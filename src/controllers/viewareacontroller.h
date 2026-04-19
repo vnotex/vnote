@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QUrl>
 #include <QVariantMap>
 #include <QVector>
 
@@ -204,6 +205,10 @@ public:
 
   // Subscribe to file-open hooks. Called once during initialization.
   void subscribeToHooks();
+
+  // Open a vx:// URL. Parses authority/path/fragment and opens the appropriate content.
+  // Currently supports vx://settings/... for deep-linking into settings pages.
+  void openVxUrl(const QUrl &p_url);
 
   // Force-emit currentViewWindowChanged (e.g. after session restore settles).
   void notifyCurrentViewWindowChanged();

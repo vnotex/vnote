@@ -2,6 +2,7 @@
 
 #include <QRegularExpression>
 #include <QSet>
+#include <QUrl>
 #include <QVariantMap>
 #include <QWidget>
 
@@ -19,6 +20,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
+#include <widgets/settingswidget.h>
 #include <widgets/viewwindow2.h>
 
 using namespace vnotex;
@@ -1213,6 +1215,24 @@ void ViewAreaController::notifyCurrentViewWindowChanged() {
   qDebug() << "ViewAreaController::notifyCurrentViewWindowChanged: currentWindowId:"
            << m_currentWindowId << "currentWorkspaceId:" << m_currentWorkspaceId;
   emit currentViewWindowChanged();
+}
+
+void ViewAreaController::openVxUrl(const QUrl &p_url) {
+  if (p_url.scheme() != QStringLiteral("vx")) {
+    qWarning() << "ViewAreaController::openVxUrl: unsupported scheme:" << p_url.scheme();
+    return;
+  }
+
+  const QString authority = p_url.authority();
+  QStringList pathSegments = p_url.path().split(QStringLiteral("/"), Qt::SkipEmptyParts);
+  QString fragment = p_url.fragment();
+
+  if (authority == QStringLiteral("settings")) {
+    auto *content = new SettingsWidget(m_services, nullptr);
+    openWidgetContent(content, pathSegments, fragment);
+  } else {
+    qWarning() << "ViewAreaController::openVxUrl: unknown authority:" << authority;
+  }
 }
 
 void ViewAreaController::subscribeToHooks() {
