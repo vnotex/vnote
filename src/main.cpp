@@ -7,6 +7,7 @@
 #include <QIcon>
 #include <QProcess>
 #include <QSslSocket>
+#include <QStyle>
 #include <QTextCodec>
 #include <QTranslator>
 
@@ -246,6 +247,15 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ThemeService>(&themeService);
     app.setThemeService(&themeService);
     themeService.setHookManager(&hookManager);
+    QObject::connect(&themeService, &ThemeService::themeChanged, &app,
+                     [&app, &themeService]() {
+                       auto stylesheet = themeService.fetchQtStyleSheet();
+                       if (!stylesheet.isEmpty()) {
+                         app.setStyleSheet(stylesheet);
+                         app.style()->unpolish(&app);
+                         app.style()->polish(&app);
+                       }
+                     });
     qInfo() << "ThemeService registered";
 
     // Initialize syntax highlighting repository (must happen before any TextEditor is created).

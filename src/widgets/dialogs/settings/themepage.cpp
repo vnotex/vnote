@@ -6,7 +6,6 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-#include <application.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
@@ -107,11 +106,6 @@ bool ThemePage::saveInternal() {
     auto *themeService = m_services.get<ThemeService>();
     if (themeService) {
       themeService->switchTheme(theme);
-    }
-
-    auto *app = static_cast<Application *>(qApp);
-    if (app) {
-      app->reloadThemeResources();
     }
   }
 

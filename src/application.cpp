@@ -57,13 +57,6 @@ void Application::reloadThemeResources() {
   }
 
   m_themeService->refreshCurrentTheme();
-
-  auto stylesheet = m_themeService->fetchQtStyleSheet();
-  if (!stylesheet.isEmpty()) {
-    setStyleSheet(stylesheet);
-    style()->unpolish(this);
-    style()->polish(this);
-  }
 }
 
 bool Application::event(QEvent *p_event) {
