@@ -2,6 +2,8 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QCoreApplication>
+#include <QProgressDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFormLayout>
@@ -161,9 +163,22 @@ void OpenVNote3NotebookDialog2::acceptedButtonClicked() {
   input.destinationRootFolderPath = m_destinationInput->text().trimmed();
   input.confirmedConversion = m_confirmCheckBox->isChecked();
 
-  QApplication::setOverrideCursor(Qt::WaitCursor);
+  QProgressDialog progress(tr("Converting notebook..."), QString(), 0, 0, this);
+  progress.setWindowModality(Qt::WindowModal);
+  progress.setMinimumDuration(0);
+  progress.show();
+  QCoreApplication::processEvents();
+
+  connect(m_controller, &OpenVNote3NotebookController::progressUpdated,
+          this, [&progress](int p_val, int p_maximum, const QString &p_message) {
+            progress.setMaximum(p_maximum);
+            progress.setValue(p_val);
+            progress.setLabelText(p_message);
+            QCoreApplication::processEvents();
+          });
+
   auto result = m_controller->convertAndOpen(input);
-  QApplication::restoreOverrideCursor();
+  progress.close();
 
   if (result.success) {
     m_openedNotebookId = result.notebookId;

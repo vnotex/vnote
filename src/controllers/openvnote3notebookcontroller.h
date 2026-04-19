@@ -46,6 +46,9 @@ public:
 
   OpenVNote3NotebookResult convertAndOpen(const OpenVNote3NotebookInput &p_input);
 
+signals:
+  void progressUpdated(int p_val, int p_maximum, const QString &p_message);
+
 private:
   ServiceLocator &m_services;
 };

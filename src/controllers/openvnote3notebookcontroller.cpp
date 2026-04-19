@@ -124,8 +124,14 @@ OpenVNote3NotebookController::convertAndOpen(const OpenVNote3NotebookInput &p_in
     return result;
   }
 
+  connect(migrationService, &VNote3MigrationService::progressUpdated,
+          this, &OpenVNote3NotebookController::progressUpdated);
+
   VNote3ConversionResult convResult = migrationService->convertNotebook(
       p_input.sourceRootFolderPath, p_input.destinationRootFolderPath);
+
+  disconnect(migrationService, &VNote3MigrationService::progressUpdated,
+             this, &OpenVNote3NotebookController::progressUpdated);
   if (!convResult.success) {
     result.success = false;
     result.errorMessage = convResult.errorMessage;
