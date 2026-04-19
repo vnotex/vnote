@@ -111,24 +111,28 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::Save:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("save_editor.svg")),
                           QObject::tr("Save"));
+    act->setProperty("iconName", QStringLiteral("save_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::Save), p_shortcutWidget);
     break;
 
   case Action::FindAndReplace:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("find_replace_editor.svg")),
                           QObject::tr("Find And Replace"));
+    act->setProperty("iconName", QStringLiteral("find_replace_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::FindAndReplace), p_shortcutWidget);
     break;
 
   case Action::Print:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("print_editor.svg")),
                           QObject::tr("Print"));
+    act->setProperty("iconName", QStringLiteral("print_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::Print), p_shortcutWidget);
     break;
 
   case Action::WordCount: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("word_count_editor.svg")),
                           QObject::tr("Word Count"));
+    act->setProperty("iconName", QStringLiteral("word_count_editor.svg"));
     auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
     Q_ASSERT(toolBtn);
     toolBtn->setPopupMode(QToolButton::InstantPopup);
@@ -143,6 +147,9 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
         generateIcon(p_services, QStringLiteral("read_editor.svg")), QObject::tr("Read"),
         generateIcon(p_services, QStringLiteral("discard_editor.svg")), QObject::tr("Discard"),
         p_tb);
+    erdAct->setProperty("editIconName", QStringLiteral("edit_editor.svg"));
+    erdAct->setProperty("readIconName", QStringLiteral("read_editor.svg"));
+    erdAct->setProperty("discardIconName", QStringLiteral("discard_editor.svg"));
     act = erdAct;
     addActionShortcut(erdAct, editorConfig.getShortcut(Shortcut::EditRead), p_shortcutWidget);
 
@@ -160,6 +167,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::TypeHeading: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_heading_editor.svg")),
                           QObject::tr("Heading 1"));
+    act->setProperty("iconName", QStringLiteral("type_heading_editor.svg"));
     act->setData(1);
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeHeading1), p_shortcutWidget);
 
@@ -193,12 +201,14 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::TypeBold:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_bold_editor.svg")),
                           QObject::tr("Bold"));
+    act->setProperty("iconName", QStringLiteral("type_bold_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeBold), p_shortcutWidget);
     break;
 
   case Action::TypeItalic:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_italic_editor.svg")),
                           QObject::tr("Italic"));
+    act->setProperty("iconName", QStringLiteral("type_italic_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeItalic), p_shortcutWidget);
     break;
 
@@ -206,6 +216,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_strikethrough_editor.svg")),
         QObject::tr("Strikethrough"));
+    act->setProperty("iconName", QStringLiteral("type_strikethrough_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeStrikethrough),
                       p_shortcutWidget);
     break;
@@ -213,6 +224,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::TypeMark:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_mark_editor.svg")),
                           QObject::tr("Mark"));
+    act->setProperty("iconName", QStringLiteral("type_mark_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMark), p_shortcutWidget);
     break;
 
@@ -220,6 +232,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_unordered_list_editor.svg")),
         QObject::tr("Unordered List"));
+    act->setProperty("iconName", QStringLiteral("type_unordered_list_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeUnorderedList),
                       p_shortcutWidget);
     break;
@@ -228,6 +241,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_ordered_list_editor.svg")),
         QObject::tr("Ordered List"));
+    act->setProperty("iconName", QStringLiteral("type_ordered_list_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeOrderedList),
                       p_shortcutWidget);
     break;
@@ -236,6 +250,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_todo_list_editor.svg")),
         QObject::tr("Todo List"));
+    act->setProperty("iconName", QStringLiteral("type_todo_list_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTodoList), p_shortcutWidget);
     break;
 
@@ -243,6 +258,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_checked_todo_list_editor.svg")),
         QObject::tr("Checked Todo List"));
+    act->setProperty("iconName", QStringLiteral("type_checked_todo_list_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCheckedTodoList),
                       p_shortcutWidget);
     break;
@@ -250,6 +266,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::TypeCode:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_code_editor.svg")),
                           QObject::tr("Code"));
+    act->setProperty("iconName", QStringLiteral("type_code_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCode), p_shortcutWidget);
     break;
 
@@ -257,12 +274,14 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_code_block_editor.svg")),
         QObject::tr("Code Block"));
+    act->setProperty("iconName", QStringLiteral("type_code_block_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCodeBlock), p_shortcutWidget);
     break;
 
   case Action::TypeMath:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_math_editor.svg")),
                           QObject::tr("Math"));
+    act->setProperty("iconName", QStringLiteral("type_math_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMath), p_shortcutWidget);
     break;
 
@@ -270,30 +289,35 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("type_math_block_editor.svg")),
         QObject::tr("Math Block"));
+    act->setProperty("iconName", QStringLiteral("type_math_block_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMathBlock), p_shortcutWidget);
     break;
 
   case Action::TypeQuote:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_quote_editor.svg")),
                           QObject::tr("Quote"));
+    act->setProperty("iconName", QStringLiteral("type_quote_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeQuote), p_shortcutWidget);
     break;
 
   case Action::TypeLink:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_link_editor.svg")),
                           QObject::tr("Link"));
+    act->setProperty("iconName", QStringLiteral("type_link_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeLink), p_shortcutWidget);
     break;
 
   case Action::TypeImage:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_image_editor.svg")),
                           QObject::tr("Image"));
+    act->setProperty("iconName", QStringLiteral("type_image_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeImage), p_shortcutWidget);
     break;
 
   case Action::TypeTable:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_table_editor.svg")),
                           QObject::tr("Table"));
+    act->setProperty("iconName", QStringLiteral("type_table_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), p_shortcutWidget);
     break;
 
@@ -301,6 +325,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("readable_width_editor.svg")),
         QObject::tr("Readable Width"));
+    act->setProperty("iconName", QStringLiteral("readable_width_editor.svg"));
     act->setCheckable(true);
     {
       const auto &shortcut = editorConfig.getShortcut(Shortcut::ToggleLayoutMode);
@@ -314,6 +339,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     act = p_tb->addAction(
         generateIcon(p_services, QStringLiteral("view_mode_editor.svg")),
         QObject::tr("Live Preview"));
+    act->setProperty("iconName", QStringLiteral("view_mode_editor.svg"));
     act->setCheckable(true);
     {
       const auto &shortcut = editorConfig.getShortcut(Shortcut::AlternateViewMode);
@@ -326,6 +352,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::Outline: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("outline_editor.svg")),
                           QObject::tr("Outline"));
+    act->setProperty("iconName", QStringLiteral("outline_editor.svg"));
     auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
     Q_ASSERT(toolBtn);
     toolBtn->setPopupMode(QToolButton::InstantPopup);
@@ -339,6 +366,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::Tag: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("tag_editor.svg")),
                           QObject::tr("Tags"));
+    act->setProperty("iconName", QStringLiteral("tag_editor.svg"));
     auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
     Q_ASSERT(toolBtn);
     toolBtn->setPopupMode(QToolButton::InstantPopup);
@@ -352,6 +380,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::Attachment: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("attachment_editor.svg")),
                           QObject::tr("Attachments"));
+    act->setProperty("iconName", QStringLiteral("attachment_editor.svg"));
     auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
     Q_ASSERT(toolBtn);
     toolBtn->setPopupMode(QToolButton::InstantPopup);
@@ -368,4 +397,25 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   }
 
   return act;
+}
+
+void ViewWindowToolBarHelper2::refreshToolBarIcons(QToolBar *p_tb, ServiceLocator &p_services) {
+  for (auto *act : p_tb->actions()) {
+    auto editIconName = act->property("editIconName").toString();
+    if (!editIconName.isEmpty()) {
+      auto *erdAct = dynamic_cast<EditReadDiscardAction *>(act);
+      if (erdAct) {
+        auto readIconName = act->property("readIconName").toString();
+        auto discardIconName = act->property("discardIconName").toString();
+        erdAct->refreshStateIcons(generateIcon(p_services, editIconName),
+                                  generateIcon(p_services, readIconName));
+        erdAct->refreshDiscardIcon(generateIcon(p_services, discardIconName));
+      }
+      continue;
+    }
+    auto iconName = act->property("iconName").toString();
+    if (!iconName.isEmpty()) {
+      act->setIcon(generateIcon(p_services, iconName));
+    }
+  }
 }

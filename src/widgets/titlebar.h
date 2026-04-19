@@ -53,6 +53,9 @@ public:
 
   void setSearchPlaceholder(const QString &p_placeholderText);
 
+public slots:
+  void refreshIcons();
+
 signals:
   void searchTextChanged(const QString &p_text);
 
@@ -106,6 +109,13 @@ private:
   static const QString c_menuIconForegroundName;
 
   static const QString c_menuIconDisabledForegroundName;
+
+  struct TrackedIcon {
+    QAction *m_action;
+    QString m_iconName;
+    bool m_isMenuIcon; // false = action button, true = menu action
+  };
+  QVector<TrackedIcon> m_trackedIcons;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(TitleBar::Actions)
@@ -114,6 +124,7 @@ template <typename Functor>
 QAction *TitleBar::addMenuAction(const QString &p_iconName, const QString &p_text,
                                  const QObject *p_context, Functor p_functor) {
   auto act = m_menu->addAction(generateMenuActionIcon(p_iconName), p_text, p_context, p_functor);
+  m_trackedIcons.push_back({act, p_iconName, true});
   return act;
 }
 

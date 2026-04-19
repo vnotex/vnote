@@ -25,6 +25,11 @@ TagViewer2::TagViewer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
   initIcons();
   setupUI();
+
+  auto *themeService = m_services.get<ThemeService>();
+  if (themeService) {
+    connect(themeService, &ThemeService::themeChanged, this, &TagViewer2::refreshIcons);
+  }
 }
 
 void TagViewer2::initIcons() {
@@ -251,4 +256,17 @@ bool TagViewer2::isTagSupported() const {
 
   auto config = notebookSvc->getNotebookConfig(m_nodeId.notebookId);
   return config.value(QStringLiteral("type")).toString() == QStringLiteral("bundled");
+}
+
+void TagViewer2::refreshIcons() {
+  initIcons();
+  // Re-apply icons to existing tag list items.
+  for (int i = 0; i < m_tagList->count(); ++i) {
+    auto *item = m_tagList->item(i);
+    if (isItemTagSelected(item)) {
+      item->setIcon(m_selectedTagIcon);
+    } else {
+      item->setIcon(m_tagIcon);
+    }
+  }
 }

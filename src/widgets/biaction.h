@@ -25,6 +25,10 @@ public:
 
   void setToolButtonForAction(QToolButton *p_btn);
 
+  // Refresh the icons for both states without changing state or text.
+  // Used for theme changes.
+  void refreshStateIcons(const QIcon &p_defaultIcon, const QIcon &p_altIcon);
+
 private:
   struct StateResource {
     QIcon m_icon;

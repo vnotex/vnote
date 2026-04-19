@@ -30,11 +30,6 @@
 
 using namespace vnotex;
 
-QIcon ViewSplit2::s_windowListIcon;
-QIcon ViewSplit2::s_windowListActiveIcon;
-QIcon ViewSplit2::s_menuIcon;
-QIcon ViewSplit2::s_menuActiveIcon;
-
 const QString ViewSplit2::c_activeActionButtonForegroundName =
     QStringLiteral("widgets#viewsplit#action_button#active#fg");
 
@@ -45,9 +40,31 @@ ViewSplit2::ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId,
     : QTabWidget(p_parent), m_services(p_services), m_workspaceId(p_workspaceId) {
   setupUI();
   setupShortcuts();
+
+  auto *themeService = m_services.get<ThemeService>();
+  if (themeService) {
+    connect(themeService, &ThemeService::themeChanged, this, &ViewSplit2::refreshIcons);
+  }
 }
 
 ViewSplit2::~ViewSplit2() {}
+
+void ViewSplit2::refreshIcons() {
+  initIcons();
+  if (m_windowListButton) {
+    m_windowListButton->defaultAction()->setIcon(m_active ? m_windowListActiveIcon
+                                                          : m_windowListIcon);
+  }
+  if (m_menuButton) {
+    m_menuButton->defaultAction()->setIcon(m_active ? m_menuActiveIcon : m_menuIcon);
+  }
+  for (int i = 0; i < count(); ++i) {
+    auto *win = getViewWindow(i);
+    if (win) {
+      setTabIcon(i, win->getIcon());
+    }
+  }
+}
 
 void ViewSplit2::setupUI() {
   // QTabWidget properties.
@@ -105,10 +122,6 @@ void ViewSplit2::setupTabBar() {
 }
 
 void ViewSplit2::initIcons() {
-  if (!s_windowListIcon.isNull()) {
-    return;
-  }
-
   auto *themeService = m_services.get<ThemeService>();
   if (!themeService) {
     return;
@@ -119,12 +132,12 @@ void ViewSplit2::initIcons() {
   const QString fg = themeService->paletteColor(c_actionButtonForegroundName);
   const QString activeFg = themeService->paletteColor(c_activeActionButtonForegroundName);
 
-  s_windowListIcon = IconUtils::fetchIcon(themeService->getIconFile(windowListIconName), fg);
-  s_windowListActiveIcon =
+  m_windowListIcon = IconUtils::fetchIcon(themeService->getIconFile(windowListIconName), fg);
+  m_windowListActiveIcon =
       IconUtils::fetchIcon(themeService->getIconFile(windowListIconName), activeFg);
 
-  s_menuIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), fg);
-  s_menuActiveIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), activeFg);
+  m_menuIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), fg);
+  m_menuActiveIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), activeFg);
 }
 
 void ViewSplit2::setupCornerWidget() {
@@ -142,7 +155,7 @@ void ViewSplit2::setupCornerWidget() {
     m_windowListButton->setPopupMode(QToolButton::InstantPopup);
     m_windowListButton->setProperty(PropertyDefs::c_actionToolButton, true);
 
-    auto act = new QAction(s_windowListIcon, tr("Open Windows"), m_windowListButton);
+    auto act = new QAction(m_windowListIcon, tr("Open Windows"), m_windowListButton);
     m_windowListButton->setDefaultAction(act);
 
     auto menu = WidgetsFactory::createMenu(m_windowListButton);
@@ -162,7 +175,7 @@ void ViewSplit2::setupCornerWidget() {
     m_menuButton->setPopupMode(QToolButton::InstantPopup);
     m_menuButton->setProperty(PropertyDefs::c_actionToolButton, true);
 
-    auto act = new QAction(s_menuIcon, tr("Menu"), m_menuButton);
+    auto act = new QAction(m_menuIcon, tr("Menu"), m_menuButton);
     m_menuButton->setDefaultAction(act);
 
     auto menu = WidgetsFactory::createMenu(m_menuButton);
@@ -420,11 +433,11 @@ void ViewSplit2::setActive(bool p_active) {
 
   if (m_windowListButton && m_menuButton) {
     if (p_active) {
-      m_windowListButton->defaultAction()->setIcon(s_windowListActiveIcon);
-      m_menuButton->defaultAction()->setIcon(s_menuActiveIcon);
+      m_windowListButton->defaultAction()->setIcon(m_windowListActiveIcon);
+      m_menuButton->defaultAction()->setIcon(m_menuActiveIcon);
     } else {
-      m_windowListButton->defaultAction()->setIcon(s_windowListIcon);
-      m_menuButton->defaultAction()->setIcon(s_menuIcon);
+      m_windowListButton->defaultAction()->setIcon(m_windowListIcon);
+      m_menuButton->defaultAction()->setIcon(m_menuIcon);
     }
   }
 }

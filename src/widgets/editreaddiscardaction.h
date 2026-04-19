@@ -19,6 +19,9 @@ public:
 
   QAction *getDiscardAction() const;
 
+  // Refresh the discard action icon. Used for theme changes.
+  void refreshDiscardIcon(const QIcon &p_discardIcon);
+
 signals:
   void triggered(Action p_act);
 

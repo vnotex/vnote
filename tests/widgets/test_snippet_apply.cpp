@@ -31,6 +31,8 @@ void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 
 void ViewWindow2::onAttachmentChanged(const QString &) {}
 
+void ViewWindow2::refreshToolBarIcons() {}
+
 } // namespace vnotex
 
 namespace tests {

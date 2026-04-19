@@ -7,6 +7,11 @@
 
 using namespace vnotex;
 
+UnitedEntryHelper::UnitedEntryHelper(ThemeService *p_themeService)
+    : m_themeService(p_themeService) {
+  refreshIcons();
+}
+
 UnitedEntryHelper::UserEntry UnitedEntryHelper::parseUserEntry(const QString &p_text) {
   UserEntry entry;
 
@@ -27,25 +32,22 @@ UnitedEntryHelper::UserEntry UnitedEntryHelper::parseUserEntry(const QString &p_
   return entry;
 }
 
-const QIcon &UnitedEntryHelper::itemIcon(ItemType p_type, ThemeService *p_themeService) {
-  static QIcon icons[ItemType::MaxItemType];
+const QIcon &UnitedEntryHelper::itemIcon(ItemType p_type) const {
+  return m_icons[p_type];
+}
 
-  if (icons[0].isNull()) {
-    // Init.
-    const QString nodeIconFgName = "base#icon#fg";
-    const auto fg = p_themeService->paletteColor(nodeIconFgName);
+void UnitedEntryHelper::refreshIcons() {
+  const QString nodeIconFgName = "base#icon#fg";
+  const auto fg = m_themeService->paletteColor(nodeIconFgName);
 
-    icons[ItemType::Buffer] = IconUtils::fetchIcon(p_themeService->getIconFile("buffer.svg"), fg);
-    icons[ItemType::File] = IconUtils::fetchIcon(p_themeService->getIconFile("file_node.svg"), fg);
-    icons[ItemType::Folder] =
-        IconUtils::fetchIcon(p_themeService->getIconFile("folder_node.svg"), fg);
-    icons[ItemType::Notebook] =
-        IconUtils::fetchIcon(p_themeService->getIconFile("notebook_default.svg"), fg);
-    icons[ItemType::Other] =
-        IconUtils::fetchIcon(p_themeService->getIconFile("other_item.svg"), fg);
-  }
-
-  return icons[p_type];
+  m_icons[ItemType::Buffer] = IconUtils::fetchIcon(m_themeService->getIconFile("buffer.svg"), fg);
+  m_icons[ItemType::File] = IconUtils::fetchIcon(m_themeService->getIconFile("file_node.svg"), fg);
+  m_icons[ItemType::Folder] =
+      IconUtils::fetchIcon(m_themeService->getIconFile("folder_node.svg"), fg);
+  m_icons[ItemType::Notebook] =
+      IconUtils::fetchIcon(m_themeService->getIconFile("notebook_default.svg"), fg);
+  m_icons[ItemType::Other] =
+      IconUtils::fetchIcon(m_themeService->getIconFile("other_item.svg"), fg);
 }
 
 UnitedEntryHelper::ItemType UnitedEntryHelper::locationTypeToItemType(LocationType p_type) {

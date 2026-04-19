@@ -47,6 +47,8 @@ public:
 
   void updateDockWidgetTabBar();
 
+  void refreshIcons();
+
   QStringList getVisibleDocks() const;
 
   QStringList hideDocks();

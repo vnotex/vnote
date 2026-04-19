@@ -94,7 +94,8 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
 
     // New note.
     const auto text = MainWindow2::tr("New Note");
-    auto newNoteAct = new QAction(generateIcon("new_note.svg"), text, newBtn);
+    auto newNoteAct = new QAction(text, newBtn);
+    setActionIcon(newNoteAct, QStringLiteral("new_note.svg"));
     QAction::connect(newNoteAct, &QAction::triggered, m_mainWindow,
                      [this]() { emit m_mainWindow->newNoteRequested(); });
     WidgetUtils::addActionShortcut(newNoteAct,
@@ -169,7 +170,8 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     const auto text = MainWindow2::tr("Quick Access");
-    auto quickAccessAct = new QAction(generateIcon("quick_access_menu.svg"), text, toolBtn);
+    auto quickAccessAct = new QAction(text, toolBtn);
+    setActionIcon(quickAccessAct, QStringLiteral("quick_access_menu.svg"));
     MainWindow2::connect(quickAccessAct, &QAction::triggered, m_mainWindow, [this]() {
       auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
       const auto &quickAccessItems = sessionConfig.getQuickAccessItems();
@@ -349,7 +351,8 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   auto btn = WidgetsFactory::createToolButton(p_toolBar);
 
   auto defaultText = MainWindow2::tr("Expand Content Area");
-  auto expandAct = new QAction(generateIcon("expand.svg"), defaultText, btn);
+  auto expandAct = new QAction(defaultText, btn);
+  setActionIcon(expandAct, QStringLiteral("expand.svg"));
   WidgetUtils::addActionShortcut(expandAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::ExpandContentArea));
   expandAct->setCheckable(true);
@@ -367,7 +370,8 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
 
   {
     auto fullScreenAct =
-        new FullScreenToggleAction(m_mainWindow, generateIcon("fullscreen.svg"), menu);
+        new FullScreenToggleAction(m_mainWindow, generateIcon(QStringLiteral("fullscreen.svg")), menu);
+    m_trackedIcons.append({fullScreenAct, QStringLiteral("fullscreen.svg"), false});
     const auto shortcut = coreConfig.getShortcut(CoreConfig::Shortcut::FullScreen);
     WidgetUtils::addActionShortcut(fullScreenAct, shortcut);
     MainWindow2::connect(fullScreenAct, &FullScreenToggleAction::fullScreenToggled, m_mainWindow,
@@ -380,8 +384,9 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   }
 
   auto stayOnTopAct =
-      menu->addAction(generateIcon("stay_on_top.svg"), MainWindow2::tr("Stay on Top"), m_mainWindow,
+      menu->addAction(MainWindow2::tr("Stay on Top"), m_mainWindow,
                       &MainWindow2::setStayOnTop);
+  setActionIcon(stayOnTopAct, QStringLiteral("stay_on_top.svg"));
   stayOnTopAct->setCheckable(true);
   WidgetUtils::addActionShortcut(stayOnTopAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::StayOnTop));
@@ -418,7 +423,8 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   auto btn = WidgetsFactory::createToolButton(p_toolBar);
 
   auto defaultText = MainWindow2::tr("Settings");
-  auto settingsAct = new QAction(generateIcon("settings.svg"), defaultText, btn);
+  auto settingsAct = new QAction(defaultText, btn);
+  setActionIcon(settingsAct, QStringLiteral("settings.svg"));
   QAction::connect(settingsAct, &QAction::triggered, [this]() {
     auto *content = new SettingsWidget(m_services, m_mainWindow);
     auto *controller = m_mainWindow->getViewArea()->getController();
@@ -484,6 +490,26 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
 }
 
 UnitedEntryMgr *ToolBarHelper2::unitedEntryMgr() const { return m_unitedEntryMgr; }
+
+void ToolBarHelper2::setActionIcon(QAction *p_action, const QString &p_iconName) {
+  p_action->setIcon(generateIcon(p_iconName));
+  m_trackedIcons.append({p_action, p_iconName, false});
+}
+
+void ToolBarHelper2::setDangerousActionIcon(QAction *p_action, const QString &p_iconName) {
+  p_action->setIcon(generateDangerousIcon(p_iconName));
+  m_trackedIcons.append({p_action, p_iconName, true});
+}
+
+void ToolBarHelper2::refreshIcons() {
+  for (auto &tracked : m_trackedIcons) {
+    if (tracked.m_isDangerous) {
+      tracked.m_action->setIcon(generateDangerousIcon(tracked.m_iconName));
+    } else {
+      tracked.m_action->setIcon(generateIcon(tracked.m_iconName));
+    }
+  }
+}
 
 void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p_item) {
   // UUID-first: try to open by UUID if available.

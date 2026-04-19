@@ -157,6 +157,10 @@ public slots:
 
   void replaceAll(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
 
+  // Refresh all toolbar icons from the current theme.
+  // Connected to ThemeService::themeChanged.
+  void refreshToolBarIcons();
+
   // Apply a snippet by name. Called from snippet panel.
   // Base implementation logs a warning; subclasses override for actual snippet support.
   virtual void applySnippet(const QString &p_name);

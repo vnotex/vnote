@@ -165,6 +165,9 @@ protected:
 private slots:
   void closeTab(int p_idx);
 
+  // Regenerate icons from current theme and update corner widget buttons.
+  void refreshIcons();
+
 private:
   void setupUI();
   void setupTabBar();
@@ -209,11 +212,11 @@ private:
   // Callback to query visible workspace IDs (set by ViewArea2).
   VisibleWorkspaceIdsFunc m_visibleWorkspaceIdsFunc;
 
-  // Icons (static, shared across all ViewSplit2 instances).
-  static QIcon s_windowListIcon;
-  static QIcon s_windowListActiveIcon;
-  static QIcon s_menuIcon;
-  static QIcon s_menuActiveIcon;
+  // Icons (per-instance, refreshed on theme change).
+  QIcon m_windowListIcon;
+  QIcon m_windowListActiveIcon;
+  QIcon m_menuIcon;
+  QIcon m_menuActiveIcon;
 
   static const QString c_actionButtonForegroundName;
   static const QString c_activeActionButtonForegroundName;

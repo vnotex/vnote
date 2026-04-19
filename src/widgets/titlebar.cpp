@@ -28,6 +28,7 @@ TitleBar::TitleBar(ThemeService *p_themeService, const QString &p_title, bool p_
                    TitleBar::Actions p_actionFlags, QWidget *p_parent)
     : QFrame(p_parent), m_themeService(p_themeService) {
   setupUI(p_title, p_hasInfoLabel, p_actionFlags);
+  connect(p_themeService, &ThemeService::themeChanged, this, &TitleBar::refreshIcons);
 }
 
 void TitleBar::setupUI(const QString &p_title, bool p_hasInfoLabel,
@@ -81,6 +82,7 @@ QToolButton *TitleBar::newActionButton(const QString &p_iconName, const QString 
 
   auto act = new QAction(icon, p_text, btn);
   btn->setDefaultAction(act);
+  m_trackedIcons.push_back({act, p_iconName, false});
   return btn;
 }
 
@@ -152,6 +154,7 @@ QIcon TitleBar::generateMenuActionIcon(const QString &p_iconName) {
 
 QAction *TitleBar::addMenuAction(const QString &p_iconName, const QString &p_text) {
   auto act = m_menu->addAction(generateMenuActionIcon(p_iconName), p_text);
+  m_trackedIcons.push_back({act, p_iconName, true});
   return act;
 }
 
@@ -239,5 +242,17 @@ void TitleBar::setSearchBoxVisible(bool p_visible) {
     m_searchEdit->setFocus();
   } else {
     m_searchEdit->clear();
+  }
+}
+
+void TitleBar::refreshIcons() {
+  for (auto &tracked : m_trackedIcons) {
+    if (tracked.m_isMenuIcon) {
+      tracked.m_action->setIcon(generateMenuActionIcon(tracked.m_iconName));
+    } else {
+      auto iconFile = m_themeService->getIconFile(tracked.m_iconName);
+      const auto fg = m_themeService->paletteColor(c_actionButtonForegroundName);
+      tracked.m_action->setIcon(IconUtils::fetchIcon(iconFile, fg));
+    }
   }
 }

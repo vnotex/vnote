@@ -9,6 +9,7 @@
 #include <functional>
 
 #include <controllers/searchcontroller.h>
+#include <unitedentry/unitedentryhelper.h>
 
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -78,6 +79,8 @@ private:
   bool m_hasLastSearchParams = false;
 
   bool m_searchActive = false;
+
+  UnitedEntryHelper m_helper;
 };
 } // namespace vnotex
 

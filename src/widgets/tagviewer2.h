@@ -57,6 +57,10 @@ private:
 
   void initIcons();
 
+private slots:
+  void refreshIcons();
+
+private:
   ServiceLocator &m_services;
 
   NodeIdentifier m_nodeId;

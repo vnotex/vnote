@@ -87,6 +87,12 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
     connect(bufferService->asQObject(), SIGNAL(attachmentChanged(QString)), this,
             SLOT(onAttachmentChanged(QString)));
   }
+
+  // Refresh toolbar icons when the theme changes.
+  auto *themeService = m_services.get<ThemeService>();
+  if (themeService) {
+    connect(themeService, &ThemeService::themeChanged, this, &ViewWindow2::refreshToolBarIcons);
+  }
 }
 
 ViewWindow2::~ViewWindow2() {
@@ -940,6 +946,13 @@ void ViewWindow2::handleEditorConfigChange() {
   if (m_layoutModeAction) {
     QSignalBlocker blocker(m_layoutModeAction);
     m_layoutModeAction->setChecked(getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
+  }
+}
+
+void ViewWindow2::refreshToolBarIcons() {
+  if (m_toolBar) {
+    ViewWindowToolBarHelper2::refreshToolBarIcons(m_toolBar, m_services);
+    updateAttachmentIcon();
   }
 }
 

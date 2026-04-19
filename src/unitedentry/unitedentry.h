@@ -16,6 +16,7 @@ class ServiceLocator;
 class EntryPopup;
 class IUnitedEntry;
 class UnitedEntryMgr;
+class UnitedEntryHelper;
 
 class UnitedEntry : public QWidget {
   Q_OBJECT
@@ -71,6 +72,8 @@ private:
   QSize calculatePopupSize() const;
 
   void updatePopupGeometry();
+
+  void refreshIcons();
 
   ServiceLocator &m_services;
 

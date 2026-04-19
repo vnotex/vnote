@@ -181,6 +181,7 @@ add_qt_test(test_tagviewer2
     ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
   LINKS
     core_services
     vxcore

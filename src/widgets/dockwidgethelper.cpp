@@ -496,6 +496,15 @@ const QIcon &DockWidgetHelper::getDockIcon(DockType p_dockType, bool p_isSideBar
   return m_dockIcons[p_dockType].m_icon;
 }
 
+void DockWidgetHelper::refreshIcons() {
+  // Invalidate cached icons by resetting rotation angles to force re-fetch.
+  for (auto &iconInfo : m_dockIcons) {
+    iconInfo.m_rotationAngle = INT_MIN;
+  }
+  // Re-apply dock icons with fresh theme colors.
+  updateDockWidgetTabBar();
+}
+
 void DockWidgetHelper::placeNavigationLabel(int p_idx, void *p_item, QLabel *p_label) {
   Q_UNUSED(p_idx);
   auto info = static_cast<NavigationItemInfo *>(p_item);

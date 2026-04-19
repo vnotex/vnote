@@ -3,10 +3,13 @@
 
 #include <QIcon>
 #include <QObject>
+#include <QString>
+#include <QVector>
 
 #include <core/global.h>
 #include <core/sessionconfig.h>
 
+class QAction;
 class QMenu;
 class QToolBar;
 
@@ -46,7 +49,19 @@ public:
   // Add spacer to toolbar.
   static void addSpacer(QToolBar *p_toolBar);
 
+  // Regenerate all tracked toolbar icons from the current theme.
+  void refreshIcons();
+
 private:
+  struct TrackedIcon {
+    QAction *m_action;
+    QString m_iconName;
+    bool m_isDangerous;
+  };
+
+  void setActionIcon(QAction *p_action, const QString &p_iconName);
+  void setDangerousActionIcon(QAction *p_action, const QString &p_iconName);
+
   QToolBar *setupFileToolBar(QToolBar *p_toolBar);
 
   QToolBar *setupSettingsToolBar(QToolBar *p_toolBar);
@@ -72,6 +87,8 @@ private:
   UnitedEntry *m_unitedEntry = nullptr;
 
   UnitedEntryMgr *m_unitedEntryMgr = nullptr;
+
+  QVector<TrackedIcon> m_trackedIcons;
 };
 
 } // namespace vnotex

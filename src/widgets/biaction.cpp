@@ -81,3 +81,9 @@ void BiAction::updateToolButtonPopupMode() {
     WidgetUtils::updateStyle(m_toolBtn);
   }
 }
+
+void BiAction::refreshStateIcons(const QIcon &p_defaultIcon, const QIcon &p_altIcon) {
+  m_resources[State::Default].m_icon = p_defaultIcon;
+  m_resources[State::Alternative].m_icon = p_altIcon;
+  setIcon(m_resources[m_state].m_icon);
+}

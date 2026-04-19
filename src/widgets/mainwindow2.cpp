@@ -24,6 +24,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/navigationmodeservice.h>
+#include <gui/services/themeservice.h>
 
 #include <controllers/searchcontroller.h>
 #include <controllers/viewareacontroller.h>
@@ -414,6 +415,11 @@ void MainWindow2::setupDocks() {
   m_dockWidgetHelper.setupDocks();
   m_dockWidgetHelper.postSetup();
 
+  // Refresh dock tab icons when theme changes.
+  auto *themeService = m_serviceLocator.get<ThemeService>();
+  connect(themeService, &ThemeService::themeChanged, &m_dockWidgetHelper,
+          &DockWidgetHelper::refreshIcons);
+
   // Wire SearchController to LocationList2's model.
   m_searchPanel->getController()->setModel(m_locationList->getModel());
 
@@ -551,6 +557,10 @@ void MainWindow2::setupToolBar() {
 
   m_toolBarHelper = new ToolBarHelper2(m_serviceLocator, this);
 
+  auto *themeService = m_serviceLocator.get<ThemeService>();
+  connect(themeService, &ThemeService::themeChanged, m_toolBarHelper,
+          [this]() { m_toolBarHelper->refreshIcons(); });
+
   if (isFrameless()) {
     auto toolBar = new TitleToolBar(tr("Global"), this);
     toolBar->setIconSize(QSize(sz + 4, sz + 4));
@@ -562,6 +572,13 @@ void MainWindow2::setupToolBar() {
     setTitleBar(toolBar);
     connect(this, &FramelessMainWindowImpl::windowStateChanged, toolBar,
             &TitleToolBar::updateMaximizeAct);
+    connect(themeService, &ThemeService::themeChanged, toolBar, [this, toolBar]() {
+      toolBar->refreshIcons(
+          m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
+          m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
+          m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
+          m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
+    });
   } else {
     auto toolBar = new QToolBar(tr("Global"), this);
     toolBar->setIconSize(QSize(sz, sz));

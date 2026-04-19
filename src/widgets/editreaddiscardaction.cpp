@@ -37,3 +37,9 @@ EditReadDiscardAction::EditReadDiscardAction(const QIcon &p_editIcon, const QStr
 EditReadDiscardAction::~EditReadDiscardAction() {}
 
 QAction *EditReadDiscardAction::getDiscardAction() const { return m_discardAct; }
+
+void EditReadDiscardAction::refreshDiscardIcon(const QIcon &p_discardIcon) {
+  if (m_discardAct) {
+    m_discardAct->setIcon(p_discardIcon);
+  }
+}

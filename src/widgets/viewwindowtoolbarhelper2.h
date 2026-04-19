@@ -88,6 +88,10 @@ public:
 
   // Generate a QIcon from theme icon file name via DI.
   static QIcon generateIcon(ServiceLocator &p_services, const QString &p_iconName);
+
+  // Refresh all toolbar action icons from the current theme.
+  // Called on theme change to regenerate icons with new palette colors.
+  static void refreshToolBarIcons(QToolBar *p_tb, ServiceLocator &p_services);
 };
 
 } // namespace vnotex

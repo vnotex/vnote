@@ -25,7 +25,8 @@ void TitleToolBar::addTitleBarIcons(const QIcon &p_minimizeIcon, const QIcon &p_
                                     const QIcon &p_restoreIcon, const QIcon &p_closeIcon) {
   addSeparator();
 
-  addAction(p_minimizeIcon, tr("Minimize"), this, [this]() { m_window->showMinimized(); });
+  m_minimizeAct =
+      addAction(p_minimizeIcon, tr("Minimize"), this, [this]() { m_window->showMinimized(); });
 
   m_maximizeIcon = p_maximizeIcon;
   m_restoreIcon = p_restoreIcon;
@@ -33,8 +34,8 @@ void TitleToolBar::addTitleBarIcons(const QIcon &p_minimizeIcon, const QIcon &p_
       addAction(p_maximizeIcon, tr("Maximize"), this, [this]() { maximizeRestoreWindow(); });
 
   {
-    auto closeAct = addAction(p_closeIcon, tr("Close"), this, [this]() { m_window->close(); });
-    auto btn = static_cast<QToolButton *>(widgetForAction(closeAct));
+    m_closeAct = addAction(p_closeIcon, tr("Close"), this, [this]() { m_window->close(); });
+    auto btn = static_cast<QToolButton *>(widgetForAction(m_closeAct));
     btn->setProperty(PropertyDefs::c_dangerButton, true);
   }
 
@@ -49,4 +50,17 @@ void TitleToolBar::updateMaximizeAct() {
     m_maximizeAct->setIcon(m_maximizeIcon);
     m_maximizeAct->setText(tr("Maximize"));
   }
+}
+
+void TitleToolBar::refreshIcons(const QIcon &p_minimizeIcon, const QIcon &p_maximizeIcon,
+                                const QIcon &p_restoreIcon, const QIcon &p_closeIcon) {
+  if (m_minimizeAct) {
+    m_minimizeAct->setIcon(p_minimizeIcon);
+  }
+  m_maximizeIcon = p_maximizeIcon;
+  m_restoreIcon = p_restoreIcon;
+  if (m_closeAct) {
+    m_closeAct->setIcon(p_closeIcon);
+  }
+  updateMaximizeAct();
 }

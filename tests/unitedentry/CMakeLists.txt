@@ -11,6 +11,7 @@ add_qt_test(test_findunitedentry
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentrymgr.cpp
     stubs_findunitedentry.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
   LINKS
     core_services
     vxcore

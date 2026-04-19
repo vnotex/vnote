@@ -17,6 +17,9 @@ public:
 
   void updateMaximizeAct();
 
+  void refreshIcons(const QIcon &p_minimizeIcon, const QIcon &p_maximizeIcon,
+                    const QIcon &p_restoreIcon, const QIcon &p_closeIcon);
+
 private:
   void setupUI();
 
@@ -29,6 +32,10 @@ private:
   QIcon m_maximizeIcon;
 
   QIcon m_restoreIcon;
+
+  QAction *m_minimizeAct = nullptr;
+
+  QAction *m_closeAct = nullptr;
 };
 } // namespace vnotex
 

@@ -1,11 +1,10 @@
 #ifndef UNITEDENTRYHELPER_H
 #define UNITEDENTRYHELPER_H
 
+#include <QIcon>
 #include <QString>
 
 #include <core/location.h>
-
-class QIcon;
 
 namespace vnotex {
 
@@ -21,13 +20,20 @@ public:
 
   enum ItemType { Buffer, File, Folder, Notebook, Other, MaxItemType };
 
-  UnitedEntryHelper() = delete;
+  explicit UnitedEntryHelper(ThemeService *p_themeService);
+
+  const QIcon &itemIcon(ItemType p_type) const;
+
+  void refreshIcons();
 
   static UserEntry parseUserEntry(const QString &p_text);
 
-  static const QIcon &itemIcon(ItemType p_type, ThemeService *p_themeService);
-
   static ItemType locationTypeToItemType(LocationType p_type);
+
+private:
+  ThemeService *m_themeService = nullptr;
+
+  QIcon m_icons[MaxItemType];
 };
 
 } // namespace vnotex

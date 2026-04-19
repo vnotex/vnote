@@ -26,11 +26,15 @@ using namespace vnotex;
 FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
                                  QObject *p_parent)
     : IUnitedEntry("find", tr("Search for files in notebooks"), p_mgr, p_parent),
-      m_services(p_services) {
+      m_services(p_services),
+      m_helper(p_services.get<ThemeService>()) {
   m_processTimer = new QTimer(this);
   m_processTimer->setSingleShot(true);
   m_processTimer->setInterval(500);
   connect(m_processTimer, &QTimer::timeout, this, &FindUnitedEntry::doProcessInternal);
+
+  auto *themeService = m_services.get<ThemeService>();
+  connect(themeService, &ThemeService::themeChanged, this, [this]() { m_helper.refreshIcons(); });
 }
 
 void FindUnitedEntry::initOnFirstProcess() {
@@ -219,7 +223,6 @@ void FindUnitedEntry::prepareResultTree() {
 void FindUnitedEntry::populateResultTree() {
   prepareResultTree();
 
-  auto *themeService = m_services.get<ThemeService>();
   const int topLevelRows = m_resultModel ? m_resultModel->rowCount() : 0;
   for (int i = 0; i < topLevelRows; ++i) {
     const QModelIndex fileIdx = m_resultModel->index(i, 0);
@@ -242,7 +245,7 @@ void FindUnitedEntry::populateResultTree() {
     auto *item = new QTreeWidgetItem(m_resultTree.data());
     item->setText(0, relativePath);
     item->setToolTip(0, relativePath);
-    item->setIcon(0, UnitedEntryHelper::itemIcon(itemType, themeService));
+    item->setIcon(0, m_helper.itemIcon(itemType));
     item->setData(0, Qt::UserRole, QVariant::fromValue(nodeId));
 
     const int childRows = m_resultModel->rowCount(fileIdx);

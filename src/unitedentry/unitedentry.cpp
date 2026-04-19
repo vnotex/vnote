@@ -49,6 +49,9 @@ UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QWid
 
   connect(m_mgr, &UnitedEntryMgr::entryFinished, this, &UnitedEntry::handleEntryFinished);
   connect(m_mgr, &UnitedEntryMgr::entryItemActivated, this, &UnitedEntry::handleEntryItemActivated);
+
+  auto *themeService = m_services.get<ThemeService>();
+  connect(themeService, &ThemeService::themeChanged, this, &UnitedEntry::refreshIcons);
 }
 
 UnitedEntry::~UnitedEntry() { delete m_popup; }
@@ -532,7 +535,16 @@ void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
   }
 
   if (m_activated && (!p_now || (p_now != m_comboBox && p_now != m_comboBox->lineEdit() &&
-                                 !WidgetUtils::isOrAncestorOf(m_popup, p_now)))) {
+                                  !WidgetUtils::isOrAncestorOf(m_popup, p_now)))) {
     deactivate();
   }
+}
+
+void UnitedEntry::refreshIcons() {
+  auto *themeService = m_services.get<ThemeService>();
+  const auto fg = themeService->paletteColor("widgets#unitedentry#icon#fg");
+  const auto busyFg = themeService->paletteColor("widgets#unitedentry#icon#busy#fg");
+
+  m_menuIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("menu.svg"), fg));
+  m_busyIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg));
 }
