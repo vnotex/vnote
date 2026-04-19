@@ -300,3 +300,17 @@ AttachmentRenameEvent AttachmentRenameEvent::fromVariantMap(const QVariantMap &p
   return e;
 }
 
+// ===== NotebookCloseEvent =====
+
+QVariantMap NotebookCloseEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  return m;
+}
+
+NotebookCloseEvent NotebookCloseEvent::fromVariantMap(const QVariantMap &p_args) {
+  NotebookCloseEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  return e;
+}
+

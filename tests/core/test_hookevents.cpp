@@ -55,6 +55,10 @@ private slots:
   void testTypedAddActionBufferEvent();
   void testTypedAddActionViewWindowCloseEvent();
 
+  // NotebookCloseEvent round-trip and typed tests.
+  void testNotebookCloseEventRoundTrip();
+  void testTypedDoActionNotebookCloseEvent();
+
   // Cancellation via typed API.
   void testTypedCancellation();
 
@@ -614,6 +618,41 @@ void TestHookEvents::testTypedCancellationAttachmentDeleteEvent() {
 
   bool cancelled = m_hookMgr->doAction(HookNames::AttachmentBeforeDelete, event);
   QVERIFY(cancelled);
+
+  m_hookMgr->removeAction(hookId);
+}
+
+// ===== NotebookCloseEvent round-trip test =====
+
+void TestHookEvents::testNotebookCloseEventRoundTrip() {
+  NotebookCloseEvent orig;
+  orig.notebookId = QStringLiteral("nb-close-1");
+
+  QVariantMap map = orig.toVariantMap();
+  NotebookCloseEvent restored = NotebookCloseEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.notebookId, orig.notebookId);
+}
+
+void TestHookEvents::testTypedDoActionNotebookCloseEvent() {
+  bool fired = false;
+  QVariantMap captured;
+  int hookId = m_hookMgr->addAction(
+      HookNames::NotebookBeforeClose,
+      [&fired, &captured](HookContext &, const QVariantMap &p_args) {
+        fired = true;
+        captured = p_args;
+      },
+      10);
+
+  NotebookCloseEvent event;
+  event.notebookId = QStringLiteral("nb-close-emit-1");
+
+  m_hookMgr->doAction(HookNames::NotebookBeforeClose, event);
+
+  QVERIFY(fired);
+  QCOMPARE(captured[QStringLiteral("notebookId")].toString(),
+           QStringLiteral("nb-close-emit-1"));
 
   m_hookMgr->removeAction(hookId);
 }

@@ -172,6 +172,14 @@ struct AttachmentRenameEvent {
   static AttachmentRenameEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for NotebookBeforeClose, NotebookAfterClose.
+struct NotebookCloseEvent {
+  QString notebookId;
+
+  QVariantMap toVariantMap() const;
+  static NotebookCloseEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 } // namespace vnotex
 
 #endif // HOOKEVENTS_H
