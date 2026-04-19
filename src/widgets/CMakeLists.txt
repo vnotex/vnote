@@ -90,10 +90,6 @@ target_sources(vnote PRIVATE
     findandreplacewidget.cpp findandreplacewidget.h
     findandreplacewidget2.cpp findandreplacewidget2.h
     floatingwidget.cpp floatingwidget.h
-    framelessmainwindow/framelessmainwindow.cpp framelessmainwindow/framelessmainwindow.h
-    framelessmainwindow/framelessmainwindowimpl.h
-    framelessmainwindow/framelessmainwindowlinux.cpp framelessmainwindow/framelessmainwindowlinux.h
-    framelessmainwindow/framelessmainwindowwin.cpp framelessmainwindow/framelessmainwindowwin.h
     fullscreentoggleaction.cpp fullscreentoggleaction.h
     historypanel.cpp historypanel.h
     itemproxystyle.cpp itemproxystyle.h
