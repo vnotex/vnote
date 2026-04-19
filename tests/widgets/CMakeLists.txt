@@ -54,3 +54,35 @@ add_custom_command(TARGET test_notebookexplorer2_state POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_notebookexplorer2_state>
 )
+
+add_qt_test(test_settings_slug
+  SOURCES
+    test_settings_slug.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/generalpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/notemanagementpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/appearancepage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/themepage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/quickaccesspage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/editorpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/imagehostpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/vipage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/texteditorpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/markdowneditorpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/fileassociationpage.h
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+
+target_include_directories(test_settings_slug PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_settings_slug POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_settings_slug>
+)
