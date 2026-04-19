@@ -71,8 +71,9 @@ private slots:
   void testConvertRealXpayNotebook();
 
   // T13: Edge case tests
-  void testConvertOrphanFilesImported();
   void testConvertMissingVxJsonGraceful();
+  void testConvertGitDirectoryNotImported();
+  void testProgressSignalEmitted();
   void testConvertEmptyTagsSkipped();
   void testConvertInvalidTimestampDegrades();
   void testConvertEmptyAttachmentFolderSkipped();
@@ -157,8 +158,8 @@ QByteArray TestVNote3MigrationService::makeConfigJson(const QJsonObject &p_overr
   jobj[QStringLiteral("version")] = 3;
   jobj[QStringLiteral("name")] = QStringLiteral("My Notebook");
   jobj[QStringLiteral("description")] = QStringLiteral("A test notebook");
-  jobj[QStringLiteral("image_folder")] = QStringLiteral("_v_images");
-  jobj[QStringLiteral("attachment_folder")] = QStringLiteral("_v_attachments");
+  jobj[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  jobj[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
   jobj[QStringLiteral("created_time")] = QStringLiteral("2024-01-01T00:00:00Z");
   jobj[QStringLiteral("version_controller")] = QStringLiteral("dummy");
   jobj[QStringLiteral("config_mgr")] = QStringLiteral("vx.vnotex");
@@ -347,24 +348,50 @@ void TestVNote3MigrationService::buildSyntheticSourceTree(const QString &p_baseP
     f.close();
   }
 
-  // Create folder-local vx.json files (should be excluded).
+  // Create folder-local vx.json files with proper file/folder listings.
   {
-    QFile f(base.filePath(QStringLiteral("vx.json")));
-    QVERIFY(f.open(QIODevice::WriteOnly));
-    f.write("{}");
-    f.close();
+    QJsonObject readmeEntry;
+    readmeEntry[QStringLiteral("name")] = QStringLiteral("readme.md");
+    QJsonArray rootFiles;
+    rootFiles.append(readmeEntry);
+    QJsonObject notesFolder;
+    notesFolder[QStringLiteral("name")] = QStringLiteral("notes");
+    QJsonArray rootFolders;
+    rootFolders.append(notesFolder);
+    QJsonObject vxImagesFolder;
+    vxImagesFolder[QStringLiteral("name")] = QStringLiteral("vx_images");
+    rootFolders.append(vxImagesFolder);
+    QJsonObject vxAttachFolder;
+    vxAttachFolder[QStringLiteral("name")] = QStringLiteral("vx_attachments");
+    rootFolders.append(vxAttachFolder);
+    QJsonObject rootVx;
+    rootVx[QStringLiteral("files")] = rootFiles;
+    rootVx[QStringLiteral("folders")] = rootFolders;
+    writeVxJson(p_basePath, rootVx);
   }
   {
-    QFile f(base.filePath(QStringLiteral("notes/vx.json")));
-    QVERIFY(f.open(QIODevice::WriteOnly));
-    f.write("{}");
-    f.close();
+    QJsonObject helloEntry;
+    helloEntry[QStringLiteral("name")] = QStringLiteral("hello.md");
+    QJsonArray notesFiles;
+    notesFiles.append(helloEntry);
+    QJsonObject subFolder;
+    subFolder[QStringLiteral("name")] = QStringLiteral("sub");
+    QJsonArray notesFolders;
+    notesFolders.append(subFolder);
+    QJsonObject notesVx;
+    notesVx[QStringLiteral("files")] = notesFiles;
+    notesVx[QStringLiteral("folders")] = notesFolders;
+    writeVxJson(base.filePath(QStringLiteral("notes")), notesVx);
   }
   {
-    QFile f(base.filePath(QStringLiteral("notes/sub/vx.json")));
-    QVERIFY(f.open(QIODevice::WriteOnly));
-    f.write("{}");
-    f.close();
+    QJsonObject deepEntry;
+    deepEntry[QStringLiteral("name")] = QStringLiteral("deep.md");
+    QJsonArray subFiles;
+    subFiles.append(deepEntry);
+    QJsonObject subVx;
+    subVx[QStringLiteral("files")] = subFiles;
+    subVx[QStringLiteral("folders")] = QJsonArray();
+    writeVxJson(base.filePath(QStringLiteral("notes/sub")), subVx);
   }
 
   // Create vx_images folder with a sample image (should be preserved).
@@ -375,6 +402,17 @@ void TestVNote3MigrationService::buildSyntheticSourceTree(const QString &p_baseP
     f.write("fake png data");
     f.close();
   }
+  // vx_images/vx.json lists diagram.png.
+  {
+    QJsonObject diagramEntry;
+    diagramEntry[QStringLiteral("name")] = QStringLiteral("diagram.png");
+    QJsonArray imgFiles;
+    imgFiles.append(diagramEntry);
+    QJsonObject imgVx;
+    imgVx[QStringLiteral("files")] = imgFiles;
+    imgVx[QStringLiteral("folders")] = QJsonArray();
+    writeVxJson(base.filePath(QStringLiteral("vx_images")), imgVx);
+  }
 
   // Create vx_attachments folder with a sample attachment (should be preserved).
   base.mkpath(QStringLiteral("vx_attachments"));
@@ -383,6 +421,17 @@ void TestVNote3MigrationService::buildSyntheticSourceTree(const QString &p_baseP
     QVERIFY(f.open(QIODevice::WriteOnly));
     f.write("fake pdf data");
     f.close();
+  }
+  // vx_attachments/vx.json lists doc.pdf.
+  {
+    QJsonObject docEntry;
+    docEntry[QStringLiteral("name")] = QStringLiteral("doc.pdf");
+    QJsonArray attFiles;
+    attFiles.append(docEntry);
+    QJsonObject attVx;
+    attVx[QStringLiteral("files")] = attFiles;
+    attVx[QStringLiteral("folders")] = QJsonArray();
+    writeVxJson(base.filePath(QStringLiteral("vx_attachments")), attVx);
   }
 
   // Create vx_recycle_bin with content (should be excluded).
@@ -464,12 +513,75 @@ void TestVNote3MigrationService::createSyntheticVNote3Source(const QString &p_ba
     f.close();
   }
 
-  // Create notes/vx.json (legacy per-folder config — should be excluded).
+  // Create vx.json files with proper file/folder listings.
+  // Root vx.json: "notes", "vx_images", "vx_attachments" folders.
   {
-    QFile f(base.filePath(QStringLiteral("notes/vx.json")));
-    QVERIFY(f.open(QIODevice::WriteOnly));
-    f.write("{}");
-    f.close();
+    QJsonObject notesFolder;
+    notesFolder[QStringLiteral("name")] = QStringLiteral("notes");
+    QJsonObject vxImagesFolder;
+    vxImagesFolder[QStringLiteral("name")] = QStringLiteral("vx_images");
+    QJsonObject vxAttachFolder;
+    vxAttachFolder[QStringLiteral("name")] = QStringLiteral("vx_attachments");
+    QJsonArray rootFolders;
+    rootFolders.append(notesFolder);
+    rootFolders.append(vxImagesFolder);
+    rootFolders.append(vxAttachFolder);
+    QJsonObject rootVx;
+    rootVx[QStringLiteral("files")] = QJsonArray();
+    rootVx[QStringLiteral("folders")] = rootFolders;
+    writeVxJson(p_basePath, rootVx);
+  }
+
+  // notes/vx.json: hello.md + subfolder.
+  {
+    QJsonObject helloEntry;
+    helloEntry[QStringLiteral("name")] = QStringLiteral("hello.md");
+    QJsonArray notesFiles;
+    notesFiles.append(helloEntry);
+    QJsonObject subfolderEntry;
+    subfolderEntry[QStringLiteral("name")] = QStringLiteral("subfolder");
+    QJsonArray notesFolders;
+    notesFolders.append(subfolderEntry);
+    QJsonObject notesVx;
+    notesVx[QStringLiteral("files")] = notesFiles;
+    notesVx[QStringLiteral("folders")] = notesFolders;
+    writeVxJson(base.filePath(QStringLiteral("notes")), notesVx);
+  }
+
+  // notes/subfolder/vx.json: world.md.
+  {
+    QJsonObject worldEntry;
+    worldEntry[QStringLiteral("name")] = QStringLiteral("world.md");
+    QJsonArray subFiles;
+    subFiles.append(worldEntry);
+    QJsonObject subVx;
+    subVx[QStringLiteral("files")] = subFiles;
+    subVx[QStringLiteral("folders")] = QJsonArray();
+    writeVxJson(base.filePath(QStringLiteral("notes/subfolder")), subVx);
+  }
+
+  // vx_images/vx.json: photo.png.
+  {
+    QJsonObject photoEntry;
+    photoEntry[QStringLiteral("name")] = QStringLiteral("photo.png");
+    QJsonArray imgFiles;
+    imgFiles.append(photoEntry);
+    QJsonObject imgVx;
+    imgVx[QStringLiteral("files")] = imgFiles;
+    imgVx[QStringLiteral("folders")] = QJsonArray();
+    writeVxJson(base.filePath(QStringLiteral("vx_images")), imgVx);
+  }
+
+  // vx_attachments/vx.json: doc.pdf.
+  {
+    QJsonObject docEntry;
+    docEntry[QStringLiteral("name")] = QStringLiteral("doc.pdf");
+    QJsonArray attFiles;
+    attFiles.append(docEntry);
+    QJsonObject attVx;
+    attVx[QStringLiteral("files")] = attFiles;
+    attVx[QStringLiteral("folders")] = QJsonArray();
+    writeVxJson(base.filePath(QStringLiteral("vx_attachments")), attVx);
   }
 
   // Create vx_recycle_bin/deleted.md (recycle bin — should be excluded).
@@ -528,23 +640,11 @@ void TestVNote3MigrationService::testConvertExcludesVxJson() {
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // Source vx.json files must NOT be imported as user content.
-  // vxcore creates its own vx.json metadata files under vx_notebook/contents/ which is expected.
-  // Scan only the user content area (root level, excluding vx_notebook/) for stray vx.json.
-  QDirIterator it(destPath, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot,
-                  QDirIterator::Subdirectories);
-  while (it.hasNext()) {
-    it.next();
-    QFileInfo fi = it.fileInfo();
-    // Skip vxcore's own metadata tree entirely.
-    QString relPath = QDir(destPath).relativeFilePath(fi.absoluteFilePath());
-    if (relPath.startsWith(QStringLiteral("vx_notebook"))) {
-      continue;
-    }
-    if (fi.isFile()) {
-      QVERIFY2(fi.fileName() != QStringLiteral("vx.json"),
-               qPrintable(QStringLiteral("vx.json found at: %1").arg(fi.filePath())));
-    }
-  }
+  // Note: vxcore creates its own folder config files (also named vx.json)
+  // inside managed folders, so we only verify that the root-level legacy
+  // vx.json is absent from user content.
+  QVERIFY2(!QFileInfo::exists(destPath + QStringLiteral("/vx.json")),
+           "Root-level legacy vx.json should not exist in destination user content");
 }
 
 void TestVNote3MigrationService::testConvertExcludesVxRecycleBin() {
@@ -628,21 +728,12 @@ void TestVNote3MigrationService::testConvertPreservesStructureAndContent() {
   QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_notebook/notebook.db")),
            "Legacy vx_notebook/notebook.db should not be imported as user content");
 
-  // notes/vx.json excluded — scan user content area only (skip vxcore metadata).
-  QDirIterator it(destPath, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot,
-                  QDirIterator::Subdirectories);
-  while (it.hasNext()) {
-    it.next();
-    QFileInfo fi = it.fileInfo();
-    QString relPath = QDir(destPath).relativeFilePath(fi.absoluteFilePath());
-    if (relPath.startsWith(QStringLiteral("vx_notebook"))) {
-      continue;
-    }
-    if (fi.isFile()) {
-      QVERIFY2(fi.fileName() != QStringLiteral("vx.json"),
-               qPrintable(QStringLiteral("vx.json should be excluded: %1").arg(relPath)));
-    }
-  }
+  // Legacy vx.json files should not be copied as user content.
+  // Note: vxcore creates its own folder config files (also named vx.json)
+  // inside managed folders, so we only verify that the root-level legacy
+  // vx.json is absent from user content (outside vx_notebook/).
+  QVERIFY2(!QFileInfo::exists(destPath + QStringLiteral("/vx.json")),
+           "Root-level legacy vx.json should not exist in destination user content");
 
   // vx_recycle_bin excluded entirely.
   QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_recycle_bin")),
@@ -1089,12 +1180,13 @@ void TestVNote3MigrationService::testConvertPreservesFolderTimestamps() {
   // createdUtc is preserved from VNote 3 source.
   QCOMPARE(actualCreated, expectedCreated);
 
-  // modifiedUtc is set by vxcore at folder creation time (not preserved),
-  // so just verify it is recent (within 60s of now).
-  const qint64 now = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+  // modifiedUtc is preserved from VNote 3 source.
+  const qint64 expectedModified =
+      QDateTime::fromString(QStringLiteral("2025-01-05T16:30:00Z"),
+                            Qt::ISODate)
+          .toMSecsSinceEpoch();
   QVERIFY2(actualModified > 0, "Folder modifiedUtc should be non-zero");
-  QVERIFY2(qAbs(now - actualModified) < 60000,
-           "Folder modifiedUtc should be recent");
+  QCOMPARE(actualModified, expectedModified);
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -1125,48 +1217,6 @@ void TestVNote3MigrationService::testConvertRealXpayNotebook() {
 }
 
 // --- T13: Edge case tests ---
-
-void TestVNote3MigrationService::testConvertOrphanFilesImported() {
-  TempDirFixture sourceDir;
-  QVERIFY(sourceDir.isValid());
-  QDir base(sourceDir.path());
-
-  QJsonObject cfgOvr;
-  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
-  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
-  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
-
-  // File on disk but NOT in vx.json.
-  {
-    QFile f(base.filePath(QStringLiteral("orphan.md")));
-    QVERIFY(f.open(QIODevice::WriteOnly));
-    f.write("# Orphan note");
-    f.close();
-  }
-
-  // Root vx.json with no file entries.
-  QJsonObject rootVx;
-  rootVx[QStringLiteral("files")] = QJsonArray();
-  rootVx[QStringLiteral("folders")] = QJsonArray();
-  writeVxJson(sourceDir.path(), rootVx);
-
-  QString destPath = m_tempDir.filePath(QStringLiteral("orphan_dest"));
-  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
-  QVERIFY2(result.success, qPrintable(result.errorMessage));
-
-  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("orphan.md")),
-           "Orphan file should be imported into destination");
-
-  QString nbId = m_notebookService->openNotebook(destPath);
-  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
-
-  QJsonObject fileInfo =
-      m_notebookService->getFileInfo(nbId, QStringLiteral("orphan.md"));
-  QVERIFY2(!fileInfo.isEmpty(),
-           "Orphan file not found in notebook metadata");
-
-  QVERIFY(m_notebookService->closeNotebook(nbId));
-}
 
 void TestVNote3MigrationService::testConvertMissingVxJsonGraceful() {
   TempDirFixture sourceDir;
@@ -1201,18 +1251,14 @@ void TestVNote3MigrationService::testConvertMissingVxJsonGraceful() {
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
-  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("nojson/inner.md")),
-           "File inside folder without vx.json should be imported");
+  // Folder is created because root vx.json lists it.
+  QVERIFY2(QDir(destPath + QStringLiteral("/nojson")).exists() ||
+               pathExistsInNotebook(destPath, QStringLiteral("nojson")),
+           "Folder 'nojson' should be created");
 
-  QString nbId = m_notebookService->openNotebook(destPath);
-  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
-
-  QJsonObject fileInfo = m_notebookService->getFileInfo(
-      nbId, QStringLiteral("nojson/inner.md"));
-  QVERIFY2(!fileInfo.isEmpty(),
-           "inner.md not found in notebook metadata");
-
-  QVERIFY(m_notebookService->closeNotebook(nbId));
+  // inner.md is NOT imported because nojson/ has no vx.json listing it.
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("nojson/inner.md")),
+           "inner.md should NOT be imported without vx.json entry");
 }
 
 void TestVNote3MigrationService::testConvertEmptyTagsSkipped() {
@@ -1440,9 +1486,13 @@ void TestVNote3MigrationService::testConvertVxImagesAtMultipleLevels() {
   rootVx[QStringLiteral("folders")] = foldersArr;
   writeVxJson(sourceDir.path(), rootVx);
 
-  // sub/vx.json (empty — note.md imported as orphan).
+  // sub/vx.json lists note.md.
+  QJsonArray subFiles;
+  QJsonObject noteEntry;
+  noteEntry[QStringLiteral("name")] = QStringLiteral("note.md");
+  subFiles.append(noteEntry);
   QJsonObject subVx;
-  subVx[QStringLiteral("files")] = QJsonArray();
+  subVx[QStringLiteral("files")] = subFiles;
   subVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(base.filePath(QStringLiteral("sub")), subVx);
 
@@ -1534,6 +1584,133 @@ void TestVNote3MigrationService::testConvertDegradedWarningsCollected() {
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("bad_ts.md")));
   QVERIFY(
       pathExistsInNotebook(destPath, QStringLiteral("bad_attach.md")));
+}
+
+void TestVNote3MigrationService::testConvertGitDirectoryNotImported() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  writeNotebookConfig(sourceDir.path(), makeConfigJson());
+
+  // Create a .git directory with content.
+  base.mkpath(QStringLiteral(".git"));
+  {
+    QFile f(base.filePath(QStringLiteral(".git/config")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("[core]\n\trepositoryformatversion = 0\n");
+    f.close();
+  }
+
+  // Create a regular file listed in vx.json.
+  {
+    QFile f(base.filePath(QStringLiteral("readme.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Readme");
+    f.close();
+  }
+
+  // Root vx.json lists only readme.md — .git is NOT listed.
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("readme.md");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("git_excluded_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // .git directory and its contents must NOT exist in destination.
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral(".git")),
+           ".git directory should not be imported");
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral(".git/config")),
+           ".git/config should not be imported");
+
+  // Regular file should exist.
+  QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("readme.md")));
+}
+
+void TestVNote3MigrationService::testProgressSignalEmitted() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  writeNotebookConfig(sourceDir.path(), makeConfigJson());
+
+  // Create 2 files and 1 folder = 3 import items.
+  base.mkpath(QStringLiteral("notes"));
+  {
+    QFile f(base.filePath(QStringLiteral("readme.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Readme");
+    f.close();
+  }
+  {
+    QFile f(base.filePath(QStringLiteral("notes/hello.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Hello");
+    f.close();
+  }
+
+  // Root vx.json: 1 file + 1 folder = 2 items at root level.
+  QJsonObject readmeEntry;
+  readmeEntry[QStringLiteral("name")] = QStringLiteral("readme.md");
+  QJsonArray rootFiles;
+  rootFiles.append(readmeEntry);
+  QJsonObject notesFolder;
+  notesFolder[QStringLiteral("name")] = QStringLiteral("notes");
+  QJsonArray rootFolders;
+  rootFolders.append(notesFolder);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = rootFiles;
+  rootVx[QStringLiteral("folders")] = rootFolders;
+  writeVxJson(sourceDir.path(), rootVx);
+
+  // notes/vx.json: 1 file = 1 item. Total: 2 + 1 = 3 items.
+  QJsonObject helloEntry;
+  helloEntry[QStringLiteral("name")] = QStringLiteral("hello.md");
+  QJsonArray notesFiles;
+  notesFiles.append(helloEntry);
+  QJsonObject notesVx;
+  notesVx[QStringLiteral("files")] = notesFiles;
+  notesVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(base.filePath(QStringLiteral("notes")), notesVx);
+
+  // Connect to progressUpdated signal.
+  QVector<std::tuple<int, int, QString>> emissions;
+  connect(m_service, &VNote3MigrationService::progressUpdated,
+          [&emissions](int p_val, int p_maximum, const QString &p_message) {
+            emissions.append(std::make_tuple(p_val, p_maximum, p_message));
+          });
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("progress_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Disconnect to avoid stale connections in other tests.
+  disconnect(m_service, &VNote3MigrationService::progressUpdated, nullptr, nullptr);
+
+  // Should have 3 emissions (1 file + 1 folder + 1 file in subfolder).
+  QVERIFY2(emissions.size() == 3,
+           qPrintable(QStringLiteral("Expected 3 progress emissions, got %1")
+                          .arg(emissions.size())));
+
+  // All emissions should have maximum = 3.
+  for (const auto &e : emissions) {
+    QCOMPARE(std::get<1>(e), 3);
+  }
+
+  // Values should be monotonically increasing: 1, 2, 3.
+  for (int i = 0; i < emissions.size(); ++i) {
+    QCOMPARE(std::get<0>(emissions[i]), i + 1);
+  }
+
+  // Final value should equal maximum.
+  QCOMPARE(std::get<0>(emissions.last()), 3);
 }
 
 // --- T-TagGraph: Tag graph migration tests ---
