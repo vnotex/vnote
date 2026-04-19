@@ -5,6 +5,7 @@
 #include <QMap>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QVariantMap>
 #include <QVector>
 
@@ -63,7 +64,9 @@ public:
   // Creates a virtual buffer, checks for duplicate tabs across all workspaces,
   // and delegates to the view layer to create WidgetViewWindow2.
   // @p_content: ownership transferred. Deleted if a duplicate tab is found.
-  void openWidgetContent(IViewWindowContent *p_content);
+  void openWidgetContent(IViewWindowContent *p_content,
+                         const QStringList &p_pathSegments = {},
+                         const QString &p_fragment = QString());
 
   // Called by the view after it has successfully created a ViewWindow2
   // in response to m_view->openBuffer().

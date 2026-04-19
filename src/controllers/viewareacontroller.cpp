@@ -106,7 +106,9 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   m_view->openBuffer(p_buffer, fileType, m_currentWorkspaceId, p_settings);
 }
 
-void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content) {
+void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content,
+                                            const QStringList &p_pathSegments,
+                                            const QString &p_fragment) {
   if (!p_content) {
     return;
   }
@@ -136,6 +138,7 @@ void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content
         m_view->setCurrentViewSplit(wsId, true);
         m_view->setCurrentBuffer(wsId, buffer.id(), true);
         setCurrentViewWindow(existingWindowId, buffer.id());
+        m_view->navigateWidgetContent(existingWindowId, p_pathSegments, p_fragment);
         delete p_content;
         return;
       }
@@ -170,6 +173,7 @@ void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content
   }
 
   m_view->openWidgetContent(p_content, buffer, m_currentWorkspaceId);
+  p_content->navigateTo(p_pathSegments, p_fragment);
 }
 
 void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
