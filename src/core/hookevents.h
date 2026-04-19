@@ -143,6 +143,14 @@ struct FileTagEvent {
   static FileTagEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for ThemeAfterSwitch.
+struct ThemeSwitchEvent {
+  QString themeName;
+
+  QVariantMap toVariantMap() const;
+  static ThemeSwitchEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for AttachmentBeforeAdd, AttachmentAfterAdd.
 struct AttachmentAddEvent {
   QString bufferId;

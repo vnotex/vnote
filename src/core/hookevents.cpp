@@ -248,6 +248,20 @@ FileTagEvent FileTagEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== ThemeSwitchEvent =====
+
+QVariantMap ThemeSwitchEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("themeName")] = themeName;
+  return m;
+}
+
+ThemeSwitchEvent ThemeSwitchEvent::fromVariantMap(const QVariantMap &p_args) {
+  ThemeSwitchEvent e;
+  e.themeName = p_args.value(QStringLiteral("themeName")).toString();
+  return e;
+}
+
 // ===== AttachmentAddEvent =====
 
 QVariantMap AttachmentAddEvent::toVariantMap() const {

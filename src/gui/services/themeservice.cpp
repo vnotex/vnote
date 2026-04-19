@@ -5,6 +5,9 @@
 #include <QRegularExpression>
 
 #include "core/exception.h"
+#include "core/hookevents.h"
+#include "core/hooknames.h"
+#include "core/services/hookmanager.h"
 #include "core/theme.h"
 #include <gui/utils/themeutils.h>
 #include <gui/utils/iconutils.h>
@@ -93,6 +96,13 @@ void ThemeService::loadCurrentTheme(const QString &p_themeName) {
 
   IconUtils::setDefaultIconForeground(paletteColor("base#icon#fg"),
                                       paletteColor("base#icon#disabled#fg"));
+
+  emit themeChanged(p_themeName);
+  if (m_hookMgr) {
+    ThemeSwitchEvent event;
+    event.themeName = p_themeName;
+    m_hookMgr->doAction(HookNames::ThemeAfterSwitch, event);
+  }
 }
 
 Theme *ThemeService::loadTheme(const QString &p_themeFolder) {
@@ -180,6 +190,8 @@ void ThemeService::refreshCurrentTheme() {
 }
 
 void ThemeService::switchTheme(const QString &p_name) { loadCurrentTheme(p_name); }
+
+void ThemeService::setHookManager(HookManager *p_hookMgr) { m_hookMgr = p_hookMgr; }
 
 QVector<QPair<QString, QString>> ThemeService::getWebStyles() const {
   QVector<QPair<QString, QString>> styles;

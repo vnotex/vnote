@@ -30,6 +30,9 @@ private slots:
   void testTagOperationEventRoundTrip();
   void testFileTagEventRoundTrip();
 
+  // Theme event round-trip test.
+  void testThemeSwitchEventRoundTrip();
+
   // Attachment event round-trip tests.
   void testAttachmentAddEventRoundTrip();
   void testAttachmentDeleteEventRoundTrip();
@@ -502,6 +505,18 @@ void TestHookEvents::testFileTagEventRoundTrip() {
   QCOMPARE(restored.tagName, orig.tagName);
   QCOMPARE(restored.tagsJson, orig.tagsJson);
   QCOMPARE(restored.operation, orig.operation);
+}
+
+// ===== Theme event round-trip test =====
+
+void TestHookEvents::testThemeSwitchEventRoundTrip() {
+  ThemeSwitchEvent orig;
+  orig.themeName = QStringLiteral("moonlight");
+
+  QVariantMap map = orig.toVariantMap();
+  ThemeSwitchEvent restored = ThemeSwitchEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.themeName, orig.themeName);
 }
 
 // ===== Attachment event round-trip tests =====

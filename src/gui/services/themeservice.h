@@ -15,6 +15,8 @@
 
 namespace vnotex {
 
+class HookManager;
+
 // Configuration for ThemeService initialization via DI.
 struct ThemeServiceConfig {
   // Current theme to load.
@@ -96,6 +98,13 @@ public:
   // Get all web stylesheets <DisplayName, FilePath>.
   QVector<QPair<QString, QString>> getWebStyles() const;
 
+  // Set the HookManager for firing theme hooks.
+  void setHookManager(HookManager *p_hookMgr);
+
+signals:
+  // Emitted after a theme is loaded (switched or refreshed).
+  void themeChanged(const QString &p_themeName);
+
 private:
   void loadAvailableThemes();
 
@@ -126,6 +135,9 @@ private:
 
   // Base background color (GUI type).
   QColor m_baseBackground;
+
+  // Hook manager for firing theme hooks (not owned).
+  HookManager *m_hookMgr = nullptr;
 };
 
 } // namespace vnotex

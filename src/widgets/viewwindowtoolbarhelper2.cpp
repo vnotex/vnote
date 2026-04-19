@@ -76,24 +76,20 @@ void ViewWindowToolBarHelper2::addButtonShortcut(QToolButton *p_btn, const QStri
 
 QIcon ViewWindowToolBarHelper2::generateIcon(ServiceLocator &p_services,
                                              const QString &p_iconName) {
-  static QVector<IconUtils::OverriddenColor> s_colors;
-
   auto *themeService = p_services.get<ThemeService>();
   if (!themeService) {
     return QIcon();
   }
+  const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
+  const auto disabledFg =
+      themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
 
-  if (s_colors.isEmpty()) {
-    const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
-    const auto disabledFg =
-        themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
-
-    s_colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-    s_colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
-  }
+  QVector<IconUtils::OverriddenColor> colors;
+  colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+  colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
 
   auto iconFile = themeService->getIconFile(p_iconName);
-  return IconUtils::fetchIcon(iconFile, s_colors);
+  return IconUtils::fetchIcon(iconFile, colors);
 }
 
 void ViewWindowToolBarHelper2::addSpacer(QToolBar *p_tb) {

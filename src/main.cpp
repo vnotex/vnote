@@ -245,6 +245,7 @@ int main(int argc, char *argv[]) {
                                configService.getDataPath(DataLocation::App)});
     serviceLocator.registerService<ThemeService>(&themeService);
     app.setThemeService(&themeService);
+    themeService.setHookManager(&hookManager);
     qInfo() << "ThemeService registered";
 
     // Initialize syntax highlighting repository (must happen before any TextEditor is created).

@@ -250,6 +250,12 @@ inline const QLatin1String FilterContextMenuItems("vnote.filter.context_menu_ite
 // No typed event — simple notification with empty args.
 inline const QLatin1String ConfigEditorChanged("vnote.config.editor_changed");
 
+// ===== Theme Events =====
+// Triggered when theme operations occur
+
+// After a theme is switched (or reloaded).
+inline const QLatin1String ThemeAfterSwitch("vnote.theme.after_switch");
+
 } // namespace HookNames
 
 } // namespace vnotex

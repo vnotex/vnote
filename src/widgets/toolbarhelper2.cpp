@@ -232,17 +232,13 @@ QToolBar *ToolBarHelper2::setupSettingsToolBar(QToolBar *p_toolBar) {
 }
 
 QIcon ToolBarHelper2::generateIcon(const QString &p_iconName) {
-  static QVector<IconUtils::OverriddenColor> colors;
-
   auto *themeService = m_services.get<ThemeService>();
+  const auto fg = themeService->paletteColor(c_fgPalette);
+  const auto disabledFg = themeService->paletteColor(c_disabledPalette);
 
-  if (colors.isEmpty()) {
-    const auto fg = themeService->paletteColor(c_fgPalette);
-    const auto disabledFg = themeService->paletteColor(c_disabledPalette);
-
-    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
-  }
+  QVector<IconUtils::OverriddenColor> colors;
+  colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+  colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
 
   auto iconFile = themeService->getIconFile(p_iconName);
   return IconUtils::fetchIcon(iconFile, colors);
