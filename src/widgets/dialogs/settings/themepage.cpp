@@ -114,6 +114,8 @@ bool ThemePage::saveInternal() {
 
 QString ThemePage::title() const { return tr("Theme"); }
 
+QString ThemePage::slug() const { return QStringLiteral("theme"); }
+
 void ThemePage::loadThemes() {
   auto *themeService = m_services.get<ThemeService>();
   if (!themeService) {

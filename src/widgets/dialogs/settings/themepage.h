@@ -15,6 +15,8 @@ public:
 
   QString title() const Q_DECL_OVERRIDE;
 
+  QString slug() const Q_DECL_OVERRIDE;
+
 protected:
   void loadInternal() Q_DECL_OVERRIDE;
 

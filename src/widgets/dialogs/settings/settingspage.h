@@ -21,6 +21,8 @@ public:
 
   virtual QString title() const = 0;
 
+  virtual QString slug() const { return QString(); }
+
   bool search(const QString &p_key);
 
   const QString &error() const;

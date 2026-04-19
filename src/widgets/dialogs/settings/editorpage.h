@@ -16,6 +16,8 @@ public:
 
   QString title() const Q_DECL_OVERRIDE;
 
+  QString slug() const Q_DECL_OVERRIDE;
+
   // Should be called by all editors setting page when saved.
   static void notifyEditorConfigChange(HookManager *p_hookMgr);
 

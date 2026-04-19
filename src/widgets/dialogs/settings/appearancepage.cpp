@@ -145,3 +145,5 @@ bool AppearancePage::saveInternal() {
 }
 
 QString AppearancePage::title() const { return tr("Appearance"); }
+
+QString AppearancePage::slug() const { return QStringLiteral("appearance"); }

@@ -231,6 +231,8 @@ void QuickAccessPage::saveQuickNoteSchemes() {
 
 QString QuickAccessPage::title() const { return tr("Quick Access"); }
 
+QString QuickAccessPage::slug() const { return QStringLiteral("quickaccess"); }
+
 QString QuickAccessPage::getDefaultQuickNoteFolderPath() {
   // LEGACY: NotebookMgr not yet in ServiceLocator - cannot get current notebook path
   return QDir::homePath();

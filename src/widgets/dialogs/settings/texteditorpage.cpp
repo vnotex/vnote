@@ -281,3 +281,5 @@ bool TextEditorPage::saveInternal() {
 }
 
 QString TextEditorPage::title() const { return tr("Text Editor"); }
+
+QString TextEditorPage::slug() const { return QStringLiteral("texteditor"); }

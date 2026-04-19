@@ -129,3 +129,5 @@ bool ImageHostPage::saveInternal() {
 }
 
 QString ImageHostPage::title() const { return tr("Image Host"); }
+
+QString ImageHostPage::slug() const { return QStringLiteral("imagehost"); }

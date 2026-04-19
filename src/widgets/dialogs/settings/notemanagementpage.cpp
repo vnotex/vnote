@@ -114,3 +114,5 @@ bool NoteManagementPage::saveInternal() {
 }
 
 QString NoteManagementPage::title() const { return tr("Note Management"); }
+
+QString NoteManagementPage::slug() const { return QStringLiteral("notemanagement"); }

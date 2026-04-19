@@ -82,6 +82,8 @@ bool FileAssociationPage::saveInternal() {
 
 QString FileAssociationPage::title() const { return tr("File Associations"); }
 
+QString FileAssociationPage::slug() const { return QStringLiteral("fileassociation"); }
+
 void FileAssociationPage::loadBuiltInTypesGroup() {
   // Clear previous dynamic rows.
   while (m_builtInCardLayout->count() > m_builtInRowStartIndex) {

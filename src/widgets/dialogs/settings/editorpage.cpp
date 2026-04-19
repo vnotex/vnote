@@ -238,6 +238,8 @@ bool EditorPage::saveInternal() {
 
 QString EditorPage::title() const { return tr("Editor"); }
 
+QString EditorPage::slug() const { return QStringLiteral("editor"); }
+
 void EditorPage::notifyEditorConfigChange(HookManager *p_hookMgr) {
   static QTimer *timer = nullptr;
   if (!timer) {

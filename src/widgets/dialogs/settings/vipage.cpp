@@ -61,3 +61,5 @@ bool ViPage::saveInternal() {
 }
 
 QString ViPage::title() const { return tr("Vi Input Mode"); }
+
+QString ViPage::slug() const { return QStringLiteral("vi"); }

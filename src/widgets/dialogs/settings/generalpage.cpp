@@ -163,3 +163,5 @@ bool GeneralPage::saveInternal() {
 }
 
 QString GeneralPage::title() const { return tr("General"); }
+
+QString GeneralPage::slug() const { return QStringLiteral("general"); }

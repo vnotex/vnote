@@ -219,6 +219,8 @@ bool MarkdownEditorPage::saveInternal() {
 
 QString MarkdownEditorPage::title() const { return tr("Markdown Editor"); }
 
+QString MarkdownEditorPage::slug() const { return QStringLiteral("markdowneditor"); }
+
 void MarkdownEditorPage::setupReadGroup() {
   auto *mainLayout = qobject_cast<QVBoxLayout *>(layout());
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Read"), QString(), this);
