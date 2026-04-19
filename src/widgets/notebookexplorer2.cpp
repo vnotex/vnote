@@ -22,10 +22,12 @@
 #include <core/exception.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
@@ -82,6 +84,18 @@ NodeExplorerState mergeNodeExplorerStateForCache(const NodeExplorerState &p_capt
 NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
   setupUI();
+
+  // Subscribe to NotebookAfterClose to refresh the explorer.
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    hookMgr->addAction<NotebookCloseEvent>(
+        HookNames::NotebookAfterClose,
+        [this](HookContext &p_ctx, const NotebookCloseEvent &) {
+          Q_UNUSED(p_ctx)
+          loadNotebooks();
+        },
+        10);
+  }
 }
 
 NotebookExplorer2::~NotebookExplorer2() {}

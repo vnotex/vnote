@@ -1,4 +1,4 @@
-﻿#ifndef VIEWAREACONTROLLER_H
+#ifndef VIEWAREACONTROLLER_H
 #define VIEWAREACONTROLLER_H
 
 #include <QJsonObject>
@@ -11,6 +11,7 @@
 #include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
+#include <core/hookcontext.h>
 #include <core/hookevents.h>
 #include <core/nodeidentifier.h>
 
@@ -19,6 +20,7 @@ namespace vnotex {
 class ServiceLocator;
 class Buffer2;
 class BufferService;
+class HookContext;
 class IViewWindowContent;
 class WorkspaceWrapper;
 
@@ -231,11 +233,20 @@ private:
   // Handle ConfigEditorChanged hook: notify all windows.
   void onEditorConfigChanged();
 
+  // Handle NotebookBeforeClose hook: check for dirty buffers and cancel if any.
+  void onNotebookBeforeClose(HookContext &p_ctx, const NotebookCloseEvent &p_event);
+
+  // Handle NotebookAfterClose hook: close all tabs for that notebook.
+  void onNotebookAfterClose(const NotebookCloseEvent &p_event);
+
   // Open a single buffer during session restore.
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
   void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
                           const QString &p_bufferId, bool p_focus,
                           ViewWindowMode p_mode = ViewWindowMode::Read, int p_lineNumber = -1);
+
+  // Buffer IDs collected during NotebookBeforeClose for use in NotebookAfterClose.
+  QStringList m_pendingNotebookCloseBufferIds;
 
   ServiceLocator &m_services;
   ViewAreaView *m_view = nullptr;

@@ -108,7 +108,7 @@ NotebookOperationResult ManageNotebooksController::closeNotebook(const QString &
   auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService->closeNotebook(p_notebookId)) {
     result.success = false;
-    result.errorMessage = tr("Failed to close notebook.");
+    result.errorMessage = tr("Failed to close notebook. There may be unsaved changes in open files. Please save or discard changes and try again.");
     return result;
   }
 

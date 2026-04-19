@@ -1238,6 +1238,19 @@ void ViewAreaController::subscribeToHooks() {
         onEditorConfigChanged();
       },
       10);
+  hookMgr->addAction<NotebookCloseEvent>(
+      HookNames::NotebookBeforeClose,
+      [this](HookContext &p_ctx, const NotebookCloseEvent &p_event) {
+        onNotebookBeforeClose(p_ctx, p_event);
+      },
+      10);
+  hookMgr->addAction<NotebookCloseEvent>(
+      HookNames::NotebookAfterClose,
+      [this](HookContext &p_ctx, const NotebookCloseEvent &p_event) {
+        Q_UNUSED(p_ctx)
+        onNotebookAfterClose(p_event);
+      },
+      10);
 }
 
 void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
@@ -1422,4 +1435,73 @@ QString ViewAreaController::generateWorkspaceName() const {
     ++n;
   }
   return QStringLiteral("Workspace %1").arg(n);
+}
+
+void ViewAreaController::onNotebookBeforeClose(HookContext &p_ctx,
+                                               const NotebookCloseEvent &p_event) {
+  m_pendingNotebookCloseBufferIds.clear();
+
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
+    return;
+  }
+
+  bool hasDirty = false;
+  QJsonArray buffers = bufferSvc->listBuffers();
+  for (int i = 0; i < buffers.size(); ++i) {
+    QJsonObject bufObj = buffers[i].toObject();
+    QString notebookId = bufObj.value(QStringLiteral("notebookId")).toString();
+    if (notebookId.isEmpty() || notebookId != p_event.notebookId) {
+      continue;
+    }
+    QString bufferId = bufObj.value(QStringLiteral("id")).toString();
+    Buffer2 handle = bufferSvc->getBufferHandle(bufferId);
+    if (handle.isValid() && handle.isModified()) {
+      hasDirty = true;
+      break;
+    }
+    m_pendingNotebookCloseBufferIds.append(bufferId);
+  }
+
+  if (hasDirty) {
+    m_pendingNotebookCloseBufferIds.clear();
+    p_ctx.cancel();
+  }
+}
+
+void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event) {
+  // Phase 1: Close tabs in visible workspaces.
+  if (m_view) {
+    QStringList visibleWsIds = m_view->getVisibleWorkspaceIds();
+    for (const auto &bufferId : m_pendingNotebookCloseBufferIds) {
+      for (const auto &wsId : visibleWsIds) {
+        ID winId = m_view->findWindowIdByBufferId(wsId, bufferId);
+        if (winId != InvalidViewWindowId) {
+          closeViewWindow(winId, true);
+        }
+      }
+    }
+  }
+
+  // Phase 2: Close tabs in hidden workspaces.
+  for (auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it) {
+    auto *wrapper = it.value();
+    if (wrapper->isVisible()) {
+      continue;
+    }
+    QVector<QObject *> allWindows = wrapper->takeAllViewWindows();
+    QVector<QObject *> remaining;
+    for (auto *obj : allWindows) {
+      auto *win = qobject_cast<ViewWindow2 *>(obj);
+      if (win && win->getNodeId().notebookId == p_event.notebookId) {
+        delete win;
+      } else {
+        remaining.append(obj);
+      }
+    }
+    wrapper->receiveViewWindows(remaining, remaining.isEmpty() ? 0 : 0);
+  }
+
+  m_pendingNotebookCloseBufferIds.clear();
+  emit windowsChanged();
 }
