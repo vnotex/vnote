@@ -15,6 +15,7 @@
 #include <QSystemTrayIcon>
 #include <QTabBar>
 #include <QTextEdit>
+#include <QToolBar>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
@@ -37,7 +38,6 @@
 #include "statusbarhelper.h"
 // #include "systemtrayhelper.h"
 #include "tagexplorer.h"
-#include "titletoolbar.h"
 #include "toolbarhelper.h"
 #include "viewarea.h"
 #include "viewwindow.h"
@@ -61,8 +61,7 @@
 using namespace vnotex;
 
 MainWindow::MainWindow(QWidget *p_parent)
-    : FramelessMainWindowImpl(!ConfigMgr::getInst().getSessionConfig().getSystemTitleBarEnabled(),
-                              p_parent) {
+    : QMainWindow(p_parent) {
       // m_dockWidgetHelper(this) {
   VNoteX::getInst().setMainWindow(this);
 
@@ -385,7 +384,7 @@ void MainWindow::closeEvent(QCloseEvent *p_event) {
 
     m_trayIcon->hide();
 
-    FramelessMainWindowImpl::closeEvent(p_event);
+    QMainWindow::closeEvent(p_event);
     qApp->exit(exitCode > -1 ? exitCode : 0);
   } else {
     emit minimizedToSystemTray();
@@ -524,18 +523,7 @@ NotebookExplorer2 *MainWindow::getNotebookExplorer() const {
 void MainWindow::setupToolBar() {
   const int sz = ConfigMgr::getInst().getCoreConfig().getToolBarIconSize();
 
-  if (isFrameless()) {
-    auto toolBar = new TitleToolBar(tr("Global"), this);
-    toolBar->setIconSize(QSize(sz + 4, sz + 4));
-    ToolBarHelper::setupToolBars(this, toolBar);
-    toolBar->addTitleBarIcons(ToolBarHelper::generateIcon(QStringLiteral("minimize.svg")),
-                              ToolBarHelper::generateIcon(QStringLiteral("maximize.svg")),
-                              ToolBarHelper::generateIcon(QStringLiteral("maximize_restore.svg")),
-                              ToolBarHelper::generateDangerousIcon(QStringLiteral("close.svg")));
-    setTitleBar(toolBar);
-    connect(this, &FramelessMainWindowImpl::windowStateChanged, toolBar,
-            &TitleToolBar::updateMaximizeAct);
-  } else {
+  {
     auto toolBar = new QToolBar(tr("Global"), this);
     toolBar->setIconSize(QSize(sz, sz));
     ToolBarHelper::setupToolBars(this, toolBar);
@@ -574,8 +562,6 @@ void MainWindow::setStayOnTop(bool p_enabled) {
     setWindowFlags(flags ^ magicFlag);
   }
 
-  setWindowFlagsOnUpdate();
-
   if (shown) {
     show();
   }
@@ -599,7 +585,7 @@ void MainWindow::changeEvent(QEvent *p_event) {
     m_windowOldState = eve->oldState();
   }
 
-  FramelessMainWindowImpl::changeEvent(p_event);
+  QMainWindow::changeEvent(p_event);
 }
 
 void MainWindow::showMainWindow() {

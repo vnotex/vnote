@@ -5,9 +5,8 @@
 // New code should use MainWindow2 which uses ServiceLocator for dependency injection.
 // This file is kept for reference during migration. Do not add new features here.
 
-#include "framelessmainwindow/framelessmainwindowimpl.h"
-
 #include <QBitArray>
+#include <QMainWindow>
 #include <QSet>
 #include <QSharedPointer>
 
@@ -38,7 +37,7 @@ class ConsoleViewer;
 enum { RESTART_EXIT_CODE = 1000 };
 
 class VNOTEX_DEPRECATED("Use MainWindow2 with ServiceLocator pattern instead") MainWindow
-    : public FramelessMainWindowImpl {
+    : public QMainWindow {
   Q_OBJECT
 public:
   // friend class DockWidgetHelper;
