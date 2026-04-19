@@ -230,6 +230,8 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
   }
 
   // Pass 2: Main import — recursive, vx.json-driven.
+  m_progressCurrent = 0;
+  m_progressTotal = countImportItems(p_sourcePath);
   const QDir sourceRoot(p_sourcePath);
   importFolder(notebookId, sourceRoot, QString(), p_destPath, inspection, result.warnings);
 
@@ -261,19 +263,6 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
   const QString vxJsonPath = absFolderPath + QStringLiteral("/vx.json");
   const LegacyVxJson vxJson = parseLegacyVxJson(vxJsonPath);
 
-  // 2. Build set of names tracked by vx.json for orphan detection.
-  QSet<QString> vxJsonNames;
-  for (const LegacyFileEntry &fe : vxJson.files) {
-    if (!fe.name.isEmpty()) {
-      vxJsonNames.insert(fe.name);
-    }
-  }
-  for (const LegacyFolderEntry &fe : vxJson.folders) {
-    if (!fe.name.isEmpty()) {
-      vxJsonNames.insert(fe.name);
-    }
-  }
-
   // --- Process file entries from vx.json ---
   for (const LegacyFileEntry &entry : vxJson.files) {
     if (entry.name.isEmpty()) {
@@ -299,6 +288,8 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
           QStringLiteral("File '%1': import threw exception, skipping").arg(filePath));
       continue;
     }
+
+    emit progressUpdated(++m_progressCurrent, m_progressTotal, filePath);
 
     // 4. Apply timestamps.
     {
@@ -412,7 +403,7 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
     // 8-9. Create folder.
     try {
       const QString folderId =
-          m_notebookService->createFolderPath(p_notebookId, subfolderRelPath);
+          m_notebookService->createFolder(p_notebookId, p_relFolderPath, folderEntry.name);
       if (folderId.isEmpty()) {
         p_warnings.append(
             QStringLiteral("Folder '%1': creation failed, skipping").arg(subfolderRelPath));
@@ -424,6 +415,8 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
               .arg(subfolderRelPath));
       continue;
     }
+
+    emit progressUpdated(++m_progressCurrent, m_progressTotal, subfolderRelPath);
 
     // 10-11. Parse subfolder's own vx.json for folder-level metadata.
     const QString subAbsPath = absFolderPath + QStringLiteral("/") + folderEntry.name;
@@ -480,73 +473,6 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
     }
   }
 
-  // --- Orphan handling: import entries not in vx.json ---
-  const QDir currentDir(absFolderPath);
-  const auto fsEntries =
-      currentDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
-  for (const QFileInfo &fi : fsEntries) {
-    const QString name = fi.fileName();
-
-    // Skip if already in vx.json.
-    if (vxJsonNames.contains(name)) {
-      continue;
-    }
-
-    // Exclusion list.
-    if (name == QStringLiteral("vx.json")) {
-      continue;
-    }
-    if (fi.isDir()) {
-      if (name == QStringLiteral("vx_notebook") ||
-          name == QStringLiteral("vx_recycle_bin")) {
-        continue;
-      }
-      if (!p_inspection.imageFolder.isEmpty() && name == p_inspection.imageFolder) {
-        continue; // Already handled by image raw-copy.
-      }
-      if (!p_inspection.attachmentFolder.isEmpty() &&
-          name == p_inspection.attachmentFolder) {
-        continue; // Attachment folder is not imported as content.
-      }
-    }
-
-    const QString orphanRelPath = p_relFolderPath.isEmpty()
-        ? name
-        : p_relFolderPath + QStringLiteral("/") + name;
-
-    if (fi.isFile()) {
-      try {
-        const QString fileId =
-            m_notebookService->importFile(p_notebookId, p_relFolderPath,
-                                          fi.absoluteFilePath());
-        if (fileId.isEmpty()) {
-          p_warnings.append(
-              QStringLiteral("Orphan file '%1': import failed").arg(orphanRelPath));
-        }
-      } catch (...) {
-        p_warnings.append(
-            QStringLiteral("Orphan file '%1': import threw exception").arg(orphanRelPath));
-      }
-    } else if (fi.isDir()) {
-      try {
-        const QString folderId =
-            m_notebookService->createFolderPath(p_notebookId, orphanRelPath);
-        if (folderId.isEmpty()) {
-          p_warnings.append(
-              QStringLiteral("Orphan folder '%1': creation failed").arg(orphanRelPath));
-          continue;
-        }
-      } catch (...) {
-        p_warnings.append(
-            QStringLiteral("Orphan folder '%1': creation threw exception")
-                .arg(orphanRelPath));
-        continue;
-      }
-      // Recurse into orphan folder.
-      importFolder(p_notebookId, p_sourceRoot, orphanRelPath,
-                   p_destPath, p_inspection, p_warnings);
-    }
-  }
 }
 
 LegacyVxJson VNote3MigrationService::parseLegacyVxJson(const QString &p_vxJsonPath) {
@@ -651,6 +577,18 @@ QStringList VNote3MigrationService::collectAllTags(const QString &p_sourcePath) 
   }
 
   return tagSet.values();
+}
+
+int VNote3MigrationService::countImportItems(const QString &p_sourcePath) {
+  int count = 0;
+  const QString vxJsonPath = QDir(p_sourcePath).filePath(QStringLiteral("vx.json"));
+  const LegacyVxJson vxJson = parseLegacyVxJson(vxJsonPath);
+  count += vxJson.files.size();
+  count += vxJson.folders.size();
+  for (const auto &folder : vxJson.folders) {
+    count += countImportItems(QDir(p_sourcePath).filePath(folder.name));
+  }
+  return count;
 }
 
 // Logic mirrors NotebookTagMgr::stringToTagGraph()

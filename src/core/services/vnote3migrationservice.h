@@ -73,6 +73,10 @@ public:
   static LegacyVxJson parseLegacyVxJson(const QString &p_vxJsonPath);
   static QStringList collectAllTags(const QString &p_sourcePath);
   static QVector<QPair<QString, QString>> parseTagGraph(const QString &p_tagGraphString);
+  static int countImportItems(const QString &p_sourcePath);
+
+signals:
+  void progressUpdated(int p_val, int p_maximum, const QString &p_message);
 
 private:
   void importFolder(const QString &p_notebookId, const QDir &p_sourceRoot,
@@ -81,6 +85,9 @@ private:
 
   NotebookCoreService *m_notebookService = nullptr;
   TagCoreService *m_tagService = nullptr;
+
+  int m_progressCurrent = 0;
+  int m_progressTotal = 0;
 };
 
 } // namespace vnotex
