@@ -7,3 +7,6 @@
 [submodule "libs/vxcore"]
 	path = libs/vxcore
 	url = https://github.com/vnotex/vxcore.git
+[submodule "libs/qwindowkit"]
+	path = libs/qwindowkit
+	url = https://github.com/vnotex/qwindowkit

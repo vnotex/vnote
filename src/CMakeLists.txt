@@ -108,6 +108,7 @@ target_link_libraries(vnote PRIVATE
     VTextEdit
     qhotkey
     vxcore
+    QWindowKit::Widgets
 )
 
 # Copy the qt.conf on Windows
