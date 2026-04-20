@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QGuiApplication>
 #include <QIcon>
 #include <QProcess>
 #include <QSslSocket>
@@ -236,6 +237,7 @@ int main(int argc, char *argv[]) {
     disableSandboxIfNeeded();
 
     // Create Qt application
+    QGuiApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
     Application app(argc, argv);
 
     configMgr.initAfterQtAppStarted();

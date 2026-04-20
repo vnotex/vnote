@@ -12,11 +12,20 @@
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QToolBar>
+#include <QToolButton>
 #include <QWidget>
+#include <QWindow>
+#include <QWindowStateChangeEvent>
+
+#include <QWKWidgets/widgetwindowagent.h>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
 #include "constants.h"
 #include "systemtrayhelper.h"
-#include "titletoolbar.h"
+#include "titletoolbar2.h"
 #include "toolbarhelper2.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -50,10 +59,12 @@
 using namespace vnotex;
 
 MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
-    : FramelessMainWindowImpl(
-          !p_serviceLocator.get<ConfigMgr2>()->getSessionConfig().getSystemTitleBarEnabled(),
-          p_parent),
-      m_serviceLocator(p_serviceLocator) {
+    : QMainWindow(p_parent), m_serviceLocator(p_serviceLocator) {
+  m_frameless = !p_serviceLocator.get<ConfigMgr2>()->getSessionConfig().getSystemTitleBarEnabled();
+  if (m_frameless) {
+    setAttribute(Qt::WA_DontCreateNativeAncestors);
+    setupWindowAgent();
+  }
   setupUI();
 
   // Restore window geometry/state early so the window appears at the right
@@ -63,6 +74,13 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
 }
 
 MainWindow2::~MainWindow2() {}
+
+void MainWindow2::setupWindowAgent() {
+  m_windowAgent = new QWK::WidgetWindowAgent(this);
+  m_windowAgent->setup(this);
+}
+
+bool MainWindow2::isFrameless() const { return m_frameless; }
 
 ServiceLocator &MainWindow2::getServiceLocator() { return m_serviceLocator; }
 
@@ -294,7 +312,7 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
 
     m_trayIcon->hide();
 
-    FramelessMainWindowImpl::closeEvent(p_event);
+    QMainWindow::closeEvent(p_event);
     qApp->exit(exitCode > -1 ? exitCode : 0);
   } else {
     emit minimizedToSystemTray();
@@ -584,16 +602,31 @@ void MainWindow2::setupToolBar() {
           [this]() { m_toolBarHelper->refreshIcons(); });
 
   if (isFrameless()) {
-    auto toolBar = new TitleToolBar(tr("Global"), this);
+    auto *toolBar = new TitleToolBar2(tr("Global"), this);
     toolBar->setIconSize(QSize(sz + 4, sz + 4));
     m_toolBarHelper->setupToolBars(toolBar);
-    toolBar->addTitleBarIcons(m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
-                              m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
-                              m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
-                              m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
-    setTitleBar(toolBar);
-    connect(this, &FramelessMainWindowImpl::windowStateChanged, toolBar,
-            &TitleToolBar::updateMaximizeAct);
+    toolBar->addTitleBarButtons(
+        m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
+        m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
+        m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
+        m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
+
+    // Register title bar and system buttons for qwindowkit.
+    m_windowAgent->setTitleBar(toolBar);
+    m_windowAgent->setSystemButton(QWK::WindowAgentBase::Minimize, toolBar->minimizeButton());
+    m_windowAgent->setSystemButton(QWK::WindowAgentBase::Maximize, toolBar->maximizeButton());
+    m_windowAgent->setSystemButton(QWK::WindowAgentBase::Close, toolBar->closeButton());
+
+    // Mark interactive toolbar widgets as hit-test visible so they receive mouse events.
+    for (auto *act : toolBar->actions()) {
+      auto *w = toolBar->widgetForAction(act);
+      if (w) {
+        m_windowAgent->setHitTestVisible(w, true);
+      }
+    }
+
+    connect(this, &MainWindow2::windowStateChanged, toolBar,
+            &TitleToolBar2::updateMaximizeButton);
     connect(themeService, &ThemeService::themeChanged, toolBar, [this, toolBar]() {
       toolBar->refreshIcons(
           m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
@@ -602,7 +635,7 @@ void MainWindow2::setupToolBar() {
           m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
     });
   } else {
-    auto toolBar = new QToolBar(tr("Global"), this);
+    auto *toolBar = new QToolBar(tr("Global"), this);
     toolBar->setIconSize(QSize(sz, sz));
     m_toolBarHelper->setupToolBars(toolBar);
   }
@@ -633,17 +666,29 @@ void MainWindow2::setContentAreaExpanded(bool p_expanded) {
 }
 
 void MainWindow2::setStayOnTop(bool p_enabled) {
-  bool visible = isVisible();
-  Qt::WindowFlags flags = windowFlags();
-
-  if (p_enabled) {
-    setWindowFlags(flags | Qt::WindowStaysOnTopHint);
+  if (m_windowAgent) {
+    // qwindowkit is active — setWindowFlags() would destroy the native handle.
+#ifdef Q_OS_WIN
+    auto hwnd = reinterpret_cast<HWND>(winId());
+    SetWindowPos(hwnd, p_enabled ? HWND_TOPMOST : HWND_NOTOPMOST,
+                 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+#else
+    if (auto *win = windowHandle()) {
+      win->setFlag(Qt::WindowStaysOnTopHint, p_enabled);
+    }
+#endif
   } else {
-    setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
-  }
-
-  if (visible) {
-    show();
+    // System title bar mode — safe to use setWindowFlags().
+    bool visible = isVisible();
+    Qt::WindowFlags flags = windowFlags();
+    if (p_enabled) {
+      setWindowFlags(flags | Qt::WindowStaysOnTopHint);
+    } else {
+      setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
+    }
+    if (visible) {
+      show();
+    }
   }
 }
 
@@ -678,9 +723,10 @@ void MainWindow2::changeEvent(QEvent *p_event) {
   if (p_event->type() == QEvent::WindowStateChange) {
     QWindowStateChangeEvent *eve = static_cast<QWindowStateChangeEvent *>(p_event);
     m_windowOldState = eve->oldState();
+    emit windowStateChanged(windowState());
   }
 
-  FramelessMainWindowImpl::changeEvent(p_event);
+  QMainWindow::changeEvent(p_event);
 }
 
 void MainWindow2::showMainWindow() {

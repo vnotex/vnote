@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 
-#include "framelessmainwindow/framelessmainwindowimpl.h"
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
 
@@ -13,6 +12,10 @@ class QToolBar;
 class QWebEngineView;
 class QProgressDialog;
 class QSystemTrayIcon;
+
+namespace QWK {
+class WidgetWindowAgent;
+}
 
 namespace vnotex {
 
@@ -31,7 +34,7 @@ class ToolBarHelper2;
 // Receives ServiceLocator via constructor for dependency injection.
 // Framework only - NO toolbar, dock widgets, menu bar, or status bar.
 // Widgets will be added incrementally during migration.
-class MainWindow2 : public FramelessMainWindowImpl, private Noncopyable {
+class MainWindow2 : public QMainWindow, private Noncopyable {
   Q_OBJECT
 
 public:
@@ -64,6 +67,8 @@ public:
   // Window state.
   void setStayOnTop(bool p_enabled);
 
+  bool isFrameless() const;
+
   // Access dock widgets.
   const QVector<QDockWidget *> &getDocks() const;
 
@@ -77,6 +82,8 @@ public:
   void quitApp();
 
 signals:
+  void windowStateChanged(Qt::WindowStates p_state);
+
   void layoutChanged();
 
   void minimizedToSystemTray();
@@ -124,6 +131,9 @@ private:
 
   // Setup tool bar.
   void setupToolBar();
+
+  // Setup qwindowkit window agent for frameless mode.
+  void setupWindowAgent();
 
   void exportNotes();
 
@@ -189,6 +199,10 @@ private:
   int m_requestQuit = -1;
 
   Qt::WindowStates m_windowOldState = Qt::WindowMinimized;
+
+  QWK::WidgetWindowAgent *m_windowAgent = nullptr;
+
+  bool m_frameless = false;
 
 #if defined(Q_OS_WIN)
   QWebEngineView *m_dummyWebView = nullptr;
