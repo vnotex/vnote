@@ -34,6 +34,16 @@ add_qt_test(test_openvnote3notebookcontroller
   GUILESS
 )
 
+add_qt_test(test_newnotebookcontroller
+  SOURCES
+    test_newnotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_exportcontroller
   SOURCES
     test_exportcontroller.cpp
