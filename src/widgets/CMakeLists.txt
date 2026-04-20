@@ -151,6 +151,7 @@ target_sources(vnote PRIVATE
     textviewwindowhelper.h
     titlebar.cpp titlebar.h
     titletoolbar.cpp titletoolbar.h
+    titletoolbar2.cpp titletoolbar2.h
     toolbarhelper.cpp toolbarhelper.h
     toolbarhelper2.cpp toolbarhelper2.h
     toolbox.cpp toolbox.h
