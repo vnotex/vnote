@@ -1,5 +1,6 @@
 #include "titletoolbar2.h"
 
+#include <QHBoxLayout>
 #include <QToolButton>
 
 #include "propertydefs.h"
@@ -21,35 +22,42 @@ void TitleToolBar2::maximizeRestoreWindow() {
   m_window->isMaximized() ? m_window->showNormal() : m_window->showMaximized();
 }
 
-void TitleToolBar2::addTitleBarButtons(const QIcon &p_minimizeIcon, const QIcon &p_maximizeIcon,
-                                       const QIcon &p_restoreIcon, const QIcon &p_closeIcon) {
-  addSeparator();
+QWidget *TitleToolBar2::createTitleBarButtons(const QIcon &p_minimizeIcon,
+                                              const QIcon &p_maximizeIcon,
+                                              const QIcon &p_restoreIcon,
+                                              const QIcon &p_closeIcon) {
+  m_titleButtonsContainer = new QWidget();
+  auto *containerLayout = new QHBoxLayout(m_titleButtonsContainer);
+  containerLayout->setContentsMargins(0, 0, 0, 0);
+  containerLayout->setSpacing(0);
 
-  m_minimizeBtn = new QToolButton(this);
+  m_minimizeBtn = new QToolButton(m_titleButtonsContainer);
   m_minimizeBtn->setIcon(p_minimizeIcon);
   m_minimizeBtn->setToolTip(tr("Minimize"));
   m_minimizeBtn->setAutoRaise(true);
-  addWidget(m_minimizeBtn);
+  containerLayout->addWidget(m_minimizeBtn);
   connect(m_minimizeBtn, &QToolButton::clicked, this, [this]() { m_window->showMinimized(); });
 
   m_maximizeIcon = p_maximizeIcon;
   m_restoreIcon = p_restoreIcon;
-  m_maximizeBtn = new QToolButton(this);
+  m_maximizeBtn = new QToolButton(m_titleButtonsContainer);
   m_maximizeBtn->setIcon(p_maximizeIcon);
   m_maximizeBtn->setToolTip(tr("Maximize"));
   m_maximizeBtn->setAutoRaise(true);
-  addWidget(m_maximizeBtn);
+  containerLayout->addWidget(m_maximizeBtn);
   connect(m_maximizeBtn, &QToolButton::clicked, this, [this]() { maximizeRestoreWindow(); });
 
-  m_closeBtn = new QToolButton(this);
+  m_closeBtn = new QToolButton(m_titleButtonsContainer);
   m_closeBtn->setIcon(p_closeIcon);
   m_closeBtn->setToolTip(tr("Close"));
   m_closeBtn->setAutoRaise(true);
   m_closeBtn->setProperty(PropertyDefs::c_dangerButton, true);
-  addWidget(m_closeBtn);
+  containerLayout->addWidget(m_closeBtn);
   connect(m_closeBtn, &QToolButton::clicked, this, [this]() { m_window->close(); });
 
   updateMaximizeButton();
+
+  return m_titleButtonsContainer;
 }
 
 void TitleToolBar2::updateMaximizeButton() {

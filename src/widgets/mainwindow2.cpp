@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QWindow>
@@ -606,7 +607,7 @@ void MainWindow2::setupToolBar() {
     auto *toolBar = new TitleToolBar2(tr("Global"), this);
     toolBar->setIconSize(QSize(sz, sz));
     m_toolBarHelper->setupToolBars(toolBar);
-    toolBar->addTitleBarButtons(
+    auto *titleBtns = toolBar->createTitleBarButtons(
         m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
         m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
         m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
@@ -618,7 +619,13 @@ void MainWindow2::setupToolBar() {
     auto *wrapperLayout = new QVBoxLayout(titleBarWrapper);
     wrapperLayout->setContentsMargins(0, 2, 0, 0);
     wrapperLayout->setSpacing(0);
-    wrapperLayout->addWidget(toolBar);
+
+    auto *innerLayout = new QHBoxLayout();
+    innerLayout->setContentsMargins(0, 0, 0, 0);
+    innerLayout->setSpacing(0);
+    innerLayout->addWidget(toolBar, 1);
+    innerLayout->addWidget(titleBtns);
+    wrapperLayout->addLayout(innerLayout);
     setMenuWidget(titleBarWrapper);
 
     // Register title bar and system buttons for qwindowkit.
