@@ -82,6 +82,7 @@ void QuickAccessPage::setupUI() {
   {
     auto *cardLayout =
         SettingsPageHelper::addSection(mainLayout, tr("Quick Note"), QString(), this);
+    cardLayout->parentWidget()->setObjectName(QStringLiteral("quicknote"));
 
     // Scheme selector.
     {

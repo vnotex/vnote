@@ -109,6 +109,15 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
 
     // Quick note.
     auto newQuickNoteAct = newMenu->addAction(MainWindow2::tr("Quick Note"), newMenu, [this]() {
+      auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+      if (sessionConfig.getQuickNoteSchemes().isEmpty()) {
+        auto *viewArea = m_mainWindow->getViewArea();
+        if (viewArea) {
+          viewArea->getController()->openVxUrl(
+              QUrl(QStringLiteral("vx://settings/quickaccess#quicknote")));
+        }
+        return;
+      }
       emit m_mainWindow->newQuickNoteRequested();
     });
     WidgetUtils::addActionShortcut(newQuickNoteAct,
