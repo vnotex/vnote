@@ -4,8 +4,10 @@
 #include <QIcon>
 #include <QToolBar>
 
+#include <core/global.h>
+
 namespace vnotex {
-class TitleToolBar : public QToolBar {
+class VNOTEX_DEPRECATED("Use TitleToolBar2 with qwindowkit instead") TitleToolBar : public QToolBar {
   Q_OBJECT
 public:
   explicit TitleToolBar(QWidget *p_parent = nullptr);

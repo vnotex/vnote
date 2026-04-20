@@ -6,9 +6,11 @@
 #include <QRect>
 #include <QVector>
 
+#include <core/global.h>
+
 namespace vnotex {
 #ifndef Q_OS_WIN
-class FramelessMainWindowLinux : public FramelessMainWindow {
+class VNOTEX_DEPRECATED("Use QWindowKit WidgetWindowAgent via MainWindow2 instead") FramelessMainWindowLinux : public FramelessMainWindow {
   Q_OBJECT
 public:
   FramelessMainWindowLinux(bool p_frameless, QWidget *p_parent = nullptr);

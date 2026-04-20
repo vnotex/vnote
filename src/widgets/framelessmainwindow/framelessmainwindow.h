@@ -4,11 +4,13 @@
 #include <QMainWindow>
 #include <QMargins>
 
+#include <core/global.h>
+
 class QTimer;
 
 namespace vnotex {
 // Base class. Use FramelessMainWindowImpl instead.
-class FramelessMainWindow : public QMainWindow {
+class VNOTEX_DEPRECATED("Use QWindowKit WidgetWindowAgent via MainWindow2 instead") FramelessMainWindow : public QMainWindow {
   Q_OBJECT
 public:
   FramelessMainWindow(bool p_frameless, QWidget *p_parent = nullptr);

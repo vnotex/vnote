@@ -3,9 +3,11 @@
 
 #include "framelessmainwindow.h"
 
+#include <core/global.h>
+
 namespace vnotex {
 #ifdef Q_OS_WIN
-class FramelessMainWindowWin : public FramelessMainWindow {
+class VNOTEX_DEPRECATED("Use QWindowKit WidgetWindowAgent via MainWindow2 instead") FramelessMainWindowWin : public FramelessMainWindow {
   Q_OBJECT
 public:
   FramelessMainWindowWin(bool p_frameless, QWidget *p_parent = nullptr);
