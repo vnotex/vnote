@@ -118,6 +118,10 @@ public:
   // Returns false only if the buffer handle is invalid.
   bool isAttachmentSupported() const;
 
+  // Check if this buffer supports tag operations.
+  // Returns false for raw notebook files or invalid buffers.
+  bool isTagSupported() const;
+
   // Copy a file to attachments folder and add to attachment list.
   // Returns the filename (not full path), or empty string on failure.
   QString insertAttachment(const QString &p_sourcePath);

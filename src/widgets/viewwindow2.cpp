@@ -313,8 +313,12 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
 void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
   addAction(p_toolBar, ViewWindowToolBarHelper2::Save);
   addAction(p_toolBar, ViewWindowToolBarHelper2::WordCount);
-  addAction(p_toolBar, ViewWindowToolBarHelper2::Tag);
-  addAction(p_toolBar, ViewWindowToolBarHelper2::Attachment);
+  if (getBuffer().isTagSupported()) {
+    addAction(p_toolBar, ViewWindowToolBarHelper2::Tag);
+  }
+  if (getBuffer().isAttachmentSupported()) {
+    addAction(p_toolBar, ViewWindowToolBarHelper2::Attachment);
+  }
 }
 
 void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {

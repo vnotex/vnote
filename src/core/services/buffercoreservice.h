@@ -162,7 +162,7 @@ public:
   // Get absolute path to the buffer's attachments folder.
   QString getAttachmentsFolder(const QString &p_bufferId) const;
 
-private:
+protected:
   // Check context validity before operations.
   bool checkContext() const;
 

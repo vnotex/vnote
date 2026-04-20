@@ -94,6 +94,10 @@ public:
 
   // ============ Buffer Queries (pass-through) ============
 
+  // Check whether the notebook for this buffer is a bundled notebook.
+  // Returns false for raw notebooks or if the notebook ID is empty/invalid.
+  bool isNotebookBundled(const QString &p_notebookId) const;
+
   // Get buffer configuration as JSON.
   QJsonObject getBuffer(const QString &p_bufferId) const;
 

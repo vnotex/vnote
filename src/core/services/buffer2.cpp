@@ -179,7 +179,13 @@ QString Buffer2::getAssetsFolder() const {
 
 // ============ Attachment Operations ============
 
-bool Buffer2::isAttachmentSupported() const { return isValid(); }
+bool Buffer2::isAttachmentSupported() const {
+  return isValid() && m_bufferService->isNotebookBundled(m_nodeId.notebookId);
+}
+
+bool Buffer2::isTagSupported() const {
+  return isValid() && m_bufferService->isNotebookBundled(m_nodeId.notebookId);
+}
 
 QString Buffer2::insertAttachment(const QString &p_sourcePath) {
   if (!isValid()) {

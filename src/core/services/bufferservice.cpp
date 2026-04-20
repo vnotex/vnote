@@ -161,6 +161,20 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
 
 // ============ Pass-through methods ============
 
+bool BufferService::isNotebookBundled(const QString &p_notebookId) const {
+  if (p_notebookId.isEmpty()) {
+    return false;
+  }
+  char *json = nullptr;
+  VxCoreError err = vxcore_notebook_get_config(m_context, p_notebookId.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    return false;
+  }
+  QJsonObject config = parseJsonObjectFromCStr(json);
+  return config.value(QStringLiteral("type")).toString().compare(
+             QStringLiteral("bundled"), Qt::CaseInsensitive) == 0;
+}
+
 QJsonObject BufferService::getBuffer(const QString &p_bufferId) const {
   return BufferCoreService::getBuffer(p_bufferId);
 }
