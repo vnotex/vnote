@@ -112,12 +112,7 @@ NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &
   }
 
   // Build config JSON for vxcore.
-  QJsonObject configObj;
-  configObj["name"] = p_input.name.trimmed();
-  if (!p_input.description.trimmed().isEmpty()) {
-    configObj["description"] = p_input.description.trimmed();
-  }
-  QString configJson = QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
+  QString configJson = buildConfigJson(p_input);
 
   // Create notebook via service.
   QString notebookId =
@@ -132,4 +127,17 @@ NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &
   result.success = true;
   result.notebookId = notebookId;
   return result;
+}
+
+QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) {
+  QJsonObject configObj;
+  configObj[QStringLiteral("name")] = p_input.name.trimmed();
+  if (!p_input.description.trimmed().isEmpty()) {
+    configObj[QStringLiteral("description")] = p_input.description.trimmed();
+  }
+  QString assetsFolderTrimmed = p_input.assetsFolder.trimmed();
+  if (!assetsFolderTrimmed.isEmpty() && assetsFolderTrimmed != QStringLiteral("vx_assets")) {
+    configObj[QStringLiteral("assetsFolder")] = assetsFolderTrimmed;
+  }
+  return QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
 }

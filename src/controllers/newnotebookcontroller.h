@@ -15,6 +15,7 @@ struct NewNotebookInput {
   QString name;
   QString description;
   QString rootFolderPath;
+  QString assetsFolder = QStringLiteral("vx_assets");
   NotebookType type = NotebookType::Bundled;
 };
 
@@ -49,6 +50,9 @@ public:
 
   // Validate all inputs.
   ValidationResult validateAll(const NewNotebookInput &p_input) const;
+
+  // Build config JSON string from input for vxcore.
+  static QString buildConfigJson(const NewNotebookInput &p_input);
 
   // Create a new notebook with the given input.
   // Returns result with success status and notebook ID or error message.

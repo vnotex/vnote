@@ -6,7 +6,9 @@
 #include <core/services/notebookcoreservice.h>
 
 class QComboBox;
+class QLineEdit;
 class QPlainTextEdit;
+class QToolButton;
 
 namespace vnotex {
 
@@ -51,6 +53,11 @@ private:
   QPlainTextEdit *m_descriptionEdit = nullptr;
   LocationInputWithBrowseButton *m_rootFolderInput = nullptr;
   QComboBox *m_typeCombo = nullptr;
+
+  // Advanced section.
+  QToolButton *m_advancedToggle = nullptr;
+  QWidget *m_advancedSection = nullptr;
+  QLineEdit *m_assetsFolderEdit = nullptr;
 
   // Result.
   QString m_newNotebookId;

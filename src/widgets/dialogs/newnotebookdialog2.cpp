@@ -3,7 +3,9 @@
 #include <QComboBox>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include <controllers/newnotebookcontroller.h>
@@ -74,6 +76,34 @@ void NewNotebookDialog2::setupUI() {
          "Raw: Plain folder structure with minimal VNote metadata."));
   layout->addRow(tr("Type:"), m_typeCombo);
 
+  // Advanced section toggle.
+  m_advancedToggle = new QToolButton(mainWidget);
+  m_advancedToggle->setText(tr("Advanced"));
+  m_advancedToggle->setCheckable(true);
+  m_advancedToggle->setArrowType(Qt::RightArrow);
+  m_advancedToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  layout->addRow(m_advancedToggle);
+
+  // Advanced section content.
+  m_advancedSection = new QWidget(mainWidget);
+  auto *advancedLayout = new QFormLayout(m_advancedSection);
+
+  m_assetsFolderEdit = new QLineEdit(m_advancedSection);
+  m_assetsFolderEdit->setText(QStringLiteral("vx_assets"));
+  m_assetsFolderEdit->setToolTip(
+      tr("Name or path for the assets folder.\n"
+         "Can be a folder name (vx_assets), relative path, or absolute path.\n"
+         "Relative paths resolve against each note file's parent directory."));
+  advancedLayout->addRow(tr("Assets Folder:"), m_assetsFolderEdit);
+
+  m_advancedSection->setVisible(false);
+  layout->addRow(m_advancedSection);
+
+  connect(m_advancedToggle, &QToolButton::toggled, this, [this](bool p_checked) {
+    m_advancedSection->setVisible(p_checked);
+    m_advancedToggle->setArrowType(p_checked ? Qt::DownArrow : Qt::RightArrow);
+  });
+
   setCentralWidget(mainWidget);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -98,6 +128,7 @@ void NewNotebookDialog2::acceptedButtonClicked() {
   input.description = m_descriptionEdit->toPlainText();
   input.rootFolderPath = m_rootFolderInput->text();
   input.type = static_cast<NotebookType>(m_typeCombo->currentData().toInt());
+  input.assetsFolder = m_assetsFolderEdit->text();
 
   // Delegate to controller.
   NewNotebookResult result = m_controller->createNotebook(input);
