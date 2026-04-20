@@ -54,6 +54,13 @@ QComboBox *WidgetsFactory::createComboBox(QWidget *p_parent) {
   return comboBox;
 }
 
+QComboBox *WidgetsFactory::createEditableComboBox(QWidget *p_parent) {
+  auto comboBox = createComboBox(p_parent);
+  comboBox->setEditable(true);
+  comboBox->setLineEdit(createLineEdit(p_parent));
+  return comboBox;
+}
+
 QCheckBox *WidgetsFactory::createCheckBox(const QString &p_text, QWidget *p_parent) {
   return new QCheckBox(p_text, p_parent);
 }

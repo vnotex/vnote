@@ -63,8 +63,7 @@ void UnitedEntry::setupUI() {
   auto mainLayout = new QHBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
 
-  m_comboBox = new QComboBox(this);
-  m_comboBox->setEditable(true);
+  m_comboBox = WidgetsFactory::createEditableComboBox(this);
   m_comboBox->setInsertPolicy(QComboBox::NoInsert);
   m_comboBox->setCompleter(nullptr);
   m_comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);

@@ -15,6 +15,7 @@
 #include <core/sessionconfig.h>
 #include <core/servicelocator.h>
 #include <core/widgetconfig.h>
+#include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
@@ -52,8 +53,7 @@ void SearchPanel2::setupUI() {
   auto *keywordLabel = new QLabel(tr("Keyword:"), this);
   mainLayout->addWidget(keywordLabel);
 
-  m_keywordCombo = new QComboBox(this);
-  m_keywordCombo->setEditable(true);
+  m_keywordCombo = WidgetsFactory::createEditableComboBox(this);
   m_keywordCombo->setInsertPolicy(QComboBox::NoInsert);
   m_keywordCombo->lineEdit()->setPlaceholderText(tr("Search..."));
   m_keywordCombo->lineEdit()->setClearButtonEnabled(true);
