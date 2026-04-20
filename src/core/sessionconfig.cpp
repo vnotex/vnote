@@ -95,6 +95,8 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_searchHistory = readStringList(p_jobj, QStringLiteral("searchHistory"));
 
+  m_unitedEntryHistory = readStringList(p_jobj, QStringLiteral("unitedEntryHistory"));
+
   m_viewAreaSession = readByteArray(p_jobj, QStringLiteral("viewareaSession"));
 
   m_viewAreaLayout = p_jobj[QStringLiteral("viewAreaLayout")].toObject();
@@ -194,6 +196,7 @@ QJsonObject SessionConfig::toJson() const {
   obj[QStringLiteral("export")] = saveExportOption();
   obj[QStringLiteral("searchOption")] = m_searchOption.toJson();
   writeStringList(obj, QStringLiteral("searchHistory"), m_searchHistory);
+  writeStringList(obj, QStringLiteral("unitedEntryHistory"), m_unitedEntryHistory);
   writeByteArray(obj, QStringLiteral("viewareaSession"), m_viewAreaSession);
   if (!m_viewAreaLayout.isEmpty()) {
     obj[QStringLiteral("viewAreaLayout")] = m_viewAreaLayout;
@@ -557,4 +560,30 @@ void SessionConfig::addSearchHistory(const QString &p_keyword) {
 
 void SessionConfig::setSearchHistory(const QStringList &p_history) {
   updateConfig(m_searchHistory, p_history, this);
+}
+
+const QStringList &SessionConfig::getUnitedEntryHistory() const { return m_unitedEntryHistory; }
+
+void SessionConfig::addUnitedEntryHistory(const QString &p_entry) {
+  auto trimmed = p_entry.trimmed();
+  if (trimmed.isEmpty()) {
+    return;
+  }
+
+  // Remove existing occurrence (case-sensitive dedup).
+  m_unitedEntryHistory.removeAll(trimmed);
+
+  // Prepend to front.
+  m_unitedEntryHistory.prepend(trimmed);
+
+  // Cap at 20.
+  while (m_unitedEntryHistory.size() > 20) {
+    m_unitedEntryHistory.removeLast();
+  }
+
+  update();
+}
+
+void SessionConfig::setUnitedEntryHistory(const QStringList &p_history) {
+  updateConfig(m_unitedEntryHistory, p_history, this);
 }

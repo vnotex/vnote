@@ -160,6 +160,10 @@ public:
   void addSearchHistory(const QString &p_keyword);
   void setSearchHistory(const QStringList &p_history);
 
+  const QStringList &getUnitedEntryHistory() const;
+  void addUnitedEntryHistory(const QString &p_entry);
+  void setUnitedEntryHistory(const QStringList &p_history);
+
 private:
   void loadCore(const QJsonObject &p_session);
 
@@ -237,6 +241,9 @@ private:
 
   // Keyword search history (most recent first, capped at 20).
   QStringList m_searchHistory;
+
+  // United entry command history (most recent first, capped at 20).
+  QStringList m_unitedEntryHistory;
 };
 } // namespace vnotex
 
