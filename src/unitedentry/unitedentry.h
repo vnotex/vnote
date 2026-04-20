@@ -75,6 +75,8 @@ private:
 
   void refreshIcons();
 
+  void populateHistoryItems();
+
   ServiceLocator &m_services;
 
   UnitedEntryMgr *m_mgr = nullptr;

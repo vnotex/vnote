@@ -1,5 +1,6 @@
 #include "unitedentry.h"
 
+#include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
@@ -12,6 +13,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QSizePolicy>
+#include <QSignalBlocker>
 #include <QTimer>
 #include <QTreeWidget>
 #include <functional>
@@ -19,6 +21,7 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -72,6 +75,10 @@ void UnitedEntry::setupUI() {
   m_comboBox->installEventFilter(this);
   connect(m_comboBox->lineEdit(), &QLineEdit::textChanged, m_processTimer,
           QOverload<>::of(&QTimer::start));
+  connect(m_comboBox, QOverload<int>::of(&QComboBox::activated), this, [this]() {
+    m_processTimer->stop();
+    processInput();
+  });
   setFocusProxy(m_comboBox);
   mainLayout->addWidget(m_comboBox);
 
@@ -146,6 +153,7 @@ void UnitedEntry::activate() {
   m_activated = true;
   m_previousFocusWidget = QApplication::focusWidget();
 
+  populateHistoryItems();
   m_processTimer->stop();
   processInput();
 
@@ -164,6 +172,7 @@ void UnitedEntry::ensureActivated(QWidget *p_previousFocus) {
 
   m_activated = true;
   m_previousFocusWidget = p_previousFocus;
+  populateHistoryItems();
 }
 
 void UnitedEntry::deactivate() {
@@ -442,6 +451,10 @@ void UnitedEntry::handleEntryItemActivated(IUnitedEntry *p_entry, bool p_quit,
   }
 
   if (p_quit) {
+    // Save to history before deactivating.
+    auto *configMgr = m_services.get<ConfigMgr2>();
+    configMgr->getSessionConfig().addUnitedEntryHistory(m_comboBox->lineEdit()->text());
+
     if (p_restoreFocus) {
       exitUnitedEntry();
     } else {
@@ -529,6 +542,10 @@ void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
     if (p_now == m_comboBox || p_now == m_comboBox->lineEdit()) {
       ensureActivated(p_old);
       m_processTimer->stop();
+      // Suppress processInput when native dropdown is showing with history items.
+      if (m_comboBox->view()->isVisible() && m_comboBox->count() > 0) {
+        return;
+      }
       processInput();
       return;
     }
@@ -547,4 +564,16 @@ void UnitedEntry::refreshIcons() {
 
   m_menuIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("menu.svg"), fg));
   m_busyIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg));
+}
+
+void UnitedEntry::populateHistoryItems() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  const auto &history = configMgr->getSessionConfig().getUnitedEntryHistory();
+  {
+    QSignalBlocker blocker(m_comboBox);
+    auto currentText = m_comboBox->lineEdit()->text();
+    m_comboBox->clear();
+    m_comboBox->addItems(history);
+    m_comboBox->lineEdit()->setText(currentText);
+  }
 }
