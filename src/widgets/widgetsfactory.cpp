@@ -14,6 +14,7 @@
 #include <core/services/snippetcoreservice.h>
 
 #include "combobox.h"
+#include "propertydefs.h"
 #include "lineeditwithsnippet.h"
 
 using namespace vnotex;
@@ -58,6 +59,7 @@ QComboBox *WidgetsFactory::createEditableComboBox(QWidget *p_parent) {
   auto comboBox = createComboBox(p_parent);
   comboBox->setEditable(true);
   comboBox->setLineEdit(createLineEdit(p_parent));
+  comboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
   return comboBox;
 }
 

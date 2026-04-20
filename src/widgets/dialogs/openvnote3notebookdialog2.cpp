@@ -54,7 +54,8 @@ void OpenVNote3NotebookDialog2::setupUI() {
   layout->addRow(m_descriptionTitleLabel, m_descriptionLabel);
 
   m_confirmCheckBox = new QCheckBox(
-      tr("I understand this will copy the notebook to the destination folder and not all data will be migrated."), mainWidget);
+      tr("I understand this will copy the notebook to the destination folder.\n"
+         "The legacy notebook would be kept for data backup."), mainWidget);
   layout->addRow(QString(), m_confirmCheckBox);
 
   setCentralWidget(mainWidget);
@@ -63,7 +64,6 @@ void OpenVNote3NotebookDialog2::setupUI() {
   setButtonEnabled(QDialogButtonBox::Ok, false);
 
   setWindowTitle(tr("Open VNote3 Notebook"));
-  setMinimumWidth(600);
 
   // Track manual edits to destination.
   connect(m_destinationInput, &LocationInputWithBrowseButton::textChanged, this, [this]() {
@@ -126,7 +126,7 @@ void OpenVNote3NotebookDialog2::validateInputs() {
   // Auto-fill destination if user hasn't manually edited it (tracks source changes).
   if (!m_destinationManuallyEdited) {
     m_suppressDestinationTracking = true;
-    m_destinationInput->setText(QDir::cleanPath(sourcePath + "-converted"));
+    m_destinationInput->setText(QDir::cleanPath(sourcePath + "-v4"));
     m_suppressDestinationTracking = false;
   }
 
