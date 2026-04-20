@@ -324,6 +324,13 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
       auto *markAction = p_menu->addAction(tr("&Mark"));
       connect(markAction, &QAction::triggered, this, [this, p_nodeId]() { markNode(p_nodeId); });
     }
+
+    if (!p_nodeId.isRoot()) {
+      auto *ignoreAction = p_menu->addAction(tr("&Ignore"));
+      connect(ignoreAction, &QAction::triggered, this, [this, p_nodeId]() {
+        emit ignoreRequested(p_nodeId);
+      });
+    }
   }
 }
 
