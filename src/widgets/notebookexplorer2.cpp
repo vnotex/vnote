@@ -3,6 +3,7 @@
 #include <QActionGroup>
 #include <QCoreApplication>
 #include <QDataStream>
+#include <QJsonDocument>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
@@ -481,6 +482,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::exportNodeRequested);
   connect(explorer, &CombinedNodeExplorer::markRequested, this,
           &NotebookExplorer2::onMarkRequested);
+  connect(explorer, &CombinedNodeExplorer::ignoreRequested, this,
+          &NotebookExplorer2::onIgnoreRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -513,6 +516,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::exportNodeRequested);
   connect(explorer, &TwoColumnsNodeExplorer::markRequested, this,
           &NotebookExplorer2::onMarkRequested);
+  connect(explorer, &TwoColumnsNodeExplorer::ignoreRequested, this,
+          &NotebookExplorer2::onIgnoreRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -1196,6 +1201,48 @@ void NotebookExplorer2::onMarkRequested(const NodeIdentifier &p_nodeId) {
   MarkNodeDialog2 dialog(nodeInfo.textColor, nodeInfo.backgroundColor, window());
   if (dialog.exec() == QDialog::Accepted) {
     m_nodeExplorer->handleMarkResult(p_nodeId, dialog.textColor(), dialog.backgroundColor());
+  }
+}
+
+void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId)
+{
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  // Extract name from relative path.
+  const QString name = p_nodeId.relativePath.mid(
+      p_nodeId.relativePath.lastIndexOf(QLatin1Char('/')) + 1);
+
+  // Confirmation dialog.
+  const QString title = tr("Ignore");
+  const QString message = tr("Add \"%1\" to the ignore list of the notebook?").arg(name);
+  int ret = MessageBoxHelper::questionOkCancel(
+      MessageBoxHelper::Question, title, message, QString(), window());
+  if (ret != QMessageBox::Ok) {
+    return;
+  }
+
+  // Read-modify-write notebook config.
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
+  QJsonArray ignored = config.value(QStringLiteral("ignored")).toArray();
+
+  // Check for duplicate.
+  for (const auto &val : ignored) {
+    if (val.toString() == name) {
+      return;
+    }
+  }
+
+  ignored.append(name);
+  config[QStringLiteral("ignored")] = ignored;
+
+  const QString configStr = QString::fromUtf8(
+      QJsonDocument(config).toJson(QJsonDocument::Compact));
+  if (!notebookService->updateNotebookConfig(p_nodeId.notebookId, configStr)) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                             tr("Failed to update notebook configuration."), window());
   }
 }
 
