@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QWidget>
 #include <QWindow>
 #include <QWindowStateChangeEvent>
@@ -603,7 +604,7 @@ void MainWindow2::setupToolBar() {
 
   if (isFrameless()) {
     auto *toolBar = new TitleToolBar2(tr("Global"), this);
-    toolBar->setIconSize(QSize(sz + 4, sz + 4));
+    toolBar->setIconSize(QSize(sz, sz));
     m_toolBarHelper->setupToolBars(toolBar);
     toolBar->addTitleBarButtons(
         m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
@@ -611,8 +612,17 @@ void MainWindow2::setupToolBar() {
         m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
         m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
 
+    // Wrap toolbar in a container with top padding for frameless title bar.
+    // QToolBar's internal layout ignores setContentsMargins, so we use a wrapper.
+    auto *titleBarWrapper = new QWidget(this);
+    auto *wrapperLayout = new QVBoxLayout(titleBarWrapper);
+    wrapperLayout->setContentsMargins(0, 2, 0, 0);
+    wrapperLayout->setSpacing(0);
+    wrapperLayout->addWidget(toolBar);
+    setMenuWidget(titleBarWrapper);
+
     // Register title bar and system buttons for qwindowkit.
-    m_windowAgent->setTitleBar(toolBar);
+    m_windowAgent->setTitleBar(titleBarWrapper);
     m_windowAgent->setSystemButton(QWK::WindowAgentBase::Minimize, toolBar->minimizeButton());
     m_windowAgent->setSystemButton(QWK::WindowAgentBase::Maximize, toolBar->maximizeButton());
     m_windowAgent->setSystemButton(QWK::WindowAgentBase::Close, toolBar->closeButton());
@@ -638,6 +648,7 @@ void MainWindow2::setupToolBar() {
     auto *toolBar = new QToolBar(tr("Global"), this);
     toolBar->setIconSize(QSize(sz, sz));
     m_toolBarHelper->setupToolBars(toolBar);
+    addToolBar(toolBar);
   }
 
   // Disable the context menu above tool bar.

@@ -268,7 +268,6 @@ void ToolBarHelper2::setupToolBars() {
 void ToolBarHelper2::setupToolBars(QToolBar *p_toolBar) {
   p_toolBar->setObjectName(QStringLiteral("UnifiedToolBar"));
   p_toolBar->setMovable(false);
-  m_mainWindow->addToolBar(p_toolBar);
 
   setupFileToolBar(p_toolBar);
   setupUnitedEntry(p_toolBar);
