@@ -308,8 +308,17 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
   connect(propertiesAction, &QAction::triggered, this,
           [this, p_nodeId]() { showNodeProperties(p_nodeId); });
 
-  auto *tagAction = p_menu->addAction(tr("Manage &Tags"));
-  connect(tagAction, &QAction::triggered, this, [this, p_nodeId]() { manageNodeTags(p_nodeId); });
+  {
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
+    QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+    bool isBundled = (nbType == QStringLiteral("bundled"));
+    if (isBundled) {
+      auto *tagAction = p_menu->addAction(tr("Manage &Tags"));
+      connect(tagAction, &QAction::triggered, this,
+              [this, p_nodeId]() { manageNodeTags(p_nodeId); });
+    }
+  }
 }
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
@@ -419,8 +428,14 @@ void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds)
     return;
   }
 
+  // Query notebook type: raw notebooks have no recycle bin, so delete permanently.
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeIds.first().notebookId);
+  QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+  bool isBundled = (nbType == QStringLiteral("bundled"));
+
   // Emit signal to request delete confirmation from view
-  emit deleteRequested(p_nodeIds, false);
+  emit deleteRequested(p_nodeIds, !isBundled);
 }
 
 void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier> &p_nodeIds) {

@@ -46,7 +46,8 @@ public:
 
   // Validate root folder path.
   // Checks: legal path, empty or non-existent, no duplicate notebook.
-  ValidationResult validateRootFolder(const QString &p_path) const;
+  ValidationResult validateRootFolder(const QString &p_path,
+                                      NotebookType p_type = NotebookType::Bundled) const;
 
   // Validate all inputs.
   ValidationResult validateAll(const NewNotebookInput &p_input) const;

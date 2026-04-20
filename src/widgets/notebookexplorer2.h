@@ -133,6 +133,7 @@ private:
   void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
   void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
   void setCurrentNotebookInternal(const QString &p_notebookId);
+  void updateRecycleBinMenuState();
   void cacheCurrentExplorerState();
   void applyCachedExplorerState(const QString &p_notebookId);
   // Apply view order to all node views
@@ -154,6 +155,8 @@ private:
   QString m_currentNotebookId;
   QHash<QString, NodeExplorerState> m_notebookStateCache;
   bool m_hasRestoredSessionStatePending = false;
+  QAction *m_openRecycleBinAction = nullptr;
+  QAction *m_emptyRecycleBinAction = nullptr;
 };
 
 } // namespace vnotex

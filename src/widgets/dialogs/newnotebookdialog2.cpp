@@ -60,9 +60,6 @@ void NewNotebookDialog2::setupUI() {
       LocationInputWithBrowseButton::Folder,
       tr("Select Notebook Root Folder"));
   m_rootFolderInput->setPlaceholderText(tr("Select a folder as notebook root"));
-  m_rootFolderInput->setToolTip(
-      tr("Root folder of the notebook.\n"
-         "A new notebook requires an empty folder or a non-existent path (will be created)."));
   connect(m_rootFolderInput, &LocationInputWithBrowseButton::textChanged, this,
           &NewNotebookDialog2::handleRootFolderPathChanged);
   layout->addRow(tr("Root Folder:"), m_rootFolderInput);
@@ -75,6 +72,27 @@ void NewNotebookDialog2::setupUI() {
       tr("Bundled: Notebook with metadata stored in config files.\n"
          "Raw: Plain folder structure with minimal VNote metadata."));
   layout->addRow(tr("Type:"), m_typeCombo);
+
+  // Update root folder tooltip based on selected notebook type.
+  auto updateRootFolderTooltip = [this]() {
+    NotebookType type = static_cast<NotebookType>(m_typeCombo->currentData().toInt());
+    if (type == NotebookType::Raw) {
+      m_rootFolderInput->setToolTip(
+          tr("Root folder of the notebook.\n"
+             "For raw notebooks, you can select an existing folder with files.\n"
+             "The folder's contents will be indexed as notebook nodes."));
+    } else {
+      m_rootFolderInput->setToolTip(
+          tr("Root folder of the notebook.\n"
+             "A new notebook requires an empty folder or a non-existent path (will be created)."));
+    }
+  };
+
+  connect(m_typeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, updateRootFolderTooltip);
+
+  // Initialize tooltip for default type.
+  updateRootFolderTooltip();
 
   // Advanced section toggle.
   m_advancedToggle = new QToolButton(mainWidget);

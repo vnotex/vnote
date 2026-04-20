@@ -26,7 +26,8 @@ ValidationResult NewNotebookController::validateName(const QString &p_name) cons
   return result;
 }
 
-ValidationResult NewNotebookController::validateRootFolder(const QString &p_path) const {
+ValidationResult NewNotebookController::validateRootFolder(const QString &p_path,
+                                                           NotebookType p_type) const {
   ValidationResult result;
   QString rootFolderPath = p_path.trimmed();
 
@@ -40,16 +41,16 @@ ValidationResult NewNotebookController::validateRootFolder(const QString &p_path
   // Check if path exists and is valid.
   QFileInfo finfo(rootFolderPath);
   if (finfo.exists()) {
-    if (finfo.isDir()) {
-      if (!QDir(rootFolderPath).isEmpty()) {
-        result.valid = false;
-        result.message = tr("Root folder of the notebook must be empty. "
-                            "If you want to import existing data, please try other operations.");
-        return result;
-      }
-    } else {
+    if (!finfo.isDir()) {
       result.valid = false;
       result.message = tr("Root folder should be a directory.");
+      return result;
+    }
+    // Only require empty directory for bundled notebooks.
+    if (p_type == NotebookType::Bundled && !QDir(rootFolderPath).isEmpty()) {
+      result.valid = false;
+      result.message = tr("Root folder of the notebook must be empty. "
+                          "If you want to import existing data, please try other operations.");
       return result;
     }
   }
@@ -84,7 +85,7 @@ ValidationResult NewNotebookController::validateAll(const NewNotebookInput &p_in
   }
 
   // Validate root folder.
-  result = validateRootFolder(p_input.rootFolderPath);
+  result = validateRootFolder(p_input.rootFolderPath, p_input.type);
   if (!result.valid) {
     return result;
   }

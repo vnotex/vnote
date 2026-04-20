@@ -16,6 +16,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include <controllers/newnotebookcontroller.h>
 #include <controllers/notebooknodecontroller.h>
 #include <controllers/opennotebookcontroller.h>
 #include <controllers/recyclebincontroller.h>
@@ -176,6 +177,9 @@ void NotebookExplorer2::setupTitleBarMenu() {
 
   m_titleBar->addMenuAction(tr("Manage Notebooks"), m_titleBar, [this]() { manageNotebooks(); });
 
+  m_titleBar->addMenuAction(tr("Open Folder as &Raw Notebook"), m_titleBar,
+                            [this]() { newNotebookFromFolder(); });
+
   m_titleBar->addMenuAction(tr("Rebuild Database"), m_titleBar, [this]() { rebuildDatabase(); });
 
   setupRecycleBinMenu();
@@ -244,7 +248,7 @@ void NotebookExplorer2::setupTitleBarMenu() {
 void NotebookExplorer2::setupRecycleBinMenu() {
   m_titleBar->addMenuSeparator();
 
-  auto openAction = m_titleBar->addMenuAction(tr("Open Recycle Bin"), this, [this]() {
+  m_openRecycleBinAction = m_titleBar->addMenuAction(tr("Open Recycle Bin"), this, [this]() {
     if (m_currentNotebookId.isEmpty()) {
       return;
     }
@@ -258,7 +262,7 @@ void NotebookExplorer2::setupRecycleBinMenu() {
     }
   });
 
-  auto emptyAction = m_titleBar->addMenuAction(tr("Empty Recycle Bin"), this, [this]() {
+  m_emptyRecycleBinAction = m_titleBar->addMenuAction(tr("Empty Recycle Bin"), this, [this]() {
     if (m_currentNotebookId.isEmpty()) {
       return;
     }
@@ -299,6 +303,22 @@ void NotebookExplorer2::setupRecycleBinMenu() {
       MessageBoxHelper::notify(MessageBoxHelper::Warning, result.errorMessage, window());
     }
   });
+}
+
+void NotebookExplorer2::updateRecycleBinMenuState() {
+  if (!m_openRecycleBinAction || !m_emptyRecycleBinAction) {
+    return;
+  }
+
+  bool enabled = false;
+  if (!m_currentNotebookId.isEmpty()) {
+    RecycleBinController controller(m_services);
+    QString path = controller.getRecycleBinPath(m_currentNotebookId);
+    enabled = !path.isEmpty();
+  }
+
+  m_openRecycleBinAction->setEnabled(enabled);
+  m_emptyRecycleBinAction->setEnabled(enabled);
 }
 
 void NotebookExplorer2::setupExploreModeMenu() {
@@ -554,6 +574,8 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
 
   m_currentNotebookId = p_notebookId;
 
+  updateRecycleBinMenuState();
+
   // Update current explorer
   if (m_nodeExplorer) {
     m_nodeExplorer->setNotebookId(p_notebookId);
@@ -692,11 +714,49 @@ void NotebookExplorer2::newNotebook() {
 }
 
 void NotebookExplorer2::newNotebookFromFolder() {
-  // TODO: Migrate NewNotebookFromFolderDialog to use ServiceLocator DI pattern
-  MessageBoxHelper::notify(
-      MessageBoxHelper::Information,
-      tr("New notebook from folder dialog is being migrated to use dependency injection."),
-      window());
+  // Get default path from session config.
+  QString defaultPath;
+  {
+    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+    defaultPath = sessionConfig.getNewNotebookDefaultRootFolderPath();
+    if (defaultPath.isEmpty()) {
+      defaultPath = QDir::homePath();
+    }
+  }
+
+  QString rootFolder = QFileDialog::getExistingDirectory(
+      window(), tr("Select Folder to Open as Raw Notebook"), defaultPath,
+      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+  if (rootFolder.isEmpty()) {
+    return;
+  }
+
+  // Build input for raw notebook creation.
+  NewNotebookInput input;
+  input.name = QFileInfo(rootFolder).fileName();
+  input.rootFolderPath = rootFolder;
+  input.type = NotebookType::Raw;
+
+  // Create notebook via controller.
+  NewNotebookController controller(m_services);
+  NewNotebookResult result = controller.createNotebook(input);
+
+  if (!result.success) {
+    MessageBoxHelper::notify(MessageBoxHelper::Critical, result.errorMessage, window());
+    return;
+  }
+
+  // Save parent dir as default for next time.
+  {
+    QFileInfo fi(rootFolder);
+    auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
+    sessionConfig.setNewNotebookDefaultRootFolderPath(fi.absolutePath());
+  }
+
+  // Reload notebooks and select the newly created one.
+  loadNotebooks();
+  setCurrentNotebook(result.notebookId);
 }
 
 void NotebookExplorer2::importNotebook() {
