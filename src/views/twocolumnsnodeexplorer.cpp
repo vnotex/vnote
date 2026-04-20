@@ -147,6 +147,8 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::exportNodeRequested);
   connect(p_controller, &NotebookNodeController::markRequested, this,
           &TwoColumnsNodeExplorer::markRequested);
+  connect(p_controller, &NotebookNodeController::ignoreRequested, this,
+          &TwoColumnsNodeExplorer::ignoreRequested);
 
   // Status signals
   connect(p_controller, &NotebookNodeController::errorOccurred, this,

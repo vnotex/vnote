@@ -121,6 +121,7 @@ signals:
   void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void markRequested(const NodeIdentifier &p_nodeId);
+  void ignoreRequested(const NodeIdentifier &p_nodeId);
 
   // === Status signals ===
   void errorOccurred(const QString &p_title, const QString &p_message);

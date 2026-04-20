@@ -88,6 +88,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::exportNodeRequested);
   connect(m_controller, &NotebookNodeController::markRequested, this,
           &CombinedNodeExplorer::markRequested);
+  connect(m_controller, &NotebookNodeController::ignoreRequested, this,
+          &CombinedNodeExplorer::ignoreRequested);
 
   // Status signals
   connect(m_controller, &NotebookNodeController::errorOccurred, this,
