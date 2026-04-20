@@ -112,6 +112,7 @@ void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   QString name = p_notebookJson.value("name").toString();
   QString rootPath = p_notebookJson.value("rootFolder").toString();
   QString description = p_notebookJson.value("description").toString();
+  QString type = p_notebookJson.value("type").toString();
   QString guid = p_notebookJson.value("id").toString();
 
   // Icon from JSON if available, otherwise generate.
@@ -123,7 +124,7 @@ void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
 
   int idx = count();
   addItem(generateItemIcon(name, icon), name);
-  setItemToolTip(idx, generateItemToolTip(name, rootPath, description));
+  setItemToolTip(idx, generateItemToolTip(name, rootPath, description, type));
   // Store GUID string for identification and save/restore.
   setItemData(idx, guid, NotebookGuidRole);
 }
@@ -158,9 +159,13 @@ QIcon NotebookSelector2::generateItemIcon(const QString &p_name, const QIcon &p_
 }
 
 QString NotebookSelector2::generateItemToolTip(const QString &p_name, const QString &p_rootPath,
-                                               const QString &p_description) {
-  return tr("Notebook: %1\nRoot folder: %2\nDescription: %3")
-      .arg(p_name, p_rootPath, p_description);
+                                               const QString &p_description,
+                                               const QString &p_type) {
+  QString typeLabel = p_type.compare(QStringLiteral("raw"), Qt::CaseInsensitive) == 0
+                          ? tr("Raw")
+                          : tr("Bundled");
+  return tr("Notebook: %1\nType: %2\nRoot folder: %3\nDescription: %4")
+      .arg(p_name, typeLabel, p_rootPath, p_description);
 }
 
 QString NotebookSelector2::getItemToolTip(int p_idx) const {

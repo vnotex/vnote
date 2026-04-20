@@ -54,7 +54,7 @@ private:
   QIcon generateItemIcon(const QString &p_name, const QIcon &p_customIcon);
 
   QString generateItemToolTip(const QString &p_name, const QString &p_rootPath,
-                              const QString &p_description);
+                              const QString &p_description, const QString &p_type);
 
   QString getItemToolTip(int p_idx) const;
   void setItemToolTip(int p_idx, const QString &p_tooltip);
