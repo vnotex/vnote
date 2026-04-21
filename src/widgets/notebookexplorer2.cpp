@@ -1243,6 +1243,12 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId)
   if (!notebookService->updateNotebookConfig(p_nodeId.notebookId, configStr)) {
     MessageBoxHelper::notify(MessageBoxHelper::Warning,
                              tr("Failed to update notebook configuration."), window());
+  } else {
+    // Reload parent node to reflect the updated ignore list.
+    NodeIdentifier parentId;
+    parentId.notebookId = p_nodeId.notebookId;
+    parentId.relativePath = p_nodeId.parentPath();
+    m_nodeExplorer->reloadNode(parentId);
   }
 }
 
