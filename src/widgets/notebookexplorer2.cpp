@@ -49,6 +49,7 @@
 #include <widgets/dialogs/newfolderdialog2.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
+#include <widgets/dialogs/nodepropertiesdialog2.h>
 #include <widgets/dialogs/openvnote3notebookdialog2.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/mainwindow.h>
@@ -1223,32 +1224,8 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
     return;
   }
 
-  // Build absolute path
-  QString absolutePath;
-  auto *notebookService = m_services.get<NotebookCoreService>();
-  QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
-  QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
-  if (!rootPath.isEmpty()) {
-    absolutePath =
-        p_nodeId.relativePath.isEmpty() ? rootPath : rootPath + "/" + p_nodeId.relativePath;
-  }
-
-  QString info;
-  info += tr("Name: %1\n").arg(nodeInfo.name);
-  info += tr("Path: %1\n").arg(absolutePath);
-  info += tr("Type: %1\n").arg(nodeInfo.isFolder ? tr("Folder") : tr("Note"));
-  info += tr("Created: %1\n").arg(nodeInfo.createdTimeUtc.toLocalTime().toString());
-  info += tr("Modified: %1\n").arg(nodeInfo.modifiedTimeUtc.toLocalTime().toString());
-
-  if (nodeInfo.isFolder) {
-    info += tr("Children: %1\n").arg(nodeInfo.childCount);
-  }
-
-  if (!nodeInfo.tags.isEmpty()) {
-    info += tr("Tags: %1\n").arg(nodeInfo.tags.join(", "));
-  }
-
-  MessageBoxHelper::notify(MessageBoxHelper::Information, info, window());
+  NodePropertiesDialog2 dialog(m_services, p_nodeId, nodeInfo, window());
+  dialog.exec();
 }
 
 void NotebookExplorer2::onMarkRequested(const NodeIdentifier &p_nodeId) {
