@@ -235,6 +235,9 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
   const QDir sourceRoot(p_sourcePath);
   importFolder(notebookId, sourceRoot, QString(), p_destPath, inspection, result.warnings);
 
+  // Copy all remaining unindexed files from source to destination.
+  copyRemainingFiles(p_sourcePath, p_destPath);
+
   // 7. Close the notebook and return success.
   if (!m_notebookService->closeNotebook(notebookId)) {
     result.errorMessage = QStringLiteral("Failed to close destination notebook");
@@ -460,18 +463,7 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
                  p_destPath, p_inspection, p_warnings);
   }
 
-  // --- Image handling: raw-copy image folder if it exists ---
-  if (!p_inspection.imageFolder.isEmpty()) {
-    const QString srcImageDir =
-        absFolderPath + QStringLiteral("/") + p_inspection.imageFolder;
-    if (QDir(srcImageDir).exists()) {
-      const QString destImageDir = p_destPath + QStringLiteral("/") +
-          (p_relFolderPath.isEmpty()
-               ? p_inspection.imageFolder
-               : p_relFolderPath + QStringLiteral("/") + p_inspection.imageFolder);
-      copyDirectoryRecursively(srcImageDir, destImageDir);
-    }
-  }
+
 
 }
 
@@ -615,4 +607,49 @@ VNote3MigrationService::parseTagGraph(const QString &p_tagGraphString) {
     result.append(qMakePair(parent, child));
   }
   return result;
+}
+
+void VNote3MigrationService::copyRemainingFiles(const QString &p_sourcePath,
+                                                 const QString &p_destPath) {
+  QDir sourceDir(p_sourcePath);
+  if (!sourceDir.exists()) {
+    return;
+  }
+
+  const auto entries =
+      sourceDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+  for (const QFileInfo &fi : entries) {
+    const QString name = fi.fileName();
+
+    // Skip excluded directories.
+    if (fi.isDir()) {
+      if (name == QStringLiteral("vx_notebook")
+          || name == QStringLiteral("vx_recycle_bin")
+          || name == QStringLiteral(".git")) {
+        continue;
+      }
+      const QString destSubDir = p_destPath + QStringLiteral("/") + name;
+      if (!QDir(destSubDir).exists()) {
+        copyDirectoryRecursively(fi.absoluteFilePath(), destSubDir);
+      } else {
+        // Directory exists in dest — recurse to copy individual missing files.
+        copyRemainingFiles(fi.absoluteFilePath(), destSubDir);
+      }
+      continue;
+    }
+
+    // Skip vx.json files.
+    if (name == QStringLiteral("vx.json")) {
+      continue;
+    }
+
+    // Skip files that already exist in destination.
+    const QString destFilePath = p_destPath + QStringLiteral("/") + name;
+    if (QFile::exists(destFilePath)) {
+      continue;
+    }
+
+    QDir().mkpath(p_destPath);
+    QFile::copy(fi.absoluteFilePath(), destFilePath);
+  }
 }

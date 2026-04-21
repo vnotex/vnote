@@ -94,6 +94,12 @@ private slots:
   // Regression: attachments in Chinese-named folder should not get garbled paths
   void testConvertMigratesAttachmentsInChineseFolder();
 
+  // Supplementary copy tests
+  void testCopyRemainingCopiesUnindexedImageFolder();
+  void testCopyRemainingCopiesUnindexedFiles();
+  void testCopyRemainingSkipsExclusions();
+  void testCopyRemainingDoesNotOverwriteImportedFiles();
+
 private:
   // Returns absolute path to a test data fixture, or empty string if not found.
   QString findFixture(const QString &p_relPath);
@@ -1272,9 +1278,9 @@ void TestVNote3MigrationService::testConvertMissingVxJsonGraceful() {
                pathExistsInNotebook(destPath, QStringLiteral("nojson")),
            "Folder 'nojson' should be created");
 
-  // inner.md is NOT imported because nojson/ has no vx.json listing it.
-  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("nojson/inner.md")),
-           "inner.md should NOT be imported without vx.json entry");
+  // inner.md is copied by supplementary copy (all files are preserved).
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("nojson/inner.md")),
+           "inner.md should be copied by supplementary copy");
 }
 
 void TestVNote3MigrationService::testConvertEmptyTagsSkipped() {
@@ -2194,6 +2200,209 @@ void TestVNote3MigrationService::testConvertMigratesAttachmentsInChineseFolder()
   // Verify file exists on disk in dest.
   QVERIFY2(QFile::exists(attachDir + QStringLiteral("/report.pdf")),
            qPrintable(QStringLiteral("report.pdf not on disk at: %1").arg(attachDir)));
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testCopyRemainingCopiesUnindexedImageFolder() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  // Config with empty image_folder override (so _v_images is NOT the configured folder).
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  // Create a regular file listed in vx.json (valid notebook).
+  {
+    QFile f(base.filePath(QStringLiteral("note.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note");
+    f.close();
+  }
+
+  // Create _v_images folder with a file NOT listed in vx.json.
+  base.mkpath(QStringLiteral("_v_images"));
+  {
+    QFile f(base.filePath(QStringLiteral("_v_images/photo.png")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("fake png data");
+    f.close();
+  }
+
+  // Root vx.json lists only note.md — _v_images is NOT listed.
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("note.md");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath =
+      m_tempDir.filePath(QStringLiteral("copy_remaining_images_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Supplementary copy should have copied the unindexed _v_images folder.
+  QVERIFY2(pathExistsInNotebook(
+               destPath, QStringLiteral("_v_images/photo.png")),
+           "Unindexed _v_images/photo.png should be copied by supplementary copy");
+}
+
+void TestVNote3MigrationService::testCopyRemainingCopiesUnindexedFiles() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  writeNotebookConfig(sourceDir.path(), makeConfigJson());
+
+  // Create a file listed in vx.json.
+  {
+    QFile f(base.filePath(QStringLiteral("indexed.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Indexed");
+    f.close();
+  }
+
+  // Create an unindexed file NOT in vx.json.
+  {
+    QFile f(base.filePath(QStringLiteral("random_notes.txt")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("some random notes");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("indexed.md");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath =
+      m_tempDir.filePath(QStringLiteral("copy_remaining_files_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Supplementary copy should have copied the unindexed file.
+  QVERIFY2(pathExistsInNotebook(
+               destPath, QStringLiteral("random_notes.txt")),
+           "Unindexed random_notes.txt should be copied by supplementary copy");
+}
+
+void TestVNote3MigrationService::testCopyRemainingSkipsExclusions() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  writeNotebookConfig(sourceDir.path(), makeConfigJson());
+
+  // Create a regular file listed in vx.json.
+  {
+    QFile f(base.filePath(QStringLiteral("readme.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Readme");
+    f.close();
+  }
+
+  // Create vx_recycle_bin directory (should be excluded).
+  base.mkpath(QStringLiteral("vx_recycle_bin"));
+  {
+    QFile f(base.filePath(QStringLiteral("vx_recycle_bin/trash.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Trash");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("readme.md");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath =
+      m_tempDir.filePath(QStringLiteral("copy_remaining_exclusions_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // vx_recycle_bin must NOT exist in destination.
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_recycle_bin")),
+           "vx_recycle_bin directory should not be copied");
+  QVERIFY2(!pathExistsInNotebook(
+               destPath, QStringLiteral("vx_recycle_bin/trash.md")),
+           "vx_recycle_bin/trash.md should not be copied");
+}
+
+void TestVNote3MigrationService::testCopyRemainingDoesNotOverwriteImportedFiles() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  // Create readme.md with content.
+  {
+    QFile f(base.filePath(QStringLiteral("readme.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Readme with timestamps");
+    f.close();
+  }
+
+  // vx.json lists readme.md with timestamps.
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("readme.md");
+  fileEntry[QStringLiteral("created_time")] =
+      QStringLiteral("2024-03-10T08:00:00Z");
+  fileEntry[QStringLiteral("modified_time")] =
+      QStringLiteral("2024-07-15T16:30:00Z");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  QString destPath =
+      m_tempDir.filePath(QStringLiteral("copy_remaining_no_overwrite_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Open notebook and verify timestamps are preserved (not clobbered).
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  QJsonObject fileInfo =
+      m_notebookService->getFileInfo(nbId, QStringLiteral("readme.md"));
+  QVERIFY2(!fileInfo.isEmpty(), "getFileInfo returned empty for readme.md");
+
+  const qint64 expectedCreated =
+      QDateTime::fromString(QStringLiteral("2024-03-10T08:00:00Z"),
+                            Qt::ISODate)
+          .toMSecsSinceEpoch();
+  const qint64 expectedModified =
+      QDateTime::fromString(QStringLiteral("2024-07-15T16:30:00Z"),
+                            Qt::ISODate)
+          .toMSecsSinceEpoch();
+
+  const qint64 actualCreated =
+      fileInfo[QStringLiteral("createdUtc")].toVariant().toLongLong();
+  const qint64 actualModified =
+      fileInfo[QStringLiteral("modifiedUtc")].toVariant().toLongLong();
+
+  QCOMPARE(actualCreated, expectedCreated);
+  QCOMPARE(actualModified, expectedModified);
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }

@@ -83,6 +83,8 @@ private:
                     const QString &p_relFolderPath, const QString &p_destPath,
                     const VNote3SourceInspectionResult &p_inspection, QStringList &p_warnings);
 
+  void copyRemainingFiles(const QString &p_sourcePath, const QString &p_destPath);
+
   NotebookCoreService *m_notebookService = nullptr;
   TagCoreService *m_tagService = nullptr;
 
