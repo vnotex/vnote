@@ -91,6 +91,9 @@ private slots:
   // Regression: 17-file folder with Chinese filenames and subfolder
   void testConvertFolderWith17FilesAndSubfolder();
 
+  // Regression: attachments in Chinese-named folder should not get garbled paths
+  void testConvertMigratesAttachmentsInChineseFolder();
+
 private:
   // Returns absolute path to a test data fixture, or empty string if not found.
   QString findFixture(const QString &p_relPath);
@@ -2101,6 +2104,96 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   const QString expectedSubfolder =
       QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x83\xa8\xe7\xbd\xb2"); // 数据库部署
   QCOMPARE(folders[0].toObject()[QStringLiteral("name")].toString(), expectedSubfolder);
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testConvertMigratesAttachmentsInChineseFolder() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  // Use UTF-8 escape sequences for Chinese folder name (养生)
+  const QString chineseFolder = QStringLiteral("\xe5\x85\xbb\xe7\x94\x9f");
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  // Create the Chinese-named subfolder and a .md file inside it.
+  base.mkpath(chineseFolder);
+  {
+    QFile f(base.filePath(chineseFolder + QStringLiteral("/noted.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with attachments in Chinese folder");
+    f.close();
+  }
+
+  // Source attachment dir inside the Chinese folder:
+  // 养生/vx_attachments/434314329027059/report.pdf
+  base.mkpath(chineseFolder + QStringLiteral("/vx_attachments/434314329027059"));
+  {
+    QFile f(base.filePath(
+        chineseFolder + QStringLiteral("/vx_attachments/434314329027059/report.pdf")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("fake pdf data for Chinese folder attachment test");
+    f.close();
+  }
+
+  // Root vx.json lists the Chinese folder
+  QJsonObject folderEntry;
+  folderEntry[QStringLiteral("name")] = chineseFolder;
+  QJsonArray foldersArr;
+  foldersArr.append(folderEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = QJsonArray();
+  rootVx[QStringLiteral("folders")] = foldersArr;
+  writeVxJson(sourceDir.path(), rootVx);
+
+  // Chinese folder's vx.json lists the file with attachment_folder
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("noted.md");
+  fileEntry[QStringLiteral("attachment_folder")] = QStringLiteral("434314329027059");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject subVx;
+  subVx[QStringLiteral("files")] = filesArr;
+  subVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(base.filePath(chineseFolder), subVx);
+
+  QString destPath = m_tempDir.filePath(QStringLiteral("chinese_attach_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  // Build the relative file path as the migration service would
+  const QString relFilePath = chineseFolder + QStringLiteral("/noted.md");
+
+  // Verify attachment listed in metadata.
+  QJsonArray attachments = m_notebookService->listAttachments(nbId, relFilePath);
+  QStringList attachNames;
+  for (const QJsonValue &v : attachments) {
+    attachNames.append(v.toString());
+  }
+  QVERIFY2(
+      attachNames.contains(QStringLiteral("report.pdf")),
+      qPrintable(QStringLiteral("Attachment 'report.pdf' missing. Got: %1")
+                     .arg(attachNames.join(QStringLiteral(", ")))));
+
+  // Verify the attachment folder path contains the Chinese folder name (not garbled).
+  QString attachDir = m_notebookService->getAttachmentsFolder(nbId, relFilePath);
+  QVERIFY2(!attachDir.isEmpty(), "getAttachmentsFolder returned empty");
+  QVERIFY2(attachDir.contains(chineseFolder),
+           qPrintable(QStringLiteral(
+               "Attachment dir should contain Chinese folder name '%1' but got: %2")
+                          .arg(chineseFolder, attachDir)));
+
+  // Verify file exists on disk in dest.
+  QVERIFY2(QFile::exists(attachDir + QStringLiteral("/report.pdf")),
+           qPrintable(QStringLiteral("report.pdf not on disk at: %1").arg(attachDir)));
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
