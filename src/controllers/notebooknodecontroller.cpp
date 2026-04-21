@@ -157,6 +157,14 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
 
   menu->addSeparator();
 
+  // Ignore action - adds this node's name to the ignored list
+  auto *ignoreAction = menu->addAction(tr("&Ignore"));
+  connect(ignoreAction, &QAction::triggered, this, [this, p_nodeId]() {
+    emit ignoreRequested(p_nodeId);
+  });
+
+  menu->addSeparator();
+
   // Open Location action
   auto *locateAction = menu->addAction(tr("Open &Location"));
   connect(locateAction, &QAction::triggered, this,
@@ -323,13 +331,6 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
     if (!p_nodeId.isRoot() && isBundled) {
       auto *markAction = p_menu->addAction(tr("&Mark"));
       connect(markAction, &QAction::triggered, this, [this, p_nodeId]() { markNode(p_nodeId); });
-    }
-
-    if (!p_nodeId.isRoot()) {
-      auto *ignoreAction = p_menu->addAction(tr("&Ignore"));
-      connect(ignoreAction, &QAction::triggered, this, [this, p_nodeId]() {
-        emit ignoreRequested(p_nodeId);
-      });
     }
   }
 }
