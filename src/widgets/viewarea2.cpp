@@ -307,7 +307,15 @@ void ViewArea2::setupShortcuts() {
     }
   }
 
-  // OpenLastClosedFile — skipped: depends on legacy HistoryMgr singleton (not yet migrated).
+  // OpenLastClosedFile.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::OpenLastClosedFile), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this,
+              [this]() { m_controller->openLastClosedFile(); });
+    }
+  }
 }
 
 ViewAreaController *ViewArea2::getController() const { return m_controller; }
@@ -875,10 +883,16 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
     ownerSplit->takeViewWindow(win);
   }
 
+  // Capture state for "Open Last Closed File" before the window is destroyed.
+  ClosedTabRecord closedTab;
+  closedTab.nodeId = win->getNodeId();
+  closedTab.mode = win->getMode();
+  closedTab.cursorPosition = win->getCursorPosition();
+
   m_windows.remove(p_windowId);
   delete win;
 
-  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId);
+  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, closedTab);
   updateScreenVisibility();
   return true;
 }

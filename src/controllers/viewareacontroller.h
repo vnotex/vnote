@@ -19,6 +19,13 @@
 
 namespace vnotex {
 
+// Record of a closed tab, used for "Open Last Closed File" (Ctrl+Shift+T).
+struct ClosedTabRecord {
+  NodeIdentifier nodeId;
+  ViewWindowMode mode = ViewWindowMode::Read;
+  int cursorPosition = -1;
+};
+
 class ServiceLocator;
 class Buffer2;
 class BufferService;
@@ -77,8 +84,9 @@ public:
                           const FileOpenSettings &p_settings);
 
   // Called by the view after a window was successfully destroyed.
-  // Updates tracking state and emits windowsChanged.
-  void onViewWindowClosed(ID p_windowId, const QString &p_bufferId, const QString &p_workspaceId);
+  // Updates tracking state, records closed tab for reopen, and emits windowsChanged.
+  void onViewWindowClosed(ID p_windowId, const QString &p_bufferId, const QString &p_workspaceId,
+                          const ClosedTabRecord &p_closedTab = ClosedTabRecord());
 
   // Request to close the view window identified by p_windowId.
   // Fires the before-close hook (cancellable). On success, calls
@@ -104,6 +112,11 @@ public:
   // @p_referenceTabIndex: the right-clicked tab index (for Others/Left/Right reference).
   // @p_mode: which tabs to close (All, Others, ToTheLeft, ToTheRight).
   void closeTabs(const QString &p_workspaceId, int p_referenceTabIndex, CloseTabMode p_mode);
+
+  // Reopen the most recently closed file tab.
+  // Pops the top entry from the closed-tab stack and opens it via BufferService.
+  // Does nothing if the stack is empty.
+  void openLastClosedFile();
 
   // ============ Split Operations ============
 
@@ -270,6 +283,11 @@ private:
   // Set during bulk close operations (removeWorkspace, closeAll) where
   // the caller manages workspace lifecycle explicitly.
   bool m_suppressAutoRemove = false;
+
+  // Stack of recently closed tabs for "Open Last Closed File" (Ctrl+Shift+T).
+  // Most recent close is at the back (push_back / pop_back).
+  static constexpr int c_maxClosedTabRecords = 20;
+  QVector<ClosedTabRecord> m_closedTabStack;
 
   // Owns all WorkspaceWrapper instances. Each workspace known to the controller
   // has an entry here. Hidden workspaces cache their ViewWindows in the wrapper.

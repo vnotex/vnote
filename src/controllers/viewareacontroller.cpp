@@ -216,7 +216,17 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
 }
 
 void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
-                                            const QString &p_workspaceId) {
+                                            const QString &p_workspaceId,
+                                            const ClosedTabRecord &p_closedTab) {
+  // Record closed tab for "Open Last Closed File" (skip during session restore/shutdown
+  // and skip virtual buffers which have no valid NodeIdentifier).
+  if (m_shouldPropagateToCore && p_closedTab.nodeId.isValid()) {
+    if (m_closedTabStack.size() >= c_maxClosedTabRecords) {
+      m_closedTabStack.removeFirst();
+    }
+    m_closedTabStack.append(p_closedTab);
+  }
+
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (m_shouldPropagateToCore) {
     if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty()) {
@@ -442,6 +452,37 @@ void ViewAreaController::closeTabs(const QString &p_workspaceId, int p_reference
     }
   }
   m_suppressAutoRemove = false;
+}
+
+void ViewAreaController::openLastClosedFile() {
+  if (m_closedTabStack.isEmpty()) {
+    return;
+  }
+
+  ClosedTabRecord record = m_closedTabStack.takeLast();
+
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
+    qWarning() << "ViewAreaController::openLastClosedFile: BufferService unavailable";
+    return;
+  }
+
+  FileOpenSettings settings;
+  settings.m_mode = record.mode;
+  settings.m_lineNumber = record.cursorPosition;
+  settings.m_focus = true;
+
+  qDebug() << "ViewAreaController::openLastClosedFile: reopening"
+           << record.nodeId.notebookId << record.nodeId.relativePath
+           << "mode:" << static_cast<int>(record.mode)
+           << "cursor:" << record.cursorPosition;
+
+  // BufferService::openBuffer fires FileAfterOpen hook, which triggers
+  // onFileAfterOpen() -> openBuffer() to create the ViewWindow2.
+  Buffer2 buf = bufferSvc->openBuffer(record.nodeId, settings);
+  if (!buf.isValid()) {
+    qWarning() << "ViewAreaController::openLastClosedFile: failed to reopen buffer";
+  }
 }
 
 void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction) {
