@@ -35,6 +35,7 @@ target_sources(vnote PRIVATE
     dialogs/newsnippetdialog2.cpp dialogs/newsnippetdialog2.h
     dialogs/newtagdialog.cpp dialogs/newtagdialog.h
     dialogs/nodeinfowidget.cpp dialogs/nodeinfowidget.h
+    dialogs/nodepropertiesdialog2.cpp dialogs/nodepropertiesdialog2.h
     dialogs/notebookinfowidget.cpp dialogs/notebookinfowidget.h
     dialogs/notepropertiesdialog.cpp dialogs/notepropertiesdialog.h
     dialogs/notetemplateselector.cpp dialogs/notetemplateselector.h
