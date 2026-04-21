@@ -135,6 +135,21 @@ bool NotebookCoreService::rebuildNotebookCache(const QString &p_notebookId) {
   return true;
 }
 
+QJsonArray NotebookCoreService::getHistoryResolved(const QString &p_notebookId) const {
+  if (!checkContext()) {
+    return QJsonArray();
+  }
+
+  char *json = nullptr;
+  VxCoreError err =
+      vxcore_notebook_history_get_resolved(m_context, p_notebookId.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    qWarning() << "getHistoryResolved failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonArray();
+  }
+  return parseJsonArrayFromCStr(json);
+}
+
 QJsonObject NotebookCoreService::resolvePathToNotebook(const QString &p_absolutePath) const {
   if (!checkContext()) {
     return QJsonObject();

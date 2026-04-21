@@ -42,6 +42,9 @@ public:
   bool updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);
   bool rebuildNotebookCache(const QString &p_notebookId);
 
+  // History operations.
+  QJsonArray getHistoryResolved(const QString &p_notebookId) const;
+
   // Resolve an absolute path to its containing notebook.
   // Returns JSON with "notebookId" and "relativePath" keys.
   // Returns empty object if path is not within any open notebook.
