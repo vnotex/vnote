@@ -10,6 +10,7 @@ add_qt_test(test_findunitedentry
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentryalias.h
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentrymgr.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/historyunitedentry.h
     stubs_findunitedentry.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
   LINKS

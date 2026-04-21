@@ -8,6 +8,7 @@
 #include <gui/utils/iconutils.h>
 #include <unitedentry/entrywidgetfactory.h>
 #include <unitedentry/helpunitedentry.h>
+#include <unitedentry/historyunitedentry.h>
 #include <unitedentry/unitedentryalias.h>
 #include <unitedentry/unitedentryhelper.h>
 #include <utils/utils.h>
@@ -107,3 +108,17 @@ void Utils::sleepWait(int) {}
 void TreeWidget::selectParentItem(QTreeWidget *) {}
 
 bool TreeWidget::isExpanded(const QTreeWidget *) { return false; }
+
+HistoryUnitedEntry::HistoryUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                                       QObject *p_parent)
+    : IUnitedEntry(QStringLiteral("history"), QString(), p_mgr, p_parent), m_services(p_services),
+      m_helper(nullptr) {}
+
+QSharedPointer<QWidget> HistoryUnitedEntry::currentPopupWidget() const { return {}; }
+
+void HistoryUnitedEntry::initOnFirstProcess() {}
+
+void HistoryUnitedEntry::processInternal(
+    const QString &, const std::function<void(const QSharedPointer<QWidget> &)> &) {
+  emit finished();
+}

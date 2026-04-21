@@ -2,6 +2,7 @@
 
 #include "findunitedentry.h"
 #include "helpunitedentry.h"
+#include "historyunitedentry.h"
 #include "unitedentryalias.h"
 
 #include <core/configmgr2.h>
@@ -23,6 +24,8 @@ void UnitedEntryMgr::init() {
   addEntry(QSharedPointer<FindUnitedEntry>::create(m_services, this));
 
   addEntry(QSharedPointer<HelpUnitedEntry>::create(m_services, this));
+
+  addEntry(QSharedPointer<HistoryUnitedEntry>::create(m_services, this));
 
   // Alias from config.
   const auto &config = m_services.get<ConfigMgr2>()->getCoreConfig();

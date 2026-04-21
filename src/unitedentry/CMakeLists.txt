@@ -3,6 +3,7 @@ target_sources(vnote PRIVATE
     entrywidgetfactory.cpp entrywidgetfactory.h
     findunitedentry.cpp findunitedentry.h
     helpunitedentry.cpp helpunitedentry.h
+    historyunitedentry.cpp historyunitedentry.h
     iunitedentry.cpp iunitedentry.h
     unitedentry.cpp unitedentry.h
     unitedentryalias.cpp unitedentryalias.h
