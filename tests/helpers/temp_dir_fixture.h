@@ -2,7 +2,9 @@
 #define TEMP_DIR_FIXTURE_H
 
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
+#include <QFileInfo>
 #include <QString>
 #include <QTemporaryDir>
 
@@ -45,7 +47,34 @@ public:
   // Check if the fixture is valid
   bool isValid() const { return m_dir.isValid(); }
 
+  // Copies a source directory tree into the temp directory under p_destName.
+  // If p_destName is empty, uses the source directory's basename.
+  // Returns the full path to the copy inside the temp directory.
+  QString copyFrom(const QString &p_sourceDir, const QString &p_destName = QString()) {
+    QString destName = p_destName.isEmpty() ? QFileInfo(p_sourceDir).fileName() : p_destName;
+    QString destPath = filePath(destName);
+    copyDirRecursive(p_sourceDir, destPath);
+    return destPath;
+  }
+
 private:
+  static void copyDirRecursive(const QString &p_src, const QString &p_dest) {
+    QDir srcDir(p_src);
+    if (!srcDir.exists()) {
+      return;
+    }
+    QDir().mkpath(p_dest);
+    const auto entries =
+        srcDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QFileInfo &fi : entries) {
+      const QString destPath = p_dest + QStringLiteral("/") + fi.fileName();
+      if (fi.isDir()) {
+        copyDirRecursive(fi.absoluteFilePath(), destPath);
+      } else {
+        QFile::copy(fi.absoluteFilePath(), destPath);
+      }
+    }
+  }
   QTemporaryDir m_dir;
 };
 

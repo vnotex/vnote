@@ -1,0 +1,10 @@
+{
+    "attachment_folder": "vx_attachments",
+    "config_mgr": "vx.vnotex",
+    "created_time": "2020-09-25T00:41:55Z",
+    "description": "",
+    "image_folder": "vx_images",
+    "name": "Database Notebook",
+    "version": 3,
+    "version_controller": "dummy"
+}

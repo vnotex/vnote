@@ -88,7 +88,13 @@ private slots:
   void testConvertMalformedTagGraphPairsSkipped();
   void testConvertPreservesMultiLevelTagGraph();
 
+  // Regression: 17-file folder with Chinese filenames and subfolder
+  void testConvertFolderWith17FilesAndSubfolder();
+
 private:
+  // Returns absolute path to a test data fixture, or empty string if not found.
+  QString findFixture(const QString &p_relPath);
+
   void writeNotebookConfig(const QString &p_basePath, const QByteArray &p_content);
   QByteArray makeConfigJson(const QJsonObject &p_overrides = QJsonObject());
   void buildSyntheticSourceTree(const QString &p_basePath);
@@ -457,6 +463,12 @@ void TestVNote3MigrationService::writeVxJson(const QString &p_dirPath,
   QVERIFY(f.open(QIODevice::WriteOnly));
   f.write(QJsonDocument(p_content).toJson(QJsonDocument::Compact));
   f.close();
+}
+
+QString TestVNote3MigrationService::findFixture(const QString &p_relPath) {
+  // QFINDTESTDATA searches relative to the source file directory (via
+  // QT_TESTCASE_SOURCEDIR set automatically by Qt6 CMake integration).
+  return QFINDTESTDATA(p_relPath);
 }
 
 // --- Helper: create a synthetic VNote3 source with specific names ---
@@ -2021,6 +2033,74 @@ void TestVNote3MigrationService::testConvertPreservesMultiLevelTagGraph() {
 
   QVERIFY2(parentMap.contains(QStringLiteral("ok")), "ok not found");
   QCOMPARE(parentMap[QStringLiteral("ok")], QStringLiteral("tag55"));
+
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
+  // Regression test: real-world VNote3 notebook with 17 files (Chinese filenames),
+  // 3 files with attachment_folder, and 1 subfolder.
+  // Uses on-disk fixture from tests/data/ instead of hardcoded JSON.
+  const QString fixturePath =
+      findFixture(QStringLiteral("../data/vnote3_notebooks/database_notebook"));
+  if (fixturePath.isEmpty()) {
+    QSKIP("Test fixture 'database_notebook' not found");
+  }
+
+  // Copy fixture to a temp dir so the source tree stays clean.
+  TempDirFixture workDir;
+  QVERIFY(workDir.isValid());
+  const QString sourcePath = workDir.copyFrom(fixturePath, QStringLiteral("source"));
+  QVERIFY2(QDir(sourcePath).exists(), "Failed to copy fixture");
+
+  // Run conversion.
+  const QString destPath = m_tempDir.filePath(QStringLiteral("legacy17_dest"));
+  auto result = m_service->convertNotebook(sourcePath, destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Verify all 17 files are migrated on disk.
+  const QStringList expectedFiles = {
+      QStringLiteral("cache.md"),
+      QStringLiteral("DB2.md"),
+      QStringLiteral("hbase.md"),
+      QStringLiteral("hive.md"),
+      QStringLiteral("mysql.md"),
+      QStringLiteral("oracle.md"),
+      QStringLiteral("sqlserver.md"),
+      // Chinese filenames — use UTF-8 escape sequences for portability.
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x85\x8d\xe7\xbd\xae.md"),           // 数据库配置.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xa4\x84\xe7\x90\x86.md"),                       // 数据处理.md
+      QStringLiteral("\xe5\x9b\xbd\xe4\xba\xa7\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93.md"),           // 国产数据库.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\x8e\xaf\xe5\xa2\x83\xe8\xae\xb0\xe5\xbd\x95.md"), // 数据库环境记录.md
+      QStringLiteral("SQL\xe8\xaf\xad\xe6\xb3\x95.md"),                                             // SQL语法.md
+      QStringLiteral("\xe7\xbb\x91\xe5\xae\x9a\xe5\x8f\x98\xe9\x87\x8f.md"),                       // 绑定变量.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\xac\x94\xe8\xae\xb0.md"),           // 数据库笔记.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\x9f\xba\xe7\xa1\x80.md"),           // 数据库基础.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\xae\xa1\xe8\xae\xa1\xe8\xaf\x84\xe6\xb5\x8b.md"), // 数据库审计评测.md
+      QStringLiteral("\xe8\xa7\x92\xe8\x89\xb2\xe4\xb8\x8e\xe6\x9d\x83\xe9\x99\x90.md"),           // 角色与权限.md
+  };
+
+  for (const QString &name : expectedFiles) {
+    QVERIFY2(pathExistsInNotebook(destPath, name),
+             qPrintable(QStringLiteral("File not migrated: %1").arg(name)));
+  }
+
+  // Open notebook and verify via NotebookCoreService.
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+
+  QJsonObject children = m_notebookService->listFolderChildren(nbId, QString());
+  QJsonArray files = children[QStringLiteral("files")].toArray();
+  QJsonArray folders = children[QStringLiteral("folders")].toArray();
+
+  // Should have exactly 17 files and 1 folder at root.
+  QCOMPARE(files.size(), 17);
+  QCOMPARE(folders.size(), 1);
+
+  // Verify the subfolder name.
+  const QString expectedSubfolder =
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x83\xa8\xe7\xbd\xb2"); // 数据库部署
+  QCOMPARE(folders[0].toObject()[QStringLiteral("name")].toString(), expectedSubfolder);
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }

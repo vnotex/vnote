@@ -10,7 +10,10 @@ tests/
 ├── helpers/
 │   ├── CMakeLists.txt
 │   ├── test_helper.h       # Common includes
-│   └── temp_dir_fixture.h  # QTemporaryDir wrapper
+│   └── temp_dir_fixture.h  # QTemporaryDir wrapper (+ copyFrom() for fixtures)
+├── data/                   # On-disk test fixtures (see "Test Data Fixtures" below)
+│   └── vnote3_notebooks/
+│       └── database_notebook/  # Real VNote3 notebook with 17 files + subfolder
 ├── core/
 │   ├── CMakeLists.txt
 │   ├── test_error.cpp
@@ -18,7 +21,8 @@ tests/
 │   ├── test_configservice.cpp
 │   ├── test_notebookservice.cpp
 │   ├── test_bufferservice.cpp   # BufferCoreService tests
-│   └── test_buffer.cpp          # Buffer2 + BufferService integration tests (29 cases)
+│   ├── test_buffer.cpp          # Buffer2 + BufferService integration tests (29 cases)
+│   └── test_vnote3migrationservice.cpp  # VNote3 migration tests (46 cases)
 └── utils/
     ├── CMakeLists.txt
     ├── test_pathutils.cpp
@@ -148,6 +152,58 @@ add_qt_test(test_myclass
 | `QSKIP("reason")` | Skip test |
 | `QTest::ignoreMessage(type, msg)` | Suppress expected qDebug/qWarning/qCritical |
 
+## Test Data Fixtures
+
+Tests that need realistic directory structures (e.g., legacy notebook migration) use on-disk fixtures under `tests/data/` instead of hardcoding JSON and file creation in C++.
+
+### Pattern
+
+1. **Create fixture directory** under `tests/data/` with real files on disk
+2. **Locate at runtime** using `QFINDTESTDATA` (works out of the box with Qt6+CMake)
+3. **Copy to temp dir** using `TempDirFixture::copyFrom()` for test isolation
+
+### Example
+
+```cpp
+// In your test class
+QString findFixture(const QString &p_relPath) {
+  // Path is relative to the test source file
+  QString path = QFINDTESTDATA(p_relPath);
+  QVERIFY2_RETURN(!path.isEmpty(),
+    qPrintable(QStringLiteral("Fixture not found: %1").arg(p_relPath)),
+    QString());
+  return path;
+}
+
+void TestMyService::testWithFixture() {
+  // Locate fixture (relative to this .cpp file's directory)
+  QString fixturePath = findFixture(
+    QStringLiteral("../data/vnote3_notebooks/database_notebook"));
+  QVERIFY2(!fixturePath.isEmpty(), "Fixture not found");
+
+  // Copy to isolated temp dir
+  TempDirFixture workDir;
+  QString sourceDir = workDir.copyFrom(fixturePath, QStringLiteral("source"));
+  QVERIFY2(!sourceDir.isEmpty(), "Failed to copy fixture");
+
+  // Test against the copy
+  // ...
+}
+```
+
+### Adding New Fixtures
+
+1. Create directory under `tests/data/` with descriptive name
+2. Add all files the test needs (stubs are fine — content doesn't have to be real)
+3. For Chinese/Unicode filenames, the files must exist on disk with those names
+4. No CMake changes needed — `QFINDTESTDATA` resolves paths automatically via `QT_TESTCASE_SOURCEDIR`
+
+### Existing Fixtures
+
+| Fixture | Path | Description |
+|---------|------|-------------|
+| database_notebook | `tests/data/vnote3_notebooks/database_notebook/` | VNote3 notebook with 17 files (Chinese + ASCII), 1 subfolder, 3 attachment dirs |
+
 ## Current Test Coverage
 
 | Test | Class | Test Cases |
@@ -161,6 +217,7 @@ add_qt_test(test_myclass
 | test_notebookservice | `NotebookCoreService` | 33 |
 | test_bufferservice | `BufferCoreService` | - |
 | test_buffer | `Buffer2` + `BufferService` | 29 |
+| test_vnote3migrationservice | `VNote3MigrationService` | 46 |
 | test_searchservice | `SearchCoreService` | - |
 | test_servicelocator | `ServiceLocator` | - |
 | test_configmgr2 | `ConfigMgr2` | - |
