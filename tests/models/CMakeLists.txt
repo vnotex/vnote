@@ -28,3 +28,13 @@ add_qt_test(test_snippetmodel
     vxcore
   GUILESS
 )
+
+add_qt_test(test_historylistmodel
+  SOURCES
+    test_historylistmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

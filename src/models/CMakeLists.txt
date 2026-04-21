@@ -6,6 +6,7 @@ target_sources(vnote PRIVATE
     searchresultmodel.cpp searchresultmodel.h
     outlinemodel.cpp outlinemodel.h
     tagfilemodel.cpp tagfilemodel.h
+    historylistmodel.cpp historylistmodel.h
     tagmodel.cpp tagmodel.h
     attachmentlistmodel.cpp attachmentlistmodel.h
     snippetlistmodel.cpp snippetlistmodel.h
