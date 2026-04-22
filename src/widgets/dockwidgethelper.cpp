@@ -99,6 +99,7 @@ void DockWidgetHelper::setupDocks() {
     tabifiedDockIndex.append(DockType::NavigationDock);
   }
 
+  // Deprecated.
   if (setupDock(DockType::HistoryDock, tr("History"), QStringLiteral("HistoryDock.vnotex"),
                 Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
     tabifiedDockIndex.append(DockType::HistoryDock);
@@ -110,7 +111,7 @@ void DockWidgetHelper::setupDocks() {
   }
 
   if (setupDock(DockType::SearchDock, tr("Search"), QStringLiteral("SearchDock.vnotex"),
-                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, false)) {
+                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
     tabifiedDockIndex.append(DockType::SearchDock);
   }
 

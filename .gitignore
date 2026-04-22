@@ -29,3 +29,5 @@ specs
 plans
 
 tmp
+test_*
+resulte.txt
