@@ -5,7 +5,6 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QCursor>
-#include <QDebug>
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -84,7 +83,7 @@ void UnitedEntry::setupUI() {
   setupActions();
 
   m_popup = new EntryPopup();
-  m_popup->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+  m_popup->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
   m_popup->setAttribute(Qt::WA_ShowWithoutActivating);
   m_popup->installEventFilter(this);
   m_popup->hide();
@@ -388,7 +387,9 @@ void UnitedEntry::processInput() {
 void UnitedEntry::popupWidget(const QSharedPointer<QWidget> &p_widget) {
   m_popup->setWidget(p_widget);
   updatePopupGeometry();
-  m_popup->show();
+  if (!m_popup->isVisible()) {
+    m_popup->show();
+  }
 }
 
 const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget() {
@@ -550,9 +551,24 @@ void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
     }
   }
 
-  if (m_activated && (!p_now || (p_now != m_comboBox && p_now != m_comboBox->lineEdit() &&
-                                  !WidgetUtils::isOrAncestorOf(m_popup, p_now)))) {
-    deactivate();
+  if (m_activated && p_now && p_now != m_comboBox && p_now != m_comboBox->lineEdit() &&
+      !WidgetUtils::isOrAncestorOf(m_popup, p_now)) {
+    if (m_deactivatePending) {
+      return;
+    }
+    m_deactivatePending = true;
+    QTimer::singleShot(0, this, [this]() {
+      m_deactivatePending = false;
+      if (!m_activated) {
+        return;
+      }
+      auto *fw = QApplication::focusWidget();
+      if (fw == m_comboBox || fw == m_comboBox->lineEdit()
+          || WidgetUtils::isOrAncestorOf(m_popup, fw)) {
+        return;
+      }
+      deactivate();
+    });
   }
 }
 

@@ -91,6 +91,8 @@ private:
 
   bool m_activated = false;
 
+  bool m_deactivatePending = false;
+
   QWidget *m_previousFocusWidget = nullptr;
 
   QTimer *m_processTimer = nullptr;
