@@ -296,6 +296,7 @@ void CoreConfig::initDefaults() {
   QJsonArray aliases;
   aliases.append(makeAlias(QStringLiteral("n"), QStringLiteral("Search for files by name in current notebook"), QStringLiteral("find --scope notebook --object name")));
   aliases.append(makeAlias(QStringLiteral("g"), QStringLiteral("Search for files by content in current notebook"), QStringLiteral("find --scope notebook --object content")));
-  aliases.append(makeAlias(QStringLiteral("b"), QStringLiteral("Search for files by content in open buffers"), QStringLiteral("find --scope buffer --object content")));
+    aliases.append(makeAlias(QStringLiteral("b"), QStringLiteral("Search for files by content in open buffers"), QStringLiteral("find --scope buffer --object content")));
+    aliases.append(makeAlias(QStringLiteral("f"), QStringLiteral("Search for files by name in current folder"), QStringLiteral("find --scope folder --object name")));
   m_unitedEntryAlias = aliases;
 }
