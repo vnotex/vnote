@@ -314,7 +314,7 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
     QString nbType = nbConfig.value(QStringLiteral("type")).toString();
     bool isBundled = (nbType == QStringLiteral("bundled"));
     if (isBundled) {
-      auto *tagAction = p_menu->addAction(tr("Manage &Tags"));
+      auto *tagAction = p_menu->addAction(tr("&Tags"));
       connect(tagAction, &QAction::triggered, this,
               [this, p_nodeId]() { manageNodeTags(p_nodeId); });
     }
@@ -783,8 +783,7 @@ void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &p_nodeId
 }
 
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
-  Q_UNUSED(p_nodeId);
-  emit infoMessage(tr("Tags"), tr("Tag management not yet implemented."));
+  emit manageTagsRequested(p_nodeId);
 }
 
 bool NotebookNodeController::canPaste() const { return !m_clipboard->nodes.isEmpty(); }

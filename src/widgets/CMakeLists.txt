@@ -68,6 +68,7 @@ target_sources(vnote PRIVATE
     dialogs/tableinsertdialog.cpp dialogs/tableinsertdialog.h
     dialogs/updater.cpp dialogs/updater.h
     dialogs/viewtagsdialog.cpp dialogs/viewtagsdialog.h
+    dialogs/viewtagsdialog2.cpp dialogs/viewtagsdialog2.h
     dockwidgethelper.cpp dockwidgethelper.h
     dragdropareaindicator.cpp dragdropareaindicator.h
     editors/graphhelper.cpp editors/graphhelper.h

@@ -90,6 +90,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::markRequested);
   connect(m_controller, &NotebookNodeController::ignoreRequested, this,
           &CombinedNodeExplorer::ignoreRequested);
+  connect(m_controller, &NotebookNodeController::manageTagsRequested, this,
+          &CombinedNodeExplorer::manageTagsRequested);
 
   // Status signals
   connect(m_controller, &NotebookNodeController::errorOccurred, this,

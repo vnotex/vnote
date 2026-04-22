@@ -130,6 +130,8 @@ signals:
 
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 
+  void manageTagsRequested(const NodeIdentifier &p_nodeId);
+
 public:
   // Get the parent folder path for a node
   NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;

@@ -123,6 +123,8 @@ signals:
   void markRequested(const NodeIdentifier &p_nodeId);
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 
+  void manageTagsRequested(const NodeIdentifier &p_nodeId);
+
   // === Status signals ===
   void errorOccurred(const QString &p_title, const QString &p_message);
   void infoMessage(const QString &p_title, const QString &p_message);

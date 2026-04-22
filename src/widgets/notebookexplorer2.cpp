@@ -52,6 +52,7 @@
 #include <widgets/dialogs/nodepropertiesdialog2.h>
 #include <widgets/dialogs/openvnote3notebookdialog2.h>
 #include <widgets/dialogs/selectdialog.h>
+#include <widgets/dialogs/viewtagsdialog2.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 #include <widgets/notebookselector2.h>
@@ -505,6 +506,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onMarkRequested);
   connect(explorer, &CombinedNodeExplorer::ignoreRequested, this,
           &NotebookExplorer2::onIgnoreRequested);
+  connect(explorer, &CombinedNodeExplorer::manageTagsRequested, this,
+          &NotebookExplorer2::onManageTagsRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -539,6 +542,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onMarkRequested);
   connect(explorer, &TwoColumnsNodeExplorer::ignoreRequested, this,
           &NotebookExplorer2::onIgnoreRequested);
+  connect(explorer, &TwoColumnsNodeExplorer::manageTagsRequested, this,
+          &NotebookExplorer2::onManageTagsRequested);
 
   m_nodeExplorer = explorer;
 }
@@ -1287,6 +1292,16 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId)
     parentId.relativePath = p_nodeId.parentPath();
     m_nodeExplorer->reloadNode(parentId);
   }
+}
+
+void NotebookExplorer2::onManageTagsRequested(const NodeIdentifier &p_nodeId)
+{
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+
+  ViewTagsDialog2 dialog(m_services, p_nodeId, window());
+  dialog.exec();
 }
 
 void NotebookExplorer2::onErrorOccurred(const QString &p_title, const QString &p_message) {
