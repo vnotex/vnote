@@ -1423,7 +1423,14 @@ void MarkdownViewWindow2::clearObsoleteImages() {
       continue;
     }
 
-    const bool deleteOk = buffer.deleteAsset(obsoleteUrl);
+    // obsoleteUrl is file-parent-relative (from markdown link).
+    // deleteAsset expects notebook-root-relative.
+    const auto parentPath = buffer.nodeId().parentPath();
+    const auto assetRelPath = parentPath.isEmpty()
+        ? obsoleteUrl
+        : QDir::cleanPath(parentPath + QStringLiteral("/") + obsoleteUrl);
+
+    const bool deleteOk = buffer.deleteAsset(assetRelPath);
     if (!deleteOk) {
       qWarning() << "MarkdownViewWindow2: failed to delete obsolete image:" << obsoleteUrl;
     }

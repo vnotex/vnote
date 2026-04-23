@@ -362,6 +362,13 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
       return false;
     }
     destFilePath = m_buffer2->insertAsset(p_srcImagePath);
+    // Convert relative asset path to absolute for getRelativeLink().
+    if (!destFilePath.isEmpty() && QDir::isRelativePath(destFilePath)) {
+      const auto assetsFolder = m_buffer2->getAssetsFolder();
+      if (!assetsFolder.isEmpty()) {
+        destFilePath = QDir(assetsFolder).filePath(QFileInfo(destFilePath).fileName());
+      }
+    }
     if (destFilePath.isEmpty()) {
       MessageBoxHelper::notify(
           MessageBoxHelper::Warning,
@@ -413,6 +420,13 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
     buffer.open(QIODevice::WriteOnly);
     p_image.save(&buffer, format.toStdString().c_str());
     destFilePath = m_buffer2->insertAssetRaw(destFileName, ba);
+    // Convert relative asset path to absolute for getRelativeLink().
+    if (!destFilePath.isEmpty() && QDir::isRelativePath(destFilePath)) {
+      const auto assetsFolder = m_buffer2->getAssetsFolder();
+      if (!assetsFolder.isEmpty()) {
+        destFilePath = QDir(assetsFolder).filePath(QFileInfo(destFilePath).fileName());
+      }
+    }
     if (destFilePath.isEmpty()) {
       MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to insert image from data."),
                                this);
@@ -864,7 +878,7 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path) {
   if (PathUtils::isLocalFile(p_path)) {
-    auto relativePath = PathUtils::relativePath(PathUtils::parentDirPath(m_contentPath), p_path);
+    auto relativePath = PathUtils::relativePath(m_contentPath, p_path);
     auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
     if (m_config.getPrependDotInRelativeLink()) {
       PathUtils::prependDotIfRelative(link);
