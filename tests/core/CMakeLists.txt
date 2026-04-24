@@ -22,7 +22,6 @@ add_qt_test(test_servicelocator
 add_qt_test(test_searchservice
   SOURCES
     test_searchservice.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
   LINKS
     core_services
     vxcore
@@ -198,6 +197,7 @@ add_qt_test(test_textviewwindowcontroller
     test_textviewwindowcontroller.cpp
     stubs_textviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
@@ -222,6 +222,7 @@ add_qt_test(test_pdfviewwindowcontroller
     test_pdfviewwindowcontroller.cpp
     stubs_textviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/pdfviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
@@ -245,6 +246,7 @@ add_qt_test(test_markdownviewwindowcontroller
     test_markdownviewwindowcontroller.cpp
     stubs_textviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdownviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
@@ -272,6 +274,7 @@ add_qt_test(test_markdowneditorcontroller
     test_markdowneditorcontroller.cpp
     stubs_textviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp

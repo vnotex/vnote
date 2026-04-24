@@ -25,6 +25,8 @@ OutlineViewer::OutlineViewer(ServiceLocator &p_services, const QString &p_title,
   setupUI(p_title);
 }
 
+OutlineViewer::~OutlineViewer() = default;
+
 void OutlineViewer::setupUI(const QString &p_title) {
   auto mainLayout = new QVBoxLayout(this);
   WidgetUtils::setContentsMargins(mainLayout);

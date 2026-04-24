@@ -3,6 +3,8 @@
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/mainconfig.h>
+#include <core/sessionconfig.h>
 #include <core/services/notebookcoreservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -90,6 +92,16 @@ QString ThemeService::paletteColor(const QString &) const { return QString(); }
 
 QIcon IconUtils::fetchIcon(const QString &p_iconFile, const QString &) { return QIcon(p_iconFile); }
 
+ConfigMgr2::~ConfigMgr2() = default;
+
+void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) { Q_UNUSED(p_jobj); }
+
+void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) { Q_UNUSED(p_jobj); }
+
+void ConfigMgr2::doWriteMainConfig() {}
+
+void ConfigMgr2::doWriteSessionConfig() {}
+
 CoreConfig &ConfigMgr2::getCoreConfig() {
   static CoreConfig *s = nullptr;
   Q_ASSERT_X(false, "stub", "ConfigMgr2::getCoreConfig() called in unit test");
@@ -100,8 +112,6 @@ const QJsonArray &CoreConfig::getUnitedEntryAlias() const {
   static QJsonArray s;
   return s;
 }
-
-QJsonArray NotebookCoreService::listNotebooks() const { return QJsonArray(); }
 
 void Utils::sleepWait(int) {}
 

@@ -6,6 +6,8 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
+#include <core/mainconfig.h>
+#include <core/sessionconfig.h>
 #include <gui/utils/widgetutils.h>
 
 #include <QAction>
@@ -14,6 +16,21 @@
 using namespace vnotex;
 
 // --- ConfigMgr2 stubs ---
+
+ConfigMgr2::~ConfigMgr2() = default;
+
+void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) {
+  Q_UNUSED(p_jobj);
+}
+
+void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) {
+  Q_UNUSED(p_jobj);
+}
+
+void ConfigMgr2::doWriteMainConfig() {}
+
+void ConfigMgr2::doWriteSessionConfig() {}
+
 
 CoreConfig &ConfigMgr2::getCoreConfig() {
   static CoreConfig *s = nullptr;
