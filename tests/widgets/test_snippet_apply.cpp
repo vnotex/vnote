@@ -33,6 +33,67 @@ void ViewWindow2::onAttachmentChanged(const QString &) {}
 
 void ViewWindow2::refreshToolBarIcons() {}
 
+QIcon ViewWindow2::getIcon() const { return {}; }
+
+QString ViewWindow2::getName() const { return {}; }
+
+QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return {}; }
+
+int ViewWindow2::getCursorPosition() const { return -1; }
+
+int ViewWindow2::getScrollPosition() const { return -1; }
+
+bool ViewWindow2::aboutToClose(bool) { return true; }
+
+void ViewWindow2::applySnippet(const QString &) {}
+
+void ViewWindow2::applySnippet() {}
+
+void ViewWindow2::clearHighlights() {}
+
+void ViewWindow2::applyFileOpenSettings(const FileOpenSettings &) {}
+
+void ViewWindow2::handleEditorConfigChange() {}
+
+void ViewWindow2::handleThemeChanged() {}
+
+void ViewWindow2::handleFindTextChanged(const QString &, FindOptions) {}
+
+void ViewWindow2::handleFindNext(const QStringList &, FindOptions) {}
+
+void ViewWindow2::handleReplace(const QString &, FindOptions, const QString &) {}
+
+void ViewWindow2::handleReplaceAll(const QString &, FindOptions, const QString &) {}
+
+void ViewWindow2::handleFindAndReplaceWidgetClosed() {}
+
+void ViewWindow2::handleFindAndReplaceWidgetOpened() {}
+
+void ViewWindow2::applyReadableWidth() {}
+
+void ViewWindow2::handleTypeAction(int) {}
+
+void ViewWindow2::fetchWordCountInfo(
+    const std::function<void(const WordCountInfo &)> &) const {}
+
+void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *) {}
+
+void ViewWindow2::handlePrint() {}
+
+void ViewWindow2::showFindAndReplaceWidget() {}
+
+QString ViewWindow2::selectedText() const { return {}; }
+
+QPoint ViewWindow2::getFloatingWidgetPosition() { return {}; }
+
+bool ViewWindow2::eventFilter(QObject *, QEvent *) { return false; }
+
+void ViewWindow2::keyPressEvent(QKeyEvent *) {}
+
+void ViewWindow2::wheelEvent(QWheelEvent *) {}
+
+void ViewWindow2::resizeEvent(QResizeEvent *) {}
+
 } // namespace vnotex
 
 namespace tests {

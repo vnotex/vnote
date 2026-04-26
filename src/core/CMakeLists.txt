@@ -77,7 +77,7 @@ target_sources(vnote PRIVATE
     notebookmgr.cpp notebookmgr.h
     pdfviewerconfig.cpp pdfviewerconfig.h
     quickaccesshelper.cpp quickaccesshelper.h
-    searchresulttypes.cpp searchresulttypes.h
+    searchresulttypes.h
     sessionconfig.cpp sessionconfig.h
     singleinstanceguard.cpp singleinstanceguard.h
     templatemgr.cpp templatemgr.h

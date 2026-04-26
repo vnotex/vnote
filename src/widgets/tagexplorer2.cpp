@@ -35,6 +35,8 @@ TagExplorer2::TagExplorer2(ServiceLocator &p_services, QWidget *p_parent)
   setupUI();
 }
 
+TagExplorer2::~TagExplorer2() = default;
+
 void TagExplorer2::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);

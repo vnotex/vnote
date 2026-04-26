@@ -21,6 +21,7 @@ class OutlineViewer : public QFrame {
 public:
   OutlineViewer(ServiceLocator &p_services, const QString &p_title,
                 QWidget *p_parent = nullptr);
+  ~OutlineViewer() override;
 
   void setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider);
 

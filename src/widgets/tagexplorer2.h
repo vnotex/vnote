@@ -31,7 +31,7 @@ class TagExplorer2 : public QFrame, private Noncopyable {
 
 public:
   explicit TagExplorer2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
-  ~TagExplorer2() override = default;
+  ~TagExplorer2() override;
 
   void setNotebookId(const QString &p_notebookId);
 
