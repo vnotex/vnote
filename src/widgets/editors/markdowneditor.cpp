@@ -1158,42 +1158,34 @@ static QString purifyImageTitle(QString p_title) {
 }
 
 void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
-  auto regs = vte::MarkdownUtils::fetchImageRegionsViaParser(p_text);
-  if (regs.isEmpty()) {
+  auto infos = vte::MarkdownUtils::fetchImageInfoViaCmark(p_text);
+  if (infos.isEmpty()) {
     return;
   }
 
-  // Sort it in ascending order.
-  std::sort(regs.begin(), regs.end());
-
-  QProgressDialog proDlg(tr("Fetching images to local..."), tr("Abort"), 0, regs.size(), this);
+  QProgressDialog proDlg(tr("Fetching images to local..."), tr("Abort"), 0, infos.size(), this);
   proDlg.setWindowModality(Qt::WindowModal);
   proDlg.setWindowTitle(tr("Fetch Images To Local"));
 
   QRegularExpression zhihuRegExp("^https?://www\\.zhihu\\.com/equation\\?tex=(.+)$");
 
-  QRegularExpression regExp(QStringLiteral("\\!\\[([^\\[\\]]*)\\]"
-                                           "\\(\\s*"
-                                           "([^\\)\"'\\s]+)"
-                                           "(\\s*(\"[^\"\\)\\n\\r]*\")|('[^'\\)\\n\\r]*'))?"
-                                           "\\s*\\)"));
-  for (int i = regs.size() - 1; i >= 0; --i) {
-    proDlg.setValue(regs.size() - 1 - i);
+  for (int i = infos.size() - 1; i >= 0; --i) {
+    proDlg.setValue(infos.size() - 1 - i);
     if (proDlg.wasCanceled()) {
       break;
     }
 
-    const auto &reg = regs[i];
-    QString linkText = p_text.mid(reg.m_startPos, reg.m_endPos - reg.m_startPos);
-    QRegularExpressionMatch match;
-    if (linkText.indexOf(regExp, 0, &match) == -1) {
+    const auto &info = infos[i];
+    if (info.m_urlPos < 0 || info.m_regionStart < 0 || info.m_regionEnd < 0
+        || info.m_url.isEmpty()) {
       continue;
     }
 
-    qDebug() << "fetching image link" << linkText;
+    const QString imageTitle = purifyImageTitle(info.m_alt.trimmed());
+    QString imageUrl = info.m_url;
 
-    const QString imageTitle = purifyImageTitle(match.captured(1).trimmed());
-    QString imageUrl = match.captured(2).trimmed();
+    qDebug() << "fetching image link" << p_text.mid(info.m_regionStart,
+                                                     info.m_regionEnd - info.m_regionStart);
 
     const int maxUrlLength = 100;
     QString urlToDisplay(imageUrl);
@@ -1216,21 +1208,21 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
       }
 
       tex = "$" + tex + "$";
-      p_text.replace(reg.m_startPos, reg.m_endPos - reg.m_startPos, tex);
+      p_text.replace(info.m_regionStart, info.m_regionEnd - info.m_regionStart, tex);
       continue;
     }
 
     // Only handle absolute file path or network path.
     QString srcImagePath;
-    QFileInfo info(WebUtils::purifyUrl(imageUrl));
+    QFileInfo fileInfo(WebUtils::purifyUrl(imageUrl));
 
     // For network image.
     QScopedPointer<QTemporaryFile> tmpFile;
 
-    if (info.exists()) {
-      if (info.isAbsolute()) {
+    if (fileInfo.exists()) {
+      if (fileInfo.isAbsolute()) {
         // Absolute local path.
-        srcImagePath = info.absoluteFilePath();
+        srcImagePath = fileInfo.absoluteFilePath();
       }
     } else {
       // Network path.
@@ -1243,9 +1235,9 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
         // Prefer the suffix from the real data.
         auto suffix = ImageUtils::guessImageSuffix(data);
         if (suffix.isEmpty()) {
-          suffix = info.suffix();
-        } else if (info.suffix() != suffix) {
-          qWarning() << "guess a different suffix from image data" << info.suffix() << suffix;
+          suffix = fileInfo.suffix();
+        } else if (fileInfo.suffix() != suffix) {
+          qWarning() << "guess a different suffix from image data" << fileInfo.suffix() << suffix;
         }
         tmpFile.reset(FileUtils::createTemporaryFile(suffix));
         if (tmpFile->open() && tmpFile->write(data) > -1) {
@@ -1270,12 +1262,15 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
     }
 
     // Replace URL in link.
-    QString newLink = QStringLiteral("![%1](%2%3)")
-                          .arg(imageTitle, urlInLink, match.captured(3));
-    p_text.replace(reg.m_startPos, reg.m_endPos - reg.m_startPos, newLink);
+    QString titleText;
+    if (!info.m_title.isEmpty()) {
+      titleText = QStringLiteral(" \"%1\"").arg(info.m_title);
+    }
+    QString newLink = QStringLiteral("![%1](%2%3)").arg(imageTitle, urlInLink, titleText);
+    p_text.replace(info.m_regionStart, info.m_regionEnd - info.m_regionStart, newLink);
   }
 
-  proDlg.setValue(regs.size());
+  proDlg.setValue(infos.size());
 }
 
 static bool updateHeadingSectionNumber(QTextCursor &p_cursor, const QTextBlock &p_block,
