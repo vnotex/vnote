@@ -278,12 +278,11 @@ void MarkdownEditor::typeImage() {
   enterInsertModeIfApplicable();
   if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
     insertImageToBufferFromLocalFile(dialog.getImageTitle(), dialog.getImageAltText(),
-                                     dialog.getImagePath(), dialog.getScaledWidth());
+                                     dialog.getImagePath());
   } else {
     auto image = dialog.getImage();
     if (!image.isNull()) {
-      insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
-                                  dialog.getScaledWidth());
+      insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image);
     }
   }
 }
@@ -333,7 +332,6 @@ EditorConfig &MarkdownEditor::getEditorConfig() const {
 bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
                                                       const QString &p_altText,
                                                       const QString &p_srcImagePath,
-                                                      int p_scaledWidth, int p_scaledHeight,
                                                       bool p_insertText, QString *p_urlInLink) {
   auto destFileName = generateImageFileNameToInsertAs(p_title, QFileInfo(p_srcImagePath).suffix());
 
@@ -377,7 +375,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
     }
   }
 
-  insertImageLink(p_title, p_altText, destFilePath, p_scaledWidth, p_scaledHeight, p_insertText,
+  insertImageLink(p_title, p_altText, destFilePath, p_insertText,
                   p_urlInLink);
   return true;
 }
@@ -388,8 +386,7 @@ QString MarkdownEditor::generateImageFileNameToInsertAs(const QString &p_title,
 }
 
 bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                                 const QImage &p_image, int p_scaledWidth,
-                                                 int p_scaledHeight) {
+                                                 const QImage &p_image) {
   // Save as PNG by default.
   const QString format("png");
   const auto destFileName = generateImageFileNameToInsertAs(p_title, format);
@@ -434,21 +431,20 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
     }
   }
 
-  insertImageLink(p_title, p_altText, destFilePath, p_scaledWidth, p_scaledHeight);
+  insertImageLink(p_title, p_altText, destFilePath);
   return true;
 }
 
 void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_altText,
-                                     const QString &p_destImagePath, int p_scaledWidth,
-                                     int p_scaledHeight, bool p_insertText, QString *p_urlInLink) {
+                                     const QString &p_destImagePath, bool p_insertText,
+                                     QString *p_urlInLink) {
   const auto urlInLink = getRelativeLink(p_destImagePath);
   if (p_urlInLink) {
     *p_urlInLink = urlInLink;
   }
   emit imageInserted(p_destImagePath, urlInLink);
   if (p_insertText) {
-    const auto imageLink = vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText,
-                                                                 p_scaledWidth, p_scaledHeight);
+    const auto imageLink = vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText);
     m_textEdit->insertPlainText(imageLink);
   }
 }
@@ -849,14 +845,13 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source) {
   dialog.setImage(image);
   if (dialog.exec() == QDialog::Accepted) {
     enterInsertModeIfApplicable();
-    insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
-                                dialog.getScaledWidth());
+    insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image);
   }
 }
 
 void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
   if (p_quiet) {
-    insertImageToBufferFromLocalFile("", "", p_url, 0);
+    insertImageToBufferFromLocalFile("", "", p_url);
   } else {
     ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
     dialog.setImagePath(p_url);
@@ -864,12 +859,11 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
       enterInsertModeIfApplicable();
       if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
         insertImageToBufferFromLocalFile(dialog.getImageTitle(), dialog.getImageAltText(),
-                                         dialog.getImagePath(), dialog.getScaledWidth());
+                                         dialog.getImagePath());
       } else {
         auto image = dialog.getImage();
         if (!image.isNull()) {
-          insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
-                                      dialog.getScaledWidth());
+          insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image);
         }
       }
     }
@@ -1178,7 +1172,11 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
 
   QRegularExpression zhihuRegExp("^https?://www\\.zhihu\\.com/equation\\?tex=(.+)$");
 
-  QRegularExpression regExp(vte::MarkdownUtils::c_imageLinkRegExp);
+  QRegularExpression regExp(QStringLiteral("\\!\\[([^\\[\\]]*)\\]"
+                                           "\\(\\s*"
+                                           "([^\\)\"'\\s]+)"
+                                           "(\\s*(\"[^\"\\)\\n\\r]*\")|('[^'\\)\\n\\r]*'))?"
+                                           "\\s*\\)"));
   for (int i = regs.size() - 1; i >= 0; --i) {
     proDlg.setValue(regs.size() - 1 - i);
     if (proDlg.wasCanceled()) {
@@ -1265,15 +1263,15 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
 
     // Insert image without inserting text.
     QString urlInLink;
-    bool ret = insertImageToBufferFromLocalFile(imageTitle, QString(), srcImagePath, 0, 0, false,
+    bool ret = insertImageToBufferFromLocalFile(imageTitle, QString(), srcImagePath, false,
                                                 &urlInLink);
     if (!ret || urlInLink.isEmpty()) {
       continue;
     }
 
     // Replace URL in link.
-    QString newLink = QStringLiteral("![%1](%2%3%4)")
-                          .arg(imageTitle, urlInLink, match.captured(3), match.captured(6));
+    QString newLink = QStringLiteral("![%1](%2%3)")
+                          .arg(imageTitle, urlInLink, match.captured(3));
     p_text.replace(reg.m_startPos, reg.m_endPos - reg.m_startPos, newLink);
   }
 
@@ -1439,9 +1437,7 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
 
     const auto linkText =
         text.mid(reg.m_startPos - p_block.position(), reg.m_endPos - reg.m_startPos);
-    int linkWidth = 0;
-    int linkHeight = 0;
-    const auto shortUrl = vte::MarkdownUtils::fetchImageLinkUrl(linkText, linkWidth, linkHeight);
+    const auto shortUrl = vte::MarkdownUtils::fetchImageLinkUrl(linkText);
     if (shortUrl.isEmpty()) {
       return true;
     }

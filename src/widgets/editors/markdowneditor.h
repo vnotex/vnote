@@ -145,21 +145,18 @@ private slots:
   void parseToMarkdownAndPaste();
 
 private:
-  // @p_scaledWidth: 0 for not overridden.
   // @p_insertText: whether insert text into the buffer after inserting image file.
   // @p_urlInLink: store the url in link if not null.
   bool insertImageToBufferFromLocalFile(const QString &p_title, const QString &p_altText,
-                                        const QString &p_srcImagePath, int p_scaledWidth = 0,
-                                        int p_scaledHeight = 0, bool p_insertText = true,
+                                        const QString &p_srcImagePath, bool p_insertText = true,
                                         QString *p_urlInLink = nullptr);
 
   bool insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                   const QImage &p_image, int p_scaledWidth = 0,
-                                   int p_scaledHeight = 0);
+                                   const QImage &p_image);
 
   void insertImageLink(const QString &p_title, const QString &p_altText,
-                       const QString &p_destImagePath, int p_scaledWidth, int p_scaledHeight,
-                       bool p_insertText = true, QString *p_urlInLink = nullptr);
+                       const QString &p_destImagePath, bool p_insertText = true,
+                       QString *p_urlInLink = nullptr);
 
   // Return true if it is processed.
   bool processHtmlFromMimeData(const QMimeData *p_source);

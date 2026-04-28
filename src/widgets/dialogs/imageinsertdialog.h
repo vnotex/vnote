@@ -8,8 +8,6 @@
 
 class QLineEdit;
 class QPushButton;
-class QSpinBox;
-class QSlider;
 class QLabel;
 class QTimer;
 class QTemporaryFile;
@@ -43,9 +41,6 @@ public:
   const QImage &getImage() const;
   void setImage(const QImage &p_image);
 
-  // Return 0 if no scaling.
-  int getScaledWidth() const;
-
 protected:
   void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -57,8 +52,6 @@ private slots:
   void browseFile();
 
   void handleImageDownloaded(const vte::NetworkReply &p_data, const QString &p_url);
-
-  void handleScaleSliderValueChanged(int p_val);
 
 private:
   void setupUI(const QString &p_title, const QString &p_imageTitle, const QString &p_imageAlt,
@@ -78,12 +71,6 @@ private:
 
   QLineEdit *m_imageAltEdit = nullptr;
 
-  QSpinBox *m_widthSpin = nullptr;
-
-  QSlider *m_scaleSlider = nullptr;
-
-  QLabel *m_sliderLabel = nullptr;
-
   QLabel *m_imageLabel = nullptr;
 
   QScrollArea *m_previewArea = nullptr;
@@ -98,12 +85,6 @@ private:
 
   // Used to hold downloaded image, to avoid data loss via QImage.
   QSharedPointer<QTemporaryFile> m_tempFile;
-
-  static int s_lastScaleSliderValue;
-
-  static int s_lastScaleWidth;
-
-  static bool s_fixedScaleWidth;
 };
 } // namespace vnotex
 

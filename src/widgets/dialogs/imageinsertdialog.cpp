@@ -1,6 +1,5 @@
 #include "imageinsertdialog.h"
 
-#include <QCheckBox>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -10,8 +9,6 @@
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 #include <QScrollArea>
-#include <QSlider>
-#include <QSpinBox>
 #include <QTemporaryFile>
 #include <QTimer>
 #include <QUrl>
@@ -28,12 +25,6 @@
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
-
-int ImageInsertDialog::s_lastScaleSliderValue = 10;
-
-int ImageInsertDialog::s_lastScaleWidth = -1;
-
-bool ImageInsertDialog::s_fixedScaleWidth = false;
 
 ImageInsertDialog::ImageInsertDialog(const QString &p_title, const QString &p_imageTitle,
                                      const QString &p_imageAlt, const QString &p_imagePath,
@@ -77,7 +68,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   // Image Title.
   m_imageTitleEdit = WidgetsFactory::createLineEdit(p_imageTitle, mainWidget);
   auto titleValidator = new QRegularExpressionValidator(
-      QRegularExpression(vte::MarkdownUtils::c_imageTitleRegExp), m_imageTitleEdit);
+      QRegularExpression(QStringLiteral("[^\\[\\]]*")), m_imageTitleEdit);
   m_imageTitleEdit->setValidator(titleValidator);
   gridLayout->addWidget(new QLabel(tr("Title:"), mainWidget), 1, 0, 1, 1);
   gridLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 3);
@@ -86,50 +77,10 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   // Image Alt.
   m_imageAltEdit = WidgetsFactory::createLineEdit(p_imageAlt, mainWidget);
   auto altValidator = new QRegularExpressionValidator(
-      QRegularExpression(vte::MarkdownUtils::c_imageAltRegExp), m_imageAltEdit);
+      QRegularExpression(QStringLiteral("[^\"'()]*")), m_imageAltEdit);
   m_imageAltEdit->setValidator(altValidator);
   gridLayout->addWidget(new QLabel(tr("Alt text:"), mainWidget), 2, 0, 1, 1);
   gridLayout->addWidget(m_imageAltEdit, 2, 1, 1, 3);
-
-  // Scale.
-  m_widthSpin = WidgetsFactory::createSpinBox(mainWidget);
-  m_widthSpin->setMinimum(1);
-  m_widthSpin->setSingleStep(10);
-  m_widthSpin->setSuffix(" px");
-  connect(m_widthSpin, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
-          [this](int p_val) {
-            if (m_image.isNull()) {
-              return;
-            }
-
-            int height = m_image.height() * (1.0 * p_val / m_image.width());
-            m_imageLabel->resize(p_val, height);
-
-            s_lastScaleWidth = p_val;
-          });
-  // 0.1 to 2.0 -> 1 to 20.
-  m_scaleSlider = new QSlider(mainWidget);
-  m_scaleSlider->setOrientation(Qt::Horizontal);
-  m_scaleSlider->setMinimum(1);
-  m_scaleSlider->setMaximum(50);
-  m_scaleSlider->setValue(s_lastScaleSliderValue);
-  m_scaleSlider->setSingleStep(1);
-  m_scaleSlider->setPageStep(5);
-  connect(m_scaleSlider, &QSlider::valueChanged, this,
-          &ImageInsertDialog::handleScaleSliderValueChanged);
-  m_sliderLabel = new QLabel("1x", mainWidget);
-  gridLayout->addWidget(new QLabel(tr("Scaling width:"), mainWidget), 3, 0, 1, 1);
-  gridLayout->addWidget(m_widthSpin, 3, 1, 1, 1);
-  gridLayout->addWidget(m_scaleSlider, 3, 2, 1, 2);
-  gridLayout->addWidget(m_sliderLabel, 3, 4, 1, 1);
-
-  {
-    auto fixedWidthCheckBox = WidgetsFactory::createCheckBox(tr("Fixed scaling width"), mainWidget);
-    fixedWidthCheckBox->setChecked(s_fixedScaleWidth);
-    connect(fixedWidthCheckBox, &QCheckBox::stateChanged, this,
-            [](int p_state) { s_fixedScaleWidth = p_state == Qt::Checked; });
-    gridLayout->addWidget(fixedWidthCheckBox, 4, 1, 1, 1);
-  }
 
   // Preview area.
   m_imageLabel = new QLabel(mainWidget);
@@ -138,7 +89,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   m_previewArea->setBackgroundRole(QPalette::Dark);
   m_previewArea->setWidget(m_imageLabel);
   m_previewArea->setMinimumSize(256, 256);
-  gridLayout->addWidget(m_previewArea, 5, 0, 1, 5);
+  gridLayout->addWidget(m_previewArea, 3, 0, 1, 5);
 
   setImageControlsVisible(false);
 
@@ -154,10 +105,6 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
 }
 
 void ImageInsertDialog::setImageControlsVisible(bool p_visible) {
-  m_widthSpin->setEnabled(p_visible);
-  m_scaleSlider->setEnabled(p_visible);
-  m_sliderLabel->setEnabled(p_visible);
-
   m_previewArea->setVisible(p_visible);
 }
 
@@ -249,23 +196,7 @@ void ImageInsertDialog::setImage(const QImage &p_image) {
     setImageControlsVisible(false);
   } else {
     m_imageLabel->setPixmap(QPixmap::fromImage(m_image));
-
     m_imageLabel->adjustSize();
-
-    m_widthSpin->setMaximum(m_image.width() * 5);
-
-    if (s_fixedScaleWidth) {
-      m_widthSpin->setValue(s_lastScaleWidth);
-    } else {
-      // Set the scaling widgets.
-      if (m_scaleSlider->value() == s_lastScaleSliderValue) {
-        // Trigger it manually.
-        handleScaleSliderValueChanged(s_lastScaleSliderValue);
-      } else {
-        m_scaleSlider->setValue(s_lastScaleSliderValue);
-      }
-    }
-
     setImageControlsVisible(true);
   }
 
@@ -275,15 +206,6 @@ void ImageInsertDialog::setImage(const QImage &p_image) {
 void ImageInsertDialog::setImagePath(const QString &p_path) {
   m_tempFile.reset();
   m_imagePathEdit->setText(p_path);
-}
-
-int ImageInsertDialog::getScaledWidth() const {
-  if (m_image.isNull()) {
-    return 0;
-  }
-
-  int val = m_widthSpin->value();
-  return val == m_image.width() ? 0 : val;
 }
 
 void ImageInsertDialog::handleImageDownloaded(const vte::NetworkReply &p_data,
@@ -305,22 +227,4 @@ void ImageInsertDialog::handleImageDownloaded(const vte::NetworkReply &p_data,
   if (!savedToFile) {
     m_tempFile.reset();
   }
-}
-
-void ImageInsertDialog::handleScaleSliderValueChanged(int p_val) {
-  if (m_image.isNull()) {
-    return;
-  }
-
-  int width = m_image.width();
-  qreal factor = 1.0;
-  if (p_val != 10) {
-    factor = p_val / 10.0;
-    width = m_image.width() * factor;
-  }
-
-  m_widthSpin->setValue(width);
-  m_sliderLabel->setText(QString::number(factor) + "x");
-
-  s_lastScaleSliderValue = p_val;
 }
