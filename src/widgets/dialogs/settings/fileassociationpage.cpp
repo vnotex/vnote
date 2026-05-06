@@ -201,18 +201,21 @@ void FileAssociationPage::addExternalProgramRow(const QString &p_name, const QSt
   auto *nameEdit = WidgetsFactory::createLineEdit(rowWidget);
   nameEdit->setObjectName(QStringLiteral("nameEdit"));
   nameEdit->setPlaceholderText(tr("Program name"));
+  nameEdit->setToolTip(tr("Display name for the external program"));
   nameEdit->setText(p_name);
   connect(nameEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
 
   auto *commandEdit = WidgetsFactory::createLineEdit(rowWidget);
   commandEdit->setObjectName(QStringLiteral("commandEdit"));
   commandEdit->setPlaceholderText(tr("Command (%1 = file path)"));
+  commandEdit->setToolTip(tr("Executable path or command. Use %1 as placeholder for the file path"));
   commandEdit->setText(p_command);
   connect(commandEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
 
   auto *suffixesEdit = WidgetsFactory::createLineEdit(rowWidget);
   suffixesEdit->setObjectName(QStringLiteral("suffixesEdit"));
   suffixesEdit->setPlaceholderText(tr("Suffixes separated by ;"));
+  suffixesEdit->setToolTip(tr("File suffixes handled by this program, separated by ; (e.g. pdf;djvu)"));
   suffixesEdit->setText(p_suffixes);
   connect(suffixesEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
 
