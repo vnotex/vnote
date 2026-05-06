@@ -24,6 +24,7 @@
 #include <core/widgetconfig.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
+#include <utils/processutils.h>
 #include <views/notebooknodeview.h>
 #include <widgets/messageboxhelper.h>
 
@@ -151,9 +152,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
     auto *openAction = menu->addAction(tr("&Open"));
     connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
 
-    auto *openWithAction = menu->addAction(tr("Open With Default App"));
-    connect(openWithAction, &QAction::triggered, this,
-            [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
+    addOpenWithSubmenu(menu, p_nodeId);
 
     menu->addSeparator();
   }
@@ -206,9 +205,7 @@ void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier 
     auto *openAction = p_menu->addAction(tr("&Open"));
     connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
 
-    auto *openWithAction = p_menu->addAction(tr("Open With Default App"));
-    connect(openWithAction, &QAction::triggered, this,
-            [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
+    addOpenWithSubmenu(p_menu, p_nodeId);
   }
 }
 
@@ -430,6 +427,46 @@ void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_node
   if (!path.isEmpty()) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
   }
+}
+
+void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
+                                                const NodeIdentifier &p_nodeId) {
+  auto *subMenu = new QMenu(tr("Open With"), p_parentMenu);
+
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (configMgr) {
+    const auto &programs = configMgr->getSessionConfig().getExternalPrograms();
+    for (const auto &prog : programs) {
+      if (prog.m_name.isEmpty()) {
+        continue;
+      }
+      QString name = prog.m_name;
+      QString command = prog.m_command;
+      auto *action = subMenu->addAction(name);
+      connect(action, &QAction::triggered, this, [this, p_nodeId, command]() {
+        QString path = buildAbsolutePath(p_nodeId);
+        if (path.isEmpty()) {
+          return;
+        }
+        SessionConfig::ExternalProgram tempProg;
+        tempProg.m_command = command;
+        QString cmd = tempProg.fetchCommand(path);
+        if (cmd.isEmpty()) {
+          return;
+        }
+        ProcessUtils::startDetached(cmd);
+      });
+    }
+    if (!programs.isEmpty()) {
+      subMenu->addSeparator();
+    }
+  }
+
+  auto *defaultAction = subMenu->addAction(tr("Default App"));
+  connect(defaultAction, &QAction::triggered, this,
+          [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
+
+  p_parentMenu->addMenu(subMenu);
 }
 
 void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds) {

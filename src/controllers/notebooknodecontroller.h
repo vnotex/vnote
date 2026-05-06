@@ -145,6 +145,7 @@ private:
   void addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
   void addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId);
   void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addOpenWithSubmenu(QMenu *p_parentMenu, const NodeIdentifier &p_nodeId);
 
   // Notify BufferMgr before node operations
   void notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId, const QString &p_operation);
