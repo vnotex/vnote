@@ -293,6 +293,8 @@ void NotebookSelector2::saveCurrentNotebook() {
     return;
   }
 
+  setToolTip(getItemToolTip(idx));
+
   // Get GUID from item data.
   QString guid = itemData(idx, NotebookGuidRole).toString();
   if (!guid.isEmpty()) {
