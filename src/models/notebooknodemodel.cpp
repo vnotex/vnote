@@ -113,11 +113,8 @@ void NotebookNodeModel::removeNodeFromCaches(const NodeIdentifier &p_nodeId) {
 
 int NotebookNodeModel::childRow(const NodeIdentifier &p_parentId,
                                 const NodeIdentifier &p_childId) const {
-  qDebug() << "[RAW-DIAG] childRow: parent=" << p_parentId.notebookId
-           << p_parentId.relativePath << "target=" << p_childId.relativePath;
   auto it = m_childrenCache.find(p_parentId);
   if (it == m_childrenCache.end()) {
-    qDebug() << "[RAW-DIAG] childRow: parent NOT in cache";
     return -1;
   }
 
@@ -807,8 +804,6 @@ NodeIdentifier NotebookNodeModel::nodeIdFromIndex(const QModelIndex &p_index) co
 }
 
 QModelIndex NotebookNodeModel::indexFromNodeId(const NodeIdentifier &p_nodeId) const {
-  qDebug() << "[RAW-DIAG] indexFromNodeId: input=" << p_nodeId.notebookId
-           << p_nodeId.relativePath;
   if (!p_nodeId.isValid() || m_notebookId.isEmpty()) {
     return QModelIndex();
   }
@@ -822,11 +817,6 @@ QModelIndex NotebookNodeModel::indexFromNodeId(const NodeIdentifier &p_nodeId) c
   NodeIdentifier parentId;
   parentId.notebookId = m_notebookId;
   parentId.relativePath = parentPath;
-
-  qDebug() << "[RAW-DIAG] indexFromNodeId: parentId=" << parentId.notebookId
-           << parentId.relativePath << "cacheContains="
-           << m_childrenCache.contains(parentId) << "displayRoot="
-           << m_displayRoot.notebookId << m_displayRoot.relativePath;
 
   int row = childRow(parentId, p_nodeId);
   if (row < 0) {

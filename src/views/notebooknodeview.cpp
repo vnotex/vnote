@@ -1,5 +1,6 @@
 #include "notebooknodeview.h"
 
+#include <QDebug>
 #include <QContextMenuEvent>
 #include <QDataStream>
 #include <QDragEnterEvent>
@@ -300,7 +301,8 @@ NodeInfo NotebookNodeView::nodeInfoFromIndex(const QModelIndex &p_index) const {
   auto *nodeModel =
       qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
   if (nodeModel) {
-    return nodeModel->nodeInfoFromIndex(sourceIdx);
+    NodeInfo result = nodeModel->nodeInfoFromIndex(sourceIdx);
+    return result;
   }
 
   return NodeInfo();
