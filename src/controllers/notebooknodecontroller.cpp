@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QDebug>
 #include <QDesktopServices>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -70,10 +71,24 @@ QString NotebookNodeController::buildAbsolutePath(const NodeIdentifier &p_nodeId
 }
 
 NodeInfo NotebookNodeController::getNodeInfo(const NodeIdentifier &p_nodeId) const {
+  qDebug() << "[RAW-DIAG] getNodeInfo: nodeId=" << p_nodeId.notebookId
+           << p_nodeId.relativePath << "model=" << (m_model != nullptr);
   if (m_model && p_nodeId.isValid()) {
+    // Direct cache lookup (bypasses fragile indexFromNodeId round-trip).
+    NodeInfo directResult = m_model->nodeInfoFromNodeId(p_nodeId);
+    if (directResult.isValid()) {
+      qDebug() << "[RAW-DIAG] getNodeInfo direct hit: isFolder=" << directResult.isFolder;
+      return directResult;
+    }
+
+    // Fallback to index-based lookup.
     QModelIndex idx = m_model->indexFromNodeId(p_nodeId);
+    qDebug() << "[RAW-DIAG] getNodeInfo: idx.isValid=" << idx.isValid();
     if (idx.isValid()) {
-      return m_model->nodeInfoFromIndex(idx);
+      NodeInfo result = m_model->nodeInfoFromIndex(idx);
+      qDebug() << "[RAW-DIAG] getNodeInfo result: valid=" << result.isValid()
+               << "isFolder=" << result.isFolder;
+      return result;
     }
   }
   return NodeInfo();

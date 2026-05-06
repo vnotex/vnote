@@ -33,6 +33,13 @@ public:
   virtual NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const = 0;
   virtual QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const = 0;
 
+  // Direct node info lookup by identifier (bypasses index reconstruction).
+  // Default returns invalid; models with a node cache should override.
+  virtual NodeInfo nodeInfoFromNodeId(const NodeIdentifier &p_nodeId) const {
+    Q_UNUSED(p_nodeId);
+    return NodeInfo();
+  }
+
   // Capability query virtual methods (defaults return false).
   virtual bool supportsDragDrop() const { return false; }
   virtual bool supportsPreview() const { return false; }

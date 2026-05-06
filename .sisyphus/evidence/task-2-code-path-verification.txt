@@ -1,0 +1,48 @@
+## Root Cause Analysis
+
+### Problem
+Right-clicking a file under a raw notebook in NotebookExplorer2 does NOT show "Open" action.
+Double-clicking does nothing for raw notebook files.
+Same actions work fine for bundled notebooks.
+
+### Root Cause
+`NotebookNodeController::getNodeInfo()` performed a fragile round-trip lookup:
+
+1. Takes NodeIdentifier (e.g., {notebookId, "test.md"})
+2. Calls `m_model->indexFromNodeId(nodeId)` which:
+   a. Computes parentPath() → for root-level files returns QString() (null)
+   b. Constructs parentId = {m_notebookId, QString()}
+   c. Looks up parentId in m_childrenCache (a QMap using operator<)
+   d. Calls childRow() to find the row of the target node
+3. If lookup fails → returns invalid QModelIndex → getNodeInfo returns invalid NodeInfo
+4. In createContextMenu line 120: `bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true;`
+   → Defaults to true (folder) → addOpenActions skips "Open" for folders
+
+The QMap lookup in `indexFromNodeId` fails for raw notebook root-level files due to
+subtle key comparison issues between the parentId constructed by parentPath() and the
+key originally used by fetchMore()/rootNodeId() when populating m_childrenCache.
+
+Raw notebooks commonly have files at the root level ("file.md"), triggering the
+null/empty parent path edge case. Bundled notebooks typically have files in subfolders
+("notes/file.md"), where parentPath() returns a non-ambiguous "notes" path.
+
+### Fix Applied
+Added `nodeInfoFromNodeId(const NodeIdentifier&)` to INodeListModel interface and
+NotebookNodeModel implementation. This method does a DIRECT lookup in m_nodeCache
+by NodeIdentifier, bypassing the fragile `indexFromNodeId` → `childRow` → QMap path.
+
+Modified `getNodeInfo()` to use direct lookup FIRST, falling back to index-based
+lookup only if needed.
+
+### Files Changed
+1. src/models/inodelistmodel.h — Added virtual nodeInfoFromNodeId() with default impl
+2. src/models/notebooknodemodel.h — Added override declaration
+3. src/models/notebooknodemodel.cpp — Implemented direct m_nodeCache lookup
+4. src/controllers/notebooknodecontroller.cpp — Use direct lookup first in getNodeInfo()
+
+### Why This Fixes Both Paths
+- Context menu: getNodeInfo() now returns valid NodeInfo with correct isFolder=false
+  → "Open" action is added to context menu
+- Double-click: nodeInfoFromIndex() already works via direct internalId lookup for
+  the tree display. The fix ensures openNode()'s internal getNodeInfo() call also
+  succeeds for external-node detection logic.

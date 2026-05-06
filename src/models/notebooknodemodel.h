@@ -65,6 +65,7 @@ public:
   // NodeIdentifier <-> Index conversion
   NodeIdentifier nodeIdFromIndex(const QModelIndex &p_index) const override;
   NodeInfo nodeInfoFromIndex(const QModelIndex &p_index) const override;
+  NodeInfo nodeInfoFromNodeId(const NodeIdentifier &p_nodeId) const override;
   QModelIndex indexFromNodeId(const NodeIdentifier &p_nodeId) const override;
 
   // INodeListModel capability overrides.
