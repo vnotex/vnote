@@ -76,6 +76,19 @@ public:
     QString m_command;
 
     QString m_shortcut;
+
+    // File suffixes this program handles (without leading dots, lowercase).
+    QStringList m_suffixes;
+
+    // Returns true if this program handles files with the given suffix (case-insensitive).
+    bool matchesSuffix(const QString &p_suffix) const;
+
+    bool operator==(const ExternalProgram &p_other) const {
+      return m_name == p_other.m_name && m_command == p_other.m_command
+             && m_shortcut == p_other.m_shortcut && m_suffixes == p_other.m_suffixes;
+    }
+
+    bool operator!=(const ExternalProgram &p_other) const { return !(*this == p_other); }
   };
 
   explicit SessionConfig(IConfigMgr *p_mgr);
@@ -143,6 +156,8 @@ public:
 
   const QVector<ExternalProgram> &getExternalPrograms() const;
   const ExternalProgram *findExternalProgram(const QString &p_name) const;
+  void setExternalPrograms(const QVector<ExternalProgram> &p_programs);
+  const ExternalProgram *findExternalProgramBySuffix(const QString &p_suffix) const;
 
   const QVector<QuickNoteScheme> &getQuickNoteSchemes() const;
   void setQuickNoteSchemes(const QVector<QuickNoteScheme> &p_schemes);

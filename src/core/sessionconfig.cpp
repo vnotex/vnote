@@ -60,6 +60,11 @@ void SessionConfig::ExternalProgram::fromJson(const QJsonObject &p_jobj) {
   m_name = p_jobj[QStringLiteral("name")].toString();
   m_command = p_jobj[QStringLiteral("command")].toString();
   m_shortcut = p_jobj[QStringLiteral("shortcut")].toString();
+  const auto suffixArr = p_jobj[QStringLiteral("suffixes")].toArray();
+  m_suffixes.clear();
+  for (const auto &s : suffixArr) {
+    m_suffixes << s.toString();
+  }
 }
 
 QJsonObject SessionConfig::ExternalProgram::toJson() const {
@@ -68,8 +73,23 @@ QJsonObject SessionConfig::ExternalProgram::toJson() const {
   jobj[QStringLiteral("name")] = m_name;
   jobj[QStringLiteral("command")] = m_command;
   jobj[QStringLiteral("shortcut")] = m_shortcut;
+  QJsonArray suffixArr;
+  for (const auto &s : m_suffixes) {
+    suffixArr.append(s);
+  }
+  jobj[QStringLiteral("suffixes")] = suffixArr;
 
   return jobj;
+}
+
+bool SessionConfig::ExternalProgram::matchesSuffix(const QString &p_suffix) const {
+  const QString lower = p_suffix.toLower();
+  for (const auto &s : m_suffixes) {
+    if (s.compare(lower, Qt::CaseInsensitive) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 QString SessionConfig::ExternalProgram::fetchCommand(const QString &p_file) const {
@@ -459,6 +479,37 @@ const SessionConfig::ExternalProgram *
 SessionConfig::findExternalProgram(const QString &p_name) const {
   for (const auto &pro : m_externalPrograms) {
     if (pro.m_name == p_name) {
+      return &pro;
+    }
+  }
+  return nullptr;
+}
+
+void SessionConfig::setExternalPrograms(const QVector<ExternalProgram> &p_programs) {
+  QVector<ExternalProgram> normalized;
+  for (const auto &pro : p_programs) {
+    ExternalProgram clean;
+    clean.m_name = pro.m_name.trimmed();
+    clean.m_command = pro.m_command;
+    clean.m_shortcut = pro.m_shortcut;
+    for (const auto &s : pro.m_suffixes) {
+      QString suffix = s.trimmed().toLower();
+      while (suffix.startsWith(QLatin1Char('.'))) {
+        suffix = suffix.mid(1);
+      }
+      if (!suffix.isEmpty()) {
+        clean.m_suffixes << suffix;
+      }
+    }
+    normalized << clean;
+  }
+  updateConfig(m_externalPrograms, normalized, this);
+}
+
+const SessionConfig::ExternalProgram *
+SessionConfig::findExternalProgramBySuffix(const QString &p_suffix) const {
+  for (const auto &pro : m_externalPrograms) {
+    if (pro.matchesSuffix(p_suffix)) {
       return &pro;
     }
   }
