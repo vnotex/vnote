@@ -1,6 +1,7 @@
 #ifndef OUTLINEVIEW_H
 #define OUTLINEVIEW_H
 
+#include <QSet>
 #include <QTreeView>
 
 namespace vnotex {
@@ -25,6 +26,12 @@ public:
   // p_level is 1-based (1 = collapse all, 6 = expand all).
   // p_baseLevel is the level of the first heading in the outline.
   void expandToLevel(int p_level, int p_baseLevel);
+
+  // Save the current expansion state (returns set of expanded heading indices).
+  QSet<int> saveExpansionState() const;
+
+  // Restore expansion state from a previously saved set of heading indices.
+  void restoreExpansionState(const QSet<int> &p_expandedHeadingIndices);
 
 signals:
   // Emitted when user clicks/activates a heading item.

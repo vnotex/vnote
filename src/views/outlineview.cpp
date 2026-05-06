@@ -87,6 +87,59 @@ void OutlineView::highlightHeading(int p_headingIndex) {
   m_muted = false;
 }
 
+QSet<int> OutlineView::saveExpansionState() const {
+  QSet<int> expanded;
+  if (!model()) {
+    return expanded;
+  }
+
+  // Walk all indices in the model and record which ones are expanded.
+  QModelIndexList stack;
+  for (int i = 0; i < model()->rowCount(); ++i) {
+    stack.append(model()->index(i, 0));
+  }
+
+  while (!stack.isEmpty()) {
+    QModelIndex idx = stack.takeLast();
+    if (isExpanded(idx)) {
+      int headingIndex = idx.data(OutlineModel::HeadingIndexRole).toInt();
+      if (headingIndex >= 0) {
+        expanded.insert(headingIndex);
+      }
+      // Also check children.
+      for (int i = 0; i < model()->rowCount(idx); ++i) {
+        stack.append(model()->index(i, 0, idx));
+      }
+    }
+  }
+
+  return expanded;
+}
+
+void OutlineView::restoreExpansionState(const QSet<int> &p_expandedHeadingIndices) {
+  if (!model() || p_expandedHeadingIndices.isEmpty()) {
+    return;
+  }
+
+  // Walk all indices and expand those whose heading index is in the set.
+  QModelIndexList stack;
+  for (int i = 0; i < model()->rowCount(); ++i) {
+    stack.append(model()->index(i, 0));
+  }
+
+  while (!stack.isEmpty()) {
+    QModelIndex idx = stack.takeLast();
+    int headingIndex = idx.data(OutlineModel::HeadingIndexRole).toInt();
+    if (headingIndex >= 0 && p_expandedHeadingIndices.contains(headingIndex)) {
+      expand(idx);
+    }
+    // Always check children (parent might not be in the set but child might be).
+    for (int i = 0; i < model()->rowCount(idx); ++i) {
+      stack.append(model()->index(i, 0, idx));
+    }
+  }
+}
+
 void OutlineView::expandToLevel(int p_level, int p_baseLevel) {
   int delta = p_level - p_baseLevel;
   if (delta <= 0) {
