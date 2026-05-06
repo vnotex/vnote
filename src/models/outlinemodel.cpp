@@ -27,13 +27,6 @@ void OutlineModel::setOutline(const QSharedPointer<Outline> &p_outline) {
   m_outline = p_outline;
   m_currentHeadingIndex = -1;
 
-  // Pick up section number config from the outline if provided.
-  if (m_outline) {
-    m_sectionNumberBaseLevel = m_outline->m_sectionNumberBaseLevel;
-    m_sectionNumberEndingDot = m_outline->m_sectionNumberEndingDot;
-    m_sectionNumberEnabled = (m_outline->m_sectionNumberBaseLevel != -1);
-  }
-
   buildTree();
 
   endResetModel();

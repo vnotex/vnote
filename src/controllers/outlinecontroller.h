@@ -73,6 +73,7 @@ private:
   QTimer *m_expandTimer = nullptr;       // Debounce timer for auto-expand
   int m_autoExpandedLevel = 6;           // Cached from config
   bool m_sectionNumberEnabled = false;   // Cached from config
+  int m_sectionNumberBaseLevel = 2;    // Cached from config
 };
 
 } // namespace vnotex

@@ -24,6 +24,9 @@ public:
   bool getOutlineSectionNumberEnabled() const;
   void setOutlineSectionNumberEnabled(bool p_enabled);
 
+  int getOutlineSectionNumberBaseLevel() const;
+  void setOutlineSectionNumberBaseLevel(int p_level);
+
   FindOptions getFindAndReplaceOptions() const;
   void setFindAndReplaceOptions(FindOptions p_options);
 
@@ -97,6 +100,9 @@ private:
   int m_outlineAutoExpandedLevel = 6;
 
   bool m_outlineSectionNumberEnabled = false;
+
+  // 1-based heading level at which outline section numbering starts.
+  int m_outlineSectionNumberBaseLevel = 2;
 
   FindOptions m_findAndReplaceOptions = FindOption::IncrementalSearch;
 
