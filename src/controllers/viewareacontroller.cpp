@@ -1,5 +1,7 @@
 #include "viewareacontroller.h"
 
+#include <QDesktopServices>
+#include <QFileInfo>
 #include <QRegularExpression>
 #include <QSet>
 #include <QUrl>
@@ -9,6 +11,7 @@
 #include <controllers/workspacewrapper.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/sessionconfig.h>
 #include <core/fileopensettings.h>
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
@@ -20,6 +23,8 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
+#include <gui/services/viewwindowfactory.h>
+#include <utils/processutils.h>
 #include <widgets/settingswidget.h>
 #include <widgets/viewwindow2.h>
 
@@ -56,6 +61,31 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   }
   if (fileType.isEmpty()) {
     fileType = QStringLiteral("Text");
+  }
+
+  // External program dispatch: check if this file suffix has a configured external program.
+  {
+    const QString suffix = QFileInfo(p_buffer.nodeId().relativePath).suffix().toLower();
+    if (!suffix.isEmpty()) {
+      auto *configMgr = m_services.get<ConfigMgr2>();
+      if (configMgr) {
+        const auto *program = configMgr->getSessionConfig().findExternalProgramBySuffix(suffix);
+        if (program) {
+          const QString absolutePath = p_buffer.resolvedPath();
+          const QString command = program->fetchCommand(absolutePath);
+          if (!command.isEmpty()) {
+            qInfo() << "ViewAreaController::openBuffer: launching external program for"
+                    << absolutePath << "command:" << command;
+            ProcessUtils::startDetached(command);
+            auto *bufferSvc = m_services.get<BufferService>();
+            if (bufferSvc) {
+              bufferSvc->closeBuffer(p_buffer.id());
+            }
+            return;
+          }
+        }
+      }
+    }
   }
 
   ViewWindowOpenEvent event;
@@ -102,6 +132,20 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     setCurrentViewWindow(existingWindowId, p_buffer.id());
     // Apply file open settings to the existing window (scroll + highlight).
     m_view->applyFileOpenSettings(existingWindowId, p_settings);
+    return;
+  }
+
+  // System default fallback: if no built-in editor exists, open with system default.
+  auto *factory = m_services.get<ViewWindowFactory>();
+  if (!factory || !factory->hasCreator(fileType)) {
+    const QString absolutePath = p_buffer.resolvedPath();
+    qDebug() << "ViewAreaController::openBuffer: no built-in editor for type" << fileType
+             << "- opening with system default:" << absolutePath;
+    QDesktopServices::openUrl(QUrl::fromLocalFile(absolutePath));
+    auto *bufferSvc = m_services.get<BufferService>();
+    if (bufferSvc) {
+      bufferSvc->closeBuffer(p_buffer.id());
+    }
     return;
   }
 
