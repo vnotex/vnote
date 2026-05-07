@@ -1,6 +1,7 @@
 #include "fileassociationpage.h"
 
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -87,6 +88,9 @@ bool FileAssociationPage::saveInternal() {
     if (!row->property("programRow").toBool()) {
       continue;
     }
+    if (row->property("systemRow").toBool()) {
+      continue;
+    }
 
     auto *nameEdit = row->findChild<QLineEdit *>(QStringLiteral("nameEdit"));
     auto *commandEdit = row->findChild<QLineEdit *>(QStringLiteral("commandEdit"));
@@ -116,6 +120,31 @@ bool FileAssociationPage::saveInternal() {
     prog.m_suffixes = suffixes;
 
     programs.append(prog);
+  }
+
+  // Collect system program row (always appended last).
+  for (auto *row : rows) {
+    if (!row->property("systemRow").toBool()) {
+      continue;
+    }
+    auto *suffixesEdit = row->findChild<QLineEdit *>(QStringLiteral("suffixesEdit"));
+    if (!suffixesEdit) {
+      continue;
+    }
+    SessionConfig::ExternalProgram sysProg;
+    sysProg.m_name = SessionConfig::ExternalProgram::c_systemProgramName;
+    QStringList suffixes =
+        suffixesEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
+    for (auto &s : suffixes) {
+      s = s.trimmed().toLower();
+      while (s.startsWith(QLatin1Char('.'))) {
+        s.remove(0, 1);
+      }
+    }
+    suffixes.removeAll(QString());
+    sysProg.m_suffixes = suffixes;
+    programs.append(sysProg);
+    break;
   }
 
   m_services.get<ConfigMgr2>()->getSessionConfig().setExternalPrograms(programs);
@@ -178,6 +207,9 @@ void FileAssociationPage::loadExternalProgramsGroup() {
   const auto &programs = sessionConfig.getExternalPrograms();
 
   for (const auto &prog : programs) {
+    if (prog.isSystemProgram()) {
+      continue;
+    }
     addExternalProgramRow(prog.m_name, prog.m_command, prog.m_suffixes.join(c_suffixSeparator));
   }
 
@@ -188,6 +220,14 @@ void FileAssociationPage::loadExternalProgramsGroup() {
     pageIsChanged();
   });
   m_externalCardLayout->addWidget(m_addProgramButton);
+
+  // System program row — always last, before the Add button.
+  for (const auto &prog : programs) {
+    if (prog.isSystemProgram()) {
+      addSystemProgramRow(prog.m_suffixes.join(c_suffixSeparator));
+      break;
+    }
+  }
 }
 
 void FileAssociationPage::addExternalProgramRow(const QString &p_name, const QString &p_command,
@@ -241,4 +281,33 @@ void FileAssociationPage::removeExternalProgramRow(QWidget *p_row) {
   m_externalCardLayout->removeWidget(p_row);
   p_row->deleteLater();
   pageIsChanged();
+}
+
+void FileAssociationPage::addSystemProgramRow(const QString &p_suffixes) {
+  auto *rowWidget = new QWidget(m_externalCardLayout->parentWidget());
+  rowWidget->setProperty("programRow", true);
+  rowWidget->setProperty("systemRow", true);
+
+  auto *rowLayout = new QHBoxLayout(rowWidget);
+  rowLayout->setContentsMargins(0, 0, 0, 0);
+
+  auto *nameLabel = new QLabel(tr("System Default App"), rowWidget);
+  nameLabel->setToolTip(tr("Built-in program that opens files with the OS default application"));
+
+  auto *suffixesEdit = WidgetsFactory::createLineEdit(rowWidget);
+  suffixesEdit->setObjectName(QStringLiteral("suffixesEdit"));
+  suffixesEdit->setPlaceholderText(tr("Suffixes separated by ;"));
+  suffixesEdit->setToolTip(tr("File suffixes to open with the system default application"));
+  suffixesEdit->setText(p_suffixes);
+  connect(suffixesEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
+
+  rowLayout->addWidget(nameLabel, 2);
+  rowLayout->addWidget(suffixesEdit, 5);
+
+  // Insert before the Add Program button if it exists.
+  int insertIndex = m_externalCardLayout->count();
+  if (m_addProgramButton) {
+    insertIndex = m_externalCardLayout->indexOf(m_addProgramButton);
+  }
+  m_externalCardLayout->insertWidget(insertIndex, rowWidget);
 }

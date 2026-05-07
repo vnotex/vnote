@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+class QLabel;
 class QPushButton;
 class QVBoxLayout;
 
@@ -32,6 +33,8 @@ private:
                              const QString &p_suffixes);
 
   void removeExternalProgramRow(QWidget *p_row);
+
+  void addSystemProgramRow(const QString &p_suffixes);
 
   QVBoxLayout *m_builtInCardLayout = nullptr;
   int m_builtInRowStartIndex = 0;

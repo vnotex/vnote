@@ -84,6 +84,16 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
         const auto *program = configMgr->getSessionConfig().findExternalProgramBySuffix(suffix);
         if (program) {
           const QString absolutePath = p_buffer.resolvedPath();
+          if (program->isSystemProgram()) {
+            qInfo() << "ViewAreaController::openBuffer: opening with system default app:"
+                    << absolutePath;
+            QDesktopServices::openUrl(QUrl::fromLocalFile(absolutePath));
+            auto *bufferSvc = m_services.get<BufferService>();
+            if (bufferSvc) {
+              bufferSvc->closeBuffer(p_buffer.id());
+            }
+            return;
+          }
           const QString command = program->fetchCommand(absolutePath);
           if (!command.isEmpty()) {
             qInfo() << "ViewAreaController::openBuffer: launching external program for"
