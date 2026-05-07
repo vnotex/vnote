@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QMenu>
+#include <QMessageBox>
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QPainter>
@@ -640,6 +641,27 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
   // Insert the rewritten text.
   enterInsertModeIfApplicable();
   m_textEdit->insertPlainText(text);
+
+  // Show info dialog if any images were processed.
+  if (!m_lastPastedImagesCopied.isEmpty() || !m_lastPastedImagesSkipped.isEmpty()) {
+    QString message;
+    if (!m_lastPastedImagesCopied.isEmpty()) {
+      message += tr("Copied (%1):").arg(m_lastPastedImagesCopied.size());
+      for (const auto &img : m_lastPastedImagesCopied) {
+        message += QStringLiteral("\n  • ") + img;
+      }
+    }
+    if (!m_lastPastedImagesSkipped.isEmpty()) {
+      if (!message.isEmpty()) {
+        message += QStringLiteral("\n\n");
+      }
+      message += tr("Skipped (%1):").arg(m_lastPastedImagesSkipped.size());
+      for (const auto &img : m_lastPastedImagesSkipped) {
+        message += QStringLiteral("\n  • ") + img;
+      }
+    }
+    QMessageBox::information(this, tr("Pasted with Linked Images"), message);
+  }
 
   return true;
 }
