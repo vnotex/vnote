@@ -89,6 +89,9 @@ public:
     }
 
     bool operator!=(const ExternalProgram &p_other) const { return !(*this == p_other); }
+
+    static const QString c_systemProgramName;
+    bool isSystemProgram() const;
   };
 
   explicit SessionConfig(IConfigMgr *p_mgr);

@@ -441,6 +441,9 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
       if (prog.m_name.isEmpty()) {
         continue;
       }
+      if (prog.isSystemProgram()) {
+        continue;
+      }
       QString name = prog.m_name;
       QString command = prog.m_command;
       auto *action = subMenu->addAction(name);
@@ -464,7 +467,7 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
     }
   }
 
-  auto *defaultAction = subMenu->addAction(tr("Default App"));
+  auto *defaultAction = subMenu->addAction(tr("System Default App"));
   connect(defaultAction, &QAction::triggered, this,
           [this, p_nodeId]() {
             openNodeWithDefaultApp(p_nodeId);

@@ -98,6 +98,12 @@ QString SessionConfig::ExternalProgram::fetchCommand(const QString &p_file) cons
   return command;
 }
 
+const QString SessionConfig::ExternalProgram::c_systemProgramName = QStringLiteral("system");
+
+bool SessionConfig::ExternalProgram::isSystemProgram() const {
+  return m_name.compare(c_systemProgramName, Qt::CaseInsensitive) == 0;
+}
+
 SessionConfig::SessionConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {}
 
 SessionConfig::~SessionConfig() {}
@@ -410,6 +416,25 @@ void SessionConfig::loadExternalPrograms(const QJsonObject &p_session) {
   for (int i = 0; i < arr.size(); ++i) {
     m_externalPrograms[i].fromJson(arr[i].toObject());
   }
+
+  // Ensure system program exists and is the last entry.
+  int sysIdx = -1;
+  for (int i = 0; i < m_externalPrograms.size(); ++i) {
+    if (m_externalPrograms[i].isSystemProgram()) {
+      sysIdx = i;
+      break;
+    }
+  }
+  if (sysIdx >= 0) {
+    ExternalProgram sys = m_externalPrograms[sysIdx];
+    sys.m_command.clear();
+    m_externalPrograms.remove(sysIdx);
+    m_externalPrograms.append(sys);
+  } else {
+    ExternalProgram sys;
+    sys.m_name = ExternalProgram::c_systemProgramName;
+    m_externalPrograms.append(sys);
+  }
 }
 
 QJsonArray SessionConfig::saveExternalPrograms() const {
@@ -503,6 +528,26 @@ void SessionConfig::setExternalPrograms(const QVector<ExternalProgram> &p_progra
     }
     normalized << clean;
   }
+
+  // Extract system program, force empty command, re-append last.
+  int sysIdx = -1;
+  for (int i = 0; i < normalized.size(); ++i) {
+    if (normalized[i].isSystemProgram()) {
+      sysIdx = i;
+      break;
+    }
+  }
+  if (sysIdx >= 0) {
+    ExternalProgram sys = normalized[sysIdx];
+    sys.m_command.clear();
+    normalized.remove(sysIdx);
+    normalized.append(sys);
+  } else {
+    ExternalProgram sys;
+    sys.m_name = ExternalProgram::c_systemProgramName;
+    normalized.append(sys);
+  }
+
   updateConfig(m_externalPrograms, normalized, this);
 }
 
