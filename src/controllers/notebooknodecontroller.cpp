@@ -20,6 +20,7 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <models/notebooknodemodel.h>
@@ -455,6 +456,7 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
           return;
         }
         ProcessUtils::startDetached(cmd);
+        closeOrphanedBuffer(p_nodeId);
       });
     }
     if (!programs.isEmpty()) {
@@ -464,9 +466,57 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
 
   auto *defaultAction = subMenu->addAction(tr("Default App"));
   connect(defaultAction, &QAction::triggered, this,
-          [this, p_nodeId]() { openNodeWithDefaultApp(p_nodeId); });
+          [this, p_nodeId]() {
+            openNodeWithDefaultApp(p_nodeId);
+            closeOrphanedBuffer(p_nodeId);
+          });
 
   p_parentMenu->addMenu(subMenu);
+}
+
+void NotebookNodeController::closeOrphanedBuffer(const NodeIdentifier &p_nodeId) {
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
+    return;
+  }
+
+  // Find buffer matching this node.
+  const auto buffers = bufferSvc->listBuffers();
+  QString bufferId;
+  for (const auto &bufVal : buffers) {
+    auto obj = bufVal.toObject();
+    if (obj[QStringLiteral("notebookId")].toString() == p_nodeId.notebookId
+        && obj[QStringLiteral("relativePath")].toString() == p_nodeId.relativePath) {
+      bufferId = obj[QStringLiteral("id")].toString();
+      break;
+    }
+  }
+  if (bufferId.isEmpty()) {
+    return;
+  }
+
+  // Don't close modified buffers (unsaved changes).
+  if (bufferSvc->isModified(bufferId)) {
+    return;
+  }
+
+  // Check if buffer is in any workspace (displayed in a ViewWindow).
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (wsSvc) {
+    const auto workspaces = wsSvc->listWorkspaces();
+    for (const auto &wsVal : workspaces) {
+      auto wsObj = wsVal.toObject();
+      auto bufferIds = wsObj[QStringLiteral("bufferIds")].toArray();
+      for (const auto &id : bufferIds) {
+        if (id.toString() == bufferId) {
+          return; // Buffer is in a workspace — don't close.
+        }
+      }
+    }
+  }
+
+  // Buffer exists but is orphaned — close it.
+  bufferSvc->closeBuffer(bufferId);
 }
 
 void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds) {
