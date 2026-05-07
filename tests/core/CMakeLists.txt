@@ -346,3 +346,11 @@ add_qt_test(test_mark_metadata
     vxcore
   GUILESS
 )
+
+add_qt_test(test_sessionconfig_extprog
+  SOURCES
+    test_sessionconfig_extprog.cpp
+  LINKS
+    core_configs
+  GUILESS
+)
