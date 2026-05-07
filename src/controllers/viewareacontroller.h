@@ -17,6 +17,8 @@
 #include <core/hookevents.h>
 #include <core/nodeidentifier.h>
 
+class QTimer;
+
 namespace vnotex {
 
 // Record of a closed tab, used for "Open Last Closed File" (Ctrl+Shift+T).
@@ -289,9 +291,22 @@ private:
   static constexpr int c_maxClosedTabRecords = 20;
   QVector<ClosedTabRecord> m_closedTabStack;
 
+  // ============ External File Change Detection ============
+
+  void onFileCheckTimerTick();
+  void onAppStateChanged(Qt::ApplicationState p_state);
+  void checkAllBuffersForExternalChanges();
+  void checkActiveBufferForExternalChanges();
+
   // Owns all WorkspaceWrapper instances. Each workspace known to the controller
   // has an entry here. Hidden workspaces cache their ViewWindows in the wrapper.
   QMap<QString, WorkspaceWrapper *> m_workspaces;
+
+  // Timer for periodic external file change polling (active buffer only).
+  QTimer *m_fileCheckTimer = nullptr;
+
+  // Reentrancy guard for file change checks.
+  bool m_fileCheckInProgress = false;
 };
 
 } // namespace vnotex

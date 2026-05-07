@@ -194,9 +194,63 @@ bool BufferService::saveBuffer(const QString &p_bufferId) {
 }
 
 bool BufferService::reloadBuffer(const QString &p_bufferId) {
+  // Fire FileBeforeReload hook (cancellable).
+  BufferEvent event;
+  event.bufferId = p_bufferId;
+  if (m_hookMgr->doAction(HookNames::FileBeforeReload, event)) {
+    return false; // Cancelled by plugin.
+  }
+
   bool ok = BufferCoreService::reloadBuffer(p_bufferId);
+
+  if (ok) {
+    // Fire FileAfterReload hook (informational).
+    m_hookMgr->doAction(HookNames::FileAfterReload, event);
+  }
+
   emit bufferModifiedChanged(p_bufferId);
   return ok;
+}
+
+QStringList BufferService::checkAllExternalChanges() {
+  QStringList changedBufferIds;
+  QJsonArray buffers = BufferCoreService::listBuffers();
+
+  for (const auto &bufferVal : buffers) {
+    QJsonObject bufObj = bufferVal.toObject();
+    QString bufferId = bufObj.value(QStringLiteral("id")).toString();
+    if (bufferId.isEmpty()) {
+      continue;
+    }
+
+    // Skip virtual buffers.
+    bool isVirtual = bufObj.value(QStringLiteral("isVirtual")).toBool();
+    if (isVirtual) {
+      continue;
+    }
+
+    // Check for external changes.
+    if (!BufferCoreService::checkExternalChanges(bufferId)) {
+      continue;
+    }
+
+    // Query the updated state.
+    BufferState state = BufferCoreService::getState(bufferId);
+    if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
+      // Fire FileExternalChange hook.
+      FileExternalChangeEvent event;
+      event.bufferId = bufferId;
+      event.filePath = bufObj.value(QStringLiteral("filePath")).toString();
+      event.state = static_cast<int>(state);
+      m_hookMgr->doAction(HookNames::FileExternalChange, event);
+
+      // Emit signal for UI layer.
+      emit bufferExternallyChanged(bufferId, state);
+      changedBufferIds.append(bufferId);
+    }
+  }
+
+  return changedBufferIds;
 }
 
 QString BufferService::insertAttachment(const QString &p_bufferId, const QString &p_sourcePath) {
@@ -363,6 +417,14 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
 
   emit bufferContentSynced(p_bufferId);
   emit bufferModifiedChanged(p_bufferId);
+
+  // Skip auto-save disk write for externally changed/missing files.
+  // Content sync from editor to buffer (above) still happens — we want the latest
+  // editor content in the vxcore buffer. Only the automatic disk write is blocked.
+  BufferState state = BufferCoreService::getState(p_bufferId);
+  if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
+    return;
+  }
 
   // Execute auto-save policy.
   switch (m_autoSavePolicy) {

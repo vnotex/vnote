@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QSet>
 #include <QString>
+#include <QStringList>
 
 #include <functional>
 
@@ -120,6 +121,7 @@ public:
   using BufferCoreService::getResolvedPath;
   using BufferCoreService::getResourceBasePath;
   using BufferCoreService::getRevision;
+  using BufferCoreService::checkExternalChanges;
   using BufferCoreService::getState;
   using BufferCoreService::insertAsset;
   using BufferCoreService::insertAssetRaw;
@@ -155,6 +157,14 @@ public:
   // Only unregisters if @p_writerKey matches the current active writer.
   void unregisterActiveWriter(const QString &p_bufferId, quintptr p_writerKey);
 
+  // ============ External Change Detection ============
+
+  // Check all open non-virtual buffers for external file changes.
+  // For each buffer whose state transitions to FileChanged or FileMissing,
+  // fires the FileExternalChange hook and emits bufferExternallyChanged signal.
+  // Returns a list of buffer IDs that have external changes detected.
+  QStringList checkAllExternalChanges();
+
 signals:
   // Emitted after buffer content is synced from editor to vxcore buffer.
   void bufferContentSynced(const QString &p_bufferId);
@@ -175,6 +185,11 @@ signals:
 
   // Emitted after attachment list/content changes for a buffer.
   void attachmentChanged(const QString &p_bufferId);
+
+  // Emitted when an open buffer's file is detected as changed or missing on disk.
+  // p_bufferId: the affected buffer.
+  // p_state: the detected state (BufferState::FileChanged or BufferState::FileMissing).
+  void bufferExternallyChanged(const QString &p_bufferId, BufferState p_state);
 
 private:
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.

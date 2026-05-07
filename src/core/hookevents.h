@@ -60,6 +60,17 @@ struct BufferEvent {
   static BufferEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for FileExternalChange hook.
+// Fired when external file modification or deletion is detected on an open buffer.
+struct FileExternalChangeEvent {
+  QString bufferId;
+  QString filePath;
+  int state = 0; // VxCoreBufferState as int: 1=FILE_MISSING, 2=FILE_CHANGED
+
+  QVariantMap toVariantMap() const;
+  static FileExternalChangeEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for ViewWindowBeforeOpen, ViewWindowAfterOpen.
 struct ViewWindowOpenEvent {
   QString fileType;

@@ -2,8 +2,10 @@
 
 #include <QDesktopServices>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QRegularExpression>
 #include <QSet>
+#include <QTimer>
 #include <QUrl>
 #include <QVariantMap>
 #include <QWidget>
@@ -31,7 +33,16 @@
 using namespace vnotex;
 
 ViewAreaController::ViewAreaController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+    : QObject(p_parent), m_services(p_services) {
+  // External file change polling timer (2-second interval).
+  m_fileCheckTimer = new QTimer(this);
+  m_fileCheckTimer->setInterval(2000);
+  connect(m_fileCheckTimer, &QTimer::timeout, this, &ViewAreaController::onFileCheckTimerTick);
+
+  // Monitor app focus state for file check scheduling.
+  connect(qApp, &QGuiApplication::applicationStateChanged,
+          this, &ViewAreaController::onAppStateChanged);
+}
 
 ViewAreaController::~ViewAreaController() {
   // Clean up workspace wrappers. Hidden workspaces may still cache ViewWindows
@@ -1613,4 +1624,41 @@ void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event)
 
   m_pendingNotebookCloseBufferIds.clear();
   emit windowsChanged();
+}
+
+void ViewAreaController::onAppStateChanged(Qt::ApplicationState p_state) {
+  if (p_state == Qt::ApplicationActive) {
+    checkAllBuffersForExternalChanges();
+    m_fileCheckTimer->start();
+  } else {
+    m_fileCheckTimer->stop();
+  }
+}
+
+void ViewAreaController::onFileCheckTimerTick() {
+  checkActiveBufferForExternalChanges();
+}
+
+void ViewAreaController::checkAllBuffersForExternalChanges() {
+  if (m_fileCheckInProgress) {
+    return;
+  }
+  m_fileCheckInProgress = true;
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (bufferSvc) {
+    bufferSvc->checkAllExternalChanges();
+  }
+  m_fileCheckInProgress = false;
+}
+
+void ViewAreaController::checkActiveBufferForExternalChanges() {
+  if (m_fileCheckInProgress) {
+    return;
+  }
+  m_fileCheckInProgress = true;
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (bufferSvc) {
+    bufferSvc->checkAllExternalChanges();
+  }
+  m_fileCheckInProgress = false;
 }

@@ -100,6 +100,24 @@ BufferEvent BufferEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== FileExternalChangeEvent =====
+
+QVariantMap FileExternalChangeEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("bufferId")] = bufferId;
+  m[QStringLiteral("filePath")] = filePath;
+  m[QStringLiteral("state")] = state;
+  return m;
+}
+
+FileExternalChangeEvent FileExternalChangeEvent::fromVariantMap(const QVariantMap &p_args) {
+  FileExternalChangeEvent e;
+  e.bufferId = p_args.value(QStringLiteral("bufferId")).toString();
+  e.filePath = p_args.value(QStringLiteral("filePath")).toString();
+  e.state = p_args.value(QStringLiteral("state")).toInt();
+  return e;
+}
+
 // ===== ViewWindowOpenEvent =====
 
 QVariantMap ViewWindowOpenEvent::toVariantMap() const {

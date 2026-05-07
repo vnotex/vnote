@@ -4,11 +4,13 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDragEnterEvent>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPushButton>
 #include <QPolygonF>
 #include <QResizeEvent>
 #include <QShortcut>
@@ -80,12 +82,15 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
   // so we use asQObject() + SIGNAL/SLOT string-based connect.
   auto *bufferService = m_services.get<BufferService>();
   if (bufferService) {
+    qRegisterMetaType<BufferState>("BufferState");
     connect(bufferService->asQObject(), SIGNAL(bufferAutoSaved(QString)), this,
             SLOT(onBufferAutoSaved(QString)));
     connect(bufferService->asQObject(), SIGNAL(bufferModifiedChanged(QString)), this,
             SLOT(onBufferModifiedChanged(QString)));
     connect(bufferService->asQObject(), SIGNAL(attachmentChanged(QString)), this,
             SLOT(onAttachmentChanged(QString)));
+    connect(bufferService->asQObject(), SIGNAL(bufferExternallyChanged(QString,BufferState)), this,
+            SLOT(onBufferExternallyChanged(QString,BufferState)));
   }
 
   // Refresh toolbar icons when the theme changes.
@@ -616,6 +621,85 @@ void ViewWindow2::onAttachmentChanged(const QString &p_bufferId) {
     return;
   }
   updateAttachmentIcon();
+}
+
+void ViewWindow2::setAutoReload(bool p_enabled) { m_autoReload = p_enabled; }
+
+bool ViewWindow2::autoReload() const { return m_autoReload; }
+
+void ViewWindow2::onBufferExternallyChanged(const QString &p_bufferId, BufferState p_state) {
+  if (p_bufferId != m_buffer.id()) {
+    return;
+  }
+  handleExternalChange(p_state);
+}
+
+void ViewWindow2::handleExternalChange(BufferState p_state) {
+  // Dismiss tracking: if user previously clicked Cancel, check if file changed again.
+  if (m_externalChangeDismissed) {
+    QString filePath = m_buffer.resolvedPath();
+    QDateTime currentMtime = QFileInfo(filePath).lastModified();
+    if (currentMtime == m_dismissedMtime) {
+      return; // Same change the user already dismissed.
+    }
+    // File changed again since dismiss — re-prompt.
+    m_externalChangeDismissed = false;
+  }
+
+  // AutoReload: silently reload without dialog (only for FileChanged, not FileMissing).
+  if (m_autoReload && p_state == BufferState::FileChanged) {
+    m_buffer.reload();
+    syncEditorFromBuffer();
+    m_lastKnownRevision = m_buffer.getRevision();
+    return;
+  }
+
+  QString filePath = m_buffer.resolvedPath();
+
+  if (p_state == BufferState::FileChanged) {
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("File Changed"));
+    msgBox.setText(tr("The file has been modified outside VNote.\n\n%1").arg(filePath));
+    QAbstractButton *reloadBtn = msgBox.addButton(tr("Reload"), QMessageBox::AcceptRole);
+    QAbstractButton *saveBtn = msgBox.addButton(tr("Save"), QMessageBox::DestructiveRole);
+    msgBox.addButton(QMessageBox::Cancel);
+    msgBox.setDefaultButton(static_cast<QPushButton *>(reloadBtn));
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == reloadBtn) {
+      m_buffer.reload();
+      syncEditorFromBuffer();
+      m_lastKnownRevision = m_buffer.getRevision();
+      m_externalChangeDismissed = false;
+    } else if (msgBox.clickedButton() == saveBtn) {
+      save();
+      m_externalChangeDismissed = false;
+    } else {
+      // Cancel
+      m_externalChangeDismissed = true;
+      m_dismissedMtime = QFileInfo(filePath).lastModified();
+    }
+  } else if (p_state == BufferState::FileMissing) {
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("File Missing"));
+    msgBox.setText(tr("The file no longer exists on disk.\n\n%1").arg(filePath));
+    QAbstractButton *saveBtn = msgBox.addButton(tr("Save"), QMessageBox::AcceptRole);
+    QAbstractButton *discardBtn = msgBox.addButton(tr("Discard"), QMessageBox::DestructiveRole);
+    msgBox.addButton(QMessageBox::Cancel);
+    msgBox.setDefaultButton(static_cast<QPushButton *>(saveBtn));
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == saveBtn) {
+      save();
+      m_externalChangeDismissed = false;
+    } else if (msgBox.clickedButton() == discardBtn) {
+      emit closeRequested();
+    } else {
+      // Cancel — for file-missing, store null QDateTime as dismiss token.
+      m_externalChangeDismissed = true;
+      m_dismissedMtime = QDateTime(); // Any future existence change re-prompts.
+    }
+  }
 }
 
 void ViewWindow2::updateAttachmentIcon() {

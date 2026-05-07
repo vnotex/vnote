@@ -31,6 +31,8 @@ void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 
 void ViewWindow2::onAttachmentChanged(const QString &) {}
 
+void ViewWindow2::onBufferExternallyChanged(const QString &, BufferState) {}
+
 void ViewWindow2::refreshToolBarIcons() {}
 
 QIcon ViewWindow2::getIcon() const { return {}; }

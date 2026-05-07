@@ -92,6 +92,15 @@ inline const QLatin1String FileBeforeUntag("vnote.file.before_untag");
 // After a tag is removed from a file
 inline const QLatin1String FileAfterUntag("vnote.file.after_untag");
 
+// When an external change is detected on a buffer's file (informational)
+inline const QLatin1String FileExternalChange("vnote.file.external_change");
+
+// Before a buffer is reloaded from disk (cancellable)
+inline const QLatin1String FileBeforeReload("vnote.file.before_reload");
+
+// After a buffer is successfully reloaded from disk
+inline const QLatin1String FileAfterReload("vnote.file.after_reload");
+
 // ===== Tag Events =====
 // Triggered when tag operations occur
 

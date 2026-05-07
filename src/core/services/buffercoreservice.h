@@ -94,6 +94,11 @@ public:
   // Check if buffer has unsaved modifications.
   bool isModified(const QString &p_bufferId) const;
 
+  // Check if the buffer's file has been modified or deleted externally.
+  // Updates the buffer's internal state (query with getState() afterwards).
+  // Returns true on success, false on failure.
+  bool checkExternalChanges(const QString &p_bufferId);
+
   // Get buffer content revision number.
   // Lightweight — avoids full JSON parsing from getBuffer().
   int getRevision(const QString &p_bufferId) const;

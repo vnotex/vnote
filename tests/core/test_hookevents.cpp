@@ -21,6 +21,7 @@ private slots:
   void testNodeRenameEventRoundTrip();
   void testFileOpenEventRoundTrip();
   void testBufferEventRoundTrip();
+  void testFileExternalChangeEventRoundTrip();
   void testViewWindowOpenEventRoundTrip();
   void testViewWindowCloseEventRoundTrip();
   void testViewWindowMoveEventRoundTrip();
@@ -153,6 +154,20 @@ void TestHookEvents::testBufferEventRoundTrip() {
   BufferEvent restored = BufferEvent::fromVariantMap(map);
 
   QCOMPARE(restored.bufferId, orig.bufferId);
+}
+
+void TestHookEvents::testFileExternalChangeEventRoundTrip() {
+  FileExternalChangeEvent original;
+  original.bufferId = QStringLiteral("buf-12345");
+  original.filePath = QStringLiteral("/path/to/file.md");
+  original.state = 2; // FILE_CHANGED
+
+  QVariantMap map = original.toVariantMap();
+  FileExternalChangeEvent restored = FileExternalChangeEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.bufferId, original.bufferId);
+  QCOMPARE(restored.filePath, original.filePath);
+  QCOMPARE(restored.state, original.state);
 }
 
 void TestHookEvents::testViewWindowOpenEventRoundTrip() {

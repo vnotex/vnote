@@ -158,6 +158,10 @@ bool HookManager::doAction(const QString &p_hook, const ThemeSwitchEvent &p_even
   return doAction(p_hook, p_event.toVariantMap());
 }
 
+bool HookManager::doAction(const QString &p_hook, const FileExternalChangeEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
 // ===== Filters =====
 
 int HookManager::addFilter(const QString &p_hook, FilterCallback p_callback, int p_priority) {

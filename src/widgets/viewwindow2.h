@@ -1,6 +1,7 @@
 #ifndef VIEWWINDOW2_H
 #define VIEWWINDOW2_H
 
+#include <QDateTime>
 #include <QFrame>
 #include <QIcon>
 #include <QPixmap>
@@ -150,6 +151,10 @@ public:
   // Default implementation syncs dirty content and unregisters from BufferService.
   virtual bool aboutToClose(bool p_force);
 
+  // Per-window auto-reload setting.
+  void setAutoReload(bool p_enabled);
+  bool autoReload() const;
+
 public slots:
   void findNext(const QString &p_text, FindOptions p_options);
 
@@ -199,6 +204,10 @@ signals:
 
   // Emitted when the display name changes.
   void nameChanged();
+
+  // Emitted when the user chooses to discard a file-missing buffer.
+  // ViewArea2 connects this to close the window.
+  void closeRequested();
 
 protected slots:
   virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
@@ -423,6 +432,9 @@ private slots:
   // Updates the attachment icon if the buffer ID matches ours.
   void onAttachmentChanged(const QString &p_bufferId);
 
+  // Called when BufferService detects external change for any buffer.
+  void onBufferExternallyChanged(const QString &p_bufferId, BufferState p_state);
+
 private:
   struct FindInfo {
     QStringList m_texts;
@@ -434,6 +446,9 @@ private:
   // Focus event handlers for auto-save integration.
   void onFocusGained();
   void onFocusLost();
+
+  // Main handler for external file changes — shows dialog or auto-reloads.
+  void handleExternalChange(BufferState p_state);
 
   // Recalculate content margins for readable-width mode.
   void updateContentMargins();
@@ -506,6 +521,16 @@ private:
 
   // Last find info for findNextOnLastFind().
   FindInfo m_findInfo;
+
+  // Per-window AutoReload flag — automatically reload on external change without dialog.
+  bool m_autoReload = false;
+
+  // Suppress re-prompt flag — set when user clicks Cancel on external change dialog.
+  bool m_externalChangeDismissed = false;
+
+  // File mtime at time of Cancel — acts as dismiss token.
+  // Re-prompt triggers if file's mtime differs from this on next notification.
+  QDateTime m_dismissedMtime;
 
   // Update the attachment action icon based on whether the buffer has attachments.
   void updateAttachmentIcon();

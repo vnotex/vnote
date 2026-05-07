@@ -127,6 +127,19 @@ bool BufferCoreService::reloadBuffer(const QString &p_bufferId) {
   return true;
 }
 
+bool BufferCoreService::checkExternalChanges(const QString &p_bufferId) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  VxCoreError err = vxcore_buffer_check_external_changes(m_context, p_bufferId.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "checkExternalChanges failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
+}
+
 QJsonObject BufferCoreService::getContent(const QString &p_bufferId) const {
   if (!checkContext()) {
     return QJsonObject();

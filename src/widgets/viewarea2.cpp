@@ -804,6 +804,9 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   m_windows[id] = win;
   win->setViewWindowId(id);
   split->addViewWindow(win);
+  connect(win, &ViewWindow2::closeRequested, this, [this, id]() {
+    m_controller->closeViewWindow(id, true);
+  });
   m_controller->onViewWindowOpened(id, p_buffer, p_settings);
 
   // QTabWidget::addTab does not make the new tab current (except the first).
@@ -833,6 +836,9 @@ void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &
   m_windows[id] = win;
   win->setViewWindowId(id);
   split->addViewWindow(win);
+  connect(win, &ViewWindow2::closeRequested, this, [this, id]() {
+    m_controller->closeViewWindow(id, true);
+  });
 
   // Use default FileOpenSettings for notification.
   FileOpenSettings settings;
