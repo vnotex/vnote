@@ -1,5 +1,6 @@
 #include "buffercoreservice.h"
 
+#include <QDebug>
 #include <QJsonDocument>
 #include <QJsonParseError>
 
@@ -133,6 +134,8 @@ bool BufferCoreService::checkExternalChanges(const QString &p_bufferId) {
   }
 
   VxCoreError err = vxcore_buffer_check_external_changes(m_context, p_bufferId.toUtf8().constData());
+  qDebug() << "[EXT-CHK] BufferCoreService::checkExternalChanges"
+           << "bufferId=" << p_bufferId << "vxcore_result=" << err;
   if (err != VXCORE_OK) {
     qWarning() << "checkExternalChanges failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
