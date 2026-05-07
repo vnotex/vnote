@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+class QPushButton;
 class QVBoxLayout;
 
 namespace vnotex {
@@ -27,11 +28,18 @@ private:
 
   void loadExternalProgramsGroup();
 
+  void addExternalProgramRow(const QString &p_name, const QString &p_command,
+                             const QString &p_suffixes);
+
+  void removeExternalProgramRow(QWidget *p_row);
+
   QVBoxLayout *m_builtInCardLayout = nullptr;
   int m_builtInRowStartIndex = 0;
 
   QVBoxLayout *m_externalCardLayout = nullptr;
   int m_externalRowStartIndex = 0;
+
+  QPushButton *m_addProgramButton = nullptr;
 
   static const char *c_nameProperty;
 
