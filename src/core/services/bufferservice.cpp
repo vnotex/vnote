@@ -215,9 +215,6 @@ bool BufferService::reloadBuffer(const QString &p_bufferId) {
 QStringList BufferService::checkAllExternalChanges() {
   QStringList changedBufferIds;
   QJsonArray buffers = BufferCoreService::listBuffers();
-  qDebug() << "[EXT-CHK] BufferService::checkAllExternalChanges"
-           << "total_buffers=" << buffers.size();
-
   for (const auto &bufferVal : buffers) {
     QJsonObject bufObj = bufferVal.toObject();
     QString bufferId = bufObj.value(QStringLiteral("id")).toString();
@@ -238,8 +235,6 @@ QStringList BufferService::checkAllExternalChanges() {
 
     // Query the updated state.
     BufferState state = BufferCoreService::getState(bufferId);
-    qDebug() << "[EXT-CHK]   buffer=" << bufferId
-             << "state=" << static_cast<int>(state);
     if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
       // Fire FileExternalChange hook.
       FileExternalChangeEvent event;
@@ -251,7 +246,6 @@ QStringList BufferService::checkAllExternalChanges() {
       // Emit signal for UI layer.
       emit bufferExternallyChanged(bufferId, state);
       changedBufferIds.append(bufferId);
-      qDebug() << "[EXT-CHK]   -> CHANGED, emitting signal for" << bufferId;
     }
   }
 

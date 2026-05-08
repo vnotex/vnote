@@ -1628,8 +1628,6 @@ void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event)
 }
 
 void ViewAreaController::onAppStateChanged(Qt::ApplicationState p_state) {
-  qDebug() << "[EXT-CHK] ViewAreaController::onAppStateChanged"
-           << "state=" << static_cast<int>(p_state);
   if (p_state == Qt::ApplicationActive) {
     checkAllBuffersForExternalChanges();
     m_fileCheckTimer->start();
@@ -1639,18 +1637,14 @@ void ViewAreaController::onAppStateChanged(Qt::ApplicationState p_state) {
 }
 
 void ViewAreaController::onFileCheckTimerTick() {
-  qDebug() << "[EXT-CHK] ViewAreaController::onFileCheckTimerTick fired";
   checkActiveBufferForExternalChanges();
 }
 
 void ViewAreaController::checkAllBuffersForExternalChanges() {
-  qDebug() << "[EXT-CHK] ViewAreaController::checkAllBuffersForExternalChanges"
-           << "reentrancy_guard=" << m_fileCheckInProgress;
   if (m_fileCheckInProgress) {
     return;
   }
   m_fileCheckInProgress = true;
-  qDebug() << "[EXT-CHK]   proceeding with check";
   auto *bufferSvc = m_services.get<BufferService>();
   if (bufferSvc) {
     bufferSvc->checkAllExternalChanges();

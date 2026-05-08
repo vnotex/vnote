@@ -635,12 +635,6 @@ void ViewWindow2::onBufferExternallyChanged(const QString &p_bufferId, BufferSta
 }
 
 void ViewWindow2::handleExternalChange(BufferState p_state) {
-  qDebug() << "[EXT-CHK] ViewWindow2::handleExternalChange"
-           << "bufferId=" << m_buffer.id()
-           << "state=" << static_cast<int>(p_state)
-           << "autoReload=" << m_autoReload
-           << "dismissed=" << m_externalChangeDismissed
-           << "dismissedMtime=" << m_dismissedMtime;
   // Dismiss tracking: if user previously clicked Cancel, check if file changed again.
   if (m_externalChangeDismissed) {
     QString filePath = m_buffer.resolvedPath();
@@ -663,7 +657,6 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
   QString filePath = m_buffer.resolvedPath();
 
   if (p_state == BufferState::FileChanged) {
-    qDebug() << "[EXT-CHK]   showing FileChanged dialog for" << filePath;
     QMessageBox msgBox(this);
     msgBox.setWindowTitle(tr("File Changed"));
     msgBox.setText(tr("The file has been modified outside VNote.\n\n%1").arg(filePath));
@@ -687,7 +680,6 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
       m_dismissedMtime = QFileInfo(filePath).lastModified();
     }
   } else if (p_state == BufferState::FileMissing) {
-    qDebug() << "[EXT-CHK]   showing FileMissing dialog for" << filePath;
     QMessageBox msgBox(this);
     msgBox.setWindowTitle(tr("File Missing"));
     msgBox.setText(tr("The file no longer exists on disk.\n\n%1").arg(filePath));
