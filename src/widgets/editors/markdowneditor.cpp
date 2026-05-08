@@ -573,12 +573,7 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
     return false;
   }
 
-  // 6. Same-file check — images already in place.
-  if (sourceBasePath == m_contentPath) {
-    return false;
-  }
-
-  // 7. Show SelectDialog.
+  // 6. Show SelectDialog.
   const auto colors = getSelectDialogShortcutColors(m_services);
   SelectDialog dialog(tr("Paste with Linked Images"), colors.first, colors.second, this);
   dialog.addSelection(tr("Paste with Linked Images"), 0);
