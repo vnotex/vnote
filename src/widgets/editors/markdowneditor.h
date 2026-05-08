@@ -170,6 +170,9 @@ private:
   // Return true if it is processed.
   bool processMultipleUrlsFromMimeData(const QMimeData *p_source);
 
+  // Return true if it is processed.
+  bool processRelativeImagesFromMimeData(const QMimeData *p_source);
+
   void insertImageFromMimeData(const QMimeData *p_source);
 
   void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
@@ -244,6 +247,10 @@ private:
   bool m_richPasteAsked = false;
 
   bool m_plainTextPasteAsked = false;
+
+  // Results from last "Paste with Linked Images" operation (for info dialog).
+  QStringList m_lastPastedImagesCopied;
+  QStringList m_lastPastedImagesSkipped;
 };
 } // namespace vnotex
 

@@ -46,6 +46,7 @@
 #include <imagehost/imagehost.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
+#include <utils/imageresolutionutils.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
 #include <utils/webutils.h>
@@ -509,6 +510,11 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
 
   m_shouldTriggerRichPaste = false;
 
+  if (processRelativeImagesFromMimeData(p_source)) {
+    *p_handled = true;
+    return;
+  }
+
   if (processHtmlFromMimeData(p_source)) {
     *p_handled = true;
     return;
@@ -528,6 +534,114 @@ void MarkdownEditor::handleInsertFromMimeData(const QMimeData *p_source, bool *p
     *p_handled = true;
     return;
   }
+}
+
+bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source) {
+  // 1. Check for custom MIME type indicating source content path.
+  if (!p_source->hasFormat(c_contentSourceMimeType)) {
+    return false;
+  }
+
+  // 2. Extract source base path.
+  QString sourceBasePath = QString::fromUtf8(p_source->data(c_contentSourceMimeType));
+  if (sourceBasePath.isEmpty()) {
+    return false;
+  }
+
+  // 3. Get clipboard text.
+  QString text = p_source->text();
+  if (text.isEmpty()) {
+    return false;
+  }
+
+  // 4. Resolve relative images.
+  auto images = ImageResolutionUtils::resolveRelativeImages(text, sourceBasePath);
+  if (images.isEmpty()) {
+    return false;
+  }
+
+  // 5. Check if at least one image exists.
+  bool anyExists = false;
+  for (const auto &img : images) {
+    if (img.exists) {
+      anyExists = true;
+      break;
+    }
+  }
+  if (!anyExists) {
+    return false;
+  }
+
+  // 6. Same-file check — images already in place.
+  if (sourceBasePath == m_contentPath) {
+    return false;
+  }
+
+  // 7. Show SelectDialog.
+  const auto colors = getSelectDialogShortcutColors(m_services);
+  SelectDialog dialog(tr("Paste with Linked Images"), colors.first, colors.second, this);
+  dialog.addSelection(tr("Paste with Linked Images"), 0);
+  dialog.addSelection(tr("Paste as Plain Text"), 1);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return true; // User cancelled — prevent fallthrough.
+  }
+
+  int selection = dialog.getSelection();
+
+  if (selection == 1) {
+    // Paste as plain text.
+    enterInsertModeIfApplicable();
+    m_textEdit->insertPlainText(p_source->text());
+    return true;
+  }
+
+  // selection == 0: Paste with Linked Images.
+  m_lastPastedImagesCopied.clear();
+  m_lastPastedImagesSkipped.clear();
+
+  // Deduplication: track already-copied source paths -> new URL.
+  QHash<QString, QString> copiedPaths;
+
+  // Process images in descending position order (safe in-place rewriting).
+  for (const auto &img : images) {
+    if (!img.exists) {
+      m_lastPastedImagesSkipped.append(
+          QStringLiteral("%1 (file not found)").arg(img.urlInLink));
+      continue;
+    }
+
+    // Check dedup — same source image already copied.
+    auto it = copiedPaths.find(img.srcAbsolutePath);
+    if (it != copiedPaths.end()) {
+      text.replace(img.urlInLinkPos, img.urlInLink.size(), it.value());
+      continue;
+    }
+
+    // Copy image via Buffer2::insertAsset.
+    QString urlInLink;
+    bool ret = insertImageToBufferFromLocalFile(
+        img.title, img.alt, img.srcAbsolutePath, false, &urlInLink);
+
+    if (!ret || urlInLink.isEmpty()) {
+      m_lastPastedImagesSkipped.append(
+          QStringLiteral("%1 (copy failed)").arg(img.urlInLink));
+      continue;
+    }
+
+    copiedPaths.insert(img.srcAbsolutePath, urlInLink);
+
+    // Rewrite URL in text.
+    text.replace(img.urlInLinkPos, img.urlInLink.size(), urlInLink);
+
+    m_lastPastedImagesCopied.append(img.urlInLink);
+  }
+
+  // Insert the rewritten text.
+  enterInsertModeIfApplicable();
+  m_textEdit->insertPlainText(text);
+
+  return true;
 }
 
 bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source) {
