@@ -639,23 +639,38 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
 
   // Show info dialog if any images were processed.
   if (!m_lastPastedImagesCopied.isEmpty() || !m_lastPastedImagesSkipped.isEmpty()) {
-    QString message;
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Pasted with Linked Images"));
+    msgBox.setIcon(QMessageBox::Information);
+
+    // Build summary line.
+    QStringList summaryParts;
     if (!m_lastPastedImagesCopied.isEmpty()) {
-      message += tr("Copied (%1):").arg(m_lastPastedImagesCopied.size());
+      summaryParts << tr("Copied %1 image(s).").arg(m_lastPastedImagesCopied.size());
+    }
+    if (!m_lastPastedImagesSkipped.isEmpty()) {
+      summaryParts << tr("Skipped %1 image(s).").arg(m_lastPastedImagesSkipped.size());
+    }
+    msgBox.setText(summaryParts.join(QStringLiteral(" ")));
+
+    // Build detailed list.
+    QString details;
+    if (!m_lastPastedImagesCopied.isEmpty()) {
+      details += tr("Copied:") + QStringLiteral("\n");
       for (const auto &img : m_lastPastedImagesCopied) {
-        message += QStringLiteral("\n  • ") + img;
+        details += QStringLiteral("  ") + img + QStringLiteral("\n");
       }
     }
     if (!m_lastPastedImagesSkipped.isEmpty()) {
-      if (!message.isEmpty()) {
-        message += QStringLiteral("\n\n");
-      }
-      message += tr("Skipped (%1):").arg(m_lastPastedImagesSkipped.size());
+      if (!details.isEmpty()) details += QStringLiteral("\n");
+      details += tr("Skipped:") + QStringLiteral("\n");
       for (const auto &img : m_lastPastedImagesSkipped) {
-        message += QStringLiteral("\n  • ") + img;
+        details += QStringLiteral("  ") + img + QStringLiteral("\n");
       }
     }
-    QMessageBox::information(this, tr("Pasted with Linked Images"), message);
+    msgBox.setDetailedText(details);
+
+    msgBox.exec();
   }
 
   return true;
