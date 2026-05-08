@@ -3,11 +3,17 @@
 
 #include <QJsonObject>
 #include <QSharedPointer>
+#include <QString>
 #include <QVector>
 
 #include "global.h"
 
 namespace vnotex {
+
+// Custom MIME type for embedding source content path in clipboard.
+static const QString c_contentSourceMimeType =
+    QStringLiteral("application/x-vnotex-content-source");
+
 class ClipboardDataItem {
 public:
   virtual ~ClipboardDataItem() {}
