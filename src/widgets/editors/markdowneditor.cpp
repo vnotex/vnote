@@ -33,6 +33,7 @@
 
 #include <widgets/dialogs/selectdialog.h>
 
+#include <core/clipboarddata.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
@@ -86,6 +87,12 @@ void MarkdownEditor::init() {
           &MarkdownEditor::handleCanInsertFromMimeData);
   connect(m_textEdit, &vte::VTextEdit::insertFromMimeDataRequested, this,
           &MarkdownEditor::handleInsertFromMimeData);
+  connect(m_textEdit, &vte::VTextEdit::createMimeDataFromSelectionRequested, this,
+          [this](QMimeData *p_source) {
+            if (!m_contentPath.isEmpty()) {
+              p_source->setData(c_contentSourceMimeType, m_contentPath.toUtf8());
+            }
+          });
   connect(m_textEdit, &vte::VTextEdit::contextMenuEventRequested, this,
           &MarkdownEditor::handleContextMenuEvent);
 
