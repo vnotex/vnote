@@ -1663,9 +1663,16 @@ void ViewAreaController::checkActiveBufferForExternalChanges() {
     return;
   }
   m_fileCheckInProgress = true;
-  auto *bufferSvc = m_services.get<BufferService>();
-  if (bufferSvc) {
-    bufferSvc->checkAllExternalChanges();
+
+  if (!m_currentWorkspaceId.isEmpty() && m_view) {
+    QString activeBufferId = m_view->getCurrentBufferIdForWorkspace(m_currentWorkspaceId);
+    if (!activeBufferId.isEmpty()) {
+      auto *bufferSvc = m_services.get<BufferService>();
+      if (bufferSvc) {
+        bufferSvc->checkSingleExternalChange(activeBufferId);
+      }
+    }
   }
+
   m_fileCheckInProgress = false;
 }

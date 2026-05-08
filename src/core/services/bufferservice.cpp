@@ -258,6 +258,40 @@ QStringList BufferService::checkAllExternalChanges() {
   return changedBufferIds;
 }
 
+bool BufferService::checkSingleExternalChange(const QString &p_bufferId) {
+  if (p_bufferId.isEmpty()) {
+    return false;
+  }
+
+  // Skip virtual buffers.
+  if (isVirtualBuffer(p_bufferId)) {
+    return false;
+  }
+
+  // Check for external changes via vxcore.
+  if (!BufferCoreService::checkExternalChanges(p_bufferId)) {
+    return false;
+  }
+
+  // Query the updated state.
+  BufferState state = BufferCoreService::getState(p_bufferId);
+  if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
+    // Fire FileExternalChange hook.
+    FileExternalChangeEvent event;
+    event.bufferId = p_bufferId;
+    QJsonObject bufObj = BufferCoreService::getBuffer(p_bufferId);
+    event.filePath = bufObj.value(QStringLiteral("filePath")).toString();
+    event.state = static_cast<int>(state);
+    m_hookMgr->doAction(HookNames::FileExternalChange, event);
+
+    // Emit signal for UI layer.
+    emit bufferExternallyChanged(p_bufferId, state);
+    return true;
+  }
+
+  return false;
+}
+
 QString BufferService::insertAttachment(const QString &p_bufferId, const QString &p_sourcePath) {
   AttachmentAddEvent event;
   event.bufferId = p_bufferId;

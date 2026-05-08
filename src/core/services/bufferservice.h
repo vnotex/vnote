@@ -165,6 +165,12 @@ public:
   // Returns a list of buffer IDs that have external changes detected.
   QStringList checkAllExternalChanges();
 
+  // Check a single buffer for external file changes.
+  // If the buffer's state transitions to FileChanged or FileMissing,
+  // fires the FileExternalChange hook and emits bufferExternallyChanged signal.
+  // Returns true if a change was detected, false otherwise.
+  bool checkSingleExternalChange(const QString &p_bufferId);
+
 signals:
   // Emitted after buffer content is synced from editor to vxcore buffer.
   void bufferContentSynced(const QString &p_bufferId);
