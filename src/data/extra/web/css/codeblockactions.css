@@ -1,0 +1,67 @@
+/* Code block action buttons — collapse / copy toolbar */
+
+/* Icon button base */
+div.code-toolbar > .toolbar .vx-codeblock-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+div.code-toolbar > .toolbar .vx-codeblock-action-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+div.code-toolbar > .toolbar .vx-codeblock-action-btn:hover {
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 3px;
+}
+
+/* Collapse state */
+div.code-toolbar.vx-collapsed > pre {
+  overflow-y: hidden !important;
+}
+
+/* Fade gradient overlay */
+div.code-toolbar.vx-collapsed::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2em;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--vx-code-bg, #f5f2f0));
+  z-index: 1;
+}
+
+/* Toolbar flex layout */
+div.code-toolbar > .toolbar {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+div.code-toolbar > .toolbar .toolbar-item {
+  display: flex;
+}
+
+/* Copy feedback state */
+div.code-toolbar > .toolbar .vx-codeblock-action-btn .vx-icon-check {
+  display: none;
+}
+
+div.code-toolbar > .toolbar .vx-codeblock-action-btn.vx-copied .vx-icon-copy {
+  display: none;
+}
+
+div.code-toolbar > .toolbar .vx-codeblock-action-btn.vx-copied .vx-icon-check {
+  display: block;
+}

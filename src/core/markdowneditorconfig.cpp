@@ -538,9 +538,20 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     r.m_name = QStringLiteral("prism");
     r.m_enabled = true;
     r.m_scripts = {
-      QStringLiteral("web/js/prism/clipboard.min.js"),
       QStringLiteral("web/js/prism.js")
     };
+    res.m_resources.append(r);
+  }
+
+  // codeblock_actions
+  {
+    WebResource::Resource r;
+    r.m_name = QStringLiteral("codeblock_actions");
+    r.m_enabled = true;
+    r.m_scripts = {
+      QStringLiteral("web/js/codeblockactions.js")
+    };
+    r.m_styles = {QStringLiteral("web/css/codeblockactions.css")};
     res.m_resources.append(r);
   }
 
