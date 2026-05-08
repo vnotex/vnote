@@ -33,3 +33,30 @@ add_qt_test(test_stringutils
     ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
   GUILESS
 )
+
+add_qt_test(test_clipboard_image
+  SOURCES
+    test_clipboard_image.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/clipboardutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/imageresolutionutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/global.cpp
+  LINKS
+    Qt6::Gui
+    Qt6::Widgets
+    VTextEdit
+  GUILESS
+)
+
+target_include_directories(test_clipboard_image PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+)
+
+# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
+add_custom_command(TARGET test_clipboard_image POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_clipboard_image>
+)

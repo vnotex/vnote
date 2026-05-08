@@ -1,0 +1,4 @@
+[1/12] Automatic MOC and UIC for target test_htmlutils
+[2/10] Automatic MOC and UIC for target test_fileutils2
+[3/8] Automatic MOC and UIC for target test_pathutils
+[4/6] Automatic MOC and UIC for target test_stringutils
