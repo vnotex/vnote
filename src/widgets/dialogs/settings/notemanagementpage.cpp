@@ -44,7 +44,7 @@ void NoteManagementPage::setupUI() {
     m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), (int)LineEndingPolicy::CRLF);
     m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);
 
-    const QString label(tr("Line ending:"));
+    const QString label(tr("Line ending"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox, this));
@@ -60,7 +60,7 @@ void NoteManagementPage::setupUI() {
     m_defaultOpenModeComboBox->addItem(tr("Read"), (int)ViewWindowMode::Read);
     m_defaultOpenModeComboBox->addItem(tr("Edit"), (int)ViewWindowMode::Edit);
 
-    const QString label(tr("Default open mode:"));
+    const QString label(tr("Default open mode"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_defaultOpenModeComboBox->toolTip(), m_defaultOpenModeComboBox, this));

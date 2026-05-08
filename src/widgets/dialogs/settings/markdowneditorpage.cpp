@@ -255,7 +255,7 @@ void MarkdownEditorPage::setupReadGroup() {
     m_zoomFactorSpinBox->setRange(0.1, 10);
     m_zoomFactorSpinBox->setSingleStep(0.1);
 
-    const QString label(tr("Zoom factor:"));
+    const QString label(tr("Zoom factor"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_zoomFactorSpinBox->toolTip(), m_zoomFactorSpinBox, this));
@@ -360,7 +360,7 @@ void MarkdownEditorPage::setupEditGroup() {
     auto *srcRowLayout = new QVBoxLayout(srcRow);
     srcRowLayout->setContentsMargins(16, 6, 16, 6);
     srcRowLayout->setSpacing(4);
-    auto *srcLabel = new QLabel(tr("In-place preview sources:"), srcRow);
+    auto *srcLabel = new QLabel(tr("In-place preview sources"), srcRow);
     srcRowLayout->addWidget(srcLabel);
 
     m_inplacePreviewSourceImageLinkCheckBox = WidgetsFactory::createCheckBox(tr("Image link"), this);
@@ -518,7 +518,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
                   p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
             });
 
-    const QString label(tr("Section number:"));
+    const QString label(tr("Section number"));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_sectionNumberComboBox->toolTip(), sectionWidget, this));
     addSearchItem(label, m_sectionNumberComboBox->toolTip(), m_sectionNumberComboBox);
@@ -532,7 +532,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
     m_plantUmlModeComboBox->addItem(tr("Web Service"), 0);
     m_plantUmlModeComboBox->addItem(tr("Local JAR"), 1);
 
-    const QString label(tr("PlantUml:"));
+    const QString label(tr("PlantUml"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox, this));
@@ -571,7 +571,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
     });
     jarLayout->addWidget(testBtn);
 
-    const QString label(tr("PlantUml JAR file:"));
+    const QString label(tr("PlantUml JAR file"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_plantUmlJarFileInput->toolTip(), jarWidget, this));
@@ -586,7 +586,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
         tr("Override the Web service used to render PlantUml graphs"));
     m_plantUmlWebServiceLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
-    const QString label(tr("Override PlantUml Web service:"));
+    const QString label(tr("Override PlantUml Web service"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit, this));
@@ -603,7 +603,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
     m_graphvizModeComboBox->addItem(tr("Web Service"), 0);
     m_graphvizModeComboBox->addItem(tr("Local Executable"), 1);
 
-    const QString label(tr("Graphviz:"));
+    const QString label(tr("Graphviz"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_graphvizModeComboBox->toolTip(), m_graphvizModeComboBox, this));
@@ -642,7 +642,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
     });
     fileLayout->addWidget(testBtn);
 
-    const QString label(tr("Graphviz executable file:"));
+    const QString label(tr("Graphviz executable file"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_graphvizFileInput->toolTip(), fileWidget, this));
@@ -657,7 +657,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
         tr("Override the MathJax script used to render math formulas"));
     m_mathJaxScriptLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
-    const QString label(tr("Override MathJax script:"));
+    const QString label(tr("Override MathJax script"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit, this));

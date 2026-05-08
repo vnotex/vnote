@@ -43,7 +43,7 @@ void EditorPage::setupUI() {
     m_autoSavePolicyComboBox->addItem(tr("Backup File"),
                                       (int)EditorConfig::AutoSavePolicy::BackupFile);
 
-    const QString label(tr("Auto save policy:"));
+    const QString label(tr("Auto save policy"));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_autoSavePolicyComboBox->toolTip(),
                                             m_autoSavePolicyComboBox, this));
@@ -62,7 +62,7 @@ void EditorPage::setupUI() {
     m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), (int)LineEndingPolicy::CRLF);
     m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);
 
-    const QString label(tr("Line ending:"));
+    const QString label(tr("Line ending"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_lineEndingComboBox->toolTip(),
@@ -79,7 +79,7 @@ void EditorPage::setupUI() {
     m_toolBarIconSizeSpinBox->setRange(1, 48);
     m_toolBarIconSizeSpinBox->setSingleStep(1);
 
-    const QString label(tr("Tool bar icon size:"));
+    const QString label(tr("Tool bar icon size"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_toolBarIconSizeSpinBox->toolTip(),
@@ -121,7 +121,7 @@ void EditorPage::setupUI() {
 
     lineLayout->addStretch();
 
-    const QString label(tr("Spell check dictionary:"));
+    const QString label(tr("Spell check dictionary"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_spellCheckDictComboBox->toolTip(),
@@ -141,7 +141,7 @@ void EditorPage::setupUI() {
     m_layoutModeComboBox->addItem(
         tr("Readable Width"), static_cast<int>(ViewWindowLayoutMode::ReadableWidth));
 
-    const QString label(tr("Content layout:"));
+    const QString label(tr("Content layout"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_layoutModeComboBox->toolTip(),
@@ -159,7 +159,7 @@ void EditorPage::setupUI() {
     m_readableWidthSpinBox->setSingleStep(20);
     m_readableWidthSpinBox->setSuffix(QStringLiteral(" px"));
 
-    const QString label(tr("Readable width:"));
+    const QString label(tr("Readable width"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_readableWidthSpinBox->toolTip(),

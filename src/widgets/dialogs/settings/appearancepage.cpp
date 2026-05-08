@@ -50,7 +50,7 @@ void AppearancePage::setupUI() {
     m_toolBarIconSizeSpinBox->setRange(1, 48);
     m_toolBarIconSizeSpinBox->setSingleStep(1);
 
-    const QString label(tr("Main tool bar icon size:"));
+    const QString label(tr("Main tool bar icon size"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, m_toolBarIconSizeSpinBox->toolTip(),
@@ -71,7 +71,7 @@ void AppearancePage::setupUI() {
     dockRowLayout->setContentsMargins(16, 6, 16, 6);
     dockRowLayout->setSpacing(4);
 
-    auto *dockLabel = new QLabel(tr("Dock widgets kept when expanding content area:"), dockRow);
+    auto *dockLabel = new QLabel(tr("Dock widgets kept when expanding content area"), dockRow);
     dockRowLayout->addWidget(dockLabel);
 
     for (int i = 0; i < docks.size(); ++i) {
@@ -87,7 +87,7 @@ void AppearancePage::setupUI() {
 
     cardLayout->addWidget(dockRow);
 
-    const QString label(tr("Dock widgets kept when expanding content area:"));
+    const QString label(tr("Dock widgets kept when expanding content area"));
     if (!m_keepDocksExpandingContentArea.isEmpty()) {
       addSearchItem(label, label, m_keepDocksExpandingContentArea.first().first);
     }

@@ -104,8 +104,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/appearancepage.cpp" line="48"/>
-        <source>Main tool bar icon size:</source>
-        <translation>主工具栏图标大小:</translation>
+        <source>Main tool bar icon size</source>
+        <translation>主工具栏图标大小</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/appearancepage.cpp" line="70"/>
@@ -322,8 +322,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="38"/>
-        <source>Auto save policy:</source>
-        <translation>自动保存策略:</translation>
+        <source>Auto save policy</source>
+        <translation>自动保存策略</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="47"/>
@@ -357,8 +357,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="55"/>
-        <source>Line ending:</source>
-        <translation>行结尾:</translation>
+        <source>Line ending</source>
+        <translation>行结尾</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="64"/>
@@ -367,8 +367,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="69"/>
-        <source>Tool bar icon size:</source>
-        <translation>工具栏图标大小:</translation>
+        <source>Tool bar icon size</source>
+        <translation>工具栏图标大小</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="81"/>
@@ -392,8 +392,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="107"/>
-        <source>Spell check dictionary:</source>
-        <translation>拼写检查词典:</translation>
+        <source>Spell check dictionary</source>
+        <translation>拼写检查词典</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="166"/>
@@ -1154,8 +1154,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="36"/>
-        <source>Language:</source>
-        <translation>语言:</translation>
+        <source>Language</source>
+        <translation>语言</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="46"/>
@@ -1184,8 +1184,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="53"/>
-        <source>OpenGL:</source>
-        <translation>OpenGL:</translation>
+        <source>OpenGL</source>
+        <translation>OpenGL</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="63"/>
@@ -1468,8 +1468,8 @@
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="62"/>
-        <source>Default image host:</source>
-        <translation>默认图床:</translation>
+        <source>Default image host</source>
+        <translation>默认图床</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/imagehostpage.cpp" line="70"/>
@@ -2560,8 +2560,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="253"/>
-        <source>Zoom factor:</source>
-        <translation>缩放:</translation>
+        <source>Zoom factor</source>
+        <translation>缩放</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="261"/>
@@ -2631,8 +2631,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="340"/>
-        <source>In-place preview sources:</source>
-        <translation>原地预览源:</translation>
+        <source>In-place preview sources</source>
+        <translation>原地预览源</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="342"/>
@@ -2732,8 +2732,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="470"/>
-        <source>Section number:</source>
-        <translation>小节序号:</translation>
+        <source>Section number</source>
+        <translation>小节序号</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="477"/>
@@ -2759,13 +2759,13 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="540"/>
-        <source>Override PlantUml Web service:</source>
-        <translation>覆盖PlantUml网页服务:</translation>
+        <source>Override PlantUml Web service</source>
+        <translation>覆盖PlantUml网页服务</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="611"/>
-        <source>Override MathJax script:</source>
-        <translation>覆盖MathJax脚本:</translation>
+        <source>Override MathJax script</source>
+        <translation>覆盖MathJax脚本</translation>
     </message>
     <message>
         <source>PlantUml Web service:</source>
@@ -2791,8 +2791,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="482"/>
-        <source>PlantUml:</source>
-        <translation>PlantUml:</translation>
+        <source>PlantUml</source>
+        <translation>PlantUml</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="494"/>
@@ -2840,8 +2840,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="528"/>
-        <source>PlantUml JAR file:</source>
-        <translation>PlantUml JAR文件:</translation>
+        <source>PlantUml JAR file</source>
+        <translation>PlantUml JAR文件</translation>
     </message>
     <message>
         <source>Use online service or local executable file to render Graphviz graphs</source>
@@ -2854,8 +2854,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="554"/>
-        <source>Graphviz:</source>
-        <translation>Graphviz:</translation>
+        <source>Graphviz</source>
+        <translation>Graphviz</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="566"/>
@@ -2879,8 +2879,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="599"/>
-        <source>Graphviz executable file:</source>
-        <translation>Graphviz可执行文件:</translation>
+        <source>Graphviz executable file</source>
+        <translation>Graphviz可执行文件</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="608"/>
@@ -3070,13 +3070,13 @@ Remove them from the configuration?</source>
     <name>vnotex::NewImageHostDialog</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="28"/>
-        <source>Type:</source>
-        <translation>类型:</translation>
+        <source>Type</source>
+        <translation>类型</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="36"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
+        <source>Name</source>
+        <translation>名字</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/newimagehostdialog.cpp" line="40"/>
@@ -3353,8 +3353,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="44"/>
-        <source>Line ending:</source>
-        <translation>行结尾:</translation>
+        <source>Line ending</source>
+        <translation>行结尾</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="53"/>
@@ -3373,8 +3373,8 @@ Remove them from the configuration?</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="58"/>
-        <source>Default open mode:</source>
-        <translation>默认打开模式:</translation>
+        <source>Default open mode</source>
+        <translation>默认打开模式</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="110"/>
@@ -4287,13 +4287,13 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="200"/>
-        <source>Scheme:</source>
-        <translation>方案:</translation>
+        <source>Scheme</source>
+        <translation>方案</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="217"/>
-        <source>Folder:</source>
-        <translation>文件夹:</translation>
+        <source>Folder</source>
+        <translation>文件夹</translation>
     </message>
     <message>
         <source>Folder path:</source>
@@ -4311,8 +4311,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="236"/>
-        <source>Note name:</source>
-        <translation>文件名:</translation>
+        <source>Note name</source>
+        <translation>文件名</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="244"/>
@@ -5191,8 +5191,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="36"/>
-        <source>Line number:</source>
-        <translation>行号:</translation>
+        <source>Line number</source>
+        <translation>行号</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="44"/>
@@ -5226,8 +5226,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="61"/>
-        <source>Input mode:</source>
-        <translation>输入模式:</translation>
+        <source>Input mode</source>
+        <translation>输入模式</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="70"/>
@@ -5251,8 +5251,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="76"/>
-        <source>Center cursor:</source>
-        <translation>光标居中:</translation>
+        <source>Center cursor</source>
+        <translation>光标居中</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="85"/>
@@ -5281,8 +5281,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="92"/>
-        <source>Wrap mode:</source>
-        <translation>换行模式:</translation>
+        <source>Wrap mode</source>
+        <translation>换行模式</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="100"/>
@@ -5301,8 +5301,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="116"/>
-        <source>Tab stop width:</source>
-        <translation>制表符宽度:</translation>
+        <source>Tab stop width</source>
+        <translation>制表符宽度</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="124"/>
@@ -5321,8 +5321,8 @@ Description: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="140"/>
-        <source>Zoom delta:</source>
-        <translation>缩放大小:</translation>
+        <source>Zoom delta</source>
+        <translation>缩放大小</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="148"/>

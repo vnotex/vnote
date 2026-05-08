@@ -37,7 +37,7 @@ void GeneralPage::setupUI() {
           loc);
     }
 
-    const QString label(tr("Language:"));
+    const QString label(tr("Language"));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_localeComboBox->toolTip(), m_localeComboBox, this));
     addSearchItem(label, m_localeComboBox->toolTip(), m_localeComboBox);
@@ -55,7 +55,7 @@ void GeneralPage::setupUI() {
     m_openGLComboBox->addItem(tr("OpenGL ES"), SessionConfig::OpenGL::Angle);
     m_openGLComboBox->addItem(tr("Software"), SessionConfig::OpenGL::Software);
 
-    const QString label(tr("OpenGL:"));
+    const QString label(tr("OpenGL"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_openGLComboBox->toolTip(), m_openGLComboBox, this));

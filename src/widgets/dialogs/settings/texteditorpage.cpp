@@ -37,7 +37,7 @@ void TextEditorPage::setupUI() {
     m_lineNumberComboBox->addItem(tr("Absolute"), (int)TextEditorConfig::LineNumberType::Absolute);
     m_lineNumberComboBox->addItem(tr("Relative"), (int)TextEditorConfig::LineNumberType::Relative);
 
-    const QString label(tr("Line number:"));
+    const QString label(tr("Line number"));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_lineNumberComboBox->toolTip(), m_lineNumberComboBox, this));
     addSearchItem(label, m_lineNumberComboBox->toolTip(), m_lineNumberComboBox);
@@ -64,7 +64,7 @@ void TextEditorPage::setupUI() {
     m_inputModeComboBox->addItem(tr("Vi"), (int)TextEditorConfig::InputMode::ViMode);
     m_inputModeComboBox->addItem(tr("VSCode"), (int)TextEditorConfig::InputMode::VscodeMode);
 
-    const QString label(tr("Input mode:"));
+    const QString label(tr("Input mode"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_inputModeComboBox->toolTip(), m_inputModeComboBox, this));
@@ -83,7 +83,7 @@ void TextEditorPage::setupUI() {
     m_centerCursorComboBox->addItem(tr("Center On Bottom"),
                                     (int)TextEditorConfig::CenterCursor::CenterOnBottom);
 
-    const QString label(tr("Center cursor:"));
+    const QString label(tr("Center cursor"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_centerCursorComboBox->toolTip(), m_centerCursorComboBox, this));
@@ -102,7 +102,7 @@ void TextEditorPage::setupUI() {
     m_wrapModeComboBox->addItem(tr("Word Wrap Or Wrap Anywhere"),
                                 (int)TextEditorConfig::WrapMode::WordWrapOrAnywhere);
 
-    const QString label(tr("Wrap mode:"));
+    const QString label(tr("Wrap mode"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_wrapModeComboBox->toolTip(),
                                                                m_wrapModeComboBox, this));
@@ -129,7 +129,7 @@ void TextEditorPage::setupUI() {
     m_tabStopWidthSpinBox->setRange(1, 32);
     m_tabStopWidthSpinBox->setSingleStep(1);
 
-    const QString label(tr("Tab stop width:"));
+    const QString label(tr("Tab stop width"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_tabStopWidthSpinBox->toolTip(), m_tabStopWidthSpinBox, this));
@@ -157,7 +157,7 @@ void TextEditorPage::setupUI() {
     m_lineSpacingSpinBox->setSingleStep(0.1);
     m_lineSpacingSpinBox->setDecimals(1);
 
-    const QString label(tr("Line spacing:"));
+    const QString label(tr("Line spacing"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_lineSpacingSpinBox->toolTip(), m_lineSpacingSpinBox, this));
@@ -173,7 +173,7 @@ void TextEditorPage::setupUI() {
     m_zoomDeltaSpinBox->setRange(-20, 20);
     m_zoomDeltaSpinBox->setSingleStep(1);
 
-    const QString label(tr("Zoom delta:"));
+    const QString label(tr("Zoom delta"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_zoomDeltaSpinBox->toolTip(),
                                                                m_zoomDeltaSpinBox, this));

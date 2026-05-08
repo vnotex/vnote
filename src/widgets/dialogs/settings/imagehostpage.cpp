@@ -40,7 +40,7 @@ void ImageHostPage::setupUI() {
     // Add items in loadInternal().
     m_defaultImageHostComboBox = WidgetsFactory::createComboBox(this);
 
-    const QString label(tr("Default image host:"));
+    const QString label(tr("Default image host"));
     cardLayout->addWidget(
         SettingsPageHelper::createSettingRow(label, QString(), m_defaultImageHostComboBox, this));
     addSearchItem(label, m_defaultImageHostComboBox);
@@ -81,7 +81,7 @@ QGroupBox *ImageHostPage::setupGeneralBox(QWidget *p_parent) {
     // Add items in loadInternal().
     m_defaultImageHostComboBox = WidgetsFactory::createComboBox(box);
 
-    const QString label(tr("Default image host:"));
+    const QString label(tr("Default image host"));
     layout->addRow(label, m_defaultImageHostComboBox);
     addSearchItem(label, m_defaultImageHostComboBox);
     connect(m_defaultImageHostComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,

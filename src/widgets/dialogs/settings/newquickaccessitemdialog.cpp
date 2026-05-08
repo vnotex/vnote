@@ -26,7 +26,7 @@ void NewQuickAccessItemDialog::setupUI() {
     m_pathInput = new LocationInputWithBrowseButton(widget);
     m_pathInput->setPlaceholderText(tr("File path"));
     m_pathInput->setBrowseType(LocationInputWithBrowseButton::File, tr("Select Quick Access File"));
-    mainLayout->addRow(tr("File:"), m_pathInput);
+    mainLayout->addRow(tr("File"), m_pathInput);
   }
 
   {
@@ -34,7 +34,7 @@ void NewQuickAccessItemDialog::setupUI() {
     m_openModeComboBox->addItem(tr("Default"), static_cast<int>(QuickAccessOpenMode::Default));
     m_openModeComboBox->addItem(tr("Read"), static_cast<int>(QuickAccessOpenMode::Read));
     m_openModeComboBox->addItem(tr("Edit"), static_cast<int>(QuickAccessOpenMode::Edit));
-    mainLayout->addRow(tr("Open Mode:"), m_openModeComboBox);
+    mainLayout->addRow(tr("Open Mode"), m_openModeComboBox);
   }
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

@@ -103,7 +103,7 @@ void QuickAccessPage::setupUI() {
       connect(deleteBtn, &QPushButton::clicked, this, &QuickAccessPage::removeQuickNoteScheme);
       selectorLayout->addWidget(deleteBtn);
 
-      const QString label(tr("Scheme:"));
+      const QString label(tr("Scheme"));
       auto *row = SettingsPageHelper::createSettingRow(label, QString(), selectorWidget, this);
       cardLayout->addWidget(row);
       addSearchItem(label, m_quickNoteSchemeComboBox);
@@ -122,7 +122,7 @@ void QuickAccessPage::setupUI() {
       auto *infoLayout = WidgetsFactory::createFormLayout(m_quickNoteInfoGroupBox);
 
       {
-        const QString label(tr("Folder:"));
+        const QString label(tr("Folder"));
         m_quickNoteFolderPathInput = new LocationInputWithBrowseButton(m_quickNoteInfoGroupBox);
         m_quickNoteFolderPathInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                                   tr("Select Quick Note Folder"));
@@ -135,7 +135,7 @@ void QuickAccessPage::setupUI() {
       }
 
       {
-        const QString label(tr("Note name:"));
+        const QString label(tr("Note name"));
         auto *snippetService = m_services.get<SnippetCoreService>();
         m_quickNoteNoteNameLineEdit =
             WidgetsFactory::createLineEditWithSnippet(snippetService, m_quickNoteInfoGroupBox);

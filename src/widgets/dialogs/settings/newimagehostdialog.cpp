@@ -20,7 +20,7 @@ void NewImageHostDialog::setupUI() {
 
   {
     m_typeComboBox = WidgetsFactory::createComboBox(widget);
-    mainLayout->addRow(tr("Type:"), m_typeComboBox);
+    mainLayout->addRow(tr("Type"), m_typeComboBox);
 
     for (int type = static_cast<int>(ImageHost::GitHub);
          type < static_cast<int>(ImageHost::MaxHost); ++type) {
@@ -29,7 +29,7 @@ void NewImageHostDialog::setupUI() {
   }
 
   m_nameLineEdit = WidgetsFactory::createLineEdit(widget);
-  mainLayout->addRow(tr("Name:"), m_nameLineEdit);
+  mainLayout->addRow(tr("Name"), m_nameLineEdit);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 
