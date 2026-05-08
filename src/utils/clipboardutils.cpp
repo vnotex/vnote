@@ -116,6 +116,23 @@ bool ClipboardUtils::mimeDataEquals(const QMimeData *p_a, const QMimeData *p_b) 
     return false;
   }
 
+  // Compare any custom MIME formats.
+  const auto formatsA = p_a->formats();
+  const auto formatsB = p_b->formats();
+  for (const auto &format : formatsA) {
+    if (!p_b->hasFormat(format)) {
+      return false;
+    }
+    if (p_a->data(format) != p_b->data(format)) {
+      return false;
+    }
+  }
+  for (const auto &format : formatsB) {
+    if (!p_a->hasFormat(format)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -159,6 +176,13 @@ std::unique_ptr<QMimeData> ClipboardUtils::cloneMimeData(const QMimeData *p_mime
 
   if (p_mimeData->hasImage()) {
     da->setImageData(p_mimeData->imageData());
+  }
+
+  // Copy any additional formats not already handled above.
+  for (const auto &format : p_mimeData->formats()) {
+    if (!da->hasFormat(format)) {
+      da->setData(format, p_mimeData->data(format));
+    }
   }
 
   return da;
