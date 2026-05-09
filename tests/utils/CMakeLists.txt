@@ -26,6 +26,13 @@ add_qt_test(test_fileutils2
   GUILESS
 )
 
+add_qt_test(test_headingslug
+  SOURCES
+    test_headingslug.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
+  GUILESS
+)
+
 add_qt_test(test_stringutils
   SOURCES
     test_stringutils.cpp

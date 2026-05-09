@@ -6,6 +6,7 @@ target_sources(vnote PRIVATE
     docsutils.cpp docsutils.h
     fileutils.cpp fileutils.h
     fileutils2.cpp fileutils2.h
+    headingslugger.cpp headingslugger.h
     htmlutils.cpp htmlutils.h
     imageresolutionutils.cpp imageresolutionutils.h
     pathutils.cpp pathutils.h
