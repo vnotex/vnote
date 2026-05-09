@@ -21,7 +21,24 @@ bool EditorConfig::ImageHostItem::operator==(const ImageHostItem &p_other) const
 }
 
 void EditorConfig::ImageHostItem::fromJson(const QJsonObject &p_jobj) {
-  m_type = p_jobj[QStringLiteral("type")].toInt();
+  auto typeVal = p_jobj[QStringLiteral("type")];
+  if (typeVal.isDouble()) {
+    // Legacy migration: integer type ID -> string type ID.
+    int intType = typeVal.toInt();
+    switch (intType) {
+    case 0:
+      m_type = QStringLiteral("github");
+      break;
+    case 1:
+      m_type = QStringLiteral("gitee");
+      break;
+    default:
+      m_type = QStringLiteral("unknown");
+      break;
+    }
+  } else {
+    m_type = typeVal.toString();
+  }
   m_name = p_jobj[QStringLiteral("name")].toString();
   m_config = p_jobj[QStringLiteral("config")].toObject();
 }

@@ -82,7 +82,7 @@ public:
 
     QJsonObject toJson() const;
 
-    int m_type = 0;
+    QString m_type;
 
     QString m_name;
 

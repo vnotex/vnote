@@ -348,3 +348,27 @@ NotebookCloseEvent NotebookCloseEvent::fromVariantMap(const QVariantMap &p_args)
   return e;
 }
 
+// ===== ImageHostUploadEvent =====
+
+QVariantMap ImageHostUploadEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("providerName")] = providerName;
+  m[QStringLiteral("providerTypeId")] = providerTypeId;
+  m[QStringLiteral("fileName")] = fileName;
+  m[QStringLiteral("destPath")] = destPath;
+  m[QStringLiteral("resultUrl")] = resultUrl;
+  m[QStringLiteral("success")] = success;
+  return m;
+}
+
+ImageHostUploadEvent ImageHostUploadEvent::fromVariantMap(const QVariantMap &p_args) {
+  ImageHostUploadEvent e;
+  e.providerName = p_args.value(QStringLiteral("providerName")).toString();
+  e.providerTypeId = p_args.value(QStringLiteral("providerTypeId")).toString();
+  e.fileName = p_args.value(QStringLiteral("fileName")).toString();
+  e.destPath = p_args.value(QStringLiteral("destPath")).toString();
+  e.resultUrl = p_args.value(QStringLiteral("resultUrl")).toString();
+  e.success = p_args.value(QStringLiteral("success")).toBool();
+  return e;
+}
+

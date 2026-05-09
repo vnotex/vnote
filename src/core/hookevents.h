@@ -200,6 +200,19 @@ struct NotebookCloseEvent {
   static NotebookCloseEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for ImageHostBeforeUpload, ImageHostAfterUpload.
+struct ImageHostUploadEvent {
+  QString providerName;    // which provider is being used
+  QString providerTypeId;  // "github", "gitee", "custom_command"
+  QString fileName;        // image filename
+  QString destPath;        // destination path on host
+  QString resultUrl;       // set after upload (empty in before_upload)
+  bool success = false;    // set after upload
+
+  QVariantMap toVariantMap() const;
+  static ImageHostUploadEvent fromVariantMap(const QVariantMap &p_map);
+};
+
 } // namespace vnotex
 
 #endif // HOOKEVENTS_H

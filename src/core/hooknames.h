@@ -265,6 +265,15 @@ inline const QLatin1String ConfigEditorChanged("vnote.config.editor_changed");
 // After a theme is switched (or reloaded).
 inline const QLatin1String ThemeAfterSwitch("vnote.theme.after_switch");
 
+// ===== Image Host Events =====
+// Triggered when image host upload operations occur
+
+// Before an image is uploaded to a host (cancellable)
+inline const QLatin1String ImageHostBeforeUpload("vnote.imagehost.before_upload");
+
+// After an image is uploaded to a host
+inline const QLatin1String ImageHostAfterUpload("vnote.imagehost.after_upload");
+
 } // namespace HookNames
 
 } // namespace vnotex
