@@ -335,14 +335,27 @@ class MarkdownIt extends VxWorker {
     }
 
     generateHeaderId(p_headerIds, p_str) {
-        // Remove leading heading sequence.
+        // Step 1: Strip VNote heading sequence numbers.
         let regExp = Utils.headingSequenceRegExp();
-        let idBase = p_str.replace(regExp, '');
-        idBase = idBase.replace(/\s/g, '-').toLowerCase();
-        let id = idBase;
+        let text = p_str.replace(regExp, '');
+
+        // Step 2: Unicode-aware lowercase.
+        text = text.toLowerCase();
+
+        // Step 3: Remove characters NOT in keep-set.
+        // Keep: Letters (\p{L}), Marks (\p{M}), Numbers (\p{N}),
+        //       Connector Punctuation (\p{Pc} — includes _),
+        //       Hyphen-minus (U+002D), Space (U+0020).
+        text = text.replace(/[^\p{L}\p{M}\p{N}\p{Pc}\u002D\u0020]/gu, '');
+
+        // Step 4: Replace spaces with hyphens.
+        text = text.replace(/ /g, '-');
+
+        // Step 5: Deduplicate.
+        let id = text;
         let idx = 1;
         while (p_headerIds.has(id)) {
-            id = idBase + '-' + idx;
+            id = text + '-' + idx;
             ++idx;
         }
         p_headerIds.add(id);
