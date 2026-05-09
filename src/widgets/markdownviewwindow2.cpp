@@ -36,6 +36,9 @@
 #include <gui/utils/widgetutils.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
+#include <utils/urlutils.h>
+#include <core/nodeidentifier.h>
+#include <core/services/notebookcoreservice.h>
 
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
@@ -359,6 +362,15 @@ void MarkdownViewWindow2::setupViewer() {
     }
   });
 
+  // Deferred anchor scroll: drain pending anchor after rendering completes.
+  connect(adapterObj, &MarkdownViewerAdapter::workFinished, this, [this]() {
+    if (!m_pendingAnchor.isEmpty() && isReadMode() && adapter()) {
+      adapter()->scrollToPosition(
+          MarkdownViewerAdapter::Position(-1, m_pendingAnchor));
+      m_pendingAnchor.clear();
+    }
+  });
+
   // Print finished cleanup.
   connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow2::onPrintFinished);
 
@@ -373,6 +385,20 @@ void MarkdownViewWindow2::setupViewer() {
     if (isReadMode()) {
       m_outlineProvider->setCurrentHeadingIndex(adapter()->getCurrentHeadingIndex());
     }
+  });
+
+  // Read-mode link interception: open internal files via BufferService with anchor.
+  connect(m_viewer, &WebViewer::localFileOpenRequested, this, [this](const QUrl &p_url) {
+    if (!p_url.isLocalFile()) {
+      return;
+    }
+    QString localPath = p_url.toLocalFile();
+    QString fragment = p_url.fragment();
+    QString combined = localPath;
+    if (!fragment.isEmpty()) {
+      combined += QLatin1Char('#') + fragment;
+    }
+    handleOpenFileRequest(combined);
   });
 }
 
@@ -488,7 +514,40 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
     handleAnchorJump(p_filePath.mid(1));
     return;
   }
-  // Non-anchor links: future cross-file navigation.
+
+  auto result = splitUrlFragment(p_filePath);
+  if (result.path.isEmpty()) {
+    return;
+  }
+
+  QString basePath = getBuffer().getResourceBasePath();
+  QString absPath = QDir(basePath).absoluteFilePath(result.path);
+  if (!QFileInfo::exists(absPath)) {
+    qWarning() << "Cross-file link target not found:" << absPath;
+    return;
+  }
+
+  auto *nbSvc = getServices().get<NotebookCoreService>();
+  if (!nbSvc) {
+    return;
+  }
+  QJsonObject resolved = nbSvc->resolvePathToNotebook(absPath);
+  if (resolved.isEmpty()) {
+    qWarning() << "File not in any notebook:" << absPath;
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(absPath));
+    return;
+  }
+
+  NodeIdentifier nodeId;
+  nodeId.notebookId = resolved[QStringLiteral("notebookId")].toString();
+  nodeId.relativePath = resolved[QStringLiteral("relativePath")].toString();
+
+  FileOpenSettings settings;
+  settings.m_anchor = result.fragment;
+  auto *bufSvc = getServices().get<BufferService>();
+  if (bufSvc) {
+    bufSvc->openBuffer(nodeId, settings);
+  }
 }
 
 void MarkdownViewWindow2::handleAnchorJump(const QString &p_anchor) {
@@ -695,6 +754,8 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
   if (!m_viewer) {
     return;
   }
+
+  m_pendingAnchor.clear();
 
   auto state = MarkdownEditorController::prepareBufferState(getBuffer());
   if (state.valid) {
@@ -1183,11 +1244,27 @@ void MarkdownViewWindow2::clearHighlights() {
 }
 
 void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
-  if (p_settings.m_lineNumber < 0 && !p_settings.m_searchHighlight.m_isValid) {
+  if (p_settings.m_lineNumber < 0 && p_settings.m_anchor.isEmpty()
+      && !p_settings.m_searchHighlight.m_isValid) {
     return;
   }
 
-  if (p_settings.m_lineNumber >= 0) {
+  // Anchor takes precedence over lineNumber when both are set.
+  if (!p_settings.m_anchor.isEmpty()) {
+    if (isReadMode()) {
+      if (m_viewerReady) {
+        if (adapter()) {
+          adapter()->scrollToPosition(
+              MarkdownViewerAdapter::Position(-1, p_settings.m_anchor));
+        }
+      } else {
+        // Viewer not ready (new file loading) — defer until workFinished.
+        m_pendingAnchor = p_settings.m_anchor;
+      }
+    } else if (m_editor) {
+      handleAnchorJump(p_settings.m_anchor);
+    }
+  } else if (p_settings.m_lineNumber >= 0) {
     // In read mode, skip scrollToPosition when findText will handle scrolling
     // to the current match. The JS findText already calls scrollIntoView() on
     // the matched node, and scrollToPosition defers by 300ms which creates a

@@ -338,6 +338,12 @@ add_qt_test(test_vxurl_parsing
   GUILESS
 )
 
+add_qt_test(test_fileopensettings
+  SOURCES
+    test_fileopensettings.cpp
+  GUILESS
+)
+
 add_qt_test(test_mark_metadata
   SOURCES
     test_mark_metadata.cpp

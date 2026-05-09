@@ -68,13 +68,9 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
             ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mimeData.release());
           });
 
-  connect(this, &WebViewer::localFileOpenRequested, this, [this](const QString &p_filePath) {
-    auto *bufferSvc = m_services.get<BufferService>();
-    if (bufferSvc) {
-      // BufferService currently opens files via NodeIdentifier, not raw local file path.
-    }
-
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_filePath));
+  connect(this, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
+    Q_UNUSED(p_url);
+    // File open handling is done by the owning MarkdownViewWindow2.
   });
 
   settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);

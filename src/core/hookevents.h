@@ -43,6 +43,7 @@ struct FileOpenEvent {
   bool newFile = false;
   bool readOnly = false;
   int lineNumber = -1;
+  QString anchor;    // Heading anchor for scroll-to-heading navigation.
   bool alwaysNewWindow = false;
   QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
   int searchOptions = 0;           // FindOptions serialized as int

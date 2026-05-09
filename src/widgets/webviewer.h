@@ -20,7 +20,7 @@ public:
 signals:
   void linkHovered(const QString &p_url);
 
-  void localFileOpenRequested(const QString &p_filePath);
+  void localFileOpenRequested(const QUrl &p_url);
 };
 } // namespace vnotex
 

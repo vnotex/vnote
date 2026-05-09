@@ -1407,6 +1407,7 @@ void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
   settings.m_newFile = p_event.newFile;
   settings.m_readOnly = p_event.readOnly;
   settings.m_lineNumber = p_event.lineNumber;
+  settings.m_anchor = p_event.anchor;
   settings.m_alwaysNewWindow = p_event.alwaysNewWindow;
   // Reconstruct SearchHighlightContext from event's search fields.
   if (!p_event.searchPatterns.isEmpty()) {

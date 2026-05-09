@@ -59,6 +59,7 @@ QVariantMap FileOpenEvent::toVariantMap() const {
   m[QStringLiteral("newFile")] = newFile;
   m[QStringLiteral("readOnly")] = readOnly;
   m[QStringLiteral("lineNumber")] = lineNumber;
+  m[QStringLiteral("anchor")] = anchor;
   m[QStringLiteral("alwaysNewWindow")] = alwaysNewWindow;
   if (!searchPatterns.isEmpty()) {
     m[QStringLiteral("searchPatterns")] = QVariant::fromValue(searchPatterns);
@@ -79,6 +80,7 @@ FileOpenEvent FileOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   e.newFile = p_args.value(QStringLiteral("newFile")).toBool();
   e.readOnly = p_args.value(QStringLiteral("readOnly")).toBool();
   e.lineNumber = p_args.value(QStringLiteral("lineNumber"), -1).toInt();
+  e.anchor = p_args.value(QStringLiteral("anchor")).toString();
   e.alwaysNewWindow = p_args.value(QStringLiteral("alwaysNewWindow")).toBool();
   e.searchPatterns = p_args.value(QStringLiteral("searchPatterns")).toStringList();
   e.searchOptions = p_args.value(QStringLiteral("searchOptions")).toInt();

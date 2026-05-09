@@ -73,6 +73,9 @@ struct FileOpenSettings {
   // 0-based.
   int m_lineNumber = -1;
 
+  // Anchor (e.g. heading slug) to scroll to after opening the file.
+  QString m_anchor;
+
   // Whether always open a new window for file.
   bool m_alwaysNewWindow = false;
 
@@ -89,6 +92,9 @@ struct FileOpenSettings {
     map[QStringLiteral("readOnly")] = m_readOnly;
     map[QStringLiteral("lineNumber")] = m_lineNumber;
     map[QStringLiteral("alwaysNewWindow")] = m_alwaysNewWindow;
+    if (!m_anchor.isEmpty()) {
+      map[QStringLiteral("anchor")] = m_anchor;
+    }
     if (m_searchHighlight.m_isValid) {
       map[QStringLiteral("searchHighlight")] = m_searchHighlight.toVariantMap();
     }
@@ -119,6 +125,9 @@ struct FileOpenSettings {
     }
     if (p_map.contains(QStringLiteral("alwaysNewWindow"))) {
       s.m_alwaysNewWindow = p_map.value(QStringLiteral("alwaysNewWindow")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("anchor"))) {
+      s.m_anchor = p_map.value(QStringLiteral("anchor")).toString();
     }
     if (p_map.contains(QStringLiteral("searchHighlight"))) {
       s.m_searchHighlight = SearchHighlightContext::fromVariantMap(

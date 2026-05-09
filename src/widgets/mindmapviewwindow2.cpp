@@ -57,8 +57,8 @@ void MindMapViewWindow2::setupEditor() {
   auto *adapterObj = new MindMapEditorAdapter(nullptr);
 
   m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this);
-  connect(m_editor, &WebViewer::localFileOpenRequested, this, [](const QString &p_filePath) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_filePath));
+  connect(m_editor, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
+    QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
 
   connectEditorSignals();

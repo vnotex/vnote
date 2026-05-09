@@ -50,6 +50,7 @@
 #include <utils/imageresolutionutils.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
+#include <utils/urlutils.h>
 #include <utils/webutils.h>
 #include <utils/widgetutils.h>
 
@@ -1721,9 +1722,18 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
     return false;
   }
 
-  const auto linkUrl = linkText.startsWith(QLatin1Char('#'))
-                           ? linkText
-                           : vte::MarkdownUtils::linkUrlToPath(getBasePath(), linkText);
+  QString linkUrl;
+  if (linkText.startsWith(QLatin1Char('#'))) {
+    linkUrl = linkText;
+  } else {
+    auto fragResult = vnotex::splitUrlFragment(linkText);
+    QString resolvedPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), fragResult.path);
+    if (!fragResult.fragment.isEmpty()) {
+      linkUrl = resolvedPath + QLatin1Char('#') + fragResult.fragment;
+    } else {
+      linkUrl = resolvedPath;
+    }
+  }
 
   {
     auto act = new QAction(tr("Open Link"), p_menu);

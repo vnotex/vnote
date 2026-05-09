@@ -61,8 +61,8 @@ void PdfViewWindow2::setupViewer() {
 
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
   m_viewer = new PdfViewer(pdfAdapter, themeService->getBaseBackground(), 1.0, this);
-  connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QString &p_filePath) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_filePath));
+  connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
+    QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
 }
 

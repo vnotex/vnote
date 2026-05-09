@@ -59,6 +59,11 @@ private slots:
   void testTypedAddActionBufferEvent();
   void testTypedAddActionViewWindowCloseEvent();
 
+  // Anchor field tests.
+  void testFileOpenEventAnchorRoundTrip();
+  void testFileOpenEventEmptyAnchorRoundTrip();
+  void testTypedDoActionFileOpenEventWithAnchor();
+
   // NotebookCloseEvent round-trip and typed tests.
   void testNotebookCloseEventRoundTrip();
   void testTypedDoActionNotebookCloseEvent();
@@ -648,6 +653,62 @@ void TestHookEvents::testTypedCancellationAttachmentDeleteEvent() {
 
   bool cancelled = m_hookMgr->doAction(HookNames::AttachmentBeforeDelete, event);
   QVERIFY(cancelled);
+
+  m_hookMgr->removeAction(hookId);
+}
+
+// ===== Anchor field tests =====
+
+void TestHookEvents::testFileOpenEventAnchorRoundTrip() {
+  FileOpenEvent orig;
+  orig.notebookId = QStringLiteral("nb-anchor-1");
+  orig.filePath = QStringLiteral("notes/heading.md");
+  orig.bufferId = QStringLiteral("buf-anchor-1");
+  orig.mode = 1;
+  orig.lineNumber = 10;
+  orig.anchor = QStringLiteral("my-section");
+
+  QVariantMap map = orig.toVariantMap();
+  FileOpenEvent restored = FileOpenEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.anchor, QStringLiteral("my-section"));
+  QCOMPARE(restored.notebookId, orig.notebookId);
+  QCOMPARE(restored.filePath, orig.filePath);
+  QCOMPARE(restored.lineNumber, orig.lineNumber);
+}
+
+void TestHookEvents::testFileOpenEventEmptyAnchorRoundTrip() {
+  FileOpenEvent orig;
+  orig.notebookId = QStringLiteral("nb-anchor-2");
+  orig.filePath = QStringLiteral("notes/no-anchor.md");
+
+  QVariantMap map = orig.toVariantMap();
+  FileOpenEvent restored = FileOpenEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.anchor, QString());
+}
+
+void TestHookEvents::testTypedDoActionFileOpenEventWithAnchor() {
+  bool fired = false;
+  QVariantMap captured;
+  int hookId = m_hookMgr->addAction(
+      HookNames::FileBeforeOpen,
+      [&fired, &captured](HookContext &, const QVariantMap &p_args) {
+        fired = true;
+        captured = p_args;
+      },
+      10);
+
+  FileOpenEvent event;
+  event.notebookId = QStringLiteral("nb-anchor-emit");
+  event.filePath = QStringLiteral("notes/anchor-emit.md");
+  event.anchor = QStringLiteral("typed-anchor-test");
+
+  m_hookMgr->doAction(HookNames::FileBeforeOpen, event);
+
+  QVERIFY(fired);
+  QCOMPARE(captured[QStringLiteral("anchor")].toString(),
+           QStringLiteral("typed-anchor-test"));
 
   m_hookMgr->removeAction(hookId);
 }

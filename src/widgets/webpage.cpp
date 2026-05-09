@@ -12,7 +12,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
                                       bool p_isMainFrame) {
   Q_UNUSED(p_type);
   if (p_url.isLocalFile()) {
-    emit localFileOpenRequested(p_url.toLocalFile());
+    emit localFileOpenRequested(p_url);
     return false;
   }
   if (!p_isMainFrame) {

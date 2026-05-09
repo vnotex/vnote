@@ -57,6 +57,7 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   event.newFile = p_settings.m_newFile;
   event.readOnly = p_settings.m_readOnly;
   event.lineNumber = p_settings.m_lineNumber;
+  event.anchor = p_settings.m_anchor;
   event.alwaysNewWindow = p_settings.m_alwaysNewWindow;
   if (p_settings.m_searchHighlight.m_isValid) {
     event.searchPatterns = p_settings.m_searchHighlight.m_patterns;

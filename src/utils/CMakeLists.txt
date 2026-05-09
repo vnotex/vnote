@@ -16,4 +16,5 @@ target_sources(vnote PRIVATE
     urldragdroputils.cpp urldragdroputils.h
     utils.cpp utils.h
     webutils.cpp webutils.h
+    urlutils.cpp urlutils.h
 )

@@ -57,6 +57,13 @@ add_qt_test(test_clipboard_image
   GUILESS
 )
 
+add_qt_test(test_urlutils
+  SOURCES
+    test_urlutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/urlutils.cpp
+  GUILESS
+)
+
 target_include_directories(test_clipboard_image PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
