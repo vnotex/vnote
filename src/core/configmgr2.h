@@ -123,6 +123,8 @@ private:
   // Perform version upgrade (copy themes, tasks, etc.).
   void upgradeMainConfigOnVersionChange();
 
+  void copyNecessaryExtraData();
+
   // Initialize app prefix search paths.
   void initAppPrefixPath();
 

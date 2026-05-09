@@ -115,6 +115,9 @@ void ConfigMgr2::initAfterQtAppStarted() {
 #if defined(VX_DEBUG_REFRESH)
     qInfo() << "application version not changed, but forced to update for debugging";
     upgradeMainConfigOnVersionChange();
+#else
+  // Check and copy necessary files to make sure we could start
+  copyNecessaryExtraData();
 #endif
   }
 
@@ -368,6 +371,49 @@ void ConfigMgr2::upgradeMainConfigOnVersionChange() {
 
   m_mainConfig->setVersion(c_version.toString());
   m_mainConfig->update();
+}
+
+void ConfigMgr2::copyNecessaryExtraData() {
+  // Check if we have the necessary themes, tasks, syntax-highlighting, web, dicts data to start.
+  // If not, copy them from the resource. This is needed for the case where user deleted some
+  // of the data files but didn't change the version (so we won't trigger upgrade logic).
+  if (QFileInfo::exists(getConfigDataFolder(ConfigDataType::Themes)) &&
+      QFileInfo::exists(getConfigDataFolder(ConfigDataType::SyntaxHighlighting)) &&
+      QFileInfo::exists(getConfigDataFolder(ConfigDataType::Web))) {
+    return;
+  }
+
+  const QString extraRcc("app:vnote_extra.rcc");
+  bool ret = QResource::registerResource(extraRcc);
+  if (!ret) {
+    qWarning() << "Failed to register resource file" << extraRcc;
+    // Don't throw - just log warning and continue
+    return;
+  }
+  auto cleanup = qScopeGuard([extraRcc]() { QResource::unregisterResource(extraRcc); });
+
+  const QString extraDataRoot(QStringLiteral(":/vnotex/data/extra"));
+
+  // Copy themes.
+  if (qApp) {
+    qApp->processEvents();
+  }
+  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/themes"),
+                      getConfigDataFolder(ConfigDataType::Themes));
+
+  // Copy syntax-highlighting.
+  if (qApp) {
+    qApp->processEvents();
+  }
+  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
+                      getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
+
+  // Copy web.
+  if (qApp) {
+    qApp->processEvents();
+  }
+  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/web"),
+                      getConfigDataFolder(ConfigDataType::Web));
 }
 
 void ConfigMgr2::initAppPrefixPath() {
