@@ -8,6 +8,7 @@
 
 #include <core/editorconfig.h>
 #include <core/global.h>
+#include <utils/headingslugger.h>
 
 class QMimeData;
 class QMenu;
@@ -32,7 +33,7 @@ public:
     Heading() = default;
 
     Heading(const QString &p_name, int p_level, const QString &p_sectionNumber = QString(),
-            int p_blockNumber = -1);
+            int p_blockNumber = -1, const QString &p_anchor = QString());
 
     QString m_name;
 
@@ -42,6 +43,8 @@ public:
     QString m_sectionNumber;
 
     int m_blockNumber = -1;
+
+    QString m_anchor;
   };
 
   MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
@@ -221,6 +224,8 @@ private:
   Buffer2 *m_buffer2 = nullptr;
 
   QVector<Heading> m_headings;
+
+  HeadingSlugger m_headingSlugger;
 
   // TimeStamp used as sequence number to interact with Web side.
   TimeStamp m_timeStamp = 0;

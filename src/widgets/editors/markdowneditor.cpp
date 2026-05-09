@@ -69,9 +69,9 @@ QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services
 } // namespace
 
 MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, const QString &p_sectionNumber,
-                                 int p_blockNumber)
+                                 int p_blockNumber, const QString &p_anchor)
     : m_name(p_name), m_level(p_level), m_sectionNumber(p_sectionNumber),
-      m_blockNumber(p_blockNumber) {}
+      m_blockNumber(p_blockNumber), m_anchor(p_anchor) {}
 
 MarkdownEditor::MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
                                const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
@@ -1063,6 +1063,8 @@ void MarkdownEditor::updateHeadings(const QVector<vte::md::ElementRegion> &p_hea
     }
   }
 
+  m_headingSlugger.reset();
+
   QVector<Heading> headings;
   headings.reserve(p_headerRegions.size());
 
@@ -1082,7 +1084,8 @@ void MarkdownEditor::updateHeadings(const QVector<vte::md::ElementRegion> &p_hea
 
     auto match = vte::MarkdownUtils::matchHeader(block.text());
     if (match.m_matched) {
-      Heading heading(match.m_header, match.m_level, match.m_sequence, block.blockNumber());
+      QString anchor = m_headingSlugger.slug(match.m_header);
+      Heading heading(match.m_header, match.m_level, match.m_sequence, block.blockNumber(), anchor);
       headings.append(heading);
     }
   }
