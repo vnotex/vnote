@@ -1721,7 +1721,9 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
     return false;
   }
 
-  const auto linkUrl = vte::MarkdownUtils::linkUrlToPath(getBasePath(), linkText);
+  const auto linkUrl = linkText.startsWith(QLatin1Char('#'))
+                           ? linkText
+                           : vte::MarkdownUtils::linkUrlToPath(getBasePath(), linkText);
 
   {
     auto act = new QAction(tr("Open Link"), p_menu);

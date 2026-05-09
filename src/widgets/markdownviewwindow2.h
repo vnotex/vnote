@@ -166,6 +166,9 @@ private:
 
   bool isLastWindowForBuffer() const;
 
+  void handleOpenFileRequest(const QString &p_filePath);
+  void handleAnchorJump(const QString &p_anchor);
+
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;

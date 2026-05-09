@@ -476,6 +476,33 @@ void MarkdownViewWindow2::connectEditorSignals() {
               m_insertedImages.insert(p_urlInLink);
             }
           });
+
+  // Self-file anchor link resolution.
+  connect(m_editor, &MarkdownEditor::openFileRequested, this, [this](const QString &p_filePath) {
+    handleOpenFileRequest(p_filePath);
+  });
+}
+
+void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
+  if (p_filePath.startsWith(QLatin1Char('#'))) {
+    handleAnchorJump(p_filePath.mid(1));
+    return;
+  }
+  // Non-anchor links: future cross-file navigation.
+}
+
+void MarkdownViewWindow2::handleAnchorJump(const QString &p_anchor) {
+  if (!m_editor || p_anchor.isEmpty()) {
+    return;
+  }
+  const auto &headings = m_editor->getHeadings();
+  for (int i = 0; i < headings.size(); ++i) {
+    if (headings[i].m_anchor == p_anchor) {
+      m_editor->scrollToHeading(i);
+      return;
+    }
+  }
+  qWarning() << "Anchor not found:" << p_anchor;
 }
 
 // ============ setMode / setModeInternal ============
