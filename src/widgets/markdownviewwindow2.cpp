@@ -850,12 +850,34 @@ void MarkdownViewWindow2::scrollDown() {
 
 void MarkdownViewWindow2::zoom(bool p_zoomIn) {
   if (isReadMode()) {
-    // Viewer zoom is handled by WebEngine (Ctrl+wheel in web view).
-    // Zoom factor change is persisted via zoomFactorChanged signal (wired in setupViewer).
+    if (m_viewer) {
+      if (p_zoomIn) {
+        m_viewer->zoomIn();
+      } else {
+        m_viewer->zoomOut();
+      }
+      // Persistence + status message handled by zoomFactorChanged signal
+      // (wired in setupViewer).
+    }
     return;
   }
   if (m_editor) {
     m_editor->zoom(m_editor->zoomDelta() + (p_zoomIn ? 1 : -1));
+    int delta = m_editorController->persistZoomDelta(m_editor->zoomDelta());
+    showZoomDelta(delta);
+  }
+}
+
+void MarkdownViewWindow2::resetZoom() {
+  if (isReadMode()) {
+    if (m_viewer) {
+      m_viewer->restoreZoom();
+      // Persistence + status message handled by zoomFactorChanged signal.
+    }
+    return;
+  }
+  if (m_editor) {
+    m_editor->zoom(0);
     int delta = m_editorController->persistZoomDelta(m_editor->zoomDelta());
     showZoomDelta(delta);
   }

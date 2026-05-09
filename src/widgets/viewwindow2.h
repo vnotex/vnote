@@ -392,6 +392,9 @@ protected:
   // Pure virtual: must be implemented by subclasses.
   virtual void zoom(bool p_zoomIn) = 0;
 
+  // Reset zoom to default. Subclasses override to implement.
+  virtual void resetZoom() {}
+
   // Display a zoom factor message (e.g., "Zoomed: 125%").
   // Convenience for subclasses that track zoom as a factor (web views).
   void showZoomFactor(qreal p_factor);

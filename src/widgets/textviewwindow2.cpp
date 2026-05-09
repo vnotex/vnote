@@ -280,6 +280,12 @@ void TextViewWindow2::zoom(bool p_zoomIn) {
   showZoomDelta(delta);
 }
 
+void TextViewWindow2::resetZoom() {
+  m_editor->zoom(0);
+  int delta = m_controller->persistZoomDelta(m_editor->zoomDelta());
+  showZoomDelta(delta);
+}
+
 // ============ Find and Replace ============
 
 void TextViewWindow2::handleFindTextChanged(const QString &p_text, FindOptions p_options) {

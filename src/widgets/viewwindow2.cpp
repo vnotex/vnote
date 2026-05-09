@@ -1022,6 +1022,34 @@ void ViewWindow2::setupShortcuts() {
       connect(shortcut, &QShortcut::activated, this, [this]() { clearHighlights(); });
     }
   }
+
+  // ZoomIn (Ctrl+=).
+  {
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Equal), this,
+                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    connect(shortcut, &QShortcut::activated, this, [this]() { zoom(true); });
+  }
+
+  // ZoomIn (Ctrl++).
+  {
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Plus), this,
+                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    connect(shortcut, &QShortcut::activated, this, [this]() { zoom(true); });
+  }
+
+  // ZoomOut (Ctrl+-).
+  {
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Minus), this,
+                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    connect(shortcut, &QShortcut::activated, this, [this]() { zoom(false); });
+  }
+
+  // ResetZoom (Ctrl+0).
+  {
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_0), this,
+                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    connect(shortcut, &QShortcut::activated, this, [this]() { resetZoom(); });
+  }
 }
 
 void ViewWindow2::handleEditorConfigChange() {

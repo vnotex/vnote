@@ -70,6 +70,8 @@ protected:
 
   void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
 
+  void resetZoom() Q_DECL_OVERRIDE;
+
   QPoint getFloatingWidgetPosition() Q_DECL_OVERRIDE;
 
   QString selectedText() const Q_DECL_OVERRIDE;

@@ -49,6 +49,13 @@ private slots:
 
   void handleWebKeyPress(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
+public:
+  void zoomIn();
+
+  void zoomOut();
+
+  void restoreZoom();
+
 private:
   void handleCopyImageUrlAction();
 
@@ -59,12 +66,6 @@ private:
   void removeHtmlFromImageData(QClipboard *p_clipboard, const QMimeData *p_mimeData);
 
   void hideUnusedActions(QMenu *p_menu);
-
-  void zoomOut();
-
-  void zoomIn();
-
-  void restoreZoom();
 
   void setupCrossCopyMenu(QMenu *p_menu, QAction *p_copyAct);
 
