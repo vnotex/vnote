@@ -26,7 +26,6 @@ class MarkdownViewerAdapter;
 class PreviewHelper;
 struct Outline;
 class EditorConfig;
-class ImageHost;
 class SearchToken;
 
 class MarkdownViewWindow : public ViewWindow {
@@ -71,8 +70,6 @@ protected slots:
   void handleTypeAction(TypeAction p_action) Q_DECL_OVERRIDE;
 
   void handleSectionNumberOverride(OverrideState p_state) Q_DECL_OVERRIDE;
-
-  void handleImageHostChanged(const QString &p_hostName) Q_DECL_OVERRIDE;
 
   void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
 
@@ -173,10 +170,6 @@ private:
 
   bool isReadMode() const;
 
-  void updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_config);
-
-  void removeFromImageHost(const QString &p_url);
-
   bool updateConfigRevision();
 
   void setupDebugViewer();
@@ -235,8 +228,6 @@ private:
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
 
   QSharedPointer<OutlineProvider> m_outlineProvider;
-
-  ImageHost *m_imageHost = nullptr;
 
   bool m_viewerReady = false;
 

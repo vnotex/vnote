@@ -23,7 +23,7 @@ class PreviewHelper;
 class Buffer2;
 class MarkdownEditorConfig;
 class MarkdownTableHelper;
-class ImageHost;
+class ImageHostController;
 class ServiceLocator;
 
 class MarkdownEditor : public vte::VMarkdownEditor {
@@ -107,7 +107,7 @@ public:
 
   QRgb getPreviewBackground() const;
 
-  void setImageHost(ImageHost *p_host);
+  void setImageHostController(ImageHostController *p_controller);
 
 public slots:
   void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
@@ -242,7 +242,7 @@ private:
   // Managed by QObject.
   MarkdownTableHelper *m_tableHelper = nullptr;
 
-  ImageHost *m_imageHost = nullptr;
+  ImageHostController *m_imageHostController = nullptr;
 
   ServiceLocator &m_services;
   QString m_contentPath;

@@ -164,8 +164,6 @@ protected slots:
 
   virtual void handleSectionNumberOverride(OverrideState p_state);
 
-  virtual void handleImageHostChanged(const QString &p_hostName);
-
   virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);
 
   virtual void handleFindNext(const QStringList &p_texts, FindOptions p_options);
@@ -329,8 +327,6 @@ private:
 
   void handleBufferChanged(const QSharedPointer<FileOpenParameters> &p_paras);
 
-  void updateImageHostMenu();
-
   void executeHook(FileOpenParameters::Hook p_hook) const;
 
   static ViewWindow::TypeAction toolBarActionToTypeAction(ViewWindowToolBarHelper::Action p_action);
@@ -377,10 +373,6 @@ private:
   EditReadDiscardAction *m_editReadDiscardAct = nullptr;
 
   WindowFlags m_flags = WindowFlag::None;
-
-  QMenu *m_imageHostMenu = nullptr;
-
-  QActionGroup *m_imageHostActionGroup = nullptr;
 
   bool m_statusWidgetInBottomLayout = false;
 

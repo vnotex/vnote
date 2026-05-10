@@ -391,6 +391,20 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
   }
 
+  case Action::ImageHost: {
+    auto *btn = new QToolButton(p_tb);
+    btn->setPopupMode(QToolButton::InstantPopup);
+    btn->setIcon(generateIcon(p_services, QStringLiteral("image_host_editor.svg")));
+    btn->setProperty("iconName", QStringLiteral("image_host_editor.svg"));
+    btn->setToolTip(QObject::tr("Image Host"));
+    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+    auto *menu = new QMenu(btn);
+    btn->setMenu(menu);
+    act = p_tb->addWidget(btn);
+    act->setProperty("iconName", QStringLiteral("image_host_editor.svg"));
+    break;
+  }
+
   default:
     Q_ASSERT(false);
     break;

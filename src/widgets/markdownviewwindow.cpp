@@ -36,8 +36,6 @@
 #include <core/htmltemplatehelper.h>
 #include <core/thememgr.h>
 #include <core/vnotex.h>
-#include <imagehost/imagehost.h>
-#include <imagehost/imagehostmgr.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <gui/utils/printutils.h>
@@ -279,8 +277,6 @@ void MarkdownViewWindow::setupToolBar() {
             [this, act]() { act->setEnabled(inModeCanInsert() && getBuffer()); });
   }
 
-  addAction(toolBar, ViewWindowToolBarHelper::ImageHost);
-
   toolBar->addSeparator();
 
   addAction(toolBar, ViewWindowToolBarHelper::TypeHeading);
@@ -342,8 +338,6 @@ void MarkdownViewWindow::setupTextEditor() {
 
   m_previewHelper->setMarkdownEditor(m_editor);
   m_editor->setPreviewHelper(m_previewHelper);
-
-  m_editor->setImageHost(m_imageHost);
 
   updateEditorFromConfig();
 
@@ -740,20 +734,16 @@ void MarkdownViewWindow::clearObsoleteImages() {
   Q_ASSERT(buffer);
   auto &editorConfig = ConfigMgr::getInst().getEditorConfig();
   auto &markdownEditorConfig = editorConfig.getMarkdownEditorConfig();
-  const bool clearRemote = editorConfig.isClearObsoleteImageAtImageHostEnabled();
-  const auto &hostMgr = ImageHostMgr::getInst();
 
-  QVector<QPair<QString, bool>> imagesToDelete;
+  QVector<QString> imagesToDelete;
   imagesToDelete.reserve(obsoleteImages.size());
 
   if (markdownEditorConfig.getConfirmBeforeClearObsoleteImages()) {
     QVector<ConfirmItemInfo> items;
     for (auto it = obsoleteImages.constBegin(); it != obsoleteImages.constEnd(); ++it) {
-      if (!it.value() || (clearRemote && hostMgr.findByImageUrl(it.key()))) {
+      if (!it.value()) {
         const auto imgPath = it.key();
-        // Use the @m_data field to denote whether it is remote.
-        items.push_back(ConfirmItemInfo(imgPath, imgPath, imgPath,
-                                        it.value() ? reinterpret_cast<void *>(1ULL) : nullptr));
+        items.push_back(ConfirmItemInfo(imgPath, imgPath, imgPath, nullptr));
       }
     }
 
@@ -772,13 +762,13 @@ void MarkdownViewWindow::clearObsoleteImages() {
       items = dialog.getConfirmedItems();
       markdownEditorConfig.setConfirmBeforeClearObsoleteImages(!dialog.isNoAskChecked());
       for (const auto &item : items) {
-        imagesToDelete.push_back(qMakePair(item.m_path, item.m_data != nullptr));
+        imagesToDelete.push_back(item.m_path);
       }
     }
   } else {
     for (auto it = obsoleteImages.constBegin(); it != obsoleteImages.constEnd(); ++it) {
-      if (clearRemote || !it.value()) {
-        imagesToDelete.push_back(qMakePair(it.key(), it.value()));
+      if (!it.value()) {
+        imagesToDelete.push_back(it.key());
       }
     }
   }
@@ -799,12 +789,8 @@ void MarkdownViewWindow::clearObsoleteImages() {
       break;
     }
 
-    proDlg.setLabelText(tr("Clear image (%1)").arg(imagesToDelete[i].first));
-    if (imagesToDelete[i].second) {
-      removeFromImageHost(imagesToDelete[i].first);
-    } else {
-      buffer->removeImage(imagesToDelete[i].first);
-    }
+    proDlg.setLabelText(tr("Clear image (%1)").arg(imagesToDelete[i]));
+    buffer->removeImage(imagesToDelete[i]);
     ++cnt;
   }
 
@@ -1125,33 +1111,6 @@ QString MarkdownViewWindow::selectedText() const {
 
   default:
     return QString();
-  }
-}
-
-void MarkdownViewWindow::handleImageHostChanged(const QString &p_hostName) {
-  m_imageHost = ImageHostMgr::getInst().find(p_hostName);
-
-  if (m_editor) {
-    m_editor->setImageHost(m_imageHost);
-  }
-}
-
-void MarkdownViewWindow::removeFromImageHost(const QString &p_url) {
-  auto host = ImageHostMgr::getInst().findByImageUrl(p_url);
-  if (!host) {
-    return;
-  }
-
-  QString errMsg;
-  QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-  auto ret = host->remove(p_url, errMsg);
-  QApplication::restoreOverrideCursor();
-
-  if (!ret) {
-    MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                             QStringLiteral("Failed to delete image (%1) from image host (%2).")
-                                 .arg(p_url, host->getName()),
-                             QString(), errMsg, this);
   }
 }
 

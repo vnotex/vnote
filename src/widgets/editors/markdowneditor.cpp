@@ -34,6 +34,7 @@
 
 #include <widgets/dialogs/selectdialog.h>
 
+#include <controllers/imagehostcontroller.h>
 #include <core/clipboarddata.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -44,7 +45,7 @@
 #include <core/texteditorconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/imageutils.h>
-#include <imagehost/imagehost.h>
+#include <imagehost/imagehosttypes.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
 #include <utils/imageresolutionutils.h>
@@ -347,7 +348,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
 
   QString destFilePath;
 
-  if (m_imageHost) {
+  if (m_imageHostController) {
     // Save to image host.
     QByteArray ba;
     try {
@@ -403,7 +404,7 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
 
   QString destFilePath;
 
-  if (m_imageHost) {
+  if (m_imageHostController) {
     // Save to image host.
     QByteArray ba;
     QBuffer buffer(&ba);
@@ -1532,17 +1533,30 @@ QRgb MarkdownEditor::getPreviewBackground() const {
   return fmt.m_backgroundColor;
 }
 
-void MarkdownEditor::setImageHost(ImageHost *p_host) {
-  // It may be different than the global default image host.
-  m_imageHost = p_host;
+void MarkdownEditor::setImageHostController(ImageHostController *p_controller) {
+  m_imageHostController = p_controller;
 }
 
 QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
                                         const QString &p_destFileName) {
-  Q_UNUSED(p_imageData);
-  Q_UNUSED(p_destFileName);
-  qWarning() << "Image host integration is not available in the new architecture";
-  return QString();
+  if (!m_imageHostController) {
+    return QString();
+  }
+  // Generate remote path.
+  // Use the content path to build a relative path: dirName/destFileName
+  QString remotePath;
+  if (!m_contentPath.isEmpty()) {
+    QFileInfo contentInfo(m_contentPath);
+    remotePath = contentInfo.dir().dirName() + "/" + p_destFileName;
+  } else {
+    remotePath = p_destFileName;
+  }
+  auto result = m_imageHostController->upload(p_imageData, remotePath);
+  if (!result.success) {
+    qWarning() << "Image host upload failed:" << result.errorMessage;
+    return QString();
+  }
+  return result.imageUrl;
 }
 
 void MarkdownEditor::insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos,

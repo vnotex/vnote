@@ -61,7 +61,10 @@ public:
     Tag,
 
     // Attachment popup button.
-    Attachment
+    Attachment,
+
+    // Image host selection.
+    ImageHost
   };
 
   ViewWindowToolBarHelper2() = delete;
