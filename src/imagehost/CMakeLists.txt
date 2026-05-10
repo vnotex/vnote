@@ -1,8 +1,7 @@
 target_sources(vnote PRIVATE
-    giteeimagehost.cpp giteeimagehost.h
-    githubimagehost.cpp githubimagehost.h
-    imagehost.cpp imagehost.h
-    imagehostmgr.cpp imagehostmgr.h
-    imagehostutils.cpp imagehostutils.h
-    repoimagehost.cpp repoimagehost.h
+    iimagehostprovider.cpp iimagehostprovider.h
+    imagehosttypes.h
+    githubprovider.cpp githubprovider.h
+    giteeprovider.cpp giteeprovider.h
+    customcommandprovider.cpp customcommandprovider.h
 )

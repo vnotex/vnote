@@ -22,6 +22,7 @@ target_sources(vnote PRIVATE
     attachmentcontroller.cpp attachmentcontroller.h
     exportcontroller.cpp exportcontroller.h
     searchcontroller.cpp searchcontroller.h
+    imagehostcontroller.cpp imagehostcontroller.h
 )
 
 target_include_directories(vnote PRIVATE

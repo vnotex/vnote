@@ -15,6 +15,7 @@ set(SERVICES_SOURCES
   templateservice.cpp
   htmltemplateservice.cpp
   hookmanager.cpp
+  imagehostservice.cpp
   workspacecoreservice.cpp
   vnote3migrationservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
@@ -40,6 +41,7 @@ set(SERVICES_HEADERS
   templateservice.h
   htmltemplateservice.h
   hookmanager.h
+  imagehostservice.h
   workspacecoreservice.h
   vnote3migrationservice.h
 )
