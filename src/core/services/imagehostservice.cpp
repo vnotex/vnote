@@ -6,6 +6,9 @@
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
+#include <imagehost/customcommandprovider.h>
+#include <imagehost/giteeprovider.h>
+#include <imagehost/githubprovider.h>
 #include <imagehost/iimagehostprovider.h>
 #include <imagehost/imagehosttypes.h>
 
@@ -133,11 +136,18 @@ QVector<ImageHostItem> ImageHostService::saveToConfig() const {
 
 IImageHostProvider *ImageHostService::createProvider(const QString &p_typeId,
                                                      const QString &p_name) {
-  // Concrete providers will be registered here in Wave 2.
-  // For now, return nullptr for unknown types.
-  Q_UNUSED(p_typeId);
-  Q_UNUSED(p_name);
-  return nullptr;
+  IImageHostProvider *provider = nullptr;
+  if (p_typeId == QStringLiteral("github")) {
+    provider = new GitHubProvider(this);
+  } else if (p_typeId == QStringLiteral("gitee")) {
+    provider = new GiteeProvider(this);
+  } else if (p_typeId == QStringLiteral("custom_command")) {
+    provider = new CustomCommandProvider(this);
+  }
+  if (provider) {
+    provider->setName(p_name);
+  }
+  return provider;
 }
 
 ImageUploadResult ImageHostService::upload(IImageHostProvider *p_provider,
@@ -176,12 +186,16 @@ ImageUploadResult ImageHostService::upload(IImageHostProvider *p_provider,
 }
 
 QStringList ImageHostService::availableTypeIds() const {
-  // Concrete providers will register their type IDs in Wave 2.
-  return {};
+  return {QStringLiteral("github"), QStringLiteral("gitee"), QStringLiteral("custom_command")};
 }
 
 QString ImageHostService::typeDisplayName(const QString &p_typeId) const {
-  // Concrete providers will register display names in Wave 2.
-  Q_UNUSED(p_typeId);
-  return {};
+  if (p_typeId == QStringLiteral("github")) {
+    return tr("GitHub Repository");
+  } else if (p_typeId == QStringLiteral("gitee")) {
+    return tr("Gitee Repository");
+  } else if (p_typeId == QStringLiteral("custom_command")) {
+    return tr("Custom Command");
+  }
+  return p_typeId;
 }
