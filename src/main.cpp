@@ -31,9 +31,11 @@
 #include <core/services/snippetcoreservice.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
+#include <core/services/imagehostservice.h>
 #include <core/services/templateservice.h>
 #include <core/services/vnote3migrationservice.h>
 #include <core/services/workspacecoreservice.h>
+#include <controllers/imagehostcontroller.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
 #include <gui/services/navigationmodeservice.h>
@@ -220,6 +222,18 @@ int main(int argc, char *argv[]) {
     TemplateService templateService(&configMgr);
     serviceLocator.registerService<TemplateService>(&templateService);
     qInfo() << "TemplateService registered";
+
+    // Create ImageHostService with HookManager for upload hooks.
+    ImageHostService imageHostService(&hookManager);
+    imageHostService.loadFromConfig(configMgr.getEditorConfig().getImageHosts(),
+                                    configMgr.getEditorConfig().getDefaultImageHost());
+    serviceLocator.registerService<ImageHostService>(&imageHostService);
+    qInfo() << "ImageHostService registered";
+
+    // Create ImageHostController for shared access across widgets.
+    ImageHostController imageHostController(serviceLocator);
+    serviceLocator.registerService<ImageHostController>(&imageHostController);
+    qInfo() << "ImageHostController registered";
 
     // Create HtmlTemplateService with ConfigMgr2
     HtmlTemplateService htmlTemplateService(&configMgr);
