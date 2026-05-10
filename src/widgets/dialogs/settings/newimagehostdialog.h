@@ -7,14 +7,15 @@ class QComboBox;
 class QLineEdit;
 
 namespace vnotex {
-class ImageHost;
+class ImageHostController;
+class IImageHostProvider;
 
 class NewImageHostDialog : public ScrollDialog {
   Q_OBJECT
 public:
-  explicit NewImageHostDialog(QWidget *p_parent = nullptr);
+  explicit NewImageHostDialog(ImageHostController *p_controller, QWidget *p_parent = nullptr);
 
-  ImageHost *getNewImageHost() const;
+  IImageHostProvider *getNewProvider() const;
 
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
@@ -26,11 +27,13 @@ private:
 
   bool newImageHost();
 
+  ImageHostController *m_controller = nullptr;
+
   QComboBox *m_typeComboBox = nullptr;
 
   QLineEdit *m_nameLineEdit = nullptr;
 
-  ImageHost *m_imageHost = nullptr;
+  IImageHostProvider *m_newProvider = nullptr;
 };
 } // namespace vnotex
 

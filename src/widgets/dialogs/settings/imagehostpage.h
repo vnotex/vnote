@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+#include <QJsonObject>
 #include <QMap>
 #include <QVector>
 
@@ -13,7 +14,8 @@ class QComboBox;
 class QCheckBox;
 
 namespace vnotex {
-class ImageHost;
+class ImageHostController;
+class IImageHostProvider;
 
 class ImageHostPage : public SettingsPage {
   Q_OBJECT
@@ -32,24 +34,29 @@ protected:
 private:
   void setupUI();
 
-  // LEGACY: ImageHostMgr not yet in ServiceLocator - image host management disabled
-  // void newImageHost();
-  // QGroupBox *setupGroupBoxForImageHost(ImageHost *p_host, QWidget *p_parent);
-  // void removeImageHost(const QString &p_hostName);
-  // void addWidgetToLayout(QWidget *p_widget);
-  // QJsonObject fieldsToConfig(const QVector<QLineEdit *> &p_fields) const;
-  // void testImageHost(const QString &p_hostName);
+  void newImageHost();
 
-  QGroupBox *setupGeneralBox(QWidget *p_parent);
+  QGroupBox *setupGroupBoxForProvider(IImageHostProvider *p_provider, QWidget *p_parent);
 
-  // LEGACY: ImageHostMgr not yet in ServiceLocator
-  // void removeLastStretch();
+  void removeImageHost(const QString &p_hostName);
+
+  void addWidgetToLayout(QWidget *p_widget);
+
+  QJsonObject fieldsToConfig(const QVector<QLineEdit *> &p_fields,
+                             IImageHostProvider *p_provider) const;
+
+  void testImageHost(IImageHostProvider *p_provider);
+
+  void removeLastStretch();
 
   QVBoxLayout *m_mainLayout = nullptr;
 
-  // LEGACY: ImageHostMgr not yet in ServiceLocator
-  // [host] -> list of related fields.
-  // QMap<ImageHost *, QVector<QLineEdit *>> m_hostToFields;
+  ImageHostController *m_controller = nullptr;
+
+  QMap<IImageHostProvider *, QVector<QLineEdit *>> m_hostToFields;
+
+  // Parallel map: for each provider, stores config key names in same order as fields.
+  QMap<IImageHostProvider *, QStringList> m_hostToKeys;
 
   QComboBox *m_defaultImageHostComboBox = nullptr;
 

@@ -1,12 +1,14 @@
 #include "markdownviewwindow2.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QCoreApplication>
 #include <QDir>
 #include <QEvent>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QLabel>
+#include <QMenu>
 #include <QPrinter>
 #include <QScrollBar>
 #include <QSplitter>
@@ -21,6 +23,7 @@
 
 #include <controllers/markdowneditorcontroller.h>
 #include <controllers/markdownviewwindowcontroller.h>
+#include <controllers/imagehostcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
@@ -39,6 +42,7 @@
 #include <utils/urlutils.h>
 #include <core/nodeidentifier.h>
 #include <core/services/notebookcoreservice.h>
+#include <imagehost/iimagehostprovider.h>
 
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
@@ -61,6 +65,7 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   m_mode = ViewWindowMode::Invalid;
   m_editorController = new MarkdownEditorController(p_services, this);
   m_windowController = new MarkdownViewWindowController(p_services, this);
+  m_imageHostController = p_services.get<ImageHostController>();
 
   setupOutlineProvider();
   setupUI();
@@ -151,6 +156,22 @@ void MarkdownViewWindow2::setupToolBar() {
 }
 
 void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
+  // Image host selection button.
+  {
+    auto *act = addAction(p_toolBar, ViewWindowToolBarHelper2::ImageHost);
+    auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+    if (btn) {
+      m_imageHostMenu = btn->menu();
+      updateImageHostMenu();
+      connect(m_imageHostMenu, &QMenu::triggered, this,
+              [this](QAction *p_act) { handleImageHostChanged(p_act->data().toString()); });
+    }
+    if (m_imageHostController) {
+      connect(m_imageHostController, &ImageHostController::providerChanged, this,
+              &MarkdownViewWindow2::updateImageHostMenu);
+    }
+  }
+
   // Outline popup button (right corner, first): wire it to this window's outline provider.
   {
     auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
@@ -262,6 +283,11 @@ void MarkdownViewWindow2::setupTextEditor() {
 
   // Provide Buffer2 handle for asset/attachment operations.
   m_editor->setBuffer2(&getBuffer());
+
+  // Provide image host controller for remote image uploads.
+  if (m_imageHostController) {
+    m_editor->setImageHostController(m_imageHostController);
+  }
 
   // Apply config.
   updateEditorFromConfig();
@@ -1562,6 +1588,16 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     }
   }
 
+  // Remote image cleanup via image host controller.
+  if (m_imageHostController) {
+    for (const auto &imgUrl : obsoleteImages) {
+      if (imgUrl.startsWith(QStringLiteral("http://")) ||
+          imgUrl.startsWith(QStringLiteral("https://"))) {
+        m_imageHostController->removeFromImageHost(imgUrl);
+      }
+    }
+  }
+
   m_insertedImages.clear();
   m_initialImages = currentImages;
 }
@@ -1606,4 +1642,51 @@ int MarkdownViewWindow2::getScrollPosition() const {
     return m_editor->getTextEdit()->verticalScrollBar()->value();
   }
   return -1;
+}
+
+void MarkdownViewWindow2::updateImageHostMenu() {
+  if (!m_imageHostMenu) {
+    return;
+  }
+  m_imageHostMenu->clear();
+
+  auto *actionGroup = new QActionGroup(m_imageHostMenu);
+
+  // "Local" option (no image host).
+  auto *localAct = actionGroup->addAction(tr("Local"));
+  localAct->setCheckable(true);
+  localAct->setData(QString());
+  m_imageHostMenu->addAction(localAct);
+
+  if (m_imageHostController) {
+    auto providers = m_imageHostController->getProviders();
+    auto *defaultProvider = m_imageHostController->getDefaultProvider();
+    for (auto *provider : providers) {
+      auto *act = actionGroup->addAction(provider->getName());
+      act->setCheckable(true);
+      act->setData(provider->getName());
+      m_imageHostMenu->addAction(act);
+      if (provider == defaultProvider) {
+        act->setChecked(true);
+      }
+    }
+    if (!defaultProvider) {
+      localAct->setChecked(true);
+    }
+  } else {
+    localAct->setChecked(true);
+  }
+}
+
+void MarkdownViewWindow2::handleImageHostChanged(const QString &p_providerName) {
+  if (!m_imageHostController) {
+    return;
+  }
+  if (p_providerName.isEmpty()) {
+    // "Local" selected — clear image host on editor.
+    m_editor->setImageHostController(nullptr);
+  } else {
+    m_imageHostController->setDefaultProvider(p_providerName);
+    m_editor->setImageHostController(m_imageHostController);
+  }
 }

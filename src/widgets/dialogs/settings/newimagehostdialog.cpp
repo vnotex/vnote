@@ -5,12 +5,16 @@
 #include <QLabel>
 #include <QLineEdit>
 
-#include <imagehost/imagehostmgr.h>
+#include <controllers/imagehostcontroller.h>
+#include <imagehost/iimagehostprovider.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
 
-NewImageHostDialog::NewImageHostDialog(QWidget *p_parent) : ScrollDialog(p_parent) { setupUI(); }
+NewImageHostDialog::NewImageHostDialog(ImageHostController *p_controller, QWidget *p_parent)
+    : ScrollDialog(p_parent), m_controller(p_controller) {
+  setupUI();
+}
 
 void NewImageHostDialog::setupUI() {
   auto widget = new QWidget(this);
@@ -22,9 +26,10 @@ void NewImageHostDialog::setupUI() {
     m_typeComboBox = WidgetsFactory::createComboBox(widget);
     mainLayout->addRow(tr("Type"), m_typeComboBox);
 
-    for (int type = static_cast<int>(ImageHost::GitHub);
-         type < static_cast<int>(ImageHost::MaxHost); ++type) {
-      m_typeComboBox->addItem(ImageHost::typeString(static_cast<ImageHost::Type>(type)), type);
+    if (m_controller) {
+      for (const auto &typeId : m_controller->availableTypeIds()) {
+        m_typeComboBox->addItem(m_controller->typeDisplayName(typeId), typeId);
+      }
     }
   }
 
@@ -43,30 +48,37 @@ void NewImageHostDialog::acceptedButtonClicked() {
 }
 
 bool NewImageHostDialog::validateInputs() {
-  bool valid = true;
-  QString msg;
-
   auto name = m_nameLineEdit->text();
   if (name.isEmpty()) {
-    msg = tr("Please specify a valid name for the image host.");
-    valid = false;
-  } else if (ImageHostMgr::getInst().find(name)) {
-    msg = tr("Name conflicts with existing image host.");
-    valid = false;
+    setInformationText(tr("Please specify a valid name for the image host."),
+                       ScrollDialog::InformationLevel::Error);
+    return false;
   }
 
-  if (!valid) {
-    setInformationText(msg, ScrollDialog::InformationLevel::Error);
-    return false;
+  if (m_controller) {
+    auto providers = m_controller->getProviders();
+    for (auto *p : providers) {
+      if (p->getName() == name) {
+        setInformationText(tr("Name conflicts with existing image host."),
+                           ScrollDialog::InformationLevel::Error);
+        return false;
+      }
+    }
   }
 
   return true;
 }
 
 bool NewImageHostDialog::newImageHost() {
-  m_imageHost = ImageHostMgr::getInst().newImageHost(
-      static_cast<ImageHost::Type>(m_typeComboBox->currentData().toInt()), m_nameLineEdit->text());
-  if (!m_imageHost) {
+  if (!m_controller) {
+    setInformationText(tr("Image host controller not available."),
+                       ScrollDialog::InformationLevel::Error);
+    return false;
+  }
+
+  auto typeId = m_typeComboBox->currentData().toString();
+  m_newProvider = m_controller->addProvider(typeId, m_nameLineEdit->text());
+  if (!m_newProvider) {
     setInformationText(tr("Failed to create image host (%1).").arg(m_nameLineEdit->text()),
                        ScrollDialog::InformationLevel::Error);
     return false;
@@ -75,4 +87,4 @@ bool NewImageHostDialog::newImageHost() {
   return true;
 }
 
-ImageHost *NewImageHostDialog::getNewImageHost() const { return m_imageHost; }
+IImageHostProvider *NewImageHostDialog::getNewProvider() const { return m_newProvider; }

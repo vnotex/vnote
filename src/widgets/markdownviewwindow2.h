@@ -15,6 +15,7 @@ class QStackedWidget;
 class QTimer;
 class QPrinter;
 class QAction;
+class QMenu;
 
 namespace vnotex {
 class MarkdownEditor;
@@ -24,6 +25,7 @@ class OutlineProvider;
 class PreviewHelper;
 class MarkdownEditorController;
 class MarkdownViewWindowController;
+class ImageHostController;
 
 // Concrete ViewWindow2 subclass for Markdown files.
 // Supports dual-mode (Edit/Read) with lazy-initialized editor and viewer,
@@ -171,15 +173,20 @@ private:
   void handleOpenFileRequest(const QString &p_filePath);
   void handleAnchorJump(const QString &p_anchor);
 
+  void handleImageHostChanged(const QString &p_providerName);
+  void updateImageHostMenu();
+
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;
+  ImageHostController *m_imageHostController = nullptr;
 
   // Widgets (managed by QObject/layout).
   QSplitter *m_splitter = nullptr;
   MarkdownEditor *m_editor = nullptr; // Lazily created.
   MarkdownViewer *m_viewer = nullptr; // Lazily created.
   PreviewHelper *m_previewHelper = nullptr;
+  QMenu *m_imageHostMenu = nullptr;
 
   // Status widgets.
   QSharedPointer<QWidget> m_textEditorStatusWidget;
