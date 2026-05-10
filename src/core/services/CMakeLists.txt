@@ -23,6 +23,12 @@ set(SERVICES_SOURCES
   ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/webutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/imagehost/iimagehostprovider.cpp
+  ${CMAKE_SOURCE_DIR}/src/imagehost/customcommandprovider.cpp
+  ${CMAKE_SOURCE_DIR}/src/imagehost/githubprovider.cpp
+  ${CMAKE_SOURCE_DIR}/src/imagehost/giteeprovider.cpp
 )
 
 set(SERVICES_HEADERS
@@ -52,13 +58,16 @@ target_link_libraries(core_services
   PUBLIC
     Qt6::Core
     Qt6::Gui
+    Qt6::Network
     vxcore
+    VTextEdit
 )
 
 target_include_directories(core_services
   PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/libs/vxcore/include
+    ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
 
 set_target_properties(core_services PROPERTIES

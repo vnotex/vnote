@@ -360,3 +360,27 @@ add_qt_test(test_sessionconfig_extprog
     core_configs
   GUILESS
 )
+
+add_qt_test(test_imagehostservice
+  SOURCES
+    test_imagehostservice.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
+add_qt_test(test_customcommandprovider
+  SOURCES
+    test_customcommandprovider.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
+add_qt_test(test_imagehostuploadhook
+  SOURCES
+    test_imagehostuploadhook.cpp
+  LINKS
+    core_services
+  GUILESS
+)
