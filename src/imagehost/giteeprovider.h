@@ -26,6 +26,8 @@ public:
 
   QJsonObject getConfig() const Q_DECL_OVERRIDE;
 
+  QHash<QString, ConfigFieldHint> getConfigFieldHints() const Q_DECL_OVERRIDE;
+
   void setConfig(const QJsonObject &p_config) Q_DECL_OVERRIDE;
 
   bool testConfig(const QJsonObject &p_config, QString &p_msg) Q_DECL_OVERRIDE;

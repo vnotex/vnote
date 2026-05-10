@@ -32,6 +32,21 @@ QJsonObject GiteeProvider::getConfig() const {
   return obj;
 }
 
+QHash<QString, ConfigFieldHint> GiteeProvider::getConfigFieldHints() const
+{
+  return {
+    {QStringLiteral("personalAccessToken"),
+     {QStringLiteral("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+      tr("Gitee Personal Access Token with 'projects' scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.")}},
+    {QStringLiteral("userName"),
+     {QStringLiteral("username"),
+      tr("Your Gitee username.")}},
+    {QStringLiteral("repositoryName"),
+     {QStringLiteral("my-image-repo"),
+      tr("Name of the Gitee repository to store images. Must already exist.")}},
+  };
+}
+
 void GiteeProvider::setConfig(const QJsonObject &p_config) {
   m_personalAccessToken = p_config[QStringLiteral("personalAccessToken")].toString();
   m_userName = p_config[QStringLiteral("userName")].toString();

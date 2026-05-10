@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QJsonObject>
+#include <QHash>
 
 #include <core/noncopyable.h>
 
@@ -11,6 +12,12 @@
 
 namespace vnotex
 {
+
+struct ConfigFieldHint
+{
+  QString placeholder;
+  QString tooltip;
+};
 
 class IImageHostProvider : public QObject, private Noncopyable
 {
@@ -37,6 +44,8 @@ public:
   virtual bool ownsUrl(const QString &p_url) const = 0;
 
   virtual QJsonObject getConfig() const = 0;
+
+  virtual QHash<QString, ConfigFieldHint> getConfigFieldHints() const { return {}; }
 
   virtual void setConfig(const QJsonObject &p_config) = 0;
 

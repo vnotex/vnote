@@ -145,9 +145,15 @@ QGroupBox *ImageHostPage::setupGroupBoxForProvider(IImageHostProvider *p_provide
   QVector<QLineEdit *> fields;
   QStringList keys;
   auto config = p_provider->getConfig();
+  auto hints = p_provider->getConfigFieldHints();
 
   for (auto it = config.begin(); it != config.end(); ++it) {
     auto *edit = new QLineEdit(it.value().toString(), box);
+    auto hintIt = hints.find(it.key());
+    if (hintIt != hints.end()) {
+      edit->setPlaceholderText(hintIt->placeholder);
+      edit->setToolTip(hintIt->tooltip);
+    }
     if (it.key().contains(QStringLiteral("token"), Qt::CaseInsensitive) ||
         it.key().contains(QStringLiteral("password"), Qt::CaseInsensitive)) {
       edit->setEchoMode(QLineEdit::Password);

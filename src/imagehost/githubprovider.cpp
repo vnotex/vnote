@@ -33,6 +33,21 @@ QJsonObject GitHubProvider::getConfig() const {
   return obj;
 }
 
+QHash<QString, ConfigFieldHint> GitHubProvider::getConfigFieldHints() const
+{
+  return {
+    {QStringLiteral("personalAccessToken"),
+     {QStringLiteral("ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+      tr("GitHub Personal Access Token with 'repo' scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.")}},
+    {QStringLiteral("userName"),
+     {QStringLiteral("octocat"),
+      tr("Your GitHub username.")}},
+    {QStringLiteral("repositoryName"),
+     {QStringLiteral("my-image-repo"),
+      tr("Name of the GitHub repository to store images. Must already exist.")}},
+  };
+}
+
 void GitHubProvider::setConfig(const QJsonObject &p_config) {
   m_personalAccessToken = p_config[QStringLiteral("personalAccessToken")].toString();
   m_userName = p_config[QStringLiteral("userName")].toString();

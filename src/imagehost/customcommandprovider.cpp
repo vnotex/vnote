@@ -128,6 +128,15 @@ QJsonObject CustomCommandProvider::getConfig() const
   return obj;
 }
 
+QHash<QString, ConfigFieldHint> CustomCommandProvider::getConfigFieldHints() const
+{
+  return {
+    {QStringLiteral("command"),
+     {QStringLiteral("picgo upload"),
+      tr("Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.")}},
+  };
+}
+
 void CustomCommandProvider::setConfig(const QJsonObject &p_config)
 {
   m_command = p_config.value(QStringLiteral("command")).toString();
