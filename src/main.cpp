@@ -12,6 +12,7 @@
 #include <QTextCodec>
 #include <QTranslator>
 
+#include <controllers/imagehostcontroller.h>
 #include <core/configmgr2.h>
 #include <core/constants.h>
 #include <core/coreconfig.h>
@@ -25,17 +26,18 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/htmltemplateservice.h>
+#include <core/services/imagehostservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/snippetcoreservice.h>
+#include <core/services/synccredentialsstore.h>
+#include <core/services/syncservice.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
-#include <core/services/imagehostservice.h>
 #include <core/services/templateservice.h>
 #include <core/services/vnote3migrationservice.h>
 #include <core/services/workspacecoreservice.h>
-#include <controllers/imagehostcontroller.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
 #include <gui/services/navigationmodeservice.h>
@@ -202,6 +204,15 @@ int main(int argc, char *argv[]) {
 
     // Wire HookManager to WorkspaceCoreService for firing view area hooks.
     workspaceService.setHookManager(&hookManager);
+
+    // Sync stack: SyncCredentialsStore (T4) + SyncService (T7). SyncService
+    // depends on NotebookCoreService AND SyncCredentialsStore, so register the
+    // store first.
+    SyncCredentialsStore syncCredentialsStore(serviceLocator);
+    serviceLocator.registerService<SyncCredentialsStore>(&syncCredentialsStore);
+    SyncService syncService(serviceLocator);
+    serviceLocator.registerService<SyncService>(&syncService);
+    qInfo() << "SyncCredentialsStore + SyncService registered";
 
     // Create ConfigMgr2 with ConfigCoreService (from ConfigService wrapper)
     ConfigMgr2 configMgr(configService.coreService());

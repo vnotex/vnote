@@ -21,6 +21,7 @@ set(SERVICES_SOURCES
   vnote3migrationservice.cpp
   synccredentialsstore.cpp
   syncworker.cpp
+  syncservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdownwebglobaloptions.cpp
@@ -57,6 +58,7 @@ set(SERVICES_HEADERS
   vnote3migrationservice.h
   synccredentialsstore.h
   syncworker.h
+  syncservice.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

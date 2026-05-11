@@ -453,3 +453,19 @@ add_qt_test(test_syncworker
   GUILESS
 )
 target_compile_definitions(test_syncworker PRIVATE VNOTE_TESTING)
+
+# T7: SyncService — GUI-thread facade owning a SyncWorker on a private QThread,
+# wrapping SyncCredentialsStore. Per ADR-1 the service NEVER touches
+# SyncManager directly. Per the T6 deviation pattern, test seams on
+# SyncService (testSetInProgress) are unconditional public API; VNOTE_TESTING
+# remains reserved on the test target so future test-only paths can compile-gate
+# without dual-compiling syncservice.cpp into both libraries.
+add_qt_test(test_syncservice
+  SOURCES
+    test_syncservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_syncservice PRIVATE VNOTE_TESTING)
