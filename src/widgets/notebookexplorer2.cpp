@@ -1227,7 +1227,7 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
       tr("Remove %n node(s) from notebook index? Files will remain on disk.", "", p_nodeIds.size());
 
   int ret = MessageBoxHelper::questionOkCancel(
-      MessageBoxHelper::Question, tr("Remove From Notebook"), message, QString(), window());
+      MessageBoxHelper::Question, tr("Remove from Notebook"), message, QString(), window());
   if (ret != QMessageBox::Ok) {
     return;
   }

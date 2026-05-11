@@ -220,14 +220,22 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
   auto *renameAction = p_menu->addAction(tr("&Rename"));
   connect(renameAction, &QAction::triggered, this, [this, p_nodeId]() { renameNode(p_nodeId); });
 
-  auto *deleteAction = p_menu->addAction(tr("&Delete"));
-  connect(deleteAction, &QAction::triggered, this,
-          [this, p_nodeId]() { deleteNodes(QList<NodeIdentifier>() << p_nodeId); });
+  {
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
+    QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+    bool isBundled = (nbType == QStringLiteral("bundled"));
+    if (isBundled) {
+      auto *deleteAction = p_menu->addAction(tr("&Delete"));
+      connect(deleteAction, &QAction::triggered, this,
+              [this, p_nodeId]() { deleteNodes(QList<NodeIdentifier>() << p_nodeId); });
 
-  auto *removeAction = p_menu->addAction(tr("Remove From Notebook"));
-  removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
-  connect(removeAction, &QAction::triggered, this,
-          [this, p_nodeId]() { removeNodesFromNotebook(QList<NodeIdentifier>() << p_nodeId); });
+      auto *removeAction = p_menu->addAction(tr("Remove from Notebook"));
+      removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
+      connect(removeAction, &QAction::triggered, this,
+              [this, p_nodeId]() { removeNodesFromNotebook(QList<NodeIdentifier>() << p_nodeId); });
+    }
+  }
 }
 
 void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
