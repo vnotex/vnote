@@ -65,6 +65,22 @@ public:
   // Recycle bin operations (bundled notebooks only).
   QString getRecycleBinPath(const QString &p_notebookId) const;
   bool emptyRecycleBin(const QString &p_notebookId);
+
+  // Sync operations (8 methods). Thin wrappers around vxcore C sync APIs.
+  // All methods return VxCoreError directly so callers can react to specific
+  // codes (VXCORE_ERR_NOT_FOUND, VXCORE_ERR_UNSUPPORTED, etc.). Returns
+  // VXCORE_ERR_NOT_INITIALIZED if the underlying vxcore context is null.
+  // Credential JSON contents (e.g. "pat") are NEVER logged by these wrappers.
+  VxCoreError enableSync(const QString &p_notebookId, const QString &p_configJson);
+  VxCoreError disableSync(const QString &p_notebookId);
+  VxCoreError triggerSync(const QString &p_notebookId);
+  VxCoreError getSyncStatus(const QString &p_notebookId, QString &p_outStatusJson);
+  VxCoreError getSyncConflicts(const QString &p_notebookId, QString &p_outConflictsJson);
+  VxCoreError resolveSyncConflict(const QString &p_notebookId, const QString &p_filePath,
+                                  const QString &p_resolution);
+  VxCoreError setSyncCredentials(const QString &p_notebookId, const QString &p_credentialsJson);
+  VxCoreError enableSyncWithCredentials(const QString &p_notebookId, const QString &p_configJson,
+                                        const QString &p_credentialsJson);
   // Folder operations (10 methods).
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);

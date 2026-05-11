@@ -262,6 +262,106 @@ bool NotebookCoreService::emptyRecycleBin(const QString &p_notebookId) {
   return true;
 }
 
+// Sync operations - thin wrappers around vxcore C sync APIs.
+// Credential JSON contents are intentionally not logged.
+VxCoreError NotebookCoreService::enableSync(const QString &p_notebookId,
+                                            const QString &p_configJson) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  const QByteArray cfg = p_configJson.toUtf8();
+  return vxcore_sync_enable(m_context, nbId.constData(), cfg.constData());
+}
+
+VxCoreError NotebookCoreService::disableSync(const QString &p_notebookId) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  return vxcore_sync_disable(m_context, nbId.constData());
+}
+
+VxCoreError NotebookCoreService::triggerSync(const QString &p_notebookId) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  return vxcore_sync_trigger(m_context, nbId.constData());
+}
+
+VxCoreError NotebookCoreService::getSyncStatus(const QString &p_notebookId,
+                                               QString &p_outStatusJson) {
+  p_outStatusJson.clear();
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  char *out = nullptr;
+  VxCoreError err = vxcore_sync_get_status(m_context, nbId.constData(), &out);
+  if (err == VXCORE_OK && out) {
+    p_outStatusJson = QString::fromUtf8(out);
+  }
+  if (out) {
+    vxcore_string_free(out);
+  }
+  return err;
+}
+
+VxCoreError NotebookCoreService::getSyncConflicts(const QString &p_notebookId,
+                                                  QString &p_outConflictsJson) {
+  p_outConflictsJson.clear();
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  char *out = nullptr;
+  VxCoreError err = vxcore_sync_get_conflicts(m_context, nbId.constData(), &out);
+  if (err == VXCORE_OK && out) {
+    p_outConflictsJson = QString::fromUtf8(out);
+  }
+  if (out) {
+    vxcore_string_free(out);
+  }
+  return err;
+}
+
+VxCoreError NotebookCoreService::resolveSyncConflict(const QString &p_notebookId,
+                                                     const QString &p_filePath,
+                                                     const QString &p_resolution) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  const QByteArray path = p_filePath.toUtf8();
+  const QByteArray res = p_resolution.toUtf8();
+  return vxcore_sync_resolve_conflict(m_context, nbId.constData(), path.constData(),
+                                      res.constData());
+}
+
+VxCoreError NotebookCoreService::setSyncCredentials(const QString &p_notebookId,
+                                                    const QString &p_credentialsJson) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  const QByteArray creds = p_credentialsJson.toUtf8();
+  return vxcore_sync_set_credentials(m_context, nbId.constData(), creds.constData());
+}
+
+VxCoreError NotebookCoreService::enableSyncWithCredentials(const QString &p_notebookId,
+                                                           const QString &p_configJson,
+                                                           const QString &p_credentialsJson) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  const QByteArray cfg = p_configJson.toUtf8();
+  const QByteArray creds = p_credentialsJson.toUtf8();
+  return vxcore_sync_enable_with_credentials(m_context, nbId.constData(), cfg.constData(),
+                                             creds.constData());
+}
+
 // Folder operations.
 QString NotebookCoreService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
                                           const QString &p_folderName) {
@@ -751,8 +851,8 @@ bool NotebookCoreService::createTag(const QString &p_notebookId, const QString &
     return false;
   }
 
-  VxCoreError err =
-      vxcore_tag_create(m_context, p_notebookId.toUtf8().constData(), p_tagName.toUtf8().constData());
+  VxCoreError err = vxcore_tag_create(m_context, p_notebookId.toUtf8().constData(),
+                                      p_tagName.toUtf8().constData());
   if (err != VXCORE_OK && err != VXCORE_ERR_ALREADY_EXISTS) {
     qWarning() << "createTag failed:" << QString::fromUtf8(vxcore_error_message(err))
                << "notebookId:" << p_notebookId << "tagName:" << p_tagName;
@@ -773,9 +873,9 @@ bool NotebookCoreService::updateFileTags(const QString &p_notebookId, const QStr
   }
   QString tagsJson = QString::fromUtf8(QJsonDocument(tagsArray).toJson(QJsonDocument::Compact));
 
-  VxCoreError err = vxcore_file_update_tags(m_context, p_notebookId.toUtf8().constData(),
-                                            p_filePath.toUtf8().constData(),
-                                            tagsJson.toUtf8().constData());
+  VxCoreError err =
+      vxcore_file_update_tags(m_context, p_notebookId.toUtf8().constData(),
+                              p_filePath.toUtf8().constData(), tagsJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFileTags failed:" << QString::fromUtf8(vxcore_error_message(err))
                << "notebookId:" << p_notebookId << "filePath:" << p_filePath;
@@ -791,9 +891,9 @@ bool NotebookCoreService::updateNodeTimestamps(const QString &p_notebookId,
     return false;
   }
 
-  VxCoreError err = vxcore_node_update_timestamps(m_context, p_notebookId.toUtf8().constData(),
-                                                  p_nodePath.toUtf8().constData(), p_createdUtc,
-                                                  p_modifiedUtc);
+  VxCoreError err =
+      vxcore_node_update_timestamps(m_context, p_notebookId.toUtf8().constData(),
+                                    p_nodePath.toUtf8().constData(), p_createdUtc, p_modifiedUtc);
   if (err != VXCORE_OK) {
     qWarning() << "updateNodeTimestamps failed:" << QString::fromUtf8(vxcore_error_message(err))
                << "notebookId:" << p_notebookId << "nodePath:" << p_nodePath;
@@ -813,8 +913,7 @@ bool NotebookCoreService::updateFileAttachments(const QString &p_notebookId,
   for (const auto &att : p_attachments) {
     attachArray.append(att);
   }
-  QString attachJson =
-      QString::fromUtf8(QJsonDocument(attachArray).toJson(QJsonDocument::Compact));
+  QString attachJson = QString::fromUtf8(QJsonDocument(attachArray).toJson(QJsonDocument::Compact));
 
   VxCoreError err = vxcore_file_update_attachments(m_context, p_notebookId.toUtf8().constData(),
                                                    p_filePath.toUtf8().constData(),
@@ -828,7 +927,7 @@ bool NotebookCoreService::updateFileAttachments(const QString &p_notebookId,
 }
 
 QString NotebookCoreService::peekFile(const QString &p_notebookId, const QString &p_filePath,
-                                       int p_maxChars) const {
+                                      int p_maxChars) const {
   if (!checkContext()) {
     return QString();
   }
@@ -854,8 +953,8 @@ QString NotebookCoreService::getAttachmentsFolder(const QString &p_notebookId,
   }
 
   char *outPath = nullptr;
-  VxCoreError err = vxcore_node_get_attachments_folder(
-      m_context, p_notebookId.toUtf8().constData(), p_filePath.toUtf8().constData(), &outPath);
+  VxCoreError err = vxcore_node_get_attachments_folder(m_context, p_notebookId.toUtf8().constData(),
+                                                       p_filePath.toUtf8().constData(), &outPath);
   if (err != VXCORE_OK) {
     qWarning() << "getAttachmentsFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
@@ -870,8 +969,8 @@ QJsonArray NotebookCoreService::listAttachments(const QString &p_notebookId,
   }
 
   char *outJson = nullptr;
-  VxCoreError err = vxcore_node_list_attachments(
-      m_context, p_notebookId.toUtf8().constData(), p_filePath.toUtf8().constData(), &outJson);
+  VxCoreError err = vxcore_node_list_attachments(m_context, p_notebookId.toUtf8().constData(),
+                                                 p_filePath.toUtf8().constData(), &outJson);
   if (err != VXCORE_OK) {
     qWarning() << "listAttachments failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonArray();

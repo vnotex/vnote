@@ -427,3 +427,13 @@ target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_TESTING)
 if(VNOTE_KEYCHAIN_AVAILABLE)
   target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_KEYCHAIN_AVAILABLE)
 endif()
+
+# T5: NotebookCoreService sync wrapper methods (8 thin C-API wrappers).
+add_qt_test(test_notebookcoreservice_sync
+  SOURCES
+    test_notebookcoreservice_sync.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
