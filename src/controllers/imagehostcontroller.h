@@ -1,11 +1,13 @@
 #ifndef IMAGEHOSTCONTROLLER_H
 #define IMAGEHOSTCONTROLLER_H
 
+#include <QJsonObject>
 #include <QObject>
 #include <QString>
 #include <QStringList>
 #include <QVector>
 
+#include <core/global.h>
 #include <imagehost/imagehosttypes.h>
 
 namespace vnotex {
@@ -24,6 +26,7 @@ public:
   ~ImageHostController() override;
 
   // Upload image data using the default provider.
+  VNOTEX_DEPRECATED("Use uploadAsync() instead")
   ImageUploadResult upload(const QByteArray &p_data, const QString &p_path);
 
   // === Provider CRUD ===
@@ -45,7 +48,20 @@ public:
   // === Remote Image Removal ===
 
   // Find the provider that owns the URL and remove the image if supported.
+  VNOTEX_DEPRECATED("Use removeAsync() instead")
   void removeFromImageHost(const QString &p_url);
+
+  // === Async Operations ===
+
+  // Upload image data asynchronously using the default provider.
+  // Returns token (>0) or -1 on failure.
+  int uploadAsync(const QByteArray &p_data, const QString &p_path);
+
+  // Remove image asynchronously. Returns token (>0) or -1 on failure.
+  int removeAsync(const QString &p_url);
+
+  // Test config asynchronously. Returns token (>0) or -1 on failure.
+  int testConfigAsync(const QString &p_typeId, const QJsonObject &p_config);
 
   // === Pass-throughs ===
 
@@ -56,6 +72,11 @@ public:
 
 signals:
   void providerChanged();
+
+  // Async operation results (forwarded from ImageHostService).
+  void uploadFinished(int p_token, const ImageHostAsyncResult &p_result);
+  void removeFinished(int p_token, const ImageHostAsyncResult &p_result);
+  void testConfigFinished(int p_token, bool p_success, const QString &p_msg);
 
 private:
   ServiceLocator &m_services;
