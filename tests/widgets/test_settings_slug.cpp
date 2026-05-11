@@ -126,6 +126,7 @@ QString ImageHostPage::title() const { return QStringLiteral("Image Host"); }
 QString ImageHostPage::slug() const { return QStringLiteral("imagehost"); }
 void ImageHostPage::loadInternal() {}
 bool ImageHostPage::saveInternal() { return true; }
+void ImageHostPage::onTestConfigFinished(int, bool, const QString &) {}
 
 // --- ViPage ---
 ViPage::ViPage(ServiceLocator &p_services, QWidget *p_parent)

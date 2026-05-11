@@ -384,3 +384,11 @@ add_qt_test(test_imagehostuploadhook
     core_services
   GUILESS
 )
+
+add_qt_test(test_imagehostasync
+  SOURCES
+    test_imagehostasync.cpp
+  LINKS
+    core_services
+  GUILESS
+)
