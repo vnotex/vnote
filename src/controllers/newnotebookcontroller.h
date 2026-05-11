@@ -6,6 +6,9 @@
 
 #include <core/services/notebookcoreservice.h>
 
+class QProgressDialog;
+class QWidget;
+
 namespace vnotex {
 
 class ServiceLocator;
@@ -63,6 +66,39 @@ public:
   // Create a new notebook with the given input.
   // Returns result with success status and notebook ID or error message.
   NewNotebookResult createNotebook(const NewNotebookInput &p_input);
+
+  // Bootstrap git sync on a notebook that already exists (per ADR-7:
+  // CREATE-THEN-ENABLE). Caller MUST have invoked createNotebook() first; this
+  // method only fires enableSyncWithCredentials via SyncService and persists
+  // the remote URL into the notebook config on success. On failure the
+  // notebook is closed and its on-disk root directory is removed recursively
+  // (per ADR-2: cleanup uses closeNotebook + QDir::removeRecursively, since
+  // there is no notebook_delete C API).
+  //
+  // While the operation runs an indeterminate, NON-cancellable QProgressDialog
+  // is shown parented at @p_dialogParent. Sync cannot be cancelled once
+  // started.
+  //
+  // Emits exactly one of:
+  //   * bootstrapSucceeded(notebookId) on VXCORE_OK,
+  //   * bootstrapFailed(notebookId, errorMessage) otherwise.
+  //
+  // The PAT is forwarded to SyncService and never cached on this controller.
+  void bootstrapSync(const QString &p_notebookId, const QString &p_remoteUrl, const QString &p_pat,
+                     QWidget *p_dialogParent);
+
+  // Create the indeterminate progress modal used by bootstrapSync. Exposed as
+  // a static helper so the T14 modal QA scenario can construct and inspect the
+  // modal without driving the full bootstrap flow. Returned dialog is heap-
+  // allocated; caller owns the lifetime (close + deleteLater).
+  //
+  // Per the plan rule "Sync cannot be cancelled once started" the dialog has
+  // NO cancel button (setCancelButton(nullptr)).
+  static QProgressDialog *createBootstrapModal(QWidget *p_parent);
+
+signals:
+  void bootstrapSucceeded(const QString &p_notebookId);
+  void bootstrapFailed(const QString &p_notebookId, const QString &p_errorMessage);
 
 private:
   ServiceLocator &m_services;

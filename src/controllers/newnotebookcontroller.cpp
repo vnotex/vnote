@@ -1,14 +1,21 @@
 #include "newnotebookcontroller.h"
 
+#include <memory>
+
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QProgressDialog>
+#include <QThread>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/syncservice.h>
 #include <utils/pathutils.h>
+
+#include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
 
@@ -149,4 +156,112 @@ QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) 
     configObj[QStringLiteral("syncBackend")] = QStringLiteral("git");
   }
   return QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
+}
+
+QProgressDialog *NewNotebookController::createBootstrapModal(QWidget *p_parent) {
+  auto *modal = new QProgressDialog(p_parent);
+  modal->setWindowTitle(QObject::tr("Setting up sync"));
+  modal->setLabelText(QObject::tr("Connecting to remote and syncing... "
+                                  "(Sync cannot be cancelled once started.)"));
+  modal->setRange(0, 0); // Indeterminate spinner.
+  // CRITICAL (per plan rule): no cancel button. setCancelButton(nullptr) removes
+  // the cancel button entirely, unlike setCancelButtonText("") which would just
+  // blank its text but leave it interactable.
+  modal->setCancelButton(nullptr);
+  modal->setMinimumDuration(0); // Show immediately, don't wait for default 4s.
+  modal->setAttribute(Qt::WA_DeleteOnClose, false);
+  modal->setModal(true);
+  return modal;
+}
+
+void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QString &p_remoteUrl,
+                                          const QString &p_pat, QWidget *p_dialogParent) {
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  auto *syncService = m_services.get<SyncService>();
+  if (!notebookService || !syncService) {
+    emit bootstrapFailed(p_notebookId,
+                         tr("Sync services not available; cannot bootstrap notebook."));
+    return;
+  }
+
+  // Capture the notebook root path BEFORE invoking enableSync, because on
+  // failure we need to closeNotebook (which discards the rootPath in vxcore)
+  // and then QDir::removeRecursively() the on-disk directory (per ADR-2).
+  // listNotebooks returns camelCase JSON keys (per vxcore convention): the
+  // notebook id is "id" and the root folder is "rootFolder".
+  QString rootPath;
+  {
+    const QJsonArray notebooks = notebookService->listNotebooks();
+    for (const auto &nbVal : notebooks) {
+      const QJsonObject nbObj = nbVal.toObject();
+      if (nbObj.value(QStringLiteral("id")).toString() == p_notebookId) {
+        rootPath = nbObj.value(QStringLiteral("rootFolder")).toString();
+        break;
+      }
+    }
+  }
+
+  // Show the indeterminate, no-cancel progress modal.
+  QProgressDialog *modal = createBootstrapModal(p_dialogParent);
+  modal->show();
+
+  // One-shot connection: enableFinished can fire for any notebook, so we filter
+  // by id inside the lambda and disconnect manually after handling our id.
+  auto conn = std::make_shared<QMetaObject::Connection>();
+  *conn =
+      connect(syncService, &SyncService::enableFinished, this,
+              [this, conn, notebookService, syncService, p_notebookId, p_remoteUrl, rootPath,
+               modal](const QString &p_resultId, VxCoreError p_result, const QString &p_message) {
+                if (p_resultId != p_notebookId) {
+                  return;
+                }
+                QObject::disconnect(*conn);
+
+                // Close + delete the modal regardless of outcome.
+                modal->close();
+                modal->deleteLater();
+
+                if (p_result == VXCORE_OK) {
+                  // Persist the flat ADR-8 syncRemoteUrl key into the notebook config.
+                  QJsonObject cfg = notebookService->getNotebookConfig(p_notebookId);
+                  cfg[QStringLiteral("syncRemoteUrl")] = p_remoteUrl;
+                  const QString cfgJson =
+                      QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+                  notebookService->updateNotebookConfig(p_notebookId, cfgJson);
+
+                  // Idempotent initial sync push.
+                  syncService->triggerSyncNow(p_notebookId);
+
+                  emit bootstrapSucceeded(p_notebookId);
+                  return;
+                }
+
+                // Failure path. Per ADR-2: cleanup uses closeNotebook +
+                // QDir::removeRecursively (no notebook_delete C API exists).
+                qCritical() << "Bootstrap sync failed for notebook" << p_notebookId
+                            << "result:" << static_cast<int>(p_result) << "message:" << p_message;
+                notebookService->closeNotebook(p_notebookId);
+                if (!rootPath.isEmpty()) {
+                  // SQLite/libgit2 may hold transient file handles on Windows just
+                  // after close; retry removeRecursively a few times to give the OS
+                  // a chance to release the locks.
+                  QDir dir(rootPath);
+                  bool removed = false;
+                  for (int attempt = 0; attempt < 20 && dir.exists(); ++attempt) {
+                    removed = dir.removeRecursively();
+                    if (removed && !dir.exists()) {
+                      break;
+                    }
+                    QThread::msleep(100);
+                  }
+                  if (dir.exists()) {
+                    qWarning() << "Bootstrap cleanup: failed to remove root after retries:"
+                               << rootPath;
+                  }
+                }
+                emit bootstrapFailed(p_notebookId, p_message);
+              });
+
+  // Fire enableSync LAST so the connect is in place before the signal could fire.
+  syncService->enableSyncForNotebook(p_notebookId, p_remoteUrl, p_pat);
 }

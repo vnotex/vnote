@@ -43,6 +43,24 @@ add_qt_test(test_newnotebookcontroller
   GUILESS
 )
 
+add_qt_test(test_bootstrap
+  SOURCES
+    test_bootstrap.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    Qt6::Widgets
+)
+# QTEST_MAIN's default crash-handler hooks deadlock when ctest captures stdout
+# via its pipe driver on Windows. Override the auto-registered ctest command
+# to invoke the binary with `-nocrashhandler`, which sidesteps the hang.
+set_property(TEST test_bootstrap PROPERTY
+  COMMAND $<TARGET_FILE:test_bootstrap> -nocrashhandler)
+set_tests_properties(test_bootstrap PROPERTIES
+  TIMEOUT 120
+)
+
 add_qt_test(test_exportcontroller
   SOURCES
     test_exportcontroller.cpp
