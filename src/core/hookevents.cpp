@@ -372,3 +372,25 @@ ImageHostUploadEvent ImageHostUploadEvent::fromVariantMap(const QVariantMap &p_a
   return e;
 }
 
+// ===== ImageHostRemoveEvent =====
+
+QVariantMap ImageHostRemoveEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("providerName")] = providerName;
+  m[QStringLiteral("providerTypeId")] = providerTypeId;
+  m[QStringLiteral("url")] = url;
+  m[QStringLiteral("success")] = success;
+  m[QStringLiteral("errorMessage")] = errorMessage;
+  return m;
+}
+
+ImageHostRemoveEvent ImageHostRemoveEvent::fromVariantMap(const QVariantMap &p_args) {
+  ImageHostRemoveEvent e;
+  e.providerName = p_args.value(QStringLiteral("providerName")).toString();
+  e.providerTypeId = p_args.value(QStringLiteral("providerTypeId")).toString();
+  e.url = p_args.value(QStringLiteral("url")).toString();
+  e.success = p_args.value(QStringLiteral("success")).toBool();
+  e.errorMessage = p_args.value(QStringLiteral("errorMessage")).toString();
+  return e;
+}
+

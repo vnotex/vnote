@@ -274,6 +274,12 @@ inline const QLatin1String ImageHostBeforeUpload("vnote.imagehost.before_upload"
 // After an image is uploaded to a host
 inline const QLatin1String ImageHostAfterUpload("vnote.imagehost.after_upload");
 
+// Before an image is removed from a host (cancellable)
+inline const QLatin1String ImageHostBeforeRemove("vnote.imagehost.before_remove");
+
+// After an image is removed from a host
+inline const QLatin1String ImageHostAfterRemove("vnote.imagehost.after_remove");
+
 } // namespace HookNames
 
 } // namespace vnotex

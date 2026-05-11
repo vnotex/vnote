@@ -213,6 +213,18 @@ struct ImageHostUploadEvent {
   static ImageHostUploadEvent fromVariantMap(const QVariantMap &p_map);
 };
 
+// Typed event struct for ImageHostBeforeRemove, ImageHostAfterRemove.
+struct ImageHostRemoveEvent {
+  QString providerName;    // which provider is being used
+  QString providerTypeId;  // "github", "gitee", "custom_command"
+  QString url;             // image URL to remove
+  bool success = false;    // set after remove
+  QString errorMessage;    // set after remove on failure
+
+  QVariantMap toVariantMap() const;
+  static ImageHostRemoveEvent fromVariantMap(const QVariantMap &p_map);
+};
+
 } // namespace vnotex
 
 #endif // HOOKEVENTS_H
