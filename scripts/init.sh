@@ -25,6 +25,15 @@ if ! git submodule update --init --recursive; then
 fi
 echo "✓ Submodules initialized successfully"
 
+# Verify libgit2 nested submodule pulled correctly (required by GitSyncBackend)
+LIBGIT2_VERSION_HEADER="libs/vxcore/third_party/libgit2/include/git2/version.h"
+if [ ! -f "$LIBGIT2_VERSION_HEADER" ]; then
+  echo "ERROR: libgit2 submodule pulled but expected header not found at $LIBGIT2_VERSION_HEADER. Check libs/vxcore/.gitmodules entry for libgit2." >&2
+  exit 1
+fi
+echo "✓ libgit2 submodule verified:"
+grep "LIBGIT2_VERSION" "$LIBGIT2_VERSION_HEADER" | head -3
+
 # Step 2: Install pre-commit hook for main repository
 echo ""
 echo "[2/3] Installing pre-commit hook for main repository..."

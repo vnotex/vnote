@@ -44,6 +44,14 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM Verify libgit2 nested submodule pulled correctly (required by GitSyncBackend)
+set "LIBGIT2_VERSION_HEADER=libs\vxcore\third_party\libgit2\include\git2\version.h"
+if not exist "%LIBGIT2_VERSION_HEADER%" (
+  echo ERROR: libgit2 submodule pulled but expected header not found at %LIBGIT2_VERSION_HEADER%. Check libs/vxcore/.gitmodules entry for libgit2. 1>&2
+  exit /b 1
+)
+findstr "LIBGIT2_VERSION" "%LIBGIT2_VERSION_HEADER%"
+
 echo.
 echo You can now start developing VNote!
 echo.
