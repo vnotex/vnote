@@ -1,6 +1,7 @@
 #ifndef MARKDOWNEDITOR_H
 #define MARKDOWNEDITOR_H
 
+#include <QHash>
 #include <QScopedPointer>
 
 #include <vtextedit/markdownhighlighter.h>
@@ -8,6 +9,7 @@
 
 #include <core/editorconfig.h>
 #include <core/global.h>
+#include <imagehost/imagehosttypes.h>
 #include <utils/headingslugger.h>
 
 class QMimeData;
@@ -45,6 +47,13 @@ public:
     int m_blockNumber = -1;
 
     QString m_anchor;
+  };
+
+  struct PlaceholderInfo {
+    QString placeholderMarkdown;
+    QString destFileName;
+    QString title;
+    QString altText;
   };
 
   MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
@@ -109,6 +118,12 @@ public:
 
   void setImageHostController(ImageHostController *p_controller);
 
+  // Static helpers for placeholder generation and replacement (testable).
+  static QString generatePlaceholder(int p_token, const QString &p_fileName);
+  static QString replacePlaceholder(const QString &p_content, int p_token,
+                                    const QString &p_realUrl, const QString &p_title);
+  static QString removePlaceholder(const QString &p_content, int p_token);
+
 public slots:
   void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
 
@@ -146,6 +161,8 @@ private slots:
   void altPaste();
 
   void parseToMarkdownAndPaste();
+
+  void onUploadFinished(int p_token, const ImageHostAsyncResult &p_result);
 
 private:
   // @p_insertText: whether insert text into the buffer after inserting image file.
@@ -204,7 +221,7 @@ private:
   void setupTableHelper();
 
   // Return the dest file path of the image on success.
-  QString saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
+  int saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
 
   void insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos, QAction *p_before);
 
@@ -243,6 +260,8 @@ private:
   MarkdownTableHelper *m_tableHelper = nullptr;
 
   ImageHostController *m_imageHostController = nullptr;
+
+  QHash<int, PlaceholderInfo> m_pendingUploads;
 
   ServiceLocator &m_services;
   QString m_contentPath;

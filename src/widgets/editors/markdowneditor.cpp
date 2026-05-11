@@ -359,10 +359,12 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
           tr("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, e.what()), this);
       return false;
     }
-    destFilePath = saveToImageHost(ba, destFileName);
-    if (destFilePath.isEmpty()) {
+    int token = saveToImageHost(ba, destFileName);
+    if (token < 0) {
       return false;
     }
+    // Placeholder already inserted by saveToImageHost; imageInserted emitted on completion.
+    return true;
   } else {
     if (!m_buffer2 || !m_buffer2->isValid()) {
       MessageBoxHelper::notify(
@@ -411,10 +413,12 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
     buffer.open(QIODevice::WriteOnly);
     p_image.save(&buffer, format.toStdString().c_str());
 
-    destFilePath = saveToImageHost(ba, destFileName);
-    if (destFilePath.isEmpty()) {
+    int token = saveToImageHost(ba, destFileName);
+    if (token < 0) {
       return false;
     }
+    // Placeholder already inserted by saveToImageHost; imageInserted emitted on completion.
+    return true;
   } else {
     if (!m_buffer2 || !m_buffer2->isValid()) {
       MessageBoxHelper::notify(MessageBoxHelper::Warning,
@@ -1534,13 +1538,21 @@ QRgb MarkdownEditor::getPreviewBackground() const {
 }
 
 void MarkdownEditor::setImageHostController(ImageHostController *p_controller) {
+  if (m_imageHostController) {
+    disconnect(m_imageHostController, &ImageHostController::uploadFinished,
+               this, &MarkdownEditor::onUploadFinished);
+  }
   m_imageHostController = p_controller;
+  if (m_imageHostController) {
+    connect(m_imageHostController, &ImageHostController::uploadFinished,
+            this, &MarkdownEditor::onUploadFinished);
+  }
 }
 
-QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
-                                        const QString &p_destFileName) {
+int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
+                                    const QString &p_destFileName) {
   if (!m_imageHostController) {
-    return QString();
+    return -1;
   }
   // Generate remote path.
   // Use the content path to build a relative path: dirName/destFileName
@@ -1551,12 +1563,89 @@ QString MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
   } else {
     remotePath = p_destFileName;
   }
-  auto result = m_imageHostController->upload(p_imageData, remotePath);
-  if (!result.success) {
-    qWarning() << "Image host upload failed:" << result.errorMessage;
-    return QString();
+  int token = m_imageHostController->uploadAsync(p_imageData, remotePath);
+  if (token < 0) {
+    return -1;
   }
-  return result.imageUrl;
+  // Insert placeholder at cursor.
+  QString placeholder = generatePlaceholder(token, p_destFileName);
+  PlaceholderInfo info;
+  info.placeholderMarkdown = placeholder;
+  info.destFileName = p_destFileName;
+  m_pendingUploads.insert(token, info);
+  m_textEdit->insertPlainText(placeholder + "\n");
+  return token;
+}
+
+QString MarkdownEditor::generatePlaceholder(int p_token, const QString &p_fileName) {
+  return QStringLiteral("![Uploading %1...](vnote-upload-%2)").arg(p_fileName).arg(p_token);
+}
+
+QString MarkdownEditor::replacePlaceholder(const QString &p_content, int p_token,
+                                            const QString &p_realUrl, const QString &p_title) {
+  const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
+  int idx = p_content.indexOf(marker);
+  if (idx < 0) return p_content;
+  int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
+  if (linkStart < 0) return p_content;
+  int linkEnd = p_content.indexOf(')', idx);
+  if (linkEnd < 0) return p_content;
+  QString result = p_content;
+  result.replace(linkStart, linkEnd - linkStart + 1,
+                 QStringLiteral("![%1](%2)").arg(p_title, p_realUrl));
+  return result;
+}
+
+QString MarkdownEditor::removePlaceholder(const QString &p_content, int p_token) {
+  const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
+  int idx = p_content.indexOf(marker);
+  if (idx < 0) return p_content;
+  int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
+  if (linkStart < 0) return p_content;
+  int linkEnd = p_content.indexOf(')', idx);
+  if (linkEnd < 0) return p_content;
+  QString result = p_content;
+  int removeEnd = linkEnd + 1;
+  if (removeEnd < result.size() && result[removeEnd] == '\n') {
+    removeEnd++;
+  }
+  result.remove(linkStart, removeEnd - linkStart);
+  return result;
+}
+
+void MarkdownEditor::onUploadFinished(int p_token, const ImageHostAsyncResult &p_result) {
+  auto it = m_pendingUploads.find(p_token);
+  if (it == m_pendingUploads.end()) {
+    return;
+  }
+  auto info = it.value();
+  m_pendingUploads.erase(it);
+
+  if (p_result.success) {
+    auto doc = m_textEdit->document();
+    QString content = doc->toPlainText();
+    QString newContent = replacePlaceholder(content, p_token, p_result.url, info.destFileName);
+    if (newContent != content) {
+      QTextCursor cursor(doc);
+      cursor.beginEditBlock();
+      cursor.select(QTextCursor::Document);
+      cursor.insertText(newContent);
+      cursor.endEditBlock();
+    }
+    emit imageInserted(p_result.url, p_result.url);
+  } else {
+    auto doc = m_textEdit->document();
+    QString content = doc->toPlainText();
+    QString newContent = removePlaceholder(content, p_token);
+    if (newContent != content) {
+      QTextCursor cursor(doc);
+      cursor.beginEditBlock();
+      cursor.select(QTextCursor::Document);
+      cursor.insertText(newContent);
+      cursor.endEditBlock();
+    }
+    qWarning() << "Image host upload failed:" << p_result.errorMessage;
+  }
 }
 
 void MarkdownEditor::insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos,
