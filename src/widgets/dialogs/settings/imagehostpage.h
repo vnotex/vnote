@@ -9,6 +9,7 @@
 
 class QGroupBox;
 class QLineEdit;
+class QPushButton;
 class QVBoxLayout;
 class QComboBox;
 class QCheckBox;
@@ -45,9 +46,14 @@ private:
   QJsonObject fieldsToConfig(const QVector<QLineEdit *> &p_fields,
                              IImageHostProvider *p_provider) const;
 
-  void testImageHost(IImageHostProvider *p_provider);
+  void testImageHost(IImageHostProvider *p_provider, QPushButton *p_testBtn);
 
   void removeLastStretch();
+
+private slots:
+  void onTestConfigFinished(int p_token, bool p_success, const QString &p_msg);
+
+private:
 
   QVBoxLayout *m_mainLayout = nullptr;
 
@@ -61,6 +67,12 @@ private:
   QComboBox *m_defaultImageHostComboBox = nullptr;
 
   QCheckBox *m_clearObsoleteImageCheckBox = nullptr;
+
+  int m_pendingTestToken = -1;
+
+  QPushButton *m_pendingTestButton = nullptr;
+
+  QString m_testButtonOriginalText;
 };
 } // namespace vnotex
 

@@ -84,6 +84,11 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 // ============ Destructor ============
 
 MarkdownViewWindow2::~MarkdownViewWindow2() {
+  // Disconnect controller signals to prevent delivery to a destroyed widget.
+  if (m_imageHostController) {
+    disconnect(m_imageHostController, nullptr, this, nullptr);
+  }
+
   // Remove status widgets from QStackedWidget and reparent to nullptr
   // to prevent double-free with QSharedPointer.
   if (m_textEditorStatusWidget) {
@@ -1593,7 +1598,7 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     for (const auto &imgUrl : obsoleteImages) {
       if (imgUrl.startsWith(QStringLiteral("http://")) ||
           imgUrl.startsWith(QStringLiteral("https://"))) {
-        m_imageHostController->removeFromImageHost(imgUrl);
+        m_imageHostController->removeAsync(imgUrl);
       }
     }
   }

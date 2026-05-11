@@ -28,6 +28,10 @@ using namespace vnotex;
 ImageHostPage::ImageHostPage(ServiceLocator &p_services, QWidget *p_parent)
     : SettingsPage(p_services, p_parent) {
   m_controller = m_services.get<ImageHostController>();
+  if (m_controller) {
+    connect(m_controller, &ImageHostController::testConfigFinished,
+            this, &ImageHostPage::onTestConfigFinished);
+  }
   setupUI();
 }
 
@@ -169,8 +173,8 @@ QGroupBox *ImageHostPage::setupGroupBoxForProvider(IImageHostProvider *p_provide
 
   // Test button.
   auto *testBtn = new QPushButton(tr("Test"), box);
-  connect(testBtn, &QPushButton::clicked, this, [this, p_provider]() {
-    testImageHost(p_provider);
+  connect(testBtn, &QPushButton::clicked, this, [this, p_provider, testBtn]() {
+    testImageHost(p_provider, testBtn);
   });
 
   // Remove button.
@@ -219,12 +223,40 @@ void ImageHostPage::removeImageHost(const QString &p_hostName) {
   pageIsChanged();
 }
 
-void ImageHostPage::testImageHost(IImageHostProvider *p_provider) {
+void ImageHostPage::testImageHost(IImageHostProvider *p_provider, QPushButton *p_testBtn) {
+  if (!m_controller || m_pendingTestToken >= 0) {
+    return;
+  }
   auto config = fieldsToConfig(m_hostToFields[p_provider], p_provider);
-  QString msg;
-  bool ok = p_provider->testConfig(config, msg);
-  MessageBoxHelper::notify(ok ? MessageBoxHelper::Information : MessageBoxHelper::Warning,
-                           ok ? tr("Test succeeded.") : tr("Test failed: %1").arg(msg), this);
+  QString typeId = p_provider->typeId();
+
+  m_pendingTestToken = m_controller->testConfigAsync(typeId, config);
+  if (m_pendingTestToken < 0) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to start test."), this);
+    return;
+  }
+
+  m_pendingTestButton = p_testBtn;
+  m_testButtonOriginalText = p_testBtn->text();
+  p_testBtn->setEnabled(false);
+  p_testBtn->setText(tr("Testing..."));
+}
+
+void ImageHostPage::onTestConfigFinished(int p_token, bool p_success, const QString &p_msg) {
+  if (p_token != m_pendingTestToken) {
+    return;
+  }
+  m_pendingTestToken = -1;
+
+  if (m_pendingTestButton) {
+    m_pendingTestButton->setEnabled(true);
+    m_pendingTestButton->setText(m_testButtonOriginalText);
+    m_pendingTestButton = nullptr;
+  }
+
+  MessageBoxHelper::notify(
+      p_success ? MessageBoxHelper::Information : MessageBoxHelper::Warning,
+      p_success ? tr("Test succeeded.") : tr("Test failed: %1").arg(p_msg), this);
 }
 
 QJsonObject ImageHostPage::fieldsToConfig(const QVector<QLineEdit *> &p_fields,
