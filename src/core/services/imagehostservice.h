@@ -6,13 +6,18 @@
 #include <QStringList>
 #include <QVector>
 
+#include <core/global.h>
 #include "core/editorconfig.h"
 #include "core/noncopyable.h"
+#include <imagehost/imagehosttypes.h>
+
+class QThread;
 
 namespace vnotex {
 
 class HookManager;
 class IImageHostProvider;
+class ImageHostWorker;
 struct ImageUploadResult;
 
 // Type alias for config item (nested in EditorConfig).
@@ -76,8 +81,21 @@ public:
 
   // Upload data via a provider, emitting before/after hooks.
   // Returns upload result. May be cancelled by hook.
+  VNOTEX_DEPRECATED("Use uploadAsync() instead")
   ImageUploadResult upload(IImageHostProvider *p_provider, const QByteArray &p_data,
                            const QString &p_path);
+
+  // === Async Operations ===
+
+  // Upload data asynchronously. Returns token (>0) or -1 on failure/cancellation.
+  // Fires ImageHostBeforeUpload hook on main thread before dispatch.
+  int uploadAsync(IImageHostProvider *p_provider, const QByteArray &p_data, const QString &p_path);
+
+  // Remove image asynchronously. Returns token (>0) or -1 on failure.
+  int removeAsync(IImageHostProvider *p_provider, const QString &p_url);
+
+  // Test config asynchronously. Returns token (>0) or -1 on failure.
+  int testConfigAsync(const QString &p_typeId, const QJsonObject &p_config);
 
   // === Available Types ===
 
@@ -91,12 +109,27 @@ signals:
   // Emitted when providers are added, removed, or modified.
   void providerChanged();
 
+  // Async operation results.
+  void uploadFinished(int p_token, const ImageHostAsyncResult &p_result);
+  void removeFinished(int p_token, const ImageHostAsyncResult &p_result);
+  void testConfigFinished(int p_token, bool p_success, const QString &p_msg);
+
+private slots:
+  void onUploadCompleted(int p_token, const ImageHostAsyncResult &p_result);
+  void onRemoveCompleted(int p_token, const ImageHostAsyncResult &p_result);
+
 private:
   HookManager *m_hookMgr = nullptr;
 
   QVector<IImageHostProvider *> m_providers;
 
   IImageHostProvider *m_defaultProvider = nullptr;
+
+  QThread *m_thread = nullptr;
+
+  ImageHostWorker *m_worker = nullptr;
+
+  int m_nextToken = 1;
 };
 
 } // namespace vnotex

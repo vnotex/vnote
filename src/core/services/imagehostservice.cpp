@@ -2,6 +2,8 @@
 
 #include <QDebug>
 #include <QFileInfo>
+#include <QMetaObject>
+#include <QThread>
 
 #include <core/hookevents.h>
 #include <core/hooknames.h>
@@ -12,13 +14,52 @@
 #include <imagehost/iimagehostprovider.h>
 #include <imagehost/imagehosttypes.h>
 
+#include "imagehostworker.h"
+
 using namespace vnotex;
 
 ImageHostService::ImageHostService(HookManager *p_hookMgr, QObject *p_parent)
     : QObject(p_parent), m_hookMgr(p_hookMgr) {
+  qRegisterMetaType<ImageHostWorkItem>();
+  qRegisterMetaType<ImageHostAsyncResult>();
+
+  m_thread = new QThread(this);
+  m_worker = new ImageHostWorker();
+  m_worker->moveToThread(m_thread);
+
+  connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
+
+  connect(m_worker, &ImageHostWorker::uploadCompleted,
+          this, &ImageHostService::onUploadCompleted);
+  connect(m_worker, &ImageHostWorker::removeCompleted,
+          this, &ImageHostService::onRemoveCompleted);
+  connect(m_worker, &ImageHostWorker::testConfigCompleted, this,
+          [this](int p_token, bool p_success, const QString &p_msg) {
+            emit testConfigFinished(p_token, p_success, p_msg);
+          });
+  connect(m_worker, &ImageHostWorker::operationFailed, this,
+          [this](int p_token, const QString &p_errorMsg) {
+            ImageHostAsyncResult result;
+            result.token = p_token;
+            result.success = false;
+            result.errorMessage = p_errorMsg;
+            emit uploadFinished(p_token, result);
+          });
+
+  m_thread->start();
 }
 
-ImageHostService::~ImageHostService() = default;
+ImageHostService::~ImageHostService() {
+  if (m_thread) {
+    m_worker->m_abortFlag.store(1);
+    m_thread->quit();
+    if (!m_thread->wait(5000)) {
+      qWarning() << "ImageHostService: worker thread did not exit in time, terminating";
+      m_thread->terminate();
+      m_thread->wait();
+    }
+  }
+}
 
 void ImageHostService::registerProvider(IImageHostProvider *p_provider) {
   if (!p_provider) {
@@ -198,4 +239,105 @@ QString ImageHostService::typeDisplayName(const QString &p_typeId) const {
     return tr("Custom Command");
   }
   return p_typeId;
+}
+
+int ImageHostService::uploadAsync(IImageHostProvider *p_provider, const QByteArray &p_data,
+                                   const QString &p_path) {
+  if (!p_provider) {
+    return -1;
+  }
+
+  // Fire before_upload hook on main thread.
+  if (m_hookMgr) {
+    ImageHostUploadEvent event;
+    event.providerName = p_provider->getName();
+    event.providerTypeId = p_provider->typeId();
+    event.fileName = QFileInfo(p_path).fileName();
+    event.destPath = p_path;
+    if (m_hookMgr->doAction(HookNames::ImageHostBeforeUpload, event)) {
+      return -1;
+    }
+  }
+
+  ImageHostWorkItem item;
+  item.token = m_nextToken++;
+  item.operation = ImageHostWorkItem::Operation::Upload;
+  item.typeId = p_provider->typeId();
+  item.config = p_provider->getConfig();
+  item.data = p_data;
+  item.path = p_path;
+  item.providerName = p_provider->getName();
+
+  QMetaObject::invokeMethod(m_worker, "doUpload", Qt::QueuedConnection,
+                            Q_ARG(ImageHostWorkItem, item));
+  return item.token;
+}
+
+int ImageHostService::removeAsync(IImageHostProvider *p_provider, const QString &p_url) {
+  if (!p_provider) {
+    return -1;
+  }
+
+  // Fire before_remove hook on main thread.
+  if (m_hookMgr) {
+    ImageHostRemoveEvent event;
+    event.providerName = p_provider->getName();
+    event.providerTypeId = p_provider->typeId();
+    event.url = p_url;
+    if (m_hookMgr->doAction(HookNames::ImageHostBeforeRemove, event)) {
+      return -1;
+    }
+  }
+
+  ImageHostWorkItem item;
+  item.token = m_nextToken++;
+  item.operation = ImageHostWorkItem::Operation::Remove;
+  item.typeId = p_provider->typeId();
+  item.config = p_provider->getConfig();
+  item.path = p_url;
+  item.providerName = p_provider->getName();
+
+  QMetaObject::invokeMethod(m_worker, "doRemove", Qt::QueuedConnection,
+                            Q_ARG(ImageHostWorkItem, item));
+  return item.token;
+}
+
+int ImageHostService::testConfigAsync(const QString &p_typeId, const QJsonObject &p_config) {
+  ImageHostWorkItem item;
+  item.token = m_nextToken++;
+  item.operation = ImageHostWorkItem::Operation::TestConfig;
+  item.typeId = p_typeId;
+  item.config = p_config;
+
+  QMetaObject::invokeMethod(m_worker, "doTestConfig", Qt::QueuedConnection,
+                            Q_ARG(ImageHostWorkItem, item));
+  return item.token;
+}
+
+void ImageHostService::onUploadCompleted(int p_token, const ImageHostAsyncResult &p_result) {
+  // Fire after_upload hook on main thread.
+  if (m_hookMgr) {
+    ImageHostUploadEvent event;
+    event.providerName = p_result.providerName;
+    event.fileName = p_result.fileName;
+    event.resultUrl = p_result.url;
+    event.success = p_result.success;
+    m_hookMgr->doAction(HookNames::ImageHostAfterUpload, event);
+  }
+
+  emit uploadFinished(p_token, p_result);
+}
+
+void ImageHostService::onRemoveCompleted(int p_token, const ImageHostAsyncResult &p_result) {
+  // Fire after_remove hook on main thread.
+  if (m_hookMgr) {
+    ImageHostRemoveEvent event;
+    event.providerName = p_result.providerName;
+    event.url = p_result.url;
+    event.success = p_result.success;
+    event.errorMessage = p_result.errorMessage;
+    m_hookMgr->doAction(HookNames::ImageHostAfterRemove, event);
+  }
+
+  emit removeFinished(p_token, p_result);
 }
