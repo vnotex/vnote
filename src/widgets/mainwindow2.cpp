@@ -6,14 +6,15 @@
 #include <QDialog>
 #include <QDockWidget>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QJsonDocument>
+#include <QMessageBox>
 #include <QProgressDialog>
 #include <QStyle>
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
-#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QWindow>
@@ -37,11 +38,13 @@
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/syncservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
 
 #include <controllers/searchcontroller.h>
+#include <controllers/syncconflictcontroller.h>
 #include <controllers/viewareacontroller.h>
 #include <qwebengineview.h>
 #include <unitedentry/unitedentrymgr.h>
@@ -135,6 +138,50 @@ void MainWindow2::setupUI() {
   setupNavigationMode();
 
   setupSystemTray();
+
+  // T16: wire SyncService::conflictsDetected → SyncConflictController. The
+  // controller is long-lived (owned by MainWindow2) so successive conflict
+  // batches reuse the same orchestrator.
+  //
+  // Retry policy: m_syncRetryCount tracks how many times conflictsDetected has
+  // fired for a given notebookId without an intervening clean syncFinished.
+  // After 3 attempts we abort the cycle and surface a QMessageBox::warning so
+  // the user is not trapped in an infinite resolve/re-conflict loop.
+  if (auto *syncSvc = m_serviceLocator.get<SyncService>()) {
+    m_syncConflictController = new SyncConflictController(m_serviceLocator, this);
+
+    connect(syncSvc, &SyncService::conflictsDetected, this,
+            [this](const QString &p_notebookId, const QStringList &p_files) {
+              int &count = m_syncRetryCount[p_notebookId];
+              ++count;
+              if (count > 3) {
+                // Reset so the next user-initiated Sync starts clean.
+                m_syncRetryCount.remove(p_notebookId);
+                QMessageBox::warning(this, tr("Sync conflict"),
+                                     tr("Sync conflict could not be resolved after 3 attempts. "
+                                        "Please resolve manually or contact support."));
+                return;
+              }
+              if (m_syncConflictController) {
+                m_syncConflictController->presentConflicts(p_notebookId, p_files, this);
+              }
+            });
+
+    // A clean sync (no conflict) for this notebook resets the retry counter.
+    connect(syncSvc, &SyncService::syncFinished, this,
+            [this](const QString &p_notebookId, VxCoreError p_result) {
+              if (p_result == VXCORE_OK) {
+                m_syncRetryCount.remove(p_notebookId);
+              }
+            });
+
+    // User-cancelled the conflict dialog: reset counter (sync stays blocked
+    // until the user manually retries via the title-bar Sync button).
+    if (m_syncConflictController) {
+      connect(m_syncConflictController, &SyncConflictController::conflictsAbandoned, this,
+              [this](const QString &p_notebookId) { m_syncRetryCount.remove(p_notebookId); });
+    }
+  }
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
@@ -643,14 +690,12 @@ void MainWindow2::setupToolBar() {
       }
     }
 
-    connect(this, &MainWindow2::windowStateChanged, toolBar,
-            &TitleToolBar2::updateMaximizeButton);
+    connect(this, &MainWindow2::windowStateChanged, toolBar, &TitleToolBar2::updateMaximizeButton);
     connect(themeService, &ThemeService::themeChanged, toolBar, [this, toolBar]() {
-      toolBar->refreshIcons(
-          m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
-          m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
-          m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
-          m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
+      toolBar->refreshIcons(m_toolBarHelper->generateIcon(QStringLiteral("minimize.svg")),
+                            m_toolBarHelper->generateIcon(QStringLiteral("maximize.svg")),
+                            m_toolBarHelper->generateIcon(QStringLiteral("maximize_restore.svg")),
+                            m_toolBarHelper->generateDangerousIcon(QStringLiteral("close.svg")));
     });
   } else {
     auto *toolBar = new QToolBar(tr("Global"), this);
@@ -689,8 +734,8 @@ void MainWindow2::setStayOnTop(bool p_enabled) {
     // qwindowkit is active — setWindowFlags() would destroy the native handle.
 #ifdef Q_OS_WIN
     auto hwnd = reinterpret_cast<HWND>(winId());
-    SetWindowPos(hwnd, p_enabled ? HWND_TOPMOST : HWND_NOTOPMOST,
-                 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    SetWindowPos(hwnd, p_enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 #else
     if (auto *win = windowHandle()) {
       win->setFlag(Qt::WindowStaysOnTopHint, p_enabled);
@@ -802,9 +847,8 @@ void MainWindow2::validateDockProportions() {
     resizeDocks(vDockList, vSizeList, Qt::Vertical);
   }
 
-  qInfo() << "MainWindow2::validateDockProportions: windowWidth=" << windowW
-           << ", adjusted" << hDockList.size() << "horizontal,"
-           << vDockList.size() << "vertical docks";
+  qInfo() << "MainWindow2::validateDockProportions: windowWidth=" << windowW << ", adjusted"
+          << hDockList.size() << "horizontal," << vDockList.size() << "vertical docks";
 }
 
 void MainWindow2::restart() {
@@ -867,7 +911,8 @@ void MainWindow2::quitApp() {
 
 void MainWindow2::onThemeChanged() {
   auto *themeService = m_serviceLocator.get<ThemeService>();
-  if (!themeService) return;
+  if (!themeService)
+    return;
 
   // Step 1: Apply stylesheet
   if (m_progressDialog) {

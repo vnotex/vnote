@@ -438,3 +438,31 @@ otebooksyncinfocontroller.cpp\ directly (it lives in vnote target, not core_serv
 
 ### Files NOT touched (per scope)
 - Did not touch `src/main.cpp`, `src/core/services/syncservice.{h,cpp}`, or `tests/widgets/CMakeLists.txt` — those are T17 territory. T15 commit only includes `src/widgets/notebookexplorer2.{h,cpp}`.
+
+
+## [2026-05-13 11:35 UTC] T16: Wire SyncService.conflictsDetected to SyncConflictController + retry cap
+
+### Wiring location: MainWindow2 (top-level UI orchestrator)
+- Added member `m_syncConflictController` (long-lived, owned by MainWindow2). Constructed once in `setupUI()` after `setupSystemTray()`. `QHash<QString,int> m_syncRetryCount` tracks per-notebook attempts.
+- Three `connect` calls (Qt::AutoConnection — both ends live on GUI thread):
+  1. `SyncService::conflictsDetected` -> lambda that increments counter, presents dialog if count <= 3, otherwise pops `QMessageBox::warning` and resets counter.
+  2. `SyncService::syncFinished` -> lambda that resets counter when `p_result == VXCORE_OK`.
+  3. `SyncConflictController::conflictsAbandoned` -> lambda that resets counter (sync stays blocked until user manually retries via title-bar Sync button).
+- Used existing `QMessageBox::warning` pattern from MainWindow2's `closeEvent` (no status-bar/toast helper exists; warning dialog matches established UX).
+
+### Test deviation (per T15 + T16 IF clause)
+- Full MainWindow2 e2e infeasible due to heavy ctor deps (ConfigMgr2/SessionConfig/ToolBarHelper2/ThemeService/HookManager/QWindowKit/QWebEngineView/SystemTray). Same story as T15's NotebookExplorer2 deferral.
+- Pragmatic substitute: `tests/integration/test_sync_e2e.cpp` defines a tiny `WiringHarness` struct that replicates MainWindow2's three connects in test code. Tests then drive `emit syncService.conflictsDetected(...)` directly to exercise the wiring against the real `SyncConflictController` + `SyncConflictDialog2`.
+- 3 cases all PASS in 1.21s: `e2eConflictResolution` (OK->resolveConflicts->syncFinished->conflictsResolved), `cancelLeavesSyncBlocked` (Cancel->conflictsAbandoned, no syncFinished, counter reset), `retryCapEnforced` (4 emissions: 3 spawn dialogs, 4th increments warnCount and skips dialog).
+
+### Test gotcha: counter reset on reject() in retryCapEnforced
+- The wiring's `conflictsAbandoned` handler resets the counter, so a Cancel between attempts would zero it. To test the cap we manually re-bump `harness.m_retry[nbId] = beforeRetry` after each `dlg->reject()` to simulate the "OK->resolve->new conflict" cycle (where the counter genuinely accumulates).
+
+### CMake registration
+- `tests/integration/CMakeLists.txt` registers `test_sync_e2e` with the same convention used in `tests/controllers/` (-nocrashhandler override, 120s timeout, `VNOTE_TESTING` reserved). Dual-compiles ONLY `syncconflictcontroller.cpp` + `syncconflictdialog2.cpp`; `core_services` provides the rest (per T6/T7 dup-symbol guidance).
+
+### Files modified/created
+- MODIFIED: `src/widgets/mainwindow2.h` (+15) — forward decl, member, retry hash, `<QHash>` include.
+- MODIFIED: `src/widgets/mainwindow2.cpp` (+50) — `<QMessageBox>` + controller/syncservice includes; wiring block in `setupUI()`.
+- MODIFIED: `tests/integration/CMakeLists.txt` (+25) — test target registration.
+- NEW: `tests/integration/test_sync_e2e.cpp` (~290 lines, 3 cases). Force-added per the T5 gotcha.

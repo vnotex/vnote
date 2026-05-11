@@ -1,7 +1,9 @@
 #ifndef MAINWINDOW2_H
 #define MAINWINDOW2_H
 
+#include <QHash>
 #include <QMainWindow>
+#include <QString>
 
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
@@ -30,6 +32,7 @@ class ViewArea2;
 class ExportDialog2;
 
 class ToolBarHelper2;
+class SyncConflictController;
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
 // Framework only - NO toolbar, dock widgets, menu bar, or status bar.
@@ -181,6 +184,17 @@ private:
 
   // Toolbar helper.
   ToolBarHelper2 *m_toolBarHelper = nullptr;
+
+  // Long-lived conflict-resolution orchestrator (T13). Owned by MainWindow2.
+  // Wired in setupUI() to SyncService::conflictsDetected.
+  SyncConflictController *m_syncConflictController = nullptr;
+
+  // Per-notebook retry counter for sync conflict resolution. Incremented each
+  // time conflictsDetected fires for a notebook. When the count exceeds 3, the
+  // conflict dialog is suppressed and a QMessageBox::warning is shown instead
+  // (prevents an infinite resolve/re-conflict loop). Reset on a clean
+  // syncFinished or when the user abandons the conflict dialog.
+  QHash<QString, int> m_syncRetryCount;
 
   ExportDialog2 *m_exportDialog = nullptr;
 

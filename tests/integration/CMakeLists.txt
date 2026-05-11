@@ -1,1 +1,29 @@
 # Integration test targets registered by individual tasks. See T16, F3.
+
+# T16: end-to-end conflict resolution flow + retry cap test.
+# Dual-compiles SyncConflictController + SyncConflictDialog2 (small) but uses
+# the real SyncService/SyncCredentialsStore from core_services (per T6/T7
+# duplicate-symbol guidance).
+add_qt_test(test_sync_e2e
+  SOURCES
+    test_sync_e2e.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/syncconflictcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/syncconflictdialog2.cpp
+  LINKS
+    Qt6::Core
+    Qt6::Widgets
+    core_services
+)
+# QTEST_MAIN's default crash-handler hooks deadlock when ctest captures stdout
+# via its pipe driver on Windows (per T14 learnings). Override the
+# auto-registered ctest command to invoke the binary with `-nocrashhandler`.
+set_property(TEST test_sync_e2e PROPERTY
+  COMMAND $<TARGET_FILE:test_sync_e2e> -nocrashhandler)
+set_tests_properties(test_sync_e2e PROPERTIES
+  TIMEOUT 120
+)
+# Reserve the ADR-6 test seam macro for future test-only code paths. Per T6/T7
+# learnings: do NOT dual-compile syncservice.cpp/syncworker.cpp/synccredentialsstore.cpp
+# into the test target — they come from core_services.
+target_compile_definitions(test_sync_e2e PRIVATE VNOTE_TESTING)
+
