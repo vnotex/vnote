@@ -9,6 +9,7 @@
 #include <QThread>
 
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synclog.h>
 
 using namespace vnotex;
 
@@ -114,7 +115,7 @@ void SyncWorker::maybeHang() {
 
 void SyncWorker::enableSync(QString p_notebookId, QString p_configJson, QString p_credentialsJson) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::enableSync: [worker] notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncWorker::enableSync: [worker] notebookId:" << p_notebookId;
 
   maybeHang();
 
@@ -135,7 +136,7 @@ void SyncWorker::enableSync(QString p_notebookId, QString p_configJson, QString 
 
 void SyncWorker::disableSync(QString p_notebookId) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::disableSync: [worker] notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncWorker::disableSync: [worker] notebookId:" << p_notebookId;
 
   maybeHang();
 
@@ -151,7 +152,7 @@ void SyncWorker::disableSync(QString p_notebookId) {
 
 void SyncWorker::triggerSync(QString p_notebookId) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::triggerSync: [worker] notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncWorker::triggerSync: [worker] notebookId:" << p_notebookId;
 
   m_syncInProgressGlobal.store(true, std::memory_order_release);
   emit syncStarted(p_notebookId);
@@ -173,7 +174,7 @@ void SyncWorker::triggerSync(QString p_notebookId) {
 
 void SyncWorker::getStatus(QString p_notebookId) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::getStatus: [worker] notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncWorker::getStatus: [worker] notebookId:" << p_notebookId;
 
   maybeHang();
 
@@ -186,14 +187,14 @@ void SyncWorker::getStatus(QString p_notebookId) {
 
   code = m_notebookCoreService->getSyncStatus(p_notebookId, statusJson);
   if (code != VXCORE_OK) {
-    qDebug() << "SyncWorker::getStatus: failed with code" << code;
+    qCDebug(syncCategory) << "SyncWorker::getStatus: failed with code" << code;
   }
   emit statusReady(p_notebookId, statusJson);
 }
 
 void SyncWorker::getConflicts(QString p_notebookId) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::getConflicts: [worker] notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncWorker::getConflicts: [worker] notebookId:" << p_notebookId;
 
   maybeHang();
 
@@ -217,8 +218,8 @@ void SyncWorker::getConflicts(QString p_notebookId) {
 
 void SyncWorker::resolveConflict(QString p_notebookId, QString p_filePath, QString p_resolution) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::resolveConflict: [worker] notebookId:" << p_notebookId
-           << "file:" << p_filePath;
+  qCDebug(syncCategory) << "SyncWorker::resolveConflict: [worker] notebookId:" << p_notebookId
+                        << "file:" << p_filePath;
 
   maybeHang();
 
@@ -234,7 +235,7 @@ void SyncWorker::resolveConflict(QString p_notebookId, QString p_filePath, QStri
 
 void SyncWorker::setCredentials(QString p_notebookId, QString p_credentialsJson) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qDebug() << "SyncWorker::setCredentials: [worker] notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncWorker::setCredentials: [worker] notebookId:" << p_notebookId;
 
   maybeHang();
 

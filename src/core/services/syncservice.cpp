@@ -16,11 +16,22 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
+#include <core/services/synclog.h>
 #include <core/services/syncworker.h>
+
+Q_LOGGING_CATEGORY(syncCategory, "vnote.sync")
 
 using namespace vnotex;
 
 namespace {
+
+// Bounded wait for the worker thread to finish a clean quit before we resort
+// to terminate(). 30s comfortably accommodates a slow git push.
+static constexpr int kShutdownTimeoutMs = 30000;
+
+// After terminate(), give the OS a brief grace period to actually reap the
+// thread before we proceed with destruction.
+static constexpr int kPostTerminateJoinMs = 1000;
 
 // Brief log-friendly description for VxCoreError. Mirrors syncworker.cpp's
 // helper but is kept local to avoid coupling.
@@ -124,11 +135,11 @@ void SyncService::shutdown() {
     return;
   }
   m_thread->quit();
-  const bool ok = m_thread->wait(30000);
+  const bool ok = m_thread->wait(kShutdownTimeoutMs);
   if (!ok) {
     qWarning() << "SyncService shutdown timed out after 30s; terminating worker thread";
     m_thread->terminate();
-    m_thread->wait(1000);
+    m_thread->wait(kPostTerminateJoinMs);
   }
 }
 
@@ -157,7 +168,7 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
     qWarning() << "SyncService::enableSyncForNotebook: ignored after shutdown";
     return;
   }
-  qDebug() << "SyncService::enableSyncForNotebook: notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncService::enableSyncForNotebook: notebookId:" << p_notebookId;
 
   const QString configJson = buildConfigJson(p_remoteUrl);
 
@@ -212,7 +223,7 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
     qWarning() << "SyncService::disableSyncForNotebook: ignored after shutdown";
     return;
   }
-  qDebug() << "SyncService::disableSyncForNotebook: notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncService::disableSyncForNotebook: notebookId:" << p_notebookId;
 
   const QString notebookId = p_notebookId;
 
@@ -238,7 +249,7 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     qWarning() << "SyncService::triggerSyncNow: ignored after shutdown";
     return;
   }
-  qDebug() << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
   QMetaObject::invokeMethod(m_worker, "triggerSync", Qt::QueuedConnection,
                             Q_ARG(QString, p_notebookId));
 }
@@ -248,7 +259,7 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
     qWarning() << "SyncService::updateCredentials: ignored after shutdown";
     return;
   }
-  qDebug() << "SyncService::updateCredentials: notebookId:" << p_notebookId;
+  qCDebug(syncCategory) << "SyncService::updateCredentials: notebookId:" << p_notebookId;
 
   const QString credsJson = buildCredentialsJson(p_newPat);
   const QString notebookId = p_notebookId;
@@ -294,8 +305,8 @@ void SyncService::resolveConflicts(const QString &p_notebookId,
     qWarning() << "SyncService::resolveConflicts: ignored after shutdown";
     return;
   }
-  qDebug() << "SyncService::resolveConflicts: notebookId:" << p_notebookId
-           << "count:" << p_resolutions.size();
+  qCDebug(syncCategory) << "SyncService::resolveConflicts: notebookId:" << p_notebookId
+                        << "count:" << p_resolutions.size();
 
   for (auto it = p_resolutions.constBegin(); it != p_resolutions.constEnd(); ++it) {
     QMetaObject::invokeMethod(m_worker, "resolveConflict", Qt::QueuedConnection,
@@ -368,8 +379,8 @@ void SyncService::onWorkerConflictsDetected(const QString &p_notebookId,
 
 void SyncService::onWorkerEnableFinished(const QString &p_notebookId, VxCoreError p_result,
                                          const QString &p_message) {
-  qDebug() << "SyncService::onWorkerEnableFinished: notebookId:" << p_notebookId
-           << "result:" << vxErrorToString(p_result);
+  qCDebug(syncCategory) << "SyncService::onWorkerEnableFinished: notebookId:" << p_notebookId
+                        << "result:" << vxErrorToString(p_result);
   emit enableFinished(p_notebookId, p_result, p_message);
 }
 

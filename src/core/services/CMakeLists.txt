@@ -59,6 +59,7 @@ set(SERVICES_HEADERS
   synccredentialsstore.h
   syncworker.h
   syncservice.h
+  synclog.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

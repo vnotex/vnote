@@ -8,6 +8,7 @@
 #include <QString>
 
 #include <core/servicelocator.h>
+#include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 #include <widgets/dialogs/syncconflictdialog2.h>
 
@@ -27,8 +28,8 @@ SyncConflictController::SyncConflictController(ServiceLocator &p_services, QObje
 void SyncConflictController::presentConflicts(const QString &p_notebookId,
                                               const QStringList &p_conflictFiles,
                                               QWidget *p_parent) {
-  qDebug() << "SyncConflictController::presentConflicts: notebookId:" << p_notebookId
-           << "conflictCount:" << p_conflictFiles.size();
+  qCDebug(syncCategory) << "SyncConflictController::presentConflicts: notebookId:" << p_notebookId
+                        << "conflictCount:" << p_conflictFiles.size();
 
   if (!m_syncService) {
     // Defensive: if SyncService is missing the abandon path keeps callers in
