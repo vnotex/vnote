@@ -91,3 +91,28 @@ add_qt_test(test_notebooksyncinfocontroller
 # VNOTE_KEYCHAIN_AVAILABLE compile gate for QtKeychain. The test exercises the
 # real services via core_services, which is exactly what ADR-6 asks for.
 target_compile_definitions(test_notebooksyncinfocontroller PRIVATE VNOTE_TESTING)
+
+add_qt_test(test_syncconflictcontroller
+  SOURCES
+    test_syncconflictcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/syncconflictcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/syncconflictdialog2.cpp
+  LINKS
+    Qt6::Core
+    Qt6::Widgets
+    core_services
+)
+# QTEST_MAIN's default crash-handler hooks deadlock when ctest captures stdout
+# via its pipe driver on Windows (per T14 learnings). Override the
+# auto-registered ctest command to invoke the binary with `-nocrashhandler`.
+set_property(TEST test_syncconflictcontroller PROPERTY
+  COMMAND $<TARGET_FILE:test_syncconflictcontroller> -nocrashhandler)
+set_tests_properties(test_syncconflictcontroller PROPERTIES
+  TIMEOUT 120
+)
+# Reserve the ADR-6 test seam macro for future test-only code paths. Per T6/T7
+# learnings: do NOT dual-compile syncservice.cpp/syncworker.cpp/synccredentialsstore.cpp
+# into the test target — they come from core_services and dual-compilation
+# produces duplicate-symbol link errors on Windows AND breaks the
+# VNOTE_KEYCHAIN_AVAILABLE compile gate for QtKeychain.
+target_compile_definitions(test_syncconflictcontroller PRIVATE VNOTE_TESTING)
