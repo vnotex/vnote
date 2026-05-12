@@ -410,3 +410,20 @@ add_qt_test(test_htmltemplateservice
     core_configs
   GUILESS
 )
+
+# T4: SyncCredentialsStore (QtKeychain wrapper, no plaintext fallback per ADR-9).
+add_qt_test(test_synccredentialsstore
+  SOURCES
+    test_synccredentialsstore.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+# Reserve the ADR-6 test seam macro for future test-only code paths.
+target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_TESTING)
+# Mirror the keychain availability flag from core_services into the test so
+# preprocessor checks (QSKIP guards) compile against the same code path.
+if(VNOTE_KEYCHAIN_AVAILABLE)
+  target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_KEYCHAIN_AVAILABLE)
+endif()
