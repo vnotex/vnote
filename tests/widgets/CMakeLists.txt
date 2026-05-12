@@ -107,3 +107,26 @@ add_custom_command(TARGET test_settings_navigation POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_settings_navigation>
 )
+
+# T17: SyncService lifecycle (NotebookBeforeClose hook + bounded shutdown).
+# NOT GUILESS — needs QApplication for the QMessageBox popped from the
+# NotebookBeforeClose hook handler. Per the T6/T7/T11 deviation: link via
+# core_services rather than dual-compiling syncservice/syncworker/synccredentialsstore
+# (would cause duplicate-symbol errors and break the VNOTE_KEYCHAIN_AVAILABLE
+# compile gate). VNOTE_TESTING is reserved on the test target per ADR-6.
+add_qt_test(test_syncservice_lifecycle
+  SOURCES
+    test_syncservice_lifecycle.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_compile_definitions(test_syncservice_lifecycle PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_syncservice_lifecycle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_syncservice_lifecycle>
+)

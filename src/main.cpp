@@ -265,6 +265,21 @@ int main(int argc, char *argv[]) {
     QGuiApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
     Application app(argc, argv);
 
+    // T17: bounded SyncService shutdown on QApplication aboutToQuit. Use
+    // Qt::DirectConnection because the GUI event loop is shutting down at
+    // this point; queued slots may never run. Idempotent: SyncService::shutdown()
+    // observes its own m_shutDown flag, so the dtor of syncService is a no-op
+    // after this call fires.
+    QObject::connect(
+        &app, &QCoreApplication::aboutToQuit, &app,
+        [&serviceLocator]() {
+          auto *svc = serviceLocator.get<vnotex::SyncService>();
+          if (svc) {
+            svc->shutdown();
+          }
+        },
+        Qt::DirectConnection);
+
     configMgr.initAfterQtAppStarted();
 
     // Create ThemeService after Qt app is started

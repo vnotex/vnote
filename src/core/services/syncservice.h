@@ -50,10 +50,12 @@ class SyncWorker;
 // same pattern: testSetInProgress is unconditional. The VNOTE_TESTING compile
 // definition remains reserved on the test target.
 //
-// NOTE: T17 will add NotebookBeforeClose hook subscription and aboutToQuit
-// shutdown wiring. T7 only exposes the public methods/signals needed by those
-// later wirings; the destructor here performs the basic worker-thread quit/wait
-// so that simple destruction paths (e.g. test teardown) are clean.
+// T17 wires the NotebookBeforeClose hook (refusing to close while a sync is
+// in progress for that notebook) inside the constructor, and exposes a public
+// shutdown() method that quits the worker thread with a bounded 30s wait and
+// a terminate() fallback. shutdown() is also wired from main.cpp via
+// QCoreApplication::aboutToQuit (DirectConnection) so that QApplication tear-
+// down does not race with in-flight worker operations.
 class SyncService : public QObject, private Noncopyable {
   Q_OBJECT
 
@@ -116,6 +118,20 @@ public:
   // core_services and test binaries.
   void testSetInProgress(const QString &p_notebookId, bool p_value);
 
+  // Bounded shutdown of the underlying SyncWorker thread.
+  // Sequence:
+  //   1. Set the m_shutDown flag so subsequent public-API calls are no-ops.
+  //   2. Call m_thread->quit() to ask the worker thread's event loop to exit.
+  //   3. Wait up to 30 seconds for the thread to finish.
+  //   4. If the wait times out, log a qWarning and call terminate() + a short
+  //      bounded wait as a last resort.
+  // Idempotent: calling shutdown() more than once is safe (subsequent calls
+  // observe the flag and return immediately).
+  // Wired from main.cpp's QCoreApplication::aboutToQuit handler with
+  // Qt::DirectConnection so that the GUI event loop teardown does not skip
+  // the call.
+  void shutdown();
+
 signals:
   // Re-emit signals from the underlying worker. All are delivered on the GUI
   // thread (worker -> queued slot -> emit).
@@ -161,6 +177,9 @@ private:
   // thread that might call isSyncInProgress.
   mutable QMutex m_inProgressMutex;
   QHash<QString, bool> m_inProgress;
+
+  // Set true by shutdown(); subsequent public-API operations early-return.
+  bool m_shutDown = false;
 };
 
 } // namespace vnotex

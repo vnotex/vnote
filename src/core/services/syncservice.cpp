@@ -1,13 +1,19 @@
 #include "syncservice.h"
 
+#include <QApplication>
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMessageBox>
 #include <QMetaObject>
 #include <QMutexLocker>
 #include <QThread>
 
+#include <core/hookcontext.h>
+#include <core/hookevents.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncworker.h>
@@ -83,17 +89,53 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
           &SyncService::onWorkerCredentialsSetFinished, Qt::QueuedConnection);
 
   m_thread->start();
+
+  // T17: subscribe to NotebookBeforeClose. Refuse the close while a sync is
+  // in progress for the same notebook. Per ADR-9 we use HookContext::cancel()
+  // (no-arg) and stash a user-visible reason via setMetadata("syncCancelReason", ...).
+  // The handler also pops a QMessageBox directly because HookManager guarantees
+  // single-threaded (GUI-thread) handler execution.
+  auto *hookMgr = m_services.get<HookManager>();
+  if (hookMgr) {
+    hookMgr->addAction<NotebookCloseEvent>(
+        HookNames::NotebookBeforeClose,
+        [this](HookContext &p_ctx, const NotebookCloseEvent &p_event) {
+          if (!isSyncInProgress(p_event.notebookId)) {
+            return;
+          }
+          p_ctx.cancel();
+          const QString reason =
+              tr("Sync is in progress for this notebook. Please wait for sync to "
+                 "complete before closing.");
+          p_ctx.setMetadata(QStringLiteral("syncCancelReason"), reason);
+          QMessageBox::warning(qApp ? qApp->activeWindow() : nullptr, tr("Cannot close notebook"),
+                               reason);
+        },
+        /*priority=*/10);
+  }
+}
+
+void SyncService::shutdown() {
+  if (m_shutDown) {
+    return;
+  }
+  m_shutDown = true;
+  if (!m_thread) {
+    return;
+  }
+  m_thread->quit();
+  const bool ok = m_thread->wait(30000);
+  if (!ok) {
+    qWarning() << "SyncService shutdown timed out after 30s; terminating worker thread";
+    m_thread->terminate();
+    m_thread->wait(1000);
+  }
 }
 
 SyncService::~SyncService() {
-  // Basic shutdown: stop the worker thread. T17 will replicate this in a
-  // dedicated shutdown() method and add a terminate() fallback after a longer
-  // timeout. Keeping this here so test teardown and unexpected destruction
-  // paths still behave cleanly.
-  if (m_thread) {
-    m_thread->quit();
-    m_thread->wait(30000);
-  }
+  // Idempotent: if shutdown() was already called via aboutToQuit, this is a
+  // no-op. Otherwise it performs a bounded quit/wait/terminate.
+  shutdown();
 }
 
 QString SyncService::buildCredentialsJson(const QString &p_pat) {
@@ -111,6 +153,10 @@ QString SyncService::buildConfigJson(const QString &p_remoteUrl) {
 
 void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QString &p_remoteUrl,
                                         const QString &p_pat) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::enableSyncForNotebook: ignored after shutdown";
+    return;
+  }
   qDebug() << "SyncService::enableSyncForNotebook: notebookId:" << p_notebookId;
 
   const QString configJson = buildConfigJson(p_remoteUrl);
@@ -162,6 +208,10 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
 }
 
 void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::disableSyncForNotebook: ignored after shutdown";
+    return;
+  }
   qDebug() << "SyncService::disableSyncForNotebook: notebookId:" << p_notebookId;
 
   const QString notebookId = p_notebookId;
@@ -184,12 +234,20 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
 }
 
 void SyncService::triggerSyncNow(const QString &p_notebookId) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::triggerSyncNow: ignored after shutdown";
+    return;
+  }
   qDebug() << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
   QMetaObject::invokeMethod(m_worker, "triggerSync", Qt::QueuedConnection,
                             Q_ARG(QString, p_notebookId));
 }
 
 void SyncService::updateCredentials(const QString &p_notebookId, const QString &p_newPat) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::updateCredentials: ignored after shutdown";
+    return;
+  }
   qDebug() << "SyncService::updateCredentials: notebookId:" << p_notebookId;
 
   const QString credsJson = buildCredentialsJson(p_newPat);
@@ -232,6 +290,10 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
 
 void SyncService::resolveConflicts(const QString &p_notebookId,
                                    const QHash<QString, QString> &p_resolutions) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::resolveConflicts: ignored after shutdown";
+    return;
+  }
   qDebug() << "SyncService::resolveConflicts: notebookId:" << p_notebookId
            << "count:" << p_resolutions.size();
 
