@@ -17,6 +17,11 @@ struct NewNotebookInput {
   QString rootFolderPath;
   QString assetsFolder = QStringLiteral("vx_assets");
   NotebookType type = NotebookType::Bundled;
+  // Sync method selected at creation time. "none" (default) creates a notebook
+  // without sync configuration. "git" injects flat sync markers (per ADR-8)
+  // into the vxcore notebook config so that bootstrap (T14) can later enable
+  // sync against the empty root (per ADR-7: create-then-enable).
+  QString syncMethod = QStringLiteral("none");
 };
 
 // Result structure for notebook creation.

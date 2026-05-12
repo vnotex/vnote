@@ -140,5 +140,13 @@ QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) 
   if (!assetsFolderTrimmed.isEmpty() && assetsFolderTrimmed != QStringLiteral("vx_assets")) {
     configObj[QStringLiteral("assetsFolder")] = assetsFolderTrimmed;
   }
+  // Per ADR-8: sync configuration uses FLAT keys on the notebook config
+  // (syncEnabled, syncBackend), not a nested "sync" object. syncRemoteUrl is
+  // intentionally NOT set here — it stays empty until T14 bootstrap runs
+  // enableSync against the empty root (per ADR-7: create-then-enable).
+  if (p_input.syncMethod == QStringLiteral("git")) {
+    configObj[QStringLiteral("syncEnabled")] = true;
+    configObj[QStringLiteral("syncBackend")] = QStringLiteral("git");
+  }
   return QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
 }
