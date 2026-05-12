@@ -9,6 +9,7 @@ target_sources(vnote PRIVATE
     opennotebookcontroller.cpp opennotebookcontroller.h
     openvnote3notebookcontroller.cpp openvnote3notebookcontroller.h
     managenotebookscontroller.cpp managenotebookscontroller.h
+    notebooksyncinfocontroller.cpp notebooksyncinfocontroller.h
     recyclebincontroller.cpp recyclebincontroller.h
     importfoldercontroller.cpp importfoldercontroller.h
     tagcontroller.cpp tagcontroller.h

@@ -73,3 +73,21 @@ add_qt_test(test_exportcontroller
     Qt6::Widgets
   GUILESS
 )
+
+add_qt_test(test_notebooksyncinfocontroller
+  SOURCES
+    test_notebooksyncinfocontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
+  LINKS
+    Qt6::Core
+    core_services
+    vxcore
+  GUILESS
+)
+# Reserve the ADR-6 test seam macro for future test-only code paths. Per T6/T7
+# learnings: do NOT dual-compile syncservice.cpp/syncworker.cpp/synccredentialsstore.cpp
+# into the test target — they come from core_services and dual-compilation
+# produces duplicate-symbol link errors on Windows AND breaks the
+# VNOTE_KEYCHAIN_AVAILABLE compile gate for QtKeychain. The test exercises the
+# real services via core_services, which is exactly what ADR-6 asks for.
+target_compile_definitions(test_notebooksyncinfocontroller PRIVATE VNOTE_TESTING)

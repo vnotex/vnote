@@ -9,22 +9,13 @@
 #include <QPushButton>
 #include <QShowEvent>
 
+#include <controllers/notebooksyncinfocontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/syncservice.h>
 
 #include "../propertydefs.h"
 #include "../widgetsfactory.h"
-
-namespace vnotex {
-
-// Forward declaration of the controller created in T11. Declared in this
-// translation unit only so that we can hold a pointer member without pulling
-// in the (not-yet-existing) controller header. T11 replaces this with a real
-// #include and constructs the controller in this dialog's constructor.
-class NotebookSyncInfoController;
-
-} // namespace vnotex
 
 using namespace vnotex;
 
@@ -50,9 +41,8 @@ const char *const kBootstrapModeProperty = "bootstrapMode";
 NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
                                                  const QString &p_notebookId, QWidget *p_parent)
     : ScrollDialog(p_parent), m_services(p_services), m_notebookId(p_notebookId) {
-  // T11 will instantiate the real controller here:
-  //   m_controller = new NotebookSyncInfoController(m_services, m_notebookId, this);
-  // Until then, m_controller stays nullptr and every call site is guarded.
+  // T11 wired the real controller. Owned by this dialog (parented to it).
+  m_controller = new NotebookSyncInfoController(m_services, m_notebookId, this);
 
   setupUI();
 
@@ -64,16 +54,26 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
 
   refreshDirtyButtons();
 
-  // Populate read-only labels with whatever the dialog can determine without
-  // a controller (notebook display name from NotebookCoreService). T11 will
-  // call m_controller->loadInitialData() to refresh these from authoritative
-  // sources (notebook config + SyncService::lastSyncTime).
-  if (auto *notebookSvc = m_services.get<NotebookCoreService>()) {
-    const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
-    const QString displayName = cfg.value(QStringLiteral("name")).toString();
-    if (!displayName.isEmpty()) {
-      m_notebookNameLabel->setText(displayName);
-    }
+  // Populate read-only labels via the controller (authoritative source for
+  // notebook display name + remote URL + lastSyncIso). The controller emits
+  // dataLoaded(...); subscribe locally to update the labels and snapshot the
+  // last-applied URL.
+  if (m_controller) {
+    connect(m_controller, &NotebookSyncInfoController::dataLoaded, this,
+            [this](const QString &p_name, const QString &p_remoteUrl, const QString &p_lastSync) {
+              if (m_notebookNameLabel && !p_name.isEmpty()) {
+                m_notebookNameLabel->setText(p_name);
+              }
+              if (m_remoteUrlEdit) {
+                m_remoteUrlEdit->setText(p_remoteUrl);
+              }
+              m_lastAppliedRemoteUrl = p_remoteUrl;
+              if (m_lastSyncLabel) {
+                m_lastSyncLabel->setText(p_lastSync.isEmpty() ? tr("Never") : p_lastSync);
+              }
+              refreshDirtyButtons();
+            });
+    m_controller->loadInitialData();
   }
 
   // Default current state to Idle. SyncService signals will move this to
@@ -251,23 +251,19 @@ void NotebookSyncInfoDialog2::onDisableSyncClicked() {
     return;
   }
 
-  // T11 hands the destructive action off to the controller, which calls
+  // T11: hand the destructive action off to the controller, which calls
   // SyncService::disableSyncForNotebook + clears the keychain entry.
-  // Until T11 lands, this is a no-op (the confirmation still fires so tests
-  // can validate the warning surface).
   if (m_controller) {
-    // T11 contract:
-    //   m_controller->disableSync();
+    m_controller->disableSync();
   }
 }
 
 void NotebookSyncInfoDialog2::acceptedButtonClicked() {
-  // T11 contract: the controller decides whether to send URL only, PAT only,
-  // or both based on which fields are dirty. Until T11 wires the controller,
-  // we still close the dialog so the bootstrap-mode flow can complete.
+  // T11: the controller decides whether to send URL only, PAT only, or both
+  // based on which fields are dirty. Then we still close the dialog so the
+  // bootstrap-mode flow can complete.
   if (m_controller) {
-    // T11 contract:
-    //   m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
+    m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
   }
 
   // Snapshot the current URL as the new "last applied" baseline so a
@@ -282,8 +278,7 @@ void NotebookSyncInfoDialog2::acceptedButtonClicked() {
 
 void NotebookSyncInfoDialog2::appliedButtonClicked() {
   if (m_controller) {
-    // T11 contract:
-    //   m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
+    m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
   }
 
   m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
