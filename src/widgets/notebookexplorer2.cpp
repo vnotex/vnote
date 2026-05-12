@@ -3,13 +3,13 @@
 #include <QActionGroup>
 #include <QCoreApplication>
 #include <QDataStream>
-#include <QFileSystemWatcher>
-#include <QJsonDocument>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFileSystemWatcher>
 #include <QInputDialog>
+#include <QJsonDocument>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -33,6 +33,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/syncservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/navigationmodeservice.h>
@@ -52,6 +53,7 @@
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/dialogs/nodepropertiesdialog2.h>
+#include <widgets/dialogs/notebooksyncinfodialog2.h>
 #include <widgets/dialogs/openvnote3notebookdialog2.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/dialogs/viewtagsdialog2.h>
@@ -103,6 +105,26 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
         },
         10);
   }
+
+  // Sync UI lifecycle wiring (T15). Refresh the Sync button + menu entry on
+  // any sync state transition for ANY notebook (the slot filters by current).
+  if (auto *syncSvc = m_services.get<SyncService>()) {
+    connect(syncSvc, &SyncService::syncStarted, this,
+            [this](const QString &) { updateSyncButtonState(); });
+    connect(syncSvc, &SyncService::syncFinished, this,
+            [this](const QString &, VxCoreError) { updateSyncButtonState(); });
+    connect(syncSvc, &SyncService::syncFailed, this,
+            [this](const QString &, VxCoreError, const QString &) { updateSyncButtonState(); });
+    connect(syncSvc, &SyncService::enableFinished, this,
+            [this](const QString &, VxCoreError, const QString &) { updateSyncButtonState(); });
+    connect(syncSvc, &SyncService::disableFinished, this,
+            [this](const QString &, VxCoreError) { updateSyncButtonState(); });
+  }
+  connect(this, &NotebookExplorer2::currentNotebookChanged, this,
+          [this](const QString &) { updateSyncButtonState(); });
+
+  // Initial state.
+  updateSyncButtonState();
 }
 
 NotebookExplorer2::~NotebookExplorer2() {}
@@ -174,6 +196,15 @@ void NotebookExplorer2::setupTitleBar() {
     connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::openVNote3Notebook);
   }
 
+  // Sync button (T15) — always visible. Placeholder icon: git-sync.svg is not
+  // present under src/data/core/icons/, so we reuse apply_editor.svg until a
+  // dedicated sync icon is shipped (TODO: add data/core/icons/git-sync.svg).
+  // Enabled state and tooltip are driven by updateSyncButtonState().
+  m_syncButton = m_titleBar->addActionButton(QStringLiteral("apply_editor.svg"), tr("Sync"));
+  m_syncButton->setObjectName(QStringLiteral("syncButton"));
+  m_syncButton->setEnabled(false);
+  connect(m_syncButton, &QToolButton::clicked, this, &NotebookExplorer2::onSyncButtonClicked);
+
   setupTitleBarMenu();
 }
 
@@ -181,6 +212,13 @@ void NotebookExplorer2::setupTitleBarMenu() {
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
 
   m_titleBar->addMenuAction(tr("Manage Notebooks"), m_titleBar, [this]() { manageNotebooks(); });
+
+  // "Notebook Sync Info..." entry (T15). Enabled only when current notebook is
+  // bundled AND has sync configured; managed by updateSyncButtonState().
+  m_syncInfoAction = m_titleBar->addMenuAction(tr("Notebook Sync Info..."), m_titleBar,
+                                               [this]() { onSyncInfoActionTriggered(); });
+  m_syncInfoAction->setObjectName(QStringLiteral("syncInfoAction"));
+  m_syncInfoAction->setEnabled(false);
 
   m_titleBar->addMenuAction(tr("Open Folder as &Raw Notebook"), m_titleBar,
                             [this]() { newNotebookFromFolder(); });
@@ -513,18 +551,18 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onManageTagsRequested);
 
   // File system watcher: track expand/collapse
-  connect(explorer, &INodeExplorer::folderExpanded, this,
-          [this](const NodeIdentifier &p_folderId) {
-            auto *nbService = m_services.get<NotebookCoreService>();
-            if (!nbService) return;
-            QString folderPath =
-                nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
-            addWatchPath(folderPath);
-          });
+  connect(explorer, &INodeExplorer::folderExpanded, this, [this](const NodeIdentifier &p_folderId) {
+    auto *nbService = m_services.get<NotebookCoreService>();
+    if (!nbService)
+      return;
+    QString folderPath = nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
+    addWatchPath(folderPath);
+  });
   connect(explorer, &INodeExplorer::folderCollapsed, this,
           [this](const NodeIdentifier &p_folderId) {
             auto *nbService = m_services.get<NotebookCoreService>();
-            if (!nbService) return;
+            if (!nbService)
+              return;
             QString folderPath =
                 nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
             removeWatchPath(folderPath);
@@ -567,18 +605,18 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onManageTagsRequested);
 
   // File system watcher: track expand/collapse
-  connect(explorer, &INodeExplorer::folderExpanded, this,
-          [this](const NodeIdentifier &p_folderId) {
-            auto *nbService = m_services.get<NotebookCoreService>();
-            if (!nbService) return;
-            QString folderPath =
-                nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
-            addWatchPath(folderPath);
-          });
+  connect(explorer, &INodeExplorer::folderExpanded, this, [this](const NodeIdentifier &p_folderId) {
+    auto *nbService = m_services.get<NotebookCoreService>();
+    if (!nbService)
+      return;
+    QString folderPath = nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
+    addWatchPath(folderPath);
+  });
   connect(explorer, &INodeExplorer::folderCollapsed, this,
           [this](const NodeIdentifier &p_folderId) {
             auto *nbService = m_services.get<NotebookCoreService>();
-            if (!nbService) return;
+            if (!nbService)
+              return;
             QString folderPath =
                 nbService->buildAbsolutePath(m_currentNotebookId, p_folderId.relativePath);
             removeWatchPath(folderPath);
@@ -763,9 +801,22 @@ void NotebookExplorer2::newNotebook() {
   // Use window() to get top-level MainWindow2 for dialog centering.
   NewNotebookDialog2 dialog(m_services, window());
   if (dialog.exec() == QDialog::Accepted) {
+    const QString newNotebookId = dialog.getNewNotebookId();
+    const QString syncMethod = dialog.getSelectedSyncMethod();
+
     // Reload notebooks and select the newly created one.
     loadNotebooks();
-    setCurrentNotebook(dialog.getNewNotebookId());
+    setCurrentNotebook(newNotebookId);
+
+    // Auto-open the Sync Info dialog in bootstrap mode for git-sync notebooks.
+    // The dialog's Apply handler (T11) calls NewNotebookController::bootstrapSync
+    // because of the bootstrap-mode flag.
+    if (syncMethod == QStringLiteral("git") && !newNotebookId.isEmpty()) {
+      auto *infoDlg = new NotebookSyncInfoDialog2(m_services, newNotebookId, this);
+      infoDlg->setAttribute(Qt::WA_DeleteOnClose);
+      infoDlg->setBootstrapMode(true);
+      infoDlg->open();
+    }
   }
 }
 
@@ -1296,21 +1347,20 @@ void NotebookExplorer2::onMarkRequested(const NodeIdentifier &p_nodeId) {
   }
 }
 
-void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId)
-{
+void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId) {
   if (!p_nodeId.isValid()) {
     return;
   }
 
   // Extract name from relative path.
-  const QString name = p_nodeId.relativePath.mid(
-      p_nodeId.relativePath.lastIndexOf(QLatin1Char('/')) + 1);
+  const QString name =
+      p_nodeId.relativePath.mid(p_nodeId.relativePath.lastIndexOf(QLatin1Char('/')) + 1);
 
   // Confirmation dialog.
   const QString title = tr("Ignore");
   const QString message = tr("Add \"%1\" to the ignore list of the notebook?").arg(name);
-  int ret = MessageBoxHelper::questionOkCancel(
-      MessageBoxHelper::Question, title, message, QString(), window());
+  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, title, message,
+                                               QString(), window());
   if (ret != QMessageBox::Ok) {
     return;
   }
@@ -1330,8 +1380,7 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId)
   ignored.append(name);
   config[QStringLiteral("ignored")] = ignored;
 
-  const QString configStr = QString::fromUtf8(
-      QJsonDocument(config).toJson(QJsonDocument::Compact));
+  const QString configStr = QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact));
   if (!notebookService->updateNotebookConfig(p_nodeId.notebookId, configStr)) {
     MessageBoxHelper::notify(MessageBoxHelper::Warning,
                              tr("Failed to update notebook configuration."), window());
@@ -1344,8 +1393,7 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId)
   }
 }
 
-void NotebookExplorer2::onManageTagsRequested(const NodeIdentifier &p_nodeId)
-{
+void NotebookExplorer2::onManageTagsRequested(const NodeIdentifier &p_nodeId) {
   if (!p_nodeId.isValid()) {
     return;
   }
@@ -1408,9 +1456,7 @@ void NotebookExplorer2::addWatchPath(const QString &p_path) {
   m_fsWatcher->addPath(p_path);
 }
 
-void NotebookExplorer2::removeWatchPath(const QString &p_path) {
-  m_fsWatcher->removePath(p_path);
-}
+void NotebookExplorer2::removeWatchPath(const QString &p_path) { m_fsWatcher->removePath(p_path); }
 
 void NotebookExplorer2::syncWatchedPaths() {
   teardownFileWatcher();
@@ -1465,3 +1511,80 @@ void NotebookExplorer2::onFsReloadTimeout() {
 
   m_lastChangedDir.clear();
 }
+
+// --- Sync UI implementation (T15) ---
+
+void NotebookExplorer2::onSyncButtonClicked() {
+  const QString nbId = currentNotebookId();
+  if (nbId.isEmpty()) {
+    return;
+  }
+  if (auto *syncSvc = m_services.get<SyncService>()) {
+    syncSvc->triggerSyncNow(nbId);
+  }
+}
+
+void NotebookExplorer2::onSyncInfoActionTriggered() {
+  const QString nbId = currentNotebookId();
+  if (nbId.isEmpty()) {
+    return;
+  }
+  auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
+  dlg->setAttribute(Qt::WA_DeleteOnClose);
+  dlg->open();
+}
+
+void NotebookExplorer2::updateSyncButtonState() {
+  if (!m_syncButton || !m_syncInfoAction) {
+    return;
+  }
+
+  const QString nbId = currentNotebookId();
+  if (nbId.isEmpty()) {
+    m_syncButton->setEnabled(false);
+    m_syncButton->setToolTip(tr("No notebook selected"));
+    m_syncInfoAction->setEnabled(false);
+    return;
+  }
+
+  // Check bundled status via BufferService.
+  bool bundled = false;
+  if (auto *bufferSvc = m_services.get<BufferService>()) {
+    bundled = bufferSvc->isNotebookBundled(nbId);
+  }
+  if (!bundled) {
+    m_syncButton->setEnabled(false);
+    m_syncButton->setToolTip(tr("Sync requires a Bundled notebook with sync enabled"));
+    m_syncInfoAction->setEnabled(false);
+    return;
+  }
+
+  auto *syncSvc = m_services.get<SyncService>();
+  const bool enabled = syncSvc && syncSvc->isSyncEnabled(nbId);
+  const bool inProgress = syncSvc && syncSvc->isSyncInProgress(nbId);
+
+  m_syncButton->setEnabled(enabled && !inProgress);
+  if (!enabled) {
+    m_syncButton->setToolTip(tr("Sync requires a Bundled notebook with sync enabled"));
+  } else if (inProgress) {
+    m_syncButton->setToolTip(tr("Sync in progress…"));
+  } else {
+    m_syncButton->setToolTip(tr("Sync now"));
+  }
+
+  // The menu entry is enabled whenever sync is configured (the dialog itself
+  // is safe to open even while a sync is in progress).
+  m_syncInfoAction->setEnabled(enabled);
+}
+
+#ifdef VNOTE_TESTING
+void NotebookExplorer2::testTriggerNewNotebookCreated(const QString &p_notebookId,
+                                                      const QString &p_syncMethod) {
+  if (p_syncMethod == QStringLiteral("git") && !p_notebookId.isEmpty()) {
+    auto *dlg = new NotebookSyncInfoDialog2(m_services, p_notebookId, this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setBootstrapMode(true);
+    dlg->open();
+  }
+}
+#endif

@@ -1,0 +1,681 @@
+ninja: warning: premature end of file; recovering
+[1/436] Automatic MOC and UIC for target qt6keychain
+[2/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_chartables.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[3/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_fullinfo.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[4/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_get.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[5/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_byte_order.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[6/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_maketables.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[7/436] Building C object libs\vxcore\third_party\libgit2\deps\http-parser\CMakeFiles\http-parser.dir\http_parser.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[8/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_config.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[9/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_exec.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[10/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_dfa_exec.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[11/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_globals.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[12/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_ord2utf8.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[13/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_newline.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[14/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_refcount.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[15/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_jit_compile.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[16/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_study.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[17/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_compile.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[18/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_string_utils.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[19/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_tables.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[20/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_xclass.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[21/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_ucd.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[22/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_version.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[23/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcre_valid_utf8.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[24/436] Building C object libs\vxcore\third_party\libgit2\deps\pcre\CMakeFiles\pcre.dir\pcreposix.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[25/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\crc32.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[26/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\adler32.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[27/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\deflate.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[28/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\inffast.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[29/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\infback.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[30/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\inftrees.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[31/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\trees.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[32/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\inflate.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[33/436] Building C object libs\vxcore\third_party\libgit2\deps\zlib\CMakeFiles\zlib.dir\zutil.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[34/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xmerge.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[35/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xdiffi.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[36/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xemit.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[37/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xhistogram.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[38/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xpatience.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[39/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xprepare.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[40/436] Building C object libs\vxcore\third_party\libgit2\deps\xdiff\CMakeFiles\xdiff.dir\xutils.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[41/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\annotated_commit.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[42/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\apply.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[43/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\attrcache.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[44/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\attr.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[45/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\attr_file.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[46/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\blame.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[47/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\blame_git.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[48/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\branch.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[49/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\blob.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[50/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\buf.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[51/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\checkout.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[52/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\cache.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[53/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\cherrypick.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[54/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\commit_graph.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[55/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\clone.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[56/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\commit.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[57/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\commit_list.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[58/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config_entries.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[59/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[60/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config_cache.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[61/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config_mem.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[62/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config_file.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[63/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config_snapshot.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[64/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\config_parse.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[65/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\crlf.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[66/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\delta.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[67/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\describe.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[68/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[69/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_driver.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[70/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_print.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[71/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_tform.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[72/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_file.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[73/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_xdiff.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[74/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\email.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[75/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_parse.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[76/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_stats.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[77/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\diff_generate.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[78/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\errors.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[79/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\fetch.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[80/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\filter.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[81/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\fetchhead.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[82/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\grafts.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[83/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\graph.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[84/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\hashsig.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[85/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\ident.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[86/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\idxmap.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[87/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\indexer.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[88/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\mailmap.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[89/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\iterator.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[90/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\ignore.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[91/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\libgit2.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[92/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\message.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[93/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\index.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[94/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\merge_driver.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[95/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\merge_file.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[96/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\merge.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[97/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\midx.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[98/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\notes.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[99/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\object.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[100/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\mwindow.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[101/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\object_api.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[102/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\odb.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[103/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\odb_loose.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[104/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\odb_mempack.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[105/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\offmap.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[106/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\oidarray.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[107/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\odb_pack.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[108/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\oidmap.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[109/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\oid.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[110/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\pack-objects.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[111/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\parse.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[112/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\pack.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[113/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\patch.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[114/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\path.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[115/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\patch_generate.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\patch_generate.c(65): warning C5287: operands are different enum types 'git_diff_flag_t' and '<unnamed-enum-GIT_DIFF_FLAG__FREE_PATH>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\patch_generate.c(66): warning C5287: operands are different enum types 'git_diff_flag_t' and '<unnamed-enum-GIT_DIFF_FLAG__FREE_PATH>'; use an explicit cast to silence this warning
+[116/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\patch_parse.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[117/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\proxy.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[118/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\pathspec.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[119/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\push.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[120/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\reader.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[121/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\refdb.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[122/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\reflog.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[123/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\rebase.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[124/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\refs.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[125/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\refspec.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[126/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\refdb_fs.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[127/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\remote.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[128/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\reset.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[129/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\repository.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[130/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\revert.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[131/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\revparse.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[132/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\signature.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[133/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\stash.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[134/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\revwalk.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[135/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\strarray.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[136/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\status.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[137/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\mbedtls.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[138/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\openssl_dynamic.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[139/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\openssl_legacy.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[140/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\schannel.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[141/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\registry.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[142/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\openssl.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[143/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\socket.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[144/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\stransport.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[145/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\streams\tls.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[146/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\sysdir.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[147/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\submodule.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1433): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1558): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1569): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1577): warning C5287: operands are different enum types '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>' and 'git_submodule_status_t'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1615): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1629): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1648): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1659): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+C:\Users\tanle\study\vnote\libs\vxcore\third_party\libgit2\src\libgit2\submodule.c(1699): warning C5287: operands are different enum types 'git_submodule_status_t' and '<unnamed-enum-GIT_SUBMODULE_STATUS__WD_SCANNED>'; use an explicit cast to silence this warning
+[148/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\tag.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[149/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\trace.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[150/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\threadstate.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[151/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\trailer.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[152/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\auth.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[153/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transport.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[154/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transaction.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[155/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\auth_gssapi.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[156/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\http.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[157/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\credential.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[158/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\auth_ntlmclient.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[159/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\git.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[160/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\credential_helpers.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[161/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\auth_sspi.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[162/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\httpclient.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[163/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\local.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[164/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\smart.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[165/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\smart_pkt.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[166/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\ssh.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[167/436] Building RC object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2package.dir\git2.rc.res
+[168/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\smart_protocol.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[169/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\worktree.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[170/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\tree-cache.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[171/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\transports\winhttp.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[172/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\allocators\stdalloc.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[173/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\date.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[174/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\alloc.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[175/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\allocators\win32_leakcheck.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[176/436] Building C object libs\vxcore\third_party\libgit2\src\libgit2\CMakeFiles\libgit2.dir\tree.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[177/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\filebuf.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[178/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\fs_path.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[179/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\allocators\failalloc.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[180/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\futils.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[181/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\hash.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[182/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\net.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[183/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\posix.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[184/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\pool.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[185/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\pqueue.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[186/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\runtime.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[187/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\sortedcache.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[188/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\rand.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[189/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\regexp.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[190/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\tsort.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[191/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\strmap.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[192/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\thread.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[193/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\str.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[194/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\utf8.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[195/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\varint.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[196/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\util.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[197/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\vector.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[198/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\wildmatch.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[199/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\zstream.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[200/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\dir.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[201/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\map.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[202/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\error.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[203/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\path_w32.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[204/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\posix_w32.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[205/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\utf-conv.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[206/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\thread.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[207/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\w32_leakcheck.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[208/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\precompiled.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[209/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\hash\collisiondetect.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[210/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\hash\sha1dc\ubc_check.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[211/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\w32_util.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[212/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\win32\w32_buffer.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[213/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\hash\win32.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[214/436] Building C object libs\vxcore\third_party\libgit2\src\util\CMakeFiles\util.dir\hash\sha1dc\sha1.c.obj
+cl : Command line warning D9025 : overriding '/MT' with '/MD'
+[215/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\handle_manager.cpp.obj
+[216/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\error_handler.cpp.obj
+[217/436] Linking C static library libs\vxcore\third_party\libgit2\git2.lib
+[218/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_search_api.cpp.obj
+[219/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\config_manager.cpp.obj
+[220/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_notebook_api.cpp.obj
+[221/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\filetype_config.cpp.obj
+[222/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_filetype_api.cpp.obj
+[223/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_api.cpp.obj
+[224/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\vxcore_config.cpp.obj
+[225/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_workspace_api.cpp.obj
+[226/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_tag_api.cpp.obj
+[227/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_buffer_api.cpp.obj
+[228/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\vxcore_session_config.cpp.obj
+[229/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_node_api.cpp.obj
+[230/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_template_api.cpp.obj
+[231/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\workspace.cpp.obj
+[232/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_folder_api.cpp.obj
+[233/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\workspace_manager.cpp.obj
+[234/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_sync_api.cpp.obj
+[235/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\api\vxcore_snippet_api.cpp.obj
+[236/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\buffer.cpp.obj
+[237/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\buffer_manager.cpp.obj
+[238/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\buffer_provider.cpp.obj
+[239/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\db\db_manager.cpp.obj
+[240/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\db\notebook_db.cpp.obj
+[241/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\history_manager.cpp.obj
+[242/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\external_buffer_provider.cpp.obj
+[243/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\db\tag_db.cpp.obj
+[244/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\notebook_manager.cpp.obj
+[245/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\standard_buffer_provider.cpp.obj
+[246/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\notebook.cpp.obj
+[247/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\raw_notebook.cpp.obj
+[248/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\folder.cpp.obj
+[249/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\folder_manager.cpp.obj
+[250/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\template_manager.cpp.obj
+[251/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\bundled_notebook.cpp.obj
+[252/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\sync\libgit2_init.cpp.obj
+[253/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\utils\base64.cpp.obj
+[254/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\db\sqlite_metadata_store.cpp.obj
+[255/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\db\file_db.cpp.obj
+[256/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\utils\utils.cpp.obj
+[257/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\search\search_file_info.cpp.obj
+[258/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\search\search_query.cpp.obj
+[259/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\raw_folder_manager.cpp.obj
+[260/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\utils\string_utils.cpp.obj
+[261/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\search\search_manager.cpp.obj
+[262/436] Building CXX object _deps\qtkeychain-build\CMakeFiles\qt6keychain.dir\qt6keychain_autogen\mocs_compilation.cpp.obj
+[263/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\snippet_manager.cpp.obj
+[264/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\sync\sync_manager.cpp.obj
+[265/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\utils\logger.cpp.obj
+[266/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\sync\git_sync_backend.cpp.obj
+[267/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\content_processor\content_processor.cpp.obj
+C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207\include\algorithm(3800): warning C4244: '=': conversion from 'int' to 'char', possible loss of data
+C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207\include\algorithm(3800): note: the template instantiation context (the oldest one first) is
+C:\Users\tanle\study\vnote\libs\vxcore\src\core\content_processor\content_processor.cpp(19): note: see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,vxcore::ContentProcessor::GetHandler::<lambda_478ce616b6b16a02ad7d6d12a450a8a8>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+        with
+        [
+            _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+            _Elem=char,
+            _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+            _Fn=vxcore::ContentProcessor::GetHandler::<lambda_478ce616b6b16a02ad7d6d12a450a8a8>
+        ]
+[268/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\platform\process_utils.cpp.obj
+[269/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\bundled_folder_manager.cpp.obj
+[270/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\platform\path_provider.cpp.obj
+[271/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\search\simple_search_backend.cpp.obj
+[272/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\search\rg_search_backend.cpp.obj
+[273/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\utils\file_utils.cpp.obj
+[274/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\content_processor\markdown_handler.cpp.obj
+[275/436] Building CXX object libs\vxcore\src\CMakeFiles\vxcore.dir\core\content_processor\asset_utils.cpp.obj
+[276/436] Building CXX object _deps\qtkeychain-build\CMakeFiles\qt6keychain.dir\moc_keychain.cpp.obj
+[277/436] Linking CXX static library lib\vxcore.lib
+[278/436] Building CXX object _deps\qtkeychain-build\CMakeFiles\qt6keychain.dir\moc_gnomekeyring_p.cpp.obj
+[279/436] Building CXX object _deps\qtkeychain-build\CMakeFiles\qt6keychain.dir\keychain.cpp.obj
+[280/436] Building CXX object _deps\qtkeychain-build\CMakeFiles\qt6keychain.dir\moc_keychain_p.cpp.obj
+[281/436] Building CXX object _deps\qtkeychain-build\CMakeFiles\qt6keychain.dir\keychain_win.cpp.obj
+[282/436] Linking CXX static library _deps\qtkeychain-build\qt6keychain.lib
+[283/436] Automatic MOC and UIC for target core_services
+[284/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\tagcoreservice.cpp.obj
+[285/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\snippetcoreservice.cpp.obj
+[286/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\tagservice.cpp.obj
+[287/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\buffer2.cpp.obj
+[288/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\configservice.cpp.obj
+[289/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\searchcoreservice.cpp.obj
+[290/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\buffercoreservice.cpp.obj
+[291/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\notebookcoreservice.cpp.obj
+[292/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\imagehostworker.cpp.obj
+[293/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\bufferservice.cpp.obj
+[294/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\hookmanager.cpp.obj
+[295/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\templateservice.cpp.obj
+[296/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\configcoreservice.cpp.obj
+[297/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\htmltemplateservice.cpp.obj
+[298/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\searchservice.cpp.obj
+[299/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\imagehostservice.cpp.obj
+[300/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\filetypecoreservice.cpp.obj
+[301/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\synccredentialsstore.cpp.obj
+[302/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\error.cpp.obj
+[303/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\workspacecoreservice.cpp.obj
+[304/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\core_services_autogen\mocs_compilation.cpp.obj
+[305/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\hookevents.cpp.obj
+[306/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\syncworker.cpp.obj
+[307/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\searchresulttypes.cpp.obj
+[308/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\imagehost\iimagehostprovider.cpp.obj
+[309/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\syncservice.cpp.obj
+[310/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\vnote3migrationservice.cpp.obj
+[311/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\utils\pathutils.cpp.obj
+[312/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\utils\fileutils.cpp.obj
+[313/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\utils\utils.cpp.obj
+[314/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\imagehost\customcommandprovider.cpp.obj
+[315/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\utils\webutils.cpp.obj
+[316/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\imagehost\githubprovider.cpp.obj
+[317/436] Building CXX object src\core\services\CMakeFiles\core_services.dir\__\__\imagehost\giteeprovider.cpp.obj
+[318/436] Linking CXX static library src\core\services\core_services.lib
+[319/436] Automatic MOC and UIC for target vnote
+[320/436] Building CXX object src\CMakeFiles\vnote.dir\core\exampleplugin.cpp.obj
+[321/436] Building CXX object src\CMakeFiles\vnote.dir\core\buffer\textbuffer.cpp.obj
+[322/436] Building CXX object src\CMakeFiles\vnote.dir\core\mainconfig.cpp.obj
+[323/436] Building CXX object src\CMakeFiles\vnote.dir\core\buffer\pdfbuffer.cpp.obj
+[324/436] Building CXX object src\CMakeFiles\vnote.dir\core\editorconfig.cpp.obj
+[325/436] Building CXX object src\CMakeFiles\vnote.dir\core\buffer\mindmapbuffer.cpp.obj
+[326/436] Building CXX object src\CMakeFiles\vnote.dir\gui\services\viewwindowfactory.cpp.obj
+[327/436] Building CXX object src\CMakeFiles\vnote.dir\unitedentry\historyunitedentry.cpp.obj
+[328/436] Building CXX object src\CMakeFiles\vnote.dir\gui\services\themeservice.cpp.obj
+[329/436] Building CXX object src\CMakeFiles\vnote.dir\core\buffer\markdownbuffer.cpp.obj
+[330/436] Building CXX object src\CMakeFiles\vnote.dir\core\buffer\buffer.cpp.obj
+[331/436] Building CXX object src\CMakeFiles\vnote.dir\core\configmgr2.cpp.obj
+[332/436] Building CXX object src\CMakeFiles\vnote.dir\export\webviewexporter.cpp.obj
+[333/436] Building CXX object src\CMakeFiles\vnote.dir\unitedentry\findunitedentry.cpp.obj
+[334/436] Building CXX object src\CMakeFiles\vnote.dir\task\taskvariablemgr.cpp.obj
+[335/436] Building CXX object src\CMakeFiles\vnote.dir\core\notebookconfigmgr\vxnotebookconfigmgr.cpp.obj
+[336/436] Building CXX object src\CMakeFiles\vnote.dir\utils\urlutils.cpp.obj
+[337/436] Building CXX object src\CMakeFiles\vnote.dir\main.cpp.obj
+[338/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\importfolderdialog2.cpp.obj
+[339/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\newsnippetdialog2.cpp.obj
+[340/436] Building CXX object src\CMakeFiles\vnote.dir\unitedentry\unitedentrymgr.cpp.obj
+[341/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\newfolderdialog2.cpp.obj
+[342/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\attachmentdragdropareaindicator.cpp.obj
+[343/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\notebooksyncinfodialog2.cpp.obj
+[344/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\nodepropertiesdialog2.cpp.obj
+[345/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\generalpage.cpp.obj
+[346/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\newnotedialog2.cpp.obj
+[347/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\editorpage.cpp.obj
+[348/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\newnotebookdialog2.cpp.obj
+[349/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\newquickaccessitemdialog.cpp.obj
+[350/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\newimagehostdialog.cpp.obj
+[351/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\fileassociationpage.cpp.obj
+[352/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\imagehostpage.cpp.obj
+[353/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\markdowneditorpage.cpp.obj
+[354/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\snippetpropertiesdialog2.cpp.obj
+[355/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\texteditorpage.cpp.obj
+[356/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\quickaccesspage.cpp.obj
+[357/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\settings\vipage.cpp.obj
+[358/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\syncconflictdialog2.cpp.obj
+[359/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\graphvizhelper.cpp.obj
+[360/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\pdfviewer.cpp.obj
+[361/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\mindmapeditor.cpp.obj
+[362/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\markdowntablehelper.cpp.obj
+[363/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\plantumlhelper.cpp.obj
+[364/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\dialogs\snippetinfowidget2.cpp.obj
+[365/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\texteditor.cpp.obj
+[366/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\findandreplacewidget.cpp.obj
+[367/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\previewhelper.cpp.obj
+[368/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\markdownviewer.cpp.obj
+[369/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\findandreplacewidget2.cpp.obj
+[370/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\lineeditwithsnippet.cpp.obj
+[371/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\editors\markdowneditor.cpp.obj
+[372/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\notebookselector2.cpp.obj
+[373/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\pdfviewwindow2.cpp.obj
+[374/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\mindmapviewwindow2.cpp.obj
+[375/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\mindmapviewwindow.cpp.obj
+[376/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\pdfviewwindow.cpp.obj
+[377/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\mainwindow.cpp.obj
+[378/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\snippetpanel2.cpp.obj
+[379/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\markdownviewwindow2.cpp.obj
+[380/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\notebookexplorer2.cpp.obj
+[381/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\searchpanel2.cpp.obj
+[382/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\markdownviewwindow.cpp.obj
+[383/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\mainwindow2.cpp.obj
+[384/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\settingswidget.cpp.obj
+[385/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\searchinfoprovider.cpp.obj
+[386/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\tagviewer2.cpp.obj
+[387/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\tagexplorer2.cpp.obj
+[388/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\textviewwindow.cpp.obj
+[389/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewwindowtoolbarhelper.cpp.obj
+[390/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\toolbarhelper.cpp.obj
+[391/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\toolbarhelper2.cpp.obj
+[392/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\textviewwindow2.cpp.obj
+[393/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\webpage.cpp.obj
+[394/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\webviewer.cpp.obj
+[395/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewarea2.cpp.obj
+[396/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\widgetviewwindow2.cpp.obj
+[397/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewwindowtoolbarhelper2.cpp.obj
+[398/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewwindow.cpp.obj
+[399/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewarea.cpp.obj
+[400/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\widgetsfactory.cpp.obj
+[401/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewwindow2.cpp.obj
+[402/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewsplit.cpp.obj
+[403/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\viewsplit2.cpp.obj
+[404/436] Building CXX object src\CMakeFiles\vnote.dir\widgets\wordcountpopup.cpp.obj
+[405/436] Building CXX object src\CMakeFiles\vnote.dir\vnote_autogen\mocs_compilation.cpp.obj
+[406/436] Building CXX object src\CMakeFiles\vnote.dir\models\historylistmodel.cpp.obj
+[407/436] Building CXX object src\CMakeFiles\vnote.dir\models\tagfilemodel.cpp.obj
+[408/436] Building CXX object src\CMakeFiles\vnote.dir\models\snippetlistmodel.cpp.obj
+[409/436] Building CXX object src\CMakeFiles\vnote.dir\models\notebooknodemodel.cpp.obj
+[410/436] Building CXX object src\CMakeFiles\vnote.dir\models\tagmodel.cpp.obj
+[411/436] Building CXX object src\CMakeFiles\vnote.dir\views\notebooknodeview.cpp.obj
+[412/436] Building CXX object src\CMakeFiles\vnote.dir\views\filelistview.cpp.obj
+[413/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\opennotebookcontroller.cpp.obj
+[414/436] Building CXX object src\CMakeFiles\vnote.dir\views\twocolumnsnodeexplorer.cpp.obj
+[415/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\newfoldercontroller.cpp.obj
+[416/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\newnotecontroller.cpp.obj
+[417/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\managenotebookscontroller.cpp.obj
+[418/436] Building CXX object src\CMakeFiles\vnote.dir\views\combinednodeexplorer.cpp.obj
+[419/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\openvnote3notebookcontroller.cpp.obj
+[420/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\notebooksyncinfocontroller.cpp.obj
+[421/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\newnotebookcontroller.cpp.obj
+[422/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\syncconflictcontroller.cpp.obj
+[423/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\tagcontroller.cpp.obj
+[424/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\notebooknodecontroller.cpp.obj
+[425/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\viewareacontroller.cpp.obj
+[426/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\recyclebincontroller.cpp.obj
+[427/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\importfoldercontroller.cpp.obj
+[428/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\snippetcontroller.cpp.obj
+[429/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\imagehostcontroller.cpp.obj
+[430/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\mindmapviewwindowcontroller.cpp.obj
+[431/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\pdfviewwindowcontroller.cpp.obj
+[432/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\textviewwindowcontroller.cpp.obj
+[433/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\searchcontroller.cpp.obj
+[434/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\markdowneditorcontroller.cpp.obj
+[435/436] Building CXX object src\CMakeFiles\vnote.dir\controllers\exportcontroller.cpp.obj
+[436/436] Linking CXX executable src\vnote.exe
+=== T15 Build Evidence (with T17 partial work stashed) ===
+Date: 05/13/2026 11:05:43
+Target: vnote (Release)
+Result: PASS
+
+=== Build last lines ===
+
+=== T15 deviation: test target not added ===
+NotebookExplorer2 has heavy widget+service dependencies (full ServiceLocator with ConfigMgr2, BufferService, NotebookCoreService, ThemeService, NavigationModeService etc., plus dialogs).
+Per plan IF clause: substituting with manual code review. Test file NOT created.
+Manual QA must be performed in F3 (launch app, observe sync button states across notebook types).

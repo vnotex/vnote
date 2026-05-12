@@ -10,15 +10,19 @@
 #include <nodeinfo.h>
 #include <views/inodeexplorer.h>
 
+class QAction;
 class QFileSystemWatcher;
 class QSplitter;
 class QMenu;
 class QActionGroup;
 class QTimer;
+class QToolButton;
 
 namespace vnotex {
 
 class NotebookSelector2;
+class NotebookSyncInfoDialog2;
+class SyncService;
 class TitleBar;
 class INodeExplorer;
 class TwoColumnsNodeExplorer;
@@ -94,6 +98,15 @@ public slots:
   // Locate a node in the explorer (switch notebook if needed, expand, select, scroll).
   void locateNode(const NodeIdentifier &p_nodeId);
 
+#ifdef VNOTE_TESTING
+  // Test-only seam (per ADR-6) that simulates the post-newNotebook() auto-open
+  // flow without driving the actual NewNotebookDialog2. Mirrors the same code
+  // path used inside newNotebook() after dialog Accept: when @p_syncMethod
+  // equals "git" it pops a NotebookSyncInfoDialog2 in bootstrap mode for
+  // @p_notebookId.
+  void testTriggerNewNotebookCreated(const QString &p_notebookId, const QString &p_syncMethod);
+#endif
+
 private slots:
   // Node activation — opens the file via BufferService
   void onNodeActivated(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
@@ -110,6 +123,14 @@ private slots:
   void onManageTagsRequested(const NodeIdentifier &p_nodeId);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onInfoMessage(const QString &p_title, const QString &p_message);
+
+  // Sync UI handlers (T15).
+  void onSyncButtonClicked();
+  void onSyncInfoActionTriggered();
+  // Recompute enabled state and tooltip for the title-bar Sync button and
+  // "Notebook Sync Info..." menu entry. Wired to SyncService lifecycle signals
+  // and to currentNotebookChanged.
+  void updateSyncButtonState();
 
 signals:
   void currentNotebookChanged(const QString &p_notebookId);
@@ -169,6 +190,11 @@ private:
   bool m_hasRestoredSessionStatePending = false;
   QAction *m_openRecycleBinAction = nullptr;
   QAction *m_emptyRecycleBinAction = nullptr;
+
+  // Sync UI elements (T15). Always-instantiated; visibility/enabled state is
+  // driven by updateSyncButtonState().
+  QToolButton *m_syncButton = nullptr;
+  QAction *m_syncInfoAction = nullptr;
 
   // File system watcher for detecting external changes
   QFileSystemWatcher *m_fsWatcher = nullptr;
