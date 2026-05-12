@@ -66,6 +66,7 @@ target_sources(vnote PRIVATE
     dialogs/snippetpropertiesdialog.cpp dialogs/snippetpropertiesdialog.h
     dialogs/snippetpropertiesdialog2.cpp dialogs/snippetpropertiesdialog2.h
     dialogs/sortdialog.cpp dialogs/sortdialog.h
+    dialogs/syncconflictdialog2.cpp dialogs/syncconflictdialog2.h
     dialogs/tableinsertdialog.cpp dialogs/tableinsertdialog.h
     dialogs/updater.cpp dialogs/updater.h
     dialogs/viewtagsdialog.cpp dialogs/viewtagsdialog.h
