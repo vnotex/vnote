@@ -1,0 +1,132 @@
+#ifndef NOTEBOOKSYNCINFODIALOG2_H
+#define NOTEBOOKSYNCINFODIALOG2_H
+
+#include <QString>
+#include <QStringList>
+
+#include "scrolldialog.h"
+
+#include <vxcore/vxcore_types.h>
+
+class QComboBox; // Reserved for future use by T11 (e.g. backend selector).
+class QLabel;
+class QLineEdit;
+class QPushButton;
+
+namespace vnotex {
+
+class NotebookSyncInfoController;
+class ServiceLocator;
+
+// NotebookSyncInfoDialog2 - View for inspecting/editing the git sync settings
+// of a single sync-enabled notebook.
+//
+// Layout (top to bottom):
+//   * Notebook         (read-only label)
+//   * Remote URL       (editable QLineEdit)
+//   * Personal Access Token (editable, password-masked QLineEdit; placeholder
+//                       prompts user to leave blank to keep the existing PAT)
+//   * Last Sync        (read-only label)
+//   * Current State    (read-only label, color-coded by SyncService state)
+//   * Disable Sync button (destructive; confirms via QMessageBox::warning)
+//   * Standard dialog buttons: Ok | Apply | Reset | Cancel
+//
+// Bootstrap mode (entered via setBootstrapMode(true)) is used by T15 when the
+// dialog is auto-opened immediately after a Git-sync notebook is created. In
+// bootstrap mode the Disable, Apply and Reset buttons are hidden, and the Ok
+// button text becomes "Bootstrap" to communicate that completing the dialog
+// performs the initial enable+push.
+//
+// The dialog OWNS its controller (heap-allocated, parented to the dialog).
+// The controller (created in T11) performs all persistence: reading the
+// notebook config, talking to SyncService, and storing/clearing PATs via
+// SyncCredentialsStore. The dialog itself NEVER calls vxcore directly and
+// NEVER reads/writes the credentials store directly.
+//
+// The PAT field is NEVER prefilled with the actual stored token. Users must
+// re-enter a PAT (or leave the field blank to keep the existing one).
+class NotebookSyncInfoDialog2 : public ScrollDialog {
+  Q_OBJECT
+
+public:
+  explicit NotebookSyncInfoDialog2(ServiceLocator &p_services, const QString &p_notebookId,
+                                   QWidget *p_parent = nullptr);
+
+  // Toggle bootstrap mode. In bootstrap mode the dialog represents an initial
+  // setup (post-create), the Disable/Apply/Reset buttons are hidden, and the
+  // Ok button is relabeled to "Bootstrap". Also sets a dynamic Qt property
+  // ("bootstrapMode") so tests can discover the mode without relying on text.
+  void setBootstrapMode(bool p_enabled);
+
+  // True if the user has typed changes that have not yet been applied. URL is
+  // dirty when it differs from the last-applied value; PAT is dirty whenever
+  // the field is non-empty (any text means the user wants to replace the PAT).
+  bool changesPending() const;
+
+protected:
+  void acceptedButtonClicked() Q_DECL_OVERRIDE;
+
+  void appliedButtonClicked() Q_DECL_OVERRIDE;
+
+  void resetButtonClicked() Q_DECL_OVERRIDE;
+
+private slots:
+  // Dirty-flag updater wired to PAT/URL textChanged.
+  void onFieldEdited();
+
+  // Disable Sync button click handler: shows a destructive-action confirmation
+  // QMessageBox and, on Ok, asks the controller to disable sync.
+  void onDisableSyncClicked();
+
+  // SyncService signal handlers. All filter by m_notebookId so unrelated
+  // notebook events do not affect this dialog.
+  void onSyncStarted(const QString &p_notebookId);
+  void onSyncFinished(const QString &p_notebookId, VxCoreError p_result);
+  void onSyncFailed(const QString &p_notebookId, VxCoreError p_code, const QString &p_message);
+  void onConflictsDetected(const QString &p_notebookId, const QStringList &p_conflictFiles);
+
+private:
+  enum class SyncStateLevel { Idle, Syncing, Conflict, Error };
+
+  void setupUI();
+
+  // Subscribe to SyncService signals (real services per ADR-6). Both ends are
+  // GUI-thread, so default Qt::AutoConnection resolves to DirectConnection.
+  void connectSyncServiceSignals();
+
+  // Render the Current State label with the appropriate text/color.
+  void setCurrentStateLabel(SyncStateLevel p_level, const QString &p_text);
+
+  // Recompute Apply/Reset enabled state based on changesPending() (no-op while
+  // in bootstrap mode where those buttons are hidden).
+  void refreshDirtyButtons();
+
+  ServiceLocator &m_services;
+
+  QString m_notebookId;
+
+  // Controller is heap-allocated and parented to this dialog. Created by T11
+  // (the controller class itself is owned by T11 - see notebook-git-sync-ui
+  // plan). T10 only declares the slot for it; the pointer remains nullptr
+  // here so the dialog VIEW is buildable on its own. Every call site that
+  // would invoke m_controller is guarded with a nullptr check.
+  NotebookSyncInfoController *m_controller = nullptr;
+
+  // Read-only labels and editable inputs.
+  QLabel *m_notebookNameLabel = nullptr;
+  QLineEdit *m_remoteUrlEdit = nullptr;
+  QLineEdit *m_patEdit = nullptr;
+  QLabel *m_lastSyncLabel = nullptr;
+  QLabel *m_currentStateLabel = nullptr;
+  QPushButton *m_disableSyncButton = nullptr;
+
+  // Last-applied URL; used by changesPending() to detect dirty edits.
+  QString m_lastAppliedRemoteUrl;
+
+  // Bootstrap mode flag; mirrors the dynamic "bootstrapMode" Qt property.
+  bool m_bootstrapMode = false;
+};
+
+} // namespace vnotex
+
+#endif // NOTEBOOKSYNCINFODIALOG2_H

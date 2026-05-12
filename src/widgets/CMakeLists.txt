@@ -37,6 +37,7 @@ target_sources(vnote PRIVATE
     dialogs/nodeinfowidget.cpp dialogs/nodeinfowidget.h
     dialogs/nodepropertiesdialog2.cpp dialogs/nodepropertiesdialog2.h
     dialogs/notebookinfowidget.cpp dialogs/notebookinfowidget.h
+    dialogs/notebooksyncinfodialog2.cpp dialogs/notebooksyncinfodialog2.h
     dialogs/notepropertiesdialog.cpp dialogs/notepropertiesdialog.h
     dialogs/notetemplateselector.cpp dialogs/notetemplateselector.h
     dialogs/openvnote3notebookdialog2.cpp dialogs/openvnote3notebookdialog2.h
