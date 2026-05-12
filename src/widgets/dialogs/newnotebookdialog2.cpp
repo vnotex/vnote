@@ -3,6 +3,7 @@
 #include <QComboBox>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QToolButton>
@@ -56,9 +57,8 @@ void NewNotebookDialog2::setupUI() {
     defaultRootPath = sessionConfig.getNewNotebookDefaultRootFolderPath();
   }
   m_rootFolderInput = new LocationInputWithBrowseButton(mainWidget, defaultRootPath);
-  m_rootFolderInput->setBrowseType(
-      LocationInputWithBrowseButton::Folder,
-      tr("Select Notebook Root Folder"));
+  m_rootFolderInput->setBrowseType(LocationInputWithBrowseButton::Folder,
+                                   tr("Select Notebook Root Folder"));
   m_rootFolderInput->setPlaceholderText(tr("Select a folder as notebook root"));
   connect(m_rootFolderInput, &LocationInputWithBrowseButton::textChanged, this,
           &NewNotebookDialog2::handleRootFolderPathChanged);
@@ -68,9 +68,8 @@ void NewNotebookDialog2::setupUI() {
   m_typeCombo = WidgetsFactory::createComboBox(mainWidget);
   m_typeCombo->addItem(tr("Bundled Notebook"), static_cast<int>(NotebookType::Bundled));
   m_typeCombo->addItem(tr("Raw Notebook"), static_cast<int>(NotebookType::Raw));
-  m_typeCombo->setToolTip(
-      tr("Bundled: Notebook with metadata stored in config files.\n"
-         "Raw: Plain folder structure with minimal VNote metadata."));
+  m_typeCombo->setToolTip(tr("Bundled: Notebook with metadata stored in config files.\n"
+                             "Raw: Plain folder structure with minimal VNote metadata."));
   layout->addRow(tr("Type:"), m_typeCombo);
 
   // Update root folder tooltip based on selected notebook type.
@@ -88,11 +87,34 @@ void NewNotebookDialog2::setupUI() {
     }
   };
 
-  connect(m_typeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, updateRootFolderTooltip);
+  connect(m_typeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          updateRootFolderTooltip);
 
   // Initialize tooltip for default type.
   updateRootFolderTooltip();
+
+  // Sync method selection. Visible only for Bundled notebooks.
+  // Actual sync configuration (remote URL, auth) is collected after creation
+  // via NotebookSyncInfoDialog2 (see ADR-7: create-then-enable).
+  m_syncMethodLabel = new QLabel(tr("Sync Method:"), mainWidget);
+  m_syncMethodLabel->setObjectName(QStringLiteral("syncMethodLabel"));
+  m_syncMethodCombo = WidgetsFactory::createComboBox(mainWidget);
+  m_syncMethodCombo->setObjectName(QStringLiteral("syncMethodCombo"));
+  m_syncMethodCombo->addItem(tr("None"), QStringLiteral("none"));
+  m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
+  m_syncMethodCombo->setToolTip(tr("Git sync is supported only for Bundled notebooks. "
+                                   "Sync settings are configured after notebook creation."));
+  layout->addRow(m_syncMethodLabel, m_syncMethodCombo);
+
+  {
+    const bool isBundled =
+        m_typeCombo->currentData().toInt() == static_cast<int>(NotebookType::Bundled);
+    m_syncMethodLabel->setVisible(isBundled);
+    m_syncMethodCombo->setVisible(isBundled);
+  }
+
+  connect(m_typeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NewNotebookDialog2::onTypeComboChanged);
 
   // Advanced section toggle.
   m_advancedToggle = new QToolButton(mainWidget);
@@ -139,6 +161,22 @@ void NewNotebookDialog2::handleRootFolderPathChanged() {
   }
 }
 
+void NewNotebookDialog2::onTypeComboChanged(int p_index) {
+  Q_UNUSED(p_index);
+  if (!m_syncMethodCombo || !m_syncMethodLabel) {
+    return;
+  }
+  const bool isBundled =
+      m_typeCombo->currentData().toInt() == static_cast<int>(NotebookType::Bundled);
+  if (!isBundled) {
+    // Force back to "None" so an accidental Raw selection doesn't persist a
+    // git sync choice.
+    m_syncMethodCombo->setCurrentIndex(0);
+  }
+  m_syncMethodLabel->setVisible(isBundled);
+  m_syncMethodCombo->setVisible(isBundled);
+}
+
 void NewNotebookDialog2::acceptedButtonClicked() {
   // Collect input from UI.
   NewNotebookInput input;
@@ -147,6 +185,7 @@ void NewNotebookDialog2::acceptedButtonClicked() {
   input.rootFolderPath = m_rootFolderInput->text();
   input.type = static_cast<NotebookType>(m_typeCombo->currentData().toInt());
   input.assetsFolder = m_assetsFolderEdit->text();
+  input.syncMethod = getSelectedSyncMethod();
 
   // Delegate to controller.
   NewNotebookResult result = m_controller->createNotebook(input);
@@ -166,3 +205,11 @@ void NewNotebookDialog2::acceptedButtonClicked() {
 }
 
 QString NewNotebookDialog2::getNewNotebookId() const { return m_newNotebookId; }
+
+QString NewNotebookDialog2::getSelectedSyncMethod() const {
+  if (!m_syncMethodCombo || !m_syncMethodCombo->isVisible()) {
+    return QStringLiteral("none");
+  }
+  const QString data = m_syncMethodCombo->currentData().toString();
+  return data.isEmpty() ? QStringLiteral("none") : data;
+}

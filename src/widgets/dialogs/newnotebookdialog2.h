@@ -6,6 +6,7 @@
 #include <core/services/notebookcoreservice.h>
 
 class QComboBox;
+class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
 class QToolButton;
@@ -30,11 +31,17 @@ public:
   // Get the ID of the newly created notebook (valid after accept()).
   QString getNewNotebookId() const;
 
+  // Returns the userData string of the currently selected sync method
+  // ("none" or "git"). Returns "none" if the combo is hidden (e.g. Raw type)
+  // or unavailable.
+  QString getSelectedSyncMethod() const;
+
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
 private slots:
   void handleRootFolderPathChanged();
+  void onTypeComboChanged(int p_index);
 
 private:
   void setupUI();
@@ -53,6 +60,10 @@ private:
   QPlainTextEdit *m_descriptionEdit = nullptr;
   LocationInputWithBrowseButton *m_rootFolderInput = nullptr;
   QComboBox *m_typeCombo = nullptr;
+
+  // Sync method selection (visible only for Bundled notebooks).
+  QLabel *m_syncMethodLabel = nullptr;
+  QComboBox *m_syncMethodCombo = nullptr;
 
   // Advanced section.
   QToolButton *m_advancedToggle = nullptr;
