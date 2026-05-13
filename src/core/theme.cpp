@@ -11,7 +11,6 @@
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
-#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
