@@ -167,6 +167,85 @@ NodeIdentifier id = buf.nodeId();  // notebookId + relativePath
 bufferSvc->closeBuffer(buf.id());
 ```
 
+## Theme Token Resolution
+
+VNote's theme system supports a one-time opt-in palette token syntax that lets theme authors reference shared colors instead of hardcoding hex values. The token system was originally limited to `interface.qss` and is now extended to `web.css` and `text-editor.theme`.
+
+### Token Syntax
+
+```
+@palette#<key>          # Direct palette lookup (e.g. @palette#fg3_5 → #222222)
+@base#<role>            # Semantic role (e.g. @base#normal#fg → resolved hex)
+@base#<role>#<sub>      # Nested role
+@widgets#<class>#...    # Per-widget mapping
+```
+
+The `#` character is a path separator (NOT a hex marker). Resolution walks the JSON in `palette.json` recursively until all references collapse to hex strings.
+
+### Files In Scope (token-aware)
+
+| File | Resolved by | Purpose |
+|------|-------------|---------|
+| `interface.qss` | `Theme::fetchQtStyleSheet()` (existing) | Qt desktop UI stylesheet |
+| `web.css` | `Theme::fetchWebStyleSheet()` (NEW) | Markdown viewer CSS |
+| `text-editor.theme` | `Theme::fetchTextEditorStyle()` (NEW) | vtextedit editor JSON |
+
+The corresponding `ThemeService` delegates expose these to consumers:
+
+```cpp
+auto *themeService = m_services.get<ThemeService>();
+QString webCss   = themeService->fetchWebStyleSheet();
+QString editor   = themeService->fetchTextEditorStyle();
+QString markdown = themeService->fetchMarkdownEditorStyle();
+```
+
+### Files Out of Scope (not token-aware)
+
+These files load and apply as-is, with no `@`-token substitution:
+
+- `highlight.css`, PrismJS code-block CSS (third-party, kept verbatim)
+- `markdown-text-editor.theme`, explicit per-theme markdown editor override (when present, returned raw via `Theme::fetchMarkdownEditorStyle()`); fallback to resolved `text-editor.theme` when absent
+- `editor-highlight.theme` / `markdown-editor-highlight.theme`, KSyntaxHighlighting JSON (vendored, format-specific)
+
+### Backward Compatibility
+
+Existing themes use hardcoded hex throughout. The new resolver is a no-op on files that contain no `@` tokens. Running `translateStyleByPalette` on `body { color: #222222; }` returns the input unchanged. All 10 shipped themes (pure, native, vue-light, vue-dark, vscode-dark, solarized-light, solarized-dark, moonlight, everforest-dark, vx-idea) continue to render exactly as before.
+
+### Authoring Example
+
+A theme author can now write `text-editor.theme` like this:
+
+```json
+{
+  "metadata": { "name": "MyTheme", "revision": 1, "type": "vtextedit" },
+  "editor-styles": {
+    "Text": {
+      "text-color": "@base#normal#fg",
+      "background-color": "@base#normal#bg"
+    },
+    "CursorLine": { "background-color": "@palette#bg3_8" }
+  }
+}
+```
+
+At theme load time, `Theme::fetchTextEditorStyle()` reads the file, resolves `@base#normal#fg` to e.g. `#222222`, and returns the resolved JSON to vtextedit via `vte::Theme::createThemeFromContent()`.
+
+The same applies to `web.css`:
+
+```css
+body {
+  color: @base#normal#fg;
+  background-color: @base#normal#bg;
+}
+```
+
+### Implementation Notes
+
+- The token regex (`Theme::translateStyleByPalette` in `src/core/theme.cpp`) accepts whitespace, colon, or double-quote as the prefix character. This is the one extension that enables JSON-quoted values like `"text-color": "@palette#fg3_5"`.
+- Resolution is performed lazily, on each `fetch*()` call. There is no caching, no temp file, no precomputed asset.
+- Consumers (`MarkdownViewWindow2`, `TextViewWindow2`) pass the resolved string content directly into `vte::Theme::createThemeFromContent()` and `HtmlTemplateService::updateMarkdownViewerTemplate()`. Both were updated to accept content rather than file paths.
+- This capability is **opt-in**: existing themes do not need any changes. New themes can adopt tokens incrementally per file.
+
 ## Plugin Hook System (WordPress-style)
 
 VNote implements a WordPress-inspired hook system for plugin extensibility. This enables plugins to:
