@@ -1,6 +1,7 @@
 #include "theme.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QRegularExpression>
@@ -193,6 +194,53 @@ QString Theme::fetchQtStyleSheet() const {
   translateUrlToAbsolute(m_themeFolderPath, style);
   translateFontFamilyList(style);
   return style;
+}
+
+QString Theme::fetchWebStyleSheet() const {
+  const auto file = getFile(File::WebStyleSheet);
+  if (file.isEmpty()) {
+    return QString();
+  }
+  QFile f(file);
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    qWarning() << "failed to open web style sheet" << file;
+    return QString();
+  }
+  auto content = QString::fromUtf8(f.readAll());
+  translateStyleByPalette(m_palette, content);
+  return content;
+}
+
+QString Theme::fetchTextEditorStyle() const {
+  const auto file = getFile(File::TextEditorStyle);
+  if (file.isEmpty()) {
+    return QString();
+  }
+  QFile f(file);
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    qWarning() << "failed to open text editor style" << file;
+    return QString();
+  }
+  auto content = QString::fromUtf8(f.readAll());
+  translateStyleByPalette(m_palette, content);
+  return content;
+}
+
+QString Theme::fetchMarkdownEditorStyle() const {
+  // If an explicit markdown-text-editor.theme exists in the theme folder,
+  // return its raw content (NO token resolution per locked scope).
+  // Otherwise, fall back to the resolved text-editor.theme content.
+  const QString explicitFile =
+      QDir(m_themeFolderPath).filePath(getFileName(File::MarkdownEditorStyle));
+  if (QFileInfo::exists(explicitFile)) {
+    QFile f(explicitFile);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      qWarning() << "failed to open markdown editor style" << explicitFile;
+      return QString();
+    }
+    return QString::fromUtf8(f.readAll());
+  }
+  return fetchTextEditorStyle();
 }
 
 void Theme::translateStyleByPalette(const Palette &p_palette, QString &p_style) {

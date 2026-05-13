@@ -30,6 +30,10 @@ public:
 
   QString fetchQtStyleSheet() const;
 
+  QString fetchWebStyleSheet() const;
+  QString fetchTextEditorStyle() const;
+  QString fetchMarkdownEditorStyle() const;
+
   QString paletteColor(const QString &p_name) const;
 
   // Get the file path of @p_fileType if exists.
