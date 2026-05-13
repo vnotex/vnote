@@ -66,6 +66,25 @@ void HtmlTemplateService::fillThemeStyles(QString &p_template, const QString &p_
   }
 }
 
+void HtmlTemplateService::fillThemeStylesWithContent(QString &p_template,
+                                                     const QString &p_webStyleContent,
+                                                     const QString &p_highlightStyleSheetFile) {
+  QString styles;
+  if (!p_webStyleContent.isEmpty()) {
+    // Defensive: reject content containing </style> to prevent template injection.
+    if (p_webStyleContent.contains(QStringLiteral("</style>"), Qt::CaseInsensitive)) {
+      qWarning() << "HtmlTemplateService: web style content contains </style>, refusing to inline";
+    } else {
+      styles +=
+          QStringLiteral("<style type=\"text/css\">\n%1\n</style>\n").arg(p_webStyleContent);
+    }
+  }
+  styles += fillStyleTag(p_highlightStyleSheetFile); // highlight CSS unchanged: still <link>
+  if (!styles.isEmpty()) {
+    p_template.replace(QStringLiteral("<!-- VX_THEME_STYLES_PLACEHOLDER -->"), styles);
+  }
+}
+
 void HtmlTemplateService::fillGlobalStyles(QString &p_template, const WebResource &p_resource,
                                            const QString &p_additionalStyles) const {
   QString styles;
@@ -184,7 +203,7 @@ void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_con
 // ============ Markdown Viewer Template ============
 
 void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
-                                                       const QString &p_webStyleSheetFile,
+                                                       const QString &p_webStyleContent,
                                                        const QString &p_highlightStyleSheetFile,
                                                        bool p_force) {
   if (!p_force && p_config.revision() == m_markdownViewerTemplate.m_revision) {
@@ -204,8 +223,8 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
   }
 
   fillGlobalStyles(m_markdownViewerTemplate.m_template, viewerResource, QString());
-  fillThemeStyles(m_markdownViewerTemplate.m_template, p_webStyleSheetFile,
-                  p_highlightStyleSheetFile);
+  fillThemeStylesWithContent(m_markdownViewerTemplate.m_template, p_webStyleContent,
+                             p_highlightStyleSheetFile);
 
   {
     MarkdownWebGlobalOptions opts;

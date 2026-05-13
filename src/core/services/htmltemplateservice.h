@@ -43,10 +43,12 @@ public:
   // ============ Markdown Viewer Template ============
 
   // Update Markdown viewer template from config + theme data.
-  // @p_webStyleSheetFile: path from ThemeService::getFile(Theme::File::WebStyleSheet).
-  // @p_highlightStyleSheetFile: path from ThemeService::getFile(Theme::File::HighlightStyleSheet).
+  // @p_webStyleContent: resolved web CSS content (token-substituted) from
+  //                     ThemeService::fetchWebStyleSheet(); inlined as <style>.
+  // @p_highlightStyleSheetFile: path from ThemeService::getFile(Theme::File::HighlightStyleSheet);
+  //                             linked via <link>.
   void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
-                                    const QString &p_webStyleSheetFile,
+                                    const QString &p_webStyleContent,
                                     const QString &p_highlightStyleSheetFile,
                                     bool p_force = false);
 
@@ -98,6 +100,12 @@ private:
   // Generate theme style tags from file paths.
   static void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
                               const QString &p_highlightStyleSheetFile);
+
+  // Generate theme style block from web CSS content (inlined as <style>) +
+  // highlight CSS file path (linked via <link>). Used by markdown viewer
+  // template (which receives token-resolved web.css content).
+  static void fillThemeStylesWithContent(QString &p_template, const QString &p_webStyleContent,
+                                         const QString &p_highlightStyleSheetFile);
 
   void generatePdfViewerTemplate(const PdfViewerConfig &p_config, Template &p_template) const;
 
