@@ -56,6 +56,18 @@ public:
                         const QString &p_themeFile, const QString &p_syntaxTheme,
                         qreal p_scaleFactor, int p_maxContentWidth = 0);
 
+  // Build vte::TextEditorConfig from VNote config + inline theme JSON content.
+  // Mirrors buildTextEditorConfig() but constructs the theme from a JSON string
+  // (typically a token-resolved theme) rather than reading from a file.
+  // @p_themeContent: theme JSON content (empty = no theme).
+  // @p_syntaxTheme: editor highlight theme name (from ThemeService).
+  // @p_scaleFactor: screen scale factor (from WidgetUtils).
+  // @p_maxContentWidth: maximum content width in pixels (0 = disabled).
+  static QSharedPointer<vte::TextEditorConfig> buildTextEditorConfigFromContent(
+      const EditorConfig &p_editorConfig, const TextEditorConfig &p_config,
+      const QString &p_themeContent, const QString &p_syntaxTheme, qreal p_scaleFactor,
+      int p_maxContentWidth = 0);
+
   // Build vte::TextEditorParameters from VNote config.
   static QSharedPointer<vte::TextEditorParameters>
   buildTextEditorParameters(const EditorConfig &p_editorConfig, const TextEditorConfig &p_config);

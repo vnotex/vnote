@@ -69,6 +69,11 @@ private slots:
   void testBuildConfig_emptyThemeFile();
   void testBuildConfig_syntaxTheme();
 
+  // Content-based theme builder
+  void testBuildTextEditorConfigFromContent_validJson();
+  void testBuildTextEditorConfigFromContent_emptyContent();
+  void testBuildTextEditorConfig_pathStillWorks();
+
   // ViConfig forwarding
   void testBuildConfig_viConfigForwarded();
 
@@ -425,6 +430,51 @@ void TestTextViewWindowController::testBuildConfig_viConfigForwarded() {
       ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_viConfig.data(), viConfig.data());
+}
+
+// --- Content-based theme builder ---
+
+namespace {
+// A minimal valid vtextedit theme JSON that vte::Theme::load() will accept.
+const char *kValidThemeJson = R"({
+  "metadata": { "name": "TestTheme", "revision": 0, "type": "vtextedit" },
+  "editor-styles": {
+    "Text": { "text-color": "#222222", "background-color": "#ffffff" }
+  }
+})";
+} // anonymous namespace
+
+void TestTextViewWindowController::testBuildTextEditorConfigFromContent_validJson() {
+  auto ec = makeEditorConfig();
+  auto &tc = ec.getTextEditorConfig();
+  auto config = TextViewWindowController::buildTextEditorConfigFromContent(
+      ec, tc, QString::fromUtf8(kValidThemeJson), QString(), 1.0, 0);
+  QVERIFY(config);
+  QVERIFY2(!config->m_theme.isNull(),
+           "expected theme to be constructed from content");
+}
+
+void TestTextViewWindowController::testBuildTextEditorConfigFromContent_emptyContent() {
+  auto ec = makeEditorConfig();
+  auto &tc = ec.getTextEditorConfig();
+  auto config = TextViewWindowController::buildTextEditorConfigFromContent(
+      ec, tc, QString(), QString(), 1.0, 0);
+  QVERIFY(config);
+  QVERIFY2(config->m_theme.isNull(),
+           "empty content should yield null theme but valid config");
+}
+
+void TestTextViewWindowController::testBuildTextEditorConfig_pathStillWorks() {
+  // Regression: existing path-based builder must remain functional.
+  // Use an empty path; the empty-path guard returns null theme but valid config
+  // (mirrors testBuildTextEditorConfigFromContent_emptyContent).
+  auto ec = makeEditorConfig();
+  auto &tc = ec.getTextEditorConfig();
+  auto config = TextViewWindowController::buildTextEditorConfig(
+      ec, tc, QString(), QString(), 1.0, 0);
+  QVERIFY(config);
+  QVERIFY2(config->m_theme.isNull(),
+           "empty path should yield null theme but valid config");
 }
 
 // ============ Group 2: buildTextEditorParameters ============
