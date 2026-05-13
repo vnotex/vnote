@@ -6,6 +6,10 @@
 
 #include <core/noncopyable.h>
 
+namespace tests {
+class TestHtmlTemplateService;
+} // namespace tests
+
 namespace vnotex {
 
 class ConfigMgr2;
@@ -25,6 +29,8 @@ struct WebResource;
 // getServices().get<HtmlTemplateService>().
 class HtmlTemplateService : public QObject, private Noncopyable {
   Q_OBJECT
+
+  friend class ::tests::TestHtmlTemplateService;
 
 public:
   explicit HtmlTemplateService(ConfigMgr2 *p_configMgr, QObject *p_parent = nullptr);
