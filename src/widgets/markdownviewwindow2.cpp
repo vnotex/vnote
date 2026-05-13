@@ -244,7 +244,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   m_editorController->checkAndUpdateConfigRevision();
 
   auto *themeService = getServices().get<ThemeService>();
-  auto themeFile = themeService->getFile(Theme::File::MarkdownEditorStyle);
+  auto themeContent = themeService->fetchMarkdownEditorStyle();
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -257,8 +257,8 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Create editor using ServiceLocator constructor.
   m_editor = new MarkdownEditor(
       getServices(), mdConfig,
-      MarkdownEditorController::buildMarkdownEditorConfig(
-          editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth),
+      MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+          editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth),
       MarkdownEditorController::buildMarkdownEditorParameters(editorConfig, mdConfig), this);
 
   // Insert at index 0 in splitter (editor always first).
@@ -335,7 +335,7 @@ void MarkdownViewWindow2::setupViewer() {
   auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
   auto *themeService = getServices().get<ThemeService>();
   htmlTemplateService->updateMarkdownViewerTemplate(
-      mdConfig, themeService->getFile(Theme::File::WebStyleSheet),
+      mdConfig, themeService->fetchWebStyleSheet(),
       themeService->getFile(Theme::File::HighlightStyleSheet));
 
   // Create adapter and viewer.
@@ -961,11 +961,11 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
   auto *themeService = getServices().get<ThemeService>();
   htmlTemplateService->updateMarkdownViewerTemplate(
-      mdConfig, themeService->getFile(Theme::File::WebStyleSheet),
+      mdConfig, themeService->fetchWebStyleSheet(),
       themeService->getFile(Theme::File::HighlightStyleSheet));
 
   if (m_editor) {
-    auto themeFile = themeService->getFile(Theme::File::MarkdownEditorStyle);
+    auto themeContent = themeService->fetchMarkdownEditorStyle();
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -975,8 +975,8 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
             ? widgetConfig.getReadableWidthMaxPx()
             : 0;
 
-    auto config = MarkdownEditorController::buildMarkdownEditorConfig(
-        editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+    auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+        editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
 
     // Guard: config application (e.g. applyLineSpacing) modifies block formats,
     // which fires contentsChanged. Suppress propagation so this is not treated
@@ -1003,7 +1003,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
 
   // ---- Editor refresh ----
   if (m_editor) {
-    auto themeFile = themeService->getFile(Theme::File::MarkdownEditorStyle);
+    auto themeContent = themeService->fetchMarkdownEditorStyle();
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -1013,8 +1013,8 @@ void MarkdownViewWindow2::handleThemeChanged() {
             ? widgetConfig.getReadableWidthMaxPx()
             : 0;
 
-    auto config = MarkdownEditorController::buildMarkdownEditorConfig(
-        editorConfig, mdConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+    auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+        editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
 
     // Propagation guard: prevent setConfig from triggering false "modified" state.
     const bool old = m_propagateEditorToBuffer;
@@ -1031,7 +1031,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
     // Force-regenerate HTML template with new theme CSS.
     auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
     htmlTemplateService->updateMarkdownViewerTemplate(
-        mdConfig, themeService->getFile(Theme::File::WebStyleSheet),
+        mdConfig, themeService->fetchWebStyleSheet(),
         themeService->getFile(Theme::File::HighlightStyleSheet),
         /*p_force=*/true);
 

@@ -17,6 +17,15 @@
 
 using namespace vnotex;
 
+namespace {
+const char *kValidMarkdownThemeJson = R"({
+  "metadata": { "name": "TestMdTheme", "revision": 0, "type": "vtextedit" },
+  "editor-styles": {
+    "Text": { "text-color": "#222222", "background-color": "#ffffff" }
+  }
+})";
+} // anonymous namespace
+
 namespace tests {
 
 class TestMarkdownEditorController : public QObject {
@@ -49,6 +58,11 @@ private slots:
   void testBuildParams_autoDetectLanguage();
   void testBuildParams_defaultDictionary();
   void testBuildParams_customDictionary();
+
+  // ============ Group 3b: buildMarkdownEditorConfigFromContent (static) ============
+
+  void testBuildMarkdownEditorConfigFromContent_validJson();
+  void testBuildMarkdownEditorConfigFromContent_emptyContent();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -230,6 +244,33 @@ void TestMarkdownEditorController::testBuildParams_customDictionary() {
   ec.setSpellCheckDefaultDictionary(QStringLiteral("de_DE"));
   auto result = MarkdownEditorController::buildMarkdownEditorParameters(ec, mdConfig);
   QCOMPARE(result->m_defaultSpellCheckLanguage, QStringLiteral("de_DE"));
+}
+
+// ============ Group 3b: buildMarkdownEditorConfigFromContent ============
+
+void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_validJson() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+
+  auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString::fromUtf8(kValidMarkdownThemeJson),
+      QStringLiteral("default"), 1.0, 0);
+
+  QVERIFY(!config.isNull());
+  QVERIFY2(!config->m_textEditorConfig->m_theme.isNull(),
+           "expected theme to be constructed from content");
+}
+
+void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_emptyContent() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+
+  auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+
+  QVERIFY(!config.isNull());
+  QVERIFY2(config->m_textEditorConfig->m_theme.isNull(),
+           "empty content should yield null theme but valid config");
 }
 
 // ============ Group 4: prepareBufferState ============

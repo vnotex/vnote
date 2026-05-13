@@ -168,6 +168,130 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdow
   return editorConfig;
 }
 
+QSharedPointer<vte::MarkdownEditorConfig>
+MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+    const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_mdConfig,
+    const QString &p_themeContent, const QString &p_syntaxTheme, qreal p_scaleFactor,
+    int p_maxContentWidth) {
+  // Build base text editor config from the TextEditorConfig within MarkdownEditorConfig.
+  const auto &textConfig = p_mdConfig.getTextEditorConfig();
+
+  auto textEditorConfig = QSharedPointer<vte::TextEditorConfig>::create();
+
+  textEditorConfig->m_viConfig = p_editorConfig.getViConfig();
+
+  if (!p_themeContent.isEmpty()) {
+    textEditorConfig->m_theme = vte::Theme::createThemeFromContent(p_themeContent);
+  }
+
+  textEditorConfig->m_syntaxTheme = p_syntaxTheme;
+
+  switch (textConfig.getLineNumberType()) {
+  case TextEditorConfig::LineNumberType::Absolute:
+    textEditorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::Absolute;
+    break;
+  case TextEditorConfig::LineNumberType::Relative:
+    textEditorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::Relative;
+    break;
+  case TextEditorConfig::LineNumberType::None:
+    textEditorConfig->m_lineNumberType = vte::VTextEditor::LineNumberType::None;
+    break;
+  }
+
+  textEditorConfig->m_textFoldingEnabled = textConfig.getTextFoldingEnabled();
+
+  switch (textConfig.getInputMode()) {
+  case TextEditorConfig::InputMode::ViMode:
+    textEditorConfig->m_inputMode = vte::InputMode::ViMode;
+    break;
+  case TextEditorConfig::InputMode::VscodeMode:
+    textEditorConfig->m_inputMode = vte::InputMode::VscodeMode;
+    break;
+  default:
+    textEditorConfig->m_inputMode = vte::InputMode::NormalMode;
+    break;
+  }
+
+  textEditorConfig->m_scaleFactor = p_scaleFactor;
+
+  switch (textConfig.getCenterCursor()) {
+  case TextEditorConfig::CenterCursor::NeverCenter:
+    textEditorConfig->m_centerCursor = vte::CenterCursor::NeverCenter;
+    break;
+  case TextEditorConfig::CenterCursor::AlwaysCenter:
+    textEditorConfig->m_centerCursor = vte::CenterCursor::AlwaysCenter;
+    break;
+  case TextEditorConfig::CenterCursor::CenterOnBottom:
+    textEditorConfig->m_centerCursor = vte::CenterCursor::CenterOnBottom;
+    break;
+  }
+
+  switch (textConfig.getWrapMode()) {
+  case TextEditorConfig::WrapMode::NoWrap:
+    textEditorConfig->m_wrapMode = vte::WrapMode::NoWrap;
+    break;
+  case TextEditorConfig::WrapMode::WordWrap:
+    textEditorConfig->m_wrapMode = vte::WrapMode::WordWrap;
+    break;
+  case TextEditorConfig::WrapMode::WrapAnywhere:
+    textEditorConfig->m_wrapMode = vte::WrapMode::WrapAnywhere;
+    break;
+  case TextEditorConfig::WrapMode::WordWrapOrAnywhere:
+    textEditorConfig->m_wrapMode = vte::WrapMode::WordWrapOrAnywhere;
+    break;
+  }
+
+  textEditorConfig->m_expandTab = textConfig.getExpandTabEnabled();
+  textEditorConfig->m_tabStopWidth = textConfig.getTabStopWidth();
+  textEditorConfig->m_highlightWhitespace = textConfig.getHighlightWhitespaceEnabled();
+  textEditorConfig->m_lineSpacing = textConfig.getLineSpacing();
+  textEditorConfig->m_maxContentWidth = p_maxContentWidth;
+
+  switch (p_editorConfig.getLineEndingPolicy()) {
+  case LineEndingPolicy::Platform:
+    textEditorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::Platform;
+    break;
+  case LineEndingPolicy::File:
+    textEditorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::File;
+    break;
+  case LineEndingPolicy::LF:
+    textEditorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::LF;
+    break;
+  case LineEndingPolicy::CRLF:
+    textEditorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CRLF;
+    break;
+  case LineEndingPolicy::CR:
+    textEditorConfig->m_lineEndingPolicy = vte::LineEndingPolicy::CR;
+    break;
+  }
+
+  // Wrap the text editor config in a markdown editor config.
+  auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
+  editorConfig->overrideTextFontFamily(p_mdConfig.getEditorOverriddenFontFamily());
+
+  editorConfig->m_constrainInplacePreviewWidthEnabled =
+      p_mdConfig.getConstrainInplacePreviewWidthEnabled();
+
+  // Map InplacePreviewSources flags from vnotex -> vte.
+  {
+    auto srcs = p_mdConfig.getInplacePreviewSources();
+    vte::MarkdownEditorConfig::InplacePreviewSources editorSrcs =
+        vte::MarkdownEditorConfig::NoInplacePreview;
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::ImageLink) {
+      editorSrcs |= vte::MarkdownEditorConfig::ImageLink;
+    }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock) {
+      editorSrcs |= vte::MarkdownEditorConfig::CodeBlock;
+    }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
+      editorSrcs |= vte::MarkdownEditorConfig::Math;
+    }
+    editorConfig->m_inplacePreviewSources = editorSrcs;
+  }
+
+  return editorConfig;
+}
+
 QSharedPointer<vte::TextEditorParameters>
 MarkdownEditorController::buildMarkdownEditorParameters(const EditorConfig &p_editorConfig,
                                                         const MarkdownEditorConfig &p_mdConfig) {

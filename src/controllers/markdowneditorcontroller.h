@@ -71,6 +71,18 @@ public:
                             const QString &p_syntaxTheme, qreal p_scaleFactor,
                             int p_maxContentWidth = 0);
 
+  // Build vte::MarkdownEditorConfig from VNote config + inline theme JSON content.
+  // Mirrors buildMarkdownEditorConfig() but constructs the theme from a JSON string
+  // (typically a token-resolved theme) rather than reading from a file.
+  // @p_themeContent: theme JSON content (empty = no theme).
+  // @p_syntaxTheme: editor highlight theme name (from ThemeService).
+  // @p_scaleFactor: screen scale factor (from WidgetUtils).
+  // @p_maxContentWidth: maximum content width in pixels (0 = disabled).
+  static QSharedPointer<vte::MarkdownEditorConfig> buildMarkdownEditorConfigFromContent(
+      const EditorConfig &p_editorConfig, const MarkdownEditorConfig &p_mdConfig,
+      const QString &p_themeContent, const QString &p_syntaxTheme, qreal p_scaleFactor,
+      int p_maxContentWidth = 0);
+
   // Build vte::TextEditorParameters from VNote config (spell check settings).
   // @p_editorConfig: top-level EditorConfig (for auto-detect language, default dictionary).
   // @p_mdConfig: MarkdownEditorConfig (for markdown-specific spell check override).
