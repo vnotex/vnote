@@ -405,7 +405,6 @@ add_qt_test(test_imagehostasync
 add_qt_test(test_htmltemplateservice
   SOURCES
     test_htmltemplateservice.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/services/htmltemplateservice.cpp
   LINKS
     core_services
     core_configs
