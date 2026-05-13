@@ -42,7 +42,7 @@ void TextViewWindow2::setupUI() {
   m_controller->checkAndUpdateConfigRevision();
 
   auto *themeService = getServices().get<ThemeService>();
-  auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+  auto themeContent = themeService->fetchTextEditorStyle();
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -55,8 +55,9 @@ void TextViewWindow2::setupUI() {
   // Central widget: text editor.
   {
     m_editor = new TextEditor(
-        TextViewWindowController::buildTextEditorConfig(editorConfig, textEditorConfig, themeFile,
-                                                        syntaxTheme, scaleFactor, maxContentWidth),
+        TextViewWindowController::buildTextEditorConfigFromContent(
+            editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor,
+            maxContentWidth),
         TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig), this);
     setCentralWidget(m_editor);
 
@@ -188,7 +189,7 @@ void TextViewWindow2::handleEditorConfigChange() {
     const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
     auto *themeService = getServices().get<ThemeService>();
-    auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+    auto themeContent = themeService->fetchTextEditorStyle();
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -198,8 +199,8 @@ void TextViewWindow2::handleEditorConfigChange() {
             ? widgetConfig.getReadableWidthMaxPx()
             : 0;
 
-    auto config = TextViewWindowController::buildTextEditorConfig(
-        editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+    auto config = TextViewWindowController::buildTextEditorConfigFromContent(
+        editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
 
     // Guard: config application (e.g. applyLineSpacing) modifies block formats,
     // which fires contentsChanged. Suppress propagation so this is not treated
@@ -225,7 +226,7 @@ void TextViewWindow2::handleThemeChanged() {
   const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
   auto *themeService = getServices().get<ThemeService>();
-  auto themeFile = themeService->getFile(Theme::File::TextEditorStyle);
+  auto themeContent = themeService->fetchTextEditorStyle();
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -235,8 +236,8 @@ void TextViewWindow2::handleThemeChanged() {
           ? widgetConfig.getReadableWidthMaxPx()
           : 0;
 
-  auto config = TextViewWindowController::buildTextEditorConfig(
-      editorConfig, textEditorConfig, themeFile, syntaxTheme, scaleFactor, maxContentWidth);
+  auto config = TextViewWindowController::buildTextEditorConfigFromContent(
+      editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
 
   // Propagation guard: prevent setConfig from triggering false "modified" state.
   const bool old = m_propagateEditorToBuffer;
