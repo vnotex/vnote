@@ -23,6 +23,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/configservice.h>
+#include <core/services/eventbridge.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/htmltemplateservice.h>
@@ -37,6 +38,7 @@
 #include <core/services/tagservice.h>
 #include <core/services/templateservice.h>
 #include <core/services/vnote3migrationservice.h>
+#include <core/services/workqueuedrainthread.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
@@ -205,14 +207,21 @@ int main(int argc, char *argv[]) {
     // Wire HookManager to WorkspaceCoreService for firing view area hooks.
     workspaceService.setHookManager(&hookManager);
 
-    // Sync stack: SyncCredentialsStore (T4) + SyncService (T7). SyncService
-    // depends on NotebookCoreService AND SyncCredentialsStore, so register the
-    // store first.
+    // Sync stack: EventBridge + SyncCredentialsStore + SyncService.
+    // EventBridge must be registered before SyncService (it looks it up in
+    // its constructor). WorkQueueDrainThread drains vxcore's "sync" queue.
+    EventBridge eventBridge(context);
+    serviceLocator.registerService<EventBridge>(&eventBridge);
+
     SyncCredentialsStore syncCredentialsStore(serviceLocator);
     serviceLocator.registerService<SyncCredentialsStore>(&syncCredentialsStore);
     SyncService syncService(serviceLocator);
     serviceLocator.registerService<SyncService>(&syncService);
-    qInfo() << "SyncCredentialsStore + SyncService registered";
+
+    WorkQueueDrainThread drainThread(context);
+    serviceLocator.registerService<WorkQueueDrainThread>(&drainThread);
+    drainThread.start();
+    qInfo() << "Sync stack registered (EventBridge + SyncService + DrainThread)";
 
     // Create ConfigMgr2 with ConfigCoreService (from ConfigService wrapper)
     ConfigMgr2 configMgr(configService.coreService());
@@ -273,6 +282,11 @@ int main(int argc, char *argv[]) {
     QObject::connect(
         &app, &QCoreApplication::aboutToQuit, &app,
         [&serviceLocator]() {
+          auto *drain = serviceLocator.get<vnotex::WorkQueueDrainThread>();
+          if (drain) {
+            drain->requestStop();
+            drain->wait(5000);
+          }
           auto *svc = serviceLocator.get<vnotex::SyncService>();
           if (svc) {
             svc->shutdown();

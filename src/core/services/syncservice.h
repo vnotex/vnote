@@ -19,6 +19,7 @@ class ServiceLocator;
 class NotebookCoreService;
 class SyncCredentialsStore;
 class SyncWorker;
+class EventBridge;
 
 // SyncService is the GUI-thread facade for the per-notebook git sync stack.
 //
@@ -156,6 +157,11 @@ private slots:
   void onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result);
   void onWorkerCredentialsSetFinished(const QString &p_notebookId, VxCoreError p_result);
 
+  // Auto-sync event forwarders (from EventBridge, already on GUI thread).
+  void onAutoSyncStarted(const QString &p_notebookId);
+  void onAutoSyncFinished(const QString &p_notebookId, VxCoreError p_result);
+  void onAutoSyncConflict(const QString &p_notebookId);
+
 private:
   void setInProgress(const QString &p_notebookId, bool p_value);
 
@@ -167,6 +173,7 @@ private:
   ServiceLocator &m_services;
   NotebookCoreService *m_notebookCoreService = nullptr;
   SyncCredentialsStore *m_credentialsStore = nullptr;
+  EventBridge *m_eventBridge = nullptr;
 
   QThread *m_thread = nullptr;
   SyncWorker *m_worker = nullptr;

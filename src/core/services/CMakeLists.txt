@@ -22,6 +22,8 @@ set(SERVICES_SOURCES
   synccredentialsstore.cpp
   syncworker.cpp
   syncservice.cpp
+  eventbridge.cpp
+  workqueuedrainthread.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdownwebglobaloptions.cpp
@@ -60,6 +62,8 @@ set(SERVICES_HEADERS
   syncworker.h
   syncservice.h
   synclog.h
+  eventbridge.h
+  workqueuedrainthread.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

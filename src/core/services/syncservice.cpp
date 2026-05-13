@@ -13,6 +13,7 @@
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/eventbridge.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
@@ -98,6 +99,14 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
           Qt::QueuedConnection);
   connect(m_worker, &SyncWorker::credentialsSetFinished, this,
           &SyncService::onWorkerCredentialsSetFinished, Qt::QueuedConnection);
+
+  // Wire EventBridge for vxcore auto-sync events (already on GUI thread).
+  m_eventBridge = m_services.get<EventBridge>();
+  if (m_eventBridge) {
+    connect(m_eventBridge, &EventBridge::syncStarted, this, &SyncService::onAutoSyncStarted);
+    connect(m_eventBridge, &EventBridge::syncFinished, this, &SyncService::onAutoSyncFinished);
+    connect(m_eventBridge, &EventBridge::syncConflict, this, &SyncService::onAutoSyncConflict);
+  }
 
   m_thread->start();
 
@@ -391,4 +400,30 @@ void SyncService::onWorkerDisableFinished(const QString &p_notebookId, VxCoreErr
 void SyncService::onWorkerCredentialsSetFinished(const QString &p_notebookId,
                                                  VxCoreError p_result) {
   emit credentialsSetFinished(p_notebookId, p_result);
+}
+
+// ---- Auto-sync event forwarders (from EventBridge) --------------------------
+
+void SyncService::onAutoSyncStarted(const QString &p_notebookId) {
+  if (m_shutDown)
+    return;
+  setInProgress(p_notebookId, true);
+  emit syncStarted(p_notebookId);
+}
+
+void SyncService::onAutoSyncFinished(const QString &p_notebookId, VxCoreError p_result) {
+  if (m_shutDown)
+    return;
+  setInProgress(p_notebookId, false);
+  if (p_result != VXCORE_OK) {
+    emit syncFailed(p_notebookId, p_result, vxErrorToString(p_result));
+  }
+  emit syncFinished(p_notebookId, p_result);
+}
+
+void SyncService::onAutoSyncConflict(const QString &p_notebookId) {
+  if (m_shutDown)
+    return;
+  QMetaObject::invokeMethod(m_worker, "getConflicts", Qt::QueuedConnection,
+                            Q_ARG(QString, p_notebookId));
 }
