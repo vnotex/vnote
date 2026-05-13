@@ -116,3 +116,12 @@ set_tests_properties(test_syncconflictcontroller PROPERTIES
 # produces duplicate-symbol link errors on Windows AND breaks the
 # VNOTE_KEYCHAIN_AVAILABLE compile gate for QtKeychain.
 target_compile_definitions(test_syncconflictcontroller PRIVATE VNOTE_TESTING)
+
+# Copy VTextEdit DLL next to test executables so CTest can find it at runtime.
+# Pick any test target to anchor the POST_BUILD command; the DLL lands in the
+# shared output directory used by all controller tests.
+add_custom_command(TARGET test_notebooksyncinfocontroller POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebooksyncinfocontroller>
+)

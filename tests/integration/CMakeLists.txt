@@ -27,3 +27,10 @@ set_tests_properties(test_sync_e2e PROPERTIES
 # into the test target — they come from core_services.
 target_compile_definitions(test_sync_e2e PRIVATE VNOTE_TESTING)
 
+# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
+add_custom_command(TARGET test_sync_e2e POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_sync_e2e>
+)
+
