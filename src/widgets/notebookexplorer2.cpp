@@ -196,12 +196,9 @@ void NotebookExplorer2::setupTitleBar() {
     connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::openVNote3Notebook);
   }
 
-  // Sync button (T15) — always visible. Placeholder icon: git-sync.svg is not
-  // present under src/data/core/icons/, so we reuse apply_editor.svg until a
-  // dedicated sync icon is shipped (TODO: add data/core/icons/git-sync.svg).
+  // Sync button (T15) — always visible.
   // Enabled state and tooltip are driven by updateSyncButtonState().
-  m_syncButton = m_titleBar->addActionButton(QStringLiteral("apply_editor.svg"), tr("Sync"));
-  m_syncButton->setObjectName(QStringLiteral("syncButton"));
+  m_syncButton = m_titleBar->addActionButton(QStringLiteral("sync_now.svg"), tr("Sync"));
   m_syncButton->setEnabled(false);
   connect(m_syncButton, &QToolButton::clicked, this, &NotebookExplorer2::onSyncButtonClicked);
 
@@ -213,15 +210,16 @@ void NotebookExplorer2::setupTitleBarMenu() {
 
   m_titleBar->addMenuAction(tr("Manage Notebooks"), m_titleBar, [this]() { manageNotebooks(); });
 
-  // "Notebook Sync Info..." entry (T15). Enabled only when current notebook is
-  // bundled AND has sync configured; managed by updateSyncButtonState().
-  m_syncInfoAction = m_titleBar->addMenuAction(tr("Notebook Sync Info..."), m_titleBar,
-                                               [this]() { onSyncInfoActionTriggered(); });
-  m_syncInfoAction->setObjectName(QStringLiteral("syncInfoAction"));
-  m_syncInfoAction->setEnabled(false);
-
   m_titleBar->addMenuAction(tr("Open Folder as &Raw Notebook"), m_titleBar,
                             [this]() { newNotebookFromFolder(); });
+
+  m_titleBar->addMenuSeparator();
+
+  // "Notebook Sync Info..." entry (T15). Enabled only when current notebook is
+  // bundled AND has sync configured; managed by updateSyncButtonState().
+  m_syncInfoAction = m_titleBar->addMenuAction(tr("Sync Info"), m_titleBar,
+                                               [this]() { onSyncInfoActionTriggered(); });
+  m_syncInfoAction->setEnabled(false);
 
   m_titleBar->addMenuAction(tr("Rebuild Database"), m_titleBar, [this]() { rebuildDatabase(); });
 
@@ -289,8 +287,6 @@ void NotebookExplorer2::setupTitleBarMenu() {
 }
 
 void NotebookExplorer2::setupRecycleBinMenu() {
-  m_titleBar->addMenuSeparator();
-
   m_openRecycleBinAction = m_titleBar->addMenuAction(tr("Open Recycle Bin"), this, [this]() {
     if (m_currentNotebookId.isEmpty()) {
       return;
@@ -1539,10 +1535,11 @@ void NotebookExplorer2::updateSyncButtonState() {
     return;
   }
 
+  m_syncButton->setToolTip(tr("Sync Now"));
+
   const QString nbId = currentNotebookId();
   if (nbId.isEmpty()) {
     m_syncButton->setEnabled(false);
-    m_syncButton->setToolTip(tr("No notebook selected"));
     m_syncInfoAction->setEnabled(false);
     return;
   }
@@ -1554,7 +1551,6 @@ void NotebookExplorer2::updateSyncButtonState() {
   }
   if (!bundled) {
     m_syncButton->setEnabled(false);
-    m_syncButton->setToolTip(tr("Sync requires a Bundled notebook with sync enabled"));
     m_syncInfoAction->setEnabled(false);
     return;
   }
@@ -1564,12 +1560,8 @@ void NotebookExplorer2::updateSyncButtonState() {
   const bool inProgress = syncSvc && syncSvc->isSyncInProgress(nbId);
 
   m_syncButton->setEnabled(enabled && !inProgress);
-  if (!enabled) {
-    m_syncButton->setToolTip(tr("Sync requires a Bundled notebook with sync enabled"));
-  } else if (inProgress) {
-    m_syncButton->setToolTip(tr("Sync in progress…"));
-  } else {
-    m_syncButton->setToolTip(tr("Sync now"));
+  if (enabled && inProgress) {
+    m_syncButton->setToolTip(tr("Sync ongoing..."));
   }
 
   // The menu entry is enabled whenever sync is configured (the dialog itself

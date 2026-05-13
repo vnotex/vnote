@@ -198,6 +198,7 @@ void NewNotebookDialog2::acceptedButtonClicked() {
     sessionConfig.setNewNotebookDefaultRootFolderPath(parentDir);
 
     m_newNotebookId = result.notebookId;
+    m_selectedSyncMethod = input.syncMethod;
     accept();
   } else {
     setInformationText(result.errorMessage, ScrollDialog::InformationLevel::Error);
@@ -207,9 +208,5 @@ void NewNotebookDialog2::acceptedButtonClicked() {
 QString NewNotebookDialog2::getNewNotebookId() const { return m_newNotebookId; }
 
 QString NewNotebookDialog2::getSelectedSyncMethod() const {
-  if (!m_syncMethodCombo || !m_syncMethodCombo->isVisible()) {
-    return QStringLiteral("none");
-  }
-  const QString data = m_syncMethodCombo->currentData().toString();
-  return data.isEmpty() ? QStringLiteral("none") : data;
+  return m_selectedSyncMethod.isEmpty() ? QStringLiteral("none") : m_selectedSyncMethod;
 }
