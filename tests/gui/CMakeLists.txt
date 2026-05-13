@@ -26,6 +26,7 @@ add_qt_test(test_themeservice
     test_themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
   LINKS
     Qt6::Gui
