@@ -19,6 +19,15 @@ add_qt_test(test_servicelocator
   GUILESS
 )
 
+add_qt_test(test_theme
+  SOURCES
+    test_theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
 add_qt_test(test_searchservice
   SOURCES
     test_searchservice.cpp
