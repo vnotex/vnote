@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/texteditorconfig.h>
 
 #include <controllers/markdowneditorcontroller.h>
