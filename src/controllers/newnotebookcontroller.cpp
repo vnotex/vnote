@@ -12,6 +12,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 #include <utils/pathutils.h>
 
@@ -101,6 +102,9 @@ ValidationResult NewNotebookController::validateAll(const NewNotebookInput &p_in
 }
 
 NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &p_input) {
+  qCDebug(syncCategory) << "NewNotebookController::createNotebook: entry syncMethod:"
+                        << p_input.syncMethod << "remoteUrl:notInInputStruct";
+
   NewNotebookResult result;
 
   // Validate first.
@@ -131,6 +135,9 @@ NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &
     result.errorMessage = tr("Failed to create notebook in (%1).").arg(p_input.rootFolderPath);
     return result;
   }
+
+  qCDebug(syncCategory) << "NewNotebookController::createNotebook: created notebookId:"
+                        << notebookId << "success:" << !notebookId.isEmpty();
 
   result.success = true;
   result.notebookId = notebookId;

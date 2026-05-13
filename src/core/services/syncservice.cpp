@@ -340,14 +340,20 @@ bool SyncService::isSyncEnabled(const QString &p_notebookId) const {
     return false;
   }
   const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-  return cfg.value(QStringLiteral("syncEnabled")).toBool();
+  const bool enabled = cfg.value(QStringLiteral("syncEnabled")).toBool();
+  qCDebug(syncCategory) << "SyncService::isSyncEnabled: query notebookId:" << p_notebookId
+                        << "syncEnabled:" << enabled;
+  return enabled;
 }
 
 bool SyncService::isSyncReady(const QString &p_notebookId) const {
   if (!m_notebookCoreService) {
     return false;
   }
-  return m_notebookCoreService->isSyncReady(p_notebookId);
+  const bool ready = m_notebookCoreService->isSyncReady(p_notebookId);
+  qCDebug(syncCategory) << "SyncService::isSyncReady: query notebookId:" << p_notebookId
+                        << "syncReady:" << ready;
+  return ready;
 }
 
 QString SyncService::lastSyncTime(const QString &p_notebookId) const {

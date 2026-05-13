@@ -7,6 +7,7 @@
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
+#include <core/services/synclog.h>
 
 using namespace vnotex;
 
@@ -368,7 +369,10 @@ bool NotebookCoreService::isSyncReady(const QString &p_notebookId) const {
   }
   int ready = 0;
   VxCoreError err = vxcore_sync_is_ready(m_context, p_notebookId.toUtf8().constData(), &ready);
-  return err == VXCORE_OK && ready != 0;
+  const bool result = (err == VXCORE_OK && ready != 0);
+  qCDebug(syncCategory) << "NotebookCoreService::isSyncReady: query notebookId:" << p_notebookId
+                        << "vxResult:" << static_cast<int>(err) << "ready:" << ready;
+  return result;
 }
 
 // Folder operations.

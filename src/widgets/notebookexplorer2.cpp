@@ -33,6 +33,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
@@ -673,6 +674,8 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
     }
   }
 
+  qCDebug(syncCategory) << "NotebookExplorer2::setCurrentNotebookInternal: transition notebookId:"
+                        << p_notebookId;
   emit currentNotebookChanged(p_notebookId);
   emit currentExploredFolderChanged(currentExploredFolderId());
 }
@@ -808,9 +811,15 @@ void NotebookExplorer2::newNotebook() {
     // The dialog's Apply handler (T11) calls NewNotebookController::bootstrapSync
     // because of the bootstrap-mode flag.
     if (syncMethod == QStringLiteral("git") && !newNotebookId.isEmpty()) {
+      qCDebug(syncCategory) << "NotebookExplorer2::newNotebook: bootstrapBranch syncMethod:"
+                            << syncMethod << "notebookId:" << newNotebookId;
       auto *infoDlg = new NotebookSyncInfoDialog2(m_services, newNotebookId, this);
       infoDlg->setAttribute(Qt::WA_DeleteOnClose);
       infoDlg->setBootstrapMode(true);
+      const bool parentIsNull = (infoDlg->parent() == nullptr);
+      const bool parentVisible = parentWidget() != nullptr && parentWidget()->isVisible();
+      qCDebug(syncCategory) << "NotebookExplorer2::newNotebook: openCalled parentIsNull:"
+                            << parentIsNull << "parentVisible:" << parentVisible;
       infoDlg->open();
     }
   }
@@ -1519,7 +1528,10 @@ void NotebookExplorer2::onSyncButtonClicked() {
   if (!syncSvc) {
     return;
   }
-  if (syncSvc->isSyncReady(nbId)) {
+  const bool syncReady = syncSvc->isSyncReady(nbId);
+  qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: clicked notebookId:" << nbId
+                        << "syncReady:" << syncReady;
+  if (syncReady) {
     syncSvc->triggerSyncNow(nbId);
   } else {
     auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
@@ -1534,6 +1546,8 @@ void NotebookExplorer2::onSyncInfoActionTriggered() {
   if (nbId.isEmpty()) {
     return;
   }
+  qCDebug(syncCategory) << "NotebookExplorer2::onSyncInfoActionTriggered: triggered notebookId:"
+                        << nbId;
   auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
   dlg->setAttribute(Qt::WA_DeleteOnClose);
   dlg->open();
@@ -1550,6 +1564,7 @@ void NotebookExplorer2::updateSyncButtonState() {
   if (nbId.isEmpty()) {
     m_syncButton->setEnabled(false);
     m_syncInfoAction->setEnabled(false);
+    qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: shortCircuit:emptyId";
     return;
   }
 
@@ -1561,6 +1576,8 @@ void NotebookExplorer2::updateSyncButtonState() {
   if (!bundled) {
     m_syncButton->setEnabled(false);
     m_syncInfoAction->setEnabled(false);
+    qCDebug(syncCategory)
+        << "NotebookExplorer2::updateSyncButtonState: shortCircuit:notBundled notebookId:" << nbId;
     return;
   }
 
@@ -1579,6 +1596,9 @@ void NotebookExplorer2::updateSyncButtonState() {
   // The menu entry is enabled whenever sync is configured (the dialog itself
   // is safe to open even while a sync is in progress).
   m_syncInfoAction->setEnabled(enabled);
+  qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
+                        << "syncEnabled:" << enabled << "syncReady:" << ready
+                        << "syncInProgress:" << inProgress;
 }
 
 #ifdef VNOTE_TESTING

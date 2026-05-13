@@ -13,6 +13,7 @@
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/snippetcoreservice.h>
+#include <core/services/synclog.h>
 #include <core/sessionconfig.h>
 #include <utils/pathutils.h>
 
@@ -199,6 +200,8 @@ void NewNotebookDialog2::acceptedButtonClicked() {
 
     m_newNotebookId = result.notebookId;
     m_selectedSyncMethod = input.syncMethod;
+    qCDebug(syncCategory) << "NewNotebookDialog2::acceptedButtonClicked: syncMethod:"
+                          << m_selectedSyncMethod << "newNotebookId:" << m_newNotebookId;
     accept();
   } else {
     setInformationText(result.errorMessage, ScrollDialog::InformationLevel::Error);

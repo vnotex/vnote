@@ -12,6 +12,7 @@
 #include <controllers/notebooksyncinfocontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 
 #include "../propertydefs.h"
@@ -259,6 +260,8 @@ void NotebookSyncInfoDialog2::onDisableSyncClicked() {
 }
 
 void NotebookSyncInfoDialog2::acceptedButtonClicked() {
+  qCDebug(syncCategory) << "NotebookSyncInfoDialog2::acceptedButtonClicked: accept bootstrapMode:"
+                        << m_bootstrapMode;
   // T11: the controller decides whether to send URL only, PAT only, or both
   // based on which fields are dirty. Then we still close the dialog so the
   // bootstrap-mode flow can complete.
