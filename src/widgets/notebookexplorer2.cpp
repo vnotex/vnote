@@ -1515,8 +1515,17 @@ void NotebookExplorer2::onSyncButtonClicked() {
   if (nbId.isEmpty()) {
     return;
   }
-  if (auto *syncSvc = m_services.get<SyncService>()) {
+  auto *syncSvc = m_services.get<SyncService>();
+  if (!syncSvc) {
+    return;
+  }
+  if (syncSvc->isSyncReady(nbId)) {
     syncSvc->triggerSyncNow(nbId);
+  } else {
+    auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setBootstrapMode(true);
+    dlg->open();
   }
 }
 
@@ -1557,11 +1566,14 @@ void NotebookExplorer2::updateSyncButtonState() {
 
   auto *syncSvc = m_services.get<SyncService>();
   const bool enabled = syncSvc && syncSvc->isSyncEnabled(nbId);
+  const bool ready = syncSvc && syncSvc->isSyncReady(nbId);
   const bool inProgress = syncSvc && syncSvc->isSyncInProgress(nbId);
 
   m_syncButton->setEnabled(enabled && !inProgress);
   if (enabled && inProgress) {
     m_syncButton->setToolTip(tr("Sync ongoing..."));
+  } else if (enabled && !ready) {
+    m_syncButton->setToolTip(tr("Sync setup incomplete — click to configure"));
   }
 
   // The menu entry is enabled whenever sync is configured (the dialog itself

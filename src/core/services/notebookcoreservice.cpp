@@ -362,6 +362,15 @@ VxCoreError NotebookCoreService::enableSyncWithCredentials(const QString &p_note
                                              creds.constData());
 }
 
+bool NotebookCoreService::isSyncReady(const QString &p_notebookId) const {
+  if (!checkContext()) {
+    return false;
+  }
+  int ready = 0;
+  VxCoreError err = vxcore_sync_is_ready(m_context, p_notebookId.toUtf8().constData(), &ready);
+  return err == VXCORE_OK && ready != 0;
+}
+
 // Folder operations.
 QString NotebookCoreService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
                                           const QString &p_folderName) {

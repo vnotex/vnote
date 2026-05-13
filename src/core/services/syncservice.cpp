@@ -343,6 +343,13 @@ bool SyncService::isSyncEnabled(const QString &p_notebookId) const {
   return cfg.value(QStringLiteral("syncEnabled")).toBool();
 }
 
+bool SyncService::isSyncReady(const QString &p_notebookId) const {
+  if (!m_notebookCoreService) {
+    return false;
+  }
+  return m_notebookCoreService->isSyncReady(p_notebookId);
+}
+
 QString SyncService::lastSyncTime(const QString &p_notebookId) const {
   if (!m_notebookCoreService) {
     return QString();

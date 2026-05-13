@@ -81,6 +81,7 @@ public:
   VxCoreError setSyncCredentials(const QString &p_notebookId, const QString &p_credentialsJson);
   VxCoreError enableSyncWithCredentials(const QString &p_notebookId, const QString &p_configJson,
                                         const QString &p_credentialsJson);
+  bool isSyncReady(const QString &p_notebookId) const;
   // Folder operations (10 methods).
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);

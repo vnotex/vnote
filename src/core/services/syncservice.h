@@ -103,6 +103,11 @@ public:
   // reads "syncEnabled" from getNotebookConfig).
   bool isSyncEnabled(const QString &p_notebookId) const;
 
+  // Returns true if the notebook's sync configuration is complete (enabled,
+  // backend set, remote URL set). A notebook can be sync-enabled but not ready
+  // if the user hasn't finished the bootstrap flow.
+  bool isSyncReady(const QString &p_notebookId) const;
+
   // Returns the persisted ISO-8601 last-sync time from the notebook config
   // ("lastSyncIso" key), or empty if not set. T14 will populate this; T7 just
   // reads it for completeness.
