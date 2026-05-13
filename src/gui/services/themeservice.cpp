@@ -151,6 +151,30 @@ QString ThemeService::fetchQtStyleSheet() const {
   return m_currentTheme->fetchQtStyleSheet();
 }
 
+QString ThemeService::fetchWebStyleSheet() const {
+  if (!m_currentTheme) {
+    return QString();
+  }
+
+  return m_currentTheme->fetchWebStyleSheet();
+}
+
+QString ThemeService::fetchTextEditorStyle() const {
+  if (!m_currentTheme) {
+    return QString();
+  }
+
+  return m_currentTheme->fetchTextEditorStyle();
+}
+
+QString ThemeService::fetchMarkdownEditorStyle() const {
+  if (!m_currentTheme) {
+    return QString();
+  }
+
+  return m_currentTheme->fetchMarkdownEditorStyle();
+}
+
 QString ThemeService::paletteColor(const QString &p_name) const {
   Q_ASSERT(m_currentTheme);
   return m_currentTheme->paletteColor(p_name);

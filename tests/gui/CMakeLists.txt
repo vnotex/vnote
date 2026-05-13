@@ -20,3 +20,15 @@ add_custom_command(TARGET test_navigationmodeservice POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_navigationmodeservice>
 )
+
+add_qt_test(test_themeservice
+  SOURCES
+    test_themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+  LINKS
+    Qt6::Gui
+    Qt6::Widgets
+    core_services
+)
