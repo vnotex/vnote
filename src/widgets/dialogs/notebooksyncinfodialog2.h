@@ -52,11 +52,22 @@ public:
   explicit NotebookSyncInfoDialog2(ServiceLocator &p_services, const QString &p_notebookId,
                                    QWidget *p_parent = nullptr);
 
+  // Pre-create overload: used by NewNotebookDialog2 to collect URL + PAT
+  // before the notebook exists in vxcore. The controller is NOT constructed
+  // in this mode; values are read back via enteredRemoteUrl()/enteredPat().
+  explicit NotebookSyncInfoDialog2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+
   // Toggle bootstrap mode. In bootstrap mode the dialog represents an initial
   // setup (post-create), the Disable/Apply/Reset buttons are hidden, and the
   // Ok button is relabeled to "Bootstrap". Also sets a dynamic Qt property
   // ("bootstrapMode") so tests can discover the mode without relying on text.
   void setBootstrapMode(bool p_enabled);
+
+  // Pre-create mode accessors. Return values entered by the user without
+  // persisting to vxcore. Only meaningful when isPreCreateMode() is true.
+  QString enteredRemoteUrl() const;
+  QString enteredPat() const;
+  bool isPreCreateMode() const;
 
   // True if the user has typed changes that have not yet been applied. URL is
   // dirty when it differs from the last-applied value; PAT is dirty whenever
@@ -125,6 +136,11 @@ private:
 
   // Bootstrap mode flag; mirrors the dynamic "bootstrapMode" Qt property.
   bool m_bootstrapMode = false;
+
+  // Pre-create mode flag; set to true when constructed via the pre-create
+  // overload. In this mode, m_controller is nullptr and acceptedButtonClicked
+  // bypasses applyChanges.
+  bool m_preCreateMode = false;
 };
 
 } // namespace vnotex

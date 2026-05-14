@@ -801,27 +801,16 @@ void NotebookExplorer2::newNotebook() {
   NewNotebookDialog2 dialog(m_services, window());
   if (dialog.exec() == QDialog::Accepted) {
     const QString newNotebookId = dialog.getNewNotebookId();
-    const QString syncMethod = dialog.getSelectedSyncMethod();
 
     // Reload notebooks and select the newly created one.
     loadNotebooks();
     setCurrentNotebook(newNotebookId);
 
-    // Auto-open the Sync Info dialog in bootstrap mode for git-sync notebooks.
-    // The dialog's Apply handler (T11) calls NewNotebookController::bootstrapSync
-    // because of the bootstrap-mode flag.
-    if (syncMethod == QStringLiteral("git") && !newNotebookId.isEmpty()) {
-      qCDebug(syncCategory) << "NotebookExplorer2::newNotebook: bootstrapBranch syncMethod:"
-                            << syncMethod << "notebookId:" << newNotebookId;
-      auto *infoDlg = new NotebookSyncInfoDialog2(m_services, newNotebookId, this);
-      infoDlg->setAttribute(Qt::WA_DeleteOnClose);
-      infoDlg->setBootstrapMode(true);
-      const bool parentIsNull = (infoDlg->parent() == nullptr);
-      const bool parentVisible = parentWidget() != nullptr && parentWidget()->isVisible();
-      qCDebug(syncCategory) << "NotebookExplorer2::newNotebook: openCalled parentIsNull:"
-                            << parentIsNull << "parentVisible:" << parentVisible;
-      infoDlg->open();
-    }
+    // Sync configuration is now collected BEFORE notebook creation via the
+    // "Configure..." button inside NewNotebookDialog2 (per ADR-9). The dialog
+    // chains createNotebook + bootstrapSync atomically before returning Accepted.
+    // By the time we reach this point, the notebook is either fully sync-ready
+    // or doesn't exist (bootstrapSync rolled back). No post-create bootstrap needed.
   }
 }
 

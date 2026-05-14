@@ -82,6 +82,46 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
   setCurrentStateLabel(SyncStateLevel::Idle, tr("Idle"));
 }
 
+// Pre-create overload: used by NewNotebookDialog2 to collect URL + PAT before
+// the notebook exists in vxcore. The controller is NOT constructed; values are
+// read back via enteredRemoteUrl()/enteredPat().
+NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services, QWidget *p_parent)
+    : ScrollDialog(p_parent), m_services(p_services), m_preCreateMode(true) {
+  setupUI();
+
+  // In pre-create mode, hide elements that don't apply (no notebook yet, no
+  // sync history, no state to monitor).
+  if (m_notebookNameLabel) {
+    m_notebookNameLabel->hide();
+  }
+  if (m_lastSyncLabel) {
+    m_lastSyncLabel->hide();
+  }
+  if (m_currentStateLabel) {
+    m_currentStateLabel->hide();
+  }
+  if (m_disableSyncButton) {
+    m_disableSyncButton->hide();
+  }
+
+  // Hide Apply/Reset buttons (not applicable in pre-create mode).
+  auto *box = getDialogButtonBox();
+  if (box) {
+    if (auto *applyBtn = box->button(QDialogButtonBox::Apply)) {
+      applyBtn->setVisible(false);
+    }
+    if (auto *resetBtn = box->button(QDialogButtonBox::Reset)) {
+      resetBtn->setVisible(false);
+    }
+  }
+
+  // Set window title for clarity.
+  setWindowTitle(tr("Configure Git Sync"));
+
+  // m_controller remains nullptr — this signals pre-create mode to
+  // acceptedButtonClicked, which bypasses applyChanges.
+}
+
 void NotebookSyncInfoDialog2::setupUI() {
   auto *centralWidget = new QWidget(this);
   auto *formLayout = new QFormLayout(centralWidget);
@@ -260,6 +300,13 @@ void NotebookSyncInfoDialog2::onDisableSyncClicked() {
 }
 
 void NotebookSyncInfoDialog2::acceptedButtonClicked() {
+  // Pre-create mode: caller (NewNotebookDialog2) reads URL/PAT via accessors
+  // and does the actual create+bootstrap atomically. We just close the dialog.
+  if (m_preCreateMode) {
+    accept();
+    return;
+  }
+
   qCDebug(syncCategory) << "NotebookSyncInfoDialog2::acceptedButtonClicked: accept bootstrapMode:"
                         << m_bootstrapMode;
   // T11: the controller decides whether to send URL only, PAT only, or both
@@ -357,3 +404,13 @@ void NotebookSyncInfoDialog2::setCurrentStateLabel(SyncStateLevel p_level, const
     break;
   }
 }
+
+QString NotebookSyncInfoDialog2::enteredRemoteUrl() const {
+  return m_remoteUrlEdit ? m_remoteUrlEdit->text() : QString();
+}
+
+QString NotebookSyncInfoDialog2::enteredPat() const {
+  return m_patEdit ? m_patEdit->text() : QString();
+}
+
+bool NotebookSyncInfoDialog2::isPreCreateMode() const { return m_preCreateMode; }

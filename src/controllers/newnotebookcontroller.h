@@ -25,6 +25,13 @@ struct NewNotebookInput {
   // into the vxcore notebook config so that bootstrap (T14) can later enable
   // sync against the empty root (per ADR-7: create-then-enable).
   QString syncMethod = QStringLiteral("none");
+  // Sync remote URL (only meaningful when syncMethod == "git"). Captured from
+  // the in-dialog "Configure..." sub-dialog before notebook creation, so it
+  // can be passed atomically to bootstrapSync after vxcore_notebook_create.
+  QString remoteUrl;
+  // Personal Access Token for git remotes that require auth. Optional.
+  // Stored only in memory; written to keychain by SyncService.
+  QString pat;
 };
 
 // Result structure for notebook creation.
