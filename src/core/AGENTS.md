@@ -196,7 +196,6 @@ The corresponding `ThemeService` delegates expose these to consumers:
 auto *themeService = m_services.get<ThemeService>();
 QString webCss   = themeService->fetchWebStyleSheet();
 QString editor   = themeService->fetchTextEditorStyle();
-QString markdown = themeService->fetchMarkdownEditorStyle();
 ```
 
 ### Files Out of Scope (not token-aware)
@@ -204,7 +203,6 @@ QString markdown = themeService->fetchMarkdownEditorStyle();
 These files load and apply as-is, with no `@`-token substitution:
 
 - `highlight.css`, PrismJS code-block CSS (third-party, kept verbatim)
-- `markdown-text-editor.theme`, explicit per-theme markdown editor override (when present, returned raw via `Theme::fetchMarkdownEditorStyle()`); fallback to resolved `text-editor.theme` when absent
 - `editor-highlight.theme` / `markdown-editor-highlight.theme`, KSyntaxHighlighting JSON (vendored, format-specific)
 
 ### Backward Compatibility

@@ -19,7 +19,6 @@ private slots:
   void cleanupTestCase();
   void testFetchWebStyleSheet_delegatesToCurrentTheme();
   void testFetchTextEditorStyle_delegatesToCurrentTheme();
-  void testFetchMarkdownEditorStyle_delegatesToCurrentTheme();
   void testFetchWebStyleSheet_nullThemeReturnsEmpty();
 
 private:
@@ -85,20 +84,6 @@ void TestThemeService::testFetchTextEditorStyle_delegatesToCurrentTheme() {
 
   QString out = svc.fetchTextEditorStyle();
   QVERIFY2(!out.isEmpty(), "expected non-empty JSON from pure text-editor.theme");
-}
-
-void TestThemeService::testFetchMarkdownEditorStyle_delegatesToCurrentTheme() {
-  vnotex::ThemeServiceConfig cfg;
-  cfg.themeName = QStringLiteral("pure");
-  cfg.locale = QStringLiteral("en_US");
-  cfg.appDataPath = appDataPathFromThemeFolder();
-
-  vnotex::ThemeService svc(cfg);
-  svc.switchTheme(QStringLiteral("pure"));
-
-  // Pure theme has no markdown-text-editor.theme — fallback to text-editor.theme.
-  QString out = svc.fetchMarkdownEditorStyle();
-  QVERIFY2(!out.isEmpty(), "expected non-empty fallback from text-editor.theme");
 }
 
 void TestThemeService::testFetchWebStyleSheet_nullThemeReturnsEmpty() {

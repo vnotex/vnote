@@ -57,7 +57,6 @@ public:
 
   QString fetchWebStyleSheet() const;
   QString fetchTextEditorStyle() const;
-  QString fetchMarkdownEditorStyle() const;
 
   // Get palette color by name from current theme.
   QString paletteColor(const QString &p_name) const;

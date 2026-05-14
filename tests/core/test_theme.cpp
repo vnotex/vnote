@@ -26,8 +26,6 @@ private slots:
   void testFetchWebStyleSheet_emptyPathReturnsEmpty();
   void testFetchWebStyleSheet_noTokensUnchanged();
   void testFetchTextEditorStyle_noTokensUnchanged();
-  void testFetchMarkdownEditorStyle_explicitFileReturnsRaw();
-  void testFetchMarkdownEditorStyle_fallbackResolvesTokens();
 };
 
 void TestTheme::initTestCase() {}
@@ -211,47 +209,6 @@ void TestTheme::testFetchTextEditorStyle_noTokensUnchanged() {
   QString raw = QString::fromUtf8(rawFile.readAll());
 
   QCOMPARE(out, raw);
-}
-
-void TestTheme::testFetchMarkdownEditorStyle_explicitFileReturnsRaw() {
-  QString src = findPureThemePath();
-  QVERIFY2(!src.isEmpty(), "pure theme fixture not found");
-
-  QTemporaryDir tmp;
-  QVERIFY(tmp.isValid());
-  QString themeDir = tmp.filePath("pure-with-markdown-theme");
-  QVERIFY(copyDir(src, themeDir));
-
-  // Add an explicit markdown-text-editor.theme containing a literal token.
-  // Per locked scope: explicit markdown theme must NOT have tokens resolved.
-  QVERIFY(writeUtf8(QDir(themeDir).filePath("markdown-text-editor.theme"),
-                    QStringLiteral("{ \"editor-styles\": { \"Text\": { \"text-color\": \"@palette#fg3_5\" } } }")));
-
-  QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(themeDir));
-  QVERIFY(theme);
-  QString out = theme->fetchMarkdownEditorStyle();
-  QVERIFY2(out.contains(QStringLiteral("@palette#fg3_5")),
-           qPrintable(QStringLiteral("explicit markdown theme should NOT have tokens resolved; got: %1").arg(out)));
-}
-
-void TestTheme::testFetchMarkdownEditorStyle_fallbackResolvesTokens() {
-  QString src = findPureThemePath();
-  QVERIFY2(!src.isEmpty(), "pure theme fixture not found");
-
-  QTemporaryDir tmp;
-  QVERIFY(tmp.isValid());
-  QString themeDir = tmp.filePath("pure-fallback");
-  QVERIFY(copyDir(src, themeDir));
-
-  // Tokenize text-editor.theme. NO markdown-text-editor.theme present.
-  QVERIFY(writeUtf8(QDir(themeDir).filePath("text-editor.theme"),
-                    QStringLiteral("{ \"editor-styles\": { \"Text\": { \"text-color\": \"@palette#fg3_5\" } } }")));
-
-  QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(themeDir));
-  QVERIFY(theme);
-  QString out = theme->fetchMarkdownEditorStyle();
-  QVERIFY2(out.contains(QStringLiteral("\"#222222\"")),
-           qPrintable(QStringLiteral("fallback path should resolve tokens; got: %1").arg(out)));
 }
 
 } // namespace tests

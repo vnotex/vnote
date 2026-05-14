@@ -225,23 +225,6 @@ QString Theme::fetchTextEditorStyle() const {
   return content;
 }
 
-QString Theme::fetchMarkdownEditorStyle() const {
-  // If an explicit markdown-text-editor.theme exists in the theme folder,
-  // return its raw content (NO token resolution per locked scope).
-  // Otherwise, fall back to the resolved text-editor.theme content.
-  const QString explicitFile =
-      QDir(m_themeFolderPath).filePath(getFileName(File::MarkdownEditorStyle));
-  if (QFileInfo::exists(explicitFile)) {
-    QFile f(explicitFile);
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      qWarning() << "failed to open markdown editor style" << explicitFile;
-      return QString();
-    }
-    return QString::fromUtf8(f.readAll());
-  }
-  return fetchTextEditorStyle();
-}
-
 void Theme::translateStyleByPalette(const Palette &p_palette, QString &p_style) {
   QRegularExpression refRe("(\\s|:|\")@(\\w+(?:#\\w+)*)");
   const int prefixCapturedIdx = 1;
@@ -372,11 +355,6 @@ QString Theme::getFile(const QString &p_themeFolder, File p_fileType) {
   QDir dir(p_themeFolder);
   if (dir.exists(getFileName(p_fileType))) {
     return dir.filePath(getFileName(p_fileType));
-  } else if (p_fileType == File::MarkdownEditorStyle) {
-    // Fallback to text editor style.
-    if (dir.exists(getFileName(File::TextEditorStyle))) {
-      return dir.filePath(getFileName(File::TextEditorStyle));
-    }
   }
   return "";
 }
@@ -393,8 +371,6 @@ QString Theme::getFileName(File p_fileType) {
     return QStringLiteral("highlight.css");
   case File::TextEditorStyle:
     return QStringLiteral("text-editor.theme");
-  case File::MarkdownEditorStyle:
-    return QStringLiteral("markdown-text-editor.theme");
   case File::EditorHighlightStyle:
     return QStringLiteral("editor-highlight.theme");
   case File::MarkdownEditorHighlightStyle:

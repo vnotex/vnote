@@ -21,7 +21,6 @@ public:
     WebStyleSheet,
     HighlightStyleSheet,
     TextEditorStyle,
-    MarkdownEditorStyle,
     EditorHighlightStyle,
     MarkdownEditorHighlightStyle,
     Icon,
@@ -32,7 +31,6 @@ public:
 
   QString fetchWebStyleSheet() const;
   QString fetchTextEditorStyle() const;
-  QString fetchMarkdownEditorStyle() const;
 
   QString paletteColor(const QString &p_name) const;
 

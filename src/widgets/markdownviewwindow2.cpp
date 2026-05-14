@@ -244,7 +244,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   m_editorController->checkAndUpdateConfigRevision();
 
   auto *themeService = getServices().get<ThemeService>();
-  auto themeContent = themeService->fetchMarkdownEditorStyle();
+  auto themeContent = themeService->fetchTextEditorStyle();
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -965,7 +965,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
       themeService->getFile(Theme::File::HighlightStyleSheet));
 
   if (m_editor) {
-    auto themeContent = themeService->fetchMarkdownEditorStyle();
+    auto themeContent = themeService->fetchTextEditorStyle();
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
@@ -1003,7 +1003,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
 
   // ---- Editor refresh ----
   if (m_editor) {
-    auto themeContent = themeService->fetchMarkdownEditorStyle();
+    auto themeContent = themeService->fetchTextEditorStyle();
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
