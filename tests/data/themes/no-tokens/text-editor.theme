@@ -1,0 +1,6 @@
+{
+  "metadata": { "name": "NoTokens", "revision": 0, "type": "vtextedit" },
+  "editor-styles": {
+    "Text": { "text-color": "#000000", "background-color": "#ffffff" }
+  }
+}
