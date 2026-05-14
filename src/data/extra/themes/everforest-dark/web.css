@@ -1,15 +1,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-    color: #D3C6AA;
+    color: @base#normal#fg;
     line-height: 1.5;
     padding: 16px;
-    background-color: #2D353B;
+    background-color: @base#normal#bg;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #E67E80;
+    color: @palette#fg10;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -46,7 +46,7 @@ h6 {
 }
 
 a {
-    color: #7FBBB3;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -96,7 +96,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", monospace, "Courier New", sans-serif;
-    color: #D3C6AA;
+    color: @palette#fg_inline_code;
     word-break: break-word;
 }
 
@@ -104,8 +104,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #D3C6AA;
-    background-color: #2D353B;
+    color: @palette#fg_inline_code;
+    background-color: @palette#bg_code_block;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", monospace, "Courier New", sans-serif;
     white-space: pre;
@@ -121,14 +121,14 @@ aside {
 }
 
 blockquote {
-    color: #859289;
-    border-left: .5em solid #859289;
+    color: @palette#fg_blockquote;
+    border-left: .5em solid @palette#fg_blockquote;
     padding: 0 1em;
     margin-left: 0;
 }
 
 blockquote p {
-    color: #859289;
+    color: @palette#fg_blockquote;
 }
 
 hr {
@@ -137,7 +137,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background-color: #475258;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -147,25 +147,25 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #475258;
-   background-color: #343F44;
+   border-top: 1px solid @palette#border_table;
+   background-color: @base#content#bg;
    margin: 0;
    padding: 0;
 }
 
 table tr:hover {
-   background-color: #3D484D;
+   background-color: @palette#bg1_6;
 }
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #475258;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #475258;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
@@ -213,8 +213,8 @@ div.vx-plantuml-graph {
 }
 
 ::selection {
-  background-color: #543A48;
-  color: #D3C6AA;
+  background-color: @base#content#selection#bg;
+  color: @base#content#selection#fg;
 }
 
 ::-webkit-scrollbar {
@@ -255,12 +255,12 @@ div.vx-plantuml-graph {
 
 #vx-content span.vx-search-match {
     color: #232A2E;
-    background-color: #83C092;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
     color: #232A2E;
-    background-color: #A7C080;
+    background-color: @palette#bg_search_current;
 }
 
 .vx-alert{

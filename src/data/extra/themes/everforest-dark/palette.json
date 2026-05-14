@@ -50,7 +50,17 @@
         "bg10_7": "#3D484D",
         "bg10_8": "#475258",
         "bg11": "#543A48",
-        "bg3_45": "#3D484D"
+        "bg3_45": "#3D484D",
+        "fg_link": "#7FBBB3",
+        "fg_inline_code": "#D3C6AA",
+        "fg_blockquote": "#859289",
+        "bg_code_block": "#2D353B",
+        "bg_search": "#83C092",
+        "bg_search_current": "#A7C080",
+        "bg_search_incremental": "#D699B6",
+        "bg_mark": "#4D4C43",
+        "bg_hr": "#475258",
+        "border_table": "#475258"
     },
     "base": {
         "normal": {
