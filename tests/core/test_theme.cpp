@@ -3,7 +3,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QScopedPointer>
 #include <QTemporaryDir>
 
@@ -26,6 +28,12 @@ private slots:
   void testFetchWebStyleSheet_emptyPathReturnsEmpty();
   void testFetchWebStyleSheet_noTokensUnchanged();
   void testFetchTextEditorStyle_noTokensUnchanged();
+  void testThemeFullyResolved_pure();
+  void testThemeFullyResolved_everforestDark();
+  void testThemeFullyResolved_moonlight();
+  void testEditorWebConceptParity_pure();
+  void testEditorWebConceptParity_everforestDark();
+  void testEditorWebConceptParity_moonlight();
 };
 
 void TestTheme::initTestCase() {}
@@ -100,6 +108,39 @@ QString findNoTokenFixturePath() {
     p = QFINDTESTDATA("tests/data/themes/no-tokens");
   }
   return p;
+}
+
+// Helper: locate a packaged theme directory by name (e.g. "pure", "everforest-dark", "moonlight").
+QString findThemePath(const QString &p_themeName) {
+  QString p = QFINDTESTDATA(QStringLiteral("../../src/data/extra/themes/%1").arg(p_themeName));
+  if (p.isEmpty()) {
+    p = QFINDTESTDATA(QStringLiteral("src/data/extra/themes/%1").arg(p_themeName));
+  }
+  return p;
+}
+
+// Helper: returns the value of `p_property` in the FIRST CSS block whose selector
+// matches `p_selector` exactly (whitespace-tolerant). Trims whitespace. Returns
+// an empty string when no match is found. Case-sensitive property name.
+QString extractCssColor(const QString &p_css, const QString &p_selector, const QString &p_property) {
+  // Match the selector text exactly, anchored either at start-of-content or after `}`.
+  // Capture the block body up to the next `}`.
+  QRegularExpression re(QStringLiteral("(?:^|\\})\\s*%1\\s*\\{([^}]*)\\}")
+                            .arg(QRegularExpression::escape(p_selector)));
+  auto match = re.match(p_css);
+  if (!match.hasMatch()) {
+    return QString();
+  }
+  const QString block = match.captured(1);
+  // Use a negative lookbehind so `color` does not accidentally match the
+  // `color` segment inside `background-color`.
+  QRegularExpression propRe(QStringLiteral("(?<![-\\w])%1\\s*:\\s*([^;}]+)")
+                                .arg(QRegularExpression::escape(p_property)));
+  auto pmatch = propRe.match(block);
+  if (!pmatch.hasMatch()) {
+    return QString();
+  }
+  return pmatch.captured(1).trimmed();
 }
 
 bool copyDir(const QString &src, const QString &dst) {
@@ -219,6 +260,167 @@ void TestTheme::testFetchTextEditorStyle_noTokensUnchanged() {
   QString raw = QString::fromUtf8(rawFile.readAll());
 
   QCOMPARE(out, raw);
+}
+
+// -------- Cross-theme regression: full token resolution --------
+
+namespace {
+// Common assertion body for "fully resolved" tests.
+void assertThemeFullyResolved(const QString &p_themeName) {
+  QString src = findThemePath(p_themeName);
+  QVERIFY2(!src.isEmpty(), qPrintable(QStringLiteral("theme '%1' not found").arg(p_themeName)));
+  QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(src));
+  QVERIFY(theme);
+
+  QString css = theme->fetchWebStyleSheet();
+  QString json = theme->fetchTextEditorStyle();
+
+  QVERIFY2(!css.contains(QStringLiteral("@palette#")),
+           qPrintable(QStringLiteral("%1 web.css has unresolved @palette# tokens:\n")
+                          .arg(p_themeName) +
+                      css.left(500)));
+  QVERIFY2(!css.contains(QStringLiteral("@base#")),
+           qPrintable(QStringLiteral("%1 web.css has unresolved @base# tokens:\n")
+                          .arg(p_themeName) +
+                      css.left(500)));
+  QVERIFY2(!json.contains(QStringLiteral("@palette#")),
+           qPrintable(QStringLiteral("%1 text-editor.theme has unresolved @palette# tokens:\n")
+                          .arg(p_themeName) +
+                      json.left(500)));
+  QVERIFY2(!json.contains(QStringLiteral("@base#")),
+           qPrintable(
+               QStringLiteral("%1 text-editor.theme has unresolved @base# tokens").arg(p_themeName)));
+
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8(), &err);
+  QVERIFY2(err.error == QJsonParseError::NoError,
+           qPrintable(QStringLiteral("%1 text-editor.theme failed to parse after resolution: ")
+                          .arg(p_themeName) +
+                      err.errorString()));
+  QVERIFY(doc.isObject());
+}
+
+// Common assertion body for editor/web concept-color parity tests.
+struct ParityExpected {
+  QString heading;
+  QString link;
+  QString inlineCode;
+  QString blockquote;
+  QString searchBg;
+  QString currentSearchBg;
+};
+
+void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpected &p_exp) {
+  QString src = findThemePath(p_themeName);
+  QVERIFY2(!src.isEmpty(), qPrintable(QStringLiteral("theme '%1' not found").arg(p_themeName)));
+  QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(src));
+  QVERIFY(theme);
+
+  QString css = theme->fetchWebStyleSheet();
+  QString json = theme->fetchTextEditorStyle();
+
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8(), &err);
+  QVERIFY2(err.error == QJsonParseError::NoError, qPrintable(err.errorString()));
+  QJsonObject root = doc.object();
+  QJsonObject syntax = root[QStringLiteral("markdown-syntax-styles")].toObject();
+  QJsonObject editorStyles = root[QStringLiteral("editor-styles")].toObject();
+
+  // Heading: h1..h6 combined rule on the web side, H1 syntax style on the editor side.
+  QString webHeading = extractCssColor(
+      css, QStringLiteral("h1, h2, h3, h4, h5, h6"), QStringLiteral("color"));
+  QString editorHeading =
+      syntax[QStringLiteral("H1")].toObject()[QStringLiteral("text-color")].toString();
+  QCOMPARE(editorHeading, webHeading);
+  QCOMPARE(editorHeading, p_exp.heading);
+
+  // Link
+  QString webLink = extractCssColor(css, QStringLiteral("a"), QStringLiteral("color"));
+  QString editorLink =
+      syntax[QStringLiteral("LINK")].toObject()[QStringLiteral("text-color")].toString();
+  QCOMPARE(editorLink, webLink);
+  QCOMPARE(editorLink, p_exp.link);
+
+  // Inline code (first occurrence of `code { ... }` -- not `pre code`).
+  QString webInlineCode = extractCssColor(css, QStringLiteral("code"), QStringLiteral("color"));
+  QString editorInlineCode =
+      syntax[QStringLiteral("CODE")].toObject()[QStringLiteral("text-color")].toString();
+  QCOMPARE(editorInlineCode, webInlineCode);
+  QCOMPARE(editorInlineCode, p_exp.inlineCode);
+
+  // Blockquote
+  QString webBlockquote =
+      extractCssColor(css, QStringLiteral("blockquote"), QStringLiteral("color"));
+  QString editorBlockquote =
+      syntax[QStringLiteral("BLOCKQUOTE")].toObject()[QStringLiteral("text-color")].toString();
+  QCOMPARE(editorBlockquote, webBlockquote);
+  QCOMPARE(editorBlockquote, p_exp.blockquote);
+
+  // Search match bg
+  QString webSearchBg = extractCssColor(css,
+                                        QStringLiteral("#vx-content span.vx-search-match"),
+                                        QStringLiteral("background-color"));
+  QString editorSearchBg = editorStyles[QStringLiteral("Search")]
+                               .toObject()[QStringLiteral("background-color")]
+                               .toString();
+  QCOMPARE(editorSearchBg, webSearchBg);
+  QCOMPARE(editorSearchBg, p_exp.searchBg);
+
+  // Current search match bg
+  QString webCurrentBg = extractCssColor(css,
+                                         QStringLiteral("#vx-content span.vx-current-search-match"),
+                                         QStringLiteral("background-color"));
+  QString editorCurrentBg = editorStyles[QStringLiteral("SearchUnderCursor")]
+                                .toObject()[QStringLiteral("background-color")]
+                                .toString();
+  QCOMPARE(editorCurrentBg, webCurrentBg);
+  QCOMPARE(editorCurrentBg, p_exp.currentSearchBg);
+}
+} // anonymous namespace
+
+void TestTheme::testThemeFullyResolved_pure() {
+  assertThemeFullyResolved(QStringLiteral("pure"));
+}
+
+void TestTheme::testThemeFullyResolved_everforestDark() {
+  assertThemeFullyResolved(QStringLiteral("everforest-dark"));
+}
+
+void TestTheme::testThemeFullyResolved_moonlight() {
+  assertThemeFullyResolved(QStringLiteral("moonlight"));
+}
+
+void TestTheme::testEditorWebConceptParity_pure() {
+  ParityExpected exp;
+  exp.heading = QStringLiteral("#222222");
+  exp.link = QStringLiteral("#0099ff");
+  exp.inlineCode = QStringLiteral("#8e24aa");
+  exp.blockquote = QStringLiteral("#666666");
+  exp.searchBg = QStringLiteral("#4db6ac");
+  exp.currentSearchBg = QStringLiteral("#66bb6a");
+  assertEditorWebConceptParity(QStringLiteral("pure"), exp);
+}
+
+void TestTheme::testEditorWebConceptParity_everforestDark() {
+  ParityExpected exp;
+  exp.heading = QStringLiteral("#E67E80");
+  exp.link = QStringLiteral("#7FBBB3");
+  exp.inlineCode = QStringLiteral("#D3C6AA");
+  exp.blockquote = QStringLiteral("#859289");
+  exp.searchBg = QStringLiteral("#83C092");
+  exp.currentSearchBg = QStringLiteral("#A7C080");
+  assertEditorWebConceptParity(QStringLiteral("everforest-dark"), exp);
+}
+
+void TestTheme::testEditorWebConceptParity_moonlight() {
+  ParityExpected exp;
+  exp.heading = QStringLiteral("#e06c75");
+  exp.link = QStringLiteral("#61afef");
+  exp.inlineCode = QStringLiteral("#98c379");
+  exp.blockquote = QStringLiteral("#abb2bf");
+  exp.searchBg = QStringLiteral("#4db6ac");
+  exp.currentSearchBg = QStringLiteral("#66bb6a");
+  assertEditorWebConceptParity(QStringLiteral("moonlight"), exp);
 }
 
 } // namespace tests
