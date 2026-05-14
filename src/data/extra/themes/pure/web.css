@@ -1,15 +1,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
-    color: #222222;
+    color: @base#normal#fg;
     line-height: 1.5;
     padding: 16px;
-    background-color: #ffffff;
+    background-color: @base#content#bg;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #222222;
+    color: @base#normal#fg;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -49,7 +49,7 @@ h6 {
 }
 
 a {
-    color: #0099ff;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -94,7 +94,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
-    color: #8e24aa;
+    color: @palette#fg_inline_code;
     word-break: break-word;
 }
 
@@ -102,8 +102,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #222222;
-    background-color: #e0e0e0;
+    color: @base#normal#fg;
+    background-color: @palette#bg_code_block;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     white-space: pre;
@@ -119,13 +119,13 @@ aside {
 }
 
 blockquote {
-    color: #666666;
-    border-left: .5em solid #7a7a7a;
+    color: @palette#fg_blockquote;
+    border-left: .5em solid @palette#fg3_7;
     padding: 0 1em;
 }
 
 blockquote p {
-    color: #666666;
+    color: @palette#fg_blockquote;
 }
 
 hr {
@@ -134,7 +134,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background-color: #999999;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -144,25 +144,25 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #cccccc;
-   background-color: #ffffff;
+   border-top: 1px solid @palette#border_table;
+   background-color: @base#content#bg;
    margin: 0;
    padding: 0;
 }
 
 table tr:hover {
-   background-color: #dadada;
+   background-color: @palette#bg3_4;
 }
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #cccccc;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #cccccc;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
@@ -202,8 +202,8 @@ div.vx-plantuml-graph {
 }
 
 ::selection {
-  background-color: #1976d2;
-  color: #ffffff;
+  background-color: @base#content#selection#bg;
+  color: @base#content#selection#fg;
 }
 
 ::-webkit-scrollbar {
@@ -243,13 +243,13 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #222222;
-    background-color: #4db6ac;
+    color: @base#normal#fg;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #222222;
-    background-color: #66bb6a;
+    color: @base#normal#fg;
+    background-color: @palette#bg_search_current;
 }
 
 .vx-alert{

@@ -9,10 +9,10 @@
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
             "font-size" : 12,
-            "text-color" : "#222222",
-            "background-color" : "#ffffff",
-            "selected-text-color" : "#ffffff",
-            "selected-background-color" : "#1976d2"
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@base#content#bg",
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
         },
         "CursorLine" : {
             "background-color" : "#c5cae9"
@@ -25,7 +25,7 @@
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "background-color" : "#dfdf00"
         },
         "IndicatorsBorder" : {
@@ -33,7 +33,7 @@
             "background-color" : "#fafafa"
         },
         "CurrentLineNumber" : {
-            "text-color" : "#222222"
+            "text-color" : "@base#normal#fg"
         },
         "Folding" : {
             "text-color" : "#6495ed"
@@ -49,18 +49,18 @@
         },
         "IncrementalSearch" : {
             "//comment" : "Incremental search highlight",
-            "text-color" : "#222222",
-            "background-color" : "#ce93d8"
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search_incremental"
         },
         "Search" : {
             "//comment" : "Search highlight",
-            "text-color" : "#222222",
-            "background-color" : "#4db6ac"
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search"
         },
         "SearchUnderCursor" : {
             "//comment" : "Search highlight under cursor",
-            "text-color" : "#222222",
-            "background-color" : "#66bb6a"
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search_current"
         }
     },
     "//comment" : "Override the Text style in editor-styles",
@@ -69,45 +69,45 @@
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size" : 12,
-            "text-color" : "#222222",
-            "background-color" : "#ffffff",
-            "selected-text-color" : "#ffffff",
-            "selected-background-color" : "#1976d2"
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@base#content#bg",
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
         }
     },
     "markdown-syntax-styles" : {
         "H1" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "bold" : true,
             "font-size" : 17
         },
         "H2" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "bold" : true,
             "font-size" : 16
         },
         "H3" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "bold" : true,
             "font-size" : 15
         },
         "H4" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "bold" : true,
             "font-size" : 14
         },
         "H5" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "bold" : true,
             "font-size" : 13
         },
         "H6" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "bold" : true,
             "font-size" : 12
         },
         "HRULE" : {
-            "text-color" : "#222222",
+            "text-color" : "@base#normal#fg",
             "background-color" : "#dac7c9"
         },
         "LIST_BULLET" : {
@@ -118,13 +118,13 @@
             "text-color" : "#0000ff"
         },
         "LINK" : {
-            "text-color" : "#005fff"
+            "text-color" : "@palette#fg_link"
         },
         "AUTO_LINK_URL" : {
-            "text-color" : "#005fff"
+            "text-color" : "@palette#fg_link"
         },
         "AUTO_LINK_EMAIL" : {
-            "text-color" : "#005fff"
+            "text-color" : "@palette#fg_link"
         },
         "IMAGE" : {
             "text-color" : "#616161"
@@ -133,7 +133,7 @@
             "text-color" : "#826200"
         },
         "CODE" : {
-            "text-color" : "#8e24aa",
+            "text-color" : "@palette#fg_inline_code",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "EMPH" : {
@@ -164,13 +164,13 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "BLOCKQUOTE" : {
-            "text-color" : "#00af00"
+            "text-color" : "@palette#fg_blockquote"
         },
         "NOTE" : {
             "text-color" : "#0087b5"
         },
         "STRIKE" : {
-            "text-color" : "#b71c1c",
+            "text-color" : "@palette#fg10",
             "strike-through" : true
         },
         "FRONTMATTER" : {
@@ -185,8 +185,8 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
-            "text-color" : "#222222",
-            "background-color" : "#ffff76"
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_mark"
         },
         "TABLE" : {
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"

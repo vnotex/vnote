@@ -40,7 +40,17 @@
         "fg15_3" : "#b0b0b0",
         "fg15_4" : "#7a7a7a",
         "fg15_5" : "#222222",
-        "bg11" : "#1976d2"
+        "bg11" : "#1976d2",
+        "fg_link" : "#0099ff",
+        "fg_inline_code" : "#8e24aa",
+        "fg_blockquote" : "#666666",
+        "bg_code_block" : "#e0e0e0",
+        "bg_search" : "#4db6ac",
+        "bg_search_current" : "#66bb6a",
+        "bg_search_incremental" : "#ce93d8",
+        "bg_mark" : "#ffff76",
+        "bg_hr" : "#999999",
+        "border_table" : "#cccccc"
     },
     "base" : {
         "normal" : {
