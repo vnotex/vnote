@@ -116,7 +116,15 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services, QWi
   }
 
   // Set window title for clarity.
-  setWindowTitle(tr("Configure Git Sync"));
+  setWindowTitle(tr("Configure Sync"));
+
+  // Override the "leave blank to keep existing" hint that setupUI() sets
+  // by default — there's no existing PAT for a brand-new notebook.
+  if (m_patEdit) {
+    m_patEdit->setPlaceholderText(QString());
+    m_patEdit->setToolTip(
+        tr("Personal Access Token used to authenticate against the remote (optional)."));
+  }
 
   // m_controller remains nullptr — this signals pre-create mode to
   // acceptedButtonClicked, which bypasses applyChanges.
@@ -253,6 +261,20 @@ void NotebookSyncInfoDialog2::setBootstrapMode(bool p_enabled) {
   }
 
   refreshDirtyButtons();
+}
+
+void NotebookSyncInfoDialog2::setPreCreateNotebookName(const QString &p_name) {
+  if (!m_notebookNameLabel) {
+    return;
+  }
+
+  const QString name = p_name.trimmed();
+  if (name.isEmpty()) {
+    m_notebookNameLabel->hide();
+  } else {
+    m_notebookNameLabel->setText(name);
+    m_notebookNameLabel->show();
+  }
 }
 
 bool NotebookSyncInfoDialog2::changesPending() const {

@@ -313,6 +313,8 @@ void NewNotebookDialog2::onConfigureSyncClicked() {
   // m_pendingPat in acceptedButtonClicked() to perform create+bootstrap
   // atomically.
   NotebookSyncInfoDialog2 dlg(m_services, this);
+  const QString notebookName = m_nameEdit->evaluatedText().trimmed();
+  dlg.setPreCreateNotebookName(notebookName);
   if (dlg.exec() == QDialog::Accepted) {
     m_pendingRemoteUrl = dlg.enteredRemoteUrl().trimmed();
     m_pendingPat = dlg.enteredPat();

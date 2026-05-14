@@ -57,6 +57,11 @@ public:
   // in this mode; values are read back via enteredRemoteUrl()/enteredPat().
   explicit NotebookSyncInfoDialog2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
+  // Set the notebook name to display in the pre-create dialog header.
+  // Only meaningful when isPreCreateMode() is true. If p_name is empty,
+  // the notebook name label is hidden.
+  void setPreCreateNotebookName(const QString &p_name);
+
   // Toggle bootstrap mode. In bootstrap mode the dialog represents an initial
   // setup (post-create), the Disable/Apply/Reset buttons are hidden, and the
   // Ok button is relabeled to "Bootstrap". Also sets a dynamic Qt property
