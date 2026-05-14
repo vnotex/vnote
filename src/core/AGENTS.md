@@ -244,6 +244,78 @@ body {
 - Consumers (`MarkdownViewWindow2`, `TextViewWindow2`) pass the resolved string content directly into `vte::Theme::createThemeFromContent()` and `HtmlTemplateService::updateMarkdownViewerTemplate()`. Both were updated to accept content rather than file paths.
 - This capability is **opt-in**: existing themes do not need any changes. New themes can adopt tokens incrementally per file.
 
+## Theme Token Conversion Convention
+
+Theme authors should use palette tokens to share colors between `web.css` and `text-editor.theme`. This convention has been demonstrated on 3 themes (pure, everforest-dark, moonlight) as a pilot. The remaining 7 themes ship hardcoded hex and will convert in future tasks.
+
+### Naming Convention
+
+Tokens follow a flat naming scheme with semantic prefixes that describe the concept being colored, not the syntax category:
+
+| Prefix | Purpose | Example tokens |
+|---|---|---|
+| `fg_<concept>` | text color | `fg_link`, `fg_inline_code`, `fg_blockquote`, `fg_heading` |
+| `bg_<concept>` | background color | `bg_code_block`, `bg_search`, `bg_search_current`, `bg_search_incremental`, `bg_mark`, `bg_hr` |
+| `border_<concept>` | border color | `border_table` |
+
+### Semantic `@base#...` vs Raw `@palette#...`
+
+Prefer semantic `@base#...` tokens when the theme's `base` mappings actually resolve to the value being substituted. Each theme MUST be preflight-verified before substitution because not all themes use the same role names.
+
+Common semantic uses:
+
+- `@base#normal#fg` or `@base#content#fg` for body text color (depends on theme: pure uses `normal`, moonlight uses `content`).
+- `@base#content#bg` for body background color.
+- `@base#content#selection#fg` and `@base#content#selection#bg` for selection foreground and background.
+
+If the theme's `base` mapping does NOT match the value being replaced, fall back to a raw `@palette#xxx` reference instead.
+
+### Per-Concept Opt-Out Matrix
+
+The viewer (`web.css`) color wins by default for shared concepts. A theme may opt out per concept to preserve source-syntax distinction inside the editor:
+
+| Theme | Concept | Decision |
+|---|---|---|
+| pure | FENCEDCODEBLOCK + VERBATIM | OPT-OUT (keep editor purple `#673ab7` to distinguish source code from prose) |
+| everforest-dark | FENCEDCODEBLOCK + VERBATIM | OPT-OUT (keep editor green `#A7C080` to distinguish source code from prose) |
+| moonlight | (none) | UNIFIED (editor and web both already used `#98c379`) |
+
+Authors should document any opt-out decision in the plan or commit message with a one-line rationale so future contributors understand why a token was not adopted.
+
+### Out-of-Scope Items
+
+The conversion pilot does NOT tokenize:
+
+- Editor chrome: `CursorLine`, `TrailingSpace`, `Tab`, `IndicatorsBorder`, `Folding`, `FoldedFolding`, `FoldingHighlight`, `FoldedFoldingRangeLine`.
+- Font families, font sizes, padding, margin, line-height, border-radius.
+- Alert system (`.vx-alert*`, `.alert-*`).
+- Graph backgrounds (`div.vx-mermaid-graph` and similar).
+- Scrollbar `rgba(...)` values (the token regex does not accept `(` as a prefix character).
+- CSS named colors (`purple`, `transparent`, `currentColor`).
+- CSS comments (`/* ... */`).
+- Source-text concepts with no rendered HTML analog: `LIST_BULLET`, `LIST_ENUMERATOR`, `IMAGE`, `REFERENCE`, `HTML_ENTITY`, `HTML`, `HTMLBLOCK`, `COMMENT`, `NOTE`, `FRONTMATTER`, `INLINEEQUATION`, `DISPLAYFORMULA`, `TABLEBORDER`.
+
+### Verification Template
+
+When converting a new theme, add 2 tests to `tests/core/test_theme.cpp`:
+
+- `testThemeFullyResolved_<name>()`: asserts that the resolved `web.css` and `text-editor.theme` contain no `@palette#` or `@base#` substrings, and that the resolved JSON still parses cleanly.
+- `testEditorWebConceptParity_<name>()`: asserts that resolved editor concept colors equal resolved viewer concept colors for heading, link, inline code, blockquote, search match background, and current search background.
+
+### Token Regex Limitations
+
+The token resolver `Theme::translateStyleByPalette` in `src/core/theme.cpp` requires the `@` character to be preceded by whitespace, a colon, or a double-quote. Consequences:
+
+- Tokens cannot appear inside `rgba(...)` because `(` is not an accepted prefix.
+- Tokens cannot appear in CSS at-rules like `@media` or `@font-face`.
+- Tokens MUST be quoted strings in JSON: `"text-color": "@palette#fg_link"`, not `"text-color": @palette#fg_link`.
+- The palette section is NOT token-resolved. All entries in the `palette` object of `palette.json` must be literal hex; aliases like `"fg_link": "@palette#bg11"` will fail. Reference: comment at `src/core/theme.cpp:107` "Skip paletteSection since it will not contain any reference."
+- Tokens inside `/* */` CSS comments would still be resolved by the regex, so keep tokens out of comments to avoid confusing the resolver.
+
+### Reference
+
+For per-theme conversion matrices used by the pilot (which palette key maps to which CSS concept on each theme), see `.sisyphus/plans/theme-token-pilot.md` (Tasks 3, 4, 5).
+
 ## Plugin Hook System (WordPress-style)
 
 VNote implements a WordPress-inspired hook system for plugin extensibility. This enables plugins to:
