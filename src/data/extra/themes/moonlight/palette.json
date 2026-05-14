@@ -55,7 +55,18 @@
         "bg10_7" : "#444b58",
         "bg10_8" : "#5a5f66",
         "bg11" : "#0c7bff",
-        "bg3_45" : "#3b424c"
+        "bg3_45" : "#3b424c",
+        "fg_link" : "#61afef",
+        "fg_inline_code" : "#98c379",
+        "fg_blockquote" : "#abb2bf",
+        "fg_heading" : "#e06c75",
+        "bg_code_block" : "#2d323b",
+        "bg_search" : "#4db6ac",
+        "bg_search_current" : "#66bb6a",
+        "bg_search_incremental" : "#ce93d8",
+        "bg_mark" : "#898900",
+        "bg_hr" : "#4c5562",
+        "border_table" : "#4c5562"
     },
     "base" : {
         "normal" : {
