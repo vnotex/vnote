@@ -92,6 +92,16 @@ QString findPureThemePath() {
   return p;
 }
 
+// Helper: locate the no-token fixture directory.
+// This fixture is guaranteed to never have tokens, suitable for byte-identity tests.
+QString findNoTokenFixturePath() {
+  QString p = QFINDTESTDATA("../data/themes/no-tokens");
+  if (p.isEmpty()) {
+    p = QFINDTESTDATA("tests/data/themes/no-tokens");
+  }
+  return p;
+}
+
 bool copyDir(const QString &src, const QString &dst) {
   QDir().mkpath(dst);
   QDir s(src);
@@ -181,8 +191,8 @@ void TestTheme::testFetchWebStyleSheet_emptyPathReturnsEmpty() {
 }
 
 void TestTheme::testFetchWebStyleSheet_noTokensUnchanged() {
-  QString src = findPureThemePath();
-  QVERIFY2(!src.isEmpty(), "pure theme fixture not found");
+  QString src = findNoTokenFixturePath();
+  QVERIFY2(!src.isEmpty(), "no-token fixture not found");
 
   QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(src));
   QVERIFY(theme);
@@ -197,8 +207,8 @@ void TestTheme::testFetchWebStyleSheet_noTokensUnchanged() {
 }
 
 void TestTheme::testFetchTextEditorStyle_noTokensUnchanged() {
-  QString src = findPureThemePath();
-  QVERIFY2(!src.isEmpty(), "pure theme fixture not found");
+  QString src = findNoTokenFixturePath();
+  QVERIFY2(!src.isEmpty(), "no-token fixture not found");
 
   QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(src));
   QVERIFY(theme);
