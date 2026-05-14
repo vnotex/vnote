@@ -24,6 +24,7 @@ class ServiceLocator;
 // Layout (top to bottom):
 //   * Notebook         (read-only label)
 //   * Remote URL       (editable QLineEdit)
+//   * (italic hint reminding that the remote repo must already exist)
 //   * Personal Access Token (editable, password-masked QLineEdit; placeholder
 //                       prompts user to leave blank to keep the existing PAT)
 //   * Last Sync        (read-only label)
@@ -131,6 +132,7 @@ private:
   // Read-only labels and editable inputs.
   QLabel *m_notebookNameLabel = nullptr;
   QLineEdit *m_remoteUrlEdit = nullptr;
+  QLabel *m_remoteUrlHintLabel = nullptr;
   QLineEdit *m_patEdit = nullptr;
   QLabel *m_lastSyncLabel = nullptr;
   QLabel *m_currentStateLabel = nullptr;

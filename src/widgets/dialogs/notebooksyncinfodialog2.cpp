@@ -25,6 +25,7 @@ namespace {
 // QObject names that tests use to discover widgets via findChild<>(). MUST be
 // kept in sync with the documentation in the dialog header.
 const char *const kRemoteUrlEditName = "remoteUrlEdit";
+const char *const kRemoteUrlHintLabelName = "remoteUrlHintLabel";
 const char *const kPatEditName = "patEdit";
 const char *const kLastSyncLabelName = "lastSyncLabel";
 const char *const kCurrentStateLabelName = "currentStateLabel";
@@ -148,6 +149,19 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_remoteUrlEdit->setToolTip(tr("Remote git repository URL used for syncing this notebook."));
   formLayout->addRow(tr("Remote URL:"), m_remoteUrlEdit);
   connect(m_remoteUrlEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
+
+  // 2b. Remote URL prerequisite hint (visible in both legacy and pre-create
+  // modes). The bootstrap/git_sync backend requires the remote repository to
+  // already exist on the Git host; a missing repo returns libgit2 404 and the
+  // failed-bootstrap rollback can leave inconsistent local state. The hint
+  // makes this prerequisite discoverable in the UI.
+  m_remoteUrlHintLabel = new QLabel(centralWidget);
+  m_remoteUrlHintLabel->setObjectName(QString::fromLatin1(kRemoteUrlHintLabelName));
+  m_remoteUrlHintLabel->setText(
+      tr("The remote repository must already exist. Create an empty repo on your Git host first."));
+  m_remoteUrlHintLabel->setWordWrap(true);
+  m_remoteUrlHintLabel->setStyleSheet(QStringLiteral("color: gray; font-style: italic;"));
+  formLayout->addRow(QString(), m_remoteUrlHintLabel);
 
   // 3. PAT (editable, password-masked, NEVER prefilled).
   m_patEdit = WidgetsFactory::createLineEdit(centralWidget);
