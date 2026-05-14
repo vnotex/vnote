@@ -72,7 +72,6 @@ private:
 
   // Result.
   QString m_newNotebookId;
-  QString m_selectedSyncMethod;
 };
 
 } // namespace vnotex
