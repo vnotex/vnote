@@ -8,6 +8,20 @@ See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for controll
 
 See [MVC Example](../../AGENTS.md#mvc-example-notebook-node-operations) for the Controller → View → Model flow.
 
+## Multi-Target Actions with Dialogs (Batch Pattern)
+
+When adding a multi-target action that requires user input via a dialog, the MVC layers have distinct responsibilities:
+
+| Layer | Owns | Forbidden |
+|---|---|---|
+| **Controller** (`NotebookNodeController`) | Decides "an action was requested on this list of nodes"; emits ONE list signal per request. Runs no UI; uses no `QDialog`. | Showing dialogs. Looping a per-id signal. Holding dialog state. |
+| **View** (`NotebookExplorer2` + its explorers) | Receives the list signal, shows ONE dialog seeded with sensible defaults, then iterates the list and invokes the existing per-id apply path. Owns all `QDialog` instances. | Looping the controller's emit. Owning business state. Direct service calls bypassing controller. |
+| **Model** (notebook node store via vxcore services) | Per-id apply primitives (`handleMarkResult`, etc.) remain single-target and idempotent. | Knowing about selections, dialogs, or batches. |
+
+**Rule for new actions**: When adding a multi-target action that requires user input via a dialog, the request signal MUST take `QList<NodeIdentifier>` (even when size is 1); the View slot MUST show ONE dialog; the apply path MUST stay per-id and be looped in the slot. **Use ONE method/signal name per action — widen the signature rather than introducing parallel singular/plural variants.** NEVER define a per-id signal that the view will fire N dialogs from.
+
+**Audit summary**: As of 2026-05-16, the only multi-target action that previously violated this rule was Mark; its `markRequested` signal was widened to `QList<NodeIdentifier>` (same name, one method) per the contract.
+
 ## Controller Inventory
 
 | Controller | Purpose |
