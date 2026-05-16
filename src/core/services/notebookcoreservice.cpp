@@ -394,6 +394,8 @@ qint64 NotebookCoreService::getLastSyncUtc(const QString &p_notebookId) const {
 // Folder operations.
 QString NotebookCoreService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
                                           const QString &p_folderName) {
+  qCDebug(syncCategory) << "NotebookCoreService::createFolder: entry notebookId:" << p_notebookId
+                        << "parentPath:" << p_parentPath << "name:" << p_folderName;
   if (!checkContext()) {
     return QString();
   }
@@ -402,6 +404,9 @@ QString NotebookCoreService::createFolder(const QString &p_notebookId, const QSt
   VxCoreError err = vxcore_folder_create(m_context, p_notebookId.toUtf8().constData(),
                                          p_parentPath.toUtf8().constData(),
                                          p_folderName.toUtf8().constData(), &folderId);
+  qCDebug(syncCategory) << "NotebookCoreService::createFolder: vxResult:" << static_cast<int>(err)
+                        << "newFolderId:"
+                        << (folderId ? QString::fromUtf8(folderId) : QStringLiteral("(null)"));
   if (err != VXCORE_OK) {
     qWarning() << "createFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();

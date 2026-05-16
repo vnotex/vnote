@@ -1523,6 +1523,9 @@ void NotebookExplorer2::onSyncButtonClicked() {
   if (syncReady) {
     syncSvc->triggerSyncNow(nbId);
   } else {
+    qCDebug(syncCategory)
+        << "NotebookExplorer2::onSyncButtonClicked: syncReady=false, opening bootstrap dialog"
+        << "notebookId:" << nbId;
     auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     dlg->setBootstrapMode(true);

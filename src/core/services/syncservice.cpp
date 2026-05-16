@@ -391,6 +391,9 @@ void SyncService::onWorkerSyncStarted(const QString &p_notebookId) {
 }
 
 void SyncService::onWorkerSyncFinished(const QString &p_notebookId, VxCoreError p_result) {
+  qCDebug(syncCategory) << "SyncService::onWorkerSyncFinished: notebookId:" << p_notebookId
+                        << "result:" << static_cast<int>(p_result)
+                        << "message:" << vxErrorToString(p_result);
   setInProgress(p_notebookId, false);
   emit syncFinished(p_notebookId, p_result);
 }
