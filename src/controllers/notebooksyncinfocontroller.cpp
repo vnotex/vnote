@@ -1,7 +1,9 @@
 #include "notebooksyncinfocontroller.h"
 
+#include <QDateTime>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
@@ -50,8 +52,11 @@ QString NotebookSyncInfoController::lastSyncTime() const {
   if (!notebookSvc) {
     return QString();
   }
-  const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
-  return cfg.value(QStringLiteral("lastSyncIso")).toString();
+  const qint64 millis = notebookSvc->getLastSyncUtc(m_notebookId);
+  if (millis <= 0) {
+    return QString();
+  }
+  return QLocale::system().toString(QDateTime::fromMSecsSinceEpoch(millis), QLocale::ShortFormat);
 }
 
 void NotebookSyncInfoController::loadInitialData() {
@@ -64,7 +69,14 @@ void NotebookSyncInfoController::loadInitialData() {
   const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
   const QString name = cfg.value(QStringLiteral("name")).toString();
   const QString url = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
-  const QString lastSync = cfg.value(QStringLiteral("lastSyncIso")).toString();
+  // Last sync timestamp is per-device and lives in metadata.db (NOT in the
+  // notebook config JSON, which would self-sync). Read via vxcore C API.
+  const qint64 lastSyncMillis = notebookSvc->getLastSyncUtc(m_notebookId);
+  QString lastSync;
+  if (lastSyncMillis > 0) {
+    lastSync = QLocale::system().toString(QDateTime::fromMSecsSinceEpoch(lastSyncMillis),
+                                          QLocale::ShortFormat);
+  }
 
   // Cache the URL so applyChanges() can detect whether the user changed it.
   m_currentRemoteUrl = url;

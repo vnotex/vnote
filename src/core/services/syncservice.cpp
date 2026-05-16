@@ -1,9 +1,11 @@
 #include "syncservice.h"
 
 #include <QApplication>
+#include <QDateTime>
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QMutexLocker>
@@ -360,8 +362,12 @@ QString SyncService::lastSyncTime(const QString &p_notebookId) const {
   if (!m_notebookCoreService) {
     return QString();
   }
-  const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-  return cfg.value(QStringLiteral("lastSyncIso")).toString();
+  // Per-device timestamp from metadata.db (NOT NotebookConfig JSON).
+  const qint64 millis = m_notebookCoreService->getLastSyncUtc(p_notebookId);
+  if (millis <= 0) {
+    return QString();
+  }
+  return QLocale::system().toString(QDateTime::fromMSecsSinceEpoch(millis), QLocale::ShortFormat);
 }
 
 void SyncService::testSetInProgress(const QString &p_notebookId, bool p_value) {

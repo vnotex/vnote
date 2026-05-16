@@ -108,9 +108,10 @@ public:
   // if the user hasn't finished the bootstrap flow.
   bool isSyncReady(const QString &p_notebookId) const;
 
-  // Returns the persisted ISO-8601 last-sync time from the notebook config
-  // ("lastSyncIso" key), or empty if not set. T14 will populate this; T7 just
-  // reads it for completeness.
+  // Returns the per-device last successful sync timestamp formatted as a
+  // locale-aware short string (via NotebookCoreService::getLastSyncUtc, which
+  // reads metadata.db). Empty if the notebook has never been successfully
+  // synced on this device.
   QString lastSyncTime(const QString &p_notebookId) const;
 
   // Test-only access to the underlying SyncWorker. Production code goes through

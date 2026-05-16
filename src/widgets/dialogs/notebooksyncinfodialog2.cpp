@@ -57,9 +57,9 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
   refreshDirtyButtons();
 
   // Populate read-only labels via the controller (authoritative source for
-  // notebook display name + remote URL + lastSyncIso). The controller emits
-  // dataLoaded(...); subscribe locally to update the labels and snapshot the
-  // last-applied URL.
+  // notebook display name + remote URL + formatted last-sync timestamp). The
+  // controller emits dataLoaded(...); subscribe locally to update the labels
+  // and snapshot the last-applied URL.
   if (m_controller) {
     connect(m_controller, &NotebookSyncInfoController::dataLoaded, this,
             [this](const QString &p_name, const QString &p_remoteUrl, const QString &p_lastSync) {

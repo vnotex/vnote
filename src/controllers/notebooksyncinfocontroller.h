@@ -17,7 +17,7 @@ class ServiceLocator;
 //
 // Responsibilities:
 //   * Load the notebook's display name, current syncRemoteUrl (flat ADR-8 key),
-//     and lastSyncIso for display in the dialog.
+//     and last-sync timestamp for display in the dialog.
 //   * Persist URL changes by mutating the notebook config JSON via
 //     NotebookCoreService::updateNotebookConfig. Per ADR-8 the key is the FLAT
 //     "syncRemoteUrl" (NOT a nested "sync.remoteUrl").
@@ -43,8 +43,9 @@ public:
   // if the key is absent.
   QString remoteUrl() const;
 
-  // Read the FLAT ADR-8 "lastSyncIso" value from the notebook config. Empty if
-  // the key is absent (e.g., the notebook has never been synced).
+  // Read the per-device last-sync timestamp via NotebookCoreService and format
+  // it as a locale-aware short string. Empty if the notebook has never been
+  // synced on this device (millis == 0).
   QString lastSyncTime() const;
 
   // Populate internal state and emit dataLoaded(...) so the dialog can refresh

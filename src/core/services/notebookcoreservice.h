@@ -82,6 +82,12 @@ public:
   VxCoreError enableSyncWithCredentials(const QString &p_notebookId, const QString &p_configJson,
                                         const QString &p_credentialsJson);
   bool isSyncReady(const QString &p_notebookId) const;
+
+  // Per-device last successful sync timestamp (milliseconds since Unix epoch).
+  // Returns 0 if the notebook has never been successfully synced on this
+  // device or if the underlying vxcore read fails. Backed by metadata.db
+  // (NOT NotebookConfig JSON) to avoid a self-sync loop.
+  qint64 getLastSyncUtc(const QString &p_notebookId) const;
   // Folder operations (10 methods).
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);
