@@ -53,6 +53,69 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 
 ---
 
+## Testing
+
+VNote has tests in **two separate locations** with different registration helpers and build configurations. Pick the right one or your test will silently never run.
+
+### Parent VNote tests (`tests/`)
+
+Built automatically with the parent project into `build-debug/tests/<category>/`. Registered via the `add_qt_test()` helper.
+
+**Add a new test:**
+1. Create `tests/<category>/test_yourthing.cpp` (categories: `controllers/`, `core/`, `gui/`, `integration/`, `models/`, `utils/`, `widgets/`).
+2. Register in the same directory's `CMakeLists.txt`:
+   ```cmake
+   add_qt_test(test_yourthing
+     SOURCES
+       test_yourthing.cpp
+       ${CMAKE_SOURCE_DIR}/src/path/to/code_under_test.cpp
+     LINKS
+       core_services
+       vxcore
+     GUILESS  # omit if test needs QApplication / widgets
+   )
+   ```
+3. Reconfigure from repo root if `tests/CMakeLists.txt` itself changed: `cmake -B build-debug`.
+
+**Build + run:**
+```powershell
+cmake --build build-debug --config Debug --target test_yourthing
+ctest --test-dir build-debug -C Debug -R "^test_yourthing$" --output-on-failure
+```
+
+### vxcore submodule tests (`libs/vxcore/tests/`)
+
+**Separate build dir required** — the parent `build-debug/` does NOT compile vxcore tests. Use a dedicated build dir configured with `-DVXCORE_BUILD_TESTS=ON`. Each test is a standalone executable (file basename = test target name) registered via `add_vxcore_test()`.
+
+**Add a new test:**
+1. Create `libs/vxcore/tests/test_yourthing.cpp` with its own `main()`. Subtests are functions that return `int` (0 = pass); call them via `RUN_TEST(...)` from `test_utils.h`. Always start `main()` with `vxcore_set_test_mode(1)` so the test uses `%TEMP%\vxcore_test*` instead of real AppData.
+2. Register in `libs/vxcore/tests/CMakeLists.txt`:
+   ```cmake
+   add_vxcore_test(test_yourthing)
+   ```
+   The helper auto-links `vxcore` and adds `${CMAKE_SOURCE_DIR}/src` + `third_party` include dirs.
+3. Test executables CANNOT call vxcore-internal symbols that lack `VXCORE_API` — they live outside the DLL. If you need an internal helper (e.g., `GetCurrentTimestampMillis()`), re-derive it locally in the test file rather than exporting it.
+
+**Configure (once per machine, or after CMake version upgrade):**
+```powershell
+cmake -S libs/vxcore -B libs/vxcore/build_test -G "Visual Studio 17 2022" -A x64 -DVXCORE_BUILD_TESTS=ON
+```
+
+**Build + run:**
+```powershell
+cmake --build libs/vxcore/build_test --config Debug --target test_yourthing
+ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-on-failure
+```
+
+### Universal rules
+
+- **Anchor the ctest regex** with `^...$` to avoid false matches (e.g., `-R "^test_sync$"` won't sweep in `test_session_persistence`).
+- After a CMake version upgrade, stale build dirs fail to reconfigure with errors like `CMakeSystem.cmake.in does not exist`. Delete the offending build dir and re-run the configure command from scratch — do NOT try to repair in place.
+- After modifying a touched module, run the FULL test target for that module (not just your new subtest) to catch regressions; vxcore tests print each subtest name to stdout so you can verify the new one ran.
+- For an end-to-end smoke after editing source, build the parent `vnote` target and launch `build-debug/src/vnote.exe` for ≥5s to confirm no startup regression.
+
+---
+
 ## Architecture Overview
 
 VNote uses a **clean architecture** with **Model-View-Controller (MVC)** pattern and dependency injection for testability and future plugin support.
