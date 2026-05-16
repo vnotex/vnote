@@ -112,7 +112,45 @@ ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-
 - **Anchor the ctest regex** with `^...$` to avoid false matches (e.g., `-R "^test_sync$"` won't sweep in `test_session_persistence`).
 - After a CMake version upgrade, stale build dirs fail to reconfigure with errors like `CMakeSystem.cmake.in does not exist`. Delete the offending build dir and re-run the configure command from scratch — do NOT try to repair in place.
 - After modifying a touched module, run the FULL test target for that module (not just your new subtest) to catch regressions; vxcore tests print each subtest name to stdout so you can verify the new one ran.
-- For an end-to-end smoke after editing source, build the parent `vnote` target and launch `build-debug/src/vnote.exe` for ≥5s to confirm no startup regression.
+
+### Running execs that depend on VTextEdit.dll (CRITICAL — avoid false-positive smoke tests)
+
+`build-debug/src/vnote.exe` and most `build-debug/tests/<category>/test_*.exe` execs link against `VTextEdit.dll` (built into `build-debug/libs/vtextedit/src/`) plus the Qt 6 runtime DLLs. Neither is automatically copied next to `vnote.exe` in this development build (only test-exec dirs get VTextEdit.dll copied via CMake target propagation). Launching `vnote.exe` without setting PATH first causes the Windows loader to pop a "VTextEdit.dll was not found" modal dialog BEFORE the process reaches `WinMain`.
+
+**This is a verification trap**: when the loader dialog blocks the process, the OS reports the process as alive (it has a PID, is technically running), so naive checks like `Start-Process … -PassThru` + `Sleep` + `HasExited` return `$false` → you falsely conclude the binary started. The process is actually frozen in pre-WinMain limbo waiting for someone to click the dialog. `Stop-Process -Force` afterwards silently dismisses the dialog and the lie is preserved.
+
+**Correct smoke-test pattern (PowerShell):**
+
+```powershell
+# 1. Prepend Qt bin + VTextEdit dir to PATH so the loader resolves all DLLs.
+$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" +
+            "$PWD/build-debug/libs/vtextedit/src;" +
+            $env:PATH
+
+# 2. Launch vnote.exe.
+$proc = Start-Process -FilePath "build-debug/src/vnote.exe" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 5
+
+# 3. Verify the process actually loaded VTextEdit.dll — NOT just HasExited.
+#    If the loader dialog blocked the process, $proc.Modules will throw or be empty.
+$loaded = $false
+try {
+  $proc.Refresh()
+  $loaded = ($proc.Modules | Where-Object { $_.ModuleName -ieq "VTextEdit.dll" }).Count -gt 0
+} catch {}
+if ($proc.HasExited) {
+  Write-Output "FAIL: vnote.exe exited with code $($proc.ExitCode) within 5s"
+} elseif (-not $loaded) {
+  Write-Output "FAIL: vnote.exe alive but VTextEdit.dll not loaded — likely a loader dialog"
+} else {
+  Write-Output "PASS: vnote.exe alive with VTextEdit.dll loaded after 5s"
+}
+Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+```
+
+The same PATH prepend is required before running parent `test_*.exe` directly (per `tests/AGENTS.md`). `ctest --test-dir build-debug` inherits the caller's PATH, so set it once at the start of the session.
+
+vxcore submodule tests (`libs/vxcore/build_test/bin/Debug/test_*.exe`) do NOT depend on Qt or VTextEdit and need no PATH setup.
 
 ---
 
