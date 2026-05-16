@@ -4,7 +4,7 @@ body {
     color: @base#normal#fg;
     line-height: 1.5;
     padding: 16px;
-    background-color: @base#content#bg;
+    background-color: #ffffff;
     font-size: 16px;
 }
 
