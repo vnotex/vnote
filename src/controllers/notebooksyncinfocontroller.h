@@ -87,12 +87,42 @@ public:
   // (per ADR-9). It is also NEVER logged in any branch.
   void bootstrapApply(const QString &p_url, const QString &p_pat);
 
+public slots:
+  // W3.T3 — Confirmation callback for URL change on a registered (S5)
+  // notebook. applyChanges() emits confirmUrlChangeRequested() when the user
+  // tries to change the URL on a sync-registered notebook; the dialog shows a
+  // QMessageBox and routes the user's decision back here.
+  //
+  // @p_confirmed: true if the user accepted the destructive URL change,
+  //   false if cancelled.
+  //
+  // On confirm: reads the existing PAT from the keychain (if the user did
+  // NOT provide a new PAT in the Sync Info dialog), then chains
+  // disableSyncForNotebook -> on disableFinished VXCORE_OK ->
+  // re-enable with the new URL + PAT. On re-enable success, restores the
+  // notebook config's syncEnabled / syncBackend / syncRemoteUrl fields and
+  // triggers an initial sync. On re-enable failure, emits error() +
+  // applyComplete(false) and leaves the notebook in disabled state (clean
+  // S0 via W2.T5 cleanup) so the user can re-enable via the Sync Info UI.
+  //
+  // On cancel: clears pending state and returns (no-op). The dialog is
+  // responsible for resetting its URL field.
+  //
+  // Idempotent: if no URL change is pending, this is a no-op.
+  void confirmUrlChange(bool p_confirmed);
+
 signals:
   void dataLoaded(const QString &p_notebookName, const QString &p_remoteUrl,
                   const QString &p_lastSyncTime);
   void applyComplete(bool p_success);
   void disableComplete(const QString &p_notebookId);
   void error(const QString &p_message);
+
+  // W3.T3 — Emitted by applyChanges() when the user tries to change the URL
+  // on a sync-registered (S5) notebook. The dialog should show a QMessageBox
+  // confirming the destructive action (disable + wipe + re-enable) and then
+  // call confirmUrlChange(true/false) to continue or abort.
+  void confirmUrlChangeRequested(const QString &p_oldUrl, const QString &p_newUrl);
 
 private slots:
   // Bridge SyncService::credentialsSetFinished into applyComplete when we are
@@ -107,6 +137,12 @@ private:
   // Persist a new syncRemoteUrl by reading the existing JSON, mutating the
   // flat ADR-8 key, and writing it back. Returns true on success.
   bool persistRemoteUrl(const QString &p_newRemoteUrl);
+
+  // W3.T3 — Internal helper for the URL-change-on-S5 atomic flow. Chains
+  // disableSyncForNotebook -> re-enable with new URL/PAT. Called after the
+  // user confirms via confirmUrlChange(true) and (if needed) after the
+  // existing PAT has been fetched from the keychain.
+  void performAtomicUrlReChange(const QString &p_newUrl, const QString &p_pat);
 
   ServiceLocator &m_services;
   QString m_notebookId;
@@ -123,6 +159,15 @@ private:
   // Snapshot of the URL-write outcome for the in-flight applyChanges; combined
   // with the PAT result when both finish to emit applyComplete(success).
   bool m_pendingUrlWriteOk = true;
+
+  // W3.T3 — Pending URL-change-confirmation state. Set by applyChanges()
+  // when it detects a URL change on a sync-registered notebook; consumed by
+  // confirmUrlChange(). The PAT field stores the user-provided NEW PAT (if
+  // any); when empty, confirmUrlChange() will fetch the existing PAT from
+  // the keychain BEFORE disable (since disable+W2.T5 wipes the keychain).
+  bool m_pendingUrlChange = false;
+  QString m_pendingUrlChangeNewUrl;
+  QString m_pendingUrlChangeProvidedPat;
 };
 
 } // namespace vnotex

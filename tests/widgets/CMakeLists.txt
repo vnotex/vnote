@@ -130,3 +130,45 @@ add_custom_command(TARGET test_syncservice_lifecycle POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_syncservice_lifecycle>
 )
+
+# W3.T2: NotebookSyncInfoDialog2 routing tests (Bug G dialog fix).
+# NOT GUILESS — needs QApplication for QDialog widget construction. Compiles
+# the full dialog source + its base classes + WidgetsFactory + WidgetUtils
+# chain explicitly because there is no separate widgets static library
+# (notebooksyncinfodialog2.cpp lives only inside the vnote executable target).
+# Adds widgets/mainwindow.h to SOURCES so AUTOMOC generates moc_mainwindow.cpp
+# (which provides MainWindow::staticMetaObject used transitively by
+# widgetutils.cpp's MainWindow::tr(...) call). We do NOT compile
+# mainwindow.cpp; only the moc-generated symbols are needed for that one tr.
+add_qt_test(test_notebooksyncinfodialog2
+  SOURCES
+    test_notebooksyncinfodialog2.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notebooksyncinfodialog2 PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_notebooksyncinfodialog2 PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_notebooksyncinfodialog2 POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebooksyncinfodialog2>
+)

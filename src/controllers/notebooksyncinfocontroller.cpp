@@ -3,12 +3,14 @@
 #include <memory>
 
 #include <QDateTime>
+#include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLocale>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synccredentialsstore.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 
@@ -109,10 +111,42 @@ bool NotebookSyncInfoController::persistRemoteUrl(const QString &p_newRemoteUrl)
 
 void NotebookSyncInfoController::applyChanges(const QString &p_newRemoteUrl,
                                               const QString &p_newPat) {
+  // W3.T3 — URL-change-on-S5 atomic disable+re-enable detection.
+  //
+  // Per W1.T1 evidence: re-calling vxcore_sync_enable_with_credentials with a
+  // different URL updates the in-memory configs_ map but does NOT rewrite the
+  // on-disk git remote.origin.url; subsequent Sync() would silently push to
+  // the OLD remote (split-brain). The only correct way to change the URL on
+  // a registered notebook is the atomic disable+wipe+re-enable sequence.
+  //
+  // Conditions for routing through the confirmation flow:
+  //   1. isSyncRegistered(id) == true   (notebook is registered at runtime).
+  //   2. p_newRemoteUrl != m_currentRemoteUrl   (URL actually changed).
+  //   3. !p_newRemoteUrl.isEmpty()   (clearing the URL via this path is not
+  //      supported — disableSync should be used instead).
+  auto *syncSvc = m_services.get<SyncService>();
+  const bool urlChanged = (p_newRemoteUrl != m_currentRemoteUrl);
+  const bool isRegistered = syncSvc && syncSvc->isSyncRegistered(m_notebookId);
+  const bool newUrlNonEmpty = !p_newRemoteUrl.isEmpty();
+
+  if (urlChanged && isRegistered && newUrlNonEmpty) {
+    // Defer the actual write until the user confirms the destructive flow
+    // via the QMessageBox shown by the dialog. The user-provided new PAT (if
+    // any) is cached here so confirmUrlChange() can use it without a second
+    // round-trip through the dialog. NEVER logged.
+    qCDebug(syncCategory) << "NotebookSyncInfoController::applyChanges: URL change on "
+                             "registered notebook detected; deferring to confirmUrlChange. id="
+                          << m_notebookId;
+    m_pendingUrlChange = true;
+    m_pendingUrlChangeNewUrl = p_newRemoteUrl;
+    m_pendingUrlChangeProvidedPat = p_newPat;
+    emit confirmUrlChangeRequested(m_currentRemoteUrl, p_newRemoteUrl);
+    return;
+  }
+
   // Diff URL against cached value; only write when the user actually changed
   // it. Empty new URL is allowed (clears the field) only if it differs from
   // the cached value.
-  bool urlChanged = (p_newRemoteUrl != m_currentRemoteUrl);
   bool urlOk = true;
   if (urlChanged) {
     urlOk = persistRemoteUrl(p_newRemoteUrl);
@@ -123,7 +157,6 @@ void NotebookSyncInfoController::applyChanges(const QString &p_newRemoteUrl,
   m_pendingUrlWriteOk = urlOk;
 
   if (!p_newPat.isEmpty()) {
-    auto *syncSvc = m_services.get<SyncService>();
     if (!syncSvc) {
       emit error(tr("Sync service not available."));
       m_pendingPatUpdate = false;
@@ -141,7 +174,7 @@ void NotebookSyncInfoController::applyChanges(const QString &p_newRemoteUrl,
   if (urlOk) {
     // URL-only completion path: PAT unchanged, runtime state may be empty
     // for previously-partial notebooks. Trigger init now.
-    if (auto *syncSvc = m_services.get<SyncService>()) {
+    if (syncSvc) {
       syncSvc->ensureSyncEnabled(m_notebookId);
     }
   }
@@ -231,6 +264,251 @@ void NotebookSyncInfoController::bootstrapApply(const QString &p_url, const QStr
   // fire (mirrors NewNotebookController::bootstrapSync line ordering). The
   // PAT is forwarded to SyncService and NEVER logged here (per ADR-9).
   syncSvc->enableSyncForNotebook(notebookId, p_url, p_pat);
+}
+
+void NotebookSyncInfoController::confirmUrlChange(bool p_confirmed) {
+  // W3.T3 — Confirmation callback from the dialog's QMessageBox routing the
+  // user's decision about the URL change on a registered notebook.
+  if (!m_pendingUrlChange) {
+    // Idempotent / out-of-order: no URL change is pending. Do nothing.
+    qCDebug(syncCategory)
+        << "NotebookSyncInfoController::confirmUrlChange: no pending URL change; ignored. id="
+        << m_notebookId;
+    return;
+  }
+
+  // Snapshot + clear pending state immediately so a reentrant call from a
+  // slot does not double-execute.
+  const QString newUrl = m_pendingUrlChangeNewUrl;
+  const QString providedPat = m_pendingUrlChangeProvidedPat;
+  m_pendingUrlChange = false;
+  m_pendingUrlChangeNewUrl.clear();
+  m_pendingUrlChangeProvidedPat.clear();
+
+  if (!p_confirmed) {
+    // User cancelled. Per spec: no-op (the dialog is responsible for
+    // resetting its URL field). Do NOT emit applyComplete — the dialog did
+    // not actually call applyChanges in the destructive sense.
+    qCDebug(syncCategory)
+        << "NotebookSyncInfoController::confirmUrlChange: user cancelled URL change. id="
+        << m_notebookId;
+    return;
+  }
+
+  qCDebug(syncCategory)
+      << "NotebookSyncInfoController::confirmUrlChange: user confirmed URL change. id="
+      << m_notebookId;
+
+  if (!providedPat.isEmpty()) {
+    // User provided a new PAT in the dialog; use it directly without going
+    // through the keychain. PAT is forwarded into the chain via lambda
+    // captures and NEVER logged.
+    performAtomicUrlReChange(newUrl, providedPat);
+    return;
+  }
+
+  // No new PAT provided. Read the EXISTING PAT from the keychain BEFORE
+  // calling disableSyncForNotebook, because W2.T5's post-disable cleanup
+  // deletes the keychain entry. If we waited until after disable, the PAT
+  // would be gone and we could not re-enable atomically.
+  auto *credStore = m_services.get<SyncCredentialsStore>();
+  if (!credStore) {
+    emit error(tr("Credentials store not available."));
+    emit applyComplete(false);
+    return;
+  }
+
+  const QString notebookId = m_notebookId;
+  auto retConn = std::make_shared<QMetaObject::Connection>();
+  auto errConn = std::make_shared<QMetaObject::Connection>();
+
+  *retConn = connect(
+      credStore, &SyncCredentialsStore::credentialsRetrieved, this,
+      [this, retConn, errConn, notebookId, newUrl](const QString &p_id, const QString &p_pat) {
+        if (p_id != notebookId) {
+          return;
+        }
+        QObject::disconnect(*retConn);
+        QObject::disconnect(*errConn);
+        // PAT received from keychain; chain into the
+        // atomic disable+re-enable flow. NEVER logged.
+        performAtomicUrlReChange(newUrl, p_pat);
+      });
+
+  *errConn = connect(
+      credStore, &SyncCredentialsStore::credentialsError, this,
+      [this, retConn, errConn, notebookId](const QString &p_id, const QString &p_msg) {
+        if (p_id != notebookId) {
+          return;
+        }
+        QObject::disconnect(*retConn);
+        QObject::disconnect(*errConn);
+        qCWarning(syncCategory) << "NotebookSyncInfoController::confirmUrlChange: failed "
+                                   "to read existing PAT from keychain; id="
+                                << notebookId << "message:" << p_msg;
+        emit error(tr("URL change failed: cannot read existing credentials. Please retry."));
+        emit applyComplete(false);
+      });
+
+  credStore->retrieveCredentials(notebookId);
+}
+
+void NotebookSyncInfoController::performAtomicUrlReChange(const QString &p_newUrl,
+                                                          const QString &p_pat) {
+  // W3.T3 — Atomic disable+re-enable for the URL-change-on-S5 flow.
+  //
+  // Sequence:
+  //   1. Install one-shot listener on SyncService::disableFinished filtered
+  //      by m_notebookId.
+  //   2. Call SyncService::disableSyncForNotebook (which also clears the
+  //      flat JSON sync keys via W2.T5 cleanup).
+  //   3. On disableFinished VXCORE_OK:
+  //        a. Install one-shot listener on SyncService::enableFinished
+  //           filtered by m_notebookId.
+  //        b. Call SyncService::enableSyncForNotebook with the NEW URL and
+  //           the PAT carried in via lambda capture.
+  //        c. On enableFinished VXCORE_OK:
+  //             - Restore the flat sync keys (syncEnabled / syncBackend /
+  //               syncRemoteUrl) since W2.T5 cleared them on disable.
+  //             - Update m_currentRemoteUrl.
+  //             - triggerSyncNow.
+  //             - emit applyComplete(true).
+  //        d. On enableFinished failure:
+  //             - emit error(URL-change-specific message).
+  //             - emit applyComplete(false).
+  //             - Notebook is left in clean S0 (the JSON was already cleared
+  //               by W2.T5 on disable; we did NOT re-write it pre-enable).
+  //   4. On disableFinished failure:
+  //        - emit error.
+  //        - emit applyComplete(false).
+  //        - Notebook stays in S5 (W2.T5 only clears JSON on disable OK).
+  //
+  // PAT is forwarded via lambda captures and is NEVER logged in any branch.
+  auto *syncSvc = m_services.get<SyncService>();
+  if (!syncSvc) {
+    emit error(tr("Sync service not available."));
+    emit applyComplete(false);
+    return;
+  }
+
+  const QString notebookId = m_notebookId;
+
+  auto disableConn = std::make_shared<QMetaObject::Connection>();
+  *disableConn = connect(
+      syncSvc, &SyncService::disableFinished, this,
+      [this, disableConn, syncSvc, notebookId, p_newUrl, p_pat](const QString &p_id,
+                                                                VxCoreError p_result) {
+        if (p_id != notebookId) {
+          return;
+        }
+        QObject::disconnect(*disableConn);
+
+        qCDebug(syncCategory)
+            << "NotebookSyncInfoController::performAtomicUrlReChange: disableFinished result="
+            << static_cast<int>(p_result) << "id=" << notebookId;
+
+        if (p_result != VXCORE_OK) {
+          qCWarning(syncCategory)
+              << "NotebookSyncInfoController::performAtomicUrlReChange: disable failed; id="
+              << notebookId << "result:" << static_cast<int>(p_result);
+          emit error(tr("URL change failed: disable error."));
+          emit applyComplete(false);
+          return;
+        }
+
+        // Disable succeeded. SyncService's W2.T5 cleanup has now cleared
+        // syncEnabled / syncBackend / syncRemoteUrl from the on-disk JSON.
+        // However, vxcore's DisableSync only clears in-memory maps; it does
+        // NOT wipe the on-disk vx_notebook/vx_sync/ git working directory
+        // (per W1.T2 evidence). If we re-enable now with a NEW URL, vxcore's
+        // GitSyncBackend::Initialize would see the OLD remote in the
+        // existing .git/config and refuse to switch (returning
+        // VXCORE_ERR_INVALID_PARAM). Wipe the vx_sync directory ourselves
+        // before re-enable so the new clone runs on a clean tree.
+        auto *notebookSvcForWipe = m_services.get<NotebookCoreService>();
+        if (notebookSvcForWipe) {
+          const QString syncDir = notebookSvcForWipe->buildAbsolutePath(
+              notebookId, QStringLiteral("vx_notebook/vx_sync"));
+          if (!syncDir.isEmpty()) {
+            QDir wipeDir(syncDir);
+            if (wipeDir.exists()) {
+              if (!wipeDir.removeRecursively()) {
+                qCWarning(syncCategory)
+                    << "NotebookSyncInfoController::performAtomicUrlReChange: failed to wipe "
+                       "vx_sync directory; re-enable may fail; id="
+                    << notebookId << "path:" << syncDir;
+              } else {
+                qCDebug(syncCategory) << "NotebookSyncInfoController::performAtomicUrlReChange: "
+                                         "wiped vx_sync directory; id="
+                                      << notebookId;
+              }
+            }
+          }
+        }
+
+        // Now wire the second one-shot listener for re-enable.
+        auto enableConn = std::make_shared<QMetaObject::Connection>();
+        *enableConn = connect(
+            syncSvc, &SyncService::enableFinished, this,
+            [this, enableConn, syncSvc, notebookId,
+             p_newUrl](const QString &p_enId, VxCoreError p_enResult, const QString &p_enMsg) {
+              if (p_enId != notebookId) {
+                return;
+              }
+              QObject::disconnect(*enableConn);
+
+              qCDebug(syncCategory) << "NotebookSyncInfoController::performAtomicUrlReChange: "
+                                       "enableFinished result="
+                                    << static_cast<int>(p_enResult) << "id=" << notebookId;
+
+              if (p_enResult == VXCORE_OK) {
+                // Re-enable succeeded; restore the flat sync keys (all 3,
+                // since W2.T5 cleared them on disable). We write them
+                // together so the on-disk config remains internally
+                // consistent at all times.
+                auto *notebookSvc = m_services.get<NotebookCoreService>();
+                if (notebookSvc) {
+                  QJsonObject cfg = notebookSvc->getNotebookConfig(notebookId);
+                  cfg[QStringLiteral("syncEnabled")] = true;
+                  cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
+                  cfg[QStringLiteral("syncRemoteUrl")] = p_newUrl;
+                  const QString cfgJson =
+                      QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+                  if (notebookSvc->updateNotebookConfig(notebookId, cfgJson)) {
+                    m_currentRemoteUrl = p_newUrl;
+                  } else {
+                    qCWarning(syncCategory)
+                        << "NotebookSyncInfoController::performAtomicUrlReChange: failed to "
+                           "restore JSON sync fields after re-enable; id="
+                        << notebookId;
+                  }
+                }
+
+                // Idempotent initial sync against the NEW remote.
+                syncSvc->triggerSyncNow(notebookId);
+                emit applyComplete(true);
+                return;
+              }
+
+              // Re-enable failed; the on-disk state is clean S0 (W2.T5
+              // already cleared the JSON during disable, and we did NOT
+              // re-write it before enable). The user can re-enable via the
+              // Enable Sync UI (W4.T2) to retry.
+              qCWarning(syncCategory)
+                  << "NotebookSyncInfoController::performAtomicUrlReChange: re-enable failed; id="
+                  << notebookId << "result:" << static_cast<int>(p_enResult)
+                  << "message:" << p_enMsg;
+              emit error(tr("URL change failed: re-enable error. Notebook now in disabled "
+                            "state; use Enable Sync to retry."));
+              emit applyComplete(false);
+            });
+
+        // PAT is forwarded into the worker via SyncService and NEVER
+        // logged here.
+        syncSvc->enableSyncForNotebook(notebookId, p_newUrl, p_pat);
+      });
+
+  syncSvc->disableSyncForNotebook(notebookId);
 }
 
 void NotebookSyncInfoController::onCredentialsSetFinished(const QString &p_notebookId,

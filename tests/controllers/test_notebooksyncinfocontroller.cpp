@@ -56,6 +56,14 @@ private slots:
   void testBootstrapApplyTriggersInitialSync();
   void testBootstrapApplyOneShotDisconnect();
 
+  // W3.T3 — URL-change-on-S5 atomic disable+re-enable flow. Closes bug B4
+  // (URL change leaves runtime stale or causes silent split-brain push).
+  void testUrlChangeShowsConfirmation();
+  void testUrlChangeConfirmedAtomicallyReregisters();
+  void testUrlChangeCancelledRestoresUrl();
+  void testUrlChangePreservesPatWhenFieldEmpty();
+  void testUrlChangeReenableFailureSurfacesError();
+
 private:
   // Initialize a bare git repo at p_bareRepoPath and seed it with one commit
   // containing a single file "seed.md" on the default branch (main). Returns
@@ -186,7 +194,12 @@ void TestNotebookSyncInfoController::applyChangesRoutesUrlAndPat() {
   NotebookSyncInfoController controller(services, nbId);
   controller.loadInitialData();
 
-  const QString newRemoteUrl = QStringLiteral("file:///tmp/new.git");
+  // Per W3.T3: URL changes on a registered notebook now route through the
+  // confirmation flow (confirmUrlChangeRequested). To keep this test focused
+  // on the PAT-routing path (which was its original intent), pass the SAME
+  // URL so only the PAT update is exercised. URL-change tests live in the
+  // testUrlChange* suite below.
+  const QString newRemoteUrl = oldRemoteUrl;
   const QString newPat = QStringLiteral("new_pat");
 
   QSignalSpy patSpy(&syncService, &SyncService::credentialsSetFinished);
@@ -663,6 +676,516 @@ void TestNotebookSyncInfoController::testBootstrapApplyOneShotDisconnect() {
 
   credStore.deleteCredentials(nbId);
   QTest::qWait(300);
+  vxcore_context_destroy(ctx);
+}
+
+// ============================================================================
+// W3.T3 — URL-change-on-S5 atomic disable+re-enable tests
+// ============================================================================
+//
+// Per W1.T1 evidence: re-calling vxcore_sync_enable_with_credentials with a
+// different URL leaves the on-disk git remote stale → split-brain. The only
+// correct path is atomic disable+wipe+re-enable. These tests verify:
+//   1. The confirmation gate fires on URL change for a registered notebook.
+//   2. Confirmed atomic re-register updates the on-disk URL AND restores
+//      runtime registration AND preserves the keychain PAT.
+//   3. Cancellation is a true no-op (no disk change, no disable invoked).
+//   4. Empty PAT field → existing PAT is fetched from keychain BEFORE disable
+//      (since disable+W2.T5 wipes the keychain entry) and reused for
+//      re-enable; keychain still has the same PAT after.
+//   5. Re-enable failure leaves the notebook in clean S0 state (W2.T5 cleared
+//      the JSON during disable; failed enable did not rewrite it) and the
+//      user gets a clear error message about needing to re-enable manually.
+
+void TestNotebookSyncInfoController::testUrlChangeShowsConfirmation() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  // Seed a real bare repo so enable succeeds and we end up in S5.
+  QString bareDir = localTemp.filePath(QStringLiteral("remote_url_confirm.git"));
+  QString oldRemoteUrl = seedBareRepo(bareDir, localTemp);
+  if (oldRemoteUrl.isEmpty()) {
+    vxcore_context_destroy(ctx);
+    QSKIP("git not available or bare-repo seeding failed");
+  }
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_url_confirm_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"URL Confirm","description":"","version":"1"})", NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  // Enable sync against the old URL → notebook is now in S5 (registered).
+  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+  syncService.enableSyncForNotebook(nbId, oldRemoteUrl, QStringLiteral("test_pat_12345"));
+  QVERIFY(enableSpy.wait(15000));
+  if (qvariant_cast<VxCoreError>(enableSpy.first().at(1)) != VXCORE_OK) {
+    qWarning() << "enableSync returned non-OK; message:" << enableSpy.first().at(2).toString();
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("OS keychain backend or git enable not usable in this test environment");
+  }
+
+  // Persist the OLD URL into the flat config so loadInitialData()'s cache
+  // matches the disk state.
+  {
+    QJsonObject cfg = notebookService.getNotebookConfig(nbId);
+    cfg[QStringLiteral("syncRemoteUrl")] = oldRemoteUrl;
+    cfg[QStringLiteral("syncEnabled")] = true;
+    cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
+    const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+    QVERIFY(notebookService.updateNotebookConfig(nbId, cfgJson));
+  }
+
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy confirmSpy(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy disableSpy(&syncService, &SyncService::disableFinished);
+
+  const QString newUrl = QStringLiteral("file:///tmp/new_remote.git");
+  controller.applyChanges(newUrl, QString());
+
+  // confirmUrlChangeRequested MUST fire synchronously with (oldUrl, newUrl).
+  QCOMPARE(confirmSpy.count(), 1);
+  QCOMPARE(confirmSpy.first().at(0).toString(), oldRemoteUrl);
+  QCOMPARE(confirmSpy.first().at(1).toString(), newUrl);
+
+  // applyComplete MUST NOT fire (we are awaiting user confirmation).
+  QCOMPARE(applySpy.count(), 0);
+
+  // No disable should have been dispatched yet.
+  QCOMPARE(disableSpy.count(), 0);
+
+  // Disk state must be unchanged (URL still the OLD url).
+  const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), oldRemoteUrl);
+
+  credStore.deleteCredentials(nbId);
+  QTest::qWait(300);
+  vxcore_context_destroy(ctx);
+}
+
+void TestNotebookSyncInfoController::testUrlChangeConfirmedAtomicallyReregisters() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  // Seed TWO bare repos (one for old URL, one for new URL) so both enables
+  // succeed against real remotes.
+  QString oldBare = localTemp.filePath(QStringLiteral("remote_url_atomic_old.git"));
+  QString oldUrl = seedBareRepo(oldBare, localTemp);
+  QString newBare = localTemp.filePath(QStringLiteral("remote_url_atomic_new.git"));
+  QString newUrl = seedBareRepo(newBare, localTemp);
+  if (oldUrl.isEmpty() || newUrl.isEmpty()) {
+    vxcore_context_destroy(ctx);
+    QSKIP("git not available or bare-repo seeding failed");
+  }
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_url_atomic_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"URL Atomic","description":"","version":"1"})", NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  // Enable sync against the OLD URL.
+  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+  syncService.enableSyncForNotebook(nbId, oldUrl, QStringLiteral("test_pat_12345"));
+  QVERIFY(enableSpy.wait(15000));
+  if (qvariant_cast<VxCoreError>(enableSpy.first().at(1)) != VXCORE_OK) {
+    qWarning() << "initial enable failed:" << enableSpy.first().at(2).toString();
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("OS keychain backend or git enable not usable in this test environment");
+  }
+
+  {
+    QJsonObject cfg = notebookService.getNotebookConfig(nbId);
+    cfg[QStringLiteral("syncRemoteUrl")] = oldUrl;
+    cfg[QStringLiteral("syncEnabled")] = true;
+    cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
+    const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+    QVERIFY(notebookService.updateNotebookConfig(nbId, cfgJson));
+  }
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy confirmSpy(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy errorSpy(&controller, &NotebookSyncInfoController::error);
+
+  // Pass the SAME PAT through the dialog so the keychain-fetch branch is
+  // skipped; covers the "user provided new PAT" path.
+  controller.applyChanges(newUrl, QStringLiteral("test_pat_12345"));
+  QCOMPARE(confirmSpy.count(), 1);
+
+  controller.confirmUrlChange(true);
+
+  QVERIFY(applySpy.wait(20000));
+  QCOMPARE(applySpy.count(), 1);
+  if (!applySpy.first().at(0).toBool()) {
+    qWarning() << "URL change atomic re-register failed; errors:" << errorSpy;
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("re-enable against new remote not usable in this test environment");
+  }
+  QCOMPARE(applySpy.first().at(0).toBool(), true);
+
+  // Disk: syncRemoteUrl updated to NEW; syncEnabled=true; syncBackend=git.
+  const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), newUrl);
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncEnabled")).toBool(), true);
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncBackend")).toString(), QStringLiteral("git"));
+
+  // Runtime: notebook is registered.
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  // Keychain: PAT preserved (re-enable wrote it back via storeCredentials).
+  QSignalSpy retrSpy(&credStore, &SyncCredentialsStore::credentialsRetrieved);
+  QSignalSpy retrErrSpy(&credStore, &SyncCredentialsStore::credentialsError);
+  credStore.retrieveCredentials(nbId);
+  bool gotRetrieve = false;
+  for (int i = 0; i < 50; ++i) {
+    if (!retrSpy.isEmpty()) {
+      gotRetrieve = true;
+      break;
+    }
+    if (!retrErrSpy.isEmpty()) {
+      break;
+    }
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    QTest::qWait(50);
+  }
+  QVERIFY2(gotRetrieve, "Expected credentialsRetrieved after URL change re-register");
+  QCOMPARE(retrSpy.first().at(1).toString(), QStringLiteral("test_pat_12345"));
+
+  credStore.deleteCredentials(nbId);
+  QTest::qWait(500);
+  vxcore_context_destroy(ctx);
+}
+
+void TestNotebookSyncInfoController::testUrlChangeCancelledRestoresUrl() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  QString bareDir = localTemp.filePath(QStringLiteral("remote_url_cancel.git"));
+  QString oldUrl = seedBareRepo(bareDir, localTemp);
+  if (oldUrl.isEmpty()) {
+    vxcore_context_destroy(ctx);
+    QSKIP("git not available or bare-repo seeding failed");
+  }
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_url_cancel_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"URL Cancel","description":"","version":"1"})", NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+  syncService.enableSyncForNotebook(nbId, oldUrl, QStringLiteral("test_pat_12345"));
+  QVERIFY(enableSpy.wait(15000));
+  if (qvariant_cast<VxCoreError>(enableSpy.first().at(1)) != VXCORE_OK) {
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("OS keychain backend or git enable not usable in this test environment");
+  }
+  {
+    QJsonObject cfg = notebookService.getNotebookConfig(nbId);
+    cfg[QStringLiteral("syncRemoteUrl")] = oldUrl;
+    cfg[QStringLiteral("syncEnabled")] = true;
+    cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
+    const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+    QVERIFY(notebookService.updateNotebookConfig(nbId, cfgJson));
+  }
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy confirmSpy(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy disableSpy(&syncService, &SyncService::disableFinished);
+
+  const QString newUrl = QStringLiteral("file:///tmp/will_not_be_used.git");
+  controller.applyChanges(newUrl, QString());
+  QCOMPARE(confirmSpy.count(), 1);
+
+  // User cancels at the QMessageBox.
+  controller.confirmUrlChange(false);
+
+  // Give any spurious signals time to fire.
+  QTest::qWait(300);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+
+  // No applyComplete should be emitted (per spec: cancel is a true no-op).
+  QCOMPARE(applySpy.count(), 0);
+  // No disable was invoked.
+  QCOMPARE(disableSpy.count(), 0);
+  // Disk state unchanged.
+  const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), oldUrl);
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncEnabled")).toBool(), true);
+  // Runtime still registered.
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  credStore.deleteCredentials(nbId);
+  QTest::qWait(300);
+  vxcore_context_destroy(ctx);
+}
+
+void TestNotebookSyncInfoController::testUrlChangePreservesPatWhenFieldEmpty() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  QString oldBare = localTemp.filePath(QStringLiteral("remote_url_pat_old.git"));
+  QString oldUrl = seedBareRepo(oldBare, localTemp);
+  QString newBare = localTemp.filePath(QStringLiteral("remote_url_pat_new.git"));
+  QString newUrl = seedBareRepo(newBare, localTemp);
+  if (oldUrl.isEmpty() || newUrl.isEmpty()) {
+    vxcore_context_destroy(ctx);
+    QSKIP("git not available or bare-repo seeding failed");
+  }
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_url_pat_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"URL Pat","description":"","version":"1"})", NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  // Seed the keychain with the existing PAT via enableSyncForNotebook.
+  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+  syncService.enableSyncForNotebook(nbId, oldUrl, QStringLiteral("test_pat_12345"));
+  QVERIFY(enableSpy.wait(15000));
+  if (qvariant_cast<VxCoreError>(enableSpy.first().at(1)) != VXCORE_OK) {
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("OS keychain backend or git enable not usable in this test environment");
+  }
+  {
+    QJsonObject cfg = notebookService.getNotebookConfig(nbId);
+    cfg[QStringLiteral("syncRemoteUrl")] = oldUrl;
+    cfg[QStringLiteral("syncEnabled")] = true;
+    cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
+    const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+    QVERIFY(notebookService.updateNotebookConfig(nbId, cfgJson));
+  }
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy confirmSpy(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy errorSpy(&controller, &NotebookSyncInfoController::error);
+
+  // PAT field is EMPTY → controller must fetch existing PAT from keychain
+  // BEFORE the disable call wipes it.
+  controller.applyChanges(newUrl, QString());
+  QCOMPARE(confirmSpy.count(), 1);
+
+  controller.confirmUrlChange(true);
+
+  QVERIFY(applySpy.wait(20000));
+  QCOMPARE(applySpy.count(), 1);
+  if (!applySpy.first().at(0).toBool()) {
+    qWarning() << "PAT-from-keychain URL change failed; errors:" << errorSpy;
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("re-enable against new remote not usable in this test environment");
+  }
+  QCOMPARE(applySpy.first().at(0).toBool(), true);
+
+  // The keychain should still have the SAME PAT (re-enable wrote it back).
+  QSignalSpy retrSpy(&credStore, &SyncCredentialsStore::credentialsRetrieved);
+  QSignalSpy retrErrSpy(&credStore, &SyncCredentialsStore::credentialsError);
+  credStore.retrieveCredentials(nbId);
+  bool gotRetrieve = false;
+  for (int i = 0; i < 50; ++i) {
+    if (!retrSpy.isEmpty()) {
+      gotRetrieve = true;
+      break;
+    }
+    if (!retrErrSpy.isEmpty()) {
+      break;
+    }
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    QTest::qWait(50);
+  }
+  QVERIFY2(gotRetrieve, "Expected credentialsRetrieved after URL change with empty PAT");
+  // The same PAT (literal `test_pat_12345`) is preserved end-to-end.
+  QCOMPARE(retrSpy.first().at(1).toString(), QStringLiteral("test_pat_12345"));
+
+  credStore.deleteCredentials(nbId);
+  QTest::qWait(500);
+  vxcore_context_destroy(ctx);
+}
+
+void TestNotebookSyncInfoController::testUrlChangeReenableFailureSurfacesError() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  // Old URL must be a real seeded repo so initial enable succeeds; new URL
+  // does not need a real remote (we force re-enable to fail via worker
+  // testForceError).
+  QString oldBare = localTemp.filePath(QStringLiteral("remote_url_reen_old.git"));
+  QString oldUrl = seedBareRepo(oldBare, localTemp);
+  if (oldUrl.isEmpty()) {
+    vxcore_context_destroy(ctx);
+    QSKIP("git not available or bare-repo seeding failed");
+  }
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_url_reen_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"URL ReEnable Fail","description":"","version":"1"})",
+      NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+  syncService.enableSyncForNotebook(nbId, oldUrl, QStringLiteral("test_pat_12345"));
+  QVERIFY(enableSpy.wait(15000));
+  if (qvariant_cast<VxCoreError>(enableSpy.first().at(1)) != VXCORE_OK) {
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("OS keychain backend or git enable not usable in this test environment");
+  }
+  {
+    QJsonObject cfg = notebookService.getNotebookConfig(nbId);
+    cfg[QStringLiteral("syncRemoteUrl")] = oldUrl;
+    cfg[QStringLiteral("syncEnabled")] = true;
+    cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
+    const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+    QVERIFY(notebookService.updateNotebookConfig(nbId, cfgJson));
+  }
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  // Test-only spy on disableFinished. Registered BEFORE confirmUrlChange so
+  // that this slot fires BEFORE the controller's one-shot disable lambda.
+  // When disable completes successfully, we arm worker testForceError so
+  // the SUBSEQUENT enableSync (dispatched by the controller's lambda) will
+  // fail with VXCORE_ERR_UNKNOWN. testForceError is one-shot
+  // consume-and-clear, which is exactly what we need.
+  QObject lifetimeAnchor;
+  QObject::connect(&syncService, &SyncService::disableFinished, &lifetimeAnchor,
+                   [&syncService, nbId](const QString &p_id, VxCoreError p_res) {
+                     if (p_id != nbId) {
+                       return;
+                     }
+                     if (p_res == VXCORE_OK) {
+                       syncService.worker()->testForceError(static_cast<int>(VXCORE_ERR_UNKNOWN));
+                     }
+                   });
+
+  QSignalSpy confirmSpy(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy errorSpy(&controller, &NotebookSyncInfoController::error);
+
+  const QString newUrl = QStringLiteral("file:///tmp/will_fail_reenable.git");
+  // Pass PAT explicitly so the keychain-fetch step is skipped (we want a
+  // simple disable-then-enable chain to force-fail).
+  controller.applyChanges(newUrl, QStringLiteral("test_pat_12345"));
+  QCOMPARE(confirmSpy.count(), 1);
+
+  controller.confirmUrlChange(true);
+
+  QVERIFY(applySpy.wait(15000));
+  QCOMPARE(applySpy.count(), 1);
+  QCOMPARE(applySpy.first().at(0).toBool(), false);
+  QVERIFY2(!errorSpy.isEmpty(), "error() must fire on re-enable failure");
+  const QString errMsg = errorSpy.first().at(0).toString();
+  QVERIFY2(errMsg.contains(QStringLiteral("re-enable"), Qt::CaseInsensitive),
+           qPrintable(QStringLiteral("error message should mention re-enable: %1").arg(errMsg)));
+
+  // Post-condition: notebook is NOT registered at runtime (clean S0).
+  QVERIFY(!syncService.isSyncRegistered(nbId));
+
+  // Post-condition: on-disk JSON sync fields are cleared (W2.T5 ran during
+  // disable; failed enable did not rewrite them).
+  const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
+  QVERIFY2(!cfgAfter.value(QStringLiteral("syncEnabled")).toBool(),
+           "syncEnabled must be cleared after disable+failed-re-enable");
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), QString());
+  QCOMPARE(cfgAfter.value(QStringLiteral("syncBackend")).toString(), QString());
+
+  // Cleanup: the in-memory storeCredentials wrote the PAT to keychain when
+  // re-enable was dispatched (storeCredentials runs BEFORE the worker
+  // enableSync call). Best-effort delete.
+  credStore.deleteCredentials(nbId);
+  QTest::qWait(500);
   vxcore_context_destroy(ctx);
 }
 

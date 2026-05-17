@@ -1,11 +1,15 @@
 #include "notebooksyncinfodialog2.h"
 
+#include <memory>
+
+#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QMetaObject>
 #include <QPushButton>
 #include <QShowEvent>
 
@@ -345,6 +349,51 @@ void NotebookSyncInfoDialog2::acceptedButtonClicked() {
 
   qCDebug(syncCategory) << "NotebookSyncInfoDialog2::acceptedButtonClicked: accept bootstrapMode:"
                         << m_bootstrapMode;
+
+  // W3.T2: route through controller->bootstrapApply() when the user is
+  // performing the initial enable (bootstrapMode==true) OR when the notebook
+  // is partial (sync_enabled on disk but not yet registered at vxcore
+  // runtime). In either case, applyChanges would silently fail / hit the
+  // chicken-and-egg path, so bootstrapApply (which atomically enables sync +
+  // persists URL on success) is the correct entry point.
+  //
+  // The dialog STAYS OPEN during the async bootstrap and only accept()s when
+  // applyComplete(true) fires. On applyComplete(false) the dialog stays open
+  // so the user can read the error (surfaced via the controller's error()
+  // signal / state label) and retry without losing their input.
+  if (m_controller) {
+    auto *syncSvc = m_services.get<SyncService>();
+    const bool partial = (syncSvc != nullptr) && !syncSvc->isSyncRegistered(m_notebookId);
+    if (m_bootstrapMode || partial) {
+      qCDebug(syncCategory) << "NotebookSyncInfoDialog2::acceptedButtonClicked: routing to "
+                               "bootstrapApply bootstrapMode:"
+                            << m_bootstrapMode << "partial:" << partial;
+      // One-shot connection to applyComplete: only accept() on success.
+      auto conn = std::make_shared<QMetaObject::Connection>();
+      *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                      [this, conn](bool p_success) {
+                        QObject::disconnect(*conn);
+                        if (p_success) {
+                          // Snapshot the URL and clear the PAT field per the
+                          // leave-blank-to-keep semantics before closing.
+                          if (m_remoteUrlEdit) {
+                            m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
+                          }
+                          if (m_patEdit) {
+                            m_patEdit->clear();
+                          }
+                          refreshDirtyButtons();
+                          accept();
+                        }
+                        // On failure, the dialog stays open. The error()
+                        // signal from the controller surfaces the message
+                        // via the existing state label / log path.
+                      });
+      m_controller->bootstrapApply(m_remoteUrlEdit->text(), m_patEdit->text());
+      return;
+    }
+  }
+
   // T11: the controller decides whether to send URL only, PAT only, or both
   // based on which fields are dirty. Then we still close the dialog so the
   // bootstrap-mode flow can complete.
@@ -363,7 +412,43 @@ void NotebookSyncInfoDialog2::acceptedButtonClicked() {
 }
 
 void NotebookSyncInfoDialog2::appliedButtonClicked() {
+  // W3.T2: mirror the partial-detection branch from acceptedButtonClicked so
+  // Apply on a partial / bootstrap-mode notebook routes to bootstrapApply
+  // instead of the chicken-and-egg applyChanges path. Unlike OK, Apply must
+  // NOT accept() the dialog on success — the Apply button is for in-place
+  // updates only.
   if (m_controller) {
+    auto *syncSvc = m_services.get<SyncService>();
+    const bool partial = (syncSvc != nullptr) && !syncSvc->isSyncRegistered(m_notebookId);
+    if (m_bootstrapMode || partial) {
+      qCDebug(syncCategory)
+          << "NotebookSyncInfoDialog2::appliedButtonClicked: routing to bootstrapApply "
+             "bootstrapMode:"
+          << m_bootstrapMode << "partial:" << partial;
+      // Temporarily disable the Apply button during the async bootstrap so
+      // the user cannot double-fire. Re-enabled via refreshDirtyButtons()
+      // after applyComplete fires.
+      if (auto *box = getDialogButtonBox()) {
+        if (auto *applyBtn = box->button(QDialogButtonBox::Apply)) {
+          applyBtn->setEnabled(false);
+        }
+      }
+      auto conn = std::make_shared<QMetaObject::Connection>();
+      *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                      [this, conn](bool p_success) {
+                        QObject::disconnect(*conn);
+                        if (p_success && m_remoteUrlEdit) {
+                          m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
+                        }
+                        if (p_success && m_patEdit) {
+                          m_patEdit->clear();
+                        }
+                        refreshDirtyButtons();
+                      });
+      m_controller->bootstrapApply(m_remoteUrlEdit->text(), m_patEdit->text());
+      return;
+    }
+
     m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
   }
 
