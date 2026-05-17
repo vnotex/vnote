@@ -67,6 +67,7 @@ private slots:
   // NotebookCloseEvent round-trip and typed tests.
   void testNotebookCloseEventRoundTrip();
   void testTypedDoActionNotebookCloseEvent();
+  void testNotebookOpenEventRoundTrip();
 
   // Cancellation via typed API.
   void testTypedCancellation();
@@ -282,14 +283,11 @@ void TestHookEvents::testTypedDoActionNodeOperationEvent() {
   m_hookMgr->doAction(HookNames::NodeBeforeDelete, event);
 
   QVERIFY(fired);
-  QCOMPARE(captured[QStringLiteral("notebookId")].toString(),
-           QStringLiteral("nb-emit-1"));
-  QCOMPARE(captured[QStringLiteral("relativePath")].toString(),
-           QStringLiteral("path/to/file.md"));
+  QCOMPARE(captured[QStringLiteral("notebookId")].toString(), QStringLiteral("nb-emit-1"));
+  QCOMPARE(captured[QStringLiteral("relativePath")].toString(), QStringLiteral("path/to/file.md"));
   QCOMPARE(captured[QStringLiteral("isFolder")].toBool(), false);
   QCOMPARE(captured[QStringLiteral("name")].toString(), QStringLiteral("file.md"));
-  QCOMPARE(captured[QStringLiteral("operation")].toString(),
-           QStringLiteral("delete"));
+  QCOMPARE(captured[QStringLiteral("operation")].toString(), QStringLiteral("delete"));
 
   m_hookMgr->removeAction(hookId);
 }
@@ -320,10 +318,8 @@ void TestHookEvents::testTypedDoActionFileOpenEvent() {
   m_hookMgr->doAction(HookNames::FileBeforeOpen, event);
 
   QVERIFY(fired);
-  QCOMPARE(captured[QStringLiteral("notebookId")].toString(),
-           QStringLiteral("nb-emit-2"));
-  QCOMPARE(captured[QStringLiteral("filePath")].toString(),
-           QStringLiteral("notes/open.md"));
+  QCOMPARE(captured[QStringLiteral("notebookId")].toString(), QStringLiteral("nb-emit-2"));
+  QCOMPARE(captured[QStringLiteral("filePath")].toString(), QStringLiteral("notes/open.md"));
   QCOMPARE(captured[QStringLiteral("mode")].toInt(), 1);
   QCOMPARE(captured[QStringLiteral("forceMode")].toBool(), true);
   QCOMPARE(captured[QStringLiteral("lineNumber")].toInt(), 42);
@@ -349,8 +345,7 @@ void TestHookEvents::testTypedDoActionBufferEvent() {
   m_hookMgr->doAction(HookNames::FileBeforeSave, event);
 
   QVERIFY(fired);
-  QCOMPARE(captured[QStringLiteral("bufferId")].toString(),
-           QStringLiteral("buf-emit-3"));
+  QCOMPARE(captured[QStringLiteral("bufferId")].toString(), QStringLiteral("buf-emit-3"));
 
   m_hookMgr->removeAction(hookId);
 }
@@ -377,13 +372,10 @@ void TestHookEvents::testTypedDoActionViewWindowMoveEvent() {
 
   QVERIFY(fired);
   QCOMPARE(captured[QStringLiteral("windowId")].toULongLong(), quint64(77777));
-  QCOMPARE(captured[QStringLiteral("srcWorkspaceId")].toString(),
-           QStringLiteral("ws-src"));
-  QCOMPARE(captured[QStringLiteral("dstWorkspaceId")].toString(),
-           QStringLiteral("ws-dst"));
+  QCOMPARE(captured[QStringLiteral("srcWorkspaceId")].toString(), QStringLiteral("ws-src"));
+  QCOMPARE(captured[QStringLiteral("dstWorkspaceId")].toString(), QStringLiteral("ws-dst"));
   QCOMPARE(captured[QStringLiteral("direction")].toInt(), 2);
-  QCOMPARE(captured[QStringLiteral("bufferId")].toString(),
-           QStringLiteral("buf-emit-4"));
+  QCOMPARE(captured[QStringLiteral("bufferId")].toString(), QStringLiteral("buf-emit-4"));
 
   m_hookMgr->removeAction(hookId);
 }
@@ -602,12 +594,10 @@ void TestHookEvents::testTypedDoActionAttachmentAddEvent() {
   m_hookMgr->doAction(HookNames::AttachmentBeforeAdd, event);
 
   QVERIFY(fired);
-  QCOMPARE(captured[QStringLiteral("bufferId")].toString(),
-           QStringLiteral("buf-emit-att-1"));
+  QCOMPARE(captured[QStringLiteral("bufferId")].toString(), QStringLiteral("buf-emit-att-1"));
   QCOMPARE(captured[QStringLiteral("sourcePath")].toString(),
            QStringLiteral("/home/user/photo.jpg"));
-  QCOMPARE(captured[QStringLiteral("filename")].toString(),
-           QStringLiteral("photo.jpg"));
+  QCOMPARE(captured[QStringLiteral("filename")].toString(), QStringLiteral("photo.jpg"));
 
   m_hookMgr->removeAction(hookId);
 }
@@ -707,8 +697,7 @@ void TestHookEvents::testTypedDoActionFileOpenEventWithAnchor() {
   m_hookMgr->doAction(HookNames::FileBeforeOpen, event);
 
   QVERIFY(fired);
-  QCOMPARE(captured[QStringLiteral("anchor")].toString(),
-           QStringLiteral("typed-anchor-test"));
+  QCOMPARE(captured[QStringLiteral("anchor")].toString(), QStringLiteral("typed-anchor-test"));
 
   m_hookMgr->removeAction(hookId);
 }
@@ -723,6 +712,20 @@ void TestHookEvents::testNotebookCloseEventRoundTrip() {
   NotebookCloseEvent restored = NotebookCloseEvent::fromVariantMap(map);
 
   QCOMPARE(restored.notebookId, orig.notebookId);
+}
+
+void TestHookEvents::testNotebookOpenEventRoundTrip() {
+  NotebookOpenEvent orig;
+  orig.notebookId = QStringLiteral("nb-open-1");
+  orig.notebookName = QStringLiteral("My Notebook");
+  orig.rootFolder = QStringLiteral("/path/to/notebook");
+
+  QVariantMap map = orig.toVariantMap();
+  NotebookOpenEvent restored = NotebookOpenEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.notebookId, orig.notebookId);
+  QCOMPARE(restored.notebookName, orig.notebookName);
+  QCOMPARE(restored.rootFolder, orig.rootFolder);
 }
 
 void TestHookEvents::testTypedDoActionNotebookCloseEvent() {
@@ -742,8 +745,7 @@ void TestHookEvents::testTypedDoActionNotebookCloseEvent() {
   m_hookMgr->doAction(HookNames::NotebookBeforeClose, event);
 
   QVERIFY(fired);
-  QCOMPARE(captured[QStringLiteral("notebookId")].toString(),
-           QStringLiteral("nb-close-emit-1"));
+  QCOMPARE(captured[QStringLiteral("notebookId")].toString(), QStringLiteral("nb-close-emit-1"));
 
   m_hookMgr->removeAction(hookId);
 }

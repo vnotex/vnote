@@ -76,6 +76,7 @@ public:
   bool doAction(const QString &p_hook, const AttachmentDeleteEvent &p_event);
   bool doAction(const QString &p_hook, const AttachmentRenameEvent &p_event);
   bool doAction(const QString &p_hook, const NotebookCloseEvent &p_event);
+  bool doAction(const QString &p_hook, const NotebookOpenEvent &p_event);
   bool doAction(const QString &p_hook, const ThemeSwitchEvent &p_event);
   bool doAction(const QString &p_hook, const FileExternalChangeEvent &p_event);
   bool doAction(const QString &p_hook, const ImageHostUploadEvent &p_event);
@@ -150,8 +151,7 @@ private:
   };
 
   // Insert entry into sorted list (by priority, stable).
-  template <typename T>
-  void insertSorted(QList<T> &p_list, const T &p_entry);
+  template <typename T> void insertSorted(QList<T> &p_list, const T &p_entry);
 
   // Next unique ID for callbacks.
   int m_nextId = 1;

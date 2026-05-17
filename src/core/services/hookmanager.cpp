@@ -44,9 +44,7 @@ bool HookManager::removeAction(int p_id) {
   return false;
 }
 
-bool HookManager::doAction(const QString &p_hook) {
-  return doAction(p_hook, QVariantMap());
-}
+bool HookManager::doAction(const QString &p_hook) { return doAction(p_hook, QVariantMap()); }
 
 bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args) {
   // Recursion guard.
@@ -151,6 +149,10 @@ bool HookManager::doAction(const QString &p_hook, const AttachmentRenameEvent &p
 }
 
 bool HookManager::doAction(const QString &p_hook, const NotebookCloseEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const NotebookOpenEvent &p_event) {
   return doAction(p_hook, p_event.toVariantMap());
 }
 
@@ -277,13 +279,11 @@ int HookManager::filterCount(const QString &p_hook) const {
 
 // ===== Private =====
 
-template <typename T>
-void HookManager::insertSorted(QList<T> &p_list, const T &p_entry) {
+template <typename T> void HookManager::insertSorted(QList<T> &p_list, const T &p_entry) {
   // Find insertion point to maintain stable sort by priority.
   // Lower priority = earlier execution, so insert before first entry with higher priority.
-  auto insertPos =
-      std::upper_bound(p_list.begin(), p_list.end(), p_entry,
-                       [](const T &a, const T &b) { return a.priority < b.priority; });
+  auto insertPos = std::upper_bound(p_list.begin(), p_list.end(), p_entry,
+                                    [](const T &a, const T &b) { return a.priority < b.priority; });
   p_list.insert(insertPos, p_entry);
 }
 

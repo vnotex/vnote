@@ -348,6 +348,24 @@ NotebookCloseEvent NotebookCloseEvent::fromVariantMap(const QVariantMap &p_args)
   return e;
 }
 
+// ===== NotebookOpenEvent =====
+
+QVariantMap NotebookOpenEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  m[QStringLiteral("notebookName")] = notebookName;
+  m[QStringLiteral("rootFolder")] = rootFolder;
+  return m;
+}
+
+NotebookOpenEvent NotebookOpenEvent::fromVariantMap(const QVariantMap &p_args) {
+  NotebookOpenEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookName = p_args.value(QStringLiteral("notebookName")).toString();
+  e.rootFolder = p_args.value(QStringLiteral("rootFolder")).toString();
+  return e;
+}
+
 // ===== ImageHostUploadEvent =====
 
 QVariantMap ImageHostUploadEvent::toVariantMap() const {
@@ -393,4 +411,3 @@ ImageHostRemoveEvent ImageHostRemoveEvent::fromVariantMap(const QVariantMap &p_a
   e.errorMessage = p_args.value(QStringLiteral("errorMessage")).toString();
   return e;
 }
-

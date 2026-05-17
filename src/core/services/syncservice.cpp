@@ -3,13 +3,17 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDebug>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QLocale>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QMutexLocker>
 #include <QThread>
+
+#include <memory>
 
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
@@ -133,6 +137,16 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
           QMessageBox::warning(qApp ? qApp->activeWindow() : nullptr, tr("Cannot close notebook"),
                                reason);
         },
+        /*priority=*/10);
+
+    hookMgr->addAction<NotebookOpenEvent>(
+        HookNames::NotebookAfterOpen,
+        [this](HookContext &, const NotebookOpenEvent &p_event) { onNotebookAfterOpen(p_event); },
+        /*priority=*/10);
+
+    hookMgr->addAction(
+        HookNames::MainWindowAfterStart,
+        [this](HookContext &, const QVariantMap &) { onMainWindowAfterStart(); },
         /*priority=*/10);
   }
 }
@@ -448,4 +462,116 @@ void SyncService::onAutoSyncConflict(const QString &p_notebookId) {
     return;
   QMetaObject::invokeMethod(m_worker, "getConflicts", Qt::QueuedConnection,
                             Q_ARG(QString, p_notebookId));
+}
+
+// ---- Reconcile-on-open ------------------------------------------------------
+
+void SyncService::onNotebookAfterOpen(const NotebookOpenEvent &p_event) {
+  qCDebug(syncCategory) << "SyncService::onNotebookAfterOpen: notebookId:" << p_event.notebookId;
+  reconcileSyncForNotebook(p_event.notebookId);
+}
+
+void SyncService::onMainWindowAfterStart() {
+  if (!m_notebookCoreService) {
+    return;
+  }
+  const QJsonArray notebooks = m_notebookCoreService->listNotebooks();
+  qCDebug(syncCategory) << "SyncService::onMainWindowAfterStart: scanning" << notebooks.size()
+                        << "notebooks for reconcile";
+  for (const QJsonValue &v : notebooks) {
+    const QJsonObject nb = v.toObject();
+    const QString nbId = nb.value(QStringLiteral("id")).toString();
+    if (nbId.isEmpty()) {
+      continue;
+    }
+    reconcileSyncForNotebook(nbId);
+  }
+}
+
+void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
+  if (m_shutDown || !m_notebookCoreService || !m_credentialsStore) {
+    return;
+  }
+
+  const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+  const bool diskEnabled = cfg.value(QStringLiteral("syncEnabled")).toBool();
+  if (!diskEnabled) {
+    qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: skip - disk says not enabled"
+                          << p_notebookId;
+    return;
+  }
+
+  if (m_reconcileAttempted.contains(p_notebookId)) {
+    qCDebug(syncCategory)
+        << "SyncService::reconcileSyncForNotebook: already attempted in this process"
+        << p_notebookId;
+    return;
+  }
+  m_reconcileAttempted.insert(p_notebookId);
+
+  const QString backend = cfg.value(QStringLiteral("syncBackend")).toString();
+  const QString remoteUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+  if (backend.isEmpty() || remoteUrl.isEmpty()) {
+    qCWarning(syncCategory) << "SyncService::reconcileSyncForNotebook: incomplete config"
+                            << "notebookId:" << p_notebookId << "backend:" << backend
+                            << "remoteUrl:" << remoteUrl;
+    emit reconcileFinished(p_notebookId, VXCORE_ERR_INVALID_PARAM);
+    return;
+  }
+
+  qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: requesting PAT"
+                        << "notebookId:" << p_notebookId;
+
+  auto connOk = std::make_shared<QMetaObject::Connection>();
+  auto connErr = std::make_shared<QMetaObject::Connection>();
+
+  *connOk =
+      connect(m_credentialsStore, &SyncCredentialsStore::credentialsRetrieved, this,
+              [this, p_notebookId, connOk, connErr, backend, remoteUrl](const QString &p_evNbId,
+                                                                        const QString &p_pat) {
+                if (p_evNbId != p_notebookId) {
+                  return;
+                }
+                QObject::disconnect(*connOk);
+                QObject::disconnect(*connErr);
+
+                qCDebug(syncCategory)
+                    << "SyncService::reconcileSyncForNotebook: got PAT, dispatching enableSync"
+                    << "notebookId:" << p_notebookId;
+
+                QJsonObject cfgObj;
+                cfgObj.insert(QStringLiteral("backend"), backend);
+                cfgObj.insert(QStringLiteral("remoteUrl"), remoteUrl);
+                const QString configJson =
+                    QString::fromUtf8(QJsonDocument(cfgObj).toJson(QJsonDocument::Compact));
+
+                QJsonObject credsObj;
+                credsObj.insert(QStringLiteral("pat"), p_pat);
+                const QString credentialsJson =
+                    QString::fromUtf8(QJsonDocument(credsObj).toJson(QJsonDocument::Compact));
+
+                QMetaObject::invokeMethod(m_worker, "enableSync", Qt::QueuedConnection,
+                                          Q_ARG(QString, p_notebookId), Q_ARG(QString, configJson),
+                                          Q_ARG(QString, credentialsJson));
+                emit reconcileFinished(p_notebookId, VXCORE_OK);
+              });
+
+  *connErr =
+      connect(
+          m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
+          [this, p_notebookId, connOk, connErr](const QString &p_evNbId, const QString &p_errMsg) {
+            if (p_evNbId != p_notebookId) {
+              return;
+            }
+            QObject::disconnect(*connOk);
+            QObject::disconnect(*connErr);
+
+            qCWarning(syncCategory)
+                << "SyncService::reconcileSyncForNotebook: PAT fetch failed"
+                << "notebookId:" << p_notebookId << "error:" << p_errMsg
+                << "-> leaving notebook usable; Sync Now will fail until user re-enters PAT";
+            emit reconcileFinished(p_notebookId, VXCORE_ERR_SYNC_AUTH_FAILED);
+          });
+
+  m_credentialsStore->retrieveCredentials(p_notebookId);
 }

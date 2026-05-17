@@ -4,6 +4,7 @@
 #include <QHash>
 #include <QMutex>
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 
@@ -20,6 +21,7 @@ class NotebookCoreService;
 class SyncCredentialsStore;
 class SyncWorker;
 class EventBridge;
+struct NotebookOpenEvent;
 
 // SyncService is the GUI-thread facade for the per-notebook git sync stack.
 //
@@ -150,6 +152,11 @@ signals:
   void disableFinished(const QString &p_notebookId, VxCoreError p_result);
   void credentialsSetFinished(const QString &p_notebookId, VxCoreError p_result);
 
+  // Emitted after a notebook reconcile attempt completes.
+  // p_result: VXCORE_OK if enableSync dispatched, VXCORE_ERR_SYNC_AUTH_FAILED
+  // if PAT lookup failed, VXCORE_ERR_INVALID_PARAM if config incomplete.
+  void reconcileFinished(const QString &p_notebookId, VxCoreError p_result);
+
 private slots:
   // Internal forwarders. All connected to worker signals via QueuedConnection
   // so they execute on the GUI thread.
@@ -163,6 +170,10 @@ private slots:
   void onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result);
   void onWorkerCredentialsSetFinished(const QString &p_notebookId, VxCoreError p_result);
 
+  // Hooks driving reconcile-on-open.
+  void onNotebookAfterOpen(const NotebookOpenEvent &p_event);
+  void onMainWindowAfterStart();
+
   // Auto-sync event forwarders (from EventBridge, already on GUI thread).
   void onAutoSyncStarted(const QString &p_notebookId);
   void onAutoSyncFinished(const QString &p_notebookId, VxCoreError p_result);
@@ -175,6 +186,11 @@ private:
   static QString buildCredentialsJson(const QString &p_pat);
   // Build a config JSON (backend=git, remoteUrl=...) for the worker.
   static QString buildConfigJson(const QString &p_remoteUrl);
+
+  // Reconcile vxcore SyncManager runtime state for a notebook whose on-disk
+  // config says syncEnabled=true but whose SyncManager::configs_ is empty.
+  // Best-effort, idempotent per process via m_reconcileAttempted.
+  void reconcileSyncForNotebook(const QString &p_notebookId);
 
   ServiceLocator &m_services;
   NotebookCoreService *m_notebookCoreService = nullptr;
@@ -193,6 +209,10 @@ private:
 
   // Set true by shutdown(); subsequent public-API operations early-return.
   bool m_shutDown = false;
+
+  // Prevents double reconcile when both MainWindowAfterStart and a subsequent
+  // user-initiated NotebookAfterOpen fire for the same notebook in one session.
+  QSet<QString> m_reconcileAttempted;
 };
 
 } // namespace vnotex

@@ -43,7 +43,7 @@ struct FileOpenEvent {
   bool newFile = false;
   bool readOnly = false;
   int lineNumber = -1;
-  QString anchor;    // Heading anchor for scroll-to-heading navigation.
+  QString anchor; // Heading anchor for scroll-to-heading navigation.
   bool alwaysNewWindow = false;
   QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
   int searchOptions = 0;           // FindOptions serialized as int
@@ -200,14 +200,27 @@ struct NotebookCloseEvent {
   static NotebookCloseEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for NotebookAfterOpen.
+// Fires once vxcore has opened a notebook (user-initiated open or programmatic).
+// Subscribers (e.g., SyncService) can use this to reconcile per-process runtime
+// state with what vxcore has persisted on disk.
+struct NotebookOpenEvent {
+  QString notebookId;
+  QString notebookName; // optional, may be empty
+  QString rootFolder;   // optional, may be empty
+
+  QVariantMap toVariantMap() const;
+  static NotebookOpenEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for ImageHostBeforeUpload, ImageHostAfterUpload.
 struct ImageHostUploadEvent {
-  QString providerName;    // which provider is being used
-  QString providerTypeId;  // "github", "gitee", "custom_command"
-  QString fileName;        // image filename
-  QString destPath;        // destination path on host
-  QString resultUrl;       // set after upload (empty in before_upload)
-  bool success = false;    // set after upload
+  QString providerName;   // which provider is being used
+  QString providerTypeId; // "github", "gitee", "custom_command"
+  QString fileName;       // image filename
+  QString destPath;       // destination path on host
+  QString resultUrl;      // set after upload (empty in before_upload)
+  bool success = false;   // set after upload
 
   QVariantMap toVariantMap() const;
   static ImageHostUploadEvent fromVariantMap(const QVariantMap &p_map);
@@ -215,11 +228,11 @@ struct ImageHostUploadEvent {
 
 // Typed event struct for ImageHostBeforeRemove, ImageHostAfterRemove.
 struct ImageHostRemoveEvent {
-  QString providerName;    // which provider is being used
-  QString providerTypeId;  // "github", "gitee", "custom_command"
-  QString url;             // image URL to remove
-  bool success = false;    // set after remove
-  QString errorMessage;    // set after remove on failure
+  QString providerName;   // which provider is being used
+  QString providerTypeId; // "github", "gitee", "custom_command"
+  QString url;            // image URL to remove
+  bool success = false;   // set after remove
+  QString errorMessage;   // set after remove on failure
 
   QVariantMap toVariantMap() const;
   static ImageHostRemoveEvent fromVariantMap(const QVariantMap &p_map);

@@ -47,7 +47,22 @@ QString NotebookCoreService::openNotebook(const QString &p_path) {
     qWarning() << "openNotebook failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
   }
-  return cstrToQString(notebookId);
+  const QString resolvedId = cstrToQString(notebookId);
+
+  // Fire NotebookAfterOpen hook so other modules (e.g., SyncService) can
+  // reconcile per-process runtime state with persisted on-disk config. The
+  // constant has existed in hooknames.h since the hook system was introduced
+  // but was never emitted until this change.
+  if (!resolvedId.isEmpty() && m_hookMgr) {
+    NotebookOpenEvent event;
+    event.notebookId = resolvedId;
+    event.rootFolder = p_path;
+    const QJsonObject cfg = getNotebookConfig(resolvedId);
+    event.notebookName = cfg.value(QStringLiteral("name")).toString();
+    m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
+  }
+
+  return resolvedId;
 }
 
 bool NotebookCoreService::closeNotebook(const QString &p_notebookId) {
