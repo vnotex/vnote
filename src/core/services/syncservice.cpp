@@ -489,6 +489,10 @@ void SyncService::onMainWindowAfterStart() {
 }
 
 void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
+  qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: ENTRY notebookId:"
+                        << p_notebookId << "shutDown:" << m_shutDown
+                        << "hasNotebookCoreService:" << (m_notebookCoreService != nullptr)
+                        << "hasCredentialsStore:" << (m_credentialsStore != nullptr);
   if (m_shutDown || !m_notebookCoreService || !m_credentialsStore) {
     return;
   }
