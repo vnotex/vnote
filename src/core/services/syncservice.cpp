@@ -252,18 +252,47 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
 
   const QString notebookId = p_notebookId;
 
-  // After the worker reports disableFinished for THIS notebook, delete the
-  // keychain entry. One-shot connection.
+  // After the worker reports disableFinished for THIS notebook:
+  //   1. If vxcore disable_sync succeeded (VXCORE_OK), clear the on-disk JSON
+  //      sync fields (syncEnabled / syncBackend / syncRemoteUrl). vxcore's
+  //      DisableSync only clears in-memory maps (W1.T2 evidence) — without
+  //      this Qt-side reset the notebook would still look sync-enabled on next
+  //      app launch and reconcileSyncForNotebook would resurrect it (B8).
+  //      Failure to update the JSON is logged but does NOT block the keychain
+  //      cleanup (best-effort to avoid orphan PAT in S6).
+  //   2. If vxcore disable_sync failed, PRESERVE the JSON fields so the user
+  //      can retry without losing config state.
+  //   3. Always delete the keychain entry afterwards.
+  // One-shot connection.
   auto *conn = new QMetaObject::Connection;
-  *conn = connect(this, &SyncService::disableFinished, this,
-                  [this, notebookId, conn](const QString &p_finishedNotebookId, VxCoreError) {
-                    if (p_finishedNotebookId != notebookId) {
-                      return;
-                    }
-                    QObject::disconnect(*conn);
-                    delete conn;
-                    m_credentialsStore->deleteCredentials(notebookId);
-                  });
+  *conn = connect(
+      this, &SyncService::disableFinished, this,
+      [this, notebookId, conn](const QString &p_finishedNotebookId, VxCoreError p_result) {
+        if (p_finishedNotebookId != notebookId) {
+          return;
+        }
+        QObject::disconnect(*conn);
+        delete conn;
+
+        // W2.T5: clear JSON sync fields only on disable success.
+        if (p_result == VXCORE_OK && m_notebookCoreService) {
+          QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
+          cfg.remove(QStringLiteral("syncEnabled"));
+          cfg.remove(QStringLiteral("syncBackend"));
+          cfg.remove(QStringLiteral("syncRemoteUrl"));
+          const QString newJson =
+              QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+          const bool ok = m_notebookCoreService->updateNotebookConfig(notebookId, newJson);
+          if (!ok) {
+            qCWarning(syncCategory)
+                << "SyncService::disableSyncForNotebook: failed to clear JSON sync fields for"
+                << "notebookId:" << notebookId
+                << "(continuing with keychain cleanup as best-effort)";
+          }
+        }
+
+        m_credentialsStore->deleteCredentials(notebookId);
+      });
 
   QMetaObject::invokeMethod(m_worker, "disableSync", Qt::QueuedConnection,
                             Q_ARG(QString, notebookId));
@@ -285,6 +314,55 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
     return;
   }
   qCDebug(syncCategory) << "SyncService::updateCredentials: notebookId:" << p_notebookId;
+
+  // F4 chicken-and-egg fix: if the notebook is NOT registered in vxcore's
+  // runtime states_ map but its on-disk config says sync is enabled, the
+  // worker's setCredentials path would fail with VXCORE_ERR_SYNC_NOT_ENABLED
+  // because vxcore_sync_set_credentials requires a states_ entry. Route to
+  // the full enableSyncForNotebook flow (which registers the notebook AND
+  // applies credentials atomically), then re-emit its enableFinished as
+  // credentialsSetFinished so the public API contract is preserved for
+  // callers that only listen for credentialsSetFinished.
+  if (!isSyncRegistered(p_notebookId) && isSyncEnabled(p_notebookId)) {
+    qCDebug(syncCategory) << "SyncService::updateCredentials routing to enableSyncForNotebook "
+                             "(notebook unregistered) id="
+                          << p_notebookId;
+
+    const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+    const QString persistedUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+    if (persistedUrl.isEmpty()) {
+      qCWarning(syncCategory)
+          << "SyncService::updateCredentials: cannot route to enableSyncForNotebook; "
+             "syncRemoteUrl is empty in notebook config for"
+          << p_notebookId;
+      emit credentialsSetFinished(p_notebookId, VXCORE_ERR_INVALID_PARAM);
+      return;
+    }
+
+    // One-shot bridge: enableFinished -> credentialsSetFinished. Filter by
+    // notebookId because enableFinished is a shared signal. The lambda
+    // self-disconnects after firing for this notebook to avoid leaking
+    // connections across multiple updateCredentials calls.
+    const QString routedNotebookId = p_notebookId;
+    auto *bridgeConn = new QMetaObject::Connection;
+    *bridgeConn =
+        connect(this, &SyncService::enableFinished, this,
+                [this, routedNotebookId, bridgeConn](const QString &p_finishedNotebookId,
+                                                     VxCoreError p_result, const QString &) {
+                  if (p_finishedNotebookId != routedNotebookId) {
+                    return;
+                  }
+                  QObject::disconnect(*bridgeConn);
+                  delete bridgeConn;
+                  emit credentialsSetFinished(routedNotebookId, p_result);
+                });
+
+    // Connect FIRST, then invoke. enableSyncForNotebook is async (keychain
+    // store -> worker dispatch via QueuedConnection) so there's no race, but
+    // we follow the convention used elsewhere in this file.
+    enableSyncForNotebook(p_notebookId, persistedUrl, p_newPat);
+    return;
+  }
 
   const QString credsJson = buildCredentialsJson(p_newPat);
   const QString notebookId = p_notebookId;
@@ -498,6 +576,17 @@ void SyncService::onMainWindowAfterStart() {
     if (nbId.isEmpty()) {
       continue;
     }
+
+    // W2.T5/S6: Orphan PAT cleanup. Legacy disable paths (prior to W2.T5) did
+    // not consistently clear keychain credentials, leaving an orphan PAT for
+    // notebooks whose JSON now says sync is disabled. Sweep here at app start
+    // so the keychain stays in sync with disk truth.
+    if (m_credentialsStore && !isSyncEnabled(nbId) && m_credentialsStore->hasCredentials(nbId)) {
+      qCDebug(syncCategory)
+          << "SyncService::onMainWindowAfterStart: S6 orphan PAT cleanup for notebookId=" << nbId;
+      m_credentialsStore->deleteCredentials(nbId);
+    }
+
     reconcileSyncForNotebook(nbId);
   }
 }
