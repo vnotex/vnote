@@ -14,6 +14,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QSplitter>
+#include <QStyle>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -1550,12 +1551,11 @@ void NotebookExplorer2::updateSyncButtonState() {
     return;
   }
 
-  m_syncButton->setToolTip(tr("Sync Now"));
-
   const QString nbId = currentNotebookId();
   if (nbId.isEmpty()) {
     m_syncButton->setEnabled(false);
     m_syncInfoAction->setEnabled(false);
+    m_syncButton->setToolTip(tr("Sync Now"));
     qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: shortCircuit:emptyId";
     return;
   }
@@ -1568,29 +1568,64 @@ void NotebookExplorer2::updateSyncButtonState() {
   if (!bundled) {
     m_syncButton->setEnabled(false);
     m_syncInfoAction->setEnabled(false);
+    m_syncButton->setToolTip(tr("Sync Now"));
     qCDebug(syncCategory)
         << "NotebookExplorer2::updateSyncButtonState: shortCircuit:notBundled notebookId:" << nbId;
     return;
   }
 
   auto *syncSvc = m_services.get<SyncService>();
-  const bool enabled = syncSvc && syncSvc->isSyncEnabled(nbId);
-  const bool ready = syncSvc && syncSvc->isSyncReady(nbId);
-  const bool inProgress = syncSvc && syncSvc->isSyncInProgress(nbId);
+  const bool syncEnabled = syncSvc && syncSvc->isSyncEnabled(nbId);
+  const bool syncReady = syncSvc && syncSvc->isSyncReady(nbId);
+  const bool syncInProgress = syncSvc && syncSvc->isSyncInProgress(nbId);
 
-  m_syncButton->setEnabled(enabled && !inProgress);
-  if (enabled && inProgress) {
-    m_syncButton->setToolTip(tr("Sync ongoing..."));
-  } else if (enabled && !ready) {
-    m_syncButton->setToolTip(tr("Sync setup incomplete — click to configure"));
+  // Detect "partial" sync state: notebook claims sync is enabled but the
+  // on-disk config is missing required fields (syncBackend or
+  // syncRemoteUrl). When syncReady is false AND syncEnabled is true,
+  // distinguish this case from "just not bootstrapped at all" so the
+  // user knows their click will open Configure Sync (not start a sync).
+  bool partialSyncConfig = false;
+  if (syncEnabled && !syncReady) {
+    if (auto *nbSvc = m_services.get<NotebookCoreService>()) {
+      const QJsonObject cfg = nbSvc->getNotebookConfig(nbId);
+      const QString backend = cfg.value(QStringLiteral("syncBackend")).toString();
+      const QString remoteUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+      // Partial = enabled but at least one critical field missing.
+      partialSyncConfig = backend.isEmpty() || remoteUrl.isEmpty();
+    }
+  }
+  qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
+                        << "syncEnabled:" << syncEnabled << "syncReady:" << syncReady
+                        << "syncInProgress:" << syncInProgress
+                        << "partialSyncConfig:" << partialSyncConfig;
+
+  m_syncButton->setEnabled(syncEnabled && !syncInProgress);
+
+  // Surface partial state via tooltip + dynamic Qt property (no new icon
+  // asset). The button click semantics are unchanged.
+  m_syncButton->setProperty("partialSyncConfig", partialSyncConfig);
+  if (partialSyncConfig) {
+    m_syncButton->setToolTip(
+        tr("Sync configured but incomplete \xE2\x80\x94 click to finish setup\n"
+           "(or use Sync Info to fill in the missing remote URL / backend)."));
+  } else if (!syncEnabled) {
+    m_syncButton->setToolTip(tr("Sync is not enabled for this notebook."));
+  } else if (syncInProgress) {
+    m_syncButton->setToolTip(tr("Sync in progress\xE2\x80\xA6"));
+  } else if (!syncReady) {
+    m_syncButton->setToolTip(tr("Click to bootstrap sync for this notebook."));
+  } else {
+    m_syncButton->setToolTip(tr("Sync Now"));
+  }
+  // Force style refresh for any QSS rule keyed on the property.
+  if (m_syncButton->style()) {
+    m_syncButton->style()->unpolish(m_syncButton);
+    m_syncButton->style()->polish(m_syncButton);
   }
 
   // The menu entry is enabled whenever sync is configured (the dialog itself
   // is safe to open even while a sync is in progress).
-  m_syncInfoAction->setEnabled(enabled);
-  qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
-                        << "syncEnabled:" << enabled << "syncReady:" << ready
-                        << "syncInProgress:" << inProgress;
+  m_syncInfoAction->setEnabled(syncEnabled);
 }
 
 #ifdef VNOTE_TESTING

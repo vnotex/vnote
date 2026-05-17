@@ -579,3 +579,16 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
 
   m_credentialsStore->retrieveCredentials(p_notebookId);
 }
+
+void SyncService::ensureSyncEnabled(const QString &p_notebookId) {
+  qCDebug(syncCategory) << "SyncService::ensureSyncEnabled: notebookId:" << p_notebookId;
+  if (m_shutDown) {
+    return;
+  }
+  // Clear any prior "already-attempted" marker so reconcileSyncForNotebook
+  // will actually run its checks and (if config is now complete) dispatch
+  // enableSync. Without this, a partial notebook that reconcile bailed on
+  // at startup would never get re-attempted within the same session.
+  m_reconcileAttempted.remove(p_notebookId);
+  reconcileSyncForNotebook(p_notebookId);
+}

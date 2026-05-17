@@ -87,6 +87,18 @@ public:
   // Trigger a one-shot sync for a notebook. Invokes SyncWorker::triggerSync.
   void triggerSyncNow(const QString &p_notebookId);
 
+  // Ensure runtime sync state is populated for a notebook whose on-disk
+  // config is now complete (sync_enabled=true, non-empty backend +
+  // remoteUrl). Forces a reconcile attempt even if a prior attempt was
+  // already made in this process (clears the notebookId from
+  // m_reconcileAttempted first).
+  //
+  // Called by NotebookSyncInfoController after the user completes a
+  // previously-partial sync config via the Sync Info dialog. Idempotent
+  // for already-runtime-enabled notebooks (the reconcile check returns
+  // early). Results surface via the existing reconcileFinished signal.
+  void ensureSyncEnabled(const QString &p_notebookId);
+
   // Replace the stored PAT for a notebook. Sequence mirrors enableSyncForNotebook
   // but invokes SyncWorker::setCredentials instead of enableSync.
   void updateCredentials(const QString &p_notebookId, const QString &p_newPat);

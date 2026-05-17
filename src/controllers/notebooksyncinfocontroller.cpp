@@ -135,6 +135,13 @@ void NotebookSyncInfoController::applyChanges(const QString &p_newRemoteUrl,
   // No PAT update requested; applyComplete fires synchronously based on the
   // URL-write outcome alone.
   m_pendingPatUpdate = false;
+  if (urlOk) {
+    // URL-only completion path: PAT unchanged, runtime state may be empty
+    // for previously-partial notebooks. Trigger init now.
+    if (auto *syncSvc = m_services.get<SyncService>()) {
+      syncSvc->ensureSyncEnabled(m_notebookId);
+    }
+  }
   emit applyComplete(urlOk);
 }
 
@@ -154,6 +161,14 @@ void NotebookSyncInfoController::onCredentialsSetFinished(const QString &p_noteb
   }
   m_pendingPatUpdate = false;
   const bool patOk = (p_result == VXCORE_OK);
+  if (patOk) {
+    // URL+PAT completion path: PAT is now in keychain. If runtime state
+    // is empty for a previously-partial notebook, trigger init now that
+    // reconcile can read the freshly-written PAT.
+    if (auto *syncSvc = m_services.get<SyncService>()) {
+      syncSvc->ensureSyncEnabled(m_notebookId);
+    }
+  }
   emit applyComplete(m_pendingUrlWriteOk && patOk);
 }
 
