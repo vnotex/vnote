@@ -122,6 +122,21 @@ public:
   // if the user hasn't finished the bootstrap flow.
   bool isSyncReady(const QString &p_notebookId) const;
 
+  // Returns true if the notebook is registered in vxcore's runtime sync state
+  // (i.e., vxcore_sync_get_status returns VXCORE_OK for this notebook).
+  // This answers "is sync currently active at runtime" — distinct from
+  // isSyncReady which answers "is sync configured on disk".
+  //
+  // A notebook can be sync-enabled on disk (isSyncReady=true) but not yet
+  // registered at runtime (isSyncRegistered=false) if the user hasn't called
+  // enableSyncForNotebook yet in this process, or if the enable operation
+  // failed.
+  //
+  // MUST be called on the main thread (SyncManager is not thread-safe).
+  // Does NOT cache the result; state changes asynchronously via worker
+  // operations.
+  bool isSyncRegistered(const QString &p_notebookId) const;
+
   // Returns the per-device last successful sync timestamp formatted as a
   // locale-aware short string (via NotebookCoreService::getLastSyncUtc, which
   // reads metadata.db). Empty if the notebook has never been successfully

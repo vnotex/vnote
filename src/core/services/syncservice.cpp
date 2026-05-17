@@ -372,6 +372,20 @@ bool SyncService::isSyncReady(const QString &p_notebookId) const {
   return ready;
 }
 
+bool SyncService::isSyncRegistered(const QString &p_notebookId) const {
+  if (!m_notebookCoreService) {
+    return false;
+  }
+  // Query vxcore's runtime sync state via getSyncStatus wrapper.
+  // Returns VXCORE_OK iff states_[notebookId] exists (notebook is registered).
+  QString throwaway;
+  const VxCoreError err = m_notebookCoreService->getSyncStatus(p_notebookId, throwaway);
+  const bool registered = (err == VXCORE_OK);
+  qCDebug(syncCategory) << "SyncService::isSyncRegistered: query notebookId:" << p_notebookId
+                        << "registered:" << registered;
+  return registered;
+}
+
 QString SyncService::lastSyncTime(const QString &p_notebookId) const {
   if (!m_notebookCoreService) {
     return QString();
@@ -511,7 +525,6 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
         << p_notebookId;
     return;
   }
-  m_reconcileAttempted.insert(p_notebookId);
 
   const QString backend = cfg.value(QStringLiteral("syncBackend")).toString();
   const QString remoteUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
@@ -522,6 +535,11 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
     emit reconcileFinished(p_notebookId, VXCORE_ERR_INVALID_PARAM);
     return;
   }
+
+  // Mark as attempted AFTER precondition checks pass, so transient failures can retry
+  m_reconcileAttempted.insert(p_notebookId);
+  qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: reconcile attempted set inserted"
+                        << "notebookId:" << p_notebookId;
 
   qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: requesting PAT"
                         << "notebookId:" << p_notebookId;
@@ -569,6 +587,12 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
             }
             QObject::disconnect(*connOk);
             QObject::disconnect(*connErr);
+
+            // Clear the "attempted" marker so a retry (e.g., after user re-enters PAT) can proceed
+            m_reconcileAttempted.remove(p_notebookId);
+            qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: reconcile attempted "
+                                     "set removed on PAT fetch failure"
+                                  << "notebookId:" << p_notebookId;
 
             qCWarning(syncCategory)
                 << "SyncService::reconcileSyncForNotebook: PAT fetch failed"

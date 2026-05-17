@@ -33,7 +33,45 @@ void logKeychainUnavailableOnce() {
 } // namespace
 
 SyncCredentialsStore::SyncCredentialsStore(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+    : QObject(p_parent), m_services(p_services) {
+  // Maintain the in-memory existence cache by listening to the store's own
+  // completion signals. Connections are made in the constructor, BEFORE any
+  // caller can attach QSignalSpy / external slots, so cache updates always
+  // run before observer slots in single-threaded scenarios (signal/slot
+  // delivery order follows connection order).
+  //
+  // The cache holds notebook IDs only — never PAT values.
+  connect(this, &SyncCredentialsStore::credentialsStored, this,
+          [this](const QString &p_notebookId) { m_knownCredentialIds.insert(p_notebookId); });
+  connect(this, &SyncCredentialsStore::credentialsRetrieved, this,
+          [this](const QString &p_notebookId, const QString & /*p_pat*/) {
+            m_knownCredentialIds.insert(p_notebookId);
+          });
+  connect(this, &SyncCredentialsStore::credentialsDeleted, this,
+          [this](const QString &p_notebookId) { m_knownCredentialIds.remove(p_notebookId); });
+  connect(this, &SyncCredentialsStore::credentialsError, this,
+          [this](const QString &p_notebookId, const QString &p_errorString) {
+            // QtKeychain reports missing entries with platform-specific strings
+            // that consistently contain the phrase "not found" (libsecret,
+            // Windows Credential Manager, and macOS Security framework all do).
+            // Treat that as authoritative proof the entry is gone; leave the
+            // cache untouched for any other error (transient backend issues
+            // must not produce false negatives).
+            if (p_errorString.contains(QLatin1String("not found"), Qt::CaseInsensitive)) {
+              m_knownCredentialIds.remove(p_notebookId);
+            }
+          });
+}
+
+bool SyncCredentialsStore::hasCredentials(const QString &p_notebookId) const {
+  return m_knownCredentialIds.contains(p_notebookId);
+}
+
+void SyncCredentialsStore::refreshKnownIds() {
+  // QtKeychain has no enumerate API; this is intentionally a no-op kept as a
+  // hook for future backends that support enumeration. The cache continues to
+  // self-maintain through completion signals (see constructor).
+}
 
 const QString &SyncCredentialsStore::serviceName() {
   static const QString s_service = QStringLiteral("VNote");

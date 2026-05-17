@@ -49,6 +49,12 @@ private slots:
   void keychainUnavailableEmitsError();
   void patNotLogged();
 
+  // W2.T0 (sync-completion-flow-overhaul) — synchronous hasCredentials cache.
+  void testHasCredentialsAfterStore();
+  void testHasCredentialsAfterDelete();
+  void testHasCredentialsForUnknownIdReturnsFalse();
+  void testRefreshKnownIdsPopulatesCache();
+
 private:
   // Helper: wait for either signal A or signal B; return which fired first.
   // Returns 1 if signalA fires, 2 if signalB fires, 0 on timeout.
@@ -247,6 +253,167 @@ void TestSyncCredentialsStore::patNotLogged() {
 
   QVERIFY2(!g_logCapture.contains(QStringLiteral("uniqueLeakCheck1234567890")),
            "PAT value leaked into a log message");
+}
+
+// ============================================================================
+// W2.T0 — Synchronous hasCredentials() cache tests
+// ============================================================================
+// These tests cover the in-memory existence cache introduced for the UI
+// classifier (W4.T1: paint-time detection of "disk says sync enabled but no
+// PAT in keychain"). Cache invariants under exercise:
+//   - storeCredentials success  -> cache contains id
+//   - deleteCredentials success -> cache does not contain id
+//   - unknown id (never stored) -> cache miss returns false
+//   - retrieveCredentials probe -> cache (re)populated even on a fresh
+//                                  SyncCredentialsStore instance
+//
+// PAT value is the literal "test_pat_12345"; W5.T3 secrecy-audit grep keys on
+// this exact string.
+
+void TestSyncCredentialsStore::testHasCredentialsAfterStore() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot exercise cache via real store");
+#else
+  SyncCredentialsStore store(m_services);
+  const QString notebookId = QStringLiteral("nb_w2t0_after_store");
+  const QString pat = QStringLiteral("test_pat_12345");
+
+  // Best-effort cleanup of any leftover key from a prior aborted run.
+  {
+    QSignalSpy delDone(&store, &SyncCredentialsStore::credentialsDeleted);
+    QSignalSpy delErr(&store, &SyncCredentialsStore::credentialsError);
+    store.deleteCredentials(notebookId);
+    waitForEither(delDone, delErr, 5000);
+  }
+
+  // Sanity: cache empty before store.
+  QVERIFY(!store.hasCredentials(notebookId));
+
+  QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
+  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
+  store.storeCredentials(notebookId, pat);
+  int which = waitForEither(storedSpy, errorSpy, 5000);
+  if (which == 2) {
+    const QString errMsg = errorSpy.first().at(1).toString();
+    QSKIP(qPrintable(
+        QStringLiteral("OS keychain backend not usable in this test environment: %1").arg(errMsg)));
+  }
+  QCOMPARE(which, 1);
+
+  // Cache must have been updated by the internal connect on credentialsStored
+  // BEFORE the spy observed the signal (connections run in registration order;
+  // cache lambda was registered in the store's constructor).
+  QVERIFY2(store.hasCredentials(notebookId),
+           "hasCredentials must return true immediately after credentialsStored");
+
+  // Cleanup.
+  QSignalSpy deletedSpy(&store, &SyncCredentialsStore::credentialsDeleted);
+  QSignalSpy errSpy2(&store, &SyncCredentialsStore::credentialsError);
+  store.deleteCredentials(notebookId);
+  waitForEither(deletedSpy, errSpy2, 5000);
+#endif
+}
+
+void TestSyncCredentialsStore::testHasCredentialsAfterDelete() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot exercise cache via real store");
+#else
+  SyncCredentialsStore store(m_services);
+  const QString notebookId = QStringLiteral("nb_w2t0_after_delete");
+  const QString pat = QStringLiteral("test_pat_12345");
+
+  // Seed.
+  {
+    QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
+    QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+    store.storeCredentials(notebookId, pat);
+    int which = waitForEither(storedSpy, errSpy, 5000);
+    if (which == 2) {
+      const QString errMsg = errSpy.first().at(1).toString();
+      QSKIP(qPrintable(QStringLiteral("OS keychain backend not usable in this test environment: %1")
+                           .arg(errMsg)));
+    }
+    QCOMPARE(which, 1);
+  }
+  QVERIFY(store.hasCredentials(notebookId));
+
+  // Delete and verify cache eviction.
+  QSignalSpy deletedSpy(&store, &SyncCredentialsStore::credentialsDeleted);
+  QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+  store.deleteCredentials(notebookId);
+  int which = waitForEither(deletedSpy, errSpy, 5000);
+  QCOMPARE(which, 1);
+
+  QVERIFY2(!store.hasCredentials(notebookId),
+           "hasCredentials must return false immediately after credentialsDeleted");
+#endif
+}
+
+void TestSyncCredentialsStore::testHasCredentialsForUnknownIdReturnsFalse() {
+  // Pure cache-miss assertion; runs without keychain because no async I/O is
+  // required.
+  SyncCredentialsStore store(m_services);
+  const QString unknownId = QStringLiteral("nb_w2t0_never_stored_12345abcdef");
+
+  QVERIFY2(!store.hasCredentials(unknownId),
+           "hasCredentials must return false for an id that was never stored");
+  QVERIFY2(!store.hasCredentials(QString()), "hasCredentials must return false for an empty id");
+}
+
+void TestSyncCredentialsStore::testRefreshKnownIdsPopulatesCache() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  // Without keychain the cache cannot self-populate. We can still verify that
+  // refreshKnownIds() is callable on an empty cache without side effects.
+  SyncCredentialsStore store(m_services);
+  store.refreshKnownIds();
+  QVERIFY(!store.hasCredentials(QStringLiteral("nb_w2t0_anything")));
+#else
+  // Seed via a first store instance.
+  const QString notebookId = QStringLiteral("nb_w2t0_refresh");
+  const QString pat = QStringLiteral("test_pat_12345");
+  {
+    SyncCredentialsStore seedStore(m_services);
+    QSignalSpy storedSpy(&seedStore, &SyncCredentialsStore::credentialsStored);
+    QSignalSpy errSpy(&seedStore, &SyncCredentialsStore::credentialsError);
+    seedStore.storeCredentials(notebookId, pat);
+    int which = waitForEither(storedSpy, errSpy, 5000);
+    if (which == 2) {
+      const QString errMsg = errSpy.first().at(1).toString();
+      QSKIP(qPrintable(QStringLiteral("OS keychain backend not usable in this test environment: %1")
+                           .arg(errMsg)));
+    }
+    QCOMPARE(which, 1);
+  }
+
+  // A FRESH store instance has an empty cache.
+  SyncCredentialsStore freshStore(m_services);
+  QVERIFY2(!freshStore.hasCredentials(notebookId),
+           "Fresh store must start with empty cache (no enumerate API)");
+
+  // refreshKnownIds() is documented as a best-effort no-op against QtKeychain.
+  // After calling it the cache must still be empty — and the call must not
+  // crash.
+  freshStore.refreshKnownIds();
+  QVERIFY2(!freshStore.hasCredentials(notebookId),
+           "refreshKnownIds() against QtKeychain is a no-op; cache remains empty");
+
+  // Indirect cache population: a successful retrieveCredentials probe causes
+  // the cache to gain the id, demonstrating the cache-from-signals invariant
+  // that refresh hooks rely on.
+  QSignalSpy retrievedSpy(&freshStore, &SyncCredentialsStore::credentialsRetrieved);
+  QSignalSpy errSpy(&freshStore, &SyncCredentialsStore::credentialsError);
+  freshStore.retrieveCredentials(notebookId);
+  int which = waitForEither(retrievedSpy, errSpy, 5000);
+  QCOMPARE(which, 1);
+  QVERIFY2(freshStore.hasCredentials(notebookId),
+           "Cache must be populated by successful credentialsRetrieved signal");
+
+  // Cleanup.
+  QSignalSpy deletedSpy(&freshStore, &SyncCredentialsStore::credentialsDeleted);
+  QSignalSpy errSpy2(&freshStore, &SyncCredentialsStore::credentialsError);
+  freshStore.deleteCredentials(notebookId);
+  waitForEither(deletedSpy, errSpy2, 5000);
+#endif
 }
 
 } // namespace tests

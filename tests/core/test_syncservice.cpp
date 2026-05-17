@@ -44,6 +44,9 @@ private slots:
   void roundtripViaServiceLocator();
   void inProgressFlagToggles();
   void testSetInProgressSeam();
+  void testIsSyncRegisteredTrueWhenStatesEntry();
+  void testIsSyncRegisteredFalseWhenAbsent();
+  void testIsSyncRegisteredUnaffectedByDiskFields();
 
 private:
   // Initialize a bare git repo at p_bareRepoPath and seed it with one commit
@@ -272,6 +275,168 @@ void TestSyncService::testSetInProgressSeam() {
   QVERIFY(syncService.isSyncInProgress(QStringLiteral("nbA")));
   syncService.testSetInProgress(QStringLiteral("nbA"), false);
   QVERIFY(!syncService.isSyncInProgress(QStringLiteral("nbA")));
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestSyncService::testIsSyncRegisteredTrueWhenStatesEntry() {
+  // Test that isSyncRegistered returns true after enableSyncForNotebook
+  // successfully registers the notebook in vxcore's runtime states_.
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+
+  // Seed a bare repo and create a notebook.
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
+  QString remoteUrl = seedBareRepo(bareDir, localTemp);
+  if (remoteUrl.isEmpty()) {
+    vxcore_context_destroy(ctx);
+    QSKIP("git not available or bare-repo seeding failed");
+  }
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_registered"));
+  QDir().mkpath(nbRoot);
+  QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"Registered NB","description":"","version":"1"})", NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  // Before enable: isSyncRegistered should return false.
+  QVERIFY(!syncService.isSyncRegistered(nbId));
+
+  // Enable sync and wait for completion.
+  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+  syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("test_pat_12345"));
+  QVERIFY(enableSpy.wait(15000));
+  QCOMPARE(enableSpy.count(), 1);
+
+  const auto args = enableSpy.first();
+  const VxCoreError result = qvariant_cast<VxCoreError>(args.at(1));
+  if (result == VXCORE_ERR_UNKNOWN) {
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(500);
+    vxcore_context_destroy(ctx);
+    QSKIP("OS keychain backend not usable in this test environment");
+  }
+  QCOMPARE(result, VXCORE_OK);
+
+  // After enable: isSyncRegistered should return true (states_[nbId] exists).
+  QVERIFY(syncService.isSyncRegistered(nbId));
+
+  // Cleanup.
+  QSignalSpy delSpy(&credStore, &SyncCredentialsStore::credentialsDeleted);
+  QSignalSpy delErr(&credStore, &SyncCredentialsStore::credentialsError);
+  credStore.deleteCredentials(nbId);
+  waitForEither(delSpy, delErr, 5000);
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestSyncService::testIsSyncRegisteredFalseWhenAbsent() {
+  // Test that isSyncRegistered returns false for a notebook that has
+  // sync enabled on disk (isSyncReady=true) but has never been registered
+  // at runtime (no enableSyncForNotebook call in this process).
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+
+  // Create a notebook with sync enabled on disk.
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_unregistered"));
+  QDir().mkpath(nbRoot);
+  QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"Unregistered NB","description":"","version":"1"})",
+      NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  // Manually set sync config on disk (without calling enableSyncForNotebook).
+  QJsonObject cfg;
+  cfg.insert(QStringLiteral("syncEnabled"), true);
+  cfg.insert(QStringLiteral("syncBackend"), QStringLiteral("git"));
+  cfg.insert(QStringLiteral("syncRemoteUrl"), QStringLiteral("file:///fake/remote.git"));
+  QJsonDocument doc(cfg);
+  notebookService.updateNotebookConfig(nbId, QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
+
+  // isSyncReady should return true (disk config is complete).
+  QVERIFY(syncService.isSyncReady(nbId));
+
+  // But isSyncRegistered should return false (no runtime states_ entry).
+  QVERIFY(!syncService.isSyncRegistered(nbId));
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestSyncService::testIsSyncRegisteredUnaffectedByDiskFields() {
+  // Test that isSyncRegistered queries runtime state only and is not
+  // affected by changes to disk config fields (syncEnabled, syncBackend, etc.).
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+
+  // Create a notebook with sync enabled on disk.
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_disk_unaffected"));
+  QDir().mkpath(nbRoot);
+  QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"Disk Unaffected NB","description":"","version":"1"})",
+      NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  // Set sync config on disk.
+  QJsonObject cfg;
+  cfg.insert(QStringLiteral("syncEnabled"), true);
+  cfg.insert(QStringLiteral("syncBackend"), QStringLiteral("git"));
+  cfg.insert(QStringLiteral("syncRemoteUrl"), QStringLiteral("file:///fake/remote.git"));
+  QJsonDocument doc(cfg);
+  notebookService.updateNotebookConfig(nbId, QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
+
+  // isSyncRegistered is false (no runtime registration).
+  QVERIFY(!syncService.isSyncRegistered(nbId));
+
+  // Disable sync on disk.
+  cfg.insert(QStringLiteral("syncEnabled"), false);
+  QJsonDocument doc2(cfg);
+  notebookService.updateNotebookConfig(nbId,
+                                       QString::fromUtf8(doc2.toJson(QJsonDocument::Compact)));
+
+  // isSyncRegistered should still be false (disk change doesn't affect runtime state).
+  QVERIFY(!syncService.isSyncRegistered(nbId));
+
+  // Re-enable sync on disk.
+  cfg.insert(QStringLiteral("syncEnabled"), true);
+  QJsonDocument doc3(cfg);
+  notebookService.updateNotebookConfig(nbId,
+                                       QString::fromUtf8(doc3.toJson(QJsonDocument::Compact)));
+
+  // isSyncRegistered should still be false (disk change doesn't affect runtime state).
+  QVERIFY(!syncService.isSyncRegistered(nbId));
 
   vxcore_context_destroy(ctx);
 }

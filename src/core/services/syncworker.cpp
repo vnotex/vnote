@@ -115,7 +115,9 @@ void SyncWorker::maybeHang() {
 
 void SyncWorker::enableSync(QString p_notebookId, QString p_configJson, QString p_credentialsJson) {
   Q_ASSERT(QThread::currentThread() == this->thread());
-  qCDebug(syncCategory) << "SyncWorker::enableSync: [worker] notebookId:" << p_notebookId;
+  const bool credsPresent = !p_credentialsJson.isEmpty();
+  qCDebug(syncCategory) << "SyncWorker::enableSync: notebookId:" << p_notebookId
+                        << "credsPresent:" << credsPresent;
 
   maybeHang();
 

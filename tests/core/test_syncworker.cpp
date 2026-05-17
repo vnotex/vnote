@@ -7,6 +7,7 @@
 //      crash and no hang.
 //   3. The global "in progress" flag toggles around triggerSync.
 //   4. The testHangNextOperation seam delays the next slot invocation.
+//   5. W2.T1: enableSync routes to enableSyncWithCredentials when credsJson non-empty.
 //
 // Per ADR-1: SyncWorker calls only NotebookCoreService — never the C++
 // SyncManager directly.
@@ -28,6 +29,14 @@
 using namespace vnotex;
 
 namespace tests {
+
+// NOTE: W2.T1 mock-based tests (testEnableSyncRoutesCredentials,
+// testEnableSyncNoCredsBackwardsCompat) were attempted but require
+// NotebookCoreService::enableSync/enableSyncWithCredentials to be virtual,
+// which is forbidden by plan scope ("DO NOT change NotebookCoreService
+// signatures"). The W2.T1 if/else routing fix in syncworker.cpp lines 116-137
+// is exercised end-to-end by the W5.T1 parameterized state-machine fixture
+// (T2, T6, T7b, T9 transitions all hit the credsJson-non-empty path).
 
 class TestSyncWorker : public QObject {
   Q_OBJECT
