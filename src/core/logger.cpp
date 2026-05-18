@@ -1,6 +1,5 @@
 #include "logger.h"
 
-#include "configmgr.h"
 #include <QFile>
 #include <QTextStream>
 
@@ -12,13 +11,13 @@ bool Logger::s_verbose = false;
 
 bool Logger::s_logToStderr = false;
 
-void Logger::init(bool p_verbose, bool p_logToStderr) {
+void Logger::init(const QString &p_logFilePath, bool p_verbose, bool p_logToStderr) {
   s_verbose = p_verbose;
   s_logToStderr = p_logToStderr;
 
 #if defined(QT_NO_DEBUG)
   if (!s_logToStderr) {
-    s_file.setFileName(ConfigMgr::getInst().getLogFile());
+    s_file.setFileName(p_logFilePath);
     if (s_file.size() >= 5 * 1024 * 1024) {
       s_file.open(QIODevice::WriteOnly | QIODevice::Text);
     } else {
@@ -28,6 +27,7 @@ void Logger::init(bool p_verbose, bool p_logToStderr) {
 #else
   // Always log to stderr in debug.
   s_logToStderr = true;
+  Q_UNUSED(p_logFilePath);
 #endif
 
   qInstallMessageHandler(Logger::log);

@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Init logger after app info is set.
-    Logger::init(cmdOptions.m_verbose, cmdOptions.m_logToStderr);
+    Logger::init(configMgr.getLogFile(), cmdOptions.m_verbose, cmdOptions.m_logToStderr);
 
     qInfo() << QStringLiteral("%1 (v%2) started at %3 (%4)")
                    .arg(ConfigMgr2::c_appName, app.applicationVersion(),

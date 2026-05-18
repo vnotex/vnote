@@ -11,7 +11,7 @@ class Logger {
 public:
   Logger() = delete;
 
-  static void init(bool p_verbose, bool p_logToStderr);
+  static void init(const QString &p_logFilePath, bool p_verbose, bool p_logToStderr);
 
 private:
   static void log(QtMsgType p_type, const QMessageLogContext &p_context, const QString &p_msg);
