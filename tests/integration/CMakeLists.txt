@@ -34,3 +34,39 @@ add_custom_command(TARGET test_sync_e2e POST_BUILD
     $<TARGET_FILE_DIR:test_sync_e2e>
 )
 
+# W5.T1 + W5.T2: parameterized state-machine matrix (S0-S7, 17 transitions)
+# and cold-start recovery integration tests.
+add_qt_test(test_sync_state_machine
+  SOURCES
+    test_sync_state_machine.cpp
+  LINKS
+    Qt6::Core
+    Qt6::Widgets
+    core_services
+)
+# Same -nocrashhandler override as test_sync_e2e — ctest stdout pipe driver
+# deadlocks against QTEST_MAIN's default Windows crash hooks (T14 learnings).
+set_property(TEST test_sync_state_machine PROPERTY
+  COMMAND $<TARGET_FILE:test_sync_state_machine> -nocrashhandler)
+set_tests_properties(test_sync_state_machine PROPERTIES
+  TIMEOUT 240
+)
+target_compile_definitions(test_sync_state_machine PRIVATE VNOTE_TESTING)
+add_custom_command(TARGET test_sync_state_machine POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_sync_state_machine>
+)
+
+# W5.T3: credential secrecy audit (no PAT in logs/JSON/source).
+# Wraps scripts/test_pat_secrecy.ps1 so it runs as part of `ctest`.
+if(WIN32)
+  add_test(
+    NAME test_pat_secrecy
+    COMMAND pwsh -NoProfile -ExecutionPolicy Bypass -File
+      ${CMAKE_SOURCE_DIR}/scripts/test_pat_secrecy.ps1
+      -RepoRoot ${CMAKE_SOURCE_DIR}
+  )
+  set_tests_properties(test_pat_secrecy PROPERTIES TIMEOUT 60)
+endif()
+
