@@ -1535,9 +1535,23 @@ void NotebookExplorer2::onSyncButtonClicked() {
   if (!syncSvc) {
     return;
   }
+  const bool syncEnabled = syncSvc->isSyncEnabled(nbId);
   const bool syncReady = syncSvc->isSyncReady(nbId);
   qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: clicked notebookId:" << nbId
-                        << "syncReady:" << syncReady;
+                        << "syncEnabled:" << syncEnabled << "syncReady:" << syncReady;
+  // W4.T2: S0 (sync disabled) MUST route to the bootstrap dialog with empty
+  // fields so the user can re-enable sync. Triggering Sync Now is forbidden
+  // here per plan ("DO NOT allow clicking Sync Now on S0 notebook").
+  if (!syncEnabled) {
+    qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: syncEnabled=false (S0), "
+                             "opening bootstrap dialog"
+                          << "notebookId:" << nbId;
+    auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setBootstrapMode(true);
+    dlg->open();
+    return;
+  }
   if (syncReady) {
     syncSvc->triggerSyncNow(nbId);
   } else {
@@ -1632,7 +1646,7 @@ void NotebookExplorer2::updateSyncButtonState() {
                         << "syncInProgress:" << syncInProgress
                         << "partialSyncConfig:" << partialSyncConfig;
 
-  m_syncButton->setEnabled(syncEnabled && !syncInProgress);
+  m_syncButton->setEnabled(bundled && !syncInProgress);
 
   // Surface partial state via tooltip + dynamic Qt property (no new icon
   // asset). The button click semantics are unchanged.
@@ -1640,11 +1654,14 @@ void NotebookExplorer2::updateSyncButtonState() {
 
   // Build tooltip, appending reconcile error if present (W4.T3)
   QString tooltip;
-  if (partialSyncConfig) {
+  if (!syncEnabled) {
+    // W4.T2: S0 affordance is "Enable Sync" (distinct from "Sync Now") so
+    // the user understands the click will open the bootstrap dialog rather
+    // than start a sync.
+    tooltip = tr("Enable Sync\xE2\x80\xA6 (sync is not configured for this notebook)");
+  } else if (partialSyncConfig) {
     tooltip = tr("Sync configured but incomplete \xE2\x80\x94 click to finish setup\n"
                  "(or use Sync Info to fill in the missing remote URL / backend).");
-  } else if (!syncEnabled) {
-    tooltip = tr("Sync is not enabled for this notebook.");
   } else if (syncInProgress) {
     tooltip = tr("Sync in progress\xE2\x80\xA6");
   } else if (!syncReady) {
@@ -1666,9 +1683,10 @@ void NotebookExplorer2::updateSyncButtonState() {
     m_syncButton->style()->polish(m_syncButton);
   }
 
-  // The menu entry is enabled whenever sync is configured (the dialog itself
-  // is safe to open even while a sync is in progress).
-  m_syncInfoAction->setEnabled(syncEnabled);
+  // W4.T2: Sync Info menu is enabled for ALL bundled notebooks regardless of
+  // syncEnabled (was previously gated to syncEnabled, which trapped S0
+  // notebooks - users could not view/edit sync settings to re-enable).
+  m_syncInfoAction->setEnabled(bundled);
 }
 
 #ifdef VNOTE_TESTING
