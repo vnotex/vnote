@@ -197,8 +197,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   // Open actions - only for files (external folders cannot be expanded)
   if (!isFolder) {
     auto *openAction = menu->addAction(tr("&Open"));
-    connect(openAction, &QAction::triggered, this,
-            [this, p_nodeId]() { openNodes(resolveSelection(p_nodeId)); });
+    connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
 
     addOpenWithSubmenu(menu, p_nodeId);
 
