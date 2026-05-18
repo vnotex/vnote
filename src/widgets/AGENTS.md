@@ -69,6 +69,48 @@ For ViewArea2 framework design decisions (splitter orientation, session layout p
 
 The orchestrator for all open/close/split/move operations is `ViewAreaController` in `../controllers/`.
 
+## NotebookExplorer2: Sync Button State
+
+`NotebookExplorer2::updateSyncButtonState` (`src/widgets/notebookexplorer2.cpp:1512-1665`) paints the per-notebook sync button and Sync Info menu. It classifies the current notebook into one of the 8 sync states (see root [Sync State Model](../../AGENTS.md#sync-state-model)) and sets the `partialSyncConfig` QWidget property, which downstream QSS reacts to.
+
+### Classifier
+
+`partialSyncConfig` is set to `true` for any non-ready state inside the `syncEnabled && syncReady` branch (`notebookexplorer2.cpp:1614-1628`):
+
+| State | Detected by | Reason |
+|---|---|---|
+| S1 (no URL/backend) | `syncEnabled && (backend.isEmpty() || remoteUrl.isEmpty())` | Incomplete disk config |
+| S2 (PAT missing) | `syncEnabled && syncReady && !credStore->hasCredentials(id)` | Disk-complete but no keychain entry |
+| S4 (not registered) | `syncEnabled && syncReady && !syncSvc->isSyncRegistered(id)` | Disk-complete, PAT present, but vxcore runtime never registered |
+| S5 (ready) | `syncEnabled && syncReady && hasCredentials && isRegistered` | partialSyncConfig=false; tooltip "Sync Now" |
+
+Use `SyncCredentialsStore::hasCredentials(id)` (cached, paint-safe per W2.T0) instead of `retrieveCredentials`. Keychain access on every paint event is too expensive. Use `SyncService::isSyncRegistered(id)` (synchronous runtime query) for S4 detection.
+
+Do not rename or remove the `partialSyncConfig` property: downstream QSS depends on it.
+
+### Tooltip Variants
+
+The button tooltip changes per state to give the user actionable guidance:
+
+| State | Tooltip | Action on click |
+|---|---|---|
+| S5 | "Sync Now" | Triggers sync |
+| S1/S2/S4 (partial) | Includes "credentials" or "initializ" hint | Opens `NotebookSyncInfoDialog2` in dialog's auto-detected mode |
+| S0 | "Enable Sync" | Opens `NotebookSyncInfoDialog2` with `setBootstrapMode(true)` and empty fields |
+| Reconcile error | Existing tooltip + `"Last sync init failed: error code %1"` appended | Same as the underlying partial/ready state |
+
+The reconcile error code is stored in `m_lastReconcileError` (in-memory `QHash<QString, int>`, `notebookexplorer2.h:201`) populated by `SyncService::reconcileFinished` (`notebookexplorer2.cpp:130-140`) and cleared on `syncFinished` success or notebook switch. No persistence to disk; no toast/modal.
+
+### Re-enable UI Affordance for S0
+
+Without this affordance, users who disable sync can never re-enable without recreating the notebook. The Sync button and Sync Info menu remain visible AND clickable for S0 notebooks (`notebookexplorer2.cpp:1602-1635`):
+
+- Button enabled regardless of `syncEnabled`; label changes to "Enable Sync" when `syncEnabled == false`.
+- `onSyncButtonClicked` branches on `!syncEnabled` → opens `NotebookSyncInfoDialog2` with `setBootstrapMode(true)` (dialog hides the Disable button in this mode).
+- Sync Info menu action enabled regardless of `syncEnabled` (was previously `setEnabled(syncEnabled)`).
+
+The dialog's bootstrap-mode dispatch (`notebooksyncinfodialog2.cpp` accept/apply handlers) routes the user's inputs through `NotebookSyncInfoController::bootstrapApply` rather than `applyChanges`, performing the atomic enable that takes a clean S0 to S5 in one shot.
+
 ## Related Modules
 
 - [`../core/AGENTS.md`](../core/AGENTS.md) — ServiceLocator, services injected into widgets

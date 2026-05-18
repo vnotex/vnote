@@ -348,6 +348,61 @@ src/
 
 ---
 
+## Sync State Model
+
+Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and service that touches sync must reason in terms of these states. The state is the tuple of: on-disk JSON sync fields, PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map.
+
+### Canonical State Predicates
+
+| State | syncEnabled (JSON) | syncBackend (JSON) | syncRemoteUrl (JSON) | PAT in keychain | states_ entry |
+|---|---|---|---|---|---|
+| S0 | false / absent | absent | absent | absent | absent |
+| S1 | true | "git" | empty | maybe | absent |
+| S2 | true | "git" | set | **absent** | absent |
+| S3 | true | empty | maybe | maybe | absent |
+| S4 | true | "git" | set | present | **absent** |
+| S5 | true | "git" | set | present | present |
+| S6 | false | absent | absent | **present** | absent |
+| S7 | true | "git" | set | present | present + active sync |
+
+S5 is the only "ready" state. S1-S4 and S6 are partial/inconsistent; S0 is cleanly disabled; S7 is in-flight.
+
+### Recovery Paths: bootstrapApply vs applyChanges
+
+| Path | Use when | Behavior |
+|---|---|---|
+| `NotebookSyncInfoController::bootstrapApply(url, pat)` | Notebook is in S1/S2/S3/S4 (any partial state). Atomic enable for an existing notebook. | Calls `SyncService::enableSyncForNotebook` directly; on success persists `syncRemoteUrl` and triggers initial sync; on failure keeps notebook in current state (NO delete, unlike `NewNotebookController::bootstrapSync`). |
+| `NotebookSyncInfoController::applyChanges(url, pat)` | Notebook is in S5 (registered). PAT refresh or URL change. | PAT-only update routes through `SyncService::updateCredentials`. URL change triggers `confirmUrlChangeRequested` signal and, on confirm, runs atomic disable+wipe `vx_notebook/vx_sync/`+re-enable. |
+
+The dialog (`NotebookSyncInfoDialog2`) auto-routes to `bootstrapApply` when `m_bootstrapMode == true` OR when `SyncService::isSyncRegistered(id) == false`. This is defense in depth: even when a caller bypasses the bootstrap entry point, partial-state notebooks still get the atomic path.
+
+### Reconcile Semantics
+
+`SyncService::reconcileSyncForNotebook` is called by `MainWindowAfterStart` and on notebook open to lift S4 notebooks (disk-complete, runtime-absent) into S5.
+
+Key invariants (`src/core/services/syncservice.cpp:505-594`):
+- `m_reconcileAttempted.insert(id)` happens **after** precondition checks (line ~540), not before. Precondition failures do NOT block retry.
+- `m_reconcileAttempted.remove(id)` fires on transient failure (credential fetch error at line ~592) so the next reconcile call retries.
+- No remove on success (notebook is registered; no retry needed).
+- Idempotence check at line 510 prevents duplicate in-flight reconciles when `MainWindowAfterStart` and `NotebookAfterOpen` race.
+
+### Disable Cleanup
+
+`SyncService::disableSyncForNotebook` on `VXCORE_OK` clears all three flat sync keys (`syncEnabled`, `syncBackend`, `syncRemoteUrl`) from notebook JSON BEFORE deleting the keychain entry (`src/core/services/syncservice.cpp:246-290`). On failure, JSON is preserved for retry. This closes the "resurrection trap" where a disabled notebook would reappear as S6 (orphan PAT) or S1 (orphan disk fields) on next app start.
+
+`SyncService::onMainWindowAfterStart` also sweeps S6 orphans: any notebook with `!isSyncEnabled() && hasCredentials(id)` gets its keychain entry deleted.
+
+### Re-enable UI Affordance
+
+S0 notebooks expose a re-enable surface via the same Sync button and Sync Info menu used for S5 (`src/widgets/notebookexplorer2.cpp:1512-1635`). For S0:
+- Button label: "Enable Sync" (distinct from "Sync Now" for S5)
+- On click: opens `NotebookSyncInfoDialog2` with `setBootstrapMode(true)` and all fields empty
+- Sync Info menu item enabled regardless of `syncEnabled` (dialog opens in bootstrap mode with disable button hidden)
+
+Without this affordance, users who disable sync cannot re-enable without recreating the notebook.
+
+---
+
 ## Code Style Guidelines
 
 ### Standards

@@ -316,6 +316,31 @@ The token resolver `Theme::translateStyleByPalette` in `src/core/theme.cpp` requ
 
 For per-theme conversion matrices used by the pilot (which palette key maps to which CSS concept on each theme), see `.sisyphus/plans/theme-token-pilot.md` (Tasks 3, 4, 5).
 
+## SyncService
+
+`SyncService` wraps the vxcore sync C API for the Qt layer. It owns the worker thread, signal contract, and partial-state recovery logic. See the root [Sync State Model](../../AGENTS.md#sync-state-model) for the S0-S7 predicates.
+
+### `isSyncRegistered(notebookId)` (runtime state check)
+
+`bool SyncService::isSyncRegistered(const QString &p_notebookId) const` (`src/core/services/syncservice.h:125-138`, `.cpp:375-387`) answers the runtime question "is this notebook in vxcore's `states_` map?" It is distinct from `isSyncReady` (disk-only check on JSON sync fields).
+
+| Helper | Source | Answers |
+|---|---|---|
+| `isSyncReady(id)` | disk JSON (`syncEnabled` + `syncBackend` + `syncRemoteUrl`) | "should sync be enabled?" |
+| `isSyncRegistered(id)` | vxcore `states_` map via `vxcore_sync_get_status` | "is sync runtime-registered right now?" |
+
+Use `isSyncRegistered` to detect S4 (disk-complete but runtime-absent) from S5 (fully registered). Main-thread-only; SyncManager is not thread-safe. Do not cache (state changes asynchronously).
+
+### `updateCredentials(notebookId, newPat)` routing
+
+`updateCredentials` (`src/core/services/syncservice.cpp:282-336`) branches on registration state:
+
+- **Registered (S5)** → dispatches `SyncWorker::setCredentials` which calls `vxcore_sync_set_credentials`. PAT-only refresh; runtime `states_` entry preserved.
+- **Unregistered + enabled-on-disk (S2/S4)** → reads `syncRemoteUrl` from notebook JSON and re-routes through `enableSyncForNotebook(id, persistedUrl, newPat)`. This is the chicken-and-egg fix: `vxcore_sync_set_credentials` returns `VXCORE_ERR_SYNC_NOT_ENABLED (25)` on unregistered notebooks, so the call must instead drive the full atomic enable flow.
+- **Unregistered + no URL on disk** → emits `credentialsSetFinished(id, VXCORE_ERR_INVALID_PARAM)` with a `qCWarning` log; cannot recover without a URL.
+
+The unregistered branch installs a one-shot bridge lambda on `enableFinished` that filters by notebookId, self-disconnects via heap-stored `QMetaObject::Connection*`, then re-emits as `credentialsSetFinished`. Callers can rely on `credentialsSetFinished` as the single completion signal regardless of which internal path runs.
+
 ## Plugin Hook System (WordPress-style)
 
 VNote implements a WordPress-inspired hook system for plugin extensibility. This enables plugins to:

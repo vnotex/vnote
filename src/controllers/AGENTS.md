@@ -31,6 +31,32 @@ See [MVC Example](../../AGENTS.md#mvc-example-notebook-node-operations) for the 
 | `TextViewWindowController` | Plain text editing |
 | `PdfViewWindowController` | PDF viewing |
 | `MindMapViewWindowController` | Mind map viewing |
+| `NotebookSyncInfoController` | Sync enable/disable, PAT refresh, URL change, bootstrap recovery |
+| `NewNotebookController` (sync portion) | New-notebook bootstrap via `bootstrapSync` (deletes notebook on enable failure) |
+
+## NotebookSyncInfoController: bootstrapApply vs applyChanges
+
+`NotebookSyncInfoController` exposes two recovery paths. Picking the wrong one is the root cause of B7 (chicken-and-egg) and B8 (resurrection trap) historically. See the root [Sync State Model](../../AGENTS.md#sync-state-model) for the S0-S7 predicates.
+
+| Method | Source | Use when | Failure behavior |
+|---|---|---|---|
+| `bootstrapApply(url, pat)` | `notebooksyncinfocontroller.cpp` (atomic enable for existing notebook) | Notebook is partial (S1/S2/S3/S4). Always called by `NotebookSyncInfoDialog2` when `m_bootstrapMode == true` OR when `SyncService::isSyncRegistered(id) == false`. | Keeps notebook intact (no delete). Emits `error(message)` then `applyComplete(false)`. Diverges from `NewNotebookController::bootstrapSync` which removes the half-created notebook on failure. |
+| `applyChanges(url, pat)` | `notebooksyncinfocontroller.cpp:107-146` | Notebook is fully registered (S5). PAT refresh or URL change. | PAT-only changes route through `SyncService::updateCredentials`. |
+
+Implementation patterns:
+
+- **One-shot signal disconnect**: `bootstrapApply` connects to `SyncService::enableFinished` via `std::make_shared<QMetaObject::Connection>`; the lambda filters by `m_notebookId`, self-disconnects, then emits `applyComplete`. Mirrors `NewNotebookController::bootstrapSync` (`newnotebookcontroller.cpp:217-244`) minus the delete-on-failure branch.
+- **Persist after success only**: `persistRemoteUrl(p_url)` runs inside the success branch of the lambda. vxcore is the source of truth; the on-disk URL advertises success only when vxcore actually accepted it.
+
+## URL Change on S5: confirmUrlChangeRequested
+
+Changing the remote URL on a registered notebook is destructive (drops the existing git remote linkage). `NotebookSyncInfoController::applyChanges` detects URL change on a registered notebook and gates it behind a confirmation flow:
+
+1. **Detect**: `urlChanged && isSyncRegistered(id) && !newUrl.isEmpty()` → cache new URL + PAT in member state, emit `confirmUrlChangeRequested(oldUrl, newUrl)`, return without further work.
+2. **Dialog catches signal**: shows a `QMessageBox` with the URL change warning. On confirm calls `controller->confirmUrlChange(true)`; on cancel calls `controller->confirmUrlChange(false)` (which clears pending state, no-op).
+3. **PAT preservation**: if the PAT field was empty, controller fetches the existing PAT from the keychain via async `SyncCredentialsStore::retrieveCredentials` BEFORE running disable (disable wipes the keychain entry per `SyncService::disableSyncForNotebook`).
+4. **Atomic re-register**: `performAtomicUrlReChange` chains `disableSyncForNotebook` → on `VXCORE_OK` wipes `<root>/vx_notebook/vx_sync/` via `QDir::removeRecursively` (required because vxcore `DisableSync` only clears in-memory maps; the gitdir remains and a re-enable against a different URL would otherwise see the stale `remote.origin.url`) → calls `enableSyncForNotebook(newUrl, pat)` → on `VXCORE_OK` restores the three flat sync keys, calls `triggerSyncNow`, emits `applyComplete(true)`.
+5. **Failure recovery**: re-enable failure leaves notebook in clean S0 (sync fields stay cleared per W2.T5 disable JSON clear). The W4.T2 "Enable Sync" UI affordance is the retry surface.
 
 ## Related Modules
 
