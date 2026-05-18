@@ -65,6 +65,28 @@ public:
   // m_notebookId.
   void disableSync();
 
+  // W3.T1 — Atomically enable sync on an EXISTING partial notebook
+  // (S1/S2/S3/S4 -> S5). Mirrors NewNotebookController::bootstrapSync but
+  // does NOT delete the notebook on failure (the notebook already exists on
+  // disk with user content; the partial sync config is intentionally left in
+  // place so the user can retry without losing their notebook).
+  //
+  // Sequence:
+  //   1. Install a one-shot connection on SyncService::enableFinished filtered
+  //      by m_notebookId.
+  //   2. Call SyncService::enableSyncForNotebook(m_notebookId, p_url, p_pat).
+  //   3. On VXCORE_OK: persist syncRemoteUrl via persistRemoteUrl(), emit
+  //      applyComplete(true), trigger an initial sync via
+  //      SyncService::triggerSyncNow.
+  //   4. On failure: emit applyComplete(false) + error(message). KEEP the
+  //      notebook intact (no closeNotebook / removeRecursively, unlike
+  //      NewNotebookController::bootstrapSync).
+  //   5. Always disconnect the one-shot connection after firing.
+  //
+  // The PAT is forwarded to SyncService and NEVER cached on this controller
+  // (per ADR-9). It is also NEVER logged in any branch.
+  void bootstrapApply(const QString &p_url, const QString &p_pat);
+
 signals:
   void dataLoaded(const QString &p_notebookName, const QString &p_remoteUrl,
                   const QString &p_lastSyncTime);
