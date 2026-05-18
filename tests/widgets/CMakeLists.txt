@@ -172,3 +172,24 @@ add_custom_command(TARGET test_notebooksyncinfodialog2 POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_notebooksyncinfodialog2>
 )
+
+# W4.T1: NotebookExplorer2 sync state classifier tests (S2/S4 partial detection).
+# Tests the extended partialSyncConfig classifier that now detects:
+#   - S2: syncEnabled && syncReady but PAT missing
+#   - S4: syncEnabled && syncReady but sync not registered
+#   - S5: fully ready state
+add_qt_test(test_notebook_explorer_sync_state
+  SOURCES
+    test_notebook_explorer_sync_state.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+
+add_custom_command(TARGET test_notebook_explorer_sync_state POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebook_explorer_sync_state>
+)

@@ -34,6 +34,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synccredentialsstore.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 #include <core/sessionconfig.h>
@@ -114,13 +115,29 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
     connect(syncSvc, &SyncService::syncStarted, this,
             [this](const QString &) { updateSyncButtonState(); });
     connect(syncSvc, &SyncService::syncFinished, this,
-            [this](const QString &, VxCoreError) { updateSyncButtonState(); });
+            [this](const QString &p_notebookId, VxCoreError) {
+              // Clear reconcile error on successful sync (sync supersedes reconcile)
+              m_lastReconcileError.remove(p_notebookId);
+              updateSyncButtonState();
+            });
     connect(syncSvc, &SyncService::syncFailed, this,
             [this](const QString &, VxCoreError, const QString &) { updateSyncButtonState(); });
     connect(syncSvc, &SyncService::enableFinished, this,
             [this](const QString &, VxCoreError, const QString &) { updateSyncButtonState(); });
     connect(syncSvc, &SyncService::disableFinished, this,
             [this](const QString &, VxCoreError) { updateSyncButtonState(); });
+    // Wire reconcileFinished to store error code and update button state (W4.T3)
+    connect(syncSvc, &SyncService::reconcileFinished, this,
+            [this](const QString &p_notebookId, VxCoreError p_result) {
+              if (p_result != VXCORE_OK) {
+                m_lastReconcileError[p_notebookId] = static_cast<int>(p_result);
+                qCWarning(syncCategory)
+                    << "reconcile error for notebookId=" << p_notebookId << "result=" << p_result;
+              } else {
+                m_lastReconcileError.remove(p_notebookId);
+              }
+              updateSyncButtonState();
+            });
   }
   connect(this, &NotebookExplorer2::currentNotebookChanged, this,
           [this](const QString &) { updateSyncButtonState(); });
@@ -1586,12 +1603,28 @@ void NotebookExplorer2::updateSyncButtonState() {
   // user knows their click will open Configure Sync (not start a sync).
   bool partialSyncConfig = false;
   if (syncEnabled && !syncReady) {
+    // S1: syncEnabled && !syncReady with missing backend/remoteUrl
     if (auto *nbSvc = m_services.get<NotebookCoreService>()) {
       const QJsonObject cfg = nbSvc->getNotebookConfig(nbId);
       const QString backend = cfg.value(QStringLiteral("syncBackend")).toString();
       const QString remoteUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
       // Partial = enabled but at least one critical field missing.
       partialSyncConfig = backend.isEmpty() || remoteUrl.isEmpty();
+    }
+  } else if (syncEnabled && syncReady) {
+    // S2: syncEnabled && syncReady but PAT missing in keychain
+    if (auto *credStore = m_services.get<SyncCredentialsStore>()) {
+      if (!credStore->hasCredentials(nbId)) {
+        partialSyncConfig = true;
+      }
+    }
+    // S4: syncEnabled && syncReady but sync not registered at runtime
+    if (!partialSyncConfig) {
+      if (auto *syncSvc = m_services.get<SyncService>()) {
+        if (!syncSvc->isSyncRegistered(nbId)) {
+          partialSyncConfig = true;
+        }
+      }
     }
   }
   qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
@@ -1604,19 +1637,29 @@ void NotebookExplorer2::updateSyncButtonState() {
   // Surface partial state via tooltip + dynamic Qt property (no new icon
   // asset). The button click semantics are unchanged.
   m_syncButton->setProperty("partialSyncConfig", partialSyncConfig);
+
+  // Build tooltip, appending reconcile error if present (W4.T3)
+  QString tooltip;
   if (partialSyncConfig) {
-    m_syncButton->setToolTip(
-        tr("Sync configured but incomplete \xE2\x80\x94 click to finish setup\n"
-           "(or use Sync Info to fill in the missing remote URL / backend)."));
+    tooltip = tr("Sync configured but incomplete \xE2\x80\x94 click to finish setup\n"
+                 "(or use Sync Info to fill in the missing remote URL / backend).");
   } else if (!syncEnabled) {
-    m_syncButton->setToolTip(tr("Sync is not enabled for this notebook."));
+    tooltip = tr("Sync is not enabled for this notebook.");
   } else if (syncInProgress) {
-    m_syncButton->setToolTip(tr("Sync in progress\xE2\x80\xA6"));
+    tooltip = tr("Sync in progress\xE2\x80\xA6");
   } else if (!syncReady) {
-    m_syncButton->setToolTip(tr("Click to bootstrap sync for this notebook."));
+    tooltip = tr("Click to bootstrap sync for this notebook.");
   } else {
-    m_syncButton->setToolTip(tr("Sync Now"));
+    tooltip = tr("Sync Now");
   }
+
+  // Append reconcile error to tooltip if present
+  if (m_lastReconcileError.contains(nbId)) {
+    int errorCode = m_lastReconcileError.value(nbId);
+    tooltip += tr("\n\nLast sync init failed: error code %1").arg(errorCode);
+  }
+
+  m_syncButton->setToolTip(tooltip);
   // Force style refresh for any QSS rule keyed on the property.
   if (m_syncButton->style()) {
     m_syncButton->style()->unpolish(m_syncButton);

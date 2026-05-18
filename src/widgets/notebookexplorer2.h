@@ -196,6 +196,10 @@ private:
   QToolButton *m_syncButton = nullptr;
   QAction *m_syncInfoAction = nullptr;
 
+  // In-memory reconcile error tracking (W4.T3). Maps notebookId -> error code.
+  // Cleared on sync success or notebook switch. Used to surface errors via tooltip.
+  QHash<QString, int> m_lastReconcileError;
+
   // File system watcher for detecting external changes
   QFileSystemWatcher *m_fsWatcher = nullptr;
   QTimer *m_fsReloadTimer = nullptr;
