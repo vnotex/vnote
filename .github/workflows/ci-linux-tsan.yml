@@ -1,0 +1,101 @@
+# Linux + ThreadSanitizer CI Workflow
+#
+# DISABLED by default until Wave 10.3 enables it.
+#
+# Planned trigger conditions (Wave 10.3):
+# - Push to master branch
+# - Pull requests touching sync paths (libs/vxcore/src/sync/*, src/core/services/sync*)
+#
+# Purpose: Detect data races in vxcore sync subsystem via ThreadSanitizer.
+# Runs vxcore sync test subset only (avoids fork-incompatible patterns).
+#
+# Reference: sync-backend-phase4.md Task 0.4
+
+name: CI-Linux-TSan
+
+on:
+  workflow_dispatch:
+
+env:
+  VNOTE_VER: 4.0.1
+  CMAKE_VER: 3.24.3
+
+jobs:
+  build-linux-tsan:
+    name: Build On Ubuntu (ThreadSanitizer)
+    if: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Init Submodules
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install a Fresh CMake
+        run: |
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Linux-x86_64.sh
+          chmod +x cmake-${CMAKE_VER}-Linux-x86_64.sh
+          mkdir ${{runner.workspace}}/cmake
+          sudo ./cmake-${CMAKE_VER}-Linux-x86_64.sh --skip-license --prefix=${{runner.workspace}}/cmake
+          sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
+          sudo ln -s ${{runner.workspace}}/cmake/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{runner.workspace}}/cmake/bin/cpack /usr/local/bin/cpack
+
+      - name: Install Dependencies
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev fcitx-libs-dev extra-cmake-modules libxkbcommon-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libgit2-dev
+          python3 -m pip config set global.break-system-packages true
+
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{runner.workspace}}/Qt
+          key: ${{ runner.os }}-QtCache-6.8
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.8.3
+          target: desktop
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
+          tools: 'tools_opensslv3_src'
+          cache: 'true'
+
+      - name: Create Build Dir
+        run: mkdir -p libs/vxcore/build_test
+        working-directory: ${{runner.workspace}}
+
+      - name: Configure vxcore Tests with ThreadSanitizer
+        run: |
+          cmake -S libs/vxcore -B libs/vxcore/build_test \
+            -G "Unix Makefiles" \
+            -DVXCORE_BUILD_TESTS=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=thread -g -O1" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
+        working-directory: ${{runner.workspace}}
+
+      - name: Build vxcore Tests
+        run: |
+          cmake --build libs/vxcore/build_test --config Debug
+        working-directory: ${{runner.workspace}}
+
+      - name: Run Sync Test Subset (ThreadSanitizer)
+        run: |
+          ctest --test-dir libs/vxcore/build_test -C Debug \
+            -R "^test_(sync|git_sync|dirty_tracker)" \
+            --output-on-failure
+        working-directory: ${{runner.workspace}}
+        env:
+          TSAN_OPTIONS: "halt_on_error=1:exitcode=66"
