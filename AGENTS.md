@@ -350,6 +350,8 @@ src/
 
 ## Sync State Model
 
+Threading rules: see `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract.
+
 Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and service that touches sync must reason in terms of these states. The state is the tuple of: on-disk JSON sync fields, PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map.
 
 ### Canonical State Predicates
