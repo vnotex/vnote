@@ -113,7 +113,7 @@ void NotebookSyncInfoController::applyChanges(const QString &p_newRemoteUrl,
                                               const QString &p_newPat) {
   // W3.T3 — URL-change-on-S5 atomic disable+re-enable detection.
   //
-  // Per W1.T1 evidence: re-calling vxcore_sync_enable_with_credentials with a
+  // Per W1.T1 evidence: re-calling vxcore_sync_enable (with credentials) with a
   // different URL updates the in-memory configs_ map but does NOT rewrite the
   // on-disk git remote.origin.url; subsequent Sync() would silently push to
   // the OLD remote (split-brain). The only correct way to change the URL on

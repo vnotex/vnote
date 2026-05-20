@@ -52,6 +52,11 @@ set_tests_properties(test_sync_state_machine PROPERTIES
   TIMEOUT 240
 )
 target_compile_definitions(test_sync_state_machine PRIVATE VNOTE_TESTING)
+# Wave 7.1: same WHOLEARCHIVE rationale as test_notebookcoreservice_sync —
+# state machine matrix exercises the git backend factory.
+if(MSVC)
+  target_link_options(test_sync_state_machine PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
 add_custom_command(TARGET test_sync_state_machine POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit>

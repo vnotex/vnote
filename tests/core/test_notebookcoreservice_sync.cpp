@@ -181,7 +181,7 @@ void TestNotebookCoreServiceSync::enableWithCredentialsClonesIntoEmptyRoot() {
   QString credsJson =
       QStringLiteral(R"({"pat":"","authorName":"Seed","authorEmail":"seed@example.com"})");
 
-  VxCoreError err = fix.service->enableSyncWithCredentials(nbId, configJson, credsJson);
+  VxCoreError err = fix.service->enableSync(nbId, configJson, credsJson);
   QCOMPARE(err, VXCORE_OK);
 
   // Verify the seed file landed in the workdir root after clone-into-empty.
@@ -269,7 +269,7 @@ void TestNotebookCoreServiceSync::getSyncStatusReturnsValidJson() {
   QString cfg =
       QStringLiteral(R"({"backend":"git","remoteUrl":"%1","intervalSeconds":300})").arg(remoteUrl);
   QString creds = QStringLiteral(R"({"pat":""})");
-  QCOMPARE(fix.service->enableSyncWithCredentials(nbId, cfg, creds), VXCORE_OK);
+  QCOMPARE(fix.service->enableSync(nbId, cfg, creds), VXCORE_OK);
 
   QString statusJson;
   VxCoreError err = fix.service->getSyncStatus(nbId, statusJson);

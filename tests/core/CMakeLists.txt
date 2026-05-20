@@ -437,6 +437,16 @@ add_qt_test(test_notebookcoreservice_sync
     vxcore
   GUILESS
 )
+# Wave 7.1 (sync-backend-phase4): force-include the git backend translation
+# unit so its self-registration token (kGitRegistration in git_sync_backend.cpp)
+# is preserved by the MSVC linker. Without this, the linker drops the .obj
+# from the static vxcore.lib (no externally-referenced symbols), the static
+# init never runs, and SyncManager::EnableSyncImpl gets a null factory for
+# backend "git". Other parent sync tests don't exercise the git factory and
+# so don't need this.
+if(MSVC)
+  target_link_options(test_notebookcoreservice_sync PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
 
 # T6: SyncWorker (worker-thread vxcore call dispatcher mirroring SearchService).
 # Per ADR-1: SyncWorker calls only NotebookCoreService — never SyncManager directly.
@@ -469,3 +479,8 @@ add_qt_test(test_syncservice
   GUILESS
 )
 target_compile_definitions(test_syncservice PRIVATE VNOTE_TESTING)
+# Wave 7.1: same WHOLEARCHIVE rationale as test_notebookcoreservice_sync —
+# this test exercises the git backend factory through SyncService.
+if(MSVC)
+  target_link_options(test_syncservice PRIVATE /WHOLEARCHIVE:vxcore)
+endif()

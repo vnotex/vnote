@@ -130,8 +130,7 @@ void SyncWorker::enableSync(QString p_notebookId, QString p_configJson, QString 
   if (p_credentialsJson.isEmpty()) {
     code = m_notebookCoreService->enableSync(p_notebookId, p_configJson);
   } else {
-    code = m_notebookCoreService->enableSyncWithCredentials(p_notebookId, p_configJson,
-                                                            p_credentialsJson);
+    code = m_notebookCoreService->enableSync(p_notebookId, p_configJson, p_credentialsJson);
   }
   emit enableFinished(p_notebookId, code, vxErrorToString(code));
 }

@@ -12,7 +12,6 @@ if (-not (Test-Path -LiteralPath $OutputDir)) {
 # C ABI functions to search for
 $CABIFunctions = @(
     "vxcore_sync_enable",
-    "vxcore_sync_enable_with_credentials",
     "vxcore_sync_set_credentials",
     "vxcore_sync_disable",
     "vxcore_sync_trigger",

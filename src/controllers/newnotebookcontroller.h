@@ -76,7 +76,7 @@ public:
 
   // Bootstrap git sync on a notebook that already exists (per ADR-7:
   // CREATE-THEN-ENABLE). Caller MUST have invoked createNotebook() first; this
-  // method only fires enableSyncWithCredentials via SyncService and persists
+  // method only fires enableSync (with credentials) via SyncService and persists
   // the remote URL into the notebook config on success. On failure the
   // notebook is closed and its on-disk root directory is removed recursively
   // (per ADR-2: cleanup uses closeNotebook + QDir::removeRecursively, since

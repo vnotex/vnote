@@ -281,13 +281,21 @@ bool NotebookCoreService::emptyRecycleBin(const QString &p_notebookId) {
 // Sync operations - thin wrappers around vxcore C sync APIs.
 // Credential JSON contents are intentionally not logged.
 VxCoreError NotebookCoreService::enableSync(const QString &p_notebookId,
-                                            const QString &p_configJson) {
+                                            const QString &p_configJson,
+                                            const QString &p_credentialsJson) {
   if (!checkContext()) {
     return VXCORE_ERR_NOT_INITIALIZED;
   }
   const QByteArray nbId = p_notebookId.toUtf8();
   const QByteArray cfg = p_configJson.toUtf8();
-  return vxcore_sync_enable(m_context, nbId.constData(), cfg.constData());
+  // Wave 7.1 (sync-backend-phase4): unified vxcore_sync_enable. Pass
+  // nullptr for credentials when caller has none — the C ABI installs a
+  // NoOpCredentialProvider in that case. Otherwise forward the JSON bytes.
+  if (p_credentialsJson.isEmpty()) {
+    return vxcore_sync_enable(m_context, nbId.constData(), cfg.constData(), nullptr);
+  }
+  const QByteArray creds = p_credentialsJson.toUtf8();
+  return vxcore_sync_enable(m_context, nbId.constData(), cfg.constData(), creds.constData());
 }
 
 VxCoreError NotebookCoreService::disableSync(const QString &p_notebookId) {
@@ -363,19 +371,6 @@ VxCoreError NotebookCoreService::setSyncCredentials(const QString &p_notebookId,
   const QByteArray nbId = p_notebookId.toUtf8();
   const QByteArray creds = p_credentialsJson.toUtf8();
   return vxcore_sync_set_credentials(m_context, nbId.constData(), creds.constData());
-}
-
-VxCoreError NotebookCoreService::enableSyncWithCredentials(const QString &p_notebookId,
-                                                           const QString &p_configJson,
-                                                           const QString &p_credentialsJson) {
-  if (!checkContext()) {
-    return VXCORE_ERR_NOT_INITIALIZED;
-  }
-  const QByteArray nbId = p_notebookId.toUtf8();
-  const QByteArray cfg = p_configJson.toUtf8();
-  const QByteArray creds = p_credentialsJson.toUtf8();
-  return vxcore_sync_enable_with_credentials(m_context, nbId.constData(), cfg.constData(),
-                                             creds.constData());
 }
 
 bool NotebookCoreService::isSyncReady(const QString &p_notebookId) const {

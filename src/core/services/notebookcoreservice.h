@@ -71,7 +71,13 @@ public:
   // codes (VXCORE_ERR_NOT_FOUND, VXCORE_ERR_UNSUPPORTED, etc.). Returns
   // VXCORE_ERR_NOT_INITIALIZED if the underlying vxcore context is null.
   // Credential JSON contents (e.g. "pat") are NEVER logged by these wrappers.
-  VxCoreError enableSync(const QString &p_notebookId, const QString &p_configJson);
+  // enableSync: unified vxcore_sync_enable wrapper. p_credentialsJson is optional;
+  // when empty/null the C ABI installs a NoOpCredentialProvider (legacy
+  // creds-less path). When non-empty, credentials are parsed and forwarded
+  // BEFORE the backend's Initialize() runs — required for backends whose
+  // initialization itself needs auth (e.g., authenticated git clone).
+  VxCoreError enableSync(const QString &p_notebookId, const QString &p_configJson,
+                         const QString &p_credentialsJson = QString());
   VxCoreError disableSync(const QString &p_notebookId);
   VxCoreError triggerSync(const QString &p_notebookId);
   VxCoreError getSyncStatus(const QString &p_notebookId, QString &p_outStatusJson);
@@ -79,8 +85,6 @@ public:
   VxCoreError resolveSyncConflict(const QString &p_notebookId, const QString &p_filePath,
                                   const QString &p_resolution);
   VxCoreError setSyncCredentials(const QString &p_notebookId, const QString &p_credentialsJson);
-  VxCoreError enableSyncWithCredentials(const QString &p_notebookId, const QString &p_configJson,
-                                        const QString &p_credentialsJson);
   bool isSyncReady(const QString &p_notebookId) const;
 
   // Per-device last successful sync timestamp (milliseconds since Unix epoch).

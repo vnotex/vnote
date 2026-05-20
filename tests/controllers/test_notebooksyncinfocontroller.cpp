@@ -683,7 +683,7 @@ void TestNotebookSyncInfoController::testBootstrapApplyOneShotDisconnect() {
 // W3.T3 — URL-change-on-S5 atomic disable+re-enable tests
 // ============================================================================
 //
-// Per W1.T1 evidence: re-calling vxcore_sync_enable_with_credentials with a
+// Per W1.T1 evidence: re-calling vxcore_sync_enable (with credentials) with a
 // different URL leaves the on-disk git remote stale → split-brain. The only
 // correct path is atomic disable+wipe+re-enable. These tests verify:
 //   1. The confirmation gate fires on URL change for a registered notebook.
