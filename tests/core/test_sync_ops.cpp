@@ -35,6 +35,9 @@ private slots:
   void disableSyncNullService();
   void disableSyncUnknownNotebook();
   void disableSyncInvokesCallbackOnSuccess();
+  void enableSyncNullService();
+  void enableSyncAgainstBareRepo();
+  void enableSyncInvalidUrl();
 
 private:
   QString seedBareRepo(const QString &p_bareRepoPath, TempDirFixture &p_workTemp);
@@ -198,6 +201,113 @@ void TestSyncOps::disableSyncInvokesCallbackOnSuccess() {
       QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
       QTest::qWait(10);
     }
+  }
+
+  vxcore_context_destroy(ctx);
+}
+
+} // namespace tests
+
+namespace tests {
+
+void TestSyncOps::enableSyncNullService() {
+  std::atomic<int> calls{0};
+  VxCoreError captured = VXCORE_OK;
+  QString capturedMsg;
+  SyncOps::enableSync(nullptr, QStringLiteral("anything"), QStringLiteral("{}"),
+                      QStringLiteral("{}"), [&](VxCoreError code, QString msg) {
+                        ++calls;
+                        captured = code;
+                        capturedMsg = msg;
+                      });
+  QCOMPARE(calls.load(), 1);
+  QCOMPARE(captured, VXCORE_ERR_NULL_POINTER);
+  QVERIFY(!capturedMsg.isEmpty());
+}
+
+void TestSyncOps::enableSyncAgainstBareRepo() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  {
+    NotebookCoreService notebookService(ctx);
+
+    TempDirFixture localTemp;
+    QVERIFY(localTemp.isValid());
+
+    const QString bareDir = localTemp.filePath(QStringLiteral("enable_remote.git"));
+    const QString remoteUrl = seedBareRepo(bareDir, localTemp);
+    if (remoteUrl.isEmpty()) {
+      QSKIP("git not available or bare-repo seeding failed");
+    }
+
+    const QString nbRoot = localTemp.filePath(QStringLiteral("nb_enable"));
+    QDir().mkpath(nbRoot);
+    const QString nbId = notebookService.createNotebook(
+        nbRoot, R"({"name":"Enable NB","description":"","version":"1"})", NotebookType::Bundled);
+    QVERIFY(!nbId.isEmpty());
+
+    const QString configJson =
+        QStringLiteral(R"({"backend":"git","remoteUrl":"%1","intervalSeconds":60})").arg(remoteUrl);
+    const QString credsJson = QStringLiteral(R"({"type":"token","value":"ghp_TEST_PAT_ENABLE"})");
+
+    std::atomic<int> calls{0};
+    VxCoreError captured = VXCORE_ERR_UNKNOWN;
+    QString capturedMsg;
+    QElapsedTimer timer;
+    timer.start();
+    SyncOps::enableSync(&notebookService, nbId, configJson, credsJson,
+                        [&](VxCoreError code, QString msg) {
+                          ++calls;
+                          captured = code;
+                          capturedMsg = msg;
+                        });
+    QVERIFY(timer.elapsed() < 30000);
+    QCOMPARE(calls.load(), 1);
+    QCOMPARE(captured, VXCORE_OK);
+    QVERIFY(capturedMsg.isEmpty());
+
+    // Cleanup: disable to avoid leaving sync state behind.
+    SyncOps::disableSync(&notebookService, nbId, [](VxCoreError) {});
+  }
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestSyncOps::enableSyncInvalidUrl() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  {
+    NotebookCoreService notebookService(ctx);
+
+    TempDirFixture localTemp;
+    QVERIFY(localTemp.isValid());
+
+    const QString nbRoot = localTemp.filePath(QStringLiteral("nb_invalid"));
+    QDir().mkpath(nbRoot);
+    const QString nbId = notebookService.createNotebook(
+        nbRoot, R"({"name":"Invalid NB","description":"","version":"1"})", NotebookType::Bundled);
+    QVERIFY(!nbId.isEmpty());
+
+    const QString configJson =
+        QStringLiteral(R"({"backend":"git","remoteUrl":"not-a-url","intervalSeconds":60})");
+    const QString credsJson = QStringLiteral(R"({"type":"token","value":"ghp_TEST_PAT_INVALID"})");
+
+    std::atomic<int> calls{0};
+    VxCoreError captured = VXCORE_OK;
+    QString capturedMsg;
+    SyncOps::enableSync(&notebookService, nbId, configJson, credsJson,
+                        [&](VxCoreError code, QString msg) {
+                          ++calls;
+                          captured = code;
+                          capturedMsg = msg;
+                        });
+    QCOMPARE(calls.load(), 1);
+    QVERIFY(captured != VXCORE_OK);
+    QVERIFY(!capturedMsg.isEmpty());
   }
 
   vxcore_context_destroy(ctx);
