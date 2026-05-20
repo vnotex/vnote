@@ -102,6 +102,21 @@ private slots:
   void onSyncFailed(const QString &p_notebookId, VxCoreError p_code, const QString &p_message);
   void onConflictsDetected(const QString &p_notebookId, const QStringList &p_conflictFiles);
 
+  // B1: Controller asks the user to confirm a destructive URL change on a
+  // sync-registered (S5) notebook. Shows a QMessageBox::warning; on Yes,
+  // forwards confirmUrlChange(true) to the controller (which then runs the
+  // atomic disable+wipe+re-enable). On No, forwards confirmUrlChange(false)
+  // and reverts the URL field text to p_oldUrl. The dialog stays open in
+  // either case; closure happens later via applyComplete (success) or stays
+  // open on failure (B2 error path).
+  void onConfirmUrlChange(const QString &p_oldUrl, const QString &p_newUrl);
+
+  // B2: Controller reports a failure (bootstrap, applyChanges, URL re-
+  // change, etc.). Shows a QMessageBox::critical so the user sees the
+  // message and can retry; the dialog is NEVER closed by this slot. Empty
+  // messages are rendered with a generic fallback rather than suppressed.
+  void onError(const QString &p_message);
+
 private:
   enum class SyncStateLevel { Idle, Syncing, Conflict, Error };
 

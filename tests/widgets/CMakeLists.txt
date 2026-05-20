@@ -173,6 +173,76 @@ add_custom_command(TARGET test_notebooksyncinfodialog2 POST_BUILD
     $<TARGET_FILE_DIR:test_notebooksyncinfodialog2>
 )
 
+# Tasks 2.1 (B1) + 2.2 (B2): wire confirmUrlChangeRequested + error signals
+# from NotebookSyncInfoController to NotebookSyncInfoDialog2. Same source
+# layout as test_notebooksyncinfodialog2 (the full dialog source + base
+# widgets compiled inline because there is no separate widgets static lib).
+add_qt_test(test_notebooksyncinfodialog2_url_change
+  SOURCES
+    test_notebooksyncinfodialog2_url_change.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notebooksyncinfodialog2_url_change PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_notebooksyncinfodialog2_url_change PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_notebooksyncinfodialog2_url_change POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebooksyncinfodialog2_url_change>
+)
+
+add_qt_test(test_notebooksyncinfodialog2_error
+  SOURCES
+    test_notebooksyncinfodialog2_error.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notebooksyncinfodialog2_error PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_notebooksyncinfodialog2_error PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_notebooksyncinfodialog2_error POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebooksyncinfodialog2_error>
+)
+
 # W4.T1: NotebookExplorer2 sync state classifier tests (S2/S4 partial detection).
 # Tests the extended partialSyncConfig classifier that now detects:
 #   - S2: syncEnabled && syncReady but PAT missing

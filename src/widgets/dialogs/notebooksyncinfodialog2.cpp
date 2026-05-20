@@ -79,6 +79,12 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
               }
               refreshDirtyButtons();
             });
+    // B1: confirm destructive URL change on a registered notebook.
+    connect(m_controller, &NotebookSyncInfoController::confirmUrlChangeRequested, this,
+            &NotebookSyncInfoDialog2::onConfirmUrlChange);
+    // B2: surface controller errors to the user without closing the dialog.
+    connect(m_controller, &NotebookSyncInfoController::error, this,
+            &NotebookSyncInfoDialog2::onError);
     m_controller->loadInitialData();
   }
 
@@ -535,3 +541,35 @@ QString NotebookSyncInfoDialog2::enteredPat() const {
 }
 
 bool NotebookSyncInfoDialog2::isPreCreateMode() const { return m_preCreateMode; }
+
+void NotebookSyncInfoDialog2::onConfirmUrlChange(const QString &p_oldUrl, const QString &p_newUrl) {
+  if (!m_controller) {
+    return;
+  }
+
+  const QMessageBox::StandardButton ret =
+      QMessageBox::warning(this, tr("Sync"),
+                           tr("This will wipe local sync state and re-clone from the new URL.\n"
+                              "Old URL: %1\nNew URL: %2\n\nContinue?")
+                               .arg(p_oldUrl.isEmpty() ? tr("(none)") : p_oldUrl,
+                                    p_newUrl.isEmpty() ? tr("(none)") : p_newUrl),
+                           QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+  if (ret == QMessageBox::Yes) {
+    m_controller->confirmUrlChange(true);
+  } else {
+    // Revert the URL field so the dialog reflects the cancelled change.
+    if (m_remoteUrlEdit) {
+      m_remoteUrlEdit->setText(p_oldUrl);
+    }
+    refreshDirtyButtons();
+    m_controller->confirmUrlChange(false);
+  }
+}
+
+void NotebookSyncInfoDialog2::onError(const QString &p_message) {
+  // Per plan: empty messages MUST NOT be suppressed silently — render a
+  // generic fallback. Dialog stays open so the user can retry.
+  const QString text = p_message.isEmpty() ? tr("Sync operation failed.") : p_message;
+  QMessageBox::critical(this, tr("Sync"), text);
+}
