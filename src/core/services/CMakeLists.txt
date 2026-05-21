@@ -21,6 +21,7 @@ set(SERVICES_SOURCES
   vnote3migrationservice.cpp
   synccredentialsstore.cpp
   syncworker.cpp
+  syncops.cpp
   syncservice.cpp
   syncstateclassifier.cpp
   syncworkqueuemanager.cpp
@@ -62,6 +63,7 @@ set(SERVICES_HEADERS
   vnote3migrationservice.h
   synccredentialsstore.h
   syncworker.h
+  syncops.h
   syncservice.h
   syncstateclassifier.h
   syncworkqueuemanager.h

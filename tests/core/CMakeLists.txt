@@ -560,6 +560,23 @@ if(MSVC)
   target_link_options(test_sync_signal_baseline PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
+# T12 (sync-queue-convergence): SyncOps namespace — stateless free-function
+# callables wrapping vxcore sync operations. Establishes the pattern T13-T16
+# follow; this test covers disableSync's null-service, unknown-notebook, and
+# success paths.
+add_qt_test(test_sync_ops
+  SOURCES
+    test_sync_ops.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_sync_ops PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_ops PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
 # Task 14.1 (F5.1): SyncWorkQueueManager — per-notebook serialized executor.
 # QThreadPool-based; per-notebook FIFO; parallel across notebooks.
 add_qt_test(test_sync_work_queue_manager
