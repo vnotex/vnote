@@ -26,7 +26,8 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
-#include <core/services/syncworker.h>
+// T24: SyncWorker class deleted; this test now relies solely on EventBridge
+// + SyncService re-emit signals to characterize the manual sync path.
 #include <temp_dir_fixture.h>
 
 #include <vxcore/vxcore.h>

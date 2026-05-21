@@ -45,8 +45,6 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
-#include <core/services/syncworker.h>
-#include <core/services/workqueuedrainthread.h>
 #include <temp_dir_fixture.h>
 
 #include <vxcore/vxcore.h>
@@ -181,12 +179,8 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     QSignalSpy bridgeFinishedSpy(&eventBridge, &EventBridge::syncFinished);
     QSignalSpy bridgeConflictSpy(&eventBridge, &EventBridge::syncConflict);
 
-    SyncWorker *worker = syncService.worker();
-    QVERIFY(worker != nullptr);
-    QSignalSpy workerStartedSpy(worker, &SyncWorker::syncStarted);
-    QSignalSpy workerFinishedSpy(worker, &SyncWorker::syncFinished);
-    QSignalSpy workerFailedSpy(worker, &SyncWorker::syncFailed);
-    QSignalSpy workerConflictsSpy(worker, &SyncWorker::conflictsDetected);
+    // T24: SyncWorker class deleted. Worker-side spies are no longer
+    // meaningful; the EventBridge spies alone characterize the auto path.
 
     // ---- Enable sync ----------------------------------------------------------
     // Note: NotebookConfig::sync_interval_seconds default is 60s. We can't easily
@@ -204,27 +198,11 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     // enableFinished payload: (notebookId, VxCoreError, message).
     QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
 
-    // Enabling sync ran an INITIAL sync via the worker. Reset worker spies so we
-    // measure ONLY the auto path that follows. EventBridge spies are also reset
-    // because Wave 2 of the refactor will change which side fires on the manual
-    // path; T1 covers that and we keep T2 strictly about the AUTO path.
-    workerStartedSpy.clear();
-    workerFinishedSpy.clear();
-    workerFailedSpy.clear();
-    workerConflictsSpy.clear();
+    // Enabling sync ran an INITIAL sync via SyncOps. Reset bridge spies so we
+    // measure ONLY the auto path that follows.
     bridgeStartedSpy.clear();
     bridgeFinishedSpy.clear();
     bridgeConflictSpy.clear();
-
-    // ---- Start the drain thread that consumes WorkQueue("sync") ----------------
-    // T9 (sync-queue-convergence): MaybeEnqueueSync no longer enqueues into
-    // WorkQueue("sync") — it emits sync.should_run instead. The drain thread
-    // therefore polls an empty queue and is harmless; we still start it so
-    // any incidental queue users (e.g., other event-bridge work) are drained.
-    // The real auto-route lives in the sync.should_run callback below until
-    // T31 introduces a production consumer on the Qt side.
-    WorkQueueDrainThread drain(ctx);
-    drain.start();
 
     // T9 shim: subscribe to sync.should_run and call vxcore_sync_trigger
     // synchronously. This mimics what the future Qt auto-route consumer will
@@ -262,9 +240,9 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     QVERIFY(buf.save());
 
     // ---- Wait for the auto-sync round trip -------------------------------------
-    // Allow up to 15s: file.saved → MaybeEnqueueSync → WorkQueue.Enqueue
-    //   → drain thread poll (≤500ms) → vxcore TriggerSync → libgit2
-    //   stage/commit/fetch/push (seconds) → EventBridge::syncFinished.
+    // Allow up to 15s: file.saved → MaybeEnqueueSync → sync.should_run event
+    //   → vxcore TriggerSync → libgit2 stage/commit/fetch/push (seconds)
+    //   → EventBridge::syncFinished.
     const int autoSyncTimeoutMs = 15000;
     QElapsedTimer t;
     t.start();
@@ -274,21 +252,12 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
       QTest::qWait(50);
     }
 
-    // ---- Stop the drain thread BEFORE asserting --------------------------------
-    // requestStop() also shuts down the WorkQueue so process_next returns.
-    drain.requestStop();
-    QVERIFY2(drain.wait(5000), "WorkQueueDrainThread did not stop within 5s");
-
     // ---- Assertions: characterize the CURRENT (pre-refactor) emission ----------
     // EventBridge fires exactly once for started + finished on the auto path.
     QCOMPARE(bridgeStartedSpy.count(), 1);
     QCOMPARE(bridgeFinishedSpy.count(), 1);
 
-    // SyncWorker is NOT involved in the auto path today.
-    QCOMPARE(workerStartedSpy.count(), 0);
-    QCOMPARE(workerFinishedSpy.count(), 0);
-    QCOMPARE(workerFailedSpy.count(), 0);
-    QCOMPARE(workerConflictsSpy.count(), 0);
+    // T24: SyncWorker is gone; no worker-side spies to assert against.
 
     // Bridge finished should report VXCORE_OK (push to a seeded bare repo).
     const VxCoreError finishedResult =

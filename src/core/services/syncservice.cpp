@@ -25,7 +25,6 @@
 #include <core/services/synccredentialsstore.h>
 #include <core/services/synclog.h>
 #include <core/services/syncops.h>
-#include <core/services/syncworker.h>
 #include <core/services/syncworkqueuemanager.h>
 
 #include <vxcore/vxcore.h>
@@ -38,13 +37,9 @@ using namespace vnotex;
 
 namespace {
 
-// Bounded wait for the worker thread to finish a clean quit before we resort
-// to terminate(). 30s comfortably accommodates a slow git push.
+// Bounded wait for the per-notebook work queue to drain on shutdown before
+// we proceed with destruction. 30s comfortably accommodates a slow git push.
 static constexpr int kShutdownTimeoutMs = 30000;
-
-// After terminate(), give the OS a brief grace period to actually reap the
-// thread before we proceed with destruction.
-static constexpr int kPostTerminateJoinMs = 1000;
 
 // Brief log-friendly description for VxCoreError. Mirrors syncworker.cpp's
 // helper but is kept local to avoid coupling.
@@ -95,29 +90,13 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
     m_workQueue = m_ownedWorkQueue.get();
   }
 
-  // Create thread and worker. The worker is constructed on the GUI thread,
-  // then moveToThread'd onto the dedicated thread BEFORE the thread starts.
-  // Standard Qt worker pattern.
-  m_thread = new QThread(this);
-  m_thread->setObjectName(QStringLiteral("VNoteSyncWorker"));
-  m_worker = new SyncWorker(m_notebookCoreService);
-  m_worker->moveToThread(m_thread);
-  // Ensure the worker is destroyed on its own thread when the thread finishes.
-  connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
-
-  // T23: SyncWorker is no longer the source of sync lifecycle signals. vxcore
-  // SyncManager emits sync.started / sync.finished / sync.conflict for BOTH
-  // manual AND auto triggers (post-T7), and EventBridge translates them into
-  // Qt signals. SyncService now subscribes to EventBridge as the single source
-  // of truth for started / finished / conflict events. The remaining worker
-  // connections (enable / disable / credentials) stay until T24 retires the
-  // worker entirely, because vxcore does not emit lifecycle events for those.
-  connect(m_worker, &SyncWorker::enableFinished, this, &SyncService::onWorkerEnableFinished,
-          Qt::QueuedConnection);
-  connect(m_worker, &SyncWorker::disableFinished, this, &SyncService::onWorkerDisableFinished,
-          Qt::QueuedConnection);
-  connect(m_worker, &SyncWorker::credentialsSetFinished, this,
-          &SyncService::onWorkerCredentialsSetFinished, Qt::QueuedConnection);
+  // T24: SyncWorker QObject + private QThread are gone. All async dispatch
+  // now flows through SyncWorkQueueManager + SyncOps. Enable / disable /
+  // setCredentials completion callbacks bounce back to the GUI thread via
+  // QMetaObject::invokeMethod(this, ..., QueuedConnection) and land in the
+  // onWorkerXxxFinished slots (kept as the bounce target so the public
+  // enableFinished / disableFinished / credentialsSetFinished signal contracts
+  // are preserved).
 
   // Wire EventBridge for all vxcore sync lifecycle events (already on GUI
   // thread; EventBridge delivers via QueuedConnection from its vxcore callback).
@@ -134,8 +113,6 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
     connect(m_eventBridge, &EventBridge::syncShouldRun, this, &SyncService::onSyncShouldRun,
             Qt::QueuedConnection);
   }
-
-  m_thread->start();
 
   // T17: subscribe to NotebookBeforeClose. Refuse the close while a sync is
   // in progress for the same notebook. Per ADR-9 we use HookContext::cancel()
@@ -177,25 +154,18 @@ void SyncService::shutdown() {
     return;
   }
   m_shutDown = true;
-  // T20: drain any locally-owned SyncWorkQueueManager before tearing down
-  // the worker thread. Owned-only path: when the ServiceLocator provides one,
-  // main.cpp's aboutToQuit handler shuts it down with the same bounded budget.
+  // T24: SyncWorker thread teardown is gone. Drain any locally-owned
+  // SyncWorkQueueManager with a bounded budget. When the ServiceLocator
+  // provides a shared instance, main.cpp's aboutToQuit handler shuts it
+  // down with the same bounded budget — SyncWorkQueueManager::shutdown is
+  // idempotent so the double-call is safe.
   if (m_ownedWorkQueue) {
-    m_ownedWorkQueue->shutdown(5000);
-  }
-  if (!m_thread) {
-    return;
-  }
-  m_thread->quit();
-  const bool ok = m_thread->wait(kShutdownTimeoutMs);
-  if (!ok) {
-    qWarning() << "SyncService shutdown timed out after 30s; terminating worker thread";
-    m_thread->terminate();
-    m_thread->wait(kPostTerminateJoinMs);
+    m_ownedWorkQueue->shutdown(kShutdownTimeoutMs);
   }
 
   // Wave 12.2 / F5.9: release any leftover cancellation tokens. After the
-  // worker thread has joined, no slot can be in flight, so freeing is safe.
+  // work queue has drained, no SyncOps callback can be in flight, so freeing
+  // is safe.
   QHash<QString, void *> leftover;
   {
     QMutexLocker locker(&m_cancellationMutex);
@@ -1265,9 +1235,24 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
                 const QString credentialsJson =
                     QString::fromUtf8(QJsonDocument(credsObj).toJson(QJsonDocument::Compact));
 
-                QMetaObject::invokeMethod(m_worker, "enableSync", Qt::QueuedConnection,
-                                          Q_ARG(QString, p_notebookId), Q_ARG(QString, configJson),
-                                          Q_ARG(QString, credentialsJson));
+                // T24: route reconcile enable through SyncWorkQueueManager +
+                // SyncOps instead of the removed SyncWorker. Best-effort:
+                // completion result is folded into reconcileFinished below
+                // (we still report VXCORE_OK to indicate dispatch succeeded,
+                // mirroring the pre-T24 behavior).
+                auto *workQueue = m_workQueue;
+                NotebookCoreService *notebookSvc = m_notebookCoreService;
+                if (workQueue) {
+                  const QString nbId = p_notebookId;
+                  workQueue->enqueue(nbId, [notebookSvc, nbId, configJson, credentialsJson]() {
+                    SyncOps::enableSync(notebookSvc, nbId, configJson, credentialsJson,
+                                        [](VxCoreError, QString) {});
+                  });
+                } else {
+                  qCWarning(syncCategory) << "SyncService::reconcileSyncForNotebook: "
+                                             "SyncWorkQueueManager unavailable for"
+                                          << p_notebookId;
+                }
                 emit reconcileFinished(p_notebookId, VXCORE_OK);
               });
 

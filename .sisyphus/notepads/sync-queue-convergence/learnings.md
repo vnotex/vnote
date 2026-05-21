@@ -555,3 +555,26 @@ onSyncFinished now emits syncFailed(id, result, vxErrorToString(result)) when re
 
 ### onAutoSyncConflict's getConflicts dispatch
 Eliminated. vxcore's sync.conflict event already includes the files array; EventBridge::syncConflictFiles delivers them directly. One fewer worker round-trip.
+
+## [2026-05-21 23:42] Task: T31
+
+### Summary
+Closed auto-sync loop: EventBridge::syncShouldRun -> SyncService::onSyncShouldRun -> SyncWorkQueueManager::enqueue(SyncOps::triggerSync, null token, coalesceKey=trigger). Best-effort: queue full / coalesce return silently with qCDebug only. Bails on !isSyncEnabled || !isSyncRegistered (notebook closed/disabled mid-event) and on m_shutDown.
+
+### Test seam pattern
+Used same internal-access pattern T17 established: reinterpret_cast<vxcore::VxCoreContext*>(ctx)->event_manager->Emit(events::kSyncShouldRun, {...}) to fire the event directly without needing a full vxcore sync flow. CMake target needs libs/vxcore/src + third_party + include on include path (same as test_eventbridge_sync).
+
+### bootstrap vs enable in tests
+First attempt used enableSyncForNotebook in setup, but that does NOT persist syncEnabled flag to notebook JSON, so isSyncEnabled() returns false and onSyncShouldRun bails. Fix: use bootstrapAndPersist(id, url, pat) which atomically enables AND writes the flat sync keys to disk. For the queue-full test, bootstrap first (with default maxDepth), drain its in-flight items (enable+persist+initial sync), THEN setMaxDepth(1) before installing the blocker.
+
+### .gitignore gotcha
+Root .gitignore has 'test_*' pattern. New test files under tests/core/ require git add -f to bypass. Fix-forward: amend with force-add. Future: consider tightening that pattern.
+
+### Verification
+ctest -R '^(test_sync_auto_route|test_sync_ops|test_sync_signal_baseline|test_sync_signal_auto_baseline)$' -> 4/4 pass.
+
+
+## [2026-05-21 23:47] Task: T24
+
+Deleted SyncWorker QObject + private QThread. SyncService now dispatches purely via SyncWorkQueueManager + SyncOps with QueuedConnection bounce to GUI thread. onWorkerEnableFinished/onWorkerDisableFinished/onWorkerCredentialsSetFinished slots kept as bounce targets so public enable/disable/credentialsSetFinished signals stay exactly-once. reconcileSyncForNotebook re-routed onto workqueue+SyncOps::enableSync. shutdown() drops thread quit/wait/terminate; just shuts down owned workqueue (bounded 30s, idempotent). test_syncworker.cpp + CMakeLists entry deleted. test_sync_signal_baseline + auto_baseline ported off SyncWorker spies (auto path was already 0/0 expectations). All 9 required ctest targets PASS.
+

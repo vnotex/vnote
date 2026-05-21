@@ -14,14 +14,11 @@
 
 #include <vxcore/vxcore_types.h>
 
-class QThread;
-
 namespace vnotex {
 
 class ServiceLocator;
 class NotebookCoreService;
 class SyncCredentialsStore;
-class SyncWorker;
 class SyncWorkQueueManager;
 class EventBridge;
 struct NotebookOpenEvent;
@@ -185,10 +182,6 @@ public:
   // synced on this device.
   QString lastSyncTime(const QString &p_notebookId) const;
 
-  // Test-only access to the underlying SyncWorker. Production code goes through
-  // the SyncService API. Documented as test-only per ADR-6 test seam access.
-  SyncWorker *worker() const noexcept { return m_worker; }
-
   // Test-only: directly mutate the in-progress map. Required by T17's
   // BlockClose test (simulating "sync running" for the close-hook check).
   // Per the T6 deviation: kept unconditional to avoid duplicate-symbol
@@ -299,9 +292,6 @@ private:
   NotebookCoreService *m_notebookCoreService = nullptr;
   SyncCredentialsStore *m_credentialsStore = nullptr;
   EventBridge *m_eventBridge = nullptr;
-
-  QThread *m_thread = nullptr;
-  SyncWorker *m_worker = nullptr;
 
   // T20: per-notebook serialized executor for enable / disable / bootstrap
   // work. Resolved from ServiceLocator (production main.cpp registers one

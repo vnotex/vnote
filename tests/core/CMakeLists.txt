@@ -448,21 +448,7 @@ if(MSVC)
   target_link_options(test_notebookcoreservice_sync PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
-# T6: SyncWorker (worker-thread vxcore call dispatcher mirroring SearchService).
-# Per ADR-1: SyncWorker calls only NotebookCoreService — never SyncManager directly.
-# Per ADR-6: VNOTE_TESTING is reserved on the test target. Test seams on
-# SyncWorker are unconditional (always compiled) to avoid duplicate-symbol
-# issues that would arise from dual-compiling syncworker.cpp into both
-# core_services and the test binary; this mirrors the T4 reservation pattern.
-add_qt_test(test_syncworker
-  SOURCES
-    test_syncworker.cpp
-  LINKS
-    core_services
-    vxcore
-  GUILESS
-)
-target_compile_definitions(test_syncworker PRIVATE VNOTE_TESTING)
+# T24: SyncWorker class deleted; test_syncworker.cpp retired with it.
 
 # T7: SyncService — GUI-thread facade owning a SyncWorker on a private QThread,
 # wrapping SyncCredentialsStore. Per ADR-1 the service NEVER touches
