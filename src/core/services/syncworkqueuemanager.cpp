@@ -31,12 +31,24 @@ SyncWorkQueueManager::~SyncWorkQueueManager() {
 
 SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString &p_notebookId,
                                                                   Work p_work) {
-  return enqueue(p_notebookId, std::move(p_work), nullptr);
+  return enqueue(p_notebookId, std::move(p_work), nullptr, QString());
 }
 
 SyncWorkQueueManager::EnqueueResult
 SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work,
                               std::function<void()> p_onCancelled) {
+  return enqueue(p_notebookId, std::move(p_work), std::move(p_onCancelled), QString());
+}
+
+SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString &p_notebookId,
+                                                                  Work p_work,
+                                                                  const QString &p_coalesceKey) {
+  return enqueue(p_notebookId, std::move(p_work), nullptr, p_coalesceKey);
+}
+
+SyncWorkQueueManager::EnqueueResult
+SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work,
+                              std::function<void()> p_onCancelled, const QString &p_coalesceKey) {
   if (!p_work) {
     qCWarning(lcQueue) << "enqueue() called with empty work for" << p_notebookId;
     return EnqueueResult::Rejected;
@@ -50,9 +62,37 @@ SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work,
       return EnqueueResult::Rejected;
     }
     PerNotebook &slot = m_perNotebook[p_notebookId];
-    slot.queue.enqueue(WorkItem{std::move(p_work), std::move(p_onCancelled)});
 
-    // Update hasPending: true if queue non-empty (which it now is after append)
+    // PRECEDENCE (under m_mutex):
+    // 1. Shutdown/empty check → done above, Rejected returned.
+    // 2. Coalesce check: if non-empty coalesceKey and matching pending item exists,
+    //    drop and return Coalesced.
+    // 3. Cap check: if queue.size() >= m_maxDepth, return QueueFull.
+    // 4. Otherwise: enqueue and return Accepted.
+
+    // (2) Coalesce check: search pending queue for matching coalesceKey.
+    //     Does NOT check the running item.
+    if (!p_coalesceKey.isEmpty()) {
+      for (const auto &item : slot.queue) {
+        if (item.coalesceKey == p_coalesceKey) {
+          qDebug(lcQueue) << "Coalescing enqueue for" << p_notebookId << "with key"
+                          << p_coalesceKey;
+          return EnqueueResult::Coalesced;
+        }
+      }
+    }
+
+    // (3) Cap check: pending queue size >= m_maxDepth.
+    if (slot.queue.size() >= m_maxDepth) {
+      qCDebug(lcQueue) << "Queue full for" << p_notebookId << "(size=" << slot.queue.size()
+                       << ", cap=" << m_maxDepth << ")";
+      return EnqueueResult::QueueFull;
+    }
+
+    // (4) Enqueue: append new work item.
+    slot.queue.enqueue(WorkItem{std::move(p_work), std::move(p_onCancelled), p_coalesceKey});
+
+    // Update hasPending: true if queue non-empty (which it now is after append).
     slot.hasPending = !slot.queue.isEmpty();
 
     if (!slot.running) {
@@ -197,4 +237,14 @@ SyncWorkQueueManager::inFlightState(const QString &p_id) const {
     return SyncInFlightState{}; // Default: all false/nullptr
   }
   return SyncInFlightState{it->running, it->hasPending, nullptr};
+}
+
+void SyncWorkQueueManager::setMaxDepth(int p_depth) {
+  QMutexLocker locker(&m_mutex);
+  m_maxDepth = p_depth;
+}
+
+int SyncWorkQueueManager::maxDepth() const {
+  QMutexLocker locker(&m_mutex);
+  return m_maxDepth;
 }

@@ -592,3 +592,17 @@ add_qt_test(test_sync_workqueue_cancel
     Qt6::Core
   GUILESS
 )
+
+# Task T6: Queue-depth cap + coalescing policy. Tests:
+# - setMaxDepth()/maxDepth() with default value 4
+# - Cap enforcement: QueueFull returned when queue.size() >= maxDepth
+# - Coalesce check: Coalesced returned for matching coalesceKey in pending queue
+# - Precedence: coalesce checked BEFORE cap (coalesce wins)
+add_qt_test(test_sync_workqueue_cap_coalesce
+  SOURCES
+    test_sync_workqueue_cap_coalesce.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
+  LINKS
+    Qt6::Core
+  GUILESS
+)

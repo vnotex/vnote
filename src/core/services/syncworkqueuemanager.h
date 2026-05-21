@@ -75,6 +75,21 @@ public:
   EnqueueResult enqueue(const QString &p_notebookId, Work p_work,
                         std::function<void()> p_onCancelled);
 
+  // Overload: enqueue work with a coalesce key (no cancellation callback).
+  // If the coalesce key is non-empty and a pending item (same notebook id)
+  // has the same key, this item is dropped and Coalesced is returned.
+  // Default cancellation callback is nullptr.
+  EnqueueResult enqueue(const QString &p_notebookId, Work p_work, const QString &p_coalesceKey);
+
+  // Overload: enqueue work with all parameters including cancellation callback
+  // and coalesce key. Precedence (under m_mutex):
+  //   1. Shutdown or empty work → Rejected.
+  //   2. Non-empty coalesceKey + match in queue → Coalesced (drop incoming).
+  //   3. Queue size >= m_maxDepth → QueueFull.
+  //   4. Otherwise → Accepted (enqueue).
+  EnqueueResult enqueue(const QString &p_notebookId, Work p_work,
+                        std::function<void()> p_onCancelled, const QString &p_coalesceKey);
+
   // Drop all pending (not-yet-started) work items for the given notebook id.
   // Returns the number of items dropped. The in-flight item (if any) is NOT
   // affected and will run to completion. Each dropped item's onCancelled
@@ -95,6 +110,15 @@ public:
   bool hasPending(const QString &p_id) const;
   SyncInFlightState inFlightState(const QString &p_id) const;
 
+  // Set the maximum queue depth per notebook. Default value is 4.
+  // Thread-safe; affects future enqueue() calls. Existing queued items are not
+  // affected retroactively. Recommended to call during initialization before any
+  // enqueue() calls to avoid transient cap changes.
+  void setMaxDepth(int p_depth);
+
+  // Get the current maximum queue depth per notebook.
+  int maxDepth() const;
+
 signals:
   // Emitted once per cancelPending() call when count > 0. Fires OUTSIDE m_mutex.
   void pendingCancelled(const QString &p_id, int p_count);
@@ -103,6 +127,8 @@ private:
   struct WorkItem {
     Work body;
     std::function<void()> onCancelled;
+    QString coalesceKey; // Used for deduplication: if non-empty and
+                         // matches pending item key, new item is coalesced.
   };
 
   struct PerNotebook {
@@ -119,6 +145,7 @@ private:
   QHash<QString, PerNotebook> m_perNotebook;
   QThreadPool *m_pool;
   bool m_shutdown = false;
+  int m_maxDepth = 4; // Default queue-depth cap per notebook
 };
 
 } // namespace vnotex
