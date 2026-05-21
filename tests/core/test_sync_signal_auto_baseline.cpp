@@ -5,11 +5,18 @@
 //
 // Hypothesis being asserted (per Metis finding referenced by the plan):
 //   * Auto-sync flows file.saved → SyncManager::MaybeEnqueueSync →
-//     vxcore WorkQueue("sync") → WorkQueueDrainThread →
+//     (T9: emit sync.should_run) → consumer subscribes and drives
 //     SyncManager::TriggerSync, which emits sync.started / sync.finished
 //     via EventManager. EventBridge translates these to Qt signals.
 //   * SyncWorker (Qt) is NOT involved on the auto path — its syncStarted /
 //     syncFinished must remain at zero.
+//
+// T9 update (sync-queue-convergence): MaybeEnqueueSync no longer enqueues
+// a job into WorkQueue("sync"). It emits a sync.should_run event instead.
+// The downstream Qt auto-route consumer (T31, future) will subscribe and
+// drive TriggerSync. Until that consumer lands, this test installs a local
+// vxcore_on_event subscriber that calls vxcore_sync_trigger to mimic the
+// post-T31 behavior, so the started/finished assertions still hold.
 //
 // This test is a REGRESSION DETECTOR for Wave 2 (T7/T9). If a future change
 // causes SyncWorker to fire on the auto path, OR causes EventBridge to stop
@@ -23,6 +30,8 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QProcess>
 #include <QSignalSpy>
 #include <QtTest>
@@ -208,9 +217,37 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     bridgeConflictSpy.clear();
 
     // ---- Start the drain thread that consumes WorkQueue("sync") ----------------
-    // Without this, MaybeEnqueueSync enqueues a lambda that never runs.
+    // T9 (sync-queue-convergence): MaybeEnqueueSync no longer enqueues into
+    // WorkQueue("sync") — it emits sync.should_run instead. The drain thread
+    // therefore polls an empty queue and is harmless; we still start it so
+    // any incidental queue users (e.g., other event-bridge work) are drained.
+    // The real auto-route lives in the sync.should_run callback below until
+    // T31 introduces a production consumer on the Qt side.
     WorkQueueDrainThread drain(ctx);
     drain.start();
+
+    // T9 shim: subscribe to sync.should_run and call vxcore_sync_trigger
+    // synchronously. This mimics what the future Qt auto-route consumer will
+    // do (T31) so EventBridge::syncStarted/Finished still fire on the auto
+    // path. The callback runs on whatever thread emits sync.should_run; in
+    // this test that is the test main thread (buffer save is synchronous).
+    struct AutoRouteCtx {
+      VxCoreContextHandle ctx;
+    };
+    AutoRouteCtx autoRouteCtx{ctx};
+    auto autoRouteCb = [](const char *, const char *json_data, void *userdata) {
+      auto *uc = static_cast<AutoRouteCtx *>(userdata);
+      QJsonParseError parseErr;
+      QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json_data), &parseErr);
+      if (parseErr.error != QJsonParseError::NoError || !doc.isObject())
+        return;
+      QJsonValue v = doc.object().value(QStringLiteral("notebookId"));
+      if (!v.isString())
+        return;
+      QByteArray nb = v.toString().toUtf8();
+      vxcore_sync_trigger(uc->ctx, nb.constData());
+    };
+    QCOMPARE(vxcore_on_event(ctx, "sync.should_run", autoRouteCb, &autoRouteCtx), VXCORE_OK);
 
     // ---- Trigger auto-sync by saving a buffer ----------------------------------
     // BufferService::openBuffer -> BufferCoreService::openBuffer (vxcore).
