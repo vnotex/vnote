@@ -28,10 +28,11 @@ SyncWorkQueueManager::~SyncWorkQueueManager() {
   shutdown(5000);
 }
 
-void SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work) {
+SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString &p_notebookId,
+                                                                  Work p_work) {
   if (!p_work) {
     qCWarning(lcQueue) << "enqueue() called with empty work for" << p_notebookId;
-    return;
+    return EnqueueResult::Rejected;
   }
 
   bool needLaunch = false;
@@ -39,7 +40,7 @@ void SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work) {
     QMutexLocker locker(&m_mutex);
     if (m_shutdown) {
       qCWarning(lcQueue) << "enqueue() after shutdown ignored for" << p_notebookId;
-      return;
+      return EnqueueResult::Rejected;
     }
     PerNotebook &slot = m_perNotebook[p_notebookId];
     slot.queue.enqueue(std::move(p_work));
@@ -55,6 +56,8 @@ void SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work) {
     const QString idCopy = p_notebookId;
     m_pool->start([this, idCopy]() { this->runLoop(idCopy); });
   }
+
+  return EnqueueResult::Accepted;
 }
 
 void SyncWorkQueueManager::runLoop(const QString &p_notebookId) {

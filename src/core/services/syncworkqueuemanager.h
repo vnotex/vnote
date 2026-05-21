@@ -37,11 +37,26 @@ class SyncWorkQueueManager : public QObject {
 public:
   using Work = std::function<void()>;
 
+  /// Result of a SyncWorkQueueManager::enqueue() call.
+  enum class EnqueueResult {
+    /// Work was queued; the runner will pick it up.
+    Accepted,
+    /// Pending work with the same coalesce key already exists; the new
+    /// item was dropped intentionally. (Coalesce logic added in T6;
+    /// returned only by T6+ code paths.)
+    Coalesced,
+    /// Per-notebook queue is at cap; caller must retry or surrender.
+    /// (Cap logic added in T6; returned only by T6+ code paths.)
+    QueueFull,
+    /// Generic refusal — e.g., manager has been shut down or work is empty.
+    Rejected,
+  };
+
   explicit SyncWorkQueueManager(QObject *p_parent = nullptr);
   ~SyncWorkQueueManager() override;
 
   // Enqueue work for a given notebook id. Thread-safe. Returns immediately.
-  void enqueue(const QString &p_notebookId, Work p_work);
+  EnqueueResult enqueue(const QString &p_notebookId, Work p_work);
 
   // Drain pending queues and wait for in-flight work to finish.
   // Returns true if pool drained within timeout.
