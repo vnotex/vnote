@@ -248,3 +248,18 @@ int SyncWorkQueueManager::maxDepth() const {
   QMutexLocker locker(&m_mutex);
   return m_maxDepth;
 }
+
+void SyncWorkQueueManager::testForceInFlight(const QString &p_notebookId, bool p_value) {
+  QMutexLocker locker(&m_mutex);
+  if (p_value) {
+    auto &slot = m_perNotebook[p_notebookId];
+    slot.running = true;
+    slot.hasPending = true;
+  } else {
+    auto it = m_perNotebook.find(p_notebookId);
+    if (it != m_perNotebook.end()) {
+      it->running = false;
+      it->hasPending = !it->queue.isEmpty();
+    }
+  }
+}

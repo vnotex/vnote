@@ -425,7 +425,8 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
           this,
           [this, notebookId, p_code]() {
             Q_UNUSED(p_code);
-            setInProgress(notebookId, false);
+            // T26: in-flight state lives on SyncWorkQueueManager — no
+            // local flag to clear. Release the cancellation token.
             VxCoreSyncCancellation *tok = nullptr;
             {
               QMutexLocker locker(&m_cancellationMutex);
@@ -924,8 +925,7 @@ void SyncService::resolveConflicts(const QString &p_notebookId,
 }
 
 bool SyncService::isSyncInProgress(const QString &p_notebookId) const {
-  QMutexLocker locker(&m_inProgressMutex);
-  return m_inProgress.value(p_notebookId, false);
+  return m_workQueue ? m_workQueue->inFlightState(p_notebookId).running : false;
 }
 
 bool SyncService::isSyncEnabled(const QString &p_notebookId) const {
@@ -976,7 +976,9 @@ QString SyncService::lastSyncTime(const QString &p_notebookId) const {
 }
 
 void SyncService::testSetInProgress(const QString &p_notebookId, bool p_value) {
-  setInProgress(p_notebookId, p_value);
+  if (m_workQueue) {
+    m_workQueue->testForceInFlight(p_notebookId, p_value);
+  }
 }
 
 void SyncService::testForceNextPersistFailure(const QString &p_message) {
@@ -986,15 +988,6 @@ void SyncService::testForceNextPersistFailure(const QString &p_message) {
 }
 
 void SyncService::testForceNextRollbackFailure() { m_testForceNextRollbackFailure = true; }
-
-void SyncService::setInProgress(const QString &p_notebookId, bool p_value) {
-  QMutexLocker locker(&m_inProgressMutex);
-  if (p_value) {
-    m_inProgress.insert(p_notebookId, true);
-  } else {
-    m_inProgress.remove(p_notebookId);
-  }
-}
 
 // ---- Worker -> SyncService forwarders --------------------------------------
 // T23: syncStarted / syncFinished / syncFailed / conflictsDetected forwarders
@@ -1027,7 +1020,8 @@ void SyncService::onWorkerCredentialsSetFinished(const QString &p_notebookId,
 void SyncService::onSyncStarted(const QString &p_notebookId) {
   if (m_shutDown)
     return;
-  setInProgress(p_notebookId, true);
+  // T26: in-flight state is tracked by SyncWorkQueueManager via its work
+  // item lifecycle; no separate flag to flip here.
   emit syncStarted(p_notebookId);
 }
 
@@ -1037,7 +1031,8 @@ void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_resu
   qCDebug(syncCategory) << "SyncService::onSyncFinished: notebookId:" << p_notebookId
                         << "result:" << static_cast<int>(p_result)
                         << "message:" << vxErrorToString(p_result);
-  setInProgress(p_notebookId, false);
+  // T26: in-flight state is tracked by SyncWorkQueueManager via its work
+  // item lifecycle; no separate flag to clear here.
 
   // Wave 12.2 / F5.9: release the cancellation token (if any). Snapshot
   // under the mutex, then free outside — rule W0.5.

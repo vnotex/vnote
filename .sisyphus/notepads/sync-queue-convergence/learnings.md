@@ -578,3 +578,11 @@ ctest -R '^(test_sync_auto_route|test_sync_ops|test_sync_signal_baseline|test_sy
 
 Deleted SyncWorker QObject + private QThread. SyncService now dispatches purely via SyncWorkQueueManager + SyncOps with QueuedConnection bounce to GUI thread. onWorkerEnableFinished/onWorkerDisableFinished/onWorkerCredentialsSetFinished slots kept as bounce targets so public enable/disable/credentialsSetFinished signals stay exactly-once. reconcileSyncForNotebook re-routed onto workqueue+SyncOps::enableSync. shutdown() drops thread quit/wait/terminate; just shuts down owned workqueue (bounded 30s, idempotent). test_syncworker.cpp + CMakeLists entry deleted. test_sync_signal_baseline + auto_baseline ported off SyncWorker spies (auto path was already 0/0 expectations). All 9 required ctest targets PASS.
 
+## [2026-05-22T19:56:52+08:00] Task: T26
+- Unified in-flight state into SyncWorkQueueManager. Removed m_inProgress + m_inProgressMutex + setInProgress.
+- isSyncInProgress(id) delegates to m_workQueue->inFlightState(id).running.
+- testSetInProgress retained as a thin delegator to new SyncWorkQueueManager::testForceInFlight(id, bool) seam — chose option (b) because multiple tests rely on it (test_sync_state_machine, test_syncservice_lifecycle, test_syncservice). Avoids large test refactor.
+- Removed all internal setInProgress callers (onSyncStarted/onSyncFinished/triggerSyncNow completion lambda) — SWQM tracks running state naturally via work-item lifecycle.
+- Verification tests (sync_ops/signal_baseline/signal_auto_baseline/auto_route) all PASS.
+- Pre-existing breakage from T24 affects test_syncservice + test_sync_state_machine (they #include syncworker.h which no longer exists); not in T26 scope.
+

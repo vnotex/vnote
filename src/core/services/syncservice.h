@@ -276,8 +276,6 @@ private slots:
   void onSyncShouldRun(const QString &p_notebookId);
 
 private:
-  void setInProgress(const QString &p_notebookId, bool p_value);
-
   // Build a credentials JSON for the worker out of a PAT string.
   static QString buildCredentialsJson(const QString &p_pat);
   // Build a config JSON (backend=git, remoteUrl=...) for the worker.
@@ -301,12 +299,9 @@ private:
   std::unique_ptr<SyncWorkQueueManager> m_ownedWorkQueue;
   SyncWorkQueueManager *m_workQueue = nullptr;
 
-  // Per-notebook in-flight flag. Guarded by m_inProgressMutex. Mutex is the
-  // only synchronization needed because all writes happen on the GUI thread
-  // (from the queued worker callbacks); the mutex is for safe reads from any
-  // thread that might call isSyncInProgress.
-  mutable QMutex m_inProgressMutex;
-  QHash<QString, bool> m_inProgress;
+  // Per-notebook in-flight state lives on SyncWorkQueueManager (T26). Query
+  // via m_workQueue->inFlightState(id).running; mutate in tests via
+  // SyncWorkQueueManager::testForceInFlight (called from testSetInProgress).
 
   // Wave 12.2 / F5.9: per-notebook cancellation tokens for in-flight
   // triggerSyncNow. Created in triggerSyncNow before dispatch, freed in the

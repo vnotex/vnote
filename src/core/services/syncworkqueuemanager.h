@@ -119,6 +119,12 @@ public:
   // Get the current maximum queue depth per notebook.
   int maxDepth() const;
 
+  // Test-only seam (T26): forcibly mutate the per-notebook `running` flag so
+  // that inFlightState(id).running returns @p_value. Required by SyncService
+  // tests (close-hook simulation, S7 state machine) after the unified
+  // in-flight state moved off SyncService. Unconditional per ADR-6.
+  void testForceInFlight(const QString &p_notebookId, bool p_value);
+
 signals:
   // Emitted once per cancelPending() call when count > 0. Fires OUTSIDE m_mutex.
   void pendingCancelled(const QString &p_id, int p_count);
