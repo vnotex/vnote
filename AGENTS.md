@@ -351,6 +351,7 @@ src/
 ## Sync State Model
 
 Threading rules: see `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract.
+Qt-side dispatch (single queue via `SyncWorkQueueManager` + `SyncOps`, coalescing, cancellation, auto-sync routing through `EventBridge::syncShouldRun`): see `src/core/services/AGENTS.md` § SyncService. vxcore's internal debounce remains as a hint for non-Qt embedders; Qt no longer consults it as a gate.
 
 Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and service that touches sync must reason in terms of these states. The state is the tuple of: on-disk JSON sync fields, PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map.
 

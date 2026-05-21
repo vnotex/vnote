@@ -623,3 +623,9 @@ Added SyncCancelledEvent struct to hookevents.h/cpp with wasQueued bool field. A
 - Documented isSyncInProgress delegation to SyncWorkQueueManager::inFlightState().running.
 - Added SyncCancelledEvent payload description (notebookId + wasQueued).
 - Evidence at .sisyphus/evidence/task-29-docs.txt: deferred grep empty, new section grep populated.
+
+## [2026-05-22 20:15:06] Task: T30
+- Root AGENTS.md already had no SyncWorker/WorkQueueDrainThread/dual-queue references (T24-T26 deletions did not bleed into root doc).
+- Added one-line pointer under Sync State Model heading directing readers to src/core/services/AGENTS.md § SyncService for converged Qt-side dispatch (single queue, coalescing, EventBridge::syncShouldRun routing). Clarified vxcore-side debounce is now a hint for non-Qt embedders only.
+- S0-S7 state model and all sub-sections (Recovery Paths, Reconcile Semantics, bootstrapAndPersist Rollback, Disable Cleanup, Startup S6 Sweep, Re-enable UI Affordance) untouched. Stale-ish syncservice.cpp line numbers in those sub-sections left as-is per task scope (only deleted-infra refs were in scope).
+- Evidence: .sisyphus/evidence/task-30-root-docs.txt (0 matches).
