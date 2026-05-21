@@ -84,6 +84,17 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
   Q_ASSERT(m_notebookCoreService);
   Q_ASSERT(m_credentialsStore);
 
+  // T20: resolve the per-notebook serialized executor. Production main.cpp
+  // registers one with bounded shutdown on QCoreApplication::aboutToQuit;
+  // tests typically do not. Own one locally in the fallback so the queued
+  // enable / disable / bootstrap paths still execute. shutdown() below
+  // drains the owned instance.
+  m_workQueue = m_services.get<SyncWorkQueueManager>();
+  if (!m_workQueue) {
+    m_ownedWorkQueue.reset(new SyncWorkQueueManager());
+    m_workQueue = m_ownedWorkQueue.get();
+  }
+
   // Create thread and worker. The worker is constructed on the GUI thread,
   // then moveToThread'd onto the dedicated thread BEFORE the thread starts.
   // Standard Qt worker pattern.
@@ -162,6 +173,12 @@ void SyncService::shutdown() {
     return;
   }
   m_shutDown = true;
+  // T20: drain any locally-owned SyncWorkQueueManager before tearing down
+  // the worker thread. Owned-only path: when the ServiceLocator provides one,
+  // main.cpp's aboutToQuit handler shuts it down with the same bounded budget.
+  if (m_ownedWorkQueue) {
+    m_ownedWorkQueue->shutdown(5000);
+  }
   if (!m_thread) {
     return;
   }
@@ -246,17 +263,50 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
     delete errorConn;
   };
 
-  *storedConn = connect(
-      m_credentialsStore, &SyncCredentialsStore::credentialsStored, this,
-      [this, notebookId, configJson, credsJson, cleanup](const QString &p_storedNotebookId) {
-        if (p_storedNotebookId != notebookId) {
-          return;
-        }
-        cleanup();
-        QMetaObject::invokeMethod(m_worker, "enableSync", Qt::QueuedConnection,
-                                  Q_ARG(QString, notebookId), Q_ARG(QString, configJson),
-                                  Q_ARG(QString, credsJson));
-      });
+  *storedConn =
+      connect(
+          m_credentialsStore, &SyncCredentialsStore::credentialsStored, this,
+          [this, notebookId, configJson, credsJson, cleanup](const QString &p_storedNotebookId) {
+            if (p_storedNotebookId != notebookId) {
+              return;
+            }
+            cleanup();
+            // T20: route enable through SyncWorkQueueManager (per-notebook FIFO)
+            // instead of the legacy SyncWorker QMetaObject::invokeMethod path.
+            // SyncOps::enableSync invokes the completion callback on the pool
+            // thread; we bounce back to the GUI thread via QueuedConnection so
+            // onWorkerEnableFinished (and thus enableFinished signal) is emitted
+            // on the GUI thread, preserving the public contract. The PAT lives
+            // ONLY in this lambda capture and the inner enqueue capture; it is
+            // released once SyncOps::enableSync returns.
+            auto *workQueue = m_workQueue;
+            NotebookCoreService *notebookSvc = m_notebookCoreService;
+            if (!workQueue) {
+              qCWarning(syncCategory)
+                  << "SyncService::enableSyncForNotebook: SyncWorkQueueManager unavailable for"
+                  << notebookId;
+              QMetaObject::invokeMethod(
+                  this,
+                  [this, notebookId]() {
+                    onWorkerEnableFinished(notebookId, VXCORE_ERR_UNKNOWN,
+                                           QStringLiteral("SyncWorkQueueManager unavailable"));
+                  },
+                  Qt::QueuedConnection);
+              return;
+            }
+            workQueue->enqueue(
+                notebookId, [this, notebookId, configJson, credsJson, notebookSvc]() {
+                  SyncOps::enableSync(notebookSvc, notebookId, configJson, credsJson,
+                                      [this, notebookId](VxCoreError p_code, QString p_msg) {
+                                        QMetaObject::invokeMethod(
+                                            this,
+                                            [this, notebookId, p_code, p_msg]() {
+                                              onWorkerEnableFinished(notebookId, p_code, p_msg);
+                                            },
+                                            Qt::QueuedConnection);
+                                      });
+                });
+          });
 
   *errorConn =
       connect(m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
@@ -342,7 +392,7 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
   // thread via QMetaObject::invokeMethod(this, ..., Qt::QueuedConnection) to
   // invoke onWorkerDisableFinished, which preserves the disableFinished signal
   // contract (emitted on the GUI thread, exactly once per call).
-  auto *workQueue = m_services.get<SyncWorkQueueManager>();
+  auto *workQueue = m_workQueue;
   NotebookCoreService *notebookSvc = m_notebookCoreService;
   if (!workQueue) {
     qCWarning(syncCategory)
@@ -431,6 +481,17 @@ void SyncService::cancelSync(const QString &p_notebookId) {
 
 // See AGENTS.md "bootstrapAndPersist Rollback x Reconcile" for rollback semantics
 // and how rollback success/failure interacts with reconcileSyncForNotebook.
+//
+// T20: enable, persist, initial-sync, and rollback all route through
+// SyncWorkQueueManager on the SAME notebookId so FIFO ordering is preserved.
+// enableSyncForNotebook already enqueues the enable work; the bridge below
+// observes enableFinished (GUI-thread signal emitted after the queued enable
+// completes) and enqueues the persist work. On persist success a third work
+// item is enqueued for the initial triggerSync. On persist failure a rollback
+// work item is enqueued that drives SyncOps::disableSync. The atomic
+// bootstrapAndPersistFinished contract (exactly one emission per call) is
+// preserved by routing all completion edges through a single emit at the
+// final step of whichever branch runs.
 void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString &p_remoteUrl,
                                       const QString &p_pat) {
   if (m_shutDown) {
@@ -443,7 +504,7 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
   const QString remoteUrl = p_remoteUrl;
 
   // One-shot bridge on enableFinished. Filters by notebookId, self-disconnects,
-  // then either persists + emits success, or rolls back + emits failure.
+  // then enqueues the persist work (or short-circuits on enable failure).
   auto conn = std::make_shared<QMetaObject::Connection>();
   *conn = connect(
       this, &SyncService::enableFinished, this,
@@ -463,85 +524,130 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
           return;
         }
 
-        // Enable succeeded; persist the three flat ADR-8 sync keys atomically.
-        bool persistOk = false;
-        QString persistErr;
-        if (m_testForceNextPersistFailure) {
-          // Test seam: simulate persist failure without writing JSON.
-          persistErr = m_testForceNextPersistFailureMsg;
-          m_testForceNextPersistFailure = false;
-          m_testForceNextPersistFailureMsg.clear();
-        } else if (m_notebookCoreService) {
-          QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
-          cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
-          cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
-          cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = remoteUrl;
-          const QString cfgJson =
-              QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
-          persistOk = m_notebookCoreService->updateNotebookConfig(notebookId, cfgJson);
-          if (!persistOk) {
-            persistErr = tr("Failed to persist sync configuration to notebook after enable.");
-          }
-        } else {
-          persistErr = tr("Notebook service not available.");
-        }
-
-        if (persistOk) {
-          // Best-effort initial sync push; runtime state is now populated, so
-          // this won't hit the chicken-and-egg path.
-          triggerSyncNow(notebookId);
-          emit bootstrapAndPersistFinished(notebookId, VXCORE_OK, QString());
+        auto *workQueue = m_workQueue;
+        if (!workQueue) {
+          qCWarning(syncCategory)
+              << "SyncService::bootstrapAndPersist: SyncWorkQueueManager unavailable for"
+              << notebookId;
+          emit bootstrapAndPersistFinished(notebookId, VXCORE_ERR_UNKNOWN,
+                                           QStringLiteral("SyncWorkQueueManager unavailable"));
           return;
         }
 
-        // Persist failed AFTER enable succeeded. Roll back the enable via
-        // disableSyncForNotebook to return the notebook to clean S0. Original
-        // persist error is preserved in the emitted signal regardless of
-        // rollback outcome. Rollback failure is logged at qCritical (loud).
-        qCritical()
-            << "SyncService::bootstrapAndPersist: persist failed after enable; rolling back. id="
-            << notebookId << "persistError:" << persistErr;
-
-        const QString origPersistErr = persistErr;
-
-        // One-shot bridge on disableFinished to surface rollback errors.
-        // We always emit bootstrapAndPersistFinished with the ORIGINAL
-        // persist error message, but we log loudly if rollback also fails.
-        auto rbConn = std::make_shared<QMetaObject::Connection>();
-        *rbConn = connect(
-            this, &SyncService::disableFinished, this,
-            [this, rbConn, notebookId, origPersistErr](const QString &p_disId,
-                                                       VxCoreError p_disResult) {
-              if (p_disId != notebookId) {
-                return;
-              }
-              QObject::disconnect(*rbConn);
-              if (p_disResult != VXCORE_OK) {
-                qCritical() << "SyncService::bootstrapAndPersist: ROLLBACK FAILED for notebook"
-                            << notebookId << ":" << vxErrorToString(p_disResult)
-                            << "— notebook may be in inconsistent state (vxcore enabled but "
-                               "JSON not persisted). Original persist error preserved.";
-              } else {
-                qCWarning(syncCategory)
-                    << "SyncService::bootstrapAndPersist: rollback succeeded for" << notebookId;
-              }
-              emit bootstrapAndPersistFinished(notebookId, VXCORE_ERR_UNKNOWN, origPersistErr);
-            });
-
-        disableSyncForNotebook(notebookId);
-
-        if (m_testForceNextRollbackFailure) {
-          // Test seam: synthesize a disableFinished failure on the GUI thread
-          // event loop. The real disableSyncForNotebook call above will also
-          // fire its own disableFinished from the worker; the one-shot rbConn
-          // self-disconnects on first match so only the first arrival counts.
-          // We emit the synthetic one via a queued invocation so it lands in
-          // the same event-loop iteration as a typical worker reply would.
-          m_testForceNextRollbackFailure = false;
+        // T20: enqueue persist work. The pool-thread body bounces to the GUI
+        // thread via QueuedConnection because NotebookCoreService::* mutates
+        // shared state that the rest of SyncService also touches on the GUI
+        // thread. FIFO ordering with the prior enable item is guaranteed by
+        // enqueue-ing on the same notebookId.
+        workQueue->enqueue(notebookId, [this, notebookId, remoteUrl]() {
           QMetaObject::invokeMethod(
-              this, [this, notebookId]() { emit disableFinished(notebookId, VXCORE_ERR_UNKNOWN); },
+              this,
+              [this, notebookId, remoteUrl]() {
+                bool persistOk = false;
+                QString persistErr;
+                if (m_testForceNextPersistFailure) {
+                  // Test seam: simulate persist failure without writing JSON.
+                  persistErr = m_testForceNextPersistFailureMsg;
+                  m_testForceNextPersistFailure = false;
+                  m_testForceNextPersistFailureMsg.clear();
+                } else if (m_notebookCoreService) {
+                  QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
+                  cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
+                  cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
+                  cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = remoteUrl;
+                  const QString cfgJson =
+                      QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+                  persistOk = m_notebookCoreService->updateNotebookConfig(notebookId, cfgJson);
+                  if (!persistOk) {
+                    persistErr =
+                        tr("Failed to persist sync configuration to notebook after enable.");
+                  }
+                } else {
+                  persistErr = tr("Notebook service not available.");
+                }
+
+                auto *wq = m_workQueue;
+                if (persistOk) {
+                  // T20: enqueue initial sync as a third FIFO work item.
+                  // Best-effort; ignore its result code (we already committed
+                  // success at the bootstrap level).
+                  if (wq) {
+                    NotebookCoreService *notebookSvc = m_notebookCoreService;
+                    wq->enqueue(notebookId, [notebookSvc, notebookId]() {
+                      SyncOps::triggerSync(notebookSvc, notebookId, /*p_cancel=*/nullptr,
+                                           [](VxCoreError) {});
+                    });
+                  }
+                  emit bootstrapAndPersistFinished(notebookId, VXCORE_OK, QString());
+                  return;
+                }
+
+                // Persist failed AFTER enable succeeded. T20: enqueue rollback
+                // (SyncOps::disableSync) on the same notebookId so it FIFO-
+                // orders after the enable. Original persist error is preserved
+                // in the emitted signal regardless of rollback outcome.
+                qCritical() << "SyncService::bootstrapAndPersist: persist failed after enable; "
+                               "rolling back. id="
+                            << notebookId << "persistError:" << persistErr;
+                const QString origPersistErr = persistErr;
+
+                const bool forceRollbackFail = m_testForceNextRollbackFailure;
+                if (forceRollbackFail) {
+                  m_testForceNextRollbackFailure = false;
+                }
+
+                if (!wq) {
+                  qCWarning(syncCategory)
+                      << "SyncService::bootstrapAndPersist: SyncWorkQueueManager unavailable for"
+                         " rollback; emitting persist error directly"
+                      << notebookId;
+                  emit bootstrapAndPersistFinished(notebookId, VXCORE_ERR_UNKNOWN, origPersistErr);
+                  return;
+                }
+
+                NotebookCoreService *notebookSvc = m_notebookCoreService;
+                wq->enqueue(notebookId, [this, notebookId, notebookSvc, origPersistErr,
+                                         forceRollbackFail]() {
+                  auto onDone = [this, notebookId, origPersistErr](VxCoreError p_disResult) {
+                    QMetaObject::invokeMethod(
+                        this,
+                        [this, notebookId, origPersistErr, p_disResult]() {
+                          if (p_disResult != VXCORE_OK) {
+                            qCritical()
+                                << "SyncService::bootstrapAndPersist: ROLLBACK FAILED for "
+                                   "notebook"
+                                << notebookId << ":" << vxErrorToString(p_disResult)
+                                << "- notebook may be in inconsistent state (vxcore enabled "
+                                   "but JSON not persisted). Original persist error "
+                                   "preserved.";
+                          } else {
+                            qCWarning(syncCategory)
+                                << "SyncService::bootstrapAndPersist: rollback succeeded for"
+                                << notebookId;
+                            // PAT was just stored for the enable; the
+                            // notebook is being rolled back to clean S0,
+                            // so drop the orphan keychain entry too.
+                            if (m_credentialsStore) {
+                              m_credentialsStore->deleteCredentials(notebookId);
+                            }
+                          }
+                          emit bootstrapAndPersistFinished(notebookId, VXCORE_ERR_UNKNOWN,
+                                                           origPersistErr);
+                        },
+                        Qt::QueuedConnection);
+                  };
+
+                  if (forceRollbackFail) {
+                    // Test seam: synthesize a disable failure without
+                    // touching vxcore.
+                    onDone(VXCORE_ERR_UNKNOWN);
+                    return;
+                  }
+                  SyncOps::disableSync(notebookSvc, notebookId, onDone);
+                });
+              },
               Qt::QueuedConnection);
-        }
+        });
       });
 
   enableSyncForNotebook(notebookId, remoteUrl, p_pat);

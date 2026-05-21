@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <memory>
+
 #include <core/noncopyable.h>
 
 #include <vxcore/vxcore_types.h>
@@ -20,6 +22,7 @@ class ServiceLocator;
 class NotebookCoreService;
 class SyncCredentialsStore;
 class SyncWorker;
+class SyncWorkQueueManager;
 class EventBridge;
 struct NotebookOpenEvent;
 
@@ -283,6 +286,14 @@ private:
 
   QThread *m_thread = nullptr;
   SyncWorker *m_worker = nullptr;
+
+  // T20: per-notebook serialized executor for enable / disable / bootstrap
+  // work. Resolved from ServiceLocator (production main.cpp registers one
+  // with bounded shutdown via aboutToQuit). Tests that do not register a
+  // SyncWorkQueueManager fall back to a SyncService-owned instance so the
+  // queued operations still run; shutdown() drains the owned instance.
+  std::unique_ptr<SyncWorkQueueManager> m_ownedWorkQueue;
+  SyncWorkQueueManager *m_workQueue = nullptr;
 
   // Per-notebook in-flight flag. Guarded by m_inProgressMutex. Mutex is the
   // only synchronization needed because all writes happen on the GUI thread
