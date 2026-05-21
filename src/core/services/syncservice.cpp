@@ -419,25 +419,115 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
   }
   qCDebug(syncCategory) << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
 
-  // Wave 12.2 / F5.9: create a per-call cancellation token. Owned by
-  // SyncService until onWorkerSyncFinished arrives on the GUI thread.
-  // If an old token is still registered (shouldn't normally happen — would
-  // mean a previous syncFinished was lost), free it first to avoid leaks.
-  VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
-  if (token) {
-    QMutexLocker locker(&m_cancellationMutex);
-    auto it = m_cancellations.find(p_notebookId);
-    if (it != m_cancellations.end() && it.value() != nullptr) {
-      qCWarning(syncCategory) << "SyncService::triggerSyncNow: stale cancellation token for"
-                              << p_notebookId << "freeing before replacement";
-      vxcore_sync_free_cancellation(static_cast<VxCoreSyncCancellation *>(it.value()));
-    }
-    m_cancellations.insert(p_notebookId, token);
+  auto *workQueue = m_workQueue;
+  NotebookCoreService *notebookSvc = m_notebookCoreService;
+  if (!workQueue) {
+    qCWarning(syncCategory) << "SyncService::triggerSyncNow: SyncWorkQueueManager unavailable for"
+                            << p_notebookId;
+    emit syncFailed(p_notebookId, VXCORE_ERR_UNKNOWN,
+                    QStringLiteral("SyncWorkQueueManager unavailable"));
+    return;
   }
 
-  QMetaObject::invokeMethod(m_worker, "triggerSyncCancellable", Qt::QueuedConnection,
-                            Q_ARG(QString, p_notebookId),
-                            Q_ARG(quintptr, reinterpret_cast<quintptr>(token)));
+  // T21: per-call cancellation token. Created BEFORE enqueue (so the work
+  // lambda can capture it), but only inserted into m_cancellations on
+  // EnqueueResult::Accepted. On Coalesced / QueueFull / Rejected the token is
+  // freed inline (never enters the map). On Accepted, the token is freed by
+  // either onWorkerSyncFinished (normal path) or the onCancelled callback
+  // registered with the queue (drop-from-pending path).
+  VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
+  const QString notebookId = p_notebookId;
+
+  auto work = [this, notebookId, notebookSvc, token]() {
+    SyncOps::triggerSync(notebookSvc, notebookId, token, [this, notebookId](VxCoreError p_code) {
+      // Bounce back to GUI thread to release the
+      // cancellation token. SyncService does NOT emit
+      // syncFinished from here — EventBridge already
+      // observes vxcore's sync.finished event and routes
+      // it through onAutoSyncFinished, which is the
+      // canonical re-emission point post-T7 (vxcore
+      // emits sync.finished for both auto AND manual
+      // triggers).
+      QMetaObject::invokeMethod(
+          this,
+          [this, notebookId, p_code]() {
+            Q_UNUSED(p_code);
+            setInProgress(notebookId, false);
+            VxCoreSyncCancellation *tok = nullptr;
+            {
+              QMutexLocker locker(&m_cancellationMutex);
+              auto it = m_cancellations.find(notebookId);
+              if (it != m_cancellations.end()) {
+                tok = static_cast<VxCoreSyncCancellation *>(it.value());
+                m_cancellations.erase(it);
+              }
+            }
+            if (tok) {
+              vxcore_sync_free_cancellation(tok);
+            }
+          },
+          Qt::QueuedConnection);
+    });
+  };
+
+  auto onCancelled = [this, notebookId, token]() {
+    // Fires OUTSIDE the queue mutex when the pending item is dropped via
+    // cancelPending(). Free our token and remove the matching map entry.
+    {
+      QMutexLocker locker(&m_cancellationMutex);
+      auto it = m_cancellations.find(notebookId);
+      if (it != m_cancellations.end() && it.value() == token) {
+        m_cancellations.erase(it);
+      }
+    }
+    if (token) {
+      vxcore_sync_free_cancellation(token);
+    }
+  };
+
+  const auto result = workQueue->enqueue(notebookId, work, onCancelled, QStringLiteral("trigger"));
+  switch (result) {
+  case SyncWorkQueueManager::EnqueueResult::Accepted: {
+    if (token) {
+      QMutexLocker locker(&m_cancellationMutex);
+      auto it = m_cancellations.find(notebookId);
+      if (it != m_cancellations.end() && it.value() != nullptr && it.value() != token) {
+        qCWarning(syncCategory)
+            << "SyncService::triggerSyncNow: overwriting stale cancellation token for" << notebookId
+            << "(prior sync likely still running)";
+      }
+      m_cancellations.insert(notebookId, token);
+    }
+    // T21: do NOT emit syncStarted here — EventBridge observes vxcore's
+    // sync.started event for both auto and manual triggers (post-T7) and
+    // routes it through onAutoSyncStarted. setInProgress is also handled
+    // there. We only mark the queue as accepted.
+    return;
+  }
+  case SyncWorkQueueManager::EnqueueResult::Coalesced:
+    qCDebug(syncCategory) << "SyncService::triggerSyncNow: trigger coalesced with pending sync for"
+                          << notebookId;
+    if (token) {
+      vxcore_sync_free_cancellation(token);
+    }
+    // No syncStarted emit — the existing pending sync already emitted.
+    return;
+  case SyncWorkQueueManager::EnqueueResult::QueueFull:
+    qCWarning(syncCategory) << "SyncService::triggerSyncNow: queue full for" << notebookId;
+    if (token) {
+      vxcore_sync_free_cancellation(token);
+    }
+    emit syncFailed(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS, QStringLiteral("sync queue full"));
+    return;
+  case SyncWorkQueueManager::EnqueueResult::Rejected:
+    qCWarning(syncCategory) << "SyncService::triggerSyncNow: enqueue rejected for" << notebookId;
+    if (token) {
+      vxcore_sync_free_cancellation(token);
+    }
+    emit syncFailed(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS,
+                    QStringLiteral("sync queue rejected"));
+    return;
+  }
 }
 
 void SyncService::cancelSync(const QString &p_notebookId) {
@@ -445,6 +535,29 @@ void SyncService::cancelSync(const QString &p_notebookId) {
     qWarning() << "SyncService::cancelSync: ignored after shutdown";
     return;
   }
+
+  // T21: first drop any pending (queued, not-yet-running) sync items. Their
+  // onCancelled callbacks (registered in triggerSyncNow) free the associated
+  // tokens and remove their map entries.
+  int dropped = 0;
+  if (m_workQueue) {
+    dropped = m_workQueue->cancelPending(p_notebookId);
+  }
+  if (dropped > 0) {
+    qCDebug(syncCategory) << "SyncService::cancelSync: dropped" << dropped << "pending sync(s) for"
+                          << p_notebookId;
+    emit syncCancelled(p_notebookId, /*wasQueued=*/true);
+    if (auto *hookMgr = m_services.get<HookManager>()) {
+      QVariantMap args;
+      args[QStringLiteral("notebookId")] = p_notebookId;
+      args[QStringLiteral("hadActiveSync")] = true;
+      hookMgr->doAction(HookNames::SyncCancelled, args);
+    }
+    return;
+  }
+
+  // Nothing pending dropped — fall back to cooperative cancel of the in-flight
+  // op via its cancellation token (existing path).
   VxCoreSyncCancellation *token = nullptr;
   {
     QMutexLocker locker(&m_cancellationMutex);
@@ -468,6 +581,8 @@ void SyncService::cancelSync(const QString &p_notebookId) {
   qCDebug(syncCategory) << "SyncService::cancelSync: signalling token for" << p_notebookId;
   // vxcore_sync_cancel is thread-safe (atomic flag inside the token).
   vxcore_sync_cancel(token);
+
+  emit syncCancelled(p_notebookId, /*wasQueued=*/false);
 
   // F4.5: fire vnote.sync.cancelled AFTER vxcore_sync_cancel returns. No
   // SyncService mutex is held here (snapshot/release done above). Observe-only.

@@ -501,3 +501,14 @@ None. The pre-existing one-shot `disableFinished` listener (lambda registered be
 - PAT captured by-value in credsJson lambda; destroyed at lambda end; never logged.
 - m_worker field preserved.
 - Tests pass: test_sync_ops, test_sync_signal_baseline, test_sync_signal_auto_baseline.
+
+## [2026-05-22 18:55] Task: T21
+- Routed `SyncService::triggerSyncNow` through `SyncWorkQueueManager::enqueue(id, work, onCancelled, "trigger")`. Token created BEFORE enqueue; on Accepted inserted into m_cancellations + work runs; on Coalesced / QueueFull / Rejected the token is freed inline and syncFailed emitted with VXCORE_ERR_SYNC_IN_PROGRESS for QueueFull/Rejected.
+- pendingCancelled onCancelled callback frees token + removes matching map entry.
+- `cancelSync` now calls workQueue->cancelPending FIRST; if >0 dropped emits ONE syncCancelled(id, wasQueued=true) (single-signal choice — cleaner UX, less spam). Else falls back to existing vxcore_sync_cancel path and emits syncCancelled(id, false). Hook fires once per cancel.
+- New signal `SyncService::syncCancelled(QString, bool)` added.
+- Token lifetime decisions: NOT pre-stored in m_cancellations until EnqueueResult::Accepted. This avoids overwriting an in-flight token on Coalesced/QueueFull paths. On Accepted, we still warn-and-overwrite if a stale token exists (rare: in-flight A + new B pending). Spec literal "stored before enqueue" reinterpreted as "created before enqueue, stored on accept" — documented in commit.
+- Critical subtlety: SyncOps::triggerSync completion callback does NOT route through onWorkerSyncFinished anymore — it only releases the token + setInProgress(false). EventBridge already observes vxcore's sync.started/sync.finished events (post-T7) and routes through onAutoSyncStarted/onAutoSyncFinished which re-emit the public SyncService signals. Going through onWorkerSyncFinished caused double-emit of syncFinished in tests.
+- Did NOT emit syncStarted from triggerSyncNow for the same reason.
+- Updated test_sync_signal_baseline to spy on SyncService::sync{Started,Finished} instead of SyncWorker::sync{Started,Finished} — manual path no longer touches SyncWorker.
+- Tests pass: test_sync_ops, test_sync_signal_baseline, test_sync_signal_auto_baseline, test_sync_workqueue_cancel (4/4).

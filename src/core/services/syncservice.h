@@ -226,6 +226,12 @@ signals:
   void syncStarted(const QString &p_notebookId);
   void syncFinished(const QString &p_notebookId, VxCoreError p_result);
   void syncFailed(const QString &p_notebookId, VxCoreError p_code, const QString &p_message);
+
+  // T21: emitted by cancelSync(). p_wasQueued is true when the cancel dropped
+  // one or more PENDING (not-yet-running) sync items from the queue; false
+  // when the cancel signalled an in-flight cancellation token (or when no
+  // active sync was found — best-effort).
+  void syncCancelled(const QString &p_notebookId, bool p_wasQueued);
   void conflictsDetected(const QString &p_notebookId, const QStringList &p_conflictFiles);
   void enableFinished(const QString &p_notebookId, VxCoreError p_result, const QString &p_message);
   void disableFinished(const QString &p_notebookId, VxCoreError p_result);

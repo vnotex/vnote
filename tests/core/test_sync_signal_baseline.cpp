@@ -191,20 +191,21 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
     // via QueuedConnection (Qt handles this transparently). EventBridge signals
     // are emitted via QMetaObject::invokeMethod with QueuedConnection inside its
     // vxcore-callback handler.
-    SyncWorker *worker = syncService.worker();
-    QVERIFY(worker != nullptr);
-
-    QSignalSpy workerStartedSpy(worker, &SyncWorker::syncStarted);
-    QSignalSpy workerFinishedSpy(worker, &SyncWorker::syncFinished);
+    // T21: triggerSyncNow no longer dispatches through SyncWorker — it goes
+    // through SyncWorkQueueManager + SyncOps directly. Observe the
+    // SyncService-level signals instead (SyncService re-emits sync lifecycle
+    // signals on the GUI thread after the queued work completes).
+    QSignalSpy workerStartedSpy(&syncService, &SyncService::syncStarted);
+    QSignalSpy workerFinishedSpy(&syncService, &SyncService::syncFinished);
     QSignalSpy bridgeStartedSpy(&eventBridge, &EventBridge::syncStarted);
     QSignalSpy bridgeFinishedSpy(&eventBridge, &EventBridge::syncFinished);
 
     // ---- Act: manual sync trigger -------------------------------------------
     syncService.triggerSyncNow(nbId);
 
-    // Wait for the worker's syncFinished — the canonical end-of-trigger signal
-    // for manual sync today. Generous timeout for libgit2 fetch/push of an
-    // empty diff against a local bare remote.
+    // Wait for SyncService::syncFinished — the canonical end-of-trigger signal
+    // for manual sync. Generous timeout for libgit2 fetch/push of an empty
+    // diff against a local bare remote.
     QVERIFY(workerFinishedSpy.wait(15000));
 
     // Drain any queued EventBridge invocations that might still be in flight,
