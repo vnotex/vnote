@@ -901,17 +901,53 @@ void SyncService::resolveConflicts(const QString &p_notebookId,
   qCDebug(syncCategory) << "SyncService::resolveConflicts: notebookId:" << p_notebookId
                         << "count:" << p_resolutions.size();
 
-  for (auto it = p_resolutions.constBegin(); it != p_resolutions.constEnd(); ++it) {
-    QMetaObject::invokeMethod(m_worker, "resolveConflict", Qt::QueuedConnection,
-                              Q_ARG(QString, p_notebookId), Q_ARG(QString, it.key()),
-                              Q_ARG(QString, it.value()));
+  auto *workQueue = m_workQueue;
+  auto *notebookSvc = m_notebookCoreService;
+  if (!workQueue) {
+    qCWarning(syncCategory) << "SyncService::resolveConflicts: SyncWorkQueueManager unavailable for"
+                            << p_notebookId;
+    return;
   }
 
-  // After all resolutions are queued, follow with a triggerSync to push the
-  // resolved state. The QueuedConnection ordering guarantees triggerSync runs
-  // AFTER the resolveConflict slots above (FIFO event queue).
-  QMetaObject::invokeMethod(m_worker, "triggerSync", Qt::QueuedConnection,
-                            Q_ARG(QString, p_notebookId));
+  // T22: enqueue each resolution as its own work item on the per-notebook
+  // FIFO queue. coalesceKey "resolve-<filePath>" collapses duplicate clicks
+  // for the same path but keeps distinct paths independent.
+  for (auto it = p_resolutions.constBegin(); it != p_resolutions.constEnd(); ++it) {
+    const QString filePath = it.key();
+    const QString resolution = it.value();
+    const QString notebookId = p_notebookId;
+    workQueue->enqueue(
+        notebookId,
+        [notebookSvc, notebookId, filePath, resolution]() {
+          SyncOps::resolveConflict(notebookSvc, notebookId, filePath, resolution,
+                                   [notebookId, filePath](VxCoreError p_code) {
+                                     if (p_code != VXCORE_OK) {
+                                       qCWarning(syncCategory)
+                                           << "SyncService::resolveConflicts: resolve failed for"
+                                           << notebookId << filePath << "code:" << p_code;
+                                     }
+                                   });
+        },
+        /*onCancelled=*/nullptr, QStringLiteral("resolve-") + filePath);
+  }
+
+  // T22: trailing triggerSync enqueued AFTER all resolves. Same coalesceKey
+  // "trigger" as SyncService::triggerSyncNow so a concurrent manual click
+  // collapses into this trailing run. Per-notebook FIFO guarantees this
+  // trigger executes only after every queued resolve has completed.
+  const QString notebookId = p_notebookId;
+  workQueue->enqueue(
+      notebookId,
+      [notebookSvc, notebookId]() {
+        SyncOps::triggerSync(
+            notebookSvc, notebookId, /*p_cancel=*/nullptr, [notebookId](VxCoreError p_code) {
+              if (p_code != VXCORE_OK) {
+                qCDebug(syncCategory) << "SyncService::resolveConflicts: trailing trigger result"
+                                      << notebookId << "code:" << p_code;
+              }
+            });
+      },
+      /*onCancelled=*/nullptr, QStringLiteral("trigger"));
 }
 
 bool SyncService::isSyncInProgress(const QString &p_notebookId) const {

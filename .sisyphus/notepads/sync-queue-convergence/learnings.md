@@ -512,3 +512,12 @@ None. The pre-existing one-shot `disableFinished` listener (lambda registered be
 - Did NOT emit syncStarted from triggerSyncNow for the same reason.
 - Updated test_sync_signal_baseline to spy on SyncService::sync{Started,Finished} instead of SyncWorker::sync{Started,Finished} — manual path no longer touches SyncWorker.
 - Tests pass: test_sync_ops, test_sync_signal_baseline, test_sync_signal_auto_baseline, test_sync_workqueue_cancel (4/4).
+
+## [2026-05-22 19:08] Task: T22 - Route resolveConflicts through SyncWorkQueueManager
+- Replaced two `QMetaObject::invokeMethod(m_worker, ...)` calls in `SyncService::resolveConflicts` with per-resolution `m_workQueue->enqueue(notebookId, work, nullptr, "resolve-<filePath>")` plus a final trailing `enqueue(notebookId, work, nullptr, "trigger")`.
+- coalesceKey rationale: duplicate clicks for the same path collapse (good); distinct paths each get their own key so they all execute in FIFO order. Trailing trigger uses the SAME `"trigger"` key as T21::triggerSyncNow so a concurrent manual click during a resolve burst absorbs into this trailing run rather than queueing twice.
+- Completion callbacks log-only (no listener exists for the old `resolveConflictFinished` signal in src/; no bridge needed). qCWarning on non-OK resolve, qCDebug for trigger result.
+- m_worker field preserved (still wired for ops not yet migrated, but resolveConflicts no longer touches it).
+- Per-notebook FIFO inside SyncWorkQueueManager preserves ordering: N resolves -> trigger.
+- Tests: test_sync_ops, test_sync_signal_baseline, test_sync_signal_auto_baseline all PASS (13.76s total).
+- Header doc on `resolveConflicts` rewritten to describe new SyncWorkQueueManager contract.

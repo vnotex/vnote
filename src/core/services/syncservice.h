@@ -143,9 +143,12 @@ public:
   void updateCredentials(const QString &p_notebookId, const QString &p_newPat);
 
   // Resolve a batch of conflicts. Each (filePath -> resolution) entry is
-  // dispatched to SyncWorker::resolveConflict via QueuedConnection. After all
-  // resolutions are queued, SyncWorker::triggerSync is invoked to push the
-  // resolved state.
+  // enqueued on the SyncWorkQueueManager for this notebookId with coalesceKey
+  // "resolve-<filePath>" (so duplicate resolutions for the same path collapse,
+  // while different paths run in FIFO order). After all resolves are queued,
+  // a final triggerSync is enqueued with coalesceKey "trigger" (same key
+  // SyncService::triggerSyncNow uses) so any concurrent manual trigger is
+  // absorbed into this trailing run.
   void resolveConflicts(const QString &p_notebookId, const QHash<QString, QString> &p_resolutions);
 
   // Returns true if a sync (or enable/disable etc. operation that maps to
