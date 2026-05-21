@@ -34,34 +34,11 @@ add_custom_command(TARGET test_sync_e2e POST_BUILD
     $<TARGET_FILE_DIR:test_sync_e2e>
 )
 
-# W5.T1 + W5.T2: parameterized state-machine matrix (S0-S7, 17 transitions)
-# and cold-start recovery integration tests.
-add_qt_test(test_sync_state_machine
-  SOURCES
-    test_sync_state_machine.cpp
-  LINKS
-    Qt6::Core
-    Qt6::Widgets
-    core_services
-)
-# Same -nocrashhandler override as test_sync_e2e — ctest stdout pipe driver
-# deadlocks against QTEST_MAIN's default Windows crash hooks (T14 learnings).
-set_property(TEST test_sync_state_machine PROPERTY
-  COMMAND $<TARGET_FILE:test_sync_state_machine> -nocrashhandler)
-set_tests_properties(test_sync_state_machine PROPERTIES
-  TIMEOUT 240
-)
-target_compile_definitions(test_sync_state_machine PRIVATE VNOTE_TESTING)
-# Wave 7.1: same WHOLEARCHIVE rationale as test_notebookcoreservice_sync —
-# state machine matrix exercises the git backend factory.
-if(MSVC)
-  target_link_options(test_sync_state_machine PRIVATE /WHOLEARCHIVE:vxcore)
-endif()
-add_custom_command(TARGET test_sync_state_machine POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_sync_state_machine>
-)
+# W5.T1+W5.T2 test_sync_state_machine retired by T27 (sync-queue-convergence):
+# the matrix relied on the deleted SyncWorker class. State-machine coverage now
+# lives in test_sync_signal_baseline + test_sync_signal_auto_baseline +
+# test_sync_ops + test_sync_close_block; cold-start recovery is exercised by
+# test_bootstrap_and_persist.
 
 # W5.T3: credential secrecy audit (no PAT in logs/JSON/source).
 # Wraps scripts/test_pat_secrecy.ps1 so it runs as part of `ctest`.

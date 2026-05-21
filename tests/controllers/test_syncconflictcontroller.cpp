@@ -28,7 +28,6 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
-#include <core/services/syncworker.h>
 #include <widgets/dialogs/syncconflictdialog2.h>
 
 #include <vxcore/vxcore.h>

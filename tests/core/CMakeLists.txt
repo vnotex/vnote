@@ -450,25 +450,22 @@ endif()
 
 # T24: SyncWorker class deleted; test_syncworker.cpp retired with it.
 
-# T7: SyncService — GUI-thread facade owning a SyncWorker on a private QThread,
-# wrapping SyncCredentialsStore. Per ADR-1 the service NEVER touches
-# SyncManager directly. Per the T6 deviation pattern, test seams on
-# SyncService (testSetInProgress) are unconditional public API; VNOTE_TESTING
-# remains reserved on the test target so future test-only paths can compile-gate
-# without dual-compiling syncservice.cpp into both libraries.
-add_qt_test(test_syncservice
+# T7/T27 (sync-queue-convergence): test_syncservice retired — it relied on the
+# deleted SyncWorker class (worker()->testHangNextOperation / testForceError).
+# Coverage migrated to test_sync_ops, test_sync_signal_baseline,
+# test_sync_signal_auto_baseline, test_sync_close_block, test_synccredentialsstore.
+
+# T27: NotebookBeforeClose hook refuses close while sync is in-flight OR queued.
+add_qt_test(test_sync_close_block
   SOURCES
-    test_syncservice.cpp
+    test_sync_close_block.cpp
   LINKS
     core_services
     vxcore
-  GUILESS
 )
-target_compile_definitions(test_syncservice PRIVATE VNOTE_TESTING)
-# Wave 7.1: same WHOLEARCHIVE rationale as test_notebookcoreservice_sync —
-# this test exercises the git backend factory through SyncService.
+target_compile_definitions(test_sync_close_block PRIVATE VNOTE_TESTING)
 if(MSVC)
-  target_link_options(test_syncservice PRIVATE /WHOLEARCHIVE:vxcore)
+  target_link_options(test_sync_close_block PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
 # T2 (sync-queue-convergence): Characterization test for AUTO sync signal

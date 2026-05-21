@@ -124,13 +124,31 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
     hookMgr->addAction<NotebookCloseEvent>(
         HookNames::NotebookBeforeClose,
         [this](HookContext &p_ctx, const NotebookCloseEvent &p_event) {
-          if (!isSyncInProgress(p_event.notebookId)) {
+          // T27: refuse close when sync is in progress OR when sync work is
+          // queued-but-not-yet-running. Auto-flush is NOT performed — the user
+          // must explicitly cancel via the sync UI to drop pending items.
+          const bool inProgress = isSyncInProgress(p_event.notebookId);
+          int pendingCount = 0;
+          if (m_workQueue) {
+            const auto snap = m_workQueue->inFlightState(p_event.notebookId);
+            // hasPending is true while running OR pending items exist. Derive
+            // pure pending count from queueDepth so the payload distinguishes
+            // running-only (pending=0) from queued (pending>0).
+            pendingCount = m_workQueue->queueDepth(p_event.notebookId);
+            (void)snap;
+          }
+          // Expose the snapshot to downstream subscribers regardless of decision.
+          p_ctx.setMetadata(QStringLiteral("pendingCount"), pendingCount);
+          if (!inProgress && pendingCount == 0) {
             return;
           }
           p_ctx.cancel();
           const QString reason =
-              tr("Sync is in progress for this notebook. Please wait for sync to "
-                 "complete before closing.");
+              inProgress ? tr("Sync is in progress for this notebook. Please wait for sync to "
+                              "complete before closing.")
+                         : tr("Sync work is queued for this notebook (%1 item(s)). Cancel the "
+                              "queued sync from the toolbar before closing.")
+                               .arg(pendingCount);
           p_ctx.setMetadata(QStringLiteral("syncCancelReason"), reason);
           QMessageBox::warning(qApp ? qApp->activeWindow() : nullptr, tr("Cannot close notebook"),
                                reason);

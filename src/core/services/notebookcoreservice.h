@@ -81,7 +81,7 @@ public:
   VxCoreError disableSync(const QString &p_notebookId);
   VxCoreError triggerSync(const QString &p_notebookId);
   // Wave 12.2 / F5.9: cancellable triggerSync. @p_cancellationHandle is the
-  // raw VxCoreSyncCancellation* (forward-declared in syncworker.h) owned by
+  // raw VxCoreSyncCancellation* (forward-declared below) owned by
   // the caller (typically SyncService). Null degrades to legacy behaviour.
   VxCoreError triggerSyncCancellable(const QString &p_notebookId,
                                      struct VxCoreSyncCancellation_ *p_cancellationHandle);
