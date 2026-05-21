@@ -494,3 +494,10 @@ None. The pre-existing one-shot `disableFinished` listener (lambda registered be
 - test_sync_ops: PASS (7.62s, 9 sub-tests)
 - test_sync_signal_baseline: PASS (2.34s)
 - test_sync_signal_auto_baseline: PASS (1.97s)
+
+## [2026-05-22 18:45:02] Task: T19
+- Migrated SyncService::updateCredentials registered branch to SyncWorkQueueManager::enqueue (T18 pattern).
+- Unregistered+enabled reroute branch unchanged: still calls enableSyncForNotebook (T20-migrated) and installs one-shot enableFinished->credentialsSetFinished bridge.
+- PAT captured by-value in credsJson lambda; destroyed at lambda end; never logged.
+- m_worker field preserved.
+- Tests pass: test_sync_ops, test_sync_signal_baseline, test_sync_signal_auto_baseline.

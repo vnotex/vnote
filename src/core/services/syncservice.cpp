@@ -729,8 +729,38 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
                   return;
                 }
                 cleanup();
-                QMetaObject::invokeMethod(m_worker, "setCredentials", Qt::QueuedConnection,
-                                          Q_ARG(QString, notebookId), Q_ARG(QString, credsJson));
+                // T19: route setCredentials through SyncWorkQueueManager (per-notebook
+                // serialized executor). The PAT-bearing credsJson is captured by-value
+                // in the enqueued lambda and again in the SyncOps::setCredentials call;
+                // both copies are destroyed when their respective scopes end. NEVER
+                // log credsJson. Completion bounces back to the GUI thread via
+                // QueuedConnection so onWorkerCredentialsSetFinished preserves the
+                // credentialsSetFinished signal contract (GUI-thread, exactly once).
+                auto *workQueue = m_services.get<SyncWorkQueueManager>();
+                NotebookCoreService *notebookSvc = m_notebookCoreService;
+                if (!workQueue) {
+                  qCWarning(syncCategory)
+                      << "SyncService::updateCredentials: SyncWorkQueueManager unavailable;"
+                      << "falling back to synchronous failure for notebookId:" << notebookId;
+                  QMetaObject::invokeMethod(
+                      this,
+                      [this, notebookId]() {
+                        onWorkerCredentialsSetFinished(notebookId, VXCORE_ERR_UNKNOWN);
+                      },
+                      Qt::QueuedConnection);
+                  return;
+                }
+                workQueue->enqueue(notebookId, [this, notebookId, credsJson, notebookSvc]() {
+                  SyncOps::setCredentials(notebookSvc, notebookId, credsJson,
+                                          [this, notebookId](VxCoreError p_err) {
+                                            QMetaObject::invokeMethod(
+                                                this,
+                                                [this, notebookId, p_err]() {
+                                                  onWorkerCredentialsSetFinished(notebookId, p_err);
+                                                },
+                                                Qt::QueuedConnection);
+                                          });
+                });
               });
 
   *errorConn =
