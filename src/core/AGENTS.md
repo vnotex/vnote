@@ -70,6 +70,7 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 | `TemplateService` | Note template management | `getTemplates()`, `getTemplateContent()`, `getTemplateFilePath()` |
 | `WorkspaceCoreService` | Workspace (split pane) operations via vxcore | `createWorkspace()`, `deleteWorkspace()`, `listWorkspaces()`, `addBuffer()`, `removeBuffer()` |
 | `HookManager` | Plugin hook system | `addAction()`, `doAction()`, `addFilter()`, `applyFilters()` |
+| `SyncStateClassifier` | Stateless sync state classifier (maps notebook ID to SyncState S0-S7) | `classify()`, `classifyFromPredicates()`, `tooltipFor()`, `isPartial()`, `isActionable()` |
 
 ### ConfigMgr2 vs ConfigCoreService (CRITICAL — Read Before Using Config)
 

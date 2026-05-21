@@ -34,6 +34,7 @@
 #include <core/services/snippetcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
+#include <core/services/syncstateclassifier.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 #include <core/services/templateservice.h>
@@ -217,6 +218,9 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<SyncCredentialsStore>(&syncCredentialsStore);
     SyncService syncService(serviceLocator);
     serviceLocator.registerService<SyncService>(&syncService);
+
+    SyncStateClassifier syncStateClassifier(serviceLocator);
+    serviceLocator.registerService<SyncStateClassifier>(&syncStateClassifier);
 
     WorkQueueDrainThread drainThread(context);
     serviceLocator.registerService<WorkQueueDrainThread>(&drainThread);
