@@ -255,12 +255,9 @@ signals:
 
 private slots:
   // Internal forwarders. All connected to worker signals via QueuedConnection
-  // so they execute on the GUI thread.
-  void onWorkerSyncStarted(const QString &p_notebookId);
-  void onWorkerSyncFinished(const QString &p_notebookId, VxCoreError p_result);
-  void onWorkerSyncFailed(const QString &p_notebookId, VxCoreError p_code,
-                          const QString &p_message);
-  void onWorkerConflictsDetected(const QString &p_notebookId, const QStringList &p_conflictFiles);
+  // so they execute on the GUI thread. T23: only enable / disable / credentials
+  // remain wired to SyncWorker — vxcore does not emit lifecycle events for
+  // those. T24 will retire these along with the worker.
   void onWorkerEnableFinished(const QString &p_notebookId, VxCoreError p_result,
                               const QString &p_message);
   void onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result);
@@ -270,10 +267,13 @@ private slots:
   void onNotebookAfterOpen(const NotebookOpenEvent &p_event);
   void onMainWindowAfterStart();
 
-  // Auto-sync event forwarders (from EventBridge, already on GUI thread).
-  void onAutoSyncStarted(const QString &p_notebookId);
-  void onAutoSyncFinished(const QString &p_notebookId, VxCoreError p_result);
-  void onAutoSyncConflict(const QString &p_notebookId);
+  // T23: single-source sync lifecycle forwarders. EventBridge translates
+  // vxcore sync.started / sync.finished / sync.conflict events into Qt
+  // signals on the GUI thread; SyncService re-emits as its own public
+  // signals. Covers manual + auto + initial-on-enable triggers uniformly.
+  void onSyncStarted(const QString &p_notebookId);
+  void onSyncFinished(const QString &p_notebookId, VxCoreError p_result);
+  void onSyncConflictFiles(const QString &p_notebookId, const QStringList &p_files);
 
 private:
   void setInProgress(const QString &p_notebookId, bool p_value);

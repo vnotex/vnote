@@ -521,3 +521,37 @@ None. The pre-existing one-shot `disableFinished` listener (lambda registered be
 - Per-notebook FIFO inside SyncWorkQueueManager preserves ordering: N resolves -> trigger.
 - Tests: test_sync_ops, test_sync_signal_baseline, test_sync_signal_auto_baseline all PASS (13.76s total).
 - Header doc on `resolveConflicts` rewritten to describe new SyncWorkQueueManager contract.
+
+## [2026-05-22 19:30] Task: T23 - Single-source sync lifecycle signals via EventBridge
+
+### Connections removed (SyncWorker -> SyncService)
+- syncStarted -> onWorkerSyncStarted
+- syncFinished -> onWorkerSyncFinished
+- syncFailed -> onWorkerSyncFailed
+- conflictsDetected -> onWorkerConflictsDetected
+
+### Connections kept (SyncWorker)
+- enableFinished / disableFinished / credentialsSetFinished (vxcore does not emit events for these; T24 will retire them with the worker)
+
+### Connections added/renamed (EventBridge -> SyncService)
+- EventBridge::syncStarted -> SyncService::onSyncStarted (was onAutoSyncStarted)
+- EventBridge::syncFinished -> SyncService::onSyncFinished (was onAutoSyncFinished, now also frees cancellation token)
+- EventBridge::syncConflictFiles -> SyncService::onSyncConflictFiles (NEW; replaces onAutoSyncConflict + getConflicts round-trip)
+- Dropped: EventBridge::syncConflict -> onAutoSyncConflict connection (no longer needed; syncConflictFiles already carries the file list from vxcore payload)
+
+### Signal signature decision
+Kept existing 2-arg conflictsDetected(QString, QStringList). No migration burden on consumers (mainwindow2, notebooksyncinfodialog2, syncconflictcontroller). Plan suggested extending the signature but it was ALREADY 2-arg in trunk, so this was a no-op.
+
+### Cancellation token cleanup
+Moved from onWorkerSyncFinished to onSyncFinished. Token is now released by the EventBridge-driven slot regardless of whether the sync was manual or auto.
+
+### syncFailed emission
+onSyncFinished now emits syncFailed(id, result, vxErrorToString(result)) when result != OK, preserving the legacy behavior that previously came from onAutoSyncFinished. Worker's syncFailed signal was its only other emitter and is gone.
+
+### Tests
+- test_sync_signal_baseline: PASS 2.58s (already updated by T21 to spy on SyncService signals)
+- test_sync_signal_auto_baseline: PASS 2.08s
+- test_sync_ops: PASS 8.83s
+
+### onAutoSyncConflict's getConflicts dispatch
+Eliminated. vxcore's sync.conflict event already includes the files array; EventBridge::syncConflictFiles delivers them directly. One fewer worker round-trip.

@@ -105,17 +105,13 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
   // Ensure the worker is destroyed on its own thread when the thread finishes.
   connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
 
-  // Wire worker -> service forwarders. ALL must be QueuedConnection so the
-  // signal payload is marshalled across threads and the slot runs on the GUI
-  // thread (where SyncService lives).
-  connect(m_worker, &SyncWorker::syncStarted, this, &SyncService::onWorkerSyncStarted,
-          Qt::QueuedConnection);
-  connect(m_worker, &SyncWorker::syncFinished, this, &SyncService::onWorkerSyncFinished,
-          Qt::QueuedConnection);
-  connect(m_worker, &SyncWorker::syncFailed, this, &SyncService::onWorkerSyncFailed,
-          Qt::QueuedConnection);
-  connect(m_worker, &SyncWorker::conflictsDetected, this, &SyncService::onWorkerConflictsDetected,
-          Qt::QueuedConnection);
+  // T23: SyncWorker is no longer the source of sync lifecycle signals. vxcore
+  // SyncManager emits sync.started / sync.finished / sync.conflict for BOTH
+  // manual AND auto triggers (post-T7), and EventBridge translates them into
+  // Qt signals. SyncService now subscribes to EventBridge as the single source
+  // of truth for started / finished / conflict events. The remaining worker
+  // connections (enable / disable / credentials) stay until T24 retires the
+  // worker entirely, because vxcore does not emit lifecycle events for those.
   connect(m_worker, &SyncWorker::enableFinished, this, &SyncService::onWorkerEnableFinished,
           Qt::QueuedConnection);
   connect(m_worker, &SyncWorker::disableFinished, this, &SyncService::onWorkerDisableFinished,
@@ -123,12 +119,14 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
   connect(m_worker, &SyncWorker::credentialsSetFinished, this,
           &SyncService::onWorkerCredentialsSetFinished, Qt::QueuedConnection);
 
-  // Wire EventBridge for vxcore auto-sync events (already on GUI thread).
+  // Wire EventBridge for all vxcore sync lifecycle events (already on GUI
+  // thread; EventBridge delivers via QueuedConnection from its vxcore callback).
   m_eventBridge = m_services.get<EventBridge>();
   if (m_eventBridge) {
-    connect(m_eventBridge, &EventBridge::syncStarted, this, &SyncService::onAutoSyncStarted);
-    connect(m_eventBridge, &EventBridge::syncFinished, this, &SyncService::onAutoSyncFinished);
-    connect(m_eventBridge, &EventBridge::syncConflict, this, &SyncService::onAutoSyncConflict);
+    connect(m_eventBridge, &EventBridge::syncStarted, this, &SyncService::onSyncStarted);
+    connect(m_eventBridge, &EventBridge::syncFinished, this, &SyncService::onSyncFinished);
+    connect(m_eventBridge, &EventBridge::syncConflictFiles, this,
+            &SyncService::onSyncConflictFiles);
   }
 
   m_thread->start();
@@ -433,8 +431,9 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
   // lambda can capture it), but only inserted into m_cancellations on
   // EnqueueResult::Accepted. On Coalesced / QueueFull / Rejected the token is
   // freed inline (never enters the map). On Accepted, the token is freed by
-  // either onWorkerSyncFinished (normal path) or the onCancelled callback
-  // registered with the queue (drop-from-pending path).
+  // either SyncService::onSyncFinished (T23: single-source EventBridge path)
+  // or the onCancelled callback registered with the queue (drop-from-pending
+  // path).
   VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
   const QString notebookId = p_notebookId;
 
@@ -444,10 +443,8 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
       // cancellation token. SyncService does NOT emit
       // syncFinished from here — EventBridge already
       // observes vxcore's sync.finished event and routes
-      // it through onAutoSyncFinished, which is the
-      // canonical re-emission point post-T7 (vxcore
-      // emits sync.finished for both auto AND manual
-      // triggers).
+      // it through onSyncFinished (T23: single-source
+      // forwarder for both auto AND manual triggers).
       QMetaObject::invokeMethod(
           this,
           [this, notebookId, p_code]() {
@@ -500,7 +497,7 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     }
     // T21: do NOT emit syncStarted here — EventBridge observes vxcore's
     // sync.started event for both auto and manual triggers (post-T7) and
-    // routes it through onAutoSyncStarted. setInProgress is also handled
+    // routes it through onSyncStarted (T23). setInProgress is also handled
     // there. We only mark the queue as accepted.
     return;
   }
@@ -1024,14 +1021,44 @@ void SyncService::setInProgress(const QString &p_notebookId, bool p_value) {
 }
 
 // ---- Worker -> SyncService forwarders --------------------------------------
+// T23: syncStarted / syncFinished / syncFailed / conflictsDetected forwarders
+// were removed; EventBridge is now the single source for those signals.
+// The enable / disable / credentials forwarders remain (vxcore does not emit
+// events for those today; T24 will remove them with the worker).
 
-void SyncService::onWorkerSyncStarted(const QString &p_notebookId) {
+void SyncService::onWorkerEnableFinished(const QString &p_notebookId, VxCoreError p_result,
+                                         const QString &p_message) {
+  qCDebug(syncCategory) << "SyncService::onWorkerEnableFinished: notebookId:" << p_notebookId
+                        << "result:" << vxErrorToString(p_result);
+  emit enableFinished(p_notebookId, p_result, p_message);
+}
+
+void SyncService::onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result) {
+  emit disableFinished(p_notebookId, p_result);
+}
+
+void SyncService::onWorkerCredentialsSetFinished(const QString &p_notebookId,
+                                                 VxCoreError p_result) {
+  emit credentialsSetFinished(p_notebookId, p_result);
+}
+
+// ---- Sync lifecycle forwarders (from EventBridge) --------------------------
+// T23: previously split into onWorkerSync* (worker source) and onAutoSync*
+// (EventBridge source). After T7 made vxcore emit lifecycle events for BOTH
+// manual and auto triggers, EventBridge is the only source — these slots
+// handle every sync (manual + auto + initial-on-enable).
+
+void SyncService::onSyncStarted(const QString &p_notebookId) {
+  if (m_shutDown)
+    return;
   setInProgress(p_notebookId, true);
   emit syncStarted(p_notebookId);
 }
 
-void SyncService::onWorkerSyncFinished(const QString &p_notebookId, VxCoreError p_result) {
-  qCDebug(syncCategory) << "SyncService::onWorkerSyncFinished: notebookId:" << p_notebookId
+void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_result) {
+  if (m_shutDown)
+    return;
+  qCDebug(syncCategory) << "SyncService::onSyncFinished: notebookId:" << p_notebookId
                         << "result:" << static_cast<int>(p_result)
                         << "message:" << vxErrorToString(p_result);
   setInProgress(p_notebookId, false);
@@ -1051,77 +1078,25 @@ void SyncService::onWorkerSyncFinished(const QString &p_notebookId, VxCoreError 
     vxcore_sync_free_cancellation(token);
   }
 
-  emit syncFinished(p_notebookId, p_result);
-}
-
-void SyncService::onWorkerSyncFailed(const QString &p_notebookId, VxCoreError p_code,
-                                     const QString &p_message) {
-  emit syncFailed(p_notebookId, p_code, p_message);
-}
-
-void SyncService::onWorkerConflictsDetected(const QString &p_notebookId,
-                                            const QStringList &p_conflictFiles) {
-  // F4.5: fire vnote.sync.conflict_detected on the GUI thread (this slot is
-  // wired to the worker signal via Qt::QueuedConnection, so we are post-bounce
-  // and hold no SyncManager / worker locks). Observe-only.
-  if (auto *hookMgr = m_services.get<HookManager>()) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("conflictCount")] = p_conflictFiles.size();
-    hookMgr->doAction(HookNames::SyncConflictDetected, args);
-  }
-  emit conflictsDetected(p_notebookId, p_conflictFiles);
-}
-
-void SyncService::onWorkerEnableFinished(const QString &p_notebookId, VxCoreError p_result,
-                                         const QString &p_message) {
-  qCDebug(syncCategory) << "SyncService::onWorkerEnableFinished: notebookId:" << p_notebookId
-                        << "result:" << vxErrorToString(p_result);
-  emit enableFinished(p_notebookId, p_result, p_message);
-}
-
-void SyncService::onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result) {
-  emit disableFinished(p_notebookId, p_result);
-}
-
-void SyncService::onWorkerCredentialsSetFinished(const QString &p_notebookId,
-                                                 VxCoreError p_result) {
-  emit credentialsSetFinished(p_notebookId, p_result);
-}
-
-// ---- Auto-sync event forwarders (from EventBridge) --------------------------
-
-void SyncService::onAutoSyncStarted(const QString &p_notebookId) {
-  if (m_shutDown)
-    return;
-  setInProgress(p_notebookId, true);
-  emit syncStarted(p_notebookId);
-}
-
-void SyncService::onAutoSyncFinished(const QString &p_notebookId, VxCoreError p_result) {
-  if (m_shutDown)
-    return;
-  setInProgress(p_notebookId, false);
   if (p_result != VXCORE_OK) {
     emit syncFailed(p_notebookId, p_result, vxErrorToString(p_result));
   }
   emit syncFinished(p_notebookId, p_result);
 }
 
-void SyncService::onAutoSyncConflict(const QString &p_notebookId) {
+void SyncService::onSyncConflictFiles(const QString &p_notebookId, const QStringList &p_files) {
   if (m_shutDown)
     return;
-  // F4.5: fire vnote.sync.conflict_detected for auto-sync-originated
-  // conflicts as well. Conflict file count is not known until getConflicts
-  // returns; observers receive -1 to signal "count unknown at fire time".
+  // F4.5: fire vnote.sync.conflict_detected on the GUI thread (this slot is
+  // wired to EventBridge via QueuedConnection, so we are post-bounce and hold
+  // no SyncManager / worker locks). Observe-only.
   if (auto *hookMgr = m_services.get<HookManager>()) {
     QVariantMap args;
     args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("conflictCount")] = -1;
+    args[QStringLiteral("conflictCount")] = p_files.size();
     hookMgr->doAction(HookNames::SyncConflictDetected, args);
   }
-  QMetaObject::invokeMethod(m_worker, "getConflicts", Qt::QueuedConnection,
-                            Q_ARG(QString, p_notebookId));
+  emit conflictsDetected(p_notebookId, p_files);
 }
 
 // ---- Reconcile-on-open ------------------------------------------------------
