@@ -485,6 +485,23 @@ if(MSVC)
   target_link_options(test_syncservice PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
+# T2 (sync-queue-convergence): Characterization test for AUTO sync signal
+# sequence. Locks in CURRENT pre-refactor behavior: file.saved fires
+# EventBridge::syncStarted/Finished while SyncWorker stays silent on the
+# auto path. Regression detector for Wave 2 (T7/T9) work.
+add_qt_test(test_sync_signal_auto_baseline
+  SOURCES
+    test_sync_signal_auto_baseline.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_sync_signal_auto_baseline PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_signal_auto_baseline PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
 # Task 8.1 (F3.1): SyncStateClassifier — pure read-through service that maps
 # (notebook config + PAT presence + runtime registration) to one of S0..S7.
 # Tests exercise the static classifyFromPredicates() helper so they don't
@@ -525,6 +542,22 @@ add_qt_test(test_bootstrap_and_persist
 )
 if(MSVC)
   target_link_options(test_bootstrap_and_persist PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
+# T1 (sync-queue-convergence): characterization test capturing the CURRENT
+# signal-emission behavior of manual sync. Becomes the regression detector for
+# Wave 2; T23 will flip its assertions once EventBridge is the single source.
+add_qt_test(test_sync_signal_baseline
+  SOURCES
+    test_sync_signal_baseline.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_sync_signal_baseline PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_signal_baseline PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
 # Task 14.1 (F5.1): SyncWorkQueueManager — per-notebook serialized executor.
