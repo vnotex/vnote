@@ -55,6 +55,22 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
 void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCancellation *p_cancel,
                  std::function<void(VxCoreError)> p_onFinished);
 
+// Resolve a single sync conflict for the given file via
+// vxcore_sync_resolve_conflict (routed through NotebookCoreService — matches
+// ADR-1 pattern: SyncOps never touches the C API directly).
+//
+// p_resolution must be one of: "keep_local", "keep_remote", "keep_both".
+// p_onFinished is ALWAYS invoked exactly once. If p_svc is null, fires
+// synchronously with VXCORE_ERR_NULL_POINTER.
+//
+// FIFO ORDERING CONTRACT: Caller must enqueue N resolveConflict + 1
+// triggerSync onto the same notebookId in SyncWorkQueueManager so FIFO
+// ordering is preserved per notebook. SyncOps itself does NOT queue and does
+// NOT auto-trigger sync after resolution — that orchestration is the
+// caller's responsibility (typically SyncService::resolveConflicts).
+void resolveConflict(NotebookCoreService *p_svc, QString p_notebookId, QString p_filePath,
+                     QString p_resolution, std::function<void(VxCoreError)> p_onFinished);
+
 } // namespace SyncOps
 
 } // namespace vnotex

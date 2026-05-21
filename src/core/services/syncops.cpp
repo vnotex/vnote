@@ -118,5 +118,20 @@ void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCan
   }
 }
 
+void resolveConflict(NotebookCoreService *p_svc, QString p_notebookId, QString p_filePath,
+                     QString p_resolution, std::function<void(VxCoreError)> p_onFinished) {
+  if (!p_svc) {
+    if (p_onFinished) {
+      p_onFinished(VXCORE_ERR_NULL_POINTER);
+    }
+    return;
+  }
+
+  const VxCoreError code = p_svc->resolveSyncConflict(p_notebookId, p_filePath, p_resolution);
+  if (p_onFinished) {
+    p_onFinished(code);
+  }
+}
+
 } // namespace SyncOps
 } // namespace vnotex

@@ -464,3 +464,10 @@ Added `add_qt_test(test_sync_ops ...)` block with `VNOTE_TESTING` + `/WHOLEARCHI
 - Tests: triggerSyncInvokesCallback (nullptr token path) + triggerSyncDoesNotFreeToken (cancel-then-free pattern proves token still alive). Both PASS (ctest 7.41s).
 - API spelling correction: vxcore exposes `vxcore_sync_free_cancellation` not `vxcore_sync_destroy_cancellation` (task spec used the wrong name).
 - Test count 6 -> 8.
+
+## [2026-05-22 17:30] Task: T16
+- Added SyncOps::resolveConflict free-function callable wrapping NotebookCoreService::resolveSyncConflict (ADR-1 pattern).
+- Header documents FIFO contract: caller enqueues N resolveConflict + 1 triggerSync onto same notebookId via SyncWorkQueueManager.
+- SyncOps does NOT auto-trigger sync after resolution; orchestration is caller's responsibility (matches SyncService::resolveConflicts pattern in syncservice.cpp:619).
+- Test test_resolve_conflict_invokes_callback_for_keep_local: covers null-service path + unknown-notebook path; deliberately does not pin VxCoreError code per existing T12 pattern.
+- All 9 test_sync_ops cases pass in 7.5s.
