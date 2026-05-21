@@ -37,6 +37,7 @@
 #include <core/services/synccredentialsstore.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
+#include <core/services/syncstateclassifier.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/navigationmodeservice.h>
@@ -1532,36 +1533,45 @@ void NotebookExplorer2::onSyncButtonClicked() {
     return;
   }
   auto *syncSvc = m_services.get<SyncService>();
-  if (!syncSvc) {
+  auto *classifier = m_services.get<SyncStateClassifier>();
+  if (!syncSvc || !classifier) {
     return;
   }
-  const bool syncEnabled = syncSvc->isSyncEnabled(nbId);
-  const bool syncReady = syncSvc->isSyncReady(nbId);
+  const SyncState state = classifier->classify(nbId);
   qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: clicked notebookId:" << nbId
-                        << "syncEnabled:" << syncEnabled << "syncReady:" << syncReady;
+                        << "state:" << static_cast<int>(state);
   // W4.T2: S0 (sync disabled) MUST route to the bootstrap dialog with empty
   // fields so the user can re-enable sync. Triggering Sync Now is forbidden
   // here per plan ("DO NOT allow clicking Sync Now on S0 notebook").
-  if (!syncEnabled) {
-    qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: syncEnabled=false (S0), "
-                             "opening bootstrap dialog"
-                          << "notebookId:" << nbId;
-    auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
-    dlg->setAttribute(Qt::WA_DeleteOnClose);
-    dlg->setBootstrapMode(true);
-    dlg->open();
-    return;
-  }
-  if (syncReady) {
-    syncSvc->triggerSyncNow(nbId);
-  } else {
+  switch (state) {
+  case SyncState::S0:
+  case SyncState::S6: {
     qCDebug(syncCategory)
-        << "NotebookExplorer2::onSyncButtonClicked: syncReady=false, opening bootstrap dialog"
+        << "NotebookExplorer2::onSyncButtonClicked: disabled state, opening bootstrap dialog"
         << "notebookId:" << nbId;
     auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     dlg->setBootstrapMode(true);
     dlg->open();
+    return;
+  }
+  case SyncState::S5:
+  case SyncState::S7:
+    syncSvc->triggerSyncNow(nbId);
+    return;
+  case SyncState::S1:
+  case SyncState::S2:
+  case SyncState::S3:
+  case SyncState::S4: {
+    qCDebug(syncCategory)
+        << "NotebookExplorer2::onSyncButtonClicked: partial state, opening bootstrap dialog"
+        << "notebookId:" << nbId;
+    auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setBootstrapMode(true);
+    dlg->open();
+    return;
+  }
   }
 }
 
@@ -1606,44 +1616,20 @@ void NotebookExplorer2::updateSyncButtonState() {
   }
 
   auto *syncSvc = m_services.get<SyncService>();
-  const bool syncEnabled = syncSvc && syncSvc->isSyncEnabled(nbId);
-  const bool syncReady = syncSvc && syncSvc->isSyncReady(nbId);
+  auto *classifier = m_services.get<SyncStateClassifier>();
+  const SyncState state = classifier ? classifier->classify(nbId) : SyncState::S0;
   const bool syncInProgress = syncSvc && syncSvc->isSyncInProgress(nbId);
 
-  // Detect "partial" sync state: notebook claims sync is enabled but the
-  // on-disk config is missing required fields (syncBackend or
-  // syncRemoteUrl). When syncReady is false AND syncEnabled is true,
-  // distinguish this case from "just not bootstrapped at all" so the
-  // user knows their click will open Configure Sync (not start a sync).
-  bool partialSyncConfig = false;
-  if (syncEnabled && !syncReady) {
-    // S1: syncEnabled && !syncReady with missing backend/remoteUrl
-    if (auto *nbSvc = m_services.get<NotebookCoreService>()) {
-      const QJsonObject cfg = nbSvc->getNotebookConfig(nbId);
-      const QString backend = cfg.value(QStringLiteral("syncBackend")).toString();
-      const QString remoteUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
-      // Partial = enabled but at least one critical field missing.
-      partialSyncConfig = backend.isEmpty() || remoteUrl.isEmpty();
-    }
-  } else if (syncEnabled && syncReady) {
-    // S2: syncEnabled && syncReady but PAT missing in keychain
-    if (auto *credStore = m_services.get<SyncCredentialsStore>()) {
-      if (!credStore->hasCredentials(nbId)) {
-        partialSyncConfig = true;
-      }
-    }
-    // S4: syncEnabled && syncReady but sync not registered at runtime
-    if (!partialSyncConfig) {
-      if (auto *syncSvc = m_services.get<SyncService>()) {
-        if (!syncSvc->isSyncRegistered(nbId)) {
-          partialSyncConfig = true;
-        }
-      }
-    }
-  }
+  // Partial states (S1-S4): notebook claims sync is enabled but configuration
+  // is incomplete (missing backend, URL, PAT, or runtime registration). The
+  // UI surfaces this via the partialSyncConfig QWidget property so the user
+  // knows their click will open Configure Sync (not start a sync).
+  const bool partialSyncConfig = classifier && classifier->isPartial(state);
+  const bool syncEnabled = (state != SyncState::S0 && state != SyncState::S6);
+  const bool syncReady = (state == SyncState::S5 || state == SyncState::S7);
   qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
-                        << "syncEnabled:" << syncEnabled << "syncReady:" << syncReady
-                        << "syncInProgress:" << syncInProgress
+                        << "state:" << static_cast<int>(state) << "syncEnabled:" << syncEnabled
+                        << "syncReady:" << syncReady << "syncInProgress:" << syncInProgress
                         << "partialSyncConfig:" << partialSyncConfig;
 
   m_syncButton->setEnabled(bundled && !syncInProgress);
