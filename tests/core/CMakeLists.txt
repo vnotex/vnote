@@ -484,3 +484,16 @@ target_compile_definitions(test_syncservice PRIVATE VNOTE_TESTING)
 if(MSVC)
   target_link_options(test_syncservice PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
+
+# Task 8.1 (F3.1): SyncStateClassifier — pure read-through service that maps
+# (notebook config + PAT presence + runtime registration) to one of S0..S7.
+# Tests exercise the static classifyFromPredicates() helper so they don't
+# need vxcore, keychain, or notebook fixtures.
+add_qt_test(test_sync_classifier
+  SOURCES
+    test_sync_classifier.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
