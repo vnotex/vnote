@@ -127,6 +127,12 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
     connect(m_eventBridge, &EventBridge::syncFinished, this, &SyncService::onSyncFinished);
     connect(m_eventBridge, &EventBridge::syncConflictFiles, this,
             &SyncService::onSyncConflictFiles);
+    // T31: close the auto-sync loop. vxcore SyncManager::MaybeEnqueueSync emits
+    // sync.should_run when a buffered file event passes the debounce gate;
+    // EventBridge translates that to syncShouldRun(QString). Without this
+    // connection, auto-sync silently dies after the event hop.
+    connect(m_eventBridge, &EventBridge::syncShouldRun, this, &SyncService::onSyncShouldRun,
+            Qt::QueuedConnection);
   }
 
   m_thread->start();
@@ -1097,6 +1103,58 @@ void SyncService::onSyncConflictFiles(const QString &p_notebookId, const QString
     hookMgr->doAction(HookNames::SyncConflictDetected, args);
   }
   emit conflictsDetected(p_notebookId, p_files);
+}
+
+// T31: auto-sync route. EventBridge::syncShouldRun -> here -> enqueue
+// SyncOps::triggerSync (with NULL cancellation token; auto path is
+// fire-and-forget). Best-effort: queue overflow / coalesce are silent —
+// do NOT emit syncFailed (auto-sync is opportunistic).
+void SyncService::onSyncShouldRun(const QString &p_notebookId) {
+  if (m_shutDown) {
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: shutting down for"
+                          << p_notebookId;
+    return;
+  }
+  if (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId)) {
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: notebook not ready"
+                          << p_notebookId;
+    return;
+  }
+  auto *workQueue = m_workQueue;
+  if (!workQueue) {
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: SyncWorkQueueManager unavailable for"
+                          << p_notebookId;
+    return;
+  }
+
+  NotebookCoreService *notebookSvc = m_notebookCoreService;
+  const QString notebookId = p_notebookId;
+  auto work = [notebookSvc, notebookId]() {
+    SyncOps::triggerSync(notebookSvc, notebookId, /*p_cancel=*/nullptr,
+                         /*onFinished=*/[](VxCoreError) {
+                           // No-op: EventBridge delivers lifecycle signals
+                           // (sync.started / sync.finished) to onSyncStarted /
+                           // onSyncFinished, which re-emit the public signals.
+                         });
+  };
+
+  const auto result =
+      workQueue->enqueue(notebookId, work, /*onCancelled=*/nullptr, QStringLiteral("trigger"));
+  switch (result) {
+  case SyncWorkQueueManager::EnqueueResult::Accepted:
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync enqueued for" << notebookId;
+    return;
+  case SyncWorkQueueManager::EnqueueResult::Coalesced:
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync coalesced for" << notebookId;
+    return;
+  case SyncWorkQueueManager::EnqueueResult::QueueFull:
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync dropped (queue full) for"
+                          << notebookId;
+    return;
+  case SyncWorkQueueManager::EnqueueResult::Rejected:
+    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync rejected for" << notebookId;
+    return;
+  }
 }
 
 // ---- Reconcile-on-open ------------------------------------------------------

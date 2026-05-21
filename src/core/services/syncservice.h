@@ -275,6 +275,13 @@ private slots:
   void onSyncFinished(const QString &p_notebookId, VxCoreError p_result);
   void onSyncConflictFiles(const QString &p_notebookId, const QStringList &p_files);
 
+  // T31: vxcore's MaybeEnqueueSync emits sync.should_run; EventBridge re-emits
+  // it as syncShouldRun(QString). This slot routes the auto-sync request onto
+  // SyncWorkQueueManager via SyncOps::triggerSync (NO cancellation token —
+  // auto path is fire-and-forget). Skips silently if the notebook has been
+  // closed / disabled between vxcore's emit and our handler running.
+  void onSyncShouldRun(const QString &p_notebookId);
+
 private:
   void setInProgress(const QString &p_notebookId, bool p_value);
 

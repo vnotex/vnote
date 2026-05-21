@@ -593,6 +593,27 @@ target_include_directories(test_eventbridge_sync PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vxcore/include
 )
 
+# T31 (sync-queue-convergence): Auto-sync route end-to-end test. Verifies
+# EventBridge::syncShouldRun -> SyncService::onSyncShouldRun ->
+# SyncWorkQueueManager::enqueue(triggerSync) -> syncFinished round-trip.
+add_qt_test(test_sync_auto_route
+  SOURCES
+    test_sync_auto_route.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_sync_auto_route PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_auto_route PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+target_include_directories(test_sync_auto_route PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vxcore/src
+  ${CMAKE_SOURCE_DIR}/libs/vxcore/third_party
+  ${CMAKE_SOURCE_DIR}/libs/vxcore/include
+)
+
 # Task 14.1 (F5.1): SyncWorkQueueManager — per-notebook serialized executor.
 # QThreadPool-based; per-notebook FIFO; parallel across notebooks.
 add_qt_test(test_sync_work_queue_manager
