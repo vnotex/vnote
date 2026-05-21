@@ -616,3 +616,10 @@ Deleted SyncWorker QObject + private QThread. SyncService now dispatches purely 
 ## [2026-05-22 20:15] Task: T28
 
 Added SyncCancelledEvent struct to hookevents.h/cpp with wasQueued bool field. Added typed doAction overload in HookManager. Updated SyncService::cancelSync (3 call sites) to emit hook via typed API. Test: testSyncCancelledEventRoundTrip covers both wasQueued=true (queued case) and false (in-flight case) round-trips. Build passes; test_hookevents PASS (all tests including new one). Updated src/core/AGENTS.md Sync Hooks table to reflect wasQueued instead of hadActiveSync.
+
+## [2026-05-22 20:14:04] Task: T29
+- Replaced 'Wave 14 partially wired; full migration deferred' paragraph in src/core/services/AGENTS.md with converged-architecture description.
+- Added 'Sync dispatch flow' section covering user/auto paths, coalescing, queue cap, cancellation.
+- Documented isSyncInProgress delegation to SyncWorkQueueManager::inFlightState().running.
+- Added SyncCancelledEvent payload description (notebookId + wasQueued).
+- Evidence at .sisyphus/evidence/task-29-docs.txt: deferred grep empty, new section grep populated.
