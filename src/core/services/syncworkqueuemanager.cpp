@@ -4,6 +4,7 @@
 #include <QMutexLocker>
 #include <QThread>
 #include <QThreadPool>
+#include <vector>
 
 using namespace vnotex;
 
@@ -30,6 +31,12 @@ SyncWorkQueueManager::~SyncWorkQueueManager() {
 
 SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString &p_notebookId,
                                                                   Work p_work) {
+  return enqueue(p_notebookId, std::move(p_work), nullptr);
+}
+
+SyncWorkQueueManager::EnqueueResult
+SyncWorkQueueManager::enqueue(const QString &p_notebookId, Work p_work,
+                              std::function<void()> p_onCancelled) {
   if (!p_work) {
     qCWarning(lcQueue) << "enqueue() called with empty work for" << p_notebookId;
     return EnqueueResult::Rejected;
@@ -43,7 +50,7 @@ SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString 
       return EnqueueResult::Rejected;
     }
     PerNotebook &slot = m_perNotebook[p_notebookId];
-    slot.queue.enqueue(std::move(p_work));
+    slot.queue.enqueue(WorkItem{std::move(p_work), std::move(p_onCancelled)});
 
     // Update hasPending: true if queue non-empty (which it now is after append)
     slot.hasPending = !slot.queue.isEmpty();
@@ -64,10 +71,48 @@ SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString 
   return EnqueueResult::Accepted;
 }
 
+int SyncWorkQueueManager::cancelPending(const QString &p_notebookId) {
+  std::vector<WorkItem> dropped;
+  {
+    QMutexLocker locker(&m_mutex);
+    auto it = m_perNotebook.find(p_notebookId);
+    if (it == m_perNotebook.end() || it->queue.isEmpty()) {
+      return 0;
+    }
+    dropped.reserve(static_cast<size_t>(it->queue.size()));
+    while (!it->queue.isEmpty()) {
+      dropped.push_back(std::move(it->queue.front()));
+      it->queue.dequeue();
+    }
+    // Pending queue now empty; hasPending reflects only the in-flight item.
+    it->hasPending = it->running;
+  }
+
+  // Invoke cancellation callbacks OUTSIDE m_mutex (Wave 0.5 contract).
+  for (auto &item : dropped) {
+    if (!item.onCancelled) {
+      continue;
+    }
+    try {
+      item.onCancelled();
+    } catch (const std::exception &e) {
+      qCWarning(lcQueue) << "onCancelled threw exception for" << p_notebookId << ":" << e.what();
+    } catch (...) {
+      qCWarning(lcQueue) << "onCancelled threw unknown exception for" << p_notebookId;
+    }
+  }
+
+  const int count = static_cast<int>(dropped.size());
+  if (count > 0) {
+    emit pendingCancelled(p_notebookId, count);
+  }
+  return count;
+}
+
 void SyncWorkQueueManager::runLoop(const QString &p_notebookId) {
   // Drain queue for this notebook. Saves a pool dispatch per item.
   for (;;) {
-    Work next;
+    WorkItem next;
     {
       QMutexLocker locker(&m_mutex);
       auto it = m_perNotebook.find(p_notebookId);
@@ -90,7 +135,7 @@ void SyncWorkQueueManager::runLoop(const QString &p_notebookId) {
 
     // Invoke work OUTSIDE the mutex (Wave 0.5 contract).
     try {
-      next();
+      next.body();
     } catch (const std::exception &e) {
       qCWarning(lcQueue) << "work threw exception for" << p_notebookId << ":" << e.what();
     } catch (...) {

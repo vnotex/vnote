@@ -67,6 +67,21 @@ public:
   // Enqueue work for a given notebook id. Thread-safe. Returns immediately.
   EnqueueResult enqueue(const QString &p_notebookId, Work p_work);
 
+  // Overload: enqueue work with an optional per-item cancellation callback.
+  // The cancellation callback fires (outside m_mutex) if the item is dropped
+  // from the pending queue via cancelPending(). It is NOT invoked when the
+  // item runs normally or when the manager shuts down (shutdown drops items
+  // silently — call cancelPending() first if cleanup is needed).
+  EnqueueResult enqueue(const QString &p_notebookId, Work p_work,
+                        std::function<void()> p_onCancelled);
+
+  // Drop all pending (not-yet-started) work items for the given notebook id.
+  // Returns the number of items dropped. The in-flight item (if any) is NOT
+  // affected and will run to completion. Each dropped item's onCancelled
+  // callback (if registered) fires OUTSIDE m_mutex. Emits pendingCancelled()
+  // ONCE per call when count > 0.
+  int cancelPending(const QString &p_notebookId);
+
   // Drain pending queues and wait for in-flight work to finish.
   // Returns true if pool drained within timeout.
   bool shutdown(int p_timeoutMs = 5000);
@@ -80,9 +95,18 @@ public:
   bool hasPending(const QString &p_id) const;
   SyncInFlightState inFlightState(const QString &p_id) const;
 
+signals:
+  // Emitted once per cancelPending() call when count > 0. Fires OUTSIDE m_mutex.
+  void pendingCancelled(const QString &p_id, int p_count);
+
 private:
+  struct WorkItem {
+    Work body;
+    std::function<void()> onCancelled;
+  };
+
   struct PerNotebook {
-    QQueue<Work> queue;
+    QQueue<WorkItem> queue;
     bool running = false;
     bool hasPending = false;
   };

@@ -581,3 +581,14 @@ add_qt_test(test_sync_workqueue_inflight
     Qt6::Core
   GUILESS
 )
+
+# Task T5: cancelPending() drops pending items, fires per-item onCancelled,
+# emits pendingCancelled signal. In-flight item is not affected.
+add_qt_test(test_sync_workqueue_cancel
+  SOURCES
+    test_sync_workqueue_cancel.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
+  LINKS
+    Qt6::Core
+  GUILESS
+)
