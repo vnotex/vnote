@@ -238,6 +238,15 @@ struct ImageHostRemoveEvent {
   static ImageHostRemoveEvent fromVariantMap(const QVariantMap &p_map);
 };
 
+// Typed event struct for SyncCancelled.
+struct SyncCancelledEvent {
+  QString notebookId;
+  bool wasQueued = false;
+
+  QVariantMap toVariantMap() const;
+  static SyncCancelledEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 } // namespace vnotex
 
 #endif // HOOKEVENTS_H

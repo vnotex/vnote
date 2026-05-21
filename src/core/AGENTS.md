@@ -587,7 +587,7 @@ Fired by `SyncService`. ALL sync hooks are **observe-only**: `HookContext::cance
 | `vnote.sync.before_enable` | `SyncService::enableSyncForNotebook` BEFORE keychain store / worker dispatch | `notebookId`, `remoteUrl` |
 | `vnote.sync.after_disable` | `SyncService::disableSyncForNotebook` AFTER vxcore disable returns VXCORE_OK and JSON sync fields are cleared. Not fired on disable failure. | `notebookId` |
 | `vnote.sync.conflict_detected` | `SyncService::onWorkerConflictsDetected` (worker→GUI queued slot) AND `SyncService::onAutoSyncConflict` (EventBridge auto-sync) | `notebookId`, `conflictCount` (-1 if unknown at fire time, auto-sync only) |
-| `vnote.sync.cancelled` | `SyncService::cancelSync` AFTER `vxcore_sync_cancel` returns. Best-effort: also fires when no in-flight token was found. | `notebookId`, `hadActiveSync` (bool) |
+| `vnote.sync.cancelled` | `SyncService::cancelSync` AFTER `vxcore_sync_cancel` returns (in-flight case) or after `SyncWorkQueueManager::cancelPending` returns (queued case). Best-effort: also fires when no in-flight token was found. | `notebookId`, `wasQueued` (bool) |
 
 ### Unregistering Hooks
 

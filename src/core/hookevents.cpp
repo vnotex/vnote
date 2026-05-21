@@ -411,3 +411,19 @@ ImageHostRemoveEvent ImageHostRemoveEvent::fromVariantMap(const QVariantMap &p_a
   e.errorMessage = p_args.value(QStringLiteral("errorMessage")).toString();
   return e;
 }
+
+// ===== SyncCancelledEvent =====
+
+QVariantMap SyncCancelledEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  m[QStringLiteral("wasQueued")] = wasQueued;
+  return m;
+}
+
+SyncCancelledEvent SyncCancelledEvent::fromVariantMap(const QVariantMap &p_args) {
+  SyncCancelledEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.wasQueued = p_args.value(QStringLiteral("wasQueued")).toBool();
+  return e;
+}

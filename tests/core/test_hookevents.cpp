@@ -69,6 +69,9 @@ private slots:
   void testTypedDoActionNotebookCloseEvent();
   void testNotebookOpenEventRoundTrip();
 
+  // SyncCancelledEvent round-trip and typed tests.
+  void testSyncCancelledEventRoundTrip();
+
   // Cancellation via typed API.
   void testTypedCancellation();
 
@@ -748,6 +751,31 @@ void TestHookEvents::testTypedDoActionNotebookCloseEvent() {
   QCOMPARE(captured[QStringLiteral("notebookId")].toString(), QStringLiteral("nb-close-emit-1"));
 
   m_hookMgr->removeAction(hookId);
+}
+
+// ===== SyncCancelledEvent round-trip and typed tests =====
+
+void TestHookEvents::testSyncCancelledEventRoundTrip() {
+  SyncCancelledEvent orig;
+  orig.notebookId = QStringLiteral("sync-nb-123");
+  orig.wasQueued = true;
+
+  QVariantMap map = orig.toVariantMap();
+  SyncCancelledEvent restored = SyncCancelledEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.notebookId, orig.notebookId);
+  QCOMPARE(restored.wasQueued, orig.wasQueued);
+
+  // Test with wasQueued = false
+  SyncCancelledEvent orig2;
+  orig2.notebookId = QStringLiteral("sync-nb-456");
+  orig2.wasQueued = false;
+
+  QVariantMap map2 = orig2.toVariantMap();
+  SyncCancelledEvent restored2 = SyncCancelledEvent::fromVariantMap(map2);
+
+  QCOMPARE(restored2.notebookId, orig2.notebookId);
+  QCOMPARE(restored2.wasQueued, orig2.wasQueued);
 }
 
 } // namespace tests

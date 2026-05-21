@@ -540,10 +540,10 @@ void SyncService::cancelSync(const QString &p_notebookId) {
                           << p_notebookId;
     emit syncCancelled(p_notebookId, /*wasQueued=*/true);
     if (auto *hookMgr = m_services.get<HookManager>()) {
-      QVariantMap args;
-      args[QStringLiteral("notebookId")] = p_notebookId;
-      args[QStringLiteral("hadActiveSync")] = true;
-      hookMgr->doAction(HookNames::SyncCancelled, args);
+      SyncCancelledEvent event;
+      event.notebookId = p_notebookId;
+      event.wasQueued = true;
+      hookMgr->doAction(HookNames::SyncCancelled, event);
     }
     return;
   }
@@ -563,10 +563,10 @@ void SyncService::cancelSync(const QString &p_notebookId) {
     // F4.5: still fire vnote.sync.cancelled best-effort so observers can
     // record cancel intent even if no in-flight op was found.
     if (auto *hookMgr = m_services.get<HookManager>()) {
-      QVariantMap args;
-      args[QStringLiteral("notebookId")] = p_notebookId;
-      args[QStringLiteral("hadActiveSync")] = false;
-      hookMgr->doAction(HookNames::SyncCancelled, args);
+      SyncCancelledEvent event;
+      event.notebookId = p_notebookId;
+      event.wasQueued = false;
+      hookMgr->doAction(HookNames::SyncCancelled, event);
     }
     return;
   }
@@ -579,10 +579,10 @@ void SyncService::cancelSync(const QString &p_notebookId) {
   // F4.5: fire vnote.sync.cancelled AFTER vxcore_sync_cancel returns. No
   // SyncService mutex is held here (snapshot/release done above). Observe-only.
   if (auto *hookMgr = m_services.get<HookManager>()) {
-    QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
-    args[QStringLiteral("hadActiveSync")] = true;
-    hookMgr->doAction(HookNames::SyncCancelled, args);
+    SyncCancelledEvent event;
+    event.notebookId = p_notebookId;
+    event.wasQueued = false;
+    hookMgr->doAction(HookNames::SyncCancelled, event);
   }
 }
 
