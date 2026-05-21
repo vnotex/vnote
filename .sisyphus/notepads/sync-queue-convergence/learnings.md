@@ -446,3 +446,21 @@ Added `add_qt_test(test_sync_ops ...)` block with `VNOTE_TESTING` + `/WHOLEARCHI
 - onFinished invoked exactly once on every path (verified by atomic counter).
 - No call back into SyncService.
 - Single atomic commit (lesson from T6).
+
+## [2026-05-22 17:21:12] Task: T14
+
+- Added `SyncOps::enableSync(NotebookCoreService*, notebookId, configJson, credsJson, onFinished(code,msg))` to `src/core/services/syncops.{h,cpp}`.
+- Mirrors SyncWorker::enableSync body: routes credsJson-empty vs non-empty to the two NotebookCoreService::enableSync overloads; on success callback gets (VXCORE_OK, QString()), on failure (code, vxErrorToString(code)).
+- vxErrorToString lifted as a file-local helper in syncops.cpp (parallel to the worker's identical helper).
+- T13 not yet landed at HEAD; this task safely coexists with the planned setCredentials addition.
+- Test extension: enableSyncNullService, enableSyncAgainstBareRepo (uses existing seedBareRepo helper), enableSyncInvalidUrl. All pass in 3.3s.
+
+
+## [2026-05-22 17:27] Task: T15 - SyncOps::triggerSync callable
+- Added `triggerSync(NotebookCoreService*, QString, VxCoreSyncCancellation*, callback)` to src/core/services/syncops.{h,cpp}.
+- Routes nullptr token to `vxcore_sync_trigger` (via `NotebookCoreService::triggerSync`), non-null to `vxcore_sync_trigger_cancellable`.
+- Token NOT freed by SyncOps (caller-owned per F5.9/SyncService T21 contract).
+- Added forward decl `struct VxCoreSyncCancellation_; typedef ... VxCoreSyncCancellation;` in syncops.h so callers including only syncops.h get the type.
+- Tests: triggerSyncInvokesCallback (nullptr token path) + triggerSyncDoesNotFreeToken (cancel-then-free pattern proves token still alive). Both PASS (ctest 7.41s).
+- API spelling correction: vxcore exposes `vxcore_sync_free_cancellation` not `vxcore_sync_destroy_cancellation` (task spec used the wrong name).
+- Test count 6 -> 8.

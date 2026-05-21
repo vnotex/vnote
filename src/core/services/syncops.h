@@ -7,6 +7,11 @@
 
 #include <vxcore/vxcore_types.h>
 
+// Forward declaration of the opaque cancellation token (defined in
+// vxcore/vxcore.h). Tests + SyncService include the full header.
+struct VxCoreSyncCancellation_;
+typedef struct VxCoreSyncCancellation_ VxCoreSyncCancellation;
+
 namespace vnotex {
 
 class NotebookCoreService;
@@ -40,6 +45,15 @@ void setCredentials(NotebookCoreService *p_svc, QString p_notebookId, QString p_
 // responsibility of SyncService::bootstrapAndPersist.
 void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_configJson,
                 QString p_credentialsJson, std::function<void(VxCoreError, QString)> p_onFinished);
+
+// Trigger a sync run for the given notebook. If @p_cancel is non-null, routes
+// through vxcore_sync_trigger_cancellable (via NotebookCoreService); otherwise
+// falls back to vxcore_sync_trigger. The token lifetime is owned by the
+// CALLER (typically SyncService) — this function NEVER frees it.
+// p_onFinished is ALWAYS invoked exactly once, even on null-service early
+// return (with VXCORE_ERR_NULL_POINTER).
+void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCancellation *p_cancel,
+                 std::function<void(VxCoreError)> p_onFinished);
 
 } // namespace SyncOps
 

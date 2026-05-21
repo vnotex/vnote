@@ -96,5 +96,27 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
   }
 }
 
+void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCancellation *p_cancel,
+                 std::function<void(VxCoreError)> p_onFinished) {
+  if (!p_svc) {
+    if (p_onFinished) {
+      p_onFinished(VXCORE_ERR_NULL_POINTER);
+    }
+    return;
+  }
+
+  VxCoreError code = VXCORE_OK;
+  if (p_cancel) {
+    code = p_svc->triggerSyncCancellable(p_notebookId, p_cancel);
+  } else {
+    code = p_svc->triggerSync(p_notebookId);
+  }
+
+  // NOTE: p_cancel is owned by the caller (SyncService). Do NOT free.
+  if (p_onFinished) {
+    p_onFinished(code);
+  }
+}
+
 } // namespace SyncOps
 } // namespace vnotex

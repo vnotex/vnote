@@ -38,6 +38,8 @@ private slots:
   void enableSyncNullService();
   void enableSyncAgainstBareRepo();
   void enableSyncInvalidUrl();
+  void triggerSyncInvokesCallback();
+  void triggerSyncDoesNotFreeToken();
 
 private:
   QString seedBareRepo(const QString &p_bareRepoPath, TempDirFixture &p_workTemp);
@@ -308,6 +310,143 @@ void TestSyncOps::enableSyncInvalidUrl() {
     QCOMPARE(calls.load(), 1);
     QVERIFY(captured != VXCORE_OK);
     QVERIFY(!capturedMsg.isEmpty());
+  }
+
+  vxcore_context_destroy(ctx);
+}
+
+namespace {
+
+// (helper namespace reserved for future use)
+
+} // namespace
+
+void TestSyncOps::triggerSyncInvokesCallback() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  {
+    ServiceLocator services;
+    NotebookCoreService notebookService(ctx);
+    SyncCredentialsStore credStore(services);
+    services.registerService<NotebookCoreService>(&notebookService);
+    services.registerService<SyncCredentialsStore>(&credStore);
+    SyncService syncService(services);
+
+    TempDirFixture localTemp;
+    QVERIFY(localTemp.isValid());
+
+    const QString bareDir = localTemp.filePath(QStringLiteral("trigger_remote.git"));
+    const QString remoteUrl = seedBareRepo(bareDir, localTemp);
+    if (remoteUrl.isEmpty()) {
+      QSKIP("git not available or bare-repo seeding failed");
+    }
+
+    const QString nbRoot = localTemp.filePath(QStringLiteral("nb_trigger"));
+    QDir().mkpath(nbRoot);
+    const QString nbId = notebookService.createNotebook(
+        nbRoot, R"({"name":"Trigger NB","description":"","version":"1"})", NotebookType::Bundled);
+    QVERIFY(!nbId.isEmpty());
+
+    QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+    syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_TRIGGER"));
+    QVERIFY(enableSpy.wait(15000));
+    const VxCoreError enableResult = qvariant_cast<VxCoreError>(enableSpy.first().at(1));
+    if (enableResult == VXCORE_ERR_UNKNOWN) {
+      credStore.deleteCredentials(nbId);
+      QTest::qWait(300);
+      QSKIP("OS keychain backend not usable in this test environment");
+    }
+    QCOMPARE(enableResult, VXCORE_OK);
+
+    // Call SyncOps::triggerSync with nullptr cancellation token.
+    std::atomic<int> calls{0};
+    VxCoreError captured = VXCORE_ERR_UNKNOWN;
+    QElapsedTimer timer;
+    timer.start();
+    SyncOps::triggerSync(&notebookService, nbId, nullptr, [&](VxCoreError code) {
+      ++calls;
+      captured = code;
+    });
+    QVERIFY(timer.elapsed() < 30000);
+    QCOMPARE(calls.load(), 1);
+    QCOMPARE(captured, VXCORE_OK);
+
+    // Cleanup
+    SyncOps::disableSync(&notebookService, nbId, [](VxCoreError) {});
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(300);
+  }
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestSyncOps::triggerSyncDoesNotFreeToken() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  {
+    ServiceLocator services;
+    NotebookCoreService notebookService(ctx);
+    SyncCredentialsStore credStore(services);
+    services.registerService<NotebookCoreService>(&notebookService);
+    services.registerService<SyncCredentialsStore>(&credStore);
+    SyncService syncService(services);
+
+    TempDirFixture localTemp;
+    QVERIFY(localTemp.isValid());
+
+    const QString bareDir = localTemp.filePath(QStringLiteral("trigger_tok_remote.git"));
+    const QString remoteUrl = seedBareRepo(bareDir, localTemp);
+    if (remoteUrl.isEmpty()) {
+      QSKIP("git not available or bare-repo seeding failed");
+    }
+
+    const QString nbRoot = localTemp.filePath(QStringLiteral("nb_trigger_tok"));
+    QDir().mkpath(nbRoot);
+    const QString nbId = notebookService.createNotebook(
+        nbRoot, R"({"name":"Trigger Tok NB","description":"","version":"1"})",
+        NotebookType::Bundled);
+    QVERIFY(!nbId.isEmpty());
+
+    QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
+    syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_TRIGGER_TOK"));
+    QVERIFY(enableSpy.wait(15000));
+    const VxCoreError enableResult = qvariant_cast<VxCoreError>(enableSpy.first().at(1));
+    if (enableResult == VXCORE_ERR_UNKNOWN) {
+      credStore.deleteCredentials(nbId);
+      QTest::qWait(300);
+      QSKIP("OS keychain backend not usable in this test environment");
+    }
+    QCOMPARE(enableResult, VXCORE_OK);
+
+    // Create a cancellation token. SyncOps MUST NOT free it.
+    VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
+    QVERIFY(token != nullptr);
+
+    std::atomic<int> calls{0};
+    VxCoreError captured = VXCORE_ERR_UNKNOWN;
+    SyncOps::triggerSync(&notebookService, nbId, token, [&](VxCoreError code) {
+      ++calls;
+      captured = code;
+    });
+    QCOMPARE(calls.load(), 1);
+    QCOMPARE(captured, VXCORE_OK);
+
+    // Token must still be valid — vxcore_sync_cancel on a live token must
+    // not crash. (If SyncOps incorrectly freed it, this would dereference
+    // freed memory and crash.)
+    vxcore_sync_cancel(token);
+
+    // Caller (this test, simulating SyncService) frees the token.
+    vxcore_sync_free_cancellation(token);
+
+    // Cleanup
+    SyncOps::disableSync(&notebookService, nbId, [](VxCoreError) {});
+    credStore.deleteCredentials(nbId);
+    QTest::qWait(300);
   }
 
   vxcore_context_destroy(ctx);
