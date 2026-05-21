@@ -471,3 +471,26 @@ Added `add_qt_test(test_sync_ops ...)` block with `VNOTE_TESTING` + `/WHOLEARCHI
 - SyncOps does NOT auto-trigger sync after resolution; orchestration is caller's responsibility (matches SyncService::resolveConflicts pattern in syncservice.cpp:619).
 - Test test_resolve_conflict_invokes_callback_for_keep_local: covers null-service path + unknown-notebook path; deliberately does not pin VxCoreError code per existing T12 pattern.
 - All 9 test_sync_ops cases pass in 7.5s.
+
+
+## [2026-05-21 23:55] Task: T18 - Route disableSyncForNotebook through SyncWorkQueueManager
+
+### Summary
+Replaced `QMetaObject::invokeMethod(m_worker, "disableSync", QueuedConnection, ...)` in `SyncService::disableSyncForNotebook` with `m_services.get<SyncWorkQueueManager>()->enqueue(notebookId, lambda)`. Lambda calls `SyncOps::disableSync(m_notebookCoreService, notebookId, callback)`; callback bounces back to GUI thread via `QMetaObject::invokeMethod(this, lambda, QueuedConnection)` to invoke `onWorkerDisableFinished`. `m_worker` field retained for other ops (T19-T22 to migrate).
+
+### Enqueue overload used
+2-arg `enqueue(QString, Work)` — no coalesce key, no onCancelled. Disable is a terminal user-initiated op; coalescing or per-item cancellation is not needed.
+
+### ServiceLocator access pattern
+On-demand: `auto *workQueue = m_services.get<SyncWorkQueueManager>();` inside the method body. No new SyncService member; consistent with how other services (HookManager) are fetched lazily. Defensive null-check falls back to a queued GUI-thread synthetic `onWorkerDisableFinished(VXCORE_ERR_UNKNOWN)` so the disableFinished signal contract still fires exactly once.
+
+### Includes added
+`<core/services/syncops.h>`, `<core/services/syncworkqueuemanager.h>`.
+
+### Surprises
+None. The pre-existing one-shot `disableFinished` listener (lambda registered before dispatch) survives untouched because the contract — "GUI-thread emit on completion" — is preserved by the queued bounce. JSON cleanup + keychain delete + `vnote.sync.after_disable` hook all still fire on success path.
+
+### Tests
+- test_sync_ops: PASS (7.62s, 9 sub-tests)
+- test_sync_signal_baseline: PASS (2.34s)
+- test_sync_signal_auto_baseline: PASS (1.97s)

@@ -24,7 +24,9 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/synclog.h>
+#include <core/services/syncops.h>
 #include <core/services/syncworker.h>
+#include <core/services/syncworkqueuemanager.h>
 
 #include <vxcore/vxcore.h>
 
@@ -333,8 +335,31 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
         }
       });
 
-  QMetaObject::invokeMethod(m_worker, "disableSync", Qt::QueuedConnection,
-                            Q_ARG(QString, notebookId));
+  // T18: route disable through SyncWorkQueueManager (per-notebook serialized
+  // executor) instead of the legacy SyncWorker QMetaObject::invokeMethod path.
+  // The work body runs on a QThreadPool worker; SyncOps::disableSync invokes
+  // the completion callback on that same thread, so we bounce back to the GUI
+  // thread via QMetaObject::invokeMethod(this, ..., Qt::QueuedConnection) to
+  // invoke onWorkerDisableFinished, which preserves the disableFinished signal
+  // contract (emitted on the GUI thread, exactly once per call).
+  auto *workQueue = m_services.get<SyncWorkQueueManager>();
+  NotebookCoreService *notebookSvc = m_notebookCoreService;
+  if (!workQueue) {
+    qCWarning(syncCategory)
+        << "SyncService::disableSyncForNotebook: SyncWorkQueueManager unavailable; falling back"
+        << "to synchronous failure for notebookId:" << notebookId;
+    QMetaObject::invokeMethod(
+        this, [this, notebookId]() { onWorkerDisableFinished(notebookId, VXCORE_ERR_UNKNOWN); },
+        Qt::QueuedConnection);
+    return;
+  }
+  workQueue->enqueue(notebookId, [this, notebookId, notebookSvc]() {
+    SyncOps::disableSync(notebookSvc, notebookId, [this, notebookId](VxCoreError p_err) {
+      QMetaObject::invokeMethod(
+          this, [this, notebookId, p_err]() { onWorkerDisableFinished(notebookId, p_err); },
+          Qt::QueuedConnection);
+    });
+  });
 }
 
 void SyncService::triggerSyncNow(const QString &p_notebookId) {
