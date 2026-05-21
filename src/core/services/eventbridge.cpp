@@ -1,14 +1,17 @@
 #include "eventbridge.h"
 
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QMetaObject>
+#include <QStringList>
 
 using namespace vnotex;
 
 namespace {
 
-const char *c_syncEvents[] = {"sync.started", "sync.finished", "sync.conflict"};
+const char *c_syncEvents[] = {"sync.started", "sync.finished", "sync.conflict", "sync.should_run"};
 
 const char *c_fileEvents[] = {"file.created", "file.saved",     "file.deleted",
                               "file.moved",   "folder.created", "folder.deleted"};
@@ -52,8 +55,25 @@ void EventBridge::onVxCoreEvent(const char *event_name, const char *json_data, v
         self, [self, notebookId, result]() { emit self->syncFinished(notebookId, result); },
         Qt::QueuedConnection);
   } else if (evName == QStringLiteral("sync.conflict")) {
+    QStringList files;
+    const QJsonValue filesVal = payload.value(QStringLiteral("files"));
+    if (filesVal.isArray()) {
+      const QJsonArray arr = filesVal.toArray();
+      files.reserve(arr.size());
+      for (const QJsonValue &v : arr) {
+        if (v.isString()) {
+          files.append(v.toString());
+        }
+      }
+    }
     QMetaObject::invokeMethod(
         self, [self, notebookId]() { emit self->syncConflict(notebookId); }, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(
+        self, [self, notebookId, files]() { emit self->syncConflictFiles(notebookId, files); },
+        Qt::QueuedConnection);
+  } else if (evName == QStringLiteral("sync.should_run")) {
+    QMetaObject::invokeMethod(
+        self, [self, notebookId]() { emit self->syncShouldRun(notebookId); }, Qt::QueuedConnection);
   } else {
     QMetaObject::invokeMethod(
         self, [self, evName, notebookId]() { emit self->fileChanged(evName, notebookId); },

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 #include <core/noncopyable.h>
 
@@ -22,6 +23,8 @@ signals:
   void syncStarted(const QString &p_notebookId);
   void syncFinished(const QString &p_notebookId, VxCoreError p_result);
   void syncConflict(const QString &p_notebookId);
+  void syncConflictFiles(const QString &p_notebookId, const QStringList &p_files);
+  void syncShouldRun(const QString &p_notebookId);
   void fileChanged(const QString &p_eventName, const QString &p_notebookId);
 
 private:

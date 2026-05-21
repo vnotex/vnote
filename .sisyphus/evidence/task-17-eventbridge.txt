@@ -1,0 +1,8 @@
+Internal ctest changing into directory: C:/Users/tanle/study/vnote/build-debug
+Test project C:/Users/tanle/study/vnote/build-debug
+    Start 52: test_eventbridge_sync
+1/1 Test #52: test_eventbridge_sync ............   Passed    0.19 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.21 sec

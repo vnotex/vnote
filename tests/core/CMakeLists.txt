@@ -577,6 +577,22 @@ if(MSVC)
   target_link_options(test_sync_ops PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
+# T17 (sync-queue-convergence): EventBridge sync event routing
+# (sync.should_run + sync.conflict files array).
+add_qt_test(test_eventbridge_sync
+  SOURCES
+    test_eventbridge_sync.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_include_directories(test_eventbridge_sync PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vxcore/src
+  ${CMAKE_SOURCE_DIR}/libs/vxcore/third_party
+  ${CMAKE_SOURCE_DIR}/libs/vxcore/include
+)
+
 # Task 14.1 (F5.1): SyncWorkQueueManager — per-notebook serialized executor.
 # QThreadPool-based; per-notebook FIFO; parallel across notebooks.
 add_qt_test(test_sync_work_queue_manager
