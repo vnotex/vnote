@@ -52,6 +52,15 @@ public:
     Rejected,
   };
 
+  /// Per-notebook in-flight state snapshot.
+  /// All fields are set atomically under m_mutex and returned as a value,
+  /// ensuring callers read a consistent snapshot without holding the lock.
+  struct SyncInFlightState {
+    bool running = false;         // true if a work item is currently executing
+    bool hasPending = false;      // true if items are queued (pending or running)
+    void *cancellation = nullptr; // VxCoreSyncCancellation* (populated by T21)
+  };
+
   explicit SyncWorkQueueManager(QObject *p_parent = nullptr);
   ~SyncWorkQueueManager() override;
 
@@ -66,10 +75,16 @@ public:
   int queueDepth(const QString &p_notebookId) const;
   bool isRunning(const QString &p_notebookId) const;
 
+  // Query per-notebook pending state. Returns snapshot (value type, not reference).
+  // For unknown notebook id, returns default-constructed state (all false/nullptr).
+  bool hasPending(const QString &p_id) const;
+  SyncInFlightState inFlightState(const QString &p_id) const;
+
 private:
   struct PerNotebook {
     QQueue<Work> queue;
     bool running = false;
+    bool hasPending = false;
   };
 
   // Worker loop: pulls and runs items for p_notebookId until queue is empty.

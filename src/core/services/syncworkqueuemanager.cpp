@@ -44,6 +44,10 @@ SyncWorkQueueManager::EnqueueResult SyncWorkQueueManager::enqueue(const QString 
     }
     PerNotebook &slot = m_perNotebook[p_notebookId];
     slot.queue.enqueue(std::move(p_work));
+
+    // Update hasPending: true if queue non-empty (which it now is after append)
+    slot.hasPending = !slot.queue.isEmpty();
+
     if (!slot.running) {
       slot.running = true;
       needLaunch = true;
@@ -74,10 +78,14 @@ void SyncWorkQueueManager::runLoop(const QString &p_notebookId) {
       // On shutdown, queues are cleared by shutdown(); we stop.
       if (m_shutdown || it->queue.isEmpty()) {
         it->running = false;
+        it->hasPending = false; // No items pending and not running
         return;
       }
       next = std::move(it->queue.front());
       it->queue.dequeue();
+
+      // Update hasPending: true if queue still has items OR we're still running
+      it->hasPending = !it->queue.isEmpty() || it->running;
     }
 
     // Invoke work OUTSIDE the mutex (Wave 0.5 contract).
@@ -125,4 +133,23 @@ bool SyncWorkQueueManager::isRunning(const QString &p_notebookId) const {
     return false;
   }
   return it->running;
+}
+
+bool SyncWorkQueueManager::hasPending(const QString &p_id) const {
+  QMutexLocker locker(&m_mutex);
+  auto it = m_perNotebook.find(p_id);
+  if (it == m_perNotebook.end()) {
+    return false;
+  }
+  return it->hasPending;
+}
+
+SyncWorkQueueManager::SyncInFlightState
+SyncWorkQueueManager::inFlightState(const QString &p_id) const {
+  QMutexLocker locker(&m_mutex);
+  auto it = m_perNotebook.find(p_id);
+  if (it == m_perNotebook.end()) {
+    return SyncInFlightState{}; // Default: all false/nullptr
+  }
+  return SyncInFlightState{it->running, it->hasPending, nullptr};
 }

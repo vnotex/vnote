@@ -570,3 +570,14 @@ add_qt_test(test_sync_work_queue_manager
     Qt6::Core
   GUILESS
 )
+
+# Task T4: SyncInFlightState + hasPending() state tracking
+# Tests state transitions: idle → pending → running → idle
+add_qt_test(test_sync_workqueue_inflight
+  SOURCES
+    test_sync_workqueue_inflight.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
+  LINKS
+    Qt6::Core
+  GUILESS
+)
