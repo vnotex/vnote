@@ -16,6 +16,13 @@ class ServiceLocator;
 //
 // See the "Sync State Model" section in the repo root AGENTS.md for the
 // authoritative predicate table.
+//
+// F3.5 (in-flight sub-state policy): S7 covers all in-flight sync operations;
+// transient sub-distinctions (e.g., currently-fetching vs currently-resolving
+// vs currently-pushing) are NOT modeled here as separate SyncState values. UI
+// consults SyncService progress signals for finer granularity while the
+// notebook is in S7. Do NOT add S8 or a nested sub-state enum for these
+// transient distinctions; they are runtime properties, not canonical states.
 enum class SyncState {
   S0, // Cleanly disabled: !syncEnabled, no backend/url, no PAT, not registered.
   S1, // Partial: enabled, backend=git, URL empty, not registered (PAT optional).

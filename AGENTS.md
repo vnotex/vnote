@@ -369,6 +369,8 @@ Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and serv
 
 S5 is the only "ready" state. S1-S4 and S6 are partial/inconsistent; S0 is cleanly disabled; S7 is in-flight.
 
+F3.5 in-flight sub-states (fetching/resolving/pushing) are NOT modeled as separate SyncState values, they remain runtime properties exposed by SyncService progress signals while the notebook is in S7.
+
 ### Recovery Paths: bootstrapApply vs applyChanges
 
 | Path | Use when | Behavior |
