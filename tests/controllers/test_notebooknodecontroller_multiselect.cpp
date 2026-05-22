@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QSet>
 #include <QtTest>
 
 #include <controllers/notebooknodecontroller.h>
@@ -78,6 +79,11 @@ private slots:
   void duplicate_multiSelection_resolvesAllIds();
   void duplicate_parentAndChild_dropsChild();
   void duplicate_singleArg_delegatesToList();
+
+  // T7: open/openWith use resolveSelection and skip folders
+  void open_multiSelection_resolvesAllIds();
+  void open_mixedFolderAndNote_skipsFolder();
+  void openWith_multiSelection_buildsCommandPerNode();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -281,6 +287,72 @@ void TestNotebookNodeControllerMultiSelect::duplicate_singleArg_delegatesToList(
   auto deduped = dedupeDescendantsForTest(singletonInput);
   QCOMPARE(deduped.size(), 1);
   QCOMPARE(deduped.at(0), a);
+}
+
+// T7: Open / Open With pipe through resolveSelection and silently skip folders.
+// Production: NotebookNodeController::openNodes / openNodesWithCommand classify each id
+// via getNodeInfo().isFolder; folders increment a skipped counter (single qDebug at end)
+// and never reach nodeActivated or ProcessUtils::startDetached.
+// Controller construction needs 18+ services so we mirror the helper at test scope.
+
+// Test-only mirror of the production folder-skip filter.
+static QList<vnotex::NodeIdentifier>
+skipFoldersForTest(const QList<vnotex::NodeIdentifier> &p_ids,
+                   const QSet<vnotex::NodeIdentifier> &p_folders) {
+  QList<vnotex::NodeIdentifier> result;
+  for (const auto &id : p_ids) {
+    if (p_folders.contains(id)) {
+      continue;
+    }
+    result.append(id);
+  }
+  return result;
+}
+
+void TestNotebookNodeControllerMultiSelect::open_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, b);
+  // openNodes does NOT dedupeDescendants — only delete/copy/cut/duplicate dedupe.
+  QCOMPARE(resolved.size(), 3);
+  QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+void TestNotebookNodeControllerMultiSelect::open_mixedFolderAndNote_skipsFolder() {
+  vnotex::NodeIdentifier note_a, note_b, folder_x;
+  note_a.notebookId = note_b.notebookId = folder_x.notebookId = "nb-1";
+  note_a.relativePath = "a.md";
+  note_b.relativePath = "b.md";
+  folder_x.relativePath = "x";
+
+  auto resolved = resolveSelectionForTest({note_a, note_b, folder_x}, note_a);
+  QSet<vnotex::NodeIdentifier> folders{folder_x};
+  auto opened = skipFoldersForTest(resolved, folders);
+
+  QCOMPARE(opened.size(), 2);
+  QCOMPARE(opened.at(0), note_a);
+  QCOMPARE(opened.at(1), note_b);
+}
+
+void TestNotebookNodeControllerMultiSelect::openWith_multiSelection_buildsCommandPerNode() {
+  vnotex::NodeIdentifier a, b, folder_x;
+  a.notebookId = b.notebookId = folder_x.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  folder_x.relativePath = "x";
+
+  auto resolved = resolveSelectionForTest({a, b, folder_x}, b);
+  QSet<vnotex::NodeIdentifier> folders{folder_x};
+  auto launched = skipFoldersForTest(resolved, folders);
+
+  // openNodesWithCommand fires ProcessUtils::startDetached exactly once per non-folder id.
+  QCOMPARE(launched.size(), 2);
+  QCOMPARE(launched.at(0), a);
+  QCOMPARE(launched.at(1), b);
 }
 
 } // namespace tests

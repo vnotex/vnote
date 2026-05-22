@@ -197,7 +197,8 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   // Open actions - only for files (external folders cannot be expanded)
   if (!isFolder) {
     auto *openAction = menu->addAction(tr("&Open"));
-    connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
+    connect(openAction, &QAction::triggered, this,
+            [this, p_nodeId]() { openNodes(resolveSelection(p_nodeId)); });
 
     addOpenWithSubmenu(menu, p_nodeId);
 
@@ -249,7 +250,8 @@ void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier 
 
   if (!p_isFolder) {
     auto *openAction = p_menu->addAction(tr("&Open"));
-    connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
+    connect(openAction, &QAction::triggered, this,
+            [this, p_nodeId]() { openNodes(resolveSelection(p_nodeId)); });
 
     addOpenWithSubmenu(p_menu, p_nodeId);
   }
@@ -412,36 +414,8 @@ void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
 }
 
 void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid()) {
-    return;
-  }
-
-  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
-
-  // Handle external nodes
-  if (nodeInfo.isValid() && nodeInfo.isExternal && !nodeInfo.isFolder) {
-    auto *configMgr = m_services.get<ConfigMgr2>();
-    bool autoImport =
-        configMgr && configMgr->getWidgetConfig().getNodeExplorerAutoImportExternalFilesEnabled();
-
-    if (autoImport) {
-      // Import the external node first, then open
-      auto *notebookService = m_services.get<NotebookCoreService>();
-      if (notebookService &&
-          notebookService->indexNode(p_nodeId.notebookId, p_nodeId.relativePath)) {
-        // Reload parent to update view
-        if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
-          NodeIdentifier parentId = getParentFolder(p_nodeId);
-          nbModel->reloadNode(parentId);
-        }
-      }
-      // Import failed, fall through to open as external file
-    }
-  }
-
-  FileOpenSettings settings;
-  settings.m_mode = m_services.get<ConfigMgr2>()->getCoreConfig().getDefaultOpenMode();
-  emit nodeActivated(p_nodeId, settings);
+  // Delegate to list version (single source of truth for open logic).
+  openNodes({p_nodeId});
 }
 
 void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_nodeId) {
@@ -478,18 +452,7 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
       QString command = prog.m_command;
       auto *action = subMenu->addAction(name);
       connect(action, &QAction::triggered, this, [this, p_nodeId, command]() {
-        QString path = buildAbsolutePath(p_nodeId);
-        if (path.isEmpty()) {
-          return;
-        }
-        SessionConfig::ExternalProgram tempProg;
-        tempProg.m_command = command;
-        QString cmd = tempProg.fetchCommand(path);
-        if (cmd.isEmpty()) {
-          return;
-        }
-        ProcessUtils::startDetached(cmd);
-        closeOrphanedBuffer(p_nodeId);
+        openNodesWithCommand(resolveSelection(p_nodeId), command);
       });
     }
     if (!programs.isEmpty()) {
@@ -499,8 +462,15 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
 
   auto *defaultAction = subMenu->addAction(tr("System Default App"));
   connect(defaultAction, &QAction::triggered, this, [this, p_nodeId]() {
-    openNodeWithDefaultApp(p_nodeId);
-    closeOrphanedBuffer(p_nodeId);
+    const auto ids = resolveSelection(p_nodeId);
+    for (const auto &id : ids) {
+      NodeInfo info = getNodeInfo(id);
+      if (info.isFolder) {
+        continue;
+      }
+      openNodeWithDefaultApp(id);
+      closeOrphanedBuffer(id);
+    }
   });
 
   p_parentMenu->addMenu(subMenu);
@@ -1197,16 +1167,65 @@ void NotebookNodeController::handleImportFolder(const NodeIdentifier &p_targetFo
   emit infoMessage(tr("Import"), tr("Folder import not yet implemented in new architecture."));
 }
 
-// Multi-node list overload stubs - each loops the corresponding single-arg method
+// Multi-node Open: opens each non-folder node in order. Folders are silently skipped
+// (the first non-folder note opened becomes the focused tab via downstream BufferMgr behavior).
 void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
+  int skipped = 0;
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
+
   for (const auto &id : p_ids) {
-    openNode(id);
+    if (!id.isValid()) {
+      continue;
+    }
+
+    NodeInfo nodeInfo = getNodeInfo(id);
+    if (nodeInfo.isValid() && nodeInfo.isFolder) {
+      ++skipped;
+      continue;
+    }
+
+    // Handle external nodes: auto-import if enabled, then fall through to open.
+    if (nodeInfo.isValid() && nodeInfo.isExternal && !nodeInfo.isFolder) {
+      bool autoImport =
+          configMgr && configMgr->getWidgetConfig().getNodeExplorerAutoImportExternalFilesEnabled();
+      if (autoImport && notebookService &&
+          notebookService->indexNode(id.notebookId, id.relativePath)) {
+        if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+          NodeIdentifier parentId = getParentFolder(id);
+          nbModel->reloadNode(parentId);
+        }
+      }
+    }
+
+    FileOpenSettings settings;
+    if (configMgr) {
+      settings.m_mode = configMgr->getCoreConfig().getDefaultOpenMode();
+    }
+    emit nodeActivated(id, settings);
+  }
+
+  if (skipped > 0) {
+    qDebug() << "openNodes: silently skipped" << skipped << "folder(s) in multi-selection";
   }
 }
 
+// Multi-node Open With: launches the external program for each non-folder node.
+// Folders are silently skipped.
 void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p_ids,
                                                   const QString &p_commandTemplate) {
+  int skipped = 0;
   for (const auto &id : p_ids) {
+    if (!id.isValid()) {
+      continue;
+    }
+
+    NodeInfo nodeInfo = getNodeInfo(id);
+    if (nodeInfo.isValid() && nodeInfo.isFolder) {
+      ++skipped;
+      continue;
+    }
+
     QString path = buildAbsolutePath(id);
     if (path.isEmpty()) {
       continue;
@@ -1219,6 +1238,11 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
     }
     ProcessUtils::startDetached(cmd);
     closeOrphanedBuffer(id);
+  }
+
+  if (skipped > 0) {
+    qDebug() << "openNodesWithCommand: silently skipped" << skipped
+             << "folder(s) in multi-selection";
   }
 }
 
