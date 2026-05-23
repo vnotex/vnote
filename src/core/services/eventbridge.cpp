@@ -46,6 +46,8 @@ void EventBridge::onVxCoreEvent(const char *event_name, const char *json_data, v
           .object();
   const QString notebookId = payload.value(QStringLiteral("notebookId")).toString();
 
+  qInfo() << "EventBridge::onVxCoreEvent: received event=" << evName << "notebookId=" << notebookId;
+
   qInfo() << "EventBridge::onVxCoreEvent: received event=" << evName
           << " notebookId=" << notebookId;
 
