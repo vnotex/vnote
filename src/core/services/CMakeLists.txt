@@ -83,6 +83,7 @@ target_include_directories(core_services
   PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/libs/vxcore/include
+    ${CMAKE_SOURCE_DIR}/libs/vxcore/src
     ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
 

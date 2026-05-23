@@ -14,6 +14,7 @@
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 
+#include <sync/sync_json_keys.h>
 #include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
@@ -49,7 +50,7 @@ QString NotebookSyncInfoController::remoteUrl() const {
   }
   const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
   // ADR-8: use the FLAT key, not a nested "sync.remoteUrl".
-  return cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+  return cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
 }
 
 QString NotebookSyncInfoController::lastSyncTime() const {
@@ -73,7 +74,7 @@ void NotebookSyncInfoController::loadInitialData() {
 
   const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
   const QString name = cfg.value(QStringLiteral("name")).toString();
-  const QString url = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+  const QString url = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
   // Last sync timestamp is per-device and lives in metadata.db (NOT in the
   // notebook config JSON, which would self-sync). Read via vxcore C API.
   const qint64 lastSyncMillis = notebookSvc->getLastSyncUtc(m_notebookId);
@@ -99,7 +100,7 @@ bool NotebookSyncInfoController::persistRemoteUrl(const QString &p_newRemoteUrl)
   // Read-modify-write the notebook config. Per ADR-8 the FLAT
   // "syncRemoteUrl" key is the source of truth.
   QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
-  cfg[QStringLiteral("syncRemoteUrl")] = p_newRemoteUrl;
+  cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = p_newRemoteUrl;
   const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
   if (!notebookSvc->updateNotebookConfig(m_notebookId, cfgJson)) {
     emit error(tr("Failed to update notebook configuration."));
@@ -469,9 +470,9 @@ void NotebookSyncInfoController::performAtomicUrlReChange(const QString &p_newUr
                 auto *notebookSvc = m_services.get<NotebookCoreService>();
                 if (notebookSvc) {
                   QJsonObject cfg = notebookSvc->getNotebookConfig(notebookId);
-                  cfg[QStringLiteral("syncEnabled")] = true;
-                  cfg[QStringLiteral("syncBackend")] = QStringLiteral("git");
-                  cfg[QStringLiteral("syncRemoteUrl")] = p_newUrl;
+                  cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
+                  cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
+                  cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = p_newUrl;
                   const QString cfgJson =
                       QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
                   if (notebookSvc->updateNotebookConfig(notebookId, cfgJson)) {

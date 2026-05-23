@@ -28,6 +28,8 @@
 
 #include <vxcore/vxcore.h>
 
+#include "sync/sync_json_keys.h"
+
 Q_LOGGING_CATEGORY(syncCategory, "vnote.sync")
 
 using namespace vnotex;
@@ -303,9 +305,9 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
         // W2.T5: clear JSON sync fields only on disable success.
         if (p_result == VXCORE_OK && m_notebookCoreService) {
           QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
-          cfg.remove(QStringLiteral("syncEnabled"));
-          cfg.remove(QStringLiteral("syncBackend"));
-          cfg.remove(QStringLiteral("syncRemoteUrl"));
+          cfg.remove(QLatin1String(vxcore::kJsonKeySyncEnabled));
+          cfg.remove(QLatin1String(vxcore::kJsonKeySyncBackend));
+          cfg.remove(QLatin1String(vxcore::kJsonKeySyncRemoteUrl));
           const QString newJson =
               QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
           const bool ok = m_notebookCoreService->updateNotebookConfig(notebookId, newJson);
@@ -423,7 +425,7 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
                           << p_notebookId;
 
     const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-    const QString persistedUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+    const QString persistedUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
     if (persistedUrl.isEmpty()) {
       qCWarning(syncCategory)
           << "SyncService::updateCredentials: cannot route to enableSyncForNotebook; "
@@ -528,7 +530,7 @@ bool SyncService::isSyncEnabled(const QString &p_notebookId) const {
     return false;
   }
   const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-  const bool enabled = cfg.value(QStringLiteral("syncEnabled")).toBool();
+  const bool enabled = cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool();
   qCDebug(syncCategory) << "SyncService::isSyncEnabled: query notebookId:" << p_notebookId
                         << "syncEnabled:" << enabled;
   return enabled;
@@ -729,7 +731,7 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
   }
 
   const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-  const bool diskEnabled = cfg.value(QStringLiteral("syncEnabled")).toBool();
+  const bool diskEnabled = cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool();
   if (!diskEnabled) {
     qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: skip - disk says not enabled"
                           << p_notebookId;
@@ -743,8 +745,8 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
     return;
   }
 
-  const QString backend = cfg.value(QStringLiteral("syncBackend")).toString();
-  const QString remoteUrl = cfg.value(QStringLiteral("syncRemoteUrl")).toString();
+  const QString backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
+  const QString remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
   if (backend.isEmpty() || remoteUrl.isEmpty()) {
     qCWarning(syncCategory) << "SyncService::reconcileSyncForNotebook: incomplete config"
                             << "notebookId:" << p_notebookId << "backend:" << backend

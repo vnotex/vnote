@@ -5,15 +5,13 @@
 
 #include "core/servicelocator.h"
 #include "notebookcoreservice.h"
+#include "sync/sync_json_keys.h"
 #include "synccredentialsstore.h"
 #include "syncservice.h"
 
 namespace vnotex {
 
 namespace {
-constexpr const char *kSyncEnabled = "syncEnabled";
-constexpr const char *kSyncBackend = "syncBackend";
-constexpr const char *kSyncRemoteUrl = "syncRemoteUrl";
 constexpr const char *kBackendGit = "git";
 } // namespace
 
@@ -78,9 +76,9 @@ SyncState SyncStateClassifier::classify(const QString &p_notebookId) const {
   }
 
   const QJsonObject cfg = notebookSvc->getNotebookConfig(p_notebookId);
-  const bool syncEnabled = cfg.value(QLatin1String(kSyncEnabled)).toBool();
-  const QString backend = cfg.value(QLatin1String(kSyncBackend)).toString();
-  const QString remoteUrl = cfg.value(QLatin1String(kSyncRemoteUrl)).toString();
+  const bool syncEnabled = cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool();
+  const QString backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
+  const QString remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
 
   const bool hasPat = credentials->hasCredentials(p_notebookId);
   const bool registered = syncSvc->isSyncRegistered(p_notebookId);

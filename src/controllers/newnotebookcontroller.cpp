@@ -16,6 +16,7 @@
 #include <core/services/syncservice.h>
 #include <utils/pathutils.h>
 
+#include <sync/sync_json_keys.h>
 #include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
@@ -159,8 +160,8 @@ QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) 
   // intentionally NOT set here — it stays empty until T14 bootstrap runs
   // enableSync against the empty root (per ADR-7: create-then-enable).
   if (p_input.syncMethod == QStringLiteral("git")) {
-    configObj[QStringLiteral("syncEnabled")] = true;
-    configObj[QStringLiteral("syncBackend")] = QStringLiteral("git");
+    configObj[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
+    configObj[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
   }
   return QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
 }
@@ -231,7 +232,7 @@ void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QSt
                 if (p_result == VXCORE_OK) {
                   // Persist the flat ADR-8 syncRemoteUrl key into the notebook config.
                   QJsonObject cfg = notebookService->getNotebookConfig(p_notebookId);
-                  cfg[QStringLiteral("syncRemoteUrl")] = p_remoteUrl;
+                  cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = p_remoteUrl;
                   const QString cfgJson =
                       QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
                   notebookService->updateNotebookConfig(p_notebookId, cfgJson);
