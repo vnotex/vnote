@@ -23,6 +23,7 @@ set(SERVICES_SOURCES
   syncworker.cpp
   syncservice.cpp
   syncstateclassifier.cpp
+  syncworkqueuemanager.cpp
   eventbridge.cpp
   workqueuedrainthread.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
@@ -63,6 +64,7 @@ set(SERVICES_HEADERS
   syncworker.h
   syncservice.h
   syncstateclassifier.h
+  syncworkqueuemanager.h
   synclog.h
   eventbridge.h
   workqueuedrainthread.h

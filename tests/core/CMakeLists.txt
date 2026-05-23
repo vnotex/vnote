@@ -526,3 +526,14 @@ add_qt_test(test_bootstrap_and_persist
 if(MSVC)
   target_link_options(test_bootstrap_and_persist PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
+
+# Task 14.1 (F5.1): SyncWorkQueueManager — per-notebook serialized executor.
+# QThreadPool-based; per-notebook FIFO; parallel across notebooks.
+add_qt_test(test_sync_work_queue_manager
+  SOURCES
+    test_sync_work_queue_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
+  LINKS
+    Qt6::Core
+  GUILESS
+)
