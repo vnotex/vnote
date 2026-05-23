@@ -1557,6 +1557,16 @@ void NotebookExplorer2::onSyncButtonClicked() {
   }
   case SyncState::S5:
   case SyncState::S7:
+    // Wave 12.2 / F5.9: if a sync is already in flight for this notebook,
+    // the button doubles as Cancel. Route to cancelSync; the syncFinished
+    // signal will repaint the button back to "Sync Now" via the existing
+    // updateSyncButtonState path.
+    if (syncSvc->isSyncInProgress(nbId)) {
+      qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: cancelling in-flight sync"
+                            << "notebookId:" << nbId;
+      syncSvc->cancelSync(nbId);
+      return;
+    }
     syncSvc->triggerSyncNow(nbId);
     return;
   case SyncState::S1:
@@ -1632,7 +1642,11 @@ void NotebookExplorer2::updateSyncButtonState() {
                         << "syncReady:" << syncReady << "syncInProgress:" << syncInProgress
                         << "partialSyncConfig:" << partialSyncConfig;
 
-  m_syncButton->setEnabled(bundled && !syncInProgress);
+  // Wave 12.2 / F5.9: keep the button enabled during in-flight sync so the
+  // user can click it to cancel. Previously it was disabled-while-syncing;
+  // now it doubles as a Cancel control (onSyncButtonClicked routes to
+  // SyncService::cancelSync when isSyncInProgress is true).
+  m_syncButton->setEnabled(bundled);
 
   // Surface partial state via tooltip + dynamic Qt property (no new icon
   // asset). The button click semantics are unchanged.
@@ -1649,7 +1663,7 @@ void NotebookExplorer2::updateSyncButtonState() {
     tooltip = tr("Sync configured but incomplete \xE2\x80\x94 click to finish setup\n"
                  "(or use Sync Info to fill in the missing remote URL / backend).");
   } else if (syncInProgress) {
-    tooltip = tr("Sync in progress\xE2\x80\xA6");
+    tooltip = tr("Sync in progress\xE2\x80\xA6 click to cancel");
   } else if (!syncReady) {
     tooltip = tr("Click to bootstrap sync for this notebook.");
   } else {

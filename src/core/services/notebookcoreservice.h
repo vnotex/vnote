@@ -80,6 +80,11 @@ public:
                          const QString &p_credentialsJson = QString());
   VxCoreError disableSync(const QString &p_notebookId);
   VxCoreError triggerSync(const QString &p_notebookId);
+  // Wave 12.2 / F5.9: cancellable triggerSync. @p_cancellationHandle is the
+  // raw VxCoreSyncCancellation* (forward-declared in syncworker.h) owned by
+  // the caller (typically SyncService). Null degrades to legacy behaviour.
+  VxCoreError triggerSyncCancellable(const QString &p_notebookId,
+                                     struct VxCoreSyncCancellation_ *p_cancellationHandle);
   VxCoreError getSyncStatus(const QString &p_notebookId, QString &p_outStatusJson);
   VxCoreError getSyncConflicts(const QString &p_notebookId, QString &p_outConflictsJson);
   VxCoreError resolveSyncConflict(const QString &p_notebookId, const QString &p_filePath,

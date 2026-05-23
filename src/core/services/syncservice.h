@@ -87,6 +87,14 @@ public:
   // Trigger a one-shot sync for a notebook. Invokes SyncWorker::triggerSync.
   void triggerSyncNow(const QString &p_notebookId);
 
+  // Wave 12.2 / F5.9: request cancellation of an in-flight triggerSyncNow for
+  // @p_notebookId. No-op if no sync is in flight or the notebook has no
+  // active cancellation token. Cancellation is cooperative: the libgit2
+  // operation polls the token via SyncCancellation; once observed it returns
+  // GIT_EUSER which the backend maps to GitOpError::Cancelled / a
+  // VXCORE_ERR_* code that surfaces through the normal syncFinished path.
+  void cancelSync(const QString &p_notebookId);
+
   // Ensure runtime sync state is populated for a notebook whose on-disk
   // config is now complete (sync_enabled=true, non-empty backend +
   // remoteUrl). Forces a reconcile attempt even if a prior attempt was
@@ -233,6 +241,15 @@ private:
   // thread that might call isSyncInProgress.
   mutable QMutex m_inProgressMutex;
   QHash<QString, bool> m_inProgress;
+
+  // Wave 12.2 / F5.9: per-notebook cancellation tokens for in-flight
+  // triggerSyncNow. Created in triggerSyncNow before dispatch, freed in the
+  // syncFinished slot on the GUI thread. Guarded by m_cancellationMutex.
+  // Value is the raw C handle (VxCoreSyncCancellation*) returned by
+  // vxcore_sync_create_cancellation; we store it as void* so the header
+  // doesn't need to include vxcore.h.
+  mutable QMutex m_cancellationMutex;
+  QHash<QString, void *> m_cancellations;
 
   // Set true by shutdown(); subsequent public-API operations early-return.
   bool m_shutDown = false;

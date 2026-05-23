@@ -314,6 +314,18 @@ VxCoreError NotebookCoreService::triggerSync(const QString &p_notebookId) {
   return vxcore_sync_trigger(m_context, nbId.constData());
 }
 
+VxCoreError
+NotebookCoreService::triggerSyncCancellable(const QString &p_notebookId,
+                                            struct VxCoreSyncCancellation_ *p_cancellationHandle) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  return vxcore_sync_trigger_cancellable(
+      m_context, nbId.constData(),
+      reinterpret_cast<VxCoreSyncCancellation *>(p_cancellationHandle));
+}
+
 VxCoreError NotebookCoreService::getSyncStatus(const QString &p_notebookId,
                                                QString &p_outStatusJson) {
   p_outStatusJson.clear();

@@ -11,6 +11,12 @@
 
 #include <vxcore/vxcore_types.h>
 
+// Forward-declare the opaque C cancellation handle (defined in vxcore.h).
+// Worker slots receive it as a `quintptr` over QueuedConnection so we don't
+// need full vxcore.h inclusion in this header. The casted pointer is the
+// raw `VxCoreSyncCancellation*` produced by vxcore_sync_create_cancellation.
+struct VxCoreSyncCancellation_;
+
 namespace vnotex {
 
 class NotebookCoreService;
@@ -61,6 +67,13 @@ public slots:
   void enableSync(QString p_notebookId, QString p_configJson, QString p_credentialsJson);
   void disableSync(QString p_notebookId);
   void triggerSync(QString p_notebookId);
+  // Wave 12.2 / F5.9: cancellable variant. @p_cancellationHandle is a
+  // quintptr-cast pointer to a VxCoreSyncCancellation_ owned by SyncService.
+  // SyncService retains ownership of the handle for the duration of the
+  // sync (releasing only after syncFinished arrives back on the GUI thread)
+  // so the worker may safely treat the raw pointer as live. Zero means "no
+  // cancellation wired" — semantically identical to triggerSync(id).
+  void triggerSyncCancellable(QString p_notebookId, quintptr p_cancellationHandle);
   void getStatus(QString p_notebookId);
   void getConflicts(QString p_notebookId);
   void resolveConflict(QString p_notebookId, QString p_filePath, QString p_resolution);

@@ -26,6 +26,8 @@
 #include <core/services/synclog.h>
 #include <core/services/syncworker.h>
 
+#include <vxcore/vxcore.h>
+
 Q_LOGGING_CATEGORY(syncCategory, "vnote.sync")
 
 using namespace vnotex;
@@ -166,6 +168,19 @@ void SyncService::shutdown() {
     m_thread->terminate();
     m_thread->wait(kPostTerminateJoinMs);
   }
+
+  // Wave 12.2 / F5.9: release any leftover cancellation tokens. After the
+  // worker thread has joined, no slot can be in flight, so freeing is safe.
+  QHash<QString, void *> leftover;
+  {
+    QMutexLocker locker(&m_cancellationMutex);
+    leftover.swap(m_cancellations);
+  }
+  for (auto it = leftover.begin(); it != leftover.end(); ++it) {
+    if (it.value()) {
+      vxcore_sync_free_cancellation(static_cast<VxCoreSyncCancellation *>(it.value()));
+    }
+  }
 }
 
 SyncService::~SyncService() {
@@ -304,8 +319,48 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     return;
   }
   qCDebug(syncCategory) << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
-  QMetaObject::invokeMethod(m_worker, "triggerSync", Qt::QueuedConnection,
-                            Q_ARG(QString, p_notebookId));
+
+  // Wave 12.2 / F5.9: create a per-call cancellation token. Owned by
+  // SyncService until onWorkerSyncFinished arrives on the GUI thread.
+  // If an old token is still registered (shouldn't normally happen — would
+  // mean a previous syncFinished was lost), free it first to avoid leaks.
+  VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
+  if (token) {
+    QMutexLocker locker(&m_cancellationMutex);
+    auto it = m_cancellations.find(p_notebookId);
+    if (it != m_cancellations.end() && it.value() != nullptr) {
+      qCWarning(syncCategory) << "SyncService::triggerSyncNow: stale cancellation token for"
+                              << p_notebookId << "freeing before replacement";
+      vxcore_sync_free_cancellation(static_cast<VxCoreSyncCancellation *>(it.value()));
+    }
+    m_cancellations.insert(p_notebookId, token);
+  }
+
+  QMetaObject::invokeMethod(m_worker, "triggerSyncCancellable", Qt::QueuedConnection,
+                            Q_ARG(QString, p_notebookId),
+                            Q_ARG(quintptr, reinterpret_cast<quintptr>(token)));
+}
+
+void SyncService::cancelSync(const QString &p_notebookId) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::cancelSync: ignored after shutdown";
+    return;
+  }
+  VxCoreSyncCancellation *token = nullptr;
+  {
+    QMutexLocker locker(&m_cancellationMutex);
+    auto it = m_cancellations.find(p_notebookId);
+    if (it != m_cancellations.end()) {
+      token = static_cast<VxCoreSyncCancellation *>(it.value());
+    }
+  }
+  if (!token) {
+    qCDebug(syncCategory) << "SyncService::cancelSync: no active sync for" << p_notebookId;
+    return;
+  }
+  qCDebug(syncCategory) << "SyncService::cancelSync: signalling token for" << p_notebookId;
+  // vxcore_sync_cancel is thread-safe (atomic flag inside the token).
+  vxcore_sync_cancel(token);
 }
 
 void SyncService::updateCredentials(const QString &p_notebookId, const QString &p_newPat) {
@@ -501,6 +556,22 @@ void SyncService::onWorkerSyncFinished(const QString &p_notebookId, VxCoreError 
                         << "result:" << static_cast<int>(p_result)
                         << "message:" << vxErrorToString(p_result);
   setInProgress(p_notebookId, false);
+
+  // Wave 12.2 / F5.9: release the cancellation token (if any). Snapshot
+  // under the mutex, then free outside — rule W0.5.
+  VxCoreSyncCancellation *token = nullptr;
+  {
+    QMutexLocker locker(&m_cancellationMutex);
+    auto it = m_cancellations.find(p_notebookId);
+    if (it != m_cancellations.end()) {
+      token = static_cast<VxCoreSyncCancellation *>(it.value());
+      m_cancellations.erase(it);
+    }
+  }
+  if (token) {
+    vxcore_sync_free_cancellation(token);
+  }
+
   emit syncFinished(p_notebookId, p_result);
 }
 

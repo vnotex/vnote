@@ -173,6 +173,30 @@ void SyncWorker::triggerSync(QString p_notebookId) {
   emit syncFinished(p_notebookId, code);
 }
 
+void SyncWorker::triggerSyncCancellable(QString p_notebookId, quintptr p_cancellationHandle) {
+  Q_ASSERT(QThread::currentThread() == this->thread());
+  qCDebug(syncCategory) << "SyncWorker::triggerSyncCancellable: [worker] notebookId:"
+                        << p_notebookId << "handle:" << p_cancellationHandle;
+
+  m_syncInProgressGlobal.store(true, std::memory_order_release);
+  emit syncStarted(p_notebookId);
+
+  maybeHang();
+
+  VxCoreError code = VXCORE_OK;
+  if (!consumeForcedError(code)) {
+    auto *handle = reinterpret_cast<struct VxCoreSyncCancellation_ *>(p_cancellationHandle);
+    code = m_notebookCoreService->triggerSyncCancellable(p_notebookId, handle);
+  }
+
+  m_syncInProgressGlobal.store(false, std::memory_order_release);
+
+  if (code != VXCORE_OK) {
+    emit syncFailed(p_notebookId, code, vxErrorToString(code));
+  }
+  emit syncFinished(p_notebookId, code);
+}
+
 void SyncWorker::getStatus(QString p_notebookId) {
   Q_ASSERT(QThread::currentThread() == this->thread());
   qCDebug(syncCategory) << "SyncWorker::getStatus: [worker] notebookId:" << p_notebookId;
