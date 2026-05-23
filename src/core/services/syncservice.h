@@ -107,6 +107,34 @@ public:
   // early). Results surface via the existing reconcileFinished signal.
   void ensureSyncEnabled(const QString &p_notebookId);
 
+  // F1.6 / Task 13.4 — Atomically enable sync for an existing partial notebook
+  // AND persist the flat ADR-8 sync keys (syncEnabled / syncBackend /
+  // syncRemoteUrl) to the notebook JSON. Replaces the prior two-step
+  // enable-then-persist pattern in NotebookSyncInfoController::bootstrapApply
+  // that left the notebook in S5 on disk-but-missing-syncRemoteUrl when the
+  // persist step failed (next reconcile would observe S4 and bail).
+  //
+  // Sequence:
+  //   1. enableSyncForNotebook(id, url, pat) — async via worker.
+  //   2. On enableFinished VXCORE_OK: write the three flat sync keys to
+  //      notebook JSON via NotebookCoreService::updateNotebookConfig.
+  //        - On persist success: trigger initial sync, emit
+  //          bootstrapAndPersistFinished(id, VXCORE_OK, "").
+  //        - On persist failure: ROLLBACK by calling
+  //          disableSyncForNotebook(id). Original persist error is preserved
+  //          and reported as bootstrapAndPersistFinished(id,
+  //          VXCORE_ERR_UNKNOWN, persistErrorMsg) regardless of whether the
+  //          rollback succeeds. Rollback failures are logged at qCritical.
+  //   3. On enableFinished failure: notebook stays in original (pre-call)
+  //      state. Emit bootstrapAndPersistFinished(id, enableResult,
+  //      enableMsg). No rollback needed (nothing to undo).
+  //
+  // PAT is forwarded to enableSyncForNotebook and NEVER cached on the
+  // service. Per Wave 0.5: no SyncService mutex is held while emitting the
+  // finished signal.
+  void bootstrapAndPersist(const QString &p_notebookId, const QString &p_remoteUrl,
+                           const QString &p_pat);
+
   // Replace the stored PAT for a notebook. Sequence mirrors enableSyncForNotebook
   // but invokes SyncWorker::setCredentials instead of enableSync.
   void updateCredentials(const QString &p_notebookId, const QString &p_newPat);
@@ -162,6 +190,19 @@ public:
   // core_services and test binaries.
   void testSetInProgress(const QString &p_notebookId, bool p_value);
 
+  // Test-only seams for Task 13.4 bootstrapAndPersist. Force the persist
+  // step and/or the rollback disable step to behave as if they failed,
+  // without needing a mock NotebookCoreService. Unconditional per ADR-6.
+  //   - testForceNextPersistFailure: next bootstrapAndPersist persist step
+  //     will skip the actual JSON write and report failure with the given
+  //     message (default "injected persist failure"). One-shot: auto-clears
+  //     after being consumed.
+  //   - testForceNextRollbackFailure: next rollback disableSync inside
+  //     bootstrapAndPersist will skip the worker dispatch and synthesize a
+  //     disableFinished(VXCORE_ERR_UNKNOWN) on the GUI thread. One-shot.
+  void testForceNextPersistFailure(const QString &p_message = QString());
+  void testForceNextRollbackFailure();
+
   // Bounded shutdown of the underlying SyncWorker thread.
   // Sequence:
   //   1. Set the m_shutDown flag so subsequent public-API calls are no-ops.
@@ -191,6 +232,14 @@ signals:
   // p_result: VXCORE_OK if enableSync dispatched, VXCORE_ERR_SYNC_AUTH_FAILED
   // if PAT lookup failed, VXCORE_ERR_INVALID_PARAM if config incomplete.
   void reconcileFinished(const QString &p_notebookId, VxCoreError p_result);
+
+  // F1.6 / Task 13.4 — Final outcome of bootstrapAndPersist().
+  //   p_result == VXCORE_OK on full success (enable + persist + trigger sync).
+  //   p_result != VXCORE_OK on either enable failure (original code) or
+  //     persist failure (VXCORE_ERR_UNKNOWN; original persist error in
+  //     p_message even if rollback later failed).
+  void bootstrapAndPersistFinished(const QString &p_notebookId, VxCoreError p_result,
+                                   const QString &p_message);
 
 private slots:
   // Internal forwarders. All connected to worker signals via QueuedConnection
@@ -257,6 +306,11 @@ private:
   // Prevents double reconcile when both MainWindowAfterStart and a subsequent
   // user-initiated NotebookAfterOpen fire for the same notebook in one session.
   QSet<QString> m_reconcileAttempted;
+
+  // Task 13.4 test seams (one-shot).
+  bool m_testForceNextPersistFailure = false;
+  QString m_testForceNextPersistFailureMsg;
+  bool m_testForceNextRollbackFailure = false;
 };
 
 } // namespace vnotex

@@ -192,8 +192,14 @@ void NotebookSyncInfoController::disableSync() {
 }
 
 void NotebookSyncInfoController::bootstrapApply(const QString &p_url, const QString &p_pat) {
-  // W3.T1: atomic enable on an EXISTING partial notebook (S1/S2/S3/S4 -> S5).
-  // Mirrors NewNotebookController::bootstrapSync but does NOT delete the
+  // W3.T1 / Task 13.4 (F1.6): atomic enable+persist on an EXISTING partial
+  // notebook (S1/S2/S3/S4 -> S5). Delegates to SyncService::bootstrapAndPersist
+  // which wraps enable + flat-key persist atomically with rollback on persist
+  // failure. Previously this controller did enable-then-persist in two steps;
+  // if persist failed after enable success the notebook ended up in S5 on disk
+  // but missing syncRemoteUrl -> next reconcile saw S4 and bailed.
+  //
+  // Unlike NewNotebookController::bootstrapSync, we do NOT delete the
   // notebook on failure (the notebook already exists with user content; the
   // partial sync config is left in place so the user can retry).
   qCDebug(syncCategory) << "NotebookSyncInfoController::bootstrapApply: start id=" << m_notebookId;
@@ -208,63 +214,43 @@ void NotebookSyncInfoController::bootstrapApply(const QString &p_url, const QStr
     return;
   }
 
-  // Capture the notebookId by value so the lambda is independent of `this`
-  // member lifetime ordering during Qt's queued-signal delivery.
   const QString notebookId = m_notebookId;
 
-  // One-shot connection: SyncService::enableFinished can fire for any
-  // notebook, so we filter by id inside the lambda and disconnect manually
-  // after handling our id. Heap-stored Connection mirrors the convention
-  // used in SyncService::updateCredentials / disableSyncForNotebook.
+  // One-shot connection on bootstrapAndPersistFinished, filtered by notebookId.
   auto conn = std::make_shared<QMetaObject::Connection>();
-  *conn =
-      connect(syncSvc, &SyncService::enableFinished, this,
-              [this, conn, syncSvc, notebookId,
-               p_url](const QString &p_resultId, VxCoreError p_result, const QString &p_message) {
-                if (p_resultId != notebookId) {
-                  return;
-                }
-                QObject::disconnect(*conn);
+  *conn = connect(
+      syncSvc, &SyncService::bootstrapAndPersistFinished, this,
+      [this, conn, notebookId, p_url](const QString &p_resultId, VxCoreError p_result,
+                                      const QString &p_message) {
+        if (p_resultId != notebookId) {
+          return;
+        }
+        QObject::disconnect(*conn);
 
-                qCDebug(syncCategory)
-                    << "NotebookSyncInfoController::bootstrapApply: enableFinished result="
-                    << static_cast<int>(p_result) << "id=" << notebookId;
+        qCDebug(syncCategory)
+            << "NotebookSyncInfoController::bootstrapApply: bootstrapAndPersistFinished result="
+            << static_cast<int>(p_result) << "id=" << notebookId;
 
-                if (p_result == VXCORE_OK) {
-                  // Persist the flat ADR-8 syncRemoteUrl key into the
-                  // notebook config so a restart finds the notebook in
-                  // S5 (sync-ready) instead of S4 (partial).
-                  // persistRemoteUrl emits error() on failure but does
-                  // NOT block applyComplete(true) — the vxcore enable
-                  // step itself succeeded.
-                  persistRemoteUrl(p_url);
+        if (p_result == VXCORE_OK) {
+          // Sync the cached URL so subsequent applyChanges() URL-diff detects
+          // no-op for the same URL.
+          m_currentRemoteUrl = p_url;
+          emit applyComplete(true);
+          return;
+        }
 
-                  // Idempotent initial sync push (best-effort; runtime
-                  // state is now populated, so this won't hit the
-                  // chicken-and-egg path).
-                  syncSvc->triggerSyncNow(notebookId);
+        // Failure path: KEEP the notebook (no closeNotebook, no
+        // removeRecursively). Partial sync config stays so the user can
+        // retry from the Sync Info dialog.
+        qCWarning(syncCategory)
+            << "NotebookSyncInfoController::bootstrapApply: failed id=" << notebookId
+            << "result:" << static_cast<int>(p_result) << "message:" << p_message;
+        emit error(p_message.isEmpty() ? tr("Failed to enable sync for notebook.") : p_message);
+        emit applyComplete(false);
+      });
 
-                  emit applyComplete(true);
-                  return;
-                }
-
-                // Failure path: KEEP the notebook (no closeNotebook, no
-                // removeRecursively). The user's notebook content stays
-                // intact; only the sync-enable failed. The partial sync
-                // config (syncEnabled / syncBackend / empty syncRemoteUrl)
-                // remains so the user can retry from the Sync Info dialog.
-                qCWarning(syncCategory)
-                    << "NotebookSyncInfoController::bootstrapApply: enable failed id=" << notebookId
-                    << "result:" << static_cast<int>(p_result) << "message:" << p_message;
-                emit error(p_message.isEmpty() ? tr("Failed to enable sync for notebook.")
-                                               : p_message);
-                emit applyComplete(false);
-              });
-
-  // Fire enableSync LAST so the connect is in place before the signal could
-  // fire (mirrors NewNotebookController::bootstrapSync line ordering). The
   // PAT is forwarded to SyncService and NEVER logged here (per ADR-9).
-  syncSvc->enableSyncForNotebook(notebookId, p_url, p_pat);
+  syncSvc->bootstrapAndPersist(notebookId, p_url, p_pat);
 }
 
 void NotebookSyncInfoController::confirmUrlChange(bool p_confirmed) {

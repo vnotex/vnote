@@ -511,3 +511,18 @@ add_qt_test(test_sync_hooks
 if(MSVC)
   target_link_options(test_sync_hooks PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
+
+# Task 13.4 (F1.6): SyncService::bootstrapAndPersist atomic enable+persist with
+# rollback on persist failure. Verifies happy path, rollback on persist failure,
+# and rollback failure logging.
+add_qt_test(test_bootstrap_and_persist
+  SOURCES
+    test_bootstrap_and_persist.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+if(MSVC)
+  target_link_options(test_bootstrap_and_persist PRIVATE /WHOLEARCHIVE:vxcore)
+endif()

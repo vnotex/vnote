@@ -404,6 +404,127 @@ void SyncService::cancelSync(const QString &p_notebookId) {
   }
 }
 
+void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString &p_remoteUrl,
+                                      const QString &p_pat) {
+  if (m_shutDown) {
+    qWarning() << "SyncService::bootstrapAndPersist: ignored after shutdown";
+    return;
+  }
+  qCDebug(syncCategory) << "SyncService::bootstrapAndPersist: notebookId:" << p_notebookId;
+
+  const QString notebookId = p_notebookId;
+  const QString remoteUrl = p_remoteUrl;
+
+  // One-shot bridge on enableFinished. Filters by notebookId, self-disconnects,
+  // then either persists + emits success, or rolls back + emits failure.
+  auto conn = std::make_shared<QMetaObject::Connection>();
+  *conn = connect(
+      this, &SyncService::enableFinished, this,
+      [this, conn, notebookId, remoteUrl](const QString &p_finishedId, VxCoreError p_enResult,
+                                          const QString &p_enMsg) {
+        if (p_finishedId != notebookId) {
+          return;
+        }
+        QObject::disconnect(*conn);
+
+        qCDebug(syncCategory)
+            << "SyncService::bootstrapAndPersist: enableFinished result="
+            << static_cast<int>(p_enResult) << "id=" << notebookId;
+
+        if (p_enResult != VXCORE_OK) {
+          // Enable failed; notebook stays in original state. Nothing to roll back.
+          emit bootstrapAndPersistFinished(notebookId, p_enResult, p_enMsg);
+          return;
+        }
+
+        // Enable succeeded; persist the three flat ADR-8 sync keys atomically.
+        bool persistOk = false;
+        QString persistErr;
+        if (m_testForceNextPersistFailure) {
+          // Test seam: simulate persist failure without writing JSON.
+          persistErr = m_testForceNextPersistFailureMsg;
+          m_testForceNextPersistFailure = false;
+          m_testForceNextPersistFailureMsg.clear();
+        } else if (m_notebookCoreService) {
+          QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
+          cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
+          cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
+          cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = remoteUrl;
+          const QString cfgJson =
+              QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+          persistOk = m_notebookCoreService->updateNotebookConfig(notebookId, cfgJson);
+          if (!persistOk) {
+            persistErr =
+                tr("Failed to persist sync configuration to notebook after enable.");
+          }
+        } else {
+          persistErr = tr("Notebook service not available.");
+        }
+
+        if (persistOk) {
+          // Best-effort initial sync push; runtime state is now populated, so
+          // this won't hit the chicken-and-egg path.
+          triggerSyncNow(notebookId);
+          emit bootstrapAndPersistFinished(notebookId, VXCORE_OK, QString());
+          return;
+        }
+
+        // Persist failed AFTER enable succeeded. Roll back the enable via
+        // disableSyncForNotebook to return the notebook to clean S0. Original
+        // persist error is preserved in the emitted signal regardless of
+        // rollback outcome. Rollback failure is logged at qCritical (loud).
+        qCritical()
+            << "SyncService::bootstrapAndPersist: persist failed after enable; rolling back. id="
+            << notebookId << "persistError:" << persistErr;
+
+        const QString origPersistErr = persistErr;
+
+        // One-shot bridge on disableFinished to surface rollback errors.
+        // We always emit bootstrapAndPersistFinished with the ORIGINAL
+        // persist error message, but we log loudly if rollback also fails.
+        auto rbConn = std::make_shared<QMetaObject::Connection>();
+        *rbConn = connect(
+            this, &SyncService::disableFinished, this,
+            [this, rbConn, notebookId, origPersistErr](const QString &p_disId,
+                                                       VxCoreError p_disResult) {
+              if (p_disId != notebookId) {
+                return;
+              }
+              QObject::disconnect(*rbConn);
+              if (p_disResult != VXCORE_OK) {
+                qCritical() << "SyncService::bootstrapAndPersist: ROLLBACK FAILED for notebook"
+                            << notebookId << ":" << vxErrorToString(p_disResult)
+                            << "— notebook may be in inconsistent state (vxcore enabled but "
+                               "JSON not persisted). Original persist error preserved.";
+              } else {
+                qCWarning(syncCategory)
+                    << "SyncService::bootstrapAndPersist: rollback succeeded for" << notebookId;
+              }
+              emit bootstrapAndPersistFinished(notebookId, VXCORE_ERR_UNKNOWN, origPersistErr);
+            });
+
+        disableSyncForNotebook(notebookId);
+
+        if (m_testForceNextRollbackFailure) {
+          // Test seam: synthesize a disableFinished failure on the GUI thread
+          // event loop. The real disableSyncForNotebook call above will also
+          // fire its own disableFinished from the worker; the one-shot rbConn
+          // self-disconnects on first match so only the first arrival counts.
+          // We emit the synthetic one via a queued invocation so it lands in
+          // the same event-loop iteration as a typical worker reply would.
+          m_testForceNextRollbackFailure = false;
+          QMetaObject::invokeMethod(
+              this,
+              [this, notebookId]() {
+                emit disableFinished(notebookId, VXCORE_ERR_UNKNOWN);
+              },
+              Qt::QueuedConnection);
+        }
+      });
+
+  enableSyncForNotebook(notebookId, remoteUrl, p_pat);
+}
+
 void SyncService::updateCredentials(const QString &p_notebookId, const QString &p_newPat) {
   if (m_shutDown) {
     qWarning() << "SyncService::updateCredentials: ignored after shutdown";
@@ -575,6 +696,14 @@ QString SyncService::lastSyncTime(const QString &p_notebookId) const {
 void SyncService::testSetInProgress(const QString &p_notebookId, bool p_value) {
   setInProgress(p_notebookId, p_value);
 }
+
+void SyncService::testForceNextPersistFailure(const QString &p_message) {
+  m_testForceNextPersistFailure = true;
+  m_testForceNextPersistFailureMsg =
+      p_message.isEmpty() ? QStringLiteral("injected persist failure") : p_message;
+}
+
+void SyncService::testForceNextRollbackFailure() { m_testForceNextRollbackFailure = true; }
 
 void SyncService::setInProgress(const QString &p_notebookId, bool p_value) {
   QMutexLocker locker(&m_inProgressMutex);
