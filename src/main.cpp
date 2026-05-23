@@ -35,6 +35,7 @@
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
 #include <core/services/syncstateclassifier.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 #include <core/services/templateservice.h>
@@ -216,6 +217,15 @@ int main(int argc, char *argv[]) {
 
     SyncCredentialsStore syncCredentialsStore(serviceLocator);
     serviceLocator.registerService<SyncCredentialsStore>(&syncCredentialsStore);
+
+    // W14.2 (F5.1 partial): SyncWorkQueueManager is wired into DI BEFORE
+    // SyncService so future migrations can look it up. Not yet used as the
+    // worker dispatcher — current SyncService still uses its private QThread +
+    // QObject SyncWorker via QMetaObject::invokeMethod(..., QueuedConnection).
+    // Shutdown is driven from QCoreApplication::aboutToQuit below.
+    SyncWorkQueueManager syncWorkQueueManager;
+    serviceLocator.registerService<SyncWorkQueueManager>(&syncWorkQueueManager);
+
     SyncService syncService(serviceLocator);
     serviceLocator.registerService<SyncService>(&syncService);
 
@@ -294,6 +304,14 @@ int main(int argc, char *argv[]) {
           auto *svc = serviceLocator.get<vnotex::SyncService>();
           if (svc) {
             svc->shutdown();
+          }
+          // W14.2: drain the per-notebook serialized executor with bounded
+          // 5s timeout, AFTER SyncService::shutdown() so no new work is
+          // enqueued during the drain window. Idempotent (calling twice is
+          // safe — the destructor also calls shutdown(5000)).
+          auto *queueMgr = serviceLocator.get<vnotex::SyncWorkQueueManager>();
+          if (queueMgr) {
+            queueMgr->shutdown(5000);
           }
         },
         Qt::DirectConnection);
