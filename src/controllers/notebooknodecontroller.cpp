@@ -313,7 +313,7 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
   if (p_nodeId.isValid()) {
     auto *duplicateAction = p_menu->addAction(tr("D&uplicate"));
     connect(duplicateAction, &QAction::triggered, this,
-            [this, p_nodeId]() { duplicateNode(p_nodeId); });
+            [this, p_nodeId]() { duplicateNodes(resolveSelection(p_nodeId)); });
   }
 }
 
@@ -731,17 +731,8 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
 }
 
 void NotebookNodeController::duplicateNode(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid()) {
-    return;
-  }
-
-  NodeIdentifier parentId = getParentFolder(p_nodeId);
-  if (!parentId.notebookId.isEmpty()) {
-    // Set clipboard and paste to same folder
-    copyNodes(QList<NodeIdentifier>() << p_nodeId);
-    pasteNodes(parentId);
-    m_clipboard->nodes.clear();
-  }
+  // Delegate to list overload for single source of truth.
+  duplicateNodes(QList<NodeIdentifier>{p_nodeId});
 }
 
 void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
@@ -1232,8 +1223,26 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
 }
 
 void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &p_ids) {
-  for (const auto &id : p_ids) {
-    duplicateNode(id);
+  const auto ids = dedupeDescendants(p_ids);
+  int failures = 0;
+  for (const auto &id : ids) {
+    if (!id.isValid()) {
+      ++failures;
+      continue;
+    }
+    NodeIdentifier parentId = getParentFolder(id);
+    if (parentId.notebookId.isEmpty()) {
+      ++failures;
+      continue;
+    }
+    // Duplicate via copy+paste-to-same-folder (auto-suffix handled by pasteNodes).
+    copyNodes(QList<NodeIdentifier>{id});
+    pasteNodes(parentId);
+    m_clipboard->nodes.clear();
+  }
+  if (failures > 0) {
+    qWarning() << "duplicateNodes: failed to duplicate" << failures << "of" << ids.size()
+               << "node(s)";
   }
 }
 

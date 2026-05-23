@@ -73,6 +73,11 @@ private slots:
   void cut_rightClickOutsideSelection_resolvesClickedOnly();
   void dedupe_parentAndChildSameNotebook_dropsChild();
   void dedupe_differentNotebooks_keepsBoth();
+
+  // T6: duplicate uses resolveSelection + dedupeDescendants
+  void duplicate_multiSelection_resolvesAllIds();
+  void duplicate_parentAndChild_dropsChild();
+  void duplicate_singleArg_delegatesToList();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -231,6 +236,51 @@ void TestNotebookNodeControllerMultiSelect::dedupe_differentNotebooks_keepsBoth(
   QCOMPARE(deduped.size(), 2);
   QCOMPARE(deduped.at(0), a);
   QCOMPARE(deduped.at(1), b);
+}
+
+// T6: duplicate mirrors the same resolve+dedupe pipeline used by delete/copy/cut.
+// Controller construction needs 18+ services so we exercise the helper pipeline directly.
+
+void TestNotebookNodeControllerMultiSelect::duplicate_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, b);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  // All three should be duplicated when clicked node is inside selection.
+  QCOMPARE(deduped.size(), 3);
+  QCOMPARE(deduped, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+void TestNotebookNodeControllerMultiSelect::duplicate_parentAndChild_dropsChild() {
+  vnotex::NodeIdentifier parent, child;
+  parent.notebookId = child.notebookId = "nb-1";
+  parent.relativePath = "folder";
+  child.relativePath = "folder/note.md";
+
+  auto resolved = resolveSelectionForTest({parent, child}, parent);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  // Duplicating the parent folder already duplicates the child; dropping the child
+  // from the batch prevents a redundant copy.
+  QCOMPARE(deduped.size(), 1);
+  QCOMPARE(deduped.at(0), parent);
+}
+
+void TestNotebookNodeControllerMultiSelect::duplicate_singleArg_delegatesToList() {
+  // Back-compat: duplicateNode(id) must behave identically to duplicateNodes({id}).
+  // The production single-arg overload body is now `duplicateNodes({p_nodeId});` —
+  // verify the equivalent helper pipeline yields one node for a single input.
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "single.md";
+
+  QList<vnotex::NodeIdentifier> singletonInput{a};
+  auto deduped = dedupeDescendantsForTest(singletonInput);
+  QCOMPARE(deduped.size(), 1);
+  QCOMPARE(deduped.at(0), a);
 }
 
 } // namespace tests
