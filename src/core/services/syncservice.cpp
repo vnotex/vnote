@@ -1093,6 +1093,7 @@ void SyncService::onSyncConflictFiles(const QString &p_notebookId, const QString
 // fire-and-forget). Best-effort: queue overflow / coalesce are silent —
 // do NOT emit syncFailed (auto-sync is opportunistic).
 void SyncService::onSyncShouldRun(const QString &p_notebookId) {
+  qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync triggered for" << p_notebookId;
   if (m_shutDown) {
     qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: shutting down for"
                          << p_notebookId;
