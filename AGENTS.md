@@ -384,17 +384,31 @@ The dialog (`NotebookSyncInfoDialog2`) auto-routes to `bootstrapApply` when `m_b
 
 `SyncService::reconcileSyncForNotebook` is called by `MainWindowAfterStart` and on notebook open to lift S4 notebooks (disk-complete, runtime-absent) into S5.
 
-Key invariants (`src/core/services/syncservice.cpp:505-594`):
-- `m_reconcileAttempted.insert(id)` happens **after** precondition checks (line ~540), not before. Precondition failures do NOT block retry.
-- `m_reconcileAttempted.remove(id)` fires on transient failure (credential fetch error at line ~592) so the next reconcile call retries.
+Key invariants (`src/core/services/syncservice.cpp:858-970`):
+- `m_reconcileAttempted.insert(id)` happens **after** all precondition checks pass (line 893), not before. The disk-enabled check (line 869), idempotence guard (line 875), and complete-config check (line 884) all run first; any of them returning early leaves the attempted set untouched. Precondition failures therefore do NOT block future retries. Concrete consequence: a notebook in S1/S3 (enabled but no backend/url, or no backend) hits the `incomplete config` branch at line 885, emits `reconcileFinished(VXCORE_ERR_INVALID_PARAM)`, and is NOT marked attempted. When the user later supplies the missing URL via `bootstrapApply` and the notebook reaches S4, the very next reconcile trigger (notebook open or app start) will pass the precondition check and proceed.
+- `m_reconcileAttempted.remove(id)` fires on transient PAT fetch failure (line 945) so the next reconcile call retries. The same key is re-cleared by `updateCredentials` (line 969) before manually re-driving reconcile, so a user re-entering a fresh PAT never hits the "already attempted" guard.
 - No remove on success (notebook is registered; no retry needed).
-- Idempotence check at line 510 prevents duplicate in-flight reconciles when `MainWindowAfterStart` and `NotebookAfterOpen` race.
+- Idempotence check at line 875 prevents duplicate in-flight reconciles when `MainWindowAfterStart` and `NotebookAfterOpen` race.
+
+### bootstrapAndPersist Rollback × Reconcile
+
+`SyncService::bootstrapAndPersist` (`syncservice.cpp:409-508`) is the atomic enable+persist path used by `NewNotebookController` (W13.4, F1.6). On persist failure AFTER vxcore enable already succeeded, it issues a rollback by calling `disableSyncForNotebook`, which per "Disable Cleanup" below clears the three flat sync JSON keys then deletes the keychain entry.
+
+Interaction with reconcile:
+- **Rollback succeeds** (the common case): the notebook returns to clean S0. The disk-enabled check at `reconcileSyncForNotebook` line 869 fails immediately, the function early-returns, `m_reconcileAttempted` is never touched, and reconcile is correctly a no-op. The notebook needs a fresh user-initiated bootstrap, not silent re-registration. This is the intended recovery story.
+- **Rollback fails** (rare; both persist AND disable failed, logged at `qCritical` line 497): the notebook is left in a partial state. If JSON still has all three keys set (vxcore enable succeeded, JSON write succeeded for some keys, then disable failed leaving keys intact), the notebook is effectively in S4. On the next reconcile trigger, all precondition checks pass, `m_reconcileAttempted` gets set, and reconcile will attempt to register the notebook. This is the expected recovery path for that edge case; the loud `qCritical` log gives operators a chance to investigate.
+
+The key property: rollback NEVER causes reconcile to silently resurrect a notebook the user wanted disabled. Either rollback succeeded (so disk is clean and reconcile bails) or rollback failed (so disk truthfully says "enabled" and reconcile correctly tries to complete the job).
 
 ### Disable Cleanup
 
 `SyncService::disableSyncForNotebook` on `VXCORE_OK` clears all three flat sync keys (`syncEnabled`, `syncBackend`, `syncRemoteUrl`) from notebook JSON BEFORE deleting the keychain entry (`src/core/services/syncservice.cpp:246-290`). On failure, JSON is preserved for retry. This closes the "resurrection trap" where a disabled notebook would reappear as S6 (orphan PAT) or S1 (orphan disk fields) on next app start.
 
-`SyncService::onMainWindowAfterStart` also sweeps S6 orphans: any notebook with `!isSyncEnabled() && hasCredentials(id)` gets its keychain entry deleted.
+### Startup S6 Sweep
+
+`SyncService::onMainWindowAfterStart` (`syncservice.cpp:828-854`) sweeps S6 orphans before reconciling. For each notebook it iterates, if `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (the S6 predicate: disk says disabled but a PAT is still in the keychain), it calls `m_credentialsStore->deleteCredentials(id)` to drop the orphan PAT. This handles the scenario where a previous session's disable succeeded inside vxcore but the app crashed (or was killed) before the keychain delete completed, leaving an orphan PAT that the new "disable clears JSON then keychain" ordering would otherwise not catch on its own.
+
+The sweep runs BEFORE `reconcileSyncForNotebook(nbId)` on each notebook, so by the time reconcile examines the notebook the keychain state is consistent with disk truth.
 
 ### Re-enable UI Affordance
 

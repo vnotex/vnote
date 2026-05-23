@@ -404,6 +404,8 @@ void SyncService::cancelSync(const QString &p_notebookId) {
   }
 }
 
+// See AGENTS.md "bootstrapAndPersist Rollback x Reconcile" for rollback semantics
+// and how rollback success/failure interacts with reconcileSyncForNotebook.
 void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString &p_remoteUrl,
                                       const QString &p_pat) {
   if (m_shutDown) {
@@ -427,9 +429,8 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
         }
         QObject::disconnect(*conn);
 
-        qCDebug(syncCategory)
-            << "SyncService::bootstrapAndPersist: enableFinished result="
-            << static_cast<int>(p_enResult) << "id=" << notebookId;
+        qCDebug(syncCategory) << "SyncService::bootstrapAndPersist: enableFinished result="
+                              << static_cast<int>(p_enResult) << "id=" << notebookId;
 
         if (p_enResult != VXCORE_OK) {
           // Enable failed; notebook stays in original state. Nothing to roll back.
@@ -454,8 +455,7 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
               QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
           persistOk = m_notebookCoreService->updateNotebookConfig(notebookId, cfgJson);
           if (!persistOk) {
-            persistErr =
-                tr("Failed to persist sync configuration to notebook after enable.");
+            persistErr = tr("Failed to persist sync configuration to notebook after enable.");
           }
         } else {
           persistErr = tr("Notebook service not available.");
@@ -514,10 +514,7 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
           // the same event-loop iteration as a typical worker reply would.
           m_testForceNextRollbackFailure = false;
           QMetaObject::invokeMethod(
-              this,
-              [this, notebookId]() {
-                emit disableFinished(notebookId, VXCORE_ERR_UNKNOWN);
-              },
+              this, [this, notebookId]() { emit disableFinished(notebookId, VXCORE_ERR_UNKNOWN); },
               Qt::QueuedConnection);
         }
       });
@@ -822,6 +819,7 @@ void SyncService::onNotebookAfterOpen(const NotebookOpenEvent &p_event) {
   reconcileSyncForNotebook(p_event.notebookId);
 }
 
+// See AGENTS.md "Startup S6 Sweep" for orphan-keychain cleanup rationale.
 void SyncService::onMainWindowAfterStart() {
   if (!m_notebookCoreService) {
     return;
@@ -850,6 +848,8 @@ void SyncService::onMainWindowAfterStart() {
   }
 }
 
+// See AGENTS.md "Reconcile Semantics" for invariant rationale on the
+// precondition-check-after-insert ordering and m_reconcileAttempted lifecycle.
 void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
   qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: ENTRY notebookId:"
                         << p_notebookId << "shutDown:" << m_shutDown
