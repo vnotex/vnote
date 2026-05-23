@@ -572,6 +572,23 @@ hookMgr->addAction(HookNames::NodeAfterRename,
 - `vnote.filter.file_content_after_load`
 - `vnote.filter.context_menu_items`
 
+**Sync Events (observe-only — see table below):**
+- `vnote.sync.before_enable`
+- `vnote.sync.after_disable`
+- `vnote.sync.conflict_detected`
+- `vnote.sync.cancelled`
+
+### Sync Hooks (F4.5)
+
+Fired by `SyncService`. ALL sync hooks are **observe-only**: `HookContext::cancel()` is ignored — handlers cannot abort the underlying op. Hooks fire OUTSIDE any `SyncService` mutex; conflict_detected fires on the GUI thread post-`QueuedConnection` bounce from the worker (no SyncManager locks held). PAT values are NEVER included in any sync hook payload.
+
+| Hook | Fire site | Context keys |
+|---|---|---|
+| `vnote.sync.before_enable` | `SyncService::enableSyncForNotebook` BEFORE keychain store / worker dispatch | `notebookId`, `remoteUrl` |
+| `vnote.sync.after_disable` | `SyncService::disableSyncForNotebook` AFTER vxcore disable returns VXCORE_OK and JSON sync fields are cleared. Not fired on disable failure. | `notebookId` |
+| `vnote.sync.conflict_detected` | `SyncService::onWorkerConflictsDetected` (worker→GUI queued slot) AND `SyncService::onAutoSyncConflict` (EventBridge auto-sync) | `notebookId`, `conflictCount` (-1 if unknown at fire time, auto-sync only) |
+| `vnote.sync.cancelled` | `SyncService::cancelSync` AFTER `vxcore_sync_cancel` returns. Best-effort: also fires when no in-flight token was found. | `notebookId`, `hadActiveSync` (bool) |
+
 ### Unregistering Hooks
 
 ```cpp

@@ -265,6 +265,28 @@ inline const QLatin1String ConfigEditorChanged("vnote.config.editor_changed");
 // After a theme is switched (or reloaded).
 inline const QLatin1String ThemeAfterSwitch("vnote.theme.after_switch");
 
+// ===== Sync Events =====
+// Observe-only hooks for the sync subsystem. Handlers MUST NOT attempt to
+// cancel the underlying operation (HookContext::cancel() is ignored by
+// SyncService — these fire after the relevant action is already in flight or
+// has completed).
+
+// Before SyncService::enableSyncForNotebook dispatches to the worker
+// (no PAT in the payload; carries notebookId and remoteUrl only).
+inline const QLatin1String SyncBeforeEnable("vnote.sync.before_enable");
+
+// After SyncService::disableSyncForNotebook receives VXCORE_OK from the worker
+// (fired AFTER on-disk JSON cleanup and BEFORE keychain delete is scheduled).
+inline const QLatin1String SyncAfterDisable("vnote.sync.after_disable");
+
+// When conflictsDetected is observed on the GUI thread (mirrors the
+// conflictsDetected signal). Carries notebookId and the conflict file count.
+inline const QLatin1String SyncConflictDetected("vnote.sync.conflict_detected");
+
+// After SyncService::cancelSync issues vxcore_sync_cancel (best-effort; fires
+// even when no in-flight token was found so observers can record the intent).
+inline const QLatin1String SyncCancelled("vnote.sync.cancelled");
+
 // ===== Image Host Events =====
 // Triggered when image host upload operations occur
 

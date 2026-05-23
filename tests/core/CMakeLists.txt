@@ -497,3 +497,17 @@ add_qt_test(test_sync_classifier
     vxcore
   GUILESS
 )
+
+# Task 13.2 (F4.5): vnote.sync.* hook surface (before_enable, after_disable,
+# conflict_detected, cancelled). Observe-only contract validation.
+add_qt_test(test_sync_hooks
+  SOURCES
+    test_sync_hooks.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+if(MSVC)
+  target_link_options(test_sync_hooks PRIVATE /WHOLEARCHIVE:vxcore)
+endif()

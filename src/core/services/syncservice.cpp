@@ -210,6 +210,17 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
   }
   qCDebug(syncCategory) << "SyncService::enableSyncForNotebook: notebookId:" << p_notebookId;
 
+  // F4.5: fire vnote.sync.before_enable BEFORE any lock acquisition or worker
+  // dispatch. Observe-only: HookContext::cancel() is intentionally ignored —
+  // sync hooks may NOT abort the underlying op (per plan F4.5). PAT is NEVER
+  // included in the payload.
+  if (auto *hookMgr = m_services.get<HookManager>()) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("remoteUrl")] = p_remoteUrl;
+    hookMgr->doAction(HookNames::SyncBeforeEnable, args);
+  }
+
   const QString configJson = buildConfigJson(p_remoteUrl);
 
   // PAT is captured ONLY in the lambda below; it is never assigned to a
@@ -307,6 +318,17 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
         }
 
         m_credentialsStore->deleteCredentials(notebookId);
+
+        // F4.5: fire vnote.sync.after_disable on success only. Fired AFTER the
+        // JSON sync fields are cleared and AFTER scheduling keychain delete,
+        // outside any SyncService mutex. Observe-only.
+        if (p_result == VXCORE_OK) {
+          if (auto *hookMgr = m_services.get<HookManager>()) {
+            QVariantMap args;
+            args[QStringLiteral("notebookId")] = notebookId;
+            hookMgr->doAction(HookNames::SyncAfterDisable, args);
+          }
+        }
       });
 
   QMetaObject::invokeMethod(m_worker, "disableSync", Qt::QueuedConnection,
@@ -356,11 +378,28 @@ void SyncService::cancelSync(const QString &p_notebookId) {
   }
   if (!token) {
     qCDebug(syncCategory) << "SyncService::cancelSync: no active sync for" << p_notebookId;
+    // F4.5: still fire vnote.sync.cancelled best-effort so observers can
+    // record cancel intent even if no in-flight op was found.
+    if (auto *hookMgr = m_services.get<HookManager>()) {
+      QVariantMap args;
+      args[QStringLiteral("notebookId")] = p_notebookId;
+      args[QStringLiteral("hadActiveSync")] = false;
+      hookMgr->doAction(HookNames::SyncCancelled, args);
+    }
     return;
   }
   qCDebug(syncCategory) << "SyncService::cancelSync: signalling token for" << p_notebookId;
   // vxcore_sync_cancel is thread-safe (atomic flag inside the token).
   vxcore_sync_cancel(token);
+
+  // F4.5: fire vnote.sync.cancelled AFTER vxcore_sync_cancel returns. No
+  // SyncService mutex is held here (snapshot/release done above). Observe-only.
+  if (auto *hookMgr = m_services.get<HookManager>()) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("hadActiveSync")] = true;
+    hookMgr->doAction(HookNames::SyncCancelled, args);
+  }
 }
 
 void SyncService::updateCredentials(const QString &p_notebookId, const QString &p_newPat) {
@@ -582,6 +621,15 @@ void SyncService::onWorkerSyncFailed(const QString &p_notebookId, VxCoreError p_
 
 void SyncService::onWorkerConflictsDetected(const QString &p_notebookId,
                                             const QStringList &p_conflictFiles) {
+  // F4.5: fire vnote.sync.conflict_detected on the GUI thread (this slot is
+  // wired to the worker signal via Qt::QueuedConnection, so we are post-bounce
+  // and hold no SyncManager / worker locks). Observe-only.
+  if (auto *hookMgr = m_services.get<HookManager>()) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("conflictCount")] = p_conflictFiles.size();
+    hookMgr->doAction(HookNames::SyncConflictDetected, args);
+  }
   emit conflictsDetected(p_notebookId, p_conflictFiles);
 }
 
@@ -623,6 +671,15 @@ void SyncService::onAutoSyncFinished(const QString &p_notebookId, VxCoreError p_
 void SyncService::onAutoSyncConflict(const QString &p_notebookId) {
   if (m_shutDown)
     return;
+  // F4.5: fire vnote.sync.conflict_detected for auto-sync-originated
+  // conflicts as well. Conflict file count is not known until getConflicts
+  // returns; observers receive -1 to signal "count unknown at fire time".
+  if (auto *hookMgr = m_services.get<HookManager>()) {
+    QVariantMap args;
+    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QStringLiteral("conflictCount")] = -1;
+    hookMgr->doAction(HookNames::SyncConflictDetected, args);
+  }
   QMetaObject::invokeMethod(m_worker, "getConflicts", Qt::QueuedConnection,
                             Q_ARG(QString, p_notebookId));
 }
