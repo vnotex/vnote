@@ -273,12 +273,13 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
     if (isBundled) {
       auto *deleteAction = p_menu->addAction(tr("&Delete"));
       connect(deleteAction, &QAction::triggered, this,
-              [this, p_nodeId]() { deleteNodes(QList<NodeIdentifier>() << p_nodeId); });
+              [this, p_nodeId]() { deleteNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
 
       auto *removeAction = p_menu->addAction(tr("Remove from Notebook"));
       removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
-      connect(removeAction, &QAction::triggered, this,
-              [this, p_nodeId]() { removeNodesFromNotebook(QList<NodeIdentifier>() << p_nodeId); });
+      connect(removeAction, &QAction::triggered, this, [this, p_nodeId]() {
+        removeNodesFromNotebook(dedupeDescendants(resolveSelection(p_nodeId)));
+      });
     }
   }
 }
@@ -287,36 +288,12 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
                                                 bool p_isFolder) {
   if (p_nodeId.isValid()) {
     auto *copyAction = p_menu->addAction(tr("&Copy"));
-    connect(copyAction, &QAction::triggered, this, [this, p_nodeId]() {
-      // Use all selected nodes: try view first, then callback, finally fall back to context menu
-      // node
-      QList<NodeIdentifier> nodeIds;
-      if (m_view) {
-        nodeIds = m_view->selectedNodeIds();
-      } else if (m_selectedNodesCallback) {
-        nodeIds = m_selectedNodesCallback();
-      }
-      if (nodeIds.isEmpty()) {
-        nodeIds << p_nodeId;
-      }
-      copyNodes(nodeIds);
-    });
+    connect(copyAction, &QAction::triggered, this,
+            [this, p_nodeId]() { copyNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
 
     auto *cutAction = p_menu->addAction(tr("Cu&t"));
-    connect(cutAction, &QAction::triggered, this, [this, p_nodeId]() {
-      // Use all selected nodes: try view first, then callback, finally fall back to context menu
-      // node
-      QList<NodeIdentifier> nodeIds;
-      if (m_view) {
-        nodeIds = m_view->selectedNodeIds();
-      } else if (m_selectedNodesCallback) {
-        nodeIds = m_selectedNodesCallback();
-      }
-      if (nodeIds.isEmpty()) {
-        nodeIds << p_nodeId;
-      }
-      cutNodes(nodeIds);
-    });
+    connect(cutAction, &QAction::triggered, this,
+            [this, p_nodeId]() { cutNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
   }
 
   // Paste is available on any folder target, including root (invalid nodeId).

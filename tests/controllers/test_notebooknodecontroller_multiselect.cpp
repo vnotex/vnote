@@ -1,3 +1,4 @@
+#include <QDir>
 #include <QtTest>
 
 #include <controllers/notebooknodecontroller.h>
@@ -26,6 +27,35 @@ resolveSelectionForTest(const QList<vnotex::NodeIdentifier> &p_selection,
   return p_selection;
 }
 
+// Test-only helper mirroring NotebookNodeController::dedupeDescendants.
+// Removes nodes whose relativePath is a descendant of another node in the list
+// (same notebookId only). Preserves input order.
+static QList<vnotex::NodeIdentifier>
+dedupeDescendantsForTest(const QList<vnotex::NodeIdentifier> &p_ids) {
+  QList<vnotex::NodeIdentifier> result;
+  for (const auto &id : p_ids) {
+    bool isDescendant = false;
+    for (const auto &other : p_ids) {
+      if (id.notebookId != other.notebookId) {
+        continue;
+      }
+      if (id == other) {
+        continue;
+      }
+      QString otherPath = QDir::cleanPath(other.relativePath);
+      QString idPath = QDir::cleanPath(id.relativePath);
+      if (!otherPath.isEmpty() && idPath.startsWith(otherPath + QLatin1Char('/'))) {
+        isDescendant = true;
+        break;
+      }
+    }
+    if (!isDescendant) {
+      result.append(id);
+    }
+  }
+  return result;
+}
+
 class TestNotebookNodeControllerMultiSelect : public QObject {
   Q_OBJECT
 
@@ -33,6 +63,16 @@ private slots:
   void resolveSelection_emptySelection_returnsClicked();
   void resolveSelection_clickedInsideSelection_returnsFullSelection();
   void resolveSelection_clickedOutsideSelection_returnsClickedOnly();
+
+  // T5: action lambdas use resolveSelection + dedupeDescendants
+  void delete_multiSelection_resolvesAllIds();
+  void delete_parentAndChild_dropsChildFromBatch();
+  void delete_rightClickOutsideSelection_emitsClickedOnly();
+  void remove_multiSelection_resolvesAllIds();
+  void copy_rightClickOutsideSelection_resolvesClickedOnly();
+  void cut_rightClickOutsideSelection_resolvesClickedOnly();
+  void dedupe_parentAndChildSameNotebook_dropsChild();
+  void dedupe_differentNotebooks_keepsBoth();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -85,6 +125,112 @@ void TestNotebookNodeControllerMultiSelect::
 
   QCOMPARE(result.size(), 1);
   QCOMPARE(result.at(0), nodeD);
+}
+
+// T5 lambdas pipe resolveSelection -> dedupeDescendants -> deleteNodes/removeNodesFromNotebook/
+// copyNodes/cutNodes. These tests exercise that pipeline at the helper level (controller
+// construction requires 18+ services; mirroring the pure helpers matches the T3 pattern).
+
+void TestNotebookNodeControllerMultiSelect::delete_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, b);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  QCOMPARE(deduped.size(), 3);
+  QCOMPARE(deduped, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+void TestNotebookNodeControllerMultiSelect::delete_parentAndChild_dropsChildFromBatch() {
+  vnotex::NodeIdentifier parent, child, sibling;
+  parent.notebookId = child.notebookId = sibling.notebookId = "nb-1";
+  parent.relativePath = "folder";
+  child.relativePath = "folder/note.md";
+  sibling.relativePath = "other.md";
+
+  auto resolved = resolveSelectionForTest({parent, child, sibling}, parent);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  QCOMPARE(deduped.size(), 2);
+  QCOMPARE(deduped.at(0), parent);
+  QCOMPARE(deduped.at(1), sibling);
+}
+
+void TestNotebookNodeControllerMultiSelect::delete_rightClickOutsideSelection_emitsClickedOnly() {
+  vnotex::NodeIdentifier a, b, c, d;
+  a.notebookId = b.notebookId = c.notebookId = d.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+  d.relativePath = "d.md";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, d);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  QCOMPARE(deduped.size(), 1);
+  QCOMPARE(deduped.at(0), d);
+}
+
+void TestNotebookNodeControllerMultiSelect::remove_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b;
+  a.notebookId = b.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+
+  auto resolved = resolveSelectionForTest({a, b}, a);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  QCOMPARE(deduped, QList<vnotex::NodeIdentifier>({a, b}));
+}
+
+void TestNotebookNodeControllerMultiSelect::copy_rightClickOutsideSelection_resolvesClickedOnly() {
+  vnotex::NodeIdentifier a, b, clicked;
+  a.notebookId = b.notebookId = clicked.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  clicked.relativePath = "outside.md";
+
+  auto resolved = resolveSelectionForTest({a, b}, clicked);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  QCOMPARE(deduped.size(), 1);
+  QCOMPARE(deduped.at(0), clicked);
+}
+
+void TestNotebookNodeControllerMultiSelect::cut_rightClickOutsideSelection_resolvesClickedOnly() {
+  vnotex::NodeIdentifier a, b, clicked;
+  a.notebookId = b.notebookId = clicked.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  clicked.relativePath = "outside.md";
+
+  auto resolved = resolveSelectionForTest({a, b}, clicked);
+  auto deduped = dedupeDescendantsForTest(resolved);
+  QCOMPARE(deduped.size(), 1);
+  QCOMPARE(deduped.at(0), clicked);
+}
+
+void TestNotebookNodeControllerMultiSelect::dedupe_parentAndChildSameNotebook_dropsChild() {
+  vnotex::NodeIdentifier parent, child;
+  parent.notebookId = child.notebookId = "nb-1";
+  parent.relativePath = "folder";
+  child.relativePath = "folder/sub/note.md";
+
+  auto deduped = dedupeDescendantsForTest({parent, child});
+  QCOMPARE(deduped.size(), 1);
+  QCOMPARE(deduped.at(0), parent);
+}
+
+void TestNotebookNodeControllerMultiSelect::dedupe_differentNotebooks_keepsBoth() {
+  vnotex::NodeIdentifier a, b;
+  a.notebookId = "nb-1";
+  a.relativePath = "folder";
+  b.notebookId = "nb-2";
+  b.relativePath = "folder/note.md";
+
+  auto deduped = dedupeDescendantsForTest({a, b});
+  QCOMPARE(deduped.size(), 2);
+  QCOMPARE(deduped.at(0), a);
+  QCOMPARE(deduped.at(1), b);
 }
 
 } // namespace tests
