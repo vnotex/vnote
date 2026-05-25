@@ -93,6 +93,17 @@ private slots:
   void pin_multiSelection_resolvesAllIds();
   void reload_multiSelection_resolvesAllIds();
   void mark_multiSelection_resolvesAllIds();
+
+  // T11: single-arg back-compat. Each single-arg xxxNode(id) inline-delegates to
+  // xxxNodes({id}); pipeline equivalent yields the singleton, unchanged.
+  void singleArg_open_unchanged();
+  void singleArg_duplicate_unchanged();
+  void singleArg_delete_unchanged();
+  void singleArg_remove_unchanged();
+  void singleArg_copyPath_unchanged();
+  void singleArg_pin_unchanged();
+  void singleArg_reload_unchanged();
+  void singleArg_mark_unchanged();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -455,6 +466,90 @@ void TestNotebookNodeControllerMultiSelect::mark_multiSelection_resolvesAllIds()
   // follow-up, out of scope).
   QCOMPARE(resolved.size(), 3);
   QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+// T11: Single-arg back-compat regression. Each single-arg xxxNode(id) is now an
+// inline delegation to xxxNodes({id}). The pipeline equivalent for a singleton
+// input is just the singleton itself (no resolveSelection — single-arg methods
+// are direct entry points used by keyboard shortcuts, toolbars, and view
+// double-clicks that bypass right-click selection logic). We mirror that
+// contract here.
+
+static QList<vnotex::NodeIdentifier> singletonPipelineForTest(const vnotex::NodeIdentifier &p_id) {
+  return QList<vnotex::NodeIdentifier>{p_id};
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_open_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  auto result = singletonPipelineForTest(a);
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_duplicate_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "dup.md";
+  auto result = dedupeDescendantsForTest(singletonPipelineForTest(a));
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_delete_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "del.md";
+  auto result = dedupeDescendantsForTest(singletonPipelineForTest(a));
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_remove_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "rm.md";
+  auto result = dedupeDescendantsForTest(singletonPipelineForTest(a));
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_copyPath_unchanged() {
+  // Single-id copy path: exactly one absolute path, no trailing newline.
+  QStringList paths{"C:/notebooks/nb-1/single.md"};
+  QString result = copyPathsForTest(paths);
+  QCOMPARE(result, QStringLiteral("C:/notebooks/nb-1/single.md"));
+  QVERIFY(!result.endsWith("\n"));
+  QCOMPARE(result.split("\n").size(), 1);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_pin_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "pin.md";
+  // Pin/Reload/Mark do NOT dedupe (non-destructive); single-arg passes through.
+  auto result = singletonPipelineForTest(a);
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_reload_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "folder/note";
+  auto result = singletonPipelineForTest(a);
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
+}
+
+void TestNotebookNodeControllerMultiSelect::singleArg_mark_unchanged() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "mark.md";
+  auto result = singletonPipelineForTest(a);
+  QCOMPARE(result.size(), 1);
+  QCOMPARE(result.at(0), a);
 }
 
 } // namespace tests

@@ -309,3 +309,23 @@ add_qt_test(test_notebookexplorer2_fs_suppression
     vxcore
 )
 
+# T11: NotebookExplorer2 multi-select smoke (currently QSKIP — see test source
+# and .sisyphus/notepads/notebookexplorer2-multiselect-fix/issues.md for the
+# construction blocker). Registered so the slot exists for future expansion.
+# NOT GUILESS — QWidget needs QApplication.
+add_qt_test(test_notebookexplorer2_multiselect
+  SOURCES
+    test_notebookexplorer2_multiselect.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+
+add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebookexplorer2_multiselect>
+)
+
