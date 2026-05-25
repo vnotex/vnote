@@ -5,6 +5,7 @@
 #include <QClipboard>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QDir>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -109,6 +110,51 @@ void NotebookNodeController::setSelectedNodesCallback(SelectedNodesCallback p_ca
   m_selectedNodesCallback = p_callback;
 }
 
+QList<NodeIdentifier>
+NotebookNodeController::resolveSelection(const NodeIdentifier &p_clickedId) const {
+  QList<NodeIdentifier> sel;
+  if (m_selectedNodesCallback) {
+    sel = m_selectedNodesCallback();
+  } else if (m_view) {
+    sel = m_view->selectedNodeIds();
+  }
+  // Qt convention: right-click outside current selection operates on clicked row only.
+  if (sel.isEmpty() || !sel.contains(p_clickedId)) {
+    return {p_clickedId};
+  }
+  return sel;
+}
+
+QList<NodeIdentifier>
+NotebookNodeController::dedupeDescendants(const QList<NodeIdentifier> &p_ids) const {
+  QList<NodeIdentifier> result;
+  for (const auto &id : p_ids) {
+    // Check if this id is a descendant of any other id in the list
+    bool isDescendant = false;
+    for (const auto &other : p_ids) {
+      // Only compare nodes in the same notebook
+      if (id.notebookId != other.notebookId) {
+        continue;
+      }
+      // Skip if comparing with self
+      if (id == other) {
+        continue;
+      }
+      // Check if other is a prefix of id (path-segment-aware)
+      QString otherPath = QDir::cleanPath(other.relativePath);
+      QString idPath = QDir::cleanPath(id.relativePath);
+      if (!otherPath.isEmpty() && idPath.startsWith(otherPath + QLatin1Char('/'))) {
+        isDescendant = true;
+        break;
+      }
+    }
+    if (!isDescendant) {
+      result.append(id);
+    }
+  }
+  return result;
+}
+
 QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
                                                  QWidget *p_parent) {
   // Get node info to determine if it's a folder or external
@@ -168,9 +214,8 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
 
   // Ignore action - adds this node's name to the ignored list
   auto *ignoreAction = menu->addAction(tr("&Ignore"));
-  connect(ignoreAction, &QAction::triggered, this, [this, p_nodeId]() {
-    emit ignoreRequested(p_nodeId);
-  });
+  connect(ignoreAction, &QAction::triggered, this,
+          [this, p_nodeId]() { emit ignoreRequested(p_nodeId); });
 
   menu->addSeparator();
 
@@ -476,11 +521,10 @@ void NotebookNodeController::addOpenWithSubmenu(QMenu *p_parentMenu,
   }
 
   auto *defaultAction = subMenu->addAction(tr("System Default App"));
-  connect(defaultAction, &QAction::triggered, this,
-          [this, p_nodeId]() {
-            openNodeWithDefaultApp(p_nodeId);
-            closeOrphanedBuffer(p_nodeId);
-          });
+  connect(defaultAction, &QAction::triggered, this, [this, p_nodeId]() {
+    openNodeWithDefaultApp(p_nodeId);
+    closeOrphanedBuffer(p_nodeId);
+  });
 
   p_parentMenu->addMenu(subMenu);
 }
@@ -496,8 +540,8 @@ void NotebookNodeController::closeOrphanedBuffer(const NodeIdentifier &p_nodeId)
   QString bufferId;
   for (const auto &bufVal : buffers) {
     auto obj = bufVal.toObject();
-    if (obj[QStringLiteral("notebookId")].toString() == p_nodeId.notebookId
-        && obj[QStringLiteral("relativePath")].toString() == p_nodeId.relativePath) {
+    if (obj[QStringLiteral("notebookId")].toString() == p_nodeId.notebookId &&
+        obj[QStringLiteral("relativePath")].toString() == p_nodeId.relativePath) {
       bufferId = obj[QStringLiteral("id")].toString();
       break;
     }
@@ -1183,4 +1227,59 @@ void NotebookNodeController::handleImportFolder(const NodeIdentifier &p_targetFo
 
   // TODO: Implement folder import via NotebookService when available
   emit infoMessage(tr("Import"), tr("Folder import not yet implemented in new architecture."));
+}
+
+// Multi-node list overload stubs - each loops the corresponding single-arg method
+void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
+  for (const auto &id : p_ids) {
+    openNode(id);
+  }
+}
+
+void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p_ids,
+                                                  const QString &p_commandTemplate) {
+  for (const auto &id : p_ids) {
+    QString path = buildAbsolutePath(id);
+    if (path.isEmpty()) {
+      continue;
+    }
+    SessionConfig::ExternalProgram tempProg;
+    tempProg.m_command = p_commandTemplate;
+    QString cmd = tempProg.fetchCommand(path);
+    if (cmd.isEmpty()) {
+      continue;
+    }
+    ProcessUtils::startDetached(cmd);
+    closeOrphanedBuffer(id);
+  }
+}
+
+void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &p_ids) {
+  for (const auto &id : p_ids) {
+    duplicateNode(id);
+  }
+}
+
+void NotebookNodeController::copyNodePaths(const QList<NodeIdentifier> &p_ids) {
+  for (const auto &id : p_ids) {
+    copyNodePath(id);
+  }
+}
+
+void NotebookNodeController::pinNodesToQuickAccess(const QList<NodeIdentifier> &p_ids) {
+  for (const auto &id : p_ids) {
+    pinNodeToQuickAccess(id);
+  }
+}
+
+void NotebookNodeController::reloadNodes(const QList<NodeIdentifier> &p_ids) {
+  for (const auto &id : p_ids) {
+    reloadNode(id);
+  }
+}
+
+void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids) {
+  for (const auto &id : p_ids) {
+    markNode(id);
+  }
 }

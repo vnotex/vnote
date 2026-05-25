@@ -79,6 +79,15 @@ public:
   void pinNodeToQuickAccess(const NodeIdentifier &p_nodeId);
   void manageNodeTags(const NodeIdentifier &p_nodeId);
 
+  // Multi-node operations (list overloads)
+  void openNodes(const QList<NodeIdentifier> &p_ids);
+  void openNodesWithCommand(const QList<NodeIdentifier> &p_ids, const QString &p_commandTemplate);
+  void duplicateNodes(const QList<NodeIdentifier> &p_ids);
+  void copyNodePaths(const QList<NodeIdentifier> &p_ids);
+  void pinNodesToQuickAccess(const QList<NodeIdentifier> &p_ids);
+  void reloadNodes(const QList<NodeIdentifier> &p_ids);
+  void markNodes(const QList<NodeIdentifier> &p_ids);
+
   // Check if clipboard has nodes to paste
   bool canPaste() const;
 
@@ -137,6 +146,15 @@ public:
   NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;
 
 private:
+  // Resolve selection following Qt right-click convention:
+  // - If clicked node is in current selection, return full selection
+  // - Otherwise, return clicked node only
+  QList<NodeIdentifier> resolveSelection(const NodeIdentifier &p_clickedId) const;
+
+  // Deduplicate descendant nodes - remove any node whose relativePath is a descendant
+  // of another node in the list (same notebookId only). Preserves input order.
+  QList<NodeIdentifier> dedupeDescendants(const QList<NodeIdentifier> &p_ids) const;
+
   // Add actions to context menu based on node type
   void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
   void addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
