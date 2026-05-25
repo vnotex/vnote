@@ -155,6 +155,10 @@ private:
   // of another node in the list (same notebookId only). Preserves input order.
   QList<NodeIdentifier> dedupeDescendants(const QList<NodeIdentifier> &p_ids) const;
 
+  // Check if clicked node represents a single effective selection (for action enable/disable).
+  // Returns true if resolveSelection(p_clickedId).size() == 1.
+  bool isSingleEffectiveSelection(const NodeIdentifier &p_clickedId) const;
+
   // Add actions to context menu based on node type
   void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
   void addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);

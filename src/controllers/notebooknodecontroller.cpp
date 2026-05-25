@@ -155,6 +155,10 @@ NotebookNodeController::dedupeDescendants(const QList<NodeIdentifier> &p_ids) co
   return result;
 }
 
+bool NotebookNodeController::isSingleEffectiveSelection(const NodeIdentifier &p_clickedId) const {
+  return resolveSelection(p_clickedId).size() == 1;
+}
+
 QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
                                                  QWidget *p_parent) {
   // Get node info to determine if it's a folder or external
@@ -198,6 +202,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   if (!isFolder) {
     auto *openAction = menu->addAction(tr("&Open"));
     connect(openAction, &QAction::triggered, this, [this, p_nodeId]() { openNode(p_nodeId); });
+    openAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
     addOpenWithSubmenu(menu, p_nodeId);
 
@@ -209,6 +214,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   importAction->setToolTip(tr("Add this external item to the notebook index"));
   connect(importAction, &QAction::triggered, this,
           [this, p_nodeId]() { importExternalNode(p_nodeId); });
+  importAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   menu->addSeparator();
 
@@ -216,6 +222,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   auto *ignoreAction = menu->addAction(tr("&Ignore"));
   connect(ignoreAction, &QAction::triggered, this,
           [this, p_nodeId]() { emit ignoreRequested(p_nodeId); });
+  ignoreAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   menu->addSeparator();
 
@@ -223,6 +230,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   auto *locateAction = menu->addAction(tr("Open &Location"));
   connect(locateAction, &QAction::triggered, this,
           [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
+  locateAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   return menu;
 }
@@ -235,10 +243,12 @@ void NotebookNodeController::addNewActions(QMenu *p_menu, const NodeIdentifier &
   auto *newNoteAction = p_menu->addAction(tr("New &Note"));
   connect(newNoteAction, &QAction::triggered, this,
           [this, targetFolder]() { newNote(targetFolder); });
+  newNoteAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   auto *newFolderAction = p_menu->addAction(tr("New &Folder"));
   connect(newFolderAction, &QAction::triggered, this,
           [this, targetFolder]() { newFolder(targetFolder); });
+  newFolderAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 }
 
 void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
@@ -265,6 +275,7 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
 
   auto *renameAction = p_menu->addAction(tr("&Rename"));
   connect(renameAction, &QAction::triggered, this, [this, p_nodeId]() { renameNode(p_nodeId); });
+  renameAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   {
     auto *notebookService = m_services.get<NotebookCoreService>();
@@ -308,6 +319,7 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
       auto *pasteAction = p_menu->addAction(tr("&Paste"));
       connect(pasteAction, &QAction::triggered, this,
               [this, targetFolder]() { pasteNodes(targetFolder); });
+      pasteAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
     }
   }
 
@@ -326,6 +338,7 @@ void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIde
   if (p_nodeId.isValid()) {
     auto *exportAction = p_menu->addAction(tr("&Export"));
     connect(exportAction, &QAction::triggered, this, [this, p_nodeId]() { exportNode(p_nodeId); });
+    exportAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
   }
 }
 
@@ -341,10 +354,12 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
   auto *locateAction = p_menu->addAction(tr("Open &Location"));
   connect(locateAction, &QAction::triggered, this,
           [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
+  locateAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   auto *propertiesAction = p_menu->addAction(tr("P&roperties"));
   connect(propertiesAction, &QAction::triggered, this,
           [this, p_nodeId]() { showNodeProperties(p_nodeId); });
+  propertiesAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   {
     auto *notebookService = m_services.get<NotebookCoreService>();
@@ -355,6 +370,7 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
       auto *tagAction = p_menu->addAction(tr("&Tags"));
       connect(tagAction, &QAction::triggered, this,
               [this, p_nodeId]() { manageNodeTags(p_nodeId); });
+      tagAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
     }
   }
 }

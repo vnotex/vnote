@@ -28,6 +28,13 @@ resolveSelectionForTest(const QList<vnotex::NodeIdentifier> &p_selection,
   return p_selection;
 }
 
+// Test-only helper mirroring NotebookNodeController::isSingleEffectiveSelection.
+// Returns true iff resolveSelection(selection, clicked).size() == 1.
+static bool isSingleEffectiveSelectionForTest(const QList<vnotex::NodeIdentifier> &p_selection,
+                                              const vnotex::NodeIdentifier &p_clicked) {
+  return resolveSelectionForTest(p_selection, p_clicked).size() == 1;
+}
+
 // Test-only helper mirroring NotebookNodeController::dedupeDescendants.
 // Removes nodes whose relativePath is a descendant of another node in the list
 // (same notebookId only). Preserves input order.
@@ -64,6 +71,11 @@ private slots:
   void resolveSelection_emptySelection_returnsClicked();
   void resolveSelection_clickedInsideSelection_returnsFullSelection();
   void resolveSelection_clickedOutsideSelection_returnsClickedOnly();
+
+  // T1: isSingleEffectiveSelection helper
+  void isSingleEffectiveSelection_singleSelection_returnsTrue();
+  void isSingleEffectiveSelection_multiSelectionClickedInside_returnsFalse();
+  void isSingleEffectiveSelection_clickedOutsideSelection_returnsTrue();
 
   // T5: action lambdas use resolveSelection + dedupeDescendants
   void delete_multiSelection_resolvesAllIds();
@@ -550,6 +562,45 @@ void TestNotebookNodeControllerMultiSelect::singleArg_mark_unchanged() {
   auto result = singletonPipelineForTest(a);
   QCOMPARE(result.size(), 1);
   QCOMPARE(result.at(0), a);
+}
+
+// T1: isSingleEffectiveSelection helper tests (mirrors resolveSelection contract)
+void TestNotebookNodeControllerMultiSelect::
+    isSingleEffectiveSelection_singleSelection_returnsTrue() {
+  vnotex::NodeIdentifier a;
+  a.notebookId = "nb-1";
+  a.relativePath = "a.md";
+
+  // Single-node selection, clicked same node → selection is [a], size == 1
+  bool result = isSingleEffectiveSelectionForTest({a}, a);
+  QVERIFY(result == true);
+}
+
+void TestNotebookNodeControllerMultiSelect::
+    isSingleEffectiveSelection_multiSelectionClickedInside_returnsFalse() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  // Multi-selection [a,b,c], clicked b (inside) → selection is [a,b,c], size == 3
+  bool result = isSingleEffectiveSelectionForTest({a, b, c}, b);
+  QVERIFY(result == false);
+}
+
+void TestNotebookNodeControllerMultiSelect::
+    isSingleEffectiveSelection_clickedOutsideSelection_returnsTrue() {
+  vnotex::NodeIdentifier a, b, c, d;
+  a.notebookId = b.notebookId = c.notebookId = d.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+  d.relativePath = "d.md";
+
+  // Multi-selection [a,b,c], clicked d (outside) → selection is [d], size == 1
+  bool result = isSingleEffectiveSelectionForTest({a, b, c}, d);
+  QVERIFY(result == true);
 }
 
 } // namespace tests
