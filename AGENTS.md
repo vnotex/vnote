@@ -424,6 +424,8 @@ Without this affordance, users who disable sync cannot re-enable without recreat
 
 VNote consumes vxcore as an embedded library following the contract documented in `libs/vxcore/AGENTS.md` § Library Integration Contract. Vxcore emits facts (events, dirty marks); VNote owns sync scheduling policy via `SyncService` + `SyncWorkQueueManager` (see `src/core/services/AGENTS.md` § SyncService). Vxcore must NOT contain Qt-side concerns (no `QTimer`, no `QObject`, no scheduling policy); VNote must NOT bypass the contract by reaching into vxcore internals (no direct backend calls, no touching libgit2, no `states_` mutation). The 4-layer ownership table lives in the vxcore doc to avoid duplication.
 
+**Qt-side scheduling shape (post May 2026 audit).** `SyncService::onSyncShouldRun` enqueues immediately via `SyncWorkQueueManager` with `coalesceKey="trigger"`; concurrent triggers per notebook collapse into one in-flight sync. There is intentionally NO Qt-side debounce timer today — vxcore's `SyncConfig::interval_seconds` is a hint, not a schedule, and the coalesce key is sufficient to dedupe bursts. A future enhancement may introduce an optional debounce window in `SyncService` (seeded from `interval_seconds`, clamped to a small range) but it stays one layer above `SyncWorkQueueManager` so queue semantics are unchanged.
+
 ---
 
 ## Code Style Guidelines
