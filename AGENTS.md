@@ -420,6 +420,10 @@ S0 notebooks expose a re-enable surface via the same Sync button and Sync Info m
 
 Without this affordance, users who disable sync cannot re-enable without recreating the notebook.
 
+### Sync Architecture Layers
+
+VNote consumes vxcore as an embedded library following the contract documented in `libs/vxcore/AGENTS.md` § Library Integration Contract. Vxcore emits facts (events, dirty marks); VNote owns sync scheduling policy via `SyncService` + `SyncWorkQueueManager` (see `src/core/services/AGENTS.md` § SyncService). Vxcore must NOT contain Qt-side concerns (no `QTimer`, no `QObject`, no scheduling policy); VNote must NOT bypass the contract by reaching into vxcore internals (no direct backend calls, no touching libgit2, no `states_` mutation). The 4-layer ownership table lives in the vxcore doc to avoid duplication.
+
 ---
 
 ## Code Style Guidelines
