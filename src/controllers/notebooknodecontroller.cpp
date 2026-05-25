@@ -365,12 +365,13 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
   Q_UNUSED(p_isFolder);
 
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
-  connect(reloadAction, &QAction::triggered, this, [this, p_nodeId]() { reloadNode(p_nodeId); });
+  connect(reloadAction, &QAction::triggered, this,
+          [this, p_nodeId]() { reloadNodes(resolveSelection(p_nodeId)); });
 
   if (p_nodeId.isValid()) {
     auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
     connect(pinAction, &QAction::triggered, this,
-            [this, p_nodeId]() { pinNodeToQuickAccess(p_nodeId); });
+            [this, p_nodeId]() { pinNodesToQuickAccess(resolveSelection(p_nodeId)); });
 
     auto *notebookService = m_services.get<NotebookCoreService>();
     QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
@@ -378,7 +379,8 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
     bool isBundled = (nbType == QStringLiteral("bundled"));
     if (!p_nodeId.isRoot() && isBundled) {
       auto *markAction = p_menu->addAction(tr("&Mark"));
-      connect(markAction, &QAction::triggered, this, [this, p_nodeId]() { markNode(p_nodeId); });
+      connect(markAction, &QAction::triggered, this,
+              [this, p_nodeId]() { markNodes(resolveSelection(p_nodeId)); });
     }
   }
 }
@@ -719,11 +721,8 @@ void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
 }
 
 void NotebookNodeController::markNode(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid()) {
-    return;
-  }
-
-  emit markRequested(p_nodeId);
+  // Delegate to list version (single source of truth).
+  markNodes({p_nodeId});
 }
 
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
@@ -803,16 +802,8 @@ void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
 }
 
 void NotebookNodeController::reloadNode(const NodeIdentifier &p_nodeId) {
-  if (p_nodeId.isValid()) {
-    auto event = QSharedPointer<Event>::create();
-    emit nodeAboutToReload(p_nodeId, event);
-
-    if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
-      nbModel->reloadNode(p_nodeId);
-    }
-  } else {
-    reloadAll();
-  }
+  // Delegate to list version (single source of truth).
+  reloadNodes({p_nodeId});
 }
 
 void NotebookNodeController::reloadAll() {
@@ -822,46 +813,8 @@ void NotebookNodeController::reloadAll() {
 }
 
 void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &p_nodeId) {
-  auto *notebookSvc = m_services.get<NotebookCoreService>();
-
-  // Build absolute path.
-  QString absolutePath = notebookSvc->buildAbsolutePath(p_nodeId.notebookId, p_nodeId.relativePath);
-  if (absolutePath.isEmpty()) {
-    qWarning() << "pinNodeToQuickAccess: failed to build absolute path for"
-               << p_nodeId.relativePath;
-    return;
-  }
-
-  // Look up UUID from file info.
-  QString uuid;
-  QJsonObject fileInfo = notebookSvc->getFileInfo(p_nodeId.notebookId, p_nodeId.relativePath);
-  if (!fileInfo.isEmpty() && fileInfo.contains(QStringLiteral("id"))) {
-    uuid = fileInfo[QStringLiteral("id")].toString();
-  }
-
-  // Get current items and check for duplicates.
-  auto *configMgr = m_services.get<ConfigMgr2>();
-  auto &sessionConfig = configMgr->getSessionConfig();
-  auto items = sessionConfig.getQuickAccessItems();
-
-  for (const auto &existing : items) {
-    if (existing.m_path == absolutePath) {
-      // Already exists — skip.
-      emit infoMessage(tr("Quick Access"), tr("Already in Quick Access."));
-      return;
-    }
-  }
-
-  // Build and append new item.
-  SessionConfig::QuickAccessItem item;
-  item.m_path = absolutePath;
-  item.m_openMode = QuickAccessOpenMode::Default;
-  item.m_uuid = uuid;
-  items.append(item);
-
-  sessionConfig.setQuickAccessItems(items);
-
-  emit infoMessage(tr("Quick Access"), tr("Pinned to Quick Access."));
+  // Delegate to list version (single source of truth).
+  pinNodesToQuickAccess({p_nodeId});
 }
 
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
@@ -1279,19 +1232,104 @@ void NotebookNodeController::copyNodePaths(const QList<NodeIdentifier> &p_ids) {
 }
 
 void NotebookNodeController::pinNodesToQuickAccess(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty()) {
+    return;
+  }
+
+  auto *notebookSvc = m_services.get<NotebookCoreService>();
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!notebookSvc || !configMgr) {
+    return;
+  }
+
+  auto &sessionConfig = configMgr->getSessionConfig();
+  auto items = sessionConfig.getQuickAccessItems();
+
+  int pinned = 0;
+  int duplicates = 0;
+  int failures = 0;
+
   for (const auto &id : p_ids) {
-    pinNodeToQuickAccess(id);
+    QString absolutePath = notebookSvc->buildAbsolutePath(id.notebookId, id.relativePath);
+    if (absolutePath.isEmpty()) {
+      qWarning() << "pinNodesToQuickAccess: failed to build absolute path for" << id.relativePath;
+      ++failures;
+      continue;
+    }
+
+    // Skip duplicates (compare against current working list).
+    bool isDup = false;
+    for (const auto &existing : items) {
+      if (existing.m_path == absolutePath) {
+        isDup = true;
+        break;
+      }
+    }
+    if (isDup) {
+      ++duplicates;
+      continue;
+    }
+
+    // Look up UUID from file info.
+    QString uuid;
+    QJsonObject fileInfo = notebookSvc->getFileInfo(id.notebookId, id.relativePath);
+    if (!fileInfo.isEmpty() && fileInfo.contains(QStringLiteral("id"))) {
+      uuid = fileInfo[QStringLiteral("id")].toString();
+    }
+
+    SessionConfig::QuickAccessItem item;
+    item.m_path = absolutePath;
+    item.m_openMode = QuickAccessOpenMode::Default;
+    item.m_uuid = uuid;
+    items.append(item);
+    ++pinned;
+  }
+
+  if (pinned > 0) {
+    sessionConfig.setQuickAccessItems(items);
+  }
+
+  if (failures > 0) {
+    qWarning() << "pinNodesToQuickAccess: pinned" << pinned << "duplicates" << duplicates
+               << "failures" << failures << "of" << p_ids.size();
+  }
+
+  if (pinned > 0 && duplicates == 0) {
+    emit infoMessage(tr("Quick Access"), tr("Pinned %1 item(s) to Quick Access.").arg(pinned));
+  } else if (pinned == 0 && duplicates > 0) {
+    emit infoMessage(tr("Quick Access"), tr("Already in Quick Access."));
+  } else if (pinned > 0 && duplicates > 0) {
+    emit infoMessage(tr("Quick Access"),
+                     tr("Pinned %1 item(s); %2 already present.").arg(pinned).arg(duplicates));
   }
 }
 
 void NotebookNodeController::reloadNodes(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty()) {
+    return;
+  }
+
+  auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model);
   for (const auto &id : p_ids) {
-    reloadNode(id);
+    if (id.isValid()) {
+      auto event = QSharedPointer<Event>::create();
+      emit nodeAboutToReload(id, event);
+      if (nbModel) {
+        nbModel->reloadNode(id);
+      }
+    } else {
+      reloadAll();
+    }
   }
 }
 
 void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids) {
+  // Note: emits markRequested per node; batch mark dialog coalescing is a known
+  // follow-up, out of scope for this change.
   for (const auto &id : p_ids) {
-    markNode(id);
+    if (!id.isValid()) {
+      continue;
+    }
+    emit markRequested(id);
   }
 }

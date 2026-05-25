@@ -88,6 +88,11 @@ private slots:
   // T9: copyPath mirrors buildAbsolutePath + join with newline
   void copyPath_singleNode_unchangedBehavior();
   void copyPath_multiSelection_newlineJoined();
+
+  // T10: pin / reload / mark resolve full selection through list overloads
+  void pin_multiSelection_resolvesAllIds();
+  void reload_multiSelection_resolvesAllIds();
+  void mark_multiSelection_resolvesAllIds();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -398,6 +403,58 @@ void TestNotebookNodeControllerMultiSelect::copyPath_multiSelection_newlineJoine
   QCOMPARE(split.at(0), "C:/notebooks/notebook1/a.md");
   QCOMPARE(split.at(1), "C:/notebooks/notebook1/b.md");
   QCOMPARE(split.at(2), "C:/notebooks/notebook1/c.md");
+}
+
+// T10: Pin / Reload / Mark route through resolveSelection then call the list overload.
+// Production: lambdas in addMiscActions emit
+//   reloadNodes(resolveSelection(p_nodeId))
+//   pinNodesToQuickAccess(resolveSelection(p_nodeId))
+//   markNodes(resolveSelection(p_nodeId))
+// The list overloads iterate the input ids (markNodes emits markRequested per id;
+// reloadNodes emits nodeAboutToReload + nbModel->reloadNode per id;
+// pinNodesToQuickAccess appends each id to QuickAccess items, skipping duplicates).
+// No dedupeDescendants for these (Pin/Reload/Mark are non-destructive — descendant
+// duplicates are harmless; matches Open semantics from T7).
+// Controller construction needs 18+ services, so we mirror the resolve pipeline.
+
+void TestNotebookNodeControllerMultiSelect::pin_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, b);
+  // pinNodesToQuickAccess does NOT dedupeDescendants — pinning is non-destructive.
+  QCOMPARE(resolved.size(), 3);
+  QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+void TestNotebookNodeControllerMultiSelect::reload_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "folder/a";
+  b.relativePath = "folder/b";
+  c.relativePath = "folder/c";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, a);
+  // reloadNodes iterates the full selection; nodeAboutToReload + model reload fire per id.
+  QCOMPARE(resolved.size(), 3);
+  QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+void TestNotebookNodeControllerMultiSelect::mark_multiSelection_resolvesAllIds() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  auto resolved = resolveSelectionForTest({a, b, c}, c);
+  // markNodes emits markRequested per id (batch mark dialog coalescing is a known
+  // follow-up, out of scope).
+  QCOMPARE(resolved.size(), 3);
+  QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
 }
 
 } // namespace tests
