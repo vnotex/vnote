@@ -1094,19 +1094,19 @@ void SyncService::onSyncConflictFiles(const QString &p_notebookId, const QString
 // do NOT emit syncFailed (auto-sync is opportunistic).
 void SyncService::onSyncShouldRun(const QString &p_notebookId) {
   if (m_shutDown) {
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: shutting down for"
-                          << p_notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: shutting down for"
+                         << p_notebookId;
     return;
   }
   if (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId)) {
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: notebook not ready"
-                          << p_notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: notebook not ready"
+                         << p_notebookId;
     return;
   }
   auto *workQueue = m_workQueue;
   if (!workQueue) {
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: SyncWorkQueueManager unavailable for"
-                          << p_notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: SyncWorkQueueManager unavailable for"
+                         << p_notebookId;
     return;
   }
 
@@ -1125,17 +1125,17 @@ void SyncService::onSyncShouldRun(const QString &p_notebookId) {
       workQueue->enqueue(notebookId, work, /*onCancelled=*/nullptr, QStringLiteral("trigger"));
   switch (result) {
   case SyncWorkQueueManager::EnqueueResult::Accepted:
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync enqueued for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync enqueued for" << notebookId;
     return;
   case SyncWorkQueueManager::EnqueueResult::Coalesced:
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync coalesced for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync coalesced for" << notebookId;
     return;
   case SyncWorkQueueManager::EnqueueResult::QueueFull:
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync dropped (queue full) for"
-                          << notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync dropped (queue full) for"
+                         << notebookId;
     return;
   case SyncWorkQueueManager::EnqueueResult::Rejected:
-    qCDebug(syncCategory) << "SyncService::onSyncShouldRun: auto-sync rejected for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync rejected for" << notebookId;
     return;
   }
 }

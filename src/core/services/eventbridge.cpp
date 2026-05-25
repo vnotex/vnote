@@ -46,6 +46,9 @@ void EventBridge::onVxCoreEvent(const char *event_name, const char *json_data, v
           .object();
   const QString notebookId = payload.value(QStringLiteral("notebookId")).toString();
 
+  qInfo() << "EventBridge::onVxCoreEvent: received event=" << evName
+          << " notebookId=" << notebookId;
+
   if (evName == QStringLiteral("sync.started")) {
     QMetaObject::invokeMethod(
         self, [self, notebookId]() { emit self->syncStarted(notebookId); }, Qt::QueuedConnection);
@@ -72,6 +75,7 @@ void EventBridge::onVxCoreEvent(const char *event_name, const char *json_data, v
         self, [self, notebookId, files]() { emit self->syncConflictFiles(notebookId, files); },
         Qt::QueuedConnection);
   } else if (evName == QStringLiteral("sync.should_run")) {
+    qInfo() << "EventBridge: routing syncShouldRun for" << notebookId;
     QMetaObject::invokeMethod(
         self, [self, notebookId]() { emit self->syncShouldRun(notebookId); }, Qt::QueuedConnection);
   } else {
