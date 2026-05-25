@@ -125,3 +125,11 @@ add_custom_command(TARGET test_notebooksyncinfocontroller POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_notebooksyncinfocontroller>
 )
+
+add_qt_test(test_notebooknodecontroller_multiselect
+  SOURCES
+    test_notebooknodecontroller_multiselect.cpp
+  LINKS
+    Qt6::Core
+  GUILESS
+)
