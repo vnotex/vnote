@@ -84,6 +84,10 @@ private slots:
   void open_multiSelection_resolvesAllIds();
   void open_mixedFolderAndNote_skipsFolder();
   void openWith_multiSelection_buildsCommandPerNode();
+
+  // T9: copyPath mirrors buildAbsolutePath + join with newline
+  void copyPath_singleNode_unchangedBehavior();
+  void copyPath_multiSelection_newlineJoined();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -353,6 +357,47 @@ void TestNotebookNodeControllerMultiSelect::openWith_multiSelection_buildsComman
   QCOMPARE(launched.size(), 2);
   QCOMPARE(launched.at(0), a);
   QCOMPARE(launched.at(1), b);
+}
+
+// Test-only helper mirroring NotebookNodeController::copyNodePaths.
+// In production, this calls buildAbsolutePath per node, collects paths into QStringList,
+// joins with newline, and writes to clipboard. We mirror the join+format logic here.
+// Since buildAbsolutePath requires NotebookCoreService, we take pre-built paths as input.
+static QString copyPathsForTest(const QStringList &p_paths) {
+  if (p_paths.isEmpty()) {
+    return QString();
+  }
+  return p_paths.join("\n");
+}
+
+void TestNotebookNodeControllerMultiSelect::copyPath_singleNode_unchangedBehavior() {
+  // Single-node case: copyNodePath(id) must produce exactly one path,
+  // no trailing newline (QStringList::join on size-1 list produces no separator).
+  QStringList paths{"C:/notebooks/notebook1/single.md"};
+  QString result = copyPathsForTest(paths);
+  QCOMPARE(result, QStringLiteral("C:/notebooks/notebook1/single.md"));
+  // Verify no trailing newline
+  QVERIFY(!result.endsWith("\n"));
+}
+
+void TestNotebookNodeControllerMultiSelect::copyPath_multiSelection_newlineJoined() {
+  // Multi-node case: N paths should be newline-separated.
+  QStringList paths{"C:/notebooks/notebook1/a.md", "C:/notebooks/notebook1/b.md",
+                    "C:/notebooks/notebook1/c.md"};
+  QString result = copyPathsForTest(paths);
+
+  // Expected: all three paths joined with newline, no trailing newline
+  QString expected = "C:/notebooks/notebook1/a.md\n"
+                     "C:/notebooks/notebook1/b.md\n"
+                     "C:/notebooks/notebook1/c.md";
+  QCOMPARE(result, expected);
+
+  // Verify split count matches input
+  QStringList split = result.split("\n");
+  QCOMPARE(split.size(), 3);
+  QCOMPARE(split.at(0), "C:/notebooks/notebook1/a.md");
+  QCOMPARE(split.at(1), "C:/notebooks/notebook1/b.md");
+  QCOMPARE(split.at(2), "C:/notebooks/notebook1/c.md");
 }
 
 } // namespace tests

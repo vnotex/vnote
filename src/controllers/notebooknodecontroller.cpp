@@ -337,7 +337,7 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
 
   auto *copyPathAction = p_menu->addAction(tr("Copy &Path"));
   connect(copyPathAction, &QAction::triggered, this,
-          [this, p_nodeId]() { copyNodePath(p_nodeId); });
+          [this, p_nodeId]() { copyNodePaths(resolveSelection(p_nodeId)); });
 
   auto *locateAction = p_menu->addAction(tr("Open &Location"));
   connect(locateAction, &QAction::triggered, this,
@@ -779,14 +779,7 @@ void NotebookNodeController::showNodeProperties(const NodeIdentifier &p_nodeId) 
 }
 
 void NotebookNodeController::copyNodePath(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid()) {
-    return;
-  }
-
-  QString path = buildAbsolutePath(p_nodeId);
-  if (!path.isEmpty()) {
-    QApplication::clipboard()->setText(path);
-  }
+  copyNodePaths({p_nodeId});
 }
 
 void NotebookNodeController::locateNodeInFileManager(const NodeIdentifier &p_nodeId) {
@@ -1271,8 +1264,17 @@ void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &p_ids) 
 }
 
 void NotebookNodeController::copyNodePaths(const QList<NodeIdentifier> &p_ids) {
+  QStringList paths;
   for (const auto &id : p_ids) {
-    copyNodePath(id);
+    QString path = buildAbsolutePath(id);
+    if (!path.isEmpty()) {
+      paths.append(path);
+    }
+  }
+
+  if (!paths.isEmpty()) {
+    QString joinedPaths = paths.join("\n");
+    QApplication::clipboard()->setText(joinedPaths);
   }
 }
 
