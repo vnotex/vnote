@@ -135,7 +135,7 @@ signals:
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);
 
-  void markRequested(const NodeIdentifier &p_nodeId);
+  void markRequested(const QList<NodeIdentifier> &p_ids);
 
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 

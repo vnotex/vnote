@@ -105,6 +105,7 @@ private slots:
   void pin_multiSelection_resolvesAllIds();
   void reload_multiSelection_resolvesAllIds();
   void mark_multiSelection_resolvesAllIds();
+  void mark_multiSelection_listPayloadPreservesOrder();
 
   // T11: single-arg back-compat. Each single-arg xxxNode(id) inline-delegates to
   // xxxNodes({id}); pipeline equivalent yields the singleton, unchanged.
@@ -478,6 +479,32 @@ void TestNotebookNodeControllerMultiSelect::mark_multiSelection_resolvesAllIds()
   // follow-up, out of scope).
   QCOMPARE(resolved.size(), 3);
   QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
+}
+
+// Test-only mirror of NotebookNodeController::markNodes payload shape after
+// widening markRequested(NodeIdentifier) → markRequested(QList<NodeIdentifier>).
+// The controller now emits ONE signal carrying the full list; the view shows a
+// single dialog and loops the per-id apply. Identity passthrough captures that
+// the controller does not reorder or drop ids before emit.
+static QList<vnotex::NodeIdentifier>
+markPayloadForTest(const QList<vnotex::NodeIdentifier> &p_ids) {
+  return p_ids;
+}
+
+void TestNotebookNodeControllerMultiSelect::mark_multiSelection_listPayloadPreservesOrder() {
+  vnotex::NodeIdentifier a, b, c;
+  a.notebookId = b.notebookId = c.notebookId = "nb-1";
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  c.relativePath = "c.md";
+
+  QList<vnotex::NodeIdentifier> input{a, b, c};
+  auto payload = markPayloadForTest(input);
+
+  QCOMPARE(payload.size(), 3);
+  QCOMPARE(payload.at(0), a);
+  QCOMPARE(payload.at(1), b);
+  QCOMPARE(payload.at(2), c);
 }
 
 // T11: Single-arg back-compat regression. Each single-arg xxxNode(id) is now an

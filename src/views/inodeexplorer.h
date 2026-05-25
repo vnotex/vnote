@@ -120,7 +120,7 @@ signals:
   void deleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
-  void markRequested(const NodeIdentifier &p_nodeId);
+  void markRequested(const QList<NodeIdentifier> &p_ids);
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 
   void manageTagsRequested(const NodeIdentifier &p_nodeId);

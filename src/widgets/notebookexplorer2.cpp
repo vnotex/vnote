@@ -1383,16 +1383,24 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
   dialog.exec();
 }
 
-void NotebookExplorer2::onMarkRequested(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid() || !m_nodeExplorer) {
+void NotebookExplorer2::onMarkRequested(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty() || !m_nodeExplorer) {
     return;
   }
 
-  NodeInfo nodeInfo = m_nodeExplorer->getNodeInfo(p_nodeId);
+  NodeInfo seedInfo = m_nodeExplorer->getNodeInfo(p_ids.first());
 
-  MarkNodeDialog2 dialog(nodeInfo.textColor, nodeInfo.backgroundColor, window());
-  if (dialog.exec() == QDialog::Accepted) {
-    m_nodeExplorer->handleMarkResult(p_nodeId, dialog.textColor(), dialog.backgroundColor());
+  MarkNodeDialog2 dialog(seedInfo.textColor, seedInfo.backgroundColor, window());
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  const QString textColor = dialog.textColor();
+  const QString backgroundColor = dialog.backgroundColor();
+  for (const auto &id : p_ids) {
+    if (id.isValid()) {
+      m_nodeExplorer->handleMarkResult(id, textColor, backgroundColor);
+    }
   }
 }
 

@@ -1339,12 +1339,8 @@ void NotebookNodeController::reloadNodes(const QList<NodeIdentifier> &p_ids) {
 }
 
 void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids) {
-  // Note: emits markRequested per node; batch mark dialog coalescing is a known
-  // follow-up, out of scope for this change.
-  for (const auto &id : p_ids) {
-    if (!id.isValid()) {
-      continue;
-    }
-    emit markRequested(id);
+  if (p_ids.isEmpty()) {
+    return;
   }
+  emit markRequested(p_ids);
 }
