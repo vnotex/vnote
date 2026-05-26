@@ -117,6 +117,37 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
 3. **Path resolution** — `getFileFromConfigFolder()` resolves relative paths against the app data directory.
 4. **Version upgrade** — Handles copying themes, web resources, etc. on version change.
 
+### VxCoreLogBridge
+
+`VxCoreLogBridge` routes vxcore's internal log lines through Qt's `qInstallMessageHandler` pipeline so they land in VNote's unified log file alongside `qDebug`/`qWarning`/`qCritical` output. Without it, vxcore would write to its own stderr/file sinks and the two log streams would diverge.
+
+**Files:** `src/core/vxcorelogbridge.h` / `.cpp`. The bridge is exposed as two free functions in the `vnotex` namespace:
+
+```cpp
+namespace vnotex {
+void installVxCoreLogBridge();
+void uninstallVxCoreLogBridge();
+}
+```
+
+**Install order.** `installVxCoreLogBridge()` MUST be called from `src/main.cpp` **before the first vxcore API call**, currently before `vxcore_set_app_info` at line 158. Installing earlier ensures the very first vxcore log lines (e.g., context creation, config load) are captured by the Qt handler. `uninstallVxCoreLogBridge()` restores the default vxcore sinks; it is safe to omit at shutdown but is provided for symmetry and tests.
+
+**Level translation.**
+
+| vxcore level | Qt level |
+|---|---|
+| `VXCORE_LOG_LEVEL_TRACE` | `QtDebugMsg` |
+| `VXCORE_LOG_LEVEL_DEBUG` | `QtDebugMsg` |
+| `VXCORE_LOG_LEVEL_INFO` | `QtInfoMsg` |
+| `VXCORE_LOG_LEVEL_WARN` | `QtWarningMsg` |
+| `VXCORE_LOG_LEVEL_ERROR` | `QtCriticalMsg` |
+| `VXCORE_LOG_LEVEL_FATAL` | `QtCriticalMsg` (NOT `QtFatalMsg`) |
+| `VXCORE_LOG_LEVEL_OFF` | no-op |
+
+**Why FATAL maps to Critical, not Fatal.** VNote's installed Qt message handler calls `abort()` on `QtFatalMsg`. A vxcore FATAL log line should not terminate the application; mapping it to `QtCriticalMsg` preserves the log entry (with the original `[FATAL]` prefix carried in the message text) without killing the process.
+
+**Why the thunk uses the `"%s", message` form.** vxcore hands the callback a pre-formatted message string. Passing it through Qt as `qCDebug(cat, "%s", message)` (rather than `qCDebug(cat, message)`) ensures any literal `%` characters inside the message are treated as data, not as printf-style format specifiers that Qt would try to re-interpret.
+
 ### Buffer2 Handle Pattern
 
 `Buffer2` is a **lightweight copyable value type** (like `QModelIndex`) that represents an open file buffer. It is NOT a `QObject` and is NOT heap-allocated. Obtain a `Buffer2` from `BufferService::openBuffer()`.
