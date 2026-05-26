@@ -214,6 +214,20 @@ void NotebookSyncInfoController::bootstrapApply(const QString &p_url, const QStr
     return;
   }
 
+  // Guard: reject empty URL
+  if (p_url.trimmed().isEmpty()) {
+    emit error(tr("Remote URL is required to enable sync."));
+    emit applyComplete(false);
+    return;
+  }
+
+  // Guard: reject empty PAT
+  if (p_pat.isEmpty()) {
+    emit error(tr("A personal access token (PAT) is required to enable sync."));
+    emit applyComplete(false);
+    return;
+  }
+
   const QString notebookId = m_notebookId;
 
   // One-shot connection on bootstrapAndPersistFinished, filtered by notebookId.
@@ -242,9 +256,9 @@ void NotebookSyncInfoController::bootstrapApply(const QString &p_url, const QStr
         // Failure path: KEEP the notebook (no closeNotebook, no
         // removeRecursively). Partial sync config stays so the user can
         // retry from the Sync Info dialog.
-        qCWarning(syncCategory)
-            << "NotebookSyncInfoController::bootstrapApply: failed id=" << notebookId
-            << "result:" << static_cast<int>(p_result) << "message:" << p_message;
+        qCWarning(syncCategory) << "NotebookSyncInfoController::bootstrapApply: failed id="
+                                << notebookId << "result:" << static_cast<int>(p_result)
+                                << "message:" << p_message;
         emit error(p_message.isEmpty() ? tr("Failed to enable sync for notebook.") : p_message);
         emit applyComplete(false);
       });

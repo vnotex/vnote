@@ -428,6 +428,21 @@ if(VNOTE_KEYCHAIN_AVAILABLE)
   target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_KEYCHAIN_AVAILABLE)
 endif()
 
+# Task 3 (Sync Info Disable empty-credential fix): SyncService::enableSyncForNotebook
+# defensive guards. Tests that empty PAT or empty URL are rejected early
+# with VXCORE_ERR_INVALID_PARAM before any keychain/worker operations.
+add_qt_test(test_syncservice
+  SOURCES
+    test_syncservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+if(MSVC)
+  target_link_options(test_syncservice PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
 # T5: NotebookCoreService sync wrapper methods (8 thin C-API wrappers).
 add_qt_test(test_notebookcoreservice_sync
   SOURCES

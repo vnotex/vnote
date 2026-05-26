@@ -343,6 +343,10 @@ void NotebookSyncInfoDialog2::onDisableSyncClicked() {
   if (m_controller) {
     m_controller->disableSync();
   }
+
+  // T1: close the dialog after successful disable to prevent subsequent OK
+  // click from triggering the empty-credential path via acceptedButtonClicked.
+  accept();
 }
 
 void NotebookSyncInfoDialog2::acceptedButtonClicked() {

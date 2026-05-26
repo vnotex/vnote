@@ -55,6 +55,11 @@ private slots:
   void testBootstrapApplyTriggersInitialSync();
   void testBootstrapApplyOneShotDisconnect();
 
+  // T2 — Empty-input guards
+  void testBootstrapApplyEmptyUrlFails();
+  void testBootstrapApplyEmptyPatFails();
+  void testBootstrapApplyValidInputsProceeds();
+
   // W3.T3 — URL-change-on-S5 atomic disable+re-enable flow. Closes bug B4
   // (URL change leaves runtime stale or causes silent split-brain push).
   void testUrlChangeShowsConfirmation();
@@ -680,8 +685,157 @@ void TestNotebookSyncInfoController::testBootstrapApplyOneShotDisconnect() {
 }
 
 // ============================================================================
-// W3.T3 — URL-change-on-S5 atomic disable+re-enable tests
+// T2 — Empty-input guards for bootstrapApply
 // ============================================================================
+
+void TestNotebookSyncInfoController::testBootstrapApplyEmptyUrlFails() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  // Create a partial notebook in S1 state.
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_empty_url_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"Empty URL","syncEnabled":true,"syncBackend":"git"})",
+      NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy errorSpy(&controller, &NotebookSyncInfoController::error);
+
+  // Pass empty URL → should be rejected immediately.
+  controller.bootstrapApply(QString(), QStringLiteral("test_pat"));
+
+  // Verify applyComplete(false) fires within 100ms (synchronous guard).
+  QVERIFY(!applySpy.isEmpty() || applySpy.wait(100));
+  QVERIFY(!applySpy.isEmpty());
+  QCOMPARE(applySpy.first().at(0).toBool(), false);
+
+  // Verify error signal fired with appropriate message.
+  QVERIFY(!errorSpy.isEmpty());
+  QVERIFY(errorSpy.first().at(0).toString().contains(QStringLiteral("URL"), Qt::CaseInsensitive));
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestNotebookSyncInfoController::testBootstrapApplyEmptyPatFails() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  // Create a partial notebook in S1 state.
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_empty_pat_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"Empty PAT","syncEnabled":true,"syncBackend":"git"})",
+      NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy errorSpy(&controller, &NotebookSyncInfoController::error);
+
+  // Pass empty PAT → should be rejected immediately.
+  controller.bootstrapApply(QStringLiteral("file:///tmp/remote.git"), QString());
+
+  // Verify applyComplete(false) fires within 100ms (synchronous guard).
+  QVERIFY(!applySpy.isEmpty() || applySpy.wait(100));
+  QVERIFY(!applySpy.isEmpty());
+  QCOMPARE(applySpy.first().at(0).toBool(), false);
+
+  // Verify error signal fired with appropriate message.
+  QVERIFY(!errorSpy.isEmpty());
+  QVERIFY(errorSpy.first().at(0).toString().contains(QStringLiteral("PAT"), Qt::CaseInsensitive));
+
+  vxcore_context_destroy(ctx);
+}
+
+void TestNotebookSyncInfoController::testBootstrapApplyValidInputsProceeds() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  QVERIFY(ctx != nullptr);
+
+  ServiceLocator services;
+  NotebookCoreService notebookService(ctx);
+  services.registerService<NotebookCoreService>(&notebookService);
+  SyncCredentialsStore credStore(services);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
+
+  TempDirFixture localTemp;
+  QVERIFY(localTemp.isValid());
+
+  // Create a partial notebook in S1 state.
+  QString nbRoot = localTemp.filePath(QStringLiteral("nb_valid_inputs_root"));
+  QDir().mkpath(nbRoot);
+  const QString nbId = notebookService.createNotebook(
+      nbRoot, R"({"name":"Valid Inputs","syncEnabled":true,"syncBackend":"git"})",
+      NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+
+  NotebookSyncInfoController controller(services, nbId);
+  controller.loadInitialData();
+
+  QSignalSpy applySpy(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy errorSpy(&controller, &NotebookSyncInfoController::error);
+
+  // Pass valid inputs → should NOT emit applyComplete(false) within 100ms
+  // (synchronous guards pass, execution continues to async service call).
+  controller.bootstrapApply(QStringLiteral("file:///tmp/valid_remote.git"),
+                            QStringLiteral("test_pat_12345"));
+
+  // Spin event loop for 100ms to allow any synchronous guards to fire.
+  for (int i = 0; i < 10; ++i) {
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+    QTest::qWait(10);
+  }
+
+  // Verify the early-return guards did NOT fire (downstream wincred / git
+  // failures in the test env are expected and acceptable — we only care that
+  // empty-input rejection messages are absent).
+  for (const auto &args : errorSpy) {
+    const QString msg = args.at(0).toString();
+    QVERIFY2(!msg.contains(QStringLiteral("Remote URL is required"), Qt::CaseInsensitive),
+             qPrintable(QStringLiteral("URL guard fired unexpectedly: ") + msg));
+    QVERIFY2(!msg.contains(QStringLiteral("personal access token (PAT) is required"),
+                           Qt::CaseInsensitive),
+             qPrintable(QStringLiteral("PAT guard fired unexpectedly: ") + msg));
+  }
+
+  // Cleanup (best-effort; the async path may have written to keychain).
+  credStore.deleteCredentials(nbId);
+  QTest::qWait(300);
+  vxcore_context_destroy(ctx);
+}
 //
 // Per W1.T1 evidence: re-calling vxcore_sync_enable (with credentials) with a
 // different URL leaves the on-disk git remote stale → split-brain. The only

@@ -223,6 +223,32 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
   }
   qCDebug(syncCategory) << "SyncService::enableSyncForNotebook: notebookId:" << p_notebookId;
 
+  // Defensive guard: reject empty PAT before any keychain/worker invocation.
+  if (p_pat.isEmpty()) {
+    qCWarning(syncCategory) << "enableSyncForNotebook rejected: empty PAT";
+    QMetaObject::invokeMethod(
+        this,
+        [this, notebookId = p_notebookId]() {
+          emit enableFinished(notebookId, VXCORE_ERR_INVALID_PARAM,
+                              tr("PAT is required to enable sync."));
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+
+  // Defensive guard: reject empty remote URL before any keychain/worker invocation.
+  if (p_remoteUrl.trimmed().isEmpty()) {
+    qCWarning(syncCategory) << "enableSyncForNotebook rejected: empty remote URL";
+    QMetaObject::invokeMethod(
+        this,
+        [this, notebookId = p_notebookId]() {
+          emit enableFinished(notebookId, VXCORE_ERR_INVALID_PARAM,
+                              tr("Remote URL is required to enable sync."));
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+
   // F4.5: fire vnote.sync.before_enable BEFORE any lock acquisition or worker
   // dispatch. Observe-only: HookContext::cancel() is intentionally ignored —
   // sync hooks may NOT abort the underlying op (per plan F4.5). PAT is NEVER
