@@ -43,6 +43,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
+#include <core/vxcorelogbridge.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
@@ -154,6 +155,10 @@ int main(int argc, char *argv[]) {
   if (codec) {
     QTextCodec::setCodecForLocale(codec);
   }
+
+  // Route all vxcore logs through Qt's logging system so they reach
+  // VNote's unified log pipeline (installed by Logger::init() later).
+  vnotex::installVxCoreLogBridge();
 
   vxcore_set_app_info(ConfigMgr2::c_orgName.toUtf8().constData(),
                       ConfigMgr2::c_appName.toUtf8().constData());

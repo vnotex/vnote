@@ -41,8 +41,9 @@ target_sources(vnote PRIVATE
     iviewwindowcontent.h
     location.h
     nodeinfo.h
-    logger.cpp logger.h
-    mainconfig.cpp mainconfig.h
+     logger.cpp logger.h
+     vxcorelogbridge.cpp vxcorelogbridge.h
+     mainconfig.cpp mainconfig.h
     markdowneditorconfig.cpp markdowneditorconfig.h
     mindmapeditorconfig.cpp mindmapeditorconfig.h
     namebasedserver.h
