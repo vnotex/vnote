@@ -239,8 +239,19 @@ void CombinedNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
 }
 
 void CombinedNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
-  if (m_model) {
-    m_model->reloadNode(p_nodeId);
+  if (!m_model) {
+    return;
+  }
+  // Capture current selection so it survives the model's begin/endRemoveRows
+  // wipe (Qt's QItemSelectionModel is index-based; removed rows lose selection
+  // even when the same node is re-inserted with a fresh internal id).
+  const NodeIdentifier savedCurrent = currentNodeId();
+
+  m_model->reloadNode(p_nodeId);
+
+  // Restore selection if the previously-selected node still exists.
+  if (savedCurrent.isValid() && savedCurrent != currentNodeId()) {
+    selectNode(savedCurrent);
   }
 }
 

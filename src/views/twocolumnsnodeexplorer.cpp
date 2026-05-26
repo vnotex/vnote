@@ -412,6 +412,11 @@ void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
 }
 
 void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId, bool p_isFolder) {
+  // Capture current selection so it survives the model's begin/endRemoveRows
+  // wipe (Qt's QItemSelectionModel is index-based; removed rows lose selection
+  // even when the same node is re-inserted with a fresh internal id).
+  const NodeIdentifier savedCurrent = currentNodeId();
+
   if (p_isFolder) {
     if (m_folderModel) {
       m_folderModel->reloadNode(p_nodeId);
@@ -420,6 +425,13 @@ void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId, bool p_i
     if (m_fileModel) {
       m_fileModel->reloadNode(p_nodeId);
     }
+  }
+
+  // Restore selection if the previously-selected node still exists.
+  // selectNode handles both folder and file ids and is a no-op for invalid ids
+  // or ids that no longer resolve to a model index.
+  if (savedCurrent.isValid() && savedCurrent != currentNodeId()) {
+    selectNode(savedCurrent);
   }
 }
 
