@@ -1221,6 +1221,15 @@ void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
 // --- GUI request handlers from controller signals ---
 
 void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
+  // Suppress the fs-watcher's delayed reload for this parent: we perform the
+  // model refresh synchronously below and need the selection to survive past
+  // the watcher's 500 ms debounce window.
+  if (auto *nbService = m_services.get<NotebookCoreService>()) {
+    const QString parentAbsPath =
+        nbService->buildAbsolutePath(p_parentId.notebookId, p_parentId.relativePath);
+    expectFsChange(parentAbsPath);
+  }
+
   NewNoteDialog2 dialog(m_services, p_parentId, window());
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
@@ -1241,6 +1250,15 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
 }
 
 void NotebookExplorer2::onNewFolderRequested(const NodeIdentifier &p_parentId) {
+  // Suppress the fs-watcher's delayed reload for this parent: we perform the
+  // model refresh synchronously below and need the selection to survive past
+  // the watcher's 500 ms debounce window.
+  if (auto *nbService = m_services.get<NotebookCoreService>()) {
+    const QString parentAbsPath =
+        nbService->buildAbsolutePath(p_parentId.notebookId, p_parentId.relativePath);
+    expectFsChange(parentAbsPath);
+  }
+
   NewFolderDialog2 dialog(m_services, p_parentId, window());
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
@@ -1307,6 +1325,15 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
     return;
   }
 
+  // Suppress the fs-watcher's delayed reload for this parent: we perform the
+  // model refresh synchronously below and need the selection to survive past
+  // the watcher's 500 ms debounce window.
+  if (auto *nbService = m_services.get<NotebookCoreService>()) {
+    const QString parentAbsPath =
+        nbService->buildAbsolutePath(p_targetFolderId.notebookId, p_targetFolderId.relativePath);
+    expectFsChange(parentAbsPath);
+  }
+
   // Use NotebookService to perform the import, then reload
   auto &notebookService = *m_services.get<NotebookCoreService>();
   for (const QString &filePath : files) {
@@ -1321,6 +1348,15 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
 }
 
 void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFolderId) {
+  // Suppress the fs-watcher's delayed reload for this parent: we perform the
+  // model refresh synchronously below and need the selection to survive past
+  // the watcher's 500 ms debounce window.
+  if (auto *nbService = m_services.get<NotebookCoreService>()) {
+    const QString parentAbsPath =
+        nbService->buildAbsolutePath(p_targetFolderId.notebookId, p_targetFolderId.relativePath);
+    expectFsChange(parentAbsPath);
+  }
+
   ImportFolderDialog2 dialog(m_services, p_targetFolderId, window());
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
@@ -1456,6 +1492,39 @@ void NotebookExplorer2::teardownFileWatcher() {
   m_lastChangedDir.clear();
 }
 
+void NotebookExplorer2::expectFsChange(const QString &p_absolutePath, int p_windowMs) {
+  if (p_absolutePath.isEmpty()) {
+    return;
+  }
+  const QString key = QDir::cleanPath(QDir(p_absolutePath).absolutePath());
+  const qint64 deadline = QDateTime::currentMSecsSinceEpoch() + qMax(p_windowMs, 0);
+  m_expectedFsChangesDeadline.insert(key, deadline);
+}
+
+bool NotebookExplorer2::consumeExpectedFsChange(const QString &p_absolutePath) {
+  if (m_expectedFsChangesDeadline.isEmpty()) {
+    return false;
+  }
+  const qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+  // Opportunistic purge of expired entries.
+  for (auto it = m_expectedFsChangesDeadline.begin(); it != m_expectedFsChangesDeadline.end();) {
+    if (it.value() < now) {
+      it = m_expectedFsChangesDeadline.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  const QString key = QDir::cleanPath(QDir(p_absolutePath).absolutePath());
+  auto it = m_expectedFsChangesDeadline.find(key);
+  if (it == m_expectedFsChangesDeadline.end()) {
+    return false;
+  }
+  m_expectedFsChangesDeadline.erase(it);
+  return true;
+}
+
 void NotebookExplorer2::addWatchPath(const QString &p_path) {
   if (p_path.isEmpty()) {
     return;
@@ -1493,6 +1562,11 @@ void NotebookExplorer2::syncWatchedPaths() {
 }
 
 void NotebookExplorer2::onFileSystemChanged(const QString &p_path) {
+  if (consumeExpectedFsChange(p_path)) {
+    // App-initiated change. Synchronous reload has already been performed by
+    // the originating handler; the delayed reload would only wipe selection.
+    return;
+  }
   m_lastChangedDir = p_path;
   m_fsReloadTimer->start();
 }

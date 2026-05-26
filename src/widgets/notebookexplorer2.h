@@ -172,6 +172,14 @@ private:
   void removeWatchPath(const QString &p_path);
   void syncWatchedPaths();
 
+  // Register p_absolutePath as an app-initiated change whose next
+  // directoryChanged event should be swallowed. Idempotent.
+  void expectFsChange(const QString &p_absolutePath, int p_windowMs = 3000);
+
+  // If p_absolutePath has a non-expired entry, remove it and return true.
+  // Else return false. Purges expired entries opportunistically.
+  bool consumeExpectedFsChange(const QString &p_absolutePath);
+
   // Services
   ServiceLocator &m_services;
 
@@ -204,6 +212,11 @@ private:
   QFileSystemWatcher *m_fsWatcher = nullptr;
   QTimer *m_fsReloadTimer = nullptr;
   QString m_lastChangedDir;
+
+  // Map of absolute filesystem paths the explorer expects to receive a
+  // directoryChanged() event for, with an epoch-ms deadline after which the
+  // expectation auto-expires.
+  QHash<QString, qint64> m_expectedFsChangesDeadline;
 };
 
 } // namespace vnotex

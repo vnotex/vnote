@@ -300,3 +300,12 @@ add_custom_command(TARGET test_notebook_explorer_sync_state POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_notebook_explorer_sync_state>
 )
+
+add_qt_test(test_notebookexplorer2_fs_suppression
+  SOURCES
+    test_notebookexplorer2_fs_suppression.cpp
+  LINKS
+    core_services
+    vxcore
+)
+
