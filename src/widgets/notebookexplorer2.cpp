@@ -1658,12 +1658,11 @@ void NotebookExplorer2::updateSyncButtonState() {
     // W4.T2: S0 affordance is "Enable Sync" (distinct from "Sync Now") so
     // the user understands the click will open the bootstrap dialog rather
     // than start a sync.
-    tooltip = tr("Enable Sync\xE2\x80\xA6 (sync is not configured for this notebook)");
+    tooltip = tr("Enable sync for this notebook");
   } else if (partialSyncConfig) {
-    tooltip = tr("Sync configured but incomplete \xE2\x80\x94 click to finish setup\n"
-                 "(or use Sync Info to fill in the missing remote URL / backend).");
+    tooltip = tr("Sync configured but incomplete");
   } else if (syncInProgress) {
-    tooltip = tr("Sync in progress\xE2\x80\xA6 click to cancel");
+    tooltip = tr("Sync in progress");
   } else if (!syncReady) {
     tooltip = tr("Click to bootstrap sync for this notebook.");
   } else {
