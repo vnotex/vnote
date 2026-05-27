@@ -1,8 +1,8 @@
 #include "notebooknodeview.h"
 
-#include <QDebug>
 #include <QContextMenuEvent>
 #include <QDataStream>
+#include <QDebug>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QKeyEvent>
@@ -429,6 +429,65 @@ void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
   QModelIndex idx = indexAt(p_event->position().toPoint());
   NodeInfo targetInfo = nodeInfoFromIndex(idx);
 
+  // Resolve target NodeIdentifier (mirrors dropEvent logic)
+  NodeIdentifier targetId = nodeIdFromIndex(idx);
+
+  // If dropping on empty area or invalid index, target is notebook root
+  if (!targetId.isValid()) {
+    auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
+    auto *nodeModel =
+        qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
+    if (nodeModel) {
+      targetId.notebookId = nodeModel->getNotebookId();
+      targetId.relativePath = QString(); // root
+    }
+  }
+
+  // If target is a file (not folder), use its parent folder as target
+  if (targetId.isValid() && !targetId.relativePath.isEmpty() && !targetInfo.isFolder) {
+    if (m_controller) {
+      targetId = m_controller->getParentFolder(targetId);
+    }
+  }
+
+  // Determine proposed action: Ctrl = Copy, otherwise Move (mirrors dropEvent)
+  Qt::DropAction proposedAction = Qt::MoveAction;
+  if (p_event->modifiers() & Qt::ControlModifier) {
+    proposedAction = Qt::CopyAction;
+  }
+
+  // Reject move-to-same-parent drops before proceeding
+  if (proposedAction == Qt::MoveAction && targetId.isValid()) {
+    const QMimeData *mimeData = p_event->mimeData();
+    if (mimeData->hasFormat(c_nodeMimeType)) {
+      // Decode dragged nodes (cache locally, decode once)
+      QList<NodeIdentifier> draggedNodes = decodeNodeMimeData(mimeData);
+
+      if (!draggedNodes.isEmpty()) {
+        // Check if ALL nodes have the same parent as target
+        bool allSameParent = true;
+        for (const NodeIdentifier &n : draggedNodes) {
+          NodeIdentifier nodeParent =
+              m_controller ? m_controller->getParentFolder(n) : NodeIdentifier();
+          // Field-wise comparison: notebookId AND relativePath
+          if (nodeParent.notebookId != targetId.notebookId ||
+              nodeParent.relativePath != targetId.relativePath) {
+            allSameParent = false;
+            break;
+          }
+        }
+
+        // If all nodes already have target as parent, reject the move
+        if (allSameParent) {
+          p_event->setDropAction(Qt::IgnoreAction);
+          p_event->ignore();
+          setDropIndicatorShown(false);
+          return;
+        }
+      }
+    }
+  }
+
   // Only accept drops on containers
   if (targetInfo.isValid() && targetInfo.isFolder) {
     p_event->acceptProposedAction();
@@ -498,7 +557,25 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
       m_controller->copyNodes(draggedNodes);
       m_controller->pasteNodes(targetId);
     } else {
-      m_controller->moveNodes(draggedNodes, targetId);
+      // MOVE branch: filter out nodes already at target parent
+      QList<NodeIdentifier> filteredNodes;
+      for (const NodeIdentifier &n : draggedNodes) {
+        NodeIdentifier nodeParent = m_controller->getParentFolder(n);
+        // Field-wise comparison: notebookId AND relativePath
+        if (nodeParent.notebookId != targetId.notebookId ||
+            nodeParent.relativePath != targetId.relativePath) {
+          filteredNodes.append(n);
+        }
+      }
+
+      // If all nodes were filtered out (already at target), noop
+      if (filteredNodes.isEmpty()) {
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->accept();
+        return;
+      }
+
+      m_controller->moveNodes(filteredNodes, targetId);
     }
 
     p_event->setDropAction(action);

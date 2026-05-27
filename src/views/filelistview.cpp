@@ -297,7 +297,65 @@ void FileListView::dragEnterEvent(QDragEnterEvent *p_event) {
 }
 
 void FileListView::dragMoveEvent(QDragMoveEvent *p_event) {
-  // In file list view, we accept drops anywhere (files go into current folder)
+  // Check if model supports drag & drop via INodeListModel interface
+  auto *nodeListModel = dynamic_cast<INodeListModel *>(model());
+  if (!nodeListModel) {
+    // Check source model if proxy
+    auto *proxy = qobject_cast<QAbstractProxyModel *>(model());
+    if (proxy) {
+      nodeListModel = dynamic_cast<INodeListModel *>(proxy->sourceModel());
+    }
+  }
+
+  if (nodeListModel && nodeListModel->supportsDragDrop()) {
+    // In FileListView, target is the current display root folder
+    NodeIdentifier targetId = nodeListModel->getDisplayRoot();
+    if (!targetId.isValid()) {
+      // Fall back to notebook root
+      targetId.notebookId = nodeListModel->getNotebookId();
+      targetId.relativePath = QString();
+    }
+
+    // Determine proposed action: Ctrl = Copy, otherwise Move
+    Qt::DropAction proposedAction = Qt::MoveAction;
+    if (p_event->modifiers() & Qt::ControlModifier) {
+      proposedAction = Qt::CopyAction;
+    }
+
+    // Reject move-to-same-parent drops before proceeding
+    if (proposedAction == Qt::MoveAction && targetId.isValid()) {
+      const QMimeData *mimeData = p_event->mimeData();
+      if (mimeData->hasFormat(c_nodeMimeType)) {
+        // Decode dragged nodes (cache locally, decode once)
+        QList<NodeIdentifier> draggedNodes = decodeNodeMimeData(mimeData);
+
+        if (!draggedNodes.isEmpty()) {
+          // Check if ALL nodes have the same parent as target
+          bool allSameParent = true;
+          for (const NodeIdentifier &n : draggedNodes) {
+            NodeIdentifier nodeParent =
+                m_controller ? m_controller->getParentFolder(n) : NodeIdentifier();
+            // Field-wise comparison: notebookId AND relativePath
+            if (nodeParent.notebookId != targetId.notebookId ||
+                nodeParent.relativePath != targetId.relativePath) {
+              allSameParent = false;
+              break;
+            }
+          }
+
+          // If all nodes already have target as parent, reject the move
+          if (allSameParent) {
+            p_event->setDropAction(Qt::IgnoreAction);
+            p_event->ignore();
+            setDropIndicatorShown(false);
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  // Accept drops
   p_event->acceptProposedAction();
   setDropIndicatorShown(true);
 
@@ -360,7 +418,25 @@ void FileListView::dropEvent(QDropEvent *p_event) {
       m_controller->copyNodes(draggedNodes);
       m_controller->pasteNodes(targetId);
     } else {
-      m_controller->moveNodes(draggedNodes, targetId);
+      // MOVE branch: filter out nodes already at target parent
+      QList<NodeIdentifier> filteredNodes;
+      for (const NodeIdentifier &n : draggedNodes) {
+        NodeIdentifier nodeParent = m_controller->getParentFolder(n);
+        // Field-wise comparison: notebookId AND relativePath
+        if (nodeParent.notebookId != targetId.notebookId ||
+            nodeParent.relativePath != targetId.relativePath) {
+          filteredNodes.append(n);
+        }
+      }
+
+      // If all nodes were filtered out (already at target), noop
+      if (filteredNodes.isEmpty()) {
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->accept();
+        return;
+      }
+
+      m_controller->moveNodes(filteredNodes, targetId);
     }
 
     p_event->setDropAction(action);
