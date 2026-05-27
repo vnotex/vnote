@@ -71,6 +71,15 @@ add_qt_test(test_notebookservice
   GUILESS
 )
 
+add_qt_test(test_notebook_hooks
+  SOURCES
+    test_notebook_hooks.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_vnote3migrationservice
   SOURCES
     test_vnote3migrationservice.cpp
