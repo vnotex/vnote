@@ -112,6 +112,7 @@ public:
   QStringList getVisibleWorkspaceIds() const override;
   QVector<ID> getViewWindowIdsForWorkspace(const QString &p_workspaceId) const override;
   ID findWindowIdByBufferId(const QString &p_workspaceId, const QString &p_bufferId) const override;
+  QVector<ID> findWindowIdsByNode(const NodeIdentifier &p_nodeId, bool p_isFolder) const override;
   QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const override;
   void onNodeRenamed(const NodeIdentifier &p_oldNodeId, const NodeIdentifier &p_newNodeId) override;
   void notifyEditorConfigChanged() override;

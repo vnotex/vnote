@@ -74,8 +74,7 @@ public:
   // Creates a virtual buffer, checks for duplicate tabs across all workspaces,
   // and delegates to the view layer to create WidgetViewWindow2.
   // @p_content: ownership transferred. Deleted if a duplicate tab is found.
-  void openWidgetContent(IViewWindowContent *p_content,
-                         const QStringList &p_pathSegments = {},
+  void openWidgetContent(IViewWindowContent *p_content, const QStringList &p_pathSegments = {},
                          const QString &p_fragment = QString());
 
   // Called by the view after it has successfully created a ViewWindow2
@@ -252,6 +251,9 @@ private:
 
   // Handle NodeAfterRename hook: update buffer paths and tab titles.
   void onNodeAfterRename(const NodeRenameEvent &p_event);
+
+  // Handle NodeAfterDelete hook: close view windows for deleted files/folders.
+  void onNodeAfterDelete(const NodeOperationEvent &p_event);
 
   // Handle ConfigEditorChanged hook: notify all windows.
   void onEditorConfigChanged();

@@ -1196,6 +1196,27 @@ ID ViewArea2::findWindowIdByBufferId(const QString &p_workspaceId,
   return ViewAreaController::InvalidViewWindowId;
 }
 
+QVector<ID> ViewArea2::findWindowIdsByNode(const NodeIdentifier &p_nodeId, bool p_isFolder) const {
+  QVector<ID> result;
+  const QString folderPrefix = p_isFolder ? (p_nodeId.relativePath + QLatin1Char('/')) : QString();
+  for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+    auto *win = it.value();
+    if (!win)
+      continue;
+    const auto &id = win->getNodeId();
+    if (id.notebookId != p_nodeId.notebookId)
+      continue;
+    if (p_isFolder) {
+      if (id.relativePath.startsWith(folderPrefix))
+        result.append(it.key());
+    } else {
+      if (id.relativePath == p_nodeId.relativePath)
+        result.append(it.key());
+    }
+  }
+  return result;
+}
+
 QString ViewArea2::getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) {

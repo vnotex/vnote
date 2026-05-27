@@ -90,6 +90,13 @@ public:
   virtual ID findWindowIdByBufferId(const QString &p_workspaceId,
                                     const QString &p_bufferId) const = 0;
 
+  // Find all view window IDs whose getNodeId() matches the given node.
+  // If p_isFolder is true, matches windows whose path starts with
+  // p_nodeId.relativePath + "/" (folder-prefix match). Otherwise exact match.
+  // Used by controller to drive close-on-delete via NodeAfterDelete hook.
+  virtual QVector<ID> findWindowIdsByNode(const NodeIdentifier &p_nodeId,
+                                          bool p_isFolder) const = 0;
+
   // Get the buffer ID of the current (active) tab in the given workspace.
   // Returns empty string if the workspace has no tabs.
   virtual QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const = 0;

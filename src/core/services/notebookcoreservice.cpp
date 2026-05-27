@@ -457,14 +457,16 @@ bool NotebookCoreService::deleteFolder(const QString &p_notebookId, const QStrin
     return false;
   }
 
+  // Build the operation event once; reused for both before- and after-hooks.
+  NodeOperationEvent event;
+  event.notebookId = p_notebookId;
+  event.relativePath = p_folderPath;
+  event.isFolder = true;
+  event.name = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
+  event.operation = QStringLiteral("delete");
+
   // Fire NodeBeforeDelete hook (cancellable).
   if (m_hookMgr) {
-    NodeOperationEvent event;
-    event.notebookId = p_notebookId;
-    event.relativePath = p_folderPath;
-    event.isFolder = true;
-    event.name = p_folderPath.mid(p_folderPath.lastIndexOf(QLatin1Char('/')) + 1);
-    event.operation = QStringLiteral("delete");
     if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, event)) {
       return false;
     }
@@ -475,6 +477,12 @@ bool NotebookCoreService::deleteFolder(const QString &p_notebookId, const QStrin
   if (err != VXCORE_OK) {
     qWarning() << "deleteFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
+  }
+
+  // Fire NodeAfterDelete hook so subscribers (e.g. ViewAreaController) can
+  // close any open view windows referencing the just-deleted folder.
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::NodeAfterDelete, event);
   }
   return true;
 }
@@ -708,14 +716,16 @@ bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString 
     return false;
   }
 
+  // Build the operation event once; reused for both before- and after-hooks.
+  NodeOperationEvent event;
+  event.notebookId = p_notebookId;
+  event.relativePath = p_filePath;
+  event.isFolder = false;
+  event.name = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
+  event.operation = QStringLiteral("delete");
+
   // Fire NodeBeforeDelete hook (cancellable).
   if (m_hookMgr) {
-    NodeOperationEvent event;
-    event.notebookId = p_notebookId;
-    event.relativePath = p_filePath;
-    event.isFolder = false;
-    event.name = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
-    event.operation = QStringLiteral("delete");
     if (m_hookMgr->doAction(HookNames::NodeBeforeDelete, event)) {
       return false;
     }
@@ -726,6 +736,12 @@ bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString 
   if (err != VXCORE_OK) {
     qWarning() << "deleteFile failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
+  }
+
+  // Fire NodeAfterDelete hook so subscribers (e.g. ViewAreaController) can
+  // close any open view windows referencing the just-deleted file.
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::NodeAfterDelete, event);
   }
   return true;
 }

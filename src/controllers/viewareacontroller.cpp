@@ -14,7 +14,6 @@
 #include <controllers/workspacewrapper.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
-#include <core/sessionconfig.h>
 #include <core/fileopensettings.h>
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
@@ -26,6 +25,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
+#include <core/sessionconfig.h>
 #include <gui/services/viewwindowfactory.h>
 #include <utils/processutils.h>
 #include <widgets/settingswidget.h>
@@ -41,8 +41,8 @@ ViewAreaController::ViewAreaController(ServiceLocator &p_services, QObject *p_pa
   connect(m_fileCheckTimer, &QTimer::timeout, this, &ViewAreaController::onFileCheckTimerTick);
 
   // Monitor app focus state for file check scheduling.
-  connect(qApp, &QGuiApplication::applicationStateChanged,
-          this, &ViewAreaController::onAppStateChanged);
+  connect(qApp, &QGuiApplication::applicationStateChanged, this,
+          &ViewAreaController::onAppStateChanged);
 }
 
 ViewAreaController::~ViewAreaController() {
@@ -175,8 +175,8 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
 }
 
 void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content,
-                                            const QStringList &p_pathSegments,
-                                            const QString &p_fragment) {
+                                           const QStringList &p_pathSegments,
+                                           const QString &p_fragment) {
   if (!p_content) {
     return;
   }
@@ -538,9 +538,8 @@ void ViewAreaController::openLastClosedFile() {
   settings.m_lineNumber = record.cursorPosition;
   settings.m_focus = true;
 
-  qDebug() << "ViewAreaController::openLastClosedFile: reopening"
-           << record.nodeId.notebookId << record.nodeId.relativePath
-           << "mode:" << static_cast<int>(record.mode)
+  qDebug() << "ViewAreaController::openLastClosedFile: reopening" << record.nodeId.notebookId
+           << record.nodeId.relativePath << "mode:" << static_cast<int>(record.mode)
            << "cursor:" << record.cursorPosition;
 
   // BufferService::openBuffer fires FileAfterOpen hook, which triggers
@@ -1362,6 +1361,13 @@ void ViewAreaController::subscribeToHooks() {
         onNodeAfterRename(p_event);
       },
       10);
+  hookMgr->addAction<NodeOperationEvent>(
+      HookNames::NodeAfterDelete,
+      [this](HookContext &p_ctx, const NodeOperationEvent &p_event) {
+        Q_UNUSED(p_ctx)
+        onNodeAfterDelete(p_event);
+      },
+      10);
   hookMgr->addAction(
       HookNames::ConfigEditorChanged,
       [this](HookContext &p_ctx, const QVariantMap &) {
@@ -1530,6 +1536,60 @@ void ViewAreaController::onNodeAfterRename(const NodeRenameEvent &p_event) {
   }
 }
 
+void ViewAreaController::onNodeAfterDelete(const NodeOperationEvent &p_event) {
+  if (p_event.notebookId.isEmpty() || p_event.relativePath.isEmpty()) {
+    return;
+  }
+
+  NodeIdentifier nodeId;
+  nodeId.notebookId = p_event.notebookId;
+  nodeId.relativePath = p_event.relativePath;
+
+  // Phase 1: visible windows. Close via the standard close path (deleteLater
+  // under the hood; force=true skips save prompts since the file no longer
+  // exists on disk).
+  if (m_view) {
+    const QVector<ID> visibleIds = m_view->findWindowIdsByNode(nodeId, p_event.isFolder);
+    for (ID winId : visibleIds) {
+      closeViewWindow(winId, /*p_force=*/true);
+    }
+  }
+
+  // Phase 2: hidden workspace windows. Mirror onNotebookBeforeClose's
+  // take-filter-give-back idiom.
+  const QString folderPrefix =
+      p_event.isFolder ? (p_event.relativePath + QLatin1Char('/')) : QString();
+  for (auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it) {
+    auto *wrapper = it.value();
+    if (wrapper->isVisible())
+      continue;
+    QVector<QObject *> all = wrapper->takeAllViewWindows();
+    QVector<QObject *> remaining;
+    for (auto *obj : all) {
+      auto *win = qobject_cast<ViewWindow2 *>(obj);
+      bool match = false;
+      if (win) {
+        const auto &nid = win->getNodeId();
+        if (nid.notebookId == p_event.notebookId) {
+          if (p_event.isFolder) {
+            match = nid.relativePath.startsWith(folderPrefix);
+          } else {
+            match = (nid.relativePath == p_event.relativePath);
+          }
+        }
+      }
+      if (match) {
+        delete win;
+      } else {
+        remaining.append(obj);
+      }
+    }
+    wrapper->receiveViewWindows(remaining, 0);
+  }
+
+  emit windowsChanged();
+}
+
 void ViewAreaController::onEditorConfigChanged() {
   // Sync auto-save policy from config.
   auto *configMgr = m_services.get<ConfigMgr2>();
@@ -1647,9 +1707,7 @@ void ViewAreaController::onAppStateChanged(Qt::ApplicationState p_state) {
   }
 }
 
-void ViewAreaController::onFileCheckTimerTick() {
-  checkActiveBufferForExternalChanges();
-}
+void ViewAreaController::onFileCheckTimerTick() { checkActiveBufferForExternalChanges(); }
 
 void ViewAreaController::checkAllBuffersForExternalChanges() {
   if (m_fileCheckInProgress) {
