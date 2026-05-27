@@ -804,9 +804,8 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   m_windows[id] = win;
   win->setViewWindowId(id);
   split->addViewWindow(win);
-  connect(win, &ViewWindow2::closeRequested, this, [this, id]() {
-    m_controller->closeViewWindow(id, true);
-  });
+  connect(win, &ViewWindow2::closeRequested, this,
+          [this, id]() { m_controller->closeViewWindow(id, true); });
   m_controller->onViewWindowOpened(id, p_buffer, p_settings);
 
   // QTabWidget::addTab does not make the new tab current (except the first).
@@ -836,9 +835,8 @@ void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &
   m_windows[id] = win;
   win->setViewWindowId(id);
   split->addViewWindow(win);
-  connect(win, &ViewWindow2::closeRequested, this, [this, id]() {
-    m_controller->closeViewWindow(id, true);
-  });
+  connect(win, &ViewWindow2::closeRequested, this,
+          [this, id]() { m_controller->closeViewWindow(id, true); });
 
   // Use default FileOpenSettings for notification.
   FileOpenSettings settings;
@@ -906,7 +904,12 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
   closedTab.cursorPosition = win->getCursorPosition();
 
   m_windows.remove(p_windowId);
-  delete win;
+  // Use deleteLater() instead of delete: closeViewWindow may be reached
+  // synchronously from within a ViewWindow2 method (e.g. handleExternalChange
+  // emitting closeRequested). deleteLater defers destruction until the event
+  // loop is idle, after any in-flight signals targeting `win` have drained,
+  // making the close primitive safe regardless of caller stack.
+  win->deleteLater();
 
   m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, closedTab);
   updateScreenVisibility();

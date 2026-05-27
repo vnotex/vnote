@@ -10,8 +10,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
-#include <QPushButton>
 #include <QPolygonF>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QShortcut>
 #include <QToolBar>
@@ -89,8 +89,8 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
             SLOT(onBufferModifiedChanged(QString)));
     connect(bufferService->asQObject(), SIGNAL(attachmentChanged(QString)), this,
             SLOT(onAttachmentChanged(QString)));
-    connect(bufferService->asQObject(), SIGNAL(bufferExternallyChanged(QString,BufferState)), this,
-            SLOT(onBufferExternallyChanged(QString,BufferState)));
+    connect(bufferService->asQObject(), SIGNAL(bufferExternallyChanged(QString, BufferState)), this,
+            SLOT(onBufferExternallyChanged(QString, BufferState)));
   }
 
   // Refresh toolbar icons when the theme changes.
@@ -693,7 +693,15 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
       save();
       m_externalChangeDismissed = false;
     } else if (msgBox.clickedButton() == discardBtn) {
-      emit closeRequested();
+      // Defer to a queued invocation: closeRequested is wired to a slot that
+      // synchronously deletes this ViewWindow2 (ViewArea2::closeViewWindow ->
+      // delete win;). Emitting directly here would free `this` while we are
+      // still on its own stack frame (and the modal QMessageBox parented to
+      // `this` would touch a freed parent during destruction). Use a queued
+      // invocation so the current stack — including msgBox's destructor and
+      // all callers up through BufferService::checkSingleExternalChange —
+      // can unwind cleanly before the window is destroyed.
+      QMetaObject::invokeMethod(this, [this]() { emit closeRequested(); }, Qt::QueuedConnection);
     } else {
       // Cancel — for file-missing, store null QDateTime as dismiss token.
       m_externalChangeDismissed = true;
@@ -1025,29 +1033,29 @@ void ViewWindow2::setupShortcuts() {
 
   // ZoomIn (Ctrl+=).
   {
-    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Equal), this,
-                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Equal), this, nullptr, nullptr,
+                                  Qt::WidgetWithChildrenShortcut);
     connect(shortcut, &QShortcut::activated, this, [this]() { zoom(true); });
   }
 
   // ZoomIn (Ctrl++).
   {
-    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Plus), this,
-                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Plus), this, nullptr, nullptr,
+                                  Qt::WidgetWithChildrenShortcut);
     connect(shortcut, &QShortcut::activated, this, [this]() { zoom(true); });
   }
 
   // ZoomOut (Ctrl+-).
   {
-    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Minus), this,
-                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Minus), this, nullptr, nullptr,
+                                  Qt::WidgetWithChildrenShortcut);
     connect(shortcut, &QShortcut::activated, this, [this]() { zoom(false); });
   }
 
   // ResetZoom (Ctrl+0).
   {
-    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_0), this,
-                                  nullptr, nullptr, Qt::WidgetWithChildrenShortcut);
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_0), this, nullptr, nullptr,
+                                  Qt::WidgetWithChildrenShortcut);
     connect(shortcut, &QShortcut::activated, this, [this]() { resetZoom(); });
   }
 }
@@ -1072,9 +1080,7 @@ void ViewWindow2::refreshToolBarIcons() {
   }
 }
 
-void ViewWindow2::handleThemeChanged() {
-  refreshToolBarIcons();
-}
+void ViewWindow2::handleThemeChanged() { refreshToolBarIcons(); }
 
 // ============ Layout Mode ============
 
