@@ -1368,6 +1368,13 @@ void ViewAreaController::subscribeToHooks() {
         onNodeAfterDelete(p_event);
       },
       10);
+  hookMgr->addAction<NodeMoveEvent>(
+      HookNames::NodeAfterMove,
+      [this](HookContext &p_ctx, const NodeMoveEvent &p_event) {
+        Q_UNUSED(p_ctx)
+        onNodeAfterMove(p_event);
+      },
+      10);
   hookMgr->addAction(
       HookNames::ConfigEditorChanged,
       [this](HookContext &p_ctx, const QVariantMap &) {
@@ -1588,6 +1595,103 @@ void ViewAreaController::onNodeAfterDelete(const NodeOperationEvent &p_event) {
   }
 
   emit windowsChanged();
+}
+
+void ViewAreaController::onNodeAfterMove(const NodeMoveEvent &p_event) {
+  if (p_event.notebookId.isEmpty() || p_event.oldRelativePath.isEmpty() ||
+      p_event.newRelativePath.isEmpty()) {
+    return;
+  }
+
+  const QString notebookId = p_event.notebookId;
+  const QString relativePath = p_event.oldRelativePath;
+  const QString newPath = p_event.newRelativePath;
+  const bool isFolder = p_event.isFolder;
+
+  // vxcore has already updated buffer paths internally during the move.
+  // We only need to update the cached NodeIdentifier on ViewWindow2 instances.
+
+  if (!isFolder) {
+    // File move: single buffer affected.
+    NodeIdentifier oldNodeId;
+    oldNodeId.notebookId = notebookId;
+    oldNodeId.relativePath = relativePath;
+
+    NodeIdentifier newNodeId;
+    newNodeId.notebookId = notebookId;
+    newNodeId.relativePath = newPath;
+
+    // Update visible windows via the view interface.
+    if (m_view) {
+      m_view->onNodeRenamed(oldNodeId, newNodeId);
+    }
+
+    // Update hidden workspace windows.
+    for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+      auto *wrapper = it.value();
+      if (wrapper->isVisible()) {
+        continue;
+      }
+      const auto &windows = wrapper->viewWindows();
+      for (auto *obj : windows) {
+        auto *win = qobject_cast<ViewWindow2 *>(obj);
+        if (win && win->getNodeId() == oldNodeId) {
+          win->onNodeRenamed(newNodeId);
+        }
+      }
+    }
+  } else {
+    // Folder move: update all windows whose paths are under the old folder.
+    QString oldPrefix = relativePath + QLatin1Char('/');
+    QString newPrefix = newPath + QLatin1Char('/');
+
+    QVector<QPair<NodeIdentifier, NodeIdentifier>> renames;
+
+    auto collectRenames = [&](const NodeIdentifier &nodeId) {
+      if (nodeId.notebookId != notebookId) {
+        return;
+      }
+      if (nodeId.relativePath.startsWith(oldPrefix)) {
+        NodeIdentifier oldId = nodeId;
+        NodeIdentifier newId;
+        newId.notebookId = notebookId;
+        newId.relativePath = newPrefix + nodeId.relativePath.mid(oldPrefix.size());
+        renames.append({oldId, newId});
+      }
+    };
+
+    if (m_view) {
+      for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+        auto *wrapper = it.value();
+        const auto &windows = wrapper->viewWindows();
+        for (auto *obj : windows) {
+          auto *win = qobject_cast<ViewWindow2 *>(obj);
+          if (win) {
+            collectRenames(win->getNodeId());
+          }
+        }
+      }
+    }
+
+    for (const auto &pair : renames) {
+      if (m_view) {
+        m_view->onNodeRenamed(pair.first, pair.second);
+      }
+      for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+        auto *wrapper = it.value();
+        if (wrapper->isVisible()) {
+          continue;
+        }
+        const auto &windows = wrapper->viewWindows();
+        for (auto *obj : windows) {
+          auto *win = qobject_cast<ViewWindow2 *>(obj);
+          if (win && win->getNodeId() == pair.first) {
+            win->onNodeRenamed(pair.second);
+          }
+        }
+      }
+    }
+  }
 }
 
 void ViewAreaController::onEditorConfigChanged() {

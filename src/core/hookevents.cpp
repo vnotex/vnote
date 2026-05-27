@@ -46,6 +46,26 @@ NodeRenameEvent NodeRenameEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== NodeMoveEvent =====
+
+QVariantMap NodeMoveEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  m[QStringLiteral("oldRelativePath")] = oldRelativePath;
+  m[QStringLiteral("newRelativePath")] = newRelativePath;
+  m[QStringLiteral("isFolder")] = isFolder;
+  return m;
+}
+
+NodeMoveEvent NodeMoveEvent::fromVariantMap(const QVariantMap &p_args) {
+  NodeMoveEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.oldRelativePath = p_args.value(QStringLiteral("oldRelativePath")).toString();
+  e.newRelativePath = p_args.value(QStringLiteral("newRelativePath")).toString();
+  e.isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
+  return e;
+}
+
 // ===== FileOpenEvent =====
 
 QVariantMap FileOpenEvent::toVariantMap() const {

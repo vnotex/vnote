@@ -62,6 +62,7 @@ public:
 
   bool doAction(const QString &p_hook, const NodeOperationEvent &p_event);
   bool doAction(const QString &p_hook, const NodeRenameEvent &p_event);
+  bool doAction(const QString &p_hook, const NodeMoveEvent &p_event);
   bool doAction(const QString &p_hook, const FileOpenEvent &p_event);
   bool doAction(const QString &p_hook, const BufferEvent &p_event);
   bool doAction(const QString &p_hook, const ViewWindowOpenEvent &p_event);

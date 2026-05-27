@@ -604,6 +604,24 @@ bool NotebookCoreService::moveFolder(const QString &p_notebookId, const QString 
     qWarning() << "moveFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
   }
+
+  // Fire NodeAfterMove hook so subscribers (e.g. ViewAreaController) can
+  // refresh open view windows to point at the new path.
+  if (m_hookMgr) {
+    const QString basename = p_srcPath.mid(p_srcPath.lastIndexOf(QLatin1Char('/')) + 1);
+    QString newPath;
+    if (p_destParentPath.isEmpty() || p_destParentPath == QStringLiteral(".")) {
+      newPath = basename;
+    } else {
+      newPath = p_destParentPath + QLatin1Char('/') + basename;
+    }
+    NodeMoveEvent moveEvent;
+    moveEvent.notebookId = p_notebookId;
+    moveEvent.oldRelativePath = p_srcPath;
+    moveEvent.newRelativePath = newPath;
+    moveEvent.isFolder = true;
+    m_hookMgr->doAction(HookNames::NodeAfterMove, moveEvent);
+  }
   return true;
 }
 
@@ -860,6 +878,24 @@ bool NotebookCoreService::moveFile(const QString &p_notebookId, const QString &p
   if (err != VXCORE_OK) {
     qWarning() << "moveFile failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
+  }
+
+  // Fire NodeAfterMove hook so subscribers (e.g. ViewAreaController) can
+  // refresh open view windows to point at the new path.
+  if (m_hookMgr) {
+    const QString basename = p_srcFilePath.mid(p_srcFilePath.lastIndexOf(QLatin1Char('/')) + 1);
+    QString newPath;
+    if (p_destFolderPath.isEmpty() || p_destFolderPath == QStringLiteral(".")) {
+      newPath = basename;
+    } else {
+      newPath = p_destFolderPath + QLatin1Char('/') + basename;
+    }
+    NodeMoveEvent moveEvent;
+    moveEvent.notebookId = p_notebookId;
+    moveEvent.oldRelativePath = p_srcFilePath;
+    moveEvent.newRelativePath = newPath;
+    moveEvent.isFolder = false;
+    m_hookMgr->doAction(HookNames::NodeAfterMove, moveEvent);
   }
   return true;
 }

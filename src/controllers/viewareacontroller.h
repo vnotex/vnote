@@ -255,6 +255,9 @@ private:
   // Handle NodeAfterDelete hook: close view windows for deleted files/folders.
   void onNodeAfterDelete(const NodeOperationEvent &p_event);
 
+  // Handle NodeAfterMove hook: refresh cached NodeIdentifier on open view windows.
+  void onNodeAfterMove(const NodeMoveEvent &p_event);
+
   // Handle ConfigEditorChanged hook: notify all windows.
   void onEditorConfigChanged();
 

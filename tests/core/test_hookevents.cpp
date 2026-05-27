@@ -19,6 +19,7 @@ private slots:
   // Round-trip serialization tests.
   void testNodeOperationEventRoundTrip();
   void testNodeRenameEventRoundTrip();
+  void testNodeMoveEventRoundTrip();
   void testFileOpenEventRoundTrip();
   void testBufferEventRoundTrip();
   void testFileExternalChangeEventRoundTrip();
@@ -125,6 +126,22 @@ void TestHookEvents::testNodeRenameEventRoundTrip() {
   QCOMPARE(restored.isFolder, orig.isFolder);
   QCOMPARE(restored.oldName, orig.oldName);
   QCOMPARE(restored.newName, orig.newName);
+}
+
+void TestHookEvents::testNodeMoveEventRoundTrip() {
+  NodeMoveEvent orig;
+  orig.notebookId = QStringLiteral("nb-move-1");
+  orig.oldRelativePath = QStringLiteral("dir1/a.md");
+  orig.newRelativePath = QStringLiteral("dir2/a.md");
+  orig.isFolder = false;
+
+  QVariantMap map = orig.toVariantMap();
+  NodeMoveEvent restored = NodeMoveEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.notebookId, orig.notebookId);
+  QCOMPARE(restored.oldRelativePath, orig.oldRelativePath);
+  QCOMPARE(restored.newRelativePath, orig.newRelativePath);
+  QCOMPARE(restored.isFolder, orig.isFolder);
 }
 
 void TestHookEvents::testFileOpenEventRoundTrip() {

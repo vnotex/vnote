@@ -32,6 +32,20 @@ struct NodeRenameEvent {
   static NodeRenameEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for NodeAfterMove.
+// Carries both old and new paths so subscribers can refresh open buffers
+// / windows to follow the moved node. NodeBeforeMove continues to use
+// NodeOperationEvent (no destination needed for the cancellation contract).
+struct NodeMoveEvent {
+  QString notebookId;
+  QString oldRelativePath;
+  QString newRelativePath;
+  bool isFolder = false;
+
+  QVariantMap toVariantMap() const;
+  static NodeMoveEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for FileBeforeOpen, FileAfterOpen.
 struct FileOpenEvent {
   QString notebookId;
