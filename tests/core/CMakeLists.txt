@@ -323,6 +323,7 @@ add_qt_test(test_configmgr2
   SOURCES
     test_configmgr2.cpp
   LINKS
+    core_services
     core_configs
     vxcore
   GUILESS
@@ -636,6 +637,7 @@ add_qt_test(test_sync_work_queue_manager
     test_sync_work_queue_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
   LINKS
+    core_services
     Qt6::Core
   GUILESS
 )
@@ -647,6 +649,7 @@ add_qt_test(test_sync_workqueue_inflight
     test_sync_workqueue_inflight.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
   LINKS
+    core_services
     Qt6::Core
   GUILESS
 )
@@ -658,6 +661,7 @@ add_qt_test(test_sync_workqueue_cancel
     test_sync_workqueue_cancel.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
   LINKS
+    core_services
     Qt6::Core
   GUILESS
 )
@@ -672,6 +676,7 @@ add_qt_test(test_sync_workqueue_cap_coalesce
     test_sync_workqueue_cap_coalesce.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
   LINKS
+    core_services
     Qt6::Core
   GUILESS
 )

@@ -7,6 +7,7 @@ add_qt_test(test_navigationmodeservice
   LINKS
     Qt6::Widgets
     VTextEdit
+    core_services
 )
 
 target_include_directories(test_navigationmodeservice PRIVATE
