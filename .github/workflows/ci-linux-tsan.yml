@@ -88,10 +88,6 @@ jobs:
           tools: 'tools_opensslv3_src'
           cache: 'true'
 
-      - name: Create Build Dir
-        run: mkdir -p libs/vxcore/build_test
-        working-directory: ${{runner.workspace}}
-
       - name: Configure vxcore Tests with ThreadSanitizer
         run: |
           cmake -S libs/vxcore -B libs/vxcore/build_test \
@@ -99,18 +95,15 @@ jobs:
             -DVXCORE_BUILD_TESTS=ON \
             -DCMAKE_CXX_FLAGS="-fsanitize=thread -g -O1" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
-        working-directory: ${{runner.workspace}}
 
       - name: Build vxcore Tests
         run: |
           cmake --build libs/vxcore/build_test --config Debug
-        working-directory: ${{runner.workspace}}
 
       - name: Run Sync Test Subset (ThreadSanitizer)
         run: |
           ctest --test-dir libs/vxcore/build_test -C Debug \
             -R "^test_(sync|git_sync|gitkeep|mock_sync_backend|libgit2_init|sync_backend_metadata|sync_backend_registry|git_backend_autoreg|sync_manager_factory_override|sync_manager_unknown_backend|git_options|credential_provider|sync_backend_with_provider|event_manager|buffer_save|libgit2_init_propagation|sync_config_backcompat|sync_status_queries|sync_config_cache|dirty_tracker|sync_manager_reentrancy|sync_thread_safety)$" \
             --output-on-failure
-        working-directory: ${{runner.workspace}}
         env:
           TSAN_OPTIONS: "halt_on_error=1:exitcode=66"
