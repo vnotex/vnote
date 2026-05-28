@@ -31,6 +31,6 @@ specs
 plans
 
 tmp
-test_*
+/test_*
 resulte.txt
 /.sisyphus/fixtures/log-cleanup/runtime/
