@@ -348,7 +348,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
 
   QString destFilePath;
 
-  if (m_imageHostController) {
+  if (m_imageHostController && m_imageHostController->getDefaultProvider()) {
     // Save to image host.
     QByteArray ba;
     try {
@@ -406,7 +406,7 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
 
   QString destFilePath;
 
-  if (m_imageHostController) {
+  if (m_imageHostController && m_imageHostController->getDefaultProvider()) {
     // Save to image host.
     QByteArray ba;
     QBuffer buffer(&ba);
