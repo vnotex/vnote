@@ -1,0 +1,45 @@
+{
+  "notebooks": [
+    {
+      "id": "fix-local-001",
+      "rootFolder": ".sisyphus/fixtures/log-cleanup/notebooks/fix-local-001",
+      "type": "bundled"
+    },
+    {
+      "id": "fix-onedrive-002",
+      "rootFolder": ".sisyphus/fixtures/log-cleanup/notebooks/fix-onedrive-002",
+      "type": "bundled"
+    },
+    {
+      "id": "fix-sync-003",
+      "rootFolder": ".sisyphus/fixtures/log-cleanup/notebooks/fix-sync-003",
+      "type": "bundled"
+    }
+  ],
+  "buffers": [
+    {
+      "id": "573797b8-3462-4faf-b6a8-2420a39a7c6c",
+      "notebookId": "fix-local-001",
+      "filePath": "test.md"
+    },
+    {
+      "id": "833a522b-e939-46ca-8f52-bd6dc6326246",
+      "notebookId": "fix-sync-003",
+      "filePath": "test.md"
+    }
+  ],
+  "workspaces": [
+    {
+      "id": "d4aaa1c1-66a3-4922-8a60-2e38f36304ff",
+      "name": "default",
+      "bufferIds": [
+        "573797b8-3462-4faf-b6a8-2420a39a7c6c",
+        "833a522b-e939-46ca-8f52-bd6dc6326246"
+      ],
+      "currentBufferId": "573797b8-3462-4faf-b6a8-2420a39a7c6c",
+      "metadata": {},
+      "bufferMetadata": {}
+    }
+  ],
+  "currentWorkspaceId": "d4aaa1c1-66a3-4922-8a60-2e38f36304ff"
+}

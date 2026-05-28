@@ -21,6 +21,8 @@ build*
 dev.sh
 nul
 .sisyphus
+!.sisyphus/fixtures/
+!.sisyphus/fixtures/**
 
 # GitHub Spec Kit related files.
 .claude
@@ -31,3 +33,4 @@ plans
 tmp
 test_*
 resulte.txt
+/.sisyphus/fixtures/log-cleanup/runtime/
