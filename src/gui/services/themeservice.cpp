@@ -8,17 +8,17 @@
 #include "core/exception.h"
 #include "core/hookevents.h"
 #include "core/hooknames.h"
+#include "core/logging.h"
 #include "core/services/hookmanager.h"
 #include "core/theme.h"
-#include <gui/utils/themeutils.h>
 #include <gui/utils/iconutils.h>
+#include <gui/utils/themeutils.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
 
 ThemeService::ThemeService(const ThemeServiceConfig &p_config, QObject *p_parent)
-    : QObject(p_parent),
-      m_locale(p_config.locale),
+    : QObject(p_parent), m_locale(p_config.locale),
       m_themeSearchPaths(PathUtils::concatenateFilePath(p_config.appDataPath, "themes")),
       m_webStylesSearchPaths(PathUtils::concatenateFilePath(p_config.appDataPath, "web_styles")) {
   loadAvailableThemes();
@@ -57,7 +57,7 @@ void ThemeService::loadAvailableThemes() {
 }
 
 void ThemeService::loadThemes(const QString &p_path) {
-  qDebug() << "search for themes in" << p_path;
+  qCDebug(lcUi) << "search for themes in" << p_path;
   QDir dir(p_path);
   dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
   auto themeFolders = dir.entryList();
@@ -73,7 +73,7 @@ void ThemeService::checkAndAddThemeFolder(const QString &p_folder) {
     info.m_displayName = Theme::getDisplayName(p_folder, m_locale);
     info.m_folderPath = p_folder;
     m_themes.push_back(info);
-    qDebug() << "add theme" << info.m_name << info.m_displayName << info.m_folderPath;
+    qCDebug(lcUi) << "add theme" << info.m_name << info.m_displayName << info.m_folderPath;
   }
 }
 

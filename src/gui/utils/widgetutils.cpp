@@ -28,6 +28,7 @@
 #include <QWidget>
 
 #include <core/global.h>
+#include <core/logging.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 
@@ -51,7 +52,7 @@ qreal WidgetUtils::calculateScaleFactor(const QScreen *p_screen) {
   if (factor < 0 || p_screen) {
     auto screen = p_screen ? p_screen : QGuiApplication::primaryScreen();
     factor = screen->devicePixelRatio();
-    qDebug() << screen->name() << "dpi" << factor;
+    qCDebug(lcUi) << screen->name() << "dpi" << factor;
   }
 
   return factor;
@@ -186,7 +187,7 @@ void WidgetUtils::addActionShortcut(QAction *p_action, const QString &p_shortcut
 
   p_action->setShortcut(kseq);
   p_action->setShortcutContext(p_context);
-  p_action->setIconText(p_action->text());  // Preserve clean label for toolbar display.
+  p_action->setIconText(p_action->text()); // Preserve clean label for toolbar display.
   p_action->setText(
       QStringLiteral("%1\t%2").arg(p_action->text(), kseq.toString(QKeySequence::NativeText)));
 }

@@ -8,6 +8,7 @@
 #include <QWidget>
 
 #include <core/coreconfig.h>
+#include <core/logging.h>
 #include <gui/utils/widgetutils.h>
 #include <vtextedit/vtextedit.h>
 
@@ -21,8 +22,7 @@ NavigationModeService::NavigationModeService(const CoreConfig &p_coreConfig,
   Q_ASSERT(p_topLevelWidget);
 
   const auto &keys = p_coreConfig.getShortcut(CoreConfig::NavigationMode);
-  auto shortcut =
-      WidgetUtils::createShortcut(keys, p_topLevelWidget, Qt::ApplicationShortcut);
+  auto shortcut = WidgetUtils::createShortcut(keys, p_topLevelWidget, Qt::ApplicationShortcut);
   if (!shortcut) {
     qWarning() << "failed to create shortcut for NavigationMode" << keys;
     return;
@@ -71,7 +71,7 @@ QChar NavigationModeService::getNextMajorKey() {
 
 void NavigationModeService::triggerNavigationMode() {
   if (m_targets.isEmpty()) {
-    qInfo() << "no navigation target";
+    qCDebug(lcUi) << "no navigation target";
     return;
   }
 
