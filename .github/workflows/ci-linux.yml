@@ -59,6 +59,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tree
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libsecret-1-dev
           python3 -m pip config set global.break-system-packages true
 
       - name: Cache Qt
