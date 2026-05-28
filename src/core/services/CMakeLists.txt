@@ -27,6 +27,7 @@ set(SERVICES_SOURCES
   eventbridge.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdownwebglobaloptions.cpp
   ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
@@ -66,6 +67,7 @@ set(SERVICES_HEADERS
   syncworkqueuemanager.h
   synclog.h
   eventbridge.h
+  ${CMAKE_SOURCE_DIR}/src/core/logging.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

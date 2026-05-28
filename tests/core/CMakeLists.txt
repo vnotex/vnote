@@ -15,7 +15,8 @@ add_qt_test(test_exception
 add_qt_test(test_logging_categories
   SOURCES
     test_logging_categories.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  LINKS
+    core_services
   GUILESS
 )
 
