@@ -36,13 +36,19 @@ target_sources(vnote PRIVATE
     htmltemplatehelper.cpp htmltemplatehelper.h
     hookcontext.h
     hooknames.h
-     iconfig.h
-     iconfigmgr.h
-     iviewwindowcontent.h
-     location.h
-     logging.cpp logging.h
-     nodeinfo.h
-     noncopyable.h
+    iconfig.h
+    iconfigmgr.h
+    iviewwindowcontent.h
+    location.h
+    logger.cpp logger.h
+    logging.cpp logging.h
+    mainconfig.cpp mainconfig.h
+    markdowneditorconfig.cpp markdowneditorconfig.h
+    mindmapeditorconfig.cpp mindmapeditorconfig.h
+    namebasedserver.h
+    nodeinfo.h
+    noncopyable.h
+    vxcorelogbridge.cpp vxcorelogbridge.h
     notebook/bundlenotebook.cpp notebook/bundlenotebook.h
     notebook/bundlenotebookfactory.cpp notebook/bundlenotebookfactory.h
     notebook/externalnode.cpp notebook/externalnode.h
