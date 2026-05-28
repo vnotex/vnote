@@ -12,6 +12,13 @@ add_qt_test(test_exception
   GUILESS
 )
 
+add_qt_test(test_logging_categories
+  SOURCES
+    test_logging_categories.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  GUILESS
+)
+
 add_qt_test(test_servicelocator
   SOURCES
     test_servicelocator.cpp
