@@ -19,6 +19,7 @@
 #include <core/editorconfig.h>
 #include <core/hooknames.h>
 #include <core/logger.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
@@ -159,6 +160,10 @@ int main(int argc, char *argv[]) {
   // Route all vxcore logs through Qt's logging system so they reach
   // VNote's unified log pipeline (installed by Logger::init() later).
   vnotex::installVxCoreLogBridge();
+
+  // Install default logging rules before QApplication creation
+  // so the first qDebug message respects them
+  vnotex::installDefaultLoggingRules();
 
   vxcore_set_app_info(ConfigMgr2::c_orgName.toUtf8().constData(),
                       ConfigMgr2::c_appName.toUtf8().constData());
