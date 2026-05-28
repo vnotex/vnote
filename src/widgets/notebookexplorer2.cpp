@@ -29,6 +29,7 @@
 #include <core/global.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
+#include <core/logging.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
@@ -132,8 +133,8 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
             [this](const QString &p_notebookId, VxCoreError p_result) {
               if (p_result != VXCORE_OK) {
                 m_lastReconcileError[p_notebookId] = static_cast<int>(p_result);
-                qCWarning(syncCategory)
-                    << "reconcile error for notebookId=" << p_notebookId << "result=" << p_result;
+                qCWarning(lcSync) << "reconcile error for notebookId=" << p_notebookId
+                                  << "result=" << p_result;
               } else {
                 m_lastReconcileError.remove(p_notebookId);
               }
@@ -693,8 +694,8 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
     }
   }
 
-  qCDebug(syncCategory) << "NotebookExplorer2::setCurrentNotebookInternal: transition notebookId:"
-                        << p_notebookId;
+  qCDebug(lcUi) << "NotebookExplorer2::setCurrentNotebookInternal: transition notebookId:"
+                << p_notebookId;
   emit currentNotebookChanged(p_notebookId);
   emit currentExploredFolderChanged(currentExploredFolderId());
 }
@@ -1620,15 +1621,15 @@ void NotebookExplorer2::onSyncButtonClicked() {
     return;
   }
   const SyncState state = classifier->classify(nbId);
-  qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: clicked notebookId:" << nbId
-                        << "state:" << static_cast<int>(state);
+  qCDebug(lcSync) << "NotebookExplorer2::onSyncButtonClicked: clicked notebookId:" << nbId
+                  << "state:" << static_cast<int>(state);
   // W4.T2: S0 (sync disabled) MUST route to the bootstrap dialog with empty
   // fields so the user can re-enable sync. Triggering Sync Now is forbidden
   // here per plan ("DO NOT allow clicking Sync Now on S0 notebook").
   switch (state) {
   case SyncState::S0:
   case SyncState::S6: {
-    qCDebug(syncCategory)
+    qCDebug(lcSync)
         << "NotebookExplorer2::onSyncButtonClicked: disabled state, opening bootstrap dialog"
         << "notebookId:" << nbId;
     auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
@@ -1644,8 +1645,8 @@ void NotebookExplorer2::onSyncButtonClicked() {
     // signal will repaint the button back to "Sync Now" via the existing
     // updateSyncButtonState path.
     if (syncSvc->isSyncInProgress(nbId)) {
-      qCDebug(syncCategory) << "NotebookExplorer2::onSyncButtonClicked: cancelling in-flight sync"
-                            << "notebookId:" << nbId;
+      qCDebug(lcSync) << "NotebookExplorer2::onSyncButtonClicked: cancelling in-flight sync"
+                      << "notebookId:" << nbId;
       syncSvc->cancelSync(nbId);
       return;
     }
@@ -1655,7 +1656,7 @@ void NotebookExplorer2::onSyncButtonClicked() {
   case SyncState::S2:
   case SyncState::S3:
   case SyncState::S4: {
-    qCDebug(syncCategory)
+    qCDebug(lcSync)
         << "NotebookExplorer2::onSyncButtonClicked: partial state, opening bootstrap dialog"
         << "notebookId:" << nbId;
     auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
@@ -1672,8 +1673,7 @@ void NotebookExplorer2::onSyncInfoActionTriggered() {
   if (nbId.isEmpty()) {
     return;
   }
-  qCDebug(syncCategory) << "NotebookExplorer2::onSyncInfoActionTriggered: triggered notebookId:"
-                        << nbId;
+  qCDebug(lcSync) << "NotebookExplorer2::onSyncInfoActionTriggered: triggered notebookId:" << nbId;
   auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
   dlg->setAttribute(Qt::WA_DeleteOnClose);
   dlg->open();
@@ -1689,7 +1689,7 @@ void NotebookExplorer2::updateSyncButtonState() {
     m_syncButton->setEnabled(false);
     m_syncInfoAction->setEnabled(false);
     m_syncButton->setToolTip(tr("Sync Now"));
-    qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: shortCircuit:emptyId";
+    qCDebug(lcSync) << "NotebookExplorer2::updateSyncButtonState: shortCircuit:emptyId";
     return;
   }
 
@@ -1702,7 +1702,7 @@ void NotebookExplorer2::updateSyncButtonState() {
     m_syncButton->setEnabled(false);
     m_syncInfoAction->setEnabled(false);
     m_syncButton->setToolTip(tr("Sync Now"));
-    qCDebug(syncCategory)
+    qCDebug(lcSync)
         << "NotebookExplorer2::updateSyncButtonState: shortCircuit:notBundled notebookId:" << nbId;
     return;
   }
@@ -1719,10 +1719,10 @@ void NotebookExplorer2::updateSyncButtonState() {
   const bool partialSyncConfig = classifier && classifier->isPartial(state);
   const bool syncEnabled = (state != SyncState::S0 && state != SyncState::S6);
   const bool syncReady = (state == SyncState::S5 || state == SyncState::S7);
-  qCDebug(syncCategory) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
-                        << "state:" << static_cast<int>(state) << "syncEnabled:" << syncEnabled
-                        << "syncReady:" << syncReady << "syncInProgress:" << syncInProgress
-                        << "partialSyncConfig:" << partialSyncConfig;
+  qCDebug(lcSync) << "NotebookExplorer2::updateSyncButtonState: decided notebookId:" << nbId
+                  << "state:" << static_cast<int>(state) << "syncEnabled:" << syncEnabled
+                  << "syncReady:" << syncReady << "syncInProgress:" << syncInProgress
+                  << "partialSyncConfig:" << partialSyncConfig;
 
   // Wave 12.2 / F5.9: keep the button enabled during in-flight sync so the
   // user can click it to cancel. Previously it was disabled-while-syncing;

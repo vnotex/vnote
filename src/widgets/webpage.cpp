@@ -2,6 +2,7 @@
 
 #include <QDebug>
 
+#include <core/logging.h>
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
@@ -34,7 +35,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
 void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message,
                                        int lineNumber, const QString &sourceID) {
   if (level == QWebEnginePage::InfoMessageLevel) {
-    qDebug() << "JS(" << sourceID << ":" << lineNumber << "):" << message;
+    qCDebug(lcWebJs) << "JS(" << sourceID << ":" << lineNumber << "):" << message;
   }
   QWebEnginePage::javaScriptConsoleMessage(level, message, lineNumber, sourceID);
 }

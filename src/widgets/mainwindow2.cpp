@@ -34,6 +34,7 @@
 #include <core/coreconfig.h>
 #include <core/exportcontext.h>
 #include <core/hooknames.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
@@ -290,8 +291,8 @@ void MainWindow2::loadStateAndGeometry() {
   // Load view area layout (new architecture).
   if (m_viewArea) {
     QJsonObject layout = sessionConfig.getViewAreaLayout();
-    qInfo() << "MainWindow2::loadStateAndGeometry: loading view area layout"
-            << QJsonDocument(layout).toJson(QJsonDocument::Compact);
+    qCDebug(lcWorkspace) << "MainWindow2::loadStateAndGeometry: loading view area layout"
+                         << QJsonDocument(layout).toJson(QJsonDocument::Compact);
     m_viewArea->loadLayoutFromSession(layout);
   }
 }
@@ -847,8 +848,8 @@ void MainWindow2::validateDockProportions() {
     resizeDocks(vDockList, vSizeList, Qt::Vertical);
   }
 
-  qInfo() << "MainWindow2::validateDockProportions: windowWidth=" << windowW << ", adjusted"
-          << hDockList.size() << "horizontal," << vDockList.size() << "vertical docks";
+  qCDebug(lcUi) << "MainWindow2::validateDockProportions: windowWidth=" << windowW << ", adjusted"
+                << hDockList.size() << "horizontal," << vDockList.size() << "vertical docks";
 }
 
 void MainWindow2::restart() {

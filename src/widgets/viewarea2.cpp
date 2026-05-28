@@ -16,6 +16,7 @@
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
 #include <core/iviewwindowcontent.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/hookmanager.h>
@@ -80,7 +81,7 @@ void ViewArea2::setupController() {
             // Re-enable propagation now that all deferred Qt signals (e.g.,
             // currentChanged posted by addTab during restore) have settled.
             m_controller->setShouldPropagateToCore(true);
-            qDebug() << "ViewArea2: propagation to core re-enabled";
+            qCDebug(lcWorkspace) << "ViewArea2: propagation to core re-enabled";
             // Re-sync current window from ground-truth UI state.
             // During restore, onViewWindowOpened() did NOT update m_currentWindowId
             // (propagation was disabled), so m_currentWindowId is still
@@ -94,8 +95,8 @@ void ViewArea2::setupController() {
             if (currentSplit) {
               currentWin = currentSplit->getCurrentViewWindow();
             }
-            qDebug() << "ViewArea2: singleShot sync: currentSplit=" << currentSplit
-                     << "currentWin=" << currentWin;
+            qCDebug(lcWorkspace) << "ViewArea2: singleShot sync: currentSplit=" << currentSplit
+                                 << "currentWin=" << currentWin;
             ID winId = currentWin ? currentWin->getViewWindowId()
                                   : ViewAreaController::InvalidViewWindowId;
             QString bufferId = currentWin ? currentWin->getBuffer().id() : QString();
@@ -120,7 +121,7 @@ void ViewArea2::setupController() {
         [this](HookContext &p_ctx, const QVariantMap &p_args) {
           Q_UNUSED(p_ctx)
           Q_UNUSED(p_args)
-          qDebug() << "ViewArea2: shutdown cancelled, re-enabling propagation";
+          qCDebug(lcWorkspace) << "ViewArea2: shutdown cancelled, re-enabling propagation";
           m_controller->setShouldPropagateToCore(true);
         },
         10);
@@ -551,7 +552,7 @@ QJsonObject ViewArea2::saveLayout() const {
   // loadLayout() sees an empty splitterTree and shows the home screen.
   // This avoids persisting workspace IDs that saveSession() will later delete.
   if (m_windows.isEmpty()) {
-    qInfo() << "ViewArea2::saveLayout: no open buffers, saving empty layout";
+    qCDebug(lcWorkspace) << "ViewArea2::saveLayout: no open buffers, saving empty layout";
     return QJsonObject();
   }
 
@@ -569,7 +570,7 @@ void ViewArea2::loadLayoutFromSession(const QJsonObject &p_layout) {
 }
 
 void ViewArea2::saveSession() {
-  qInfo() << "ViewArea2::saveSession: syncing buffer order and persisting session";
+  qCDebug(lcWorkspace) << "ViewArea2::saveSession: syncing buffer order and persisting session";
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (wsSvc) {
@@ -599,9 +600,10 @@ void ViewArea2::saveSession() {
         wsSvc->setCurrentBuffer(it.key(), currentWin->getBuffer().id());
       }
 
-      qDebug() << "  Synced workspace" << it.key() << "buffer order:" << bufferIds
-               << "currentBuffer:"
-               << (currentWin ? currentWin->getBuffer().id() : QStringLiteral("(none)"));
+      qCDebug(lcWorkspace) << "  Synced workspace" << it.key() << "buffer order:" << bufferIds
+                           << "currentBuffer:"
+                           << (currentWin ? currentWin->getBuffer().id()
+                                          : QStringLiteral("(none)"));
     }
 
     // Remove empty workspaces (no buffers) from vxcore.
@@ -611,7 +613,7 @@ void ViewArea2::saveSession() {
       QString wsId = wsObj.value(QStringLiteral("id")).toString();
       QJsonArray bufferIds = wsObj.value(QStringLiteral("bufferIds")).toArray();
       if (bufferIds.isEmpty()) {
-        qDebug() << "  Removing empty workspace:" << wsId;
+        qCDebug(lcWorkspace) << "  Removing empty workspace:" << wsId;
         wsSvc->deleteWorkspace(wsId);
       }
     }
@@ -620,7 +622,7 @@ void ViewArea2::saveSession() {
   // Disable propagation so buffer closes during teardown don't touch vxcore.
   m_controller->setShouldPropagateToCore(false);
 
-  qInfo() << "ViewArea2::saveSession: done";
+  qCDebug(lcWorkspace) << "ViewArea2::saveSession: done";
 }
 
 void ViewArea2::restoreSession() {
@@ -653,7 +655,8 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
     if (w) {
       bufferId = w->getBuffer().id();
     }
-    qDebug() << "ViewArea2: split currentViewWindowChanged, win:" << w << "bufferId:" << bufferId;
+    qCDebug(lcWorkspace) << "ViewArea2: split currentViewWindowChanged, win:" << w
+                         << "bufferId:" << bufferId;
     m_controller->setCurrentViewWindow(
         w ? w->getViewWindowId() : ViewAreaController::InvalidViewWindowId, bufferId);
   });
@@ -1048,9 +1051,9 @@ QVector<QObject *> ViewArea2::takeViewWindowsFromSplit(const QString &p_workspac
     return {};
   }
 
-  qDebug() << "ViewArea2::takeViewWindowsFromSplit: workspace:" << p_workspaceId
-           << "windowCount:" << split->getViewWindowCount()
-           << "propagateToCore:" << m_controller->shouldPropagateToCore();
+  qCDebug(lcWorkspace) << "ViewArea2::takeViewWindowsFromSplit: workspace:" << p_workspaceId
+                       << "windowCount:" << split->getViewWindowCount()
+                       << "propagateToCore:" << m_controller->shouldPropagateToCore();
 
   // Sync tab order and current buffer to vxcore before hiding.
   if (m_controller->shouldPropagateToCore() && split->getViewWindowCount() > 0) {
@@ -1060,7 +1063,7 @@ QVector<QObject *> ViewArea2::takeViewWindowsFromSplit(const QString &p_workspac
       for (auto *win : split->getAllViewWindows()) {
         bufferIds.append(win->getBuffer().id());
       }
-      qDebug() << "  Syncing buffer order before hide:" << bufferIds;
+      qCDebug(lcWorkspace) << "  Syncing buffer order before hide:" << bufferIds;
       wsSvc->setBufferOrder(p_workspaceId, bufferIds);
 
       // Also sync the current buffer so it's correct if the workspace
@@ -1068,7 +1071,7 @@ QVector<QObject *> ViewArea2::takeViewWindowsFromSplit(const QString &p_workspac
       auto *currentWin = split->getCurrentViewWindow();
       if (currentWin) {
         QString curBufId = currentWin->getBuffer().id();
-        qDebug() << "  Syncing current buffer before hide:" << curBufId;
+        qCDebug(lcWorkspace) << "  Syncing current buffer before hide:" << curBufId;
         wsSvc->setCurrentBuffer(p_workspaceId, curBufId);
       }
     }
@@ -1081,11 +1084,11 @@ QVector<QObject *> ViewArea2::takeViewWindowsFromSplit(const QString &p_workspac
   QVector<QObject *> result;
   auto viewWindows = split->getAllViewWindows();
   for (auto *win : viewWindows) {
-    qDebug() << "  Taking window for buffer:" << win->getBuffer().id();
+    qCDebug(lcWorkspace) << "  Taking window for buffer:" << win->getBuffer().id();
     split->takeViewWindow(win); // removeTab + disconnect + setVisible(false) + setParent(nullptr)
     result.append(win);
   }
-  qDebug() << "  Took" << result.size() << "windows from split";
+  qCDebug(lcWorkspace) << "  Took" << result.size() << "windows from split";
   // NOTE: m_windows map entries are KEPT — the ViewWindow2 still exists, just hidden.
   return result;
 }
@@ -1138,18 +1141,20 @@ void ViewArea2::setCurrentBuffer(const QString &p_workspaceId, const QString &p_
     return;
   }
 
-  qDebug() << "ViewArea2::setCurrentBuffer: workspace:" << p_workspaceId << "buffer:" << p_bufferId
-           << "focus:" << p_focus << "currentWidget:" << split->currentWidget();
+  qCDebug(lcWorkspace) << "ViewArea2::setCurrentBuffer: workspace:" << p_workspaceId
+                       << "buffer:" << p_bufferId << "focus:" << p_focus
+                       << "currentWidget:" << split->currentWidget();
 
   // Find the ViewWindow2 with the matching buffer ID.
   auto windows = split->getAllViewWindows();
   for (auto *win : windows) {
     if (win->getBuffer().id() == p_bufferId) {
-      qDebug() << "ViewArea2::setCurrentBuffer: found win:" << win
-               << "calling setCurrentViewWindow";
+      qCDebug(lcWorkspace) << "ViewArea2::setCurrentBuffer: found win:" << win
+                           << "calling setCurrentViewWindow";
       split->setCurrentViewWindow(win);
-      qDebug() << "ViewArea2::setCurrentBuffer: after setCurrentViewWindow, currentWidget:"
-               << split->currentWidget();
+      qCDebug(lcWorkspace)
+          << "ViewArea2::setCurrentBuffer: after setCurrentViewWindow, currentWidget:"
+          << split->currentWidget();
       if (p_focus) {
         split->focus();
       }
