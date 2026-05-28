@@ -18,6 +18,7 @@ on:
   push:
     branches: [master]
     paths:
+      - 'libs/vxcore'
       - 'libs/vxcore/src/sync/**'
       - 'src/core/services/sync*'
       - 'src/widgets/dialogs/notebooksync*'
@@ -25,6 +26,7 @@ on:
       - '.github/workflows/ci-linux-tsan.yml'
   pull_request:
     paths:
+      - 'libs/vxcore'
       - 'libs/vxcore/src/sync/**'
       - 'src/core/services/sync*'
       - 'src/widgets/dialogs/notebooksync*'
