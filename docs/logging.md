@@ -138,6 +138,57 @@ tail -f ~/.local/share/VNote/vnote.log
 Get-Content "$env:APPDATA/VNote/vnote.log" -Wait
 ```
 
+## Trade-offs and Caveats
+
+### Chromium Logging Suppression
+
+By default, VNote sets the environment variable `QTWEBENGINE_CHROMIUM_FLAGS=--disable-logging` at startup (in `src/main.cpp`). This suppresses verbose Chromium debug output, particularly:
+- `[####:####:date/time:WARNING:viz_main_impl.cc(...)] VizNullHypothesis is disabled` (spurious warning from Chromium's graphics pipeline)
+- Other internal Chromium chatter
+
+**Trade-off**: This flag also hides some genuine Chromium ERROR and WARNING lines that may be useful when debugging WebEngine rendering issues or JavaScript errors in the Markdown viewer.
+
+**Workaround**: To restore Chromium logs for debugging, unset the flag before running VNote:
+
+```bash
+# Linux/macOS
+export QTWEBENGINE_CHROMIUM_FLAGS=
+vnote
+
+# Windows (PowerShell)
+$env:QTWEBENGINE_CHROMIUM_FLAGS = ""
+& "path/to/vnote.exe"
+
+# Windows (Command Prompt)
+set QTWEBENGINE_CHROMIUM_FLAGS=
+vnote.exe
+```
+
+### VTextEdit Debug Suppression
+
+VTextEdit (the editor library) emits bare `qDebug()` calls (e.g., `"XXX : not implemented yet"`). These are suppressed by the default logging rule `*.debug=false`. To see them during development:
+
+```bash
+# Linux/macOS
+export QT_LOGGING_RULES="*.debug=true"
+vnote
+
+# Windows (PowerShell)
+$env:QT_LOGGING_RULES = "*.debug=true"
+& "path/to/vnote.exe"
+
+# Windows (Command Prompt)
+set QT_LOGGING_RULES=*.debug=true
+vnote.exe
+```
+
+This will enable debug output for all categories, including VTextEdit. To selectively re-enable only VTextEdit debug while keeping VNote's web.js and vim categories suppressed:
+
+```bash
+export QT_LOGGING_RULES="*.debug=true;vnote.web.js.debug=false;vnote.vim.debug=false"
+vnote
+```
+
 ## Related
 
 - [Architecture Documentation](../AGENTS.md) - Overall VNote architecture

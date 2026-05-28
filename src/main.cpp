@@ -165,6 +165,12 @@ int main(int argc, char *argv[]) {
   // so the first qDebug message respects them
   vnotex::installDefaultLoggingRules();
 
+  // Suppress Chromium logging noise. This hides VizNullHypothesis warnings
+  // and other verbose Chromium debug output, but also hides some genuine
+  // Chromium ERROR/WARNING lines. To restore Chromium logs, unset the env:
+  // set QTWEBENGINE_CHROMIUM_FLAGS= (empty)
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-logging");
+
   vxcore_set_app_info(ConfigMgr2::c_orgName.toUtf8().constData(),
                       ConfigMgr2::c_appName.toUtf8().constData());
 

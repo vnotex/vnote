@@ -18,7 +18,13 @@ void installDefaultLoggingRules() {
   QString rules = QStringLiteral("*.debug=false\n"
                                  "vnote.web.js.debug=false\n"
                                  "vnote.vim.debug=false\n"
-                                 "qt.qpa.*.debug=false");
+                                 "qt.qpa.*.debug=false\n"
+                                 // vtextedit emits bare qDebug() calls that are caught by
+                                 // the global *.debug=false above. These extra rules are
+                                 // belt-and-suspenders in case vtextedit later adopts
+                                 // categories like qt.text.* or vnote.text.*:
+                                 "qt.text.*.debug=false\n"
+                                 "vtextedit.*.debug=false");
 
   QByteArray extra = qgetenv("VNOTE_LOG_RULES");
   if (!extra.isEmpty()) {
