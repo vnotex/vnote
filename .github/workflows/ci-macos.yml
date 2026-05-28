@@ -174,30 +174,6 @@ jobs:
 
         working-directory: ${{runner.workspace}}/build
 
-      - name: "Notarize Bundle"
-        # Extract the secrets we defined earlier as environment variables
-        env:
-          PROD_MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.CLI_MACOS_NOTARY_USER }}
-          PROD_MACOS_NOTARIZATION_TEAM_ID: ${{ secrets.CLI_MACOS_TEAM_ID }}
-          PROD_MACOS_NOTARIZATION_PWD: ${{ secrets.CLI_MACOS_NOTARY_PWD }}
-        run: |
-          # Store the notarization credentials so that we can prevent a UI password dialog
-          # from blocking the CI
-          echo "Create keychain profile"
-          xcrun notarytool store-credentials "notarytool-profile" --apple-id "$PROD_MACOS_NOTARIZATION_APPLE_ID" --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" --password "$PROD_MACOS_NOTARIZATION_PWD"
-
-          # Here we send the notarization request to the Apple's Notarization service, waiting for the result.
-          # This typically takes a few seconds inside a CI environment, but it might take more depending on the App
-          # characteristics. Visit the Notarization docs for more information and strategies on how to optimize it if
-          # you're curious
-          echo "Notarize app"
-          xcrun notarytool submit "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg" --keychain-profile "notarytool-profile" --wait
-
-          # Finally, we need to "attach the staple" to our executable, which will allow our app to be
-          # validated by macOS even when an internet connection is not available.
-          echo "Attach staple"
-          xcrun stapler staple "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg"
-
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
