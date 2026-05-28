@@ -12,6 +12,7 @@
 
 #include <core/error.h>
 #include <core/fileopensettings.h>
+#include <core/logging.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
@@ -57,9 +58,9 @@ void SearchController::setCurrentFolderId(const NodeIdentifier &p_folderId) {
 
 void SearchController::search(const QString &p_keyword, int p_scope, int p_searchMode,
                               bool p_caseSensitive, bool p_useRegex, const QString &p_filePattern) {
-  qDebug() << "SearchController::search: keyword:" << p_keyword << "scope:" << p_scope
-           << "mode:" << p_searchMode << "caseSensitive:" << p_caseSensitive
-           << "regex:" << p_useRegex << "filePattern:" << p_filePattern;
+  qCDebug(lcUi) << "SearchController::search: keyword:" << p_keyword << "scope:" << p_scope
+                << "mode:" << p_searchMode << "caseSensitive:" << p_caseSensitive
+                << "regex:" << p_useRegex << "filePattern:" << p_filePattern;
 
   resetSearchState();
   if (m_model) {
@@ -167,7 +168,7 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
   }
 
   if (m_pendingTargets.isEmpty()) {
-    qDebug() << "SearchController::search: no targets found, emitting empty result";
+    qCDebug(lcUi) << "SearchController::search: no targets found, emitting empty result";
     if (m_model) {
       m_model->setSearchResult(m_accumulatedResult);
     }
@@ -175,12 +176,12 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
     return;
   }
 
-  qDebug() << "SearchController::search: pendingTargets:" << m_pendingTargets.size();
+  qCDebug(lcUi) << "SearchController::search: pendingTargets:" << m_pendingTargets.size();
   startNextSearch();
 }
 
 void SearchController::cancel() {
-  qDebug() << "SearchController::cancel: cancelling search";
+  qCDebug(lcUi) << "SearchController::cancel: cancelling search";
   m_cancelRequested = true;
   m_pendingTargets.clear();
 
@@ -223,22 +224,23 @@ void SearchController::activateResult(const QModelIndex &p_index) {
     settings.m_searchHighlight = ctx;
   }
 
-  qDebug() << "SearchController::activateResult: notebookId:" << nodeId.notebookId
-           << "path:" << nodeId.relativePath << "lineNumber:" << lineNumber;
+  qCDebug(lcUi) << "SearchController::activateResult: notebookId:" << nodeId.notebookId
+                << "path:" << nodeId.relativePath << "lineNumber:" << lineNumber;
 
   emit nodeActivated(nodeId, settings);
 }
 
 void SearchController::onSearchFinished(int p_token, const SearchResult &p_result) {
   if (!m_activeTokens.contains(p_token)) {
-    qDebug() << "SearchController::onSearchFinished: discarding stale token:" << p_token;
+    qCDebug(lcUi) << "SearchController::onSearchFinished: discarding stale token:" << p_token;
     return;
   }
   m_activeTokens.remove(p_token);
 
-  qDebug() << "SearchController::onSearchFinished: matchCount:" << p_result.m_matchCount
-           << "fileResults:" << p_result.m_fileResults.size()
-           << "truncated:" << p_result.m_truncated << "pendingTargets:" << m_pendingTargets.size();
+  qCDebug(lcUi) << "SearchController::onSearchFinished: matchCount:" << p_result.m_matchCount
+                << "fileResults:" << p_result.m_fileResults.size()
+                << "truncated:" << p_result.m_truncated
+                << "pendingTargets:" << m_pendingTargets.size();
 
   mergeSearchResult(p_result);
 
@@ -263,7 +265,7 @@ void SearchController::onSearchFinished(int p_token, const SearchResult &p_resul
 
 void SearchController::onSearchFailed(int p_token, const Error &p_error) {
   if (!m_activeTokens.contains(p_token)) {
-    qDebug() << "SearchController::onSearchFailed: discarding stale token:" << p_token;
+    qCDebug(lcUi) << "SearchController::onSearchFailed: discarding stale token:" << p_token;
     return;
   }
   m_activeTokens.remove(p_token);
@@ -281,12 +283,12 @@ void SearchController::onSearchFailed(int p_token, const Error &p_error) {
 
 void SearchController::onSearchCancelled(int p_token) {
   if (!m_activeTokens.contains(p_token)) {
-    qDebug() << "SearchController::onSearchCancelled: discarding stale token:" << p_token;
+    qCDebug(lcUi) << "SearchController::onSearchCancelled: discarding stale token:" << p_token;
     return;
   }
   m_activeTokens.remove(p_token);
 
-  qDebug() << "SearchController::onSearchCancelled";
+  qCDebug(lcUi) << "SearchController::onSearchCancelled";
   emit searchCancelled();
   resetSearchState();
 }
@@ -366,9 +368,9 @@ QString SearchController::buildFilesInputFilesJson(const QStringList &p_files) c
 }
 
 void SearchController::dispatchSearch(const SearchTarget &p_target) {
-  qDebug() << "SearchController::dispatchSearch: notebookId:" << p_target.notebookId
-           << "mode:" << m_activeSearchMode
-           << "hasInputFiles:" << !p_target.inputFilesJson.isEmpty();
+  qCDebug(lcUi) << "SearchController::dispatchSearch: notebookId:" << p_target.notebookId
+                << "mode:" << m_activeSearchMode
+                << "hasInputFiles:" << !p_target.inputFilesJson.isEmpty();
 
   auto *searchSvc = m_services.get<SearchService>();
   if (!searchSvc) {
@@ -411,7 +413,7 @@ void SearchController::startNextSearch() {
     return;
   }
 
-  qDebug() << "SearchController::startNextSearch: remaining:" << m_pendingTargets.size();
+  qCDebug(lcUi) << "SearchController::startNextSearch: remaining:" << m_pendingTargets.size();
 
   const SearchTarget target = m_pendingTargets.takeFirst();
   dispatchSearch(target);
@@ -430,8 +432,8 @@ void SearchController::mergeSearchResult(const SearchResult &p_result) {
   m_accumulatedResult.m_matchCount += p_result.m_matchCount;
   m_accumulatedResult.m_truncated = m_accumulatedResult.m_truncated || p_result.m_truncated;
 
-  qDebug() << "SearchController::mergeSearchResult: accumulated matchCount:"
-           << m_accumulatedResult.m_matchCount
-           << "fileResults:" << m_accumulatedResult.m_fileResults.size()
-           << "truncated:" << m_accumulatedResult.m_truncated;
+  qCDebug(lcUi) << "SearchController::mergeSearchResult: accumulated matchCount:"
+                << m_accumulatedResult.m_matchCount
+                << "fileResults:" << m_accumulatedResult.m_fileResults.size()
+                << "truncated:" << m_accumulatedResult.m_truncated;
 }

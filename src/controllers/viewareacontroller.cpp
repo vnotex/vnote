@@ -19,6 +19,7 @@
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/iviewwindowcontent.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
@@ -1134,24 +1135,25 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
   }
 
   if (p_layoutWorkspaceIds.isEmpty()) {
-    qInfo() << "ViewAreaController::restoreSession: no workspaces in layout";
+    qCDebug(lcWorkspace) << "ViewAreaController::restoreSession: no workspaces in layout";
     return;
   }
 
-  qInfo() << "ViewAreaController::restoreSession: layout has" << p_layoutWorkspaceIds.size()
-          << "workspaces";
+  qCDebug(lcWorkspace) << "ViewAreaController::restoreSession: layout has"
+                       << p_layoutWorkspaceIds.size() << "workspaces";
 
   // Determine the current workspace. If the saved current workspace is not in the
   // layout, fall back to the first workspace in the layout.
   QString restoredCurrentWsId = wsSvc->getCurrentWorkspace();
   if (!p_layoutWorkspaceIds.contains(restoredCurrentWsId)) {
     restoredCurrentWsId = p_layoutWorkspaceIds.first();
-    qDebug() << "ViewAreaController::restoreSession: saved current workspace not in layout,"
-             << "falling back to:" << restoredCurrentWsId;
+    qCDebug(lcWorkspace)
+        << "ViewAreaController::restoreSession: saved current workspace not in layout,"
+        << "falling back to:" << restoredCurrentWsId;
   }
 
-  qDebug() << "ViewAreaController::restoreSession: restoring workspaces from layout:"
-           << p_layoutWorkspaceIds << "currentWorkspace:" << restoredCurrentWsId;
+  qCDebug(lcWorkspace) << "ViewAreaController::restoreSession: restoring workspaces from layout:"
+                       << p_layoutWorkspaceIds << "currentWorkspace:" << restoredCurrentWsId;
 
   QStringList restoredWorkspaceIds;
 
@@ -1193,13 +1195,13 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
     // Per-buffer metadata is now stored in "bufferMetadata" (native vxcore field).
     QJsonObject bufferMetadata = wsConfig.value(QStringLiteral("bufferMetadata")).toObject();
 
-    qDebug() << "  Workspace" << wsId
-             << "name:" << wsConfig.value(QStringLiteral("name")).toString()
-             << "buffers:" << bufferIds << "currentBuffer:" << currentBufferId
-             << "bufferMetadata keys:" << bufferMetadata.keys();
+    qCDebug(lcWorkspace) << "  Workspace" << wsId
+                         << "name:" << wsConfig.value(QStringLiteral("name")).toString()
+                         << "buffers:" << bufferIds << "currentBuffer:" << currentBufferId
+                         << "bufferMetadata keys:" << bufferMetadata.keys();
 
     if (bufferIds.isEmpty()) {
-      qDebug() << "    (no buffers, skipping)";
+      qCDebug(lcWorkspace) << "    (no buffers, skipping)";
       continue;
     }
 
@@ -1221,16 +1223,17 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
         mode = ViewWindowMode::Edit;
       }
       lineNumber = bufMeta.value(QStringLiteral("cursorPosition")).toInt(-1);
-      qDebug() << "    Opening buffer" << bufferId
-               << (bufferId == currentBufferId ? "(current)" : "(non-current)")
-               << "mode:" << modeStr << "cursor:" << lineNumber;
+      qCDebug(lcWorkspace) << "    Opening buffer" << bufferId
+                           << (bufferId == currentBufferId ? "(current)" : "(non-current)")
+                           << "mode:" << modeStr << "cursor:" << lineNumber;
       openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode, lineNumber);
     }
 
     // After all buffers are opened in order, set the current buffer's tab as active.
     if (!currentBufferId.isEmpty() && m_view) {
       bool shouldFocus = (wsId == restoredCurrentWsId);
-      qDebug() << "    Setting current buffer:" << currentBufferId << "focus:" << shouldFocus;
+      qCDebug(lcWorkspace) << "    Setting current buffer:" << currentBufferId
+                           << "focus:" << shouldFocus;
       m_view->setCurrentBuffer(wsId, currentBufferId, shouldFocus);
     }
   }
@@ -1266,11 +1269,11 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
   // setCurrentViewSplit() to mark the split as active.
   m_currentWorkspaceId.clear();
   if (!restoredCurrentWsId.isEmpty()) {
-    qDebug() << "  Setting current workspace:" << restoredCurrentWsId;
+    qCDebug(lcWorkspace) << "  Setting current workspace:" << restoredCurrentWsId;
     setCurrentViewSplit(restoredCurrentWsId, true);
   }
 
-  qInfo() << "ViewAreaController::restoreSession: done";
+  qCDebug(lcWorkspace) << "ViewAreaController::restoreSession: done";
   // Note: m_shouldPropagateToCore stays false. The caller is responsible for
   // re-enabling it after pending signals have been processed (e.g., via
   // QTimer::singleShot(0, ...)) to avoid deferred currentChanged signals
@@ -1297,10 +1300,10 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
     fileType = QStringLiteral("Text");
   }
 
-  qDebug() << "    Opening restored buffer: buffer:" << p_bufferId
-           << "path:" << buf.nodeId().relativePath << "type:" << fileType
-           << "workspace:" << p_workspaceId << "focus:" << p_focus
-           << "mode:" << static_cast<int>(p_mode) << "lineNumber:" << p_lineNumber;
+  qCDebug(lcWorkspace) << "    Opening restored buffer: buffer:" << p_bufferId
+                       << "path:" << buf.nodeId().relativePath << "type:" << fileType
+                       << "workspace:" << p_workspaceId << "focus:" << p_focus
+                       << "mode:" << static_cast<int>(p_mode) << "lineNumber:" << p_lineNumber;
 
   FileOpenSettings settings;
   settings.m_focus = p_focus;
@@ -1318,8 +1321,8 @@ void ViewAreaController::checkCurrentViewWindowChange(const QString &p_workspace
 }
 
 void ViewAreaController::notifyCurrentViewWindowChanged() {
-  qDebug() << "ViewAreaController::notifyCurrentViewWindowChanged: currentWindowId:"
-           << m_currentWindowId << "currentWorkspaceId:" << m_currentWorkspaceId;
+  qCDebug(lcWorkspace) << "ViewAreaController::notifyCurrentViewWindowChanged: currentWindowId:"
+                       << m_currentWindowId << "currentWorkspaceId:" << m_currentWorkspaceId;
   emit currentViewWindowChanged();
 }
 

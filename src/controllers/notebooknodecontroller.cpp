@@ -18,6 +18,7 @@
 #include <core/coreconfig.h>
 #include <core/events.h>
 #include <core/fileopensettings.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
@@ -1167,7 +1168,7 @@ void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
   }
 
   if (skipped > 0) {
-    qDebug() << "openNodes: silently skipped" << skipped << "folder(s) in multi-selection";
+    qCDebug(lcUi) << "openNodes: silently skipped" << skipped << "folder(s) in multi-selection";
   }
 }
 
@@ -1202,8 +1203,8 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
   }
 
   if (skipped > 0) {
-    qDebug() << "openNodesWithCommand: silently skipped" << skipped
-             << "folder(s) in multi-selection";
+    qCDebug(lcUi) << "openNodesWithCommand: silently skipped" << skipped
+                  << "folder(s) in multi-selection";
   }
 }
 
