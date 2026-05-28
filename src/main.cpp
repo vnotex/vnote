@@ -157,6 +157,34 @@ int main(int argc, char *argv[]) {
     QTextCodec::setCodecForLocale(codec);
   }
 
+  // Early parse: scan argv for --verbose flag BEFORE vxcore context creation.
+  // This allows us to inject env vars that vxcore's Logger constructor reads.
+  // We do a simple literal scan instead of full QCommandLineParser (which requires
+  // QCoreApplication) since we only care about the --verbose flag for now.
+  bool verboseEarlyFlag = false;
+  {
+    QStringList args;
+    for (int i = 0; i < argc; ++i) {
+      args << QString::fromLocal8Bit(argv[i]);
+    }
+    if (args.contains("--verbose") || args.contains("-verbose")) {
+      verboseEarlyFlag = true;
+    }
+  }
+
+  // If --verbose was passed, unmute all QLoggingCategory categories and set vxcore
+  // to debug level. Only inject if the user hasn't already set these env vars.
+  // This ensures the logging rules pick up our changes when we call
+  // installDefaultLoggingRules() below, and vxcore's Logger ctor reads VXCORE_LOG_LEVEL.
+  if (verboseEarlyFlag) {
+    if (qgetenv("VNOTE_LOG_RULES").isEmpty()) {
+      qputenv("VNOTE_LOG_RULES", "*.debug=true");
+    }
+    if (qgetenv("VXCORE_LOG_LEVEL").isEmpty()) {
+      qputenv("VXCORE_LOG_LEVEL", "debug");
+    }
+  }
+
   // Route all vxcore logs through Qt's logging system so they reach
   // VNote's unified log pipeline (installed by Logger::init() later).
   vnotex::installVxCoreLogBridge();
