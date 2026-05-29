@@ -10,11 +10,12 @@
 #include <QStandardPaths>
 #include <QTimer>
 
+#include "core/logging.h"
 #include "coreconfig.h"
 #include "editorconfig.h"
 #include "mainconfig.h"
-#include "sessionconfig.h"
 #include "services/configcoreservice.h"
+#include "sessionconfig.h"
 #include "widgetconfig.h"
 
 #include <utils/fileutils2.h>
@@ -38,9 +39,7 @@ const QString ConfigMgr2::c_orgName = QStringLiteral("VNoteX");
 const QString ConfigMgr2::c_appName = QStringLiteral("VNote");
 
 ConfigMgr2::ConfigMgr2(ConfigCoreService *p_configService, QObject *p_parent)
-    : QObject(p_parent),
-      m_configService(p_configService),
-      m_mainConfig(new MainConfig(this)),
+    : QObject(p_parent), m_configService(p_configService), m_mainConfig(new MainConfig(this)),
       m_sessionConfig(new SessionConfig(this)) {
   Q_ASSERT(m_configService != nullptr);
 
@@ -73,8 +72,8 @@ ConfigMgr2::~ConfigMgr2() {
 }
 
 void ConfigMgr2::init() {
-  qInfo() << "ConfigMgr2 initializing with paths:"
-          << "app=" << m_appDataPath << "user=" << m_localDataPath;
+  qCDebug(lcConfig) << "ConfigMgr2 initializing with paths:"
+                    << "app=" << m_appDataPath << "user=" << m_localDataPath;
 
   // Load and initialize main config
   {
@@ -100,7 +99,7 @@ void ConfigMgr2::init() {
     }
   }
 
-  qInfo() << "ConfigMgr2 initialized successfully";
+  qCDebug(lcConfig) << "ConfigMgr2 initialized successfully";
 }
 
 void ConfigMgr2::initAfterQtAppStarted() {
@@ -116,45 +115,29 @@ void ConfigMgr2::initAfterQtAppStarted() {
     qInfo() << "application version not changed, but forced to update for debugging";
     upgradeMainConfigOnVersionChange();
 #else
-  // Check and copy necessary files to make sure we could start
-  copyNecessaryExtraData();
+    // Check and copy necessary files to make sure we could start
+    copyNecessaryExtraData();
 #endif
   }
 
-  qInfo() << "ConfigMgr2 post-initialized successfully";
+  qCDebug(lcConfig) << "ConfigMgr2 post-initialized successfully";
 }
 
-MainConfig &ConfigMgr2::getConfig() {
-  return *m_mainConfig;
-}
+MainConfig &ConfigMgr2::getConfig() { return *m_mainConfig; }
 
-const MainConfig &ConfigMgr2::getConfig() const {
-  return *m_mainConfig;
-}
+const MainConfig &ConfigMgr2::getConfig() const { return *m_mainConfig; }
 
-SessionConfig &ConfigMgr2::getSessionConfig() {
-  return *m_sessionConfig;
-}
+SessionConfig &ConfigMgr2::getSessionConfig() { return *m_sessionConfig; }
 
-const SessionConfig &ConfigMgr2::getSessionConfig() const {
-  return *m_sessionConfig;
-}
+const SessionConfig &ConfigMgr2::getSessionConfig() const { return *m_sessionConfig; }
 
-CoreConfig &ConfigMgr2::getCoreConfig() {
-  return m_mainConfig->getCoreConfig();
-}
+CoreConfig &ConfigMgr2::getCoreConfig() { return m_mainConfig->getCoreConfig(); }
 
-const CoreConfig &ConfigMgr2::getCoreConfig() const {
-  return m_mainConfig->getCoreConfig();
-}
+const CoreConfig &ConfigMgr2::getCoreConfig() const { return m_mainConfig->getCoreConfig(); }
 
-EditorConfig &ConfigMgr2::getEditorConfig() {
-  return m_mainConfig->getEditorConfig();
-}
+EditorConfig &ConfigMgr2::getEditorConfig() { return m_mainConfig->getEditorConfig(); }
 
-WidgetConfig &ConfigMgr2::getWidgetConfig() {
-  return m_mainConfig->getWidgetConfig();
-}
+WidgetConfig &ConfigMgr2::getWidgetConfig() { return m_mainConfig->getWidgetConfig(); }
 
 QString ConfigMgr2::getConfigDataFolder(ConfigDataType p_type) const {
   QString folderName;
@@ -195,13 +178,9 @@ QString ConfigMgr2::getConfigDataFolder(ConfigDataType p_type) const {
   return m_appDataPath + QDir::separator() + folderName;
 }
 
-QString ConfigMgr2::getAppDataPath() const {
-  return m_appDataPath;
-}
+QString ConfigMgr2::getAppDataPath() const { return m_appDataPath; }
 
-QString ConfigMgr2::getUserConfigPath() const {
-  return m_localDataPath;
-}
+QString ConfigMgr2::getUserConfigPath() const { return m_localDataPath; }
 
 QString ConfigMgr2::getLogFile() const {
   return m_localDataPath + QDir::separator() + QStringLiteral("vnote.log");
@@ -234,9 +213,7 @@ QJsonValue ConfigMgr2::parseAndReadConfig(const QString &p_exp) const {
   }
 }
 
-QString ConfigMgr2::getApplicationVersion() {
-  return c_version.toString();
-}
+QString ConfigMgr2::getApplicationVersion() { return c_version.toString(); }
 
 QString ConfigMgr2::getApplicationFilePath() {
 #if defined(Q_OS_LINUX)
@@ -282,13 +259,9 @@ void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) {
   scheduleSessionConfigWrite();
 }
 
-void ConfigMgr2::scheduleMainConfigWrite() {
-  m_mainConfigWriteTimer->start();
-}
+void ConfigMgr2::scheduleMainConfigWrite() { m_mainConfigWriteTimer->start(); }
 
-void ConfigMgr2::scheduleSessionConfigWrite() {
-  m_sessionConfigWriteTimer->start();
-}
+void ConfigMgr2::scheduleSessionConfigWrite() { m_sessionConfigWriteTimer->start(); }
 
 void ConfigMgr2::doWriteMainConfig() {
   if (m_pendingMainConfig.isEmpty()) {

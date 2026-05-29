@@ -18,6 +18,7 @@
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/eventbridge.h>
 #include <core/services/hookmanager.h>

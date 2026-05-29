@@ -7,6 +7,7 @@
 
 #include <core/hookevents.h>
 #include <core/hooknames.h>
+#include <core/logging.h>
 #include <core/services/hookmanager.h>
 #include <imagehost/customcommandprovider.h>
 #include <imagehost/giteeprovider.h>
@@ -29,10 +30,8 @@ ImageHostService::ImageHostService(HookManager *p_hookMgr, QObject *p_parent)
 
   connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
 
-  connect(m_worker, &ImageHostWorker::uploadCompleted,
-          this, &ImageHostService::onUploadCompleted);
-  connect(m_worker, &ImageHostWorker::removeCompleted,
-          this, &ImageHostService::onRemoveCompleted);
+  connect(m_worker, &ImageHostWorker::uploadCompleted, this, &ImageHostService::onUploadCompleted);
+  connect(m_worker, &ImageHostWorker::removeCompleted, this, &ImageHostService::onRemoveCompleted);
   connect(m_worker, &ImageHostWorker::testConfigCompleted, this,
           [this](int p_token, bool p_success, const QString &p_msg) {
             emit testConfigFinished(p_token, p_success, p_msg);
@@ -116,13 +115,9 @@ IImageHostProvider *ImageHostService::findProviderByUrl(const QString &p_url) co
   return nullptr;
 }
 
-const QVector<IImageHostProvider *> &ImageHostService::getProviders() const {
-  return m_providers;
-}
+const QVector<IImageHostProvider *> &ImageHostService::getProviders() const { return m_providers; }
 
-IImageHostProvider *ImageHostService::getDefaultProvider() const {
-  return m_defaultProvider;
-}
+IImageHostProvider *ImageHostService::getDefaultProvider() const { return m_defaultProvider; }
 
 void ImageHostService::setDefaultProvider(const QString &p_name) {
   auto *provider = findProvider(p_name);
@@ -157,7 +152,7 @@ void ImageHostService::loadFromConfig(const QVector<ImageHostItem> &p_items,
 
   m_defaultProvider = findProvider(p_defaultName);
 
-  qDebug() << "loaded" << m_providers.size() << "image host providers";
+  qCDebug(lcConfig) << "loaded" << m_providers.size() << "image host providers";
 }
 
 QVector<ImageHostItem> ImageHostService::saveToConfig() const {
@@ -191,8 +186,8 @@ IImageHostProvider *ImageHostService::createProvider(const QString &p_typeId,
   return provider;
 }
 
-ImageUploadResult ImageHostService::upload(IImageHostProvider *p_provider,
-                                            const QByteArray &p_data, const QString &p_path) {
+ImageUploadResult ImageHostService::upload(IImageHostProvider *p_provider, const QByteArray &p_data,
+                                           const QString &p_path) {
   if (!p_provider) {
     return ImageUploadResult{false, {}, tr("No provider"), {}};
   }
@@ -242,7 +237,7 @@ QString ImageHostService::typeDisplayName(const QString &p_typeId) const {
 }
 
 int ImageHostService::uploadAsync(IImageHostProvider *p_provider, const QByteArray &p_data,
-                                   const QString &p_path) {
+                                  const QString &p_path) {
   if (!p_provider) {
     return -1;
   }
