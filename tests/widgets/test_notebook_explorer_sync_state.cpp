@@ -65,6 +65,19 @@ private slots:
   void testS0SyncButtonClickOpensBootstrapDialog();
   void testS0SyncInfoMenuEnabled();
 
+  // sync-in-progress-ux T1: onSyncFailedSurface SYNC_IN_PROGRESS branch
+  // (mirrored locally — NotebookExplorer2 widget construction is blocked per
+  // the project-wide convention used by sibling tests; see
+  // test_notebookexplorer2_multiselect.cpp for the blocker note).
+  void testT1_OnSyncFailedSurface_InProgressIsSilent();
+
+  // sync-in-progress-ux T4: deferred-credential-retry state machine
+  // (logic mirrored locally for the same reason as T1).
+  void testT4A_CredentialsDeferredWhileSyncRunning();
+  void testT4B_DeferredConsumedOnSyncFinishOk();
+  void testT4C_DeferredNotConsumedOnSyncFinishFail();
+  void testT4D_CredentialsImmediateWhenSyncIdle();
+
 private:
   // Create a notebook on disk via NotebookCoreService.
   // Returns notebookId (empty string on failure).
@@ -370,6 +383,205 @@ void TestNotebookExplorerSyncState::testS0SyncInfoMenuEnabled() {
   // Sanity: old predicate (syncEnabled) would have been false -> S0 trap.
   const bool menuEnabledUnderOldRule = syncSvc->isSyncEnabled(notebookId);
   QVERIFY(!menuEnabledUnderOldRule);
+}
+
+// ============================================================================
+// sync-in-progress-ux T1 + T4 — local logic mirrors
+// ============================================================================
+//
+// NotebookExplorer2 widget construction is blocked in this test target
+// (requires full ServiceLocator wiring with ThemeService, ConfigMgr2, etc.;
+// see test_notebookexplorer2_multiselect.cpp QSKIP for the canonical
+// blocker note). The tests below therefore mirror the relevant slot bodies
+// from src/widgets/notebookexplorer2.cpp inline and assert behavioural
+// invariants on the mirror. If the production slot diverges from the mirror,
+// reviewers MUST update both the production code AND the mirror below in
+// the same commit (this preserves the established sibling-test pattern and
+// avoids adding #ifdef VNOTE_TESTING test seams in NotebookExplorer2 — see
+// plan TODO 6 acceptance: "Only use a seam if the real-signal approach is
+// infeasible". Real-signal approach is infeasible until a NotebookExplorer2
+// test harness exists).
+
+namespace mirror_t1 {
+// Mirrors NotebookExplorer2::onSyncFailedSurface IN_PROGRESS branch from
+// src/widgets/notebookexplorer2.cpp ~line 1724.
+struct State {
+  QSet<QString> authFailureNotified;
+  QSet<QString> networkFailureNotified;
+  QHash<QString, int> lastReconcileError;
+  int messageBoxShownCount = 0; // production calls QMessageBox; mirror counts.
+};
+
+// Returns true if the slot returned early (silent path), false otherwise.
+inline bool onSyncFailedSurface(State &s, const QString &notebookId, VxCoreError code) {
+  if (notebookId.isEmpty()) {
+    return true;
+  }
+  if (code == VXCORE_ERR_SYNC_CONFLICT) {
+    return true;
+  }
+  if (code == VXCORE_ERR_SYNC_IN_PROGRESS) {
+    // Silent overlap. Mirrors production branch: NEVER mutate anti-spam
+    // state, circuit-breaker, or reconcile-error tracker. Log + refresh
+    // button only.
+    return true;
+  }
+  // Non-IN_PROGRESS branches: production mutates anti-spam sets and shows
+  // a QMessageBox. Mirror only records the side-effects we need for tests.
+  if (code == VXCORE_ERR_SYNC_AUTH_FAILED) {
+    s.authFailureNotified.insert(notebookId);
+    ++s.messageBoxShownCount;
+  } else if (code == VXCORE_ERR_SYNC_NETWORK) {
+    s.networkFailureNotified.insert(notebookId);
+    ++s.messageBoxShownCount;
+  } else {
+    s.authFailureNotified.insert(notebookId); // generic-bucket reuse
+    ++s.messageBoxShownCount;
+  }
+  return false;
+}
+} // namespace mirror_t1
+
+namespace mirror_t4 {
+// Mirrors NotebookExplorer2's credentialsSetFinished + syncFinished lambdas
+// from src/widgets/notebookexplorer2.cpp ~lines 121-209.
+struct State {
+  QSet<QString> credentialUpdateRetryArm;
+  QSet<QString> deferredCredentialRetry;
+  QSet<QString> pendingManualSyncFeedback;
+  QSet<QString> authFailureNotified;
+  QSet<QString> networkFailureNotified;
+  QHash<QString, int> lastReconcileError;
+  QStringList triggerSyncNowCalls;
+};
+
+inline void credentialsSetFinishedOk(State &s, const QString &notebookId, bool isSyncInProgress) {
+  s.authFailureNotified.remove(notebookId);
+  s.networkFailureNotified.remove(notebookId);
+  if (s.credentialUpdateRetryArm.remove(notebookId)) {
+    if (isSyncInProgress) {
+      // Defer (T4 Scenario A).
+      s.deferredCredentialRetry.insert(notebookId);
+    } else {
+      // Immediate (T4 Scenario D).
+      s.pendingManualSyncFeedback.insert(notebookId);
+      s.triggerSyncNowCalls.append(notebookId);
+    }
+  }
+}
+
+inline void syncFinished(State &s, const QString &notebookId, VxCoreError result) {
+  s.lastReconcileError.remove(notebookId);
+  if (result == VXCORE_OK) {
+    s.authFailureNotified.remove(notebookId);
+    s.networkFailureNotified.remove(notebookId);
+    s.credentialUpdateRetryArm.remove(notebookId);
+    // Existing remove-and-(would-show-feedback) block runs FIRST.
+    s.pendingManualSyncFeedback.remove(notebookId);
+    // NEW T4 block runs AFTER so the insert below tags the trailing sync.
+    if (s.deferredCredentialRetry.remove(notebookId)) {
+      s.pendingManualSyncFeedback.insert(notebookId);
+      s.triggerSyncNowCalls.append(notebookId);
+    }
+  } else {
+    s.pendingManualSyncFeedback.remove(notebookId);
+    // deferredCredentialRetry is intentionally NOT touched on failure
+    // (per plan: consumed on next OK or cleared by disable/notebook-switch).
+  }
+}
+} // namespace mirror_t4
+
+void TestNotebookExplorerSyncState::testT1_OnSyncFailedSurface_InProgressIsSilent() {
+  // T1: onSyncFailedSurface MUST swallow VXCORE_ERR_SYNC_IN_PROGRESS without
+  // mutating anti-spam sets, reconcile-error tracker, or showing a dialog.
+  mirror_t1::State s;
+  const QString nbId = QStringLiteral("nb-t1");
+
+  const bool tookSilentPath = mirror_t1::onSyncFailedSurface(s, nbId, VXCORE_ERR_SYNC_IN_PROGRESS);
+  QVERIFY2(tookSilentPath, "IN_PROGRESS must take the silent early-return branch");
+  QVERIFY2(!s.authFailureNotified.contains(nbId),
+           "anti-spam (auth) set must NOT be mutated by IN_PROGRESS");
+  QVERIFY2(!s.networkFailureNotified.contains(nbId),
+           "anti-spam (network) set must NOT be mutated by IN_PROGRESS");
+  QVERIFY2(!s.lastReconcileError.contains(nbId),
+           "reconcile-error tracker must NOT be mutated by IN_PROGRESS");
+  QCOMPARE(s.messageBoxShownCount, 0);
+
+  // Regression guard: a real auth failure for the SAME notebook STILL
+  // surfaces (we didn't accidentally short-circuit downstream codes).
+  const bool authTookSilent = mirror_t1::onSyncFailedSurface(s, nbId, VXCORE_ERR_SYNC_AUTH_FAILED);
+  QVERIFY2(!authTookSilent, "AUTH_FAILED must NOT take the silent path");
+  QVERIFY(s.authFailureNotified.contains(nbId));
+  QCOMPARE(s.messageBoxShownCount, 1);
+}
+
+void TestNotebookExplorerSyncState::testT4A_CredentialsDeferredWhileSyncRunning() {
+  // T4 Scenario A: credentialsSetFinished(OK) while sync is in flight ->
+  // deferred (NOT immediate trigger).
+  mirror_t4::State s;
+  const QString nbId = QStringLiteral("nb-defer");
+  s.credentialUpdateRetryArm.insert(nbId);
+
+  mirror_t4::credentialsSetFinishedOk(s, nbId, /*isSyncInProgress=*/true);
+
+  QVERIFY2(s.triggerSyncNowCalls.isEmpty(),
+           "triggerSyncNow must NOT fire while a sync is already running");
+  QVERIFY2(s.deferredCredentialRetry.contains(nbId),
+           "id must be inserted into m_deferredCredentialRetry");
+  QVERIFY2(!s.credentialUpdateRetryArm.contains(nbId),
+           "credential retry arm must be consumed in either branch");
+  QVERIFY2(!s.pendingManualSyncFeedback.contains(nbId),
+           "deferred path must NOT pre-tag manual feedback (would tag wrong sync)");
+}
+
+void TestNotebookExplorerSyncState::testT4B_DeferredConsumedOnSyncFinishOk() {
+  // T4 Scenario B: syncFinished(OK) consumes the deferred entry AND fires
+  // the trailing trigger AFTER the existing pendingManualSyncFeedback
+  // remove block (so the insert below tags the TRAILING sync, not the
+  // just-finished one).
+  mirror_t4::State s;
+  const QString nbId = QStringLiteral("nb-trail");
+  s.deferredCredentialRetry.insert(nbId);
+
+  mirror_t4::syncFinished(s, nbId, VXCORE_OK);
+
+  QCOMPARE(s.triggerSyncNowCalls.size(), 1);
+  QCOMPARE(s.triggerSyncNowCalls.first(), nbId);
+  QVERIFY2(!s.deferredCredentialRetry.contains(nbId),
+           "deferred entry must be consumed exactly once on OK");
+  QVERIFY2(s.pendingManualSyncFeedback.contains(nbId),
+           "trailing sync must be tagged so its success surfaces correctly");
+}
+
+void TestNotebookExplorerSyncState::testT4C_DeferredNotConsumedOnSyncFinishFail() {
+  // T4 Scenario C: a non-OK syncFinished must NOT consume the deferred
+  // entry. Next OK sync (or disable/notebook-switch) clears it.
+  mirror_t4::State s;
+  const QString nbId = QStringLiteral("nb-fail");
+  s.deferredCredentialRetry.insert(nbId);
+
+  mirror_t4::syncFinished(s, nbId, VXCORE_ERR_SYNC_NETWORK);
+
+  QVERIFY2(s.triggerSyncNowCalls.isEmpty(),
+           "triggerSyncNow must NOT fire from a failed syncFinished");
+  QVERIFY2(s.deferredCredentialRetry.contains(nbId),
+           "deferred entry must persist across a failed sync");
+}
+
+void TestNotebookExplorerSyncState::testT4D_CredentialsImmediateWhenSyncIdle() {
+  // T4 Scenario D: credentialsSetFinished(OK) with idle sync fires
+  // triggerSyncNow IMMEDIATELY (pre-fix behavior preserved when not racing).
+  mirror_t4::State s;
+  const QString nbId = QStringLiteral("nb-now");
+  s.credentialUpdateRetryArm.insert(nbId);
+
+  mirror_t4::credentialsSetFinishedOk(s, nbId, /*isSyncInProgress=*/false);
+
+  QCOMPARE(s.triggerSyncNowCalls.size(), 1);
+  QCOMPARE(s.triggerSyncNowCalls.first(), nbId);
+  QVERIFY2(!s.deferredCredentialRetry.contains(nbId), "immediate path must NOT touch deferred set");
+  QVERIFY2(s.pendingManualSyncFeedback.contains(nbId),
+           "immediate path must tag manual feedback for the triggered sync");
 }
 
 } // namespace tests

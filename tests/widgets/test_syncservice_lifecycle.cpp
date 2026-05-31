@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
+#include <QSemaphore>
 #include <QSignalSpy>
 #include <QTimer>
 #include <QtTest>
@@ -39,6 +40,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
+#include <core/services/syncworkqueuemanager.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -110,6 +112,13 @@ private slots:
   void cancelReasonMetadata();
   void boundedShutdown();
   void visualBlockedDialog();
+
+  // sync-in-progress-ux T2: triggerSyncNow MUST NOT emit
+  // syncFailed(VXCORE_ERR_SYNC_IN_PROGRESS) for the QueueFull / Rejected
+  // EnqueueResult branches (silent match for the auto-sync path).
+  void triggerSyncNow_queueFull_silent();
+  void triggerSyncNow_rejected_silent();
+  void triggerSyncNow_coalesced_silent_regressionGuard();
 
 private:
   MessageBoxAutoCloser *m_closer = nullptr;
@@ -353,6 +362,156 @@ void TestSyncServiceLifecycle::visualBlockedDialog() {
 
   syncService.testSetInProgress(QStringLiteral("nbVisual"), false);
   vxcore_context_destroy(ctx);
+}
+
+// ----------------------------------------------------------------------------
+// sync-in-progress-ux T2 — service-layer silent QueueFull/Rejected/Coalesced
+// ----------------------------------------------------------------------------
+//
+// Goal: pin the post-fix invariant that SyncService::triggerSyncNow NEVER
+// emits syncFailed(VXCORE_ERR_SYNC_IN_PROGRESS) for the three non-Accepted
+// EnqueueResult branches. Pre-fix, QueueFull and Rejected emitted IN_PROGRESS
+// failures; Coalesced was always silent (regression-guarded here).
+//
+// Test recipe per plan TODO 6:
+//   - Inject a SyncWorkQueueManager into the ServiceLocator BEFORE
+//     constructing SyncService, so we can call setMaxDepth() / shutdown()
+//     to force the branch we want.
+//   - QueueFull: set maxDepth=0; the very first triggerSyncNow hits the cap
+//     check (0 >= 0) and returns QueueFull. This avoids the threading
+//     gymnastics of pre-filling pending slots with semaphore-blocked work,
+//     while still exercising the exact production switch-case branch
+//     that used to emit syncFailed(IN_PROGRESS).
+//   - Rejected: shutdown() the queue first; subsequent enqueue() returns
+//     Rejected synchronously.
+//   - Coalesced: pre-enqueue a slow item directly with coalesceKey="trigger"
+//     blocked on a QSemaphore so it stays pending while we call
+//     triggerSyncNow (which also uses coalesceKey="trigger"), guaranteeing
+//     the Coalesced branch executes.
+//
+// All three scenarios assert no syncFailed signal is emitted via QSignalSpy.
+
+namespace {
+// Tiny helper that wires the standard fixture used by the T2 scenarios.
+struct T2Fixture {
+  VxCoreContextHandle ctx = nullptr;
+  ServiceLocator services;
+  HookManager hookMgr;
+  std::unique_ptr<NotebookCoreService> notebookSvc;
+  std::unique_ptr<SyncCredentialsStore> credStore;
+  SyncWorkQueueManager workQueue; // registered into services BEFORE SyncService
+  std::unique_ptr<SyncService> sync;
+
+  T2Fixture() {
+    VxCoreError err = vxcore_context_create("{}", &ctx);
+    Q_ASSERT(err == VXCORE_OK);
+    Q_UNUSED(err);
+    services.registerService<HookManager>(&hookMgr);
+    notebookSvc.reset(new NotebookCoreService(ctx));
+    services.registerService<NotebookCoreService>(notebookSvc.get());
+    credStore.reset(new SyncCredentialsStore(services));
+    services.registerService<SyncCredentialsStore>(credStore.get());
+    // CRITICAL: register the queue BEFORE SyncService is constructed so
+    // SyncService picks it up from the locator (instead of allocating its
+    // own owned queue, which we couldn't poke at from the test).
+    services.registerService<SyncWorkQueueManager>(&workQueue);
+    sync.reset(new SyncService(services));
+  }
+  ~T2Fixture() {
+    sync.reset();
+    if (ctx) {
+      vxcore_context_destroy(ctx);
+    }
+  }
+};
+} // namespace
+
+void TestSyncServiceLifecycle::triggerSyncNow_queueFull_silent() {
+  T2Fixture f;
+
+  // maxDepth=0 means queue.size() (0) >= cap (0) -> QueueFull on every
+  // enqueue regardless of coalesce key. Simpler and deterministic vs
+  // pre-filling the queue with distinct-keyed semaphore-blocked work; the
+  // production branch under test (case EnqueueResult::QueueFull) is the
+  // same either way.
+  f.workQueue.setMaxDepth(0);
+
+  QSignalSpy failSpy(f.sync.get(), &SyncService::syncFailed);
+  QSignalSpy finSpy(f.sync.get(), &SyncService::syncFinished);
+
+  f.sync->triggerSyncNow(QStringLiteral("nb-qfull"));
+  // No async work runs (enqueue returned QueueFull); just process anyway.
+  QTest::qWait(50);
+
+  QCOMPARE(failSpy.count(), 0);
+  QCOMPARE(finSpy.count(), 0);
+}
+
+void TestSyncServiceLifecycle::triggerSyncNow_rejected_silent() {
+  T2Fixture f;
+
+  // Shutdown the queue so subsequent enqueue() returns Rejected.
+  QVERIFY(f.workQueue.shutdown(2000));
+
+  QSignalSpy failSpy(f.sync.get(), &SyncService::syncFailed);
+  QSignalSpy finSpy(f.sync.get(), &SyncService::syncFinished);
+
+  f.sync->triggerSyncNow(QStringLiteral("nb-reject"));
+  QTest::qWait(50);
+
+  QCOMPARE(failSpy.count(), 0);
+  QCOMPARE(finSpy.count(), 0);
+}
+
+void TestSyncServiceLifecycle::triggerSyncNow_coalesced_silent_regressionGuard() {
+  T2Fixture f;
+  // Default depth is fine for this test (4); we just need one pending
+  // item with key="trigger" so SyncService::triggerSyncNow coalesces.
+
+  const QString nbId = QStringLiteral("nb-coalesce");
+
+  // Block the worker on a semaphore so the pre-enqueued item stays pending
+  // (well, RUNNING from the queue's POV, since it pops to dispatch). To
+  // actually keep one item pending we enqueue TWO blocked items: first
+  // becomes running on the pool thread (acquires the semaphore), second
+  // sits in the pending queue with coalesceKey="trigger".
+  QSemaphore blockFirst(0);
+  QSemaphore blockSecond(0);
+  auto blockA = [&blockFirst]() { blockFirst.acquire(); };
+  auto blockB = [&blockSecond]() { blockSecond.acquire(); };
+
+  QCOMPARE(f.workQueue.enqueue(nbId, blockA, QStringLiteral("warmup")),
+           SyncWorkQueueManager::EnqueueResult::Accepted);
+  // Wait for the pool worker to actually pick up blockA and start running it
+  // (queueDepth drops to 0 once it's popped from the pending queue). Without
+  // this wait, the pool may not have dispatched yet and blockA sits pending,
+  // which would put blockB at depth=2 instead of the intended 1.
+  for (int i = 0; i < 100 && f.workQueue.queueDepth(nbId) != 0; ++i) {
+    QTest::qWait(10);
+  }
+  QCOMPARE(f.workQueue.queueDepth(nbId), 0);
+
+  QCOMPARE(f.workQueue.enqueue(nbId, blockB, QStringLiteral("trigger")),
+           SyncWorkQueueManager::EnqueueResult::Accepted);
+  QCOMPARE(f.workQueue.queueDepth(nbId), 1);
+
+  QSignalSpy failSpy(f.sync.get(), &SyncService::syncFailed);
+
+  // Now trigger sync — production uses coalesceKey="trigger"; matches the
+  // pending blockB; should return Coalesced silently (regression guard
+  // pre-existing pre-fix behavior).
+  f.sync->triggerSyncNow(nbId);
+  QTest::qWait(50);
+
+  QCOMPARE(failSpy.count(), 0);
+  // Queue depth must not have grown (Coalesced drops the duplicate).
+  QCOMPARE(f.workQueue.queueDepth(nbId), 1);
+
+  // Clean shutdown: release both semaphores so the worker can drain and
+  // the queue can shut down without leaking threads.
+  blockFirst.release();
+  blockSecond.release();
+  f.workQueue.shutdown(2000);
 }
 
 } // namespace tests

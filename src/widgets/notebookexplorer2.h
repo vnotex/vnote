@@ -243,6 +243,15 @@ private:
   // notebook switch, disable, and on successful sync.
   QSet<QString> m_credentialUpdateRetryArm;
 
+  // T3 (sync-in-progress-ux): defer-one-retry set for credential-update
+  // race. When credentialsSetFinished(OK) arrives but a sync is already in
+  // flight for the notebook (isSyncInProgress(id)==true), insert the
+  // notebookId here instead of calling triggerSyncNow immediately. The
+  // syncFinished(OK) handler consumes the entry and fires the deferred
+  // trigger. ONE-SHOT per credentialsSetFinished — adding the same id twice
+  // is idempotent (QSet semantics) so we never pile up retries.
+  QSet<QString> m_deferredCredentialRetry;
+
   // File system watcher for detecting external changes
   QFileSystemWatcher *m_fsWatcher = nullptr;
   QTimer *m_fsReloadTimer = nullptr;

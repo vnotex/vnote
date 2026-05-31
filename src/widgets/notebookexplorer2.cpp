@@ -140,6 +140,20 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
                   qCInfo(lcSync) << "Manual sync completed successfully for notebook"
                                  << p_notebookId;
                 }
+
+                // T4 (sync-in-progress-ux): consume any deferred credential-retry
+                // for this notebook. Placed AFTER the existing remove-and-show so
+                // the insert below tags the TRAILING sync (not the just-finished
+                // one). Order matters.
+                if (m_deferredCredentialRetry.remove(p_notebookId)) {
+                  if (auto *svc = m_services.get<SyncService>()) {
+                    m_pendingManualSyncFeedback.insert(p_notebookId);
+                    qCInfo(lcSync) << "NotebookExplorer2: consuming deferred credential retry "
+                                      "after sync completion"
+                                   << "notebookId:" << p_notebookId;
+                    svc->triggerSyncNow(p_notebookId);
+                  }
+                }
               } else {
                 // Failed manual sync: drop the pending-feedback tag so we don't
                 // double-notify (the failure dialog already provides feedback).
@@ -172,12 +186,23 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
                 m_networkFailureNotified.remove(p_notebookId);
                 if (m_credentialUpdateRetryArm.remove(p_notebookId)) {
                   if (auto *svc = m_services.get<SyncService>()) {
-                    m_pendingManualSyncFeedback.insert(p_notebookId);
-                    qCDebug(lcSync)
-                        << "NotebookExplorer2: credentialsSetFinished OK with armed retry; "
-                           "triggering sync"
-                        << "notebookId:" << p_notebookId;
-                    svc->triggerSyncNow(p_notebookId);
+                    if (svc->isSyncInProgress(p_notebookId)) {
+                      // Sync is currently running; defer ONE retry until it completes
+                      // (consumed in syncFinished(OK) lambda). User still sees verdict
+                      // of the new PAT, just one sync cycle later. Idempotent QSet
+                      // insert prevents stacking.
+                      m_deferredCredentialRetry.insert(p_notebookId);
+                      qCInfo(lcSync) << "NotebookExplorer2: credentialsSetFinished OK while sync "
+                                        "in flight; deferring retry"
+                                     << "notebookId:" << p_notebookId;
+                    } else {
+                      m_pendingManualSyncFeedback.insert(p_notebookId);
+                      qCDebug(lcSync)
+                          << "NotebookExplorer2: credentialsSetFinished OK with armed retry; "
+                             "triggering sync"
+                          << "notebookId:" << p_notebookId;
+                      svc->triggerSyncNow(p_notebookId);
+                    }
                   }
                 }
               }
@@ -188,6 +213,7 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
               m_authFailureNotified.remove(p_notebookId);
               m_networkFailureNotified.remove(p_notebookId);
               m_credentialUpdateRetryArm.remove(p_notebookId);
+              m_deferredCredentialRetry.remove(p_notebookId);
               m_pendingManualSyncFeedback.remove(p_notebookId);
               updateSyncButtonState();
             });
@@ -209,6 +235,7 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
     m_authFailureNotified.clear();
     m_networkFailureNotified.clear();
     m_credentialUpdateRetryArm.clear();
+    m_deferredCredentialRetry.clear();
     m_pendingManualSyncFeedback.clear();
     updateSyncButtonState();
   });
@@ -1692,6 +1719,19 @@ void NotebookExplorer2::onSyncFailedSurface(const QString &p_notebookId, VxCoreE
   // Conflict failures are owned by MainWindow2 (which surfaces the conflict
   // resolution flow). Don't double-notify here.
   if (p_code == VXCORE_ERR_SYNC_CONFLICT) {
+    return;
+  }
+
+  if (p_code == VXCORE_ERR_SYNC_IN_PROGRESS) {
+    // Overlap with another in-flight sync (queue full, queue rejected on
+    // shutdown, OR backend op_mutex_ try_lock race). NOT a real failure —
+    // the original sync continues; this trigger was redundant. Log and
+    // refresh the button only. NEVER mutate anti-spam state, circuit-
+    // breaker, or reconcile-error tracker.
+    qCInfo(lcSync) << "NotebookExplorer2::onSyncFailedSurface: SYNC_IN_PROGRESS"
+                   << "treated as overlap (silent) notebookId:" << p_notebookId
+                   << "message:" << p_message;
+    updateSyncButtonState();
     return;
   }
 
