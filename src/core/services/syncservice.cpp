@@ -161,6 +161,22 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
         [this](HookContext &, const NotebookOpenEvent &p_event) { onNotebookAfterOpen(p_event); },
         /*priority=*/10);
 
+    // T2 (fix-qtkeychain-win32-error-8): wipe any stored PAT when a notebook
+    // is removed from VNote. NotebookAfterClose fires only on VXCORE_OK, i.e.
+    // the notebook has truly left listNotebooks() and the startup S6 sweep
+    // can no longer reach it. Centralizing here covers every current and
+    // future caller of NotebookCoreService::closeNotebook (ManageNotebooks
+    // close, NewNotebook rollback, VNote3 migration, etc.). deleteCredentials
+    // is idempotent so notebooks that never had sync enabled are a no-op.
+    hookMgr->addAction<NotebookCloseEvent>(
+        HookNames::NotebookAfterClose,
+        [this](HookContext &, const NotebookCloseEvent &p_event) {
+          if (m_credentialsStore && !p_event.notebookId.isEmpty()) {
+            m_credentialsStore->deleteCredentials(p_event.notebookId);
+          }
+        },
+        /*priority=*/10);
+
     hookMgr->addAction(
         HookNames::MainWindowAfterStart,
         [this](HookContext &, const QVariantMap &) { onMainWindowAfterStart(); },
@@ -367,45 +383,64 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
   //   3. Always delete the keychain entry afterwards.
   // One-shot connection.
   auto *conn = new QMetaObject::Connection;
-  *conn = connect(
-      this, &SyncService::disableFinished, this,
-      [this, notebookId, conn](const QString &p_finishedNotebookId, VxCoreError p_result) {
-        if (p_finishedNotebookId != notebookId) {
-          return;
-        }
-        QObject::disconnect(*conn);
-        delete conn;
+  *conn =
+      connect(
+          this, &SyncService::disableFinished, this,
+          [this, notebookId, conn](const QString &p_finishedNotebookId, VxCoreError p_result) {
+            if (p_finishedNotebookId != notebookId) {
+              return;
+            }
+            QObject::disconnect(*conn);
+            delete conn;
 
-        // W2.T5: clear JSON sync fields only on disable success.
-        if (p_result == VXCORE_OK && m_notebookCoreService) {
-          QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
-          cfg.remove(QLatin1String(vxcore::kJsonKeySyncEnabled));
-          cfg.remove(QLatin1String(vxcore::kJsonKeySyncBackend));
-          cfg.remove(QLatin1String(vxcore::kJsonKeySyncRemoteUrl));
-          const QString newJson =
-              QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
-          const bool ok = m_notebookCoreService->updateNotebookConfig(notebookId, newJson);
-          if (!ok) {
-            qCWarning(syncCategory)
-                << "SyncService::disableSyncForNotebook: failed to clear JSON sync fields for"
-                << "notebookId:" << notebookId
-                << "(continuing with keychain cleanup as best-effort)";
-          }
-        }
+            // W2.T5 + Task 3 (fix-qtkeychain-win32-error-8): on disable SUCCESS
+            // clear the three flat sync JSON keys AND wipe the PAT from the
+            // keychain AND fire the after_disable hook. All success-only side
+            // effects live inside this single guard so the failure branch
+            // (else) can preserve everything for a clean retry.
+            if (p_result == VXCORE_OK) {
+              if (m_notebookCoreService) {
+                QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
+                cfg.remove(QLatin1String(vxcore::kJsonKeySyncEnabled));
+                cfg.remove(QLatin1String(vxcore::kJsonKeySyncBackend));
+                cfg.remove(QLatin1String(vxcore::kJsonKeySyncRemoteUrl));
+                const QString newJson =
+                    QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
+                const bool ok = m_notebookCoreService->updateNotebookConfig(notebookId, newJson);
+                if (!ok) {
+                  qCWarning(syncCategory)
+                      << "SyncService::disableSyncForNotebook: failed to clear JSON sync fields for"
+                      << "notebookId:" << notebookId
+                      << "(continuing with keychain cleanup as best-effort)";
+                }
+              }
 
-        m_credentialsStore->deleteCredentials(notebookId);
+              m_credentialsStore->deleteCredentials(notebookId);
 
-        // F4.5: fire vnote.sync.after_disable on success only. Fired AFTER the
-        // JSON sync fields are cleared and AFTER scheduling keychain delete,
-        // outside any SyncService mutex. Observe-only.
-        if (p_result == VXCORE_OK) {
-          if (auto *hookMgr = m_services.get<HookManager>()) {
-            QVariantMap args;
-            args[QStringLiteral("notebookId")] = notebookId;
-            hookMgr->doAction(HookNames::SyncAfterDisable, args);
-          }
-        }
-      });
+              // F4.5: fire vnote.sync.after_disable on success only. Fired AFTER
+              // the JSON sync fields are cleared and AFTER scheduling keychain
+              // delete, outside any SyncService mutex. Observe-only.
+              if (auto *hookMgr = m_services.get<HookManager>()) {
+                QVariantMap args;
+                args[QStringLiteral("notebookId")] = notebookId;
+                hookMgr->doAction(HookNames::SyncAfterDisable, args);
+              }
+            } else {
+              // INTENTIONAL: do NOT call deleteCredentials on disable failure;
+              // the next successful disable attempt will clean both JSON and
+              // keychain. Preserving the PAT here keeps it available for retry
+              // so the user does not have to re-enter credentials after a
+              // transient backend error. The companion JSON keys are likewise
+              // preserved above (the success guard never runs on failure).
+              // Orphan-PAT recovery for the rare case where a previous-session
+              // disable wiped JSON but not keychain is handled by the S6
+              // startup sweep in onMainWindowAfterStart.
+              qCDebug(syncCategory)
+                  << "SyncService::disableSyncForNotebook: disable failed; preserving JSON and "
+                  << "keychain PAT for retry; notebookId:" << notebookId
+                  << "result:" << static_cast<int>(p_result);
+            }
+          });
 
   // T18: route disable through SyncWorkQueueManager (per-notebook serialized
   // executor) instead of the legacy SyncWorker QMetaObject::invokeMethod path.
@@ -539,15 +574,22 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     if (token) {
       vxcore_sync_free_cancellation(token);
     }
-    emit syncFailed(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS, QStringLiteral("sync queue full"));
+    // T2 (sync-in-progress-ux): silent treatment to match onSyncShouldRun
+    // (auto-sync path) — QueueFull/Rejected are not user-visible failures.
+    // UI surfaces only via log; no syncFailed signal because IN_PROGRESS
+    // would be classified as non-error in onSyncFailedSurface anyway, and
+    // omitting the emit keeps the signal contract clean.
     return;
   case SyncWorkQueueManager::EnqueueResult::Rejected:
     qCWarning(syncCategory) << "SyncService::triggerSyncNow: enqueue rejected for" << notebookId;
     if (token) {
       vxcore_sync_free_cancellation(token);
     }
-    emit syncFailed(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS,
-                    QStringLiteral("sync queue rejected"));
+    // T2 (sync-in-progress-ux): silent treatment to match onSyncShouldRun
+    // (auto-sync path) — QueueFull/Rejected are not user-visible failures.
+    // UI surfaces only via log; no syncFailed signal because IN_PROGRESS
+    // would be classified as non-error in onSyncFailedSurface anyway, and
+    // omitting the emit keeps the signal contract clean.
     return;
   }
 }
