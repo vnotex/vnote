@@ -202,6 +202,10 @@ public:
   void testForceNextPersistFailure(const QString &p_message = QString());
   void testForceNextRollbackFailure();
 
+  // Public accessor for the credentials store. Used by T1 bootstrapSync
+  // rollback path to delete orphan keychain PAT on enable failure.
+  SyncCredentialsStore *credentialsStore() const { return m_credentialsStore; }
+
   // Bounded shutdown of the underlying SyncWorker thread.
   // Sequence:
   //   1. Set the m_shutDown flag so subsequent public-API calls are no-ops.

@@ -12,6 +12,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synccredentialsstore.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 #include <utils/pathutils.h>
@@ -248,6 +249,15 @@ void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QSt
                 // QDir::removeRecursively (no notebook_delete C API exists).
                 qCritical() << "Bootstrap sync failed for notebook" << p_notebookId
                             << "result:" << static_cast<int>(p_result) << "message:" << p_message;
+
+                // T1: Delete the just-stored PAT from the keychain to prevent
+                // orphan vault entries. Mirror the pattern from
+                // SyncService::bootstrapAndPersist rollback (line 774-776).
+                auto *credStore = syncService->credentialsStore();
+                if (credStore) {
+                  credStore->deleteCredentials(p_notebookId);
+                }
+
                 notebookService->closeNotebook(p_notebookId);
                 if (!rootPath.isEmpty()) {
                   // SQLite/libgit2 may hold transient file handles on Windows just
