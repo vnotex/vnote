@@ -57,21 +57,21 @@ public:
   // credentialsRetrieved / credentialsError-with-"not found" signals. Use
   // hasCredentials() ONLY for UI hints (e.g., classifier badges) where a
   // stale-but-recent answer is acceptable.
-  bool hasCredentials(const QString &p_notebookId) const;
+  virtual bool hasCredentials(const QString &p_notebookId) const;
 
 public slots:
   // Asynchronously store a PAT for the given notebook.
   // Emits credentialsStored on success, credentialsError on failure.
-  void storeCredentials(const QString &p_notebookId, const QString &p_pat);
+  virtual void storeCredentials(const QString &p_notebookId, const QString &p_pat);
 
   // Asynchronously retrieve the PAT for the given notebook.
   // Emits credentialsRetrieved on success (with the PAT string), or
   // credentialsError on failure (including not-found and backend errors).
-  void retrieveCredentials(const QString &p_notebookId);
+  virtual void retrieveCredentials(const QString &p_notebookId);
 
   // Asynchronously delete the PAT for the given notebook.
   // Emits credentialsDeleted on success, credentialsError on failure.
-  void deleteCredentials(const QString &p_notebookId);
+  virtual void deleteCredentials(const QString &p_notebookId);
 
   // Best-effort refresh of the in-memory existence cache.
   //
@@ -80,7 +80,7 @@ public slots:
   // backends that support enumeration, and as a no-op safety call sites can
   // invoke after suspected external mutation. The cache continues to update
   // automatically through the completion signals listed in hasCredentials().
-  void refreshKnownIds();
+  virtual void refreshKnownIds();
 
 signals:
   void credentialsStored(const QString &p_notebookId);

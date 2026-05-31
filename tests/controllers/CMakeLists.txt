@@ -126,6 +126,25 @@ add_custom_command(TARGET test_notebooksyncinfocontroller POST_BUILD
     $<TARGET_FILE_DIR:test_notebooksyncinfocontroller>
 )
 
+add_qt_test(test_syncservice_credentials_cleanup
+  SOURCES
+    test_syncservice_credentials_cleanup.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
+  LINKS
+    Qt6::Core
+    Qt6::Widgets
+    core_services
+    vxcore
+)
+# QTEST_MAIN's default crash-handler hooks deadlock when ctest captures stdout
+# via its pipe driver on Windows (per T14 / test_bootstrap learnings). Override
+# the auto-registered ctest command to invoke the binary with `-nocrashhandler`.
+set_property(TEST test_syncservice_credentials_cleanup PROPERTY
+  COMMAND $<TARGET_FILE:test_syncservice_credentials_cleanup> -nocrashhandler)
+set_tests_properties(test_syncservice_credentials_cleanup PROPERTIES
+  TIMEOUT 60
+)
+
 add_qt_test(test_notebooknodecontroller_multiselect
   SOURCES
     test_notebooknodecontroller_multiselect.cpp
