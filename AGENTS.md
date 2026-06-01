@@ -405,6 +405,8 @@ The key property: rollback NEVER causes reconcile to silently resurrect a notebo
 
 `SyncService::disableSyncForNotebook` on `VXCORE_OK` clears all three flat sync keys (`syncEnabled`, `syncBackend`, `syncRemoteUrl`) from notebook JSON BEFORE deleting the keychain entry (`src/core/services/syncservice.cpp:246-290`). On failure, JSON is preserved for retry. This closes the "resurrection trap" where a disabled notebook would reappear as S6 (orphan PAT) or S1 (orphan disk fields) on next app start.
 
+For the full table of all five credential cleanup sites (bootstrap rollback, `bootstrapAndPersist` rollback, notebook removal, sync disable, S6 startup sweep) and the "when fires / when does NOT fire" matrix, see [src/core/services/AGENTS.md § Credential Cleanup Invariants](src/core/services/AGENTS.md#credential-cleanup-invariants).
+
 ### Startup S6 Sweep
 
 `SyncService::onMainWindowAfterStart` (`syncservice.cpp:828-854`) sweeps S6 orphans before reconciling. For each notebook it iterates, if `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (the S6 predicate: disk says disabled but a PAT is still in the keychain), it calls `m_credentialsStore->deleteCredentials(id)` to drop the orphan PAT. This handles the scenario where a previous session's disable succeeded inside vxcore but the app crashed (or was killed) before the keychain delete completed, leaving an orphan PAT that the new "disable clears JSON then keychain" ordering would otherwise not catch on its own.

@@ -72,6 +72,18 @@ Changing the remote URL on a registered notebook is destructive (drops the exist
 4. **Atomic re-register**: `performAtomicUrlReChange` chains `disableSyncForNotebook` → on `VXCORE_OK` wipes `<root>/vx_notebook/vx_sync/` via `QDir::removeRecursively` (required because vxcore `DisableSync` only clears in-memory maps; the gitdir remains and a re-enable against a different URL would otherwise see the stale `remote.origin.url`) → calls `enableSyncForNotebook(newUrl, pat)` → on `VXCORE_OK` restores the three flat sync keys, calls `triggerSyncNow`, emits `applyComplete(true)`.
 5. **Failure recovery**: re-enable failure leaves notebook in clean S0 (sync fields stay cleared per W2.T5 disable JSON clear). The W4.T2 "Enable Sync" UI affordance is the retry surface.
 
+## NewNotebookController bootstrapSync Rollback
+
+`NewNotebookController::bootstrapSync` (`src/controllers/newnotebookcontroller.cpp`) wires the new-notebook flow to `SyncService::enableSyncForNotebook` and on failure tears the half-created notebook down. The cleanup order is invariant:
+
+1. `credStore->deleteCredentials(p_notebookId)` (line 258) — free the keychain slot for the just-stored PAT.
+2. `notebookService->closeNotebook(p_notebookId)` (line 261) — drop the notebook from vxcore.
+3. `QDir::removeRecursively` on the rootPath (lines 266+) with Windows-retry loop.
+
+**Why this ordering matters**: `deleteCredentials` MUST run BEFORE `closeNotebook`. Although `SyncService` also wipes the PAT from inside the `NotebookAfterClose` hook handler (see `src/core/services/AGENTS.md` § Credential Cleanup Invariants), keeping the explicit pre-close delete in `bootstrapSync` is defense in depth: it ensures the keychain entry is gone even if the hook subscription is ever broken, reordered, or skipped (e.g., by a future refactor that runs `closeNotebook` against a different service handle). The hook then runs idempotently and is a no-op.
+
+This is the ONLY controller-side `deleteCredentials` call site. All other credential cleanup belongs to `SyncService`.
+
 ## Related Modules
 
 - [`../core/AGENTS.md`](../core/AGENTS.md) — ServiceLocator and services used by controllers
