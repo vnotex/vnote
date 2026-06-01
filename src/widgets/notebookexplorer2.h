@@ -3,12 +3,14 @@
 
 #include <QFrame>
 #include <QHash>
+#include <QSet>
 #include <QVBoxLayout>
 
 #include <core/global.h>
 #include <core/noncopyable.h>
 #include <nodeinfo.h>
 #include <views/inodeexplorer.h>
+#include <vxcore/vxcore_types.h>
 
 class QAction;
 class QFileSystemWatcher;
@@ -127,6 +129,14 @@ private slots:
   // Sync UI handlers (T15).
   void onSyncButtonClicked();
   void onSyncInfoActionTriggered();
+  // Surface sync failures to the user. Wired to SyncService::syncFailed.
+  // Routes by error code: auth/network → modal dialog with "Open Sync Info"
+  // shortcut; conflict is handled elsewhere (MainWindow2). Anti-spam guards
+  // (m_authFailureNotified / m_networkFailureNotified) ensure at most one
+  // popup per notebook per "failure streak" — cleared on the next successful
+  // sync or notebook switch.
+  void onSyncFailedSurface(const QString &p_notebookId, VxCoreError p_code,
+                           const QString &p_message);
   // Recompute enabled state and tooltip for the title-bar Sync button and
   // "Notebook Sync Info..." menu entry. Wired to SyncService lifecycle signals
   // and to currentNotebookChanged.
@@ -207,6 +217,31 @@ private:
   // In-memory reconcile error tracking (W4.T3). Maps notebookId -> error code.
   // Cleared on sync success or notebook switch. Used to surface errors via tooltip.
   QHash<QString, int> m_lastReconcileError;
+
+  // Anti-spam set for auth/network sync-failure modal popups. Once we have
+  // shown the user an auth-failed dialog for a notebook, we suppress further
+  // popups for the same notebook until the next successful sync (clears the
+  // entry), the user switches notebooks, or sync is disabled. Without this
+  // the auto-sync path would pop a modal on every 3 s save tick.
+  QSet<QString> m_authFailureNotified;
+  QSet<QString> m_networkFailureNotified;
+
+  // Manual-sync feedback set. Populated in onSyncButtonClicked when a user
+  // explicitly invokes Sync Now (state S5/S7 non-cancel branch). Consumed in
+  // the syncFinished handler on VXCORE_OK to emit a brief status-bar
+  // confirmation. Auto-sync success NEVER pushes a status message (would be
+  // noisy on every save tick), so this set is the only way the syncFinished
+  // OK lambda decides whether to notify the user.
+  QSet<QString> m_pendingManualSyncFeedback;
+
+  // Credential-update auto-retry arm. Populated in onSyncFailedSurface when an
+  // auth-failure dialog is shown. Consumed in the credentialsSetFinished(OK)
+  // handler: if the arm is set for the notebook, immediately call
+  // SyncService::triggerSyncNow so the user sees the verdict of their new
+  // PAT without an extra click. Tagged for manual feedback so the result
+  // surfaces through the same Sync Now success/failure UX. Cleared on
+  // notebook switch, disable, and on successful sync.
+  QSet<QString> m_credentialUpdateRetryArm;
 
   // File system watcher for detecting external changes
   QFileSystemWatcher *m_fsWatcher = nullptr;

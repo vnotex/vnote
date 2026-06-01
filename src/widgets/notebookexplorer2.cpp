@@ -13,6 +13,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QPushButton>
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
@@ -117,17 +118,79 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
     connect(syncSvc, &SyncService::syncStarted, this,
             [this](const QString &) { updateSyncButtonState(); });
     connect(syncSvc, &SyncService::syncFinished, this,
-            [this](const QString &p_notebookId, VxCoreError) {
+            [this](const QString &p_notebookId, VxCoreError p_result) {
               // Clear reconcile error on successful sync (sync supersedes reconcile)
               m_lastReconcileError.remove(p_notebookId);
+              if (p_result == VXCORE_OK) {
+                // Reset failure-popup suppression so the NEXT failure (if any)
+                // surfaces again.
+                m_authFailureNotified.remove(p_notebookId);
+                m_networkFailureNotified.remove(p_notebookId);
+                // Drop any pending credential-retry arm — sync clearly works now.
+                m_credentialUpdateRetryArm.remove(p_notebookId);
+                // Manual Sync Now success confirmation: only fires when the user
+                // explicitly invoked Sync Now (or T3 auto-retry tagged it). Auto-
+                // sync ticks do NOT push status messages.
+                if (m_pendingManualSyncFeedback.remove(p_notebookId)) {
+                  // Note: success feedback to user is currently log-only.
+                  // MainWindow2 deliberately has no status bar; VNoteX::getInst()
+                  // is legacy and triggers throwing ThemeMgr init from this
+                  // code path (crash). A future MainWindow2-native status
+                  // surface would be the right place to show "Sync complete".
+                  qCInfo(lcSync) << "Manual sync completed successfully for notebook"
+                                 << p_notebookId;
+                }
+              } else {
+                // Failed manual sync: drop the pending-feedback tag so we don't
+                // double-notify (the failure dialog already provides feedback).
+                m_pendingManualSyncFeedback.remove(p_notebookId);
+              }
               updateSyncButtonState();
             });
-    connect(syncSvc, &SyncService::syncFailed, this,
-            [this](const QString &, VxCoreError, const QString &) { updateSyncButtonState(); });
+    connect(syncSvc, &SyncService::syncFailed, this, &NotebookExplorer2::onSyncFailedSurface);
     connect(syncSvc, &SyncService::enableFinished, this,
-            [this](const QString &, VxCoreError, const QString &) { updateSyncButtonState(); });
+            [this](const QString &p_notebookId, VxCoreError p_result, const QString &) {
+              if (p_result == VXCORE_OK) {
+                // An explicit user-driven enable succeeded — give failure popups a
+                // fresh chance on the next sync attempt.
+                m_authFailureNotified.remove(p_notebookId);
+                m_networkFailureNotified.remove(p_notebookId);
+              }
+              updateSyncButtonState();
+            });
+    connect(syncSvc, &SyncService::credentialsSetFinished, this,
+            [this](const QString &p_notebookId, VxCoreError p_result) {
+              if (p_result == VXCORE_OK) {
+                // User supplied new credentials successfully. Reset suppression
+                // so any next failure surfaces. If we had previously shown an
+                // auth-failure dialog for this notebook (m_credentialUpdateRetryArm
+                // set), immediately re-trigger a sync so the user sees the
+                // verdict of their new PAT WITHOUT an extra Sync Now click; tag
+                // it for manual feedback so success surfaces via the status bar
+                // and failure surfaces via onSyncFailedSurface as usual.
+                m_authFailureNotified.remove(p_notebookId);
+                m_networkFailureNotified.remove(p_notebookId);
+                if (m_credentialUpdateRetryArm.remove(p_notebookId)) {
+                  if (auto *svc = m_services.get<SyncService>()) {
+                    m_pendingManualSyncFeedback.insert(p_notebookId);
+                    qCDebug(lcSync)
+                        << "NotebookExplorer2: credentialsSetFinished OK with armed retry; "
+                           "triggering sync"
+                        << "notebookId:" << p_notebookId;
+                    svc->triggerSyncNow(p_notebookId);
+                  }
+                }
+              }
+              updateSyncButtonState();
+            });
     connect(syncSvc, &SyncService::disableFinished, this,
-            [this](const QString &, VxCoreError) { updateSyncButtonState(); });
+            [this](const QString &p_notebookId, VxCoreError) {
+              m_authFailureNotified.remove(p_notebookId);
+              m_networkFailureNotified.remove(p_notebookId);
+              m_credentialUpdateRetryArm.remove(p_notebookId);
+              m_pendingManualSyncFeedback.remove(p_notebookId);
+              updateSyncButtonState();
+            });
     // Wire reconcileFinished to store error code and update button state (W4.T3)
     connect(syncSvc, &SyncService::reconcileFinished, this,
             [this](const QString &p_notebookId, VxCoreError p_result) {
@@ -141,8 +204,14 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
               updateSyncButtonState();
             });
   }
-  connect(this, &NotebookExplorer2::currentNotebookChanged, this,
-          [this](const QString &) { updateSyncButtonState(); });
+  connect(this, &NotebookExplorer2::currentNotebookChanged, this, [this](const QString &) {
+    // Reset all per-notebook UI feedback state on notebook switch.
+    m_authFailureNotified.clear();
+    m_networkFailureNotified.clear();
+    m_credentialUpdateRetryArm.clear();
+    m_pendingManualSyncFeedback.clear();
+    updateSyncButtonState();
+  });
 
   // Initial state.
   updateSyncButtonState();
@@ -1610,6 +1679,93 @@ void NotebookExplorer2::onFsReloadTimeout() {
 
 // --- Sync UI implementation (T15) ---
 
+void NotebookExplorer2::onSyncFailedSurface(const QString &p_notebookId, VxCoreError p_code,
+                                            const QString &p_message) {
+  // Always refresh the button regardless of error category so the post-failure
+  // state (back to "Sync Now" from in-progress) is reflected.
+  updateSyncButtonState();
+
+  if (p_notebookId.isEmpty()) {
+    return;
+  }
+
+  // Conflict failures are owned by MainWindow2 (which surfaces the conflict
+  // resolution flow). Don't double-notify here.
+  if (p_code == VXCORE_ERR_SYNC_CONFLICT) {
+    return;
+  }
+
+  // Best-effort notebook label for the message body.
+  QString notebookLabel = p_notebookId;
+  if (auto *nbSvc = m_services.get<NotebookCoreService>()) {
+    const QJsonObject cfg = nbSvc->getNotebookConfig(p_notebookId);
+    const QString name = cfg.value(QStringLiteral("name")).toString();
+    if (!name.isEmpty()) {
+      notebookLabel = name;
+    }
+  }
+
+  if (p_code == VXCORE_ERR_SYNC_AUTH_FAILED) {
+    // Suppress repeat popups within a "failure streak". Counter is cleared on
+    // the next successful sync, notebook switch, or sync disable.
+    if (m_authFailureNotified.contains(p_notebookId)) {
+      qCDebug(lcSync) << "NotebookExplorer2::onSyncFailedSurface: auth-failure popup suppressed"
+                      << "notebookId:" << p_notebookId;
+      return;
+    }
+    // Arm credential-update auto-retry: if the user fixes the PAT via Sync
+    // Info, credentialsSetFinished(OK) will trigger a sync automatically so
+    // the user sees the verdict.
+    m_credentialUpdateRetryArm.insert(p_notebookId);
+    m_authFailureNotified.insert(p_notebookId);
+
+    QMessageBox box(QMessageBox::Warning, tr("Sync authentication failed"),
+                    tr("Sync failed for notebook \"%1\".\n\nGitHub rejected the stored Personal "
+                       "Access Token (HTTP 401). The token may have been revoked, expired, or had "
+                       "its SSO authorization withdrawn.\n\nUpdate the token to resume syncing.")
+                        .arg(notebookLabel),
+                    QMessageBox::Cancel, this);
+    box.setDetailedText(p_message);
+    QPushButton *openInfoBtn = box.addButton(tr("Open Sync Info..."), QMessageBox::AcceptRole);
+    box.setDefaultButton(openInfoBtn);
+    box.exec();
+    if (box.clickedButton() == openInfoBtn) {
+      auto *dlg = new NotebookSyncInfoDialog2(m_services, p_notebookId, this);
+      dlg->setAttribute(Qt::WA_DeleteOnClose);
+      dlg->open();
+    }
+    return;
+  }
+
+  if (p_code == VXCORE_ERR_SYNC_NETWORK) {
+    if (m_networkFailureNotified.contains(p_notebookId)) {
+      qCDebug(lcSync) << "NotebookExplorer2::onSyncFailedSurface: network-failure popup suppressed"
+                      << "notebookId:" << p_notebookId;
+      return;
+    }
+    m_networkFailureNotified.insert(p_notebookId);
+    MessageBoxHelper::notify(
+        MessageBoxHelper::Information, tr("Sync network error"),
+        tr("Sync failed for notebook \"%1\" because of a network error. VNote will retry "
+           "automatically on the next change.")
+            .arg(notebookLabel),
+        p_message, this);
+    return;
+  }
+
+  // Other failure codes (queue full, invalid param, not enabled, unknown).
+  // These are usually internal-state problems the user can't act on; show a
+  // single warning and rely on the anti-spam guard reusing the auth slot's
+  // bucket so we never spam during a failure streak.
+  if (m_authFailureNotified.contains(p_notebookId)) {
+    return;
+  }
+  m_authFailureNotified.insert(p_notebookId);
+  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Sync failed"),
+                           tr("Sync failed for notebook \"%1\".").arg(notebookLabel), p_message,
+                           this);
+}
+
 void NotebookExplorer2::onSyncButtonClicked() {
   const QString nbId = currentNotebookId();
   if (nbId.isEmpty()) {
@@ -1650,6 +1806,17 @@ void NotebookExplorer2::onSyncButtonClicked() {
       syncSvc->cancelSync(nbId);
       return;
     }
+    // Manual Sync Now overrides anti-spam suppression: the user explicitly
+    // clicked, so any next failure MUST surface even if a prior failure popup
+    // was already shown. Without this clear, m_authFailureNotified.contains(id)
+    // in onSyncFailedSurface would short-circuit and the user would see
+    // "nothing happens" again.
+    m_authFailureNotified.remove(nbId);
+    m_networkFailureNotified.remove(nbId);
+    // Tag for success-feedback so the syncFinished(OK) handler can post a
+    // brief status-bar confirmation. Manual click only — auto-sync never
+    // populates this set.
+    m_pendingManualSyncFeedback.insert(nbId);
     syncSvc->triggerSyncNow(nbId);
     return;
   case SyncState::S1:

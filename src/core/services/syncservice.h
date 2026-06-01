@@ -319,6 +319,18 @@ private:
   // user-initiated NotebookAfterOpen fire for the same notebook in one session.
   QSet<QString> m_reconcileAttempted;
 
+  // Per-notebook consecutive auth-failure counter (Wave: silent-sync fix).
+  // Incremented on every VXCORE_ERR_SYNC_AUTH_FAILED in onSyncFinished.
+  // Reset on any successful syncFinished(VXCORE_OK), on updateCredentials
+  // (user supplied a new PAT, give it a fresh chance), and on disable.
+  // When the count reaches kAuthFailureCircuitThreshold the auto-sync path
+  // (onSyncShouldRun) suppresses further auto-triggered syncs for the
+  // notebook so we stop hammering the remote with known-bad credentials on
+  // every keystroke. Manual triggerSyncNow is NEVER suppressed (user intent
+  // overrides the circuit-breaker).
+  QHash<QString, int> m_authFailureCount;
+  static constexpr int kAuthFailureCircuitThreshold = 3;
+
   // Task 13.4 test seams (one-shot).
   bool m_testForceNextPersistFailure = false;
   QString m_testForceNextPersistFailureMsg;

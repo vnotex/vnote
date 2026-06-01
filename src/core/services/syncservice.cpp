@@ -349,6 +349,9 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
   }
   qCDebug(syncCategory) << "SyncService::disableSyncForNotebook: notebookId:" << p_notebookId;
 
+  // Sync is being turned off — drop any auth-failure cooldown for this id.
+  m_authFailureCount.remove(p_notebookId);
+
   const QString notebookId = p_notebookId;
 
   // After the worker reports disableFinished for THIS notebook:
@@ -794,6 +797,14 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
   }
   qCDebug(syncCategory) << "SyncService::updateCredentials: notebookId:" << p_notebookId;
 
+  // User supplied a new PAT — give it a fresh chance even if the previous PAT
+  // tripped the auth-failure circuit-breaker.
+  if (m_authFailureCount.remove(p_notebookId)) {
+    qCInfo(syncCategory)
+        << "SyncService::updateCredentials: cleared auth-failure counter on PAT update"
+        << "notebookId:" << p_notebookId;
+  }
+
   // F4 chicken-and-egg fix: if the notebook is NOT registered in vxcore's
   // runtime states_ map but its on-disk config says sync is enabled, the
   // worker's setCredentials path would fail with VXCORE_ERR_SYNC_NOT_ENABLED
@@ -1094,6 +1105,20 @@ void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_resu
     vxcore_sync_free_cancellation(token);
   }
 
+  // Track consecutive auth failures for the auto-sync circuit-breaker.
+  // Reset on any success so a single good sync clears the cooldown.
+  if (p_result == VXCORE_OK) {
+    if (m_authFailureCount.remove(p_notebookId)) {
+      qCInfo(syncCategory) << "SyncService::onSyncFinished: auth failure counter cleared on success"
+                           << "notebookId:" << p_notebookId;
+    }
+  } else if (p_result == VXCORE_ERR_SYNC_AUTH_FAILED) {
+    const int count = ++m_authFailureCount[p_notebookId];
+    qCWarning(syncCategory) << "SyncService::onSyncFinished: auth failure"
+                            << "notebookId:" << p_notebookId << "consecutiveCount:" << count
+                            << "circuitThreshold:" << kAuthFailureCircuitThreshold;
+  }
+
   if (p_result != VXCORE_OK) {
     emit syncFailed(p_notebookId, p_result, vxErrorToString(p_result));
   }
@@ -1129,6 +1154,17 @@ void SyncService::onSyncShouldRun(const QString &p_notebookId) {
   if (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId)) {
     qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: notebook not ready"
                          << p_notebookId;
+    return;
+  }
+  // Auth-failure circuit-breaker: after N consecutive auth failures, stop
+  // auto-syncing to avoid hammering the remote with known-bad credentials on
+  // every save tick. Manual triggerSyncNow remains allowed (user intent
+  // overrides). Counter resets on successful sync or updateCredentials.
+  const int authFailures = m_authFailureCount.value(p_notebookId, 0);
+  if (authFailures >= kAuthFailureCircuitThreshold) {
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: "
+                            "auth-failure circuit-breaker open"
+                         << p_notebookId << "consecutiveFailures:" << authFailures;
     return;
   }
   auto *workQueue = m_workQueue;
@@ -1326,6 +1362,16 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
 void SyncService::ensureSyncEnabled(const QString &p_notebookId) {
   qCDebug(syncCategory) << "SyncService::ensureSyncEnabled: notebookId:" << p_notebookId;
   if (m_shutDown) {
+    return;
+  }
+  // Idempotence: ensureSyncEnabled exists to lift S4 (disk-complete but runtime-
+  // unregistered) into S5. If the notebook is already registered in vxcore's
+  // states_ map, there is nothing to do. This avoids redundant reconcile work
+  // when callers fire ensureSyncEnabled in multiple paths (e.g., dialog Apply
+  // followed by OK both routing through onCredentialsSetFinished).
+  if (isSyncRegistered(p_notebookId)) {
+    qCDebug(syncCategory) << "SyncService::ensureSyncEnabled: skip - notebook already registered"
+                          << p_notebookId;
     return;
   }
   // Clear any prior "already-attempted" marker so reconcileSyncForNotebook
