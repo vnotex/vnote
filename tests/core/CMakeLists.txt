@@ -630,6 +630,18 @@ target_include_directories(test_sync_auto_route PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vxcore/include
 )
 
+# Task 4 (F3.5): SyncErrorPresenter — QtCore-only mapping of (Context, VxCoreError,
+# rawMessage) to translated, actionable (primary, details) error presentation.
+# TDD: 11 test cases covering Win32 error 8, auth/network failures, and fallbacks.
+add_qt_test(test_syncerrorpresenter
+  SOURCES
+    test_syncerrorpresenter.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 # Task 14.1 (F5.1): SyncWorkQueueManager — per-notebook serialized executor.
 # QThreadPool-based; per-notebook FIFO; parallel across notebooks.
 add_qt_test(test_sync_work_queue_manager

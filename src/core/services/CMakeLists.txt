@@ -23,6 +23,7 @@ set(SERVICES_SOURCES
   syncops.cpp
   syncservice.cpp
   syncstateclassifier.cpp
+  syncerrorpresenter.cpp
   syncworkqueuemanager.cpp
   eventbridge.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
@@ -64,6 +65,7 @@ set(SERVICES_HEADERS
   syncops.h
   syncservice.h
   syncstateclassifier.h
+  syncerrorpresenter.h
   syncworkqueuemanager.h
   synclog.h
   eventbridge.h
