@@ -723,3 +723,15 @@ add_qt_test(test_buffer_save_queue
     Qt6::Core
   GUILESS
 )
+
+# V5 (vxcore-sync-stage-only): proves SyncOps::triggerSync releases the
+# NotebookIoGate between the stage and network phases via contention timing
+# against a fake ISyncNotebookService. No production code instrumentation.
+add_qt_test(test_syncops_gate_release
+  SOURCES
+    test_syncops_gate_release.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
