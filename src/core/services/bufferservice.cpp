@@ -1,6 +1,8 @@
 #include "bufferservice.h"
 
 #include <QDebug>
+#include <QElapsedTimer>
+#include <QLoggingCategory>
 #include <QTimer>
 #include <QtGlobal>
 
@@ -10,6 +12,10 @@
 #include <core/services/hookmanager.h>
 
 using namespace vnotex;
+
+namespace {
+Q_LOGGING_CATEGORY(perfSave, "vnote.perf.save")
+} // namespace
 
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
                              AutoSavePolicy p_autoSavePolicy, QObject *p_parent)
@@ -172,8 +178,9 @@ bool BufferService::isNotebookBundled(const QString &p_notebookId) const {
     return false;
   }
   QJsonObject config = parseJsonObjectFromCStr(json);
-  return config.value(QStringLiteral("type")).toString().compare(
-             QStringLiteral("bundled"), Qt::CaseInsensitive) == 0;
+  return config.value(QStringLiteral("type"))
+             .toString()
+             .compare(QStringLiteral("bundled"), Qt::CaseInsensitive) == 0;
 }
 
 QJsonObject BufferService::getBuffer(const QString &p_bufferId) const {
@@ -410,6 +417,9 @@ void BufferService::unregisterActiveWriter(const QString &p_bufferId, quintptr p
 }
 
 void BufferService::onAutoSaveTimerTick() {
+  QElapsedTimer timer;
+  timer.start();
+
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
     return;
@@ -426,9 +436,15 @@ void BufferService::onAutoSaveTimerTick() {
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
   }
+
+  qint64 elapsed = timer.elapsed();
+  qCDebug(perfSave) << "[perf.save] tick_ms=" << elapsed;
 }
 
 void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
+  QElapsedTimer timer;
+  timer.start();
+
   // Virtual buffers have no file content to sync.
   if (m_virtualBufferIds.contains(p_bufferId)) {
     return;
@@ -516,4 +532,7 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     break;
   }
   }
+
+  qint64 elapsed = timer.elapsed();
+  qCDebug(perfSave) << "[perf.save] execute_ms=" << elapsed;
 }

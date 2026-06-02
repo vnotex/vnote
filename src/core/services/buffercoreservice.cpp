@@ -1,10 +1,17 @@
 #include "buffercoreservice.h"
 
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QLoggingCategory>
+#include <QThread>
 
 using namespace vnotex;
+
+namespace {
+Q_LOGGING_CATEGORY(perfSave, "vnote.perf.save")
+} // namespace
 
 BufferCoreService::BufferCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
@@ -107,7 +114,15 @@ bool BufferCoreService::saveBuffer(const QString &p_bufferId) {
     return false;
   }
 
+  QElapsedTimer timer;
+  timer.start();
+
   VxCoreError err = vxcore_buffer_save(m_context, p_bufferId.toUtf8().constData());
+
+  qint64 elapsed = timer.elapsed();
+  qCDebug(perfSave) << "[perf.save] vxcore_buffer_save_ms=" << elapsed
+                    << "thread=" << QThread::currentThreadId() << "buffer=" << p_bufferId;
+
   if (err != VXCORE_OK) {
     qWarning() << "saveBuffer failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -133,7 +148,8 @@ bool BufferCoreService::checkExternalChanges(const QString &p_bufferId) {
     return false;
   }
 
-  VxCoreError err = vxcore_buffer_check_external_changes(m_context, p_bufferId.toUtf8().constData());
+  VxCoreError err =
+      vxcore_buffer_check_external_changes(m_context, p_bufferId.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "checkExternalChanges failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
