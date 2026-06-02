@@ -30,6 +30,7 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <../helpers/keychain_guard.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
@@ -89,6 +90,7 @@ private:
   VxCoreContextHandle m_ctx = nullptr;
   ServiceLocator m_services;
   TempDirFixture m_tempDir;
+  tests::KeychainGuard *m_keychainGuard = nullptr;
 };
 
 void TestNotebookExplorerSyncState::initTestCase() {
@@ -106,9 +108,17 @@ void TestNotebookExplorerSyncState::initTestCase() {
   m_services.registerService<NotebookCoreService>(new NotebookCoreService(m_ctx));
   m_services.registerService<SyncCredentialsStore>(new SyncCredentialsStore(m_services));
   m_services.registerService<SyncService>(new SyncService(m_services));
+
+  auto *credStore = m_services.get<SyncCredentialsStore>();
+  m_keychainGuard = new tests::KeychainGuard(credStore, this);
 }
 
 void TestNotebookExplorerSyncState::cleanupTestCase() {
+  if (m_keychainGuard) {
+    m_keychainGuard->cleanup();
+    delete m_keychainGuard;
+    m_keychainGuard = nullptr;
+  }
   if (m_ctx) {
     vxcore_context_destroy(m_ctx);
     m_ctx = nullptr;
@@ -211,6 +221,7 @@ void TestNotebookExplorerSyncState::testClassifyReadyS5() {
   QVERIFY(credStore != nullptr);
   QSignalSpy storedSpy(credStore, &SyncCredentialsStore::credentialsStored);
   credStore->storeCredentials(notebookId, QStringLiteral("test_pat_12345"));
+  m_keychainGuard->track(notebookId); // defensive: in case credentialsStored signal races
 
   // Wait for async store to complete. If keychain is unavailable on this
   // CI runner, the store falls back to an in-memory cache and emits
