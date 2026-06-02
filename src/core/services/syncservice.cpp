@@ -24,6 +24,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
+#include <core/services/syncerrorpresenter.h>
 #include <core/services/synclog.h>
 #include <core/services/syncops.h>
 #include <core/services/syncworkqueuemanager.h>
@@ -350,8 +351,10 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
                   return;
                 }
                 cleanup();
+                const auto presented = SyncErrorPresenter::present(
+                    SyncErrorPresenter::Context::CredentialWrite, VXCORE_ERR_UNKNOWN, p_errMsg);
                 qWarning() << "SyncService::enableSyncForNotebook: keychain store failed:"
-                           << p_errMsg;
+                           << p_errMsg << "| user-facing:" << presented.primary;
                 emit enableFinished(notebookId, VXCORE_ERR_UNKNOWN, p_errMsg);
               });
 

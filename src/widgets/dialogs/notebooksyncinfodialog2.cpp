@@ -16,6 +16,7 @@
 #include <controllers/notebooksyncinfocontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/syncerrorpresenter.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 
@@ -574,6 +575,12 @@ void NotebookSyncInfoDialog2::onConfirmUrlChange(const QString &p_oldUrl, const 
 void NotebookSyncInfoDialog2::onError(const QString &p_message) {
   // Per plan: empty messages MUST NOT be suppressed silently — render a
   // generic fallback. Dialog stays open so the user can retry.
-  const QString text = p_message.isEmpty() ? tr("Sync operation failed.") : p_message;
+  const auto presented = SyncErrorPresenter::present(SyncErrorPresenter::Context::CredentialWrite,
+                                                     VXCORE_ERR_UNKNOWN, p_message);
+  const QString text =
+      presented.primary.isEmpty() ? tr("Sync operation failed.") : presented.primary;
+  if (!presented.details.isEmpty()) {
+    qCDebug(syncCategory) << "SyncErrorPresenter details:" << presented.details;
+  }
   QMessageBox::critical(this, tr("Sync"), text);
 }
