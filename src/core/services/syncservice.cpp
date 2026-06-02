@@ -23,6 +23,7 @@
 #include <core/services/eventbridge.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncerrorpresenter.h>
 #include <core/services/synclog.h>
@@ -500,7 +501,12 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
   const QString notebookId = p_notebookId;
 
   auto work = [this, notebookId, notebookSvc, token]() {
-    SyncOps::triggerSync(notebookSvc, notebookId, token, [this, notebookId](VxCoreError p_code) {
+    // T8: pass the shared NotebookIoGate to SyncOps so the git-stage phase
+    // serializes against BufferSaveQueue workers on the same notebook.
+    NotebookIoGate *gate = m_services.get<NotebookIoGate>();
+    SyncOps::triggerSync(
+        notebookSvc, notebookId, token,
+        [this, notebookId](VxCoreError p_code) {
       // Bounce back to GUI thread to release the
       // cancellation token. SyncService does NOT emit
       // syncFinished from here — EventBridge already
@@ -527,7 +533,8 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
             }
           },
           Qt::QueuedConnection);
-    });
+    },
+        gate);
   };
 
   auto onCancelled = [this, notebookId, token]() {
@@ -755,9 +762,11 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
                   // success at the bootstrap level).
                   if (wq) {
                     NotebookCoreService *notebookSvc = m_notebookCoreService;
-                    wq->enqueue(notebookId, [notebookSvc, notebookId]() {
+                    NotebookIoGate *gate = m_services.get<NotebookIoGate>();
+                    wq->enqueue(notebookId, [notebookSvc, notebookId, gate]() {
+                      // T8: serialize git-stage against BufferSaveQueue saves.
                       SyncOps::triggerSync(notebookSvc, notebookId, /*p_cancel=*/nullptr,
-                                           [](VxCoreError) {});
+                                           [](VxCoreError) {}, gate);
                     });
                   }
                   emit bootstrapAndPersistFinished(notebookId, VXCORE_OK, QString());
@@ -1011,16 +1020,20 @@ void SyncService::resolveConflicts(const QString &p_notebookId,
   // collapses into this trailing run. Per-notebook FIFO guarantees this
   // trigger executes only after every queued resolve has completed.
   const QString notebookId = p_notebookId;
+  NotebookIoGate *gate = m_services.get<NotebookIoGate>();
   workQueue->enqueue(
       notebookId,
-      [notebookSvc, notebookId]() {
+      [notebookSvc, notebookId, gate]() {
+        // T8: serialize git-stage against BufferSaveQueue saves.
         SyncOps::triggerSync(
-            notebookSvc, notebookId, /*p_cancel=*/nullptr, [notebookId](VxCoreError p_code) {
+            notebookSvc, notebookId, /*p_cancel=*/nullptr,
+            [notebookId](VxCoreError p_code) {
               if (p_code != VXCORE_OK) {
                 qCDebug(syncCategory) << "SyncService::resolveConflicts: trailing trigger result"
                                       << notebookId << "code:" << p_code;
               }
-            });
+            },
+            gate);
       },
       /*onCancelled=*/nullptr, QStringLiteral("trigger"));
 }
@@ -1221,13 +1234,16 @@ void SyncService::onSyncShouldRun(const QString &p_notebookId) {
 
   NotebookCoreService *notebookSvc = m_notebookCoreService;
   const QString notebookId = p_notebookId;
-  auto work = [notebookSvc, notebookId]() {
+  NotebookIoGate *gate = m_services.get<NotebookIoGate>();
+  auto work = [notebookSvc, notebookId, gate]() {
+    // T8: serialize git-stage against BufferSaveQueue saves.
     SyncOps::triggerSync(notebookSvc, notebookId, /*p_cancel=*/nullptr,
                          /*onFinished=*/[](VxCoreError) {
                            // No-op: EventBridge delivers lifecycle signals
                            // (sync.started / sync.finished) to onSyncStarted /
                            // onSyncFinished, which re-emit the public signals.
-                         });
+                         },
+                         gate);
   };
 
   const auto result =

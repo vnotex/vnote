@@ -15,6 +15,7 @@ typedef struct VxCoreSyncCancellation_ VxCoreSyncCancellation;
 namespace vnotex {
 
 class NotebookCoreService;
+class NotebookIoGate;
 
 // Stateless free-function callables that wrap vxcore sync operations.
 // Designed to be invoked from any thread (typically a SyncWorkQueueManager
@@ -52,8 +53,16 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
 // CALLER (typically SyncService) — this function NEVER frees it.
 // p_onFinished is ALWAYS invoked exactly once, even on null-service early
 // return (with VXCORE_ERR_NULL_POINTER).
+// @p_gate (optional): when non-null, the call wraps `vxcore_sync_trigger_*`
+// in a `NotebookIoGate::ScopedLock(notebookId)` so it serializes against
+// BufferSaveQueue workers (and other SyncOps callers) on the SAME notebook.
+// The gate is acquired ONLY after the early-return null-service check, so
+// passing null is identical to pre-T8 behavior. Callers MUST NOT acquire the
+// gate themselves before invoking this; doing so would deadlock the per-
+// notebook mutex (it is non-recursive).
 void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCancellation *p_cancel,
-                 std::function<void(VxCoreError)> p_onFinished);
+                 std::function<void(VxCoreError)> p_onFinished,
+                 NotebookIoGate *p_gate = nullptr);
 
 // Resolve a single sync conflict for the given file via
 // vxcore_sync_resolve_conflict (routed through NotebookCoreService — matches
