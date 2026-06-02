@@ -119,16 +119,12 @@ void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags) {
     // from the action, overriding any direct button state.
     m_searchButton = addActionButton(QStringLiteral("search.svg"), tr("Search"));
     m_searchButton->defaultAction()->setCheckable(true);
-    connect(m_searchButton->defaultAction(), &QAction::toggled, this, &TitleBar::setSearchBoxVisible);
+    connect(m_searchButton->defaultAction(), &QAction::toggled, this,
+            &TitleBar::setSearchBoxVisible);
   }
 }
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-void TitleBar::enterEvent(QEvent *p_event)
-#else
-void TitleBar::enterEvent(QEnterEvent *p_event)
-#endif
-{
+void TitleBar::enterEvent(EnterEventCompat *p_event) {
   QFrame::enterEvent(p_event);
   setActionButtonsVisible(true);
 }
@@ -158,9 +154,7 @@ QAction *TitleBar::addMenuAction(const QString &p_iconName, const QString &p_tex
   return act;
 }
 
-void TitleBar::addMenuAction(QAction *p_action) {
-  m_menu->addAction(p_action);
-}
+void TitleBar::addMenuAction(QAction *p_action) { m_menu->addAction(p_action); }
 
 QMenu *TitleBar::addMenuSubMenu(const QString &p_text) { return m_menu->addMenu(p_text); }
 

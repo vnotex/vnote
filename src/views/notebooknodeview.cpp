@@ -426,7 +426,11 @@ void NotebookNodeView::dragEnterEvent(QDragEnterEvent *p_event) {
 }
 
 void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QModelIndex idx = indexAt(p_event->position().toPoint());
+#else
+  QModelIndex idx = indexAt(p_event->pos());
+#endif
   NodeInfo targetInfo = nodeInfoFromIndex(idx);
 
   // Resolve target NodeIdentifier (mirrors dropEvent logic)
@@ -505,7 +509,11 @@ void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
 
 void NotebookNodeView::dropEvent(QDropEvent *p_event) {
   const QMimeData *mimeData = p_event->mimeData();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QModelIndex idx = indexAt(p_event->position().toPoint());
+#else
+  QModelIndex idx = indexAt(p_event->pos());
+#endif
   NodeIdentifier targetId = nodeIdFromIndex(idx);
 
   // If dropping on empty area or invalid index, target is notebook root

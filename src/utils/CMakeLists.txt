@@ -10,6 +10,7 @@ target_sources(vnote PRIVATE
     htmlutils.cpp htmlutils.h
     imageresolutionutils.cpp imageresolutionutils.h
     pathutils.cpp pathutils.h
+    qtcompat.h
     stringutils.cpp stringutils.h
     strnatcmp.c strnatcmp.h
     processutils.cpp processutils.h

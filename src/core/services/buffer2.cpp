@@ -9,31 +9,21 @@
 
 using namespace vnotex;
 
-Buffer2::Buffer2()
-    : m_bufferService(nullptr), m_hookMgr(nullptr) {
-}
+Buffer2::Buffer2() : m_bufferService(nullptr), m_hookMgr(nullptr) {}
 
-Buffer2::Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr,
-                 const QString &p_bufferId, const NodeIdentifier &p_nodeId)
-    : m_bufferService(p_bufferService),
-      m_hookMgr(p_hookMgr),
-      m_bufferId(p_bufferId),
+Buffer2::Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr, const QString &p_bufferId,
+                 const NodeIdentifier &p_nodeId)
+    : m_bufferService(p_bufferService), m_hookMgr(p_hookMgr), m_bufferId(p_bufferId),
       m_nodeId(p_nodeId) {
   Q_ASSERT(m_bufferService);
   Q_ASSERT(m_hookMgr);
 }
 
-bool Buffer2::isValid() const {
-  return m_bufferService && !m_bufferId.isEmpty();
-}
+bool Buffer2::isValid() const { return m_bufferService && !m_bufferId.isEmpty(); }
 
-QString Buffer2::id() const {
-  return m_bufferId;
-}
+QString Buffer2::id() const { return m_bufferId; }
 
-const NodeIdentifier &Buffer2::nodeId() const {
-  return m_nodeId;
-}
+const NodeIdentifier &Buffer2::nodeId() const { return m_nodeId; }
 
 // ============ Path Resolution ============
 
@@ -101,9 +91,9 @@ QByteArray Buffer2::getContentRaw() const {
   return m_bufferService->getContentRaw(m_bufferId);
 }
 
-QByteArrayView Buffer2::peekContentRaw() const {
+QByteArrayViewCompat Buffer2::peekContentRaw() const {
   if (!isValid()) {
-    return QByteArrayView{};
+    return QByteArrayViewCompat{};
   }
   return m_bufferService->peekContentRaw(m_bufferId);
 }

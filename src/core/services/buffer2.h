@@ -2,12 +2,12 @@
 #define BUFFER2_H
 
 #include <QByteArray>
-#include <QByteArrayView>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
 
 #include <core/nodeidentifier.h>
+#include <utils/qtcompat.h>
 
 namespace vnotex {
 
@@ -29,8 +29,8 @@ public:
   Buffer2();
 
   // Construct a valid buffer handle. Called by BufferService::openBuffer().
-  Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr,
-          const QString &p_bufferId, const NodeIdentifier &p_nodeId);
+  Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr, const QString &p_bufferId,
+          const NodeIdentifier &p_nodeId);
 
   // Check whether this handle refers to a valid open buffer.
   bool isValid() const;
@@ -74,7 +74,7 @@ public:
   // Return a non-owning view over the buffer's raw content held by vxcore.
   // The view is only valid until the next buffer-mutating operation
   // (setContent, setContentRaw, save, reload, close).
-  QByteArrayView peekContentRaw() const;
+  QByteArrayViewCompat peekContentRaw() const;
 
   // Set buffer content from raw bytes.
   bool setContentRaw(const QByteArray &p_data);

@@ -5,6 +5,8 @@
 #include <QMenu>
 #include <QVector>
 
+#include <utils/qtcompat.h>
+
 class QToolButton;
 class QToolBar;
 class QLabel;
@@ -60,11 +62,7 @@ signals:
   void searchTextChanged(const QString &p_text);
 
 protected:
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  void enterEvent(QEvent *p_event) Q_DECL_OVERRIDE;
-#else
-  void enterEvent(QEnterEvent *p_event) Q_DECL_OVERRIDE;
-#endif
+  void enterEvent(EnterEventCompat *p_event) Q_DECL_OVERRIDE;
 
   void leaveEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -77,8 +75,7 @@ private:
 
   void setSearchBoxVisible(bool p_visible);
 
-  QToolButton *newActionButton(const QString &p_iconName, const QString &p_text,
-                                      QWidget *p_parent);
+  QToolButton *newActionButton(const QString &p_iconName, const QString &p_text, QWidget *p_parent);
 
   QIcon generateMenuActionIcon(const QString &p_iconName);
 
