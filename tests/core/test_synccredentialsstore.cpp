@@ -17,6 +17,8 @@
 #include <core/services/synccredentialsstore.h>
 #include <vxcore/vxcore.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -117,6 +119,7 @@ void TestSyncCredentialsStore::storeRetrieve() {
   QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot test happy path");
 #else
   SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_t4_storeretrieve");
   const QString pat = QStringLiteral("ghp_TEST123");
 
@@ -150,11 +153,8 @@ void TestSyncCredentialsStore::storeRetrieve() {
   QCOMPARE(retrievedSpy.first().at(0).toString(), notebookId);
   QCOMPARE(retrievedSpy.first().at(1).toString(), pat);
 
-  // Cleanup
-  QSignalSpy deletedSpy(&store, &SyncCredentialsStore::credentialsDeleted);
-  QSignalSpy errorSpy3(&store, &SyncCredentialsStore::credentialsError);
-  store.deleteCredentials(notebookId);
-  waitForEither(deletedSpy, errorSpy3, 5000);
+  // POST-test cleanup: delete what THIS test wrote
+  guard.cleanup();
 #endif
 }
 
@@ -163,6 +163,7 @@ void TestSyncCredentialsStore::delete_() {
   QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot test happy path");
 #else
   SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_t4_deletetest");
   const QString pat = QStringLiteral("ghp_DELETEME");
 
@@ -196,6 +197,9 @@ void TestSyncCredentialsStore::delete_() {
   if (which == 1) {
     QVERIFY(retrievedSpy.first().at(1).toString().isEmpty());
   }
+
+  // POST-test cleanup: guard tracks the store() call above
+  guard.cleanup();
 #endif
 }
 
@@ -204,6 +208,7 @@ void TestSyncCredentialsStore::keychainUnavailableEmitsError() {
   QSKIP("requires VNOTE_USE_KEYCHAIN=OFF build to test fallback path");
 #else
   SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_t4_unavailable");
 
   QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
@@ -213,6 +218,9 @@ void TestSyncCredentialsStore::keychainUnavailableEmitsError() {
   QCOMPARE(errorSpy.first().at(0).toString(), notebookId);
   QVERIFY(
       errorSpy.first().at(1).toString().contains(QStringLiteral("secure-keychain-unavailable")));
+
+  // POST-test cleanup
+  guard.cleanup();
 #endif
 }
 
@@ -222,6 +230,7 @@ void TestSyncCredentialsStore::patNotLogged() {
   g_previousHandler = qInstallMessageHandler(captureMessageHandler);
 
   SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_t4_logleakcheck");
   const QString uniquePat = QStringLiteral("uniqueLeakCheck1234567890");
 
@@ -253,6 +262,9 @@ void TestSyncCredentialsStore::patNotLogged() {
 
   QVERIFY2(!g_logCapture.contains(QStringLiteral("uniqueLeakCheck1234567890")),
            "PAT value leaked into a log message");
+
+  // POST-test cleanup
+  guard.cleanup();
 }
 
 // ============================================================================
@@ -275,6 +287,7 @@ void TestSyncCredentialsStore::testHasCredentialsAfterStore() {
   QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot exercise cache via real store");
 #else
   SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_w2t0_after_store");
   const QString pat = QStringLiteral("test_pat_12345");
 
@@ -306,11 +319,8 @@ void TestSyncCredentialsStore::testHasCredentialsAfterStore() {
   QVERIFY2(store.hasCredentials(notebookId),
            "hasCredentials must return true immediately after credentialsStored");
 
-  // Cleanup.
-  QSignalSpy deletedSpy(&store, &SyncCredentialsStore::credentialsDeleted);
-  QSignalSpy errSpy2(&store, &SyncCredentialsStore::credentialsError);
-  store.deleteCredentials(notebookId);
-  waitForEither(deletedSpy, errSpy2, 5000);
+  // POST-test cleanup: delete what THIS test wrote
+  guard.cleanup();
 #endif
 }
 
@@ -319,6 +329,7 @@ void TestSyncCredentialsStore::testHasCredentialsAfterDelete() {
   QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot exercise cache via real store");
 #else
   SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_w2t0_after_delete");
   const QString pat = QStringLiteral("test_pat_12345");
 
@@ -346,6 +357,9 @@ void TestSyncCredentialsStore::testHasCredentialsAfterDelete() {
 
   QVERIFY2(!store.hasCredentials(notebookId),
            "hasCredentials must return false immediately after credentialsDeleted");
+
+  // POST-test cleanup: guard tracks the seed store() call
+  guard.cleanup();
 #endif
 }
 
@@ -383,10 +397,17 @@ void TestSyncCredentialsStore::testRefreshKnownIdsPopulatesCache() {
                            .arg(errMsg)));
     }
     QCOMPARE(which, 1);
+    // NOTE: do NOT clean up here — the second half of this test must be able to
+    // retrieve the credential via freshStore. freshGuard tracks this id below
+    // and cleans it up at end-of-test.
   }
 
   // A FRESH store instance has an empty cache.
   SyncCredentialsStore freshStore(m_services);
+  tests::KeychainGuard freshGuard(&freshStore);
+  // Manually register the seed-written id (freshStore never called storeCredentials,
+  // so the credentialsStored signal never fires on freshStore's store).
+  freshGuard.track(notebookId);
   QVERIFY2(!freshStore.hasCredentials(notebookId),
            "Fresh store must start with empty cache (no enumerate API)");
 
@@ -408,11 +429,8 @@ void TestSyncCredentialsStore::testRefreshKnownIdsPopulatesCache() {
   QVERIFY2(freshStore.hasCredentials(notebookId),
            "Cache must be populated by successful credentialsRetrieved signal");
 
-  // Cleanup.
-  QSignalSpy deletedSpy(&freshStore, &SyncCredentialsStore::credentialsDeleted);
-  QSignalSpy errSpy2(&freshStore, &SyncCredentialsStore::credentialsError);
-  freshStore.deleteCredentials(notebookId);
-  waitForEither(deletedSpy, errSpy2, 5000);
+  // POST-test cleanup: both stores' writes are cleaned up by their guards
+  freshGuard.cleanup();
 #endif
 }
 
