@@ -215,8 +215,11 @@ int main(int argc, char *argv[]) {
   int ret = 0;
 
   // Scoped block to ensure proper destruction order:
-  // All services and UI must be destroyed BEFORE vxcore_context_destroy()
-  {
+  // All services and UI must be destroyed BEFORE vxcore_context_destroy().
+  // Wrapped in do/while(false) so early-exit paths (Version/Help/single-instance)
+  // can `break;` out and let scope unwinding tear down services BEFORE the
+  // single post-scope vxcore_context_destroy() call.
+  do {
     // Create ServiceLocator
     ServiceLocator serviceLocator;
 
@@ -360,6 +363,13 @@ int main(int argc, char *argv[]) {
           if (bufSvc) {
             bufSvc->shutdown(5000);
           }
+          // Crash-fix: unregister EventBridge from vxcore EventManager BEFORE
+          // SyncService/vxcore teardown to avoid AV in ~EventBridge ->
+          // vxcore_off_event (mutex on already-freed EventManager).
+          auto *bridge = serviceLocator.get<vnotex::EventBridge>();
+          if (bridge) {
+            bridge->shutdown();
+          }
         },
         Qt::DirectConnection);
 
@@ -398,6 +408,7 @@ int main(int argc, char *argv[]) {
     }
 
     CommandLineOptions cmdOptions;
+    bool earlyExit = false;
     switch (cmdOptions.parse(app.arguments())) {
     case CommandLineOptions::Ok:
       break;
@@ -411,16 +422,21 @@ int main(int argc, char *argv[]) {
       auto versionStr =
           QStringLiteral("%1 %2").arg(app.applicationName(), app.applicationVersion());
       qInfo() << versionStr;
-      vxcore_context_destroy(context);
-      return 0;
+      ret = 0;
+      earlyExit = true;
+      break;
     }
 
     case CommandLineOptions::HelpRequested:
       Q_FALLTHROUGH();
     default:
       qInfo() << cmdOptions.m_helpText;
-      vxcore_context_destroy(context);
-      return 0;
+      ret = 0;
+      earlyExit = true;
+      break;
+    }
+    if (earlyExit) {
+      break;
     }
 
     // Guarding.
@@ -429,8 +445,8 @@ int main(int argc, char *argv[]) {
     if (!canRun) {
       guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
       guard.requestShow();
-      vxcore_context_destroy(context);
-      return 0;
+      ret = 0;
+      break;
     }
 
     // Init logger after app info is set.
@@ -491,7 +507,7 @@ int main(int argc, char *argv[]) {
       // then vxcore_context_destroy() will be called below.
     }
     // All services destroyed here before vxcore context
-  }
+  } while (false);
 
   // Cleanup: destroy vxcore context (after all services are destroyed)
   vxcore_context_destroy(context);

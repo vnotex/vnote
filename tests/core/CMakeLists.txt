@@ -702,6 +702,17 @@ add_qt_test(test_sync_workqueue_cap_coalesce
   GUILESS
 )
 
+# Regression test for startup AV in EventBridge teardown (crash-fix).
+# Asserts shutdown() is idempotent and dtor-after-shutdown is safe.
+add_qt_test(test_eventbridge_shutdown
+  SOURCES
+    test_eventbridge_shutdown.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 # T5 (sync-autosave-ui-freeze): BufferSaveQueue — async per-(notebook,buffer)
 # save executor. Uses a fake IBufferCoreService — no vxcore needed.
 add_qt_test(test_buffer_save_queue

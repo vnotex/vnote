@@ -30,7 +30,13 @@ EventBridge::EventBridge(VxCoreContextHandle p_context, QObject *p_parent)
   }
 }
 
-EventBridge::~EventBridge() {
+EventBridge::~EventBridge() { shutdown(); }
+
+void EventBridge::shutdown() {
+  if (m_shutDown) {
+    return;
+  }
+  m_shutDown = true;
   for (const auto *ev : c_syncEvents) {
     vxcore_off_event(m_context, ev, onVxCoreEvent);
   }
