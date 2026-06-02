@@ -211,6 +211,46 @@ void TestMyService::testWithFixture() {
 |---------|------|-------------|
 | database_notebook | `tests/data/vnote3_notebooks/database_notebook/` | VNote3 notebook with 17 files (Chinese + ASCII), 1 subfolder, 3 attachment dirs |
 
+## Real Keychain Usage
+
+All **new or modified tests** that instantiate the real `SyncCredentialsStore` (not a `MockCredentialsStore` / in-memory fake) MUST register a `tests::KeychainGuard` to track and clean up written PAT entries.
+
+### Why
+
+Without deterministic cleanup, tests leak PAT entries into the host OS keychain. Fixed-ID tests overwrite themselves harmlessly, but UUID-based writes accumulate forever. QtKeychain has no enumerate API (see `src/core/services/synccredentialsstore.cpp:71`), so cleanup cannot be done by sweeping the keychain at startup; it must be driven by tracking each write.
+
+### How
+
+```cpp
+#include "../helpers/keychain_guard.h"
+
+// Class-level member:
+tests::KeychainGuard *m_keychainGuard = nullptr;
+
+// In initTestCase(), after registering SyncCredentialsStore:
+auto *credStore = m_services.get<vnotex::SyncCredentialsStore>();
+m_keychainGuard = new tests::KeychainGuard(credStore, this);
+
+// In cleanupTestCase(), BEFORE destroying the vxcore context:
+if (m_keychainGuard) {
+  m_keychainGuard->cleanup();
+  delete m_keychainGuard;
+  m_keychainGuard = nullptr;
+}
+
+// For indirect writes (e.g. via SyncService::enableSyncForNotebook),
+// also call track() defensively in case the credentialsStored signal races:
+m_keychainGuard->track(notebookId);
+```
+
+### Ordering
+
+`cleanup()` MUST run before the vxcore context is destroyed. The guard talks to `SyncCredentialsStore`, which depends on `ServiceLocator` and the live vxcore context; tearing the context down first leaves the guard with dangling references.
+
+### Cross-reference
+
+For the prod-side cleanup contract (5 sites in `SyncService`), see [`../src/core/services/AGENTS.md` § Credential Cleanup Invariants](../src/core/services/AGENTS.md#credential-cleanup-invariants).
+
 ## Current Test Coverage
 
 | Test | Class | Test Cases |
