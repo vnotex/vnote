@@ -12,15 +12,15 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include "propertydefs.h"
+#include "widgetsfactory.h"
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
-#include <core/widgetconfig.h>
-#include "propertydefs.h"
-#include "widgetsfactory.h"
 
 using namespace vnotex;
 
@@ -133,22 +133,22 @@ void FindAndReplaceWidget2::setupUI() {
     gridLayout->addLayout(optionLayout, 2, 1, 1, 4);
 
     m_caseSensitiveCheckBox = WidgetsFactory::createCheckBox(tr("&Case sensitive"), this);
-    connect(m_caseSensitiveCheckBox, &QCheckBox::checkStateChanged, this,
+    connect(m_caseSensitiveCheckBox, &QCheckBox::stateChanged, this,
             &FindAndReplaceWidget2::updateFindOptions);
     optionLayout->addWidget(m_caseSensitiveCheckBox);
 
     m_wholeWordOnlyCheckBox = WidgetsFactory::createCheckBox(tr("&Whole word only"), this);
-    connect(m_wholeWordOnlyCheckBox, &QCheckBox::checkStateChanged, this,
+    connect(m_wholeWordOnlyCheckBox, &QCheckBox::stateChanged, this,
             &FindAndReplaceWidget2::updateFindOptions);
     optionLayout->addWidget(m_wholeWordOnlyCheckBox);
 
     m_regularExpressionCheckBox = WidgetsFactory::createCheckBox(tr("Re&gular expression"), this);
-    connect(m_regularExpressionCheckBox, &QCheckBox::checkStateChanged, this,
+    connect(m_regularExpressionCheckBox, &QCheckBox::stateChanged, this,
             &FindAndReplaceWidget2::updateFindOptions);
     optionLayout->addWidget(m_regularExpressionCheckBox);
 
     m_incrementalSearchCheckBox = WidgetsFactory::createCheckBox(tr("&Incremental search"), this);
-    connect(m_incrementalSearchCheckBox, &QCheckBox::checkStateChanged, this,
+    connect(m_incrementalSearchCheckBox, &QCheckBox::stateChanged, this,
             &FindAndReplaceWidget2::updateFindOptions);
     optionLayout->addWidget(m_incrementalSearchCheckBox);
 
