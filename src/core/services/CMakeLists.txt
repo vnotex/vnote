@@ -3,11 +3,13 @@ set(SERVICES_SOURCES
   buffer2.cpp
   buffercoreservice.cpp
   bufferservice.cpp
+  buffersavequeue.cpp
   configcoreservice.cpp
   configservice.cpp
   searchcoreservice.cpp
   searchservice.cpp
   notebookcoreservice.cpp
+  notebookiogate.cpp
   snippetcoreservice.cpp
   tagcoreservice.cpp
   tagservice.cpp
@@ -45,11 +47,14 @@ set(SERVICES_HEADERS
   buffer2.h
   buffercoreservice.h
   bufferservice.h
+  buffersavequeue.h
+  ibuffercoreservice.h
   configcoreservice.h
   configservice.h
   searchcoreservice.h
   searchservice.h
   notebookcoreservice.h
+  notebookiogate.h
   snippetcoreservice.h
   tagcoreservice.h
   tagservice.h

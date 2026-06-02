@@ -9,6 +9,7 @@
 #include <QString>
 
 #include <core/noncopyable.h>
+#include <core/services/ibuffercoreservice.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -26,7 +27,7 @@ enum class BufferState {
 // Service layer for buffer operations. Wraps VxCore buffer C API and provides Qt-friendly
 // interface. BufferCoreService manages open file buffers - opening, closing, reading/writing
 // content, and assets.
-class BufferCoreService : public QObject, private Noncopyable {
+class BufferCoreService : public QObject, public IBufferCoreService, private Noncopyable {
   Q_OBJECT
 
 public:
@@ -64,7 +65,7 @@ public:
   // ============ Buffer Content ============
 
   // Save buffer content to disk.
-  bool saveBuffer(const QString &p_bufferId);
+  bool saveBuffer(const QString &p_bufferId) override;
 
   // Reload buffer content from disk.
   bool reloadBuffer(const QString &p_bufferId);
@@ -84,7 +85,7 @@ public:
   QByteArrayView peekContentRaw(const QString &p_bufferId) const;
 
   // Set buffer content from raw bytes.
-  bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data);
+  bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data) override;
 
   // ============ Buffer State ============
 
