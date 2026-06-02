@@ -34,6 +34,16 @@ vxcore file events → `SyncManager::MaybeEnqueueSync` → emit `sync.should_run
 
 **Cancellation event payload:** `SyncCancelledEvent` (typed hook event for `vnote.sync.cancelled`) carries `notebookId` (QString) and `wasQueued` (bool). `wasQueued=true` indicates the cancellation removed a pending queue entry; `wasQueued=false` indicates the in-flight sync was aborted via `vxcore_sync_cancel`.
 
+### Save / sync I/O serialization
+
+The auto-save path NEVER calls `vxcore_buffer_save` on the UI thread. `BufferService` (`bufferservice.h`/`.cpp`) snapshots `(content, revision)` on the GUI thread and hands the work to `BufferSaveQueue` (`buffersavequeue.h`/`.cpp`), a per-notebook FIFO that wraps `BufferCoreService::saveBuffer` on a worker so auto-save IO never blocks the editor.
+
+Save workers and `SyncOps::triggerSync` share `NotebookIoGate` (`notebookiogate.h`/`.cpp`), a per-notebook async mutex. Both call sites wrap their notebook-touching critical section in `NotebookIoGate::ScopedLock(notebookId)`. `SyncOps::triggerSync` (`syncops.cpp`) now acquires the gate around `vxcore_sync_trigger_cancellable`, guaranteeing a sync never reads a half-flushed file and a save never lands inside someone else's `git add` / commit.
+
+Own the trade-off explicitly: during a network stall the gate is held for as long as the sync round-trip takes, which can be many seconds. The auto-save UI thread is unaffected because work is queued in `BufferSaveQueue`; the visible worst case is a save delayed by a network timeout, never a frozen editor. The full rationale lives in the root [Save Path Threading Contract](../../../AGENTS.md#save-path-threading-contract).
+
+Performance instrumentation: the Qt logging category `vnote.perf.save` covers UI-thread enqueue + worker save latency, and vxcore emits `VXCORE_LOG_DEBUG` lines tagged `[perf.mark_dirty]` / `[perf.maybe_enqueue]` for the synchronous tail that still runs on the caller thread. Both are off by default; enable them when chasing UI-thread regressions.
+
 ## Credential Cleanup Invariants
 
 The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault entries (which surface to users as qtkeychain Win32 error 8 and similar storage faults on the next enable attempt), `m_credentialsStore->deleteCredentials(notebookId)` runs at FIVE well-defined sites. Every code path that retires a notebook or its sync registration goes through one of these.

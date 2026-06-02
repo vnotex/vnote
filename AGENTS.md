@@ -430,6 +430,22 @@ VNote consumes vxcore as an embedded library following the contract documented i
 
 ---
 
+## Save Path Threading Contract
+
+The `Buffer2` / [`BufferService`](src/core/services/bufferservice.h) auto-save path used to call `vxcore_buffer_save` inline on the UI thread, so any slow filesystem operation (large file flush, virus scanner, network drive, antivirus quarantine) froze the editor. That synchronous call now runs on a worker via [`BufferSaveQueue`](src/core/services/buffersavequeue.h). The UI thread's job is reduced to: snapshot the current content plus a monotonically increasing revision, call `BufferSaveQueue::enqueue(...)`, and return. No disk I/O on the UI thread.
+
+Save work and any git-stage / git-commit work on the SAME notebook are serialized by [`NotebookIoGate`](src/core/services/notebookiogate.h), a per-notebook async mutex. Both `BufferSaveQueue` workers and [`SyncOps::triggerSync`](src/core/services/syncops.cpp) acquire `NotebookIoGate::ScopedLock(notebookId)` around their notebook-touching critical section. This prevents a sync round-trip from reading a half-written file, and it prevents a save from racing into the working tree mid-commit.
+
+vxcore's `mark_dirty` → `MaybeEnqueueSync` → `Emit("sync.should_run")` chain remains synchronous on the caller thread BY DESIGN. In steady state it is microseconds, and pushing it onto another thread would buy nothing while costing event-ordering guarantees. **This contract does NOT change vxcore.** The threading discipline is consumer-side only: keep `vxcore_buffer_save` off the UI thread, and the `mark_dirty` tail it triggers stays off the UI thread for free.
+
+The legacy `Buffer` (1-second timer in `src/core/buffer/buffer.cpp`) bypasses vxcore entirely and does not participate in this contract. It is out of scope here and will be retired alongside the rest of the legacy code path.
+
+> **Forbidden Patterns (post-T7):**
+> - Calling `vxcore_buffer_save` directly from the UI thread. Use [`BufferSaveQueue::enqueue`](src/core/services/buffersavequeue.h) instead.
+> - Touching a notebook's working tree (save, stage, commit, checkout) without holding `NotebookIoGate::ScopedLock(notebookId)`.
+
+---
+
 ## Code Style Guidelines
 
 ### Standards
