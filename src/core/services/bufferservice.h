@@ -114,6 +114,7 @@ public:
   // saveBuffer and reloadBuffer emit bufferModifiedChanged after the operation.
   bool saveBuffer(const QString &p_bufferId);
   bool reloadBuffer(const QString &p_bufferId);
+  using BufferCoreService::checkExternalChanges;
   using BufferCoreService::deleteAsset;
   using BufferCoreService::getAssetsFolder;
   using BufferCoreService::getContent;
@@ -121,7 +122,6 @@ public:
   using BufferCoreService::getResolvedPath;
   using BufferCoreService::getResourceBasePath;
   using BufferCoreService::getRevision;
-  using BufferCoreService::checkExternalChanges;
   using BufferCoreService::getState;
   using BufferCoreService::insertAsset;
   using BufferCoreService::insertAssetRaw;
@@ -140,7 +140,34 @@ public:
 
   // Mark a buffer as having pending editor changes.
   // Starts the shared auto-save timer if not running.
+  // Also increments the buffer's monotonic revision counter (snapshot versioning).
   void markDirty(const QString &p_bufferId);
+
+  // ============ Snapshot Revision Tracking (T6) ============
+  // Snapshot-versioned save support: a monotonic revision counter is bumped
+  // on every editor content-change signal (via markDirty). The save-completion
+  // handler reports back the revision it actually persisted via
+  // markRevisionSaved(). The buffer is only cleared from the dirty set when
+  // lastSavedRevision catches up to currentRevision.
+  //
+  // Assumption: a quint64 counter cannot overflow in practice (~10^19 edits).
+
+  // Current monotonic revision for a buffer. 0 if buffer unknown or unedited.
+  quint64 currentRevision(const QString &p_bufferId) const;
+
+  // Last successfully-saved revision for a buffer. 0 if never saved/unknown.
+  quint64 lastSavedRevision(const QString &p_bufferId) const;
+
+  // Report that a save completed for @p_revision. Only advances
+  // m_lastSavedRevision if p_revision > current m_lastSavedRevision (stale
+  // completions are ignored). If lastSavedRevision == currentRevision after
+  // the update, the buffer's dirty flag is cleared. To be called by the
+  // BufferSaveQueue save-completion handler (wired in T7).
+  void markRevisionSaved(const QString &p_bufferId, quint64 p_revision);
+
+  // Whether the buffer has pending unsaved content (membership in dirty set).
+  // Preserves the legacy "has unsaved content" semantic.
+  bool isDirty(const QString &p_bufferId) const;
 
   // Immediately sync a dirty buffer's content from its active writer.
   // Used on focus-loss for instant consistency.
@@ -230,6 +257,14 @@ private:
 
   // Consecutive save failure counts per buffer (for bounded retry).
   QHash<QString, int> m_saveFailureCounts;
+
+  // Per-buffer snapshot revision record (T6). Lazily created on first
+  // markDirty/openBuffer; cleared on closeBuffer.
+  struct BufferRecord {
+    quint64 m_revision = 0;
+    quint64 m_lastSavedRevision = 0;
+  };
+  QHash<QString, BufferRecord> m_revisions;
 };
 
 } // namespace vnotex

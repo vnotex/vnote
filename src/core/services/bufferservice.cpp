@@ -138,6 +138,7 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
   m_activeWriters.remove(p_bufferId);
   m_saveFailureCounts.remove(p_bufferId);
   m_virtualBufferIds.remove(p_bufferId);
+  m_revisions.remove(p_bufferId);
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
   }
@@ -370,9 +371,51 @@ void BufferService::markDirty(const QString &p_bufferId) {
   // in the C API. The read-only check is done at the ViewWindow2 level before calling markDirty.
 
   m_dirtyBuffers.insert(p_bufferId);
+  // Atomic with the auto-save trigger: bump the revision so the snapshot
+  // captured by the next save tick is uniquely identifiable.
+  ++m_revisions[p_bufferId].m_revision;
   if (!m_autoSaveTimer->isActive()) {
     m_autoSaveTimer->start();
   }
+}
+
+// ============ Snapshot Revision Tracking (T6) ============
+
+quint64 BufferService::currentRevision(const QString &p_bufferId) const {
+  auto it = m_revisions.constFind(p_bufferId);
+  return it == m_revisions.constEnd() ? 0 : it->m_revision;
+}
+
+quint64 BufferService::lastSavedRevision(const QString &p_bufferId) const {
+  auto it = m_revisions.constFind(p_bufferId);
+  return it == m_revisions.constEnd() ? 0 : it->m_lastSavedRevision;
+}
+
+void BufferService::markRevisionSaved(const QString &p_bufferId, quint64 p_revision) {
+  if (p_bufferId.isEmpty()) {
+    return;
+  }
+  auto it = m_revisions.find(p_bufferId);
+  if (it == m_revisions.end()) {
+    return;
+  }
+  // Stale completion: a newer save already advanced lastSavedRevision past this.
+  if (p_revision <= it->m_lastSavedRevision) {
+    return;
+  }
+  it->m_lastSavedRevision = p_revision;
+  // Only clear dirty if the latest persisted revision matches the latest edit.
+  // Otherwise newer edits exist (rev > p_revision) and the buffer stays dirty.
+  if (it->m_lastSavedRevision == it->m_revision) {
+    m_dirtyBuffers.remove(p_bufferId);
+    if (m_dirtyBuffers.isEmpty()) {
+      m_autoSaveTimer->stop();
+    }
+  }
+}
+
+bool BufferService::isDirty(const QString &p_bufferId) const {
+  return m_dirtyBuffers.contains(p_bufferId);
 }
 
 void BufferService::syncNow(const QString &p_bufferId) {

@@ -161,6 +161,15 @@ add_qt_test(test_buffer
   GUILESS
 )
 
+add_qt_test(test_buffer_revision
+  SOURCES
+    test_buffer_revision.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_virtual_buffer
   SOURCES
     test_virtual_buffer.cpp
@@ -687,6 +696,17 @@ add_qt_test(test_sync_workqueue_cap_coalesce
   SOURCES
     test_sync_workqueue_cap_coalesce.cpp
     ${CMAKE_SOURCE_DIR}/src/core/services/syncworkqueuemanager.cpp
+  LINKS
+    core_services
+    Qt6::Core
+  GUILESS
+)
+
+# T5 (sync-autosave-ui-freeze): BufferSaveQueue — async per-(notebook,buffer)
+# save executor. Uses a fake IBufferCoreService — no vxcore needed.
+add_qt_test(test_buffer_save_queue
+  SOURCES
+    test_buffer_save_queue.cpp
   LINKS
     core_services
     Qt6::Core
