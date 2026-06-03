@@ -124,7 +124,8 @@ public:
   // Split the workspace p_workspaceId in the given direction.
   // Fires hooks, allocates a new workspace via WorkspaceCoreService,
   // then calls m_view->split() for the view to create the new split widget.
-  void splitViewSplit(const QString &p_workspaceId, Direction p_direction);
+  void splitViewSplit(const QString &p_workspaceId, Direction p_direction,
+                      bool p_openCurrentBuffer = true);
 
   // Remove the split for p_workspaceId.
   // @p_keepWorkspace: if true, hide-only mode (workspace becomes hidden, split removed).

@@ -551,7 +551,8 @@ void ViewAreaController::openLastClosedFile() {
   }
 }
 
-void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction) {
+void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction,
+                                        bool p_openCurrentBuffer) {
   if (p_workspaceId.isEmpty()) {
     return;
   }
@@ -586,7 +587,7 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
 
   // Open the current buffer of the source workspace in the new split.
   // Set the new workspace as current — the new split becomes active (natural UX).
-  if (!currentBufferId.isEmpty() && !newWsId.isEmpty()) {
+  if (p_openCurrentBuffer && !currentBufferId.isEmpty() && !newWsId.isEmpty()) {
     auto *bufferSvc = m_services.get<BufferService>();
     if (bufferSvc) {
       Buffer2 buf = bufferSvc->getBufferHandle(currentBufferId);
