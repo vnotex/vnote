@@ -65,6 +65,12 @@ public:
   // ============ Buffer Content ============
 
   // Save buffer content to disk.
+  //
+  // THREADING: This call may block on filesystem / libgit2 contention. UI-thread
+  // callers MUST prefer BufferService + BufferSaveQueue::enqueue, which dispatches
+  // the save to a worker and serializes per-notebook via NotebookIoGate. Direct
+  // calls to this method are permitted ONLY from worker threads (e.g. the
+  // BufferSaveQueue worker itself) or from test code.
   bool saveBuffer(const QString &p_bufferId) override;
 
   // Reload buffer content from disk.

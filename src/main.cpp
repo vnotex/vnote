@@ -30,6 +30,7 @@
 #include <core/services/htmltemplateservice.h>
 #include <core/services/imagehostservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/snippetcoreservice.h>
@@ -226,7 +227,11 @@ int main(int argc, char *argv[]) {
     SearchCoreService searchService(context);
     SearchService searchAsyncService(&searchService);
     WorkspaceCoreService workspaceService(context);
-    BufferService bufferService(context, &hookManager);
+    // T7: NotebookIoGate serializes save/sync I/O per notebook. Must be
+    // constructed BEFORE BufferService (which captures it by pointer) and
+    // remain alive until after BufferService shutdown.
+    NotebookIoGate notebookIoGate;
+    BufferService bufferService(context, &hookManager, &notebookIoGate);
     TagCoreService tagCoreService(context);
     TagService tagService(context, &hookManager);
     SnippetCoreService snippetCoreService(context);
@@ -237,6 +242,7 @@ int main(int argc, char *argv[]) {
     VNote3MigrationService migrationService(&notebookService, &tagCoreService);
     serviceLocator.registerService<VNote3MigrationService>(&migrationService);
     serviceLocator.registerService<BufferService>(&bufferService);
+    serviceLocator.registerService<NotebookIoGate>(&notebookIoGate);
     serviceLocator.registerService<SearchCoreService>(&searchService);
     serviceLocator.registerService<SearchService>(&searchAsyncService);
     serviceLocator.registerService<WorkspaceCoreService>(&workspaceService);
@@ -346,6 +352,13 @@ int main(int argc, char *argv[]) {
           auto *queueMgr = serviceLocator.get<vnotex::SyncWorkQueueManager>();
           if (queueMgr) {
             queueMgr->shutdown(5000);
+          }
+          // T7: drain async BufferSaveQueue so in-flight auto-saves complete
+          // before BufferService is destroyed. Idempotent — dtor also calls
+          // shutdown(5000).
+          auto *bufSvc = serviceLocator.get<vnotex::BufferService>();
+          if (bufSvc) {
+            bufSvc->shutdown(5000);
           }
         },
         Qt::DirectConnection);

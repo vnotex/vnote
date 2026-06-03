@@ -19,6 +19,8 @@ class QTimer;
 namespace vnotex {
 
 class HookManager;
+class BufferSaveQueue;
+class NotebookIoGate;
 
 // Auto-save policy for buffer content.
 // Matches EditorConfig::AutoSavePolicy values.
@@ -40,11 +42,23 @@ class BufferService : private BufferCoreService {
   Q_OBJECT
 
 public:
-  // Constructor receives VxCore context handle, HookManager, and initial auto-save policy.
+  // Constructor receives VxCore context handle, HookManager, NotebookIoGate, and initial
+  // auto-save policy. NotebookIoGate is shared with SyncOps; required by the BufferSaveQueue
+  // worker pool to serialize working-tree access per notebook.
   explicit BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
+                         NotebookIoGate *p_ioGate,
                          AutoSavePolicy p_autoSavePolicy = AutoSavePolicy::AutoSave,
                          QObject *p_parent = nullptr);
+
+  // Convenience overload (test / legacy callers): owns an internal NotebookIoGate.
+  // Production code MUST pass the shared NotebookIoGate explicitly.
+  explicit BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
+                         AutoSavePolicy p_autoSavePolicy, QObject *p_parent = nullptr);
   ~BufferService() override;
+
+  // Drain in-flight async saves. Returns true if drained within @p_timeoutMs.
+  // Safe to call multiple times (idempotent). The dtor calls this as a safety net.
+  bool shutdown(int p_timeoutMs = 5000);
 
   // Expose QObject base for signal connections from outside.
   // Needed because BufferService privately inherits QObject (via BufferCoreService),
@@ -219,6 +233,9 @@ signals:
   // Emitted after attachment list/content changes for a buffer.
   void attachmentChanged(const QString &p_bufferId);
 
+  // Emitted when an async save reports an error from the BufferSaveQueue worker.
+  void saveError(const QString &p_bufferId, const QString &p_errorMsg);
+
   // Emitted when an open buffer's file is detected as changed or missing on disk.
   // p_bufferId: the affected buffer.
   // p_state: the detected state (BufferState::FileChanged or BufferState::FileMissing).
@@ -231,6 +248,10 @@ private:
   // Sync content from active writer to vxcore buffer and execute auto-save policy.
   void executeSyncForBuffer(const QString &p_bufferId);
 
+  // Async save-completion handler wired to BufferSaveQueue::saveFinished.
+  void onSaveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
+                      const QString &p_errorMsg);
+
   struct ActiveWriter {
     quintptr key = 0;
     ContentFetchCallback callback;
@@ -240,6 +261,13 @@ private:
   static const int c_maxSaveFailures = 3;
 
   HookManager *m_hookMgr = nullptr;
+  NotebookIoGate *m_ioGate = nullptr;
+  // Owned gate used only by the convenience ctor (test/legacy). Nullptr when
+  // a shared gate is supplied externally.
+  NotebookIoGate *m_ownedIoGate = nullptr;
+  // Heap-allocated, parented to `this` — Qt destroys it. Do NOT delete manually.
+  // Dtor calls m_saveQueue->shutdown(5000) as a safety net.
+  BufferSaveQueue *m_saveQueue = nullptr;
   AutoSavePolicy m_autoSavePolicy = AutoSavePolicy::AutoSave;
 
   // Managed by QObject.

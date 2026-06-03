@@ -9,7 +9,9 @@
 #include <core/fileopensettings.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
+#include <core/services/buffersavequeue.h>
 #include <core/services/hookmanager.h>
+#include <core/services/notebookiogate.h>
 
 using namespace vnotex;
 
@@ -18,17 +20,47 @@ Q_LOGGING_CATEGORY(perfSave, "vnote.perf.save")
 } // namespace
 
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
-                             AutoSavePolicy p_autoSavePolicy, QObject *p_parent)
-    : BufferCoreService(p_context, p_parent), m_hookMgr(p_hookMgr),
+                             NotebookIoGate *p_ioGate, AutoSavePolicy p_autoSavePolicy,
+                             QObject *p_parent)
+    : BufferCoreService(p_context, p_parent), m_hookMgr(p_hookMgr), m_ioGate(p_ioGate),
       m_autoSavePolicy(p_autoSavePolicy) {
   Q_ASSERT(m_hookMgr);
+  Q_ASSERT(m_ioGate);
 
   m_autoSaveTimer = new QTimer(this);
   m_autoSaveTimer->setInterval(c_autoSaveIntervalMs);
   QObject::connect(m_autoSaveTimer, &QTimer::timeout, this, [this]() { onAutoSaveTimerTick(); });
+
+  // T7: BufferSaveQueue dispatches auto-save off the UI thread, serializing
+  // per (notebookId, bufferId) and acquiring NotebookIoGate per notebook.
+  m_saveQueue = new BufferSaveQueue(*this, *m_ioGate, this);
+  QObject::connect(
+      m_saveQueue, &BufferSaveQueue::saveFinished, asQObject(),
+      [this](const QString &p_bufferId, quint64 p_revision, bool p_ok, const QString &p_errorMsg) {
+        onSaveFinished(p_bufferId, p_revision, p_ok, p_errorMsg);
+      },
+      Qt::QueuedConnection);
 }
 
-BufferService::~BufferService() {}
+BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
+                             AutoSavePolicy p_autoSavePolicy, QObject *p_parent)
+    : BufferService(p_context, p_hookMgr, new NotebookIoGate(), p_autoSavePolicy, p_parent) {
+  // Re-tag the gate we just created as owned so the dtor cleans it up.
+  m_ownedIoGate = m_ioGate;
+}
+
+BufferService::~BufferService() {
+  // Safety net — idempotent. The aboutToQuit handler should have called this already.
+  if (m_saveQueue) {
+    m_saveQueue->shutdown(5000);
+  }
+  delete m_ownedIoGate;
+  m_ownedIoGate = nullptr;
+}
+
+bool BufferService::shutdown(int p_timeoutMs) {
+  return m_saveQueue ? m_saveQueue->shutdown(p_timeoutMs) : true;
+}
 
 QObject *BufferService::asQObject() { return this; }
 
@@ -499,58 +531,57 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     return;
   }
 
-  // Fetch content from editor via callback and write to vxcore buffer.
-  QString content = it->callback();
-  QByteArray contentBytes = content.toUtf8();
-  bool setOk = BufferCoreService::setContentRaw(p_bufferId, contentBytes);
-  if (!setOk) {
-    qWarning() << "BufferService: failed to set content for buffer" << p_bufferId;
-    return;
-  }
-
-  emit bufferContentSynced(p_bufferId);
-  emit bufferModifiedChanged(p_bufferId);
-
   // Skip auto-save disk write for externally changed/missing files.
-  // Content sync from editor to buffer (above) still happens — we want the latest
-  // editor content in the vxcore buffer. Only the automatic disk write is blocked.
+  // (Inline check before snapshot — cheap.)
   BufferState state = BufferCoreService::getState(p_bufferId);
   if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
     return;
   }
 
-  // Execute auto-save policy.
-  switch (m_autoSavePolicy) {
-  case AutoSavePolicy::None:
-    // Content synced to vxcore buffer only — no disk write.
-    break;
+  // Fetch latest editor content as a QString snapshot — UI thread only.
+  QString content = it->callback();
 
-  case AutoSavePolicy::AutoSave: {
-    bool saveOk = BufferCoreService::saveBuffer(p_bufferId);
-    if (saveOk) {
-      m_saveFailureCounts.remove(p_bufferId);
-      emit bufferAutoSaved(p_bufferId);
+  // Capture the revision tied to this snapshot (T6). markRevisionSaved on
+  // completion advances lastSavedRevision and clears dirty iff it catches up
+  // to current.
+  const quint64 capturedRev = currentRevision(p_bufferId);
+
+  switch (m_autoSavePolicy) {
+  case AutoSavePolicy::None: {
+    // Sync to in-memory vxcore buffer only — no disk write, fast.
+    if (BufferCoreService::setContentRaw(p_bufferId, content.toUtf8())) {
+      emit bufferContentSynced(p_bufferId);
       emit bufferModifiedChanged(p_bufferId);
     } else {
-      int failCount = m_saveFailureCounts.value(p_bufferId, 0) + 1;
-      m_saveFailureCounts[p_bufferId] = failCount;
-      qWarning() << "BufferService: AutoSave failed for buffer" << p_bufferId << "(attempt"
-                 << failCount << ")";
-      emit bufferAutoSaveFailed(p_bufferId);
-      if (failCount >= c_maxSaveFailures) {
-        qWarning() << "BufferService: AutoSave aborted for buffer" << p_bufferId << "after"
-                   << c_maxSaveFailures << "failures";
-        emit bufferAutoSaveAborted(p_bufferId);
-      } else {
-        // Keep in dirty set for retry on next tick.
-        m_dirtyBuffers.insert(p_bufferId);
-      }
+      qWarning() << "BufferService: failed to set content for buffer" << p_bufferId;
     }
     break;
   }
 
+  case AutoSavePolicy::AutoSave: {
+    // T7: dispatch off UI thread via BufferSaveQueue.
+    // Resolve notebookId for gate keying.
+    QJsonObject bufJson = BufferCoreService::getBuffer(p_bufferId);
+    QString notebookId = bufJson.value(QStringLiteral("notebookId")).toString();
+
+    // Emit content-synced eagerly: the snapshot is committed to the queue and
+    // the editor view can drop any "syncing" hint. The actual disk write
+    // completes asynchronously via onSaveFinished.
+    emit bufferContentSynced(p_bufferId);
+    m_saveQueue->enqueue(notebookId, p_bufferId, content, capturedRev);
+    break;
+  }
+
   case AutoSavePolicy::BackupFile: {
-    // Use vxcore's built-in backup mechanism via BufferCoreService.
+    // Backup file does NOT contend with libgit2 (writes to .vswp, not the working tree)
+    // and so remains inline. Still cheap (in-memory + sibling-file write).
+    if (!BufferCoreService::setContentRaw(p_bufferId, content.toUtf8())) {
+      qWarning() << "BufferService: failed to set content for buffer" << p_bufferId;
+      break;
+    }
+    emit bufferContentSynced(p_bufferId);
+    emit bufferModifiedChanged(p_bufferId);
+
     bool backupOk = BufferCoreService::writeBackup(p_bufferId);
     if (backupOk) {
       qDebug() << "BufferService: backup written for buffer" << p_bufferId << "at"
@@ -578,4 +609,33 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
 
   qint64 elapsed = timer.elapsed();
   qCDebug(perfSave) << "[perf.save] execute_ms=" << elapsed;
+}
+
+void BufferService::onSaveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
+                                   const QString &p_errorMsg) {
+  if (p_ok) {
+    // T6: advances lastSavedRevision and clears dirty iff lastSaved == current.
+    markRevisionSaved(p_bufferId, p_revision);
+    m_saveFailureCounts.remove(p_bufferId);
+    emit bufferAutoSaved(p_bufferId);
+    emit bufferModifiedChanged(p_bufferId);
+  } else {
+    int failCount = m_saveFailureCounts.value(p_bufferId, 0) + 1;
+    m_saveFailureCounts[p_bufferId] = failCount;
+    qWarning() << "BufferService: AutoSave failed for buffer" << p_bufferId << "(attempt"
+               << failCount << "):" << p_errorMsg;
+    emit saveError(p_bufferId, p_errorMsg);
+    emit bufferAutoSaveFailed(p_bufferId);
+    if (failCount >= c_maxSaveFailures) {
+      qWarning() << "BufferService: AutoSave aborted for buffer" << p_bufferId << "after"
+                 << c_maxSaveFailures << "failures";
+      emit bufferAutoSaveAborted(p_bufferId);
+    } else {
+      // Re-mark dirty so the next timer tick retries.
+      m_dirtyBuffers.insert(p_bufferId);
+      if (!m_autoSaveTimer->isActive()) {
+        m_autoSaveTimer->start();
+      }
+    }
+  }
 }
