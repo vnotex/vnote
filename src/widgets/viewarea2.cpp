@@ -958,16 +958,50 @@ void ViewArea2::moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspa
 void ViewArea2::onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
                                                   Direction p_direction) {
   auto *target = findSplitByDirection(p_split, p_direction);
+
+  // Only-tab guard (legacy parity: viewarea.cpp:1425-1428). Creating a new split
+  // solely to immediately empty the source is a visual no-op.
+  const int srcCountBefore = p_split->getAllViewWindows().size();
+  if (!target && srcCountBefore <= 1) {
+    return;
+  }
+
+  bool createdDst = false;
   if (!target) {
-    m_controller->splitViewSplit(p_split->getWorkspaceId(), p_direction);
+    // Auto-create an empty destination split. Pass false so splitViewSplit does
+    // not clone the current buffer — the move transfer below fills the new split.
+    m_controller->splitViewSplit(p_split->getWorkspaceId(), p_direction,
+                                 /*p_openCurrentBuffer=*/false);
     target = findSplitByDirection(p_split, p_direction);
     if (!target) {
       return;
     }
+    createdDst = true;
   }
-  m_controller->moveViewWindowOneSplit(p_split->getWorkspaceId(), p_win->getViewWindowId(),
-                                       p_direction, target->getWorkspaceId(),
+
+  const QString srcWsId = p_split->getWorkspaceId();
+  const QString dstWsId = target->getWorkspaceId();
+
+  m_controller->moveViewWindowOneSplit(srcWsId, p_win->getViewWindowId(), p_direction, dstWsId,
                                        p_win->getBuffer().id());
+
+  // Rollback: if the move was cancelled by ViewWindowBeforeMove (or otherwise
+  // no-op'd), an auto-created destination would be left empty. Remove it via
+  // the controller so hooks fire.
+  if (createdDst) {
+    auto *dstSplit = splitForWorkspace(dstWsId);
+    if (dstSplit && dstSplit->getAllViewWindows().isEmpty()) {
+      m_controller->removeViewSplit(dstWsId, /*p_keepWorkspace=*/false, /*p_force=*/true);
+      return;
+    }
+  }
+
+  // Auto-remove empty source after a successful only-tab move (legacy parity:
+  // viewarea.cpp:1443-1447).
+  auto *srcSplit = splitForWorkspace(srcWsId);
+  if (srcSplit && srcSplit->getAllViewWindows().isEmpty()) {
+    m_controller->removeViewSplit(srcWsId, /*p_keepWorkspace=*/false, /*p_force=*/true);
+  }
 }
 
 void ViewArea2::onRemoveSplitRequested(ViewSplit2 *p_split) {
