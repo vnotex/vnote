@@ -173,13 +173,37 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // If --verbose was passed, unmute all QLoggingCategory categories and set vxcore
-  // to debug level. Only inject if the user hasn't already set these env vars.
-  // This ensures the logging rules pick up our changes when we call
-  // installDefaultLoggingRules() below, and vxcore's Logger ctor reads VXCORE_LOG_LEVEL.
+  // If --verbose was passed, unmute VNote- and vxcore-owned QLoggingCategory
+  // categories only (NOT Qt's built-in qt.* categories). Each category is listed
+  // explicitly rather than via a wildcard, because a bare `*.debug=true` rule
+  // also turns on noisy Qt internals like qt.accessibility / qt.qpa.* that
+  // produce thousands of QAccessibleInterface log lines on every render and
+  // have been observed to trigger a use-after-free crash deep inside
+  // Qt6WebEngineCore.dll while editing PlantUML / Mermaid fenced blocks (the
+  // accessibility debug formatter dereferences interfaces freed by the
+  // WebEngine accessibility tree turnover). See
+  // .sisyphus/evidence/puml-edit-crash/diagnosis.md for the full analysis.
+  //
+  // All vxcore logs are routed through the VxCoreLogBridge under the
+  // vnote.vxbridge category, so enabling that one entry covers every vxcore
+  // log line as well.
+  //
+  // When adding a new Q_LOGGING_CATEGORY under the vnote.* namespace, also
+  // append it to the list below so it participates in --verbose.
+  // Only inject if the user hasn't already set these env vars.
   if (verboseEarlyFlag) {
     if (qgetenv("VNOTE_LOG_RULES").isEmpty()) {
-      qputenv("VNOTE_LOG_RULES", "*.debug=true");
+      qputenv("VNOTE_LOG_RULES", "vnote.sync.debug=true\n"
+                                 "vnote.sync.workqueue.debug=true\n"
+                                 "vnote.buffer.debug=true\n"
+                                 "vnote.buffer.savequeue.debug=true\n"
+                                 "vnote.workspace.debug=true\n"
+                                 "vnote.web.js.debug=true\n"
+                                 "vnote.vim.debug=true\n"
+                                 "vnote.vxbridge.debug=true\n"
+                                 "vnote.ui.debug=true\n"
+                                 "vnote.config.debug=true\n"
+                                 "vnote.perf.save.debug=true");
     }
     if (qgetenv("VXCORE_LOG_LEVEL").isEmpty()) {
       qputenv("VXCORE_LOG_LEVEL", "debug");
