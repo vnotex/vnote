@@ -11,6 +11,7 @@ target_sources(vnote PRIVATE
     imageresolutionutils.cpp imageresolutionutils.h
     pathutils.cpp pathutils.h
     qtcompat.h
+    scrollpreservationpolicy.cpp scrollpreservationpolicy.h
     stringutils.cpp stringutils.h
     strnatcmp.c strnatcmp.h
     processutils.cpp processutils.h

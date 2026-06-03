@@ -26,6 +26,13 @@ add_qt_test(test_fileutils2
   GUILESS
 )
 
+add_qt_test(test_scrollpreservationpolicy
+  SOURCES
+    test_scrollpreservationpolicy.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/scrollpreservationpolicy.cpp
+  GUILESS
+)
+
 add_qt_test(test_headingslug
   SOURCES
     test_headingslug.cpp
