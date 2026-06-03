@@ -42,8 +42,8 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
     m_nodeExplorerCloseBeforeOpenWithEnabled =
         READBOOL(QStringLiteral("nodeExplorerCloseBeforeOpenWithEnabled"));
   }
-    m_nodeExplorerSingleClickActivation =
-        READBOOL(QStringLiteral("nodeExplorerSingleClickActivation"));
+  m_nodeExplorerSingleClickActivation =
+      READBOOL(QStringLiteral("nodeExplorerSingleClickActivation"));
 
   m_searchPanelAdvancedSettingsVisible =
       READBOOL(QStringLiteral("searchPanelAdvancedSettingsVisible"));
@@ -63,8 +63,8 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("unitedEntryExpandAll"));
 
-  m_viewWindowLayoutMode = static_cast<ViewWindowLayoutMode>(
-      READINT(QStringLiteral("viewWindowLayoutMode")));
+  m_viewWindowLayoutMode =
+      static_cast<ViewWindowLayoutMode>(READINT(QStringLiteral("viewWindowLayoutMode")));
   m_readableWidthMaxPx = READINT(QStringLiteral("readableWidthMaxPx"));
   if (m_readableWidthMaxPx <= 0) {
     m_readableWidthMaxPx = 720;
@@ -102,20 +102,16 @@ QJsonObject WidgetConfig::toJson() const {
       m_nodeExplorerAutoImportExternalFilesEnabled;
   obj[QStringLiteral("nodeExplorerCloseBeforeOpenWithEnabled")] =
       m_nodeExplorerCloseBeforeOpenWithEnabled;
-  obj[QStringLiteral("nodeExplorerSingleClickActivation")] =
-      m_nodeExplorerSingleClickActivation;
+  obj[QStringLiteral("nodeExplorerSingleClickActivation")] = m_nodeExplorerSingleClickActivation;
 
-  obj[QStringLiteral("searchPanelAdvancedSettingsVisible")] =
-      m_searchPanelAdvancedSettingsVisible;
-  obj[QStringLiteral("snippetPanelBuiltInSnippetsVisible")] =
-      m_snippetPanelBuiltInSnippetsVisible;
+  obj[QStringLiteral("searchPanelAdvancedSettingsVisible")] = m_searchPanelAdvancedSettingsVisible;
+  obj[QStringLiteral("snippetPanelBuiltInSnippetsVisible")] = m_snippetPanelBuiltInSnippetsVisible;
   obj[QStringLiteral("tagExplorerTwoColumnsEnabled")] = m_tagExplorerTwoColumnsEnabled;
   writeStringList(obj, QStringLiteral("mainWindowKeepDocksExpandingContentArea"),
                   m_mainWindowKeepDocksExpandingContentArea);
   obj[QStringLiteral("newNoteDefaultFileTypeName")] = m_newNoteDefaultFileTypeName;
   obj[QStringLiteral("unitedEntryExpandAll")] = m_unitedEntryExpandAllEnabled;
-  obj[QStringLiteral("viewWindowLayoutMode")] =
-      static_cast<int>(m_viewWindowLayoutMode);
+  obj[QStringLiteral("viewWindowLayoutMode")] = static_cast<int>(m_viewWindowLayoutMode);
   obj[QStringLiteral("readableWidthMaxPx")] = m_readableWidthMaxPx;
   obj[QStringLiteral("searchScope")] = m_searchScope;
   obj[QStringLiteral("searchMode")] = m_searchMode;
@@ -137,7 +133,9 @@ void WidgetConfig::setOutlineSectionNumberEnabled(bool p_enabled) {
   updateConfig(m_outlineSectionNumberEnabled, p_enabled, this);
 }
 
-int WidgetConfig::getOutlineSectionNumberBaseLevel() const { return m_outlineSectionNumberBaseLevel; }
+int WidgetConfig::getOutlineSectionNumberBaseLevel() const {
+  return m_outlineSectionNumberBaseLevel;
+}
 
 void WidgetConfig::setOutlineSectionNumberBaseLevel(int p_level) {
   updateConfig(m_outlineSectionNumberBaseLevel, p_level, this);
@@ -301,20 +299,17 @@ void WidgetConfig::setReadableWidthMaxPx(int p_px) {
 }
 
 void WidgetConfig::initDefaults() {
-  m_mainWindowKeepDocksExpandingContentArea = {QStringLiteral("OutlineDock.vnotex"), QStringLiteral("WindowsDock.vnotex")};
+  m_mainWindowKeepDocksExpandingContentArea =
+      QStringList{QStringLiteral("OutlineDock.vnotex"), QStringLiteral("WindowsDock.vnotex")};
 }
 
 int WidgetConfig::getSearchScope() const { return m_searchScope; }
 
-void WidgetConfig::setSearchScope(int p_scope) {
-  updateConfig(m_searchScope, p_scope, this);
-}
+void WidgetConfig::setSearchScope(int p_scope) { updateConfig(m_searchScope, p_scope, this); }
 
 int WidgetConfig::getSearchMode() const { return m_searchMode; }
 
-void WidgetConfig::setSearchMode(int p_mode) {
-  updateConfig(m_searchMode, p_mode, this);
-}
+void WidgetConfig::setSearchMode(int p_mode) { updateConfig(m_searchMode, p_mode, this); }
 
 bool WidgetConfig::getSearchCaseSensitive() const { return m_searchCaseSensitive; }
 
@@ -324,9 +319,7 @@ void WidgetConfig::setSearchCaseSensitive(bool p_sensitive) {
 
 bool WidgetConfig::getSearchRegex() const { return m_searchRegex; }
 
-void WidgetConfig::setSearchRegex(bool p_regex) {
-  updateConfig(m_searchRegex, p_regex, this);
-}
+void WidgetConfig::setSearchRegex(bool p_regex) { updateConfig(m_searchRegex, p_regex, this); }
 
 const QString &WidgetConfig::getSearchFilePattern() const { return m_searchFilePattern; }
 

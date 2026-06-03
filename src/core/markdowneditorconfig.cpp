@@ -39,19 +39,16 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_mathJaxScript = READSTR(QStringLiteral("mathJaxScript"));
 
   m_prependDotInRelativeLink = READBOOL(QStringLiteral("prependDotInRelativeLink"));
-  m_confirmBeforeClearObsoleteImages =
-      READBOOL(QStringLiteral("confirmBeforeClearObsoleteImages"));
+  m_confirmBeforeClearObsoleteImages = READBOOL(QStringLiteral("confirmBeforeClearObsoleteImages"));
   m_insertFileNameAsTitle = READBOOL(QStringLiteral("insertFileNameAsTitle"));
 
   m_sectionNumberMode = stringToSectionNumberMode(READSTR(QStringLiteral("sectionNumber")));
   m_sectionNumberBaseLevel = READINT(QStringLiteral("sectionNumberBaseLevel"));
-  m_sectionNumberStyle =
-      stringToSectionNumberStyle(READSTR(QStringLiteral("sectionNumberStyle")));
+  m_sectionNumberStyle = stringToSectionNumberStyle(READSTR(QStringLiteral("sectionNumberStyle")));
 
   m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrainImageWidth"));
   m_imageAlignCenterEnabled = READBOOL(QStringLiteral("imageAlignCenter"));
-  m_constrainInplacePreviewWidthEnabled =
-      READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
+  m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
   m_zoomFactorInReadMode = READREAL(QStringLiteral("zoomFactorInReadMode"));
   m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
 
@@ -465,7 +462,8 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("global_styles");
     r.m_enabled = true;
-    r.m_styles = {QStringLiteral("web/css/user.css"), QStringLiteral("web/css/globalstyles.css")};
+    r.m_styles =
+        QStringList{QStringLiteral("web/css/user.css"), QStringLiteral("web/css/globalstyles.css")};
     res.m_resources.append(r);
   }
 
@@ -474,24 +472,22 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("built_in");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/qwebchannel.js"),
-      QStringLiteral("web/js/eventemitter.js"),
-      QStringLiteral("web/js/vxcore.js"),
-      QStringLiteral("web/js/utils.js"),
-      QStringLiteral("web/js/nodelinemapper.js"),
-      QStringLiteral("web/js/lrucache.js"),
-      QStringLiteral("web/js/graphcache.js"),
-      QStringLiteral("web/js/graphpreviewer.js"),
-      QStringLiteral("web/js/markdownviewercore.js"),
-      QStringLiteral("web/js/vxworker.js"),
-      QStringLiteral("web/js/graphrenderer.js"),
-      QStringLiteral("web/js/svg-to-image.js"),
-      QStringLiteral("web/js/computed-style-to-inline-style.js"),
-      QStringLiteral("web/js/imageviewer.js"),
-      QStringLiteral("web/js/easyaccess.js"),
-      QStringLiteral("web/js/crosscopy.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/qwebchannel.js"),
+                   QStringLiteral("web/js/eventemitter.js"),
+                   QStringLiteral("web/js/vxcore.js"),
+                   QStringLiteral("web/js/utils.js"),
+                   QStringLiteral("web/js/nodelinemapper.js"),
+                   QStringLiteral("web/js/lrucache.js"),
+                   QStringLiteral("web/js/graphcache.js"),
+                   QStringLiteral("web/js/graphpreviewer.js"),
+                   QStringLiteral("web/js/markdownviewercore.js"),
+                   QStringLiteral("web/js/vxworker.js"),
+                   QStringLiteral("web/js/graphrenderer.js"),
+                   QStringLiteral("web/js/svg-to-image.js"),
+                   QStringLiteral("web/js/computed-style-to-inline-style.js"),
+                   QStringLiteral("web/js/imageviewer.js"),
+                   QStringLiteral("web/js/easyaccess.js"),
+                   QStringLiteral("web/js/crosscopy.js")};
     r.m_styles = {QStringLiteral("web/css/imageviewer.css")};
     res.m_resources.append(r);
   }
@@ -510,24 +506,22 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("markdown_it");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
-      QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
-      QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
-      QStringLiteral("web/js/markdownit.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
+                   QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
+                   QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
+                   QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
+                   QStringLiteral("web/js/markdownit.js")};
     r.m_styles = {QStringLiteral("web/css/markdownit.css")};
     res.m_resources.append(r);
   }
@@ -537,9 +531,7 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("prism");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/prism.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/prism.js")};
     res.m_resources.append(r);
   }
 
@@ -548,9 +540,7 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("codeblock_actions");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/codeblockactions.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/codeblockactions.js")};
     r.m_styles = {QStringLiteral("web/css/codeblockactions.css")};
     res.m_resources.append(r);
   }
@@ -569,11 +559,9 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("flowchart.js");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/flowchart.js/raphael.min.js"),
-      QStringLiteral("web/js/flowchart.js/flowchart.min.js"),
-      QStringLiteral("web/js/flowchartjs.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/flowchart.js/raphael.min.js"),
+                   QStringLiteral("web/js/flowchart.js/flowchart.min.js"),
+                   QStringLiteral("web/js/flowchartjs.js")};
     res.m_resources.append(r);
   }
 
@@ -618,11 +606,9 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("turndown");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/turndown/turndown.js"),
-      QStringLiteral("web/js/turndown/turndown-plugin-gfm.js"),
-      QStringLiteral("web/js/turndown.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/turndown/turndown.js"),
+                   QStringLiteral("web/js/turndown/turndown-plugin-gfm.js"),
+                   QStringLiteral("web/js/turndown.js")};
     res.m_resources.append(r);
   }
 
@@ -631,10 +617,8 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("mark.js");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/mark.js/mark.min.js"),
-      QStringLiteral("web/js/markjs.js")
-    };
+    r.m_scripts = {QStringLiteral("web/js/mark.js/mark.min.js"),
+                   QStringLiteral("web/js/markjs.js")};
     res.m_resources.append(r);
   }
 
