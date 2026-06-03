@@ -35,7 +35,17 @@ jobs:
             qt: 6.8.3
             qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
             qt_tools: tools_opensslv3_x64
+            qt_major: 6
             suffix: ""
+          - name: "Build on Win64 Qt 5.15"
+            arch: win64_msvc2019_64
+            vs_version: 2022
+            vs_cmd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat"
+            qt: 5.15.2
+            qt_modules: qtwebengine
+            qt_tools: tools_opensslv3_x64
+            qt_major: 5
+            suffix: "-windows7"
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -58,6 +68,13 @@ jobs:
           path: ${{runner.workspace}}/Qt
           key: ${{runner.os}}-${{matrix.config.arch}}-QtCache-${{matrix.config.qt}}
 
+      - name: Install MSVC 2019 BuildTools (v142)
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: pwsh
+        run: |
+          choco install visualstudio2019buildtools --no-progress -y `
+            --package-parameters "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.v142.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041"
+
       - name: Install Qt Official Build
         uses: jurplel/install-qt-action@v3
         with:
@@ -73,6 +90,13 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Clone OpenSSL on 5.15
+        shell: bash
+        if: ${{ startsWith(matrix.config.qt, '5.15') }}
+        run: |
+          git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
+        working-directory: ${{ runner.workspace }}/build
+
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
@@ -83,12 +107,44 @@ jobs:
         run: |
           cmake --version
           call "${{matrix.config.vs_cmd}}"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE%
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DVNOTE_BUILD_TESTS=OFF -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
+          type cmake-configure.log
           cmake --build .
           cmake --build . --target=pack
           7z x VNote*.zip -o*
           dir
         working-directory: ${{runner.workspace}}/build
+
+      - name: Assert MSVC v142 + Qt 5.15.2 in use
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: |
+          grep -E "MSVC.*19\.29|Compiler.*19\.29" cmake-configure.log || (echo "v142 toolset NOT in use" && exit 1)
+          grep -E "Found Qt5.*5\.15\.2|Qt5 .*5\.15\.2|5\.15\.2" cmake-configure.log || (echo "Qt 5.15.2 not found" && exit 1)
+          echo "v142 + Qt 5.15.2 verified"
+
+      - name: Rename on 5.15
+        shell: bash
+        if: ${{ startsWith(matrix.config.qt, '5.15') }}
+        working-directory: ${{ runner.workspace }}/build
+        run: |
+          mv VNote-${VNOTE_VER}-win64 VNote-${VNOTE_VER}-win64-windows7 || true
+          mv VNote-${VNOTE_VER}-win64.zip VNote-${VNOTE_VER}-win64-windows7.zip || true
+
+      - name: Verify Qt5 zip composition
+        if: ${{ startsWith(matrix.config.qt, '5.15') }}
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          $extracted = "VNote-${{env.VNOTE_VER}}-win64-windows7"
+          if (-not (Test-Path "$extracted/vnote.exe")) { Write-Error "vnote.exe missing"; exit 1 }
+          if (-not (Test-Path "$extracted/Qt5Core.dll")) { Write-Error "Qt5Core.dll missing"; exit 1 }
+          if (-not (Test-Path "$extracted/Qt5WebEngineCore.dll")) { Write-Error "Qt5WebEngineCore.dll missing"; exit 1 }
+          if (-not (Test-Path "$extracted/QtWebEngineProcess.exe")) { Write-Error "QtWebEngineProcess.exe missing"; exit 1 }
+          $qt6 = Get-ChildItem -Recurse $extracted -Filter "Qt6*.dll" -ErrorAction SilentlyContinue
+          if ($qt6) { Write-Error "Qt6 DLLs leaked into Qt5 build: $qt6"; exit 1 }
+          Write-Host "Qt5 zip composition OK"
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
@@ -97,6 +153,7 @@ jobs:
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
 
       - name: Archive Installer
+        if: ${{ !startsWith(matrix.config.qt, '5.15') }}
         uses: actions/upload-artifact@v4
         with:
           name: VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.msi
