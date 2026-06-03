@@ -746,10 +746,16 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
   }
 
   // Transfer buffer registration between workspaces in vxcore.
+  // Order matters: addBuffer(dst) BEFORE removeBuffer(src) so the buffer never
+  // becomes orphan. WorkspaceManager::RemoveBufferFromWorkspace auto-closes a
+  // buffer that is no longer in any workspace (workspace_manager.cpp:244-249);
+  // a removeBuffer-first ordering would destroy the buffer mid-move and leave
+  // the view window with a dead ID. addBuffer is idempotent so the case where
+  // dst already holds the buffer (legacy clone-on-split path) remains safe.
   if (m_shouldPropagateToCore && !p_bufferId.isEmpty()) {
     if (wsSvc) {
-      wsSvc->removeBuffer(p_srcWorkspaceId, p_bufferId);
       wsSvc->addBuffer(p_dstWorkspaceId, p_bufferId);
+      wsSvc->removeBuffer(p_srcWorkspaceId, p_bufferId);
     }
   }
 
