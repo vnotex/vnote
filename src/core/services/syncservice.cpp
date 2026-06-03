@@ -504,36 +504,21 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     // T8: pass the shared NotebookIoGate to SyncOps so the git-stage phase
     // serializes against BufferSaveQueue workers on the same notebook.
     NotebookIoGate *gate = m_services.get<NotebookIoGate>();
+    // vxcore-sync-stage-only V3: the staged path (stage_only + network_phase)
+    // does NOT emit sync.started/sync.finished events from vxcore, so
+    // EventBridge no longer fires onSyncStarted/onSyncFinished automatically.
+    // Drive them directly from this orchestrator instead.
+    QMetaObject::invokeMethod(
+        this, [this, notebookId]() { onSyncStarted(notebookId); }, Qt::QueuedConnection);
     SyncOps::triggerSync(
         notebookSvc, notebookId, token,
         [this, notebookId](VxCoreError p_code) {
-      // Bounce back to GUI thread to release the
-      // cancellation token. SyncService does NOT emit
-      // syncFinished from here — EventBridge already
-      // observes vxcore's sync.finished event and routes
-      // it through onSyncFinished (T23: single-source
-      // forwarder for both auto AND manual triggers).
-      QMetaObject::invokeMethod(
-          this,
-          [this, notebookId, p_code]() {
-            Q_UNUSED(p_code);
-            // T26: in-flight state lives on SyncWorkQueueManager — no
-            // local flag to clear. Release the cancellation token.
-            VxCoreSyncCancellation *tok = nullptr;
-            {
-              QMutexLocker locker(&m_cancellationMutex);
-              auto it = m_cancellations.find(notebookId);
-              if (it != m_cancellations.end()) {
-                tok = static_cast<VxCoreSyncCancellation *>(it.value());
-                m_cancellations.erase(it);
-              }
-            }
-            if (tok) {
-              vxcore_sync_free_cancellation(tok);
-            }
-          },
-          Qt::QueuedConnection);
-    },
+          // Bounce back to GUI thread to emit syncFinished (and release the
+          // cancellation token via onSyncFinished).
+          QMetaObject::invokeMethod(
+              this, [this, notebookId, p_code]() { onSyncFinished(notebookId, p_code); },
+              Qt::QueuedConnection);
+        },
         gate);
   };
 
@@ -763,10 +748,23 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
                   if (wq) {
                     NotebookCoreService *notebookSvc = m_notebookCoreService;
                     NotebookIoGate *gate = m_services.get<NotebookIoGate>();
-                    wq->enqueue(notebookId, [notebookSvc, notebookId, gate]() {
-                      // T8: serialize git-stage against BufferSaveQueue saves.
-                      SyncOps::triggerSync(notebookSvc, notebookId, /*p_cancel=*/nullptr,
-                                           [](VxCoreError) {}, gate);
+                    wq->enqueue(notebookId, [this, notebookSvc, notebookId, gate]() {
+                      // V3: emit lifecycle signals here — staged path does not
+                      // emit vxcore sync.started / sync.finished events.
+                      QMetaObject::invokeMethod(
+                          this, [this, notebookId]() { onSyncStarted(notebookId); },
+                          Qt::QueuedConnection);
+                      SyncOps::triggerSync(
+                          notebookSvc, notebookId, /*p_cancel=*/nullptr,
+                          [this, notebookId](VxCoreError p_code) {
+                            QMetaObject::invokeMethod(
+                                this,
+                                [this, notebookId, p_code]() {
+                                  onSyncFinished(notebookId, p_code);
+                                },
+                                Qt::QueuedConnection);
+                          },
+                          gate);
                     });
                   }
                   emit bootstrapAndPersistFinished(notebookId, VXCORE_OK, QString());
@@ -1023,15 +1021,20 @@ void SyncService::resolveConflicts(const QString &p_notebookId,
   NotebookIoGate *gate = m_services.get<NotebookIoGate>();
   workQueue->enqueue(
       notebookId,
-      [notebookSvc, notebookId, gate]() {
-        // T8: serialize git-stage against BufferSaveQueue saves.
+      [this, notebookSvc, notebookId, gate]() {
+        // V3: emit lifecycle signals here — staged path skips vxcore events.
+        QMetaObject::invokeMethod(
+            this, [this, notebookId]() { onSyncStarted(notebookId); }, Qt::QueuedConnection);
         SyncOps::triggerSync(
             notebookSvc, notebookId, /*p_cancel=*/nullptr,
-            [notebookId](VxCoreError p_code) {
+            [this, notebookId](VxCoreError p_code) {
               if (p_code != VXCORE_OK) {
                 qCDebug(syncCategory) << "SyncService::resolveConflicts: trailing trigger result"
                                       << notebookId << "code:" << p_code;
               }
+              QMetaObject::invokeMethod(
+                  this, [this, notebookId, p_code]() { onSyncFinished(notebookId, p_code); },
+                  Qt::QueuedConnection);
             },
             gate);
       },
@@ -1235,15 +1238,20 @@ void SyncService::onSyncShouldRun(const QString &p_notebookId) {
   NotebookCoreService *notebookSvc = m_notebookCoreService;
   const QString notebookId = p_notebookId;
   NotebookIoGate *gate = m_services.get<NotebookIoGate>();
-  auto work = [notebookSvc, notebookId, gate]() {
-    // T8: serialize git-stage against BufferSaveQueue saves.
-    SyncOps::triggerSync(notebookSvc, notebookId, /*p_cancel=*/nullptr,
-                         /*onFinished=*/[](VxCoreError) {
-                           // No-op: EventBridge delivers lifecycle signals
-                           // (sync.started / sync.finished) to onSyncStarted /
-                           // onSyncFinished, which re-emit the public signals.
-                         },
-                         gate);
+  auto work = [this, notebookSvc, notebookId, gate]() {
+    // vxcore-sync-stage-only V3: staged path does not emit lifecycle
+    // events through vxcore; drive Qt syncStarted/syncFinished here.
+    QMetaObject::invokeMethod(
+        this, [this, notebookId]() { onSyncStarted(notebookId); }, Qt::QueuedConnection);
+    SyncOps::triggerSync(
+        notebookSvc, notebookId, /*p_cancel=*/nullptr,
+        /*onFinished=*/
+        [this, notebookId](VxCoreError p_code) {
+          QMetaObject::invokeMethod(
+              this, [this, notebookId, p_code]() { onSyncFinished(notebookId, p_code); },
+              Qt::QueuedConnection);
+        },
+        gate);
   };
 
   const auto result =

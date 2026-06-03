@@ -16,6 +16,7 @@ namespace vnotex {
 
 class NotebookCoreService;
 class NotebookIoGate;
+class ISyncNotebookService;
 
 // Stateless free-function callables that wrap vxcore sync operations.
 // Designed to be invoked from any thread (typically a SyncWorkQueueManager
@@ -47,21 +48,20 @@ void setCredentials(NotebookCoreService *p_svc, QString p_notebookId, QString p_
 void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_configJson,
                 QString p_credentialsJson, std::function<void(VxCoreError, QString)> p_onFinished);
 
-// Trigger a sync run for the given notebook. If @p_cancel is non-null, routes
-// through vxcore_sync_trigger_cancellable (via NotebookCoreService); otherwise
-// falls back to vxcore_sync_trigger. The token lifetime is owned by the
-// CALLER (typically SyncService) — this function NEVER frees it.
+// Trigger a sync run for the given notebook using the V3 staged pattern.
+// Stage+commit phase runs under the per-notebook IO gate; the network phase
+// (fetch / rebase / push) runs WITHOUT the gate so concurrent saves on the
+// same notebook resume immediately after the local commit lands, regardless
+// of network latency. @p_cancel is owned by the caller (typically
+// SyncService); this function NEVER frees it.
 // p_onFinished is ALWAYS invoked exactly once, even on null-service early
 // return (with VXCORE_ERR_NULL_POINTER).
-// @p_gate (optional): when non-null, the call wraps `vxcore_sync_trigger_*`
-// in a `NotebookIoGate::ScopedLock(notebookId)` so it serializes against
-// BufferSaveQueue workers (and other SyncOps callers) on the SAME notebook.
-// The gate is acquired ONLY after the early-return null-service check, so
-// passing null is identical to pre-T8 behavior. Callers MUST NOT acquire the
-// gate themselves before invoking this; doing so would deadlock the per-
-// notebook mutex (it is non-recursive).
-void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCancellation *p_cancel,
-                 std::function<void(VxCoreError)> p_onFinished,
+// @p_gate (optional): when non-null, the call wraps the stage+commit phase
+// in a `NotebookIoGate::ScopedLock(notebookId)` and releases it BEFORE
+// invoking the network phase. Callers MUST NOT acquire the gate themselves
+// before invoking this; the per-notebook mutex is non-recursive.
+void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
+                 VxCoreSyncCancellation *p_cancel, std::function<void(VxCoreError)> p_onFinished,
                  NotebookIoGate *p_gate = nullptr);
 
 // Resolve a single sync conflict for the given file via

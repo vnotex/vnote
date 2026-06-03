@@ -49,6 +49,7 @@ set(SERVICES_HEADERS
   bufferservice.h
   buffersavequeue.h
   ibuffercoreservice.h
+  isyncnotebookservice.h
   configcoreservice.h
   configservice.h
   searchcoreservice.h

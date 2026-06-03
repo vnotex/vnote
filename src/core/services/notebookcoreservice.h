@@ -8,6 +8,7 @@
 #include <QStringList>
 
 #include <core/noncopyable.h>
+#include <core/services/isyncnotebookservice.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -21,7 +22,7 @@ class HookManager;
 
 // Service layer for notebook operations. Wraps VxCore C API and provides Qt signals.
 // NotebookCoreService IS the new notebook layer - replaces legacy NotebookMgr.
-class NotebookCoreService : public QObject, private Noncopyable {
+class NotebookCoreService : public QObject, public ISyncNotebookService, private Noncopyable {
   Q_OBJECT
 
 public:
@@ -85,6 +86,14 @@ public:
   // the caller (typically SyncService). Null degrades to legacy behaviour.
   VxCoreError triggerSyncCancellable(const QString &p_notebookId,
                                      struct VxCoreSyncCancellation_ *p_cancellationHandle);
+  // ISyncNotebookService overrides. Wrap vxcore_sync_stage_only /
+  // vxcore_sync_network_phase so SyncOps::triggerSync can hold the per-
+  // notebook IO gate around staging only and release it before network IO.
+  VxCoreError syncStageOnly(const QString &p_notebookId,
+                            VxCoreSyncCancellation *p_cancellationToken,
+                            bool *p_didCommit) override;
+  VxCoreError syncNetworkPhase(const QString &p_notebookId,
+                               VxCoreSyncCancellation *p_cancellationToken) override;
   VxCoreError getSyncStatus(const QString &p_notebookId, QString &p_outStatusJson);
   VxCoreError getSyncConflicts(const QString &p_notebookId, QString &p_outConflictsJson);
   VxCoreError resolveSyncConflict(const QString &p_notebookId, const QString &p_filePath,

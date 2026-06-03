@@ -3,6 +3,7 @@
 #include <memory>
 #include <utility>
 
+#include <core/services/isyncnotebookservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 
@@ -98,8 +99,9 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
   }
 }
 
-void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCancellation *p_cancel,
-                 std::function<void(VxCoreError)> p_onFinished, NotebookIoGate *p_gate) {
+void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
+                 VxCoreSyncCancellation *p_cancel, std::function<void(VxCoreError)> p_onFinished,
+                 NotebookIoGate *p_gate) {
   // Null-service early-return runs BEFORE gate acquisition. This both
   // preserves prior contract semantics and satisfies the T8 invariant
   // "cancellation/precondition checks before acquiring the gate", since
@@ -112,34 +114,23 @@ void triggerSync(NotebookCoreService *p_svc, QString p_notebookId, VxCoreSyncCan
     return;
   }
 
-  // T8: acquire the per-notebook gate (shared with BufferSaveQueue workers
-  // via ServiceLocator) so a sync round-trip cannot race a save on the same
-  // working tree for `.git/index.lock` or exclusive Windows file handles.
-  //
-  // v1 trade-off (intentional, see plan sync-autosave-ui-freeze T8):
-  //   The gate is held across the ENTIRE vxcore_sync_trigger_cancellable
-  //   call, INCLUDING fetch/rebase/push network phases, because vxcore does
-  //   not yet expose a stage-only entry point. During a network stall the
-  //   gate is held for as long as the round-trip takes (potentially many
-  //   seconds). The UI thread is NEVER affected: an auto-save that overlaps
-  //   stays queued in BufferSaveQueue and the editor stays responsive.
-  //   Worst case is "save delayed by network timeout" — strictly better
-  //   than today's UI freeze. A follow-up tracked in
-  //   .sisyphus/evidence/task-3-vxcore-callsite-audit.md will add a
-  //   stage-only vxcore API so we can release the gate before network I/O.
-  //
-  // Gate is OPTIONAL: callers that pass nullptr (tests, legacy paths) get
-  // the pre-T8 behavior unchanged.
-  std::unique_ptr<NotebookIoGate::ScopedLock> lock;
-  if (p_gate) {
-    lock.reset(new NotebookIoGate::ScopedLock(*p_gate, p_notebookId));
+  // vxcore-sync-stage-only V3: staged pattern.
+  // Gate held ONLY around stage+commit phase. Network phase runs WITHOUT
+  // the gate so concurrent saves on the same notebook resume immediately
+  // after the local commit lands, regardless of network latency. See
+  // root AGENTS.md § Save Path Threading Contract.
+  bool didCommit = false;
+  VxCoreError code = VXCORE_OK;
+  {
+    std::unique_ptr<NotebookIoGate::ScopedLock> lock;
+    if (p_gate) {
+      lock.reset(new NotebookIoGate::ScopedLock(*p_gate, p_notebookId));
+    }
+    code = p_svc->syncStageOnly(p_notebookId, p_cancel, &didCommit);
   }
 
-  VxCoreError code = VXCORE_OK;
-  if (p_cancel) {
-    code = p_svc->triggerSyncCancellable(p_notebookId, p_cancel);
-  } else {
-    code = p_svc->triggerSync(p_notebookId);
+  if (code == VXCORE_OK) {
+    code = p_svc->syncNetworkPhase(p_notebookId, p_cancel);
   }
 
   // NOTE: p_cancel is owned by the caller (SyncService). Do NOT free.

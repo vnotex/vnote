@@ -326,6 +326,31 @@ NotebookCoreService::triggerSyncCancellable(const QString &p_notebookId,
       reinterpret_cast<VxCoreSyncCancellation *>(p_cancellationHandle));
 }
 
+VxCoreError NotebookCoreService::syncStageOnly(const QString &p_notebookId,
+                                               VxCoreSyncCancellation *p_cancellationToken,
+                                               bool *p_didCommit) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  int didCommitInt = 0;
+  const QByteArray nbId = p_notebookId.toUtf8();
+  const VxCoreError err =
+      vxcore_sync_stage_only(m_context, nbId.constData(), p_cancellationToken, &didCommitInt);
+  if (p_didCommit) {
+    *p_didCommit = (didCommitInt != 0);
+  }
+  return err;
+}
+
+VxCoreError NotebookCoreService::syncNetworkPhase(const QString &p_notebookId,
+                                                  VxCoreSyncCancellation *p_cancellationToken) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  return vxcore_sync_network_phase(m_context, nbId.constData(), p_cancellationToken);
+}
+
 VxCoreError NotebookCoreService::getSyncStatus(const QString &p_notebookId,
                                                QString &p_outStatusJson) {
   p_outStatusJson.clear();
