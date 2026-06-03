@@ -179,6 +179,10 @@ int ViewWindow2::getCursorPosition() const { return -1; }
 
 int ViewWindow2::getScrollPosition() const { return -1; }
 
+ViewWindow2::ViewScrollState ViewWindow2::captureScrollState() const { return {}; }
+
+void ViewWindow2::restoreScrollState(const ViewScrollState &p_state) { Q_UNUSED(p_state) }
+
 bool ViewWindow2::isModified() const {
   // Use local dirty flag OR vxcore modified flag.
   // m_editorDirty is set immediately on keystroke;
@@ -648,9 +652,13 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
 
   // AutoReload: silently reload without dialog (only for FileChanged, not FileMissing).
   if (m_autoReload && p_state == BufferState::FileChanged) {
+    const ViewScrollState saved = captureScrollState();
     m_buffer.reload();
     syncEditorFromBuffer();
     m_lastKnownRevision = m_buffer.getRevision();
+    if (saved.isValid()) {
+      restoreScrollState(saved);
+    }
     return;
   }
 
@@ -667,9 +675,13 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
     msgBox.exec();
 
     if (msgBox.clickedButton() == reloadBtn) {
+      const ViewScrollState saved = captureScrollState();
       m_buffer.reload();
       syncEditorFromBuffer();
       m_lastKnownRevision = m_buffer.getRevision();
+      if (saved.isValid()) {
+        restoreScrollState(saved);
+      }
       m_externalChangeDismissed = false;
     } else if (msgBox.clickedButton() == saveBtn) {
       save();

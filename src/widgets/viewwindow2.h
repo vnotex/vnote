@@ -118,6 +118,26 @@ public:
   // Subclasses override to provide actual position from their editor widget.
   virtual int getScrollPosition() const;
 
+  // Captured scroll state used to restore position across a reload.
+  // Edit-mode subclasses populate m_scrollValue / m_scrollMax (pixel-based).
+  // Markdown Read-mode populates m_topLineNumber (line-based, best-effort).
+  // A state is "valid" iff at least one channel was captured.
+  struct ViewScrollState {
+    int m_scrollValue = -1;
+    int m_scrollMax = -1;
+    int m_topLineNumber = -1;
+
+    bool isValid() const { return m_scrollValue >= 0 || m_topLineNumber >= 0; }
+  };
+
+  // Capture the current scroll position. Default returns an invalid state
+  // (no-op); subclasses override to capture pixel value or top line number.
+  virtual ViewScrollState captureScrollState() const;
+
+  // Restore a previously captured scroll position after a reload. Default is
+  // a no-op; subclasses override to apply the policy.
+  virtual void restoreScrollState(const ViewScrollState &p_state);
+
   // Set view mode (Read/Edit). Subclasses implement mode switching and UI updates.
   // Pure virtual: must be implemented by subclasses.
   virtual void setMode(ViewWindowMode p_mode) = 0;
