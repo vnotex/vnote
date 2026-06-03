@@ -16,6 +16,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/widgetutils.h>
 
+#include "../utils/scrollpreservationpolicy.h"
 #include "editors/statuswidget.h"
 #include "editors/texteditor.h"
 #include "findandreplacewidget2.h"
@@ -55,9 +56,9 @@ void TextViewWindow2::setupUI() {
   // Central widget: text editor.
   {
     m_editor = new TextEditor(
-        TextViewWindowController::buildTextEditorConfigFromContent(
-            editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor,
-            maxContentWidth),
+        TextViewWindowController::buildTextEditorConfigFromContent(editorConfig, textEditorConfig,
+                                                                   themeContent, syntaxTheme,
+                                                                   scaleFactor, maxContentWidth),
         TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig), this);
     setCentralWidget(m_editor);
 
@@ -177,6 +178,33 @@ int TextViewWindow2::getScrollPosition() const {
     return m_editor->getTextEdit()->verticalScrollBar()->value();
   }
   return -1;
+}
+
+ViewWindow2::ViewScrollState TextViewWindow2::captureScrollState() const {
+  if (!m_editor) {
+    return {};
+  }
+  auto *vbar = m_editor->getTextEdit()->verticalScrollBar();
+  if (!vbar) {
+    return {};
+  }
+  ViewScrollState s;
+  s.m_scrollValue = vbar->value();
+  s.m_scrollMax = vbar->maximum();
+  return s;
+}
+
+void TextViewWindow2::restoreScrollState(const ViewScrollState &p_state) {
+  if (!m_editor || p_state.m_scrollValue < 0) {
+    return;
+  }
+  auto *vbar = m_editor->getTextEdit()->verticalScrollBar();
+  if (!vbar) {
+    return;
+  }
+  const int target = ScrollPreservationPolicy::computeRestoredScrollValue(
+      p_state.m_scrollValue, p_state.m_scrollMax, vbar->maximum());
+  vbar->setValue(target);
 }
 
 void TextViewWindow2::handleEditorConfigChange() {
