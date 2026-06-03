@@ -14,9 +14,7 @@ MindMapEditorConfig::MindMapEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig
   initDefaults();
 }
 
-void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) {
-  loadEditorResource(p_jobj);
-}
+void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) { loadEditorResource(p_jobj); }
 
 QJsonObject MindMapEditorConfig::toJson() const {
   QJsonObject obj;
@@ -33,9 +31,7 @@ QJsonObject MindMapEditorConfig::saveEditorResource() const { return m_editorRes
 
 const WebResource &MindMapEditorConfig::getEditorResource() const { return m_editorResource; }
 
-void MindMapEditorConfig::initDefaults() {
-  m_editorResource = defaultEditorResource();
-}
+void MindMapEditorConfig::initDefaults() { m_editorResource = defaultEditorResource(); }
 
 WebResource MindMapEditorConfig::defaultEditorResource() {
   WebResource res;
@@ -46,7 +42,7 @@ WebResource MindMapEditorConfig::defaultEditorResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("global_styles");
     r.m_enabled = true;
-    r.m_styles = {QStringLiteral("web/css/globalstyles.css")};
+    r.m_styles = QStringList{QStringLiteral("web/css/globalstyles.css")};
     res.m_resources.append(r);
   }
 
@@ -55,12 +51,9 @@ WebResource MindMapEditorConfig::defaultEditorResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("built_in");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/qwebchannel.js"),
-      QStringLiteral("web/js/eventemitter.js"),
-      QStringLiteral("web/js/utils.js"),
-      QStringLiteral("web/js/vxcore.js")
-    };
+    r.m_scripts = QStringList{
+        QStringLiteral("web/js/qwebchannel.js"), QStringLiteral("web/js/eventemitter.js"),
+        QStringLiteral("web/js/utils.js"), QStringLiteral("web/js/vxcore.js")};
     res.m_resources.append(r);
   }
 
@@ -69,12 +62,11 @@ WebResource MindMapEditorConfig::defaultEditorResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("mindmap_dependencies");
     r.m_enabled = true;
-    r.m_scripts = {
-      QStringLiteral("web/js/mindmap/lib/mind-elixir/MindElixir.js"),
-      QStringLiteral("web/js/mindmap/core/mindmap-core.js"),
-      QStringLiteral("web/js/mindmap/features/outline/outline.js"),
-      QStringLiteral("web/js/mindmap/features/link-handler/link-handler.js")
-    };
+    r.m_scripts =
+        QStringList{QStringLiteral("web/js/mindmap/lib/mind-elixir/MindElixir.js"),
+                    QStringLiteral("web/js/mindmap/core/mindmap-core.js"),
+                    QStringLiteral("web/js/mindmap/features/outline/outline.js"),
+                    QStringLiteral("web/js/mindmap/features/link-handler/link-handler.js")};
     res.m_resources.append(r);
   }
 
@@ -83,7 +75,7 @@ WebResource MindMapEditorConfig::defaultEditorResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("mindmap_editor");
     r.m_enabled = true;
-    r.m_scripts = {QStringLiteral("web/js/mindmapeditor.js")};
+    r.m_scripts = QStringList{QStringLiteral("web/js/mindmapeditor.js")};
     res.m_resources.append(r);
   }
 
