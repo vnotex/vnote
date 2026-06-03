@@ -74,6 +74,33 @@ jobs:
         run: |
           choco install visualstudio2019buildtools --no-progress -y `
             --package-parameters "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.v142.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041"
+          if (-not (Test-Path "${{ matrix.config.vs_cmd }}")) {
+            Write-Error "vcvars64.bat NOT found at expected path after choco install: ${{ matrix.config.vs_cmd }}"
+            exit 1
+          }
+          Write-Host "vcvars64.bat present at ${{ matrix.config.vs_cmd }}"
+
+      - name: Setup MSVC v142 dev environment (Qt5 only)
+        if: ${{ matrix.config.qt_major == 5 }}
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+          vsversion: "2019"
+          toolset: "14.29"
+
+      - name: Strip MinGW from PATH (Qt5 only)
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: pwsh
+        run: |
+          # windows-2022 ships with C:\mingw64\bin and C:\Strawberry on PATH.
+          # CMake's compiler probe will pick gcc.exe before cl.exe and MinGW
+          # silently wins. Strip these so cmake selects MSVC.
+          $kept = $env:PATH -split ';' | Where-Object {
+            $_ -and ($_ -notmatch '(?i)mingw') -and ($_ -notmatch '(?i)strawberry')
+          }
+          $newPath = ($kept -join ';')
+          "PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Stripped MinGW/Strawberry from PATH."
 
       - name: Install Qt Official Build
         uses: jurplel/install-qt-action@v3
@@ -106,8 +133,9 @@ jobs:
         shell: cmd
         run: |
           cmake --version
-          call "${{matrix.config.vs_cmd}}"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DVNOTE_BUILD_TESTS=OFF -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
+          where cl
+          cl 2>&1 | findstr /R "Compiler.*19"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DVNOTE_BUILD_TESTS=OFF -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
           type cmake-configure.log
           cmake --build .
           cmake --build . --target=pack
