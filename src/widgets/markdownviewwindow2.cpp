@@ -44,6 +44,7 @@
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
 
+#include "../utils/scrollpreservationpolicy.h"
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
 #include "editors/markdownvieweradapter.h"
@@ -1651,6 +1652,42 @@ int MarkdownViewWindow2::getScrollPosition() const {
     return m_editor->getTextEdit()->verticalScrollBar()->value();
   }
   return -1;
+}
+
+ViewWindow2::ViewScrollState MarkdownViewWindow2::captureScrollState() const {
+  ViewScrollState s;
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    if (auto *vbar = m_editor->getTextEdit()->verticalScrollBar()) {
+      s.m_scrollValue = vbar->value();
+      s.m_scrollMax = vbar->maximum();
+    }
+  } else if (m_mode == ViewWindowMode::Read && m_viewer) {
+    if (auto *a = adapter()) {
+      s.m_topLineNumber = a->getTopLineNumber();
+    }
+  }
+  return s;
+}
+
+void MarkdownViewWindow2::restoreScrollState(const ViewScrollState &p_state) {
+  if (m_mode == ViewWindowMode::Edit && m_editor && p_state.m_scrollValue >= 0) {
+    if (auto *vbar = m_editor->getTextEdit()->verticalScrollBar()) {
+      const int target = ScrollPreservationPolicy::computeRestoredScrollValue(
+          p_state.m_scrollValue, p_state.m_scrollMax, vbar->maximum());
+      vbar->setValue(target);
+    }
+  } else if (m_mode == ViewWindowMode::Read && m_viewer && p_state.m_topLineNumber >= 0) {
+    if (auto *a = adapter()) {
+      const int line =
+          ScrollPreservationPolicy::computeRestoredReadModeLine(p_state.m_topLineNumber);
+      if (line >= 0) {
+        // Use the PUBLIC scrollToPosition API. The QWebChannel + JS bridge
+        // handle async timing internally. Do NOT call the private
+        // scrollToLine(int) at adapter.h:224.
+        a->scrollToPosition(MarkdownViewerAdapter::Position(line, QString()));
+      }
+    }
+  }
 }
 
 void MarkdownViewWindow2::updateImageHostMenu() {

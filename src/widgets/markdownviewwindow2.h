@@ -52,6 +52,10 @@ public:
 
   int getScrollPosition() const Q_DECL_OVERRIDE;
 
+  ViewScrollState captureScrollState() const override;
+
+  void restoreScrollState(const ViewScrollState &p_state) override;
+
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
 
 public slots:
