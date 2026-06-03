@@ -131,11 +131,15 @@ jobs:
 
       - name: Configure and Build Project
         shell: cmd
+        env:
+          QT_MAJOR: ${{ matrix.config.qt_major }}
+          VS_CMD: ${{ matrix.config.vs_cmd }}
+          RUNNER_WORKSPACE: ${{ runner.workspace }}
         run: |
           cmake --version
-          where cl
-          cl 2>&1 | findstr /R "Compiler.*19"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=${{matrix.config.qt_major}} -DVNOTE_BUILD_TESTS=OFF -DOPENSSL_EXTRA_LIB_DIR=${{runner.workspace}}\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
+          if "%QT_MAJOR%"=="6" call "%VS_CMD%"
+          where cl || echo "cl.exe not on PATH"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=OFF -DOPENSSL_EXTRA_LIB_DIR=%RUNNER_WORKSPACE%\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
           type cmake-configure.log
           cmake --build .
           cmake --build . --target=pack
