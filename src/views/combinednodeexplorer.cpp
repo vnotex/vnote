@@ -5,6 +5,7 @@
 
 #include <controllers/notebooknodecontroller.h>
 #include <core/configmgr2.h>
+#include <core/events.h>
 #include <core/servicelocator.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
