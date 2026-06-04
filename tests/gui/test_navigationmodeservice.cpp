@@ -11,8 +11,8 @@
 #include <QWidget>
 
 #include <core/coreconfig.h>
-#include <gui/utils/widgetutils.h>
 #include <gui/services/navigationmodeservice.h>
+#include <gui/utils/widgetutils.h>
 #include <widgets/navigationmode.h>
 
 namespace vnotex {
@@ -172,8 +172,7 @@ void TestNavigationModeService::testRegisterMaxTargets() {
     m_service->registerNavigationTarget(targets[i]);
   }
 
-  QTest::ignoreMessage(QtWarningMsg,
-                       QRegularExpression("failed to register navigation target.*"));
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression("failed to register navigation target.*"));
   m_service->registerNavigationTarget(targets[26]);
 
   qDeleteAll(targets);
@@ -242,12 +241,8 @@ void TestNavigationModeService::testMouseClickExits() {
   QVERIFY(QMetaObject::invokeMethod(m_service, "triggerNavigationMode", Qt::DirectConnection));
   QCOMPARE(target.showCount, 1);
 
-  QMouseEvent mouseEvent(QEvent::MouseButtonPress,
-                         QPointF(10, 10),
-                         QPointF(10, 10),
-                         Qt::LeftButton,
-                         Qt::LeftButton,
-                         Qt::NoModifier);
+  QMouseEvent mouseEvent(QEvent::MouseButtonPress, QPointF(10, 10), QPointF(10, 10), Qt::LeftButton,
+                         Qt::LeftButton, Qt::NoModifier);
   QCoreApplication::sendEvent(m_topLevelWidget, &mouseEvent);
 
   QVERIFY(target.hideCount >= 1);
@@ -267,7 +262,7 @@ void TestNavigationModeService::testMetaKeyIgnored() {
 }
 
 void TestNavigationModeService::testNoTargetsWarning() {
-  QTest::ignoreMessage(QtInfoMsg, "no navigation target");
+  QTest::ignoreMessage(QtDebugMsg, "no navigation target");
   QVERIFY(QMetaObject::invokeMethod(m_service, "triggerNavigationMode", Qt::DirectConnection));
 }
 
