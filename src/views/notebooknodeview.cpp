@@ -456,7 +456,7 @@ void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
 
   // Determine proposed action: Ctrl = Copy, otherwise Move (mirrors dropEvent)
   Qt::DropAction proposedAction = Qt::MoveAction;
-  if (p_event->modifiers() & Qt::ControlModifier) {
+  if (p_event->keyboardModifiers() & Qt::ControlModifier) {
     proposedAction = Qt::CopyAction;
   }
 
@@ -556,7 +556,7 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
 
     // Determine action: Ctrl = Copy, otherwise Move
     Qt::DropAction action = Qt::MoveAction;
-    if (p_event->modifiers() & Qt::ControlModifier) {
+    if (p_event->keyboardModifiers() & Qt::ControlModifier) {
       action = Qt::CopyAction;
     }
 
