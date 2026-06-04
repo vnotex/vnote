@@ -265,6 +265,17 @@ MarkdownEditorController::buildMarkdownEditorConfigFromContent(
     break;
   }
 
+  // Pre-seed an empty placeholder theme so vte::MarkdownEditorConfig's constructor
+  // short-circuits fillDefaultTheme(). The default-theme code path reads the
+  // bundled :/vtextedit/editor/data/themes/default.theme resource via
+  // Theme::loadStyleFormat() -> chooseAvailableFont() -> QFontDatabase(), and
+  // QFontDatabase requires a live QGuiApplication. A controller must remain
+  // headless-safe and must not depend on QFontDatabase.
+  const bool themeWasEmpty = textEditorConfig->m_theme.isNull();
+  if (themeWasEmpty) {
+    textEditorConfig->m_theme = QSharedPointer<vte::Theme>::create();
+  }
+
   // Wrap the text editor config in a markdown editor config.
   auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
   editorConfig->overrideTextFontFamily(p_mdConfig.getEditorOverriddenFontFamily());
@@ -287,6 +298,12 @@ MarkdownEditorController::buildMarkdownEditorConfigFromContent(
       editorSrcs |= vte::MarkdownEditorConfig::Math;
     }
     editorConfig->m_inplacePreviewSources = editorSrcs;
+  }
+
+  if (themeWasEmpty) {
+    // Honor the empty-content contract: caller passed no theme JSON, so leave
+    // the theme slot null. Downstream consumers branch on this.
+    editorConfig->m_textEditorConfig->m_theme.reset();
   }
 
   return editorConfig;
