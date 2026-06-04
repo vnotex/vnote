@@ -232,13 +232,14 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
     QCOMPARE(workerStartedSpy.first().at(0).toString(), nbId);
     QCOMPARE(workerFinishedSpy.first().at(0).toString(), nbId);
 
-    // Post-T7 (commit 11051e4 in vxcore submodule): vxcore SyncManager::TriggerSync
-    // now emits sync.started/finished for EVERY trigger (manual + auto). EventBridge
-    // subscribes unconditionally, so it sees the manual-path emissions too.
-    // SyncWorker also still emits its own signals (those are removed in T23 when
-    // EventBridge becomes the single source).
-    QCOMPARE(bridgeStartedSpy.count(), 1);
-    QCOMPARE(bridgeFinishedSpy.count(), 1);
+    // V3 contract (commit 6887182e): SyncOps::triggerSync now drives
+    // vxcore_sync_stage_only + vxcore_sync_network_phase, which deliberately
+    // do NOT emit sync.started/sync.finished events. The SyncService
+    // orchestrator owns lifecycle signals (see workerStartedSpy /
+    // workerFinishedSpy assertions above which alias to SyncService signals
+    // and DO still trigger).
+    QCOMPARE(bridgeStartedSpy.count(), 0);
+    QCOMPARE(bridgeFinishedSpy.count(), 0);
 
     // ---- Teardown -----------------------------------------------------------
     QSignalSpy delSpy(&credStore, &SyncCredentialsStore::credentialsDeleted);
