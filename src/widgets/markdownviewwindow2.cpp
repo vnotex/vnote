@@ -17,32 +17,32 @@
 #include <QToolBar>
 #include <QToolButton>
 
-#include <vtextedit/markdownutils.h>
 #include <vtextedit/markdownhighlighter.h>
+#include <vtextedit/markdownutils.h>
 #include <vtextedit/vtextedit.h>
 
+#include <controllers/imagehostcontroller.h>
 #include <controllers/markdowneditorcontroller.h>
 #include <controllers/markdownviewwindowcontroller.h>
-#include <controllers/imagehostcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
 #include <core/markdowneditorconfig.h>
+#include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/htmltemplateservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/theme.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
+#include <imagehost/iimagehostprovider.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
-#include <core/nodeidentifier.h>
-#include <core/services/notebookcoreservice.h>
-#include <imagehost/iimagehostprovider.h>
 
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
@@ -212,8 +212,13 @@ void MarkdownViewWindow2::handlePrint() {
 
   m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
   if (m_printer) {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    m_viewer->page()->print(m_printer.data(), std::bind(&MarkdownViewWindow2::onPrintFinished, this,
+                                                        std::placeholders::_1));
+#else
     m_printer->setOutputFormat(QPrinter::PdfFormat);
     m_viewer->print(m_printer.get());
+#endif
   }
 }
 
@@ -396,14 +401,15 @@ void MarkdownViewWindow2::setupViewer() {
   // Deferred anchor scroll: drain pending anchor after rendering completes.
   connect(adapterObj, &MarkdownViewerAdapter::workFinished, this, [this]() {
     if (!m_pendingAnchor.isEmpty() && isReadMode() && adapter()) {
-      adapter()->scrollToPosition(
-          MarkdownViewerAdapter::Position(-1, m_pendingAnchor));
+      adapter()->scrollToPosition(MarkdownViewerAdapter::Position(-1, m_pendingAnchor));
       m_pendingAnchor.clear();
     }
   });
 
   // Print finished cleanup.
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow2::onPrintFinished);
+#endif
 
   // Outline pipeline: viewer headings -> OutlineProvider.
   connect(adapterObj, &MarkdownViewerAdapter::headingsChanged, this, [this]() {
@@ -535,9 +541,8 @@ void MarkdownViewWindow2::connectEditorSignals() {
           });
 
   // Self-file anchor link resolution.
-  connect(m_editor, &MarkdownEditor::openFileRequested, this, [this](const QString &p_filePath) {
-    handleOpenFileRequest(p_filePath);
-  });
+  connect(m_editor, &MarkdownEditor::openFileRequested, this,
+          [this](const QString &p_filePath) { handleOpenFileRequest(p_filePath); });
 }
 
 void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
@@ -1297,8 +1302,8 @@ void MarkdownViewWindow2::clearHighlights() {
 }
 
 void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
-  if (p_settings.m_lineNumber < 0 && p_settings.m_anchor.isEmpty()
-      && !p_settings.m_searchHighlight.m_isValid) {
+  if (p_settings.m_lineNumber < 0 && p_settings.m_anchor.isEmpty() &&
+      !p_settings.m_searchHighlight.m_isValid) {
     return;
   }
 
@@ -1307,8 +1312,7 @@ void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settin
     if (isReadMode()) {
       if (m_viewerReady) {
         if (adapter()) {
-          adapter()->scrollToPosition(
-              MarkdownViewerAdapter::Position(-1, p_settings.m_anchor));
+          adapter()->scrollToPosition(MarkdownViewerAdapter::Position(-1, p_settings.m_anchor));
         }
       } else {
         // Viewer not ready (new file loading) — defer until workFinished.
@@ -1584,8 +1588,8 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     // deleteAsset expects notebook-root-relative.
     const auto parentPath = buffer.nodeId().parentPath();
     const auto assetRelPath = parentPath.isEmpty()
-        ? obsoleteUrl
-        : QDir::cleanPath(parentPath + QStringLiteral("/") + obsoleteUrl);
+                                  ? obsoleteUrl
+                                  : QDir::cleanPath(parentPath + QStringLiteral("/") + obsoleteUrl);
 
     const bool deleteOk = buffer.deleteAsset(assetRelPath);
     if (!deleteOk) {
