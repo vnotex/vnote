@@ -19,6 +19,8 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt version to use (5 or 6), defaults to 6")
+
 set(QHOTKEY_INSTALL OFF CACHE BOOL "Disable installing QHotKey" FORCE)
 add_subdirectory(libs)
 
