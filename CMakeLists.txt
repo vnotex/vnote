@@ -78,5 +78,9 @@ endif()
 add_subdirectory(src)
 
 # TODO: find a better way to organize tests
+option(VNOTE_BUILD_TESTS "Build VNote unit tests" ON)
+
 enable_testing()
-add_subdirectory(tests)
+if(VNOTE_BUILD_TESTS)
+  add_subdirectory(tests)
+endif()

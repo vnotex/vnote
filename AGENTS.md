@@ -51,6 +51,13 @@ cmake --build . --config Release
 rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 ```
 
+### Packaging-Only Build (Skip Tests)
+For CI builds that only produce artifacts and don't need to compile the test infrastructure (e.g., to avoid hard-coded Qt6 test code when building against Qt5), pass the `VNOTE_BUILD_TESTS` option:
+```bash
+cmake .. -DVNOTE_BUILD_TESTS=OFF
+cmake --build .
+```
+
 ---
 
 ## Testing

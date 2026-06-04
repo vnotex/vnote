@@ -1,6 +1,10 @@
 # =============================================================================
 # VNote Test Infrastructure
 # =============================================================================
+# Early-return guard: skip entire tests subdirectory if VNOTE_BUILD_TESTS is OFF
+if(NOT VNOTE_BUILD_TESTS)
+  return()
+endif()
 #
 # Usage:
 #   add_qt_test(test_name
