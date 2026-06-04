@@ -38,3 +38,12 @@ add_qt_test(test_historylistmodel
     vxcore
   GUILESS
 )
+
+# Copy VTextEdit DLL next to test executables so CTest can find it at runtime.
+# Pick any test target to anchor the POST_BUILD command; the DLL lands in the
+# shared output directory used by all model tests in this subdirectory.
+add_custom_command(TARGET test_tagfilemodel POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_tagfilemodel>
+)

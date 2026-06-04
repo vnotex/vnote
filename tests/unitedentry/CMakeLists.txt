@@ -30,6 +30,13 @@ target_include_directories(test_findunitedentry PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
+# Copy VTextEdit DLL next to test executables so CTest can find it at runtime.
+add_custom_command(TARGET test_findunitedentry POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_findunitedentry>
+)
+
 add_qt_test(test_unitedentry_history
   SOURCES
     test_unitedentry_history.cpp
