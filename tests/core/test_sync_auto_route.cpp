@@ -36,6 +36,8 @@
 #include "core/event_manager.h"
 #include "core/event_names.h"
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -120,6 +122,8 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    // T5: track UUID writes from bootstrapAndPersist below.
+    tests::KeychainGuard guard(&credStore);
     EventBridge eventBridge(ctx);
     services.registerService<EventBridge>(&eventBridge);
     HookManager hookMgr;
@@ -135,6 +139,7 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
     QString remoteUrl = seedBareRepo(bareDir, localTemp);
     if (remoteUrl.isEmpty()) {
+      guard.cleanup();
       vxcore_context_destroy(ctx);
       QSKIP("git not available or bare-repo seeding failed");
     }
@@ -149,6 +154,9 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_T31"));
     QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
     QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
+
+    // Defensive track in case credentialsStored signal raced cleanup.
+    guard.track(nbId);
 
     // Wait for the initial sync (kicked off by enable) to drain.
     QSignalSpy finishedSpy(&syncService, &SyncService::syncFinished);
@@ -177,6 +185,7 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
 
     syncService.shutdown();
+    guard.cleanup();
   }
   vxcore_context_destroy(ctx);
 }
@@ -191,6 +200,7 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     EventBridge eventBridge(ctx);
     services.registerService<EventBridge>(&eventBridge);
     HookManager hookMgr;
@@ -204,6 +214,7 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
     QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
     QString remoteUrl = seedBareRepo(bareDir, localTemp);
     if (remoteUrl.isEmpty()) {
+      guard.cleanup();
       vxcore_context_destroy(ctx);
       QSKIP("git not available or bare-repo seeding failed");
     }
@@ -216,6 +227,8 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
     QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
     syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_T31_QF"));
     QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
+
+    guard.track(nbId);
 
     // Drain any initial sync.
     QTest::qWait(500);
@@ -285,6 +298,7 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
       QTest::qWait(50);
     }
     syncService.shutdown();
+    guard.cleanup();
   }
   vxcore_context_destroy(ctx);
 }
@@ -299,6 +313,7 @@ void TestSyncAutoRoute::test_auto_route_disabled_bail() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     EventBridge eventBridge(ctx);
     services.registerService<EventBridge>(&eventBridge);
     HookManager hookMgr;
@@ -326,6 +341,7 @@ void TestSyncAutoRoute::test_auto_route_disabled_bail() {
     QCOMPARE(wqMgr.isRunning(nbId), false);
 
     syncService.shutdown();
+    guard.cleanup();
   }
   vxcore_context_destroy(ctx);
 }

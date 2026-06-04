@@ -34,6 +34,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -81,6 +83,8 @@ void TestSyncHooks::beforeEnableFires() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    // T5: track real keychain writes (beforeEnable indirectly writes one).
+    tests::KeychainGuard guard(&credStore);
     SyncService syncService(services);
 
     int fireCount = 0;
@@ -114,10 +118,15 @@ void TestSyncHooks::beforeEnableFires() {
     QTest::qWait(200);
     QCoreApplication::processEvents();
 
+    // Defensive: track the fixed-id write so cleanup is symmetric with auto.
+    guard.track(QStringLiteral("nb-xyz"));
+
     // Best-effort cleanup of any keychain entry the store may have written.
     credStore.deleteCredentials(QStringLiteral("nb-xyz"));
     QTest::qWait(200);
     QCoreApplication::processEvents();
+    // T5: guard cleanup before the services scope closes and ctx is destroyed.
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);
@@ -137,6 +146,7 @@ void TestSyncHooks::afterDisableNotFiredOnFailure() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     SyncService syncService(services);
 
     int fireCount = 0;
@@ -168,6 +178,7 @@ void TestSyncHooks::afterDisableNotFiredOnFailure() {
     } else {
       QCOMPARE(fireCount, 0);
     }
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);
@@ -187,6 +198,7 @@ void TestSyncHooks::conflictDetectedFires() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     // EventBridge is the only public, GUI-thread route to drive
     // onAutoSyncConflict without instantiating a vxcore sync session.
     EventBridge eventBridge(ctx);
@@ -218,6 +230,7 @@ void TestSyncHooks::conflictDetectedFires() {
     // Auto-sync path fires with conflictCount = -1 (unknown until getConflicts
     // returns).
     QCOMPARE(capturedCount, -1);
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);
@@ -237,6 +250,7 @@ void TestSyncHooks::cancelledFires() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     SyncService syncService(services);
 
     int fireCount = 0;
@@ -257,6 +271,7 @@ void TestSyncHooks::cancelledFires() {
     QCOMPARE(captured.value(QStringLiteral("notebookId")).toString(),
              QStringLiteral("nb-not-syncing"));
     QCOMPARE(captured.value(QStringLiteral("hadActiveSync")).toBool(), false);
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);

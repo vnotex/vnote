@@ -45,6 +45,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -160,6 +162,9 @@ void TestSyncServiceLifecycle::blockCloseWhileSyncing() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  // T5: this test uses testSetInProgress (no real keychain write) but the
+  // guard wires the rollout list uniformly.
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
   services.registerService<SyncService>(&syncService);
 
@@ -186,6 +191,7 @@ void TestSyncServiceLifecycle::blockCloseWhileSyncing() {
   QVERIFY2(!cancelled2, "doAction should NOT cancel when sync is not in progress");
   QCOMPARE(m_closer->m_seenCount, 0);
 
+  guard.cleanup();
   vxcore_context_destroy(ctx);
 }
 
@@ -200,6 +206,7 @@ void TestSyncServiceLifecycle::cancelReasonMetadata() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
   services.registerService<SyncService>(&syncService);
 
@@ -233,6 +240,7 @@ void TestSyncServiceLifecycle::cancelReasonMetadata() {
            qPrintable(QStringLiteral("Unexpected reason: %1").arg(reason)));
 
   syncService.testSetInProgress(QStringLiteral("nbB"), false);
+  guard.cleanup();
   vxcore_context_destroy(ctx);
 }
 
@@ -247,11 +255,13 @@ void TestSyncServiceLifecycle::boundedShutdown() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
   services.registerService<SyncService>(&syncService);
 
   // Arm the worker's hang seam so the next dispatched slot blocks for 35s.
   // shutdown() then has to time-out (30s) and call terminate() to recover.
+  guard.cleanup();
   QSKIP("T24: SyncWorker::testHangNextOperation seam removed; needs port to "
         "SyncOps/SyncWorkQueueManager");
   syncService.triggerSyncNow(QStringLiteral("nbHang"));
@@ -310,6 +320,7 @@ void TestSyncServiceLifecycle::visualBlockedDialog() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
   services.registerService<SyncService>(&syncService);
 
@@ -361,6 +372,7 @@ void TestSyncServiceLifecycle::visualBlockedDialog() {
   qDebug() << "visualBlockedDialog: capturedText=" << capturedText << "grabbed=" << grabbed;
 
   syncService.testSetInProgress(QStringLiteral("nbVisual"), false);
+  guard.cleanup();
   vxcore_context_destroy(ctx);
 }
 
@@ -399,6 +411,9 @@ struct T2Fixture {
   HookManager hookMgr;
   std::unique_ptr<NotebookCoreService> notebookSvc;
   std::unique_ptr<SyncCredentialsStore> credStore;
+  // T5: guard tracks any real keychain writes; declared AFTER credStore so it
+  // destructs BEFORE credStore (LIFO), with the store still alive for cleanup.
+  std::unique_ptr<tests::KeychainGuard> keychainGuard;
   SyncWorkQueueManager workQueue; // registered into services BEFORE SyncService
   std::unique_ptr<SyncService> sync;
 
@@ -411,6 +426,7 @@ struct T2Fixture {
     services.registerService<NotebookCoreService>(notebookSvc.get());
     credStore.reset(new SyncCredentialsStore(services));
     services.registerService<SyncCredentialsStore>(credStore.get());
+    keychainGuard.reset(new tests::KeychainGuard(credStore.get()));
     // CRITICAL: register the queue BEFORE SyncService is constructed so
     // SyncService picks it up from the locator (instead of allocating its
     // own owned queue, which we couldn't poke at from the test).
@@ -419,6 +435,11 @@ struct T2Fixture {
   }
   ~T2Fixture() {
     sync.reset();
+    // T5: clean the keychain BEFORE the context (and store) are torn down.
+    if (keychainGuard) {
+      keychainGuard->cleanup();
+      keychainGuard.reset();
+    }
     if (ctx) {
       vxcore_context_destroy(ctx);
     }

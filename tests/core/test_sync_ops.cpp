@@ -23,6 +23,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -151,6 +153,8 @@ void TestSyncOps::disableSyncInvokesCallbackOnSuccess() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    // T5: track real keychain writes from enableSyncForNotebook below.
+    tests::KeychainGuard guard(&credStore);
     SyncService syncService(services);
 
     TempDirFixture localTemp;
@@ -181,6 +185,9 @@ void TestSyncOps::disableSyncInvokesCallbackOnSuccess() {
     }
     QCOMPARE(enableResult, VXCORE_OK);
 
+    // Defensive: ensure the freshly written PAT is tracked for cleanup.
+    guard.track(nbId);
+
     // Call SyncOps::disableSync directly (no work-queue routing yet — T12
     // only establishes the callable; T18 wires it through SyncService).
     std::atomic<int> calls{0};
@@ -204,6 +211,7 @@ void TestSyncOps::disableSyncInvokesCallbackOnSuccess() {
       QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
       QTest::qWait(10);
     }
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);
@@ -333,6 +341,7 @@ void TestSyncOps::triggerSyncInvokesCallback() {
     SyncCredentialsStore credStore(services);
     services.registerService<NotebookCoreService>(&notebookService);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     SyncService syncService(services);
 
     TempDirFixture localTemp;
@@ -361,6 +370,8 @@ void TestSyncOps::triggerSyncInvokesCallback() {
     }
     QCOMPARE(enableResult, VXCORE_OK);
 
+    guard.track(nbId);
+
     // Call SyncOps::triggerSync with nullptr cancellation token.
     std::atomic<int> calls{0};
     VxCoreError captured = VXCORE_ERR_UNKNOWN;
@@ -378,6 +389,7 @@ void TestSyncOps::triggerSyncInvokesCallback() {
     SyncOps::disableSync(&notebookService, nbId, [](VxCoreError) {});
     credStore.deleteCredentials(nbId);
     QTest::qWait(300);
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);
@@ -394,6 +406,7 @@ void TestSyncOps::triggerSyncDoesNotFreeToken() {
     SyncCredentialsStore credStore(services);
     services.registerService<NotebookCoreService>(&notebookService);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     SyncService syncService(services);
 
     TempDirFixture localTemp;
@@ -423,6 +436,8 @@ void TestSyncOps::triggerSyncDoesNotFreeToken() {
     }
     QCOMPARE(enableResult, VXCORE_OK);
 
+    guard.track(nbId);
+
     // Create a cancellation token. SyncOps MUST NOT free it.
     VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
     QVERIFY(token != nullptr);
@@ -448,6 +463,7 @@ void TestSyncOps::triggerSyncDoesNotFreeToken() {
     SyncOps::disableSync(&notebookService, nbId, [](VxCoreError) {});
     credStore.deleteCredentials(nbId);
     QTest::qWait(300);
+    guard.cleanup();
   }
 
   vxcore_context_destroy(ctx);

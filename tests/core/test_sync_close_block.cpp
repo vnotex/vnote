@@ -26,6 +26,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -65,6 +67,9 @@ void TestSyncCloseBlock::closeBlockedWhenInProgress() {
     services.registerService<NotebookCoreService>(&nbSvc);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    // T5: this test uses testForceInFlight (no real keychain write) but the
+    // guard wires the rollout uniformly.
+    tests::KeychainGuard guard(&credStore);
     HookManager hookMgr;
     services.registerService<HookManager>(&hookMgr);
     SyncWorkQueueManager wq;
@@ -90,6 +95,7 @@ void TestSyncCloseBlock::closeBlockedWhenInProgress() {
     QVERIFY(!lastCtx.metadata().value(QStringLiteral("syncCancelReason")).toString().isEmpty());
 
     wq.testForceInFlight(nbId, false);
+    guard.cleanup();
   }
   vxcore_context_destroy(ctx);
 }
@@ -103,6 +109,7 @@ void TestSyncCloseBlock::closeBlockedWhenQueuedNotRunning() {
     services.registerService<NotebookCoreService>(&nbSvc);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     HookManager hookMgr;
     services.registerService<HookManager>(&hookMgr);
     SyncWorkQueueManager wq;
@@ -141,6 +148,7 @@ void TestSyncCloseBlock::closeBlockedWhenQueuedNotRunning() {
 
     release.release();
     QVERIFY(wq.shutdown(5000));
+    guard.cleanup();
   }
   vxcore_context_destroy(ctx);
 }
@@ -154,6 +162,7 @@ void TestSyncCloseBlock::closeAllowedWhenIdle() {
     services.registerService<NotebookCoreService>(&nbSvc);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    tests::KeychainGuard guard(&credStore);
     HookManager hookMgr;
     services.registerService<HookManager>(&hookMgr);
     SyncWorkQueueManager wq;
@@ -167,6 +176,7 @@ void TestSyncCloseBlock::closeAllowedWhenIdle() {
     ev.notebookId = nbId;
     const bool cancelled = hookMgr.doAction(HookNames::NotebookBeforeClose, ev);
     QVERIFY2(!cancelled, "Close must proceed when sync is idle");
+    guard.cleanup();
   }
   vxcore_context_destroy(ctx);
 }

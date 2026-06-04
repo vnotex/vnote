@@ -33,6 +33,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -115,6 +117,8 @@ void TestBootstrapAndPersist::happy_path_s5() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  // T5: track UUID-based notebook writes so cleanup runs before ctx destroy.
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
 
   TempDirFixture localTemp;
@@ -123,6 +127,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
   QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
   QString remoteUrl = seedBareRepo(bareDir, localTemp);
   if (remoteUrl.isEmpty()) {
+    guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
   }
@@ -149,17 +154,20 @@ void TestBootstrapAndPersist::happy_path_s5() {
     if (!cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool()) {
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
+      guard.cleanup();
       vxcore_context_destroy(ctx);
       QSKIP("OS keychain backend not usable in this test environment");
     }
   }
   QCOMPARE(result, VXCORE_OK);
 
+  // Defensive: signal-based auto-track should already catch this, but pin it.
+  guard.track(nbId);
+
   // Flat ADR-8 keys present.
   const QJsonObject cfg = notebookService.getNotebookConfig(nbId);
   QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool(), true);
-  QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString(),
-           QStringLiteral("git"));
+  QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString(), QStringLiteral("git"));
   QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString(), remoteUrl);
 
   // Runtime registered.
@@ -171,6 +179,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
   credStore.deleteCredentials(nbId);
   (void)delSpy.wait(3000);
   (void)delErr.count();
+  guard.cleanup();
   vxcore_context_destroy(ctx);
 }
 
@@ -184,6 +193,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
 
   TempDirFixture localTemp;
@@ -192,6 +202,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
   QString remoteUrl = seedBareRepo(bareDir, localTemp);
   if (remoteUrl.isEmpty()) {
+    guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
   }
@@ -199,8 +210,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   QString nbRoot = localTemp.filePath(QStringLiteral("nb_persist_fail"));
   QDir().mkpath(nbRoot);
   QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"PersistFail NB","description":"","version":"1"})",
-      NotebookType::Bundled);
+      nbRoot, R"({"name":"PersistFail NB","description":"","version":"1"})", NotebookType::Bundled);
   QVERIFY(!nbId.isEmpty());
 
   // Pre-condition: sync is not enabled on disk (default-initialized notebooks
@@ -222,12 +232,17 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   QCOMPARE(finSpy.first().at(0).toString(), nbId);
   const VxCoreError result = qvariant_cast<VxCoreError>(finSpy.first().at(1));
   const QString msg = finSpy.first().at(2).toString();
+  // Track the id regardless — vxcore may have written the keychain entry
+  // before the simulated persist failure fired. Rollback's deleteCredentials
+  // is best-effort; guard.cleanup() backstops it.
+  guard.track(nbId);
   // If enable itself failed (e.g., keychain unavailable), we never reached
   // the persist seam — skip as documented.
   if (result != VXCORE_ERR_UNKNOWN || msg != injectedMsg) {
     if (result == VXCORE_ERR_UNKNOWN) {
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
+      guard.cleanup();
       vxcore_context_destroy(ctx);
       QSKIP("Enable failed (likely keychain) — persist seam never reached");
     }
@@ -255,6 +270,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   // Cleanup (in case keychain entry survived).
   credStore.deleteCredentials(nbId);
   QTest::qWait(500);
+  guard.cleanup();
   vxcore_context_destroy(ctx);
 }
 
@@ -268,6 +284,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
+  tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
 
   TempDirFixture localTemp;
@@ -276,6 +293,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
   QString remoteUrl = seedBareRepo(bareDir, localTemp);
   if (remoteUrl.isEmpty()) {
+    guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
   }
@@ -308,10 +326,14 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   QCOMPARE(finSpy.first().at(0).toString(), nbId);
   const VxCoreError result = qvariant_cast<VxCoreError>(finSpy.first().at(1));
   const QString msg = finSpy.first().at(2).toString();
+  // Track for cleanup regardless: rollback-failure leaves the keychain entry
+  // alive, so guard.cleanup() must remove it.
+  guard.track(nbId);
   if (result == VXCORE_ERR_UNKNOWN && msg != injectedMsg) {
     // Enable phase itself failed -> persist seam unreached. Skip.
     credStore.deleteCredentials(nbId);
     QTest::qWait(500);
+    guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("Enable failed (likely keychain) — persist seam never reached");
   }
@@ -320,6 +342,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
 
   credStore.deleteCredentials(nbId);
   QTest::qWait(500);
+  guard.cleanup();
   vxcore_context_destroy(ctx);
 }
 

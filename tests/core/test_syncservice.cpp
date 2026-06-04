@@ -18,6 +18,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -56,6 +58,9 @@ void TestSyncService::testEnableSyncEmptyPatShortCircuits() {
   ServiceLocator services;
   NotebookCoreService notebookService(m_context);
   SyncCredentialsStore credStore(services);
+  // T5: guard wires the rollout uniformly even when the test short-circuits
+  // before any keychain write.
+  tests::KeychainGuard guard(&credStore);
   services.registerService<NotebookCoreService>(&notebookService);
   services.registerService<SyncCredentialsStore>(&credStore);
   SyncService syncService(services);
@@ -85,6 +90,7 @@ void TestSyncService::testEnableSyncEmptyPatShortCircuits() {
   QCOMPARE(resultCode, VXCORE_ERR_INVALID_PARAM);
   QVERIFY(!resultMsg.isEmpty());
   QVERIFY(resultMsg.contains(QStringLiteral("PAT"), Qt::CaseInsensitive));
+  guard.cleanup();
 }
 
 void TestSyncService::testEnableSyncEmptyUrlShortCircuits() {
@@ -92,6 +98,7 @@ void TestSyncService::testEnableSyncEmptyUrlShortCircuits() {
   ServiceLocator services;
   NotebookCoreService notebookService(m_context);
   SyncCredentialsStore credStore(services);
+  tests::KeychainGuard guard(&credStore);
   services.registerService<NotebookCoreService>(&notebookService);
   services.registerService<SyncCredentialsStore>(&credStore);
   SyncService syncService(services);
@@ -122,6 +129,7 @@ void TestSyncService::testEnableSyncEmptyUrlShortCircuits() {
   QVERIFY(!resultMsg.isEmpty());
   QVERIFY(resultMsg.contains(QStringLiteral("URL"), Qt::CaseInsensitive) ||
           resultMsg.contains(QStringLiteral("Remote"), Qt::CaseInsensitive));
+  guard.cleanup();
 }
 
 } // namespace tests

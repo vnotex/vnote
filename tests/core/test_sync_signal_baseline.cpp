@@ -33,6 +33,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -150,6 +152,9 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    // T5: track UUID writes so cleanup runs before the inner scope closes
+    // and vxcore_context_destroy is called below.
+    tests::KeychainGuard guard(&credStore);
     // EventBridge subscribes to vxcore sync.* events on construction; if no
     // events are emitted (current baseline for manual sync), its Qt signals
     // stay silent.
@@ -183,9 +188,14 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
     if (enableResult == VXCORE_ERR_UNKNOWN) {
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
+      guard.cleanup();
       QSKIP("OS keychain backend not usable in this test environment");
     }
     QCOMPARE(enableResult, VXCORE_OK);
+
+    // Defensive: signal-based auto-track should catch this, but pin the id
+    // explicitly so the post-test cleanup always runs.
+    guard.track(nbId);
 
     // ---- Arm spies on BOTH signal sources before the manual trigger ----------
     // Worker signals fire on the worker thread and are delivered to QSignalSpy
@@ -246,6 +256,9 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
     QSignalSpy delErrSpy(&credStore, &SyncCredentialsStore::credentialsError);
     credStore.deleteCredentials(nbId);
     waitForEither(delSpy, delErrSpy, 5000);
+    // T5: explicit guard cleanup before the inner scope closes (and
+    // EventBridge / SyncService destruct against the still-live ctx).
+    guard.cleanup();
 
   } // close inner scope so EventBridge destructs while ctx is still valid
 

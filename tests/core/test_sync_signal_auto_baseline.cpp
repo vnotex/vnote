@@ -50,6 +50,8 @@
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
+#include "../helpers/keychain_guard.h"
+
 using namespace vnotex;
 
 namespace tests {
@@ -148,6 +150,9 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     services.registerService<NotebookCoreService>(&notebookService);
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
+    // T5: track every UUID-based notebook write so cleanup runs before the
+    // vxcore context is torn down. Defensive track() after enable below.
+    tests::KeychainGuard guard(&credStore);
     EventBridge eventBridge(ctx);
     services.registerService<EventBridge>(&eventBridge);
     HookManager hookMgr;
@@ -197,6 +202,9 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     QVERIFY2(enableSpy.wait(15000), "enableFinished did not arrive within 15s");
     // enableFinished payload: (notebookId, VxCoreError, message).
     QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
+
+    // Defensive: track the id even though credentialsStored should auto-track.
+    guard.track(nbId);
 
     // Enabling sync ran an INITIAL sync via SyncOps. Reset bridge spies so we
     // measure ONLY the auto path that follows.
@@ -266,6 +274,10 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
 
     // ---- Tear down -------------------------------------------------------------
     syncService.shutdown();
+    // T5: cleanup keychain BEFORE the ctx-holders scope closes, so the guard
+    // talks to a live SyncCredentialsStore and finishes its delete-and-wait
+    // before vxcore_context_destroy runs below.
+    guard.cleanup();
   } // close ctx-holders scope before destroying the context
   vxcore_context_destroy(ctx);
 }
