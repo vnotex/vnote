@@ -129,6 +129,21 @@ ctest --test-dir build -R test_error      # Run single test (pattern match)
 ctest --test-dir build --output-on-failure  # Show output on failure
 ```
 
+### VTextEdit.dll runtime copy
+
+Tests that link `core_services` (transitively or directly) load `VTextEdit.dll` at runtime. The build copies the DLL next to each subdirectory's test exes via a `POST_BUILD` step anchored on one test target per subdir (the canonical reference is `tests/utils/CMakeLists.txt:78-83`):
+
+```cmake
+# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
+add_custom_command(TARGET test_clipboard_image POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_clipboard_image>
+)
+```
+
+**When adding tests to a NEW subdirectory under `tests/`**, that subdir's `CMakeLists.txt` MUST include this `POST_BUILD` block anchored on any one test target. Without it, `ctest` reports the test as failed with exit code `0xc0000135` (Windows "DLL not found") and the test binary never reaches its `main()`. One copy per subdir is enough; `copy_if_different` makes incremental rebuilds free.
+
 ## Adding New Tests
 
 Use the `add_qt_test()` helper function in CMakeLists.txt:
@@ -251,6 +266,22 @@ m_keychainGuard->track(notebookId);
 
 For the prod-side cleanup contract (5 sites in `SyncService`), see [`../src/core/services/AGENTS.md` § Credential Cleanup Invariants](../src/core/services/AGENTS.md#credential-cleanup-invariants).
 
+### Mandatory `KeychainGuard` rollout (post-fix-failing-tests plan)
+
+All sync tests that instantiate `SyncCredentialsStore` (whether through `ServiceLocator` or by local construction) MUST register a `tests::KeychainGuard`. This is non-negotiable: missing guards cause cumulative `notebook_sync_pat_<uuid>` accumulation in the Windows Credential Manager, eventually tripping Win32 error 8 ("Not enough storage") which cascades every sync test into failure on subsequent runs.
+
+As of 2026-06-05, the following tests are compliant:
+
+- `test_synccredentialsstore` (canonical reference)
+- `test_sync_signal_auto_baseline`, `test_sync_signal_baseline`
+- `test_sync_hooks`, `test_sync_ops`, `test_sync_auto_route`, `test_sync_close_block`
+- `test_bootstrap_and_persist`
+- `test_syncservice`, `test_syncservice_lifecycle`
+
+(10 tests total.) New sync tests MUST follow the template in the "Real Keychain Usage → How" section above. Tests that do NOT touch the keychain (`test_eventbridge_sync`, `test_notebookcoreservice_sync`) are exempt.
+
+**Operator note (Windows):** the keychain entry surfaces in `cmdkey /list` as `LegacyGeneric:target=notebook_sync_pat_<uuid>` (CRED_TYPE_GENERIC). `KeychainGuard::cleanup()` delegates to `SyncCredentialsStore::deleteCredentials()`, which handles the full target name internally; operators do NOT need to manage the `LegacyGeneric:target=` prefix manually when invoking the guard.
+
 ## Current Test Coverage
 
 | Test | Class | Test Cases |
@@ -271,6 +302,22 @@ For the prod-side cleanup contract (5 sites in `SyncService`), see [`../src/core
 | test_hookmanager | `HookManager` | 24 |
 | test_hookintegration | Hook integration | 10 |
 | **Total** | | **267+** |
+
+## Debugging Tips
+
+### Windows exit code `0xC0000409` is NOT a stack overrun
+
+`0xC0000409` (`STATUS_STACK_BUFFER_OVERRUN`) is misleading. On Windows, Qt's `qFatal()` calls `__fastfail(FAST_FAIL_FATAL_APP_EXIT)`, which the OS reports as `0xC0000409`. The actual cause is almost always a `qFatal()` deep inside Qt, e.g., `QFontDatabase: Must construct a QGuiApplication before accessing QFontDatabase` raised when a `QTEST_GUILESS_MAIN` test transitively touches font-database code.
+
+When a test exits with this code, **re-run it with file-based output capture** to surface the real Qt diagnostic:
+
+```powershell
+$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" + $env:PATH
+& "build/.../tests/<category>/test_name.exe" -o "output.txt,txt"
+Get-Content output.txt | Select-String "QFATAL|FAIL"
+```
+
+The `QFATAL : ...` message line names the real cause. Do NOT chase the test for recursion, oversized stack allocations, or fixture loops; that is a false trail. Fix the underlying Qt precondition (switch to `QTEST_MAIN`, guard the GUI-dependent code path, or short-circuit before the offending Qt subsystem is touched).
 
 ## Related Modules
 
