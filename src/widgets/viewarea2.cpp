@@ -640,6 +640,25 @@ ViewWindow2 *ViewArea2::windowForId(ID p_windowId) const {
   return m_windows.value(p_windowId, nullptr);
 }
 
+void ViewArea2::getCurrentWindowInfoForWorkspace(const QString &p_workspaceId, ID &p_windowId,
+                                                 QString &p_bufferId) const {
+  p_windowId = ViewAreaController::InvalidViewWindowId;
+  p_bufferId.clear();
+  if (p_workspaceId.isEmpty()) {
+    return;
+  }
+  auto it = m_splits.constFind(p_workspaceId);
+  if (it == m_splits.constEnd() || !it.value()) {
+    return;
+  }
+  ViewWindow2 *win = it.value()->getCurrentViewWindow();
+  if (!win) {
+    return;
+  }
+  p_windowId = win->getViewWindowId();
+  p_bufferId = win->getBuffer().id();
+}
+
 // ============ wireSplitSignals ============
 
 void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {

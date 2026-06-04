@@ -801,6 +801,14 @@ void ViewAreaController::setCurrentViewSplit(const QString &p_workspaceId, bool 
   if (wsSvc) {
     wsSvc->fireViewSplitAfterActivate(event);
   }
+  // Propagate split change to current-window tracking so docks bound to
+  // currentViewWindowChanged (e.g., Outline) rebind to the newly active split.
+  if (m_view) {
+    ID winId = InvalidViewWindowId;
+    QString bufferId;
+    m_view->getCurrentWindowInfoForWorkspace(p_workspaceId, winId, bufferId);
+    setCurrentViewWindow(winId, bufferId);
+  }
 }
 
 void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bufferId) {

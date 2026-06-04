@@ -101,6 +101,12 @@ public:
   // Returns empty string if the workspace has no tabs.
   virtual QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const = 0;
 
+  // Fills p_windowId and p_bufferId with the current ViewWindow's IDs in the
+  // split owning p_workspaceId. Sets p_windowId to ViewAreaController::InvalidViewWindowId
+  // and p_bufferId to an empty QString if no such split exists or the split is empty.
+  virtual void getCurrentWindowInfoForWorkspace(const QString &p_workspaceId, ID &p_windowId,
+                                                QString &p_bufferId) const = 0;
+
   // Notify all visible view windows whose node matches p_oldNodeId that
   // the file has been renamed. The view iterates its windows internally.
   virtual void onNodeRenamed(const NodeIdentifier &p_oldNodeId,
