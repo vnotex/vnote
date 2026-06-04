@@ -158,10 +158,10 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         run: |
           $extracted = "VNote-${{env.VNOTE_VER}}-win64-windows7"
-          if (-not (Test-Path "$extracted/vnote.exe")) { Write-Error "vnote.exe missing"; exit 1 }
-          if (-not (Test-Path "$extracted/Qt5Core.dll")) { Write-Error "Qt5Core.dll missing"; exit 1 }
-          if (-not (Test-Path "$extracted/Qt5WebEngineCore.dll")) { Write-Error "Qt5WebEngineCore.dll missing"; exit 1 }
-          if (-not (Test-Path "$extracted/QtWebEngineProcess.exe")) { Write-Error "QtWebEngineProcess.exe missing"; exit 1 }
+          if (-not (Test-Path "$extracted/bin/vnote.exe")) { Write-Error "vnote.exe missing"; exit 1 }
+          if (-not (Test-Path "$extracted/bin/Qt5Core.dll")) { Write-Error "Qt5Core.dll missing"; exit 1 }
+          if (-not (Test-Path "$extracted/bin/Qt5WebEngineCore.dll")) { Write-Error "Qt5WebEngineCore.dll missing"; exit 1 }
+          if (-not (Test-Path "$extracted/bin/QtWebEngineProcess.exe")) { Write-Error "QtWebEngineProcess.exe missing"; exit 1 }
           $qt6 = Get-ChildItem -Recurse $extracted -Filter "Qt6*.dll" -ErrorAction SilentlyContinue
           if ($qt6) { Write-Error "Qt6 DLLs leaked into Qt5 build: $qt6"; exit 1 }
           Write-Host "Qt5 zip composition OK"
