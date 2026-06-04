@@ -34,3 +34,5 @@ tmp
 /test_*
 resulte.txt
 /.sisyphus/fixtures/log-cleanup/runtime/
+
+.codegraph/
