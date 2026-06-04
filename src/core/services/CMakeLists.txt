@@ -82,9 +82,9 @@ add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
 
 target_link_libraries(core_services
   PUBLIC
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Network
+    Qt${QT_DEFAULT_MAJOR_VERSION}::Core
+    Qt${QT_DEFAULT_MAJOR_VERSION}::Gui
+    Qt${QT_DEFAULT_MAJOR_VERSION}::Network
     vxcore
     VTextEdit
 )
@@ -106,10 +106,18 @@ set_target_properties(core_services PROPERTIES
 # is found (system find_package OR FetchContent build).
 if(VNOTE_KEYCHAIN_AVAILABLE)
   target_compile_definitions(core_services PRIVATE VNOTE_KEYCHAIN_AVAILABLE)
-  if(TARGET Qt6Keychain::Qt6Keychain)
-    target_link_libraries(core_services PRIVATE Qt6Keychain::Qt6Keychain)
-  elseif(TARGET qt6keychain)
-    target_link_libraries(core_services PRIVATE qt6keychain)
+  if(QT_DEFAULT_MAJOR_VERSION GREATER 5)
+    if(TARGET Qt6Keychain::Qt6Keychain)
+      target_link_libraries(core_services PRIVATE Qt6Keychain::Qt6Keychain)
+    elseif(TARGET qt6keychain)
+      target_link_libraries(core_services PRIVATE qt6keychain)
+    endif()
+  else()
+    if(TARGET Qt5Keychain::Qt5Keychain)
+      target_link_libraries(core_services PRIVATE Qt5Keychain::Qt5Keychain)
+    elseif(TARGET qt5keychain)
+      target_link_libraries(core_services PRIVATE qt5keychain)
+    endif()
   endif()
   # FetchContent path: QtKeychain's CMakeLists.txt only sets INSTALL_INTERFACE
   # include directories, so consumers via add_subdirectory / FetchContent must
