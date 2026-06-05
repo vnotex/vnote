@@ -631,6 +631,77 @@ void ViewWindow2::setAutoReload(bool p_enabled) { m_autoReload = p_enabled; }
 
 bool ViewWindow2::autoReload() const { return m_autoReload; }
 
+bool ViewWindow2::reload() {
+  // Defensive guard for unbound/untitled buffers.
+  if (m_buffer.resolvedPath().isEmpty()) {
+    return false;
+  }
+
+  // Sync editor content to buffer first so isModified() is accurate.
+  auto *bufferService = m_services.get<BufferService>();
+  if (bufferService && m_editorDirty && m_buffer.isValid()) {
+    bufferService->syncNow(m_buffer.id());
+  }
+
+  const bool wasDirty = isModified();
+  bool needsDiscard = false;
+
+  if (wasDirty) {
+    // Ask to save changes.
+    int ret = MessageBoxHelper::questionSaveDiscardCancel(
+        MessageBoxHelper::Question,
+        tr("Reload note (%1) and discard unsaved changes?").arg(getName()),
+        tr("Note path (%1).").arg(m_buffer.resolvedPath()), QString(), this);
+    switch (ret) {
+    case QMessageBox::Save:
+      // Save first, then reload. After save, buffer is clean — dirty flags
+      // were already cleared by save(), so no need to discard below.
+      if (!save()) {
+        return false;
+      }
+      break;
+
+    case QMessageBox::Discard:
+      // Fall through to reload; dirty flags will be cleared before reload.
+      needsDiscard = true;
+      break;
+
+    case QMessageBox::Cancel:
+    default:
+      return false;
+    }
+  }
+
+  const ViewScrollState scroll = captureScrollState();
+
+  // Clear local dirty state BEFORE reload so that when BufferService emits
+  // bufferModifiedChanged (inside m_buffer.reload()), isModified() returns false.
+  bool clearedDirty = false;
+  if (needsDiscard) {
+    m_editorDirty = false;
+    setModified(false);
+    clearedDirty = true;
+  }
+
+  if (!m_buffer.reload()) {
+    if (clearedDirty) {
+      // Reload failed — restore dirty state to reflect that unsaved changes
+      // were not actually discarded.
+      m_editorDirty = true;
+      setModified(true);
+    }
+    return false;
+  }
+
+  syncEditorFromBuffer();
+  m_lastKnownRevision = m_buffer.getRevision();
+  if (scroll.isValid()) {
+    restoreScrollState(scroll);
+  }
+  m_externalChangeDismissed = false;
+  return true;
+}
+
 void ViewWindow2::onBufferExternallyChanged(const QString &p_bufferId, BufferState p_state) {
   if (p_bufferId != m_buffer.id()) {
     return;

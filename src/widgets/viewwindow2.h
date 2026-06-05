@@ -171,6 +171,11 @@ public:
   // Default implementation syncs dirty content and unregisters from BufferService.
   virtual bool aboutToClose(bool p_force);
 
+  // Reload buffer content from disk, prompting Save/Discard/Cancel on unsaved
+  // changes. Preserves current mode (does not switch Read<->Edit). Returns true
+  // on successful reload, false on cancel/failure/missing-path.
+  bool reload();
+
   // Per-window auto-reload setting.
   void setAutoReload(bool p_enabled);
   bool autoReload() const;
