@@ -329,3 +329,36 @@ add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
     $<TARGET_FILE_DIR:test_notebookexplorer2_multiselect>
 )
 
+# T3: ViewWindow2::reload() (commit 94c53d36) + ViewSplit2 Reload menu (commit bf44c324).
+# NOT GUILESS — needs QApplication for QMessageBox automation in dirty-buffer
+# subtests (Save / Discard / Cancel branches).
+#
+# Scope adjustment: viewwindow2.cpp is NOT compiled inline because that would
+# pull in ~12 transitive widget deps (attachmentpopup2, findandreplacewidget2,
+# editreaddiscardaction, ...). Instead this test uses the stub-injection
+# pattern from test_snippet_apply: viewwindow2.h provides the class shape
+# (via AUTOMOC) and the test cpp defines no-op bodies for every ViewWindow2
+# non-pure-virtual method to satisfy the linker. TestViewWindow2 then
+# replicates the production reload() logic (see file header for rationale).
+add_qt_test(test_viewsplit2_reload_menu
+  SOURCES
+    test_viewsplit2_reload_menu.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindow2.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_viewsplit2_reload_menu PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_viewsplit2_reload_menu PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_viewsplit2_reload_menu POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_viewsplit2_reload_menu>
+)
+
