@@ -650,14 +650,18 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
   menu.addSeparator();
 
+  // ---- Reload ----
+  auto *reloadAct = menu.addAction(tr("Reload"), [win]() { win->reload(); });
+  reloadAct->setToolTip(tr("Reload file from disk, discarding unsaved changes"));
+  reloadAct->setEnabled(!absPath.isEmpty());
+
   // ---- Auto Reload ----
   auto *autoReloadAct = menu.addAction(tr("Auto Reload"));
   autoReloadAct->setCheckable(true);
   autoReloadAct->setChecked(win->autoReload());
   autoReloadAct->setToolTip(tr("Automatically reload file from disk when modified externally"));
-  connect(autoReloadAct, &QAction::toggled, this, [win](bool p_checked) {
-    win->setAutoReload(p_checked);
-  });
+  connect(autoReloadAct, &QAction::toggled, this,
+          [win](bool p_checked) { win->setAutoReload(p_checked); });
 
   menu.exec(p_globalPos);
 }
