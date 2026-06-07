@@ -120,6 +120,15 @@ void MarkdownViewWindow2::setupUI() {
     m_mainStatusWidget->setContentsMargins(0, 0, 0, 0);
     statusWidget->setEditorStatusWidget(m_mainStatusWidget.staticCast<QWidget>());
     setStatusWidget(statusWidget);
+
+    // Capture non-owning handle for read-mode auto-hide.
+    m_statusWidgetWrapper = statusWidget.data();
+    // The wrapper has a single QLabel child (m_messageLabel inside StatusWidget).
+    // Watch its show/hide events so we know when a transient message is on-screen.
+    m_statusMessageLabel = statusWidget->findChild<QLabel *>();
+    if (m_statusMessageLabel) {
+      m_statusMessageLabel->installEventFilter(this);
+    }
   }
 
   setupToolBar();
@@ -678,6 +687,11 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       m_splitter->handle(1)->setVisible(false);
     }
     m_mainStatusWidget->setCurrentWidget(m_viewerStatusWidget.get());
+    // Hide the wrapper StatusWidget in Read mode. The eventFilter on
+    // m_statusMessageLabel will re-show it whenever a transient message arrives.
+    if (m_statusWidgetWrapper) {
+      m_statusWidgetWrapper->setVisible(false);
+    }
     break;
 
   case ViewWindowMode::Edit:
@@ -691,7 +705,13 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
       setEditViewMode(MarkdownViewWindowController::getEditViewMode(mdConfig));
     }
+    // Clear any transient message left over from Read mode (e.g. a hovered link
+    // URL) so we don't carry it into Edit's editor status surface.
+    showMessage(QString());
     m_mainStatusWidget->setCurrentWidget(m_textEditorStatusWidget.get());
+    if (m_statusWidgetWrapper) {
+      m_statusWidgetWrapper->setVisible(true);
+    }
     break;
 
   default:
@@ -1444,6 +1464,23 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 // ============ Helpers ============
 
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == m_statusMessageLabel.data() && m_statusMessageLabel) {
+    if (p_event->type() == QEvent::Show) {
+      // A transient message just became visible — make sure the wrapper
+      // is visible too, regardless of current mode.
+      if (m_statusWidgetWrapper) {
+        m_statusWidgetWrapper->setVisible(true);
+      }
+    } else if (p_event->type() == QEvent::Hide) {
+      // The transient message just disappeared. In Read mode, hide the
+      // wrapper again so the empty "Markdown Viewer" page is not revealed.
+      if (m_mode == ViewWindowMode::Read && m_statusWidgetWrapper) {
+        m_statusWidgetWrapper->setVisible(false);
+      }
+    }
+    // Do not consume the event — let the label process it normally.
+  }
+
   if (p_obj == m_splitter) {
     if (p_event->type() == QEvent::FocusIn) {
       focusEditor();
