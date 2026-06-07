@@ -247,8 +247,18 @@ void CombinedNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
   // wipe (Qt's QItemSelectionModel is index-based; removed rows lose selection
   // even when the same node is re-inserted with a fresh internal id).
   const NodeIdentifier savedCurrent = currentNodeId();
+  // Capture expanded folders so the tree shape survives the reload
+  // (NotebookNodeModel::removeNodeFromCaches assigns fresh internal ids to
+  // re-inserted children, which Qt's QTreeView treats as a different subtree).
+  const QList<NodeIdentifier> savedExpanded =
+      m_view ? m_view->getExpandedFolders() : QList<NodeIdentifier>();
 
   m_model->reloadNode(p_nodeId);
+
+  // Replay expansion BEFORE selection — ancestors must be expanded first.
+  if (m_view && !savedExpanded.isEmpty()) {
+    m_view->replayExpandedFolders(savedExpanded);
+  }
 
   // Restore selection if the previously-selected node still exists.
   if (savedCurrent.isValid() && savedCurrent != currentNodeId()) {

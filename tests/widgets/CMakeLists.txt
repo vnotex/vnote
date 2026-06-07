@@ -55,6 +55,51 @@ add_custom_command(TARGET test_notebookexplorer2_state POST_BUILD
     $<TARGET_FILE_DIR:test_notebookexplorer2_state>
 )
 
+add_qt_test(test_node_explorer_reload_expansion
+  SOURCES
+    test_node_explorer_reload_expansion.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/filelistview.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_node_explorer_reload_expansion PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_node_explorer_reload_expansion POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_node_explorer_reload_expansion>
+)
+
 add_qt_test(test_settings_slug
   SOURCES
     test_settings_slug.cpp

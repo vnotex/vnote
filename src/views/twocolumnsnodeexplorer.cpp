@@ -418,6 +418,13 @@ void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId, bool p_i
   // even when the same node is re-inserted with a fresh internal id).
   const NodeIdentifier savedCurrent = currentNodeId();
 
+  // Capture folder-panel expansion when reloading the folder tree (the file
+  // panel is a FileListView with no folder-expansion state).
+  QList<NodeIdentifier> savedExpanded;
+  if (p_isFolder && m_folderView) {
+    savedExpanded = m_folderView->getExpandedFolders();
+  }
+
   if (p_isFolder) {
     if (m_folderModel) {
       m_folderModel->reloadNode(p_nodeId);
@@ -426,6 +433,12 @@ void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId, bool p_i
     if (m_fileModel) {
       m_fileModel->reloadNode(p_nodeId);
     }
+  }
+
+  // Replay folder-panel expansion BEFORE selection restore (only when we
+  // captured something for the folder branch).
+  if (p_isFolder && m_folderView && !savedExpanded.isEmpty()) {
+    m_folderView->replayExpandedFolders(savedExpanded);
   }
 
   // Restore selection if the previously-selected node still exists.
