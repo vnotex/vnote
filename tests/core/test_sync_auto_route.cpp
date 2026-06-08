@@ -181,7 +181,17 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
       QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
       QTest::qWait(50);
     }
-    QCOMPARE(finishedSpy.count(), 1);
+    // Post vxcore-metadata-events plan: createFile / openBuffer / save each
+    // fire folder.config_changed (T4 persistence event) → mark_dirty →
+    // sync.should_run, so the auto-route enqueues up to 3 triggerSync items.
+    // SyncWorkQueueManager coalesces concurrent requests on coalesceKey
+    // "trigger", so the actual finishedSpy count is timing-dependent (1, 2,
+    // or 3 depending on which syncs collapse into the in-flight one).
+    // For this end-to-end test we only verify that AT LEAST ONE sync round
+    // trip completed via the SyncService auto-route — the exact count is
+    // covered by test_sync_signal_auto_baseline which drives vxcore_sync_trigger
+    // directly (no coalescing).
+    QVERIFY(finishedSpy.count() >= 1);
     QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
 
     syncService.shutdown();

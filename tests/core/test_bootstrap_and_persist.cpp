@@ -127,6 +127,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
   QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
   QString remoteUrl = seedBareRepo(bareDir, localTemp);
   if (remoteUrl.isEmpty()) {
+    syncService.shutdown();
     guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
@@ -152,6 +153,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
     // documented skip (matches sibling tests).
     const QJsonObject cfg = notebookService.getNotebookConfig(nbId);
     if (!cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool()) {
+      syncService.shutdown();
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
       guard.cleanup();
@@ -174,6 +176,17 @@ void TestBootstrapAndPersist::happy_path_s5() {
   QVERIFY(syncService.isSyncRegistered(nbId));
 
   // Cleanup.
+  // SEGFAULT fix (post vxcore-metadata-events plan): bootstrapAndPersist
+  // writes the flat sync config via SaveFolderConfig, which fires
+  // folder.config_changed → mark_dirty → sync.should_run → SyncService
+  // enqueues a SyncOps::triggerSync work item on its owned SyncWorkQueueManager.
+  // That work item runs on a pool thread and calls vxcore_sync_network_phase,
+  // which touches SyncManager::states_. Without shutdown() here, the local
+  // SyncService dtor wouldn't run until function exit — AFTER
+  // vxcore_context_destroy(ctx) below — so the pool thread crashes on a
+  // freed SyncManager. shutdown() drains the queue (with the bounded
+  // budget) while ctx is still alive.
+  syncService.shutdown();
   QSignalSpy delSpy(&credStore, &SyncCredentialsStore::credentialsDeleted);
   QSignalSpy delErr(&credStore, &SyncCredentialsStore::credentialsError);
   credStore.deleteCredentials(nbId);
@@ -202,6 +215,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
   QString remoteUrl = seedBareRepo(bareDir, localTemp);
   if (remoteUrl.isEmpty()) {
+    syncService.shutdown();
     guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
@@ -240,6 +254,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   // the persist seam — skip as documented.
   if (result != VXCORE_ERR_UNKNOWN || msg != injectedMsg) {
     if (result == VXCORE_ERR_UNKNOWN) {
+      syncService.shutdown();
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
       guard.cleanup();
@@ -268,6 +283,10 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
            "notebook must NOT be runtime-registered after rollback");
 
   // Cleanup (in case keychain entry survived).
+  // See happy_path_s5 for the rationale behind the explicit shutdown() —
+  // the persistence-event cascade triggered by SaveFolderConfig may have
+  // enqueued a triggerSync that must drain before vxcore_context_destroy.
+  syncService.shutdown();
   credStore.deleteCredentials(nbId);
   QTest::qWait(500);
   guard.cleanup();
@@ -293,6 +312,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
   QString remoteUrl = seedBareRepo(bareDir, localTemp);
   if (remoteUrl.isEmpty()) {
+    syncService.shutdown();
     guard.cleanup();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
@@ -331,6 +351,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   guard.track(nbId);
   if (result == VXCORE_ERR_UNKNOWN && msg != injectedMsg) {
     // Enable phase itself failed -> persist seam unreached. Skip.
+    syncService.shutdown();
     credStore.deleteCredentials(nbId);
     QTest::qWait(500);
     guard.cleanup();
@@ -340,6 +361,10 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   QCOMPARE(result, VXCORE_ERR_UNKNOWN);
   QCOMPARE(msg, injectedMsg); // ORIGINAL persist error preserved even when rollback fails.
 
+  // See happy_path_s5 for the rationale behind the explicit shutdown() —
+  // the persistence-event cascade triggered by SaveFolderConfig may have
+  // enqueued a triggerSync that must drain before vxcore_context_destroy.
+  syncService.shutdown();
   credStore.deleteCredentials(nbId);
   QTest::qWait(500);
   guard.cleanup();

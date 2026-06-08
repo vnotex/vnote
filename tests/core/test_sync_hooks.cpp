@@ -199,8 +199,13 @@ void TestSyncHooks::conflictDetectedFires() {
     SyncCredentialsStore credStore(services);
     services.registerService<SyncCredentialsStore>(&credStore);
     tests::KeychainGuard guard(&credStore);
-    // EventBridge is the only public, GUI-thread route to drive
-    // onAutoSyncConflict without instantiating a vxcore sync session.
+    // EventBridge translates vxcore's sync.conflict event into TWO Qt signals:
+    //   - syncConflict(notebookId)
+    //   - syncConflictFiles(notebookId, files)
+    // SyncService is wired to syncConflictFiles (see ctor: connect(...,
+    // &EventBridge::syncConflictFiles, this, &SyncService::onSyncConflictFiles)),
+    // which is the slot that fires vnote.sync.conflict_detected with
+    // conflictCount = files.size(). Drive that path here.
     EventBridge eventBridge(ctx);
     services.registerService<EventBridge>(&eventBridge);
     SyncService syncService(services);
@@ -217,19 +222,19 @@ void TestSyncHooks::conflictDetectedFires() {
         },
         10);
 
-    // Drive the auto-sync conflict path directly. EventBridge::syncConflict
-    // is connected to SyncService::onAutoSyncConflict in the SyncService
-    // ctor; invoking the signal here triggers the hook fire.
-    QMetaObject::invokeMethod(&eventBridge, "syncConflict", Qt::DirectConnection,
-                              Q_ARG(QString, QStringLiteral("nb-conflict")));
+    // Drive the conflict path. SyncService::onSyncConflictFiles fires
+    // vnote.sync.conflict_detected with conflictCount = files.size().
+    const QStringList conflicts = {QStringLiteral("note.md"), QStringLiteral("todo.md")};
+    QMetaObject::invokeMethod(&eventBridge, "syncConflictFiles", Qt::DirectConnection,
+                              Q_ARG(QString, QStringLiteral("nb-conflict")),
+                              Q_ARG(QStringList, conflicts));
     QTest::qWait(50);
     QCoreApplication::processEvents();
 
     QCOMPARE(fireCount, 1);
     QCOMPARE(capturedNb, QStringLiteral("nb-conflict"));
-    // Auto-sync path fires with conflictCount = -1 (unknown until getConflicts
-    // returns).
-    QCOMPARE(capturedCount, -1);
+    // onSyncConflictFiles uses files.size() as conflictCount.
+    QCOMPARE(capturedCount, conflicts.size());
     guard.cleanup();
   }
 

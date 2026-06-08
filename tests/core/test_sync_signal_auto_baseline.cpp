@@ -251,26 +251,41 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     // Allow up to 15s: file.saved → MaybeEnqueueSync → sync.should_run event
     //   → vxcore TriggerSync → libgit2 stage/commit/fetch/push (seconds)
     //   → EventBridge::syncFinished.
+    //
+    // Updated 1 → 3 after the vxcore-metadata-events plan:
+    // SaveFolderConfig now emits folder.config_changed (T4 persistence event)
+    // which drives mark_dirty → sync.should_run. Each of the three file
+    // operations below produces one extra sync round-trip:
+    //   1. createFile("auto.md")            → folder.config_changed → 1st sync
+    //   2. openBuffer → RecordFileOpen      → folder.config_changed → 2nd sync
+    //      (UpdateFileMetadata writes "last_opened_*" via SaveFolderConfig)
+    //   3. buf.save()                       → file.saved tail        → 3rd sync
+    // The auto-route shim drives vxcore_sync_trigger synchronously for each
+    // sync.should_run, so the bridge spies see started+finished × 3.
     const int autoSyncTimeoutMs = 15000;
+    const int expectedRoundTrips = 3;
     QElapsedTimer t;
     t.start();
-    while (bridgeFinishedSpy.isEmpty() && t.elapsed() < autoSyncTimeoutMs) {
+    while (bridgeFinishedSpy.count() < expectedRoundTrips && t.elapsed() < autoSyncTimeoutMs) {
       // Pump the EventBridge's QueuedConnection emissions onto this thread.
       QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
       QTest::qWait(50);
     }
 
-    // ---- Assertions: characterize the CURRENT (pre-refactor) emission ----------
-    // EventBridge fires exactly once for started + finished on the auto path.
-    QCOMPARE(bridgeStartedSpy.count(), 1);
-    QCOMPARE(bridgeFinishedSpy.count(), 1);
+    // ---- Assertions: characterize the CURRENT (post-metadata-events) emission --
+    // EventBridge fires started + finished once per sync.should_run hop. See
+    // the comment above the wait loop for the 1 → 3 derivation.
+    QCOMPARE(bridgeStartedSpy.count(), expectedRoundTrips);
+    QCOMPARE(bridgeFinishedSpy.count(), expectedRoundTrips);
 
     // T24: SyncWorker is gone; no worker-side spies to assert against.
 
-    // Bridge finished should report VXCORE_OK (push to a seeded bare repo).
-    const VxCoreError finishedResult =
-        static_cast<VxCoreError>(bridgeFinishedSpy.first().at(1).toInt());
-    QCOMPARE(finishedResult, VXCORE_OK);
+    // Bridge finished should report VXCORE_OK for each sync round-trip.
+    for (int i = 0; i < expectedRoundTrips; ++i) {
+      const VxCoreError finishedResult =
+          static_cast<VxCoreError>(bridgeFinishedSpy.at(i).at(1).toInt());
+      QCOMPARE(finishedResult, VXCORE_OK);
+    }
 
     // ---- Tear down -------------------------------------------------------------
     syncService.shutdown();
