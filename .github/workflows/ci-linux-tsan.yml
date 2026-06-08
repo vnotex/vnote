@@ -105,7 +105,7 @@ jobs:
       - name: Run Sync Test Subset (ThreadSanitizer)
         run: |
           ctest --test-dir libs/vxcore/build_test -C Debug \
-            -R "^test_(sync|git_sync|gitkeep|mock_sync_backend|libgit2_init|sync_backend_metadata|sync_backend_registry|git_backend_autoreg|sync_manager_factory_override|sync_manager_unknown_backend|git_options|credential_provider|sync_backend_with_provider|event_manager|buffer_save|libgit2_init_propagation|sync_config_backcompat|sync_status_queries|sync_config_cache|dirty_tracker|sync_manager_reentrancy|sync_thread_safety)$" \
+            -R "^test_(sync|git_sync|gitkeep|mock_sync_backend|libgit2_init|sync_backend_metadata|sync_backend_registry|git_backend_autoreg|sync_manager_factory_override|sync_manager_unknown_backend|git_options|credential_provider|sync_backend_with_provider|event_manager|buffer_save|libgit2_init_propagation|sync_config_backcompat|sync_status_queries|sync_config_cache|dirty_tracker|sync_manager_reentrancy|sync_thread_safety|vxcore_sync_is_registered|vxcore_sync_cancellable_api|sync_credentials_api)$" \
             --output-on-failure
         env:
           TSAN_OPTIONS: "halt_on_error=1:exitcode=66"

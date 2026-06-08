@@ -123,16 +123,33 @@ jobs:
           QT_MAJOR: ${{ matrix.config.qt_major }}
           VS_CMD: ${{ matrix.config.vs_cmd }}
           RUNNER_WORKSPACE: ${{ runner.workspace }}
+          # tests/CMakeLists.txt hard-requires Qt6 (find_package(Qt6 REQUIRED)),
+          # so the Qt5 matrix entry MUST build packaging-only. Qt6 entry builds
+          # tests so the Build-and-Run-Tests step below can ctest them.
+          VNOTE_TESTS: ${{ matrix.config.qt_major == 6 && 'ON' || 'OFF' }}
         run: |
           cmake --version
           if "%QT_MAJOR%"=="6" call "%VS_CMD%"
           where cl || echo "cl.exe not on PATH"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=OFF -DOPENSSL_EXTRA_LIB_DIR=%RUNNER_WORKSPACE%\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=%VNOTE_TESTS% -DOPENSSL_EXTRA_LIB_DIR=%RUNNER_WORKSPACE%\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
           type cmake-configure.log
           cmake --build .
           cmake --build . --target=pack
           7z x VNote*.zip -o*
           dir
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build and Run Tests (Qt6 only)
+        # tests/CMakeLists.txt hard-requires Qt6 so this step is skipped on
+        # the Qt5 matrix entry. The previous step already built tests when
+        # VNOTE_BUILD_TESTS=ON, so ctest only needs to dispatch them.
+        if: ${{ matrix.config.qt_major == 6 }}
+        shell: cmd
+        env:
+          VS_CMD: ${{ matrix.config.vs_cmd }}
+        run: |
+          call "%VS_CMD%"
+          ctest -C Release --output-on-failure
         working-directory: ${{runner.workspace}}/build
 
       - name: Assert MSVC v142 + Qt 5.15.2 in use

@@ -121,6 +121,21 @@ jobs:
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 
+      - name: Build and Run Tests
+        # Build remaining targets (Qt-side tests + vxcore tests; --target pack
+        # above only built the AppImage target) then run them headlessly via
+        # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to ON
+        # in the root CMakeLists.txt, so no extra -D is needed.
+        run: |
+          set -e
+          cmake --build .
+          export QT_QPA_PLATFORM=offscreen
+          # libVTextEdit.so lives next to the parent build's vnote binary;
+          # add it to LD_LIBRARY_PATH so Qt-side test exes resolve it at load.
+          export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
+          ctest --output-on-failure
+        working-directory: ${{runner.workspace}}/build
+
       - name: Fix Package
         run: |
           mkdir fixpackage
