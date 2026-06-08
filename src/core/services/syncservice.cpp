@@ -1109,6 +1109,69 @@ void SyncService::testForceNextPersistFailure(const QString &p_message) {
 
 void SyncService::testForceNextRollbackFailure() { m_testForceNextRollbackFailure = true; }
 
+void SyncService::testForceLastSyncUtc(const QString &p_notebookId, qint64 p_ms) {
+  if (p_ms < 0) {
+    m_testLastSyncUtcOverrides.remove(p_notebookId);
+  } else {
+    m_testLastSyncUtcOverrides.insert(p_notebookId, p_ms);
+  }
+}
+
+void SyncService::testInvokeMaybeTriggerPostReconcile(const QString &p_notebookId) {
+  maybeTriggerPostReconcile(p_notebookId);
+}
+
+void SyncService::testSetMaybeTriggerBypassReadinessCheck(bool p_bypass) {
+  m_testBypassReadinessCheck = p_bypass;
+}
+
+// Post-reconcile freshness-gated auto-trigger. Called from reconcileSyncForNotebook
+// after the enable work item completes with VXCORE_OK, on the GUI thread (via
+// the QueuedConnection bounce from the SyncOps::enableSync completion lambda).
+// See header comment on maybeTriggerPostReconcile for the full rationale.
+void SyncService::maybeTriggerPostReconcile(const QString &p_notebookId) {
+  if (m_shutDown) {
+    return;
+  }
+  // Defensive: reconcile may have raced with a disable / unregister; do not
+  // try to trigger a sync we cannot run. Tests may opt out of this check via
+  // testSetMaybeTriggerBypassReadinessCheck so the gate logic can be
+  // exercised without a real vxcore sync registration.
+  if (!m_testBypassReadinessCheck &&
+      (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId))) {
+    qCInfo(syncCategory) << "SyncService::maybeTriggerPostReconcile: skip (not ready) for"
+                         << p_notebookId;
+    return;
+  }
+  // If a sync is already in flight, do nothing. The work queue's coalesceKey
+  // would collapse a duplicate enqueue anyway; skipping here just keeps the
+  // queue clean.
+  if (isSyncInProgress(p_notebookId)) {
+    qCInfo(syncCategory) << "SyncService::maybeTriggerPostReconcile: skip (sync in progress) for"
+                         << p_notebookId;
+    return;
+  }
+  // Freshness gate: covers rapid open/close cycles without thrashing. Tests
+  // may override via testForceLastSyncUtc.
+  qint64 lastSyncMs = 0;
+  const auto overrideIt = m_testLastSyncUtcOverrides.constFind(p_notebookId);
+  if (overrideIt != m_testLastSyncUtcOverrides.constEnd()) {
+    lastSyncMs = overrideIt.value();
+  } else if (m_notebookCoreService) {
+    lastSyncMs = m_notebookCoreService->getLastSyncUtc(p_notebookId);
+  }
+  const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+  if (lastSyncMs > 0 && (nowMs - lastSyncMs) < kPostReconcileFreshnessMs) {
+    qCInfo(syncCategory) << "SyncService::maybeTriggerPostReconcile: skip (fresh) for"
+                         << p_notebookId << "ageMs:" << (nowMs - lastSyncMs)
+                         << "thresholdMs:" << kPostReconcileFreshnessMs;
+    return;
+  }
+  qCInfo(syncCategory) << "SyncService::maybeTriggerPostReconcile: enqueueing for" << p_notebookId
+                       << "lastSyncMs:" << lastSyncMs << "nowMs:" << nowMs;
+  triggerSyncNow(p_notebookId);
+}
+
 // ---- Worker -> SyncService forwarders --------------------------------------
 // T23: syncStarted / syncFinished / syncFailed / conflictsDetected forwarders
 // were removed; EventBridge is now the single source for those signals.
@@ -1389,13 +1452,33 @@ void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
                 // completion result is folded into reconcileFinished below
                 // (we still report VXCORE_OK to indicate dispatch succeeded,
                 // mirroring the pre-T24 behavior).
+                //
+                // After enable returns VXCORE_OK we bounce back to the GUI
+                // thread and call maybeTriggerPostReconcile, which auto-fires
+                // a triggerSyncNow IF the notebook is "stale" (last successful
+                // sync > kPostReconcileFreshnessMs ago). Closes the multi-
+                // device staleness window where opening a notebook would only
+                // enqueue enableSync, leaving the first FetchOrigin to wait
+                // for the next save/manual-sync. The completion lambda runs
+                // on a pool thread; the QueuedConnection hop puts the gate
+                // (which inspects per-notebook state via SyncService members)
+                // back on the GUI thread.
                 auto *workQueue = m_workQueue;
                 NotebookCoreService *notebookSvc = m_notebookCoreService;
                 if (workQueue) {
                   const QString nbId = p_notebookId;
-                  workQueue->enqueue(nbId, [notebookSvc, nbId, configJson, credentialsJson]() {
+                  workQueue->enqueue(nbId, [this, notebookSvc, nbId, configJson,
+                                            credentialsJson]() {
                     SyncOps::enableSync(notebookSvc, nbId, configJson, credentialsJson,
-                                        [](VxCoreError, QString) {});
+                                        [this, nbId](VxCoreError p_code, QString) {
+                                          if (p_code != VXCORE_OK) {
+                                            return;
+                                          }
+                                          QMetaObject::invokeMethod(
+                                              this,
+                                              [this, nbId]() { maybeTriggerPostReconcile(nbId); },
+                                              Qt::QueuedConnection);
+                                        });
                   });
                 } else {
                   qCWarning(syncCategory) << "SyncService::reconcileSyncForNotebook: "

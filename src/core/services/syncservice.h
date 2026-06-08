@@ -202,6 +202,26 @@ public:
   void testForceNextPersistFailure(const QString &p_message = QString());
   void testForceNextRollbackFailure();
 
+  // Test-only seams for the post-reconcile freshness gate (auto-sync on open).
+  // Unconditional per ADR-6.
+  //   - testForceLastSyncUtc: override the value
+  //     NotebookCoreService::getLastSyncUtc would return for the freshness
+  //     comparison inside maybeTriggerPostReconcile. A non-negative override
+  //     wins over the real metadata.db read. Pass -1 to clear an override.
+  //   - testInvokeMaybeTriggerPostReconcile: invoke the helper directly,
+  //     bypassing the full reconcile/enable lambda chain (which otherwise
+  //     would require keychain + notebook + bare-repo setup). Public solely
+  //     so tests can exercise the gate without staging a real reconcile.
+  //   - testSetMaybeTriggerBypassReadinessCheck: when true, the
+  //     isSyncEnabled / isSyncRegistered defense inside
+  //     maybeTriggerPostReconcile is skipped so tests can drive the
+  //     freshness / in-progress gates without a real vxcore sync
+  //     registration (which would require a real bare-repo enable flow).
+  //     Default false; production code never flips this.
+  void testForceLastSyncUtc(const QString &p_notebookId, qint64 p_ms);
+  void testInvokeMaybeTriggerPostReconcile(const QString &p_notebookId);
+  void testSetMaybeTriggerBypassReadinessCheck(bool p_bypass);
+
   // Public accessor for the credentials store. Used by T1 bootstrapSync
   // rollback path to delete orphan keychain PAT on enable failure.
   SyncCredentialsStore *credentialsStore() const { return m_credentialsStore; }
@@ -290,6 +310,27 @@ private:
   // Best-effort, idempotent per process via m_reconcileAttempted.
   void reconcileSyncForNotebook(const QString &p_notebookId);
 
+  // After reconcile has registered a notebook with vxcore, optionally enqueue
+  // a `triggerSyncNow` IF the notebook is "stale" (last successful sync was
+  // more than kPostReconcileFreshnessMs ago, or never synced on this device).
+  //
+  // Closes the UX gap from the reconcile-only path: opening a notebook (or
+  // app start) was only enqueuing enableSync, so the first actual FetchOrigin
+  // had to wait for the next save or manual "Sync Now" to fire mark_dirty.
+  // For multi-device users this surfaced as stale content after sleep/wake.
+  //
+  // Skips silently when any of these is true:
+  //   * service is shutting down
+  //   * notebook is no longer sync-enabled or sync-registered (defense)
+  //   * a sync is already in flight for this notebook (queue would coalesce
+  //     anyway; this just avoids spurious queue churn)
+  //   * last successful sync was within kPostReconcileFreshnessMs
+  //
+  // Re-uses the existing triggerSyncNow path, so SyncWorkQueueManager
+  // coalescing (coalesceKey="trigger") still de-dupes against concurrent
+  // user-initiated or auto-sync triggers.
+  void maybeTriggerPostReconcile(const QString &p_notebookId);
+
   ServiceLocator &m_services;
   NotebookCoreService *m_notebookCoreService = nullptr;
   SyncCredentialsStore *m_credentialsStore = nullptr;
@@ -339,6 +380,23 @@ private:
   bool m_testForceNextPersistFailure = false;
   QString m_testForceNextPersistFailureMsg;
   bool m_testForceNextRollbackFailure = false;
+
+  // Test-only overrides for last-sync UTC, consumed by maybeTriggerPostReconcile.
+  // Per-notebook; presence wins over the real NotebookCoreService::getLastSyncUtc
+  // read. Empty in production.
+  QHash<QString, qint64> m_testLastSyncUtcOverrides;
+
+  // Test-only flag: when true, maybeTriggerPostReconcile skips its
+  // isSyncEnabled / isSyncRegistered defense check. Default (production)
+  // is false.
+  bool m_testBypassReadinessCheck = false;
+
+  // Post-reconcile freshness window: skip auto-trigger if the per-device last
+  // successful sync timestamp is newer than (now - this). 2 minutes is long
+  // enough to coalesce rapid close-open cycles (workspace switching, window
+  // refocus) but short enough that a real sleep/wake cycle is treated as
+  // stale and gets a fresh sync. Tunable per future telemetry.
+  static constexpr qint64 kPostReconcileFreshnessMs = 2 * 60 * 1000;
 };
 
 } // namespace vnotex

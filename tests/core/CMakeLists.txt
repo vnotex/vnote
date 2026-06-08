@@ -470,6 +470,25 @@ if(MSVC)
   target_link_options(test_syncservice PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
+# Follow-up to vxcore-metadata-events: SyncService::maybeTriggerPostReconcile
+# closes the multi-device staleness window where reconcile-on-open only
+# enqueued enableSync. After reconcile registers a notebook, the freshness
+# gate auto-fires triggerSyncNow IF last successful sync was > 2 min ago.
+# Verifies stale->triggers, fresh->skips, in-progress->skips,
+# not-ready->skips (defense in depth for post-enable-failure case).
+add_qt_test(test_sync_service_freshness
+  SOURCES
+    test_sync_service_freshness.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_sync_service_freshness PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_service_freshness PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
 # T5: NotebookCoreService sync wrapper methods (8 thin C-API wrappers).
 add_qt_test(test_notebookcoreservice_sync
   SOURCES
