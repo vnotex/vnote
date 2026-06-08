@@ -91,7 +91,10 @@ struct CloneAndOpenValidationResult {
 // next to the final destination, clone into staging (worker thread), rename
 // to final, optionally enable sync if PAT was supplied, fully rollback on
 // failure. View (OpenNotebookDialog2) collects input and displays results;
-// see src/widgets/dialogs/opennotebookdialog2.h.
+// see src/widgets/dialogs/opennotebookdialog2.h. T25 wired the
+// NotebookExplorer2 toolbar "Open Notebook" button to that dialog so the
+// legacy QFileDialog::getExistingDirectory path is no longer reachable from
+// the UI.
 class OpenNotebookController : public QObject {
   Q_OBJECT
 

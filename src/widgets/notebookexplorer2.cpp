@@ -61,6 +61,7 @@
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/dialogs/nodepropertiesdialog2.h>
 #include <widgets/dialogs/notebooksyncinfodialog2.h>
+#include <widgets/dialogs/opennotebookdialog2.h>
 #include <widgets/dialogs/openvnote3notebookdialog2.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/dialogs/viewtagsdialog2.h>
@@ -1016,38 +1017,27 @@ void NotebookExplorer2::newNotebookFromFolder() {
 }
 
 void NotebookExplorer2::importNotebook() {
-  QString rootFolder = QFileDialog::getExistingDirectory(
-      window(), tr("Select Notebook Root Folder"), QDir::homePath(),
-      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-  if (rootFolder.isEmpty()) {
-    return;
-  }
-
-  OpenNotebookController controller(m_services);
-
-  // Validate the selected folder.
-  auto validation = controller.validateRootFolder(rootFolder);
-  if (!validation.valid) {
-    MessageBoxHelper::notify(MessageBoxHelper::Warning, validation.message, window());
-    return;
-  }
-
-  // Open the notebook.
-  OpenNotebookInput input;
-  input.rootFolderPath = rootFolder;
-
-  OpenNotebookResult result = controller.openNotebook(input);
-  if (!result.success) {
-    MessageBoxHelper::notify(MessageBoxHelper::Critical, result.errorMessage, window());
-    return;
-  }
-
-  // Reload notebooks and select the newly-opened one.
-  if (m_notebookSelector) {
-    m_notebookSelector->loadNotebooks();
-    setCurrentNotebook(result.notebookId);
-  }
+  // T25 (open-notebook-remote-readonly): the inline QFileDialog +
+  // stack-allocated OpenNotebookController path was replaced by the new
+  // OpenNotebookDialog2 widget which supports BOTH the local-folder pick
+  // and the remote-URL clone path. The dialog owns its own controller
+  // instance (heap-allocated, parented to the dialog) so this slot stays
+  // simple: open the dialog, refresh the selector when it signals success.
+  //
+  // The dialog emits notebookOpened(QString) ONLY on a successful local
+  // open in T24's MVP (remote mode is still stubbed pending T25 wiring of
+  // OpenNotebookController::cloneAndOpen). When that signal fires we
+  // refresh NotebookSelector2 and switch the explorer to the freshly
+  // opened notebook, matching the behavior the old QFileDialog path used
+  // to provide.
+  OpenNotebookDialog2 dialog(m_services, window());
+  connect(&dialog, &OpenNotebookDialog2::notebookOpened, this, [this](const QString &p_notebookId) {
+    if (m_notebookSelector) {
+      m_notebookSelector->loadNotebooks();
+      setCurrentNotebook(p_notebookId);
+    }
+  });
+  dialog.exec();
 }
 
 void NotebookExplorer2::openVNote3Notebook() {
