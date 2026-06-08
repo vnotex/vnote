@@ -71,6 +71,17 @@ add_qt_test(test_urlutils
   GUILESS
 )
 
+add_qt_test(test_fileutils2_staging
+  SOURCES
+    test_fileutils2_staging.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Gui
+  GUILESS
+)
+
 target_include_directories(test_clipboard_image PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )

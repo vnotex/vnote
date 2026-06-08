@@ -7,6 +7,7 @@
 #include <QRandomGenerator>
 #include <QTemporaryFile>
 #include <QTextStream>
+#include <QThread>
 
 #include "pathutils.h"
 
@@ -393,4 +394,177 @@ QStringList FileUtils2::entryListRecursively(const QString &p_dirPath,
   }
 
   return entries;
+}
+
+QString FileUtils2::generateCloneStagingDir(const QString &p_finalParentDir,
+                                            const QString &p_finalLeafName, QString *p_errorOut) {
+  if (p_errorOut) {
+    *p_errorOut = QString();
+  }
+
+  // Ensure parent directory exists
+  QDir parentDir(p_finalParentDir);
+  if (!parentDir.exists()) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Parent directory does not exist: %1").arg(p_finalParentDir);
+    }
+    return QString();
+  }
+
+  // Generate unique staging dir name with timestamp
+  qint64 timestampMs = QDateTime::currentMSecsSinceEpoch();
+  QString stagingDirName = QStringLiteral(".%1.vnote-clone-pending-%2")
+                               .arg(p_finalLeafName, QString::number(timestampMs));
+
+  // Ensure uniqueness by adding collision counter if needed
+  QString stagingDirPath = parentDir.filePath(stagingDirName);
+  int collisionCounter = 0;
+  while (QDir(stagingDirPath).exists()) {
+    ++collisionCounter;
+    stagingDirName =
+        QStringLiteral(".%1.vnote-clone-pending-%2-%3")
+            .arg(p_finalLeafName, QString::number(timestampMs), QString::number(collisionCounter));
+    stagingDirPath = parentDir.filePath(stagingDirName);
+  }
+
+  // Create the staging directory
+  if (!parentDir.mkpath(stagingDirName)) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Failed to create staging directory: %1").arg(stagingDirPath);
+    }
+    return QString();
+  }
+
+  // Create marker file with metadata
+  QString finalDirPath = parentDir.filePath(p_finalLeafName);
+  QJsonObject markerJson;
+  markerJson.insert(QStringLiteral("createdUtc"), QJsonValue(static_cast<double>(timestampMs)));
+  markerJson.insert(QStringLiteral("finalDir"), QJsonValue(QDir(finalDirPath).absolutePath()));
+
+  QString markerFilePath = QDir(stagingDirPath).filePath(QStringLiteral("staging-marker.json"));
+  QFile markerFile(markerFilePath);
+  if (!markerFile.open(QIODevice::WriteOnly)) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Failed to create marker file: %1").arg(markerFilePath);
+    }
+    QDir(stagingDirPath).removeRecursively();
+    return QString();
+  }
+
+  markerFile.write(QJsonDocument(markerJson).toJson());
+  markerFile.close();
+
+  return QDir(stagingDirPath).absolutePath();
+}
+
+bool FileUtils2::renameStagingToFinal(const QString &p_stagingDir, const QString &p_finalDir,
+                                      QString *p_errorOut) {
+  if (p_errorOut) {
+    *p_errorOut = QString();
+  }
+
+  QDir stagingDir(p_stagingDir);
+  QDir finalDir(p_finalDir);
+
+  // Check if staging dir exists
+  if (!stagingDir.exists()) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Staging directory does not exist: %1").arg(p_stagingDir);
+    }
+    return false;
+  }
+
+  // Check if final dir already exists (collision)
+  if (finalDir.exists()) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Final directory already exists: %1").arg(p_finalDir);
+    }
+    return false;
+  }
+
+  // Perform atomic rename using QDir::rename
+  // QDir::rename is atomic on POSIX; on Windows it's best-effort.
+  // The staging dir MUST be on the same filesystem as the final dir for atomicity.
+  if (!stagingDir.rename(p_stagingDir, p_finalDir)) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Failed to rename staging directory to final destination")
+                        .append(QStringLiteral(" (%1 -> %2)").arg(p_stagingDir, p_finalDir));
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool FileUtils2::removeStagingDir(const QString &p_stagingDir, QString *p_errorOut) {
+  if (p_errorOut) {
+    *p_errorOut = QString();
+  }
+
+  QDir dir(p_stagingDir);
+
+  // Reuse the Windows 20×100ms retry pattern from NewNotebookController
+  // This handles the libgit2 file-handle race where the OS may hold transient
+  // locks briefly after file operations complete.
+  // See: src/controllers/newnotebookcontroller.cpp:268-278
+  bool removed = false;
+  for (int attempt = 0; attempt < 20 && dir.exists(); ++attempt) {
+    removed = dir.removeRecursively();
+    if (removed && !dir.exists()) {
+      break;
+    }
+    QThread::msleep(100);
+  }
+
+  if (dir.exists()) {
+    if (p_errorOut) {
+      *p_errorOut = QStringLiteral("Failed to remove staging directory after 20 attempts: %1")
+                        .arg(p_stagingDir);
+    }
+    return false;
+  }
+
+  return true;
+}
+
+QStringList FileUtils2::sweepOrphanStagingDirs(const QString &p_parentDir, qint64 p_olderThanMs) {
+  QStringList orphans;
+
+  QDir parentDir(p_parentDir);
+  if (!parentDir.exists()) {
+    return orphans;
+  }
+
+  qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+  // Find all entries matching pattern .*.vnote-clone-pending-*
+  QStringList filters;
+  filters << QStringLiteral(".*.vnote-clone-pending-*");
+
+  auto entries =
+      parentDir.entryList(filters, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+
+  for (const auto &entry : entries) {
+    QString entryPath = parentDir.filePath(entry);
+
+    // Read marker file to check creation timestamp
+    QString markerPath = QDir(entryPath).filePath(QStringLiteral("staging-marker.json"));
+    QFile markerFile(markerPath);
+    if (!markerFile.open(QIODevice::ReadOnly)) {
+      continue; // Skip entries without valid marker
+    }
+
+    QJsonObject markerJson = QJsonDocument::fromJson(markerFile.readAll()).object();
+    markerFile.close();
+
+    qint64 createdUtc = markerJson.value(QStringLiteral("createdUtc")).toVariant().toLongLong();
+    qint64 ageMs = now - createdUtc;
+
+    // If older than threshold, add to orphan list
+    if (ageMs > p_olderThanMs) {
+      orphans.append(QDir(entryPath).absolutePath());
+    }
+  }
+
+  return orphans;
 }

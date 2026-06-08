@@ -37,8 +37,7 @@ public:
 
   // Copy file. If p_move is true, move instead of copy.
   // Overwrites destination file if it exists.
-  static Error copyFile(const QString &p_filePath, const QString &p_destPath,
-                        bool p_move = false);
+  static Error copyFile(const QString &p_filePath, const QString &p_destPath, bool p_move = false);
 
   // Copy directory recursively. If p_move is true, move instead of copy.
   // Merges if target directory exists, overwriting files with same names.
@@ -88,8 +87,37 @@ public:
   static QStringList entryListRecursively(const QString &p_dirPath,
                                           const QStringList &p_nameFilters,
                                           QDir::Filters p_filters = QDir::NoFilter);
-};
 
+  // --- Staging directory helpers for safe clone/move operations ---
+
+  // Create a unique staging directory under p_finalParentDir with the pattern:
+  // .<p_finalLeafName>.vnote-clone-pending-<timestampMs>
+  // Writes a marker file "staging-marker.json" inside containing:
+  // {"createdUtc": <ms>, "finalDir": "<absolute path of intended final destination>"}
+  // Returns absolute path of the new staging directory on success.
+  // On failure, returns empty string and sets *p_errorOut.
+  static QString generateCloneStagingDir(const QString &p_finalParentDir,
+                                         const QString &p_finalLeafName, QString *p_errorOut);
+
+  // Atomically rename staging directory to final destination.
+  // Uses QDir::rename (best-effort atomic on POSIX, best-effort on Windows).
+  // IMPORTANT: p_stagingDir MUST be on the same filesystem as p_finalDir for atomicity.
+  // Returns true on success; returns false + *p_errorOut on failure.
+  // On failure, does NOT modify either directory.
+  static bool renameStagingToFinal(const QString &p_stagingDir, const QString &p_finalDir,
+                                   QString *p_errorOut);
+
+  // Recursively remove a staging directory.
+  // Reuses the Windows 20x100ms retry pattern to handle libgit2 file-handle races.
+  // Returns true on success; returns false + *p_errorOut on failure.
+  static bool removeStagingDir(const QString &p_stagingDir, QString *p_errorOut);
+
+  // Scan p_parentDir for orphan staging directories matching pattern
+  // .*.vnote-clone-pending-* whose marker file indicates age > p_olderThanMs.
+  // Returns list of absolute paths that WOULD be swept (does NOT delete).
+  // Caller decides whether to invoke removeStagingDir on each result.
+  static QStringList sweepOrphanStagingDirs(const QString &p_parentDir, qint64 p_olderThanMs);
+};
 } // namespace vnotex
 
 #endif // FILEUTILS2_H
