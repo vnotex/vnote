@@ -687,10 +687,15 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       m_splitter->handle(1)->setVisible(false);
     }
     m_mainStatusWidget->setCurrentWidget(m_viewerStatusWidget.get());
-    // Hide the wrapper StatusWidget in Read mode. The eventFilter on
-    // m_statusMessageLabel will re-show it whenever a transient message arrives.
+    // Collapse the wrapper StatusWidget to zero height in Read mode. We use
+    // setMaximumHeight(0) rather than setVisible(false) so the wrapper stays
+    // technically visible — that way StatusWidget's internal QStackedLayout
+    // still delivers QEvent::Show to m_messageLabel when a transient message
+    // arrives, and our eventFilter can expand the wrapper back to natural
+    // height. (Qt does not deliver Show events to children of a hidden
+    // parent, so setVisible(false) would silently break the auto-show path.)
     if (m_statusWidgetWrapper) {
-      m_statusWidgetWrapper->setVisible(false);
+      m_statusWidgetWrapper->setMaximumHeight(0);
     }
     break;
 
@@ -710,7 +715,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     showMessage(QString());
     m_mainStatusWidget->setCurrentWidget(m_textEditorStatusWidget.get());
     if (m_statusWidgetWrapper) {
-      m_statusWidgetWrapper->setVisible(true);
+      m_statusWidgetWrapper->setMaximumHeight(QWIDGETSIZE_MAX);
     }
     break;
 
@@ -1466,16 +1471,18 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
   if (p_obj == m_statusMessageLabel.data() && m_statusMessageLabel) {
     if (p_event->type() == QEvent::Show) {
-      // A transient message just became visible — make sure the wrapper
-      // is visible too, regardless of current mode.
+      // A transient message just became visible — expand the wrapper to its
+      // natural height so the message is actually displayed. Works in both
+      // modes; harmless in Edit mode where the wrapper is already expanded.
       if (m_statusWidgetWrapper) {
-        m_statusWidgetWrapper->setVisible(true);
+        m_statusWidgetWrapper->setMaximumHeight(QWIDGETSIZE_MAX);
       }
     } else if (p_event->type() == QEvent::Hide) {
-      // The transient message just disappeared. In Read mode, hide the
-      // wrapper again so the empty "Markdown Viewer" page is not revealed.
+      // The transient message just disappeared. In Read mode, collapse the
+      // wrapper back to zero height so the empty "Markdown Viewer" page is
+      // not revealed. In Edit mode, leave the wrapper at natural height.
       if (m_mode == ViewWindowMode::Read && m_statusWidgetWrapper) {
-        m_statusWidgetWrapper->setVisible(false);
+        m_statusWidgetWrapper->setMaximumHeight(0);
       }
     }
     // Do not consume the event — let the label process it normally.
