@@ -101,6 +101,15 @@ public:
   VxCoreError setSyncCredentials(const QString &p_notebookId, const QString &p_credentialsJson);
   bool isSyncReady(const QString &p_notebookId) const;
 
+  // Lightweight runtime check whether a notebook is registered with vxcore's
+  // SyncManager (i.e., present in states_ map). Wraps vxcore_sync_is_registered.
+  // Unlike getSyncStatus, this NEVER acquires the per-backend op_mutex_,
+  // making it safe to call from the UI thread at high frequency without
+  // racing the worker-thread sync work that would otherwise be starved into
+  // VXCORE_ERR_SYNC_IN_PROGRESS. Returns false on any error (null context,
+  // notebook unknown, etc.).
+  bool isSyncRegistered(const QString &p_notebookId) const;
+
   // Per-device last successful sync timestamp (milliseconds since Unix epoch).
   // Returns 0 if the notebook has never been successfully synced on this
   // device or if the underlying vxcore read fails. Backed by metadata.db

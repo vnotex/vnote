@@ -1070,11 +1070,14 @@ bool SyncService::isSyncRegistered(const QString &p_notebookId) const {
   if (!m_notebookCoreService) {
     return false;
   }
-  // Query vxcore's runtime sync state via getSyncStatus wrapper.
-  // Returns VXCORE_OK iff states_[notebookId] exists (notebook is registered).
-  QString throwaway;
-  const VxCoreError err = m_notebookCoreService->getSyncStatus(p_notebookId, throwaway);
-  const bool registered = (err == VXCORE_OK);
+  // Route through NotebookCoreService::isSyncRegistered
+  // (vxcore_sync_is_registered -> SyncManager::IsRegistered) which only
+  // acquires state_mutex_, NEVER the per-backend op_mutex_. The previous
+  // implementation called getSyncStatus -> GitSyncBackend::GetStatus and
+  // acquired op_mutex_ blockingly, racing against worker-thread
+  // StageAndCommit/FetchRebasePush into persistent VXCORE_ERR_SYNC_IN_PROGRESS
+  // (21) on every Sync Now click.
+  const bool registered = m_notebookCoreService->isSyncRegistered(p_notebookId);
   qCDebug(syncCategory) << "SyncService::isSyncRegistered: query notebookId:" << p_notebookId
                         << "registered:" << registered;
   return registered;

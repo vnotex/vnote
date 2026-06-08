@@ -422,6 +422,20 @@ bool NotebookCoreService::isSyncReady(const QString &p_notebookId) const {
   return result;
 }
 
+bool NotebookCoreService::isSyncRegistered(const QString &p_notebookId) const {
+  if (!checkContext()) {
+    return false;
+  }
+  int registered = 0;
+  const QByteArray nbId = p_notebookId.toUtf8();
+  const VxCoreError err = vxcore_sync_is_registered(m_context, nbId.constData(), &registered);
+  const bool result = (err == VXCORE_OK && registered != 0);
+  qCDebug(syncCategory) << "NotebookCoreService::isSyncRegistered: query notebookId:"
+                        << p_notebookId << "vxResult:" << static_cast<int>(err)
+                        << "registered:" << registered;
+  return result;
+}
+
 qint64 NotebookCoreService::getLastSyncUtc(const QString &p_notebookId) const {
   if (!checkContext()) {
     return 0;
