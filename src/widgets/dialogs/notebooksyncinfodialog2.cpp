@@ -12,6 +12,7 @@
 #include <QMetaObject>
 #include <QPushButton>
 #include <QShowEvent>
+#include <QVBoxLayout>
 
 #include <controllers/notebooksyncinfocontroller.h>
 #include <core/servicelocator.h>
@@ -40,6 +41,9 @@ const char *const kApplyButtonName = "applyButton";
 const char *const kOkButtonName = "okButton";
 const char *const kResetButtonName = "resetButton";
 const char *const kCancelButtonName = "cancelButton";
+// T29: object name for the read-only banner label; consumed by
+// test_notebook_sync_info_dialog2_readonly to assert visibility per RO state.
+const char *const kReadOnlyBannerLabelName = "readOnlyBannerLabel";
 
 const char *const kBootstrapModeProperty = "bootstrapMode";
 
@@ -60,6 +64,11 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
   setProperty(kBootstrapModeProperty, false);
 
   refreshDirtyButtons();
+
+  // T29: query the notebook's read-only state once at open and reflect it in
+  // the banner. Cached in m_isReadOnlyNotebook so the post-PAT-save modal
+  // path agrees with the banner the user just saw.
+  refreshReadOnlyBanner();
 
   // Populate read-only labels via the controller (authoritative source for
   // notebook display name + remote URL + formatted last-sync timestamp). The

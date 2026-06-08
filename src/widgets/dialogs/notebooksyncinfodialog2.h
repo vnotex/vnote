@@ -133,6 +133,12 @@ private:
   // in bootstrap mode where those buttons are hidden).
   void refreshDirtyButtons();
 
+  // T29: Show / hide the read-only banner based on the notebook's current
+  // read-only state (queried via NotebookCoreService::isNotebookReadOnly).
+  // Idempotent; safe to call multiple times. No-op in pre-create mode (no
+  // notebook ID yet to query).
+  void refreshReadOnlyBanner();
+
   ServiceLocator &m_services;
 
   QString m_notebookId;
@@ -146,6 +152,12 @@ private:
 
   // Read-only labels and editable inputs.
   QLabel *m_notebookNameLabel = nullptr;
+  // T29: Banner shown at the top of the dialog when the notebook is
+  // read-only (no PAT). Explains close-and-reopen flow. Hidden for writable
+  // notebooks and in pre-create mode. Lazily wrapped in italic warning
+  // style; not themed via QSS to keep the message visually distinct from
+  // regular labels.
+  QLabel *m_readOnlyBannerLabel = nullptr;
   QLineEdit *m_remoteUrlEdit = nullptr;
   QLabel *m_remoteUrlHintLabel = nullptr;
   QLineEdit *m_patEdit = nullptr;
@@ -163,6 +175,14 @@ private:
   // overload. In this mode, m_controller is nullptr and acceptedButtonClicked
   // bypasses applyChanges.
   bool m_preCreateMode = false;
+
+  // T29: Cached read-only state, refreshed at dialog open. Drives both the
+  // banner visibility and the "close-and-reopen" modal shown after a
+  // successful PAT save. Cached (rather than queried per use) so the modal
+  // path agrees with the banner the user just saw — querying mid-flow
+  // would race a hypothetical mid-dialog RO transition (which is forbidden
+  // per Metis Important #9/#10 but we are defensive).
+  bool m_isReadOnlyNotebook = false;
 };
 
 } // namespace vnotex

@@ -4,7 +4,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_INSTALL_BINDIR "." CACHE STRING "Binary dir for install")
 
-find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Core Gui Network PrintSupport Sql Svg Widgets WebChannel WebEngineWidgets LinguistTools)
+find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Concurrent Core Gui Network PrintSupport Sql Svg Widgets WebChannel WebEngineWidgets LinguistTools)
 find_package(Qt${QT_DEFAULT_MAJOR_VERSION} OPTIONAL_COMPONENTS Core5Compat)
 
 if ((QT_DEFAULT_MAJOR_VERSION GREATER 5))
@@ -102,6 +102,7 @@ add_subdirectory(views)
 add_subdirectory(controllers)
 
 target_link_libraries(vnote PRIVATE
+    Qt::Concurrent
     Qt::Core
     Qt::Gui
     Qt::Network
