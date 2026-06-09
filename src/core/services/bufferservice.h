@@ -242,6 +242,13 @@ signals:
   // p_state: the detected state (BufferState::FileChanged or BufferState::FileMissing).
   void bufferExternallyChanged(const QString &p_bufferId, BufferState p_state);
 
+  // Emitted when markDirty() refuses to mark a buffer dirty because the
+  // buffer's owning notebook is read-only (T16). The buffer is NOT added to
+  // the dirty set, the revision counter is NOT bumped, and no auto-save is
+  // scheduled. UI orchestration (T28 modal warning) subscribes to this so
+  // the user learns why their edit was discarded.
+  void dirtyRejectedReadOnly(const QString &p_bufferId);
+
 private:
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.
   void onAutoSaveTimerTick();

@@ -58,6 +58,14 @@ signals:
   void saveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                     const QString &p_errorMsg);
 
+  // Emitted when enqueue() refuses to dispatch a save because the buffer's
+  // owning notebook is read-only (T16). The disk file is NEVER touched in
+  // this case — the guard fires BEFORE any mutex acquisition, queue
+  // insertion, or worker dispatch. UI listeners (T28) react by warning the
+  // user. Emitted directly on the calling (UI) thread because enqueue()
+  // itself is required to run on the UI thread.
+  void saveRejectedReadOnly(const QString &p_bufferId);
+
 private:
   struct SaveJob {
     QString notebookId;

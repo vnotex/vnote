@@ -44,6 +44,19 @@ QString BufferSaveQueue::compositeKey(const QString &p_notebookId, const QString
 
 void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_bufferId,
                               const QString &p_content, quint64 p_revision) {
+  // Guard: refuse to write to a read-only notebook's buffer (T16).
+  // Checked BEFORE any mutex acquisition, queue insertion, or worker dispatch
+  // so the disk file is NEVER touched. Notebook RO state is immutable for
+  // the notebook's lifetime under the current design, so the enqueue-time
+  // check is sufficient — no worker-thread re-check is needed.
+  // Emitted directly on the caller (UI) thread; listeners (T28) warn the user.
+  if (m_coreService.isBufferReadOnly(p_bufferId)) {
+    qCWarning(bufferSaveQueueLog) << "enqueue rejected: buffer is read-only" << p_bufferId
+                                  << "notebook" << p_notebookId << "revision" << p_revision;
+    emit saveRejectedReadOnly(p_bufferId);
+    return;
+  }
+
   const QString key = compositeKey(p_notebookId, p_bufferId);
 
   SaveJob superseded;

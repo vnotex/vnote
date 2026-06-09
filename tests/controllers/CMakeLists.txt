@@ -152,3 +152,14 @@ add_qt_test(test_notebooknodecontroller_multiselect
     Qt6::Core
   GUILESS
 )
+
+add_qt_test(test_controllers_readonly_state
+  SOURCES
+    test_controllers_readonly_state.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

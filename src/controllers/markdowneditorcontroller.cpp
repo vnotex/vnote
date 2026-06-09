@@ -344,7 +344,7 @@ MarkdownEditorController::prepareBufferState(const Buffer2 &p_buffer) {
     state.content = QString::fromUtf8(p_buffer.peekContentRaw());
     auto resolved = p_buffer.resolvedPath();
     state.basePath = resolved.isEmpty() ? QString() : QFileInfo(resolved).path();
-    state.readOnly = false;
+    state.readOnly = p_buffer.isReadOnly();
     state.modified = p_buffer.isModified();
     state.valid = true;
     state.revision = p_buffer.getRevision();

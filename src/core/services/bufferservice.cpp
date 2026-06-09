@@ -393,14 +393,19 @@ void BufferService::markDirty(const QString &p_bufferId) {
     return;
   }
 
-  // Guard: read-only buffers should not be marked dirty.
-  if (BufferCoreService::isModified(p_bufferId)) {
-    // isModified doesn't tell us read-only, but if we can't even get the buffer, skip.
+  // Guard: read-only buffers must never enter the dirty set (T16).
+  // Notebook RO state is immutable for the notebook's lifetime under the
+  // current design (no live RO transition), so checking once at the entry
+  // point is sufficient. Emits dirtyRejectedReadOnly so the UI orchestration
+  // layer (T28 modal warning) can warn the user. Does NOT clear an existing
+  // dirty flag — under the no-live-transition rule a buffer cannot legally
+  // be dirty before becoming read-only, but if it ever were, we refuse to
+  // silently drop the unsaved edit.
+  if (BufferCoreService::isBufferReadOnly(p_bufferId)) {
+    qWarning() << "BufferService::markDirty rejected: buffer is read-only" << p_bufferId;
+    emit dirtyRejectedReadOnly(p_bufferId);
+    return;
   }
-
-  // Check read-only via buffer JSON (lightweight check).
-  // Buffer2::isReadOnly() is not available here, but vxcore buffers don't have a read-only flag
-  // in the C API. The read-only check is done at the ViewWindow2 level before calling markDirty.
 
   m_dirtyBuffers.insert(p_bufferId);
   // Atomic with the auto-save trigger: bump the revision so the snapshot

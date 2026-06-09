@@ -23,6 +23,20 @@ public:
   // Persist the buffer's in-memory content to disk.
   // Returns true on success.
   virtual bool saveBuffer(const QString &p_bufferId) = 0;
+
+  // Check whether the buffer's owning notebook is read-only.
+  //
+  // BufferSaveQueue::enqueue() consults this BEFORE acquiring any mutex so
+  // a read-only notebook can never reach setContentRaw/saveBuffer on disk.
+  //
+  // Default returns false (writable). The default keeps pre-existing fake
+  // implementations source-compatible — they continue to behave as before.
+  // Production code (BufferCoreService) overrides to query vxcore; new
+  // fakes that need to simulate a read-only notebook override and return true.
+  virtual bool isBufferReadOnly(const QString &p_bufferId) const {
+    (void)p_bufferId;
+    return false;
+  }
 };
 
 } // namespace vnotex
