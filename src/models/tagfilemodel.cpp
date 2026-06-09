@@ -4,11 +4,12 @@
 
 #include <core/services/notebookcoreservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 TagFileModel::TagFileModel(NotebookCoreService *p_notebookService, QObject *p_parent)
-    : QAbstractListModel(p_parent), m_notebookService(p_notebookService) {
-}
+    : QAbstractListModel(p_parent), m_notebookService(p_notebookService) {}
 
 void TagFileModel::setNodes(const QJsonArray &p_nodes, const QString &p_notebookId) {
   beginResetModel();
@@ -21,10 +22,9 @@ void TagFileModel::setNodes(const QJsonArray &p_nodes, const QString &p_notebook
     const QString filePath = obj.value(QStringLiteral("filePath")).toString();
 
     NodeInfo info;
-    info.id.notebookId =
-        obj.contains(QStringLiteral("notebookId"))
-            ? obj.value(QStringLiteral("notebookId")).toString()
-            : p_notebookId;
+    info.id.notebookId = obj.contains(QLatin1String(vxcore::kJsonKeyNotebookId))
+                             ? obj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString()
+                             : p_notebookId;
     info.id.relativePath = filePath;
     info.isFolder = false;
     info.isExternal = false;
@@ -131,6 +131,4 @@ QModelIndex TagFileModel::indexFromNodeId(const NodeIdentifier &p_nodeId) const 
   return QModelIndex();
 }
 
-QString TagFileModel::getNotebookId() const {
-  return m_notebookId;
-}
+QString TagFileModel::getNotebookId() const { return m_notebookId; }

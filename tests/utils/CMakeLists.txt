@@ -82,6 +82,18 @@ add_qt_test(test_fileutils2_staging
   GUILESS
 )
 
+# Grep-gate regression test: prevents reintroduction of shared-schema JSON
+# key literals in src/. See tests/utils/test_json_key_drift.cpp for the full
+# contract (gated literal set, allow-list, escape hatch).
+add_qt_test(test_json_key_drift
+  SOURCES
+    test_json_key_drift.cpp
+  GUILESS
+)
+target_compile_definitions(test_json_key_drift PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 target_include_directories(test_clipboard_image PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
