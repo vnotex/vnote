@@ -227,6 +227,23 @@ struct NotebookOpenEvent {
   static NotebookOpenEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for NotebookAfterClone.
+// Fires after NotebookCoreService::cloneNotebookFromUrl successfully clones
+// a remote VNote notebook into targetDir and registers it with NotebookManager.
+// Observers can use this to react to clone success (e.g., refresh the
+// notebook list, badge the notebook as read-only when isReadOnly=true).
+// Note: snapshot-only MVP -- this hook fires BEFORE any sync registration
+// (which never happens on the clone path; callers wanting RW sync invoke
+// enableSync separately).
+struct NotebookCloneEvent {
+  QString notebookId;
+  QString targetDir;
+  bool isReadOnly = false;
+
+  QVariantMap toVariantMap() const;
+  static NotebookCloneEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for ImageHostBeforeUpload, ImageHostAfterUpload.
 struct ImageHostUploadEvent {
   QString providerName;   // which provider is being used

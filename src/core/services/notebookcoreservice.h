@@ -37,6 +37,22 @@ public:
   // Notebook operations (7 methods).
   QString createNotebook(const QString &p_path, const QString &p_configJson, NotebookType p_type);
   QString openNotebook(const QString &p_path);
+  // Extended open accepting JSON options string. Currently honors:
+  //   { "readOnly": bool }  // default false
+  // Existing openNotebook(path) is preserved as a thin shim calling this
+  // method with "{}". Fires NotebookAfterOpen on success (same as openNotebook).
+  QString openNotebookEx(const QString &p_path, const QString &p_optionsJson);
+  // Clone a remote VNote notebook into p_targetDir (which must exist and be
+  // empty -- caller's responsibility). Wraps vxcore_sync_clone (T19). On
+  // success returns the new notebook id and fires NotebookAfterClone hook
+  // with NotebookCloneEvent {notebookId, targetDir, isReadOnly}.
+  // Returns empty string on failure (hook does NOT fire).
+  // p_credentialsJson may be empty -- the C ABI then installs a
+  // NoOpCredentialProvider (anonymous clone). PAT contents are NEVER logged.
+  // Per design (snapshot-only MVP), this method does NOT register sync; the
+  // caller must invoke enableSync separately if they want a RW notebook.
+  QString cloneNotebookFromUrl(const QString &p_targetDir, const QString &p_configJson,
+                               const QString &p_credentialsJson);
   bool closeNotebook(const QString &p_notebookId);
   QJsonArray listNotebooks() const;
   QJsonObject getNotebookConfig(const QString &p_notebookId) const;
@@ -66,6 +82,13 @@ public:
   // Recycle bin operations (bundled notebooks only).
   QString getRecycleBinPath(const QString &p_notebookId) const;
   bool emptyRecycleBin(const QString &p_notebookId);
+
+  // Read-only state query. Wraps vxcore_notebook_is_read_only so widgets do
+  // not need a back-door into the private VxCore context. Returns false on
+  // any error (notebook not found, null context, etc.) — defensive default
+  // so UI badges fail closed rather than misreporting an editable notebook
+  // as read-only.
+  bool isNotebookReadOnly(const QString &p_notebookId) const;
 
   // Sync operations (8 methods). Thin wrappers around vxcore C sync APIs.
   // All methods return VxCoreError directly so callers can react to specific

@@ -160,6 +160,10 @@ bool HookManager::doAction(const QString &p_hook, const NotebookOpenEvent &p_eve
   return doAction(p_hook, p_event.toVariantMap());
 }
 
+bool HookManager::doAction(const QString &p_hook, const NotebookCloneEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
 bool HookManager::doAction(const QString &p_hook, const ThemeSwitchEvent &p_event) {
   return doAction(p_hook, p_event.toVariantMap());
 }

@@ -386,6 +386,24 @@ NotebookOpenEvent NotebookOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== NotebookCloneEvent =====
+
+QVariantMap NotebookCloneEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("notebookId")] = notebookId;
+  m[QStringLiteral("targetDir")] = targetDir;
+  m[QStringLiteral("isReadOnly")] = isReadOnly;
+  return m;
+}
+
+NotebookCloneEvent NotebookCloneEvent::fromVariantMap(const QVariantMap &p_args) {
+  NotebookCloneEvent e;
+  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.targetDir = p_args.value(QStringLiteral("targetDir")).toString();
+  e.isReadOnly = p_args.value(QStringLiteral("isReadOnly")).toBool();
+  return e;
+}
+
 // ===== ImageHostUploadEvent =====
 
 QVariantMap ImageHostUploadEvent::toVariantMap() const {

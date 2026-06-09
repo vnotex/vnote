@@ -37,22 +37,37 @@ QString NotebookCoreService::createNotebook(const QString &p_path, const QString
 }
 
 QString NotebookCoreService::openNotebook(const QString &p_path) {
+  // Back-compat shim: delegate to openNotebookEx with empty options.
+  // Mirrors the vxcore_notebook_open -> vxcore_notebook_open_ex relationship
+  // established by T14 so the hook-firing logic lives in exactly one place.
+  return openNotebookEx(p_path, QStringLiteral("{}"));
+}
+
+QString NotebookCoreService::openNotebookEx(const QString &p_path, const QString &p_optionsJson) {
   if (!checkContext()) {
     return QString();
   }
 
+  // vxcore_notebook_open_ex treats nullptr / empty options the same as "{}".
+  // Forward the raw bytes when present; pass nullptr when the QString is
+  // empty so we don't allocate a stale temporary.
+  const QByteArray pathBytes = p_path.toUtf8();
+  const QByteArray optsBytes = p_optionsJson.toUtf8();
+  const char *optsCstr = p_optionsJson.isEmpty() ? nullptr : optsBytes.constData();
+
   char *notebookId = nullptr;
-  VxCoreError err = vxcore_notebook_open(m_context, p_path.toUtf8().constData(), &notebookId);
+  VxCoreError err =
+      vxcore_notebook_open_ex(m_context, pathBytes.constData(), optsCstr, &notebookId);
   if (err != VXCORE_OK) {
-    qWarning() << "openNotebook failed:" << QString::fromUtf8(vxcore_error_message(err));
+    qWarning() << "openNotebookEx failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
   }
   const QString resolvedId = cstrToQString(notebookId);
 
   // Fire NotebookAfterOpen hook so other modules (e.g., SyncService) can
-  // reconcile per-process runtime state with persisted on-disk config. The
-  // constant has existed in hooknames.h since the hook system was introduced
-  // but was never emitted until this change.
+  // reconcile per-process runtime state with persisted on-disk config.
+  // Matches openNotebook's behavior; the underlying notebook ID is the same
+  // regardless of whether the caller went through the legacy shim.
   if (!resolvedId.isEmpty() && m_hookMgr) {
     NotebookOpenEvent event;
     event.notebookId = resolvedId;
@@ -60,6 +75,55 @@ QString NotebookCoreService::openNotebook(const QString &p_path) {
     const QJsonObject cfg = getNotebookConfig(resolvedId);
     event.notebookName = cfg.value(QStringLiteral("name")).toString();
     m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
+  }
+
+  return resolvedId;
+}
+
+QString NotebookCoreService::cloneNotebookFromUrl(const QString &p_targetDir,
+                                                  const QString &p_configJson,
+                                                  const QString &p_credentialsJson) {
+  if (!checkContext()) {
+    return QString();
+  }
+
+  // Match vxcore_sync_clone's contract for credentials_json: when empty pass
+  // nullptr so the C ABI installs a NoOpCredentialProvider (anonymous clone).
+  // PAT contents inside p_credentialsJson are NEVER logged.
+  const QByteArray targetBytes = p_targetDir.toUtf8();
+  const QByteArray configBytes = p_configJson.toUtf8();
+  const QByteArray credsBytes = p_credentialsJson.toUtf8();
+  const char *credsCstr = p_credentialsJson.isEmpty() ? nullptr : credsBytes.constData();
+
+  char *notebookId = nullptr;
+  VxCoreError err = vxcore_sync_clone(m_context, targetBytes.constData(), configBytes.constData(),
+                                      credsCstr, &notebookId);
+  if (err != VXCORE_OK) {
+    qWarning() << "cloneNotebookFromUrl failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "targetDir:" << p_targetDir;
+    return QString();
+  }
+  const QString resolvedId = cstrToQString(notebookId);
+  if (resolvedId.isEmpty()) {
+    return QString();
+  }
+
+  // Determine read-only state for the hook payload. The clone path itself
+  // does NOT set RO (caller's responsibility per snapshot-only MVP); we
+  // query vxcore so the hook reflects the runtime truth even if a future
+  // caller flips RO between clone and hook delivery.
+  bool readOnly = false;
+  const QByteArray idBytes = resolvedId.toUtf8();
+  vxcore_notebook_is_read_only(m_context, idBytes.constData(), &readOnly);
+
+  // Fire NotebookAfterClone hook only on success so plugins never receive
+  // a false-positive clone notification (per T20 acceptance criteria).
+  if (m_hookMgr) {
+    NotebookCloneEvent event;
+    event.notebookId = resolvedId;
+    event.targetDir = p_targetDir;
+    event.isReadOnly = readOnly;
+    m_hookMgr->doAction(HookNames::NotebookAfterClone, event);
   }
 
   return resolvedId;
@@ -276,6 +340,24 @@ bool NotebookCoreService::emptyRecycleBin(const QString &p_notebookId) {
     return false;
   }
   return true;
+}
+
+bool NotebookCoreService::isNotebookReadOnly(const QString &p_notebookId) const {
+  if (!checkContext() || p_notebookId.isEmpty()) {
+    return false;
+  }
+  bool readOnly = false;
+  VxCoreError err =
+      vxcore_notebook_is_read_only(m_context, p_notebookId.toUtf8().constData(), &readOnly);
+  if (err != VXCORE_OK) {
+    // Notebook may not exist (e.g. just-closed or never-opened); a read-only
+    // hint that fails to resolve must NOT crash the UI. Log at debug level
+    // because this is expected for some lifecycle races.
+    qDebug() << "isNotebookReadOnly query failed for" << p_notebookId
+             << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return readOnly;
 }
 
 // Sync operations - thin wrappers around vxcore C sync APIs.

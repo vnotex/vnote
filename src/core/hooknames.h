@@ -26,6 +26,12 @@ inline const QLatin1String NotebookBeforeClose("vnote.notebook.before_close");
 // After a notebook is closed
 inline const QLatin1String NotebookAfterClose("vnote.notebook.after_close");
 
+// After a notebook is cloned from a remote URL (snapshot-only MVP).
+// Fires when NotebookCoreService::cloneNotebookFromUrl returns a non-empty
+// notebook id. Carries notebookId + targetDir + isReadOnly so observers can
+// react (e.g., toast the user, refresh the explorer, badge a read-only icon).
+inline const QLatin1String NotebookAfterClone("vnote.notebook.after_clone");
+
 // ===== Node Events =====
 // Triggered when node (file/folder) operations occur
 

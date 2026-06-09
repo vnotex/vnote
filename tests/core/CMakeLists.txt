@@ -776,3 +776,25 @@ add_qt_test(test_syncops_gate_release
     vxcore
   GUILESS
 )
+
+# T20 (open-notebook-remote-readonly): NotebookCoreService::cloneNotebookFromUrl
+# and openNotebookEx Qt wrappers around vxcore_sync_clone (T19) and
+# vxcore_notebook_open_ex (T14). Verifies clone happy path fires the
+# vnote.notebook.after_clone hook, malformed config skips the hook, and
+# readOnly:true option flips the runtime RO flag.
+add_qt_test(test_notebook_core_service_clone
+  SOURCES
+    test_notebook_core_service_clone.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+if(MSVC)
+  # vxcore self-registers the git backend via a token in
+  # git_sync_backend.cpp. MSVC's /OPT:REF drops the .obj if no externally
+  # referenced symbol pulls it in -- mirror the existing whole-archive trick
+  # used by test_notebookcoreservice_sync so vxcore_sync_clone can resolve
+  # the "git" backend.
+  target_link_options(test_notebook_core_service_clone PRIVATE /WHOLEARCHIVE:vxcore)
+endif()

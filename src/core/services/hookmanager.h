@@ -78,6 +78,7 @@ public:
   bool doAction(const QString &p_hook, const AttachmentRenameEvent &p_event);
   bool doAction(const QString &p_hook, const NotebookCloseEvent &p_event);
   bool doAction(const QString &p_hook, const NotebookOpenEvent &p_event);
+  bool doAction(const QString &p_hook, const NotebookCloneEvent &p_event);
   bool doAction(const QString &p_hook, const ThemeSwitchEvent &p_event);
   bool doAction(const QString &p_hook, const FileExternalChangeEvent &p_event);
   bool doAction(const QString &p_hook, const ImageHostUploadEvent &p_event);
