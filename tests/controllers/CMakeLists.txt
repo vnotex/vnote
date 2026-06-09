@@ -178,6 +178,7 @@ add_qt_test(test_controllers_readonly_state
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
   LINKS
+    core_configs
     core_services
     vxcore
   GUILESS
