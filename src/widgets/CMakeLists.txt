@@ -40,6 +40,7 @@ target_sources(vnote PRIVATE
     dialogs/notebooksyncinfodialog2.cpp dialogs/notebooksyncinfodialog2.h
     dialogs/notepropertiesdialog.cpp dialogs/notepropertiesdialog.h
     dialogs/notetemplateselector.cpp dialogs/notetemplateselector.h
+    dialogs/opennotebookdialog2.cpp dialogs/opennotebookdialog2.h
     dialogs/openvnote3notebookdialog2.cpp dialogs/openvnote3notebookdialog2.h
     dialogs/renametagdialog.cpp dialogs/renametagdialog.h
     dialogs/scrolldialog.cpp dialogs/scrolldialog.h

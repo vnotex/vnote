@@ -374,6 +374,48 @@ add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
     $<TARGET_FILE_DIR:test_notebookexplorer2_multiselect>
 )
 
+# T24 (open-notebook-remote-readonly): OpenNotebookDialog2 two-mode UI test.
+# NOT GUILESS — needs QApplication for QDialog widget construction, QStackedWidget
+# layout, and the QRadioButton click semantics. Compiles the dialog source plus
+# its base classes inline because there is no separate widgets static library
+# (opennotebookdialog2.cpp lives only inside the vnote executable target).
+# Mirrors the source list of test_notebooksyncinfodialog2 with the addition of
+# locationinputwithbrowsebutton.cpp (the local-mode root folder picker) and
+# opennotebookcontroller.cpp (the controller the dialog instantiates).
+add_qt_test(test_open_notebook_dialog2
+  SOURCES
+    test_open_notebook_dialog2.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_open_notebook_dialog2 PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_open_notebook_dialog2 PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_open_notebook_dialog2 POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_open_notebook_dialog2>
+)
+
 # T3: ViewWindow2::reload() (commit 94c53d36) + ViewSplit2 Reload menu (commit bf44c324).
 # NOT GUILESS — needs QApplication for QMessageBox automation in dirty-buffer
 # subtests (Save / Discard / Cancel branches).
