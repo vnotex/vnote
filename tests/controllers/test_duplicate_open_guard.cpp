@@ -109,7 +109,11 @@ void TestDuplicateOpenGuard::testOpenNotebookRejectsLocalFolderDuplicate() {
   bool found = false;
   QString retrievedRootFolder;
   for (const auto &nb : notebooks) {
-    if (nb.toObject().value(QStringLiteral("id")).toString() == QStringLiteral("notebook1-id")) {
+    // vxcore CLEARS the JSON-supplied id and generates its own UUID
+    // (libs/vxcore/src/core/notebook_manager.cpp:97 — config.id.clear()),
+    // so the test must search by the id returned from createNotebook,
+    // not by the id embedded in configJson1.
+    if (nb.toObject().value(QStringLiteral("id")).toString() == nbId1) {
       found = true;
       // Verify the rootFolder key is present and matches.
       retrievedRootFolder = nb.toObject().value(QStringLiteral("rootFolder")).toString();
@@ -159,13 +163,22 @@ void TestDuplicateOpenGuard::testOpenNotebookRejectsDuplicateOnCloneAndOpen() {
   QVERIFY(notebooks.size() >= 1);
   bool found = false;
   for (const auto &nb : notebooks) {
-    if (nb.toObject().value(QStringLiteral("id")).toString() == QStringLiteral("notebook2-id")) {
+    // vxcore CLEARS the JSON-supplied id (see subtest 1 comment); use the
+    // returned id from createNotebook.
+    if (nb.toObject().value(QStringLiteral("id")).toString() == nbId2) {
       found = true;
       QCOMPARE(nb.toObject().value(QStringLiteral("rootFolder")).toString(), rootFolder2);
       break;
     }
   }
   QVERIFY2(found, "Notebook2 not found in list after creation");
+
+  // Simulate orphan state: the clone validator's pre-flight check requires
+  // the destination directory NOT to exist (opennotebookcontroller.cpp:215-221).
+  // The duplicate-open branch is only reachable when a notebook is registered
+  // in vxcore but its on-disk directory has been externally removed (orphan
+  // registration). Remove rootFolder2 here so the duplicate check is reachable.
+  QVERIFY(QDir(rootFolder2).removeRecursively());
 
   // Now try the clone-and-open validation path with the same final destination.
   OpenNotebookController controller(m_services);
@@ -202,6 +215,15 @@ void TestDuplicateOpenGuard::testNewNotebookRejectsDuplicate() {
   QString nbId3 = nbSvc->createNotebook(rootFolder3, configJson3, NotebookType::Bundled);
   QVERIFY(!nbId3.isEmpty());
   // IMPORTANT: Keep the notebook OPEN during the test.
+
+  // Simulate orphan state: the new-notebook validator's pre-flight check
+  // requires the root folder to be EMPTY for bundled notebooks
+  // (newnotebookcontroller.cpp:60-65). The duplicate branch is only reachable
+  // when a notebook is registered in vxcore but its on-disk directory has
+  // been externally cleaned (orphan registration). Remove + recreate
+  // rootFolder3 as empty so the duplicate check is reachable.
+  QVERIFY(QDir(rootFolder3).removeRecursively());
+  QVERIFY(QDir().mkpath(rootFolder3));
 
   // Try to create another notebook with the same root folder.
   NewNotebookController controller(m_services);
