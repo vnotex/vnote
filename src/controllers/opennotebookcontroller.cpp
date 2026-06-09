@@ -19,6 +19,7 @@
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
+#include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
@@ -333,6 +334,21 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
   const QString remoteUrl = p_input.remoteUrl.trimmed();
   const QString pat = p_input.pat; // capture by value -- lambda lifetime is bounded by QFuture
 
+  // openurl-followups Item 2: create the cancellation token on the GUI
+  // thread BEFORE spawning the worker. The token outlives the worker
+  // (freed below in the GUI-thread tail), so the captured raw pointer the
+  // worker uses is guaranteed valid for the entire clone duration.
+  //
+  // If a previous clone left a stale token (shouldn't happen — cloneAndOpen
+  // is expected to be called serially per controller instance — but be
+  // defensive), free it first.
+  if (m_currentCloneToken) {
+    vxcore_sync_free_cancellation(m_currentCloneToken);
+    m_currentCloneToken = nullptr;
+  }
+  m_currentCloneToken = vxcore_sync_create_cancellation();
+  VxCoreSyncCancellation *cancellationToken = m_currentCloneToken;
+
   // Capture pointers + values for the worker; no ServiceLocator access from
   // the worker thread (the resolution above is the last DI access).
   // Progress signal fired immediately so the dialog can show indeterminate
@@ -342,29 +358,52 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
       Qt::QueuedConnection);
 
   // We deliberately discard the returned QFuture: the worker's only
-  // observable outputs are the queued-signal emissions, and the controller
-  // does NOT support mid-clone cancellation in MVP (per plan).
+  // observable outputs are the queued-signal emissions, and cancellation is
+  // routed through the cancellation token (not the QFuture).
   (void)QtConcurrent::run([this, notebookService, syncService, credStore, stagingDir, finalDir,
-                           configJson, credentialsJson, remoteUrl, pat, patEmpty]() {
+                           configJson, credentialsJson, remoteUrl, pat, patEmpty,
+                           cancellationToken]() {
+    // emitFinished: bounces back to the GUI thread, frees the cancellation
+    // token BEFORE emitting cloneFinished (so any listener calling
+    // cancelClone() in response sees nullptr), then emits.
     auto emitFinished = [this](CloneAndOpenResult result) {
       QMetaObject::invokeMethod(
-          this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
+          this,
+          [this, result]() {
+            if (m_currentCloneToken) {
+              vxcore_sync_free_cancellation(m_currentCloneToken);
+              m_currentCloneToken = nullptr;
+            }
+            emit cloneFinished(result);
+          },
+          Qt::QueuedConnection);
     };
 
     // Step 3: synchronous clone into the staging dir. This blocks the worker
     // for the full libgit2 fetch + checkout but never touches the UI thread.
-    const QString stagingNotebookId =
-        notebookService->cloneNotebookFromUrl(stagingDir, configJson, credentialsJson);
+    // openurl-followups Item 2: pass the cancellation token so the call can
+    // be aborted via cancelClone() on the GUI thread, and capture the
+    // underlying VxCoreError so we can distinguish VXCORE_ERR_CANCELLED
+    // from generic failures for the user-facing message.
+    VxCoreError cloneErr = VXCORE_OK;
+    const QString stagingNotebookId = notebookService->cloneNotebookFromUrl(
+        stagingDir, configJson, credentialsJson, cancellationToken, &cloneErr);
     if (stagingNotebookId.isEmpty()) {
       // Clone failed: clean up the staging dir; never touch finalDir (it
-      // doesn't exist yet).
+      // doesn't exist yet). Branch on VXCORE_ERR_CANCELLED for the
+      // user-friendly cancellation message; everything else gets the
+      // generic "verify URL / PAT / notebook" message.
       QString rmErr;
       FileUtils2::removeStagingDir(stagingDir, &rmErr);
       CloneAndOpenResult result;
       result.success = false;
-      result.errorMessage = tr("Failed to clone remote notebook. "
-                               "Verify the URL is reachable, the PAT (if any) is valid, "
-                               "and the remote is an actual VNote notebook.");
+      if (cloneErr == VXCORE_ERR_CANCELLED) {
+        result.errorMessage = tr("Clone cancelled by user.");
+      } else {
+        result.errorMessage = tr("Failed to clone remote notebook. "
+                                 "Verify the URL is reachable, the PAT (if any) is valid, "
+                                 "and the remote is an actual VNote notebook.");
+      }
       emitFinished(result);
       return;
     }
@@ -473,4 +512,20 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
         },
         Qt::QueuedConnection);
   });
+}
+
+void OpenNotebookController::cancelClone() {
+  // openurl-followups Item 2: signal cancellation. Lock-free per vxcore docs;
+  // safe to call from the GUI thread (or any thread, but the dialog will
+  // only call from GUI). No-op when no clone is in flight (token is null).
+  //
+  // The actual cleanup (free + null) happens on the GUI thread inside the
+  // emitFinished lambda BEFORE cloneFinished is emitted (see cloneAndOpen).
+  // We deliberately do NOT free the token here — the worker thread may
+  // still be reading the cancellation flag through its captured raw
+  // pointer; freeing would create a use-after-free race. Just flip the
+  // atomic flag and let the worker's cleanup path handle disposal.
+  if (m_currentCloneToken) {
+    vxcore_sync_cancel(m_currentCloneToken);
+  }
 }

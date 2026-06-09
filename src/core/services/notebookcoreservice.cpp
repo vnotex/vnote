@@ -82,8 +82,16 @@ QString NotebookCoreService::openNotebookEx(const QString &p_path, const QString
 
 QString NotebookCoreService::cloneNotebookFromUrl(const QString &p_targetDir,
                                                   const QString &p_configJson,
-                                                  const QString &p_credentialsJson) {
+                                                  const QString &p_credentialsJson,
+                                                  VxCoreSyncCancellation *p_cancellationToken,
+                                                  VxCoreError *p_outErr) {
+  if (p_outErr) {
+    *p_outErr = VXCORE_OK;
+  }
   if (!checkContext()) {
+    if (p_outErr) {
+      *p_outErr = VXCORE_ERR_NOT_INITIALIZED;
+    }
     return QString();
   }
 
@@ -95,9 +103,17 @@ QString NotebookCoreService::cloneNotebookFromUrl(const QString &p_targetDir,
   const QByteArray credsBytes = p_credentialsJson.toUtf8();
   const char *credsCstr = p_credentialsJson.isEmpty() ? nullptr : credsBytes.constData();
 
+  // Route through the cancellable variant unconditionally. When
+  // p_cancellationToken is null the C ABI behaves identically to the legacy
+  // vxcore_sync_clone (by design — vxcore_sync_clone is now itself a shim
+  // on top of vxcore_sync_clone_cancellable).
   char *notebookId = nullptr;
-  VxCoreError err = vxcore_sync_clone(m_context, targetBytes.constData(), configBytes.constData(),
-                                      credsCstr, &notebookId);
+  VxCoreError err =
+      vxcore_sync_clone_cancellable(m_context, targetBytes.constData(), configBytes.constData(),
+                                    credsCstr, p_cancellationToken, &notebookId);
+  if (p_outErr) {
+    *p_outErr = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "cloneNotebookFromUrl failed:" << QString::fromUtf8(vxcore_error_message(err))
                << "targetDir:" << p_targetDir;

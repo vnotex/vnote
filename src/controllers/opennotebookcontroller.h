@@ -5,6 +5,13 @@
 #include <QObject>
 #include <QString>
 
+// Forward-declare the opaque C handle in the global namespace so member
+// declarations below match the type used by vxcore's C API
+// (vxcore_sync_create_cancellation / vxcore_sync_cancel /
+// vxcore_sync_free_cancellation). Placing the forward decl inside vnotex
+// would create a distinct unrelated type, breaking conversions at use sites.
+struct VxCoreSyncCancellation_;
+
 namespace vnotex {
 
 class ServiceLocator;
@@ -150,7 +157,27 @@ public:
   //           finalDestDir).
   //        g. If PAT empty: skip sync registration (RO snapshot).
   //        h. Emit cloneFinished(success=true, ..., isReadOnly=PAT empty).
+  //
+  // openurl-followups Item 2: cancellation. The controller now creates a
+  // VxCoreSyncCancellation token at clone start, stores it in
+  // m_currentCloneToken, and forwards it to
+  // NotebookCoreService::cloneNotebookFromUrl. Callers may invoke
+  // cancelClone() from the GUI thread to request an in-flight abort. The
+  // token is freed on the GUI thread BEFORE cloneFinished is emitted so any
+  // listener calling cancelClone() in response sees a nullptr (safe no-op).
   void cloneAndOpen(const CloneAndOpenInput &p_input);
+
+  // openurl-followups Item 2: request cancellation of an in-flight clone.
+  // Safe to call from the GUI thread at any time:
+  //   - When no clone is in flight: no-op (m_currentCloneToken is null).
+  //   - When a clone is in flight: flips the token's atomic cancel flag.
+  //     The worker thread's libgit2 progress callback observes the flag on
+  //     the next chunk and aborts with VXCORE_ERR_CANCELLED. The worker
+  //     then runs the staging-dir cleanup rollback and emits cloneFinished
+  //     with errorMessage set to a "cancelled by user" message.
+  //
+  // Lock-free per vxcore_sync_cancel's documented contract.
+  void cancelClone();
 
 signals:
   // T22: Coarse-grained progress hook for the dialog's status label. phase is
@@ -166,6 +193,33 @@ signals:
 
 private:
   ServiceLocator &m_services;
+
+  // openurl-followups Item 2: cancellation handle for an in-flight clone.
+  //
+  // Ownership / lifecycle (CRITICAL — read carefully before changing):
+  //   * CREATED on the GUI thread inside cloneAndOpen, AFTER validation and
+  //     BEFORE QtConcurrent::run spawns the worker. Allocation happens via
+  //     vxcore_sync_create_cancellation (lock-free per vxcore docs).
+  //   * READ from BOTH threads while the clone is in flight:
+  //       - GUI thread: cancelClone() calls vxcore_sync_cancel(token). The
+  //         token API is documented lock-free, so no extra mutex.
+  //       - Worker thread: receives the same pointer through the closure
+  //         capture and passes it into
+  //         NotebookCoreService::cloneNotebookFromUrl, which forwards into
+  //         vxcore_sync_clone_cancellable -> libgit2 progress callback.
+  //   * FREED on the GUI thread inside the QMetaObject::invokeMethod
+  //     callback that bounces back from the worker, BEFORE emitting
+  //     cloneFinished. Setting m_currentCloneToken=nullptr before the
+  //     emission guarantees any listener calling cancelClone() in response
+  //     to cloneFinished sees a null pointer (safe no-op per vxcore's
+  //     null-safety contract).
+  //
+  // Because the GUI thread is the SOLE thread that mutates this member
+  // (initialization in cloneAndOpen and cleanup in the GUI-thread tail of
+  // the worker), no synchronization beyond Qt's thread affinity is needed.
+  // The worker thread reads its own captured copy of the raw pointer; the
+  // member itself is only TOUCHED on the GUI thread.
+  ::VxCoreSyncCancellation_ *m_currentCloneToken = nullptr;
 };
 
 } // namespace vnotex

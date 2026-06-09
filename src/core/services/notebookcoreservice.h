@@ -51,8 +51,24 @@ public:
   // NoOpCredentialProvider (anonymous clone). PAT contents are NEVER logged.
   // Per design (snapshot-only MVP), this method does NOT register sync; the
   // caller must invoke enableSync separately if they want a RW notebook.
+  //
+  // p_cancellationToken: optional cancellation handle (created by caller via
+  //   vxcore_sync_create_cancellation, freed by caller via
+  //   vxcore_sync_free_cancellation). When non-null, forwarded to
+  //   vxcore_sync_clone_cancellable so the call can be aborted from another
+  //   thread via vxcore_sync_cancel(token). When null, behavior matches the
+  //   pre-cancellation contract bit-for-bit.
+  //
+  // p_outErr: optional out-pointer for the raw VxCoreError code. The empty
+  //   QString return value cannot distinguish VXCORE_ERR_CANCELLED from any
+  //   other failure; callers that need this distinction (e.g.,
+  //   OpenNotebookController showing a user-friendly "cancelled" message vs
+  //   a generic error) should pass a non-null p_outErr and inspect it on
+  //   empty return.
   QString cloneNotebookFromUrl(const QString &p_targetDir, const QString &p_configJson,
-                               const QString &p_credentialsJson);
+                               const QString &p_credentialsJson,
+                               VxCoreSyncCancellation *p_cancellationToken = nullptr,
+                               VxCoreError *p_outErr = nullptr);
   bool closeNotebook(const QString &p_notebookId);
   QJsonArray listNotebooks() const;
   QJsonObject getNotebookConfig(const QString &p_notebookId) const;
