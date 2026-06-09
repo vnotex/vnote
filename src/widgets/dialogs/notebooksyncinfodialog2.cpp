@@ -155,6 +155,25 @@ void NotebookSyncInfoDialog2::setupUI() {
   auto *centralWidget = new QWidget(this);
   auto *formLayout = new QFormLayout(centralWidget);
 
+  // T29: Read-only banner shown at the top of the dialog when the notebook
+  // is read-only. Constructed hidden; refreshReadOnlyBanner toggles visibility
+  // post-setup once the notebook's RO state has been queried via
+  // NotebookCoreService::isNotebookReadOnly (T21). Italic warning style,
+  // styled inline rather than via QSS to preserve the visual distinction
+  // from regular labels regardless of the active theme.
+  m_readOnlyBannerLabel =
+      new QLabel(tr("This notebook is currently open in read-only mode. To enable editing, "
+                    "close this notebook and re-open it from the remote URL with a valid "
+                    "Personal Access Token. Adding a PAT here will be saved, but editing "
+                    "will only become available after closing and re-opening the notebook."),
+                 centralWidget);
+  m_readOnlyBannerLabel->setObjectName(QString::fromLatin1(kReadOnlyBannerLabelName));
+  m_readOnlyBannerLabel->setWordWrap(true);
+  m_readOnlyBannerLabel->setStyleSheet(
+      QStringLiteral("QLabel { color: #b58900; font-style: italic; padding: 8px; }"));
+  m_readOnlyBannerLabel->hide();
+  formLayout->addRow(m_readOnlyBannerLabel);
+
   // 1. Notebook name (read-only).
   m_notebookNameLabel = new QLabel(centralWidget);
   m_notebookNameLabel->setObjectName(QString::fromLatin1(kNotebookNameLabelName));
@@ -417,6 +436,40 @@ void NotebookSyncInfoDialog2::acceptedButtonClicked() {
   // T11: the controller decides whether to send URL only, PAT only, or both
   // based on which fields are dirty. Then we still close the dialog so the
   // bootstrap-mode flow can complete.
+  //
+  // T29 follow-up: when the notebook is read-only (cloned without PAT) and
+  // the user just typed a PAT, defer accept() until applyComplete reports
+  // success so we can pop a final "close and re-open" modal. Per MVP scope
+  // we do NOT live-transition RO→RW — the user must close and re-open to
+  // pick up the new credentials. The modal is shown ONLY on success so the
+  // user isn't told their PAT was saved when in fact a backend failure
+  // surfaced via the error() signal.
+  if (m_controller && m_isReadOnlyNotebook && m_patEdit && !m_patEdit->text().isEmpty()) {
+    auto conn = std::make_shared<QMetaObject::Connection>();
+    *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                    [this, conn](bool p_success) {
+                      QObject::disconnect(*conn);
+                      if (p_success) {
+                        QMessageBox::information(
+                            this, tr("PAT saved"),
+                            tr("Personal Access Token has been saved. Please close "
+                               "and re-open this notebook to enable editing."));
+                        if (m_remoteUrlEdit) {
+                          m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
+                        }
+                        if (m_patEdit) {
+                          m_patEdit->clear();
+                        }
+                        refreshDirtyButtons();
+                        accept();
+                      }
+                      // On failure, stay open so the user can retry; the
+                      // error() signal surfaces the message via onError.
+                    });
+    m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
+    return;
+  }
+
   if (m_controller) {
     m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
   }
@@ -469,6 +522,25 @@ void NotebookSyncInfoDialog2::appliedButtonClicked() {
       return;
     }
 
+    // T29 follow-up: if the user just typed a PAT into a read-only notebook,
+    // wire a one-shot completion handler BEFORE the async applyChanges call
+    // so applyComplete cannot race past our connect. The handler pops the
+    // "close and re-open" modal on success. Unlike the OK path this does NOT
+    // accept() the dialog (Apply keeps the dialog open by contract).
+    if (m_isReadOnlyNotebook && m_patEdit && !m_patEdit->text().isEmpty()) {
+      auto conn = std::make_shared<QMetaObject::Connection>();
+      *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                      [this, conn](bool p_success) {
+                        QObject::disconnect(*conn);
+                        if (p_success) {
+                          QMessageBox::information(
+                              this, tr("PAT saved"),
+                              tr("Personal Access Token has been saved. Please close "
+                                 "and re-open this notebook to enable editing."));
+                        }
+                      });
+    }
+
     m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
   }
 
@@ -519,6 +591,36 @@ void NotebookSyncInfoDialog2::onConflictsDetected(const QString &p_notebookId,
   }
   setCurrentStateLabel(SyncStateLevel::Conflict,
                        tr("Conflicts (%1 file(s))").arg(p_conflictFiles.size()));
+}
+
+void NotebookSyncInfoDialog2::refreshReadOnlyBanner() {
+  // T29: pre-create mode has no notebook ID yet to query, so the banner is
+  // always hidden. The empty-id guard is defense-in-depth in case the
+  // (services, notebookId, parent) ctor is ever invoked with an empty id.
+  if (m_preCreateMode || m_notebookId.isEmpty()) {
+    if (m_readOnlyBannerLabel) {
+      m_readOnlyBannerLabel->hide();
+    }
+    m_isReadOnlyNotebook = false;
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    // Defensive: the dialog is only buildable with a wired ServiceLocator,
+    // but a unit-test ServiceLocator could lack NotebookCoreService. Fail
+    // closed (no banner) rather than asserting and crashing.
+    if (m_readOnlyBannerLabel) {
+      m_readOnlyBannerLabel->hide();
+    }
+    m_isReadOnlyNotebook = false;
+    return;
+  }
+
+  m_isReadOnlyNotebook = notebookService->isNotebookReadOnly(m_notebookId);
+  if (m_readOnlyBannerLabel) {
+    m_readOnlyBannerLabel->setVisible(m_isReadOnlyNotebook);
+  }
 }
 
 void NotebookSyncInfoDialog2::setCurrentStateLabel(SyncStateLevel p_level, const QString &p_text) {

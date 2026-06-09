@@ -546,3 +546,43 @@ add_custom_command(TARGET test_notebook_selector2_readonly_badge POST_BUILD
     $<TARGET_FILE_DIR:test_notebook_selector2_readonly_badge>
 )
 
+# T29 follow-up (open-notebook-remote-readonly): read-only banner visibility
+# in NotebookSyncInfoDialog2. Mirrors the source layout of
+# test_notebooksyncinfodialog2 — the dialog cpp + its base widgets are
+# compiled inline because there is no separate widgets static library
+# (notebooksyncinfodialog2.cpp lives only inside the vnote executable
+# target). NOT GUILESS — needs QApplication for QDialog widget construction
+# and QLabel visibility checks.
+add_qt_test(test_notebook_sync_info_dialog2_readonly
+  SOURCES
+    test_notebook_sync_info_dialog2_readonly.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notebook_sync_info_dialog2_readonly PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_notebook_sync_info_dialog2_readonly PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_notebook_sync_info_dialog2_readonly POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebook_sync_info_dialog2_readonly>
+)
+
