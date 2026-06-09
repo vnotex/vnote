@@ -551,6 +551,25 @@ if(MSVC)
   target_link_options(test_sync_close_block PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
+# Verifies the Qt-side wiring of the notebook-close → sync runtime release
+# path that fixes the Windows pack-file handle leak. After this fix,
+# closing a sync-enabled notebook releases the libgit2 git_repository*
+# (and the mmapped .pack files on Windows) immediately, instead of
+# leaking them until vnote.exe exits. The vxcore side of the same fix
+# (SyncManager::UnregisterBackend / vxcore_sync_unregister_notebook) is
+# covered exhaustively by libs/vxcore/tests/test_sync_unregister.cpp.
+add_qt_test(test_sync_close_releases_handles
+  SOURCES
+    test_sync_close_releases_handles.cpp
+  LINKS
+    core_services
+    vxcore
+)
+target_compile_definitions(test_sync_close_releases_handles PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_close_releases_handles PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
 # T2 (sync-queue-convergence): Characterization test for AUTO sync signal
 # sequence. Locks in CURRENT pre-refactor behavior: file.saved fires
 # EventBridge::syncStarted/Finished while SyncWorker stays silent on the

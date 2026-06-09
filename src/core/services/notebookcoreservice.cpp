@@ -405,6 +405,14 @@ VxCoreError NotebookCoreService::disableSync(const QString &p_notebookId) {
   return vxcore_sync_disable(m_context, nbId.constData());
 }
 
+VxCoreError NotebookCoreService::unregisterSyncRuntime(const QString &p_notebookId) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  return vxcore_sync_unregister_notebook(m_context, nbId.constData());
+}
+
 VxCoreError NotebookCoreService::triggerSync(const QString &p_notebookId) {
   if (!checkContext()) {
     return VXCORE_ERR_NOT_INITIALIZED;

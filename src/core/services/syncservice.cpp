@@ -171,10 +171,26 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
     // future caller of NotebookCoreService::closeNotebook (ManageNotebooks
     // close, NewNotebook rollback, VNote3 migration, etc.). deleteCredentials
     // is idempotent so notebooks that never had sync enabled are a no-op.
+    //
+    // T-fix-pack-handle-leak: ALSO release the vxcore sync runtime so
+    // libgit2's git_repository* (and the mmapped .pack files it owns on
+    // Windows) is freed immediately. Without this the user cannot delete
+    // the notebook folder from Windows Explorer until vnote.exe exits.
+    // Order matters: release runtime FIRST while the notebookId is still
+    // meaningful and before the keychain delete races; deleteCredentials
+    // runs second so any future caller's expectations about PAT cleanup
+    // are unchanged. NotebookBeforeClose already refuses close while a
+    // sync is in flight (syncservice.cpp:128 handler), so by the time we
+    // get here the sync worker is guaranteed not to be touching the
+    // backend pointer we're about to destroy.
     hookMgr->addAction<NotebookCloseEvent>(
         HookNames::NotebookAfterClose,
         [this](HookContext &, const NotebookCloseEvent &p_event) {
-          if (m_credentialsStore && !p_event.notebookId.isEmpty()) {
+          if (p_event.notebookId.isEmpty()) {
+            return;
+          }
+          unregisterSyncRuntime(p_event.notebookId);
+          if (m_credentialsStore) {
             m_credentialsStore->deleteCredentials(p_event.notebookId);
           }
         },
@@ -472,6 +488,32 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
           Qt::QueuedConnection);
     });
   });
+}
+
+void SyncService::unregisterSyncRuntime(const QString &p_notebookId) {
+  if (p_notebookId.isEmpty()) {
+    return;
+  }
+  if (!m_notebookCoreService) {
+    qCWarning(syncCategory)
+        << "SyncService::unregisterSyncRuntime: NotebookCoreService unavailable for"
+        << p_notebookId;
+    return;
+  }
+  // Synchronous, lock-free against libgit2 — SyncManager::UnregisterBackend
+  // moves the unique_ptr<ISyncBackend> out of backends_ under state_mutex_
+  // and lets it destruct AFTER the lock is released. The destructor runs
+  // ~GitSyncBackend → git_repository_free → unmap pack files. No worker
+  // queue needed; this is short enough to run on the GUI thread (the close
+  // path is already on the GUI thread).
+  const VxCoreError err = m_notebookCoreService->unregisterSyncRuntime(p_notebookId);
+  if (err != VXCORE_OK) {
+    qCWarning(syncCategory) << "SyncService::unregisterSyncRuntime: failed for" << p_notebookId
+                            << ":" << vxErrorToString(err);
+  } else {
+    qCDebug(syncCategory) << "SyncService::unregisterSyncRuntime: released runtime for"
+                          << p_notebookId;
+  }
 }
 
 void SyncService::triggerSyncNow(const QString &p_notebookId) {

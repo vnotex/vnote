@@ -119,6 +119,14 @@ public:
   VxCoreError enableSync(const QString &p_notebookId, const QString &p_configJson,
                          const QString &p_credentialsJson = QString());
   VxCoreError disableSync(const QString &p_notebookId);
+  // Release the per-notebook sync runtime (frees the libgit2 repo handle and
+  // unmaps any mmapped .pack files on Windows) WITHOUT touching on-disk sync
+  // config or the keychain PAT. Wraps vxcore_sync_unregister_notebook.
+  // Idempotent: returns VXCORE_OK on a notebook that was never registered.
+  // Used by SyncService's NotebookAfterClose handler so closing a notebook
+  // releases the file handles immediately instead of leaking them until app
+  // exit. NEVER logs PAT or remote URL values.
+  VxCoreError unregisterSyncRuntime(const QString &p_notebookId);
   VxCoreError triggerSync(const QString &p_notebookId);
   // Wave 12.2 / F5.9: cancellable triggerSync. @p_cancellationHandle is the
   // raw VxCoreSyncCancellation* (forward-declared below) owned by

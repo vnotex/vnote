@@ -84,6 +84,19 @@ public:
   // disableFinished, deletes the keychain entry via SyncCredentialsStore.
   void disableSyncForNotebook(const QString &p_notebookId);
 
+  // Release the vxcore sync runtime for a notebook (frees the libgit2 repo
+  // handle so Windows unmaps mmapped .pack files and closes their file
+  // descriptors) WITHOUT touching on-disk sync config or the keychain PAT.
+  // Safe to call on a notebook that was never sync-registered (idempotent).
+  // Logs and swallows vxcore errors via qCWarning(syncCategory); the close
+  // path MUST always proceed. NEVER logs PAT or remote URL values.
+  //
+  // Fired by the NotebookAfterClose hook handler in the SyncService ctor
+  // BEFORE the existing keychain credential deletion, so the libgit2 handle
+  // is released while the notebook ID is still meaningful and before any
+  // other cleanup races.
+  void unregisterSyncRuntime(const QString &p_notebookId);
+
   // Trigger a one-shot sync for a notebook. Invokes SyncWorker::triggerSync.
   void triggerSyncNow(const QString &p_notebookId);
 
