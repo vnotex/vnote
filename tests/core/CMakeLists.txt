@@ -798,3 +798,17 @@ if(MSVC)
   # the "git" backend.
   target_link_options(test_notebook_core_service_clone PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
+
+# T21 (open-notebook-remote-readonly): NotebookCoreService::isNotebookReadOnly
+# delegate. Verifies the Qt-side read-through wrapper around
+# vxcore_notebook_is_read_only -- per the investigation SessionConfig does
+# NOT mirror NotebookRecord, so this lightweight delegate is the single
+# Qt-flavored entry point for UI consumers (lock badge, Sync Info guidance).
+add_qt_test(test_notebook_core_service_readonly
+  SOURCES
+    test_notebook_core_service_readonly.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
