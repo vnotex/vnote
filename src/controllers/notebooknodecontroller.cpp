@@ -31,6 +31,8 @@
 #include <views/notebooknodeview.h>
 #include <widgets/messageboxhelper.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObject *p_parent)
@@ -61,7 +63,7 @@ QString NotebookNodeController::buildAbsolutePath(const NodeIdentifier &p_nodeId
   // Get notebook root path from service
   auto *notebookService = m_services.get<NotebookCoreService>();
   QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
-  QString rootPath = config.value(QStringLiteral("rootFolder")).toString();
+  QString rootPath = config.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
 
   if (rootPath.isEmpty()) {
     return QString();
@@ -281,7 +283,7 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
   {
     auto *notebookService = m_services.get<NotebookCoreService>();
     QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
-    QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+    QString nbType = nbConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString();
     bool isBundled = (nbType == QStringLiteral("bundled"));
     if (isBundled) {
       auto *deleteAction = p_menu->addAction(tr("&Delete"));
@@ -365,7 +367,7 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
   {
     auto *notebookService = m_services.get<NotebookCoreService>();
     QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
-    QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+    QString nbType = nbConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString();
     bool isBundled = (nbType == QStringLiteral("bundled"));
     if (isBundled) {
       auto *tagAction = p_menu->addAction(tr("&Tags"));
@@ -391,7 +393,7 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
 
     auto *notebookService = m_services.get<NotebookCoreService>();
     QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
-    QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+    QString nbType = nbConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString();
     bool isBundled = (nbType == QStringLiteral("bundled"));
     if (!p_nodeId.isRoot() && isBundled) {
       auto *markAction = p_menu->addAction(tr("&Mark"));
@@ -505,9 +507,9 @@ void NotebookNodeController::closeOrphanedBuffer(const NodeIdentifier &p_nodeId)
   QString bufferId;
   for (const auto &bufVal : buffers) {
     auto obj = bufVal.toObject();
-    if (obj[QStringLiteral("notebookId")].toString() == p_nodeId.notebookId &&
+    if (obj[QLatin1String(vxcore::kJsonKeyNotebookId)].toString() == p_nodeId.notebookId &&
         obj[QStringLiteral("relativePath")].toString() == p_nodeId.relativePath) {
-      bufferId = obj[QStringLiteral("id")].toString();
+      bufferId = obj[QLatin1String(vxcore::kJsonKeyId)].toString();
       break;
     }
   }
@@ -547,7 +549,7 @@ void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds)
   // Query notebook type: raw notebooks have no recycle bin, so delete permanently.
   auto *notebookService = m_services.get<NotebookCoreService>();
   QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeIds.first().notebookId);
-  QString nbType = nbConfig.value(QStringLiteral("type")).toString();
+  QString nbType = nbConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString();
   bool isBundled = (nbType == QStringLiteral("bundled"));
 
   // Emit signal to request delete confirmation from view
@@ -617,12 +619,12 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
           notebookService->getFolderConfig(nodeId.notebookId, nodeId.relativePath);
       if (!folderConfig.isEmpty()) {
         isFolder = true;
-        nodeName = folderConfig.value(QStringLiteral("name")).toString();
+        nodeName = folderConfig.value(QLatin1String(vxcore::kJsonKeyName)).toString();
       } else {
         QJsonObject fileInfo = notebookService->getFileInfo(nodeId.notebookId, nodeId.relativePath);
         if (!fileInfo.isEmpty()) {
           isFolder = false;
-          nodeName = fileInfo.value(QStringLiteral("name")).toString();
+          nodeName = fileInfo.value(QLatin1String(vxcore::kJsonKeyName)).toString();
         } else {
           emit errorOccurred(tr("Error"), tr("Node not found: %1").arg(nodeId.relativePath));
           continue;
@@ -913,10 +915,10 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
     QJsonArray buffers = bufferSvc->listBuffers();
     for (int i = 0; i < buffers.size(); ++i) {
       QJsonObject bufObj = buffers[i].toObject();
-      QString nbId = bufObj.value(QStringLiteral("notebookId")).toString();
+      QString nbId = bufObj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
       QString filePath = bufObj.value(QStringLiteral("filePath")).toString();
       if (nbId == p_nodeId.notebookId && filePath == p_nodeId.relativePath) {
-        QString bufferId = bufObj.value(QStringLiteral("id")).toString();
+        QString bufferId = bufObj.value(QLatin1String(vxcore::kJsonKeyId)).toString();
         Buffer2 buf = bufferSvc->getBufferHandle(bufferId);
         if (buf.isValid() && buf.isModified()) {
           int ret = MessageBoxHelper::questionSaveDiscardCancel(
@@ -1289,8 +1291,8 @@ void NotebookNodeController::pinNodesToQuickAccess(const QList<NodeIdentifier> &
     // Look up UUID from file info.
     QString uuid;
     QJsonObject fileInfo = notebookSvc->getFileInfo(id.notebookId, id.relativePath);
-    if (!fileInfo.isEmpty() && fileInfo.contains(QStringLiteral("id"))) {
-      uuid = fileInfo[QStringLiteral("id")].toString();
+    if (!fileInfo.isEmpty() && fileInfo.contains(QLatin1String(vxcore::kJsonKeyId))) {
+      uuid = fileInfo[QLatin1String(vxcore::kJsonKeyId)].toString();
     }
 
     SessionConfig::QuickAccessItem item;

@@ -5,12 +5,12 @@
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
-ManageNotebooksController::ManageNotebooksController(ServiceLocator &p_services,
-                                                     QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {
-}
+ManageNotebooksController::ManageNotebooksController(ServiceLocator &p_services, QObject *p_parent)
+    : QObject(p_parent), m_services(p_services) {}
 
 QJsonArray ManageNotebooksController::listNotebooks() const {
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -28,10 +28,10 @@ NotebookInfo ManageNotebooksController::getNotebookInfo(const QString &p_noteboo
   QJsonObject config = notebookService->getNotebookConfig(p_notebookId);
 
   info.id = p_notebookId;
-  info.name = config["name"].toString();
-  info.description = config["description"].toString();
-  info.rootFolder = config["rootFolder"].toString();
-  info.type = config["type"].toString();
+  info.name = config[QLatin1String(vxcore::kJsonKeyName)].toString();
+  info.description = config[QLatin1String(vxcore::kJsonKeyDescription)].toString();
+  info.rootFolder = config[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
+  info.type = config[QLatin1String(vxcore::kJsonKeyType)].toString();
 
   // Map type to user-friendly display name.
   if (info.type == QStringLiteral("bundled")) {
@@ -45,8 +45,8 @@ NotebookInfo ManageNotebooksController::getNotebookInfo(const QString &p_noteboo
   return info;
 }
 
-ManageNotebooksValidationResult ManageNotebooksController::validateName(
-    const QString &p_name) const {
+ManageNotebooksValidationResult
+ManageNotebooksController::validateName(const QString &p_name) const {
   ManageNotebooksValidationResult result;
 
   if (p_name.trimmed().isEmpty()) {
@@ -58,8 +58,8 @@ ManageNotebooksValidationResult ManageNotebooksController::validateName(
   return result;
 }
 
-NotebookOperationResult ManageNotebooksController::updateNotebook(
-    const NotebookUpdateInput &p_input) {
+NotebookOperationResult
+ManageNotebooksController::updateNotebook(const NotebookUpdateInput &p_input) {
   NotebookOperationResult result;
 
   // Validate name first.
@@ -82,8 +82,8 @@ NotebookOperationResult ManageNotebooksController::updateNotebook(
   // vxcore does NOT support partial updates - missing fields get default values.
   // Note: rootFolder and type in the JSON are ignored by vxcore (not part of NotebookConfig).
   QJsonObject config = notebookService->getNotebookConfig(p_input.notebookId);
-  config["name"] = p_input.name.trimmed();
-  config["description"] = p_input.description;
+  config[QLatin1String(vxcore::kJsonKeyName)] = p_input.name.trimmed();
+  config[QLatin1String(vxcore::kJsonKeyDescription)] = p_input.description;
 
   QString configJson = QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact));
   if (!notebookService->updateNotebookConfig(p_input.notebookId, configJson)) {
@@ -108,7 +108,8 @@ NotebookOperationResult ManageNotebooksController::closeNotebook(const QString &
   auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService->closeNotebook(p_notebookId)) {
     result.success = false;
-    result.errorMessage = tr("Failed to close notebook. There may be unsaved changes in open files. Please save or discard changes and try again.");
+    result.errorMessage = tr("Failed to close notebook. There may be unsaved changes in open "
+                             "files. Please save or discard changes and try again.");
     return result;
   }
 

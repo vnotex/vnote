@@ -9,15 +9,14 @@
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 TagController::TagController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {
-}
+    : QObject(p_parent), m_services(p_services) {}
 
-void TagController::setNotebookId(const QString &p_notebookId) {
-  m_notebookId = p_notebookId;
-}
+void TagController::setNotebookId(const QString &p_notebookId) { m_notebookId = p_notebookId; }
 
 void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   if (p_selectedTags.isEmpty()) {
@@ -52,8 +51,8 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   m_matchingNodes = QJsonArray();
   for (const QJsonValue &val : rawNodes) {
     QJsonObject obj = val.toObject();
-    if (!obj.contains(QLatin1String("notebookId"))) {
-      obj.insert(QLatin1String("notebookId"), notebookId);
+    if (!obj.contains(QLatin1String(vxcore::kJsonKeyNotebookId))) {
+      obj.insert(QLatin1String(vxcore::kJsonKeyNotebookId), notebookId);
     }
     m_matchingNodes.append(obj);
   }
@@ -182,7 +181,8 @@ void TagController::handleNewTagResult(const QString &p_notebookId, const QStrin
   }
 }
 
-void TagController::handleDeleteTagConfirmed(const QString &p_notebookId, const QString &p_tagName) {
+void TagController::handleDeleteTagConfirmed(const QString &p_notebookId,
+                                             const QString &p_tagName) {
   const QString notebookId = resolveNotebookId(p_notebookId);
   if (notebookId.isEmpty()) {
     emit errorOccurred(tr("Delete Tag"), tr("No notebook selected."));
@@ -226,7 +226,7 @@ QString TagController::extractTagName(const QJsonValue &p_tagValue) const {
   }
 
   const QJsonObject tagObj = p_tagValue.toObject();
-  return tagObj.value(QString(QLatin1String("name"))).toString();
+  return tagObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
 }
 
 NodeIdentifier TagController::extractNodeIdentifier(const QJsonValue &p_nodeValue) const {
@@ -237,7 +237,7 @@ NodeIdentifier TagController::extractNodeIdentifier(const QJsonValue &p_nodeValu
     return nodeId;
   }
 
-  const QString notebookId = nodeObj.value(QString(QLatin1String("notebookId"))).toString();
+  const QString notebookId = nodeObj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   if (!notebookId.isEmpty()) {
     nodeId.notebookId = notebookId;
   } else {

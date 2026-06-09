@@ -13,6 +13,8 @@
 #include <export/exporter.h>
 #include <utils/fileutils.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 ExportController::ExportController(ServiceLocator &p_services, QObject *p_parent)
@@ -187,7 +189,7 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
   const auto fileArray = children.value(QStringLiteral("files")).toArray();
   for (const auto &fileValue : fileArray) {
     const auto fileObj = fileValue.toObject();
-    const auto name = fileObj.value(QStringLiteral("name")).toString();
+    const auto name = fileObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
     if (name.isEmpty()) {
       continue;
     }
@@ -217,7 +219,7 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
   const auto folderArray = children.value(QStringLiteral("folders")).toArray();
   for (const auto &folderValue : folderArray) {
     const auto folderObj = folderValue.toObject();
-    const auto name = folderObj.value(QStringLiteral("name")).toString();
+    const auto name = folderObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
     if (name.isEmpty()) {
       continue;
     }
@@ -248,7 +250,7 @@ QString ExportController::notebookBatchName(const QString &p_notebookId) const {
   }
 
   const auto config = notebookService->getNotebookConfig(p_notebookId);
-  const auto rootFolder = config.value(QStringLiteral("rootFolder")).toString();
+  const auto rootFolder = config.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
   const auto name = QFileInfo(rootFolder).fileName();
   return name.isEmpty() ? p_notebookId : name;
 }

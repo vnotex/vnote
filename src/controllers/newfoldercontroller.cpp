@@ -7,6 +7,8 @@
 #include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 NewFolderController::NewFolderController(ServiceLocator &p_services, QObject *p_parent)
@@ -38,7 +40,7 @@ FolderValidationResult NewFolderController::validateName(const QString &p_notebo
     QJsonArray folders = children.value("folders").toArray();
     for (const auto &folder : folders) {
       QJsonObject folderObj = folder.toObject();
-      QString existingName = folderObj.value("name").toString();
+      QString existingName = folderObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
       if (existingName.compare(name, Qt::CaseInsensitive) == 0) {
         result.valid = false;
         result.message = tr("Name conflicts with existing folder.");
@@ -49,7 +51,7 @@ FolderValidationResult NewFolderController::validateName(const QString &p_notebo
     QJsonArray files = children.value("files").toArray();
     for (const auto &file : files) {
       QJsonObject fileObj = file.toObject();
-      QString existingName = fileObj.value("name").toString();
+      QString existingName = fileObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
       if (existingName.compare(name, Qt::CaseInsensitive) == 0) {
         result.valid = false;
         result.message = tr("Name conflicts with existing note.");

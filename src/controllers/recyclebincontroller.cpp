@@ -5,6 +5,9 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 RecycleBinController::RecycleBinController(ServiceLocator &p_services, QObject *p_parent)
@@ -34,7 +37,7 @@ QString RecycleBinController::getNotebookName(const QString &p_notebookId) const
   }
 
   QJsonObject config = notebookService->getNotebookConfig(p_notebookId);
-  return config.value("name").toString();
+  return config.value(QLatin1String(vxcore::kJsonKeyName)).toString();
 }
 
 RecycleBinResult RecycleBinController::prepareRecycleBinPath(const QString &p_notebookId) {

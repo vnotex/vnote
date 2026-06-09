@@ -20,6 +20,8 @@
 #include <core/services/searchservice.h>
 #include <models/searchresultmodel.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 SearchController::SearchController(ServiceLocator &p_services, QObject *p_parent)
@@ -94,7 +96,7 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
 
     const QJsonArray notebooks = notebookSvc->listNotebooks();
     for (const QJsonValue &val : notebooks) {
-      const QString notebookId = val.toObject().value(QStringLiteral("id")).toString();
+      const QString notebookId = val.toObject().value(QLatin1String(vxcore::kJsonKeyId)).toString();
       if (!notebookId.isEmpty()) {
         SearchTarget target;
         target.notebookId = notebookId;
@@ -142,7 +144,7 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
     QHash<QString, QSet<QString>> filesByNotebook;
     for (const QJsonValue &val : buffers) {
       const QJsonObject obj = val.toObject();
-      const QString notebookId = obj.value(QStringLiteral("notebookId")).toString();
+      const QString notebookId = obj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
       QString filePath = obj.value(QStringLiteral("path")).toString();
       if (filePath.isEmpty()) {
         filePath = obj.value(QStringLiteral("filePath")).toString();

@@ -7,14 +7,17 @@
 #include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 ImportFolderController::ImportFolderController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
-ImportFolderValidationResult ImportFolderController::validateSourceFolder(
-    const QString &p_notebookId, const QString &p_parentPath,
-    const QString &p_sourceFolderPath) const {
+ImportFolderValidationResult
+ImportFolderController::validateSourceFolder(const QString &p_notebookId,
+                                             const QString &p_parentPath,
+                                             const QString &p_sourceFolderPath) const {
   ImportFolderValidationResult result;
 
   QString folderPath = p_sourceFolderPath.trimmed();
@@ -50,7 +53,7 @@ ImportFolderValidationResult ImportFolderController::validateSourceFolder(
   auto *notebookService = m_services.get<NotebookCoreService>();
   if (notebookService) {
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_notebookId);
-    QString rootPath = notebookConfig.value("rootFolder").toString();
+    QString rootPath = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
     QString parentAbsPath = PathUtils::concatenateFilePath(rootPath, p_parentPath);
 
     if (PathUtils::pathContains(folderPath, parentAbsPath)) {
@@ -63,8 +66,8 @@ ImportFolderValidationResult ImportFolderController::validateSourceFolder(
   return result;
 }
 
-ImportFolderValidationResult ImportFolderController::validateAll(
-    const ImportFolderInput &p_input) const {
+ImportFolderValidationResult
+ImportFolderController::validateAll(const ImportFolderInput &p_input) const {
   ImportFolderValidationResult result;
 
   if (p_input.notebookId.isEmpty()) {
@@ -102,8 +105,8 @@ ImportFolderResult ImportFolderController::importFolder(const ImportFolderInput 
 
   // Use vxcore_folder_import API to import the folder recursively.
   // The API handles folder creation, file copying, and indexing in one call.
-  QString folderId = notebookService->importFolder(
-      p_input.notebookId, p_input.parentFolderPath, p_input.sourceFolderPath, suffixAllowlist);
+  QString folderId = notebookService->importFolder(p_input.notebookId, p_input.parentFolderPath,
+                                                   p_input.sourceFolderPath, suffixAllowlist);
 
   if (folderId.isEmpty()) {
     result.success = false;

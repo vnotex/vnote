@@ -19,6 +19,7 @@
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
@@ -40,7 +41,7 @@ QString notebookNameFromConfig(NotebookCoreService *p_svc, const QString &p_note
     return QString();
   }
   const QJsonObject cfg = p_svc->getNotebookConfig(p_notebookId);
-  return cfg.value(QStringLiteral("name")).toString();
+  return cfg.value(QLatin1String(vxcore::kJsonKeyName)).toString();
 }
 
 // Helper: tear down a notebook root that the controller CREATED (never an
@@ -123,9 +124,9 @@ OpenNotebookController::validateRootFolder(const QString &p_path) const {
     QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       QJsonObject nbObj = nb.toObject();
-      QString existingPath = nbObj.value("rootFolder").toString();
+      QString existingPath = nbObj.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
       if (QDir(existingPath) == QDir(rootFolderPath)) {
-        QString existingName = nbObj.value("name").toString();
+        QString existingName = nbObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
         result.valid = false;
         result.message = tr("This notebook (%1) is already open.").arg(existingName);
         return result;
@@ -242,9 +243,10 @@ OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) con
     const QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       const QJsonObject nbObj = nb.toObject();
-      const QString existingPath = nbObj.value(QStringLiteral("rootFolder")).toString();
+      const QString existingPath =
+          nbObj.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
       if (QDir(existingPath) == QDir(finalDir)) {
-        const QString existingName = nbObj.value(QStringLiteral("name")).toString();
+        const QString existingName = nbObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
         result.valid = false;
         result.message =
             tr("A notebook (%1) is already open at this destination.").arg(existingName);

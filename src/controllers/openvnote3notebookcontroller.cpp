@@ -9,6 +9,8 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/vnote3migrationservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 OpenVNote3NotebookController::OpenVNote3NotebookController(ServiceLocator &p_services,
@@ -75,9 +77,10 @@ OpenNotebookValidationResult OpenVNote3NotebookController::validateDestinationRo
     QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       QJsonObject nbObj = nb.toObject();
-      QString existingPath = QDir::cleanPath(nbObj.value(QStringLiteral("rootFolder")).toString());
+      QString existingPath =
+          QDir::cleanPath(nbObj.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString());
       if (existingPath == dst) {
-        QString existingName = nbObj.value(QStringLiteral("name")).toString();
+        QString existingName = nbObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
         result.valid = false;
         result.message = tr("This path is already opened as notebook (%1).").arg(existingName);
         return result;

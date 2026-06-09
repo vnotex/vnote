@@ -15,6 +15,7 @@
 #include <core/services/syncservice.h>
 
 #include <sync/sync_json_keys.h>
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
@@ -40,7 +41,7 @@ QString NotebookSyncInfoController::notebookName() const {
     return QString();
   }
   const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
-  return cfg.value(QStringLiteral("name")).toString();
+  return cfg.value(QLatin1String(vxcore::kJsonKeyName)).toString();
 }
 
 QString NotebookSyncInfoController::remoteUrl() const {
@@ -73,7 +74,7 @@ void NotebookSyncInfoController::loadInitialData() {
   }
 
   const QJsonObject cfg = notebookSvc->getNotebookConfig(m_notebookId);
-  const QString name = cfg.value(QStringLiteral("name")).toString();
+  const QString name = cfg.value(QLatin1String(vxcore::kJsonKeyName)).toString();
   const QString url = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
   // Last sync timestamp is per-device and lives in metadata.db (NOT in the
   // notebook config JSON, which would self-sync). Read via vxcore C API.

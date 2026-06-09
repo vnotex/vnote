@@ -32,6 +32,8 @@
 #include <widgets/settingswidget.h>
 #include <widgets/viewwindow2.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 ViewAreaController::ViewAreaController(ServiceLocator &p_services, QObject *p_parent)
@@ -1764,11 +1766,11 @@ void ViewAreaController::onNotebookBeforeClose(HookContext &p_ctx,
   QJsonArray buffers = bufferSvc->listBuffers();
   for (int i = 0; i < buffers.size(); ++i) {
     QJsonObject bufObj = buffers[i].toObject();
-    QString notebookId = bufObj.value(QStringLiteral("notebookId")).toString();
+    QString notebookId = bufObj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
     if (notebookId.isEmpty() || notebookId != p_event.notebookId) {
       continue;
     }
-    QString bufferId = bufObj.value(QStringLiteral("id")).toString();
+    QString bufferId = bufObj.value(QLatin1String(vxcore::kJsonKeyId)).toString();
     Buffer2 handle = bufferSvc->getBufferHandle(bufferId);
     if (handle.isValid() && handle.isModified()) {
       hasDirty = true;

@@ -8,6 +8,8 @@
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 NewNoteController::NewNoteController(ServiceLocator &p_services, QObject *p_parent)
@@ -39,7 +41,7 @@ NoteValidationResult NewNoteController::validateName(const QString &p_notebookId
     QJsonArray files = children.value("files").toArray();
     for (const auto &file : files) {
       QJsonObject fileObj = file.toObject();
-      QString existingName = fileObj.value("name").toString();
+      QString existingName = fileObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
       if (existingName.compare(name, Qt::CaseInsensitive) == 0) {
         result.valid = false;
         result.message = tr("Name conflicts with existing note.");
@@ -107,7 +109,7 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
 
     // Get the full path and write content.
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
-    QString rootPath = notebookConfig.value("rootFolder").toString();
+    QString rootPath = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
     QString fullPath = PathUtils::concatenateFilePath(rootPath, filePath);
     FileUtils::writeFile(fullPath, evaluatedContent);
   }
@@ -118,7 +120,8 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
   return result;
 }
 
-QString NewNoteController::evaluateTemplateContent(const QString &p_content, const QString &p_name) {
+QString NewNoteController::evaluateTemplateContent(const QString &p_content,
+                                                   const QString &p_name) {
   int cursorOffset = 0;
   return SnippetMgr::getInst().applySnippetBySymbol(p_content, QString(), cursorOffset,
                                                     SnippetMgr::generateOverrides(p_name));

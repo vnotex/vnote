@@ -18,6 +18,7 @@
 #include <utils/pathutils.h>
 
 #include <sync/sync_json_keys.h>
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
@@ -71,9 +72,9 @@ ValidationResult NewNotebookController::validateRootFolder(const QString &p_path
     QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       QJsonObject nbObj = nb.toObject();
-      QString existingPath = nbObj.value("rootFolder").toString();
+      QString existingPath = nbObj.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
       if (QDir(existingPath) == QDir(rootFolderPath)) {
-        QString existingName = nbObj.value("name").toString();
+        QString existingName = nbObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
         result.valid = false;
         result.message =
             tr("There already exists a notebook (%1) with the same root folder.").arg(existingName);
@@ -148,13 +149,13 @@ NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &
 
 QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) {
   QJsonObject configObj;
-  configObj[QStringLiteral("name")] = p_input.name.trimmed();
+  configObj[QLatin1String(vxcore::kJsonKeyName)] = p_input.name.trimmed();
   if (!p_input.description.trimmed().isEmpty()) {
-    configObj[QStringLiteral("description")] = p_input.description.trimmed();
+    configObj[QLatin1String(vxcore::kJsonKeyDescription)] = p_input.description.trimmed();
   }
   QString assetsFolderTrimmed = p_input.assetsFolder.trimmed();
   if (!assetsFolderTrimmed.isEmpty() && assetsFolderTrimmed != QStringLiteral("vx_assets")) {
-    configObj[QStringLiteral("assetsFolder")] = assetsFolderTrimmed;
+    configObj[QLatin1String(vxcore::kJsonKeyAssetsFolder)] = assetsFolderTrimmed;
   }
   // Per ADR-8: sync configuration uses FLAT keys on the notebook config
   // (syncEnabled, syncBackend), not a nested "sync" object. syncRemoteUrl is
@@ -203,8 +204,8 @@ void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QSt
     const QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nbVal : notebooks) {
       const QJsonObject nbObj = nbVal.toObject();
-      if (nbObj.value(QStringLiteral("id")).toString() == p_notebookId) {
-        rootPath = nbObj.value(QStringLiteral("rootFolder")).toString();
+      if (nbObj.value(QLatin1String(vxcore::kJsonKeyId)).toString() == p_notebookId) {
+        rootPath = nbObj.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
         break;
       }
     }
