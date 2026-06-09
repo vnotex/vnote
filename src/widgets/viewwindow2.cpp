@@ -91,6 +91,15 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
             SLOT(onAttachmentChanged(QString)));
     connect(bufferService->asQObject(), SIGNAL(bufferExternallyChanged(QString, BufferState)), this,
             SLOT(onBufferExternallyChanged(QString, BufferState)));
+    // T28: subscribe to the markDirty and forwarded save rejection signals so
+    // we can pop a single modal explaining why the edit was discarded. Both
+    // arrive via the SIGNAL/SLOT string form because BufferService inherits
+    // QObject privately through BufferCoreService (PMF connect is not
+    // available without exposing the base class).
+    connect(bufferService->asQObject(), SIGNAL(dirtyRejectedReadOnly(QString)), this,
+            SLOT(onDirtyRejectedReadOnly(QString)));
+    connect(bufferService->asQObject(), SIGNAL(saveRejectedReadOnly(QString)), this,
+            SLOT(onSaveRejectedReadOnly(QString)));
   }
 
   // Refresh toolbar icons when the theme changes.
@@ -749,6 +758,53 @@ void ViewWindow2::onBufferExternallyChanged(const QString &p_bufferId, BufferSta
     return;
   }
   handleExternalChange(p_state);
+}
+
+// T28: read-only rejection slots. Both signals (markDirty and saveQueue
+// enqueue) funnel through the same cooldown-aware modal so a single save
+// burst that emits both rejection signals only displays one warning. We
+// filter on bufferId first so a sibling ViewWindow2 for a different buffer
+// stays silent.
+void ViewWindow2::onDirtyRejectedReadOnly(const QString &p_bufferId) {
+  if (p_bufferId != m_buffer.id()) {
+    return;
+  }
+  showReadOnlyWarning();
+}
+
+void ViewWindow2::onSaveRejectedReadOnly(const QString &p_bufferId) {
+  if (p_bufferId != m_buffer.id()) {
+    return;
+  }
+  showReadOnlyWarning();
+}
+
+void ViewWindow2::showReadOnlyWarning() {
+  // Cooldown gate: per Metis Important #8, AT MOST one modal per save-attempt
+  // burst. m_readOnlyWarningCooldown is invalid (.isValid() == false) until
+  // the first display; once started, hasExpired(2s) is the dedupe condition.
+  if (m_readOnlyWarningCooldown.isValid() &&
+      !m_readOnlyWarningCooldown.hasExpired(c_readOnlyWarningCooldownMs)) {
+    return;
+  }
+  m_readOnlyWarningCooldown.start();
+  ++m_readOnlyWarningCount;
+
+  if (m_readOnlyWarningSuppressModal) {
+    // Test-only branch: cooldown bookkeeping above is still effective.
+    return;
+  }
+
+  // Plain-English wording per plan; do NOT mention VXCORE_ERR_READ_ONLY. The
+  // notebook name is substituted via getName() (the file's display name).
+  // Two-line layout: first line states the read-only fact, second line gives
+  // the recovery instruction.
+  MessageBoxHelper::notify(
+      MessageBoxHelper::Warning,
+      tr("This notebook is read-only (%1). Changes cannot be saved.").arg(getName()),
+      tr("To enable editing, close this notebook and re-open it from the remote URL with a "
+         "valid Personal Access Token."),
+      QString(), this);
 }
 
 void ViewWindow2::handleExternalChange(BufferState p_state) {

@@ -180,6 +180,12 @@ void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 void ViewWindow2::onAttachmentChanged(const QString &) {}
 void ViewWindow2::onBufferExternallyChanged(const QString &, BufferState) {}
 
+// T28: stub for the new RO-rejection slots. test_viewsplit2_reload_menu does
+// not exercise this path; the no-op bodies just satisfy the linker.
+void ViewWindow2::onDirtyRejectedReadOnly(const QString &) {}
+void ViewWindow2::onSaveRejectedReadOnly(const QString &) {}
+void ViewWindow2::showReadOnlyWarning() {}
+
 // Protected
 void ViewWindow2::applyReadableWidth() {}
 void ViewWindow2::handleTypeAction(int) {}

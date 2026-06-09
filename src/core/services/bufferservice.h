@@ -249,6 +249,15 @@ signals:
   // the user learns why their edit was discarded.
   void dirtyRejectedReadOnly(const QString &p_bufferId);
 
+  // Forwarded from the internal BufferSaveQueue (T28). Fires when an enqueue
+  // is rejected because the owning notebook is read-only — the disk file is
+  // NEVER touched in that case. Surfaced on BufferService so UI consumers
+  // (ViewWindow2 modal warning) do not have to reach into the private save
+  // queue. Emitted on this object's owning (UI) thread because the queue's
+  // saveRejectedReadOnly signal fires directly from the calling thread (which
+  // is required to be the UI thread per its enqueue() contract).
+  void saveRejectedReadOnly(const QString &p_bufferId);
+
 private:
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.
   void onAutoSaveTimerTick();

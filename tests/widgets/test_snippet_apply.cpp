@@ -11,8 +11,8 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/snippetcoreservice.h>
 #include <temp_dir_fixture.h>
-#include <vxcore/vxcore.h>
 #include <vtextedit/vtextedit.h>
+#include <vxcore/vxcore.h>
 #include <widgets/textviewwindowhelper.h>
 
 using namespace vnotex;
@@ -32,6 +32,12 @@ void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 void ViewWindow2::onAttachmentChanged(const QString &) {}
 
 void ViewWindow2::onBufferExternallyChanged(const QString &, BufferState) {}
+
+void ViewWindow2::onDirtyRejectedReadOnly(const QString &) {}
+
+void ViewWindow2::onSaveRejectedReadOnly(const QString &) {}
+
+void ViewWindow2::showReadOnlyWarning() {}
 
 void ViewWindow2::refreshToolBarIcons() {}
 
@@ -75,8 +81,7 @@ void ViewWindow2::applyReadableWidth() {}
 
 void ViewWindow2::handleTypeAction(int) {}
 
-void ViewWindow2::fetchWordCountInfo(
-    const std::function<void(const WordCountInfo &)> &) const {}
+void ViewWindow2::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &) const {}
 
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *) {}
 
@@ -188,8 +193,8 @@ void TestSnippetApply::initTestCase() {
       m_notebookService->createFolder(m_notebookId, QString(), QStringLiteral("notes"));
   QVERIFY(!folderId.isEmpty());
 
-  const QString helloFileId =
-      m_notebookService->createFile(m_notebookId, QStringLiteral("notes"), QStringLiteral("hello.md"));
+  const QString helloFileId = m_notebookService->createFile(m_notebookId, QStringLiteral("notes"),
+                                                            QStringLiteral("hello.md"));
   QVERIFY(!helloFileId.isEmpty());
 
   const QString readmeFileId =

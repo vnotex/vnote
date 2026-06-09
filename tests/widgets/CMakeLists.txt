@@ -475,3 +475,30 @@ add_custom_command(TARGET test_view_window2_readonly_toolbar POST_BUILD
     $<TARGET_FILE_DIR:test_view_window2_readonly_toolbar>
 )
 
+# T28: ViewWindow2 modal warning on read-only save attempts, with cooldown.
+# Same stub-injection pattern as T27 / test_viewsplit2_reload_menu —
+# viewwindow2.cpp is not compiled inline. The test enables the
+# testSetReadOnlyWarningSuppressModal seam so QMessageBox::exec() does not
+# block the event loop while still ticking the cooldown counter.
+# NOT GUILESS — QMessageBox + QFrame require QApplication.
+add_qt_test(test_view_window2_readonly_save_warning
+  SOURCES
+    test_view_window2_readonly_save_warning.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindow2.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_view_window2_readonly_save_warning PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_view_window2_readonly_save_warning POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_view_window2_readonly_save_warning>
+)
+

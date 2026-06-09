@@ -40,6 +40,19 @@ BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookM
         onSaveFinished(p_bufferId, p_revision, p_ok, p_errorMsg);
       },
       Qt::QueuedConnection);
+  // T28: forward the read-only rejection signal to consumers via this
+  // BufferService instance so UI listeners (ViewWindow2 modal warning) can
+  // subscribe without reaching into the private m_saveQueue. The queue emits
+  // directly on the UI thread inside enqueue() (per its threading contract),
+  // so a DirectConnection is correct here — keeps the modal trigger
+  // synchronous with the rejected enqueue call. NOTE: BufferService inherits
+  // QObject privately (via BufferCoreService), so we route through a lambda
+  // bound to asQObject() and forward by emitting via the PMF — the lambda
+  // captures `this` to access the protected emit hook.
+  QObject::connect(
+      m_saveQueue, &BufferSaveQueue::saveRejectedReadOnly, asQObject(),
+      [this](const QString &p_bufferId) { emit saveRejectedReadOnly(p_bufferId); },
+      Qt::DirectConnection);
 }
 
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,

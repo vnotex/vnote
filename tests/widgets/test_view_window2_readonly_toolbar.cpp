@@ -110,6 +110,13 @@ void ViewWindow2::onBufferAutoSaved(const QString &) {}
 void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 void ViewWindow2::onAttachmentChanged(const QString &) {}
 void ViewWindow2::onBufferExternallyChanged(const QString &, BufferState) {}
+
+// T28: stub for the new RO-rejection slots. This test only exercises Save /
+// Insert action enable predicates; the rejection-modal path is covered by
+// test_view_window2_readonly_save_warning. No-op bodies satisfy the linker.
+void ViewWindow2::onDirtyRejectedReadOnly(const QString &) {}
+void ViewWindow2::onSaveRejectedReadOnly(const QString &) {}
+void ViewWindow2::showReadOnlyWarning() {}
 void ViewWindow2::applyReadableWidth() {}
 void ViewWindow2::handleTypeAction(int) {}
 void ViewWindow2::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &) const {}

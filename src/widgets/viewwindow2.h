@@ -2,6 +2,7 @@
 #define VIEWWINDOW2_H
 
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QFrame>
 #include <QIcon>
 #include <QPixmap>
@@ -463,6 +464,12 @@ private slots:
   // Called when BufferService detects external change for any buffer.
   void onBufferExternallyChanged(const QString &p_bufferId, BufferState p_state);
 
+  // T28: react to read-only rejection signals from BufferService (markDirty
+  // path) and the forwarded BufferSaveQueue::saveRejectedReadOnly signal.
+  // Both call into showReadOnlyWarning() which dedupes via a shared cooldown.
+  void onDirtyRejectedReadOnly(const QString &p_bufferId);
+  void onSaveRejectedReadOnly(const QString &p_bufferId);
+
 private:
   struct FindInfo {
     QStringList m_texts;
@@ -563,6 +570,45 @@ private:
   // Update the attachment action icon based on whether the buffer has attachments.
   void updateAttachmentIcon();
 
+  // T28: show the read-only save-rejection modal, suppressing repeat displays
+  // within m_readOnlyWarningCooldownMs of a previous show. The cooldown is
+  // shared across both rejection signals (markDirty + save) so a single save
+  // burst that fires several signals only pops one modal.
+  void showReadOnlyWarning();
+
+  // T28: time-since-last-modal tracker for the shared cooldown. Invalid (not
+  // started) until the first modal fires; once started, hasExpired() is the
+  // gate against re-display.
+  QElapsedTimer m_readOnlyWarningCooldown;
+
+  // Hard-coded cooldown window. Per plan: "show one, suppress for 2 seconds".
+  static const qint64 c_readOnlyWarningCooldownMs = 2000;
+
+  // Test seam: set to true to suppress the actual QMessageBox::exec() call but
+  // STILL fire the cooldown bookkeeping. Production code never flips this;
+  // the headless save-warning test enables it so the modal does not block
+  // the test event loop.
+  bool m_readOnlyWarningSuppressModal = false;
+
+  // Test observability: count of times the modal would have been displayed
+  // (incremented even when m_readOnlyWarningSuppressModal is true). Exposed
+  // via testReadOnlyWarningCount() / testResetReadOnlyWarning() so tests can
+  // verify dedupe without polling for an actual QMessageBox.
+  int m_readOnlyWarningCount = 0;
+
+public:
+  // Test hooks (see m_readOnlyWarningSuppressModal). Production callers do
+  // not use these.
+  void testSetReadOnlyWarningSuppressModal(bool p_suppress) {
+    m_readOnlyWarningSuppressModal = p_suppress;
+  }
+  int testReadOnlyWarningCount() const { return m_readOnlyWarningCount; }
+  void testResetReadOnlyWarning() {
+    m_readOnlyWarningCount = 0;
+    m_readOnlyWarningCooldown.invalidate();
+  }
+
+private:
   static QIcon generateAttachmentFullIcon(const QString &p_iconFile, const QString &p_foreground,
                                           const QString &p_disabledForeground,
                                           const QString &p_masterColor);
