@@ -357,9 +357,21 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
   case ViewWindowToolBarHelper2::Save:
     m_saveAction = act;
     act->setEnabled(false);
+    // T27: surface read-only-notebook status on the Save action tooltip so the
+    // user immediately understands why it's greyed out. Notebook RO state is
+    // immutable for the buffer's lifetime (T22 no-live-transition rule), so
+    // setting once at construction is sufficient.
+    if (getBuffer().isValid() && getBuffer().isReadOnly()) {
+      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+    }
     connect(act, &QAction::triggered, this, [this]() { save(); });
-    connect(this, &ViewWindow2::statusChanged, this,
-            [this]() { m_saveAction->setEnabled(getBuffer().isValid() && isModified()); });
+    connect(this, &ViewWindow2::statusChanged, this, [this]() {
+      // T27: enable Save only when the buffer is writable AND modified. We
+      // re-query isReadOnly() every time per the "do not cache" rule even
+      // though the value is in practice constant for the buffer's lifetime.
+      const auto &buf = getBuffer();
+      m_saveAction->setEnabled(buf.isValid() && isModified() && !buf.isReadOnly());
+    });
     break;
 
   case ViewWindowToolBarHelper2::EditRead: {
@@ -404,8 +416,23 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
 
   case ViewWindowToolBarHelper2::TypeHeading: {
     act->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this,
-            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
+    // T27: combine visibility (Edit-mode only) with enabled-state (writable
+    // notebook only). Re-query isReadOnly() each refresh per the "do not
+    // cache" rule.
+    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
+      const bool inEdit = (m_mode == ViewWindowMode::Edit);
+      act->setVisible(inEdit);
+      const auto &buf = getBuffer();
+      const bool readOnly = buf.isValid() && buf.isReadOnly();
+      act->setEnabled(inEdit && !readOnly);
+    });
+    // Initial enabled state mirrors current mode / RO. Default mode is Read so
+    // the action starts hidden; this guards against ever showing it enabled on
+    // a RO buffer if a subclass starts in Edit mode.
+    if (getBuffer().isValid() && getBuffer().isReadOnly()) {
+      act->setEnabled(false);
+      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+    }
     // Default button click triggers Heading 1.
     connect(act, &QAction::triggered, this, [this]() { handleTypeAction(TypeHeading1); });
     // Menu items (H2-H6, Clear) trigger via data().
@@ -436,8 +463,23 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     act->setVisible(false);
     connect(act, &QAction::triggered, this,
             [this, typeActionId]() { handleTypeAction(typeActionId); });
-    connect(this, &ViewWindow2::modeChanged, this,
-            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
+    // T27: combine visibility (Edit-mode only) with enabled-state (writable
+    // notebook only). Every formatting / insert action mutates the buffer, so
+    // they are all disabled when the owning notebook is read-only. Re-query
+    // isReadOnly() each refresh per the "do not cache" rule.
+    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
+      const bool inEdit = (m_mode == ViewWindowMode::Edit);
+      act->setVisible(inEdit);
+      const auto &buf = getBuffer();
+      const bool readOnly = buf.isValid() && buf.isReadOnly();
+      act->setEnabled(inEdit && !readOnly);
+    });
+    // Initial enabled state mirrors current mode / RO. Guards against showing
+    // an enabled formatting action on a RO buffer that opens in Edit mode.
+    if (getBuffer().isValid() && getBuffer().isReadOnly()) {
+      act->setEnabled(false);
+      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+    }
     break;
   }
 

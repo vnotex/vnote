@@ -407,3 +407,29 @@ add_custom_command(TARGET test_viewsplit2_reload_menu POST_BUILD
     $<TARGET_FILE_DIR:test_viewsplit2_reload_menu>
 )
 
+# T27: ViewWindow2 disables Save/Insert actions on read-only buffer.
+# Same stub-injection pattern as test_viewsplit2_reload_menu — viewwindow2.cpp
+# is not compiled inline to avoid pulling in ~12 widget transitive deps.
+# NOT GUILESS — QAction belongs to QtGui, and the production runtime path
+# materializes inside a real QFrame so we use QTEST_MAIN.
+add_qt_test(test_view_window2_readonly_toolbar
+  SOURCES
+    test_view_window2_readonly_toolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindow2.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_view_window2_readonly_toolbar PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_view_window2_readonly_toolbar POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_view_window2_readonly_toolbar>
+)
+
