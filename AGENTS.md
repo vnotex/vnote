@@ -699,6 +699,14 @@ clang-format -i src/core/myfile.cpp
 
 ---
 
+## Shared JSON Keys (SSOT)
+
+Cross-boundary JSON keys (vxcore↔Qt) live in `<vxcore/notebook_json_keys.h>`.
+See [`libs/vxcore/AGENTS.md` § JSON Conventions](libs/vxcore/AGENTS.md#json-conventions)
+for the SSOT contract and the `test_json_key_drift` regression gate.
+
+---
+
 ## Module Documentation Index
 
 Detailed knowledge for each module lives in its own AGENTS.md:

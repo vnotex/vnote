@@ -148,6 +148,24 @@ void uninstallVxCoreLogBridge();
 
 **Why the thunk uses the `"%s", message` form.** vxcore hands the callback a pre-formatted message string. Passing it through Qt as `qCDebug(cat, "%s", message)` (rather than `qCDebug(cat, message)`) ensures any literal `%` characters inside the message are treated as data, not as printf-style format specifiers that Qt would try to re-interpret.
 
+### Shared JSON Keys (SSOT)
+
+Cross-boundary JSON keys (vxcore writes ↔ Qt reads, or vice versa) live in the
+public vxcore header [`<vxcore/notebook_json_keys.h>`](../../libs/vxcore/include/vxcore/notebook_json_keys.h).
+Use the `kJsonKey*` constants instead of inline string literals on the Qt side:
+
+```cpp
+#include <vxcore/notebook_json_keys.h>
+// ...
+const QString rootFolder =
+    notebookJson.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
+```
+
+The grep-gate test `tests/utils/test_json_key_drift.cpp` fails the build if
+shared-schema literals are reintroduced in `src/`. See
+[`libs/vxcore/AGENTS.md` § JSON Conventions](../../libs/vxcore/AGENTS.md#json-conventions)
+for the full contract.
+
 ### Buffer2 Handle Pattern
 
 `Buffer2` is a **lightweight copyable value type** (like `QModelIndex`) that represents an open file buffer. It is NOT a `QObject` and is NOT heap-allocated. Obtain a `Buffer2` from `BufferService::openBuffer()`.
