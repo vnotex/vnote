@@ -179,6 +179,19 @@ add_qt_test(test_buffer_read_only
   GUILESS
 )
 
+# T16 (open-notebook-remote-readonly): BufferService::markDirty +
+# BufferSaveQueue::enqueue refuse to mutate buffers backed by a read-only
+# notebook. Verifies the rejection signals fire AND the disk file is
+# untouched, plus a writable-notebook regression check.
+add_qt_test(test_buffer_read_only_guard
+  SOURCES
+    test_buffer_read_only_guard.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_virtual_buffer
   SOURCES
     test_virtual_buffer.cpp
