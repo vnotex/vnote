@@ -122,7 +122,7 @@ OpenNotebookController::validateRootFolder(const QString &p_path) const {
     QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       QJsonObject nbObj = nb.toObject();
-      QString existingPath = nbObj.value("root_path").toString();
+      QString existingPath = nbObj.value("rootFolder").toString();
       if (QDir(existingPath) == QDir(rootFolderPath)) {
         QString existingName = nbObj.value("name").toString();
         result.valid = false;
@@ -241,7 +241,7 @@ OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) con
     const QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       const QJsonObject nbObj = nb.toObject();
-      const QString existingPath = nbObj.value(QStringLiteral("root_path")).toString();
+      const QString existingPath = nbObj.value(QStringLiteral("rootFolder")).toString();
       if (QDir(existingPath) == QDir(finalDir)) {
         const QString existingName = nbObj.value(QStringLiteral("name")).toString();
         result.valid = false;

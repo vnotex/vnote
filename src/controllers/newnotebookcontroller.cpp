@@ -71,7 +71,7 @@ ValidationResult NewNotebookController::validateRootFolder(const QString &p_path
     QJsonArray notebooks = notebookService->listNotebooks();
     for (const auto &nb : notebooks) {
       QJsonObject nbObj = nb.toObject();
-      QString existingPath = nbObj.value("root_path").toString();
+      QString existingPath = nbObj.value("rootFolder").toString();
       if (QDir(existingPath) == QDir(rootFolderPath)) {
         QString existingName = nbObj.value("name").toString();
         result.valid = false;

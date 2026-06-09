@@ -1,5 +1,20 @@
 find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
 
+add_qt_test(test_duplicate_open_guard
+  SOURCES
+    test_duplicate_open_guard.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Concurrent
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_snippetcontroller
   SOURCES
     test_snippetcontroller.cpp
