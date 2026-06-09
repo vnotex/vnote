@@ -399,7 +399,11 @@ add_qt_test(test_open_notebook_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
+    Qt6::Concurrent
     core_services
     vxcore
     VTextEdit
