@@ -59,6 +59,16 @@ OpenNotebookDialog2::OpenNotebookDialog2(ServiceLocator &p_services, QWidget *p_
   // explicit per the project convention for modal dialogs.
   setWindowModality(Qt::ApplicationModal);
 
+  // openurl-followups Item 2: wire controller signals so remote-mode clone
+  // completion and progress updates land in this dialog. Both signals carry
+  // primitive / QObject-safe payloads (the result struct is a Q_DECLARE_METATYPE
+  // value type registered by the controller's ctor) so default Qt::AutoConnection
+  // is fine — the controller emits via QueuedConnection from its worker tail.
+  connect(m_controller, &OpenNotebookController::cloneFinished, this,
+          &OpenNotebookDialog2::onCloneFinished);
+  connect(m_controller, &OpenNotebookController::cloneProgressUpdated, this,
+          &OpenNotebookDialog2::onCloneProgressUpdated);
+
   // Initialize button + validation state.
   updateOpenButtonState();
 }
@@ -106,7 +116,7 @@ void OpenNotebookDialog2::setupUI() {
   m_modeStack->setCurrentIndex(static_cast<int>(LocalMode));
   mainLayout->addWidget(m_modeStack);
 
-  // Bottom: progress bar (hidden by default; T22 will show during clone).
+  // Bottom: progress bar (hidden by default; shown during a remote clone).
   m_progressBar = new QProgressBar(mainWidget);
   m_progressBar->setObjectName(QLatin1String(kProgressBarName));
   m_progressBar->setRange(0, 0); // indeterminate by default
@@ -125,6 +135,13 @@ void OpenNotebookDialog2::setupUI() {
     }
     if (auto *cancelBtn = box->button(QDialogButtonBox::Cancel)) {
       cancelBtn->setObjectName(QLatin1String(kCancelButtonName));
+      // openurl-followups Item 2: cache the Cancel button so
+      // rejectedButtonClicked() can flip its enabled state during
+      // cancellation. The base Dialog wiring connects the button's
+      // clicked signal to rejectedButtonClicked via QDialogButtonBox's
+      // rejected() signal, so overriding rejectedButtonClicked() is
+      // sufficient — no extra connect needed here.
+      m_cancelButton = cancelBtn;
     }
   }
   setButtonEnabled(QDialogButtonBox::Open, false);
@@ -373,8 +390,30 @@ void OpenNotebookDialog2::acceptedButtonClicked() {
   if (currentMode() == LocalMode) {
     handleLocalOpen();
   } else {
-    handleRemoteOpenStubbed();
+    handleRemoteOpen();
   }
+}
+
+void OpenNotebookDialog2::rejectedButtonClicked() {
+  // openurl-followups Item 2: while a remote clone is in flight, Cancel
+  // requests an abort via the controller rather than closing the dialog.
+  // The controller cancels the cancellation token; the worker observes
+  // VXCORE_ERR_CANCELLED and fires onCloneFinished with a "cancelled by
+  // user" message, where we re-enable inputs and let the user retry or
+  // dismiss the dialog.
+  if (m_cloneInProgress) {
+    m_controller->cancelClone();
+    if (m_cancelButton) {
+      // Prevent double-cancel: until cloneFinished arrives, the user
+      // cannot click Cancel again. The button re-enables in
+      // onCloneFinished regardless of outcome.
+      m_cancelButton->setEnabled(false);
+    }
+    setInformationText(tr("Cancelling clone..."), InformationLevel::Info);
+    return;
+  }
+  // No clone in flight: fall through to the base Dialog::reject() behavior.
+  ScrollDialog::rejectedButtonClicked();
 }
 
 void OpenNotebookDialog2::handleLocalOpen() {
@@ -393,12 +432,100 @@ void OpenNotebookDialog2::handleLocalOpen() {
   accept();
 }
 
-void OpenNotebookDialog2::handleRemoteOpenStubbed() {
-  // T24 STUB: the actual clone path is wired in T25 (NotebookExplorer2
-  // wiring) after T22 supplies cloneAndOpen() / cloneFinished /
-  // cloneProgressUpdated. Show an informational message so the user knows
-  // why nothing happened; the dialog stays open.
-  QMessageBox::information(this, tr("Remote Open"), tr("Remote clone will be wired in task T25."));
+void OpenNotebookDialog2::handleRemoteOpen() {
+  // openurl-followups Item 2: drive the controller's async clone+open path.
+  // The previous T24 stub displayed a QMessageBox::information with a
+  // "wired in T25" message; T25 only wired the explorer button to spawn
+  // this dialog, NOT the dialog's internal remote-mode handler. This is
+  // the actual wiring.
+  CloneAndOpenInput input;
+  input.remoteUrl = m_remoteUrlEdit ? m_remoteUrlEdit->text().trimmed() : QString();
+  input.pat = m_remotePatEdit ? m_remotePatEdit->text() : QString();
+  input.finalDestDir = m_remoteDestEdit ? m_remoteDestEdit->text().trimmed() : QString();
+  // Backend / intervalSeconds keep CloneAndOpenInput's defaults ("git", 60).
+
+  // Disable inputs so the user cannot mutate them mid-clone. The Cancel
+  // button stays ENABLED so the user can abort the in-flight clone (the
+  // rejectedButtonClicked override branches on m_cloneInProgress).
+  setButtonEnabled(QDialogButtonBox::Open, false);
+  if (m_localModeRadio)
+    m_localModeRadio->setEnabled(false);
+  if (m_remoteModeRadio)
+    m_remoteModeRadio->setEnabled(false);
+  setRemoteInputsEnabled(false);
+
+  // Show indeterminate progress bar; the controller's coarse progress
+  // callback (cloneProgressUpdated) will update the info text only — the
+  // bar stays indeterminate because libgit2's clone has no usable progress
+  // numerator/denominator for our use case.
+  if (m_progressBar) {
+    m_progressBar->setRange(0, 0);
+    m_progressBar->show();
+  }
+  setInformationText(tr("Cloning..."), InformationLevel::Info);
+
+  m_cloneInProgress = true;
+  m_controller->cloneAndOpen(input);
+}
+
+void OpenNotebookDialog2::setRemoteInputsEnabled(bool p_enabled) {
+  if (m_remoteUrlEdit)
+    m_remoteUrlEdit->setEnabled(p_enabled);
+  if (m_remotePatEdit)
+    m_remotePatEdit->setEnabled(p_enabled);
+  if (m_remoteDestBrowseButton)
+    m_remoteDestBrowseButton->setEnabled(p_enabled);
+  // Note: m_remoteDestEdit is read-only by design (user picks via Browse);
+  // skip enable/disable to preserve the read-only contract.
+}
+
+void OpenNotebookDialog2::onCloneProgressUpdated(int p_current, int p_total,
+                                                 const QString &p_phase) {
+  // Coarse progress: the controller fires this once at the start ("Cloning...")
+  // and may fire more in the future. The progress bar stays indeterminate;
+  // only the info text changes.
+  (void)p_current;
+  (void)p_total;
+  setInformationText(p_phase, InformationLevel::Info);
+}
+
+void OpenNotebookDialog2::onCloneFinished(const CloneAndOpenResult &p_result) {
+  m_cloneInProgress = false;
+  if (m_progressBar) {
+    m_progressBar->hide();
+  }
+  // Re-enable Cancel button regardless of outcome — even on success the
+  // dialog will accept() and close so this is harmless; on cancel/failure
+  // the user needs Cancel available again to dismiss the dialog.
+  if (m_cancelButton) {
+    m_cancelButton->setEnabled(true);
+  }
+
+  if (p_result.success) {
+    m_openedNotebookId = p_result.notebookId;
+    emit notebookOpened(m_openedNotebookId);
+    accept();
+    return;
+  }
+
+  // Failure path: re-enable mode radios + remote inputs + Open button so the
+  // user can retry. Distinguish "cancelled by user" from a generic error:
+  // cancelled shows a neutral Info banner; everything else shows an Error
+  // banner. Per the brief, NO error modal — inline feedback only.
+  if (m_localModeRadio)
+    m_localModeRadio->setEnabled(true);
+  if (m_remoteModeRadio)
+    m_remoteModeRadio->setEnabled(true);
+  setRemoteInputsEnabled(true);
+  // Restore Open button state via the standard validation path so it
+  // re-enables only when the current inputs are valid.
+  updateOpenButtonState();
+
+  if (p_result.errorMessage.contains(QStringLiteral("cancel"), Qt::CaseInsensitive)) {
+    setInformationText(tr("Clone cancelled."), InformationLevel::Info);
+  } else {
+    setInformationText(p_result.errorMessage, InformationLevel::Error);
+  }
 }
 
 QString OpenNotebookDialog2::getOpenedNotebookId() const { return m_openedNotebookId; }

@@ -416,6 +416,62 @@ add_custom_command(TARGET test_open_notebook_dialog2 POST_BUILD
     $<TARGET_FILE_DIR:test_open_notebook_dialog2>
 )
 
+# openurl-followups Item 2: OpenNotebookDialog2 mid-clone Cancel test.
+# Same compile shape as test_open_notebook_dialog2 (dialog source + base
+# classes + locationinputwithbrowsebutton + opennotebookcontroller). Drives
+# the dialog through a real file:// bare-repo fixture and fires
+# controller.cancelClone() to verify the dialog wires Cancel through to the
+# cancellation token. Tolerant of race-lost iterations (file:// is fast).
+# NOT GUILESS — needs QApplication for dialog construction + QSignalSpy.
+add_qt_test(test_open_notebook_dialog2_cancel
+  SOURCES
+    test_open_notebook_dialog2_cancel.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Concurrent
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_open_notebook_dialog2_cancel PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_open_notebook_dialog2_cancel PRIVATE VNOTE_TESTING)
+
+# vxcore self-registers the git backend via a static-init token; the
+# /WHOLEARCHIVE link option forces the registration TU into the test exe so
+# the file:// clone path works. Mirrors the equivalent block in
+# tests/controllers/CMakeLists.txt for test_open_notebook_controller_clone.
+if(MSVC)
+  target_link_options(test_open_notebook_dialog2_cancel PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+set_tests_properties(test_open_notebook_dialog2_cancel PROPERTIES
+  TIMEOUT 180
+)
+
+add_custom_command(TARGET test_open_notebook_dialog2_cancel POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_open_notebook_dialog2_cancel>
+)
+
 # T3: ViewWindow2::reload() (commit 94c53d36) + ViewSplit2 Reload menu (commit bf44c324).
 # NOT GUILESS — needs QApplication for QMessageBox automation in dirty-buffer
 # subtests (Save / Discard / Cancel branches).

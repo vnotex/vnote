@@ -18,6 +18,7 @@ namespace vnotex {
 class LocationInputWithBrowseButton;
 class OpenNotebookController;
 class ServiceLocator;
+struct CloneAndOpenResult;
 
 // OpenNotebookDialog2 - View for opening an existing notebook.
 // Two modes:
@@ -25,15 +26,17 @@ class ServiceLocator;
 //     and open it through OpenNotebookController::openNotebook().
 //   * Remote URL  : provide an HTTPS or file:// URL, an optional PAT (empty
 //     means read-only), and a destination parent folder. The dialog suggests
-//     the leaf folder name from the URL. Clone wiring lives in T22; T24
-//     stubs the Open action with an informational message.
+//     the leaf folder name from the URL. Clone wiring (openurl-followups
+//     Item 2) drives OpenNotebookController::cloneAndOpen and exposes
+//     mid-clone Cancel via OpenNotebookController::cancelClone.
 //
 // Pure UI: all business logic is delegated to OpenNotebookController. The
 // dialog never calls vxcore directly and never touches the credentials store.
 //
 // On a successful Local-mode open, the dialog emits notebookOpened(QString)
-// with the new notebook ID and accept()s. Remote mode is wired in T25 once
-// T22 supplies cloneAndOpen()/cloneFinished/cloneProgressUpdated.
+// with the new notebook ID and accept()s. Remote mode wires the controller
+// signals (cloneFinished + cloneProgressUpdated) and emits notebookOpened +
+// accept() on a successful clone result.
 class OpenNotebookDialog2 : public ScrollDialog {
   Q_OBJECT
 
@@ -54,11 +57,24 @@ signals:
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
+  // openurl-followups Item 2: intercept Cancel clicks so an in-flight clone
+  // can be aborted via OpenNotebookController::cancelClone instead of
+  // closing the dialog. The base class default (reject()) runs ONLY when
+  // no clone is in flight.
+  void rejectedButtonClicked() Q_DECL_OVERRIDE;
+
 private slots:
   void onModeChanged();
   void onLocalRootChanged();
   void onRemoteFieldsChanged();
   void onBrowseRemoteDestClicked();
+
+  // openurl-followups Item 2: controller signal handlers wired in setupUI.
+  // Both bounce on the GUI thread (default Qt::AutoConnection across same-
+  // thread sender/receiver — but the controller emits via QueuedConnection
+  // from its worker tail, so we receive on the GUI thread either way).
+  void onCloneProgressUpdated(int p_current, int p_total, const QString &p_phase);
+  void onCloneFinished(const CloneAndOpenResult &p_result);
 
 private:
   void setupUI();
@@ -95,9 +111,20 @@ private:
   // Local-mode Open click: synchronous controller call + signal + accept().
   void handleLocalOpen();
 
-  // Remote-mode Open click: T24 STUB. Shows QMessageBox::information stating
-  // the remote clone path is wired in T25. No controller call, no signal.
-  void handleRemoteOpenStubbed();
+  // openurl-followups Item 2: Remote-mode Open click. Builds the
+  // CloneAndOpenInput from the URL/PAT/dest fields, disables the mode-toggle
+  // radios + Open button + relevant inputs, shows the indeterminate progress
+  // bar, sets the "Cloning..." info text, flips m_cloneInProgress=true, and
+  // dispatches OpenNotebookController::cloneAndOpen. Completion arrives via
+  // onCloneFinished on the GUI thread; progress beats arrive via
+  // onCloneProgressUpdated.
+  void handleRemoteOpen();
+
+  // Helper: toggle the enabled state of remote-mode inputs as a single
+  // block. Used to disable inputs during a clone and re-enable them on
+  // failure / cancellation so the user can retry without dismissing the
+  // dialog.
+  void setRemoteInputsEnabled(bool p_enabled);
 
   ServiceLocator &m_services;
 
@@ -125,11 +152,24 @@ private:
   // <parent>/<repoNameFromUrl> and written into m_remoteDestEdit.
   QString m_remoteSelectedParentDir;
 
-  // Bottom progress (hidden by default; T22 will show during clone).
+  // Bottom progress (hidden by default; shown during a remote clone).
   QProgressBar *m_progressBar = nullptr;
 
-  // Result of a successful Local-mode open.
+  // Result of a successful Local-mode open OR remote-mode clone.
   QString m_openedNotebookId;
+
+  // openurl-followups Item 2: cached pointer to the Cancel button so the
+  // rejectedButtonClicked override can flip its enabled state during
+  // cancellation. Captured in setupUI from
+  // getDialogButtonBox()->button(QDialogButtonBox::Cancel).
+  QPushButton *m_cancelButton = nullptr;
+
+  // openurl-followups Item 2: true while OpenNotebookController::cloneAndOpen
+  // is in flight (between handleRemoteOpen dispatch and onCloneFinished).
+  // The rejectedButtonClicked override branches on this flag to either
+  // request controller-level cancellation (true) or run the normal reject()
+  // path (false).
+  bool m_cloneInProgress = false;
 };
 
 } // namespace vnotex
