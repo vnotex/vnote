@@ -3,18 +3,88 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
+#include <QMetaObject>
+#include <QRegularExpression>
+#include <QString>
+#include <QThread>
+#include <QtConcurrentRun>
+#include <memory>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synccredentialsstore.h>
+#include <core/services/syncservice.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
+
+#include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
 
-OpenNotebookController::OpenNotebookController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+namespace {
 
-OpenNotebookValidationResult OpenNotebookController::validateRootFolder(const QString &p_path) const {
+// MUST match OpenNotebookDialog2::kRemoteUrlSchemeRegex character-for-character
+// (per T24 learnings.md, the dialog is the single source of truth, but the
+// controller's validator MUST agree so the dialog and a direct controller
+// caller produce identical accept/reject outcomes for the same input).
+const char *const kRemoteUrlSchemeRegex = "^(https://|file:///)\\S+$";
+
+// Helper: extract the leaf notebook name from the just-cloned config.json so
+// the cloneFinished signal can carry a human-readable name. Returns empty on
+// any error -- callers should treat as advisory only.
+QString notebookNameFromConfig(NotebookCoreService *p_svc, const QString &p_notebookId) {
+  if (!p_svc || p_notebookId.isEmpty()) {
+    return QString();
+  }
+  const QJsonObject cfg = p_svc->getNotebookConfig(p_notebookId);
+  return cfg.value(QStringLiteral("name")).toString();
+}
+
+// Helper: tear down a notebook root that the controller CREATED (never an
+// existing user dir). Mirrors NewNotebookController::bootstrapSync rollback
+// (newnotebookcontroller.cpp:266-279) verbatim: 20 x 100ms QDir::removeRecursively
+// retries to dodge the Windows libgit2 file-handle race.
+void teardownCreatedDir(const QString &p_dir) {
+  if (p_dir.isEmpty()) {
+    return;
+  }
+  QDir dir(p_dir);
+  if (!dir.exists()) {
+    return;
+  }
+  for (int attempt = 0; attempt < 20 && dir.exists(); ++attempt) {
+    if (dir.removeRecursively()) {
+      break;
+    }
+    QThread::msleep(100);
+  }
+  if (dir.exists()) {
+    qWarning() << "OpenNotebookController: failed to remove created dir after retries:" << p_dir;
+  }
+}
+
+// Helper: convert a free-form vxcore error message into a user-facing
+// sentence. Strips trailing newlines so the dialog renders cleanly.
+QString trimDiagnostic(QString p_msg) {
+  while (p_msg.endsWith(QLatin1Char('\n')) || p_msg.endsWith(QLatin1Char(' '))) {
+    p_msg.chop(1);
+  }
+  return p_msg;
+}
+
+} // namespace
+
+OpenNotebookController::OpenNotebookController(ServiceLocator &p_services, QObject *p_parent)
+    : QObject(p_parent), m_services(p_services) {
+  // T22: enable cross-thread marshalling of cloneFinished's struct payload.
+  // qRegisterMetaType is idempotent so multiple controller instances are safe.
+  qRegisterMetaType<CloneAndOpenResult>("vnotex::CloneAndOpenResult");
+}
+
+OpenNotebookValidationResult
+OpenNotebookController::validateRootFolder(const QString &p_path) const {
   OpenNotebookValidationResult result;
   QString rootFolderPath = p_path.trimmed();
 
@@ -84,24 +154,323 @@ OpenNotebookResult OpenNotebookController::openNotebook(const OpenNotebookInput 
     return result;
   }
 
-  // Open notebook via service.
-  // The vxcore layer will validate if it's a valid VNote notebook.
-  QString notebookId = notebookService->openNotebook(p_input.rootFolderPath.trimmed());
+  // T23: Route through openNotebookEx so the readOnly flag (default false)
+  // reaches vxcore. Existing callers that leave readOnly default produce the
+  // identical byte sequence ("{}") that openNotebook(path) -> openNotebookEx
+  // back-compat shim would emit, so no behavior change for legacy paths.
+  const QString optionsJson =
+      p_input.readOnly ? QStringLiteral("{\"readOnly\":true}") : QStringLiteral("{}");
+  QString notebookId =
+      notebookService->openNotebookEx(p_input.rootFolderPath.trimmed(), optionsJson);
 
   if (notebookId.isEmpty()) {
     result.success = false;
-    result.errorMessage =
-        tr("Failed to open notebook from (%1). "
-           "The folder may not be a valid VNote notebook.")
-            .arg(p_input.rootFolderPath);
+    result.errorMessage = tr("Failed to open notebook from (%1). "
+                             "The folder may not be a valid VNote notebook.")
+                              .arg(p_input.rootFolderPath);
     return result;
   }
 
   // Get notebook name from config for display.
-  QJsonObject config = notebookService->getNotebookConfig(notebookId);
-  result.notebookName = config.value("name").toString();
+  result.notebookName = notebookNameFromConfig(notebookService, notebookId);
 
   result.success = true;
   result.notebookId = notebookId;
   return result;
+}
+
+CloneAndOpenValidationResult
+OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) const {
+  CloneAndOpenValidationResult result;
+
+  const QString url = p_input.remoteUrl.trimmed();
+  if (url.isEmpty()) {
+    result.valid = false;
+    result.message = tr("Remote URL must not be empty.");
+    return result;
+  }
+
+  // URL-scheme guard — identical regex to OpenNotebookDialog2 per T24
+  // contract.
+  static const QRegularExpression scheme(QString::fromLatin1(kRemoteUrlSchemeRegex));
+  if (!scheme.match(url).hasMatch()) {
+    result.valid = false;
+    result.message = tr("Remote URL must use HTTPS or file:// scheme (got: %1).").arg(url);
+    return result;
+  }
+
+  const QString finalDir = p_input.finalDestDir.trimmed();
+  if (finalDir.isEmpty()) {
+    result.valid = false;
+    result.message = tr("Destination folder path must not be empty.");
+    return result;
+  }
+  if (!PathUtils::isLegalPath(finalDir)) {
+    result.valid = false;
+    result.message = tr("Destination folder path is not valid.");
+    return result;
+  }
+
+  const QFileInfo finalInfo(finalDir);
+  if (finalInfo.exists()) {
+    result.valid = false;
+    result.message = tr("Destination folder (%1) already exists; it must not exist (we create it).")
+                         .arg(finalDir);
+    return result;
+  }
+
+  // Parent must exist + be a directory + be writable so we can create the
+  // staging dir and (eventually) the final dir alongside.
+  const QFileInfo parentInfo(finalInfo.absolutePath());
+  if (!parentInfo.exists() || !parentInfo.isDir()) {
+    result.valid = false;
+    result.message = tr("Parent folder of destination does not exist or is not a directory: %1.")
+                         .arg(parentInfo.absoluteFilePath());
+    return result;
+  }
+  if (!parentInfo.isWritable()) {
+    result.valid = false;
+    result.message =
+        tr("Parent folder of destination is not writable: %1.").arg(parentInfo.absoluteFilePath());
+    return result;
+  }
+
+  // Duplicate-open guard against the resolved final dir.
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (notebookService) {
+    const QJsonArray notebooks = notebookService->listNotebooks();
+    for (const auto &nb : notebooks) {
+      const QJsonObject nbObj = nb.toObject();
+      const QString existingPath = nbObj.value(QStringLiteral("root_path")).toString();
+      if (QDir(existingPath) == QDir(finalDir)) {
+        const QString existingName = nbObj.value(QStringLiteral("name")).toString();
+        result.valid = false;
+        result.message =
+            tr("A notebook (%1) is already open at this destination.").arg(existingName);
+        return result;
+      }
+    }
+  }
+
+  return result;
+}
+
+void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
+  // Step 1: pre-validate on the caller thread so dialog dismissal happens
+  // synchronously when the user typed something obviously wrong. Returning
+  // early via cloneFinished keeps the contract simple: every call emits
+  // cloneFinished exactly once.
+  const CloneAndOpenValidationResult validation = validateCloneInput(p_input);
+  if (!validation.valid) {
+    CloneAndOpenResult result;
+    result.success = false;
+    result.errorMessage = validation.message;
+    QMetaObject::invokeMethod(
+        this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    CloneAndOpenResult result;
+    result.success = false;
+    result.errorMessage = tr("NotebookService not available.");
+    QMetaObject::invokeMethod(
+        this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
+    return;
+  }
+  // SyncService / SyncCredentialsStore are required only for the PAT path.
+  // We resolve them up-front so the worker thread never touches the
+  // ServiceLocator (no DI overhead inside the closure).
+  const bool needsSync = !p_input.pat.isEmpty();
+  auto *syncService = needsSync ? m_services.get<SyncService>() : nullptr;
+  auto *credStore = needsSync ? m_services.get<SyncCredentialsStore>() : nullptr;
+  if (needsSync && (!syncService || !credStore)) {
+    CloneAndOpenResult result;
+    result.success = false;
+    result.errorMessage = tr("Sync services not available; cannot use a PAT.");
+    QMetaObject::invokeMethod(
+        this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
+    return;
+  }
+
+  const QString finalDir = QFileInfo(p_input.finalDestDir.trimmed()).absoluteFilePath();
+  const QFileInfo finalInfo(finalDir);
+  const QString parentDir = finalInfo.absolutePath();
+  const QString leafName = finalInfo.fileName();
+
+  // Step 2: stage on the SAME filesystem as the final destination so the
+  // QDir::rename in step 5 is atomic (cross-filesystem rename fails on
+  // Windows).
+  QString stagingErr;
+  const QString stagingDir = FileUtils2::generateCloneStagingDir(parentDir, leafName, &stagingErr);
+  if (stagingDir.isEmpty()) {
+    CloneAndOpenResult result;
+    result.success = false;
+    result.errorMessage = tr("Failed to create staging directory: %1").arg(stagingErr);
+    QMetaObject::invokeMethod(
+        this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
+    return;
+  }
+
+  // Build config + credentials JSON once on the caller thread so the worker
+  // closure captures simple QStrings. PAT contents are NEVER logged.
+  QJsonObject configObj;
+  configObj[QStringLiteral("backend")] = p_input.backend;
+  configObj[QStringLiteral("remoteUrl")] = p_input.remoteUrl.trimmed();
+  configObj[QStringLiteral("intervalSeconds")] = p_input.intervalSeconds;
+  const QString configJson =
+      QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
+
+  QString credentialsJson;
+  if (!p_input.pat.isEmpty()) {
+    QJsonObject credsObj;
+    credsObj[QStringLiteral("pat")] = p_input.pat;
+    credentialsJson = QString::fromUtf8(QJsonDocument(credsObj).toJson(QJsonDocument::Compact));
+  }
+
+  const bool patEmpty = p_input.pat.isEmpty();
+  const QString remoteUrl = p_input.remoteUrl.trimmed();
+  const QString pat = p_input.pat; // capture by value -- lambda lifetime is bounded by QFuture
+
+  // Capture pointers + values for the worker; no ServiceLocator access from
+  // the worker thread (the resolution above is the last DI access).
+  // Progress signal fired immediately so the dialog can show indeterminate
+  // feedback.
+  QMetaObject::invokeMethod(
+      this, [this]() { emit cloneProgressUpdated(0, 100, tr("Cloning...")); },
+      Qt::QueuedConnection);
+
+  // We deliberately discard the returned QFuture: the worker's only
+  // observable outputs are the queued-signal emissions, and the controller
+  // does NOT support mid-clone cancellation in MVP (per plan).
+  (void)QtConcurrent::run([this, notebookService, syncService, credStore, stagingDir, finalDir,
+                           configJson, credentialsJson, remoteUrl, pat, patEmpty]() {
+    auto emitFinished = [this](CloneAndOpenResult result) {
+      QMetaObject::invokeMethod(
+          this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
+    };
+
+    // Step 3: synchronous clone into the staging dir. This blocks the worker
+    // for the full libgit2 fetch + checkout but never touches the UI thread.
+    const QString stagingNotebookId =
+        notebookService->cloneNotebookFromUrl(stagingDir, configJson, credentialsJson);
+    if (stagingNotebookId.isEmpty()) {
+      // Clone failed: clean up the staging dir; never touch finalDir (it
+      // doesn't exist yet).
+      QString rmErr;
+      FileUtils2::removeStagingDir(stagingDir, &rmErr);
+      CloneAndOpenResult result;
+      result.success = false;
+      result.errorMessage = tr("Failed to clone remote notebook. "
+                               "Verify the URL is reachable, the PAT (if any) is valid, "
+                               "and the remote is an actual VNote notebook.");
+      emitFinished(result);
+      return;
+    }
+
+    // Step 4: rename staging -> final. Vxcore's NotebookManager already
+    // recorded root_folder=stagingDir in session.json, but that's fine: step
+    // 5 below closes + re-opens against finalDir to refresh the record.
+    QString renameErr;
+    if (!FileUtils2::renameStagingToFinal(stagingDir, finalDir, &renameErr)) {
+      // Rename failed: rollback. Close the staging notebook so vxcore drops
+      // the stale registration. removeStagingDir handles the dir; the
+      // (non-existent) finalDir needs no cleanup.
+      notebookService->closeNotebook(stagingNotebookId);
+      QString rmErr;
+      FileUtils2::removeStagingDir(stagingDir, &rmErr);
+      CloneAndOpenResult result;
+      result.success = false;
+      result.errorMessage =
+          tr("Failed to move cloned notebook into destination: %1").arg(trimDiagnostic(renameErr));
+      emitFinished(result);
+      return;
+    }
+
+    // Step 5: close + re-open with finalDir so vxcore's NotebookRecord
+    // reflects the true root path. This is THE CRITICAL step that the plan
+    // calls out: without it, session restore later cannot find the notebook
+    // because root_folder still points at the obsolete staging dir.
+    notebookService->closeNotebook(stagingNotebookId);
+    const QString optionsJson =
+        patEmpty ? QStringLiteral("{\"readOnly\":true}") : QStringLiteral("{}");
+    const QString finalNotebookId = notebookService->openNotebookEx(finalDir, optionsJson);
+    if (finalNotebookId.isEmpty()) {
+      // Re-open failed: best-effort cleanup of the just-created finalDir
+      // (which we own — user didn't have anything there before us).
+      teardownCreatedDir(finalDir);
+      CloneAndOpenResult result;
+      result.success = false;
+      result.errorMessage = tr("Cloned notebook could not be re-opened from %1.").arg(finalDir);
+      emitFinished(result);
+      return;
+    }
+
+    const QString notebookName = notebookNameFromConfig(notebookService, finalNotebookId);
+
+    // Step 6: if PAT was supplied, persist + register sync. RO snapshot
+    // path skips this entirely (snapshot-only MVP).
+    if (patEmpty) {
+      CloneAndOpenResult result;
+      result.success = true;
+      result.notebookId = finalNotebookId;
+      result.notebookName = notebookName;
+      result.isReadOnly = true;
+      emitFinished(result);
+      return;
+    }
+
+    // PAT path: enable sync. This itself is async on the SyncService side;
+    // we bounce back to the GUI thread, install a one-shot listener filtered
+    // by notebookId, and emit cloneFinished from the listener so the dialog
+    // sees clone + sync registration as a single atomic step. The
+    // SyncCredentialsStore::storeCredentials call is fired from inside
+    // SyncService::enableSyncForNotebook -- we don't need to duplicate it
+    // here.
+    QMetaObject::invokeMethod(
+        this,
+        [this, syncService, credStore, finalNotebookId, finalDir, notebookName, remoteUrl, pat,
+         emitFinished]() {
+          auto conn = std::make_shared<QMetaObject::Connection>();
+          *conn = connect(
+              syncService, &SyncService::enableFinished, this,
+              [this, conn, credStore, finalNotebookId, finalDir, notebookName, emitFinished](
+                  const QString &p_resultId, VxCoreError p_result, const QString &p_message) {
+                if (p_resultId != finalNotebookId) {
+                  return;
+                }
+                QObject::disconnect(*conn);
+                if (p_result == VXCORE_OK) {
+                  CloneAndOpenResult ok;
+                  ok.success = true;
+                  ok.notebookId = finalNotebookId;
+                  ok.notebookName = notebookName;
+                  ok.isReadOnly = false;
+                  emitFinished(ok);
+                  return;
+                }
+                // Sync enable failed: full rollback. Delete keychain entry,
+                // close notebook in vxcore, delete the on-disk final dir
+                // (which we created -- never user pre-existing per
+                // validation).
+                if (credStore) {
+                  credStore->deleteCredentials(finalNotebookId);
+                }
+                auto *notebookService = m_services.get<NotebookCoreService>();
+                if (notebookService) {
+                  notebookService->closeNotebook(finalNotebookId);
+                }
+                teardownCreatedDir(finalDir);
+                CloneAndOpenResult fail;
+                fail.success = false;
+                fail.errorMessage = tr("Cloned notebook but failed to enable sync: %1")
+                                        .arg(trimDiagnostic(p_message));
+                emitFinished(fail);
+              },
+              Qt::QueuedConnection);
+          syncService->enableSyncForNotebook(finalNotebookId, remoteUrl, pat);
+        },
+        Qt::QueuedConnection);
+  });
 }

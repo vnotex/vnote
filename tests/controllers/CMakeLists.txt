@@ -27,7 +27,11 @@ add_qt_test(test_openvnote3notebookcontroller
     ${CMAKE_SOURCE_DIR}/src/controllers/openvnote3notebookcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
+    Qt6::Concurrent
     core_services
     vxcore
   GUILESS
@@ -163,3 +167,35 @@ add_qt_test(test_controllers_readonly_state
     vxcore
   GUILESS
 )
+
+# T22 (open-notebook-remote-readonly): OpenNotebookController::cloneAndOpen
+# async clone + staging-dir-safe rollback. Tests exercise the worker
+# dispatch (QtConcurrent::run inside the controller), pre-flight validation,
+# and the staging-dir cleanup contract using file:// bare-repo fixtures.
+add_qt_test(test_open_notebook_controller_clone
+  SOURCES
+    test_open_notebook_controller_clone.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Concurrent
+    Qt6::Widgets
+    core_services
+    vxcore
+)
+# QTEST_MAIN crash-handler deadlocks with ctest's stdout pipe driver on
+# Windows (per T14 / test_bootstrap learnings). Use -nocrashhandler.
+set_property(TEST test_open_notebook_controller_clone PROPERTY
+  COMMAND $<TARGET_FILE:test_open_notebook_controller_clone> -nocrashhandler)
+set_tests_properties(test_open_notebook_controller_clone PROPERTIES
+  TIMEOUT 180
+)
+if(MSVC)
+  # vxcore self-registers the git backend via a token in
+  # git_sync_backend.cpp. MSVC's /OPT:REF drops the .obj if no externally
+  # referenced symbol pulls it in -- mirror the trick used by
+  # test_notebook_core_service_clone so vxcore_sync_clone resolves "git".
+  target_link_options(test_open_notebook_controller_clone PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
