@@ -29,7 +29,6 @@ public:
   // Returns empty string if no notebook is selected.
   QString currentNotebookId() const;
 
-
 signals:
   void newNotebookRequested();
 
@@ -52,6 +51,16 @@ private:
   void addNotebookItem(const QJsonObject &p_notebookJson);
 
   QIcon generateItemIcon(const QString &p_name, const QIcon &p_customIcon);
+
+  // Returns true if the given notebook is currently flagged read-only by
+  // vxcore. Wraps vxcore_notebook_is_read_only via the C ABI. Silently
+  // returns false on any error (defensive — the badge is a hint, not a
+  // gate).
+  bool isNotebookReadOnly(const QString &p_notebookId) const;
+
+  // Lazily-loaded shared lock icon used to badge read-only notebooks. Cached
+  // for cacheKey() identity comparisons in tests.
+  static const QIcon &readOnlyBadgeIcon();
 
   QString generateItemToolTip(const QString &p_name, const QString &p_rootPath,
                               const QString &p_description, const QString &p_type);

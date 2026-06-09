@@ -17,6 +17,7 @@ class QFileSystemWatcher;
 class QSplitter;
 class QMenu;
 class QActionGroup;
+class QLabel;
 class QTimer;
 class QToolButton;
 
@@ -199,6 +200,10 @@ private:
   // UI Components
   TitleBar *m_titleBar = nullptr;
   NotebookSelector2 *m_notebookSelector = nullptr;
+  // T26: visible lock badge that surfaces a notebook's read-only state next
+  // to the selector. Hidden by default; toggled from setCurrentNotebookInternal
+  // based on NotebookCoreService::isNotebookReadOnly.
+  QLabel *m_readOnlyBadgeLabel = nullptr;
   QVBoxLayout *m_mainLayout = nullptr;
 
   // State

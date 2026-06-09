@@ -502,3 +502,47 @@ add_custom_command(TARGET test_view_window2_readonly_save_warning POST_BUILD
     $<TARGET_FILE_DIR:test_view_window2_readonly_save_warning>
 )
 
+# T26 (open-notebook-remote-readonly): Lock-icon badge for read-only
+# notebooks in NotebookSelector2. Compiles the selector source + its
+# transitive widget dependencies (combobox, navigationmode) inline because
+# there is no separate widgets static library. NotebookSelector2 reads
+# ConfigMgr2 / SessionConfig via ServiceLocator under nullptr-guards, so the
+# test omits ConfigMgr2/ThemeService registration but still links
+# core_configs to satisfy the dead-but-linked ConfigMgr2 symbol references.
+# Reuses test_mainwindow_stub.cpp for MainWindow::staticMetaObject (pulled
+# in transitively via WidgetUtils::safelyOpenUrl → MainWindow::tr) and a
+# local ThemeService::paletteColor stub since the navigation label code
+# path is dead in the read-only badge scenario but the linker still needs
+# the symbol resolved.
+# NOT GUILESS — needs QApplication for QComboBox widget construction.
+add_qt_test(test_notebook_selector2_readonly_badge
+  SOURCES
+    test_notebook_selector2_readonly_badge.cpp
+    test_mainwindow_stub.cpp
+    test_themeservice_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/data/core/core.qrc
+    ${CMAKE_SOURCE_DIR}/src/widgets/notebookselector2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notebook_selector2_readonly_badge PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_notebook_selector2_readonly_badge POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebook_selector2_readonly_badge>
+)
+

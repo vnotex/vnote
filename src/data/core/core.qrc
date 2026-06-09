@@ -68,6 +68,7 @@
         <file>icons/open_notebook.svg</file>
         <file>icons/open_legacy_notebook.svg</file>
         <file>icons/sync_now.svg</file>
+        <file>icons/read_only.svg</file>
         <file>icons/clear.svg</file>
         <file>icons/clear_selection.svg</file>
         <file>icons/open_folder.svg</file>

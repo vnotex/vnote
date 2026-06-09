@@ -10,6 +10,7 @@
 #include <QFileSystemWatcher>
 #include <QInputDialog>
 #include <QJsonDocument>
+#include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -263,6 +264,20 @@ void NotebookExplorer2::setupUI() {
                                       "Move mouse on one item to check its details."));
   m_notebookSelector->setViewOrder(widgetConfig.getNotebookSelectorViewOrder());
   m_mainLayout->addWidget(m_notebookSelector);
+
+  // T26: Read-only badge label. Hidden by default; visibility is driven by
+  // setCurrentNotebookInternal() based on NotebookCoreService::isNotebookReadOnly.
+  // Lives directly under the selector so users see the lock + reason inline
+  // with the active notebook name. Object name is exported for test discovery
+  // and themed via QSS (objectName == "readOnlyBadgeLabel").
+  m_readOnlyBadgeLabel = new QLabel(this);
+  m_readOnlyBadgeLabel->setObjectName(QStringLiteral("readOnlyBadgeLabel"));
+  m_readOnlyBadgeLabel->setContentsMargins(6, 2, 6, 2);
+  m_readOnlyBadgeLabel->setTextFormat(Qt::RichText);
+  m_readOnlyBadgeLabel->setToolTip(tr("Read-only notebook (no PAT)"));
+  m_readOnlyBadgeLabel->setStyleSheet(QStringLiteral("QLabel { font-style: italic; }"));
+  m_readOnlyBadgeLabel->hide();
+  m_mainLayout->addWidget(m_readOnlyBadgeLabel);
 
   // Get initial explore mode from config (0=Combined, 1=TwoColumns)
   int mode = m_services.get<ConfigMgr2>()->getWidgetConfig().getNodeExplorerExploreMode();
@@ -781,6 +796,30 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   }
 
   updateRecycleBinMenuState();
+
+  // T26: surface read-only state to the user inline. Hidden for writable
+  // notebooks; rich-text label with embedded lock icon when read-only. The
+  // tooltip ("Read-only notebook (no PAT)") was set once in setupUI() and
+  // does not need to be updated per-switch.
+  if (m_readOnlyBadgeLabel) {
+    bool readOnly = false;
+    if (!m_currentNotebookId.isEmpty()) {
+      auto *nbService = m_services.get<NotebookCoreService>();
+      if (nbService) {
+        readOnly = nbService->isNotebookReadOnly(m_currentNotebookId);
+      }
+    }
+    if (readOnly) {
+      // Use HTML img to embed the same Qt resource icon shown in the
+      // selector combobox. Sized at 14px to match label x-height roughly.
+      m_readOnlyBadgeLabel->setText(
+          tr("<img src=\":/vnotex/data/core/icons/read_only.svg\" width=\"14\" height=\"14\"> "
+             "Read-only (no PAT)"));
+      m_readOnlyBadgeLabel->show();
+    } else {
+      m_readOnlyBadgeLabel->hide();
+    }
+  }
 
   // Update current explorer
   if (m_nodeExplorer) {

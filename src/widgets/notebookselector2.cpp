@@ -123,10 +123,38 @@ void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   }
 
   int idx = count();
-  addItem(generateItemIcon(name, icon), name);
-  setItemToolTip(idx, generateItemToolTip(name, rootPath, description, type));
+  // T26: read-only notebooks get a lock badge in place of the name-derived
+  // icon. The lock icon is intentionally distinctive (monochrome padlock)
+  // and pairs with a tooltip suffix so accessibility is preserved.
+  const bool readOnly = isNotebookReadOnly(guid);
+  QIcon itemIcon = readOnly ? readOnlyBadgeIcon() : generateItemIcon(name, icon);
+  addItem(itemIcon, name);
+  QString tooltip = generateItemToolTip(name, rootPath, description, type);
+  if (readOnly) {
+    tooltip.append(QStringLiteral("\n\n"));
+    tooltip.append(tr("Read-only notebook (no PAT)"));
+  }
+  setItemToolTip(idx, tooltip);
   // Store GUID string for identification and save/restore.
   setItemData(idx, guid, NotebookGuidRole);
+}
+
+bool NotebookSelector2::isNotebookReadOnly(const QString &p_notebookId) const {
+  if (p_notebookId.isEmpty()) {
+    return false;
+  }
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    return false;
+  }
+  return notebookService->isNotebookReadOnly(p_notebookId);
+}
+
+const QIcon &NotebookSelector2::readOnlyBadgeIcon() {
+  // QIcon's cacheKey() is stable per QIcon instance; we hold a single shared
+  // instance so the test's identity check (`cacheKey() ==`) is reliable.
+  static const QIcon s_icon(QStringLiteral(":/vnotex/data/core/icons/read_only.svg"));
+  return s_icon;
 }
 
 void NotebookSelector2::fetchIconColor(const QString &p_name, QString &p_fg, QString &p_bg) {
@@ -161,9 +189,8 @@ QIcon NotebookSelector2::generateItemIcon(const QString &p_name, const QIcon &p_
 QString NotebookSelector2::generateItemToolTip(const QString &p_name, const QString &p_rootPath,
                                                const QString &p_description,
                                                const QString &p_type) {
-  QString typeLabel = p_type.compare(QStringLiteral("raw"), Qt::CaseInsensitive) == 0
-                          ? tr("Raw")
-                          : tr("Bundled");
+  QString typeLabel =
+      p_type.compare(QStringLiteral("raw"), Qt::CaseInsensitive) == 0 ? tr("Raw") : tr("Bundled");
   return tr("Notebook: %1\nType: %2\nRoot folder: %3\nDescription: %4")
       .arg(p_name, typeLabel, p_rootPath, p_description);
 }
