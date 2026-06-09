@@ -199,3 +199,22 @@ if(MSVC)
   # test_notebook_core_service_clone so vxcore_sync_clone resolves "git".
   target_link_options(test_open_notebook_controller_clone PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
+
+# T23 (open-notebook-remote-readonly): OpenNotebookInput.readOnly param.
+# Verifies the controller forwards the new struct field to
+# NotebookCoreService::openNotebookEx with the correct options JSON
+# ({"readOnly":true} vs "{}"). One subtest per branch + back-compat
+# verification via vxcore_notebook_is_read_only.
+add_qt_test(test_open_notebook_controller_readonly_param
+  SOURCES
+    test_open_notebook_controller_readonly_param.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Concurrent
+    core_services
+    vxcore
+  GUILESS
+)
