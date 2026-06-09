@@ -7,6 +7,8 @@
 #include <QMetaObject>
 #include <QStringList>
 
+#include <vxcore/notebook_json_keys.h>
+
 #include "core/logging.h"
 
 using namespace vnotex;
@@ -52,7 +54,7 @@ void EventBridge::onVxCoreEvent(const char *event_name, const char *json_data, v
       QJsonDocument::fromJson(
           QByteArray::fromRawData(json_data, static_cast<int>(strlen(json_data))))
           .object();
-  const QString notebookId = payload.value(QStringLiteral("notebookId")).toString();
+  const QString notebookId = payload.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
 
   qCDebug(lcVxBridge) << "EventBridge::onVxCoreEvent: received event=" << evName
                       << "notebookId=" << notebookId;

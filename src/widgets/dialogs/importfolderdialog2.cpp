@@ -9,13 +9,14 @@
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
+#include <vxcore/notebook_json_keys.h>
 
 #include "folderfilesfilterwidget.h"
 
 using namespace vnotex;
 
-ImportFolderDialog2::ImportFolderDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
-                                         QWidget *p_parent)
+ImportFolderDialog2::ImportFolderDialog2(ServiceLocator &p_services,
+                                         const NodeIdentifier &p_parentId, QWidget *p_parent)
     : ScrollDialog(p_parent), m_services(p_services), m_parentId(p_parentId) {
   // Create controller.
   m_controller = new ImportFolderController(m_services, this);
@@ -36,7 +37,7 @@ void ImportFolderDialog2::setupUI() {
   QString parentPath;
   if (notebookService) {
     QJsonObject notebookConfig = notebookService->getNotebookConfig(m_parentId.notebookId);
-    QString rootPath = notebookConfig.value("rootFolder").toString();
+    QString rootPath = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
     parentPath = PathUtils::concatenateFilePath(rootPath, m_parentId.relativePath);
   }
 
@@ -78,8 +79,8 @@ void ImportFolderDialog2::validateInputs() {
     valid = false;
   }
 
-  setInformationText(msg,
-                     valid ? ScrollDialog::InformationLevel::Info : ScrollDialog::InformationLevel::Error);
+  setInformationText(msg, valid ? ScrollDialog::InformationLevel::Info
+                                : ScrollDialog::InformationLevel::Error);
   setButtonEnabled(QDialogButtonBox::Ok, valid);
 }
 

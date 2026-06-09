@@ -43,6 +43,7 @@
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
+#include <vxcore/notebook_json_keys.h>
 
 #include "../utils/scrollpreservationpolicy.h"
 #include "editors/markdowneditor.h"
@@ -585,7 +586,7 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   }
 
   NodeIdentifier nodeId;
-  nodeId.notebookId = resolved[QStringLiteral("notebookId")].toString();
+  nodeId.notebookId = resolved[QLatin1String(vxcore::kJsonKeyNotebookId)].toString();
   nodeId.relativePath = resolved[QStringLiteral("relativePath")].toString();
 
   FileOpenSettings settings;

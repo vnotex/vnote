@@ -30,6 +30,7 @@
 #include <core/services/syncops.h>
 #include <core/services/syncworkqueuemanager.h>
 
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 
 #include "sync/sync_json_keys.h"
@@ -274,7 +275,7 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
   // included in the payload.
   if (auto *hookMgr = m_services.get<HookManager>()) {
     QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QLatin1String(vxcore::kJsonKeyNotebookId)] = p_notebookId;
     args[QStringLiteral("remoteUrl")] = p_remoteUrl;
     hookMgr->doAction(HookNames::SyncBeforeEnable, args);
   }
@@ -426,7 +427,7 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
               // delete, outside any SyncService mutex. Observe-only.
               if (auto *hookMgr = m_services.get<HookManager>()) {
                 QVariantMap args;
-                args[QStringLiteral("notebookId")] = notebookId;
+                args[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
                 hookMgr->doAction(HookNames::SyncAfterDisable, args);
               }
             } else {
@@ -1260,7 +1261,7 @@ void SyncService::onSyncConflictFiles(const QString &p_notebookId, const QString
   // no SyncManager / worker locks). Observe-only.
   if (auto *hookMgr = m_services.get<HookManager>()) {
     QVariantMap args;
-    args[QStringLiteral("notebookId")] = p_notebookId;
+    args[QLatin1String(vxcore::kJsonKeyNotebookId)] = p_notebookId;
     args[QStringLiteral("conflictCount")] = p_files.size();
     hookMgr->doAction(HookNames::SyncConflictDetected, args);
   }
@@ -1356,7 +1357,7 @@ void SyncService::onMainWindowAfterStart() {
                         << "notebooks for reconcile";
   for (const QJsonValue &v : notebooks) {
     const QJsonObject nb = v.toObject();
-    const QString nbId = nb.value(QStringLiteral("id")).toString();
+    const QString nbId = nb.value(QLatin1String(vxcore::kJsonKeyId)).toString();
     if (nbId.isEmpty()) {
       continue;
     }

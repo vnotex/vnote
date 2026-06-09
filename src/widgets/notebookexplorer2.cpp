@@ -50,6 +50,7 @@
 #include <views/combinednodeexplorer.h>
 #include <views/inodeexplorer.h>
 #include <views/twocolumnsnodeexplorer.h>
+#include <vxcore/notebook_json_keys.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
 #include <core/services/templateservice.h>
 #include <snippet/snippetmgr.h>
@@ -594,7 +595,7 @@ void NotebookExplorer2::rebuildDatabase() {
 
   // Get notebook name for the dialog.
   QJsonObject config = notebookService.getNotebookConfig(m_currentNotebookId);
-  QString notebookName = config.value("name").toString();
+  QString notebookName = config.value(QLatin1String(vxcore::kJsonKeyName)).toString();
   if (notebookName.isEmpty()) {
     notebookName = tr("current notebook");
   }
@@ -1125,7 +1126,7 @@ void NotebookExplorer2::newQuickNote() {
     auto &notebookService = *m_services.get<NotebookCoreService>();
     QJsonObject resolved = notebookService.resolvePathToNotebook(scheme.m_folderPath);
     if (!resolved.isEmpty()) {
-      notebookId = resolved[QStringLiteral("notebookId")].toString();
+      notebookId = resolved[QLatin1String(vxcore::kJsonKeyNotebookId)].toString();
       folderPath = resolved[QStringLiteral("relativePath")].toString();
     } else {
       // Path not found in any notebook - use scheme.m_folderPath as-is if current notebook is
@@ -1163,7 +1164,7 @@ void NotebookExplorer2::newQuickNote() {
   // Get notebook root path to generate unique filename.
   auto &notebookService = *m_services.get<NotebookCoreService>();
   QJsonObject notebookConfig = notebookService.getNotebookConfig(notebookId);
-  QString rootFolder = notebookConfig[QStringLiteral("rootFolder")].toString();
+  QString rootFolder = notebookConfig[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
   QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
 
   QString newFileName = FileUtils::generateFileNameWithSequence(
@@ -1551,7 +1552,7 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId) {
   // Read-modify-write notebook config.
   auto *notebookService = m_services.get<NotebookCoreService>();
   QJsonObject config = notebookService->getNotebookConfig(p_nodeId.notebookId);
-  QJsonArray ignored = config.value(QStringLiteral("ignored")).toArray();
+  QJsonArray ignored = config.value(QLatin1String(vxcore::kJsonKeyIgnored)).toArray();
 
   // Check for duplicate.
   for (const auto &val : ignored) {
@@ -1561,7 +1562,7 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId) {
   }
 
   ignored.append(name);
-  config[QStringLiteral("ignored")] = ignored;
+  config[QLatin1String(vxcore::kJsonKeyIgnored)] = ignored;
 
   const QString configStr = QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact));
   if (!notebookService->updateNotebookConfig(p_nodeId.notebookId, configStr)) {
@@ -1768,7 +1769,7 @@ void NotebookExplorer2::onSyncFailedSurface(const QString &p_notebookId, VxCoreE
   QString notebookLabel = p_notebookId;
   if (auto *nbSvc = m_services.get<NotebookCoreService>()) {
     const QJsonObject cfg = nbSvc->getNotebookConfig(p_notebookId);
-    const QString name = cfg.value(QStringLiteral("name")).toString();
+    const QString name = cfg.value(QLatin1String(vxcore::kJsonKeyName)).toString();
     if (!name.isEmpty()) {
       notebookLabel = name;
     }

@@ -12,6 +12,7 @@
 #include <core/services/buffersavequeue.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookiogate.h>
+#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -206,7 +207,7 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
   }
 
   NodeIdentifier nodeId;
-  nodeId.notebookId = bufJson.value(QStringLiteral("notebookId")).toString();
+  nodeId.notebookId = bufJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   nodeId.relativePath = bufJson.value(QStringLiteral("filePath")).toString();
 
   return Buffer2(this, m_hookMgr, p_bufferId, nodeId);
@@ -224,7 +225,7 @@ bool BufferService::isNotebookBundled(const QString &p_notebookId) const {
     return false;
   }
   QJsonObject config = parseJsonObjectFromCStr(json);
-  return config.value(QStringLiteral("type"))
+  return config.value(QLatin1String(vxcore::kJsonKeyType))
              .toString()
              .compare(QStringLiteral("bundled"), Qt::CaseInsensitive) == 0;
 }
@@ -271,7 +272,7 @@ QStringList BufferService::checkAllExternalChanges() {
   QJsonArray buffers = BufferCoreService::listBuffers();
   for (const auto &bufferVal : buffers) {
     QJsonObject bufObj = bufferVal.toObject();
-    QString bufferId = bufObj.value(QStringLiteral("id")).toString();
+    QString bufferId = bufObj.value(QLatin1String(vxcore::kJsonKeyId)).toString();
     if (bufferId.isEmpty()) {
       continue;
     }
@@ -580,7 +581,7 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     // T7: dispatch off UI thread via BufferSaveQueue.
     // Resolve notebookId for gate keying.
     QJsonObject bufJson = BufferCoreService::getBuffer(p_bufferId);
-    QString notebookId = bufJson.value(QStringLiteral("notebookId")).toString();
+    QString notebookId = bufJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
 
     // Emit content-synced eagerly: the snapshot is committed to the queue and
     // the editor view can drop any "syncing" hint. The actual disk write

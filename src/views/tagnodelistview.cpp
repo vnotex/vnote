@@ -4,6 +4,8 @@
 #include <QJsonObject>
 #include <QStandardItemModel>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 TagNodeListView::TagNodeListView(QWidget *p_parent) : QListView(p_parent) {
@@ -28,7 +30,8 @@ void TagNodeListView::setNodes(const QJsonArray &p_nodes) {
   for (const QJsonValue &val : p_nodes) {
     const QJsonObject obj = val.toObject();
 
-    // vxcore returns "filePath" for tag matches; also accept "relativePath" and "path" as fallbacks.
+    // vxcore returns "filePath" for tag matches; also accept "relativePath" and "path" as
+    // fallbacks.
     QString path = obj.value(QStringLiteral("filePath")).toString();
     if (path.isEmpty()) {
       path = obj.value(QStringLiteral("relativePath")).toString();
@@ -37,7 +40,7 @@ void TagNodeListView::setNodes(const QJsonArray &p_nodes) {
       path = obj.value(QStringLiteral("path")).toString();
     }
 
-    const QString notebookId = obj.value(QStringLiteral("notebookId")).toString();
+    const QString notebookId = obj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
 
     // Display the file name portion for readability; store full relative path as data.
     const QString displayName = obj.value(QStringLiteral("fileName")).toString();

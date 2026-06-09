@@ -6,6 +6,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <vxcore/notebook_json_keys.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 #include <widgets/widgetsfactory.h>
 
@@ -67,11 +68,11 @@ SessionConfig::QuickAccessItem NewQuickAccessItemDialog::getItem() const {
   if (notebookSvc) {
     auto resolved = notebookSvc->resolvePathToNotebook(item.m_path);
     if (!resolved.isEmpty()) {
-      auto notebookId = resolved[QStringLiteral("notebookId")].toString();
+      auto notebookId = resolved[QLatin1String(vxcore::kJsonKeyNotebookId)].toString();
       auto relativePath = resolved[QStringLiteral("relativePath")].toString();
       auto fileInfo = notebookSvc->getFileInfo(notebookId, relativePath);
-      if (!fileInfo.isEmpty() && fileInfo.contains(QStringLiteral("id"))) {
-        item.m_uuid = fileInfo[QStringLiteral("id")].toString();
+      if (!fileInfo.isEmpty() && fileInfo.contains(QLatin1String(vxcore::kJsonKeyId))) {
+        item.m_uuid = fileInfo[QLatin1String(vxcore::kJsonKeyId)].toString();
       }
     }
   }

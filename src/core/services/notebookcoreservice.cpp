@@ -8,6 +8,7 @@
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
 #include <core/services/synclog.h>
+#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -73,7 +74,7 @@ QString NotebookCoreService::openNotebookEx(const QString &p_path, const QString
     event.notebookId = resolvedId;
     event.rootFolder = p_path;
     const QJsonObject cfg = getNotebookConfig(resolvedId);
-    event.notebookName = cfg.value(QStringLiteral("name")).toString();
+    event.notebookName = cfg.value(QLatin1String(vxcore::kJsonKeyName)).toString();
     m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
   }
 
@@ -264,7 +265,7 @@ QJsonObject NotebookCoreService::resolvePathToNotebook(const QString &p_absolute
   }
 
   QJsonObject result;
-  result["notebookId"] = QString::fromUtf8(notebookId);
+  result[QLatin1String(vxcore::kJsonKeyNotebookId)] = QString::fromUtf8(notebookId);
   result["relativePath"] = QString::fromUtf8(relativePath);
 
   vxcore_string_free(notebookId);

@@ -2,6 +2,8 @@
 
 #include <QDebug>
 
+#include <vxcore/notebook_json_keys.h>
+
 #include "hooknames.h"
 #include "services/hookmanager.h"
 
@@ -23,7 +25,7 @@ void ExamplePlugin::registerHooks(HookManager *p_hookMgr) {
   s_notebookOpenId = p_hookMgr->addAction(
       HookNames::NotebookBeforeOpen,
       [](HookContext &p_ctx, const QVariantMap &p_args) {
-        QString notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+        QString notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
         qDebug() << "[ExamplePlugin] Notebook opening:" << notebookId;
 
         // Example: Cancel opening for specific notebooks (commented out)
@@ -40,7 +42,7 @@ void ExamplePlugin::registerHooks(HookManager *p_hookMgr) {
       HookNames::NodeBeforeActivate,
       [](HookContext &p_ctx, const QVariantMap &p_args) {
         Q_UNUSED(p_ctx);
-        QString notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+        QString notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
         QString relativePath = p_args.value(QStringLiteral("relativePath")).toString();
         qDebug() << "[ExamplePlugin] Node activating:" << notebookId << "/" << relativePath;
       },

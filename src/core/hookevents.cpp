@@ -1,25 +1,27 @@
 #include "hookevents.h"
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 // ===== NodeOperationEvent =====
 
 QVariantMap NodeOperationEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("relativePath")] = relativePath;
   m[QStringLiteral("isFolder")] = isFolder;
-  m[QStringLiteral("name")] = name;
+  m[QLatin1String(vxcore::kJsonKeyName)] = name;
   m[QStringLiteral("operation")] = operation;
   return m;
 }
 
 NodeOperationEvent NodeOperationEvent::fromVariantMap(const QVariantMap &p_args) {
   NodeOperationEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.relativePath = p_args.value(QStringLiteral("relativePath")).toString();
   e.isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
-  e.name = p_args.value(QStringLiteral("name")).toString();
+  e.name = p_args.value(QLatin1String(vxcore::kJsonKeyName)).toString();
   e.operation = p_args.value(QStringLiteral("operation")).toString();
   return e;
 }
@@ -28,7 +30,7 @@ NodeOperationEvent NodeOperationEvent::fromVariantMap(const QVariantMap &p_args)
 
 QVariantMap NodeRenameEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("relativePath")] = relativePath;
   m[QStringLiteral("isFolder")] = isFolder;
   m[QStringLiteral("oldName")] = oldName;
@@ -38,7 +40,7 @@ QVariantMap NodeRenameEvent::toVariantMap() const {
 
 NodeRenameEvent NodeRenameEvent::fromVariantMap(const QVariantMap &p_args) {
   NodeRenameEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.relativePath = p_args.value(QStringLiteral("relativePath")).toString();
   e.isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
   e.oldName = p_args.value(QStringLiteral("oldName")).toString();
@@ -50,7 +52,7 @@ NodeRenameEvent NodeRenameEvent::fromVariantMap(const QVariantMap &p_args) {
 
 QVariantMap NodeMoveEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("oldRelativePath")] = oldRelativePath;
   m[QStringLiteral("newRelativePath")] = newRelativePath;
   m[QStringLiteral("isFolder")] = isFolder;
@@ -59,7 +61,7 @@ QVariantMap NodeMoveEvent::toVariantMap() const {
 
 NodeMoveEvent NodeMoveEvent::fromVariantMap(const QVariantMap &p_args) {
   NodeMoveEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.oldRelativePath = p_args.value(QStringLiteral("oldRelativePath")).toString();
   e.newRelativePath = p_args.value(QStringLiteral("newRelativePath")).toString();
   e.isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
@@ -70,14 +72,14 @@ NodeMoveEvent NodeMoveEvent::fromVariantMap(const QVariantMap &p_args) {
 
 QVariantMap FileOpenEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("filePath")] = filePath;
   m[QStringLiteral("bufferId")] = bufferId;
   m[QStringLiteral("mode")] = mode;
   m[QStringLiteral("forceMode")] = forceMode;
   m[QStringLiteral("focus")] = focus;
   m[QStringLiteral("newFile")] = newFile;
-  m[QStringLiteral("readOnly")] = readOnly;
+  m[QLatin1String(vxcore::kJsonKeyReadOnly)] = readOnly;
   m[QStringLiteral("lineNumber")] = lineNumber;
   m[QStringLiteral("anchor")] = anchor;
   m[QStringLiteral("alwaysNewWindow")] = alwaysNewWindow;
@@ -91,14 +93,14 @@ QVariantMap FileOpenEvent::toVariantMap() const {
 
 FileOpenEvent FileOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   FileOpenEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.filePath = p_args.value(QStringLiteral("filePath")).toString();
   e.bufferId = p_args.value(QStringLiteral("bufferId")).toString();
   e.mode = p_args.value(QStringLiteral("mode")).toInt();
   e.forceMode = p_args.value(QStringLiteral("forceMode")).toBool();
   e.focus = p_args.value(QStringLiteral("focus"), true).toBool();
   e.newFile = p_args.value(QStringLiteral("newFile")).toBool();
-  e.readOnly = p_args.value(QStringLiteral("readOnly")).toBool();
+  e.readOnly = p_args.value(QLatin1String(vxcore::kJsonKeyReadOnly)).toBool();
   e.lineNumber = p_args.value(QStringLiteral("lineNumber"), -1).toInt();
   e.anchor = p_args.value(QStringLiteral("anchor")).toString();
   e.alwaysNewWindow = p_args.value(QStringLiteral("alwaysNewWindow")).toBool();
@@ -250,7 +252,7 @@ ViewSplitActivateEvent ViewSplitActivateEvent::fromVariantMap(const QVariantMap 
 
 QVariantMap TagOperationEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("tagName")] = tagName;
   m[QStringLiteral("parentTag")] = parentTag;
   m[QStringLiteral("operation")] = operation;
@@ -259,7 +261,7 @@ QVariantMap TagOperationEvent::toVariantMap() const {
 
 TagOperationEvent TagOperationEvent::fromVariantMap(const QVariantMap &p_args) {
   TagOperationEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.tagName = p_args.value(QStringLiteral("tagName")).toString();
   e.parentTag = p_args.value(QStringLiteral("parentTag")).toString();
   e.operation = p_args.value(QStringLiteral("operation")).toString();
@@ -270,7 +272,7 @@ TagOperationEvent TagOperationEvent::fromVariantMap(const QVariantMap &p_args) {
 
 QVariantMap FileTagEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("filePath")] = filePath;
   m[QStringLiteral("tagName")] = tagName;
   m[QStringLiteral("tagsJson")] = tagsJson;
@@ -280,7 +282,7 @@ QVariantMap FileTagEvent::toVariantMap() const {
 
 FileTagEvent FileTagEvent::fromVariantMap(const QVariantMap &p_args) {
   FileTagEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.filePath = p_args.value(QStringLiteral("filePath")).toString();
   e.tagName = p_args.value(QStringLiteral("tagName")).toString();
   e.tagsJson = p_args.value(QStringLiteral("tagsJson")).toString();
@@ -358,13 +360,13 @@ AttachmentRenameEvent AttachmentRenameEvent::fromVariantMap(const QVariantMap &p
 
 QVariantMap NotebookCloseEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   return m;
 }
 
 NotebookCloseEvent NotebookCloseEvent::fromVariantMap(const QVariantMap &p_args) {
   NotebookCloseEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   return e;
 }
 
@@ -372,17 +374,17 @@ NotebookCloseEvent NotebookCloseEvent::fromVariantMap(const QVariantMap &p_args)
 
 QVariantMap NotebookOpenEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("notebookName")] = notebookName;
-  m[QStringLiteral("rootFolder")] = rootFolder;
+  m[QLatin1String(vxcore::kJsonKeyRootFolder)] = rootFolder;
   return m;
 }
 
 NotebookOpenEvent NotebookOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   NotebookOpenEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.notebookName = p_args.value(QStringLiteral("notebookName")).toString();
-  e.rootFolder = p_args.value(QStringLiteral("rootFolder")).toString();
+  e.rootFolder = p_args.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
   return e;
 }
 
@@ -390,17 +392,17 @@ NotebookOpenEvent NotebookOpenEvent::fromVariantMap(const QVariantMap &p_args) {
 
 QVariantMap NotebookCloneEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
-  m[QStringLiteral("targetDir")] = targetDir;
-  m[QStringLiteral("isReadOnly")] = isReadOnly;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyTargetDir)] = targetDir;
+  m[QLatin1String(vxcore::kJsonKeyIsReadOnly)] = isReadOnly;
   return m;
 }
 
 NotebookCloneEvent NotebookCloneEvent::fromVariantMap(const QVariantMap &p_args) {
   NotebookCloneEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
-  e.targetDir = p_args.value(QStringLiteral("targetDir")).toString();
-  e.isReadOnly = p_args.value(QStringLiteral("isReadOnly")).toBool();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+  e.targetDir = p_args.value(QLatin1String(vxcore::kJsonKeyTargetDir)).toString();
+  e.isReadOnly = p_args.value(QLatin1String(vxcore::kJsonKeyIsReadOnly)).toBool();
   return e;
 }
 
@@ -454,14 +456,14 @@ ImageHostRemoveEvent ImageHostRemoveEvent::fromVariantMap(const QVariantMap &p_a
 
 QVariantMap SyncCancelledEvent::toVariantMap() const {
   QVariantMap m;
-  m[QStringLiteral("notebookId")] = notebookId;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
   m[QStringLiteral("wasQueued")] = wasQueued;
   return m;
 }
 
 SyncCancelledEvent SyncCancelledEvent::fromVariantMap(const QVariantMap &p_args) {
   SyncCancelledEvent e;
-  e.notebookId = p_args.value(QStringLiteral("notebookId")).toString();
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   e.wasQueued = p_args.value(QStringLiteral("wasQueued")).toBool();
   return e;
 }

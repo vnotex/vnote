@@ -15,6 +15,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
+#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -71,8 +72,8 @@ void NotebookSelector2::sortNotebooks(QJsonArray &p_notebooks) const {
   case ViewOrder::OrderedByName:
     std::sort(nbList.begin(), nbList.end(),
               [reversed](const QJsonObject &p_a, const QJsonObject &p_b) {
-                QString nameA = p_a.value("name").toString().toLower();
-                QString nameB = p_b.value("name").toString().toLower();
+                QString nameA = p_a.value(QLatin1String(vxcore::kJsonKeyName)).toString().toLower();
+                QString nameB = p_b.value(QLatin1String(vxcore::kJsonKeyName)).toString().toLower();
                 if (reversed) {
                   return nameB < nameA;
                 } else {
@@ -109,11 +110,11 @@ void NotebookSelector2::sortNotebooks(QJsonArray &p_notebooks) const {
 }
 
 void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
-  QString name = p_notebookJson.value("name").toString();
-  QString rootPath = p_notebookJson.value("rootFolder").toString();
-  QString description = p_notebookJson.value("description").toString();
-  QString type = p_notebookJson.value("type").toString();
-  QString guid = p_notebookJson.value("id").toString();
+  QString name = p_notebookJson.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+  QString rootPath = p_notebookJson.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
+  QString description = p_notebookJson.value(QLatin1String(vxcore::kJsonKeyDescription)).toString();
+  QString type = p_notebookJson.value(QLatin1String(vxcore::kJsonKeyType)).toString();
+  QString guid = p_notebookJson.value(QLatin1String(vxcore::kJsonKeyId)).toString();
 
   // Icon from JSON if available, otherwise generate.
   QIcon icon;

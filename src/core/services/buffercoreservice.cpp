@@ -7,6 +7,8 @@
 #include <QLoggingCategory>
 #include <QThread>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 namespace {
@@ -282,7 +284,7 @@ bool BufferCoreService::isBufferReadOnly(const QString &p_bufferId) const {
   }
 
   // Extract notebook ID from buffer JSON
-  QString notebookId = bufferJson.value(QStringLiteral("notebookId")).toString();
+  QString notebookId = bufferJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   if (notebookId.isEmpty()) {
     // Virtual/external buffers may not have a notebook ID
     qDebug() << "isBufferReadOnly: buffer has no notebookId (external or virtual)";
@@ -291,7 +293,8 @@ bool BufferCoreService::isBufferReadOnly(const QString &p_bufferId) const {
 
   // Query notebook read-only flag
   bool readOnly = false;
-  VxCoreError err = vxcore_notebook_is_read_only(m_context, notebookId.toUtf8().constData(), &readOnly);
+  VxCoreError err =
+      vxcore_notebook_is_read_only(m_context, notebookId.toUtf8().constData(), &readOnly);
   if (err != VXCORE_OK) {
     qWarning() << "isBufferReadOnly: failed to query notebook" << notebookId
                << QString::fromUtf8(vxcore_error_message(err));
