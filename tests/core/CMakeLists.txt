@@ -170,6 +170,15 @@ add_qt_test(test_buffer_revision
   GUILESS
 )
 
+add_qt_test(test_buffer_read_only
+  SOURCES
+    test_buffer_read_only.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_virtual_buffer
   SOURCES
     test_virtual_buffer.cpp

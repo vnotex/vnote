@@ -87,6 +87,10 @@ public:
   // Check if buffer has unsaved modifications.
   bool isModified() const;
 
+  // Check if the buffer's owning notebook is read-only.
+  // Returns false on any error (invalid handle, notebook not found, vxcore error).
+  bool isReadOnly() const noexcept;
+
   // Get buffer content revision number.
   int getRevision() const;
 

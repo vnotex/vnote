@@ -139,6 +139,7 @@ public:
   using BufferCoreService::getState;
   using BufferCoreService::insertAsset;
   using BufferCoreService::insertAssetRaw;
+  using BufferCoreService::isBufferReadOnly;
   using BufferCoreService::isModified;
   using BufferCoreService::peekContentRaw;
   using BufferCoreService::setContent;

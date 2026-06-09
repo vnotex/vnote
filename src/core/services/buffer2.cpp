@@ -121,6 +121,13 @@ bool Buffer2::isModified() const {
   return m_bufferService->isModified(m_bufferId);
 }
 
+bool Buffer2::isReadOnly() const noexcept {
+  if (!isValid()) {
+    return false;
+  }
+  return m_bufferService->isBufferReadOnly(m_bufferId);
+}
+
 int Buffer2::getRevision() const {
   if (!isValid()) {
     return 0;
