@@ -8,8 +8,9 @@
 //      page; local page is no longer current.
 //   3. In remote mode, an invalid URL scheme (ssh://...) keeps the Open
 //      button disabled.
-//   4. In remote mode, a valid HTTPS URL + a non-existent destination derived
-//      from a real parent dir enables the Open button.
+//   4. In remote mode, a valid HTTPS URL + a non-existent or existing-empty
+//      destination enables the Open button; an existing non-empty path
+//      disables it (refine-open-notebook-dialog: relaxed dest contract).
 //
 // Per ADR-9 patterns used in adjacent dialog tests (test_notebooksyncinfodialog2):
 // the dialog is instantiated directly with a ServiceLocator wired to a real
@@ -19,6 +20,7 @@
 #include <QButtonGroup>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QLineEdit>
 #include <QPushButton>
@@ -31,6 +33,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <temp_dir_fixture.h>
 #include <widgets/dialogs/opennotebookdialog2.h>
+#include <widgets/locationinputwithbrowsebutton.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -57,8 +60,8 @@ private slots:
   // 3. Remote mode: paste invalid URL scheme (ssh://...) -> Open disabled.
   void testInvalidRemoteUrlSchemeKeepsOpenDisabled();
 
-  // 4. Remote mode: valid HTTPS URL + valid (non-existent) destination -> Open
-  //    enabled.
+  // 4. Remote mode: valid HTTPS URL + valid destination (non-existing OR
+  //    existing-empty) -> Open enabled. Non-empty existing dest -> disabled.
   void testValidRemoteUrlEnablesOpenButton();
 
 private:
@@ -166,17 +169,14 @@ void TestOpenNotebookDialog2::testSwitchToRemoteMode() {
 
   auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
   auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remotePatEdit"));
-  auto *destEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteDestEdit"));
-  auto *browseBtn = dialog.findChild<QPushButton *>(QStringLiteral("remoteDestBrowseButton"));
+  auto *destInput =
+      dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
   QVERIFY2(urlEdit, "remoteUrlEdit must exist");
   QVERIFY2(patEdit, "remotePatEdit must exist");
-  QVERIFY2(destEdit, "remoteDestEdit must exist");
-  QVERIFY2(browseBtn, "remoteDestBrowseButton must exist");
+  QVERIFY2(destInput, "remoteDestInput (LocationInputWithBrowseButton) must exist");
 
   // PAT must use password echo mode (the password-mask contract).
   QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
-  // Destination must be read-only (user picks via Browse, not by typing).
-  QVERIFY(destEdit->isReadOnly());
 
   // Switching back to Local should restore index 0.
   auto *localRadio = dialog.findChild<QRadioButton *>(QStringLiteral("localModeRadio"));
@@ -234,14 +234,24 @@ void TestOpenNotebookDialog2::testInvalidRemoteUrlSchemeKeepsOpenDisabled() {
 }
 
 // =============================================================================
-// Subtest 4: Valid URL + valid (non-existent) destination enables Open.
+// Subtest 4: Valid URL + valid destination enables Open.
+//
+// Post refine-open-notebook-dialog the dest contract is "non-existing OR
+// existing-empty", so this subtest covers three branches:
+//   a) non-existing path with a writable parent       -> Open ENABLED
+//   b) existing empty directory                       -> Open ENABLED
+//   c) existing non-empty directory                   -> Open DISABLED
+//
+// The user-typed/browse value lands in the LocationInputWithBrowseButton's
+// internal QLineEdit; we drive it via setText() to bypass the modal QFileDialog
+// (same observable state).
 // =============================================================================
 void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
   ServiceLocator services;
   NotebookCoreService *svc = nullptr;
   buildServices(services, svc);
 
-  // Real parent directory the dialog can populate as parent + suggest leaf.
+  // Real parent directory the dialog can validate against.
   TempDirFixture parentTemp;
   QVERIFY(parentTemp.isValid());
   const QString parentDir = parentTemp.path();
@@ -257,44 +267,53 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
   auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-  auto *destEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteDestEdit"));
+  auto *destInput =
+      dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
   QVERIFY(urlEdit);
-  QVERIFY(destEdit);
+  QVERIFY(destInput);
 
   auto *box = dialog.getDialogButtonBox();
   QVERIFY(box);
   auto *openBtn = box->button(QDialogButtonBox::Open);
   QVERIFY(openBtn);
 
-  // Set the URL first so the dialog will know the leaf name when we set the
-  // parent (the dialog uses the URL leaf as the appended folder name).
   urlEdit->setText(QStringLiteral("https://github.com/vnotex/test-notebook.git"));
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
   // Without a destination, Open must still be disabled.
   QVERIFY(!openBtn->isEnabled());
 
-  // Bypass the QFileDialog by writing the destination directly. This is the
-  // same observable state the dialog would land in after the user picks the
-  // parent through Browse: an absolute path equal to <parent>/<leaf>. We
-  // can't drive the modal QFileDialog from a test, so we set the field
-  // directly and trust the textChanged-driven validation path.
-  const QString computedDest = QDir::cleanPath(parentDir + QStringLiteral("/test-notebook"));
-  QVERIFY2(!QFileInfo::exists(computedDest),
+  // (a) Non-existing path with a writable parent: Open enabled.
+  const QString nonExistingDest = QDir::cleanPath(parentDir + QStringLiteral("/test-notebook"));
+  QVERIFY2(!QFileInfo::exists(nonExistingDest),
            "Test precondition: derived destination must not yet exist");
-
-  // The dest line edit is read-only via the property; setText() still works.
-  destEdit->setText(computedDest);
+  destInput->setText(nonExistingDest);
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
   QVERIFY2(openBtn->isEnabled(),
-           "Open button must be enabled when URL is https://... and dest does not exist");
+           "Open must be enabled when URL is https://... and dest does not exist");
 
-  // Sanity: introducing an existing destination should disable Open.
-  destEdit->setText(parentDir); // parentDir itself definitely exists
+  // (b) Existing EMPTY directory: still enabled (relaxed contract).
+  const QString existingEmptyDest = QDir::cleanPath(parentDir + QStringLiteral("/empty-dest"));
+  QVERIFY(QDir().mkpath(existingEmptyDest));
+  QVERIFY(QFileInfo(existingEmptyDest).isDir());
+  destInput->setText(existingEmptyDest);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QVERIFY2(openBtn->isEnabled(), "Open must be enabled when dest is an existing empty directory");
+
+  // (c) Existing NON-EMPTY directory: disabled. Seed a sentinel file inside.
+  const QString existingNonEmptyDest =
+      QDir::cleanPath(parentDir + QStringLiteral("/nonempty-dest"));
+  QVERIFY(QDir().mkpath(existingNonEmptyDest));
+  {
+    QFile sentinel(existingNonEmptyDest + QStringLiteral("/sentinel.txt"));
+    QVERIFY(sentinel.open(QIODevice::WriteOnly));
+    sentinel.write("x");
+    sentinel.close();
+  }
+  destInput->setText(existingNonEmptyDest);
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
   QVERIFY2(!openBtn->isEnabled(),
-           "Open button must be disabled when the destination folder already exists");
+           "Open must be DISABLED when dest is an existing non-empty directory");
 
   delete svc;
 }

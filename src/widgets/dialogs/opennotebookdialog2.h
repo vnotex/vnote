@@ -6,7 +6,6 @@
 #include <QString>
 
 class QButtonGroup;
-class QLabel;
 class QLineEdit;
 class QProgressBar;
 class QPushButton;
@@ -22,13 +21,14 @@ struct CloneAndOpenResult;
 
 // OpenNotebookDialog2 - View for opening an existing notebook.
 // Two modes:
-//   * Local Folder: pick a root folder on disk via QFileDialog::getExistingDirectory
+//   * Local Folder: pick a root folder on disk via LocationInputWithBrowseButton
 //     and open it through OpenNotebookController::openNotebook().
 //   * Remote URL  : provide an HTTPS or file:// URL, an optional PAT (empty
-//     means read-only), and a destination parent folder. The dialog suggests
-//     the leaf folder name from the URL. Clone wiring (openurl-followups
-//     Item 2) drives OpenNotebookController::cloneAndOpen and exposes
-//     mid-clone Cancel via OpenNotebookController::cancelClone.
+//     means read-only), and a local root folder. The local root folder may
+//     either NOT exist yet (the controller creates it) OR be an existing
+//     empty directory. Clone wiring drives
+//     OpenNotebookController::cloneAndOpen and exposes mid-clone Cancel via
+//     OpenNotebookController::cancelClone.
 //
 // Pure UI: all business logic is delegated to OpenNotebookController. The
 // dialog never calls vxcore directly and never touches the credentials store.
@@ -37,6 +37,13 @@ struct CloneAndOpenResult;
 // with the new notebook ID and accept()s. Remote mode wires the controller
 // signals (cloneFinished + cloneProgressUpdated) and emits notebookOpened +
 // accept() on a successful clone result.
+//
+// Banner-suppression contract (see plan refine-open-notebook-dialog):
+// changes to the URL or PAT fields NEVER set the ScrollDialog info-text
+// banner; they only flip the Open button enabled state. Only changes to
+// the Local root folder (when non-empty AND invalid) surface a banner
+// message. Clone start / progress / failure events continue to use the
+// banner. This keeps the dialog quiet and stable in size while typing.
 class OpenNotebookDialog2 : public ScrollDialog {
   Q_OBJECT
 
@@ -67,7 +74,6 @@ private slots:
   void onModeChanged();
   void onLocalRootChanged();
   void onRemoteFieldsChanged();
-  void onBrowseRemoteDestClicked();
 
   // openurl-followups Item 2: controller signal handlers wired in setupUI.
   // Both bounce on the GUI thread (default Qt::AutoConnection across same-
@@ -81,29 +87,17 @@ private:
   void setupLocalPage(QWidget *p_page);
   void setupRemotePage(QWidget *p_page);
 
-  // Extracts a leaf repository name from the URL. Strips trailing slashes and
-  // ".git", then returns the final path segment. Used to auto-suggest the
-  // final destination folder from a user-picked parent.
-  // Examples:
-  //   https://github.com/user/repo.git    -> "repo"
-  //   https://github.com/user/repo        -> "repo"
-  //   file:///C:/path/to/repo.git/        -> "repo"
-  static QString extractRepoNameFromUrl(const QString &p_url);
-
-  // Recompute and write the suggested destination into m_remoteDestEdit based
-  // on the currently selected parent directory and the URL field.
-  void updateSuggestedDestination();
-
   // Recompute the Open button enabled state from the active mode's validation.
   void updateOpenButtonState();
 
-  // STUB for remote-mode validation. T22 will move this to
-  // OpenNotebookController::validateCloneInput(). Returns valid=true when:
-  //   - URL is non-empty AND matches https:// or file:/// scheme
-  //   - Destination is non-empty AND does NOT yet exist on disk
-  // On failure, populates message with a user-facing reason.
+  // Remote-mode validation result. See validateRemoteInputs() for details.
+  // surfaceInBanner controls whether the validation message is shown in the
+  // ScrollDialog info-text banner (true) or only used to disable the Open
+  // button silently (false). URL / PAT errors are silent; Local root folder
+  // errors surface in the banner. Per plan refine-open-notebook-dialog.
   struct RemoteValidation {
     bool valid = false;
+    bool surfaceInBanner = false;
     QString message;
   };
   RemoteValidation validateRemoteInputs() const;
@@ -144,13 +138,7 @@ private:
   QWidget *m_remotePage = nullptr;
   QLineEdit *m_remoteUrlEdit = nullptr;
   QLineEdit *m_remotePatEdit = nullptr;
-  QLineEdit *m_remoteDestEdit = nullptr;
-  QPushButton *m_remoteDestBrowseButton = nullptr;
-  QLabel *m_remoteDestHintLabel = nullptr;
-  QLabel *m_remotePatHintLabel = nullptr;
-  // Parent folder the user picked via Browse; the final dest is derived as
-  // <parent>/<repoNameFromUrl> and written into m_remoteDestEdit.
-  QString m_remoteSelectedParentDir;
+  LocationInputWithBrowseButton *m_remoteDestInput = nullptr;
 
   // Bottom progress (hidden by default; shown during a remote clone).
   QProgressBar *m_progressBar = nullptr;

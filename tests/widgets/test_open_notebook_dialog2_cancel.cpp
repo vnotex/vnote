@@ -40,6 +40,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <temp_dir_fixture.h>
 #include <widgets/dialogs/opennotebookdialog2.h>
+#include <widgets/locationinputwithbrowsebutton.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -211,14 +212,15 @@ void TestOpenNotebookDialog2Cancel::testCancelDuringRemoteClone() {
     QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
     auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-    auto *destEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteDestEdit"));
+    auto *destInput =
+        dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
     QVERIFY(urlEdit);
-    QVERIFY(destEdit);
+    QVERIFY(destInput);
 
     urlEdit->setText(remoteUrl);
-    // m_remoteDestEdit is read-only, but setText() still works through Qt's
-    // model. The dialog's validation path picks this up via textChanged.
-    destEdit->setText(destDir);
+    // The dialog's validation path picks this up via textChanged on the
+    // LocationInputWithBrowseButton's internal QLineEdit.
+    destInput->setText(destDir);
     QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
     auto *box = dialog.getDialogButtonBox();

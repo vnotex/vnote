@@ -3,11 +3,9 @@
 #include <QButtonGroup>
 #include <QDialogButtonBox>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QProgressBar>
@@ -19,6 +17,7 @@
 
 #include <controllers/opennotebookcontroller.h>
 #include <core/servicelocator.h>
+#include <utils/pathutils.h>
 
 #include "../locationinputwithbrowsebutton.h"
 
@@ -33,8 +32,7 @@ const char *const kModeStackName = "modeStack";
 const char *const kLocalRootInputName = "localRootInput";
 const char *const kRemoteUrlEditName = "remoteUrlEdit";
 const char *const kRemotePatEditName = "remotePatEdit";
-const char *const kRemoteDestEditName = "remoteDestEdit";
-const char *const kRemoteDestBrowseButtonName = "remoteDestBrowseButton";
+const char *const kRemoteDestInputName = "remoteDestInput";
 const char *const kProgressBarName = "openNotebookProgressBar";
 const char *const kOpenButtonName = "openButton";
 const char *const kCancelButtonName = "cancelButton";
@@ -178,59 +176,43 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remoteUrlEdit->setPlaceholderText(
       tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
   m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported."));
-  layout->addRow(tr("Remote URL (HTTPS or file://):"), m_remoteUrlEdit);
+  layout->addRow(tr("Remote URL:"), m_remoteUrlEdit);
 
-  // PAT field (password echo).
+  // PAT field (password echo). "(optional)" hint lives in the placeholder so
+  // the label stays compact; see plan refine-open-notebook-dialog.
   m_remotePatEdit = new QLineEdit(p_page);
   m_remotePatEdit->setObjectName(QLatin1String(kRemotePatEditName));
   m_remotePatEdit->setEchoMode(QLineEdit::Password);
-  m_remotePatEdit->setPlaceholderText(tr("Leave blank to open the notebook read-only"));
+  m_remotePatEdit->setPlaceholderText(tr("Optional (empty to open as read-only)"));
   m_remotePatEdit->setToolTip(
       tr("If empty, the notebook opens read-only (you cannot edit, only view)."));
-  layout->addRow(tr("Personal Access Token (optional):"), m_remotePatEdit);
+  layout->addRow(tr("Personal Access Token:"), m_remotePatEdit);
 
-  // Destination folder: read-only QLineEdit + Browse button.
-  auto *destContainer = new QWidget(p_page);
-  auto *destLayout = new QHBoxLayout(destContainer);
-  destLayout->setContentsMargins(0, 0, 0, 0);
+  // Local root folder: project-standard LocationInputWithBrowseButton. Must
+  // either not exist (will be created during clone) or be an existing empty
+  // directory. Validation enforces the contract; see validateRemoteInputs()
+  // and OpenNotebookController::validateCloneInput().
+  m_remoteDestInput = new LocationInputWithBrowseButton(p_page);
+  m_remoteDestInput->setObjectName(QLatin1String(kRemoteDestInputName));
+  m_remoteDestInput->setBrowseType(LocationInputWithBrowseButton::Folder,
+                                   tr("Select Local Root Folder"));
+  m_remoteDestInput->setPlaceholderText(tr("Folder to clone into (must not exist or be empty)"));
+  m_remoteDestInput->setToolTip(
+      tr("Local folder that will receive the cloned notebook. It must either not exist yet "
+         "(it will be created) or be an existing empty directory."));
+  layout->addRow(tr("Local root folder:"), m_remoteDestInput);
 
-  m_remoteDestEdit = new QLineEdit(destContainer);
-  m_remoteDestEdit->setObjectName(QLatin1String(kRemoteDestEditName));
-  m_remoteDestEdit->setReadOnly(true);
-  m_remoteDestEdit->setPlaceholderText(
-      tr("Browse to pick a parent folder; the leaf name is filled in from the URL"));
-
-  m_remoteDestBrowseButton = new QPushButton(tr("Browse..."), destContainer);
-  m_remoteDestBrowseButton->setObjectName(QLatin1String(kRemoteDestBrowseButtonName));
-
-  destLayout->addWidget(m_remoteDestEdit, 1);
-  destLayout->addWidget(m_remoteDestBrowseButton);
-
-  layout->addRow(tr("Destination folder:"), destContainer);
-
-  // Hint labels: spelled-out semantics for the must-not-exist + read-only-on-empty-PAT rules.
-  m_remoteDestHintLabel =
-      new QLabel(tr("The destination folder must not yet exist; it will be created."), p_page);
-  m_remoteDestHintLabel->setWordWrap(true);
-  layout->addRow(QString(), m_remoteDestHintLabel);
-
-  m_remotePatHintLabel = new QLabel(
-      tr("Note: empty PAT means the notebook opens read-only (you cannot edit, only view)."),
-      p_page);
-  m_remotePatHintLabel->setWordWrap(true);
-  layout->addRow(QString(), m_remotePatHintLabel);
-
-  // Wire field-change validation.
-  connect(m_remoteUrlEdit, &QLineEdit::textChanged, this, [this](const QString &) {
-    updateSuggestedDestination();
-    onRemoteFieldsChanged();
-  });
+  // Wire field-change validation. Per plan refine-open-notebook-dialog the
+  // dialog deliberately suppresses banner updates on URL/PAT changes; only
+  // Local-root-folder changes can surface a banner message. The wiring is
+  // identical across the three fields — the per-field gating lives in
+  // updateOpenButtonState() via the RemoteValidation::surfaceInBanner flag.
+  connect(m_remoteUrlEdit, &QLineEdit::textChanged, this,
+          [this](const QString &) { onRemoteFieldsChanged(); });
   connect(m_remotePatEdit, &QLineEdit::textChanged, this,
           [this](const QString &) { onRemoteFieldsChanged(); });
-  connect(m_remoteDestEdit, &QLineEdit::textChanged, this,
+  connect(m_remoteDestInput, &LocationInputWithBrowseButton::textChanged, this,
           [this](const QString &) { onRemoteFieldsChanged(); });
-  connect(m_remoteDestBrowseButton, &QPushButton::clicked, this,
-          &OpenNotebookDialog2::onBrowseRemoteDestClicked);
 }
 
 OpenNotebookDialog2::Mode OpenNotebookDialog2::currentMode() const {
@@ -259,36 +241,6 @@ void OpenNotebookDialog2::onRemoteFieldsChanged() {
   updateOpenButtonState();
 }
 
-void OpenNotebookDialog2::onBrowseRemoteDestClicked() {
-  QString initDir = m_remoteSelectedParentDir;
-  if (initDir.isEmpty()) {
-    initDir = QDir::homePath();
-  }
-  const QString picked =
-      QFileDialog::getExistingDirectory(this, tr("Select Destination Parent Folder"), initDir);
-  if (picked.isEmpty()) {
-    return;
-  }
-  m_remoteSelectedParentDir = picked;
-  updateSuggestedDestination();
-}
-
-void OpenNotebookDialog2::updateSuggestedDestination() {
-  if (m_remoteSelectedParentDir.isEmpty()) {
-    return;
-  }
-  const QString leaf = extractRepoNameFromUrl(m_remoteUrlEdit->text());
-  if (leaf.isEmpty()) {
-    // No usable leaf yet (URL empty or only-scheme). Park parent in the field
-    // so the user sees what they picked, but mark with a trailing slash so
-    // validation flags it as "not a final destination yet".
-    m_remoteDestEdit->setText(QDir::cleanPath(m_remoteSelectedParentDir));
-    return;
-  }
-  const QString full = QDir::cleanPath(m_remoteSelectedParentDir + QLatin1Char('/') + leaf);
-  m_remoteDestEdit->setText(full);
-}
-
 void OpenNotebookDialog2::updateOpenButtonState() {
   if (currentMode() == LocalMode) {
     const QString path = m_localRootInput ? m_localRootInput->text().trimmed() : QString();
@@ -308,11 +260,18 @@ void OpenNotebookDialog2::updateOpenButtonState() {
     return;
   }
 
-  // Remote mode.
+  // Remote mode. Per plan refine-open-notebook-dialog, URL / PAT errors
+  // disable Open SILENTLY (no banner update) so the dialog stays quiet and
+  // stable in size while the user is typing. Only Local-root-folder errors
+  // surface in the banner (via RemoteValidation::surfaceInBanner).
   const RemoteValidation remote = validateRemoteInputs();
   if (!remote.valid) {
-    setInformationText(remote.message, InformationLevel::Error);
     setButtonEnabled(QDialogButtonBox::Open, false);
+    if (remote.surfaceInBanner) {
+      setInformationText(remote.message, InformationLevel::Error);
+    } else {
+      setInformationText(QString(), InformationLevel::Info);
+    }
     return;
   }
   setInformationText(QString(), InformationLevel::Info);
@@ -321,69 +280,65 @@ void OpenNotebookDialog2::updateOpenButtonState() {
 
 OpenNotebookDialog2::RemoteValidation OpenNotebookDialog2::validateRemoteInputs() const {
   RemoteValidation result;
+
+  // URL: empty -> silent invalid; bad scheme -> silent invalid (banner stays
+  // quiet per the "no banner on URL change" mandate). Open just disables.
   const QString url = m_remoteUrlEdit ? m_remoteUrlEdit->text().trimmed() : QString();
   if (url.isEmpty()) {
-    // Empty URL: keep the feedback area quiet until the user types.
     return result;
   }
-
   static const QRegularExpression scheme(QString::fromLatin1(kRemoteUrlSchemeRegex));
   if (!scheme.match(url).hasMatch()) {
     result.message = tr("Remote URL must use HTTPS or file:// scheme (got: %1).").arg(url);
+    // surfaceInBanner stays false: URL errors are silent.
     return result;
   }
 
-  const QString dest = m_remoteDestEdit ? m_remoteDestEdit->text().trimmed() : QString();
+  // Local root folder: empty -> silent invalid; populated-but-invalid ->
+  // surfaceInBanner=true so the user gets actionable feedback.
+  const QString dest = m_remoteDestInput ? m_remoteDestInput->text().trimmed() : QString();
   if (dest.isEmpty()) {
-    result.message = tr("Click Browse... to pick a destination parent folder.");
     return result;
   }
-
-  // The dialog appends the URL-derived leaf onto the parent. A bare parent
-  // (no leaf appended yet) means we have no usable repo name to derive.
-  const QString leaf = extractRepoNameFromUrl(url);
-  if (leaf.isEmpty()) {
-    result.message = tr("Could not derive a repository name from the URL; please refine the URL.");
+  if (!PathUtils::isLegalPath(dest)) {
+    result.message = tr("Local root folder path is not valid.");
+    result.surfaceInBanner = true;
     return result;
   }
-
-  if (QFileInfo::exists(dest)) {
-    result.message = tr("The destination folder (%1) already exists; it must not exist.").arg(dest);
-    return result;
+  const QFileInfo destInfo(dest);
+  if (destInfo.exists()) {
+    if (!destInfo.isDir()) {
+      result.message = tr("Local root folder must be a directory.");
+      result.surfaceInBanner = true;
+      return result;
+    }
+    // Must be empty (no visible OR hidden/system entries) so the worker's
+    // pre-rename rmdir hop is safe and the atomic rename can proceed.
+    const QDir destDir(dest);
+    const QStringList entries =
+        destDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
+    if (!entries.isEmpty()) {
+      result.message =
+          tr("Local root folder must be empty (contains %1 item(s)).").arg(entries.size());
+      result.surfaceInBanner = true;
+      return result;
+    }
+  } else {
+    const QFileInfo parentInfo(destInfo.absolutePath());
+    if (!parentInfo.exists() || !parentInfo.isDir()) {
+      result.message = tr("Parent folder does not exist.");
+      result.surfaceInBanner = true;
+      return result;
+    }
+    if (!parentInfo.isWritable()) {
+      result.message = tr("Parent folder is not writable.");
+      result.surfaceInBanner = true;
+      return result;
+    }
   }
 
   result.valid = true;
   return result;
-}
-
-QString OpenNotebookDialog2::extractRepoNameFromUrl(const QString &p_url) {
-  QString trimmed = p_url.trimmed();
-  if (trimmed.isEmpty()) {
-    return QString();
-  }
-  // Strip trailing slashes.
-  while (trimmed.endsWith(QLatin1Char('/'))) {
-    trimmed.chop(1);
-  }
-  // Strip trailing ".git" (case-insensitive).
-  if (trimmed.endsWith(QStringLiteral(".git"), Qt::CaseInsensitive)) {
-    trimmed.chop(4);
-  }
-  // Strip any further trailing slash after the .git removal.
-  while (trimmed.endsWith(QLatin1Char('/'))) {
-    trimmed.chop(1);
-  }
-  const int slash = trimmed.lastIndexOf(QLatin1Char('/'));
-  if (slash < 0) {
-    return QString();
-  }
-  const QString leaf = trimmed.mid(slash + 1);
-  // Defensive: reject obviously-bogus leaves (e.g. ":" left over from a
-  // malformed URL). Anything left over is fine to use as a folder name.
-  if (leaf.isEmpty()) {
-    return QString();
-  }
-  return leaf;
 }
 
 void OpenNotebookDialog2::acceptedButtonClicked() {
@@ -441,7 +396,7 @@ void OpenNotebookDialog2::handleRemoteOpen() {
   CloneAndOpenInput input;
   input.remoteUrl = m_remoteUrlEdit ? m_remoteUrlEdit->text().trimmed() : QString();
   input.pat = m_remotePatEdit ? m_remotePatEdit->text() : QString();
-  input.finalDestDir = m_remoteDestEdit ? m_remoteDestEdit->text().trimmed() : QString();
+  input.finalDestDir = m_remoteDestInput ? m_remoteDestInput->text().trimmed() : QString();
   // Backend / intervalSeconds keep CloneAndOpenInput's defaults ("git", 60).
 
   // Disable inputs so the user cannot mutate them mid-clone. The Cancel
@@ -473,10 +428,8 @@ void OpenNotebookDialog2::setRemoteInputsEnabled(bool p_enabled) {
     m_remoteUrlEdit->setEnabled(p_enabled);
   if (m_remotePatEdit)
     m_remotePatEdit->setEnabled(p_enabled);
-  if (m_remoteDestBrowseButton)
-    m_remoteDestBrowseButton->setEnabled(p_enabled);
-  // Note: m_remoteDestEdit is read-only by design (user picks via Browse);
-  // skip enable/disable to preserve the read-only contract.
+  if (m_remoteDestInput)
+    m_remoteDestInput->setEnabled(p_enabled);
 }
 
 void OpenNotebookDialog2::onCloneProgressUpdated(int p_current, int p_total,
