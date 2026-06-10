@@ -201,6 +201,20 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_T2_BASELINE"));
     QVERIFY2(enableSpy.wait(15000), "enableFinished did not arrive within 15s");
     // enableFinished payload: (notebookId, VxCoreError, message).
+    // CI Linux runners have no D-Bus session / org.freedesktop.secrets
+    // provider; the keychain store call fails with VXCORE_ERR_UNKNOWN and a
+    // message containing "secrets". Skip cleanly in that environment instead
+    // of asserting VXCORE_OK we cannot achieve. Mirrors the pattern in
+    // test_bootstrap_and_persist.cpp.
+    const QString enableMsg = enableSpy.first().at(2).toString();
+    if (enableSpy.first().at(1).toInt() != static_cast<int>(VXCORE_OK) &&
+        (enableMsg.contains(QStringLiteral("secrets"), Qt::CaseInsensitive) ||
+         enableMsg.contains(QStringLiteral("keychain"), Qt::CaseInsensitive))) {
+      syncService.shutdown();
+      guard.cleanup();
+      vxcore_context_destroy(ctx);
+      QSKIP("OS keychain backend not usable in this test environment");
+    }
     QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
 
     // Defensive: track the id even though credentialsStored should auto-track.

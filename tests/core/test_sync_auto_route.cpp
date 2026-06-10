@@ -153,6 +153,19 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
     syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_T31"));
     QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
+    // CI Linux runners have no D-Bus session / org.freedesktop.secrets
+    // provider; bootstrapAndPersist propagates the keychain failure
+    // verbatim via the 3rd payload slot. Skip rather than assert what the
+    // environment cannot deliver.
+    const QString bootstrapMsg = enableSpy.first().at(2).toString();
+    if (enableSpy.first().at(1).toInt() != static_cast<int>(VXCORE_OK) &&
+        (bootstrapMsg.contains(QStringLiteral("secrets"), Qt::CaseInsensitive) ||
+         bootstrapMsg.contains(QStringLiteral("keychain"), Qt::CaseInsensitive))) {
+      syncService.shutdown();
+      guard.cleanup();
+      vxcore_context_destroy(ctx);
+      QSKIP("OS keychain backend not usable in this test environment");
+    }
     QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
 
     // Defensive track in case credentialsStored signal raced cleanup.

@@ -333,8 +333,11 @@ void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
   // Pre-flight validate: synchronous answer, no worker dispatch.
   const auto validation = controller.validateCloneInput(input);
   QVERIFY2(!validation.valid, "existing dest dir must be rejected by validation");
-  QVERIFY2(validation.message.contains(QStringLiteral("already exists")),
-           qPrintable(QStringLiteral("validation message must mention 'already exists' (got: %1)")
+  // Post-e6caf855: an EMPTY existing dest is allowed; only non-empty existing
+  // dirs are rejected, with new wording "must be empty (contains N item(s))".
+  // The sentinel file above keeps the dir non-empty so this branch fires.
+  QVERIFY2(validation.message.contains(QStringLiteral("must be empty")),
+           qPrintable(QStringLiteral("validation message must mention 'must be empty' (got: %1)")
                           .arg(validation.message)));
 
   // cloneAndOpen with the same input must short-circuit through

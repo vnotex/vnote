@@ -173,10 +173,21 @@ void TestClipboardImage::test_resolveRelativeImages_absolutePath() {
   QTemporaryDir tmpDir;
   QVERIFY(tmpDir.isValid());
 
-  // Absolute paths should be filtered out (not treated as relative)
-  QString md = "![](C:/absolute/path/img.png)";
-  auto results = vnotex::ImageResolutionUtils::resolveRelativeImages(md, tmpDir.path());
-  QVERIFY(results.isEmpty());
+  // Absolute paths should be filtered out (not treated as relative). Use a
+  // POSIX-absolute path so the assertion holds on both Windows and Linux
+  // (QDir::isAbsolutePath("C:/...") returns false on Linux because "C:" is
+  // just a relative dirname there).
+  QString mdPosix = "![](/absolute/path/img.png)";
+  auto resultsPosix = vnotex::ImageResolutionUtils::resolveRelativeImages(mdPosix, tmpDir.path());
+  QVERIFY(resultsPosix.isEmpty());
+
+#ifdef Q_OS_WIN
+  // Windows drive-letter paths are also absolute on Windows; keep the
+  // original case covered on its native platform.
+  QString mdWin = "![](C:/absolute/path/img.png)";
+  auto resultsWin = vnotex::ImageResolutionUtils::resolveRelativeImages(mdWin, tmpDir.path());
+  QVERIFY(resultsWin.isEmpty());
+#endif
 }
 
 void TestClipboardImage::test_resolveRelativeImages_networkUrl() {
