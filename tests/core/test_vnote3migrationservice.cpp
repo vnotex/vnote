@@ -944,8 +944,7 @@ void TestVNote3MigrationService::testConvertPreservesTags() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonObject fileInfo =
-      m_notebookService->getFileInfo(nbId, QStringLiteral("tagged.md"));
+  QJsonObject fileInfo = m_notebookService->getFileInfo(nbId, QStringLiteral("tagged.md"));
   QVERIFY2(!fileInfo.isEmpty(), "getFileInfo returned empty for tagged.md");
 
   QJsonArray resultTags = fileInfo[QStringLiteral("tags")].toArray();
@@ -953,9 +952,10 @@ void TestVNote3MigrationService::testConvertPreservesTags() {
   for (const QJsonValue &v : resultTags) {
     tagList.append(v.toString());
   }
-  QVERIFY2(tagList.contains(QStringLiteral("work")),
-           qPrintable(QStringLiteral("Tag 'work' missing. Got: %1")
-                          .arg(tagList.join(QStringLiteral(", ")))));
+  QVERIFY2(
+      tagList.contains(QStringLiteral("work")),
+      qPrintable(
+          QStringLiteral("Tag 'work' missing. Got: %1").arg(tagList.join(QStringLiteral(", ")))));
   QVERIFY2(tagList.contains(QStringLiteral("important")),
            qPrintable(QStringLiteral("Tag 'important' missing. Got: %1")
                           .arg(tagList.join(QStringLiteral(", ")))));
@@ -982,10 +982,8 @@ void TestVNote3MigrationService::testConvertPreservesTimestamps() {
 
   QJsonObject fileEntry;
   fileEntry[QStringLiteral("name")] = QStringLiteral("timed.md");
-  fileEntry[QStringLiteral("created_time")] =
-      QStringLiteral("2024-01-15T10:30:00Z");
-  fileEntry[QStringLiteral("modified_time")] =
-      QStringLiteral("2024-06-20T14:45:00Z");
+  fileEntry[QStringLiteral("created_time")] = QStringLiteral("2024-01-15T10:30:00Z");
+  fileEntry[QStringLiteral("modified_time")] = QStringLiteral("2024-06-20T14:45:00Z");
   QJsonArray filesArr;
   filesArr.append(fileEntry);
   QJsonObject rootVx;
@@ -1000,23 +998,18 @@ void TestVNote3MigrationService::testConvertPreservesTimestamps() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonObject fileInfo =
-      m_notebookService->getFileInfo(nbId, QStringLiteral("timed.md"));
+  QJsonObject fileInfo = m_notebookService->getFileInfo(nbId, QStringLiteral("timed.md"));
   QVERIFY2(!fileInfo.isEmpty(), "getFileInfo returned empty for timed.md");
 
   const qint64 expectedCreated =
-      QDateTime::fromString(QStringLiteral("2024-01-15T10:30:00Z"),
-                            Qt::ISODate)
+      QDateTime::fromString(QStringLiteral("2024-01-15T10:30:00Z"), Qt::ISODate)
           .toMSecsSinceEpoch();
   const qint64 expectedModified =
-      QDateTime::fromString(QStringLiteral("2024-06-20T14:45:00Z"),
-                            Qt::ISODate)
+      QDateTime::fromString(QStringLiteral("2024-06-20T14:45:00Z"), Qt::ISODate)
           .toMSecsSinceEpoch();
 
-  const qint64 actualCreated =
-      fileInfo[QStringLiteral("createdUtc")].toVariant().toLongLong();
-  const qint64 actualModified =
-      fileInfo[QStringLiteral("modifiedUtc")].toVariant().toLongLong();
+  const qint64 actualCreated = fileInfo[QStringLiteral("createdUtc")].toVariant().toLongLong();
+  const qint64 actualModified = fileInfo[QStringLiteral("modifiedUtc")].toVariant().toLongLong();
 
   QCOMPARE(actualCreated, expectedCreated);
   QCOMPARE(actualModified, expectedModified);
@@ -1059,14 +1052,10 @@ void TestVNote3MigrationService::testConvertPreservesVisualMetadata() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonObject metadata =
-      m_notebookService->getFileMetadata(nbId, QStringLiteral("colored.md"));
-  QVERIFY2(!metadata.isEmpty(),
-           "getFileMetadata returned empty for colored.md");
-  QCOMPARE(metadata[QStringLiteral("textColor")].toString(),
-           QStringLiteral("#FF0000"));
-  QCOMPARE(metadata[QStringLiteral("backgroundColor")].toString(),
-           QStringLiteral("#00FF00"));
+  QJsonObject metadata = m_notebookService->getFileMetadata(nbId, QStringLiteral("colored.md"));
+  QVERIFY2(!metadata.isEmpty(), "getFileMetadata returned empty for colored.md");
+  QCOMPARE(metadata[QStringLiteral("textColor")].toString(), QStringLiteral("#FF0000"));
+  QCOMPARE(metadata[QStringLiteral("backgroundColor")].toString(), QStringLiteral("#00FF00"));
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -1091,8 +1080,7 @@ void TestVNote3MigrationService::testConvertMigratesAttachments() {
   // Source attachment dir: vx_attachments/434314329027059/report.pdf
   base.mkpath(QStringLiteral("vx_attachments/434314329027059"));
   {
-    QFile f(base.filePath(
-        QStringLiteral("vx_attachments/434314329027059/report.pdf")));
+    QFile f(base.filePath(QStringLiteral("vx_attachments/434314329027059/report.pdf")));
     QVERIFY(f.open(QIODevice::WriteOnly));
     f.write("fake pdf data for attachment test");
     f.close();
@@ -1100,8 +1088,7 @@ void TestVNote3MigrationService::testConvertMigratesAttachments() {
 
   QJsonObject fileEntry;
   fileEntry[QStringLiteral("name")] = QStringLiteral("noted.md");
-  fileEntry[QStringLiteral("attachment_folder")] =
-      QStringLiteral("434314329027059");
+  fileEntry[QStringLiteral("attachment_folder")] = QStringLiteral("434314329027059");
   QJsonArray filesArr;
   filesArr.append(fileEntry);
   QJsonObject rootVx;
@@ -1117,24 +1104,20 @@ void TestVNote3MigrationService::testConvertMigratesAttachments() {
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
   // Verify attachment listed in metadata.
-  QJsonArray attachments =
-      m_notebookService->listAttachments(nbId, QStringLiteral("noted.md"));
+  QJsonArray attachments = m_notebookService->listAttachments(nbId, QStringLiteral("noted.md"));
   QStringList attachNames;
   for (const QJsonValue &v : attachments) {
     attachNames.append(v.toString());
   }
-  QVERIFY2(
-      attachNames.contains(QStringLiteral("report.pdf")),
-      qPrintable(QStringLiteral("Attachment 'report.pdf' missing. Got: %1")
-                     .arg(attachNames.join(QStringLiteral(", ")))));
+  QVERIFY2(attachNames.contains(QStringLiteral("report.pdf")),
+           qPrintable(QStringLiteral("Attachment 'report.pdf' missing. Got: %1")
+                          .arg(attachNames.join(QStringLiteral(", ")))));
 
   // Verify file exists on disk in dest.
-  QString attachDir = m_notebookService->getAttachmentsFolder(
-      nbId, QStringLiteral("noted.md"));
+  QString attachDir = m_notebookService->getAttachmentsFolder(nbId, QStringLiteral("noted.md"));
   QVERIFY2(!attachDir.isEmpty(), "getAttachmentsFolder returned empty");
   QVERIFY2(QFile::exists(attachDir + QStringLiteral("/report.pdf")),
-           qPrintable(QStringLiteral("report.pdf not on disk at: %1")
-                          .arg(attachDir)));
+           qPrintable(QStringLiteral("report.pdf not on disk at: %1").arg(attachDir)));
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -1169,10 +1152,8 @@ void TestVNote3MigrationService::testConvertPreservesFolderTimestamps() {
 
   // docs/vx.json has folder-level timestamps.
   QJsonObject docsVx;
-  docsVx[QStringLiteral("created_time")] =
-      QStringLiteral("2023-03-10T08:00:00Z");
-  docsVx[QStringLiteral("modified_time")] =
-      QStringLiteral("2025-01-05T16:30:00Z");
+  docsVx[QStringLiteral("created_time")] = QStringLiteral("2023-03-10T08:00:00Z");
+  docsVx[QStringLiteral("modified_time")] = QStringLiteral("2025-01-05T16:30:00Z");
   docsVx[QStringLiteral("files")] = QJsonArray();
   docsVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(base.filePath(QStringLiteral("docs")), docsVx);
@@ -1184,18 +1165,14 @@ void TestVNote3MigrationService::testConvertPreservesFolderTimestamps() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonObject folderConfig =
-      m_notebookService->getFolderConfig(nbId, QStringLiteral("docs"));
-  QVERIFY2(!folderConfig.isEmpty(),
-           "getFolderConfig returned empty for docs");
+  QJsonObject folderConfig = m_notebookService->getFolderConfig(nbId, QStringLiteral("docs"));
+  QVERIFY2(!folderConfig.isEmpty(), "getFolderConfig returned empty for docs");
 
   const qint64 expectedCreated =
-      QDateTime::fromString(QStringLiteral("2023-03-10T08:00:00Z"),
-                            Qt::ISODate)
+      QDateTime::fromString(QStringLiteral("2023-03-10T08:00:00Z"), Qt::ISODate)
           .toMSecsSinceEpoch();
 
-  const qint64 actualCreated =
-      folderConfig[QStringLiteral("createdUtc")].toVariant().toLongLong();
+  const qint64 actualCreated = folderConfig[QStringLiteral("createdUtc")].toVariant().toLongLong();
   const qint64 actualModified =
       folderConfig[QStringLiteral("modifiedUtc")].toVariant().toLongLong();
 
@@ -1204,8 +1181,7 @@ void TestVNote3MigrationService::testConvertPreservesFolderTimestamps() {
 
   // modifiedUtc is preserved from VNote 3 source.
   const qint64 expectedModified =
-      QDateTime::fromString(QStringLiteral("2025-01-05T16:30:00Z"),
-                            Qt::ISODate)
+      QDateTime::fromString(QStringLiteral("2025-01-05T16:30:00Z"), Qt::ISODate)
           .toMSecsSinceEpoch();
   QVERIFY2(actualModified > 0, "Folder modifiedUtc should be non-zero");
   QCOMPARE(actualModified, expectedModified);
@@ -1214,8 +1190,7 @@ void TestVNote3MigrationService::testConvertPreservesFolderTimestamps() {
 }
 
 void TestVNote3MigrationService::testConvertRealXpayNotebook() {
-  const QString xpayPath = QStringLiteral(
-      "C:/Users/tanle/OneDrive - Microsoft/notebooks/xpay");
+  const QString xpayPath = QStringLiteral("C:/Users/tanle/OneDrive - Microsoft/notebooks/xpay");
   if (!QDir(xpayPath).exists()) {
     QSKIP("Real xpay notebook not found");
   }
@@ -1228,12 +1203,10 @@ void TestVNote3MigrationService::testConvertRealXpayNotebook() {
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted xpay notebook");
 
   // Verify notebook has content.
-  QJsonObject children =
-      m_notebookService->listFolderChildren(nbId, QString());
+  QJsonObject children = m_notebookService->listFolderChildren(nbId, QString());
   QJsonArray files = children[QStringLiteral("files")].toArray();
   QJsonArray folders = children[QStringLiteral("folders")].toArray();
-  QVERIFY2(files.size() + folders.size() > 0,
-           "Converted xpay notebook has no content at root");
+  QVERIFY2(files.size() + folders.size() > 0, "Converted xpay notebook has no content at root");
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -1317,8 +1290,7 @@ void TestVNote3MigrationService::testConvertEmptyTagsSkipped() {
   // No tag-related warnings.
   for (const QString &w : result.warnings) {
     QVERIFY2(!w.contains(QStringLiteral("tag"), Qt::CaseInsensitive),
-             qPrintable(
-                 QStringLiteral("Unexpected tag warning: %1").arg(w)));
+             qPrintable(QStringLiteral("Unexpected tag warning: %1").arg(w)));
   }
 
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("notags.md")));
@@ -1344,8 +1316,7 @@ void TestVNote3MigrationService::testConvertInvalidTimestampDegrades() {
   QJsonObject fileEntry;
   fileEntry[QStringLiteral("name")] = QStringLiteral("badtime.md");
   fileEntry[QStringLiteral("created_time")] = QStringLiteral("not-a-date");
-  fileEntry[QStringLiteral("modified_time")] =
-      QStringLiteral("2024-06-20T14:45:00Z");
+  fileEntry[QStringLiteral("modified_time")] = QStringLiteral("2024-06-20T14:45:00Z");
   QJsonArray filesArr;
   filesArr.append(fileEntry);
   QJsonObject rootVx;
@@ -1360,14 +1331,12 @@ void TestVNote3MigrationService::testConvertInvalidTimestampDegrades() {
   // Should have a warning about malformed created_time.
   bool foundWarning = false;
   for (const QString &w : result.warnings) {
-    if (w.contains(QStringLiteral("malformed")) &&
-        w.contains(QStringLiteral("created_time"))) {
+    if (w.contains(QStringLiteral("malformed")) && w.contains(QStringLiteral("created_time"))) {
       foundWarning = true;
       break;
     }
   }
-  QVERIFY2(foundWarning,
-           "Expected warning about malformed created_time");
+  QVERIFY2(foundWarning, "Expected warning about malformed created_time");
 
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("badtime.md")));
 }
@@ -1399,17 +1368,14 @@ void TestVNote3MigrationService::testConvertEmptyAttachmentFolderSkipped() {
   rootVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(sourceDir.path(), rootVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("emptyattach_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("emptyattach_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // No attachment-related warnings.
   for (const QString &w : result.warnings) {
-    QVERIFY2(
-        !w.contains(QStringLiteral("attachment"), Qt::CaseInsensitive),
-        qPrintable(
-            QStringLiteral("Unexpected attachment warning: %1").arg(w)));
+    QVERIFY2(!w.contains(QStringLiteral("attachment"), Qt::CaseInsensitive),
+             qPrintable(QStringLiteral("Unexpected attachment warning: %1").arg(w)));
   }
 
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("noattach.md")));
@@ -1443,25 +1409,21 @@ void TestVNote3MigrationService::testConvertMissingAttachmentDirDegrades() {
   rootVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(sourceDir.path(), rootVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("missingattachdir_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("missingattachdir_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // Warning about missing attachment source dir.
   bool foundWarning = false;
   for (const QString &w : result.warnings) {
-    if (w.contains(QStringLiteral("attachment")) &&
-        w.contains(QStringLiteral("not found"))) {
+    if (w.contains(QStringLiteral("attachment")) && w.contains(QStringLiteral("not found"))) {
       foundWarning = true;
       break;
     }
   }
-  QVERIFY2(foundWarning,
-           "Expected warning about missing attachment source directory");
+  QVERIFY2(foundWarning, "Expected warning about missing attachment source directory");
 
-  QVERIFY(
-      pathExistsInNotebook(destPath, QStringLiteral("missingattach.md")));
+  QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("missingattach.md")));
 }
 
 void TestVNote3MigrationService::testConvertVxImagesAtMultipleLevels() {
@@ -1518,16 +1480,13 @@ void TestVNote3MigrationService::testConvertVxImagesAtMultipleLevels() {
   subVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(base.filePath(QStringLiteral("sub")), subVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("multilevel_images_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("multilevel_images_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
-  QVERIFY2(pathExistsInNotebook(
-               destPath, QStringLiteral("vx_images/root_img.png")),
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("vx_images/root_img.png")),
            "Root-level vx_images/root_img.png should be copied");
-  QVERIFY2(pathExistsInNotebook(
-               destPath, QStringLiteral("sub/vx_images/sub_img.png")),
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("sub/vx_images/sub_img.png")),
            "Subfolder vx_images/sub_img.png should be copied");
 }
 
@@ -1564,8 +1523,7 @@ void TestVNote3MigrationService::testConvertDegradedWarningsCollected() {
 
   QJsonObject file2;
   file2[QStringLiteral("name")] = QStringLiteral("bad_attach.md");
-  file2[QStringLiteral("attachment_folder")] =
-      QStringLiteral("nonexistent_777");
+  file2[QStringLiteral("attachment_folder")] = QStringLiteral("nonexistent_777");
 
   QJsonArray filesArr;
   filesArr.append(file1);
@@ -1580,11 +1538,10 @@ void TestVNote3MigrationService::testConvertDegradedWarningsCollected() {
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // Multiple warnings should be collected.
-  QVERIFY2(
-      result.warnings.size() >= 3,
-      qPrintable(QStringLiteral("Expected >= 3 warnings, got %1: %2")
-                     .arg(result.warnings.size())
-                     .arg(result.warnings.join(QStringLiteral("; ")))));
+  QVERIFY2(result.warnings.size() >= 3,
+           qPrintable(QStringLiteral("Expected >= 3 warnings, got %1: %2")
+                          .arg(result.warnings.size())
+                          .arg(result.warnings.join(QStringLiteral("; ")))));
 
   bool hasTimestampWarning = false;
   bool hasAttachmentWarning = false;
@@ -1592,20 +1549,16 @@ void TestVNote3MigrationService::testConvertDegradedWarningsCollected() {
     if (w.contains(QStringLiteral("malformed"))) {
       hasTimestampWarning = true;
     }
-    if (w.contains(QStringLiteral("attachment")) &&
-        w.contains(QStringLiteral("not found"))) {
+    if (w.contains(QStringLiteral("attachment")) && w.contains(QStringLiteral("not found"))) {
       hasAttachmentWarning = true;
     }
   }
-  QVERIFY2(hasTimestampWarning,
-           "Expected at least one timestamp malformed warning");
-  QVERIFY2(hasAttachmentWarning,
-           "Expected at least one attachment missing warning");
+  QVERIFY2(hasTimestampWarning, "Expected at least one timestamp malformed warning");
+  QVERIFY2(hasAttachmentWarning, "Expected at least one attachment missing warning");
 
   // Both files still imported despite warnings.
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("bad_ts.md")));
-  QVERIFY(
-      pathExistsInNotebook(destPath, QStringLiteral("bad_attach.md")));
+  QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("bad_attach.md")));
 }
 
 void TestVNote3MigrationService::testConvertGitDirectoryNotImported() {
@@ -1717,9 +1670,9 @@ void TestVNote3MigrationService::testProgressSignalEmitted() {
   disconnect(m_service, &VNote3MigrationService::progressUpdated, nullptr, nullptr);
 
   // Should have 3 emissions (1 file + 1 folder + 1 file in subfolder).
-  QVERIFY2(emissions.size() == 3,
-           qPrintable(QStringLiteral("Expected 3 progress emissions, got %1")
-                          .arg(emissions.size())));
+  QVERIFY2(
+      emissions.size() == 3,
+      qPrintable(QStringLiteral("Expected 3 progress emissions, got %1").arg(emissions.size())));
 
   // All emissions should have maximum = 3.
   for (const auto &e : emissions) {
@@ -1781,8 +1734,7 @@ void TestVNote3MigrationService::testConvertPreservesTagGraph() {
     QJsonObject tagObj = tagVal.toObject();
     if (tagObj[QStringLiteral("name")].toString() == QStringLiteral("child")) {
       foundChild = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
-               QStringLiteral("parent"));
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("parent"));
     }
   }
   QVERIFY2(foundChild, "Tag 'child' not found in listTags output");
@@ -1892,8 +1844,7 @@ void TestVNote3MigrationService::testConvertTagGraphOrphanTagsDegrades() {
     }
     if (name == QStringLiteral("ghost2")) {
       foundGhost2 = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
-               QStringLiteral("ghost1"));
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("ghost1"));
     }
   }
   QVERIFY2(foundGhost1, "Orphan tag 'ghost1' not pre-created");
@@ -1951,13 +1902,11 @@ void TestVNote3MigrationService::testConvertMalformedTagGraphPairsSkipped() {
     QString name = tagObj[QStringLiteral("name")].toString();
     if (name == QStringLiteral("child")) {
       foundChild = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
-               QStringLiteral("valid"));
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("valid"));
     }
     if (name == QStringLiteral("pair")) {
       foundPair = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(),
-               QStringLiteral("good"));
+      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("good"));
     }
   }
   QVERIFY2(foundChild, "Tag 'child' not found with parent 'valid'");
@@ -2022,12 +1971,10 @@ void TestVNote3MigrationService::testConvertPreservesMultiLevelTagGraph() {
 
   // Root-level tags: tag1 and tag5 have no parent.
   QVERIFY2(parentMap.contains(QStringLiteral("tag1")), "tag1 not found");
-  QVERIFY2(parentMap[QStringLiteral("tag1")].isEmpty(),
-            "tag1 should be root-level (no parent)");
+  QVERIFY2(parentMap[QStringLiteral("tag1")].isEmpty(), "tag1 should be root-level (no parent)");
 
   QVERIFY2(parentMap.contains(QStringLiteral("tag5")), "tag5 not found");
-  QVERIFY2(parentMap[QStringLiteral("tag5")].isEmpty(),
-            "tag5 should be root-level (no parent)");
+  QVERIFY2(parentMap[QStringLiteral("tag5")].isEmpty(), "tag5 should be root-level (no parent)");
 
   // Level 2: tag11 -> parent tag1, tag55 -> parent tag5.
   QVERIFY2(parentMap.contains(QStringLiteral("tag11")), "tag11 not found");
@@ -2067,6 +2014,39 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   auto result = m_service->convertNotebook(sourcePath, destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
+  // Diagnostics: surface migration warnings + actual destination contents +
+  // source contents so CJK-filename failures on CI-Linux print actionable data
+  // instead of just "File not migrated: <name>". The byte-string analysis
+  // tells us whether the bug is silent importFile failure, copyRemainingFiles
+  // failure, or NFC/NFD normalization mismatch.
+  if (!result.warnings.isEmpty()) {
+    qWarning().noquote() << "Migration warnings (" << result.warnings.size() << "):\n  "
+                         << result.warnings.join(QStringLiteral("\n  "));
+  }
+  {
+    const QStringList srcEntries =
+        QDir(sourcePath).entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
+    QStringList srcEntriesHex;
+    srcEntriesHex.reserve(srcEntries.size());
+    for (const QString &n : srcEntries) {
+      srcEntriesHex
+          << QStringLiteral("%1  (utf8=%2)").arg(n, QString::fromLatin1(n.toUtf8().toHex()));
+    }
+    qWarning().noquote() << "Source directory entries (" << srcEntries.size() << "):\n  "
+                         << srcEntriesHex.join(QStringLiteral("\n  "));
+
+    const QStringList destEntries =
+        QDir(destPath).entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
+    QStringList destEntriesHex;
+    destEntriesHex.reserve(destEntries.size());
+    for (const QString &n : destEntries) {
+      destEntriesHex
+          << QStringLiteral("%1  (utf8=%2)").arg(n, QString::fromLatin1(n.toUtf8().toHex()));
+    }
+    qWarning().noquote() << "Destination directory entries (" << destEntries.size() << "):\n  "
+                         << destEntriesHex.join(QStringLiteral("\n  "));
+  }
+
   // Verify all 17 files are migrated on disk.
   const QStringList expectedFiles = {
       QStringLiteral("cache.md"),
@@ -2077,21 +2057,29 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
       QStringLiteral("oracle.md"),
       QStringLiteral("sqlserver.md"),
       // Chinese filenames — use UTF-8 escape sequences for portability.
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x85\x8d\xe7\xbd\xae.md"),           // 数据库配置.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xa4\x84\xe7\x90\x86.md"),                       // 数据处理.md
-      QStringLiteral("\xe5\x9b\xbd\xe4\xba\xa7\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93.md"),           // 国产数据库.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\x8e\xaf\xe5\xa2\x83\xe8\xae\xb0\xe5\xbd\x95.md"), // 数据库环境记录.md
-      QStringLiteral("SQL\xe8\xaf\xad\xe6\xb3\x95.md"),                                             // SQL语法.md
-      QStringLiteral("\xe7\xbb\x91\xe5\xae\x9a\xe5\x8f\x98\xe9\x87\x8f.md"),                       // 绑定变量.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\xac\x94\xe8\xae\xb0.md"),           // 数据库笔记.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\x9f\xba\xe7\xa1\x80.md"),           // 数据库基础.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\xae\xa1\xe8\xae\xa1\xe8\xaf\x84\xe6\xb5\x8b.md"), // 数据库审计评测.md
-      QStringLiteral("\xe8\xa7\x92\xe8\x89\xb2\xe4\xb8\x8e\xe6\x9d\x83\xe9\x99\x90.md"),           // 角色与权限.md
+      QStringLiteral(
+          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x85\x8d\xe7\xbd\xae.md"), // 数据库配置.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xa4\x84\xe7\x90\x86.md"),  // 数据处理.md
+      QStringLiteral(
+          "\xe5\x9b\xbd\xe4\xba\xa7\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93.md"), // 国产数据库.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\x8e\xaf\xe5\xa2\x83\xe8\xae\xb0\xe5"
+                     "\xbd\x95.md"),                                         // 数据库环境记录.md
+      QStringLiteral("SQL\xe8\xaf\xad\xe6\xb3\x95.md"),                      // SQL语法.md
+      QStringLiteral("\xe7\xbb\x91\xe5\xae\x9a\xe5\x8f\x98\xe9\x87\x8f.md"), // 绑定变量.md
+      QStringLiteral(
+          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\xac\x94\xe8\xae\xb0.md"), // 数据库笔记.md
+      QStringLiteral(
+          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\x9f\xba\xe7\xa1\x80.md"), // 数据库基础.md
+      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\xae\xa1\xe8\xae\xa1\xe8\xaf\x84\xe6"
+                     "\xb5\x8b.md"), // 数据库审计评测.md
+      QStringLiteral(
+          "\xe8\xa7\x92\xe8\x89\xb2\xe4\xb8\x8e\xe6\x9d\x83\xe9\x99\x90.md"), // 角色与权限.md
   };
 
   for (const QString &name : expectedFiles) {
     QVERIFY2(pathExistsInNotebook(destPath, name),
-             qPrintable(QStringLiteral("File not migrated: %1").arg(name)));
+             qPrintable(QStringLiteral("File not migrated: %1 (utf8=%2)")
+                            .arg(name, QString::fromLatin1(name.toUtf8().toHex()))));
   }
 
   // Open notebook and verify via NotebookCoreService.
@@ -2140,8 +2128,8 @@ void TestVNote3MigrationService::testConvertMigratesAttachmentsInChineseFolder()
   // 养生/vx_attachments/434314329027059/report.pdf
   base.mkpath(chineseFolder + QStringLiteral("/vx_attachments/434314329027059"));
   {
-    QFile f(base.filePath(
-        chineseFolder + QStringLiteral("/vx_attachments/434314329027059/report.pdf")));
+    QFile f(base.filePath(chineseFolder +
+                          QStringLiteral("/vx_attachments/434314329027059/report.pdf")));
     QVERIFY(f.open(QIODevice::WriteOnly));
     f.write("fake pdf data for Chinese folder attachment test");
     f.close();
@@ -2184,18 +2172,17 @@ void TestVNote3MigrationService::testConvertMigratesAttachmentsInChineseFolder()
   for (const QJsonValue &v : attachments) {
     attachNames.append(v.toString());
   }
-  QVERIFY2(
-      attachNames.contains(QStringLiteral("report.pdf")),
-      qPrintable(QStringLiteral("Attachment 'report.pdf' missing. Got: %1")
-                     .arg(attachNames.join(QStringLiteral(", ")))));
+  QVERIFY2(attachNames.contains(QStringLiteral("report.pdf")),
+           qPrintable(QStringLiteral("Attachment 'report.pdf' missing. Got: %1")
+                          .arg(attachNames.join(QStringLiteral(", ")))));
 
   // Verify the attachment folder path contains the Chinese folder name (not garbled).
   QString attachDir = m_notebookService->getAttachmentsFolder(nbId, relFilePath);
   QVERIFY2(!attachDir.isEmpty(), "getAttachmentsFolder returned empty");
   QVERIFY2(attachDir.contains(chineseFolder),
-           qPrintable(QStringLiteral(
-               "Attachment dir should contain Chinese folder name '%1' but got: %2")
-                          .arg(chineseFolder, attachDir)));
+           qPrintable(
+               QStringLiteral("Attachment dir should contain Chinese folder name '%1' but got: %2")
+                   .arg(chineseFolder, attachDir)));
 
   // Verify file exists on disk in dest.
   QVERIFY2(QFile::exists(attachDir + QStringLiteral("/report.pdf")),
@@ -2242,14 +2229,12 @@ void TestVNote3MigrationService::testCopyRemainingCopiesUnindexedImageFolder() {
   rootVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(sourceDir.path(), rootVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("copy_remaining_images_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("copy_remaining_images_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // Supplementary copy should have copied the unindexed _v_images folder.
-  QVERIFY2(pathExistsInNotebook(
-               destPath, QStringLiteral("_v_images/photo.png")),
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("_v_images/photo.png")),
            "Unindexed _v_images/photo.png should be copied by supplementary copy");
 }
 
@@ -2285,14 +2270,12 @@ void TestVNote3MigrationService::testCopyRemainingCopiesUnindexedFiles() {
   rootVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(sourceDir.path(), rootVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("copy_remaining_files_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("copy_remaining_files_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // Supplementary copy should have copied the unindexed file.
-  QVERIFY2(pathExistsInNotebook(
-               destPath, QStringLiteral("random_notes.txt")),
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("random_notes.txt")),
            "Unindexed random_notes.txt should be copied by supplementary copy");
 }
 
@@ -2329,16 +2312,14 @@ void TestVNote3MigrationService::testCopyRemainingSkipsExclusions() {
   rootVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(sourceDir.path(), rootVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("copy_remaining_exclusions_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("copy_remaining_exclusions_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
   // vx_recycle_bin must NOT exist in destination.
   QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_recycle_bin")),
            "vx_recycle_bin directory should not be copied");
-  QVERIFY2(!pathExistsInNotebook(
-               destPath, QStringLiteral("vx_recycle_bin/trash.md")),
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_recycle_bin/trash.md")),
            "vx_recycle_bin/trash.md should not be copied");
 }
 
@@ -2363,10 +2344,8 @@ void TestVNote3MigrationService::testCopyRemainingDoesNotOverwriteImportedFiles(
   // vx.json lists readme.md with timestamps.
   QJsonObject fileEntry;
   fileEntry[QStringLiteral("name")] = QStringLiteral("readme.md");
-  fileEntry[QStringLiteral("created_time")] =
-      QStringLiteral("2024-03-10T08:00:00Z");
-  fileEntry[QStringLiteral("modified_time")] =
-      QStringLiteral("2024-07-15T16:30:00Z");
+  fileEntry[QStringLiteral("created_time")] = QStringLiteral("2024-03-10T08:00:00Z");
+  fileEntry[QStringLiteral("modified_time")] = QStringLiteral("2024-07-15T16:30:00Z");
   QJsonArray filesArr;
   filesArr.append(fileEntry);
   QJsonObject rootVx;
@@ -2374,8 +2353,7 @@ void TestVNote3MigrationService::testCopyRemainingDoesNotOverwriteImportedFiles(
   rootVx[QStringLiteral("folders")] = QJsonArray();
   writeVxJson(sourceDir.path(), rootVx);
 
-  QString destPath =
-      m_tempDir.filePath(QStringLiteral("copy_remaining_no_overwrite_dest"));
+  QString destPath = m_tempDir.filePath(QStringLiteral("copy_remaining_no_overwrite_dest"));
   auto result = m_service->convertNotebook(sourceDir.path(), destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
@@ -2383,23 +2361,18 @@ void TestVNote3MigrationService::testCopyRemainingDoesNotOverwriteImportedFiles(
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonObject fileInfo =
-      m_notebookService->getFileInfo(nbId, QStringLiteral("readme.md"));
+  QJsonObject fileInfo = m_notebookService->getFileInfo(nbId, QStringLiteral("readme.md"));
   QVERIFY2(!fileInfo.isEmpty(), "getFileInfo returned empty for readme.md");
 
   const qint64 expectedCreated =
-      QDateTime::fromString(QStringLiteral("2024-03-10T08:00:00Z"),
-                            Qt::ISODate)
+      QDateTime::fromString(QStringLiteral("2024-03-10T08:00:00Z"), Qt::ISODate)
           .toMSecsSinceEpoch();
   const qint64 expectedModified =
-      QDateTime::fromString(QStringLiteral("2024-07-15T16:30:00Z"),
-                            Qt::ISODate)
+      QDateTime::fromString(QStringLiteral("2024-07-15T16:30:00Z"), Qt::ISODate)
           .toMSecsSinceEpoch();
 
-  const qint64 actualCreated =
-      fileInfo[QStringLiteral("createdUtc")].toVariant().toLongLong();
-  const qint64 actualModified =
-      fileInfo[QStringLiteral("modifiedUtc")].toVariant().toLongLong();
+  const qint64 actualCreated = fileInfo[QStringLiteral("createdUtc")].toVariant().toLongLong();
+  const qint64 actualModified = fileInfo[QStringLiteral("modifiedUtc")].toVariant().toLongLong();
 
   QCOMPARE(actualCreated, expectedCreated);
   QCOMPARE(actualModified, expectedModified);
