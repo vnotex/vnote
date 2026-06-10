@@ -116,6 +116,11 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
   VxCoreContextHandle ctx = nullptr;
   QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
   QVERIFY(ctx != nullptr);
+  // Set across the keychain-skip path; QSKIP fires AFTER scope close so
+  // EventBridge / BufferService dtors run with ctx still alive. See
+  // test_sync_signal_auto_baseline for the full rationale (destroying ctx
+  // inside the scope hangs the process and ctest reports Timeout).
+  bool keychainUnavailable = false;
   {
     ServiceLocator services;
     NotebookCoreService notebookService(ctx);
@@ -156,61 +161,63 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     // CI Linux runners have no D-Bus session / org.freedesktop.secrets
     // provider; bootstrapAndPersist propagates the keychain failure
     // verbatim via the 3rd payload slot. Skip rather than assert what the
-    // environment cannot deliver.
+    // environment cannot deliver. QSKIP runs AFTER scope close (see comment
+    // above) so don't destroy ctx here.
     const QString bootstrapMsg = enableSpy.first().at(2).toString();
-    if (enableSpy.first().at(1).toInt() != static_cast<int>(VXCORE_OK) &&
-        (bootstrapMsg.contains(QStringLiteral("secrets"), Qt::CaseInsensitive) ||
-         bootstrapMsg.contains(QStringLiteral("keychain"), Qt::CaseInsensitive))) {
-      syncService.shutdown();
-      guard.cleanup();
-      vxcore_context_destroy(ctx);
-      QSKIP("OS keychain backend not usable in this test environment");
+    keychainUnavailable =
+        (enableSpy.first().at(1).toInt() != static_cast<int>(VXCORE_OK) &&
+         (bootstrapMsg.contains(QStringLiteral("secrets"), Qt::CaseInsensitive) ||
+          bootstrapMsg.contains(QStringLiteral("keychain"), Qt::CaseInsensitive)));
+    if (!keychainUnavailable) {
+      QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
+
+      // Defensive track in case credentialsStored signal raced cleanup.
+      guard.track(nbId);
+
+      // Wait for the initial sync (kicked off by enable) to drain.
+      QSignalSpy finishedSpy(&syncService, &SyncService::syncFinished);
+      QElapsedTimer t;
+      t.start();
+      while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QTest::qWait(50);
+      }
+      finishedSpy.clear();
+
+      // Trigger auto-sync by saving a buffer (vxcore emits sync.should_run).
+      QString fileId = notebookService.createFile(nbId, QString(), QStringLiteral("auto.md"));
+      QVERIFY(!fileId.isEmpty());
+      Buffer2 buf = bufferService.openBuffer(NodeIdentifier{nbId, QStringLiteral("auto.md")});
+      QVERIFY(buf.isValid());
+      QVERIFY(buf.setContentRaw(QByteArray("auto sync trigger\n")));
+      QVERIFY(buf.save());
+
+      t.restart();
+      while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QTest::qWait(50);
+      }
+      // Post vxcore-metadata-events plan: createFile / openBuffer / save each
+      // fire folder.config_changed (T4 persistence event) → mark_dirty →
+      // sync.should_run, so the auto-route enqueues up to 3 triggerSync items.
+      // SyncWorkQueueManager coalesces concurrent requests on coalesceKey
+      // "trigger", so the actual finishedSpy count is timing-dependent (1, 2,
+      // or 3 depending on which syncs collapse into the in-flight one).
+      // For this end-to-end test we only verify that AT LEAST ONE sync round
+      // trip completed via the SyncService auto-route — the exact count is
+      // covered by test_sync_signal_auto_baseline which drives vxcore_sync_trigger
+      // directly (no coalescing).
+      QVERIFY(finishedSpy.count() >= 1);
+      QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
     }
-    QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
-
-    // Defensive track in case credentialsStored signal raced cleanup.
-    guard.track(nbId);
-
-    // Wait for the initial sync (kicked off by enable) to drain.
-    QSignalSpy finishedSpy(&syncService, &SyncService::syncFinished);
-    QElapsedTimer t;
-    t.start();
-    while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-      QTest::qWait(50);
-    }
-    finishedSpy.clear();
-
-    // Trigger auto-sync by saving a buffer (vxcore emits sync.should_run).
-    QString fileId = notebookService.createFile(nbId, QString(), QStringLiteral("auto.md"));
-    QVERIFY(!fileId.isEmpty());
-    Buffer2 buf = bufferService.openBuffer(NodeIdentifier{nbId, QStringLiteral("auto.md")});
-    QVERIFY(buf.isValid());
-    QVERIFY(buf.setContentRaw(QByteArray("auto sync trigger\n")));
-    QVERIFY(buf.save());
-
-    t.restart();
-    while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-      QTest::qWait(50);
-    }
-    // Post vxcore-metadata-events plan: createFile / openBuffer / save each
-    // fire folder.config_changed (T4 persistence event) → mark_dirty →
-    // sync.should_run, so the auto-route enqueues up to 3 triggerSync items.
-    // SyncWorkQueueManager coalesces concurrent requests on coalesceKey
-    // "trigger", so the actual finishedSpy count is timing-dependent (1, 2,
-    // or 3 depending on which syncs collapse into the in-flight one).
-    // For this end-to-end test we only verify that AT LEAST ONE sync round
-    // trip completed via the SyncService auto-route — the exact count is
-    // covered by test_sync_signal_auto_baseline which drives vxcore_sync_trigger
-    // directly (no coalescing).
-    QVERIFY(finishedSpy.count() >= 1);
-    QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
 
     syncService.shutdown();
     guard.cleanup();
   }
   vxcore_context_destroy(ctx);
+  if (keychainUnavailable) {
+    QSKIP("OS keychain backend not usable in this test environment");
+  }
 }
 
 void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
