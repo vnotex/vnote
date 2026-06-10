@@ -2068,23 +2068,31 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
       QStringLiteral("mysql.md"),
       QStringLiteral("oracle.md"),
       QStringLiteral("sqlserver.md"),
-      // Chinese filenames — use UTF-8 escape sequences for portability.
-      QStringLiteral(
-          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x85\x8d\xe7\xbd\xae.md"), // 数据库配置.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xa4\x84\xe7\x90\x86.md"),  // 数据处理.md
-      QStringLiteral(
+      // Chinese filenames — use QString::fromUtf8 with UTF-8 escape sequences.
+      // QStringLiteral interprets `\xe6` as Latin-1 codepoint U+00E6 on Linux
+      // GCC, producing double-encoded names that never match actual UTF-8
+      // files on disk. QString::fromUtf8 reads byte literals as raw UTF-8.
+      // Confirmed via CI-Linux diagnostic: source/dest dirs both contain
+      // e695b0... UTF-8 bytes, but the QStringLiteral lookup name's hex was
+      // c3a6c295... (each Latin-1 codepoint re-encoded to UTF-8 by toUtf8()).
+      QString::fromUtf8(
+          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x85\x8d\xe7\xbd\xae.md"),   // 数据库配置.md
+      QString::fromUtf8("\xe6\x95\xb0\xe6\x8d\xae\xe5\xa4\x84\xe7\x90\x86.md"), // 数据处理.md
+      QString::fromUtf8(
           "\xe5\x9b\xbd\xe4\xba\xa7\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93.md"), // 国产数据库.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\x8e\xaf\xe5\xa2\x83\xe8\xae\xb0\xe5"
-                     "\xbd\x95.md"),                                         // 数据库环境记录.md
-      QStringLiteral("SQL\xe8\xaf\xad\xe6\xb3\x95.md"),                      // SQL语法.md
-      QStringLiteral("\xe7\xbb\x91\xe5\xae\x9a\xe5\x8f\x98\xe9\x87\x8f.md"), // 绑定变量.md
-      QStringLiteral(
+      QString::fromUtf8(
+          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\x8e\xaf\xe5\xa2\x83\xe8\xae\xb0\xe5\xbd\x95"
+          ".md"),                                                               // 数据库环境记录.md
+      QString::fromUtf8("SQL\xe8\xaf\xad\xe6\xb3\x95.md"),                      // SQL语法.md
+      QString::fromUtf8("\xe7\xbb\x91\xe5\xae\x9a\xe5\x8f\x98\xe9\x87\x8f.md"), // 绑定变量.md
+      QString::fromUtf8(
           "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe7\xac\x94\xe8\xae\xb0.md"), // 数据库笔记.md
-      QStringLiteral(
+      QString::fromUtf8(
           "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\x9f\xba\xe7\xa1\x80.md"), // 数据库基础.md
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\xae\xa1\xe8\xae\xa1\xe8\xaf\x84\xe6"
-                     "\xb5\x8b.md"), // 数据库审计评测.md
-      QStringLiteral(
+      QString::fromUtf8(
+          "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe5\xae\xa1\xe8\xae\xa1\xe8\xaf\x84\xe6\xb5\x8b"
+          ".md"), // 数据库审计评测.md
+      QString::fromUtf8(
           "\xe8\xa7\x92\xe8\x89\xb2\xe4\xb8\x8e\xe6\x9d\x83\xe9\x99\x90.md"), // 角色与权限.md
   };
 
@@ -2107,8 +2115,10 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   QCOMPARE(folders.size(), 1);
 
   // Verify the subfolder name.
-  const QString expectedSubfolder =
-      QStringLiteral("\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x83\xa8\xe7\xbd\xb2"); // 数据库部署
+  // QString::fromUtf8 (not QStringLiteral) for the same Linux Latin-1
+  // interpretation reason documented above on expectedFiles.
+  const QString expectedSubfolder = QString::fromUtf8(
+      "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x83\xa8\xe7\xbd\xb2"); // 数据库部署
   QCOMPARE(folders[0].toObject()[QStringLiteral("name")].toString(), expectedSubfolder);
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
@@ -2119,8 +2129,10 @@ void TestVNote3MigrationService::testConvertMigratesAttachmentsInChineseFolder()
   QVERIFY(sourceDir.isValid());
   QDir base(sourceDir.path());
 
-  // Use UTF-8 escape sequences for Chinese folder name (养生)
-  const QString chineseFolder = QStringLiteral("\xe5\x85\xbb\xe7\x94\x9f");
+  // Use UTF-8 escape sequences for Chinese folder name (养生).
+  // QString::fromUtf8 (not QStringLiteral); see testConvertFolderWith17* for
+  // the Linux Latin-1 interpretation rationale.
+  const QString chineseFolder = QString::fromUtf8("\xe5\x85\xbb\xe7\x94\x9f");
 
   QJsonObject cfgOvr;
   cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
