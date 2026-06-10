@@ -560,8 +560,11 @@ QStringList FileUtils2::sweepOrphanStagingDirs(const QString &p_parentDir, qint6
   QStringList filters;
   filters << QStringLiteral(".*.vnote-clone-pending-*");
 
-  auto entries =
-      parentDir.entryList(filters, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+  // QDir::Hidden is REQUIRED: staging dir names start with '.', which Linux
+  // (and Qt's default entryList behavior) treat as hidden. Without this flag
+  // the sweep returns an empty list on Linux and silently no-ops on startup.
+  auto entries = parentDir.entryList(filters, QDir::AllDirs | QDir::Hidden | QDir::NoDotAndDotDot |
+                                                  QDir::NoSymLinks);
 
   for (const auto &entry : entries) {
     QString entryPath = parentDir.filePath(entry);
