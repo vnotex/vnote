@@ -9,6 +9,7 @@ target_sources(vnote PRIVATE
     headingslugger.cpp headingslugger.h
     htmlutils.cpp htmlutils.h
     imageresolutionutils.cpp imageresolutionutils.h
+    notebookpathhelpers.cpp notebookpathhelpers.h
     pathutils.cpp pathutils.h
     qtcompat.h
     scrollpreservationpolicy.cpp scrollpreservationpolicy.h

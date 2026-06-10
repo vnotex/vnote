@@ -46,6 +46,7 @@
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
 #include <utils/fileutils.h>
+#include <utils/notebookpathhelpers.h>
 #include <utils/widgetutils.h>
 #include <views/combinednodeexplorer.h>
 #include <views/inodeexplorer.h>
@@ -118,8 +119,21 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
   // Sync UI lifecycle wiring (T15). Refresh the Sync button + menu entry on
   // any sync state transition for ANY notebook (the slot filters by current).
   if (auto *syncSvc = m_services.get<SyncService>()) {
-    connect(syncSvc, &SyncService::syncStarted, this,
-            [this](const QString &) { updateSyncButtonState(); });
+    connect(syncSvc, &SyncService::syncStarted, this, [this](const QString &p_notebookId) {
+      // Maintain active-sync fs-event suppression: only suppress on
+      // the currently displayed notebook (a sync on a different
+      // notebook MUST NOT swallow fs events on the displayed one).
+      if (p_notebookId == m_currentNotebookId) {
+        m_activeSyncFsSuppression.insert(p_notebookId);
+      }
+      // A new sync resets the grace clock; stop any in-flight grace
+      // timer so its timeout doesn't later wipe state added by a
+      // newer sync.
+      if (m_syncGraceTimer) {
+        m_syncGraceTimer->stop();
+      }
+      updateSyncButtonState();
+    });
     connect(syncSvc, &SyncService::syncFinished, this,
             [this](const QString &p_notebookId, VxCoreError p_result) {
               // Clear reconcile error on successful sync (sync supersedes reconcile)
@@ -163,6 +177,15 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
                 m_pendingManualSyncFeedback.remove(p_notebookId);
               }
               updateSyncButtonState();
+              // Start grace timer to keep fs-event suppression active for
+              // 2 s after syncFinished, so late deliveries from the post-
+              // stage network rebase are still swallowed. Only arm when the
+              // finished notebook is the currently displayed one AND its
+              // suppression is currently active.
+              if (p_notebookId == m_currentNotebookId &&
+                  m_activeSyncFsSuppression.contains(p_notebookId) && m_syncGraceTimer) {
+                m_syncGraceTimer->start();
+              }
             });
     connect(syncSvc, &SyncService::syncFailed, this, &NotebookExplorer2::onSyncFailedSurface);
     connect(syncSvc, &SyncService::enableFinished, this,
@@ -218,8 +241,23 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
               m_credentialUpdateRetryArm.remove(p_notebookId);
               m_deferredCredentialRetry.remove(p_notebookId);
               m_pendingManualSyncFeedback.remove(p_notebookId);
+              // Drop fs-event suppression for this notebook and stop any
+              // pending grace timer so it doesn't fire after disable.
+              m_activeSyncFsSuppression.remove(p_notebookId);
+              if (m_syncGraceTimer) {
+                m_syncGraceTimer->stop();
+              }
               updateSyncButtonState();
             });
+    // Drop fs-event suppression on syncCancelled so a cancel that races with
+    // the grace-window does not leave the set stale. Handles both wasQueued
+    // (pending-cancel) and in-flight cancel cases identically.
+    connect(syncSvc, &SyncService::syncCancelled, this, [this](const QString &p_notebookId, bool) {
+      m_activeSyncFsSuppression.remove(p_notebookId);
+      if (m_syncGraceTimer) {
+        m_syncGraceTimer->stop();
+      }
+    });
     // Wire reconcileFinished to store error code and update button state (W4.T3)
     connect(syncSvc, &SyncService::reconcileFinished, this,
             [this](const QString &p_notebookId, VxCoreError p_result) {
@@ -240,14 +278,66 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
     m_credentialUpdateRetryArm.clear();
     m_deferredCredentialRetry.clear();
     m_pendingManualSyncFeedback.clear();
+    // Drop stale active-sync fs-event suppression from the previously
+    // displayed notebook AND stop any pending grace timer (otherwise its
+    // delayed timeout would wipe state that belongs to the new notebook's
+    // freshly-armed suppression).
+    m_activeSyncFsSuppression.clear();
+    if (m_syncGraceTimer) {
+      m_syncGraceTimer->stop();
+    }
     updateSyncButtonState();
   });
+
+  // Grace timer: keeps active-sync fs-event suppression armed for 2 s after
+  // syncFinished so late deliveries from the post-stage network rebase are
+  // still swallowed (the existing one-shot expectFsChange would have fired
+  // by then).
+  m_syncGraceTimer = new QTimer(this);
+  m_syncGraceTimer->setSingleShot(true);
+  m_syncGraceTimer->setInterval(2000);
+  connect(m_syncGraceTimer, &QTimer::timeout, this, [this]() {
+    // Drop suppression for the currently displayed notebook. The grace timer
+    // is only ever (re)started for the current notebook (see syncFinished
+    // lambda), so clearing on the current id is the correct scope.
+    if (!m_currentNotebookId.isEmpty()) {
+      m_activeSyncFsSuppression.remove(m_currentNotebookId);
+    }
+  });
+
+  // Subscribe to FileBeforeSave so user-initiated saves arm an expectFsChange
+  // for the buffer's parent directory; the directoryChanged event Qt fires
+  // after the file is rewritten would otherwise reload the explorer and wipe
+  // selection. Synchronous subscription on the UI thread is REQUIRED for the
+  // arm to happen BEFORE the disk write — do not switch to QueuedConnection.
+  if (auto *hookMgr = m_services.get<HookManager>()) {
+    m_fileBeforeSaveHookId = hookMgr->addAction<BufferEvent>(
+        HookNames::FileBeforeSave,
+        [this](HookContext &p_ctx, const BufferEvent &p_event) {
+          Q_UNUSED(p_ctx) // observe-only — do NOT call p_ctx.cancel().
+          const QString parentAbs =
+              resolveExpectFsChangePathForBuffer(m_services, p_event.bufferId, m_currentNotebookId);
+          if (!parentAbs.isEmpty()) {
+            // Default 3000 ms window matches the hooked-mutator pattern at
+            // line 1357 et al.
+            expectFsChange(parentAbs);
+          }
+        },
+        /*priority=*/10);
+  }
 
   // Initial state.
   updateSyncButtonState();
 }
 
-NotebookExplorer2::~NotebookExplorer2() {}
+NotebookExplorer2::~NotebookExplorer2() {
+  if (m_fileBeforeSaveHookId >= 0) {
+    if (auto *hookMgr = m_services.get<HookManager>()) {
+      hookMgr->removeAction(m_fileBeforeSaveHookId);
+    }
+    m_fileBeforeSaveHookId = -1;
+  }
+}
 
 void NotebookExplorer2::setupUI() {
   m_mainLayout = new QVBoxLayout(this);
@@ -1697,6 +1787,15 @@ void NotebookExplorer2::syncWatchedPaths() {
 }
 
 void NotebookExplorer2::onFileSystemChanged(const QString &p_path) {
+  // While a sync is in flight for the currently displayed notebook (or for
+  // the 2 s grace window after syncFinished), drop fs events on any path
+  // under that notebook's root: the explorer reload would only wipe the
+  // user's selection. consumeExpectedFsChange is one-shot and cannot cover
+  // sync's multi-event burst, so this is a separate code path.
+  if (m_activeSyncFsSuppression.contains(m_currentNotebookId) &&
+      isPathUnderNotebookRoot(m_services, m_currentNotebookId, p_path)) {
+    return;
+  }
   if (consumeExpectedFsChange(p_path)) {
     // App-initiated change. Synchronous reload has already been performed by
     // the originating handler; the delayed reload would only wipe selection.

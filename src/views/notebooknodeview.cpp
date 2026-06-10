@@ -142,10 +142,49 @@ void NotebookNodeView::selectNode(const NodeIdentifier &p_nodeId) {
   }
 
   QModelIndex idx = indexFromNodeId(p_nodeId);
-  if (idx.isValid()) {
-    selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-    setCurrentIndex(idx);
+  if (!idx.isValid()) {
+    // Target index is not yet materialized — walk the ancestor chain and
+    // fetchMore() at each step so the proxy/source caches are populated
+    // before retrying. Mirrors the proven pattern in expandToNode() above,
+    // but only fetches (no expand) since selection does not require the
+    // ancestor rows to be visually expanded.
+    if (model()) {
+      // Ensure root children are loaded (may be empty after notebook/display-root switch).
+      if (model()->canFetchMore(QModelIndex())) {
+        model()->fetchMore(QModelIndex());
+      }
+
+      // Walk strict ancestors only (NOT the target itself).
+      QStringList components = p_nodeId.relativePath.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+      QString currentPath;
+      for (int i = 0; i < components.size() - 1; ++i) {
+        if (!currentPath.isEmpty()) {
+          currentPath += QLatin1Char('/');
+        }
+        currentPath += components[i];
+
+        NodeIdentifier parentId;
+        parentId.notebookId = p_nodeId.notebookId;
+        parentId.relativePath = currentPath;
+
+        QModelIndex parentIdx = indexFromNodeId(parentId);
+        if (parentIdx.isValid() && model()->canFetchMore(parentIdx)) {
+          model()->fetchMore(parentIdx);
+        }
+      }
+    }
+
+    // Retry once after the walk.
+    idx = indexFromNodeId(p_nodeId);
+    if (!idx.isValid()) {
+      qWarning() << "NotebookNodeView::selectNode: failed to resolve" << p_nodeId.notebookId
+                 << p_nodeId.relativePath;
+      return;
+    }
   }
+
+  selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+  setCurrentIndex(idx);
 }
 
 void NotebookNodeView::expandToNode(const NodeIdentifier &p_nodeId) {

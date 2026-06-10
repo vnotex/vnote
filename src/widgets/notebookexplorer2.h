@@ -266,6 +266,21 @@ private:
   // directoryChanged() event for, with an epoch-ms deadline after which the
   // expectation auto-expires.
   QHash<QString, qint64> m_expectedFsChangesDeadline;
+
+  // Hook handle for FileBeforeSave subscription; -1 when unregistered.
+  // Stored so the destructor can call HookManager::removeAction symmetrically.
+  int m_fileBeforeSaveHookId = -1;
+
+  // Set of notebook IDs whose sync is in flight. While a notebook's ID is in
+  // this set, fs events on its watched paths are dropped without arming the
+  // debounce timer. Maintained by syncStarted/syncFinished/syncCancelled/
+  // disableFinished/currentNotebookChanged handlers.
+  QSet<QString> m_activeSyncFsSuppression;
+
+  // Singleshot timer started after syncFinished. Keeps suppression active for
+  // 2 s of grace so late fs deliveries from the post-stage network rebase are
+  // still swallowed. Owned by Qt parent (this); do NOT delete manually.
+  QTimer *m_syncGraceTimer = nullptr;
 };
 
 } // namespace vnotex
