@@ -102,6 +102,9 @@ public:
   // Atomically rename staging directory to final destination.
   // Uses QDir::rename (best-effort atomic on POSIX, best-effort on Windows).
   // IMPORTANT: p_stagingDir MUST be on the same filesystem as p_finalDir for atomicity.
+  // On success, also best-effort removes the staging marker file (it has no
+  // meaning in the final dir; a failed removal logs a warning but still
+  // returns true since the marker is cosmetic-only at that point).
   // Returns true on success; returns false + *p_errorOut on failure.
   // On failure, does NOT modify either directory.
   static bool renameStagingToFinal(const QString &p_stagingDir, const QString &p_finalDir,

@@ -109,6 +109,12 @@ void TestFileUtils2Staging::testRenameStagingToFinal_success() {
 
   // Verify staging dir no longer exists
   QVERIFY(!QDir(stagingDir).exists());
+
+  // Regression: staging-marker.json must not leak into the final dir after a
+  // successful rename. Without this gate, the marker surfaces as an "external
+  // file" in the notebook explorer (BundledFolderManager::ListExternalNodes
+  // has no exclusion for it).
+  QVERIFY(!QFile::exists(QDir(finalDir).filePath("staging-marker.json")));
 }
 
 // =============================================================================

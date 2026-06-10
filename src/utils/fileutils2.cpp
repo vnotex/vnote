@@ -13,6 +13,13 @@
 
 using namespace vnotex;
 
+namespace {
+// SSOT for the staging marker filename. The marker is written by
+// generateCloneStagingDir, consumed by sweepOrphanStagingDirs, and
+// disposed by renameStagingToFinal on success.
+static const QString kStagingMarkerName = QStringLiteral("staging-marker.json");
+} // namespace
+
 Error FileUtils2::readFile(const QString &p_filePath, QByteArray *p_data) {
   Q_ASSERT(p_data);
   QFile file(p_filePath);
@@ -441,7 +448,7 @@ QString FileUtils2::generateCloneStagingDir(const QString &p_finalParentDir,
   markerJson.insert(QStringLiteral("createdUtc"), QJsonValue(static_cast<double>(timestampMs)));
   markerJson.insert(QStringLiteral("finalDir"), QJsonValue(QDir(finalDirPath).absolutePath()));
 
-  QString markerFilePath = QDir(stagingDirPath).filePath(QStringLiteral("staging-marker.json"));
+  QString markerFilePath = QDir(stagingDirPath).filePath(kStagingMarkerName);
   QFile markerFile(markerFilePath);
   if (!markerFile.open(QIODevice::WriteOnly)) {
     if (p_errorOut) {
@@ -491,6 +498,18 @@ bool FileUtils2::renameStagingToFinal(const QString &p_stagingDir, const QString
                         .append(QStringLiteral(" (%1 -> %2)").arg(p_stagingDir, p_finalDir));
     }
     return false;
+  }
+
+  // Best-effort: the staging marker has no meaning in the final dir (sweep
+  // matches by .*.vnote-clone-pending-* name, which the rename has already
+  // changed). Without this delete, the file appears as an "external file"
+  // in the notebook explorer because BundledFolderManager::ListExternalNodes
+  // does not skip it. Failure here is cosmetic only — never fail the rename
+  // on it (the controller would otherwise tear down the user's freshly
+  // cloned notebook).
+  const QString markerPath = QDir(p_finalDir).filePath(kStagingMarkerName);
+  if (QFile::exists(markerPath) && !QFile::remove(markerPath)) {
+    qWarning() << "renameStagingToFinal: failed to remove staging marker at" << markerPath;
   }
 
   return true;
@@ -548,7 +567,7 @@ QStringList FileUtils2::sweepOrphanStagingDirs(const QString &p_parentDir, qint6
     QString entryPath = parentDir.filePath(entry);
 
     // Read marker file to check creation timestamp
-    QString markerPath = QDir(entryPath).filePath(QStringLiteral("staging-marker.json"));
+    QString markerPath = QDir(entryPath).filePath(kStagingMarkerName);
     QFile markerFile(markerPath);
     if (!markerFile.open(QIODevice::ReadOnly)) {
       continue; // Skip entries without valid marker

@@ -304,6 +304,12 @@ void TestOpenNotebookControllerClone::testCloneRoSnapshotHappyPath() {
                          QDir::Hidden | QDir::Dirs | QDir::NoDotAndDotDot);
   QVERIFY2(pending.isEmpty(), "staging dir should not remain after a successful rename");
 
+  // Regression: staging-marker.json must not be left behind in the final dir
+  // after the staging-to-final rename. Without this gate, the marker surfaces
+  // as an "external file" in the notebook explorer.
+  QVERIFY2(!QFile::exists(input.finalDestDir + QStringLiteral("/staging-marker.json")),
+           "staging-marker.json must not leak into the cloned notebook root");
+
   // Vxcore confirms read-only state on the just-opened notebook.
   bool readOnly = false;
   QCOMPARE(vxcore_notebook_is_read_only(m_ctx, result.notebookId.toUtf8().constData(), &readOnly),
