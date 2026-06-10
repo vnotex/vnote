@@ -129,6 +129,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
   if (remoteUrl.isEmpty()) {
     syncService.shutdown();
     guard.cleanup();
+    syncService.shutdown();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
   }
@@ -157,6 +158,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
       guard.cleanup();
+      syncService.shutdown();
       vxcore_context_destroy(ctx);
       QSKIP("OS keychain backend not usable in this test environment");
     }
@@ -193,6 +195,13 @@ void TestBootstrapAndPersist::happy_path_s5() {
   (void)delSpy.wait(3000);
   (void)delErr.count();
   guard.cleanup();
+  // CRITICAL: drain the work queue (including the trailing initial sync that
+  // bootstrapAndPersist enqueued at syncservice.cpp:751) BEFORE destroying
+  // the vxcore context. Otherwise the worker thread is still mid-flight in
+  // vxcore_sync_* with a dangling context handle -> use-after-free SEGFAULT.
+  // On Linux file:// remotes finish inside the 3s delSpy window; on Windows
+  // libgit2 + filesystem ops + AV scanning push past that window.
+  syncService.shutdown();
   vxcore_context_destroy(ctx);
 }
 
@@ -217,6 +226,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   if (remoteUrl.isEmpty()) {
     syncService.shutdown();
     guard.cleanup();
+    syncService.shutdown();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
   }
@@ -258,6 +268,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
       credStore.deleteCredentials(nbId);
       QTest::qWait(500);
       guard.cleanup();
+      syncService.shutdown();
       vxcore_context_destroy(ctx);
       QSKIP("Enable failed (likely keychain) — persist seam never reached");
     }
@@ -290,6 +301,9 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   credStore.deleteCredentials(nbId);
   QTest::qWait(500);
   guard.cleanup();
+  // CRITICAL: see happy_path_s5 for rationale — drain before ctx destroy to
+  // avoid use-after-free of the vxcore context from the worker thread.
+  syncService.shutdown();
   vxcore_context_destroy(ctx);
 }
 
@@ -314,6 +328,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   if (remoteUrl.isEmpty()) {
     syncService.shutdown();
     guard.cleanup();
+    syncService.shutdown();
     vxcore_context_destroy(ctx);
     QSKIP("git not available or bare-repo seeding failed");
   }
@@ -355,6 +370,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
     credStore.deleteCredentials(nbId);
     QTest::qWait(500);
     guard.cleanup();
+    syncService.shutdown();
     vxcore_context_destroy(ctx);
     QSKIP("Enable failed (likely keychain) — persist seam never reached");
   }
@@ -368,6 +384,9 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   credStore.deleteCredentials(nbId);
   QTest::qWait(500);
   guard.cleanup();
+  // CRITICAL: see happy_path_s5 for rationale — drain before ctx destroy to
+  // avoid use-after-free of the vxcore context from the worker thread.
+  syncService.shutdown();
   vxcore_context_destroy(ctx);
 }
 
