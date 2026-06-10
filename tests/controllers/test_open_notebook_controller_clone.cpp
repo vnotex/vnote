@@ -321,8 +321,14 @@ void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
   TempDirFixture localTemp;
   QVERIFY(localTemp.isValid());
 
-  // Pre-create the user-chosen destination -- validateCloneInput must reject.
-  const QString existingDestDir = localTemp.filePath(QStringLiteral("already_exists"));
+  // Pre-create the user-chosen destination as a NON-EMPTY dir --
+  // validateCloneInput must reject. Per commit e6caf855 ("allow
+  // OpenNotebookController clone into non-existing or empty dest"), EMPTY
+  // existing dirs are now accepted (the worker rmdirs them before the
+  // staging->final rename); only NON-EMPTY existing dirs are rejected. The
+  // sentinel file below both verifies post-rollback safety AND makes the dir
+  // non-empty, which is what triggers the validation failure tested here.
+  const QString existingDestDir = localTemp.filePath(QStringLiteral("non_empty_exists"));
   QVERIFY(QDir().mkpath(existingDestDir));
   // Add a sentinel file so we can confirm we don't touch it on rollback.
   QFile sentinel(existingDestDir + QStringLiteral("/sentinel.txt"));
@@ -338,9 +344,9 @@ void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
   OpenNotebookController controller(m_services);
   // Pre-flight validate: synchronous answer, no worker dispatch.
   const auto validation = controller.validateCloneInput(input);
-  QVERIFY2(!validation.valid, "existing dest dir must be rejected by validation");
-  QVERIFY2(validation.message.contains(QStringLiteral("already exists")),
-           qPrintable(QStringLiteral("validation message must mention 'already exists' (got: %1)")
+  QVERIFY2(!validation.valid, "non-empty existing dest dir must be rejected by validation");
+  QVERIFY2(validation.message.contains(QStringLiteral("must be empty")),
+           qPrintable(QStringLiteral("validation message must mention 'must be empty' (got: %1)")
                           .arg(validation.message)));
 
   // cloneAndOpen with the same input must short-circuit through
