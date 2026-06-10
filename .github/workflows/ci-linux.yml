@@ -136,6 +136,17 @@ jobs:
           ctest --output-on-failure
         working-directory: ${{runner.workspace}}/build
 
+      - name: Re-run failed tests with extra-verbose output (debug aid)
+        # On failure of the previous step, re-run only the failing tests with
+        # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
+        # land in the CI log. Diagnostic only; never gates the workflow.
+        if: failure()
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
+          ctest --rerun-failed --extra-verbose || true
+        working-directory: ${{runner.workspace}}/build
+
       - name: Fix Package
         run: |
           mkdir fixpackage

@@ -152,6 +152,22 @@ jobs:
           ctest -C Release --output-on-failure
         working-directory: ${{runner.workspace}}/build
 
+      - name: Re-run failed tests with extra-verbose output (debug aid)
+        # On failure of the previous step, re-run only the failing tests with
+        # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
+        # land in the CI log. The QTEST_MAIN crash-handler workaround
+        # (-nocrashhandler in CMakeLists) silences the default Qt Test stdout
+        # path; --output-on-failure alone often shows nothing useful. This
+        # step never gates the workflow (|| exit 0) - it's pure diagnostics.
+        if: ${{ failure() && matrix.config.qt_major == 6 }}
+        shell: cmd
+        env:
+          VS_CMD: ${{ matrix.config.vs_cmd }}
+        run: |
+          call "%VS_CMD%"
+          ctest -C Release --rerun-failed --extra-verbose || exit 0
+        working-directory: ${{runner.workspace}}/build
+
       - name: Assert MSVC v142 + Qt 5.15.2 in use
         if: ${{ matrix.config.qt_major == 5 }}
         shell: bash
