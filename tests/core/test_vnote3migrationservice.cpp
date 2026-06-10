@@ -2019,6 +2019,17 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   // instead of just "File not migrated: <name>". The byte-string analysis
   // tells us whether the bug is silent importFile failure, copyRemainingFiles
   // failure, or NFC/NFD normalization mismatch.
+  //
+  // Gated on Q_OS_LINUX because adding the qWarning() block on Windows
+  // broke test #12 (test_vnote3migrationservice) in CI iteration 6 — the
+  // test was reported ***Failed even though every ImportFile log line
+  // showed success. The Windows Qt Test output suppression (per the
+  // documented QTEST_MAIN-vs-stdout-pipe deadlock workaround that
+  // installs -nocrashhandler) interacts badly with multi-line qWarning
+  // output emitted between QVERIFY2 calls in some configurations. The
+  // failing platform is Linux; restricting the noisy diagnostic to that
+  // platform is the minimal-blast-radius fix.
+#ifdef Q_OS_LINUX
   if (!result.warnings.isEmpty()) {
     qWarning().noquote() << "Migration warnings (" << result.warnings.size() << "):\n  "
                          << result.warnings.join(QStringLiteral("\n  "));
@@ -2046,6 +2057,7 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
     qWarning().noquote() << "Destination directory entries (" << destEntries.size() << "):\n  "
                          << destEntriesHex.join(QStringLiteral("\n  "));
   }
+#endif
 
   // Verify all 17 files are migrated on disk.
   const QStringList expectedFiles = {
