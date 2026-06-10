@@ -51,6 +51,10 @@ int ViewWindow2::getCursorPosition() const { return -1; }
 
 int ViewWindow2::getScrollPosition() const { return -1; }
 
+ViewWindow2::ViewScrollState ViewWindow2::captureScrollState() const { return {}; }
+
+void ViewWindow2::restoreScrollState(const ViewScrollState &) {}
+
 bool ViewWindow2::aboutToClose(bool) { return true; }
 
 void ViewWindow2::applySnippet(const QString &) {}
