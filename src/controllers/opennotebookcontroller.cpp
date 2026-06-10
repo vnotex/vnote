@@ -204,37 +204,57 @@ OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) con
   const QString finalDir = p_input.finalDestDir.trimmed();
   if (finalDir.isEmpty()) {
     result.valid = false;
-    result.message = tr("Destination folder path must not be empty.");
+    result.message = tr("Local root folder path must not be empty.");
     return result;
   }
   if (!PathUtils::isLegalPath(finalDir)) {
     result.valid = false;
-    result.message = tr("Destination folder path is not valid.");
+    result.message = tr("Local root folder path is not valid.");
     return result;
   }
 
+  // Dest contract (post refine-open-notebook-dialog): the local root folder
+  // may EITHER not exist (we create it via the staging rename) OR be an
+  // existing empty directory. cloneAndOpen's worker thread converts the
+  // existing-empty case back to the "does not exist" precondition via a
+  // single pre-rename rmdir hop. Anything else (file, non-empty dir,
+  // unwritable parent for the non-existing case) is rejected.
   const QFileInfo finalInfo(finalDir);
   if (finalInfo.exists()) {
-    result.valid = false;
-    result.message = tr("Destination folder (%1) already exists; it must not exist (we create it).")
-                         .arg(finalDir);
-    return result;
-  }
-
-  // Parent must exist + be a directory + be writable so we can create the
-  // staging dir and (eventually) the final dir alongside.
-  const QFileInfo parentInfo(finalInfo.absolutePath());
-  if (!parentInfo.exists() || !parentInfo.isDir()) {
-    result.valid = false;
-    result.message = tr("Parent folder of destination does not exist or is not a directory: %1.")
-                         .arg(parentInfo.absoluteFilePath());
-    return result;
-  }
-  if (!parentInfo.isWritable()) {
-    result.valid = false;
-    result.message =
-        tr("Parent folder of destination is not writable: %1.").arg(parentInfo.absoluteFilePath());
-    return result;
+    if (!finalInfo.isDir()) {
+      result.valid = false;
+      result.message = tr("Local root folder must be a directory.");
+      return result;
+    }
+    const QDir destDir(finalDir);
+    const QStringList entries =
+        destDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
+    if (!entries.isEmpty()) {
+      result.valid = false;
+      result.message =
+          tr("Local root folder must be empty (contains %1 item(s)).").arg(entries.size());
+      return result;
+    }
+    // Existing-empty dir: parent's writability is implied by the dir's own
+    // existence (we wouldn't be able to read it otherwise on any sane FS).
+    // We still need to be able to create the staging sibling, which the
+    // existing FileUtils2::generateCloneStagingDir path verifies separately.
+  } else {
+    // Non-existing: parent must exist + be a writable directory so we can
+    // create the staging dir AND (eventually) the final dir alongside.
+    const QFileInfo parentInfo(finalInfo.absolutePath());
+    if (!parentInfo.exists() || !parentInfo.isDir()) {
+      result.valid = false;
+      result.message = tr("Parent folder of destination does not exist or is not a directory: %1.")
+                           .arg(parentInfo.absoluteFilePath());
+      return result;
+    }
+    if (!parentInfo.isWritable()) {
+      result.valid = false;
+      result.message = tr("Parent folder of destination is not writable: %1.")
+                           .arg(parentInfo.absoluteFilePath());
+      return result;
+    }
   }
 
   // Duplicate-open guard against the resolved final dir.
@@ -413,6 +433,38 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
     // Step 4: rename staging -> final. Vxcore's NotebookManager already
     // recorded root_folder=stagingDir in session.json, but that's fine: step
     // 5 below closes + re-opens against finalDir to refresh the record.
+    //
+    // refine-open-notebook-dialog: if finalDir exists (validation guarantees
+    // it is an empty directory), remove it first so the atomic rename can
+    // proceed. Windows QDir::rename cannot overwrite even an empty dir, so
+    // this pre-rmdir hop is mandatory on Windows; on POSIX it's harmless.
+    // The 20x100ms retry loop mirrors teardownCreatedDir's defensive pattern
+    // for transient antivirus / Explorer-preview handles.
+    if (QFileInfo::exists(finalDir)) {
+      QDir d(finalDir);
+      bool removed = false;
+      for (int attempt = 0; attempt < 20 && !removed; ++attempt) {
+        if (d.removeRecursively()) {
+          removed = true;
+          break;
+        }
+        QThread::msleep(100);
+      }
+      if (!removed) {
+        // We never modified finalDir's contents (it was empty going in and
+        // rmdir failed). The user's original folder is intact; only the
+        // staging dir needs cleanup.
+        notebookService->closeNotebook(stagingNotebookId);
+        QString rmErr;
+        FileUtils2::removeStagingDir(stagingDir, &rmErr);
+        CloneAndOpenResult result;
+        result.success = false;
+        result.errorMessage = tr("Could not prepare local root folder %1.").arg(finalDir);
+        emitFinished(result);
+        return;
+      }
+    }
+
     QString renameErr;
     if (!FileUtils2::renameStagingToFinal(stagingDir, finalDir, &renameErr)) {
       // Rename failed: rollback. Close the staging notebook so vxcore drops
