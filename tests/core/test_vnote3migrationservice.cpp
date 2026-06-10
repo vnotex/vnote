@@ -2014,51 +2014,6 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   auto result = m_service->convertNotebook(sourcePath, destPath);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
 
-  // Diagnostics: surface migration warnings + actual destination contents +
-  // source contents so CJK-filename failures on CI-Linux print actionable data
-  // instead of just "File not migrated: <name>". The byte-string analysis
-  // tells us whether the bug is silent importFile failure, copyRemainingFiles
-  // failure, or NFC/NFD normalization mismatch.
-  //
-  // Gated on Q_OS_LINUX because adding the qWarning() block on Windows
-  // broke test #12 (test_vnote3migrationservice) in CI iteration 6 — the
-  // test was reported ***Failed even though every ImportFile log line
-  // showed success. The Windows Qt Test output suppression (per the
-  // documented QTEST_MAIN-vs-stdout-pipe deadlock workaround that
-  // installs -nocrashhandler) interacts badly with multi-line qWarning
-  // output emitted between QVERIFY2 calls in some configurations. The
-  // failing platform is Linux; restricting the noisy diagnostic to that
-  // platform is the minimal-blast-radius fix.
-#ifdef Q_OS_LINUX
-  if (!result.warnings.isEmpty()) {
-    qWarning().noquote() << "Migration warnings (" << result.warnings.size() << "):\n  "
-                         << result.warnings.join(QStringLiteral("\n  "));
-  }
-  {
-    const QStringList srcEntries =
-        QDir(sourcePath).entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
-    QStringList srcEntriesHex;
-    srcEntriesHex.reserve(srcEntries.size());
-    for (const QString &n : srcEntries) {
-      srcEntriesHex
-          << QStringLiteral("%1  (utf8=%2)").arg(n, QString::fromLatin1(n.toUtf8().toHex()));
-    }
-    qWarning().noquote() << "Source directory entries (" << srcEntries.size() << "):\n  "
-                         << srcEntriesHex.join(QStringLiteral("\n  "));
-
-    const QStringList destEntries =
-        QDir(destPath).entryList(QDir::NoDotAndDotDot | QDir::AllEntries);
-    QStringList destEntriesHex;
-    destEntriesHex.reserve(destEntries.size());
-    for (const QString &n : destEntries) {
-      destEntriesHex
-          << QStringLiteral("%1  (utf8=%2)").arg(n, QString::fromLatin1(n.toUtf8().toHex()));
-    }
-    qWarning().noquote() << "Destination directory entries (" << destEntries.size() << "):\n  "
-                         << destEntriesHex.join(QStringLiteral("\n  "));
-  }
-#endif
-
   // Verify all 17 files are migrated on disk.
   const QStringList expectedFiles = {
       QStringLiteral("cache.md"),
