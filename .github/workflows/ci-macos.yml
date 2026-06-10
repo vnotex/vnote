@@ -168,9 +168,28 @@ jobs:
           codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
           codesign -v -vvv ./src/VNote.app
 
-          hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
-          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
-          codesign -v -vvv ./VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          # Spotlight / XProtect can hold handles on freshly codesigned bundle
+          # contents, causing `hdiutil create` to fail with "Resource busy".
+          # Flush filesystem buffers + wait a beat, then retry with backoff.
+          DMG_NAME="VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg"
+          sync
+          sleep 5
+          for attempt in 1 2 3 4 5; do
+            echo "hdiutil create attempt $attempt: $DMG_NAME"
+            if hdiutil create -volname "VNote" -srcfolder ./src/VNote.app -ov -format UDZO "$DMG_NAME"; then
+              echo "hdiutil create succeeded on attempt $attempt"
+              break
+            fi
+            echo "hdiutil create failed on attempt $attempt; cleaning up and retrying"
+            hdiutil detach -force "/Volumes/VNote" 2>/dev/null || true
+            if [ "$attempt" = "5" ]; then
+              echo "hdiutil create exhausted retries"
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+          codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime "./$DMG_NAME"
+          codesign -v -vvv "./$DMG_NAME"
 
         working-directory: ${{runner.workspace}}/build
 
