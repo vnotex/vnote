@@ -11,6 +11,7 @@
 #include <QCoreApplication>
 #include <QSignalSpy>
 #include <QString>
+#include <QThread>
 #include <QtTest>
 
 #include <core/servicelocator.h>
@@ -56,6 +57,15 @@ private slots:
   void testHasCredentialsAfterDelete();
   void testHasCredentialsForUnknownIdReturnsFalse();
   void testRefreshKnownIdsPopulatesCache();
+
+  // Regression gate for the cross-thread QObject parenting warning that
+  // fires when the three async credential methods are invoked off the
+  // store's thread (e.g., from a NotebookAfterClose/AfterOpen hook handler
+  // fired inside OpenNotebookController::cloneAndOpen's QtConcurrent::run
+  // worker). See plan: .sisyphus/plans/synccredentialsstore-thread-affinity.md
+  void testStoreSafeFromWorkerThread();
+  void testRetrieveSafeFromWorkerThread();
+  void testDeleteSafeFromWorkerThread();
 
 private:
   // Helper: wait for either signal A or signal B; return which fired first.
@@ -431,6 +441,145 @@ void TestSyncCredentialsStore::testRefreshKnownIdsPopulatesCache() {
 
   // POST-test cleanup: both stores' writes are cleaned up by their guards
   freshGuard.cleanup();
+#endif
+}
+
+void TestSyncCredentialsStore::testStoreSafeFromWorkerThread() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cross-thread parenting warning "
+        "only fires in the keychain branch; the #else branch already "
+        "self-marshals");
+#else
+  SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
+  const QString notebookId = QStringLiteral("nb_t4_worker_store");
+  const QString pat = QStringLiteral("ghp_workerThreadCheck");
+
+  // Install message handler BEFORE the worker fires.
+  g_logCapture.clear();
+  g_previousHandler = qInstallMessageHandler(captureMessageHandler);
+
+  QThread *worker =
+      QThread::create([&store, notebookId, pat]() { store.storeCredentials(notebookId, pat); });
+  QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsStored);
+  QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+  worker->start();
+  QVERIFY2(worker->wait(2000), "worker thread must finish (the call returns immediately "
+                               "after the QueuedConnection invoke)");
+
+  // Wait for the marshaled call to actually execute on the GUI thread
+  // and then for QtKeychain's async response.
+  const int which = waitForEither(doneSpy, errSpy, 5000);
+  QVERIFY2(which != 0, "marshaled storeCredentials must complete");
+
+  // Drain any final pending events so the message handler catches
+  // everything before we restore.
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+
+  qInstallMessageHandler(g_previousHandler);
+  g_previousHandler = nullptr;
+
+  worker->deleteLater();
+
+  QVERIFY2(!g_logCapture.contains(
+               QStringLiteral("Cannot create children for a parent that is in a different thread")),
+           qPrintable(QStringLiteral("Cross-thread QObject parenting warning leaked.\n"
+                                     "Captured log:\n%1")
+                          .arg(g_logCapture)));
+
+  guard.cleanup();
+#endif
+}
+
+void TestSyncCredentialsStore::testRetrieveSafeFromWorkerThread() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cross-thread parenting warning "
+        "only fires in the keychain branch; the #else branch already "
+        "self-marshals");
+#else
+  SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
+  const QString notebookId = QStringLiteral("nb_t4_worker_retrieve");
+
+  // Install message handler BEFORE the worker fires.
+  g_logCapture.clear();
+  g_previousHandler = qInstallMessageHandler(captureMessageHandler);
+
+  QThread *worker =
+      QThread::create([&store, notebookId]() { store.retrieveCredentials(notebookId); });
+  QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsRetrieved);
+  QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+  worker->start();
+  QVERIFY2(worker->wait(2000), "worker thread must finish (the call returns immediately "
+                               "after the QueuedConnection invoke)");
+
+  // Wait for the marshaled call to actually execute on the GUI thread
+  // and then for QtKeychain's async response.
+  const int which = waitForEither(doneSpy, errSpy, 5000);
+  QVERIFY2(which != 0, "marshaled retrieveCredentials must complete");
+
+  // Drain any final pending events so the message handler catches
+  // everything before we restore.
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+
+  qInstallMessageHandler(g_previousHandler);
+  g_previousHandler = nullptr;
+
+  worker->deleteLater();
+
+  QVERIFY2(!g_logCapture.contains(
+               QStringLiteral("Cannot create children for a parent that is in a different thread")),
+           qPrintable(QStringLiteral("Cross-thread QObject parenting warning leaked.\n"
+                                     "Captured log:\n%1")
+                          .arg(g_logCapture)));
+
+  guard.cleanup();
+#endif
+}
+
+void TestSyncCredentialsStore::testDeleteSafeFromWorkerThread() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cross-thread parenting warning "
+        "only fires in the keychain branch; the #else branch already "
+        "self-marshals");
+#else
+  SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
+  const QString notebookId = QStringLiteral("nb_t4_worker_delete");
+
+  // Install message handler BEFORE the worker fires.
+  g_logCapture.clear();
+  g_previousHandler = qInstallMessageHandler(captureMessageHandler);
+
+  QThread *worker =
+      QThread::create([&store, notebookId]() { store.deleteCredentials(notebookId); });
+  QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsDeleted);
+  QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+  worker->start();
+  QVERIFY2(worker->wait(2000), "worker thread must finish (the call returns immediately "
+                               "after the QueuedConnection invoke)");
+
+  // Wait for the marshaled call to actually execute on the GUI thread
+  // and then for QtKeychain's async response.
+  const int which = waitForEither(doneSpy, errSpy, 5000);
+  QVERIFY2(which != 0, "marshaled deleteCredentials must complete");
+
+  // Drain any final pending events so the message handler catches
+  // everything before we restore.
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+
+  qInstallMessageHandler(g_previousHandler);
+  g_previousHandler = nullptr;
+
+  worker->deleteLater();
+
+  QVERIFY2(!g_logCapture.contains(
+               QStringLiteral("Cannot create children for a parent that is in a different thread")),
+           qPrintable(QStringLiteral("Cross-thread QObject parenting warning leaked.\n"
+                                     "Captured log:\n%1")
+                          .arg(g_logCapture)));
+
+  guard.cleanup();
 #endif
 }
 

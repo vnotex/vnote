@@ -2,6 +2,7 @@
 
 #include <QMetaObject>
 #include <QStringLiteral>
+#include <QThread>
 #include <QtGlobal>
 
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
@@ -83,6 +84,22 @@ QString SyncCredentialsStore::keychainKey(const QString &p_notebookId) {
 }
 
 void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const QString &p_pat) {
+  // Thread-safety guard: SyncCredentialsStore lives on the GUI thread and
+  // parents QKeychain::Job instances to itself. When called from a worker
+  // thread (e.g., via a NotebookAfterClose/AfterOpen hook handler fired
+  // inside OpenNotebookController::cloneAndOpen's QtConcurrent::run
+  // worker), the `new QKeychain::...(serviceName(), this)` below would
+  // trip Qt's cross-thread child-parenting check. Self-marshal to the
+  // store's own thread before touching the keychain machinery. Mirrors
+  // the pattern already used in the #else branch below.
+  if (thread() != QThread::currentThread()) {
+    const QString notebookId = p_notebookId;
+    const QString pat = p_pat;
+    QMetaObject::invokeMethod(
+        this, [this, notebookId, pat]() { storeCredentials(notebookId, pat); },
+        Qt::QueuedConnection);
+    return;
+  }
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
   auto *job = new QKeychain::WritePasswordJob(serviceName(), this);
   job->setAutoDelete(false);
@@ -115,6 +132,13 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
 }
 
 void SyncCredentialsStore::retrieveCredentials(const QString &p_notebookId) {
+  // See storeCredentials for the thread-safety rationale.
+  if (thread() != QThread::currentThread()) {
+    const QString notebookId = p_notebookId;
+    QMetaObject::invokeMethod(
+        this, [this, notebookId]() { retrieveCredentials(notebookId); }, Qt::QueuedConnection);
+    return;
+  }
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
   auto *job = new QKeychain::ReadPasswordJob(serviceName(), this);
   job->setAutoDelete(false);
@@ -146,6 +170,13 @@ void SyncCredentialsStore::retrieveCredentials(const QString &p_notebookId) {
 }
 
 void SyncCredentialsStore::deleteCredentials(const QString &p_notebookId) {
+  // See storeCredentials for the thread-safety rationale.
+  if (thread() != QThread::currentThread()) {
+    const QString notebookId = p_notebookId;
+    QMetaObject::invokeMethod(
+        this, [this, notebookId]() { deleteCredentials(notebookId); }, Qt::QueuedConnection);
+    return;
+  }
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
   auto *job = new QKeychain::DeletePasswordJob(serviceName(), this);
   job->setAutoDelete(false);
