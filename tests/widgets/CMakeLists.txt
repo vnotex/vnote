@@ -654,6 +654,21 @@ add_custom_command(TARGET test_notebook_selector2_readonly_badge POST_BUILD
     $<TARGET_FILE_DIR:test_notebook_selector2_readonly_badge>
 )
 
+# T4 (notebook-explorer-drag-reorder): SortDialog2 — pure-UI reorder dialog
+# with Up/Down/Top/Bottom buttons and internal drag-drop. No ServiceLocator
+# / vxcore dependency; the dialog accepts initial order and returns final
+# order via getSortedOrder(). Sources: just the dialog .cpp + the test.
+# LINKS: only Qt6::Widgets — the dialog uses pure standard Qt widgets, no
+# WidgetsFactory / vxcore / VTextEdit transitive dependencies.
+# NOT GUILESS — needs QApplication for QDialog widget construction.
+add_qt_test(test_sort_dialog2
+  SOURCES
+    test_sort_dialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/sortdialog2.cpp
+  LINKS
+    Qt6::Widgets
+)
+
 # T29 follow-up (open-notebook-remote-readonly): read-only banner visibility
 # in NotebookSyncInfoDialog2. Mirrors the source layout of
 # test_notebooksyncinfodialog2 — the dialog cpp + its base widgets are
