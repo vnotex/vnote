@@ -7,6 +7,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <string>
+
 #include <core/noncopyable.h>
 #include <core/services/isyncnotebookservice.h>
 
@@ -19,6 +21,7 @@ namespace vnotex {
 enum class NotebookType { Bundled = VXCORE_NOTEBOOK_BUNDLED, Raw = VXCORE_NOTEBOOK_RAW };
 
 class HookManager;
+class NotebookIoGate;
 
 // Service layer for notebook operations. Wraps VxCore C API and provides Qt signals.
 // NotebookCoreService IS the new notebook layer - replaces legacy NotebookMgr.
@@ -33,6 +36,13 @@ public:
   // Set HookManager for firing node operation hooks.
   // Called from main() after both services are constructed.
   void setHookManager(HookManager *p_hookMgr);
+
+  // Set NotebookIoGate for serializing reorder writes against save / sync work
+  // on the same notebook's working tree. T6: required by reorderFolderChildren.
+  // Called from main() with the SAME instance already injected into
+  // BufferSaveQueue / SyncOps — sharing the gate is what makes per-notebook
+  // serialization actually serialize across actors.
+  void setNotebookIoGate(NotebookIoGate *p_ioGate);
 
   // Notebook operations (7 methods).
   QString createNotebook(const QString &p_path, const QString &p_configJson, NotebookType p_type);
@@ -189,6 +199,31 @@ public:
   // Returns JSON with "files" and "folders" arrays.
   QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath) const;
 
+  // Atomically rewrite the order of a folder's children (subfolders / files)
+  // in its vx.json. Returns immediately; the actual disk write happens on a
+  // worker thread holding NotebookIoGate::ScopedLock(notebookId), and the
+  // result is delivered via the reorderCompleted signal.
+  //
+  // Hook contract:
+  //   - vnote.node.before_reorder fires SYNCHRONOUSLY on the calling thread.
+  //     A hook that calls ctx.cancel() short-circuits with success=false
+  //     and errorMessage="Cancelled by hook"; the vxcore call is NOT made.
+  //   - vnote.node.after_reorder fires on this service's owning thread AFTER
+  //     the worker has released the IoGate, so handlers can safely re-enter
+  //     the gate without deadlock risk.
+  //
+  // No-op contract:
+  //   If both presented sub-arrays match (or are empty), the method emits
+  //   reorderCompleted(true) WITHOUT firing hooks or dispatching to vxcore.
+  //
+  // Args:
+  //   p_orderedFolders: empty = "do not reorder folders" (sub-array omitted
+  //     from JSON); non-empty = exact permutation of current folder names.
+  //   p_orderedFiles:   same semantics for files.
+  void reorderFolderChildren(const QString &p_notebookId, const QString &p_folderRelPath,
+                             const QStringList &p_orderedFolders,
+                             const QStringList &p_orderedFiles);
+
   // List external (unindexed) nodes in a folder.
   // External nodes exist on filesystem but are not tracked in metadata.
   // Returns JSON with "files" and "folders" arrays (each entry has "name" and "type" only).
@@ -268,6 +303,14 @@ public:
   // Returns empty array on error.
   QJsonArray listAttachments(const QString &p_notebookId, const QString &p_filePath) const;
 
+signals:
+  // T6 (notebook-explorer-drag-reorder): emitted from this service's owning
+  // thread when reorderFolderChildren() finishes (success OR failure path).
+  // success=true with empty errorMessage signals OK; success=false carries a
+  // translated, user-facing message.
+  void reorderCompleted(const QString &notebookId, const QString &folderRelPath, bool success,
+                        const QString &errorMessage);
+
 private:
   // Check context validity before operations.
   bool checkContext() const;
@@ -284,8 +327,20 @@ private:
   // Parse JSON string to QJsonArray from C string (takes ownership, frees p_str).
   static QJsonArray parseJsonArrayFromCStr(char *p_str);
 
+  // T6 helper: build the {"folders":[...],"files":[...]} JSON consumed by
+  // vxcore_folder_set_children_order. Either sub-array is omitted if its
+  // corresponding QStringList is empty (matches vxcore's "do not touch"
+  // contract for missing keys).
+  static std::string buildOrderedJson(const QStringList &p_orderedFolders,
+                                      const QStringList &p_orderedFiles);
+
+  // T6 helper: translate a VxCoreError code from
+  // vxcore_folder_set_children_order into a user-facing message.
+  static QString reorderErrorToString(int p_rc);
+
   VxCoreContextHandle m_context = nullptr;
   HookManager *m_hookMgr = nullptr;
+  NotebookIoGate *m_ioGate = nullptr;
 };
 
 } // namespace vnotex

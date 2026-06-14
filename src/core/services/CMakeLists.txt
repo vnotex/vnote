@@ -85,8 +85,15 @@ target_link_libraries(core_services
     Qt${QT_DEFAULT_MAJOR_VERSION}::Core
     Qt${QT_DEFAULT_MAJOR_VERSION}::Gui
     Qt${QT_DEFAULT_MAJOR_VERSION}::Network
+    Qt${QT_DEFAULT_MAJOR_VERSION}::Concurrent
     vxcore
     VTextEdit
+  PRIVATE
+    # T6 (notebook-explorer-drag-reorder): NotebookCoreService::buildOrderedJson
+    # uses nlohmann::json to build the {folders, files} payload consumed by
+    # vxcore_folder_set_children_order. The target is the INTERFACE library
+    # exposed by libs/vxcore/third_party/CMakeLists.txt.
+    nlohmann_json
 )
 
 target_include_directories(core_services

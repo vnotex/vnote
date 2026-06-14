@@ -2,11 +2,16 @@
 
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QMetaObject>
 #include <QVariantMap>
+#include <QtConcurrent>
+
+#include <nlohmann/json.hpp>
 
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
+#include <core/services/notebookiogate.h>
 #include <core/services/synclog.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -16,6 +21,8 @@ NotebookCoreService::NotebookCoreService(VxCoreContextHandle p_context, QObject 
     : QObject(p_parent), m_context(p_context) {}
 
 void NotebookCoreService::setHookManager(HookManager *p_hookMgr) { m_hookMgr = p_hookMgr; }
+
+void NotebookCoreService::setNotebookIoGate(NotebookIoGate *p_ioGate) { m_ioGate = p_ioGate; }
 
 NotebookCoreService::~NotebookCoreService() {}
 
@@ -804,6 +811,154 @@ QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
     return QJsonObject();
   }
   return parseJsonObjectFromCStr(json);
+}
+
+// T6 (notebook-explorer-drag-reorder): async reorder with hooks + IoGate.
+//
+// Threading layout:
+//   Caller thread (typically GUI):
+//     1. Pre-validate args.
+//     2. Snapshot current order via listFolderChildren.
+//     3. No-op short-circuit (no hooks, no worker).
+//     4. Fire before_reorder synchronously (gives plugins a cancel slot
+//        BEFORE any disk work is queued).
+//     5. Dispatch to QtConcurrent worker; return.
+//   Worker thread:
+//     6. Hold NotebookIoGate::ScopedLock(notebookId) for the duration of
+//        the vxcore_folder_set_children_order call ONLY.
+//     7. Release the gate by leaving the inner { } scope (RAII).
+//     8. Queue completion (after-hook + reorderCompleted signal) onto the
+//        service's owning thread via QMetaObject::invokeMethod /
+//        Qt::QueuedConnection. Releasing the gate BEFORE queuing the
+//        after-hook is what makes it safe for plugins to re-enter the gate
+//        from inside the after-hook callback (e.g., to stage a follow-up
+//        write) without deadlocking.
+void NotebookCoreService::reorderFolderChildren(const QString &p_notebookId,
+                                                const QString &p_folderRelPath,
+                                                const QStringList &p_orderedFolders,
+                                                const QStringList &p_orderedFiles) {
+  if (p_notebookId.isEmpty() || (p_orderedFolders.isEmpty() && p_orderedFiles.isEmpty()) ||
+      !m_hookMgr || !m_ioGate) {
+    emit reorderCompleted(p_notebookId, p_folderRelPath, false, tr("Invalid arguments"));
+    return;
+  }
+
+  // Snapshot current order so the event payload carries the "previous" state
+  // and the no-op check has something to compare against.
+  const QJsonObject children = listFolderChildren(p_notebookId, p_folderRelPath);
+  QStringList previousFolderOrder;
+  for (const QJsonValue &v : children.value(QStringLiteral("folders")).toArray()) {
+    previousFolderOrder.append(v.toObject().value(QStringLiteral("name")).toString());
+  }
+  QStringList previousFileOrder;
+  for (const QJsonValue &v : children.value(QStringLiteral("files")).toArray()) {
+    previousFileOrder.append(v.toObject().value(QStringLiteral("name")).toString());
+  }
+
+  // No-op short-circuit: an absent sub-array means "do not reorder this kind";
+  // a sub-array equal to the current order means "no effective change". When
+  // BOTH kinds satisfy one of those, neither vxcore nor the hooks need to fire.
+  const bool foldersUnchanged =
+      p_orderedFolders.isEmpty() || p_orderedFolders == previousFolderOrder;
+  const bool filesUnchanged = p_orderedFiles.isEmpty() || p_orderedFiles == previousFileOrder;
+  if (foldersUnchanged && filesUnchanged) {
+    emit reorderCompleted(p_notebookId, p_folderRelPath, true, QString());
+    return;
+  }
+
+  NodeReorderEvent event;
+  event.notebookId = p_notebookId;
+  event.folderRelPath = p_folderRelPath;
+  event.previousFolderOrder = previousFolderOrder;
+  event.previousFileOrder = previousFileOrder;
+  event.newFolderOrder = p_orderedFolders;
+  event.newFileOrder = p_orderedFiles;
+
+  // Synchronous before-hook lets plugins cancel BEFORE any worker dispatch.
+  // The typed doAction overload returns true when a callback called cancel().
+  if (m_hookMgr->doAction(HookNames::NodeBeforeReorder, event)) {
+    emit reorderCompleted(p_notebookId, p_folderRelPath, false, tr("Cancelled by hook"));
+    return;
+  }
+
+  // Capture by value so the worker has stable copies (Qt strings are CoW so
+  // this is cheap). Capturing `this` is safe — the service outlives all in-
+  // flight reorders by construction (it is destroyed only at shutdown after
+  // QThreadPool::waitForDone via ~QtConcurrent::run cleanup).
+  const QString notebookId = p_notebookId;
+  const QString folderRelPath = p_folderRelPath;
+  const QStringList orderedFolders = p_orderedFolders;
+  const QStringList orderedFiles = p_orderedFiles;
+
+  QtConcurrent::run([this, notebookId, folderRelPath, orderedFolders, orderedFiles, event]() {
+    int rc = VXCORE_ERR_UNKNOWN;
+    {
+      // Acquire-release window: hold the gate for the working-tree write ONLY.
+      // Mirrors the SyncOps::triggerSync stage-phase pattern.
+      NotebookIoGate::ScopedLock lock(*m_ioGate, notebookId);
+      const std::string orderedJson = buildOrderedJson(orderedFolders, orderedFiles);
+      rc = static_cast<int>(vxcore_folder_set_children_order(
+          m_context, notebookId.toUtf8().constData(),
+          folderRelPath.isEmpty() ? "." : folderRelPath.toUtf8().constData(), orderedJson.c_str()));
+    } // Gate released here BEFORE queuing the after-hook.
+
+    QMetaObject::invokeMethod(
+        this,
+        [this, notebookId, folderRelPath, event, rc]() {
+          if (rc == VXCORE_OK) {
+            if (m_hookMgr) {
+              m_hookMgr->doAction(HookNames::NodeAfterReorder, event);
+            }
+            emit reorderCompleted(notebookId, folderRelPath, true, QString());
+          } else {
+            emit reorderCompleted(notebookId, folderRelPath, false, reorderErrorToString(rc));
+          }
+        },
+        Qt::QueuedConnection);
+  });
+}
+
+std::string NotebookCoreService::buildOrderedJson(const QStringList &p_orderedFolders,
+                                                  const QStringList &p_orderedFiles) {
+  // Either sub-array is OPTIONAL; vxcore treats a missing key as "do not touch
+  // this kind" (per vxcore_folder_set_children_order contract).
+  nlohmann::json j = nlohmann::json::object();
+  if (!p_orderedFolders.isEmpty()) {
+    nlohmann::json arr = nlohmann::json::array();
+    for (const QString &name : p_orderedFolders) {
+      arr.push_back(name.toStdString());
+    }
+    j["folders"] = arr;
+  }
+  if (!p_orderedFiles.isEmpty()) {
+    nlohmann::json arr = nlohmann::json::array();
+    for (const QString &name : p_orderedFiles) {
+      arr.push_back(name.toStdString());
+    }
+    j["files"] = arr;
+  }
+  return j.dump();
+}
+
+QString NotebookCoreService::reorderErrorToString(int p_rc) {
+  switch (p_rc) {
+  case VXCORE_OK:
+    return tr("OK");
+  case VXCORE_ERR_INVALID_PARAM:
+    return tr("Invalid argument");
+  case VXCORE_ERR_NOT_FOUND:
+    return tr("Folder not found");
+  case VXCORE_ERR_INVALID_STATE:
+    return tr("Invalid state");
+  case VXCORE_ERR_PERMUTATION_MISMATCH:
+    return tr("Submitted order is not a valid permutation of the folder's children");
+  case VXCORE_ERR_NOT_IMPLEMENTED:
+    return tr("Reorder is not supported for this notebook type");
+  case VXCORE_ERR_UNKNOWN:
+    return tr("Unknown error while reordering");
+  default:
+    return tr("vxcore error %1 while reordering").arg(p_rc);
+  }
 }
 
 QJsonObject NotebookCoreService::listFolderExternal(const QString &p_notebookId,

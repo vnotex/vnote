@@ -840,3 +840,15 @@ add_qt_test(test_notebook_core_service_readonly
     vxcore
   GUILESS
 )
+
+# T6 (notebook-explorer-drag-reorder): NotebookCoreService::reorderFolderChildren
+# async, IoGate-serialized, hook-aware service method. NOT GUILESS — the test
+# spins the Qt event loop to receive the queued reorderCompleted signal and to
+# run worker-thread completion lambdas via QMetaObject::invokeMethod.
+add_qt_test(test_notebook_core_service_reorder
+  SOURCES
+    test_notebook_core_service_reorder.cpp
+  LINKS
+    core_services
+    vxcore
+)

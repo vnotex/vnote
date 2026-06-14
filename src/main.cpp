@@ -282,6 +282,12 @@ int main(int argc, char *argv[]) {
     // Wire HookManager to NotebookCoreService for firing node operation hooks.
     notebookService.setHookManager(&hookManager);
 
+    // T6 (notebook-explorer-drag-reorder): wire the SAME NotebookIoGate that
+    // BufferSaveQueue / SyncOps already use, so reorderFolderChildren
+    // serializes against in-flight saves and sync stage-phase work for the
+    // same notebook.
+    notebookService.setNotebookIoGate(&notebookIoGate);
+
     // Wire HookManager to WorkspaceCoreService for firing view area hooks.
     workspaceService.setHookManager(&hookManager);
 
