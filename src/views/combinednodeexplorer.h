@@ -55,6 +55,11 @@ public:
   void reloadNode(const NodeIdentifier &p_nodeId) override;
   void startInlineRename(const NodeIdentifier &p_nodeId) override;
 
+  // === Reorder ===
+  void requestReorderNodes(const NodeIdentifier &p_parentId,
+                           const QStringList &p_orderedFolderNames,
+                           const QStringList &p_orderedFileNames) override;
+
   // === External files visibility ===
   void setExternalNodesVisible(bool p_visible) override;
 
@@ -66,6 +71,11 @@ public:
 
 signals:
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
+
+  // T11 (notebook-explorer-drag-reorder): forwarded from
+  // NotebookNodeController::sortRequested. NotebookExplorer2 connects to this
+  // and owns SortDialog2 (controllers MUST NOT show QDialog).
+  void sortRequested(const NodeIdentifier &p_parentId);
 
 private slots:
   void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);

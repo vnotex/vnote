@@ -75,6 +75,15 @@ public:
   // Extended version for explicit folder/file specification
   void reloadNode(const NodeIdentifier &p_nodeId, bool p_isFolder);
 
+  // === Reorder ===
+  // T11 (notebook-explorer-drag-reorder): bridge method required by
+  // INodeExplorer. The full forwarding + signal mirror is added in T12
+  // (sortRequested wiring through both panes). This implementation builds
+  // the NodeIdentifier lists and dispatches to the folder pane's controller.
+  void requestReorderNodes(const NodeIdentifier &p_parentId,
+                           const QStringList &p_orderedFolderNames,
+                           const QStringList &p_orderedFileNames) override;
+
   // === State capture/restore ===
   NodeExplorerState captureState() const override;
   void applyState(const NodeExplorerState &p_state) override;
@@ -95,6 +104,15 @@ public:
 
 signals:
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
+
+  // T12 (notebook-explorer-drag-reorder): forwarded from
+  // NotebookNodeController::sortRequested. Wired for BOTH the folder pane
+  // controller AND the file pane controller via connectControllerSignals,
+  // so either pane's "Sort..." action surfaces here. NotebookExplorer2
+  // connects this to onSortRequested (shared with CombinedNodeExplorer) and
+  // owns SortDialog2 — controllers MUST NOT show QDialog
+  // (src/controllers/AGENTS.md).
+  void sortRequested(const NodeIdentifier &p_parentId);
 
 private slots:
   void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);

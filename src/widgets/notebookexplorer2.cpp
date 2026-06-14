@@ -66,9 +66,11 @@
 #include <widgets/dialogs/opennotebookdialog2.h>
 #include <widgets/dialogs/openvnote3notebookdialog2.h>
 #include <widgets/dialogs/selectdialog.h>
+#include <widgets/dialogs/sortdialog2.h>
 #include <widgets/dialogs/viewtagsdialog2.h>
 #include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
+#include <widgets/notebookexplorer2_sortseam.h>
 #include <widgets/notebookselector2.h>
 #include <widgets/titlebar.h>
 
@@ -769,6 +771,10 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onIgnoreRequested);
   connect(explorer, &CombinedNodeExplorer::manageTagsRequested, this,
           &NotebookExplorer2::onManageTagsRequested);
+  // T11 (notebook-explorer-drag-reorder): SortDialog2 lives in NotebookExplorer2
+  // because controllers MUST NOT show QDialog (src/controllers/AGENTS.md).
+  connect(explorer, &CombinedNodeExplorer::sortRequested, this,
+          &NotebookExplorer2::onSortRequested);
 
   // File system watcher: track expand/collapse
   connect(explorer, &INodeExplorer::folderExpanded, this, [this](const NodeIdentifier &p_folderId) {
@@ -823,6 +829,12 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onIgnoreRequested);
   connect(explorer, &TwoColumnsNodeExplorer::manageTagsRequested, this,
           &NotebookExplorer2::onManageTagsRequested);
+  // T12 (notebook-explorer-drag-reorder): SortDialog2 lives in
+  // NotebookExplorer2 because controllers MUST NOT show QDialog
+  // (src/controllers/AGENTS.md). Reuses the slot wired in T11 for
+  // CombinedNodeExplorer — one slot serves both explorer types.
+  connect(explorer, &TwoColumnsNodeExplorer::sortRequested, this,
+          &NotebookExplorer2::onSortRequested);
 
   // File system watcher: track expand/collapse
   connect(explorer, &INodeExplorer::folderExpanded, this, [this](const NodeIdentifier &p_folderId) {
@@ -1684,6 +1696,37 @@ void NotebookExplorer2::onInfoMessage(const QString &p_title, const QString &p_m
   MessageBoxHelper::notify(MessageBoxHelper::Information, p_title + ": " + p_message, window());
 }
 
+// T11 (notebook-explorer-drag-reorder): owns SortDialog2 lifecycle. Reads the
+// parent folder's current children via listFolderChildren, shows up to two
+// modal dialogs in sequence (folders then files; strict separation per locked
+// decision), and routes the result through INodeExplorer::requestReorderNodes.
+// MUST NOT call vxcore/service directly for persistence — go through the
+// explorer bridge → controller → service chain. The unchanged-order check at
+// the view layer prevents spurious service calls.
+//
+// The dialog-show logic is extracted into runSortDialogsForChildren (a public
+// static helper) so widget tests can exercise it without instantiating a full
+// NotebookExplorer2.
+void NotebookExplorer2::onSortRequested(const NodeIdentifier &p_parentId) {
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService || !m_nodeExplorer) {
+    return;
+  }
+
+  const QJsonObject childrenJson =
+      notebookService->listFolderChildren(p_parentId.notebookId, p_parentId.relativePath);
+
+  const SortDialogResult result = runSortDialogsForChildren(p_parentId, childrenJson, this);
+
+  if (!result.newFolderOrder.isEmpty() || !result.newFileOrder.isEmpty()) {
+    m_nodeExplorer->requestReorderNodes(p_parentId, result.newFolderOrder, result.newFileOrder);
+  }
+}
+
+// NotebookExplorer2::runSortDialogsForChildren lives in
+// notebookexplorer2_sortseam.cpp so widget tests can link the helper without
+// dragging in the full NotebookExplorer2 TU and its ~20 transitive widget /
+// service deps.
 void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
                                         const FileOpenSettings &p_settings) {
   auto *bufferSvc = m_services.get<BufferService>();

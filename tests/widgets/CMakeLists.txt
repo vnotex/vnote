@@ -71,6 +71,7 @@ add_qt_test(test_node_explorer_reload_expansion
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
@@ -117,6 +118,7 @@ add_qt_test(test_explorer_selection_after_save
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
@@ -667,6 +669,124 @@ add_qt_test(test_sort_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/sortdialog2.cpp
   LINKS
     Qt6::Widgets
+)
+
+# T11 (notebook-explorer-drag-reorder): wires SortDialog2 into the
+# NotebookExplorer2 / CombinedNodeExplorer chain. Tests:
+#   1. NotebookExplorer2::runSortDialogsForChildren (static testable seam used
+#      by the onSortRequested slot). 7 sub-tests covering: two dialogs in
+#      sequence (folders then files), accept folders + cancel files,
+#      cancel both, accept unchanged (no-op), files-only, folders-only,
+#      empty JSON skips both.
+#   2. CombinedNodeExplorer::sortRequested forwarding from the inner
+#      NotebookNodeController.
+#   3. CombinedNodeExplorer::requestReorderNodes name-to-id translation.
+# Compiles the static helper from notebookexplorer2.cpp inline (NOT the full
+# slot — only the helper is referenced; the rest of notebookexplorer2.cpp
+# has too many transitive widget deps to drag in here). The
+# CombinedNodeExplorer chain reuses the test_explorer_selection_after_save
+# source recipe (notebook node explorer family compiled inline).
+# NOT GUILESS — QDialog::exec() needs QApplication.
+add_qt_test(test_notebook_explorer2_sort
+  SOURCES
+    test_notebook_explorer2_sort.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/notebookexplorer2_sortseam.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/notebookexplorer2_sortseam.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/sortdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notebook_explorer2_sort PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_notebook_explorer2_sort POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notebook_explorer2_sort>
+)
+
+# T12 (notebook-explorer-drag-reorder): TwoColumnsNodeExplorer sort wiring
+# mirror of test_notebook_explorer2_sort, but for the two-pane explorer.
+# Compiles TwoColumnsNodeExplorer + the notebook node explorer family inline
+# (same recipe as test_explorer_selection_after_save). Tests:
+#   T12a: NotebookNodeController::sortRequested forwarding from BOTH the
+#         folder pane controller AND the file pane controller.
+#   T12b: requestReorderNodes builds NodeIdentifier lists from flat name
+#         lists (root-parent no-slash branch) and dispatches successfully.
+#   T12c: Single-dispatch invariant — folder controller reorders, file
+#         controller never sees the call.
+# NOT GUILESS — QWidget needs QApplication.
+add_qt_test(test_two_columns_node_explorer_sort
+  SOURCES
+    test_two_columns_node_explorer_sort.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/filelistview.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_two_columns_node_explorer_sort PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_two_columns_node_explorer_sort POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_two_columns_node_explorer_sort>
 )
 
 # T29 follow-up (open-notebook-remote-readonly): read-only banner visibility

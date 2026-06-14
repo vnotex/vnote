@@ -89,6 +89,14 @@ public:
   // === Reload ===
   virtual void reloadNode(const NodeIdentifier &p_nodeId) = 0;
 
+  // === Reorder ===
+  // Apply a reorder of the parent's children. Either name list may be empty
+  // if that sub-array was not reordered. Implementations build NodeIdentifier
+  // lists and delegate to NotebookNodeController::reorderNodes.
+  virtual void requestReorderNodes(const NodeIdentifier &p_parentId,
+                                   const QStringList &p_orderedFolderNames,
+                                   const QStringList &p_orderedFileNames) = 0;
+
   // === Inline rename ===
   // Start inline editing for a node (triggers edit mode on the view)
   virtual void startInlineRename(const NodeIdentifier &p_nodeId) = 0;

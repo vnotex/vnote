@@ -9,6 +9,7 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QQueue>
+#include <QSet>
 #include <QSortFilterProxyModel>
 #include <QUrl>
 
@@ -68,6 +69,75 @@ bool isDropOnSelfOrDescendant(const QList<NodeIdentifier> &p_sources,
   return false;
 }
 
+// === T9 helpers (notebook-explorer-drag-reorder) ===
+
+// True when the view is currently in OrderedByConfiguration mode (the only
+// sort mode under which drag-reorder is allowed). If the model is not a
+// NotebookNodeProxyModel (e.g. tests using a bare source model) we
+// conservatively treat it as ByConfig — there is no other order to violate.
+bool isReorderSortModeActive(QAbstractItemModel *p_model) {
+  if (auto *proxy = qobject_cast<NotebookNodeProxyModel *>(p_model)) {
+    return proxy->viewOrder() == ViewOrder::OrderedByConfiguration;
+  }
+  return true;
+}
+
+// True when the proxy's name filter is non-empty. With a filter active the
+// visible rows are a subset of the on-disk order, so a drag-reorder would
+// re-order a partial view, corrupting the persisted child order.
+bool isProxyFilterActive(QAbstractItemModel *p_model) {
+  if (auto *proxy = qobject_cast<NotebookNodeProxyModel *>(p_model)) {
+    return !proxy->nameFilter().isEmpty();
+  }
+  return false;
+}
+
+// 0 = all folders, 1 = all files, -1 = mixed/unknown. The check goes through
+// the source NotebookNodeModel; if any dragged node is missing from the
+// source's cache (e.g. cross-view drag from FileListView whose nodes the
+// tree view has never seen) we return -1 so the dispatch path conservatively
+// rejects.
+int draggedTypeKind(NotebookNodeModel *p_nodeModel, const QList<NodeIdentifier> &p_draggedNodes) {
+  if (!p_nodeModel || p_draggedNodes.isEmpty()) {
+    return -1;
+  }
+  bool hasFolder = false;
+  bool hasFile = false;
+  for (const NodeIdentifier &id : p_draggedNodes) {
+    NodeInfo info = p_nodeModel->nodeInfoFromNodeId(id);
+    if (!info.isValid()) {
+      return -1;
+    }
+    if (info.isFolder) {
+      hasFolder = true;
+    } else {
+      hasFile = true;
+    }
+    if (hasFolder && hasFile) {
+      return -1;
+    }
+  }
+  return hasFolder ? 0 : 1;
+}
+
+// True when every dragged node shares the target as its parent. Mirrors the
+// loop that previously rejected same-parent drops outright — preserved here
+// because the reorder dispatch is gated by the same "all-same-parent"
+// predicate, just with a different decision (accept reorder instead of
+// reject) when the other conditions line up.
+bool allDraggedShareParent(NotebookNodeController *p_controller,
+                           const QList<NodeIdentifier> &p_draggedNodes,
+                           const NodeIdentifier &p_targetId) {
+  for (const NodeIdentifier &n : p_draggedNodes) {
+    NodeIdentifier nodeParent = p_controller ? p_controller->getParentFolder(n) : NodeIdentifier();
+    if (nodeParent.notebookId != p_targetId.notebookId ||
+        nodeParent.relativePath != p_targetId.relativePath) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // anonymous namespace
 
 NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
@@ -106,7 +176,32 @@ void NotebookNodeView::setupView() {
 }
 
 void NotebookNodeView::setController(NotebookNodeController *p_controller) {
+  // T9 (notebook-explorer-drag-reorder): swap-safe connection lifecycle.
+  // Disconnect any prior nodesReordered handler before re-pointing m_controller
+  // so callers that hot-swap controllers don't end up with a stale receiver.
+  if (m_reorderedConn) {
+    disconnect(m_reorderedConn);
+    m_reorderedConn = QMetaObject::Connection();
+  }
+
   m_controller = p_controller;
+
+  if (m_controller) {
+    // Mirror the refresh strategy used after moveNodes/pasteNodes (controller
+    // calls NotebookNodeModel::reloadNode(parentId) — see
+    // notebooknodecontroller.cpp:792, :1116, etc.). For reorder the controller
+    // does NOT touch the model itself (it only emits nodesReordered after the
+    // worker thread finishes), so the view owns the refresh hook here.
+    m_reorderedConn = connect(m_controller, &NotebookNodeController::nodesReordered, this,
+                              [this](const NodeIdentifier &p_parentId) {
+                                auto *proxy = qobject_cast<NotebookNodeProxyModel *>(model());
+                                auto *nodeModel = qobject_cast<NotebookNodeModel *>(
+                                    proxy ? proxy->sourceModel() : model());
+                                if (nodeModel) {
+                                  nodeModel->reloadNode(p_parentId);
+                                }
+                              });
+  }
 }
 
 NotebookNodeController *NotebookNodeView::controller() const { return m_controller; }
@@ -466,72 +561,123 @@ void NotebookNodeView::dragEnterEvent(QDragEnterEvent *p_event) {
 
 void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QModelIndex idx = indexAt(p_event->position().toPoint());
+  const QPoint dropPos = p_event->position().toPoint();
 #else
-  QModelIndex idx = indexAt(p_event->pos());
+  const QPoint dropPos = p_event->pos();
 #endif
-  NodeInfo targetInfo = nodeInfoFromIndex(idx);
 
-  // Resolve target NodeIdentifier (mirrors dropEvent logic)
+  QModelIndex idx = indexAt(dropPos);
+  NodeInfo targetInfo = nodeInfoFromIndex(idx);
   NodeIdentifier targetId = nodeIdFromIndex(idx);
 
-  // If dropping on empty area or invalid index, target is notebook root
+  // Resolve target NodeIdentifier (mirrors dropEvent logic). Drops on empty
+  // viewport area fall back to the notebook root.
+  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
+  auto *nodeModel =
+      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
   if (!targetId.isValid()) {
-    auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
-    auto *nodeModel =
-        qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
     if (nodeModel) {
       targetId.notebookId = nodeModel->getNotebookId();
       targetId.relativePath = QString(); // root
     }
   }
 
-  // If target is a file (not folder), use its parent folder as target
+  // If the cursor sits on a FILE row, the move/copy semantics are "drop into
+  // this file's parent folder", so rewrite the target. Reorder semantics use
+  // the original file index as the ANCHOR; we preserve idx + targetInfo for
+  // that purpose and only rewrite targetId.
   if (targetId.isValid() && !targetId.relativePath.isEmpty() && !targetInfo.isFolder) {
     if (m_controller) {
       targetId = m_controller->getParentFolder(targetId);
     }
   }
 
-  // Determine proposed action: Ctrl = Copy, otherwise Move (mirrors dropEvent)
+  // Let QTreeView compute the drop indicator position FIRST. Reading it
+  // before this point would yield stale data from the previous drag-move.
+  QTreeView::dragMoveEvent(p_event);
+  const DropIndicatorPosition indicatorPos = dropIndicatorPosition();
+
+  // === Dispatch decision ===
+  // Reorder is only meaningful for MOVE-action drags carrying our internal
+  // mime payload. Copy drags and external URL drops keep their previous
+  // accept/ignore decisions (set by the existing logic below).
   Qt::DropAction proposedAction = Qt::MoveAction;
   if (p_event->keyboardModifiers() & Qt::ControlModifier) {
     proposedAction = Qt::CopyAction;
   }
 
-  // Reject move-to-same-parent drops before proceeding
-  if (proposedAction == Qt::MoveAction && targetId.isValid()) {
-    const QMimeData *mimeData = p_event->mimeData();
-    if (mimeData->hasFormat(c_nodeMimeType)) {
-      // Decode dragged nodes (cache locally, decode once)
-      QList<NodeIdentifier> draggedNodes = decodeNodeMimeData(mimeData);
+  const QMimeData *mimeData = p_event->mimeData();
+  const bool isNodeDrag = proposedAction == Qt::MoveAction && targetId.isValid() && mimeData &&
+                          mimeData->hasFormat(c_nodeMimeType);
 
-      if (!draggedNodes.isEmpty()) {
-        // Check if ALL nodes have the same parent as target
-        bool allSameParent = true;
-        for (const NodeIdentifier &n : draggedNodes) {
-          NodeIdentifier nodeParent =
-              m_controller ? m_controller->getParentFolder(n) : NodeIdentifier();
-          // Field-wise comparison: notebookId AND relativePath
-          if (nodeParent.notebookId != targetId.notebookId ||
-              nodeParent.relativePath != targetId.relativePath) {
-            allSameParent = false;
-            break;
-          }
-        }
+  if (isNodeDrag) {
+    QList<NodeIdentifier> draggedNodes = decodeNodeMimeData(mimeData);
+    if (!draggedNodes.isEmpty()) {
+      const bool sameParent = allDraggedShareParent(m_controller, draggedNodes, targetId);
 
-        // If all nodes already have target as parent, reject the move
-        if (allSameParent) {
+      if (sameParent) {
+        // === Candidate for the new reorder path ===
+        // Per the plan-locked decision (Wave 3, T9), check sort mode +
+        // filter at BOTH dragMove and drop time — the toolbar could flip
+        // either mid-drag.
+        if (!isReorderSortModeActive(model()) || isProxyFilterActive(model())) {
           p_event->setDropAction(Qt::IgnoreAction);
           p_event->ignore();
           setDropIndicatorShown(false);
           return;
         }
+        // OnItem / OnViewport on the same parent are no-ops (move-into-own-
+        // parent / no anchor). Silent reject preserves the pre-T9 semantics
+        // for OnItem and adds the OnViewport guard.
+        if (indicatorPos == OnItem || indicatorPos == OnViewport) {
+          p_event->setDropAction(Qt::IgnoreAction);
+          p_event->ignore();
+          setDropIndicatorShown(false);
+          return;
+        }
+        // Mixed-type drag: must reject. Folders and files reorder
+        // independently; mixing them would force the dispatch to touch
+        // both sub-arrays of vx.json, which is out of scope for T9.
+        const int draggedKind = draggedTypeKind(nodeModel, draggedNodes);
+        if (draggedKind < 0) {
+          p_event->setDropAction(Qt::IgnoreAction);
+          p_event->ignore();
+          setDropIndicatorShown(false);
+          return;
+        }
+        // Anchor type must match dragged type — you can't reorder a file
+        // relative to a folder anchor (or vice versa) because the folder
+        // section always sorts above the file section under folder-first.
+        NodeInfo anchorInfo = nodeInfoFromIndex(idx);
+        if (!anchorInfo.isValid()) {
+          // No anchor (shouldn't happen for AboveItem/BelowItem with a
+          // valid indicator, but defensively reject).
+          p_event->setDropAction(Qt::IgnoreAction);
+          p_event->ignore();
+          setDropIndicatorShown(false);
+          return;
+        }
+        const bool draggedIsFolder = (draggedKind == 0);
+        if (anchorInfo.isFolder != draggedIsFolder) {
+          p_event->setDropAction(Qt::IgnoreAction);
+          p_event->ignore();
+          setDropIndicatorShown(false);
+          return;
+        }
+        // All checks pass — accept reorder. The drop will be persisted by
+        // dropEvent via the controller.
+        p_event->setDropAction(Qt::MoveAction);
+        p_event->acceptProposedAction();
+        setDropIndicatorShown(true);
+        return;
       }
+      // sameParent == false → fall through to the existing cross-parent
+      // accept-if-folder logic below.
     }
   }
 
-  // Only accept drops on containers
+  // === Existing cross-parent / non-reorder accept logic (preserved) ===
+  // Only accept drops on containers.
   if (targetInfo.isValid() && targetInfo.isFolder) {
     p_event->acceptProposedAction();
     setDropIndicatorShown(true);
@@ -542,32 +688,32 @@ void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
   } else {
     p_event->ignore();
   }
-
-  QTreeView::dragMoveEvent(p_event);
 }
 
 void NotebookNodeView::dropEvent(QDropEvent *p_event) {
   const QMimeData *mimeData = p_event->mimeData();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QModelIndex idx = indexAt(p_event->position().toPoint());
+  const QPoint dropPos = p_event->position().toPoint();
 #else
-  QModelIndex idx = indexAt(p_event->pos());
+  const QPoint dropPos = p_event->pos();
 #endif
+  QModelIndex idx = indexAt(dropPos);
   NodeIdentifier targetId = nodeIdFromIndex(idx);
+  NodeInfo targetInfo = nodeInfoFromIndex(idx);
 
   // If dropping on empty area or invalid index, target is notebook root
+  auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
+  auto *nodeModel =
+      qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
   if (!targetId.isValid()) {
-    auto *proxyModel = qobject_cast<NotebookNodeProxyModel *>(model());
-    auto *nodeModel =
-        qobject_cast<NotebookNodeModel *>(proxyModel ? proxyModel->sourceModel() : model());
     if (nodeModel) {
       targetId.notebookId = nodeModel->getNotebookId();
       targetId.relativePath = QString(); // root
     }
   }
 
-  // If target is a file (not folder), use its parent folder as target
-  NodeInfo targetInfo = nodeInfoFromIndex(idx);
+  // If target is a file (not folder), use its parent folder as the drop
+  // target. Keep idx + targetInfo for anchor lookup in the reorder path.
   if (targetId.isValid() && !targetId.relativePath.isEmpty() && !targetInfo.isFolder) {
     if (m_controller) {
       targetId = m_controller->getParentFolder(targetId);
@@ -577,6 +723,11 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
       return;
     }
   }
+
+  // T9: re-read indicator at drop time. dragMoveEvent already updated it,
+  // but we re-read here so this method is correct even if invoked
+  // out-of-band by tests.
+  const DropIndicatorPosition indicatorPos = dropIndicatorPosition();
 
   if (mimeData->hasFormat(c_nodeMimeType)) {
     // Decode dragged nodes
@@ -599,32 +750,128 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
       action = Qt::CopyAction;
     }
 
-    // Perform operation via controller
     if (action == Qt::CopyAction) {
+      // Copy semantics are unchanged: copy + paste into target folder.
       m_controller->copyNodes(draggedNodes);
       m_controller->pasteNodes(targetId);
-    } else {
-      // MOVE branch: filter out nodes already at target parent
-      QList<NodeIdentifier> filteredNodes;
-      for (const NodeIdentifier &n : draggedNodes) {
-        NodeIdentifier nodeParent = m_controller->getParentFolder(n);
-        // Field-wise comparison: notebookId AND relativePath
-        if (nodeParent.notebookId != targetId.notebookId ||
-            nodeParent.relativePath != targetId.relativePath) {
-          filteredNodes.append(n);
-        }
-      }
+      p_event->setDropAction(action);
+      p_event->accept();
+      return;
+    }
 
-      // If all nodes were filtered out (already at target), noop
-      if (filteredNodes.isEmpty()) {
+    // === MOVE branch ===
+    const bool sameParent = allDraggedShareParent(m_controller, draggedNodes, targetId);
+
+    if (sameParent) {
+      // === T9 same-parent reorder dispatch ===
+      // Re-check sort mode + filter — they could have flipped between
+      // dragMoveEvent and dropEvent via the toolbar.
+      if (!isReorderSortModeActive(model()) || isProxyFilterActive(model())) {
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->accept();
+        return;
+      }
+      if (indicatorPos == OnItem || indicatorPos == OnViewport) {
+        // OnItem on same parent would be a move-into-own-parent no-op;
+        // OnViewport has no anchor. Both are silent rejects.
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->accept();
+        return;
+      }
+      const int draggedKind = draggedTypeKind(nodeModel, draggedNodes);
+      if (draggedKind < 0) {
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->accept();
+        return;
+      }
+      const bool draggedIsFolder = (draggedKind == 0);
+      NodeInfo anchorInfo = nodeInfoFromIndex(idx);
+      if (!anchorInfo.isValid() || anchorInfo.isFolder != draggedIsFolder) {
         p_event->setDropAction(Qt::IgnoreAction);
         p_event->accept();
         return;
       }
 
-      m_controller->moveNodes(filteredNodes, targetId);
+      // Build the new ordered list for the dragged-type sub-array. Per the
+      // plan: enumerate proxy children of parentId, filter to dragged type,
+      // remove dragged ids, insert as contiguous block at the indicator
+      // position relative to the anchor.
+      QModelIndex parentIdx;
+      if (!targetId.relativePath.isEmpty()) {
+        parentIdx = indexFromNodeId(targetId);
+      }
+      // parentIdx invalid = proxy root.
+
+      QList<NodeIdentifier> ordered;
+      const int rowCount = model()->rowCount(parentIdx);
+      for (int i = 0; i < rowCount; ++i) {
+        QModelIndex childIdx = model()->index(i, 0, parentIdx);
+        NodeInfo childInfo = nodeInfoFromIndex(childIdx);
+        if (!childInfo.isValid()) {
+          continue;
+        }
+        if (childInfo.isFolder == draggedIsFolder) {
+          ordered.append(childInfo.id);
+        }
+      }
+
+      QSet<NodeIdentifier> draggedSet;
+      for (const auto &n : draggedNodes) {
+        draggedSet.insert(n);
+      }
+      QList<NodeIdentifier> cleaned;
+      cleaned.reserve(ordered.size());
+      for (const auto &id : ordered) {
+        if (!draggedSet.contains(id)) {
+          cleaned.append(id);
+        }
+      }
+
+      int anchorPos = -1;
+      for (int i = 0; i < cleaned.size(); ++i) {
+        if (cleaned.at(i) == anchorInfo.id) {
+          anchorPos = i;
+          break;
+        }
+      }
+      int insertPos = (anchorPos < 0) ? cleaned.size()
+                                      : (indicatorPos == AboveItem ? anchorPos : anchorPos + 1);
+
+      for (int i = 0; i < draggedNodes.size(); ++i) {
+        cleaned.insert(insertPos + i, draggedNodes.at(i));
+      }
+
+      // Split into the right sub-array. Pass the OTHER list empty so the
+      // service leaves that section untouched (per the contract documented
+      // on NotebookNodeController::reorderNodes).
+      if (draggedIsFolder) {
+        m_controller->reorderNodes(targetId, cleaned, QList<NodeIdentifier>{});
+      } else {
+        m_controller->reorderNodes(targetId, QList<NodeIdentifier>{}, cleaned);
+      }
+      p_event->setDropAction(Qt::MoveAction);
+      p_event->acceptProposedAction();
+      return;
     }
 
+    // === Cross-parent: existing move path ===
+    QList<NodeIdentifier> filteredNodes;
+    for (const NodeIdentifier &n : draggedNodes) {
+      NodeIdentifier nodeParent = m_controller->getParentFolder(n);
+      // Field-wise comparison: notebookId AND relativePath
+      if (nodeParent.notebookId != targetId.notebookId ||
+          nodeParent.relativePath != targetId.relativePath) {
+        filteredNodes.append(n);
+      }
+    }
+
+    if (filteredNodes.isEmpty()) {
+      p_event->setDropAction(Qt::IgnoreAction);
+      p_event->accept();
+      return;
+    }
+
+    m_controller->moveNodes(filteredNodes, targetId);
     p_event->setDropAction(action);
     p_event->accept();
     return;

@@ -168,6 +168,13 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::ignoreRequested);
   connect(p_controller, &NotebookNodeController::manageTagsRequested, this,
           &TwoColumnsNodeExplorer::manageTagsRequested);
+  // T12 (notebook-explorer-drag-reorder): forward sortRequested to the
+  // outer widget (NotebookExplorer2). Connected for BOTH controllers via
+  // this helper (called once per pane in setupUI), so either pane's
+  // "Sort..." surfaces the dialog. NotebookExplorer2 owns SortDialog2 —
+  // controllers MUST NOT show QDialog (src/controllers/AGENTS.md).
+  connect(p_controller, &NotebookNodeController::sortRequested, this,
+          &TwoColumnsNodeExplorer::sortRequested);
 
   // Status signals
   connect(p_controller, &NotebookNodeController::errorOccurred, this,
@@ -628,4 +635,36 @@ void TwoColumnsNodeExplorer::applyState(const NodeExplorerState &p_state) {
       m_fileView->selectNode(p_state.currentNodeId);
     }
   }
+}
+
+// T11 (notebook-explorer-drag-reorder): bridge method required by INodeExplorer.
+// Translates flat name lists to NodeIdentifier lists (parent prefix + name) and
+// delegates to the folder pane's controller. T12 will refine the per-pane
+// signal forwarding so that sortRequested originating in either pane reaches
+// NotebookExplorer2.
+void TwoColumnsNodeExplorer::requestReorderNodes(const NodeIdentifier &p_parentId,
+                                                 const QStringList &p_orderedFolderNames,
+                                                 const QStringList &p_orderedFileNames) {
+  if (!m_folderController) {
+    return;
+  }
+  QList<NodeIdentifier> folderIds;
+  QList<NodeIdentifier> fileIds;
+  const QString prefix =
+      p_parentId.relativePath.isEmpty() ? QString() : (p_parentId.relativePath + QLatin1Char('/'));
+  folderIds.reserve(p_orderedFolderNames.size());
+  for (const auto &name : p_orderedFolderNames) {
+    NodeIdentifier id;
+    id.notebookId = p_parentId.notebookId;
+    id.relativePath = prefix + name;
+    folderIds.append(id);
+  }
+  fileIds.reserve(p_orderedFileNames.size());
+  for (const auto &name : p_orderedFileNames) {
+    NodeIdentifier id;
+    id.notebookId = p_parentId.notebookId;
+    id.relativePath = prefix + name;
+    fileIds.append(id);
+  }
+  m_folderController->reorderNodes(p_parentId, folderIds, fileIds);
 }

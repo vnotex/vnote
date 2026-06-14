@@ -3,7 +3,9 @@
 
 #include <QFrame>
 #include <QHash>
+#include <QJsonObject>
 #include <QSet>
+#include <QStringList>
 #include <QVBoxLayout>
 
 #include <core/global.h>
@@ -126,6 +128,14 @@ private slots:
   void onManageTagsRequested(const NodeIdentifier &p_nodeId);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onInfoMessage(const QString &p_title, const QString &p_message);
+
+  // T11 (notebook-explorer-drag-reorder): handles the sortRequested signal
+  // forwarded from CombinedNodeExplorer / TwoColumnsNodeExplorer. Owns the
+  // SortDialog2 instances (controllers MUST NOT show QDialog per
+  // src/controllers/AGENTS.md). Shows two dialogs in sequence (folders then
+  // files; strict separation) and routes the result through
+  // INodeExplorer::requestReorderNodes.
+  void onSortRequested(const NodeIdentifier &p_parentId);
 
   // Sync UI handlers (T15).
   void onSyncButtonClicked();

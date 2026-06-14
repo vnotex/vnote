@@ -120,6 +120,7 @@ target_sources(vnote PRIVATE
     navigationmodewrapper.h
     notebookexplorer.cpp notebookexplorer.h
     notebookexplorer2.cpp notebookexplorer2.h
+    notebookexplorer2_sortseam.cpp notebookexplorer2_sortseam.h
     notebookexplorersession.cpp notebookexplorersession.h
     notebooknodeexplorer.cpp notebooknodeexplorer.h
     notebookselector.cpp notebookselector.h

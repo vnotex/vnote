@@ -51,6 +51,10 @@ void NotebookNodeController::copyNodePath(const NodeIdentifier &) {}
 void NotebookNodeController::locateNodeInFileManager(const NodeIdentifier &) {}
 void NotebookNodeController::sortNodes(const NodeIdentifier &) {}
 void NotebookNodeController::reloadNode(const NodeIdentifier &) {}
+void NotebookNodeController::reorderNodes(const NodeIdentifier &, const QList<NodeIdentifier> &,
+                                          const QList<NodeIdentifier> &) {
+  // Stub for test linkage — not exercised by this test.
+}
 void NotebookNodeController::reloadAll() {}
 void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &) {}
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &) {}

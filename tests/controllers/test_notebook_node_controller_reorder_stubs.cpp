@@ -18,6 +18,12 @@
 
 namespace vnotex {
 
+// T9 (notebook-explorer-drag-reorder): moveNodes is now virtual on
+// NotebookNodeController so the GUI drag-drop test can intercept it. The
+// linker therefore requires a definition for the vtable even though this
+// test never touches the move path. No-op body is sufficient.
+void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &, const NodeIdentifier &) {}
+
 void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &, const NodeIdentifier &) {}
 void NotebookNodeController::handleNewFolderResult(const NodeIdentifier &, const NodeIdentifier &) {
 }

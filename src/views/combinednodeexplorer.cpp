@@ -93,6 +93,11 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::ignoreRequested);
   connect(m_controller, &NotebookNodeController::manageTagsRequested, this,
           &CombinedNodeExplorer::manageTagsRequested);
+  // T11 (notebook-explorer-drag-reorder): forward sortRequested to outer
+  // widget (NotebookExplorer2). The outer widget owns SortDialog2 — controller
+  // MUST NOT show QDialog per src/controllers/AGENTS.md.
+  connect(m_controller, &NotebookNodeController::sortRequested, this,
+          &CombinedNodeExplorer::sortRequested);
 
   // Status signals
   connect(m_controller, &NotebookNodeController::errorOccurred, this,
@@ -327,4 +332,36 @@ void CombinedNodeExplorer::applyState(const NodeExplorerState &p_state) {
   if (p_state.currentNodeId.isValid()) {
     selectNode(p_state.currentNodeId);
   }
+}
+
+// T11 (notebook-explorer-drag-reorder): bridge method invoked by
+// NotebookExplorer2::onSortRequested after SortDialog2 returns. Translates the
+// flat name lists into NodeIdentifier lists (parent prefix + name) and
+// delegates to the controller, which validates + dispatches to the service.
+// Either name list may be empty to mean "this sub-array was not reordered".
+void CombinedNodeExplorer::requestReorderNodes(const NodeIdentifier &p_parentId,
+                                               const QStringList &p_orderedFolderNames,
+                                               const QStringList &p_orderedFileNames) {
+  if (!m_controller) {
+    return;
+  }
+  QList<NodeIdentifier> folderIds;
+  QList<NodeIdentifier> fileIds;
+  const QString prefix =
+      p_parentId.relativePath.isEmpty() ? QString() : (p_parentId.relativePath + QLatin1Char('/'));
+  folderIds.reserve(p_orderedFolderNames.size());
+  for (const auto &name : p_orderedFolderNames) {
+    NodeIdentifier id;
+    id.notebookId = p_parentId.notebookId;
+    id.relativePath = prefix + name;
+    folderIds.append(id);
+  }
+  fileIds.reserve(p_orderedFileNames.size());
+  for (const auto &name : p_orderedFileNames) {
+    NodeIdentifier id;
+    id.notebookId = p_parentId.notebookId;
+    id.relativePath = prefix + name;
+    fileIds.append(id);
+  }
+  m_controller->reorderNodes(p_parentId, folderIds, fileIds);
 }

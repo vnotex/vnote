@@ -2,6 +2,7 @@
 #define NOTEBOOKNODEVIEW_H
 
 #include <QList>
+#include <QMetaObject>
 #include <QSharedPointer>
 #include <QTreeView>
 
@@ -87,6 +88,12 @@ private:
   void setupView();
 
   NotebookNodeController *m_controller = nullptr;
+
+  // T9 (notebook-explorer-drag-reorder): connection to the controller's
+  // nodesReordered signal. Stored so setController() can disconnect cleanly
+  // when the controller is swapped/cleared. The slot reloads the affected
+  // parent in the model so the new on-disk order surfaces in the view.
+  QMetaObject::Connection m_reorderedConn;
 };
 
 } // namespace vnotex

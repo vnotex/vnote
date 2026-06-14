@@ -57,7 +57,11 @@ public:
   void duplicateNode(const NodeIdentifier &p_nodeId);
   void renameNode(const NodeIdentifier &p_nodeId);
   void markNode(const NodeIdentifier &p_nodeId);
-  void moveNodes(const QList<NodeIdentifier> &p_nodeIds, const NodeIdentifier &p_targetFolderId);
+  // T9 (notebook-explorer-drag-reorder): virtual so the GUI drag-drop test
+  // (tests/gui/test_notebook_node_view_reorder.cpp) can intercept the call
+  // with a recording subclass and assert the view dispatched correctly.
+  virtual void moveNodes(const QList<NodeIdentifier> &p_nodeIds,
+                         const NodeIdentifier &p_targetFolderId);
 
   // Import/Export
   void exportNode(const NodeIdentifier &p_nodeId);
@@ -85,9 +89,13 @@ public:
   // p_orderedFileIds:   same semantics for file children.
   // If BOTH lists are empty, the call is a hard no-op (no service call, no
   // signal).
-  void reorderNodes(const NodeIdentifier &p_parentId,
-                    const QList<NodeIdentifier> &p_orderedFolderIds,
-                    const QList<NodeIdentifier> &p_orderedFileIds);
+  //
+  // T9 (notebook-explorer-drag-reorder): virtual so the GUI drag-drop test
+  // (tests/gui/test_notebook_node_view_reorder.cpp) can intercept the call
+  // with a recording subclass and assert the view dispatched correctly.
+  virtual void reorderNodes(const NodeIdentifier &p_parentId,
+                            const QList<NodeIdentifier> &p_orderedFolderIds,
+                            const QList<NodeIdentifier> &p_orderedFileIds);
   void reloadNode(const NodeIdentifier &p_nodeId);
   void reloadAll();
 
