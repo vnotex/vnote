@@ -100,6 +100,10 @@ bool HookManager::doAction(const QString &p_hook, const NodeMoveEvent &p_event) 
   return doAction(p_hook, p_event.toVariantMap());
 }
 
+bool HookManager::doAction(const QString &p_hook, const NodeReorderEvent &p_event) {
+  return doAction(p_hook, p_event.toVariantMap());
+}
+
 bool HookManager::doAction(const QString &p_hook, const FileOpenEvent &p_event) {
   return doAction(p_hook, p_event.toVariantMap());
 }

@@ -68,6 +68,30 @@ NodeMoveEvent NodeMoveEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== NodeReorderEvent =====
+
+QVariantMap NodeReorderEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
+  m[QStringLiteral("folderRelPath")] = folderRelPath;
+  m[QStringLiteral("previousFolderOrder")] = previousFolderOrder;
+  m[QStringLiteral("previousFileOrder")] = previousFileOrder;
+  m[QStringLiteral("newFolderOrder")] = newFolderOrder;
+  m[QStringLiteral("newFileOrder")] = newFileOrder;
+  return m;
+}
+
+NodeReorderEvent NodeReorderEvent::fromVariantMap(const QVariantMap &p_args) {
+  NodeReorderEvent e;
+  e.notebookId = p_args.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+  e.folderRelPath = p_args.value(QStringLiteral("folderRelPath")).toString();
+  e.previousFolderOrder = p_args.value(QStringLiteral("previousFolderOrder")).toStringList();
+  e.previousFileOrder = p_args.value(QStringLiteral("previousFileOrder")).toStringList();
+  e.newFolderOrder = p_args.value(QStringLiteral("newFolderOrder")).toStringList();
+  e.newFileOrder = p_args.value(QStringLiteral("newFileOrder")).toStringList();
+  return e;
+}
+
 // ===== FileOpenEvent =====
 
 QVariantMap FileOpenEvent::toVariantMap() const {

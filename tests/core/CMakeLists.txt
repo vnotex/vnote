@@ -128,6 +128,15 @@ add_qt_test(test_hookcontext
   GUILESS
 )
 
+add_qt_test(test_hooknames_reorder
+  SOURCES
+    test_hooknames_reorder.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_nodeinfo
   SOURCES
     test_nodeinfo.cpp

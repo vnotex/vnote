@@ -46,6 +46,19 @@ struct NodeMoveEvent {
   static NodeMoveEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for NodeBeforeReorder, NodeAfterReorder.
+struct NodeReorderEvent {
+  QString notebookId;
+  QString folderRelPath;           // "" for notebook root
+  QStringList previousFolderOrder; // empty if folders unchanged
+  QStringList previousFileOrder;   // empty if files unchanged
+  QStringList newFolderOrder;
+  QStringList newFileOrder;
+
+  QVariantMap toVariantMap() const;
+  static NodeReorderEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for FileBeforeOpen, FileAfterOpen.
 struct FileOpenEvent {
   QString notebookId;

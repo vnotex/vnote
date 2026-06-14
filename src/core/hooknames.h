@@ -65,6 +65,12 @@ inline const QLatin1String NodeBeforeMove("vnote.node.before_move");
 // After a node is moved
 inline const QLatin1String NodeAfterMove("vnote.node.after_move");
 
+// Before a node folder/file order is reordered
+inline const QLatin1String NodeBeforeReorder("vnote.node.before_reorder");
+
+// After a node folder/file order is reordered
+inline const QLatin1String NodeAfterReorder("vnote.node.after_reorder");
+
 // Before a node is copied
 inline const QLatin1String NodeBeforeCopy("vnote.node.before_copy");
 
