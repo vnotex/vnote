@@ -39,6 +39,19 @@ add_qt_test(test_historylistmodel
   GUILESS
 )
 
+add_qt_test(test_notebook_node_proxy_model_order
+  SOURCES
+    test_notebook_node_proxy_model_order.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 # Copy VTextEdit DLL next to test executables so CTest can find it at runtime.
 # Pick any test target to anchor the POST_BUILD command; the DLL lands in the
 # shared output directory used by all model tests in this subdirectory.

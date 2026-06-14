@@ -161,7 +161,11 @@ bool NotebookNodeProxyModel::lessThan(const QModelIndex &p_left, const QModelInd
 
   case ViewOrder::OrderedByConfiguration:
   default:
-    // Sort by name using natural order (e.g. Note 2 before Note 10)
-    return naturalCompare(leftInfo.name, rightInfo.name);
+    // Source row IS the on-disk order from vxcore_folder_list_children.
+    // Both indices share the same parent (proxy guarantees same-parent
+    // comparisons) and the folder-first invariant was checked earlier in
+    // lessThan.
+    Q_ASSERT(p_left.parent() == p_right.parent());
+    return p_left.row() < p_right.row();
   }
 }
