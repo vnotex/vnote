@@ -172,6 +172,33 @@ add_qt_test(test_notebooknodecontroller_multiselect
   GUILESS
 )
 
+# T7 (notebook-explorer-drag-reorder): controller-layer reorder dispatch.
+# Mock-service pattern: subclass NotebookCoreService and override the virtual
+# reorderFolderChildren to intercept dispatch (no vxcore, no disk I/O).
+# Test uses the real NotebookNodeController + real ServiceLocator wiring so
+# the constructor's connect(reorderCompleted, onReorderCompleted) and the
+# signal/slot path are exercised end-to-end.
+#
+# Only notebooknodecontroller_reorder.cpp is compiled here — the
+# constructor / destructor / reorderNodes / onReorderCompleted live in that
+# tiny TU specifically so this test does NOT need to drag in the full
+# view/model/theme dependency graph that notebooknodecontroller.cpp pulls in.
+add_qt_test(test_notebook_node_controller_reorder
+  SOURCES
+    test_notebook_node_controller_reorder.cpp
+    test_notebook_node_controller_reorder_stubs.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.h
+  LINKS
+    Qt6::Widgets
+    core_services
+    vxcore
+)
+target_include_directories(test_notebook_node_controller_reorder PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/controllers
+)
+
 add_qt_test(test_controllers_readonly_state
   SOURCES
     test_controllers_readonly_state.cpp

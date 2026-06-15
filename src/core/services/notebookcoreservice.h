@@ -220,9 +220,14 @@ public:
   //   p_orderedFolders: empty = "do not reorder folders" (sub-array omitted
   //     from JSON); non-empty = exact permutation of current folder names.
   //   p_orderedFiles:   same semantics for files.
-  void reorderFolderChildren(const QString &p_notebookId, const QString &p_folderRelPath,
-                             const QStringList &p_orderedFolders,
-                             const QStringList &p_orderedFiles);
+  //
+  // Virtual to allow test subclasses (e.g. RecordingNotebookCoreService used
+  // by tests/controllers/test_notebook_node_controller_reorder.cpp) to
+  // intercept calls without touching vxcore or the filesystem. No runtime
+  // overhead for production callers (single-inheritance vtable dispatch).
+  virtual void reorderFolderChildren(const QString &p_notebookId, const QString &p_folderRelPath,
+                                     const QStringList &p_orderedFolders,
+                                     const QStringList &p_orderedFiles);
 
   // List external (unindexed) nodes in a folder.
   // External nodes exist on filesystem but are not tracked in metadata.

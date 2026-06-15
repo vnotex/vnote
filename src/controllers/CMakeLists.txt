@@ -3,6 +3,7 @@ target_sources(vnote PRIVATE
     viewareaview.h
     workspacewrapper.cpp workspacewrapper.h
     notebooknodecontroller.cpp notebooknodecontroller.h
+    notebooknodecontroller_reorder.cpp
     newnotebookcontroller.cpp newnotebookcontroller.h
     newnotecontroller.cpp newnotecontroller.h
     newfoldercontroller.cpp newfoldercontroller.h

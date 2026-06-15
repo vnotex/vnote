@@ -72,6 +72,22 @@ public:
 
   // Sorting and reload
   void sortNodes(const NodeIdentifier &p_parentId);
+
+  // T7 (notebook-explorer-drag-reorder): persist a drag-reorder of a folder's
+  // children. Validates inputs (all dragged ids share parentId; type-consistent
+  // — folder names for folder children, file names for file children), then
+  // dispatches to NotebookCoreService::reorderFolderChildren. Returns
+  // immediately; caller relies on the nodesReordered (success) /
+  // errorOccurred (failure) signals.
+  //
+  // p_orderedFolderIds: empty = "do not reorder folders"; non-empty =
+  //   permutation of folder children of p_parentId (validated by service).
+  // p_orderedFileIds:   same semantics for file children.
+  // If BOTH lists are empty, the call is a hard no-op (no service call, no
+  // signal).
+  void reorderNodes(const NodeIdentifier &p_parentId,
+                    const QList<NodeIdentifier> &p_orderedFolderIds,
+                    const QList<NodeIdentifier> &p_orderedFileIds);
   void reloadNode(const NodeIdentifier &p_nodeId);
   void reloadAll();
 
@@ -141,6 +157,11 @@ signals:
 
   void manageTagsRequested(const NodeIdentifier &p_nodeId);
 
+  // T7 (notebook-explorer-drag-reorder): emitted after the service confirms
+  // a successful folder-children reorder. The View should reload the folder
+  // identified by p_parentId so the new order is visible.
+  void nodesReordered(const NodeIdentifier &p_parentId);
+
 public:
   // Get the parent folder path for a node
   NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;
@@ -150,11 +171,9 @@ private:
   // - If clicked node is in current selection, return full selection
   // - Otherwise, return clicked node only
   QList<NodeIdentifier> resolveSelection(const NodeIdentifier &p_clickedId) const;
-
   // Deduplicate descendant nodes - remove any node whose relativePath is a descendant
   // of another node in the list (same notebookId only). Preserves input order.
   QList<NodeIdentifier> dedupeDescendants(const QList<NodeIdentifier> &p_ids) const;
-
   // Check if clicked node represents a single effective selection (for action enable/disable).
   // Returns true if resolveSelection(p_clickedId).size() == 1.
   bool isSingleEffectiveSelection(const NodeIdentifier &p_clickedId) const;
@@ -181,6 +200,12 @@ private:
 
   // Get NodeInfo for a node from model
   NodeInfo getNodeInfo(const NodeIdentifier &p_nodeId) const;
+
+  // T7 (notebook-explorer-drag-reorder): translates
+  // NotebookCoreService::reorderCompleted into either nodesReordered (success)
+  // or errorOccurred (failure). Connected once in the constructor.
+  void onReorderCompleted(const QString &p_notebookId, const QString &p_folderRelPath,
+                          bool p_success, const QString &p_errorMessage);
 
   ServiceLocator &m_services;
   INodeListModel *m_model = nullptr;

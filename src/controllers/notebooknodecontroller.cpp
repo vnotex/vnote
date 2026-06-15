@@ -35,10 +35,11 @@
 
 using namespace vnotex;
 
-NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services), m_clipboard(new ClipboardState()) {}
-
-NotebookNodeController::~NotebookNodeController() {}
+// NOTE: The constructor, destructor, reorderNodes, and onReorderCompleted live
+// in notebooknodecontroller_reorder.cpp — a deliberately thin TU that the
+// reorder test (tests/controllers/test_notebook_node_controller_reorder.cpp)
+// compiles standalone without dragging in the full controller's view / model
+// / theme dependency graph.
 
 void NotebookNodeController::setModel(INodeListModel *p_model) { m_model = p_model; }
 
