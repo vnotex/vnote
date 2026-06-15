@@ -61,6 +61,11 @@ void NotebookNodeController::manageNodeTags(const NodeIdentifier &) {}
 bool NotebookNodeController::canPaste() const { return false; }
 void NotebookNodeController::shareClipboardWith(NotebookNodeController *) {}
 bool NotebookNodeController::isSingleClickActivationEnabled() const { return false; }
+// Read-only gating helpers (read-only feature) — writable in tests.
+bool NotebookNodeController::isNotebookReadOnly(const QString &) const { return false; }
+bool NotebookNodeController::isSelectionReadOnly(const QList<NodeIdentifier> &) const {
+  return false;
+}
 void NotebookNodeController::setSelectedNodesCallback(SelectedNodesCallback) {}
 void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &, const NodeIdentifier &) {}
 void NotebookNodeController::handleNewFolderResult(const NodeIdentifier &, const NodeIdentifier &) {
