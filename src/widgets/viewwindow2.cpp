@@ -395,7 +395,11 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
                 setMode(ViewWindowMode::Edit);
                 break;
               case EditReadDiscardAction::Action::Read:
-                if (save()) {
+                // A read-only buffer can never have unsaved edits (the editor is
+                // read-only and markDirty rejects read-only buffers), and saving it
+                // would fail at vxcore. Treat "Save And Read" as a plain switch to
+                // Read mode (no save attempt) — i.e. behave like Discard-And-Read.
+                if (m_buffer.isReadOnly() || save()) {
                   setMode(ViewWindowMode::Read);
                 }
                 break;

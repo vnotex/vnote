@@ -44,6 +44,7 @@ private slots:
 
   void testMarkDirtyRejectedOnReadOnlyNotebook();
   void testEnqueueRejectedOnReadOnlyNotebook();
+  void testSaveBufferRejectedOnReadOnlyNotebook();
   void testWritableNotebookStillWorks();
 
 private:
@@ -255,7 +256,45 @@ void TestBufferReadOnlyGuard::testEnqueueRejectedOnReadOnlyNotebook() {
 }
 
 // =================================================================
-// Subtest 3: Writable notebook — no rejection, full happy path on both
+// Subtest 3: BufferService::saveBuffer (the INTERACTIVE save path) on a
+// read-only notebook is rejected BEFORE reaching vxcore, mirroring the
+// markDirty / BufferSaveQueue guards. Proves "Save And Read" can rely on the
+// service-layer guard as defense in depth.
+// =================================================================
+void TestBufferReadOnlyGuard::testSaveBufferRejectedOnReadOnlyNotebook() {
+  // Open the buffer while still writable, then flip the notebook to read-only.
+  QString fileId =
+      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("ro_save.md"));
+  QVERIFY(!fileId.isEmpty());
+
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, fileId});
+  QVERIFY(buf.isValid());
+
+  setNotebookReadOnly(true);
+  QVERIFY(buf.isReadOnly());
+
+  // BufferService privately inherits QObject (via BufferCoreService) so the
+  // SIGNAL() macro form is required (matches Subtest 1 above).
+  QSignalSpy spy(m_bufferService->asQObject(), SIGNAL(saveRejectedReadOnly(QString)));
+  QVERIFY(spy.isValid());
+
+  // The guard returns false and emits saveRejectedReadOnly BEFORE vxcore_buffer_save.
+  QTest::ignoreMessage(QtWarningMsg,
+                       QRegularExpression("saveBuffer rejected: buffer is read-only.*"));
+  QCOMPARE(m_bufferService->saveBuffer(buf.id()), false);
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.at(0).at(0).toString(), buf.id());
+
+  // Buffer2::save() routes through the same guarded BufferService::saveBuffer,
+  // so the interactive handle also reports failure (and emits again).
+  QTest::ignoreMessage(QtWarningMsg,
+                       QRegularExpression("saveBuffer rejected: buffer is read-only.*"));
+  QCOMPARE(buf.save(), false);
+  QCOMPARE(spy.count(), 2);
+}
+
+// =================================================================
+// Subtest 4: Writable notebook — no rejection, full happy path on both
 // markDirty AND enqueue. Regression coverage.
 // =================================================================
 void TestBufferReadOnlyGuard::testWritableNotebookStillWorks() {

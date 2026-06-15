@@ -258,6 +258,15 @@ bool BufferService::isBufferReadOnly(const QString &p_bufferId) const {
 // ============ BufferCoreService wrappers ============
 
 bool BufferService::saveBuffer(const QString &p_bufferId) {
+  // Read-only buffers must never reach vxcore_buffer_save (which returns
+  // "Notebook is read-only" and surfaces a generic save failure). Mirrors the
+  // markDirty / BufferSaveQueue::enqueue guards. UI consumes saveRejectedReadOnly
+  // via ViewWindow2::showReadOnlyWarning.
+  if (isBufferReadOnly(p_bufferId)) {
+    qWarning() << "BufferService::saveBuffer rejected: buffer is read-only" << p_bufferId;
+    emit saveRejectedReadOnly(p_bufferId);
+    return false;
+  }
   bool ok = BufferCoreService::saveBuffer(p_bufferId);
   emit bufferModifiedChanged(p_bufferId);
   return ok;
