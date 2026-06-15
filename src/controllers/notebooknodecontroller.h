@@ -148,6 +148,14 @@ signals:
   void infoMessage(const QString &p_title, const QString &p_message);
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
+  // T8 (notebook-explorer-drag-reorder): emitted when the user invokes the
+  // "Sort..." action (context menu or keyboard). The View (NotebookExplorer2)
+  // owns SortDialog2 and, on user confirmation, calls reorderNodes() with the
+  // chosen order. Controllers MUST NOT show QDialog (per
+  // src/controllers/AGENTS.md); this signal is the same architectural pattern
+  // as newNoteRequested / newFolderRequested.
+  void sortRequested(const NodeIdentifier &p_parentId);
+
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);
 

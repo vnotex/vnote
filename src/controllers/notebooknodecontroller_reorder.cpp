@@ -1,13 +1,14 @@
 // notebooknodecontroller_reorder.cpp
 //
-// Holds the NotebookNodeController constructor, destructor, and the
-// drag-reorder dispatch path (T7, plan notebook-explorer-drag-reorder).
+// Holds the NotebookNodeController constructor, destructor, the drag-reorder
+// dispatch path (T7), and the sortNodes signal emitter (T8) — all part of the
+// notebook-explorer-drag-reorder plan.
 //
 // Why this lives in its own TU: the rest of NotebookNodeController pulls in
 // the view / model / theme / process-utils dependency graph (~20 transitive
 // .cpp files). The reorder unit test
 // (tests/controllers/test_notebook_node_controller_reorder.cpp) only needs the
-// reorder code path. Compiling THIS file standalone — together with
+// reorder + sort code paths. Compiling THIS file standalone — together with
 // core_services + Qt6::Widgets — is enough to construct, exercise, and tear
 // down a controller without recompiling the entire UI stack. The vtable +
 // QObject machinery land here because the destructor is the first out-of-line
@@ -17,6 +18,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <models/inodelistmodel.h>
 
 using namespace vnotex;
 
@@ -32,6 +34,42 @@ NotebookNodeController::NotebookNodeController(ServiceLocator &p_services, QObje
 }
 
 NotebookNodeController::~NotebookNodeController() {}
+
+// T8: setModel/model live here so the reorder test target (which compiles
+// only this TU) can configure a stub model for the sortNodes/currentNotebookId
+// path. Production callers (NotebookExplorer2, etc.) link against these
+// definitions unchanged.
+void NotebookNodeController::setModel(INodeListModel *p_model) { m_model = p_model; }
+
+INodeListModel *NotebookNodeController::model() const { return m_model; }
+
+// T8: lives here (moved from notebooknodecontroller.cpp) so sortNodes() can
+// reach it without forcing the reorder unit test target to compile the full
+// controller TU. All production callers (newNote, newFolder,
+// addCopyMoveActions, sortNodes) link against this definition unchanged.
+QString NotebookNodeController::currentNotebookId() const {
+  if (m_model) {
+    return m_model->getNotebookId();
+  }
+  return QString();
+}
+
+// T8: sortNodes is now a thin signal emitter. Per src/controllers/AGENTS.md
+// (and the locked plan decision) controllers MUST NOT show QDialog. We emit
+// sortRequested; NotebookExplorer2::onSortRequested (T11) owns SortDialog2
+// and, on user confirmation, calls reorderNodes() with the chosen order.
+// Mirrors the newNote -> newNoteRequested pattern.
+void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
+  NodeIdentifier parentId = p_parentId;
+  if (!parentId.isValid()) {
+    parentId.notebookId = currentNotebookId();
+    parentId.relativePath = QString(); // notebook root
+  }
+  if (parentId.notebookId.isEmpty()) {
+    return; // No active notebook -> no-op
+  }
+  emit sortRequested(parentId);
+}
 
 void NotebookNodeController::reorderNodes(const NodeIdentifier &p_parentId,
                                           const QList<NodeIdentifier> &p_orderedFolderIds,

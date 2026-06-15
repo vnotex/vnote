@@ -40,21 +40,17 @@ using namespace vnotex;
 // reorder test (tests/controllers/test_notebook_node_controller_reorder.cpp)
 // compiles standalone without dragging in the full controller's view / model
 // / theme dependency graph.
-
-void NotebookNodeController::setModel(INodeListModel *p_model) { m_model = p_model; }
-
-INodeListModel *NotebookNodeController::model() const { return m_model; }
+// T8: setModel/model/currentNotebookId/sortNodes also live there for the
+// same reason — sortNodes' test needs setModel + currentNotebookId reachable.
 
 void NotebookNodeController::setView(NotebookNodeView *p_view) { m_view = p_view; }
 
 NotebookNodeView *NotebookNodeController::view() const { return m_view; }
 
-QString NotebookNodeController::currentNotebookId() const {
-  if (m_model) {
-    return m_model->getNotebookId();
-  }
-  return QString();
-}
+// NOTE: currentNotebookId() lives in notebooknodecontroller_reorder.cpp.
+// It is called by sortNodes() (also in the reorder TU) and by newNote /
+// newFolder / addCopyMoveActions here. Moving it keeps the reorder unit
+// test self-contained without breaking the production link path.
 
 QString NotebookNodeController::buildAbsolutePath(const NodeIdentifier &p_nodeId) const {
   if (!p_nodeId.isValid()) {
@@ -381,11 +377,20 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
                                             bool p_isFolder) {
-  Q_UNUSED(p_isFolder);
-
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
   connect(reloadAction, &QAction::triggered, this,
           [this, p_nodeId]() { reloadNodes(resolveSelection(p_nodeId)); });
+
+  // T8 (notebook-explorer-drag-reorder): Sort... action. Always enabled per
+  // locked plan decision (the dialog sets canonical ByConfig order regardless
+  // of current view-order). Target is the folder itself (for folder clicks)
+  // or the clicked file's parent folder — same derivation as newNote /
+  // newFolder above. The action triggers sortNodes() which emits
+  // sortRequested; NotebookExplorer2 owns the dialog.
+  NodeIdentifier sortTarget = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
+  auto *sortAction = p_menu->addAction(tr("&Sort..."));
+  sortAction->setEnabled(true);
+  connect(sortAction, &QAction::triggered, this, [this, sortTarget]() { sortNodes(sortTarget); });
 
   if (p_nodeId.isValid()) {
     auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
@@ -815,10 +820,9 @@ void NotebookNodeController::locateNodeInFileManager(const NodeIdentifier &p_nod
   QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
 }
 
-void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
-  Q_UNUSED(p_parentId);
-  emit infoMessage(tr("Sort"), tr("Sort functionality not yet implemented."));
-}
+// NOTE: sortNodes() lives in notebooknodecontroller_reorder.cpp so the
+// reorder unit test (tests/controllers/test_notebook_node_controller_reorder)
+// can exercise the signal-emit path without compiling the full controller TU.
 
 void NotebookNodeController::reloadNode(const NodeIdentifier &p_nodeId) {
   // Delegate to list version (single source of truth).
