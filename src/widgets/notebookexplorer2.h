@@ -158,6 +158,11 @@ signals:
   void currentExploredFolderChanged(const NodeIdentifier &p_folderId);
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
+  // Emitted from setCurrentNotebookInternal() whenever the active notebook's
+  // read-only state is (re)computed. MainWindow2 wires this to the File-toolbar
+  // mutation-action affordance; the explorer never references the toolbar.
+  void readOnlyStateChanged(bool p_readOnly);
+
 private:
   void setupUI();
   void setupTitleBar();
@@ -178,6 +183,10 @@ private:
   void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
   void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
   void setCurrentNotebookInternal(const QString &p_notebookId);
+  // Functional read-only guard for toolbar-driven mutation slots. Resolves the
+  // current notebook id the same way the read-only badge does and queries
+  // NotebookCoreService::isNotebookReadOnly. No caching.
+  bool isCurrentNotebookReadOnly() const;
   void updateRecycleBinMenuState();
   void cacheCurrentExplorerState();
   void applyCachedExplorerState(const QString &p_notebookId);

@@ -52,6 +52,11 @@ public:
   // Regenerate all tracked toolbar icons from the current theme.
   void refreshIcons();
 
+  // Enable/disable the File-toolbar mutation actions (New Note, Quick Note,
+  // New Folder, Import Files, Import Folder) as a read-only affordance. The
+  // Export action is intentionally excluded (read-only safe).
+  void setMutationActionsEnabled(bool p_enabled);
+
 private:
   struct TrackedIcon {
     QAction *m_action;
@@ -91,6 +96,14 @@ private:
   UnitedEntryMgr *m_unitedEntryMgr = nullptr;
 
   QVector<TrackedIcon> m_trackedIcons;
+
+  // File-toolbar mutation actions, toggled by setMutationActionsEnabled(). The
+  // Export action is deliberately NOT tracked here (it is read-only safe).
+  QAction *m_newNoteAct = nullptr;
+  QAction *m_newQuickNoteAct = nullptr;
+  QAction *m_newFolderAct = nullptr;
+  QAction *m_importFileAct = nullptr;
+  QAction *m_importFolderAct = nullptr;
 };
 
 } // namespace vnotex

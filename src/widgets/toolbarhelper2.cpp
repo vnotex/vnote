@@ -102,6 +102,7 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewNote));
     newBtn->addAction(newNoteAct);
     newBtn->setDefaultAction(newNoteAct);
+    m_newNoteAct = newNoteAct;
 
     // Popup menu.
     auto newMenu = WidgetsFactory::createMenu(tb);
@@ -122,22 +123,25 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     });
     WidgetUtils::addActionShortcut(newQuickNoteAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewQuickNote));
+    m_newQuickNoteAct = newQuickNoteAct;
 
     // New folder.
     auto newFolderAct = newMenu->addAction(MainWindow2::tr("New Folder"), newMenu,
                                            [this]() { emit m_mainWindow->newFolderRequested(); });
     WidgetUtils::addActionShortcut(newFolderAct,
                                    coreConfig.getShortcut(CoreConfig::Shortcut::NewFolder));
+    m_newFolderAct = newFolderAct;
 
     newMenu->addSeparator();
 
     // Import file.
-    newMenu->addAction(MainWindow2::tr("Import Files"), newMenu,
-                       [this]() { emit m_mainWindow->importFileRequested(); });
+    m_importFileAct = newMenu->addAction(MainWindow2::tr("Import Files"), newMenu,
+                                         [this]() { emit m_mainWindow->importFileRequested(); });
 
     // Import folder.
-    newMenu->addAction(MainWindow2::tr("Import Folder"), newMenu,
-                       [this]() { emit m_mainWindow->importFolderRequested(); });
+    m_importFolderAct = newMenu->addAction(MainWindow2::tr("Import Folder"), newMenu, [this]() {
+      emit m_mainWindow->importFolderRequested();
+    });
 
     auto exportAct = newMenu->addAction(MainWindow2::tr("Export"), newMenu,
                                         [this]() { emit m_mainWindow->exportRequested(); });
@@ -434,8 +438,8 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   btn->setMenu(menu);
 
   {
-    auto fullScreenAct =
-        new FullScreenToggleAction(m_mainWindow, generateIcon(QStringLiteral("fullscreen.svg")), menu);
+    auto fullScreenAct = new FullScreenToggleAction(
+        m_mainWindow, generateIcon(QStringLiteral("fullscreen.svg")), menu);
     m_trackedIcons.append({fullScreenAct, QStringLiteral("fullscreen.svg"), false});
     const auto shortcut = coreConfig.getShortcut(CoreConfig::Shortcut::FullScreen);
     WidgetUtils::addActionShortcut(fullScreenAct, shortcut);
@@ -449,8 +453,7 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   }
 
   auto stayOnTopAct =
-      menu->addAction(MainWindow2::tr("Stay on Top"), m_mainWindow,
-                      &MainWindow2::setStayOnTop);
+      menu->addAction(MainWindow2::tr("Stay on Top"), m_mainWindow, &MainWindow2::setStayOnTop);
   setActionIcon(stayOnTopAct, QStringLiteral("stay_on_top.svg"));
   stayOnTopAct->setCheckable(true);
   WidgetUtils::addActionShortcut(stayOnTopAct,
@@ -573,6 +576,24 @@ void ToolBarHelper2::refreshIcons() {
     } else {
       tracked.m_action->setIcon(generateIcon(tracked.m_iconName));
     }
+  }
+}
+
+void ToolBarHelper2::setMutationActionsEnabled(bool p_enabled) {
+  if (m_newNoteAct) {
+    m_newNoteAct->setEnabled(p_enabled);
+  }
+  if (m_newQuickNoteAct) {
+    m_newQuickNoteAct->setEnabled(p_enabled);
+  }
+  if (m_newFolderAct) {
+    m_newFolderAct->setEnabled(p_enabled);
+  }
+  if (m_importFileAct) {
+    m_importFileAct->setEnabled(p_enabled);
+  }
+  if (m_importFolderAct) {
+    m_importFolderAct->setEnabled(p_enabled);
   }
 }
 

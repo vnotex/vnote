@@ -68,12 +68,20 @@ void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
   if (parentId.notebookId.isEmpty()) {
     return; // No active notebook -> no-op
   }
+  if (isNotebookReadOnly(parentId.notebookId)) {
+    return; // Read-only notebook -> sort persistence is a mutation, block it.
+  }
   emit sortRequested(parentId);
 }
 
 void NotebookNodeController::reorderNodes(const NodeIdentifier &p_parentId,
                                           const QList<NodeIdentifier> &p_orderedFolderIds,
                                           const QList<NodeIdentifier> &p_orderedFileIds) {
+  // Read-only guard: reorder persists a new child order to disk (a mutation).
+  if (isNotebookReadOnly(p_parentId.notebookId)) {
+    return;
+  }
+
   // Validation 1: empty input → hard no-op. The service has its own no-op
   // check but the controller MUST short-circuit BEFORE dispatch so callers
   // get deterministic "nothing happened" behavior (no signal, no service

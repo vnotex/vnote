@@ -182,6 +182,13 @@ public:
   // Get the parent folder path for a node
   NodeIdentifier getParentFolder(const NodeIdentifier &p_nodeId) const;
 
+  // Read-only notebook predicates. Live queries (NEVER cached) forwarding to
+  // NotebookCoreService::isNotebookReadOnly (which fails open / returns false on
+  // error). Public because the views (notebook-explorer gating tasks) call them
+  // to grey out mutating affordances; do NOT rename these signatures.
+  bool isNotebookReadOnly(const QString &p_notebookId) const;
+  bool isSelectionReadOnly(const QList<NodeIdentifier> &p_nodeIds) const;
+
 private:
   // Resolve selection following Qt right-click convention:
   // - If clicked node is in current selection, return full selection
@@ -194,14 +201,19 @@ private:
   // Returns true if resolveSelection(p_clickedId).size() == 1.
   bool isSingleEffectiveSelection(const NodeIdentifier &p_clickedId) const;
 
-  // Add actions to context menu based on node type
-  void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  // Add actions to context menu based on node type. p_readOnly greys out
+  // mutating actions when the clicked notebook is read-only.
+  void addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder,
+                     bool p_readOnly);
   void addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
-  void addEditActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
-  void addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addEditActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder,
+                      bool p_readOnly);
+  void addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder,
+                          bool p_readOnly);
   void addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
-  void addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId);
-  void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
+  void addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_readOnly);
+  void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder,
+                      bool p_readOnly);
   void addOpenWithSubmenu(QMenu *p_parentMenu, const NodeIdentifier &p_nodeId);
   void closeOrphanedBuffer(const NodeIdentifier &p_nodeId);
 

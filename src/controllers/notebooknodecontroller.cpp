@@ -98,6 +98,23 @@ NodeIdentifier NotebookNodeController::getParentFolder(const NodeIdentifier &p_n
   return parentId;
 }
 
+bool NotebookNodeController::isNotebookReadOnly(const QString &p_notebookId) const {
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    return false;
+  }
+  return notebookService->isNotebookReadOnly(p_notebookId);
+}
+
+bool NotebookNodeController::isSelectionReadOnly(const QList<NodeIdentifier> &p_nodeIds) const {
+  for (const auto &id : p_nodeIds) {
+    if (isNotebookReadOnly(id.notebookId)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool NotebookNodeController::isSingleClickActivationEnabled() const {
   auto *configMgr = m_services.get<ConfigMgr2>();
   if (configMgr) {
@@ -173,19 +190,25 @@ QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
 
   bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true; // Default to folder for root
 
-  addNewActions(menu, p_nodeId, isFolder);
+  // Resolve the clicked notebook (root/invalid falls back to the active
+  // notebook) and query its read-only state ONCE for this menu build. Live
+  // query — never cached. Mutating actions are greyed out when true.
+  const QString clickedNotebookId = p_nodeId.isValid() ? p_nodeId.notebookId : currentNotebookId();
+  const bool readOnly = isNotebookReadOnly(clickedNotebookId);
+
+  addNewActions(menu, p_nodeId, isFolder, readOnly);
   menu->addSeparator();
   addOpenActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addEditActions(menu, p_nodeId, isFolder);
+  addEditActions(menu, p_nodeId, isFolder, readOnly);
   menu->addSeparator();
-  addCopyMoveActions(menu, p_nodeId, isFolder);
+  addCopyMoveActions(menu, p_nodeId, isFolder, readOnly);
   menu->addSeparator();
   addImportExportActions(menu, p_nodeId, isFolder);
   menu->addSeparator();
-  addInfoActions(menu, p_nodeId);
+  addInfoActions(menu, p_nodeId, readOnly);
   menu->addSeparator();
-  addMiscActions(menu, p_nodeId, isFolder);
+  addMiscActions(menu, p_nodeId, isFolder, readOnly);
 
   return menu;
 }
@@ -197,6 +220,11 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   // Get node info to determine if it's a folder
   NodeInfo nodeInfo = getNodeInfo(p_nodeId);
   bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true;
+
+  // Read-only state of the external node's notebook (live query). Greys out the
+  // index-mutating actions (Import to Index, Ignore) while leaving Open /
+  // Open Location available.
+  const bool readOnly = isNotebookReadOnly(p_nodeId.notebookId);
 
   // Open actions - only for files (external folders cannot be expanded)
   if (!isFolder) {
@@ -214,7 +242,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   importAction->setToolTip(tr("Add this external item to the notebook index"));
   connect(importAction, &QAction::triggered, this,
           [this, p_nodeId]() { importExternalNode(p_nodeId); });
-  importAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+  importAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !readOnly);
 
   menu->addSeparator();
 
@@ -222,7 +250,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   auto *ignoreAction = menu->addAction(tr("&Ignore"));
   connect(ignoreAction, &QAction::triggered, this,
           [this, p_nodeId]() { emit ignoreRequested(p_nodeId); });
-  ignoreAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+  ignoreAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !readOnly);
 
   menu->addSeparator();
 
@@ -236,19 +264,19 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
 }
 
 void NotebookNodeController::addNewActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
-                                           bool p_isFolder) {
+                                           bool p_isFolder, bool p_readOnly) {
   // Determine target folder for new items
   NodeIdentifier targetFolder = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
 
   auto *newNoteAction = p_menu->addAction(tr("New &Note"));
   connect(newNoteAction, &QAction::triggered, this,
           [this, targetFolder]() { newNote(targetFolder); });
-  newNoteAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+  newNoteAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !p_readOnly);
 
   auto *newFolderAction = p_menu->addAction(tr("New &Folder"));
   connect(newFolderAction, &QAction::triggered, this,
           [this, targetFolder]() { newFolder(targetFolder); });
-  newFolderAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+  newFolderAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !p_readOnly);
 }
 
 void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
@@ -267,7 +295,7 @@ void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier 
 }
 
 void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
-                                            bool p_isFolder) {
+                                            bool p_isFolder, bool p_readOnly) {
   Q_UNUSED(p_isFolder);
   if (!p_nodeId.isValid()) {
     return;
@@ -275,7 +303,7 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
 
   auto *renameAction = p_menu->addAction(tr("&Rename"));
   connect(renameAction, &QAction::triggered, this, [this, p_nodeId]() { renameNode(p_nodeId); });
-  renameAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+  renameAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !p_readOnly);
 
   {
     auto *notebookService = m_services.get<NotebookCoreService>();
@@ -286,18 +314,20 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
       auto *deleteAction = p_menu->addAction(tr("&Delete"));
       connect(deleteAction, &QAction::triggered, this,
               [this, p_nodeId]() { deleteNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
+      deleteAction->setEnabled(!p_readOnly);
 
       auto *removeAction = p_menu->addAction(tr("Remove from Notebook"));
       removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
       connect(removeAction, &QAction::triggered, this, [this, p_nodeId]() {
         removeNodesFromNotebook(dedupeDescendants(resolveSelection(p_nodeId)));
       });
+      removeAction->setEnabled(!p_readOnly);
     }
   }
 }
 
 void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
-                                                bool p_isFolder) {
+                                                bool p_isFolder, bool p_readOnly) {
   if (p_nodeId.isValid()) {
     auto *copyAction = p_menu->addAction(tr("&Copy"));
     connect(copyAction, &QAction::triggered, this,
@@ -306,6 +336,7 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
     auto *cutAction = p_menu->addAction(tr("Cu&t"));
     connect(cutAction, &QAction::triggered, this,
             [this, p_nodeId]() { cutNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
+    cutAction->setEnabled(!p_readOnly);
   }
 
   // Paste is available on any folder target, including root (invalid nodeId).
@@ -319,7 +350,10 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
       auto *pasteAction = p_menu->addAction(tr("&Paste"));
       connect(pasteAction, &QAction::triggered, this,
               [this, targetFolder]() { pasteNodes(targetFolder); });
-      pasteAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+      // Paste mutates the TARGET folder's notebook — gate on its read-only
+      // state (live query), not the clicked node's notebook.
+      pasteAction->setEnabled(isSingleEffectiveSelection(p_nodeId) &&
+                              !isNotebookReadOnly(targetFolder.notebookId));
     }
   }
 
@@ -327,6 +361,7 @@ void NotebookNodeController::addCopyMoveActions(QMenu *p_menu, const NodeIdentif
     auto *duplicateAction = p_menu->addAction(tr("D&uplicate"));
     connect(duplicateAction, &QAction::triggered, this,
             [this, p_nodeId]() { duplicateNodes(resolveSelection(p_nodeId)); });
+    duplicateAction->setEnabled(!p_readOnly);
   }
 }
 
@@ -342,7 +377,8 @@ void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIde
   }
 }
 
-void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId) {
+void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                            bool p_readOnly) {
   if (!p_nodeId.isValid()) {
     return;
   }
@@ -370,13 +406,13 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
       auto *tagAction = p_menu->addAction(tr("&Tags"));
       connect(tagAction, &QAction::triggered, this,
               [this, p_nodeId]() { manageNodeTags(p_nodeId); });
-      tagAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+      tagAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !p_readOnly);
     }
   }
 }
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
-                                            bool p_isFolder) {
+                                            bool p_isFolder, bool p_readOnly) {
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
   connect(reloadAction, &QAction::triggered, this,
           [this, p_nodeId]() { reloadNodes(resolveSelection(p_nodeId)); });
@@ -389,7 +425,7 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
   // sortRequested; NotebookExplorer2 owns the dialog.
   NodeIdentifier sortTarget = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
   auto *sortAction = p_menu->addAction(tr("&Sort"));
-  sortAction->setEnabled(true);
+  sortAction->setEnabled(!p_readOnly);
   connect(sortAction, &QAction::triggered, this, [this, sortTarget]() { sortNodes(sortTarget); });
 
   if (p_nodeId.isValid()) {
@@ -405,6 +441,7 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
       auto *markAction = p_menu->addAction(tr("&Mark"));
       connect(markAction, &QAction::triggered, this,
               [this, p_nodeId]() { markNodes(resolveSelection(p_nodeId)); });
+      markAction->setEnabled(!p_readOnly);
     }
   }
 }
@@ -412,6 +449,9 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
 void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
   QString notebookId = p_parentId.isValid() ? p_parentId.notebookId : currentNotebookId();
   if (notebookId.isEmpty()) {
+    return;
+  }
+  if (isNotebookReadOnly(notebookId)) {
     return;
   }
 
@@ -427,6 +467,9 @@ void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
 void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
   QString notebookId = p_parentId.isValid() ? p_parentId.notebookId : currentNotebookId();
   if (notebookId.isEmpty()) {
+    return;
+  }
+  if (isNotebookReadOnly(notebookId)) {
     return;
   }
 
@@ -551,6 +594,9 @@ void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds)
   if (p_nodeIds.isEmpty()) {
     return;
   }
+  if (isSelectionReadOnly(p_nodeIds)) {
+    return;
+  }
 
   // Query notebook type: raw notebooks have no recycle bin, so delete permanently.
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -564,6 +610,9 @@ void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &p_nodeIds)
 
 void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier> &p_nodeIds) {
   if (p_nodeIds.isEmpty()) {
+    return;
+  }
+  if (isSelectionReadOnly(p_nodeIds)) {
     return;
   }
 
@@ -582,6 +631,15 @@ void NotebookNodeController::cutNodes(const QList<NodeIdentifier> &p_nodeIds) {
 
 void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) {
   if (m_clipboard->nodes.isEmpty() || !p_targetFolderId.isValid()) {
+    return;
+  }
+  // Read-only gating (move/copy semantics): block writing INTO a read-only
+  // target, and block a MOVE-out (cut) from a read-only source. A COPY-out
+  // (non-cut paste) from a read-only source into a writable target is allowed.
+  if (isNotebookReadOnly(p_targetFolderId.notebookId)) {
+    return;
+  }
+  if (m_clipboard->isCut && isSelectionReadOnly(m_clipboard->nodes)) {
     return;
   }
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -735,6 +793,9 @@ void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
   if (!p_nodeId.isValid()) {
     return;
   }
+  if (isNotebookReadOnly(p_nodeId.notebookId)) {
+    return;
+  }
 
   NodeInfo nodeInfo = getNodeInfo(p_nodeId);
   if (!nodeInfo.isValid()) {
@@ -751,6 +812,12 @@ void NotebookNodeController::markNode(const NodeIdentifier &p_nodeId) {
 
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
                                        const NodeIdentifier &p_targetFolderId) {
+  // Cross-parent drag-move: reject MOVE-in (read-only target) or MOVE-out
+  // (any read-only source). Copy is the only operation permitted out of a
+  // read-only notebook and does not flow through here.
+  if (isNotebookReadOnly(p_targetFolderId.notebookId) || isSelectionReadOnly(p_nodeIds)) {
+    return;
+  }
   cutNodes(p_nodeIds);
   pasteNodes(p_targetFolderId);
 }
@@ -765,6 +832,9 @@ void NotebookNodeController::exportNode(const NodeIdentifier &p_nodeId) {
 
 void NotebookNodeController::importExternalNode(const NodeIdentifier &p_nodeId) {
   if (!p_nodeId.isValid()) {
+    return;
+  }
+  if (isNotebookReadOnly(p_nodeId.notebookId)) {
     return;
   }
 
@@ -841,6 +911,9 @@ void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &p_nodeId
 }
 
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
+  if (isNotebookReadOnly(p_nodeId.notebookId)) {
+    return;
+  }
   emit manageTagsRequested(p_nodeId);
 }
 
@@ -903,6 +976,9 @@ void NotebookNodeController::handleNewFolderResult(const NodeIdentifier &p_paren
 void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
                                                 const QString &p_newName) {
   if (!p_nodeId.isValid() || p_newName.isEmpty()) {
+    return;
+  }
+  if (isNotebookReadOnly(p_nodeId.notebookId)) {
     return;
   }
 
@@ -971,6 +1047,9 @@ void NotebookNodeController::handleMarkResult(const NodeIdentifier &p_nodeId,
   if (!p_nodeId.isValid()) {
     return;
   }
+  if (isNotebookReadOnly(p_nodeId.notebookId)) {
+    return;
+  }
 
   NodeInfo nodeInfo = getNodeInfo(p_nodeId);
   if (!nodeInfo.isValid()) {
@@ -1026,6 +1105,9 @@ void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &
   if (p_nodeIds.isEmpty()) {
     return;
   }
+  if (isSelectionReadOnly(p_nodeIds)) {
+    return;
+  }
 
   auto *notebookService = m_services.get<NotebookCoreService>();
   QSet<NodeIdentifier> parentsToReload;
@@ -1063,6 +1145,9 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
   if (p_nodeIds.isEmpty()) {
     return;
   }
+  if (isSelectionReadOnly(p_nodeIds)) {
+    return;
+  }
 
   auto *notebookService = m_services.get<NotebookCoreService>();
   QSet<NodeIdentifier> parentsToReload;
@@ -1088,6 +1173,9 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
 void NotebookNodeController::handleImportFiles(const NodeIdentifier &p_targetFolderId,
                                                const QStringList &p_files) {
   if (!p_targetFolderId.isValid() || p_files.isEmpty()) {
+    return;
+  }
+  if (isNotebookReadOnly(p_targetFolderId.notebookId)) {
     return;
   }
 
@@ -1216,6 +1304,9 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
 }
 
 void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &p_ids) {
+  if (isSelectionReadOnly(p_ids)) {
+    return;
+  }
   const auto ids = dedupeDescendants(p_ids);
   int failures = 0;
   for (const auto &id : ids) {
@@ -1348,6 +1439,9 @@ void NotebookNodeController::reloadNodes(const QList<NodeIdentifier> &p_ids) {
 
 void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids) {
   if (p_ids.isEmpty()) {
+    return;
+  }
+  if (isSelectionReadOnly(p_ids)) {
     return;
   }
   emit markRequested(p_ids);

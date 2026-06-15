@@ -136,6 +136,12 @@ void MainWindow2::setupUI() {
   connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
           m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentFolderId);
 
+  // Read-only affordance: disable the File-toolbar mutation actions when the
+  // current notebook is read-only (Export stays enabled). Loose coupling — the
+  // explorer only emits; MainWindow2 drives the toolbar helper.
+  connect(m_notebookExplorer, &NotebookExplorer2::readOnlyStateChanged, this,
+          [this](bool p_readOnly) { m_toolBarHelper->setMutationActionsEnabled(!p_readOnly); });
+
   setupNavigationMode();
 
   setupSystemTray();

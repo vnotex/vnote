@@ -905,14 +905,14 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   // notebooks; rich-text label with embedded lock icon when read-only. The
   // tooltip ("Read-only notebook (no PAT)") was set once in setupUI() and
   // does not need to be updated per-switch.
-  if (m_readOnlyBadgeLabel) {
-    bool readOnly = false;
-    if (!m_currentNotebookId.isEmpty()) {
-      auto *nbService = m_services.get<NotebookCoreService>();
-      if (nbService) {
-        readOnly = nbService->isNotebookReadOnly(m_currentNotebookId);
-      }
+  bool readOnly = false;
+  if (!m_currentNotebookId.isEmpty()) {
+    auto *nbService = m_services.get<NotebookCoreService>();
+    if (nbService) {
+      readOnly = nbService->isNotebookReadOnly(m_currentNotebookId);
     }
+  }
+  if (m_readOnlyBadgeLabel) {
     if (readOnly) {
       // Use HTML img to embed the same Qt resource icon shown in the
       // selector combobox. Sized at 14px to match label x-height roughly.
@@ -924,6 +924,10 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
       m_readOnlyBadgeLabel->hide();
     }
   }
+
+  // Surface read-only state to interested parties (e.g. MainWindow2 toggles the
+  // File-toolbar mutation actions). Loose coupling: emit only.
+  emit readOnlyStateChanged(readOnly);
 
   // Update current explorer
   if (m_nodeExplorer) {
@@ -1174,6 +1178,11 @@ void NotebookExplorer2::newFolder() {
     return;
   }
 
+  // Functional read-only guard: silently no-op for read-only notebooks.
+  if (isCurrentNotebookReadOnly()) {
+    return;
+  }
+
   // Delegate to the shared handler
   onNewFolderRequested(parentId);
 }
@@ -1186,11 +1195,21 @@ void NotebookExplorer2::newNote() {
     return;
   }
 
+  // Functional read-only guard: silently no-op for read-only notebooks.
+  if (isCurrentNotebookReadOnly()) {
+    return;
+  }
+
   // Delegate to the shared handler
   onNewNoteRequested(parentId);
 }
 
 void NotebookExplorer2::newQuickNote() {
+  // Functional read-only guard: silently no-op for read-only notebooks.
+  if (isCurrentNotebookReadOnly()) {
+    return;
+  }
+
   // Get quick note schemes from session config.
   auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
   const auto &schemes = sessionConfig.getQuickNoteSchemes();
@@ -1321,6 +1340,11 @@ void NotebookExplorer2::importFile() {
     return;
   }
 
+  // Functional read-only guard: silently no-op for read-only notebooks.
+  if (isCurrentNotebookReadOnly()) {
+    return;
+  }
+
   onImportFilesRequested(folderId);
 }
 
@@ -1332,7 +1356,20 @@ void NotebookExplorer2::importFolder() {
     return;
   }
 
+  // Functional read-only guard: silently no-op for read-only notebooks.
+  if (isCurrentNotebookReadOnly()) {
+    return;
+  }
+
   onImportFolderRequested(folderId);
+}
+
+bool NotebookExplorer2::isCurrentNotebookReadOnly() const {
+  if (m_currentNotebookId.isEmpty()) {
+    return false;
+  }
+  auto *nbService = m_services.get<NotebookCoreService>();
+  return nbService && nbService->isNotebookReadOnly(m_currentNotebookId);
 }
 
 NodeIdentifier NotebookExplorer2::currentExploredFolderId() const {

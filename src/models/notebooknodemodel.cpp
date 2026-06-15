@@ -1,10 +1,10 @@
 #include "notebooknodemodel.h"
 
 #include <QDebug>
+#include <QIODevice>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMimeData>
-#include <QIODevice>
 
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
@@ -55,9 +55,7 @@ void NotebookNodeModel::setDisplayRoot(const NodeIdentifier &p_folderId) {
   endResetModel();
 }
 
-NodeIdentifier NotebookNodeModel::getDisplayRoot() const {
-  return m_displayRoot;
-}
+NodeIdentifier NotebookNodeModel::getDisplayRoot() const { return m_displayRoot; }
 
 void NotebookNodeModel::ensureRoot() const {
   if (m_notebookId.isEmpty()) {
@@ -152,8 +150,8 @@ NodeIdentifier NotebookNodeModel::nodeIdForIndexId(quintptr p_indexId) const {
   return it.value();
 }
 
-QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(
-    const QJsonObject &p_json, const NodeIdentifier &p_parentId) const {
+QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(const QJsonObject &p_json,
+                                                           const NodeIdentifier &p_parentId) const {
   QVector<NodeInfo> children;
 
   QJsonArray folders = p_json.value(QStringLiteral("folders")).toArray();
@@ -174,8 +172,9 @@ QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(
   return children;
 }
 
-QVector<NodeInfo> NotebookNodeModel::parseExternalNodesFromJson(
-    const QJsonObject &p_json, const NodeIdentifier &p_parentId) const {
+QVector<NodeInfo>
+NotebookNodeModel::parseExternalNodesFromJson(const QJsonObject &p_json,
+                                              const NodeIdentifier &p_parentId) const {
   QVector<NodeInfo> externals;
 
   // External folders first (sorted alphabetically)
@@ -418,6 +417,16 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
     return false;
   }
 
+  // Read-only notebooks refuse inline rename. Defense-in-depth: flags() already
+  // withholds Qt::ItemIsEditable, but a programmatic setData must also be
+  // refused. Queried live each call (no caching).
+  {
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    if (notebookService && notebookService->isNotebookReadOnly(m_notebookId)) {
+      return false;
+    }
+  }
+
   QString newName = p_value.toString().trimmed();
   if (newName.isEmpty()) {
     return false;
@@ -455,8 +464,9 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
 
     // Update the relativePath in the node identifier
     QString parentPath = nodeId.parentPath();
-    QString newRelativePath = parentPath.isEmpty() ? newName : parentPath + QLatin1Char('/') + newName;
-    
+    QString newRelativePath =
+        parentPath.isEmpty() ? newName : parentPath + QLatin1Char('/') + newName;
+
     // Remove old cache entries
     NodeIdentifier newNodeId;
     newNodeId.notebookId = nodeId.notebookId;
@@ -500,7 +510,6 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
   return false;
 }
 
-
 Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
     return Qt::NoItemFlags;
@@ -518,16 +527,22 @@ Qt::ItemFlags NotebookNodeModel::flags(const QModelIndex &p_index) const {
       return defaultFlags;
     }
 
-    // Enable drag for indexed nodes
+    // Enable drag for indexed nodes (copy-out is allowed even when read-only)
     defaultFlags |= Qt::ItemIsDragEnabled;
 
-    // Enable drop only on folders
-    if (nodeInfo.isFolder) {
-      defaultFlags |= Qt::ItemIsDropEnabled;
-    }
+    // Read-only notebooks forbid mutating drop targets and inline rename.
+    // Query live each call so the predicate reflects the current state.
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    const bool readOnly = notebookService && notebookService->isNotebookReadOnly(m_notebookId);
+    if (!readOnly) {
+      // Enable drop only on folders
+      if (nodeInfo.isFolder) {
+        defaultFlags |= Qt::ItemIsDropEnabled;
+      }
 
-    // All indexed nodes are editable (rename)
-    defaultFlags |= Qt::ItemIsEditable;
+      // All indexed nodes are editable (rename)
+      defaultFlags |= Qt::ItemIsEditable;
+    }
   }
 
   return defaultFlags;
@@ -755,6 +770,15 @@ bool NotebookNodeModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_a
   Q_UNUSED(p_row);
   Q_UNUSED(p_column);
 
+  // Read-only notebooks reject all internal drops INTO them. Queried live so
+  // the guard reflects the current state regardless of the view path.
+  {
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    if (notebookService && notebookService->isNotebookReadOnly(m_notebookId)) {
+      return false;
+    }
+  }
+
   if (p_action == Qt::IgnoreAction) {
     return true;
   }
@@ -877,9 +901,9 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
     NodeInfo info;
     info.id = p_nodeId;
     info.isFolder = true;
-    info.name = p_nodeId.relativePath.isEmpty() 
-        ? QStringLiteral("Root") 
-        : p_nodeId.relativePath.section(QLatin1Char('/'), -1);
+    info.name = p_nodeId.relativePath.isEmpty()
+                    ? QStringLiteral("Root")
+                    : p_nodeId.relativePath.section(QLatin1Char('/'), -1);
     m_nodeCache.insert(p_nodeId, info);
     nodeIt = m_nodeCache.find(p_nodeId);
   }

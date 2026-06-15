@@ -398,10 +398,51 @@ void FileListView::contextMenuEvent(QContextMenuEvent *p_event) {
 void FileListView::dragEnterEvent(QDragEnterEvent *p_event) {
   const QMimeData *mimeData = p_event->mimeData();
 
+  // Resolve the drop target notebook for read-only gating (same resolution as
+  // dragMoveEvent / dropEvent: display root with notebook-root fallback).
+  auto *nodeListModel = dynamic_cast<INodeListModel *>(model());
+  if (!nodeListModel) {
+    auto *proxy = qobject_cast<QAbstractProxyModel *>(model());
+    if (proxy) {
+      nodeListModel = dynamic_cast<INodeListModel *>(proxy->sourceModel());
+    }
+  }
+  NodeIdentifier targetId;
+  if (nodeListModel) {
+    targetId = nodeListModel->getDisplayRoot();
+    if (!targetId.isValid()) {
+      targetId.notebookId = nodeListModel->getNotebookId();
+      targetId.relativePath = QString();
+    }
+  }
+  const bool targetReadOnly = m_controller && m_controller->isNotebookReadOnly(targetId.notebookId);
+
   if (mimeData->hasFormat("application/x-vnotex-node-identifier")) {
+    // Read-only gating: block MOVE with read-only source (move-out) or
+    // read-only target (move-in / reorder), and COPY into a read-only target
+    // (copy-in). COPY-out (read-only source -> writable target) is allowed.
+    Qt::DropAction proposedAction = Qt::MoveAction;
+    if (p_event->keyboardModifiers() & Qt::ControlModifier) {
+      proposedAction = Qt::CopyAction;
+    }
+    bool blocked = false;
+    if (proposedAction == Qt::MoveAction) {
+      blocked = targetReadOnly ||
+                (m_controller && m_controller->isSelectionReadOnly(decodeNodeMimeData(mimeData)));
+    } else {
+      blocked = targetReadOnly;
+    }
+    if (blocked) {
+      p_event->ignore();
+      return;
+    }
     p_event->acceptProposedAction();
   } else if (mimeData->hasUrls()) {
-    // External file drop
+    // External file drop: block import INTO a read-only target.
+    if (targetReadOnly) {
+      p_event->ignore();
+      return;
+    }
     p_event->acceptProposedAction();
   } else {
     p_event->ignore();
@@ -438,6 +479,34 @@ void FileListView::dragMoveEvent(QDragMoveEvent *p_event) {
     Qt::DropAction proposedAction = Qt::MoveAction;
     if (p_event->keyboardModifiers() & Qt::ControlModifier) {
       proposedAction = Qt::CopyAction;
+    }
+
+    // Read-only gating (mirror dropEvent): block URL import into a read-only
+    // target, MOVE with read-only source (move-out) or read-only target
+    // (move-in / reorder), and COPY into a read-only target (copy-in).
+    // COPY-out is allowed. Ignore so the cursor shows "forbidden".
+    {
+      const bool targetReadOnly =
+          m_controller && m_controller->isNotebookReadOnly(targetId.notebookId);
+      const QMimeData *dragMime = p_event->mimeData();
+      bool blocked = false;
+      if (dragMime->hasFormat(c_nodeMimeType)) {
+        if (proposedAction == Qt::MoveAction) {
+          blocked =
+              targetReadOnly ||
+              (m_controller && m_controller->isSelectionReadOnly(decodeNodeMimeData(dragMime)));
+        } else {
+          blocked = targetReadOnly;
+        }
+      } else if (dragMime->hasUrls()) {
+        blocked = targetReadOnly;
+      }
+      if (blocked) {
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->ignore();
+        setDropIndicatorShown(false);
+        return;
+      }
     }
 
     // T10 (drag-reorder): lifted same-parent guard. The original guard at
@@ -550,6 +619,12 @@ void FileListView::dropEvent(QDropEvent *p_event) {
 
     // Perform operation via controller
     if (action == Qt::CopyAction) {
+      // Read-only gating: block COPY INTO a read-only target (copy-in).
+      // Copy-out (read-only source -> writable target) is allowed.
+      if (m_controller->isNotebookReadOnly(targetId.notebookId)) {
+        p_event->ignore();
+        return;
+      }
       m_controller->copyNodes(draggedNodes);
       m_controller->pasteNodes(targetId);
       p_event->setDropAction(action);
@@ -558,6 +633,14 @@ void FileListView::dropEvent(QDropEvent *p_event) {
     }
 
     // MOVE branch.
+    // Read-only gating: block move-out (read-only source) and move-in / reorder
+    // (read-only target). Silent.
+    if (m_controller->isSelectionReadOnly(draggedNodes) ||
+        m_controller->isNotebookReadOnly(targetId.notebookId)) {
+      p_event->ignore();
+      return;
+    }
+
     // T10 (drag-reorder): same-parent + same-view + Above/Below indicator +
     // OrderedByConfiguration + empty filter routes to reorderNodes. Every
     // other branch falls back to the legacy "filter and move" path which
@@ -646,6 +729,12 @@ void FileListView::dropEvent(QDropEvent *p_event) {
   }
 
   if (mimeData->hasUrls()) {
+    // Read-only gating: block external file import INTO a read-only target.
+    if (m_controller && m_controller->isNotebookReadOnly(targetId.notebookId)) {
+      p_event->ignore();
+      return;
+    }
+
     // External file import
     QStringList filePaths;
     for (const QUrl &url : mimeData->urls()) {
