@@ -164,6 +164,11 @@ void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &
 void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::handleImportFiles(const NodeIdentifier &, const QStringList &) {}
 void NotebookNodeController::handleImportFolder(const NodeIdentifier &, const QString &) {}
+// Read-only gating helpers (read-only feature) — writable in tests.
+bool NotebookNodeController::isNotebookReadOnly(const QString &) const { return false; }
+bool NotebookNodeController::isSelectionReadOnly(const QList<NodeIdentifier> &) const {
+  return false;
+}
 
 NodeIdentifier NotebookNodeController::getParentFolder(const NodeIdentifier &p_nodeId) const {
   // Tests pre-populate g_parentMap with id → parent mappings. If absent,

@@ -55,4 +55,10 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
 void NotebookNodeController::handleImportFiles(const NodeIdentifier &, const QStringList &) {}
 void NotebookNodeController::handleImportFolder(const NodeIdentifier &, const QString &) {}
 
+// Read-only gating helpers (read-only feature) — writable in tests.
+bool NotebookNodeController::isNotebookReadOnly(const QString &) const { return false; }
+bool NotebookNodeController::isSelectionReadOnly(const QList<NodeIdentifier> &) const {
+  return false;
+}
+
 } // namespace vnotex
