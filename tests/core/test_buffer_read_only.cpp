@@ -30,6 +30,7 @@ private slots:
   void testBufferReadOnlyFalse();
   void testBufferReadOnlyTrue();
   void testBufferReadOnlyDefensiveInvalid();
+  void testForcedReadOnlyOverride();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -91,12 +92,14 @@ void TestBufferReadOnly::testBufferReadOnlyFalse() {
   // Subtest 1: Open notebook with read_only=false, open a buffer, assert isReadOnly() == false
 
   // Create a test file in root folder
-  QString fileId = m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
+  QString fileId =
+      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
   QVERIFY(!fileId.isEmpty());
 
   // Verify notebook is NOT read-only
   bool readOnly = true;
-  VxCoreError err = vxcore_notebook_is_read_only(m_context, m_notebookId.toUtf8().constData(), &readOnly);
+  VxCoreError err =
+      vxcore_notebook_is_read_only(m_context, m_notebookId.toUtf8().constData(), &readOnly);
   QCOMPARE(err, VXCORE_OK);
   QCOMPARE(readOnly, false);
 
@@ -117,11 +120,13 @@ void TestBufferReadOnly::testBufferReadOnlyTrue() {
   // open buffer, assert isReadOnly() == true
 
   // Create a test file in root folder
-  QString fileId = m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test2.md"));
+  QString fileId =
+      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test2.md"));
   QVERIFY(!fileId.isEmpty());
 
   // Set notebook to read-only
-  VxCoreError err = vxcore_notebook_set_read_only(m_context, m_notebookId.toUtf8().constData(), true);
+  VxCoreError err =
+      vxcore_notebook_set_read_only(m_context, m_notebookId.toUtf8().constData(), true);
   QCOMPARE(err, VXCORE_OK);
 
   // Verify notebook IS read-only
@@ -156,6 +161,49 @@ void TestBufferReadOnly::testBufferReadOnlyDefensiveInvalid() {
   Buffer2 invalidBuf;
   QCOMPARE(invalidBuf.isValid(), false);
   QCOMPARE(invalidBuf.isReadOnly(), false); // noexcept, should not crash
+}
+
+void TestBufferReadOnly::testForcedReadOnlyOverride() {
+  // The notebook is writable, but a buffer opened with
+  // FileOpenSettings::m_readOnly == true must still report read-only.
+  // (Reproduces the "View Logs" bug: a forced-read-only buffer in a writable
+  // notebook used to open editable.)
+
+  QString fileId =
+      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test_forced_ro.md"));
+  QVERIFY(!fileId.isEmpty());
+
+  // Sanity: notebook is NOT read-only.
+  bool nbReadOnly = true;
+  VxCoreError err =
+      vxcore_notebook_is_read_only(m_context, m_notebookId.toUtf8().constData(), &nbReadOnly);
+  QCOMPARE(err, VXCORE_OK);
+  QCOMPARE(nbReadOnly, false);
+
+  // Open via BufferService with the per-open read-only override set.
+  FileOpenSettings settings;
+  settings.m_readOnly = true;
+  Buffer2 buf = m_bufferService->openBuffer(
+      NodeIdentifier{m_notebookId, QStringLiteral("test_forced_ro.md")}, settings);
+  QVERIFY(buf.isValid());
+  const QString bufferId = buf.id();
+
+  // Override is honored through both the handle and the service query.
+  QCOMPARE(buf.isReadOnly(), true);
+  QCOMPARE(m_bufferService->isBufferReadOnly(bufferId), true);
+
+  // Close clears the forced-read-only state.
+  QVERIFY(m_bufferService->closeBuffer(bufferId));
+
+  // Reopen the SAME file with default settings (m_readOnly == false): the
+  // override must be gone and the notebook-derived (writable) state applies.
+  Buffer2 buf2 = m_bufferService->openBuffer(
+      NodeIdentifier{m_notebookId, QStringLiteral("test_forced_ro.md")});
+  QVERIFY(buf2.isValid());
+  QCOMPARE(buf2.isReadOnly(), false);
+  QCOMPARE(m_bufferService->isBufferReadOnly(buf2.id()), false);
+
+  m_bufferService->closeBuffer(buf2.id());
 }
 
 } // namespace tests

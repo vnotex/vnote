@@ -131,6 +131,12 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   event.bufferId = bufferId;
   m_hookMgr->doAction(HookNames::FileAfterOpen, event);
 
+  // Honor the per-open read-only override: the notebook may be writable, but a
+  // buffer explicitly opened read-only (e.g. "View Logs") must stay read-only.
+  if (p_settings.m_readOnly) {
+    m_forcedReadOnlyBuffers.insert(bufferId);
+  }
+
   qDebug() << "BufferService::openBuffer succeeded bufferId:" << bufferId;
   return Buffer2(this, m_hookMgr, bufferId, p_nodeId);
 }
@@ -184,6 +190,7 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
   m_activeWriters.remove(p_bufferId);
   m_saveFailureCounts.remove(p_bufferId);
   m_virtualBufferIds.remove(p_bufferId);
+  m_forcedReadOnlyBuffers.remove(p_bufferId);
   m_revisions.remove(p_bufferId);
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
@@ -239,6 +246,14 @@ bool BufferService::isVirtualBuffer(const QString &p_bufferId) const {
 }
 
 QJsonArray BufferService::listBuffers() const { return BufferCoreService::listBuffers(); }
+
+bool BufferService::isBufferReadOnly(const QString &p_bufferId) const {
+  // Per-open override (FileOpenSettings::m_readOnly) OR the notebook's read-only flag.
+  if (m_forcedReadOnlyBuffers.contains(p_bufferId)) {
+    return true;
+  }
+  return BufferCoreService::isBufferReadOnly(p_bufferId);
+}
 
 // ============ BufferCoreService wrappers ============
 
@@ -415,7 +430,7 @@ void BufferService::markDirty(const QString &p_bufferId) {
   // dirty flag — under the no-live-transition rule a buffer cannot legally
   // be dirty before becoming read-only, but if it ever were, we refuse to
   // silently drop the unsaved edit.
-  if (BufferCoreService::isBufferReadOnly(p_bufferId)) {
+  if (isBufferReadOnly(p_bufferId)) {
     qWarning() << "BufferService::markDirty rejected: buffer is read-only" << p_bufferId;
     emit dirtyRejectedReadOnly(p_bufferId);
     return;

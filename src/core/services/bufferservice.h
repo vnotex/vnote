@@ -139,7 +139,9 @@ public:
   using BufferCoreService::getState;
   using BufferCoreService::insertAsset;
   using BufferCoreService::insertAssetRaw;
-  using BufferCoreService::isBufferReadOnly;
+  // Overrides base to OR the per-open FileOpenSettings::m_readOnly override
+  // (forced-read-only set) with the notebook-derived read-only state.
+  bool isBufferReadOnly(const QString &p_bufferId) const override;
   using BufferCoreService::isModified;
   using BufferCoreService::peekContentRaw;
   using BufferCoreService::setContent;
@@ -296,6 +298,11 @@ private:
   // Set of buffer IDs that are virtual (non-file-backed).
   // Used to skip auto-save/sync for virtual buffers.
   QSet<QString> m_virtualBufferIds;
+
+  // Buffers opened with FileOpenSettings::m_readOnly. ORed into
+  // isBufferReadOnly so a forced-read-only buffer is treated as read-only
+  // even when its notebook is writable. GUI-thread only (no mutex needed).
+  QSet<QString> m_forcedReadOnlyBuffers;
 
   // Map from buffer ID to the active writer's content fetch callback.
   QHash<QString, ActiveWriter> m_activeWriters;
