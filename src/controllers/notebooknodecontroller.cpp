@@ -388,7 +388,7 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
   // newFolder above. The action triggers sortNodes() which emits
   // sortRequested; NotebookExplorer2 owns the dialog.
   NodeIdentifier sortTarget = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
-  auto *sortAction = p_menu->addAction(tr("&Sort..."));
+  auto *sortAction = p_menu->addAction(tr("&Sort"));
   sortAction->setEnabled(true);
   connect(sortAction, &QAction::triggered, this, [this, sortTarget]() { sortNodes(sortTarget); });
 
