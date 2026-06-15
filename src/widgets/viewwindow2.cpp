@@ -534,6 +534,13 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     if (tagPopup) {
       tagPopup->setNodeId(getBuffer().nodeId());
     }
+    // T27: editing tags mutates the node, so disable on a read-only notebook and
+    // surface the same tooltip as Save/format. Notebook RO state is immutable for
+    // the buffer's lifetime; re-query isReadOnly() per the "do not cache" rule.
+    if (getBuffer().isValid() && getBuffer().isReadOnly()) {
+      act->setEnabled(false);
+      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+    }
     break;
   }
 
@@ -546,8 +553,15 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
       m_attachmentPopup = attachmentPopup;
     }
     m_attachmentAction = act;
-    // Disable if buffer doesn't support attachments.
-    act->setEnabled(getBuffer().isAttachmentSupported());
+    // Disable if buffer doesn't support attachments OR the owning notebook is
+    // read-only (adding/deleting attachments mutates the node). Re-query
+    // isReadOnly() per the "do not cache" rule.
+    const auto &attBuf = getBuffer();
+    const bool attReadOnly = attBuf.isValid() && attBuf.isReadOnly();
+    act->setEnabled(attBuf.isAttachmentSupported() && !attReadOnly);
+    if (attReadOnly) {
+      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+    }
     // Set initial icon state.
     updateAttachmentIcon();
     break;
@@ -1387,7 +1401,7 @@ bool ViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
   if (p_obj == m_toolBar) {
     switch (p_event->type()) {
     case QEvent::DragEnter:
-      if (m_buffer.isValid() && m_buffer.isAttachmentSupported() &&
+      if (m_buffer.isValid() && m_buffer.isAttachmentSupported() && !m_buffer.isReadOnly() &&
           AttachmentDragDropAreaIndicator2::isAccepted(dynamic_cast<QDragEnterEvent *>(p_event))) {
         // Lazily create indicator on first drag.
         if (!m_attachmentDragDropIndicator) {
