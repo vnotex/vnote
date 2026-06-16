@@ -16,7 +16,8 @@ VNote dialogs use a mixed capitalization scheme. The rules below are the project
 | **Window / dialog titles** (`setWindowTitle`, `QFileDialog` title) | **Title Case** | `"Open Notebook"`, `"Select Local Root Folder"`, `"Manage Notebooks"` |
 | **Tooltips** | sentence form, **end with a period** | `"Remote git URL. Only HTTPS and file:// schemes are supported."` |
 | **Banner / info-text messages** (`setInformationText`) | sentence form, **end with a period** | `"Local root folder must be empty (contains 3 item(s))."`, `"Cloning..."` |
-| **Radio button / checkbox labels** | **Title Case** | `"Local Folder"`, `"Remote URL"` |
+| **Radio button / checkbox labels** | **sentence case** | `"Local folder"`, `"Keep both"`, `"Expand Tab"` |
+| **ComboBox item labels** | **sentence case** (first word only) | `"Bundled notebook"`, `"No wrap"`, `"Web service"`, `"Local JAR"` |
 
 ### Why these rules
 
@@ -63,25 +64,19 @@ Use this pattern when the dialog has both keystroke-driven validation (noisy) an
 | `NewQuickAccessItemDialog` | (inline) | Add a quick-access entry (used inside Settings) |
 | `SnippetInfoWidget2` / snippet dialogs | `SnippetController` | Snippet metadata |
 
-## Known Inconsistencies (Cleanup Backlog)
+## Capitalization Cleanup (Completed)
 
-These labels violate the sentence-case convention and SHOULD be normalized in a focused follow-up plan. Listed here so a future contributor doesn't accidentally copy the wrong style:
+The sentence-case sweep across the new-architecture Settings pages
+(`settings/`, `settingswidget.cpp`) and the `*Dialog2` dialogs has been completed.
+Content strings — form labels, checkbox/radio labels, combobox items, group/section
+body labels, tooltips, and placeholders — use sentence case. Buttons, window/dialog
+titles, settings page titles, and `SettingsPageHelper::addSection` card titles remain
+Title Case. Proper nouns / product names (PlantUml, MathJax, Graphviz, VNote, Vi, Git),
+initialisms (URL, PAT, JSON, JAR, HTML, PDF), keyboard key names (Tab, Ctrl), and the
+established terms `Personal Access Token` and `Remote URL` keep their canonical casing.
 
-| File | Line | Current | Target |
-|---|---|---|---|
-| `newnotebookdialog2.cpp` | 72 | `"Root Folder:"` | `"Root folder:"` |
-| `newnotebookdialog2.cpp` | 107 | `"Sync Method:"` | `"Sync method:"` |
-| `newnotebookdialog2.cpp` | 169 | `"Assets Folder:"` | `"Assets folder:"` |
-| `managenotebooksdialog2.cpp` | 89 | `"Root Folder:"` | `"Root folder:"` |
-| `openvnote3notebookdialog2.cpp` | 35 | `"Source Folder:"` | `"Source folder:"` |
-| `openvnote3notebookdialog2.cpp` | 41 | `"Destination Folder:"` | `"Destination folder:"` |
-| `openvnote3notebookdialog2.cpp` | 43 | `"Notebook Name:"` | `"Notebook name:"` |
-| `notebooksyncinfodialog2.cpp` | 220 | `"Last Sync:"` | `"Last sync:"` |
-| `notebooksyncinfodialog2.cpp` | 226 | `"Current State:"` | `"Current state:"` |
-
-`"Personal Access Token:"` and `"Remote URL:"` are NOT in this list — they are correctly preserved per the proper-noun / initialism rules above.
-
-The cleanup should also update each dialog's translation `.ts` entries (`translations/`) and re-run `lupdate`. A single PR is fine because each change is a one-line label edit with no behavior change.
+Translation `.ts` files in `src/data/core/translations/` were intentionally left
+untouched; a future `lupdate` pass will refresh the source entries.
 
 ## Related Modules
 

@@ -99,15 +99,15 @@ void SyncConflictDialog2::setupUI() {
     pathLabel->setToolTip(filePath);
     rowLayout->addWidget(pathLabel, /*stretch=*/1);
 
-    // Radios: Keep Local (default) | Keep Remote | Keep Both.
-    auto *localRb = new QRadioButton(tr("Keep Local"), row);
+    // Radios: Keep local (default) | Keep remote | Keep both.
+    auto *localRb = new QRadioButton(tr("Keep local"), row);
     localRb->setObjectName(radioObjectName(i, "local"));
     localRb->setChecked(true);
 
-    auto *remoteRb = new QRadioButton(tr("Keep Remote"), row);
+    auto *remoteRb = new QRadioButton(tr("Keep remote"), row);
     remoteRb->setObjectName(radioObjectName(i, "remote"));
 
-    auto *bothRb = new QRadioButton(tr("Keep Both"), row);
+    auto *bothRb = new QRadioButton(tr("Keep both"), row);
     bothRb->setObjectName(radioObjectName(i, "both"));
 
     rowLayout->addWidget(localRb);

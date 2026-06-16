@@ -58,12 +58,12 @@ void MarkNodeDialog2::setupUI() {
   auto *layout = new QVBoxLayout(mainWidget);
 
   // Text color section.
-  auto *textSection = buildColorSection(tr("Text Color"), m_textColor, m_textSwatches,
+  auto *textSection = buildColorSection(tr("Text color"), m_textColor, m_textSwatches,
                                         c_swatchCount, m_textColorIndicator, m_textColor);
   layout->addWidget(textSection);
 
   // Background color section.
-  auto *bgSection = buildColorSection(tr("Background Color"), m_bgColor, m_bgSwatches,
+  auto *bgSection = buildColorSection(tr("Background color"), m_bgColor, m_bgSwatches,
                                       c_swatchCount, m_bgColorIndicator, m_bgColor);
   layout->addWidget(bgSection);
 
@@ -71,7 +71,7 @@ void MarkNodeDialog2::setupUI() {
   auto *previewGroup = new QLabel(tr("Preview"), mainWidget);
   layout->addWidget(previewGroup);
 
-  m_previewLabel = new QLabel(tr("Sample Text"), mainWidget);
+  m_previewLabel = new QLabel(tr("Sample text"), mainWidget);
   m_previewLabel->setAlignment(Qt::AlignCenter);
   m_previewLabel->setMinimumHeight(48);
   m_previewLabel->setAutoFillBackground(true);

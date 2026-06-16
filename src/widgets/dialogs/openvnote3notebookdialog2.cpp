@@ -3,11 +3,11 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QCoreApplication>
-#include <QProgressDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFormLayout>
 #include <QLabel>
+#include <QProgressDialog>
 
 #include <controllers/openvnote3notebookcontroller.h>
 #include <core/servicelocator.h>
@@ -32,15 +32,15 @@ void OpenVNote3NotebookDialog2::setupUI() {
   m_sourceInput = new LocationInputWithBrowseButton(mainWidget);
   m_sourceInput->setBrowseType(LocationInputWithBrowseButton::Folder, tr("Select Source Folder"));
   m_sourceInput->setPlaceholderText(tr("Select the VNote3 notebook root folder"));
-  layout->addRow(tr("Source Folder:"), m_sourceInput);
+  layout->addRow(tr("Source folder:"), m_sourceInput);
 
   m_destinationInput = new LocationInputWithBrowseButton(mainWidget);
   m_destinationInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                     tr("Select Destination Folder"));
   m_destinationInput->setPlaceholderText(tr("Select the destination root folder"));
-  layout->addRow(tr("Destination Folder:"), m_destinationInput);
+  layout->addRow(tr("Destination folder:"), m_destinationInput);
 
-  m_nameTitleLabel = new QLabel(tr("Notebook Name:"), mainWidget);
+  m_nameTitleLabel = new QLabel(tr("Notebook name:"), mainWidget);
   m_nameLabel = new QLabel(mainWidget);
   m_nameTitleLabel->hide();
   m_nameLabel->hide();
@@ -53,9 +53,10 @@ void OpenVNote3NotebookDialog2::setupUI() {
   m_descriptionLabel->hide();
   layout->addRow(m_descriptionTitleLabel, m_descriptionLabel);
 
-  m_confirmCheckBox = new QCheckBox(
-      tr("I understand this will copy the notebook to the destination folder.\n"
-         "The legacy notebook would be kept for data backup."), mainWidget);
+  m_confirmCheckBox =
+      new QCheckBox(tr("I understand this will copy the notebook to the destination folder.\n"
+                       "The legacy notebook would be kept for data backup."),
+                    mainWidget);
   layout->addRow(QString(), m_confirmCheckBox);
 
   setCentralWidget(mainWidget);
@@ -169,8 +170,8 @@ void OpenVNote3NotebookDialog2::acceptedButtonClicked() {
   progress.show();
   QCoreApplication::processEvents();
 
-  connect(m_controller, &OpenVNote3NotebookController::progressUpdated,
-          this, [&progress](int p_val, int p_maximum, const QString &p_message) {
+  connect(m_controller, &OpenVNote3NotebookController::progressUpdated, this,
+          [&progress](int p_val, int p_maximum, const QString &p_message) {
             progress.setMaximum(p_maximum);
             progress.setValue(p_val);
             progress.setLabelText(p_message);

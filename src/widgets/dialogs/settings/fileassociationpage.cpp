@@ -108,8 +108,7 @@ bool FileAssociationPage::saveInternal() {
     prog.m_name = name;
     prog.m_command = commandEdit->text().trimmed();
 
-    QStringList suffixes =
-        suffixesEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
+    QStringList suffixes = suffixesEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
     for (auto &s : suffixes) {
       s = s.trimmed().toLower();
       while (s.startsWith(QLatin1Char('.'))) {
@@ -133,8 +132,7 @@ bool FileAssociationPage::saveInternal() {
     }
     SessionConfig::ExternalProgram sysProg;
     sysProg.m_name = SessionConfig::ExternalProgram::c_systemProgramName;
-    QStringList suffixes =
-        suffixesEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
+    QStringList suffixes = suffixesEdit->text().split(c_suffixSeparator, Qt::SkipEmptyParts);
     for (auto &s : suffixes) {
       s = s.trimmed().toLower();
       while (s.startsWith(QLatin1Char('.'))) {
@@ -248,21 +246,22 @@ void FileAssociationPage::addExternalProgramRow(const QString &p_name, const QSt
   auto *commandEdit = WidgetsFactory::createLineEdit(rowWidget);
   commandEdit->setObjectName(QStringLiteral("commandEdit"));
   commandEdit->setPlaceholderText(tr("Command (%1 = file path)"));
-  commandEdit->setToolTip(tr("Executable path or command. Use %1 as placeholder for the file path"));
+  commandEdit->setToolTip(
+      tr("Executable path or command. Use %1 as placeholder for the file path"));
   commandEdit->setText(p_command);
   connect(commandEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
 
   auto *suffixesEdit = WidgetsFactory::createLineEdit(rowWidget);
   suffixesEdit->setObjectName(QStringLiteral("suffixesEdit"));
   suffixesEdit->setPlaceholderText(tr("Suffixes separated by ;"));
-  suffixesEdit->setToolTip(tr("File suffixes handled by this program, separated by ; (e.g. pdf;djvu)"));
+  suffixesEdit->setToolTip(
+      tr("File suffixes handled by this program, separated by ; (e.g. pdf;djvu)"));
   suffixesEdit->setText(p_suffixes);
   connect(suffixesEdit, &QLineEdit::textChanged, this, &FileAssociationPage::pageIsChanged);
 
   auto *removeBtn = new QPushButton(tr("Remove"), rowWidget);
-  connect(removeBtn, &QPushButton::clicked, this, [this, rowWidget]() {
-    removeExternalProgramRow(rowWidget);
-  });
+  connect(removeBtn, &QPushButton::clicked, this,
+          [this, rowWidget]() { removeExternalProgramRow(rowWidget); });
 
   rowLayout->addWidget(nameEdit, 2);
   rowLayout->addWidget(commandEdit, 3);
@@ -291,7 +290,7 @@ void FileAssociationPage::addSystemProgramRow(const QString &p_suffixes) {
   auto *rowLayout = new QHBoxLayout(rowWidget);
   rowLayout->setContentsMargins(0, 0, 0, 0);
 
-  auto *nameLabel = new QLabel(tr("System Default App"), rowWidget);
+  auto *nameLabel = new QLabel(tr("System default app"), rowWidget);
   nameLabel->setToolTip(tr("Built-in program that opens files with the OS default application"));
 
   auto *suffixesEdit = WidgetsFactory::createLineEdit(rowWidget);

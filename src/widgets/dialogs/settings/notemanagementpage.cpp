@@ -4,9 +4,9 @@
 #include <QComboBox>
 #include <QVBoxLayout>
 
+#include "settingspagehelper.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include "settingspagehelper.h"
 #include <core/servicelocator.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -25,7 +25,7 @@ void NoteManagementPage::setupUI() {
       SettingsPageHelper::addSection(mainLayout, tr("Note Management"), QString(), this);
 
   {
-    const QString label(tr("Per-Notebook access history"));
+    const QString label(tr("Per-notebook access history"));
     m_perNotebookHistoryCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_perNotebookHistoryCheckBox->setToolTip(tr("Store note access history in its notebook"));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
@@ -39,7 +39,7 @@ void NoteManagementPage::setupUI() {
     m_lineEndingComboBox = WidgetsFactory::createComboBox(this);
     m_lineEndingComboBox->setToolTip(tr("Line ending used to write configuration files"));
 
-    m_lineEndingComboBox->addItem(tr("Follow Platform"), (int)LineEndingPolicy::Platform);
+    m_lineEndingComboBox->addItem(tr("Follow platform"), (int)LineEndingPolicy::Platform);
     m_lineEndingComboBox->addItem(tr("LF (Linux/macOS)"), (int)LineEndingPolicy::LF);
     m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), (int)LineEndingPolicy::CRLF);
     m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);

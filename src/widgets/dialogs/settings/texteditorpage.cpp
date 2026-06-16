@@ -78,9 +78,9 @@ void TextEditorPage::setupUI() {
     m_centerCursorComboBox->setToolTip(tr("Force to center text cursor"));
 
     m_centerCursorComboBox->addItem(tr("Never"), (int)TextEditorConfig::CenterCursor::NeverCenter);
-    m_centerCursorComboBox->addItem(tr("Always Center"),
+    m_centerCursorComboBox->addItem(tr("Always center"),
                                     (int)TextEditorConfig::CenterCursor::AlwaysCenter);
-    m_centerCursorComboBox->addItem(tr("Center On Bottom"),
+    m_centerCursorComboBox->addItem(tr("Center on bottom"),
                                     (int)TextEditorConfig::CenterCursor::CenterOnBottom);
 
     const QString label(tr("Center cursor"));
@@ -96,10 +96,10 @@ void TextEditorPage::setupUI() {
     m_wrapModeComboBox = WidgetsFactory::createComboBox(this);
     m_wrapModeComboBox->setToolTip(tr("Word wrap mode of editor"));
 
-    m_wrapModeComboBox->addItem(tr("No Wrap"), (int)TextEditorConfig::WrapMode::NoWrap);
-    m_wrapModeComboBox->addItem(tr("Word Wrap"), (int)TextEditorConfig::WrapMode::WordWrap);
-    m_wrapModeComboBox->addItem(tr("Wrap Anywhere"), (int)TextEditorConfig::WrapMode::WrapAnywhere);
-    m_wrapModeComboBox->addItem(tr("Word Wrap Or Wrap Anywhere"),
+    m_wrapModeComboBox->addItem(tr("No wrap"), (int)TextEditorConfig::WrapMode::NoWrap);
+    m_wrapModeComboBox->addItem(tr("Word wrap"), (int)TextEditorConfig::WrapMode::WordWrap);
+    m_wrapModeComboBox->addItem(tr("Wrap anywhere"), (int)TextEditorConfig::WrapMode::WrapAnywhere);
+    m_wrapModeComboBox->addItem(tr("Word wrap or wrap anywhere"),
                                 (int)TextEditorConfig::WrapMode::WordWrapOrAnywhere);
 
     const QString label(tr("Wrap mode"));

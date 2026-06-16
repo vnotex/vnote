@@ -35,7 +35,7 @@ void NewQuickAccessItemDialog::setupUI() {
     m_openModeComboBox->addItem(tr("Default"), static_cast<int>(QuickAccessOpenMode::Default));
     m_openModeComboBox->addItem(tr("Read"), static_cast<int>(QuickAccessOpenMode::Read));
     m_openModeComboBox->addItem(tr("Edit"), static_cast<int>(QuickAccessOpenMode::Edit));
-    mainLayout->addRow(tr("Open Mode"), m_openModeComboBox);
+    mainLayout->addRow(tr("Open mode"), m_openModeComboBox);
   }
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

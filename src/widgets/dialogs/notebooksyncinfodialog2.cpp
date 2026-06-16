@@ -217,13 +217,13 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_lastSyncLabel->setObjectName(QString::fromLatin1(kLastSyncLabelName));
   m_lastSyncLabel->setText(tr("Never"));
   m_lastSyncLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  formLayout->addRow(tr("Last Sync:"), m_lastSyncLabel);
+  formLayout->addRow(tr("Last sync:"), m_lastSyncLabel);
 
   // 5. Current State (read-only, color-coded).
   m_currentStateLabel = new QLabel(centralWidget);
   m_currentStateLabel->setObjectName(QString::fromLatin1(kCurrentStateLabelName));
   m_currentStateLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  formLayout->addRow(tr("Current State:"), m_currentStateLabel);
+  formLayout->addRow(tr("Current state:"), m_currentStateLabel);
 
   // Action button row above the standard dialog button box.
   auto *actionRow = new QWidget(centralWidget);

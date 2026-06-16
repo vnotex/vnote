@@ -47,7 +47,8 @@ void MarkdownEditorPage::setupUI() {
 }
 
 void MarkdownEditorPage::loadInternal() {
-  const auto &markdownConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+  const auto &markdownConfig =
+      m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
 
   m_insertFileNameAsTitleCheckBox->setChecked(markdownConfig.getInsertFileNameAsTitle());
 
@@ -346,8 +347,8 @@ void MarkdownEditorPage::setupEditGroup() {
         tr("Constrain in-place preview width to the window"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
-        m_constrainInplacePreviewWidthCheckBox,
-        m_constrainInplacePreviewWidthCheckBox->toolTip(), this));
+        m_constrainInplacePreviewWidthCheckBox, m_constrainInplacePreviewWidthCheckBox->toolTip(),
+        this));
     addSearchItem(label, m_constrainInplacePreviewWidthCheckBox->toolTip(),
                   m_constrainInplacePreviewWidthCheckBox);
     connect(m_constrainInplacePreviewWidthCheckBox, &QCheckBox::stateChanged, this,
@@ -363,12 +364,14 @@ void MarkdownEditorPage::setupEditGroup() {
     auto *srcLabel = new QLabel(tr("In-place preview sources"), srcRow);
     srcRowLayout->addWidget(srcLabel);
 
-    m_inplacePreviewSourceImageLinkCheckBox = WidgetsFactory::createCheckBox(tr("Image link"), this);
+    m_inplacePreviewSourceImageLinkCheckBox =
+        WidgetsFactory::createCheckBox(tr("Image link"), this);
     srcRowLayout->addWidget(m_inplacePreviewSourceImageLinkCheckBox);
     connect(m_inplacePreviewSourceImageLinkCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
 
-    m_inplacePreviewSourceCodeBlockCheckBox = WidgetsFactory::createCheckBox(tr("Code block"), this);
+    m_inplacePreviewSourceCodeBlockCheckBox =
+        WidgetsFactory::createCheckBox(tr("Code block"), this);
     srcRowLayout->addWidget(m_inplacePreviewSourceCodeBlockCheckBox);
     connect(m_inplacePreviewSourceCodeBlockCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -527,9 +530,9 @@ void MarkdownEditorPage::setupGeneralGroup() {
   {
     m_plantUmlModeComboBox = WidgetsFactory::createComboBox(this);
     m_plantUmlModeComboBox->setToolTip(
-        tr("Use Web service or local JAR file to render PlantUml graphs"));
+        tr("Use web service or local JAR file to render PlantUml graphs"));
 
-    m_plantUmlModeComboBox->addItem(tr("Web Service"), 0);
+    m_plantUmlModeComboBox->addItem(tr("Web service"), 0);
     m_plantUmlModeComboBox->addItem(tr("Local JAR"), 1);
 
     const QString label(tr("PlantUml"));
@@ -548,10 +551,9 @@ void MarkdownEditorPage::setupGeneralGroup() {
 
     m_plantUmlJarFileInput = new LocationInputWithBrowseButton(this);
     m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUml graphs"));
-    m_plantUmlJarFileInput->setBrowseType(
-        LocationInputWithBrowseButton::File,
-        tr("Select PlantUml JAR File"),
-        QStringLiteral("PlantUml JAR (*.jar)"));
+    m_plantUmlJarFileInput->setBrowseType(LocationInputWithBrowseButton::File,
+                                          tr("Select PlantUml JAR File"),
+                                          QStringLiteral("PlantUml JAR (*.jar)"));
     jarLayout->addWidget(m_plantUmlJarFileInput, 1);
 
     auto *testBtn = new QPushButton(tr("Test"), this);
@@ -583,10 +585,10 @@ void MarkdownEditorPage::setupGeneralGroup() {
   {
     m_plantUmlWebServiceLineEdit = WidgetsFactory::createLineEdit(this);
     m_plantUmlWebServiceLineEdit->setToolTip(
-        tr("Override the Web service used to render PlantUml graphs"));
+        tr("Override the web service used to render PlantUml graphs"));
     m_plantUmlWebServiceLineEdit->setPlaceholderText(tr("Empty to use default one"));
 
-    const QString label(tr("Override PlantUml Web service"));
+    const QString label(tr("Override PlantUml web service"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit, this));
@@ -598,10 +600,10 @@ void MarkdownEditorPage::setupGeneralGroup() {
   {
     m_graphvizModeComboBox = WidgetsFactory::createComboBox(this);
     m_graphvizModeComboBox->setToolTip(
-        tr("Use Web service or local executable file to render Graphviz graphs"));
+        tr("Use web service or local executable file to render Graphviz graphs"));
 
-    m_graphvizModeComboBox->addItem(tr("Web Service"), 0);
-    m_graphvizModeComboBox->addItem(tr("Local Executable"), 1);
+    m_graphvizModeComboBox->addItem(tr("Web service"), 0);
+    m_graphvizModeComboBox->addItem(tr("Local executable"), 1);
 
     const QString label(tr("Graphviz"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
@@ -619,9 +621,8 @@ void MarkdownEditorPage::setupGeneralGroup() {
 
     m_graphvizFileInput = new LocationInputWithBrowseButton(this);
     m_graphvizFileInput->setToolTip(tr("Local executable file to render Graphviz graphs"));
-    m_graphvizFileInput->setBrowseType(
-        LocationInputWithBrowseButton::File,
-        tr("Select Graphviz Executable File"));
+    m_graphvizFileInput->setBrowseType(LocationInputWithBrowseButton::File,
+                                       tr("Select Graphviz Executable File"));
     fileLayout->addWidget(m_graphvizFileInput, 1);
 
     auto *testBtn = new QPushButton(tr("Test"), this);

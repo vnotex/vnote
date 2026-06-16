@@ -71,7 +71,7 @@ void QuickAccessPage::setupUI() {
       editLayout->addWidget(m_quickAccessTextEdit);
       cardLayout->addWidget(editWrapper);
 
-      const QString searchLabel(tr("Quick Access:"));
+      const QString searchLabel(tr("Quick access:"));
       addSearchItem(searchLabel, m_quickAccessTextEdit->placeholderText(), m_quickAccessTextEdit);
       connect(m_quickAccessTextEdit, &QPlainTextEdit::textChanged, this,
               &QuickAccessPage::pageIsChanged);

@@ -79,7 +79,7 @@ void OpenNotebookDialog2::setupUI() {
 
   // Top: mode selector radios.
   auto *modeRow = new QHBoxLayout();
-  m_localModeRadio = new QRadioButton(tr("Local Folder"), mainWidget);
+  m_localModeRadio = new QRadioButton(tr("Local folder"), mainWidget);
   m_localModeRadio->setObjectName(QLatin1String(kLocalModeRadioName));
   m_localModeRadio->setToolTip(tr("Open an existing VNote notebook from a local folder on disk."));
   m_localModeRadio->setChecked(true);

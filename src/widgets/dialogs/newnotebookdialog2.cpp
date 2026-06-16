@@ -69,14 +69,14 @@ void NewNotebookDialog2::setupUI() {
   m_rootFolderInput->setPlaceholderText(tr("Select a folder as notebook root"));
   connect(m_rootFolderInput, &LocationInputWithBrowseButton::textChanged, this,
           &NewNotebookDialog2::handleRootFolderPathChanged);
-  layout->addRow(tr("Root Folder:"), m_rootFolderInput);
+  layout->addRow(tr("Root folder:"), m_rootFolderInput);
 
   // Notebook type combo.
   m_typeCombo = WidgetsFactory::createComboBox(mainWidget);
-  m_typeCombo->addItem(tr("Bundled Notebook"), static_cast<int>(NotebookType::Bundled));
-  m_typeCombo->addItem(tr("Raw Notebook"), static_cast<int>(NotebookType::Raw));
-  m_typeCombo->setToolTip(tr("Bundled: Notebook with metadata stored in config files.\n"
-                             "Raw: Plain folder structure with minimal VNote metadata."));
+  m_typeCombo->addItem(tr("Bundled notebook"), static_cast<int>(NotebookType::Bundled));
+  m_typeCombo->addItem(tr("Raw notebook"), static_cast<int>(NotebookType::Raw));
+  m_typeCombo->setToolTip(tr("Bundled: notebook with metadata stored in config files.\n"
+                             "Raw: plain folder structure with minimal VNote metadata."));
   layout->addRow(tr("Type:"), m_typeCombo);
 
   // Update root folder tooltip based on selected notebook type.
@@ -104,13 +104,13 @@ void NewNotebookDialog2::setupUI() {
   // For Git sync, the actual remote URL + PAT are collected BEFORE notebook
   // creation via the Configure... button (pre-create flow per
   // notebook-sync-config-pre-create plan).
-  m_syncMethodLabel = new QLabel(tr("Sync Method:"), mainWidget);
+  m_syncMethodLabel = new QLabel(tr("Sync method:"), mainWidget);
   m_syncMethodLabel->setObjectName(QStringLiteral("syncMethodLabel"));
   m_syncMethodCombo = WidgetsFactory::createComboBox(mainWidget);
   m_syncMethodCombo->setObjectName(QStringLiteral("syncMethodCombo"));
   m_syncMethodCombo->addItem(tr("None"), QStringLiteral("none"));
   m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
-  m_syncMethodCombo->setToolTip(tr("Git sync is supported only for Bundled notebooks. "
+  m_syncMethodCombo->setToolTip(tr("Git sync is supported only for bundled notebooks. "
                                    "Sync settings are configured immediately via the "
                                    "Configure... button before notebook creation."));
 
@@ -166,7 +166,7 @@ void NewNotebookDialog2::setupUI() {
       tr("Name or path for the assets folder.\n"
          "Can be a folder name (vx_assets), relative path, or absolute path.\n"
          "Relative paths resolve against each note file's parent directory."));
-  advancedLayout->addRow(tr("Assets Folder:"), m_assetsFolderEdit);
+  advancedLayout->addRow(tr("Assets folder:"), m_assetsFolderEdit);
 
   m_advancedSection->setVisible(false);
   layout->addRow(m_advancedSection);

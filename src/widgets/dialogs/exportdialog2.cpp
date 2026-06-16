@@ -93,30 +93,30 @@ QString sourceText(ExportSource p_source, const ExportContext &p_context) {
   switch (p_source) {
   case ExportSource::CurrentBuffer:
     if (!p_context.bufferName.isEmpty()) {
-      return ExportDialog2::tr("Current Buffer (%1)").arg(p_context.bufferName);
+      return ExportDialog2::tr("Current buffer (%1)").arg(p_context.bufferName);
     }
-    return ExportDialog2::tr("Current Buffer");
+    return ExportDialog2::tr("Current buffer");
 
   case ExportSource::CurrentNote:
     if (p_context.currentNodeId.isValid()) {
-      return ExportDialog2::tr("Current Note (%1)").arg(p_context.currentNodeId.relativePath);
+      return ExportDialog2::tr("Current note (%1)").arg(p_context.currentNodeId.relativePath);
     }
-    return ExportDialog2::tr("Current Note");
+    return ExportDialog2::tr("Current note");
 
   case ExportSource::CurrentFolder:
     if (p_context.currentFolderId.isValid()) {
-      return ExportDialog2::tr("Current Folder (%1)").arg(p_context.currentFolderId.relativePath);
+      return ExportDialog2::tr("Current folder (%1)").arg(p_context.currentFolderId.relativePath);
     }
-    return ExportDialog2::tr("Current Folder");
+    return ExportDialog2::tr("Current folder");
 
   case ExportSource::CurrentNotebook:
     if (!p_context.notebookId.isEmpty()) {
-      return ExportDialog2::tr("Current Notebook (%1)").arg(p_context.notebookId);
+      return ExportDialog2::tr("Current notebook (%1)").arg(p_context.notebookId);
     }
-    return ExportDialog2::tr("Current Notebook");
+    return ExportDialog2::tr("Current notebook");
   }
 
-  return ExportDialog2::tr("Unknown Source");
+  return ExportDialog2::tr("Unknown source");
 }
 
 bool sourceAvailable(ExportSource p_source, const ExportContext &p_context) {
@@ -273,8 +273,8 @@ void ExportDialog2::setupUI() {
           &QStackedLayout::setCurrentIndex);
   connect(m_formatCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [this](int p_idx) {
-            const QString titles[] = {tr("Markdown Options"), tr("HTML Options"), tr("PDF Options"),
-                                      tr("Custom Options")};
+            const QString titles[] = {tr("Markdown options"), tr("HTML options"), tr("PDF options"),
+                                      tr("Custom options")};
             if (p_idx >= 0 && p_idx < 4) {
               m_formatGroupBox->setTitle(titles[p_idx]);
             }
@@ -373,7 +373,7 @@ void ExportDialog2::setupUI() {
     m_wkhtmltopdfArgsEdit = WidgetsFactory::createLineEdit(page);
     layout->addRow(tr("Wkhtmltopdf arguments:"), m_wkhtmltopdfArgsEdit);
 
-    m_pdfAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-One"), page);
+    m_pdfAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);
     m_pdfAllInOneCheck->setToolTip(tr("Export all source files into one file"));
     layout->addRow(m_pdfAllInOneCheck);
 
@@ -412,7 +412,7 @@ void ExportDialog2::setupUI() {
     m_useHtmlInputCheck = WidgetsFactory::createCheckBox(tr("Use HTML input"), page);
     layout->addRow(m_useHtmlInputCheck);
 
-    m_customAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-One"), page);
+    m_customAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);
     m_customAllInOneCheck->setToolTip(tr("Export all source files into one file"));
     layout->addRow(m_customAllInOneCheck);
 
@@ -429,7 +429,7 @@ void ExportDialog2::setupUI() {
     m_stackedLayout->addWidget(page);
   }
 
-  m_formatGroupBox = new QGroupBox(tr("Markdown Options"), mainWidget);
+  m_formatGroupBox = new QGroupBox(tr("Markdown options"), mainWidget);
   auto *groupBoxLayout = new QVBoxLayout(m_formatGroupBox);
   groupBoxLayout->setContentsMargins(0, 0, 0, 0);
   groupBoxLayout->addWidget(stackedScrollWidget);

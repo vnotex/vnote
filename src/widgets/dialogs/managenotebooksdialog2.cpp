@@ -86,7 +86,7 @@ void ManageNotebooksDialog2::setupUI() {
           &ManageNotebooksDialog2::openRootFolderInExplorer);
 
   rootFolderWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  formLayout->addRow(tr("Root Folder:"), rootFolderWidget);
+  formLayout->addRow(tr("Root folder:"), rootFolderWidget);
 
   // Notebook type (read-only label).
   m_typeLabel = new QLabel(infoWidget);
@@ -104,8 +104,7 @@ void ManageNotebooksDialog2::setupUI() {
   m_closeBtn = new QPushButton(tr("Close Notebook"), infoWidget);
   m_closeBtn->setEnabled(false);
   btnLayout->addWidget(m_closeBtn);
-  connect(m_closeBtn, &QPushButton::clicked, this,
-          &ManageNotebooksDialog2::closeSelectedNotebook);
+  connect(m_closeBtn, &QPushButton::clicked, this, &ManageNotebooksDialog2::closeSelectedNotebook);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Apply | QDialogButtonBox::Reset |
                      QDialogButtonBox::Cancel);
@@ -272,9 +271,7 @@ void ManageNotebooksDialog2::acceptedButtonClicked() {
   }
 }
 
-void ManageNotebooksDialog2::resetButtonClicked() {
-  selectNotebook(m_currentNotebookId);
-}
+void ManageNotebooksDialog2::resetButtonClicked() { selectNotebook(m_currentNotebookId); }
 
 void ManageNotebooksDialog2::appliedButtonClicked() {
   if (saveChangesToNotebook()) {

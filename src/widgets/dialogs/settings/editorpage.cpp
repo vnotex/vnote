@@ -39,14 +39,13 @@ void EditorPage::setupUI() {
     m_autoSavePolicyComboBox->setToolTip(tr("Auto save policy"));
 
     m_autoSavePolicyComboBox->addItem(tr("None"), (int)EditorConfig::AutoSavePolicy::None);
-    m_autoSavePolicyComboBox->addItem(tr("Auto Save"), (int)EditorConfig::AutoSavePolicy::AutoSave);
-    m_autoSavePolicyComboBox->addItem(tr("Backup File"),
+    m_autoSavePolicyComboBox->addItem(tr("Auto save"), (int)EditorConfig::AutoSavePolicy::AutoSave);
+    m_autoSavePolicyComboBox->addItem(tr("Backup file"),
                                       (int)EditorConfig::AutoSavePolicy::BackupFile);
 
     const QString label(tr("Auto save policy"));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_autoSavePolicyComboBox->toolTip(),
-                                            m_autoSavePolicyComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_autoSavePolicyComboBox->toolTip(), m_autoSavePolicyComboBox, this));
     addSearchItem(label, m_autoSavePolicyComboBox->toolTip(), m_autoSavePolicyComboBox);
     connect(m_autoSavePolicyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &EditorPage::pageIsChanged);
@@ -56,17 +55,16 @@ void EditorPage::setupUI() {
     m_lineEndingComboBox = WidgetsFactory::createComboBox(this);
     m_lineEndingComboBox->setToolTip(tr("Line ending"));
 
-    m_lineEndingComboBox->addItem(tr("Follow Platform"), (int)LineEndingPolicy::Platform);
-    m_lineEndingComboBox->addItem(tr("Follow File"), (int)LineEndingPolicy::File);
+    m_lineEndingComboBox->addItem(tr("Follow platform"), (int)LineEndingPolicy::Platform);
+    m_lineEndingComboBox->addItem(tr("Follow file"), (int)LineEndingPolicy::File);
     m_lineEndingComboBox->addItem(tr("LF (Linux/macOS)"), (int)LineEndingPolicy::LF);
     m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), (int)LineEndingPolicy::CRLF);
     m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);
 
     const QString label(tr("Line ending"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_lineEndingComboBox->toolTip(),
-                                            m_lineEndingComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox, this));
     addSearchItem(label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox);
     connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &EditorPage::pageIsChanged);
@@ -81,9 +79,8 @@ void EditorPage::setupUI() {
 
     const QString label(tr("Tool bar icon size"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_toolBarIconSizeSpinBox->toolTip(),
-                                            m_toolBarIconSizeSpinBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox, this));
     addSearchItem(label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox);
     connect(m_toolBarIconSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &EditorPage::pageIsChanged);
@@ -123,9 +120,8 @@ void EditorPage::setupUI() {
 
     const QString label(tr("Spell check dictionary"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_spellCheckDictComboBox->toolTip(),
-                                            spellCheckWidget, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_spellCheckDictComboBox->toolTip(), spellCheckWidget, this));
     addSearchItem(label, m_spellCheckDictComboBox->toolTip(), m_spellCheckDictComboBox);
     connect(m_spellCheckDictComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &EditorPage::pageIsChanged);
@@ -133,40 +129,37 @@ void EditorPage::setupUI() {
 
   {
     m_layoutModeComboBox = WidgetsFactory::createComboBox(this);
-    m_layoutModeComboBox->setToolTip(
-        tr("Default content layout mode for editor windows"));
+    m_layoutModeComboBox->setToolTip(tr("Default content layout mode for editor windows"));
 
-    m_layoutModeComboBox->addItem(
-        tr("Full Width"), static_cast<int>(ViewWindowLayoutMode::FullWidth));
-    m_layoutModeComboBox->addItem(
-        tr("Readable Width"), static_cast<int>(ViewWindowLayoutMode::ReadableWidth));
+    m_layoutModeComboBox->addItem(tr("Full width"),
+                                  static_cast<int>(ViewWindowLayoutMode::FullWidth));
+    m_layoutModeComboBox->addItem(tr("Readable width"),
+                                  static_cast<int>(ViewWindowLayoutMode::ReadableWidth));
 
     const QString label(tr("Content layout"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_layoutModeComboBox->toolTip(),
-                                            m_layoutModeComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_layoutModeComboBox->toolTip(), m_layoutModeComboBox, this));
     addSearchItem(label, m_layoutModeComboBox->toolTip(), m_layoutModeComboBox);
-    connect(m_layoutModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &EditorPage::pageIsChanged);
+    connect(m_layoutModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &EditorPage::pageIsChanged);
   }
 
   {
     m_readableWidthSpinBox = WidgetsFactory::createSpinBox(this);
     m_readableWidthSpinBox->setToolTip(
-        tr("Maximum content width in pixels for Readable Width mode"));
+        tr("Maximum content width in pixels for readable width mode"));
     m_readableWidthSpinBox->setRange(400, 2000);
     m_readableWidthSpinBox->setSingleStep(20);
     m_readableWidthSpinBox->setSuffix(QStringLiteral(" px"));
 
     const QString label(tr("Readable width"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_readableWidthSpinBox->toolTip(),
-                                            m_readableWidthSpinBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_readableWidthSpinBox->toolTip(), m_readableWidthSpinBox, this));
     addSearchItem(label, m_readableWidthSpinBox->toolTip(), m_readableWidthSpinBox);
-    connect(m_readableWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &EditorPage::pageIsChanged);
+    connect(m_readableWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &EditorPage::pageIsChanged);
   }
 
   mainLayout->addStretch();
@@ -197,8 +190,8 @@ void EditorPage::loadInternal() {
 
   {
     const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
-    int idx = m_layoutModeComboBox->findData(
-        static_cast<int>(widgetConfig.getViewWindowLayoutMode()));
+    int idx =
+        m_layoutModeComboBox->findData(static_cast<int>(widgetConfig.getViewWindowLayoutMode()));
     m_layoutModeComboBox->setCurrentIndex(idx != -1 ? idx : 0);
     m_readableWidthSpinBox->setValue(widgetConfig.getReadableWidthMaxPx());
   }
@@ -225,8 +218,7 @@ bool EditorPage::saveInternal() {
 
   {
     auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
-    auto mode = static_cast<ViewWindowLayoutMode>(
-        m_layoutModeComboBox->currentData().toInt());
+    auto mode = static_cast<ViewWindowLayoutMode>(m_layoutModeComboBox->currentData().toInt());
     widgetConfig.setViewWindowLayoutMode(mode);
     widgetConfig.setReadableWidthMaxPx(m_readableWidthSpinBox->value());
   }
@@ -247,9 +239,8 @@ void EditorPage::notifyEditorConfigChange(HookManager *p_hookMgr) {
     timer->setSingleShot(true);
     timer->setInterval(1000);
     if (p_hookMgr) {
-      QObject::connect(timer, &QTimer::timeout, [p_hookMgr]() {
-        p_hookMgr->doAction(HookNames::ConfigEditorChanged);
-      });
+      QObject::connect(timer, &QTimer::timeout,
+                       [p_hookMgr]() { p_hookMgr->doAction(HookNames::ConfigEditorChanged); });
     }
   }
 
