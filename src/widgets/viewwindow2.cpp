@@ -329,18 +329,8 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
 }
 
 void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
-  // Passive read-only indicator: a non-interactive lock badge shown only when the
-  // owning notebook is read-only. Disabled so it reads as a status badge, not a
-  // button (no triggered connection). The iconName property lets refreshToolBarIcons()
-  // re-theme it on theme change. Re-query isReadOnly() live per the "do not cache" rule.
-  if (getBuffer().isValid() && getBuffer().isReadOnly()) {
-    auto *roAct = p_toolBar->addAction(
-        ViewWindowToolBarHelper2::generateIcon(getServices(), QStringLiteral("read_only.svg")),
-        QString());
-    roAct->setProperty("iconName", QStringLiteral("read_only.svg"));
-    roAct->setToolTip(tr("Read-only notebook"));
-    roAct->setEnabled(false);
-  }
+  // The read-only indicator lives on the view-window TAB (a lock badge to the
+  // left of the title, see ViewSplit2::effectiveTabIcon), not in this toolbar.
   addAction(p_toolBar, ViewWindowToolBarHelper2::Save);
   addAction(p_toolBar, ViewWindowToolBarHelper2::WordCount);
   if (getBuffer().isTagSupported()) {

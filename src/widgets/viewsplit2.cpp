@@ -61,7 +61,7 @@ void ViewSplit2::refreshIcons() {
   for (int i = 0; i < count(); ++i) {
     auto *win = getViewWindow(i);
     if (win) {
-      setTabIcon(i, win->getIcon());
+      setTabIcon(i, effectiveTabIcon(win));
     }
   }
 }
@@ -138,6 +138,12 @@ void ViewSplit2::initIcons() {
 
   m_menuIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), fg);
   m_menuActiveIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), activeFg);
+
+  // Read-only buffers display this lock badge on their tab (see effectiveTabIcon()).
+  // Reuse the tab-area icon foreground (fg) so it matches sibling tab icons and
+  // re-themes on theme change.
+  m_readOnlyTabIcon =
+      IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("read_only.svg")), fg);
 }
 
 void ViewSplit2::setupCornerWidget() {
@@ -344,7 +350,7 @@ void ViewSplit2::closeTab(int p_idx) {
 }
 
 void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
-  int idx = addTab(p_win, p_win->getIcon(), p_win->getTitle());
+  int idx = addTab(p_win, effectiveTabIcon(p_win), p_win->getTitle());
   QString tooltip = p_win->getBuffer().resolvedPath();
   setTabToolTip(idx, tooltip.isEmpty() ? p_win->getTitle() : tooltip);
 
@@ -358,7 +364,7 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
       return;
     int idx = indexOf(win);
     if (idx != -1) {
-      setTabIcon(idx, win->getIcon());
+      setTabIcon(idx, effectiveTabIcon(win));
       setTabText(idx, win->getTitle());
       QString tooltip = win->getBuffer().resolvedPath();
       setTabToolTip(idx, tooltip.isEmpty() ? win->getTitle() : tooltip);
@@ -448,6 +454,18 @@ void ViewSplit2::focus() { focusCurrentViewWindow(); }
 
 ViewWindow2 *ViewSplit2::getViewWindow(int p_idx) const {
   return qobject_cast<ViewWindow2 *>(widget(p_idx));
+}
+
+QIcon ViewSplit2::effectiveTabIcon(ViewWindow2 *p_win) const {
+  if (!p_win) {
+    return QIcon();
+  }
+  // Read-only is queried live (never cached) per the project rule; a read-only
+  // notebook stays read-only for the buffer's lifetime, so the lock is stable.
+  if (p_win->getBuffer().isReadOnly()) {
+    return m_readOnlyTabIcon;
+  }
+  return p_win->getIcon();
 }
 
 void ViewSplit2::focusCurrentViewWindow() {

@@ -3,9 +3,9 @@
 
 #include <QIcon>
 #include <QPoint>
-#include <QTabWidget>
 #include <QString>
 #include <QStringList>
+#include <QTabWidget>
 #include <QVector>
 #include <functional>
 
@@ -183,6 +183,11 @@ private:
 
   void focusCurrentViewWindow();
 
+  // Resolve the icon to display on p_win's tab. Returns the themed read-only
+  // lock badge when the window's buffer belongs to a read-only notebook;
+  // otherwise falls back to p_win->getIcon().
+  QIcon effectiveTabIcon(ViewWindow2 *p_win) const;
+
   // Switch to the previously active tab (alternate tab).
   void alternateTab();
 
@@ -217,6 +222,10 @@ private:
   QIcon m_windowListActiveIcon;
   QIcon m_menuIcon;
   QIcon m_menuActiveIcon;
+
+  // Lock badge shown on the left of the tab title when the tab's buffer
+  // belongs to a read-only notebook (see effectiveTabIcon()).
+  QIcon m_readOnlyTabIcon;
 
   static const QString c_actionButtonForegroundName;
   static const QString c_activeActionButtonForegroundName;
