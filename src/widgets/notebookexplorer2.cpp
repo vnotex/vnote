@@ -918,7 +918,7 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
       // selector combobox. Sized at 14px to match label x-height roughly.
       m_readOnlyBadgeLabel->setText(
           tr("<img src=\":/vnotex/data/core/icons/read_only.svg\" width=\"14\" height=\"14\"> "
-             "Read-only (no PAT)"));
+             "Read-only"));
       m_readOnlyBadgeLabel->show();
     } else {
       m_readOnlyBadgeLabel->hide();
