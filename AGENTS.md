@@ -22,6 +22,52 @@ The init script:
 2. Installs pre-commit hook for automatic clang-format on staged C++ files
 3. Sets up vtextedit submodule pre-commit hook
 
+## Submodule Push Discipline (CRITICAL — read before every push)
+
+VNote pins git submodules (`libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`) to specific commits. When you change code inside a submodule, the parent repo records a new submodule pointer (a gitlink to a commit SHA). **CI clones submodules from their own remotes** — if the pinned commit only exists in your local submodule checkout, every CI job fails at the "Init Submodules" step with:
+
+```
+fatal: remote error: upload-pack: not our ref <sha>
+fatal: Fetched in submodule path 'libs/vxcore', but it did not contain <sha>. Direct fetching of that commit failed.
+```
+
+This breaks **all** CI checks (Linux, Windows, macOS, TSan) before any build runs.
+
+### Rule: ALWAYS push the submodule FIRST, then the parent repo.
+
+When a commit bumps a submodule pointer, the order is non-negotiable:
+
+1. **Push the submodule remote first.** From inside the submodule (e.g. `cd libs/vxcore`), push its branch so the pinned commit exists upstream:
+   ```bash
+   cd libs/vxcore
+   git push origin HEAD:main      # or the appropriate branch
+   cd ../..
+   ```
+2. **Then push the parent vnote repo.** Only after the submodule commit is on its remote may you push the gitlink that references it.
+
+To push both at once and let git verify submodules are reachable, use:
+```bash
+git push --recurse-submodules=on-demand
+```
+Or enforce it as a guard before any push (recommended once per clone):
+```bash
+git config push.recurseSubmodules check   # aborts the parent push if a submodule commit is unpushed
+```
+
+### Before pushing, verify no submodule commit is stranded
+
+```bash
+# For each submodule, confirm local HEAD is not ahead of its remote:
+git submodule foreach 'git status -sb'
+# A line like "## main...origin/main [ahead 1]" means an UNPUSHED submodule commit — push it before pushing vnote.
+
+# Confirm the pinned SHA exists on the submodule remote:
+cd libs/vxcore && git branch -r --contains $(git rev-parse HEAD) && cd ../..
+# Empty output = the commit is NOT on any remote branch yet. DO NOT push vnote until it is.
+```
+
+If CI is already failing with "not our ref", the fix is to push the missing submodule commit (do **not** roll back the parent pointer if newer parent commits depend on the new submodule API).
+
 ## Build Commands
 
 ### Release Build

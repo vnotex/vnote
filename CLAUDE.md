@@ -112,6 +112,20 @@ Three submodules in `libs/`:
 - **QHotkey** — Cross-platform global hotkey support
 - **vxcore** — C library backend (built as static lib, tests/CLI disabled)
 
+**CRITICAL — push submodules before pushing vnote.** The parent repo pins each submodule to a commit SHA, but CI clones submodules from their own remotes. If you change submodule code, you MUST push the submodule's branch to its remote **before** pushing the vnote commit that bumps the pointer. Otherwise every CI job fails at "Init Submodules" with `fatal: remote error: upload-pack: not our ref <sha>`, which breaks all checks before any build runs.
+
+```bash
+# 1) Push the submodule first
+cd libs/vxcore && git push origin HEAD:main && cd ../..
+# 2) Then push vnote. Use a guard to catch stranded submodule commits:
+git config push.recurseSubmodules check   # one-time: aborts parent push if a submodule commit is unpushed
+git push --recurse-submodules=on-demand    # or push both together
+# Verify the pinned SHA exists upstream:
+git submodule foreach 'git status -sb'     # "[ahead N]" means an UNPUSHED submodule commit
+```
+
+If CI already shows "not our ref", fix it by pushing the missing submodule commit (do not roll back the parent pointer when newer parent commits depend on the new submodule API).
+
 ## Code Style
 
 Enforced by `.clang-format` via pre-commit hook. Key conventions:
