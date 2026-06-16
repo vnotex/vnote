@@ -897,9 +897,26 @@ void NotebookCoreService::reorderFolderChildren(const QString &p_notebookId,
       // Mirrors the SyncOps::triggerSync stage-phase pattern.
       NotebookIoGate::ScopedLock lock(*m_ioGate, notebookId);
       const std::string orderedJson = buildOrderedJson(orderedFolders, orderedFiles);
-      rc = static_cast<int>(vxcore_folder_set_children_order(
-          m_context, notebookId.toUtf8().constData(),
-          folderRelPath.isEmpty() ? "." : folderRelPath.toUtf8().constData(), orderedJson.c_str()));
+      // THREADING: vxcore's FolderManager is NOT thread-safe — its folder-config
+      // cache is shared with main-thread reads (NotebookNodeModel::fetchMore ->
+      // listFolderChildren). Run the actual vxcore folder write on the MAIN
+      // thread so it is serialized with all other main-thread vxcore folder
+      // access; otherwise a concurrent main-thread cache reload can free the
+      // cached FolderConfig under the worker, yielding the current=0
+      // PERMUTATION_MISMATCH that made this reorder spuriously fail. The
+      // NotebookIoGate stays held HERE on the worker (async acquisition that
+      // never blocks the UI thread) to keep serializing the working-tree write
+      // against save/sync workers; BlockingQueuedConnection keeps the gate held
+      // across the write without releasing it early.
+      QMetaObject::invokeMethod(
+          this,
+          [this, &rc, &notebookId, &folderRelPath, &orderedJson]() {
+            rc = static_cast<int>(vxcore_folder_set_children_order(
+                m_context, notebookId.toUtf8().constData(),
+                folderRelPath.isEmpty() ? "." : folderRelPath.toUtf8().constData(),
+                orderedJson.c_str()));
+          },
+          Qt::BlockingQueuedConnection);
     } // Gate released here BEFORE queuing the after-hook.
 
     QMetaObject::invokeMethod(
