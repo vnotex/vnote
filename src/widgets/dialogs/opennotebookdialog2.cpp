@@ -7,7 +7,6 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
@@ -378,7 +377,6 @@ void OpenNotebookDialog2::handleLocalOpen() {
   OpenNotebookResult result = m_controller->openNotebook(input);
   if (!result.success) {
     setInformationText(result.errorMessage, InformationLevel::Error);
-    QMessageBox::critical(this, tr("Open Notebook Failed"), result.errorMessage);
     return;
   }
 
