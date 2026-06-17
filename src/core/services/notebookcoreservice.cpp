@@ -4,7 +4,6 @@
 #include <QJsonParseError>
 #include <QMetaObject>
 #include <QVariantMap>
-#include <QtConcurrent>
 
 #include <nlohmann/json.hpp>
 
@@ -813,32 +812,36 @@ QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
   return parseJsonObjectFromCStr(json);
 }
 
-// T6 (notebook-explorer-drag-reorder): async reorder with hooks + IoGate.
+// T6 (notebook-explorer-drag-reorder): reorder with hooks.
 //
-// Threading layout:
-//   Caller thread (typically GUI):
-//     1. Pre-validate args.
-//     2. Snapshot current order via listFolderChildren.
-//     3. No-op short-circuit (no hooks, no worker).
-//     4. Fire before_reorder synchronously (gives plugins a cancel slot
-//        BEFORE any disk work is queued).
-//     5. Dispatch to QtConcurrent worker; return.
-//   Worker thread:
-//     6. Hold NotebookIoGate::ScopedLock(notebookId) for the duration of
-//        the vxcore_folder_set_children_order call ONLY.
-//     7. Release the gate by leaving the inner { } scope (RAII).
-//     8. Queue completion (after-hook + reorderCompleted signal) onto the
-//        service's owning thread via QMetaObject::invokeMethod /
-//        Qt::QueuedConnection. Releasing the gate BEFORE queuing the
-//        after-hook is what makes it safe for plugins to re-enter the gate
-//        from inside the after-hook callback (e.g., to stage a follow-up
-//        write) without deadlocking.
+// Threading layout — ALL vxcore work runs SYNCHRONOUSLY on the caller (GUI)
+// thread, exactly like every sibling folder mutation (createFolder /
+// createFile / rename / delete). This is mandatory for correctness: vxcore's
+// FolderManager config cache is NOT thread-safe and the model reads
+// (NotebookNodeModel::fetchMore -> listFolderChildren) run on the GUI thread,
+// so the reorder's read-modify-write MUST be one atomic GUI-thread unit with
+// respect to those reads. An earlier design dispatched the write to a
+// QtConcurrent worker that only held NotebookIoGate while marshalling the
+// vxcore call back to the GUI thread; that left the snapshot read and the
+// write as two separate GUI-thread events, with the QSignalSpy::wait nested
+// event loop and queued model/folder events free to interleave between them —
+// the source of a deterministic VXCORE_ERR_PERMUTATION_MISMATCH on 2-core CI.
+//
+//   1. Pre-validate args.
+//   2. Snapshot current order via listFolderChildren.
+//   3. No-op short-circuit (no hooks, no write).
+//   4. Fire before_reorder synchronously (gives plugins a cancel slot
+//      BEFORE any disk work happens).
+//   5. Perform the vxcore_folder_set_children_order write synchronously.
+//   6. Deliver completion (after-hook + reorderCompleted signal) ASYNCHRONOUSLY
+//      via Qt::QueuedConnection, preserving the public async contract for
+//      callers/tests that wait for the signal after this function returns.
 void NotebookCoreService::reorderFolderChildren(const QString &p_notebookId,
                                                 const QString &p_folderRelPath,
                                                 const QStringList &p_orderedFolders,
                                                 const QStringList &p_orderedFiles) {
   if (p_notebookId.isEmpty() || (p_orderedFolders.isEmpty() && p_orderedFiles.isEmpty()) ||
-      !m_hookMgr || !m_ioGate) {
+      !m_hookMgr) {
     emit reorderCompleted(p_notebookId, p_folderRelPath, false, tr("Invalid arguments"));
     return;
   }
@@ -881,58 +884,48 @@ void NotebookCoreService::reorderFolderChildren(const QString &p_notebookId,
     return;
   }
 
-  // Capture by value so the worker has stable copies (Qt strings are CoW so
-  // this is cheap). Capturing `this` is safe — the service outlives all in-
-  // flight reorders by construction (it is destroyed only at shutdown after
-  // QThreadPool::waitForDone via ~QtConcurrent::run cleanup).
+  // THREADING (CI race fix): the snapshot read above (listFolderChildren),
+  // this write, and every model read (NotebookNodeModel::fetchMore ->
+  // listFolderChildren) all hit vxcore's FolderManager, whose config cache is
+  // NOT thread-safe. A correct reorder needs the read-modify-write to be a
+  // single ATOMIC unit with respect to those reads. The previous design ran a
+  // QtConcurrent worker that merely held NotebookIoGate while marshalling the
+  // sole vxcore call back to the UI thread via BlockingQueuedConnection — so
+  // the gate window and the actual vxcore-access window were disjoint, and the
+  // snapshot read (line above) and the write became two separate UI-thread
+  // events. The QSignalSpy::wait()/nested event loop and queued model+folder
+  // event delivery could run BETWEEN them, letting the write observe an
+  // inconsistent root config (current=0) -> VXCORE_ERR_PERMUTATION_MISMATCH on
+  // the 2-core CI scheduler.
+  //
+  // Fix: run the vxcore write SYNCHRONOUSLY on the calling (UI) thread, exactly
+  // like every sibling NotebookCoreService folder mutation (createFolder,
+  // createFile, rename, delete) already does. With no worker and no nested
+  // event loop between the snapshot and the write, the cache the write sees is
+  // the cache the snapshot saw. The completion is still delivered
+  // ASYNCHRONOUSLY (Qt::QueuedConnection) so the public reorderCompleted
+  // contract — and callers/tests that wait for the signal AFTER this returns —
+  // are unchanged.
   const QString notebookId = p_notebookId;
   const QString folderRelPath = p_folderRelPath;
-  const QStringList orderedFolders = p_orderedFolders;
-  const QStringList orderedFiles = p_orderedFiles;
+  const std::string orderedJson = buildOrderedJson(p_orderedFolders, p_orderedFiles);
+  const int rc = static_cast<int>(vxcore_folder_set_children_order(
+      m_context, notebookId.toUtf8().constData(),
+      folderRelPath.isEmpty() ? "." : folderRelPath.toUtf8().constData(), orderedJson.c_str()));
 
-  QtConcurrent::run([this, notebookId, folderRelPath, orderedFolders, orderedFiles, event]() {
-    int rc = VXCORE_ERR_UNKNOWN;
-    {
-      // Acquire-release window: hold the gate for the working-tree write ONLY.
-      // Mirrors the SyncOps::triggerSync stage-phase pattern.
-      NotebookIoGate::ScopedLock lock(*m_ioGate, notebookId);
-      const std::string orderedJson = buildOrderedJson(orderedFolders, orderedFiles);
-      // THREADING: vxcore's FolderManager is NOT thread-safe — its folder-config
-      // cache is shared with main-thread reads (NotebookNodeModel::fetchMore ->
-      // listFolderChildren). Run the actual vxcore folder write on the MAIN
-      // thread so it is serialized with all other main-thread vxcore folder
-      // access; otherwise a concurrent main-thread cache reload can free the
-      // cached FolderConfig under the worker, yielding the current=0
-      // PERMUTATION_MISMATCH that made this reorder spuriously fail. The
-      // NotebookIoGate stays held HERE on the worker (async acquisition that
-      // never blocks the UI thread) to keep serializing the working-tree write
-      // against save/sync workers; BlockingQueuedConnection keeps the gate held
-      // across the write without releasing it early.
-      QMetaObject::invokeMethod(
-          this,
-          [this, &rc, &notebookId, &folderRelPath, &orderedJson]() {
-            rc = static_cast<int>(vxcore_folder_set_children_order(
-                m_context, notebookId.toUtf8().constData(),
-                folderRelPath.isEmpty() ? "." : folderRelPath.toUtf8().constData(),
-                orderedJson.c_str()));
-          },
-          Qt::BlockingQueuedConnection);
-    } // Gate released here BEFORE queuing the after-hook.
-
-    QMetaObject::invokeMethod(
-        this,
-        [this, notebookId, folderRelPath, event, rc]() {
-          if (rc == VXCORE_OK) {
-            if (m_hookMgr) {
-              m_hookMgr->doAction(HookNames::NodeAfterReorder, event);
-            }
-            emit reorderCompleted(notebookId, folderRelPath, true, QString());
-          } else {
-            emit reorderCompleted(notebookId, folderRelPath, false, reorderErrorToString(rc));
+  QMetaObject::invokeMethod(
+      this,
+      [this, notebookId, folderRelPath, event, rc]() {
+        if (rc == VXCORE_OK) {
+          if (m_hookMgr) {
+            m_hookMgr->doAction(HookNames::NodeAfterReorder, event);
           }
-        },
-        Qt::QueuedConnection);
-  });
+          emit reorderCompleted(notebookId, folderRelPath, true, QString());
+        } else {
+          emit reorderCompleted(notebookId, folderRelPath, false, reorderErrorToString(rc));
+        }
+      },
+      Qt::QueuedConnection);
 }
 
 std::string NotebookCoreService::buildOrderedJson(const QStringList &p_orderedFolders,

@@ -264,9 +264,12 @@ void TestTwoColumnsNodeExplorerSort::
   explorer->requestReorderNodes(rootId, {QStringLiteral("beta"), QStringLiteral("alpha")},
                                 /*orderedFileNames=*/QStringList());
 
-  // nodesReordered is emitted via QueuedConnection from the reorder worker.
-  QVERIFY(reorderedSpy.wait(5000));
-  QCOMPARE(reorderedSpy.count(), 1);
+  // nodesReordered is emitted via QueuedConnection after the synchronous
+  // reorder write. QTRY_COMPARE is order-robust: it passes whether the signal
+  // already arrived or arrives within the timeout, unlike QSignalSpy::wait
+  // which only catches a NEXT emission and spuriously fails if completion
+  // already landed before the wait was entered.
+  QTRY_COMPARE_WITH_TIMEOUT(reorderedSpy.count(), 1, 5000);
   QCOMPARE(errorSpy.count(), 0);
 
   // Verify the emit carried the original parent identifier (notebookId
@@ -309,7 +312,8 @@ void TestTwoColumnsNodeExplorerSort::testRequestReorderNodesUsesSharedController
   explorer->requestReorderNodes(rootId, {QStringLiteral("beta"), QStringLiteral("alpha")},
                                 /*orderedFileNames=*/QStringList());
 
-  QVERIFY(serviceReorderedSpy.wait(5000));
+  // Order-robust wait for the first service-level completion (see T12b note).
+  QTRY_VERIFY_WITH_TIMEOUT(serviceReorderedSpy.count() >= 1, 5000);
 
   // Drain any pending events so a hypothetical double-dispatch would have
   // had a chance to surface as a second service emit. 100ms is generous

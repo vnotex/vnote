@@ -37,11 +37,12 @@ public:
   // Called from main() after both services are constructed.
   void setHookManager(HookManager *p_hookMgr);
 
-  // Set NotebookIoGate for serializing reorder writes against save / sync work
-  // on the same notebook's working tree. T6: required by reorderFolderChildren.
-  // Called from main() with the SAME instance already injected into
-  // BufferSaveQueue / SyncOps — sharing the gate is what makes per-notebook
-  // serialization actually serialize across actors.
+  // Set NotebookIoGate (the per-notebook working-tree serializer shared with
+  // BufferSaveQueue / SyncOps). Retained for dependency wiring; NOT consulted by
+  // reorderFolderChildren, which — like its sibling folder mutations
+  // (createFolder/createFile/rename/delete) — now runs synchronously on the UI
+  // thread (see reorderFolderChildren in the .cpp for the rationale). Called
+  // from main() with the SAME instance injected into the other actors.
   void setNotebookIoGate(NotebookIoGate *p_ioGate);
 
   // Notebook operations (7 methods).
@@ -200,17 +201,19 @@ public:
   QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath) const;
 
   // Atomically rewrite the order of a folder's children (subfolders / files)
-  // in its vx.json. Returns immediately; the actual disk write happens on a
-  // worker thread holding NotebookIoGate::ScopedLock(notebookId), and the
-  // result is delivered via the reorderCompleted signal.
+  // in its vx.json. The vxcore write runs SYNCHRONOUSLY on the calling (UI)
+  // thread — like every sibling folder mutation — because vxcore's FolderManager
+  // cache is not thread-safe and is read on the UI thread (model fetchMore);
+  // the read-modify-write must therefore be one atomic UI-thread step. The
+  // result is delivered ASYNCHRONOUSLY via the reorderCompleted signal
+  // (Qt::QueuedConnection), so callers may wait() for it after this returns.
   //
   // Hook contract:
   //   - vnote.node.before_reorder fires SYNCHRONOUSLY on the calling thread.
   //     A hook that calls ctx.cancel() short-circuits with success=false
   //     and errorMessage="Cancelled by hook"; the vxcore call is NOT made.
   //   - vnote.node.after_reorder fires on this service's owning thread AFTER
-  //     the worker has released the IoGate, so handlers can safely re-enter
-  //     the gate without deadlock risk.
+  //     a successful write, just before reorderCompleted(true).
   //
   // No-op contract:
   //   If both presented sub-arrays match (or are empty), the method emits

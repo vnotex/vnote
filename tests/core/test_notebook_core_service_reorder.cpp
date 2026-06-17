@@ -46,7 +46,7 @@ private slots:
   void testNoOpSkipsHooksAndVxcore();
   void testVxcoreErrorSkipsAfterHookAndReportsFailure();
   void testHookCancelSkipsVxcoreAndReportsCancelled();
-  void testIoGateSerializesWithExternalHolder();
+  void testReorderIsIndependentOfIoGate();
   void testAfterHookFiresAfterLockRelease();
 
 private:
@@ -369,8 +369,25 @@ void TestNotebookCoreServiceReorder::testHookCancelSkipsVxcoreAndReportsCancelle
   m_hookMgr->removeAction(afterId);
 }
 
-// ===== 5. IoGate serialization =====
-void TestNotebookCoreServiceReorder::testIoGateSerializesWithExternalHolder() {
+// ===== 5. Reorder is INDEPENDENT of the NotebookIoGate =====
+//
+// CONTRACT CHANGE (CI race fix): reorderFolderChildren now runs the vxcore
+// write SYNCHRONOUSLY on the calling (UI) thread, exactly like its sibling
+// folder mutations (createFolder/createFile/rename/delete). It deliberately
+// does NOT acquire the per-notebook NotebookIoGate. Rationale: vxcore's
+// FolderManager cache is not thread-safe and is read on the UI thread (model
+// fetchMore -> listFolderChildren); the only correct serialization is
+// UI-thread atomicity. A gate held on a worker thread (the retired design)
+// could never serialize against those UI-thread reads — it guarded the wrong
+// resource on the wrong thread and produced a deterministic PERMUTATION_MISMATCH
+// on 2-core CI runners.
+//
+// This test pins the new contract: a foreign thread holding the gate does NOT
+// block reorder. (The acknowledged, pre-existing flip-side — a structural
+// vx.json write can race a concurrent git-stage, exactly as the ungated
+// siblings already can — is tracked as a future "serialize all FolderManager
+// writes" refactor. Do NOT "fix" this test back to gate-serialization.)
+void TestNotebookCoreServiceReorder::testReorderIsIndependentOfIoGate() {
   QStringList seedFolders, seedFiles;
   const QString nbId = seedNotebook(QStringLiteral("nb_iogate"), &seedFolders, &seedFiles);
   QVERIFY(!nbId.isEmpty());
@@ -378,7 +395,8 @@ void TestNotebookCoreServiceReorder::testIoGateSerializesWithExternalHolder() {
   QStringList newFolders = seedFolders;
   std::reverse(newFolders.begin(), newFolders.end());
 
-  // Acquire the gate from a foreign thread BEFORE invoking reorder.
+  // Acquire the gate from a foreign thread BEFORE invoking reorder and hold it
+  // for the entire reorder. Reorder must NOT depend on it.
   std::atomic<bool> holderHasLock{false};
   std::atomic<bool> releaseRequested{false};
   QThread *holder = QThread::create([&]() {
@@ -396,24 +414,17 @@ void TestNotebookCoreServiceReorder::testIoGateSerializesWithExternalHolder() {
   QSignalSpy spy(m_service, &NotebookCoreService::reorderCompleted);
   m_service->reorderFolderChildren(nbId, QString(), newFolders, QStringList());
 
-  // While the external holder owns the gate, reorder must NOT progress.
-  bool finishedEarly = spy.wait(400);
-  QVERIFY2(!finishedEarly, "reorder completed while external IoGate holder still owned the lock");
-  QCOMPARE(spy.size(), 0);
+  // Reorder completes (and persists) even while the external holder owns the
+  // gate — proving the gate is not on reorder's path.
+  QVERIFY(spy.wait(5000));
+  QCOMPARE(spy.size(), 1);
+  QCOMPARE(spy.takeFirst().at(2).toBool(), true);
+  QCOMPARE(listFolders(nbId), newFolders);
 
-  // Release the gate.
+  // Release the foreign holder.
   releaseRequested.store(true);
   holder->wait();
   delete holder;
-
-  // Now reorder should drain.
-  if (spy.isEmpty()) {
-    QVERIFY(spy.wait(5000));
-  }
-  QCOMPARE(spy.size(), 1);
-  QCOMPARE(spy.takeFirst().at(2).toBool(), true);
-
-  QCOMPARE(listFolders(nbId), newFolders);
 }
 
 // ===== 6. After-hook fires AFTER lock release =====
