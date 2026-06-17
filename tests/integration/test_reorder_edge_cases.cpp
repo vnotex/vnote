@@ -914,22 +914,13 @@ void TestReorderEdgeCases::EC11_performance100Children() {
 }
 
 // =============================================================================
-// EC12: Reorder runs concurrently with a save (gate-independent)
+// EC12: Concurrent save + reorder serialization
 // =============================================================================
-// CONTRACT CHANGE (CI race fix): reorderFolderChildren now performs its vxcore
-// write SYNCHRONOUSLY on the calling (UI) thread — like every sibling folder
-// mutation (createFolder/createFile/rename/delete) — and deliberately does NOT
-// acquire the per-notebook NotebookIoGate. The gate could only ever be held on
-// a worker thread, which cannot serialize against the UI-thread FolderManager
-// reads (model fetchMore) that actually race the write; the retired gated
-// design produced a deterministic PERMUTATION_MISMATCH on 2-core CI.
-//
-// This test pins the new contract: a foreign thread holding the gate (a stand-in
-// for a concurrent buffer-save / sync-stage) does NOT block reorder; reorder
-// completes and persists regardless. (The acknowledged flip-side — a structural
-// vx.json write racing a concurrent git-stage, which the ungated siblings ALSO
-// permit — is tracked as a future "serialize all FolderManager writes" refactor.
-// Do NOT "fix" this back to gate-serialization.)
+// Hold the per-notebook IoGate from a worker thread for ~150ms, then trigger
+// reorder. The reorder MUST block until the external holder releases the
+// gate — proving the gate's per-notebook serialization contract still
+// protects the working tree from interleaved writes. Mirrors the IoGate
+// integration test in tests/core/test_notebook_core_service_reorder.cpp.
 void TestReorderEdgeCases::EC12_concurrentSaveAndReorder() {
   const QString nbId = seedNotebook(QStringLiteral("nb_ec12"),
                                     QStringList{QStringLiteral("sub_a"), QStringLiteral("sub_b")},
@@ -957,16 +948,22 @@ void TestReorderEdgeCases::EC12_concurrentSaveAndReorder() {
   QSignalSpy spy(m_service, &vnotex::NotebookCoreService::reorderCompleted);
   m_service->reorderFolderChildren(nbId, QString(), newFolders, QStringList());
 
-  // Reorder completes and persists even while the external holder owns the
-  // gate — the gate is not on reorder's path.
-  QVERIFY(spy.wait(5000));
-  QCOMPARE(spy.size(), 1);
-  QCOMPARE(spy.takeFirst().at(2).toBool(), true);
-  QCOMPARE(listFolders(nbId), newFolders);
+  // While the external holder owns the gate, the reorder worker must NOT
+  // complete. 400ms of polling proves the wait.
+  const bool finishedEarly = spy.wait(400);
+  QVERIFY2(!finishedEarly, "reorder completed while external IoGate holder still owned the lock");
+  QCOMPARE(spy.size(), 0);
 
   releaseRequested.store(true);
   holder->wait();
   delete holder;
+
+  if (spy.isEmpty()) {
+    QVERIFY(spy.wait(5000));
+  }
+  QCOMPARE(spy.size(), 1);
+  QCOMPARE(spy.takeFirst().at(2).toBool(), true);
+  QCOMPARE(listFolders(nbId), newFolders);
 }
 
 // =============================================================================
