@@ -155,10 +155,24 @@ TwoColumnsNodeExplorer *TestTwoColumnsNodeExplorerSort::bringUpExplorer() {
   m_nbId = m_notebookSvc->createNotebook(nbPath, cfg, NotebookType::Bundled);
   Q_ASSERT(!m_nbId.isEmpty());
 
-  Q_ASSERT(!m_notebookSvc->createFolder(m_nbId, QString(), QStringLiteral("alpha")).isEmpty());
-  Q_ASSERT(!m_notebookSvc->createFolder(m_nbId, QString(), QStringLiteral("beta")).isEmpty());
-  Q_ASSERT(!m_notebookSvc->createFile(m_nbId, QString(), QStringLiteral("one.md")).isEmpty());
-  Q_ASSERT(!m_notebookSvc->createFile(m_nbId, QString(), QStringLiteral("two.md")).isEmpty());
+  // Seed folders + files. CRITICAL: these calls MUST be unconditional and
+  // MUST NOT be wrapped in Q_ASSERT. CI builds Release (CMAKE_BUILD_TYPE
+  // defaults to Release in the root CMakeLists, and ci-win.yml passes
+  // -DCMAKE_BUILD_TYPE=Release explicitly), where QT_NO_DEBUG strips Q_ASSERT
+  // TOGETHER WITH its argument expression. The previous
+  // Q_ASSERT(!create...().isEmpty()) form therefore compiled the seeding OUT
+  // entirely in Release, leaving the notebook empty so the subsequent reorder
+  // observed current=0 -> VXCORE_ERR_PERMUTATION_MISMATCH and timed out
+  // (green in local Debug, red on Linux/Windows CI).
+  const QString alphaId = m_notebookSvc->createFolder(m_nbId, QString(), QStringLiteral("alpha"));
+  const QString betaId = m_notebookSvc->createFolder(m_nbId, QString(), QStringLiteral("beta"));
+  const QString oneId = m_notebookSvc->createFile(m_nbId, QString(), QStringLiteral("one.md"));
+  const QString twoId = m_notebookSvc->createFile(m_nbId, QString(), QStringLiteral("two.md"));
+  Q_ASSERT(!alphaId.isEmpty() && !betaId.isEmpty() && !oneId.isEmpty() && !twoId.isEmpty());
+  Q_UNUSED(alphaId);
+  Q_UNUSED(betaId);
+  Q_UNUSED(oneId);
+  Q_UNUSED(twoId);
 
   auto *explorer = new TwoColumnsNodeExplorer(*m_services);
   explorer->setNotebookId(m_nbId);
