@@ -40,8 +40,14 @@ public:
   // Open a file as a buffer.
   // p_notebookId: ID of the notebook (empty for external files).
   // p_filePath: Relative path (notebook) or absolute path (external).
+  // p_outErr: optional out-pointer for the raw VxCoreError from vxcore_buffer_open.
+  //   Set to VXCORE_OK on success. The empty-string return cannot distinguish
+  //   VXCORE_ERR_NODE_NOT_EXISTS (bundled file whose content is gone on disk)
+  //   from any other failure; callers that need to detect a missing-on-disk
+  //   node should pass a non-null p_outErr and inspect it on empty return.
   // Returns buffer ID, or empty string on failure.
-  QString openBuffer(const QString &p_notebookId, const QString &p_filePath);
+  QString openBuffer(const QString &p_notebookId, const QString &p_filePath,
+                     VxCoreError *p_outErr = nullptr);
 
   // Open a file as a buffer by its node ID (UUID).
   // Combines UUID resolution and buffer opening in a single atomic vxcore call.

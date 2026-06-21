@@ -77,9 +77,15 @@ public:
   // Open a file as a buffer.
   // Fires FileBeforeOpen (cancellable) and FileAfterOpen.
   // @p_settings controls how the file should be opened (mode, readOnly, lineNumber, etc.).
+  // @p_outErr: optional out-pointer for the raw VxCoreError from the underlying
+  //   vxcore_buffer_open. Set to VXCORE_OK on success (and when cancelled by a
+  //   hook before vxcore is called). An invalid Buffer2 plus *p_outErr ==
+  //   VXCORE_ERR_NODE_NOT_EXISTS means the bundled file's content is gone on
+  //   disk. Existing two-arg callers are unaffected.
   // Returns a Buffer2 handle for per-buffer operations, or an invalid Buffer2 on failure/cancel.
   Buffer2 openBuffer(const NodeIdentifier &p_nodeId,
-                     const FileOpenSettings &p_settings = FileOpenSettings());
+                     const FileOpenSettings &p_settings = FileOpenSettings(),
+                     VxCoreError *p_outErr = nullptr);
 
   // Open a file as a buffer by its node ID (UUID).
   // Resolves the UUID to notebookId + relativePath first (without opening a buffer),

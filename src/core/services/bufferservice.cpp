@@ -95,7 +95,10 @@ void BufferService::syncAutoSavePolicy(int p_configPolicy) {
 // ============ Buffer Lifecycle (with hooks) ============
 
 Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
-                                  const FileOpenSettings &p_settings) {
+                                  const FileOpenSettings &p_settings, VxCoreError *p_outErr) {
+  if (p_outErr) {
+    *p_outErr = VXCORE_OK;
+  }
   qDebug() << "BufferService::openBuffer notebook:" << p_nodeId.notebookId
            << "path:" << p_nodeId.relativePath << "mode:" << static_cast<int>(p_settings.m_mode)
            << "readOnly:" << p_settings.m_readOnly << "lineNumber:" << p_settings.m_lineNumber;
@@ -121,7 +124,8 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
     return Buffer2(); // Cancelled by plugin.
   }
 
-  QString bufferId = BufferCoreService::openBuffer(p_nodeId.notebookId, p_nodeId.relativePath);
+  QString bufferId =
+      BufferCoreService::openBuffer(p_nodeId.notebookId, p_nodeId.relativePath, p_outErr);
 
   if (bufferId.isEmpty()) {
     qWarning() << "BufferService::openBuffer failed for" << p_nodeId.relativePath;

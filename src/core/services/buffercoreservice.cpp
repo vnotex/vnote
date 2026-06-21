@@ -21,8 +21,15 @@ BufferCoreService::BufferCoreService(VxCoreContextHandle p_context, QObject *p_p
 BufferCoreService::~BufferCoreService() {}
 
 // Buffer lifecycle.
-QString BufferCoreService::openBuffer(const QString &p_notebookId, const QString &p_filePath) {
+QString BufferCoreService::openBuffer(const QString &p_notebookId, const QString &p_filePath,
+                                      VxCoreError *p_outErr) {
+  if (p_outErr) {
+    *p_outErr = VXCORE_OK;
+  }
   if (!checkContext()) {
+    if (p_outErr) {
+      *p_outErr = VXCORE_ERR_NOT_INITIALIZED;
+    }
     return QString();
   }
 
@@ -30,6 +37,9 @@ QString BufferCoreService::openBuffer(const QString &p_notebookId, const QString
   VxCoreError err = vxcore_buffer_open(
       m_context, p_notebookId.isEmpty() ? nullptr : p_notebookId.toUtf8().constData(),
       p_filePath.toUtf8().constData(), &bufferId);
+  if (p_outErr) {
+    *p_outErr = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "openBuffer failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();
