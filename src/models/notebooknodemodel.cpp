@@ -10,6 +10,8 @@
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 namespace {
@@ -243,6 +245,12 @@ NodeInfo NotebookNodeModel::parseNodeInfoFromJson(const QJsonObject &p_json,
     info.id.relativePath = p_parentId.relativePath + QLatin1Char('/') + name;
   }
 
+  // Transient missing-content flag. Derived strictly from the latest listing's
+  // per-child "exists" bool (bundled notebooks). Absent or true => not missing;
+  // never sticky across reloads. Distinct from isExternal.
+  const QString existsKey = QString::fromUtf8(vxcore::kJsonKeyNodeExists);
+  info.isMissing = p_json.contains(existsKey) && !p_json.value(existsKey).toBool();
+
   const QJsonValue createdUtc = p_json.value(QStringLiteral("createdUtc"));
   if (createdUtc.isDouble()) {
     auto createdMs = static_cast<qint64>(createdUtc.toDouble());
@@ -377,6 +385,9 @@ QVariant NotebookNodeModel::data(const QModelIndex &p_index, int p_role) const {
 
   case IsExternalRole:
     return info.isExternal;
+
+  case IsMissingRole:
+    return info.isMissing;
 
   case ChildCountRole:
     return info.childCount;
@@ -640,9 +651,20 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
   }
 
   // Fetch indexed nodes
+  VxCoreError listErr = VXCORE_OK;
   QJsonObject result =
-      notebookService->listFolderChildren(parentId.notebookId, parentId.relativePath);
+      notebookService->listFolderChildren(parentId.notebookId, parentId.relativePath, &listErr);
+  QList<NodeIdentifier> missingIds;
+  if (listErr == VXCORE_ERR_NODE_NOT_EXISTS) {
+    // The listed folder's own content is gone from disk.
+    missingIds.append(parentId);
+  }
   QVector<NodeInfo> children = parseChildrenFromJson(result, parentId);
+  for (const NodeInfo &child : children) {
+    if (child.isMissing) {
+      missingIds.append(child.id);
+    }
+  }
   allNodes.append(children);
 
   if (!allNodes.isEmpty()) {
@@ -669,6 +691,10 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
 
   // Prefetch grandchildren so child folders show correct child count
   prefetchChildrenOfChildren(p_parent);
+
+  if (!missingIds.isEmpty()) {
+    emit missingNodesDetected(missingIds);
+  }
 }
 
 void NotebookNodeModel::prefetchChildrenOfChildren(const QModelIndex &p_parent) {
@@ -894,6 +920,9 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
 
   QModelIndex nodeIndex = indexFromNodeId(p_nodeId);
 
+  // Collected during the listing below; emitted once at the end (transient).
+  QList<NodeIdentifier> missingIds;
+
   // Ensure the node is in cache (may be loading a folder not yet fetched)
   auto nodeIt = m_nodeCache.find(p_nodeId);
   if (nodeIt == m_nodeCache.end()) {
@@ -942,9 +971,19 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
         }
 
         // Fetch indexed nodes
-        QJsonObject result =
-            notebookService->listFolderChildren(p_nodeId.notebookId, p_nodeId.relativePath);
+        VxCoreError listErr = VXCORE_OK;
+        QJsonObject result = notebookService->listFolderChildren(p_nodeId.notebookId,
+                                                                 p_nodeId.relativePath, &listErr);
+        if (listErr == VXCORE_ERR_NODE_NOT_EXISTS) {
+          // The reloaded folder's own content is gone from disk.
+          missingIds.append(p_nodeId);
+        }
         QVector<NodeInfo> childrenInfo = parseChildrenFromJson(result, p_nodeId);
+        for (const NodeInfo &child : childrenInfo) {
+          if (child.isMissing) {
+            missingIds.append(child.id);
+          }
+        }
         allNodes.append(childrenInfo);
 
         QVector<NodeIdentifier> childIds;
@@ -974,6 +1013,10 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
 
   // Prefetch grandchildren so child folders show correct child count
   prefetchChildrenOfChildren(nodeIndex);
+
+  if (!missingIds.isEmpty()) {
+    emit missingNodesDetected(missingIds);
+  }
 }
 
 void NotebookNodeModel::nodeDataChanged(const NodeIdentifier &p_nodeId) {

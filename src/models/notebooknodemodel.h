@@ -3,6 +3,7 @@
 
 #include <QAbstractItemModel>
 #include <QHash>
+#include <QList>
 #include <QMap>
 #include <QSet>
 #include <QVector>
@@ -90,6 +91,12 @@ public:
 signals:
   void notebookChanged();
   void errorOccurred(const QString &p_title, const QString &p_message);
+
+  // Emitted when a folder listing observes indexed nodes whose content is
+  // missing on disk (bundled notebooks). Carries the folder's own id when the
+  // listed folder itself is gone, and/or the ids of any "exists:false" children.
+  // Detection-only: consumers (controllers) decide how to react. Transient.
+  void missingNodesDetected(const QList<NodeIdentifier> &p_nodeIds);
 
 private:
   void ensureRoot() const;

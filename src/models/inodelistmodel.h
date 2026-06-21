@@ -25,7 +25,8 @@ public:
     PathRole,                        // QString (262)
     ModifiedTimeRole,                // QDateTime (263)
     CreatedTimeRole,                 // QDateTime (264)
-    PreviewRole                      // QString (265)
+    PreviewRole,                     // QString (265)
+    IsMissingRole                    // bool (266) - transient: content missing on disk
   };
 
   // Node accessor pure virtuals.
