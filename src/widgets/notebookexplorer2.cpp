@@ -270,6 +270,18 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
               } else {
                 m_lastReconcileError.remove(p_notebookId);
               }
+              // Auto-prompt-on-open (sync-info-on-open): if this notebook was
+              // just interactively opened and its sync config is complete on
+              // disk but the PAT is missing from the keychain (state S2,
+              // surfaced here as VXCORE_ERR_SYNC_AUTH_FAILED after the async
+              // credential lookup), pop the Sync Info dialog in bootstrap mode
+              // so the user can supply the PAT. We remove the id on the FIRST
+              // reconcileFinished for it (any result) so a stale entry can never
+              // mis-fire a later prompt.
+              const bool wasPendingOpen = m_pendingOpenSyncPrompt.remove(p_notebookId);
+              if (wasPendingOpen && p_result == VXCORE_ERR_SYNC_AUTH_FAILED) {
+                maybePromptSyncInfoForMissingPat(p_notebookId);
+              }
               updateSyncButtonState();
             });
   }
@@ -1139,6 +1151,14 @@ void NotebookExplorer2::importNotebook() {
   // to provide.
   OpenNotebookDialog2 dialog(m_services, window());
   connect(&dialog, &OpenNotebookDialog2::notebookOpened, this, [this](const QString &p_notebookId) {
+    // Record the interactively-opened notebook so the reconcileFinished handler
+    // can auto-prompt for a missing PAT (state S2) right after open. Scoped to
+    // this id only, so the startup reconcile sweep never pops a dialog. The
+    // insert runs here (synchronously, before the async credentialsError that
+    // drives the S2 reconcileFinished can fire) so it always wins that race.
+    if (!p_notebookId.isEmpty()) {
+      m_pendingOpenSyncPrompt.insert(p_notebookId);
+    }
     if (m_notebookSelector) {
       m_notebookSelector->loadNotebooks();
       setCurrentNotebook(p_notebookId);
@@ -2093,6 +2113,38 @@ void NotebookExplorer2::onSyncInfoActionTriggered() {
   auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
   dlg->setAttribute(Qt::WA_DeleteOnClose);
   dlg->open();
+}
+
+void NotebookExplorer2::maybePromptSyncInfoForMissingPat(const QString &p_notebookId) {
+  if (p_notebookId.isEmpty()) {
+    return;
+  }
+  auto *classifier = m_services.get<SyncStateClassifier>();
+  if (!classifier) {
+    return;
+  }
+  // Re-confirm the notebook is genuinely in S2 (sync configured on disk, PAT
+  // missing). VXCORE_ERR_SYNC_AUTH_FAILED can also be emitted for transient
+  // keychain faults where a PAT actually exists; the classify() re-check guards
+  // against prompting a notebook that is not actually missing its PAT.
+  if (classifier->classify(p_notebookId) != SyncState::S2) {
+    qCDebug(lcSync) << "NotebookExplorer2::maybePromptSyncInfoForMissingPat: skip, not S2"
+                    << "notebookId:" << p_notebookId;
+    return;
+  }
+  qCDebug(lcSync) << "NotebookExplorer2::maybePromptSyncInfoForMissingPat: S2 detected on open,"
+                  << "scheduling bootstrap dialog notebookId:" << p_notebookId;
+  // Defer the dialog open to the next event-loop turn. The AUTH_FAILED emit can
+  // arrive while OpenNotebookDialog2's nested exec() loop is still unwinding;
+  // opening a second dialog re-entrantly on top of the closing modal is fragile,
+  // so we let the stack unwind first.
+  const QString notebookId = p_notebookId;
+  QTimer::singleShot(0, this, [this, notebookId]() {
+    auto *dlg = new NotebookSyncInfoDialog2(m_services, notebookId, this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setBootstrapMode(true);
+    dlg->open();
+  });
 }
 
 void NotebookExplorer2::updateSyncButtonState() {

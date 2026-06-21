@@ -22,6 +22,8 @@
 // Per ADR-9: tests use literal `test_pat_12345` for PAT; the PAT MUST NOT
 // appear in ctest stdout/stderr (verified separately by grep).
 
+#include <functional>
+
 #include <QApplication>
 #include <QCoreApplication>
 #include <QDir>
@@ -36,6 +38,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
+#include <core/services/syncstateclassifier.h>
 #include <temp_dir_fixture.h>
 
 #include <vxcore/vxcore.h>
@@ -56,6 +59,16 @@ private slots:
   void testClassifyPartialS2NoPat();
   void testClassifyPartialS4NotRegistered();
   void testClassifyReadyS5();
+
+  // sync-info-on-open: auto-prompt for a missing PAT right after a notebook is
+  // opened from a local folder. Covers the real-classifier S2 detection plus
+  // the reconcileFinished prompt-gating decision (mirror).
+  void testClassifyS2WithRealClassifier();
+  void testOpenPromptFiresOnS2();
+  void testOpenPromptSkipsNonAuthFailedResult();
+  void testOpenPromptSkipsWhenNotS2();
+  void testOpenPromptImmuneToStartupSweep();
+  void testOpenPromptRemovesPendingIdOnFirstReconcile();
 
   // W4.T3 - reconcile error surface
   void testReconcileErrorUpdatesTooltip();
@@ -108,6 +121,7 @@ void TestNotebookExplorerSyncState::initTestCase() {
   m_services.registerService<NotebookCoreService>(new NotebookCoreService(m_ctx));
   m_services.registerService<SyncCredentialsStore>(new SyncCredentialsStore(m_services));
   m_services.registerService<SyncService>(new SyncService(m_services));
+  m_services.registerService<SyncStateClassifier>(new SyncStateClassifier(m_services));
 
   auto *credStore = m_services.get<SyncCredentialsStore>();
   m_keychainGuard = new tests::KeychainGuard(credStore, this);
@@ -501,6 +515,145 @@ inline void syncFinished(State &s, const QString &notebookId, VxCoreError result
   }
 }
 } // namespace mirror_t4
+
+// ============================================================================
+// sync-info-on-open — prompt-on-open gating mirror
+// ============================================================================
+//
+// Mirrors NotebookExplorer2's reconcileFinished prompt-on-open extension and
+// maybePromptSyncInfoForMissingPat() decision from
+// src/widgets/notebookexplorer2.cpp. As with mirror_t1/mirror_t4 (see the note
+// above), NotebookExplorer2 widget construction is blocked in this test target,
+// so the slot decision is mirrored inline. If the production logic diverges,
+// reviewers MUST update BOTH the production code AND this mirror in the same
+// commit.
+namespace mirror_open_prompt {
+struct State {
+  QSet<QString> pendingOpenSyncPrompt;
+  QStringList promptScheduledFor; // ids for which the bootstrap dialog was scheduled
+};
+
+// classifyFn models SyncStateClassifier::classify(id) in production.
+inline void reconcileFinished(State &s, const QString &notebookId, VxCoreError result,
+                              const std::function<SyncState(const QString &)> &classifyFn) {
+  // The id is removed on the FIRST reconcileFinished regardless of result so a
+  // stale entry can never mis-fire a later prompt.
+  const bool wasPendingOpen = s.pendingOpenSyncPrompt.remove(notebookId);
+  if (wasPendingOpen && result == VXCORE_ERR_SYNC_AUTH_FAILED) {
+    // maybePromptSyncInfoForMissingPat: re-confirm genuine S2 before prompting
+    // (guards against transient keychain faults that also surface as
+    // AUTH_FAILED but where a PAT actually exists).
+    if (classifyFn(notebookId) == SyncState::S2) {
+      s.promptScheduledFor.append(notebookId);
+    }
+  }
+}
+} // namespace mirror_open_prompt
+
+void TestNotebookExplorerSyncState::testClassifyS2WithRealClassifier() {
+  // Proves the production gate input: a notebook with sync-ready config on disk
+  // but no PAT in the keychain classifies as S2 (the prompt-on-open trigger).
+  const QString notebookId =
+      createNotebook(QStringLiteral("test_nb_open_s2"), QStringLiteral("OpenS2"));
+  QVERIFY(!notebookId.isEmpty());
+  QVERIFY(writeSyncReadyConfig(notebookId));
+
+  auto *credStore = m_services.get<SyncCredentialsStore>();
+  QVERIFY(credStore != nullptr);
+  QVERIFY(!credStore->hasCredentials(notebookId));
+
+  auto *classifier = m_services.get<SyncStateClassifier>();
+  QVERIFY(classifier != nullptr);
+  const SyncState state = classifier->classify(notebookId);
+  QCOMPARE(static_cast<int>(state), static_cast<int>(SyncState::S2));
+  QVERIFY(classifier->isPartial(state));
+}
+
+void TestNotebookExplorerSyncState::testOpenPromptFiresOnS2() {
+  // The prime case: an interactively-opened notebook whose reconcile reports a
+  // missing PAT (AUTH_FAILED) and classifies as S2 schedules the bootstrap
+  // dialog and consumes the pending id.
+  mirror_open_prompt::State s;
+  const QString nbId = QStringLiteral("nb-open-s2");
+  s.pendingOpenSyncPrompt.insert(nbId);
+
+  mirror_open_prompt::reconcileFinished(s, nbId, VXCORE_ERR_SYNC_AUTH_FAILED,
+                                        [](const QString &) { return SyncState::S2; });
+
+  QCOMPARE(s.promptScheduledFor.size(), 1);
+  QCOMPARE(s.promptScheduledFor.first(), nbId);
+  QVERIFY2(!s.pendingOpenSyncPrompt.contains(nbId),
+           "pending id must be consumed on the first reconcileFinished");
+}
+
+void TestNotebookExplorerSyncState::testOpenPromptSkipsNonAuthFailedResult() {
+  // OK (heading to S5) and INVALID_PARAM (S1/S3 incomplete config) must NOT
+  // prompt, but MUST still consume the pending id.
+  const VxCoreError results[] = {VXCORE_OK, VXCORE_ERR_INVALID_PARAM};
+  for (const VxCoreError result : results) {
+    mirror_open_prompt::State s;
+    const QString nbId = QStringLiteral("nb-open-nonauth");
+    s.pendingOpenSyncPrompt.insert(nbId);
+
+    mirror_open_prompt::reconcileFinished(s, nbId, result,
+                                          [](const QString &) { return SyncState::S2; });
+
+    QVERIFY2(s.promptScheduledFor.isEmpty(),
+             "only AUTH_FAILED may trigger the prompt-on-open dialog");
+    QVERIFY2(!s.pendingOpenSyncPrompt.contains(nbId),
+             "pending id must be consumed regardless of result");
+  }
+}
+
+void TestNotebookExplorerSyncState::testOpenPromptSkipsWhenNotS2() {
+  // AUTH_FAILED can also fire for transient keychain faults where the notebook
+  // is genuinely S4/S5 (a PAT exists). The classify() re-check must suppress the
+  // prompt in that case.
+  mirror_open_prompt::State s;
+  const QString nbId = QStringLiteral("nb-open-not-s2");
+  s.pendingOpenSyncPrompt.insert(nbId);
+
+  mirror_open_prompt::reconcileFinished(s, nbId, VXCORE_ERR_SYNC_AUTH_FAILED,
+                                        [](const QString &) { return SyncState::S4; });
+
+  QVERIFY2(s.promptScheduledFor.isEmpty(),
+           "non-S2 classification must suppress the prompt (transient-fault guard)");
+  QVERIFY2(!s.pendingOpenSyncPrompt.contains(nbId), "pending id still consumed");
+}
+
+void TestNotebookExplorerSyncState::testOpenPromptImmuneToStartupSweep() {
+  // onMainWindowAfterStart emits reconcileFinished for EVERY enabled notebook.
+  // Ids that were never interactively opened are NOT in the pending set, so the
+  // startup sweep must never schedule a dialog (no dialog storm).
+  mirror_open_prompt::State s; // pending set intentionally empty
+  const QString nbId = QStringLiteral("nb-startup-sweep");
+
+  mirror_open_prompt::reconcileFinished(s, nbId, VXCORE_ERR_SYNC_AUTH_FAILED,
+                                        [](const QString &) { return SyncState::S2; });
+
+  QVERIFY2(s.promptScheduledFor.isEmpty(),
+           "startup-sweep reconcile (id not pending) must NOT prompt");
+}
+
+void TestNotebookExplorerSyncState::testOpenPromptRemovesPendingIdOnFirstReconcile() {
+  // A second reconcileFinished for the same id (e.g. a later auto-sync reconcile
+  // attempt) must NOT re-prompt because the id was consumed on the first one.
+  mirror_open_prompt::State s;
+  const QString nbId = QStringLiteral("nb-open-once");
+  s.pendingOpenSyncPrompt.insert(nbId);
+
+  // First reconcile: OK (heading to S5) consumes the id without prompting.
+  mirror_open_prompt::reconcileFinished(s, nbId, VXCORE_OK,
+                                        [](const QString &) { return SyncState::S2; });
+  QVERIFY(s.promptScheduledFor.isEmpty());
+  QVERIFY(!s.pendingOpenSyncPrompt.contains(nbId));
+
+  // Second reconcile: AUTH_FAILED + S2, but id no longer pending -> no prompt.
+  mirror_open_prompt::reconcileFinished(s, nbId, VXCORE_ERR_SYNC_AUTH_FAILED,
+                                        [](const QString &) { return SyncState::S2; });
+  QVERIFY2(s.promptScheduledFor.isEmpty(),
+           "consumed id must not re-prompt on a later reconcileFinished");
+}
 
 void TestNotebookExplorerSyncState::testT1_OnSyncFailedSurface_InProgressIsSilent() {
   // T1: onSyncFailedSurface MUST swallow VXCORE_ERR_SYNC_IN_PROGRESS without

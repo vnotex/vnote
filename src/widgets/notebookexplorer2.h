@@ -153,6 +153,14 @@ private slots:
   // and to currentNotebookChanged.
   void updateSyncButtonState();
 
+  // Auto-prompt-on-open (sync-info-on-open). Invoked from the reconcileFinished
+  // handler when a freshly, interactively-opened notebook reports a missing PAT
+  // (state S2). Re-confirms the notebook is genuinely S2 and, on the next
+  // event-loop turn, pops NotebookSyncInfoDialog2 in bootstrap mode so the user
+  // can supply the PAT. Deferred via QTimer so it never opens re-entrantly on
+  // top of the still-unwinding OpenNotebookDialog2 modal.
+  void maybePromptSyncInfoForMissingPat(const QString &p_notebookId);
+
 signals:
   void currentNotebookChanged(const QString &p_notebookId);
   void currentExploredFolderChanged(const NodeIdentifier &p_folderId);
@@ -241,6 +249,19 @@ private:
   // In-memory reconcile error tracking (W4.T3). Maps notebookId -> error code.
   // Cleared on sync success or notebook switch. Used to surface errors via tooltip.
   QHash<QString, int> m_lastReconcileError;
+
+  // Auto-prompt-on-open set (sync-info-on-open). Populated in importNotebook's
+  // notebookOpened lambda with the just-interactively-opened notebook id, then
+  // consumed in the reconcileFinished handler: if the id is still present AND
+  // reconcile reported VXCORE_ERR_SYNC_AUTH_FAILED AND the notebook classifies
+  // as S2 (sync configured on disk but PAT missing from the keychain), we
+  // auto-open NotebookSyncInfoDialog2 in bootstrap mode so the user can supply
+  // the missing PAT right after opening the notebook. Scoped to interactively-
+  // opened ids ONLY, so the onMainWindowAfterStart startup reconcile sweep never
+  // triggers a dialog storm. Each id is removed on the FIRST reconcileFinished
+  // for that id (regardless of result), so a stale entry can never mis-fire a
+  // later prompt.
+  QSet<QString> m_pendingOpenSyncPrompt;
 
   // Anti-spam set for auth/network sync-failure modal popups. Once we have
   // shown the user an auth-failed dialog for a notebook, we suppress further
