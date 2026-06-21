@@ -74,8 +74,9 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
       QIcon::Mode iconMode = QIcon::Normal;
       if (!(p_option.state & QStyle::State_Enabled)) {
         iconMode = QIcon::Disabled;
-      } else if (p_nodeInfo.isExternal) {
-        // External nodes use disabled icon mode for faded appearance
+      } else if (p_nodeInfo.isExternal || p_nodeInfo.isMissing) {
+        // External nodes (unindexed) and missing nodes (indexed but content gone
+        // from disk) both use disabled icon mode for a faded appearance.
         iconMode = QIcon::Disabled;
       } else if (p_option.state & QStyle::State_Selected) {
         iconMode = QIcon::Selected;
@@ -222,8 +223,10 @@ QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
                                                const QStyleOptionViewItem &p_option) const {
   Q_UNUSED(p_option);
 
-  // External nodes get a faded/semi-transparent appearance
-  if (p_nodeInfo.isExternal) {
+  // External nodes (unindexed) and missing nodes (indexed but content gone from
+  // disk) both get a faded/semi-transparent appearance, reusing the same
+  // external-node dim treatment for visual consistency.
+  if (p_nodeInfo.isExternal || p_nodeInfo.isMissing) {
     auto *themeService = m_services.get<ThemeService>();
     if (themeService) {
       QString externalFg = themeService->paletteColor(
