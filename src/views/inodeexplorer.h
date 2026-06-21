@@ -83,6 +83,13 @@ public:
   virtual void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName) = 0;
   virtual void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) = 0;
   virtual void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) = 0;
+  // T12 (missing-files-on-disk): batch handlers for the missing-node prompt.
+  // On accept the view calls handleMissingRemovalConfirmed (delegates to
+  // NotebookNodeController::handleMissingRemovalConfirmed — revalidates then
+  // unindexes still-missing nodes); on decline it calls suppressMissingNodes
+  // (session-only suppression). Mirrors the handleRemoveConfirmed delegation.
+  virtual void handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds) = 0;
+  virtual void suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) = 0;
   virtual void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
                                 const QString &p_bgColor) = 0;
 
@@ -127,6 +134,11 @@ signals:
   void renameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
   void deleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
+  // T12 (missing-files-on-disk): forwarded from
+  // NotebookNodeController::missingNodeRemovalRequested. NotebookExplorer2
+  // connects to this and shows ONE batch confirmation dialog (views own
+  // dialogs; controllers MUST NOT).
+  void missingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void markRequested(const QList<NodeIdentifier> &p_ids);
   void ignoreRequested(const NodeIdentifier &p_nodeId);

@@ -768,6 +768,9 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onDeleteRequested);
   connect(explorer, &CombinedNodeExplorer::removeFromNotebookRequested, this,
           &NotebookExplorer2::onRemoveFromNotebookRequested);
+  // T12 (missing-files-on-disk): batch prompt for indexed-but-missing nodes.
+  connect(explorer, &CombinedNodeExplorer::missingNodeRemovalRequested, this,
+          &NotebookExplorer2::onMissingNodeRemovalRequested);
   connect(explorer, &CombinedNodeExplorer::propertiesRequested, this,
           &NotebookExplorer2::onPropertiesRequested);
   connect(explorer, &CombinedNodeExplorer::errorOccurred, this,
@@ -826,6 +829,9 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onDeleteRequested);
   connect(explorer, &TwoColumnsNodeExplorer::removeFromNotebookRequested, this,
           &NotebookExplorer2::onRemoveFromNotebookRequested);
+  // T12 (missing-files-on-disk): batch prompt for indexed-but-missing nodes.
+  connect(explorer, &TwoColumnsNodeExplorer::missingNodeRemovalRequested, this,
+          &NotebookExplorer2::onMissingNodeRemovalRequested);
   connect(explorer, &TwoColumnsNodeExplorer::propertiesRequested, this,
           &NotebookExplorer2::onPropertiesRequested);
   connect(explorer, &TwoColumnsNodeExplorer::errorOccurred, this,
@@ -1602,6 +1608,31 @@ void NotebookExplorer2::onRemoveFromNotebookRequested(const QList<NodeIdentifier
 
   // Use unified interface to perform the removal
   m_nodeExplorer->handleRemoveConfirmed(p_nodeIds);
+}
+
+void NotebookExplorer2::onMissingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  // ONE consolidated prompt for the whole batch. The files on disk are NOT
+  // affected — only the notebook's index entries are removed on confirm.
+  QString message =
+      tr("%n item(s) indexed in this notebook are missing on disk. Remove them from the notebook "
+         "index? The files on disk are NOT affected.",
+         "", p_nodeIds.size());
+
+  int ret = MessageBoxHelper::questionOkCancel(MessageBoxHelper::Question, tr("Missing Items"),
+                                               message, QString(), window());
+  if (ret == QMessageBox::Ok) {
+    // Controller revalidates each id, unindexes the still-missing ones (folder
+    // unindex cascades) and reloads the affected parents.
+    m_nodeExplorer->handleMissingRemovalConfirmed(p_nodeIds);
+  } else {
+    // Decline: suppress for the rest of the session so they stay grayed and do
+    // not re-prompt.
+    m_nodeExplorer->suppressMissingNodes(p_nodeIds);
+  }
 }
 
 void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFolderId) {

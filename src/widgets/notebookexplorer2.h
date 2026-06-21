@@ -122,6 +122,10 @@ private slots:
   void onRenameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
   void onDeleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void onRemoveFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
+  // T12 (missing-files-on-disk): show ONE consolidated confirmation when the
+  // controller reports indexed-but-missing-on-disk nodes. OK unindexes (disk
+  // untouched); Cancel suppresses them for the session.
+  void onMissingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds);
   void onPropertiesRequested(const NodeIdentifier &p_nodeId);
   void onMarkRequested(const QList<NodeIdentifier> &p_ids);
   void onIgnoreRequested(const NodeIdentifier &p_nodeId);

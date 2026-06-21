@@ -83,6 +83,10 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::deleteRequested);
   connect(m_controller, &NotebookNodeController::removeFromNotebookRequested, this,
           &CombinedNodeExplorer::removeFromNotebookRequested);
+  // T12 (missing-files-on-disk): forward the batch missing-node prompt request
+  // to the outer widget (NotebookExplorer2), which owns the dialog.
+  connect(m_controller, &NotebookNodeController::missingNodeRemovalRequested, this,
+          &CombinedNodeExplorer::missingNodeRemovalRequested);
   connect(m_controller, &NotebookNodeController::propertiesRequested, this,
           &CombinedNodeExplorer::propertiesRequested);
   connect(m_controller, &NotebookNodeController::exportNodeRequested, this,
@@ -234,6 +238,18 @@ void CombinedNodeExplorer::handleDeleteConfirmed(const QList<NodeIdentifier> &p_
 void CombinedNodeExplorer::handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
   if (m_controller) {
     m_controller->handleRemoveConfirmed(p_nodeIds);
+  }
+}
+
+void CombinedNodeExplorer::handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
+  if (m_controller) {
+    m_controller->handleMissingRemovalConfirmed(p_nodeIds);
+  }
+}
+
+void CombinedNodeExplorer::suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) {
+  if (m_controller) {
+    m_controller->suppressMissingNodes(p_nodeIds);
   }
 }
 

@@ -158,6 +158,12 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::deleteRequested);
   connect(p_controller, &NotebookNodeController::removeFromNotebookRequested, this,
           &TwoColumnsNodeExplorer::removeFromNotebookRequested);
+  // T12 (missing-files-on-disk): forward the batch missing-node prompt request
+  // to the outer widget (NotebookExplorer2). Connected for BOTH controllers via
+  // this helper (called once per pane), so a missing-node detected in either
+  // pane surfaces the dialog. NotebookExplorer2 owns the QDialog.
+  connect(p_controller, &NotebookNodeController::missingNodeRemovalRequested, this,
+          &TwoColumnsNodeExplorer::missingNodeRemovalRequested);
   connect(p_controller, &NotebookNodeController::propertiesRequested, this,
           &TwoColumnsNodeExplorer::propertiesRequested);
   connect(p_controller, &NotebookNodeController::exportNodeRequested, this,
@@ -401,6 +407,31 @@ void TwoColumnsNodeExplorer::handleRemoveConfirmed(const QList<NodeIdentifier> &
   NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
   if (controller) {
     controller->handleRemoveConfirmed(p_nodeIds);
+  }
+}
+
+void TwoColumnsNodeExplorer::handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  // Mirror handleRemoveConfirmed: route the batch to the controller owning the
+  // first node. The controller revalidates and unindexes (folder unindex
+  // cascades), so a heterogeneous batch is handled by the cascade + reload.
+  NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
+  if (controller) {
+    controller->handleMissingRemovalConfirmed(p_nodeIds);
+  }
+}
+
+void TwoColumnsNodeExplorer::suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+
+  NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
+  if (controller) {
+    controller->suppressMissingNodes(p_nodeIds);
   }
 }
 

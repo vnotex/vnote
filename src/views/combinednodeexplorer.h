@@ -49,6 +49,8 @@ public:
   void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName) override;
   void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent) override;
   void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds) override;
+  void handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds) override;
+  void suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) override;
   void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
                         const QString &p_bgColor) override;
 
