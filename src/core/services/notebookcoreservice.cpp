@@ -641,14 +641,24 @@ bool NotebookCoreService::deleteFolder(const QString &p_notebookId, const QStrin
 }
 
 QJsonObject NotebookCoreService::getFolderConfig(const QString &p_notebookId,
-                                                 const QString &p_folderPath) const {
+                                                 const QString &p_folderPath,
+                                                 VxCoreError *p_outErr) const {
+  if (p_outErr) {
+    *p_outErr = VXCORE_OK;
+  }
   if (!checkContext()) {
+    if (p_outErr) {
+      *p_outErr = VXCORE_ERR_NOT_INITIALIZED;
+    }
     return QJsonObject();
   }
 
   char *json = nullptr;
   VxCoreError err = vxcore_node_get_config(m_context, p_notebookId.toUtf8().constData(),
                                            p_folderPath.toUtf8().constData(), &json);
+  if (p_outErr) {
+    *p_outErr = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "getFolderConfig failed:" << QString::fromUtf8(vxcore_error_message(err))
                << "notebookId:" << p_notebookId << "folderPath:" << p_folderPath;
@@ -797,8 +807,15 @@ QString NotebookCoreService::copyFolder(const QString &p_notebookId, const QStri
 }
 
 QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
-                                                    const QString &p_folderPath) const {
+                                                    const QString &p_folderPath,
+                                                    VxCoreError *p_outErr) const {
+  if (p_outErr) {
+    *p_outErr = VXCORE_OK;
+  }
   if (!checkContext()) {
+    if (p_outErr) {
+      *p_outErr = VXCORE_ERR_NOT_INITIALIZED;
+    }
     return QJsonObject();
   }
 
@@ -806,10 +823,15 @@ QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
   VxCoreError err = vxcore_folder_list_children(
       m_context, p_notebookId.toUtf8().constData(),
       p_folderPath.isEmpty() ? "." : p_folderPath.toUtf8().constData(), &json);
+  if (p_outErr) {
+    *p_outErr = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "listFolderChildren failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
   }
+  // The per-child transient "exists" field (vxcore::kJsonKeyNodeExists) emitted
+  // by vxcore for bundled notebooks rides along in this JSON untouched.
   return parseJsonObjectFromCStr(json);
 }
 
@@ -1082,15 +1104,24 @@ bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString 
   return true;
 }
 
-QJsonObject NotebookCoreService::getFileInfo(const QString &p_notebookId,
-                                             const QString &p_filePath) const {
+QJsonObject NotebookCoreService::getFileInfo(const QString &p_notebookId, const QString &p_filePath,
+                                             VxCoreError *p_outErr) const {
+  if (p_outErr) {
+    *p_outErr = VXCORE_OK;
+  }
   if (!checkContext()) {
+    if (p_outErr) {
+      *p_outErr = VXCORE_ERR_NOT_INITIALIZED;
+    }
     return QJsonObject();
   }
 
   char *json = nullptr;
   VxCoreError err = vxcore_node_get_config(m_context, p_notebookId.toUtf8().constData(),
                                            p_filePath.toUtf8().constData(), &json);
+  if (p_outErr) {
+    *p_outErr = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "getFileInfo failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();

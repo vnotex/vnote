@@ -179,7 +179,12 @@ public:
   // Delete a folder. Fires NodeBeforeDelete hook (cancellable) before deletion.
   // Returns false if cancelled by hook or if deletion fails.
   bool deleteFolder(const QString &p_notebookId, const QString &p_folderPath);
-  QJsonObject getFolderConfig(const QString &p_notebookId, const QString &p_folderPath) const;
+  // p_outErr: optional out-pointer for the raw VxCoreError from the underlying
+  // vxcore_node_get_config. Set to VXCORE_OK on success, or the failure code
+  // (e.g. VXCORE_ERR_NODE_NOT_EXISTS for a bundled folder whose content was
+  // deleted on disk). The returned QJsonObject is empty on failure, as before.
+  QJsonObject getFolderConfig(const QString &p_notebookId, const QString &p_folderPath,
+                              VxCoreError *p_outErr = nullptr) const;
   bool updateFolderMetadata(const QString &p_notebookId, const QString &p_folderPath,
                             const QString &p_metadataJson);
   QJsonObject getFolderMetadata(const QString &p_notebookId, const QString &p_folderPath) const;
@@ -196,8 +201,16 @@ public:
                      const QString &p_destParentPath, const QString &p_newName);
 
   // List direct children of a folder (files and subfolders).
-  // Returns JSON with "files" and "folders" arrays.
-  QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath) const;
+  // Returns JSON with "files" and "folders" arrays. For bundled notebooks each
+  // child object additionally carries a transient "exists" bool (vxcore::
+  // kJsonKeyNodeExists) reflecting whether the child's content is present on
+  // disk; this field is passed straight through from the C-API JSON.
+  // p_outErr: optional out-pointer for the raw VxCoreError from the underlying
+  // vxcore_folder_list_children. Set to VXCORE_OK on success, or the failure
+  // code (e.g. VXCORE_ERR_NODE_NOT_EXISTS when the listed FOLDER's content is
+  // gone from disk). The returned QJsonObject is empty on failure, as before.
+  QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath,
+                                 VxCoreError *p_outErr = nullptr) const;
 
   // Atomically rewrite the order of a folder's children (subfolders / files)
   // in its vx.json. Returns immediately; the actual disk write happens on a
@@ -251,7 +264,12 @@ public:
   // Delete a file. Fires NodeBeforeDelete hook (cancellable) before deletion.
   // Returns false if cancelled by hook or if deletion fails.
   bool deleteFile(const QString &p_notebookId, const QString &p_filePath);
-  QJsonObject getFileInfo(const QString &p_notebookId, const QString &p_filePath) const;
+  // p_outErr: optional out-pointer for the raw VxCoreError from the underlying
+  // vxcore_node_get_config. Set to VXCORE_OK on success, or the failure code
+  // (e.g. VXCORE_ERR_NODE_NOT_EXISTS for a bundled file whose content was
+  // deleted on disk). The returned QJsonObject is empty on failure, as before.
+  QJsonObject getFileInfo(const QString &p_notebookId, const QString &p_filePath,
+                          VxCoreError *p_outErr = nullptr) const;
   QJsonObject getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const;
   bool updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
                           const QString &p_metadataJson);
