@@ -15,9 +15,11 @@ namespace vnotex {
 // Extends NodeIdentifier with display metadata.
 struct NodeInfo {
   // --- Identity (required for all operations) ---
-  NodeIdentifier id;     // Unique identifier (notebookId + relativePath)
-  bool isFolder = false; // True for folders, false for files
+  NodeIdentifier id;       // Unique identifier (notebookId + relativePath)
+  bool isFolder = false;   // True for folders, false for files
   bool isExternal = false; // True if node is not indexed (exists on filesystem only)
+  bool isMissing = false;  // Transient: node is indexed but its content is missing on disk
+                           // (bundled). Not persisted.
 
   // --- Cached metadata (for display, avoid repeated service calls) ---
   QString name;              // Display name (last path component or notebook name for root)
