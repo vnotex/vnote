@@ -39,7 +39,14 @@ NotebookNodeController::~NotebookNodeController() {}
 // only this TU) can configure a stub model for the sortNodes/currentNotebookId
 // path. Production callers (NotebookExplorer2, etc.) link against these
 // definitions unchanged.
-void NotebookNodeController::setModel(INodeListModel *p_model) { m_model = p_model; }
+void NotebookNodeController::setModel(INodeListModel *p_model) {
+  m_model = p_model;
+  // T11 (missing-files-on-disk): wire the model's missing-node detection signal
+  // to the controller. The connect itself lives in notebooknodecontroller.cpp
+  // (bindModelMissingSignal) so this thin TU stays free of NotebookNodeModel's
+  // symbols.
+  bindModelMissingSignal(p_model);
+}
 
 INodeListModel *NotebookNodeController::model() const { return m_model; }
 

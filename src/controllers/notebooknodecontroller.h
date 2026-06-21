@@ -3,6 +3,7 @@
 
 #include <QList>
 #include <QObject>
+#include <QSet>
 #include <QSharedPointer>
 
 #include <functional>
@@ -112,6 +113,26 @@ public:
   void reloadNodes(const QList<NodeIdentifier> &p_ids);
   void markNodes(const QList<NodeIdentifier> &p_ids);
 
+  // --- Missing-files-on-disk (phantom node) batch removal (T11) ---
+  // A "phantom" node is one that is still indexed in a bundled notebook but
+  // whose content was deleted from disk outside VNote. These two methods are
+  // the apply path the View (T12) drives from its batch removal prompt; they
+  // are plain methods (called DIRECTLY by the view slot, mirroring the
+  // multi-target batch pattern in src/controllers/AGENTS.md), NOT QDialog
+  // owners. The controller never shows a dialog.
+  //
+  // Invoked when the user ACCEPTS the prompt. REVALIDATES each id's on-disk
+  // existence FIRST and SKIPS any node that has reappeared (the service now
+  // returns VXCORE_OK), then unindexes the rest (metadata only; disk content
+  // is never deleted) and reloads the affected parent folders. Unindexing a
+  // folder cascades in vxcore (the whole subtree drops out of the index), so
+  // no separate descendant enumeration is needed.
+  void handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds);
+  // Invoked when the user DECLINES the prompt. Adds the ids to an in-memory,
+  // session-only suppression set so they are not re-surfaced via
+  // missingNodeRemovalRequested for the rest of the session. Never persisted.
+  void suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds);
+
   // Check if clipboard has nodes to paste
   bool canPaste() const;
 
@@ -151,6 +172,14 @@ signals:
   void renameRequested(const NodeIdentifier &p_nodeId, const QString &p_currentName);
   void deleteRequested(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void removeFromNotebookRequested(const QList<NodeIdentifier> &p_nodeIds);
+  // T11 (missing-files-on-disk): emitted when phantom (indexed-but-missing-on-
+  // disk) nodes are detected on access — either by the file-open PREFLIGHT in
+  // openNodes() or by the model's folder-listing detection
+  // (NotebookNodeModel::missingNodesDetected, wired in setModel()). Carries only
+  // the non-suppressed ids (files AND folders). The View (T12) shows ONE batch
+  // prompt and, on accept, calls handleMissingRemovalConfirmed(); on decline,
+  // suppressMissingNodes(). Controllers MUST NOT show dialogs (views own them).
+  void missingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void errorOccurred(const QString &p_title, const QString &p_message);
   void infoMessage(const QString &p_title, const QString &p_message);
@@ -220,6 +249,19 @@ private:
   // Notify BufferMgr before node operations
   void notifyBeforeNodeOperation(const NodeIdentifier &p_nodeId, const QString &p_operation);
 
+  // T11 (missing-files-on-disk): wire NotebookNodeModel::missingNodesDetected
+  // -> onModelMissingNodesDetected. Called from setModel(). Defined in
+  // notebooknodecontroller.cpp (where the concrete NotebookNodeModel type is
+  // available) so notebooknodecontroller_reorder.cpp — and the isolated reorder
+  // unit tests that compile only that thin TU — stay free of the model's
+  // symbols. A non-NotebookNodeModel INodeListModel is silently ignored.
+  void bindModelMissingSignal(INodeListModel *p_model);
+  // Re-emits missingNodeRemovalRequested for the non-suppressed subset of the
+  // ids the model reports as missing.
+  void onModelMissingNodesDetected(const QList<NodeIdentifier> &p_nodeIds);
+  // Returns p_nodeIds with session-suppressed ids removed (input order kept).
+  QList<NodeIdentifier> filterSuppressedMissingNodes(const QList<NodeIdentifier> &p_nodeIds) const;
+
   // Get current notebook ID from model
   QString currentNotebookId() const;
 
@@ -246,6 +288,11 @@ private:
     bool isCut = false;
   };
   QSharedPointer<ClipboardState> m_clipboard;
+
+  // T11 (missing-files-on-disk): session-only set of phantom node ids the user
+  // declined to remove. Filtered out of missingNodeRemovalRequested emits.
+  // In-memory; never persisted.
+  QSet<NodeIdentifier> m_suppressedMissingNodes;
 };
 
 } // namespace vnotex

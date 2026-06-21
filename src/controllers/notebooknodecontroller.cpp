@@ -1170,6 +1170,102 @@ void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &
   }
 }
 
+// --- T11 (missing-files-on-disk): phantom node detection + batch removal ---
+
+void NotebookNodeController::bindModelMissingSignal(INodeListModel *p_model) {
+  // Only NotebookNodeModel emits missingNodesDetected. Other INodeListModel
+  // implementations (stubs, alternative models) are silently ignored.
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(p_model)) {
+    connect(nbModel, &NotebookNodeModel::missingNodesDetected, this,
+            &NotebookNodeController::onModelMissingNodesDetected, Qt::UniqueConnection);
+  }
+}
+
+QList<NodeIdentifier>
+NotebookNodeController::filterSuppressedMissingNodes(const QList<NodeIdentifier> &p_nodeIds) const {
+  QList<NodeIdentifier> result;
+  result.reserve(p_nodeIds.size());
+  for (const NodeIdentifier &id : p_nodeIds) {
+    if (!m_suppressedMissingNodes.contains(id)) {
+      result.append(id);
+    }
+  }
+  return result;
+}
+
+void NotebookNodeController::onModelMissingNodesDetected(const QList<NodeIdentifier> &p_nodeIds) {
+  // The model (NotebookNodeModel::fetchMore / reloadNode) reports missing files
+  // AND missing folders as they appear in listings. Re-surface the
+  // non-suppressed subset for the view to prompt on.
+  const QList<NodeIdentifier> toPrompt = filterSuppressedMissingNodes(p_nodeIds);
+  if (!toPrompt.isEmpty()) {
+    emit missingNodeRemovalRequested(toPrompt);
+  }
+}
+
+void NotebookNodeController::suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) {
+  for (const NodeIdentifier &id : p_nodeIds) {
+    if (id.isValid()) {
+      m_suppressedMissingNodes.insert(id);
+    }
+  }
+}
+
+void NotebookNodeController::handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds) {
+  if (p_nodeIds.isEmpty()) {
+    return;
+  }
+  if (isSelectionReadOnly(p_nodeIds)) {
+    return;
+  }
+
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    return;
+  }
+  QSet<NodeIdentifier> parentsToReload;
+
+  for (const NodeIdentifier &nodeId : p_nodeIds) {
+    if (!nodeId.isValid()) {
+      continue;
+    }
+
+    // REVALIDATE-before-unindex: between detection and the user's confirmation
+    // the node may have reappeared on disk (e.g. restored from a backup or a
+    // sync pull). Re-check existence FIRST; if it now resolves, SKIP it so we
+    // never unindex a node that is once again present.
+    NodeInfo nodeInfo = getNodeInfo(nodeId);
+    VxCoreError revErr = VXCORE_OK;
+    if (nodeInfo.isValid() && nodeInfo.isFolder) {
+      notebookService->getFolderConfig(nodeId.notebookId, nodeId.relativePath, &revErr);
+    } else {
+      notebookService->getFileInfo(nodeId.notebookId, nodeId.relativePath, &revErr);
+    }
+    if (revErr == VXCORE_OK) {
+      // Node reappeared on disk — do NOT unindex it.
+      continue;
+    }
+
+    notifyBeforeNodeOperation(nodeId, QStringLiteral("remove"));
+
+    NodeIdentifier parentId = getParentFolder(nodeId);
+    parentsToReload.insert(parentId);
+    // Metadata-only removal; disk content is never deleted. Unindexing a folder
+    // cascades in vxcore (its whole subtree drops out of the navigable index),
+    // so a batch of the reported ids is sufficient — no descendant enumeration.
+    if (!notebookService->unindexNode(nodeId.notebookId, nodeId.relativePath)) {
+      emit errorOccurred(tr("Error"), tr("Failed to remove from notebook."));
+    }
+  }
+
+  // Reload all affected parent folders so removed nodes disappear from the tree.
+  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+    for (const NodeIdentifier &parentId : parentsToReload) {
+      nbModel->reloadNode(parentId);
+    }
+  }
+}
+
 void NotebookNodeController::handleImportFiles(const NodeIdentifier &p_targetFolderId,
                                                const QStringList &p_files) {
   if (!p_targetFolderId.isValid() || p_files.isEmpty()) {
@@ -1231,6 +1327,13 @@ void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
   auto *configMgr = m_services.get<ConfigMgr2>();
   auto *notebookService = m_services.get<NotebookCoreService>();
 
+  // T11 (missing-files-on-disk): phantom FILE nodes detected during the
+  // file-open preflight. openNodes() does NOT open a buffer (the buffer is
+  // opened downstream by the view/ViewWindow path); the buffer-open out-param
+  // (T7) is therefore only a safety net. The authoritative file-open detection
+  // is this getFileInfo PREFLIGHT.
+  QList<NodeIdentifier> missingFileIds;
+
   for (const auto &id : p_ids) {
     if (!id.isValid()) {
       continue;
@@ -1255,11 +1358,35 @@ void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
       }
     }
 
+    // PREFLIGHT: for an INDEXED file (not an external node), verify its content
+    // still exists on disk BEFORE activating it. A bundled file whose content
+    // was deleted outside VNote surfaces VXCORE_ERR_NODE_NOT_EXISTS here; do
+    // NOT emit nodeActivated for it — collect it for a single batch removal
+    // prompt instead. Intact files behave exactly as before.
+    if (notebookService && !id.relativePath.isEmpty() &&
+        !(nodeInfo.isValid() && nodeInfo.isExternal)) {
+      VxCoreError preflightErr = VXCORE_OK;
+      notebookService->getFileInfo(id.notebookId, id.relativePath, &preflightErr);
+      if (preflightErr == VXCORE_ERR_NODE_NOT_EXISTS) {
+        missingFileIds.append(id);
+        continue;
+      }
+    }
+
     FileOpenSettings settings;
     if (configMgr) {
       settings.m_mode = configMgr->getCoreConfig().getDefaultOpenMode();
     }
     emit nodeActivated(id, settings);
+  }
+
+  // After the loop, surface the (suppression-filtered) phantom files as ONE
+  // batch removal request for the view to prompt on.
+  if (!missingFileIds.isEmpty()) {
+    const QList<NodeIdentifier> toPrompt = filterSuppressedMissingNodes(missingFileIds);
+    if (!toPrompt.isEmpty()) {
+      emit missingNodeRemovalRequested(toPrompt);
+    }
   }
 
   if (skipped > 0) {
