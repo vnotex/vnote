@@ -128,3 +128,42 @@ add_custom_command(TARGET test_reorder_edge_cases POST_BUILD
     $<TARGET_FILE_DIR:test_reorder_edge_cases>
 )
 
+# T7 (missing-files-on-disk): SHARED Qt integration test for the missing-nodes
+# feature. Extended by T8/T9/T11. Surfaces VXCORE_ERR_NODE_NOT_EXISTS through
+# the BufferCoreService / BufferService open-buffer out-param. Uses the real
+# NotebookCoreService + BufferService against real vxcore + on-disk notebooks
+# (no mocks). GUILESS — no widgets, just QCoreApplication for the services.
+add_qt_test(test_missing_nodes_qt
+  SOURCES
+    test_missing_nodes_qt.cpp
+    test_missing_nodes_qt_controller_stubs.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.h
+  LINKS
+    Qt6::Core
+    Qt6::Widgets
+    core_configs
+    core_services
+    vxcore
+    VTextEdit
+  GUILESS
+)
+target_include_directories(test_missing_nodes_qt PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/controllers
+)
+# Same QTEST_MAIN crash-handler caveat as test_sync_e2e — ctest's pipe driver
+# deadlocks the default handler on Windows; -nocrashhandler bypasses it.
+set_property(TEST test_missing_nodes_qt PROPERTY
+  COMMAND $<TARGET_FILE:test_missing_nodes_qt> -nocrashhandler)
+set_tests_properties(test_missing_nodes_qt PROPERTIES
+  TIMEOUT 120
+)
+# Copy VTextEdit DLL next to the test executable so CTest resolves it at runtime.
+add_custom_command(TARGET test_missing_nodes_qt POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_missing_nodes_qt>
+)

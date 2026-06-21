@@ -38,4 +38,9 @@ void NotebookNodeController::handleImportFolder(const NodeIdentifier &, const QS
 // Read-only gating helpers (read-only feature) — writable in tests.
 bool NotebookNodeController::isNotebookReadOnly(const QString &) const { return false; }
 
+// T11 (missing-files-on-disk): setModel() now calls bindModelMissingSignal to
+// wire NotebookNodeModel::missingNodesDetected. The real definition lives in
+// notebooknodecontroller.cpp (not compiled here); a no-op satisfies the linker.
+void NotebookNodeController::bindModelMissingSignal(INodeListModel *) {}
+
 } // namespace vnotex

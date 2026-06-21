@@ -63,4 +63,9 @@ bool NotebookNodeController::isSelectionReadOnly(const QList<NodeIdentifier> &) 
   return false;
 }
 
+// T11 (missing-files-on-disk): setModel() now calls bindModelMissingSignal to
+// wire NotebookNodeModel::missingNodesDetected. The real definition lives in
+// notebooknodecontroller.cpp (not compiled here); a no-op satisfies the linker.
+void NotebookNodeController::bindModelMissingSignal(INodeListModel *) {}
+
 } // namespace vnotex
