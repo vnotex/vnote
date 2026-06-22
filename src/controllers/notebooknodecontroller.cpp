@@ -186,6 +186,14 @@ QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
     return createExternalNodeContextMenu(p_nodeId, p_parent);
   }
 
+  // A "missing" node (indexed but its content was deleted on disk) gets a
+  // reduced menu: the normal actions (open, rename, copy, paste, pin, new...)
+  // either fail or are meaningless on a phantom. Only removal + a few
+  // metadata/path actions apply.
+  if (nodeInfo.isValid() && nodeInfo.isMissing) {
+    return createMissingNodeContextMenu(p_nodeId, p_parent);
+  }
+
   QMenu *menu = new QMenu(p_parent);
 
   bool isFolder = nodeInfo.isValid() ? nodeInfo.isFolder : true; // Default to folder for root
@@ -259,6 +267,58 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
   connect(locateAction, &QAction::triggered, this,
           [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
   locateAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+
+  return menu;
+}
+
+QMenu *NotebookNodeController::createMissingNodeContextMenu(const NodeIdentifier &p_nodeId,
+                                                            QWidget *p_parent) {
+  QMenu *menu = new QMenu(p_parent);
+
+  // Read-only state of the missing node's notebook (live query) — greys the
+  // mutating actions (Remove from Notebook, Delete).
+  const bool readOnly = isNotebookReadOnly(p_nodeId.notebookId);
+
+  // Primary: remove the phantom(s) from the index via the phantom-aware
+  // pipeline (revalidates each id, skips any that reappeared, cascades folder
+  // unindex) — same path as the auto-prompt on open/expand.
+  auto *removeAction = menu->addAction(tr("Remove from Notebook"));
+  removeAction->setToolTip(tr("Remove the missing item(s) from the notebook index"));
+  connect(removeAction, &QAction::triggered, this, [this, p_nodeId]() {
+    emit missingNodeRemovalRequested(
+        filterSuppressedMissingNodes(dedupeDescendants(resolveSelection(p_nodeId))));
+  });
+  removeAction->setEnabled(!readOnly);
+
+  // Delete (bundled only) — now tolerates phantoms.
+  {
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
+    const bool isBundled =
+        nbConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString() == QStringLiteral("bundled");
+    if (isBundled) {
+      auto *deleteAction = menu->addAction(tr("&Delete"));
+      connect(deleteAction, &QAction::triggered, this,
+              [this, p_nodeId]() { deleteNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
+      deleteAction->setEnabled(!readOnly);
+    }
+  }
+
+  menu->addSeparator();
+
+  auto *copyPathAction = menu->addAction(tr("Copy &Path"));
+  connect(copyPathAction, &QAction::triggered, this,
+          [this, p_nodeId]() { copyNodePaths(resolveSelection(p_nodeId)); });
+
+  auto *missingLocateAction = menu->addAction(tr("Open &Location"));
+  connect(missingLocateAction, &QAction::triggered, this,
+          [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
+  missingLocateAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+
+  auto *propertiesAction = menu->addAction(tr("P&roperties"));
+  connect(propertiesAction, &QAction::triggered, this,
+          [this, p_nodeId]() { showNodeProperties(p_nodeId); });
+  propertiesAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
   return menu;
 }

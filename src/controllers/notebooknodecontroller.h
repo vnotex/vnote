@@ -45,6 +45,12 @@ public:
   // Context menu for external (unindexed) nodes
   QMenu *createExternalNodeContextMenu(const NodeIdentifier &p_nodeId, QWidget *p_parent = nullptr);
 
+  // Context menu for "missing" (phantom: indexed but content gone from disk)
+  // nodes. A reduced menu — the normal actions (open, rename, copy, paste, pin,
+  // new...) either fail or are meaningless on a phantom, so only removal plus a
+  // few metadata/path actions are offered.
+  QMenu *createMissingNodeContextMenu(const NodeIdentifier &p_nodeId, QWidget *p_parent = nullptr);
+
   // Node operations using NodeIdentifier
   void newNote(const NodeIdentifier &p_parentId);
   void newFolder(const NodeIdentifier &p_parentId);
