@@ -19,13 +19,16 @@
 #include <QtTest>
 
 #include <controllers/notebooknodecontroller.h>
+#include <core/configmgr2.h>
 #include <core/fileopensettings.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/buffercoreservice.h>
 #include <core/services/bufferservice.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/sessionconfig.h>
 #include <models/inodelistmodel.h>
 #include <models/notebooknodemodel.h>
 #include <temp_dir_fixture.h>
@@ -75,6 +78,10 @@ private slots:
   void testControllerSuppression();
   void testControllerRevalidateSkipsReappeared();
   void testControllerFolderUnindexCascades();
+
+  // NotebookNodeController phantom handling in paste / pin (now-fixes).
+  void testControllerPastePhantomSourceRoutesToRemoval();
+  void testControllerPinPhantomRoutesToRemoval();
 
 private:
   // Create a fresh file in the notebook, then delete its on-disk content while
@@ -698,6 +705,100 @@ void TestMissingNodesQt::testControllerFolderUnindexCascades() {
   VxCoreError subErr = VXCORE_OK;
   m_notebookService->listFolderChildren(m_notebookId, QStringLiteral("casc/sub"), &subErr);
   QVERIFY2(subErr != VXCORE_OK, "casc/sub must be unreachable after the folder unindex cascades");
+}
+
+void TestMissingNodesQt::testControllerPastePhantomSourceRoutesToRemoval() {
+  // Stage a phantom file inside a folder, set it as the clipboard source, then
+  // paste into root. The cross-panel paste path queries the service for the
+  // source's type; a phantom (indexed but content gone) must be routed to the
+  // batch missing-removal prompt instead of pasted or reported as a generic
+  // "Node not found" error.
+  const QString folder = QStringLiteral("pastesrc");
+  QVERIFY(!m_notebookService->createFolder(m_notebookId, QString(), folder).isEmpty());
+  const QString badRel = makePhantomFileIn(folder, QStringLiteral("ghost.md"));
+  QVERIFY2(!badRel.isEmpty(), "Failed to create phantom source file");
+
+  ServiceLocator services;
+  services.registerService<NotebookCoreService>(m_notebookService);
+  // The model is intentionally left UNPRIMED so the source node is absent from
+  // the controller's cache, forcing the cross-panel (service-probe) paste path
+  // that classifies the source via getFolderConfig/getFileInfo.
+  NotebookNodeModel model(services);
+  model.setNotebookId(m_notebookId);
+  NotebookNodeController controller(services);
+  controller.setModel(&model);
+
+  int removalEmits = 0;
+  bool sawPhantomInRemoval = false;
+  int errorEmits = 0;
+  QObject::connect(&controller, &NotebookNodeController::missingNodeRemovalRequested, &controller,
+                   [&](const QList<NodeIdentifier> &ids) {
+                     ++removalEmits;
+                     for (const NodeIdentifier &id : ids) {
+                       if (id.relativePath == badRel) {
+                         sawPhantomInRemoval = true;
+                       }
+                     }
+                   });
+  QObject::connect(&controller, &NotebookNodeController::errorOccurred, &controller,
+                   [&](const QString &, const QString &) { ++errorEmits; });
+
+  controller.copyNodes(QList<NodeIdentifier>{NodeIdentifier{m_notebookId, badRel}});
+  controller.pasteNodes(NodeIdentifier{m_notebookId, QString()}); // paste into root
+
+  // Phantom routed to the removal prompt, NOT reported as a generic error.
+  // (The paste classifier emits once; the post-paste model reload may re-surface
+  // the same phantom child via missingNodesDetected, so assert >=1, not ==1.)
+  QVERIFY(removalEmits >= 1);
+  QVERIFY2(sawPhantomInRemoval,
+           "phantom source id absent from missingNodeRemovalRequested payload");
+  QCOMPARE(errorEmits, 0);
+
+  // No copy landed in root: there must be no file named "ghost.md" at root.
+  VxCoreError rootErr = VXCORE_ERR_UNKNOWN;
+  const QJsonObject root = m_notebookService->listFolderChildren(m_notebookId, QString(), &rootErr);
+  QCOMPARE(rootErr, VXCORE_OK);
+  const QJsonArray files = root.value(QStringLiteral("files")).toArray();
+  for (const QJsonValue &v : files) {
+    QVERIFY2(v.toObject().value(QStringLiteral("name")).toString() != QStringLiteral("ghost.md"),
+             "phantom source must NOT have been pasted into root");
+  }
+}
+
+void TestMissingNodesQt::testControllerPinPhantomRoutesToRemoval() {
+  // Pinning a phantom node must NOT append a blank-UUID Quick Access entry; it
+  // must skip the node and route it to the batch missing-removal prompt.
+  const QString badRel = makePhantomFile(QStringLiteral("pin_ghost.md"));
+  QVERIFY2(!badRel.isEmpty(), "Failed to create phantom file for pin");
+
+  // pinNodesToQuickAccess requires ConfigMgr2 (for the Quick Access session
+  // list); without it the method early-returns before the phantom check.
+  ConfigCoreService configService(m_context);
+  ConfigMgr2 configMgr(&configService);
+  configMgr.init();
+
+  ServiceLocator services;
+  services.registerService<NotebookCoreService>(m_notebookService);
+  services.registerService<ConfigMgr2>(&configMgr);
+  NotebookNodeController controller(services);
+
+  const int before = configMgr.getSessionConfig().getQuickAccessItems().size();
+
+  int removalEmits = 0;
+  QList<NodeIdentifier> removalIds;
+  QObject::connect(&controller, &NotebookNodeController::missingNodeRemovalRequested, &controller,
+                   [&](const QList<NodeIdentifier> &ids) {
+                     ++removalEmits;
+                     removalIds = ids;
+                   });
+
+  controller.pinNodesToQuickAccess({NodeIdentifier{m_notebookId, badRel}});
+
+  // Phantom routed to removal; NOT pinned (Quick Access list size unchanged).
+  QCOMPARE(removalEmits, 1);
+  QCOMPARE(removalIds.size(), 1);
+  QCOMPARE(removalIds.first().relativePath, badRel);
+  QCOMPARE(configMgr.getSessionConfig().getQuickAccessItems().size(), before);
 }
 
 } // namespace tests

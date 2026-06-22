@@ -547,9 +547,18 @@ void ViewAreaController::openLastClosedFile() {
 
   // BufferService::openBuffer fires FileAfterOpen hook, which triggers
   // onFileAfterOpen() -> openBuffer() to create the ViewWindow2.
-  Buffer2 buf = bufferSvc->openBuffer(record.nodeId, settings);
+  VxCoreError openErr = VXCORE_OK;
+  Buffer2 buf = bufferSvc->openBuffer(record.nodeId, settings, &openErr);
   if (!buf.isValid()) {
-    qWarning() << "ViewAreaController::openLastClosedFile: failed to reopen buffer";
+    if (openErr == VXCORE_ERR_NODE_NOT_EXISTS) {
+      // The file was indexed but its content was deleted on disk since the tab
+      // was closed. Surface a specific, user-meaningful message. ViewAreaController
+      // has no user-notification signal, so log a distinct warning.
+      qWarning() << "ViewAreaController::openLastClosedFile: file no longer exists on disk:"
+                 << record.nodeId.notebookId << record.nodeId.relativePath;
+    } else {
+      qWarning() << "ViewAreaController::openLastClosedFile: failed to reopen buffer";
+    }
   }
 }
 

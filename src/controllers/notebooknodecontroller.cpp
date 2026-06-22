@@ -666,6 +666,11 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
   // Track first successfully pasted node for selection
   NodeIdentifier firstPastedNode;
 
+  // Phantom source nodes (indexed in metadata but content gone on disk):
+  // collected here and surfaced as ONE batch missing-removal prompt after the
+  // loop, mirroring the openNodes preflight pattern.
+  QList<NodeIdentifier> missingSourceIds;
+
   for (const NodeIdentifier &nodeId : m_clipboard->nodes) {
     if (m_clipboard->isCut) {
       notifyBeforeNodeOperation(nodeId, QStringLiteral("move"));
@@ -677,18 +682,30 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
     bool isFolder = nodeInfo.isFolder;
     QString nodeName = nodeInfo.name;
     if (!nodeInfo.isValid()) {
-      // Cross-panel paste: node not in our model cache, query service
-      // Try folder config first, then file info
+      // Cross-panel paste: node not in our model cache, query service.
+      // Try folder config first, then file info. Pass out-params so a phantom
+      // (indexed but content deleted on disk -> VXCORE_ERR_NODE_NOT_EXISTS) is
+      // distinguished from a genuinely-unknown path.
+      VxCoreError folderErr = VXCORE_OK;
       QJsonObject folderConfig =
-          notebookService->getFolderConfig(nodeId.notebookId, nodeId.relativePath);
+          notebookService->getFolderConfig(nodeId.notebookId, nodeId.relativePath, &folderErr);
       if (!folderConfig.isEmpty()) {
         isFolder = true;
         nodeName = folderConfig.value(QLatin1String(vxcore::kJsonKeyName)).toString();
       } else {
-        QJsonObject fileInfo = notebookService->getFileInfo(nodeId.notebookId, nodeId.relativePath);
+        VxCoreError fileErr = VXCORE_OK;
+        QJsonObject fileInfo =
+            notebookService->getFileInfo(nodeId.notebookId, nodeId.relativePath, &fileErr);
         if (!fileInfo.isEmpty()) {
           isFolder = false;
           nodeName = fileInfo.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+        } else if (folderErr == VXCORE_ERR_NODE_NOT_EXISTS ||
+                   fileErr == VXCORE_ERR_NODE_NOT_EXISTS) {
+          // Phantom source: indexed but its content was deleted on disk. Do NOT
+          // attempt the move/copy or emit a generic error; route it to the batch
+          // missing-removal prompt instead.
+          missingSourceIds.append(nodeId);
+          continue;
         } else {
           emit errorOccurred(tr("Error"), tr("Node not found: %1").arg(nodeId.relativePath));
           continue;
@@ -751,6 +768,15 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
               p_targetFolderId.relativePath + QStringLiteral("/") + targetName;
         }
       }
+    }
+  }
+
+  // Surface phantom source nodes (indexed but content gone on disk) as ONE
+  // suppression-filtered batch missing-removal request for the view to prompt on.
+  if (!missingSourceIds.isEmpty()) {
+    const QList<NodeIdentifier> toPrompt = filterSuppressedMissingNodes(missingSourceIds);
+    if (!toPrompt.isEmpty()) {
+      emit missingNodeRemovalRequested(toPrompt);
     }
   }
 
@@ -1490,6 +1516,10 @@ void NotebookNodeController::pinNodesToQuickAccess(const QList<NodeIdentifier> &
   int duplicates = 0;
   int failures = 0;
 
+  // Phantom nodes (indexed but content gone on disk): never pinned, collected
+  // for a single batch missing-removal prompt after the loop.
+  QList<NodeIdentifier> missingPinIds;
+
   for (const auto &id : p_ids) {
     QString absolutePath = notebookSvc->buildAbsolutePath(id.notebookId, id.relativePath);
     if (absolutePath.isEmpty()) {
@@ -1513,7 +1543,14 @@ void NotebookNodeController::pinNodesToQuickAccess(const QList<NodeIdentifier> &
 
     // Look up UUID from file info.
     QString uuid;
-    QJsonObject fileInfo = notebookSvc->getFileInfo(id.notebookId, id.relativePath);
+    VxCoreError pinErr = VXCORE_OK;
+    QJsonObject fileInfo = notebookSvc->getFileInfo(id.notebookId, id.relativePath, &pinErr);
+    if (pinErr == VXCORE_ERR_NODE_NOT_EXISTS) {
+      // Phantom: indexed but content deleted on disk. Do NOT pin a blank-UUID
+      // entry; route it to the batch missing-removal prompt instead.
+      missingPinIds.append(id);
+      continue;
+    }
     if (!fileInfo.isEmpty() && fileInfo.contains(QLatin1String(vxcore::kJsonKeyId))) {
       uuid = fileInfo[QLatin1String(vxcore::kJsonKeyId)].toString();
     }
@@ -1542,6 +1579,15 @@ void NotebookNodeController::pinNodesToQuickAccess(const QList<NodeIdentifier> &
   } else if (pinned > 0 && duplicates > 0) {
     emit infoMessage(tr("Quick Access"),
                      tr("Pinned %1 item(s); %2 already present.").arg(pinned).arg(duplicates));
+  }
+
+  // Surface phantom nodes (indexed but content gone on disk) as ONE
+  // suppression-filtered batch missing-removal request for the view to prompt on.
+  if (!missingPinIds.isEmpty()) {
+    const QList<NodeIdentifier> toPrompt = filterSuppressedMissingNodes(missingPinIds);
+    if (!toPrompt.isEmpty()) {
+      emit missingNodeRemovalRequested(toPrompt);
+    }
   }
 }
 
