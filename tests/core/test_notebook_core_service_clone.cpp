@@ -199,7 +199,7 @@ void TestNotebookCoreServiceClone::testCloneFromBareRepoFiresHookAndRegistersNot
       10);
 
   const QString configJson =
-      QStringLiteral(R"({"backend":"git","remoteUrl":"%1","intervalSeconds":60})").arg(remoteUrl);
+      QStringLiteral(R"({"backend":"git","remoteUrl":"%1","autoSyncEnabled":true})").arg(remoteUrl);
   // Empty credentials -> anonymous clone (file:// remote needs no auth).
   const QString credsJson = QString();
 

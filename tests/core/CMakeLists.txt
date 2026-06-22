@@ -520,6 +520,25 @@ if(MSVC)
   target_link_options(test_sync_service_freshness PRIVATE /WHOLEARCHIVE:vxcore)
 endif()
 
+# T7 (sync-interval-debounce): SyncService trailing-throttle auto-sync debounce.
+# Drives the debounce engine (armOrIgnoreDebounce / onDebounceTimeout /
+# enqueueAutoSync) deterministically via the T7 timer-state seams — no real
+# network, no real-clock sleeps, no real vxcore sync registration. 7 cases:
+# N==0 immediate, burst collapse, trailing flush, fresh re-arm, manual bypass,
+# shutdown cleanup, and per-notebook independence.
+add_qt_test(test_sync_service_debounce
+  SOURCES
+    test_sync_service_debounce.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+target_compile_definitions(test_sync_service_debounce PRIVATE VNOTE_TESTING)
+if(MSVC)
+  target_link_options(test_sync_service_debounce PRIVATE /WHOLEARCHIVE:vxcore)
+endif()
+
 # T5: NotebookCoreService sync wrapper methods (8 thin C-API wrappers).
 add_qt_test(test_notebookcoreservice_sync
   SOURCES

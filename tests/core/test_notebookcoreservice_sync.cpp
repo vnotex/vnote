@@ -174,7 +174,7 @@ void TestNotebookCoreServiceSync::enableWithCredentialsClonesIntoEmptyRoot() {
 
   // Build sync config JSON pointing at the seeded bare repo.
   QString configJson =
-      QStringLiteral(R"({"backend":"git","remoteUrl":"%1","intervalSeconds":300})").arg(remoteUrl);
+      QStringLiteral(R"({"backend":"git","remoteUrl":"%1","autoSyncEnabled":true})").arg(remoteUrl);
 
   // Empty PAT — file:// remote does not need auth, but we exercise the
   // credentials path.
@@ -267,7 +267,7 @@ void TestNotebookCoreServiceSync::getSyncStatusReturnsValidJson() {
   QVERIFY(!nbId.isEmpty());
 
   QString cfg =
-      QStringLiteral(R"({"backend":"git","remoteUrl":"%1","intervalSeconds":300})").arg(remoteUrl);
+      QStringLiteral(R"({"backend":"git","remoteUrl":"%1","autoSyncEnabled":true})").arg(remoteUrl);
   QString creds = QStringLiteral(R"({"pat":""})");
   QCOMPARE(fix.service->enableSync(nbId, cfg, creds), VXCORE_OK);
 

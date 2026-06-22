@@ -197,15 +197,13 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     // meaningful; the EventBridge spies alone characterize the auto path.
 
     // ---- Enable sync ----------------------------------------------------------
-    // Note: NotebookConfig::sync_interval_seconds default is 60s. We can't easily
-    // override that through SyncService::enableSyncForNotebook (it always builds
-    // {"backend":"git","remoteUrl":...} without intervalSeconds), but vxcore's
-    // MaybeEnqueueSync debounce uses `now - last < interval`, and `last` is the
-    // default time_point (zero) on the FIRST event, so `now - 0 = now` is much
-    // larger than any interval. The first file.saved therefore passes the gate
-    // regardless. We document this in the notepad — the plan's "intervalSeconds=0"
-    // hint is wrong because vxcore explicitly skips when interval_seconds <= 0
-    // (sync_manager.cpp:100).
+    // Note: NotebookConfig::auto_sync_enabled default is true. SyncService::
+    // enableSyncForNotebook always builds {"backend":"git","remoteUrl":...} without
+    // an explicit autoSyncEnabled key, so the notebook keeps the default-true gate.
+    // vxcore's MaybeEnqueueSync only suppresses the sync.should_run emission when
+    // auto_sync_enabled is false; with the gate open the first file.saved passes
+    // through and the auto path fires. Cadence is owned Qt-side now, so there is no
+    // per-notebook interval to set here.
     QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
     syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_T2_BASELINE"));
     QVERIFY2(enableSpy.wait(15000), "enableFinished did not arrive within 15s");

@@ -260,7 +260,8 @@ void TestSyncOps::enableSyncAgainstBareRepo() {
     QVERIFY(!nbId.isEmpty());
 
     const QString configJson =
-        QStringLiteral(R"({"backend":"git","remoteUrl":"%1","intervalSeconds":60})").arg(remoteUrl);
+        QStringLiteral(R"({"backend":"git","remoteUrl":"%1","autoSyncEnabled":true})")
+            .arg(remoteUrl);
     const QString credsJson = QStringLiteral(R"({"type":"token","value":"ghp_TEST_PAT_ENABLE"})");
 
     std::atomic<int> calls{0};
@@ -304,7 +305,7 @@ void TestSyncOps::enableSyncInvalidUrl() {
     QVERIFY(!nbId.isEmpty());
 
     const QString configJson =
-        QStringLiteral(R"({"backend":"git","remoteUrl":"not-a-url","intervalSeconds":60})");
+        QStringLiteral(R"({"backend":"git","remoteUrl":"not-a-url","autoSyncEnabled":true})");
     const QString credsJson = QStringLiteral(R"({"type":"token","value":"ghp_TEST_PAT_INVALID"})");
 
     std::atomic<int> calls{0};

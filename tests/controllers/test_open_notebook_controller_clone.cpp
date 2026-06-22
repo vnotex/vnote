@@ -271,7 +271,7 @@ void TestOpenNotebookControllerClone::testCloneRoSnapshotHappyPath() {
   input.remoteUrl = remoteUrl;
   input.pat = QString(); // anonymous -> read-only snapshot
   input.finalDestDir = localTemp.filePath(QStringLiteral("clone_dest_happy"));
-  input.intervalSeconds = 60;
+  input.autoSyncEnabled = true;
 
   OpenNotebookController controller(m_services);
   QSignalSpy finishedSpy(&controller, &OpenNotebookController::cloneFinished);

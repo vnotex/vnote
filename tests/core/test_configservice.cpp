@@ -1,6 +1,10 @@
 // test_configservice.cpp - Unit tests for ConfigService
 #include <QtTest>
 
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include <core/services/configcoreservice.h>
 #include <vxcore/vxcore.h>
 
@@ -44,6 +48,11 @@ private slots:
   // Test shutdown lifecycle
   void testPrepareShutdown();
   void testCancelShutdown();
+
+  // Test autoSyncDebounceSeconds round-trip + clamping (the accessors the
+  // General settings spinbox reads/writes).
+  void testAutoSyncDebounceRoundTrip();
+  void testAutoSyncDebounceClamp();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -219,6 +228,42 @@ void TestConfigService::testCancelShutdown() {
   // Cancel when not in shutdown state should also succeed (no-op).
   bool cancelResult2 = m_service->cancelShutdown();
   QVERIFY(cancelResult2);
+}
+
+void TestConfigService::testAutoSyncDebounceRoundTrip() {
+  // Write a value through the exact accessor the General settings spinbox uses.
+  QVERIFY(m_service->setAutoSyncDebounceSeconds(180));
+
+  // In-memory read-back.
+  QCOMPARE(m_service->getAutoSyncDebounceSeconds(), 180);
+
+  // On-disk persistence: the value must land in vxcore.json so it survives a
+  // restart. Parse the file rather than string-matching so formatting
+  // (compact vs pretty) does not make the test brittle.
+  const QString configPath = m_service->getConfigPath();
+  QVERIFY(!configPath.isEmpty());
+
+  QFile file(configPath);
+  QVERIFY2(file.open(QIODevice::ReadOnly | QIODevice::Text),
+           qPrintable(QStringLiteral("Cannot open %1").arg(configPath)));
+  const QByteArray raw = file.readAll();
+  file.close();
+
+  QJsonParseError parseError{};
+  const QJsonDocument doc = QJsonDocument::fromJson(raw, &parseError);
+  QCOMPARE(parseError.error, QJsonParseError::NoError);
+  QVERIFY(doc.isObject());
+  QCOMPARE(doc.object().value(QStringLiteral("autoSyncDebounceSeconds")).toInt(-1), 180);
+}
+
+void TestConfigService::testAutoSyncDebounceClamp() {
+  // Above the maximum clamps down to 86400.
+  QVERIFY(m_service->setAutoSyncDebounceSeconds(999999));
+  QCOMPARE(m_service->getAutoSyncDebounceSeconds(), 86400);
+
+  // Below the minimum clamps up to 0 (immediate).
+  QVERIFY(m_service->setAutoSyncDebounceSeconds(-5));
+  QCOMPARE(m_service->getAutoSyncDebounceSeconds(), 0);
 }
 
 } // namespace tests
