@@ -566,6 +566,18 @@ qint64 NotebookCoreService::getLastSyncUtc(const QString &p_notebookId) const {
   return static_cast<qint64>(out);
 }
 
+void NotebookCoreService::setLastSyncUtc(const QString &p_notebookId, qint64 p_utcMillis) {
+  if (!checkContext()) {
+    return;
+  }
+  const QByteArray nbId = p_notebookId.toUtf8();
+  VxCoreError err =
+      vxcore_sync_set_last_sync_utc(m_context, nbId.constData(), static_cast<int64_t>(p_utcMillis));
+  qCDebug(syncCategory) << "NotebookCoreService::setLastSyncUtc: notebookId:" << p_notebookId
+                        << "utc:" << static_cast<qlonglong>(p_utcMillis)
+                        << "vxResult:" << static_cast<int>(err);
+}
+
 // Folder operations.
 QString NotebookCoreService::createFolder(const QString &p_notebookId, const QString &p_parentPath,
                                           const QString &p_folderName) {

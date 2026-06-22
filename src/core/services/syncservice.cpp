@@ -1316,6 +1316,21 @@ void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_resu
       qCInfo(syncCategory) << "SyncService::onSyncFinished: auth failure counter cleared on success"
                            << "notebookId:" << p_notebookId;
     }
+    // Persist the per-device "last successful sync" timestamp HERE, on the GUI
+    // thread. The two-phase production sync path (StageOnly + NetworkPhaseOnly)
+    // does NOT write last_sync_utc inside vxcore (the legacy bundled TriggerSync
+    // did, but it has no production callers). We must NOT write it from the sync
+    // worker thread: metadata.db is a non-thread-safe per-notebook sqlite
+    // connection touched ONLY from the GUI thread in production (OpenBuffer,
+    // tag/folder ops, getLastSyncUtc reads). This slot runs on the GUI thread
+    // (bounced via Qt::QueuedConnection from every SyncOps::triggerSync
+    // completion — manual, auto-sync, bootstrap-initial, post-conflict), so the
+    // write serializes with all other metadata.db access. Written BEFORE
+    // syncFinished is emitted so the dialog's onSyncFinished re-read sees a
+    // fresh value. See VNote root AGENTS.md Save Path Threading Contract.
+    if (m_notebookCoreService) {
+      m_notebookCoreService->setLastSyncUtc(p_notebookId, QDateTime::currentMSecsSinceEpoch());
+    }
   } else if (p_result == VXCORE_ERR_SYNC_AUTH_FAILED) {
     const int count = ++m_authFailureCount[p_notebookId];
     qCWarning(syncCategory) << "SyncService::onSyncFinished: auth failure"

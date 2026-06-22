@@ -568,6 +568,15 @@ void NotebookSyncInfoDialog2::onSyncFinished(const QString &p_notebookId, VxCore
   }
   if (p_result == VXCORE_OK) {
     setCurrentStateLabel(SyncStateLevel::Idle, tr("Idle"));
+    // Refresh the "Last sync" label live: SyncService::onSyncFinished has just
+    // persisted the new timestamp (on the GUI thread, before emitting
+    // syncFinished), so re-reading via the controller yields a fresh value. We
+    // deliberately do NOT call loadInitialData() here, which would also reset
+    // the remote-URL field and clobber any in-progress edits.
+    if (m_controller && m_lastSyncLabel) {
+      const QString lastSync = m_controller->lastSyncTime();
+      m_lastSyncLabel->setText(lastSync.isEmpty() ? tr("Never") : lastSync);
+    }
   } else {
     setCurrentStateLabel(SyncStateLevel::Error,
                          tr("Error (code %1)").arg(static_cast<int>(p_result)));

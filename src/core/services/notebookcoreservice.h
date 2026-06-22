@@ -172,6 +172,13 @@ public:
   // device or if the underlying vxcore read fails. Backed by metadata.db
   // (NOT NotebookConfig JSON) to avoid a self-sync loop.
   qint64 getLastSyncUtc(const QString &p_notebookId) const;
+
+  // Persist the per-device last successful sync timestamp (milliseconds since
+  // Unix epoch) into metadata.db. Setter mirror of getLastSyncUtc. MUST be
+  // called on the GUI thread (the single metadata.db owner in production); the
+  // two-phase sync path does not write this itself. Called from
+  // SyncService::onSyncFinished after a successful sync round-trip.
+  void setLastSyncUtc(const QString &p_notebookId, qint64 p_utcMillis);
   // Folder operations (10 methods).
   QString createFolder(const QString &p_notebookId, const QString &p_parentPath,
                        const QString &p_folderName);
