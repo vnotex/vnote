@@ -22,7 +22,7 @@ For the canonical service catalog, DI rules, and Buffer2/HookManager patterns, s
 `SyncService::triggerSyncNow` → `m_workQueueManager->enqueue(id, λ→SyncOps::triggerSync, "trigger")` → pool thread → `vxcore_sync_trigger` → vxcore emits `sync.started` / `sync.finished` / `sync.conflict` events → `EventBridge` → `SyncService` Qt signals.
 
 **Auto-sync path:**
-vxcore file events → `SyncManager::MaybeEnqueueSync` → emit `sync.should_run` → `EventBridge::syncShouldRun` → `SyncService::onSyncShouldRun` → `m_workQueueManager->enqueue(id, λ→SyncOps::triggerSync, "trigger")` → … (same tail as user path).
+vxcore file events → `SyncManager::MaybeEnqueueSync` → emit `sync.should_run` → `EventBridge::syncShouldRun` → `SyncService::onSyncShouldRun` → per-notebook trailing-throttle debounce (see below) → `enqueueAutoSync` → `m_workQueueManager->enqueue(id, λ→SyncOps::triggerSync, "trigger")` → … (same tail as user path).
 
 **Coalescing:** both paths use `coalesceKey="trigger"` so the second of two concurrent trigger requests is dropped (returns `Coalesced` result). This prevents redundant network round-trips when a user clicks Sync while an auto-sync is already queued (or vice versa).
 
@@ -33,6 +33,29 @@ vxcore file events → `SyncManager::MaybeEnqueueSync` → emit `sync.should_run
 `isSyncInProgress(id)` now delegates to `SyncWorkQueueManager::inFlightState(id).running` — there is no longer a separate `m_inFlight` set on `SyncService`. The queue manager is the single source of truth for in-flight state.
 
 **Cancellation event payload:** `SyncCancelledEvent` (typed hook event for `vnote.sync.cancelled`) carries `notebookId` (QString) and `wasQueued` (bool). `wasQueued=true` indicates the cancellation removed a pending queue entry; `wasQueued=false` indicates the in-flight sync was aborted via `vxcore_sync_cancel`.
+
+### Auto-sync debounce (trailing throttle)
+
+The auto-sync path is debounced one layer ABOVE `SyncWorkQueueManager`, so queue and coalesce semantics are untouched. Manual "Sync Now" (`triggerSyncNow`) and the post-reconcile freshness trigger (`maybeTriggerPostReconcile`) BYPASS the debounce; only `EventBridge::syncShouldRun` → `onSyncShouldRun` is throttled.
+
+**Insertion point.** `SyncService::onSyncShouldRun` (`syncservice.cpp`) keeps its shutdown / readiness / auth-circuit-breaker guards, then reads the cadence via `debounceSeconds()`. When the cadence is `<= 0` it calls `enqueueAutoSync` immediately (debounce disabled, `0 = immediate`); otherwise it calls `armOrIgnoreDebounce`.
+
+**Trailing-throttle semantics.**
+- `armOrIgnoreDebounce(id)`: if a timer is already active for the notebook, it is KEPT (the burst is absorbed into the pending fire, not reset). Otherwise it creates/reuses a parented single-shot `QTimer` whose delay is `qMax(0, (lastSyncMs + cadence*1000) - now)`. So a notebook that synced recently waits out the remainder of the window; one that has not synced in a while fires (near-)immediately on the next tick.
+- `onDebounceTimeout(id)`: re-runs the shutdown / readiness / auth-circuit-breaker guards, then RE-READS the cadence and RE-CHECKS freshness. If the last sync is still inside the window it re-arms for the remaining time instead of enqueuing (defends against a sync that landed while the timer was pending). Otherwise it calls `enqueueAutoSync`.
+- `enqueueAutoSync(id)`: the single shared enqueue body, `coalesceKey="trigger"` (same key as the manual path, so the two still dedupe against each other).
+
+**Read on demand.** `debounceSeconds()` reads `ConfigCoreService::getAutoSyncDebounceSeconds()` (clamped `[0, 86400]`) on every call rather than caching, so editing `autoSyncDebounceSeconds` in `vxcore.json` takes effect without restart. The value is a GLOBAL app-config integer stored in vxcore's `vxcore.json` but consumed ONLY by VNote; vxcore does not schedule. The per-notebook `autoSyncEnabled` boolean gate is separate: it suppresses `sync.should_run` emission inside vxcore when false and carries no cadence.
+
+**Timer cleanup.** Debounce timers are dropped on `NotebookAfterClose`, `disableSyncForNotebook` success, `unregisterSyncRuntime`, `shutdown()`, and the destructor, so a retired notebook never leaves a live timer behind.
+
+**Test seams** (on `SyncService`, unconditional per ADR-6):
+- `testSetDebounceOverrideSeconds(int)`: forces `debounceSeconds()` to return the override (pass `< 0` to clear and fall back to `ConfigCoreService`).
+- `testIsDebounceTimerActive(id)`: true if a debounce `QTimer` is currently armed for the notebook.
+- `testDebounceRemainingMs(id)`: remaining ms on the armed timer (for asserting the trailing-window math).
+- `testFireDebounceNow(id)`: invokes `onDebounceTimeout(id)` directly so tests do not have to wait real wall-clock time.
+
+Coverage: `tests/core/test_sync_service_debounce.cpp`.
 
 ### Post-reconcile freshness gate (`maybeTriggerPostReconcile`)
 

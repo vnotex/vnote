@@ -108,7 +108,7 @@ o_leak_on_shutdown() loop
 ### Auto-sync test fixture wiring (LOAD-BEARING)
 - For `EventBridge` to fire on the auto path, the ServiceLocator must register: `NotebookCoreService`, `SyncCredentialsStore`, `EventBridge`, `HookManager` (SyncService's ctor pulls EventBridge via m_services.get<EventBridge>(); without it the auto-sync slots never connect).
 - vxcore's `WorkQueueManager` is auto-wired by `vxcore_context_create` (sync_manager.cpp `SetWorkQueueManager` is called from `vxcore_api.cpp:153`). You do NOT need to call it manually — only the Qt-side `WorkQueueDrainThread` must be started.
-- Plan claim "intervalSeconds=0 disables debounce" is WRONG: `sync_manager.cpp:100` explicitly skips when `interval_seconds <= 0`. The real reason a single save works is that `last_enqueue_time_[id]` is a default-constructed `time_point` (zero) on first event, so `now - 0 = now` always exceeds any interval. First save fires immediately regardless of interval.
+- Plan claim "intervalSeconds=0 disables debounce" is WRONG: at the time, `sync_manager.cpp:100` explicitly skipped when the per-notebook interval `<= 0`. The real reason a single save works is that `last_enqueue_time_[id]` is a default-constructed `time_point` (zero) on first event, so `now - 0 = now` always exceeds any interval. First save fires immediately regardless of interval. (UPDATE: that per-notebook int was later replaced by the boolean `auto_sync_enabled` gate, and auto-sync cadence moved Qt-side to `SyncService`'s trailing-throttle debounce keyed off the global `autoSyncDebounceSeconds`.)
 
 ### Lifecycle order trap
 - `EventBridge` calls `vxcore_off_event` in its dtor. If the `VxCoreContextHandle` is destroyed BEFORE EventBridge (or any other `XxxCoreService` holding the handle), the dtor crashes with use-after-free.
@@ -340,14 +340,14 @@ MaybeEnqueueSync now emits sync.should_run event (payload {"notebookId":"<id>"})
 
 ### Tests
 - New (libs/vxcore/tests/test_event_manager.cpp):
-  - test_should_run_emitted_on_dirty: subscribe to sync.should_run, enable sync with intervalSeconds=60, create one file; exactly 1 event, payload notebookId matches.
+  - test_should_run_emitted_on_dirty: subscribe to sync.should_run, enable sync with the per-notebook gate on (now the boolean `autoSyncEnabled=true`; was `intervalSeconds=60` at the time), create one file; exactly 1 event, payload notebookId matches.
   - test_should_run_debounce_dedups: 5 rapid file.created → exactly 1 sync.should_run (first passes gate, rest within interval).
   - test_should_run_not_emitted_when_workqueue_unused: WorkQueue("sync").Size() stays 0 throughout (proves auto path no longer enqueues).
 - Updated test_sync.cpp::test_auto_sync_does_not_double_emit and test_auto_sync_conflict_carries_files: both used to rely on vxcore_work_queue_process_next to drain a queued lambda. Now they subscribe to sync.should_run and call vxcore_sync_trigger from the callback (mimics the future T31 Qt auto-route consumer). Assertions unchanged — started=1, finished=1, conflict.count=1 + files payload.
 - Updated parent tests/core/test_sync_signal_auto_baseline.cpp: same shim (vxcore_on_event sync.should_run + vxcore_sync_trigger). Drain thread left running because it's harmless; documented in updated header comment. bridgeStarted/Finished still 1, worker spies still 0, finishedResult VXCORE_OK.
 
 ### Debounce subtlety
-last_enqueue_time_ starts at default time_point{} for a new notebook id, so the FIRST event always passes (now - 0 > any interval). Subsequent events within interval_seconds are suppressed. Same logic as pre-T9.
+last_enqueue_time_ starts at default time_point{} for a new notebook id, so the FIRST event always passes (now - 0 > any interval). Subsequent events within the debounce window were suppressed. Same logic as pre-T9. (UPDATE: vxcore's per-notebook interval was later replaced by the boolean `auto_sync_enabled` on/off gate; the trailing-throttle window now lives Qt-side in `SyncService`, keyed off the global `autoSyncDebounceSeconds`.)
 
 ### Build + Test Status
 - vxcore: test_event_manager + test_sync 2/2 PASS (.sisyphus/evidence/task-9-should-run.txt)
