@@ -64,6 +64,15 @@ public:
   // Set recoverLastSession setting in vxcore config and persist.
   bool setRecoverLastSessionEnabled(bool p_enabled);
 
+  // Get autoSyncDebounceSeconds setting from vxcore config.
+  // Returns clamped value in range [0, 86400].
+  int getAutoSyncDebounceSeconds() const;
+
+  // Set autoSyncDebounceSeconds setting in vxcore config and persist.
+  // Clamps p_seconds to range [0, 86400] before writing.
+  // Returns true on success, false on failure.
+  bool setAutoSyncDebounceSeconds(int p_seconds);
+
   // Snapshot current session state to disk. Sets shutdown flag to prevent
   // destructor double-save. Idempotent.
   bool prepareShutdown();

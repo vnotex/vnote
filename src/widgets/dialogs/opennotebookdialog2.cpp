@@ -395,7 +395,7 @@ void OpenNotebookDialog2::handleRemoteOpen() {
   input.remoteUrl = m_remoteUrlEdit ? m_remoteUrlEdit->text().trimmed() : QString();
   input.pat = m_remotePatEdit ? m_remotePatEdit->text() : QString();
   input.finalDestDir = m_remoteDestInput ? m_remoteDestInput->text().trimmed() : QString();
-  // Backend / intervalSeconds keep CloneAndOpenInput's defaults ("git", 60).
+  // Backend / autoSyncEnabled keep CloneAndOpenInput's defaults ("git", true).
 
   // Disable inputs so the user cannot mutate them mid-clone. The Cancel
   // button stays ENABLED so the user can abort the in-flight clone (the

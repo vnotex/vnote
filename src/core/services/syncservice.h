@@ -14,6 +14,8 @@
 
 #include <vxcore/vxcore_types.h>
 
+class QTimer;
+
 namespace vnotex {
 
 class ServiceLocator;
@@ -235,6 +237,12 @@ public:
   void testInvokeMaybeTriggerPostReconcile(const QString &p_notebookId);
   void testSetMaybeTriggerBypassReadinessCheck(bool p_bypass);
 
+  // Test-only seams for auto-sync debounce. Unconditional per ADR-6.
+  void testSetDebounceOverrideSeconds(int p_seconds);
+  bool testIsDebounceTimerActive(const QString &p_notebookId) const;
+  int testDebounceRemainingMs(const QString &p_notebookId) const;
+  void testFireDebounceNow(const QString &p_notebookId);
+
   // Public accessor for the credentials store. Used by T1 bootstrapSync
   // rollback path to delete orphan keychain PAT on enable failure.
   SyncCredentialsStore *credentialsStore() const { return m_credentialsStore; }
@@ -312,6 +320,8 @@ private slots:
   // closed / disabled between vxcore's emit and our handler running.
   void onSyncShouldRun(const QString &p_notebookId);
 
+  void onDebounceTimeout(const QString &p_notebookId);
+
 private:
   // Build a credentials JSON for the worker out of a PAT string.
   static QString buildCredentialsJson(const QString &p_pat);
@@ -343,6 +353,12 @@ private:
   // coalescing (coalesceKey="trigger") still de-dupes against concurrent
   // user-initiated or auto-sync triggers.
   void maybeTriggerPostReconcile(const QString &p_notebookId);
+
+  int debounceSeconds() const;
+  qint64 lastSyncTimeMs(const QString &p_notebookId) const;
+  void armOrIgnoreDebounce(const QString &p_notebookId);
+  void dropDebounceTimer(const QString &p_notebookId);
+  void enqueueAutoSync(const QString &p_notebookId);
 
   ServiceLocator &m_services;
   NotebookCoreService *m_notebookCoreService = nullptr;
@@ -389,6 +405,10 @@ private:
   QHash<QString, int> m_authFailureCount;
   static constexpr int kAuthFailureCircuitThreshold = 3;
 
+  // Per-notebook trailing-throttle timers for the auto-sync path. Timers live
+  // on the SyncService/GUI thread and are parented to this.
+  QHash<QString, QTimer *> m_debounceTimers;
+
   // Task 13.4 test seams (one-shot).
   bool m_testForceNextPersistFailure = false;
   QString m_testForceNextPersistFailureMsg;
@@ -403,6 +423,9 @@ private:
   // isSyncEnabled / isSyncRegistered defense check. Default (production)
   // is false.
   bool m_testBypassReadinessCheck = false;
+
+  // Test-only override for debounceSeconds(). -1 means read ConfigCoreService.
+  int m_testDebounceOverrideSeconds = -1;
 
   // Post-reconcile freshness window: skip auto-trigger if the per-device last
   // successful sync timestamp is newer than (now - this). 2 minutes is long

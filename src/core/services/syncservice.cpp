@@ -12,6 +12,7 @@
 #include <QMetaObject>
 #include <QMutexLocker>
 #include <QThread>
+#include <QTimer>
 
 #include <memory>
 
@@ -20,6 +21,7 @@
 #include <core/hooknames.h>
 #include <core/logging.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/eventbridge.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
@@ -189,6 +191,7 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
           if (p_event.notebookId.isEmpty()) {
             return;
           }
+          dropDebounceTimer(p_event.notebookId);
           unregisterSyncRuntime(p_event.notebookId);
           if (m_credentialsStore) {
             m_credentialsStore->deleteCredentials(p_event.notebookId);
@@ -208,6 +211,14 @@ void SyncService::shutdown() {
     return;
   }
   m_shutDown = true;
+  for (QTimer *timer : qAsConst(m_debounceTimers)) {
+    if (timer) {
+      timer->stop();
+      timer->deleteLater();
+    }
+  }
+  m_debounceTimers.clear();
+
   // T24: SyncWorker thread teardown is gone. Drain any locally-owned
   // SyncWorkQueueManager with a bounded budget. When the ServiceLocator
   // provides a shared instance, main.cpp's aboutToQuit handler shuts it
@@ -236,6 +247,8 @@ SyncService::~SyncService() {
   // Idempotent: if shutdown() was already called via aboutToQuit, this is a
   // no-op. Otherwise it performs a bounded quit/wait/terminate.
   shutdown();
+  qDeleteAll(m_debounceTimers);
+  m_debounceTimers.clear();
 }
 
 QString SyncService::buildCredentialsJson(const QString &p_pat) {
@@ -420,6 +433,8 @@ void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
             // effects live inside this single guard so the failure branch
             // (else) can preserve everything for a clean retry.
             if (p_result == VXCORE_OK) {
+              dropDebounceTimer(notebookId);
+
               if (m_notebookCoreService) {
                 QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
                 cfg.remove(QLatin1String(vxcore::kJsonKeySyncEnabled));
@@ -494,6 +509,7 @@ void SyncService::unregisterSyncRuntime(const QString &p_notebookId) {
   if (p_notebookId.isEmpty()) {
     return;
   }
+  dropDebounceTimer(p_notebookId);
   if (!m_notebookCoreService) {
     qCWarning(syncCategory)
         << "SyncService::unregisterSyncRuntime: NotebookCoreService unavailable for"
@@ -1168,6 +1184,24 @@ void SyncService::testSetMaybeTriggerBypassReadinessCheck(bool p_bypass) {
   m_testBypassReadinessCheck = p_bypass;
 }
 
+void SyncService::testSetDebounceOverrideSeconds(int p_seconds) {
+  m_testDebounceOverrideSeconds = p_seconds;
+}
+
+bool SyncService::testIsDebounceTimerActive(const QString &p_notebookId) const {
+  const QTimer *timer = m_debounceTimers.value(p_notebookId, nullptr);
+  return timer && timer->isActive();
+}
+
+int SyncService::testDebounceRemainingMs(const QString &p_notebookId) const {
+  const QTimer *timer = m_debounceTimers.value(p_notebookId, nullptr);
+  return timer ? timer->remainingTime() : -1;
+}
+
+void SyncService::testFireDebounceNow(const QString &p_notebookId) {
+  onDebounceTimeout(p_notebookId);
+}
+
 // Post-reconcile freshness-gated auto-trigger. Called from reconcileSyncForNotebook
 // after the enable work item completes with VXCORE_OK, on the GUI thread (via
 // the QueuedConnection bounce from the SyncOps::enableSync completion lambda).
@@ -1310,36 +1344,61 @@ void SyncService::onSyncConflictFiles(const QString &p_notebookId, const QString
   emit conflictsDetected(p_notebookId, p_files);
 }
 
-// T31: auto-sync route. EventBridge::syncShouldRun -> here -> enqueue
-// SyncOps::triggerSync (with NULL cancellation token; auto path is
-// fire-and-forget). Best-effort: queue overflow / coalesce are silent —
-// do NOT emit syncFailed (auto-sync is opportunistic).
-void SyncService::onSyncShouldRun(const QString &p_notebookId) {
-  qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync triggered for" << p_notebookId;
-  if (m_shutDown) {
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: shutting down for"
-                         << p_notebookId;
+int SyncService::debounceSeconds() const {
+  if (m_testDebounceOverrideSeconds >= 0) {
+    return m_testDebounceOverrideSeconds;
+  }
+  auto *configSvc = m_services.get<ConfigCoreService>();
+  return configSvc ? configSvc->getAutoSyncDebounceSeconds() : 0;
+}
+
+qint64 SyncService::lastSyncTimeMs(const QString &p_notebookId) const {
+  const auto overrideIt = m_testLastSyncUtcOverrides.constFind(p_notebookId);
+  if (overrideIt != m_testLastSyncUtcOverrides.constEnd()) {
+    return overrideIt.value();
+  }
+  return m_notebookCoreService ? m_notebookCoreService->getLastSyncUtc(p_notebookId) : 0;
+}
+
+void SyncService::armOrIgnoreDebounce(const QString &p_notebookId) {
+  QTimer *timer = m_debounceTimers.value(p_notebookId, nullptr);
+  if (timer && timer->isActive()) {
+    qCInfo(syncCategory) << "SyncService::armOrIgnoreDebounce: active timer kept for"
+                         << p_notebookId << "remainingMs:" << timer->remainingTime();
     return;
   }
-  if (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId)) {
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: notebook not ready"
-                         << p_notebookId;
+
+  const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+  const qint64 lastMs = lastSyncTimeMs(p_notebookId);
+  const qint64 intervalMs = static_cast<qint64>(debounceSeconds()) * 1000;
+  const qint64 delayMs = qMax<qint64>(0, (lastMs + intervalMs) - nowMs);
+
+  if (!timer) {
+    timer = new QTimer(this);
+    timer->setSingleShot(true);
+    m_debounceTimers.insert(p_notebookId, timer);
+    connect(timer, &QTimer::timeout, this,
+            [this, p_notebookId]() { onDebounceTimeout(p_notebookId); });
+  }
+
+  qCInfo(syncCategory) << "SyncService::armOrIgnoreDebounce: timer armed for" << p_notebookId
+                       << "delayMs:" << delayMs << "lastSyncMs:" << lastMs;
+  timer->start(static_cast<int>(delayMs));
+}
+
+void SyncService::dropDebounceTimer(const QString &p_notebookId) {
+  QTimer *timer = m_debounceTimers.take(p_notebookId);
+  if (!timer) {
     return;
   }
-  // Auth-failure circuit-breaker: after N consecutive auth failures, stop
-  // auto-syncing to avoid hammering the remote with known-bad credentials on
-  // every save tick. Manual triggerSyncNow remains allowed (user intent
-  // overrides). Counter resets on successful sync or updateCredentials.
-  const int authFailures = m_authFailureCount.value(p_notebookId, 0);
-  if (authFailures >= kAuthFailureCircuitThreshold) {
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: "
-                            "auth-failure circuit-breaker open"
-                         << p_notebookId << "consecutiveFailures:" << authFailures;
-    return;
-  }
+  timer->stop();
+  timer->deleteLater();
+}
+
+void SyncService::enqueueAutoSync(const QString &p_notebookId) {
   auto *workQueue = m_workQueue;
   if (!workQueue) {
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: SyncWorkQueueManager unavailable for"
+    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: SyncWorkQueueManager unavailable for"
                          << p_notebookId;
     return;
   }
@@ -1367,19 +1426,98 @@ void SyncService::onSyncShouldRun(const QString &p_notebookId) {
       workQueue->enqueue(notebookId, work, /*onCancelled=*/nullptr, QStringLiteral("trigger"));
   switch (result) {
   case SyncWorkQueueManager::EnqueueResult::Accepted:
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync enqueued for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync enqueued for" << notebookId;
     return;
   case SyncWorkQueueManager::EnqueueResult::Coalesced:
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync coalesced for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync coalesced for" << notebookId;
     return;
   case SyncWorkQueueManager::EnqueueResult::QueueFull:
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync dropped (queue full) for"
+    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync dropped (queue full) for"
                          << notebookId;
     return;
   case SyncWorkQueueManager::EnqueueResult::Rejected:
-    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync rejected for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync rejected for" << notebookId;
     return;
   }
+}
+
+void SyncService::onDebounceTimeout(const QString &p_notebookId) {
+  if (QTimer *timer = m_debounceTimers.value(p_notebookId, nullptr)) {
+    timer->stop();
+  }
+  if (m_shutDown) {
+    dropDebounceTimer(p_notebookId);
+    return;
+  }
+  if (!m_testBypassReadinessCheck &&
+      (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId))) {
+    qCInfo(syncCategory) << "SyncService::onDebounceTimeout: skip (not ready) for" << p_notebookId;
+    dropDebounceTimer(p_notebookId);
+    return;
+  }
+  const int authFailures = m_authFailureCount.value(p_notebookId, 0);
+  if (authFailures >= kAuthFailureCircuitThreshold) {
+    qCInfo(syncCategory) << "SyncService::onDebounceTimeout: skip (auth circuit-breaker) for"
+                         << p_notebookId << "consecutiveFailures:" << authFailures;
+    dropDebounceTimer(p_notebookId);
+    return;
+  }
+
+  const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+  const qint64 n = debounceSeconds();
+  const qint64 lastMs = lastSyncTimeMs(p_notebookId);
+  const qint64 intervalMs = n * 1000;
+  if (n > 0 && lastMs > 0 && (nowMs - lastMs) < intervalMs) {
+    QTimer *timer = m_debounceTimers.value(p_notebookId, nullptr);
+    const qint64 remainingMs = qMax<qint64>(0, (lastMs + intervalMs) - nowMs);
+    if (!timer) {
+      armOrIgnoreDebounce(p_notebookId);
+      return;
+    }
+    qCInfo(syncCategory) << "SyncService::onDebounceTimeout: re-arming fresh timer for"
+                         << p_notebookId << "remainingMs:" << remainingMs;
+    timer->start(static_cast<int>(remainingMs));
+    return;
+  }
+
+  enqueueAutoSync(p_notebookId);
+}
+
+// T31: auto-sync route. EventBridge::syncShouldRun -> here -> enqueue
+// SyncOps::triggerSync (with NULL cancellation token; auto path is
+// fire-and-forget). Best-effort: queue overflow / coalesce are silent —
+// do NOT emit syncFailed (auto-sync is opportunistic).
+void SyncService::onSyncShouldRun(const QString &p_notebookId) {
+  qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync triggered for" << p_notebookId;
+  if (m_shutDown) {
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: shutting down for"
+                         << p_notebookId;
+    return;
+  }
+  if (!isSyncEnabled(p_notebookId) || !isSyncRegistered(p_notebookId)) {
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: notebook not ready"
+                         << p_notebookId;
+    return;
+  }
+  // Auth-failure circuit-breaker: after N consecutive auth failures, stop
+  // auto-syncing to avoid hammering the remote with known-bad credentials on
+  // every save tick. Manual triggerSyncNow remains allowed (user intent
+  // overrides). Counter resets on successful sync or updateCredentials.
+  const int authFailures = m_authFailureCount.value(p_notebookId, 0);
+  if (authFailures >= kAuthFailureCircuitThreshold) {
+    qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync skipped: "
+                            "auth-failure circuit-breaker open"
+                         << p_notebookId << "consecutiveFailures:" << authFailures;
+    return;
+  }
+
+  const int n = debounceSeconds();
+  if (n > 0) {
+    armOrIgnoreDebounce(p_notebookId);
+    return;
+  }
+
+  enqueueAutoSync(p_notebookId);
 }
 
 // ---- Reconcile-on-open ------------------------------------------------------

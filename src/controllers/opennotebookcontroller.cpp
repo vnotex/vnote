@@ -341,7 +341,7 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
   QJsonObject configObj;
   configObj[QStringLiteral("backend")] = p_input.backend;
   configObj[QStringLiteral("remoteUrl")] = p_input.remoteUrl.trimmed();
-  configObj[QStringLiteral("intervalSeconds")] = p_input.intervalSeconds;
+  configObj[QStringLiteral("autoSyncEnabled")] = p_input.autoSyncEnabled;
   const QString configJson =
       QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
 

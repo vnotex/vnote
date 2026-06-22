@@ -59,15 +59,15 @@ struct OpenNotebookValidationResult {
 //                     sibling staging dir, clones into it, then renames
 //                     into this path on success.
 //   * backend       : Sync backend name (currently "git"; future-proofed).
-//   * intervalSeconds: Auto-sync interval. Passed through to vxcore in the
-//                     config JSON. Ignored for RO clones since they never
-//                     register with SyncService.
+//   * autoSyncEnabled: Boolean gate for auto-sync. Passed through to vxcore
+//                     in the config JSON. Ignored for RO clones since they
+//                     never register with SyncService.
 struct CloneAndOpenInput {
   QString remoteUrl;
   QString pat;
   QString finalDestDir;
   QString backend = QStringLiteral("git");
-  int intervalSeconds = 60;
+  bool autoSyncEnabled = true;
 };
 
 // T22: Result of a clone-then-open operation.

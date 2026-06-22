@@ -2,11 +2,12 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
+#include "settingspagehelper.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
-#include "settingspagehelper.h"
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/sessionconfig.h>
@@ -38,8 +39,8 @@ void GeneralPage::setupUI() {
     }
 
     const QString label(tr("Language"));
-    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_localeComboBox->toolTip(), m_localeComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_localeComboBox->toolTip(),
+                                                               m_localeComboBox, this));
     addSearchItem(label, m_localeComboBox->toolTip(), m_localeComboBox);
     connect(m_localeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &GeneralPage::pageIsChangedWithRestartNeeded);
@@ -57,8 +58,8 @@ void GeneralPage::setupUI() {
 
     const QString label(tr("OpenGL"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_openGLComboBox->toolTip(), m_openGLComboBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_openGLComboBox->toolTip(),
+                                                               m_openGLComboBox, this));
     addSearchItem(label, m_openGLComboBox->toolTip(), m_openGLComboBox);
     connect(m_openGLComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &GeneralPage::pageIsChangedWithRestartNeeded);
@@ -102,6 +103,24 @@ void GeneralPage::setupUI() {
     connect(m_checkForUpdatesCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::pageIsChanged);
   }
 
+  {
+    m_autoSyncDebounceSpinBox = WidgetsFactory::createSpinBox(this);
+    m_autoSyncDebounceSpinBox->setRange(0, 86400);
+    m_autoSyncDebounceSpinBox->setSingleStep(30);
+    m_autoSyncDebounceSpinBox->setSuffix(QStringLiteral(" s"));
+    m_autoSyncDebounceSpinBox->setSpecialValueText(tr("Immediate"));
+    m_autoSyncDebounceSpinBox->setToolTip(
+        tr("Auto-sync runs at most once per this interval. 0 = sync immediately on every change."));
+
+    const QString label(tr("Auto-sync interval"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_autoSyncDebounceSpinBox->toolTip(), m_autoSyncDebounceSpinBox, this));
+    addSearchItem(label, m_autoSyncDebounceSpinBox->toolTip(), m_autoSyncDebounceSpinBox);
+    connect(m_autoSyncDebounceSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &GeneralPage::pageIsChanged);
+  }
+
   mainLayout->addStretch();
 }
 
@@ -130,6 +149,9 @@ void GeneralPage::loadInternal() {
       m_services.get<ConfigCoreService>()->isRecoverLastSessionEnabled());
 
   m_checkForUpdatesCheckBox->setChecked(coreConfig.isCheckForUpdatesOnStartEnabled());
+
+  m_autoSyncDebounceSpinBox->setValue(
+      m_services.get<ConfigCoreService>()->getAutoSyncDebounceSeconds());
 }
 
 bool GeneralPage::saveInternal() {
@@ -158,6 +180,12 @@ bool GeneralPage::saveInternal() {
   }
 
   coreConfig.setCheckForUpdatesOnStartEnabled(m_checkForUpdatesCheckBox->isChecked());
+
+  if (!m_services.get<ConfigCoreService>()->setAutoSyncDebounceSeconds(
+          m_autoSyncDebounceSpinBox->value())) {
+    setError(tr("Failed to save auto-sync interval."));
+    return false;
+  }
 
   return true;
 }

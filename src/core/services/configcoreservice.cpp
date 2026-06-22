@@ -8,6 +8,11 @@
 
 using namespace vnotex;
 
+namespace {
+constexpr int c_minAutoSyncDebounceSeconds = 0;
+constexpr int c_maxAutoSyncDebounceSeconds = 86400;
+} // namespace
+
 ConfigCoreService::ConfigCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
 
@@ -37,8 +42,8 @@ QString ConfigCoreService::getDataPath(DataLocation p_location) const {
   }
 
   char *path = nullptr;
-  VxCoreError err = vxcore_context_get_data_path(
-      m_context, static_cast<VxCoreDataLocation>(p_location), &path);
+  VxCoreError err =
+      vxcore_context_get_data_path(m_context, static_cast<VxCoreDataLocation>(p_location), &path);
   if (err != VXCORE_OK) {
     return QString();
   }
@@ -98,15 +103,15 @@ QJsonObject ConfigCoreService::getSessionConfig() const {
 }
 
 QJsonObject ConfigCoreService::getConfigByName(DataLocation p_location,
-                                           const QString &p_baseName) const {
+                                               const QString &p_baseName) const {
   if (!checkContext()) {
     return QJsonObject();
   }
 
   char *json = nullptr;
-  VxCoreError err = vxcore_context_get_config_by_name(
-      m_context, static_cast<VxCoreDataLocation>(p_location),
-      p_baseName.toUtf8().constData(), &json);
+  VxCoreError err =
+      vxcore_context_get_config_by_name(m_context, static_cast<VxCoreDataLocation>(p_location),
+                                        p_baseName.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
     return QJsonObject();
   }
@@ -114,16 +119,15 @@ QJsonObject ConfigCoreService::getConfigByName(DataLocation p_location,
 }
 
 QJsonObject ConfigCoreService::getConfigByNameWithDefaults(DataLocation p_location,
-                                                       const QString &p_baseName,
-                                                       const QJsonObject &p_defaults) const {
+                                                           const QString &p_baseName,
+                                                           const QJsonObject &p_defaults) const {
   if (!checkContext()) {
     return p_defaults;
   }
 
   char *json = nullptr;
   VxCoreError err = vxcore_context_get_config_by_name_with_defaults(
-      m_context, static_cast<VxCoreDataLocation>(p_location),
-      p_baseName.toUtf8().constData(),
+      m_context, static_cast<VxCoreDataLocation>(p_location), p_baseName.toUtf8().constData(),
       QJsonDocument(p_defaults).toJson(QJsonDocument::Compact).constData(), &json);
   if (err != VXCORE_OK) {
     return QJsonObject();
@@ -132,15 +136,15 @@ QJsonObject ConfigCoreService::getConfigByNameWithDefaults(DataLocation p_locati
 }
 
 Error ConfigCoreService::updateConfigByName(DataLocation p_location, const QString &p_baseName,
-                                        const QJsonObject &p_json) {
+                                            const QJsonObject &p_json) {
   if (!checkContext()) {
     return Error::error(ErrorCode::InvalidArgument, "Context is null");
   }
 
   QString jsonStr = QJsonDocument(p_json).toJson(QJsonDocument::Indented);
   VxCoreError err = vxcore_context_update_config_by_name(
-      m_context, static_cast<VxCoreDataLocation>(p_location),
-      p_baseName.toUtf8().constData(), jsonStr.toUtf8().constData());
+      m_context, static_cast<VxCoreDataLocation>(p_location), p_baseName.toUtf8().constData(),
+      jsonStr.toUtf8().constData());
   if (err != VXCORE_OK) {
     return Error::error(ErrorCode::FailToWriteFile,
                         QString("Failed to update config: %1").arg(err));
@@ -184,6 +188,39 @@ bool ConfigCoreService::setRecoverLastSessionEnabled(bool p_enabled) {
 
   QJsonObject update;
   update[QStringLiteral("recoverLastSession")] = p_enabled;
+  QString jsonStr = QJsonDocument(update).toJson(QJsonDocument::Compact);
+
+  VxCoreError err = vxcore_context_update_config(m_context, jsonStr.toUtf8().constData());
+  return err == VXCORE_OK;
+}
+
+int ConfigCoreService::getAutoSyncDebounceSeconds() const {
+  QJsonObject config = getConfig();
+  int value = config.value(QStringLiteral("autoSyncDebounceSeconds")).toInt(60);
+  // Clamp to valid range
+  if (value < c_minAutoSyncDebounceSeconds) {
+    value = c_minAutoSyncDebounceSeconds;
+  } else if (value > c_maxAutoSyncDebounceSeconds) {
+    value = c_maxAutoSyncDebounceSeconds;
+  }
+  return value;
+}
+
+bool ConfigCoreService::setAutoSyncDebounceSeconds(int p_seconds) {
+  if (!checkContext()) {
+    return false;
+  }
+
+  // Clamp to valid range
+  int clampedSeconds = p_seconds;
+  if (clampedSeconds < c_minAutoSyncDebounceSeconds) {
+    clampedSeconds = c_minAutoSyncDebounceSeconds;
+  } else if (clampedSeconds > c_maxAutoSyncDebounceSeconds) {
+    clampedSeconds = c_maxAutoSyncDebounceSeconds;
+  }
+
+  QJsonObject update;
+  update[QStringLiteral("autoSyncDebounceSeconds")] = clampedSeconds;
   QString jsonStr = QJsonDocument(update).toJson(QJsonDocument::Compact);
 
   VxCoreError err = vxcore_context_update_config(m_context, jsonStr.toUtf8().constData());
