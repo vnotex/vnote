@@ -912,7 +912,7 @@ void NotebookCoreService::reorderFolderChildren(const QString &p_notebookId,
   const QStringList orderedFolders = p_orderedFolders;
   const QStringList orderedFiles = p_orderedFiles;
 
-  QtConcurrent::run([this, notebookId, folderRelPath, orderedFolders, orderedFiles, event]() {
+  (void)QtConcurrent::run([this, notebookId, folderRelPath, orderedFolders, orderedFiles, event]() {
     int rc = VXCORE_ERR_UNKNOWN;
     {
       // Acquire-release window: hold the gate for the working-tree write ONLY.
