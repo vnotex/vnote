@@ -33,6 +33,7 @@ class ExportDialog2;
 
 class ToolBarHelper2;
 class SyncConflictController;
+class FirstRunController;
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
 // Framework only - NO toolbar, dock widgets, menu bar, or status bar.
@@ -188,6 +189,11 @@ private:
   // Long-lived conflict-resolution orchestrator (T13). Owned by MainWindow2.
   // Wired in setupUI() to SyncService::conflictsDetected.
   SyncConflictController *m_syncConflictController = nullptr;
+
+  // First-run experience controller (creates a default notebook on version
+  // change when zero notebooks exist). Owned by MainWindow2; surfacing handled
+  // by the defaultNotebookCreated connection in setupUI().
+  FirstRunController *m_firstRunController = nullptr;
 
   // Per-notebook retry counter for sync conflict resolution. Incremented each
   // time conflictsDetected fires for a notebook. When the count exceeds 3, the

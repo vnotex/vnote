@@ -44,6 +44,7 @@
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
 
+#include <controllers/firstruncontroller.h>
 #include <controllers/searchcontroller.h>
 #include <controllers/syncconflictcontroller.h>
 #include <controllers/viewareacontroller.h>
@@ -189,6 +190,21 @@ void MainWindow2::setupUI() {
               [this](const QString &p_notebookId) { m_syncRetryCount.remove(p_notebookId); });
     }
   }
+
+  // First-run experience: construct BEFORE kickOffPostInit() so the controller's
+  // MainWindowAfterStart subscription (priority 5) is registered before the hook
+  // fires. Surface the created notebook via a queued connection so the explorer
+  // refresh runs after the synchronous hook-dispatch chain completes.
+  m_firstRunController = new FirstRunController(m_serviceLocator, this);
+  connect(
+      m_firstRunController, &FirstRunController::defaultNotebookCreated, this,
+      [this](const QString &p_id) {
+        if (m_notebookExplorer && !p_id.isEmpty()) {
+          m_notebookExplorer->loadNotebooks();
+          m_notebookExplorer->setCurrentNotebook(p_id);
+        }
+      },
+      Qt::QueuedConnection);
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
