@@ -888,6 +888,12 @@ void NotebookExplorer2::loadNotebooks() {
   QString selectedId = m_notebookSelector->currentNotebookId();
   if (!selectedId.isEmpty()) {
     setCurrentNotebookInternal(selectedId);
+  } else if (!m_currentNotebookId.isEmpty()) {
+    // Last notebook closed: route through the internal setter (NOT the
+    // public setCurrentNotebook, whose equality guard would no-op). This
+    // resets the node model, emits currentNotebookChanged(""), and lets
+    // downstream panels clear.
+    setCurrentNotebookInternal(QString());
   }
 }
 
