@@ -215,6 +215,8 @@ QJsonValue ConfigMgr2::parseAndReadConfig(const QString &p_exp) const {
 
 QString ConfigMgr2::getApplicationVersion() { return c_version.toString(); }
 
+bool ConfigMgr2::isVersionChanged() const { return m_versionChanged; }
+
 QString ConfigMgr2::getApplicationFilePath() {
 #if defined(Q_OS_LINUX)
   // We could get the APPIMAGE env variable from the AppRun script.

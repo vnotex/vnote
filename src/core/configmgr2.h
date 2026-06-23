@@ -92,6 +92,11 @@ public:
   // Get application version string.
   static QString getApplicationVersion();
 
+  // Returns true if the persisted config version differs from the current
+  // application version (computed once during init()). Stays true for the
+  // whole session even after the new version is persisted.
+  bool isVersionChanged() const;
+
   // Get application file path.
   static QString getApplicationFilePath();
 
