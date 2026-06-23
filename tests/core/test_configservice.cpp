@@ -122,8 +122,9 @@ void TestConfigService::testGetDataPath() {
   QVERIFY(!appPath.isEmpty());
   QVERIFY(!localPath.isEmpty());
 
-  // Paths should be different (app vs local)
-  QVERIFY(appPath != localPath || appPath.contains("test"));
+  // Paths must be different (app vs local). The invariant now holds in test mode
+  // too, since ConfigManager splits them into app/ and local/ subfolders.
+  QVERIFY(appPath != localPath);
 }
 
 void TestConfigService::testGetConfigPath() {
@@ -135,7 +136,7 @@ void TestConfigService::testGetConfigPath() {
 void TestConfigService::testGetSessionConfigPath() {
   QString path = m_service->getSessionConfigPath();
   QVERIFY(!path.isEmpty());
-  QVERIFY(path.contains("session.json") || path.contains("session"));
+  QVERIFY(path.endsWith("vxsession.json"));
 }
 
 void TestConfigService::testGetConfig() {
