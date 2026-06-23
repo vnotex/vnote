@@ -13,6 +13,7 @@ target_sources(vnote PRIVATE
     notebooksyncinfocontroller.cpp notebooksyncinfocontroller.h
     syncconflictcontroller.cpp syncconflictcontroller.h
     recyclebincontroller.cpp recyclebincontroller.h
+    firstruncontroller.cpp firstruncontroller.h
     importfoldercontroller.cpp importfoldercontroller.h
     tagcontroller.cpp tagcontroller.h
     snippetcontroller.cpp snippetcontroller.h
