@@ -1,4 +1,34 @@
 # Changes
+## v4.1.0
+VNote 4 is a major release built on a brand-new native core (**vxcore**) that powers notebook management, search, configuration, and synchronization. The whole application has been re-architected (clean MVC + dependency injection) for reliability and future extensibility. Highlights versus VNote 3:
+
+* **Notebook Sync** (flagship): keep notebooks in sync across devices through any Git remote (GitHub, GitLab, self-hosted) over HTTPS or local `file://` repositories
+    * Enable per notebook from the new **Sync** button and **Sync Info** panel in the notebook explorer
+    * Authenticate with a Personal Access Token, stored securely in your system keychain (Windows Credential Manager, macOS Keychain, or Linux Secret Service) — never written to config or logs
+    * Changes sync automatically in the background, with a configurable **Auto-sync interval** in Settings > General (or sync on demand with **Sync Now**)
+    * Built-in conflict resolution when the same note is edited on two devices
+    * Live status (last sync time, idle/syncing/conflict/error) plus actionable messages for authentication failures
+* **Open & clone notebooks**: the redesigned **Open Notebook** dialog supports a **Local folder** mode and a **Remote URL** mode that clones a notebook straight from a Git URL (with optional token and mid-clone cancel)
+* **Read-only notebooks**: open a remote notebook without a token to browse it read-only; a lock badge marks read-only notebooks and tabs, and editing actions are safely disabled. Add a token later to enable editing
+* **VNote 3 migration**: import and convert existing VNote 3 notebooks via **Open VNote3 Notebook**
+* **Filesystem-aware notebooks**
+    * Detects notes whose files were deleted on disk, renders them dimmed, and offers a batch "remove missing items from the notebook" prompt
+    * Show/import external (unindexed) files, per-notebook ignore list, and **Rebuild Database** for index maintenance
+    * "Remove from Notebook" to drop a note from the index while keeping the file on disk
+    * Raw vs Bundled notebook types
+* **Notebook explorer**: drag-and-drop reordering and a manual **Sort** dialog (Top/Up/Down/Bottom), per-node **Mark** (custom text/background color), **Pin to Quick Access**, and multiple view orders (configuration, name, created/modified time)
+* **Editor & views**
+    * Split panes (vertical/horizontal), move tabs across splits, maximize and evenly distribute splits, with full session layout persistence
+    * Per-tab **Reload** and **Auto Reload** with scroll-position preservation, and external-change detection
+    * **Reopen last closed tab** (`Ctrl+Shift+T`)
+    * Markdown editor with live preview, side-by-side edit/preview, in-place code/math block preview, MathJax, Mermaid, flowchart.js, WaveDrom, PlantUML and Graphviz diagrams, syntax highlighting, image paste and image-host upload
+    * Plain-text, PDF, and mind-map view windows
+* **Responsiveness**: note saving now runs off the UI thread, so large files, network drives, or antivirus scans no longer freeze the editor; saves and Git operations on the same notebook are serialized for safety
+* **Tags & search**: hierarchical tag tree with per-note tagging; search by File Name / Content / Tag across Buffers / Folder / Notebook / All Notebooks, with case-sensitivity, regex and file-pattern options
+* **Docks**: Notebook explorer, Outline, Tag, Search, Snippet, History, Quick Access / Location List, and Console panels
+* **Themes**: 10 built-in themes spanning light and dark (Everforest, Moonlight, Pure, Native, Solarized Light/Dark, VSCode Dark, Vue Light/Dark, VX-Idea) with one-click switching
+* **Platforms**: Windows, Linux, and macOS (universal Intel + Apple Silicon); built with Qt 6, with a Qt 5.15.2 build still provided for Windows 7 compatibility
+
 ## v3.20.0
 * MindMap: add outline and linking support
 * Refine themes
