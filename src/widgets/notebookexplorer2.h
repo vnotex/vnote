@@ -199,7 +199,7 @@ private:
   // current notebook id the same way the read-only badge does and queries
   // NotebookCoreService::isNotebookReadOnly. No caching.
   bool isCurrentNotebookReadOnly() const;
-  void updateRecycleBinMenuState();
+  void updateTitleBarMenuState();
   void cacheCurrentExplorerState();
   void applyCachedExplorerState(const QString &p_notebookId);
   // Apply view order to all node views
@@ -242,6 +242,7 @@ private:
   QString m_currentNotebookId;
   QHash<QString, NodeExplorerState> m_notebookStateCache;
   bool m_hasRestoredSessionStatePending = false;
+  QAction *m_rebuildDatabaseAction = nullptr;
   QAction *m_openRecycleBinAction = nullptr;
   QAction *m_emptyRecycleBinAction = nullptr;
 

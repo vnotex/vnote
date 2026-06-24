@@ -459,7 +459,8 @@ void NotebookExplorer2::setupTitleBarMenu() {
                                                [this]() { onSyncInfoActionTriggered(); });
   m_syncInfoAction->setEnabled(false);
 
-  m_titleBar->addMenuAction(tr("Rebuild Database"), m_titleBar, [this]() { rebuildDatabase(); });
+  m_rebuildDatabaseAction = m_titleBar->addMenuAction(tr("Rebuild Database"), m_titleBar,
+                                                      [this]() { rebuildDatabase(); });
 
   setupRecycleBinMenu();
 
@@ -522,6 +523,11 @@ void NotebookExplorer2::setupTitleBarMenu() {
   }
 
   setupExploreModeMenu();
+
+  // Apply the initial enabled/disabled state for notebook-dependent menu
+  // actions. At construction no notebook is active, so Rebuild Database and the
+  // recycle bin actions start disabled until a notebook is selected.
+  updateTitleBarMenuState();
 }
 
 void NotebookExplorer2::setupRecycleBinMenu() {
@@ -582,20 +588,30 @@ void NotebookExplorer2::setupRecycleBinMenu() {
   });
 }
 
-void NotebookExplorer2::updateRecycleBinMenuState() {
+void NotebookExplorer2::updateTitleBarMenuState() {
+  const bool hasNotebook = !m_currentNotebookId.isEmpty();
+
+  // Rebuild Database requires an open notebook.
+  if (m_rebuildDatabaseAction) {
+    m_rebuildDatabaseAction->setEnabled(hasNotebook);
+  }
+
   if (!m_openRecycleBinAction || !m_emptyRecycleBinAction) {
     return;
   }
 
-  bool enabled = false;
-  if (!m_currentNotebookId.isEmpty()) {
+  // Recycle bin actions require an open notebook whose type supports a recycle
+  // bin (non-empty path). Empty Recycle Bin additionally requires the notebook
+  // to be writable.
+  bool recycleBinSupported = false;
+  if (hasNotebook) {
     RecycleBinController controller(m_services);
     QString path = controller.getRecycleBinPath(m_currentNotebookId);
-    enabled = !path.isEmpty();
+    recycleBinSupported = !path.isEmpty();
   }
 
-  m_openRecycleBinAction->setEnabled(enabled);
-  m_emptyRecycleBinAction->setEnabled(enabled);
+  m_openRecycleBinAction->setEnabled(recycleBinSupported);
+  m_emptyRecycleBinAction->setEnabled(recycleBinSupported && !isCurrentNotebookReadOnly());
 }
 
 void NotebookExplorer2::setupExploreModeMenu() {
@@ -923,7 +939,7 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
     }
   }
 
-  updateRecycleBinMenuState();
+  updateTitleBarMenuState();
 
   // T26: surface read-only state to the user inline. Hidden for writable
   // notebooks; rich-text label with embedded lock icon when read-only. The
