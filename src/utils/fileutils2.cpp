@@ -333,10 +333,7 @@ QString FileUtils2::generateUniqueFileName(const QString &p_folderPath, const QS
 QString FileUtils2::generateRandomFileName(const QString &p_hints, const QString &p_suffix) {
   Q_UNUSED(p_hints);
 
-  // Do not use toSecsSinceEpoch() here since we want a short name.
-  const QString timeStamp(QDateTime::currentDateTime().toString(QStringLiteral("sszzzmmHHyyMMdd")));
-  const QString baseName(
-      QString::number(timeStamp.toLongLong() + QRandomGenerator::global()->generate()));
+  const QString baseName(QString::number(QRandomGenerator::global()->bounded(0x10000), 16));
 
   QString suffix;
   if (!p_suffix.isEmpty()) {

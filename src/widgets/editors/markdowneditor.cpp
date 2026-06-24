@@ -48,8 +48,9 @@
 #include <imagehost/imagehosttypes.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils.h>
-#include <utils/imageresolutionutils.h>
+#include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
+#include <utils/imageresolutionutils.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
 #include <utils/webutils.h>
@@ -388,14 +389,13 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
     }
   }
 
-  insertImageLink(p_title, p_altText, destFilePath, p_insertText,
-                  p_urlInLink);
+  insertImageLink(p_title, p_altText, destFilePath, p_insertText, p_urlInLink);
   return true;
 }
 
 QString MarkdownEditor::generateImageFileNameToInsertAs(const QString &p_title,
                                                         const QString &p_suffix) {
-  return FileUtils::generateRandomFileName(p_title, p_suffix);
+  return FileUtils2::generateRandomFileName(p_title, p_suffix);
 }
 
 bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
@@ -608,8 +608,7 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
   // Process images in descending position order (safe in-place rewriting).
   for (const auto &img : images) {
     if (!img.exists) {
-      m_lastPastedImagesSkipped.append(
-          QStringLiteral("%1 (file not found)").arg(img.urlInLink));
+      m_lastPastedImagesSkipped.append(QStringLiteral("%1 (file not found)").arg(img.urlInLink));
       continue;
     }
 
@@ -622,12 +621,11 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
 
     // Copy image via Buffer2::insertAsset.
     QString urlInLink;
-    bool ret = insertImageToBufferFromLocalFile(
-        img.title, img.alt, img.srcAbsolutePath, false, &urlInLink);
+    bool ret = insertImageToBufferFromLocalFile(img.title, img.alt, img.srcAbsolutePath, false,
+                                                &urlInLink);
 
     if (!ret || urlInLink.isEmpty()) {
-      m_lastPastedImagesSkipped.append(
-          QStringLiteral("%1 (copy failed)").arg(img.urlInLink));
+      m_lastPastedImagesSkipped.append(QStringLiteral("%1 (copy failed)").arg(img.urlInLink));
       continue;
     }
 
@@ -668,7 +666,8 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
       }
     }
     if (!m_lastPastedImagesSkipped.isEmpty()) {
-      if (!details.isEmpty()) details += QStringLiteral("\n");
+      if (!details.isEmpty())
+        details += QStringLiteral("\n");
       details += tr("Skipped:") + QStringLiteral("\n");
       for (const auto &img : m_lastPastedImagesSkipped) {
         details += QStringLiteral("  ") + img + QStringLiteral("\n");
@@ -1338,16 +1337,16 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
     }
 
     const auto &info = infos[i];
-    if (info.m_urlPos < 0 || info.m_regionStart < 0 || info.m_regionEnd < 0
-        || info.m_url.isEmpty()) {
+    if (info.m_urlPos < 0 || info.m_regionStart < 0 || info.m_regionEnd < 0 ||
+        info.m_url.isEmpty()) {
       continue;
     }
 
     const QString imageTitle = purifyImageTitle(info.m_alt.trimmed());
     QString imageUrl = info.m_url;
 
-    qDebug() << "fetching image link" << p_text.mid(info.m_regionStart,
-                                                     info.m_regionEnd - info.m_regionStart);
+    qDebug() << "fetching image link"
+             << p_text.mid(info.m_regionStart, info.m_regionEnd - info.m_regionStart);
 
     const int maxUrlLength = 100;
     QString urlToDisplay(imageUrl);
@@ -1417,8 +1416,8 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
 
     // Insert image without inserting text.
     QString urlInLink;
-    bool ret = insertImageToBufferFromLocalFile(imageTitle, QString(), srcImagePath, false,
-                                                &urlInLink);
+    bool ret =
+        insertImageToBufferFromLocalFile(imageTitle, QString(), srcImagePath, false, &urlInLink);
     if (!ret || urlInLink.isEmpty()) {
       continue;
     }
@@ -1539,18 +1538,17 @@ QRgb MarkdownEditor::getPreviewBackground() const {
 
 void MarkdownEditor::setImageHostController(ImageHostController *p_controller) {
   if (m_imageHostController) {
-    disconnect(m_imageHostController, &ImageHostController::uploadFinished,
-               this, &MarkdownEditor::onUploadFinished);
+    disconnect(m_imageHostController, &ImageHostController::uploadFinished, this,
+               &MarkdownEditor::onUploadFinished);
   }
   m_imageHostController = p_controller;
   if (m_imageHostController) {
-    connect(m_imageHostController, &ImageHostController::uploadFinished,
-            this, &MarkdownEditor::onUploadFinished);
+    connect(m_imageHostController, &ImageHostController::uploadFinished, this,
+            &MarkdownEditor::onUploadFinished);
   }
 }
 
-int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData,
-                                    const QString &p_destFileName) {
+int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName) {
   if (!m_imageHostController) {
     return -1;
   }
@@ -1582,14 +1580,17 @@ QString MarkdownEditor::generatePlaceholder(int p_token, const QString &p_fileNa
 }
 
 QString MarkdownEditor::replacePlaceholder(const QString &p_content, int p_token,
-                                            const QString &p_realUrl, const QString &p_title) {
+                                           const QString &p_realUrl, const QString &p_title) {
   const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
   int idx = p_content.indexOf(marker);
-  if (idx < 0) return p_content;
+  if (idx < 0)
+    return p_content;
   int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0) return p_content;
+  if (linkStart < 0)
+    return p_content;
   int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0) return p_content;
+  if (linkEnd < 0)
+    return p_content;
   QString result = p_content;
   result.replace(linkStart, linkEnd - linkStart + 1,
                  QStringLiteral("![%1](%2)").arg(p_title, p_realUrl));
@@ -1599,11 +1600,14 @@ QString MarkdownEditor::replacePlaceholder(const QString &p_content, int p_token
 QString MarkdownEditor::removePlaceholder(const QString &p_content, int p_token) {
   const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
   int idx = p_content.indexOf(marker);
-  if (idx < 0) return p_content;
+  if (idx < 0)
+    return p_content;
   int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0) return p_content;
+  if (linkStart < 0)
+    return p_content;
   int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0) return p_content;
+  if (linkEnd < 0)
+    return p_content;
   QString result = p_content;
   int removeEnd = linkEnd + 1;
   if (removeEnd < result.size() && result[removeEnd] == '\n') {
@@ -1649,7 +1653,7 @@ void MarkdownEditor::onUploadFinished(int p_token, const ImageHostAsyncResult &p
 }
 
 void MarkdownEditor::insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos,
-                                                 QAction *p_before) {
+                                                QAction *p_before) {
   auto cursor = m_textEdit->cursorForPosition(p_pos);
   const int pos = cursor.position();
   const auto block = cursor.block();

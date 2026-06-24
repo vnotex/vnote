@@ -3,6 +3,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QRegularExpression>
 
 #include <temp_dir_fixture.h>
 #include <utils/fileutils2.h>
@@ -31,6 +32,9 @@ private slots:
   void testCopyDir_moveBasic();
   void testCopyDir_moveMerge();
   void testCopyDir_samePath();
+
+  // generateRandomFileName tests
+  void testGenerateRandomFileNameHex();
 };
 
 // =============================================================================
@@ -284,6 +288,49 @@ void TestFileUtils2::testCopyDir_samePath() {
   QVERIFY(!err);
   QVERIFY(QDir(srcDir).exists());
   QCOMPARE(readFileContent(srcDir + "/file.txt"), QString("content"));
+}
+
+// =============================================================================
+// generateRandomFileName tests
+// =============================================================================
+void TestFileUtils2::testGenerateRandomFileNameHex() {
+  QRegularExpression hexPattern(QStringLiteral("^[0-9a-f]{1,4}$"));
+
+  // Test format and range: loop 5000 times
+  for (int i = 0; i < 5000; ++i) {
+    auto name = FileUtils2::generateRandomFileName(QStringLiteral("img"), QStringLiteral("png"));
+
+    // Strip trailing .png to get basename
+    QString basename = name;
+    if (basename.endsWith(QStringLiteral(".png"))) {
+      basename = basename.left(basename.length() - 4);
+    }
+
+    // Assert format matches [0-9a-f]{1,4}
+    QVERIFY2(hexPattern.match(basename).hasMatch(),
+             qPrintable(QStringLiteral("Invalid hex format: %1").arg(basename)));
+
+    // Assert value is in range [0, 0xffff]
+    bool ok = false;
+    int value = basename.toInt(&ok, 16);
+    QVERIFY2(ok, qPrintable(QStringLiteral("Failed to parse hex: %1").arg(basename)));
+    QVERIFY2(
+        value >= 0 && value <= 0xffff,
+        qPrintable(QStringLiteral("Value out of range: %1 (0x%2)").arg(value).arg(value, 0, 16)));
+  }
+
+  // Test suffix cases
+  auto withPng = FileUtils2::generateRandomFileName(QStringLiteral("x"), QStringLiteral("PNG"));
+  QVERIFY2(withPng.endsWith(QStringLiteral(".png")),
+           qPrintable(QStringLiteral("PNG suffix not lowercased: %1").arg(withPng)));
+
+  auto noSuffix = FileUtils2::generateRandomFileName(QStringLiteral("x"), QStringLiteral(""));
+  QVERIFY2(!noSuffix.contains(QLatin1Char('.')),
+           qPrintable(QStringLiteral("Empty suffix should not contain dot: %1").arg(noSuffix)));
+
+  auto withJpeg = FileUtils2::generateRandomFileName(QStringLiteral("x"), QStringLiteral("JPEG"));
+  QVERIFY2(withJpeg.endsWith(QStringLiteral(".jpeg")),
+           qPrintable(QStringLiteral("JPEG suffix not lowercased: %1").arg(withJpeg)));
 }
 
 } // namespace tests

@@ -18,6 +18,7 @@
 #include <notebook/vxnode.h>
 #include <notebookbackend/inotebookbackend.h>
 #include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 
@@ -778,7 +779,7 @@ QString VXNotebookConfigMgr::fetchNodeAttachmentFolder(const QString &p_nodePath
   auto notebookFolder = PathUtils::concatenateFilePath(PathUtils::parentDirPath(p_nodePath),
                                                        getNotebook()->getAttachmentFolder());
   if (p_folderName.isEmpty()) {
-    p_folderName = FileUtils::generateUniqueFileName(notebookFolder, QString(), QString());
+    p_folderName = FileUtils2::generateUniqueFileName(notebookFolder, QString(), QString());
   } else if (FileUtils::childExistsCaseInsensitive(notebookFolder, p_folderName)) {
     p_folderName = FileUtils::generateFileNameWithSequence(notebookFolder, p_folderName, QString());
   }
