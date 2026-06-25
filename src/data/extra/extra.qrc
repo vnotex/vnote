@@ -963,5 +963,11 @@
         <file>themes/vx-idea/up.svg</file>
         <file>themes/vx-idea/up_disabled.svg</file>
         <file>themes/vx-idea/web.css</file>
+
+        <file>default-notebook/Welcome.md</file>
+        <file>default-notebook/欢迎使用.md</file>
+        <file>default-notebook/vx_assets/7b85a8c6-9fc6-4dff-ae46-a4607c17bf33/6f2b.png</file>
+        <file>default-notebook/vx_notebook/config.json</file>
+        <file>default-notebook/vx_notebook/contents/vx.json</file>
     </qresource>
 </RCC>
