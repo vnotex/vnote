@@ -91,6 +91,17 @@ Save workers and `SyncOps::triggerSync` share `NotebookIoGate` ([`notebookiogate
 
 Performance instrumentation: the Qt logging category `vnote.perf.save` covers UI-thread enqueue + worker save latency, and vxcore emits `VXCORE_LOG_DEBUG` lines tagged `[perf.mark_dirty]` / `[perf.maybe_enqueue]` for the synchronous tail that still runs on the caller thread. Both are off by default; enable them when chasing UI-thread regressions.
 
+### External-change detection gate (false-positive defense)
+
+VNote detects files modified on disk by external tools via polling, NOT a `QFileSystemWatcher` (no watcher observes open buffers; the only `QFileSystemWatcher` instances watch the theme dir and the notebook tree). `ViewAreaController` runs a 2 s `QTimer` that checks the ACTIVE buffer (`checkSingleExternalChange`) plus a full sweep of ALL buffers on app re-focus (`checkAllExternalChanges`). The check chain is `BufferService` → `BufferCoreService::checkExternalChanges` → `vxcore_buffer_check_external_changes` → `vxcore::Buffer::CheckExternalChanges`.
+
+The detector is a THIRD concurrent actor on the mutex-less vxcore `Buffer` (the other two are the UI thread and the `BufferSaveQueue` worker). It is NOT serialized by the save FIFO or `NotebookIoGate`. To stop a self-save from being mis-reported as an external edit, the gate is TWO-LAYER:
+
+1. **Qt-side scheduling gate (consumer policy).** `BufferService::checkSingleExternalChange` and `checkAllExternalChanges` call `BufferSaveQueue::isBusy(notebookId, bufferId)` and SKIP the buffer when a save is pending or in-flight. This applies per-buffer to BOTH the single-active check and the full sweep (a background tab must not false-positive against its own in-flight save). It also guarantees `content_` is stable when the vxcore content-compare (below) runs, since no save worker is mutating that buffer. `isBusy` reads the queue's existing `m_pending`/`m_running` maps under `m_mutex`.
+2. **vxcore content-fact confirmation (library fact).** Because the Qt gate cannot cover the sync NETWORK phase (rebase/checkout run with `NotebookIoGate` RELEASED — see Save/sync I/O serialization above) nor Windows lazy-mtime-flush, `Buffer::CheckExternalChanges` no longer flags on a bare mtime mismatch. When `current_mtime != last_modified_time_` it compares the on-disk bytes against `content_` (exact, then EOL-normalized) and only flags `FILE_CHANGED` on a real content difference; a benign mtime bump refreshes `last_modified_time_` and stays NORMAL. The stamp is refreshed ONLY on confirmed equality, so a genuine unresolved external edit keeps flagging. See `libs/vxcore/AGENTS.md` and `libs/vxcore/tests/test_buffer.cpp` (`test_buffer_external_change_content_aware`).
+
+The git sync backend sets `core.autocrlf=false` (`git_sync_pipeline.cpp`), so sync itself does not rewrite EOLs; the EOL-normalized compare in layer 2 is defense against third-party external editors. Coverage: `tests/core/test_buffer_save_queue.cpp` (`testIsBusyReflectsPendingAndRunning`).
+
 ## Credential Cleanup Invariants
 
 The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault entries (which surface to users as qtkeychain Win32 error 8 and similar storage faults on the next enable attempt), `m_credentialsStore->deleteCredentials(notebookId)` runs at FIVE well-defined sites. Every code path that retires a notebook or its sync registration goes through one of these.

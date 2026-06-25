@@ -161,6 +161,12 @@ void BufferSaveQueue::emitFinishedQueued(const QString &p_bufferId, quint64 p_re
       Qt::QueuedConnection);
 }
 
+bool BufferSaveQueue::isBusy(const QString &p_notebookId, const QString &p_bufferId) const {
+  const QString key = compositeKey(p_notebookId, p_bufferId);
+  QMutexLocker locker(&m_mutex);
+  return m_pending.contains(key) || m_running.value(key, false);
+}
+
 bool BufferSaveQueue::shutdown(int p_timeoutMs) {
   QMutexLocker locker(&m_mutex);
   if (m_stopping && m_inFlightCount == 0) {

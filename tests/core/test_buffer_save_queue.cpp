@@ -85,6 +85,7 @@ private slots:
   void testDistinctNotebooksParallelize();
   void testShutdownDrainsInFlight();
   void testErrorPath();
+  void testIsBusyReflectsPendingAndRunning();
 };
 
 // Helper: wait until the QSignalSpy collects @p_target signals or timeout.
@@ -287,6 +288,33 @@ void TestBufferSaveQueue::testErrorPath() {
   QCOMPARE(args.at(1).toULongLong(), quint64(42));
   QCOMPARE(args.at(2).toBool(), false);
   QVERIFY(!args.at(3).toString().isEmpty());
+
+  QVERIFY(queue.shutdown(2000));
+}
+
+void TestBufferSaveQueue::testIsBusyReflectsPendingAndRunning() {
+  FakeBufferCoreService fake;
+  fake.setSleepMs(200); // Hold the worker in setContentRaw so the job is "running".
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferSaveQueue queue(fake, gate);
+  QSignalSpy spy(&queue, &vnotex::BufferSaveQueue::saveFinished);
+
+  // Idle queue: not busy.
+  QVERIFY(!queue.isBusy("nb1", "bufA"));
+  // A different buffer must remain unaffected throughout.
+  QVERIFY(!queue.isBusy("nb1", "bufB"));
+
+  queue.enqueue("nb1", "bufA", "payload", 1);
+
+  // While the worker is sleeping inside setContentRaw, the job is in-flight and
+  // isBusy must report true for THIS buffer only. This is the exact window the
+  // external-change check must skip to avoid a self-write false positive.
+  QVERIFY(queue.isBusy("nb1", "bufA"));
+  QVERIFY(!queue.isBusy("nb1", "bufB"));
+
+  // After the save drains, isBusy returns to false.
+  QVERIFY(waitForSignalCount(spy, 1));
+  QVERIFY(queue.isBusy("nb1", "bufA") == false);
 
   QVERIFY(queue.shutdown(2000));
 }

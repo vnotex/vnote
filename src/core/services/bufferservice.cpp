@@ -311,6 +311,17 @@ QStringList BufferService::checkAllExternalChanges() {
       continue;
     }
 
+    // Skip while VNote is itself writing this buffer's file on a worker thread
+    // (per-buffer gate applied to the full sweep so background tabs do not
+    // false-positive against their own in-flight save). See
+    // checkSingleExternalChange for the rationale.
+    if (m_saveQueue) {
+      const QString notebookId = bufObj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+      if (m_saveQueue->isBusy(notebookId, bufferId)) {
+        continue;
+      }
+    }
+
     // Check for external changes.
     if (!BufferCoreService::checkExternalChanges(bufferId)) {
       continue;
@@ -343,6 +354,19 @@ bool BufferService::checkSingleExternalChange(const QString &p_bufferId) {
   // Skip virtual buffers.
   if (isVirtualBuffer(p_bufferId)) {
     return false;
+  }
+
+  // Skip while VNote is itself writing this buffer's file on a worker thread.
+  // A check that lands mid-self-write would read the new on-disk mtime before
+  // BufferSaveQueue's worker re-stamps Buffer::last_modified_time_, producing a
+  // false-positive "modified outside VNote". Once the save drains, the stamp
+  // matches disk and a later check stays NORMAL.
+  if (m_saveQueue) {
+    const QString notebookId =
+        getBuffer(p_bufferId).value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+    if (m_saveQueue->isBusy(notebookId, p_bufferId)) {
+      return false;
+    }
   }
 
   // Check for external changes via vxcore.

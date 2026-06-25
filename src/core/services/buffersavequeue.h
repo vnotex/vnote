@@ -53,6 +53,14 @@ public:
   // to drain. Returns true if drained; false on timeout.
   bool shutdown(int p_timeoutMs = 5000);
 
+  // True if a save for @p_notebookId/@p_bufferId is pending (coalesced, not yet
+  // started) OR in-flight (worker dispatched, may be mid-write). The external-
+  // change detector calls this to AVOID inspecting a buffer whose file VNote is
+  // itself writing on a worker thread: a check that reads the new on-disk mtime
+  // before the worker re-stamps Buffer::last_modified_time_ would otherwise
+  // false-positive as "modified outside VNote". Thread-safe; takes m_mutex.
+  bool isBusy(const QString &p_notebookId, const QString &p_bufferId) const;
+
 signals:
   // Emitted on this object's owning thread (queued from worker).
   void saveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
