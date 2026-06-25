@@ -74,6 +74,15 @@ add_qt_test(test_firstruncontroller
     vxcore
   GUILESS
 )
+# Point the FRE test at the REAL bundled notebook shipped in
+# src/data/extra/default-notebook. Using the production asset (rather than a
+# tests/data copy) means the test also guards against a corrupt/incomplete
+# bundled notebook. fileutils2.cpp (copyDir) comes from core_configs and
+# error.cpp from core_services -- do NOT add them to SOURCES or MSVC reports
+# duplicate symbols.
+target_compile_definitions(test_firstruncontroller PRIVATE
+  DEFAULT_NOTEBOOK_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/src/data/extra/default-notebook"
+)
 
 add_qt_test(test_bootstrap
   SOURCES

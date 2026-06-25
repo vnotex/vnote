@@ -96,10 +96,13 @@ void TestFirstRunController::test_versionUnchanged_noCreation() {
   QCOMPARE(spy.count(), 0);
 }
 
-// S2: target absent -> create default notebook, verify config fields + signal.
+// S2: target absent -> copy bundled notebook + open, verify config fields,
+// copied files on disk, and signal.
 void TestFirstRunController::test_create_targetAbsent() {
   FirstRunController controller(m_services);
-  controller.setParentDirOverrideForTesting(m_tempDir.createDir("s2"));
+  const QString parentDir = m_tempDir.createDir("s2");
+  controller.setParentDirOverrideForTesting(parentDir);
+  controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
   QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
 
   QCOMPARE(controller.shouldCreateDefaultNotebook(true), true);
@@ -115,6 +118,13 @@ void TestFirstRunController::test_create_targetAbsent() {
   QVERIFY(nb.value(QLatin1String(vxcore::kJsonKeyRootFolder))
               .toString()
               .endsWith(QStringLiteral("my_notebook")));
+
+  // The bundled notebook content was copied onto disk and is writable.
+  const QString root = parentDir + QStringLiteral("/my_notebook");
+  QVERIFY(QFileInfo::exists(root + QStringLiteral("/Welcome.md")));
+  QVERIFY(QFileInfo::exists(root + QStringLiteral("/vx_notebook/config.json")));
+  QFileInfo welcomeInfo(root + QStringLiteral("/Welcome.md"));
+  QVERIFY(welcomeInfo.isWritable());
 
   QCOMPARE(spy.count(), 1);
   QVERIFY(!spy.at(0).at(0).toString().isEmpty());
@@ -159,13 +169,14 @@ void TestFirstRunController::test_targetNonEmpty_skip() {
   QCOMPARE(spy.count(), 0);
 }
 
-// S5: target dir exists but empty -> create.
+// S5: target dir exists but empty -> copy + open.
 void TestFirstRunController::test_targetEmptyDir_create() {
   QString override = m_tempDir.createDir("s5");
   m_tempDir.createDir("s5/my_notebook");
 
   FirstRunController controller(m_services);
   controller.setParentDirOverrideForTesting(override);
+  controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
   QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
 
   QVERIFY(controller.createDefaultNotebook());
@@ -195,6 +206,7 @@ void TestFirstRunController::test_targetIsFile_skip() {
 void TestFirstRunController::test_doubleTrigger_single() {
   FirstRunController controller(m_services);
   controller.setParentDirOverrideForTesting(m_tempDir.createDir("s7"));
+  controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
   QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
 
   QVERIFY(controller.createDefaultNotebook());
