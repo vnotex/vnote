@@ -59,7 +59,10 @@ public:
   Mode currentMode() const;
 
 signals:
-  void notebookOpened(const QString &p_notebookId);
+  // Emitted on a successful open. p_suppressSyncPrompt is true ONLY for a
+  // no-PAT remote clone that landed as writable S2 and must open silently
+  // (no PAT auto-prompt). False for all normal opens (local + with-PAT clone).
+  void notebookOpened(const QString &p_notebookId, bool p_suppressSyncPrompt);
 
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;

@@ -82,6 +82,12 @@ struct CloneAndOpenResult {
   QString errorMessage;
   // True when the notebook was opened in read-only mode (empty PAT path).
   bool isReadOnly = false;
+  // True when the notebook was cloned from a remote URL with NO PAT: it lands
+  // as a normal, fully-writable notebook with partial sync info persisted
+  // (sync state S2 — syncEnabled=true, syncBackend="git", syncRemoteUrl=<url>,
+  // no token). Such a clone must open SILENTLY (no PAT auto-prompt). Distinct
+  // from isReadOnly, which is NOT used by the no-PAT path anymore.
+  bool partialSyncNoPat = false;
 };
 
 // T22: Pre-flight validation result for CloneAndOpenInput. Mirrors the shape

@@ -70,6 +70,13 @@ private slots:
   void testOpenPromptImmuneToStartupSweep();
   void testOpenPromptRemovesPendingIdOnFirstReconcile();
 
+  // silent-S2-clone (open-remote-no-pat-not-readonly): the no-PAT remote clone
+  // opens SILENTLY. Part A: the open-dialog arming gate must NOT arm the prompt
+  // when suppressSyncPrompt is true. Part B: updateSyncButtonState must NOT
+  // append the "sync init failed" line for S2 + AUTH_FAILED.
+  void testSilentOpenDoesNotArmPrompt();
+  void testS2AuthFailedTooltipHidesError();
+
   // W4.T3 - reconcile error surface
   void testReconcileErrorUpdatesTooltip();
   void testReconcileSuccessClearsError();
@@ -548,7 +555,53 @@ inline void reconcileFinished(State &s, const QString &notebookId, VxCoreError r
     }
   }
 }
+
+// Models the notebookOpened slot's arming gate in NotebookExplorer2 (Part A,
+// src/widgets/notebookexplorer2.cpp open-dialog connect lambda). A no-PAT
+// remote clone lands as a writable S2 notebook that must open SILENTLY: the
+// dialog signals that via suppressSyncPrompt == true, in which case the
+// post-open PAT prompt is NOT armed (the id is never inserted into the pending
+// set). A normal local/with-PAT open passes suppressSyncPrompt == false, which
+// arms the prompt exactly as before.
+inline void notebookOpened(State &s, const QString &notebookId, bool suppressSyncPrompt) {
+  if (!suppressSyncPrompt && !notebookId.isEmpty()) {
+    s.pendingOpenSyncPrompt.insert(notebookId);
+  }
+}
 } // namespace mirror_open_prompt
+
+// ============================================================================
+// sync-info-on-open — updateSyncButtonState reconcile-error tooltip mirror
+// ============================================================================
+//
+// Mirrors the reconcile-error tooltip append + S2/AUTH_FAILED cosmetic guard
+// from NotebookExplorer2::updateSyncButtonState (Part B,
+// src/widgets/notebookexplorer2.cpp ~line 2275). A freshly-cloned no-PAT
+// notebook (S2) legitimately fails reconcile with AUTH_FAILED because it has
+// no token yet; that is the EXPECTED partial state, so the failure line is NOT
+// appended and the normal partial tooltip stands. All other state/error
+// combinations still surface the failure line. The literal strings are kept
+// character-for-character identical to production (wrapped with tr(...) there;
+// QCoreApplication::translate here is equivalent and available outside the
+// class). If production diverges, update BOTH this mirror AND the production
+// code in the same commit.
+namespace mirror_tooltip {
+inline QString syncButtonTooltip(SyncState state, bool hasReconcileError, int errorCode) {
+  // Base tooltip for the partial-config case (the only branch exercised here).
+  QString tooltip =
+      QCoreApplication::translate("NotebookExplorer2", "Sync configured but incomplete");
+  if (hasReconcileError) {
+    const bool s2AuthExpected =
+        (state == SyncState::S2) && (errorCode == static_cast<int>(VXCORE_ERR_SYNC_AUTH_FAILED));
+    if (!s2AuthExpected) {
+      tooltip += QCoreApplication::translate("NotebookExplorer2",
+                                             "\n\nLast sync init failed: error code %1")
+                     .arg(errorCode);
+    }
+  }
+  return tooltip;
+}
+} // namespace mirror_tooltip
 
 void TestNotebookExplorerSyncState::testClassifyS2WithRealClassifier() {
   // Proves the production gate input: a notebook with sync-ready config on disk
@@ -653,6 +706,52 @@ void TestNotebookExplorerSyncState::testOpenPromptRemovesPendingIdOnFirstReconci
                                         [](const QString &) { return SyncState::S2; });
   QVERIFY2(s.promptScheduledFor.isEmpty(),
            "consumed id must not re-prompt on a later reconcileFinished");
+}
+
+void TestNotebookExplorerSyncState::testSilentOpenDoesNotArmPrompt() {
+  // Part A: a no-PAT remote clone (S2) opens SILENTLY. The dialog emits
+  // notebookOpened with suppressSyncPrompt == true, so the arming gate must NOT
+  // insert the id into the pending set — the AUTH_FAILED that reconcile emits
+  // for the tokenless notebook therefore never pops the Sync Info dialog.
+  mirror_open_prompt::State s;
+  const QString silentId = QStringLiteral("nb-silent-s2");
+  mirror_open_prompt::notebookOpened(s, silentId, /*suppressSyncPrompt=*/true);
+  QVERIFY2(!s.pendingOpenSyncPrompt.contains(silentId),
+           "silent S2 clone (suppress=true) must NOT arm the post-open prompt");
+
+  // Control: a normal local/with-PAT open passes suppress == false and MUST
+  // arm the prompt exactly as before (no behavioral change for that path).
+  const QString normalId = QStringLiteral("nb-normal-open");
+  mirror_open_prompt::notebookOpened(s, normalId, /*suppressSyncPrompt=*/false);
+  QVERIFY2(s.pendingOpenSyncPrompt.contains(normalId),
+           "normal open (suppress=false) must arm the prompt as before");
+}
+
+void TestNotebookExplorerSyncState::testS2AuthFailedTooltipHidesError() {
+  // Part B: S2 + AUTH_FAILED is the EXPECTED partial state for a fresh no-PAT
+  // clone, so the cosmetic "sync init failed" line must be suppressed; the
+  // normal partial tooltip stands.
+  const QString tip = mirror_tooltip::syncButtonTooltip(
+      SyncState::S2, /*hasReconcileError=*/true, static_cast<int>(VXCORE_ERR_SYNC_AUTH_FAILED));
+  QVERIFY2(!tip.contains(QStringLiteral("sync init failed")),
+           "S2+AUTH_FAILED must NOT surface the sync-init-failed line");
+  QVERIFY2(tip.contains(QStringLiteral("Sync configured but incomplete")),
+           "S2 clone shows the normal partial tooltip");
+
+  // Control 1 (different state): a non-S2 state with a genuine error MUST still
+  // surface the failure line.
+  const QString tip2 = mirror_tooltip::syncButtonTooltip(SyncState::S4, /*hasReconcileError=*/true,
+                                                         static_cast<int>(VXCORE_ERR_SYNC_NETWORK));
+  QVERIFY2(tip2.contains(QStringLiteral("sync init failed")),
+           "non-S2/non-AUTH_FAILED errors must still surface");
+
+  // Control 2 (same S2 state, DIFFERENT error): proves the guard is keyed on
+  // BOTH state AND error — an S2 notebook with a non-AUTH_FAILED error still
+  // surfaces the failure line.
+  const QString tip3 = mirror_tooltip::syncButtonTooltip(SyncState::S2, /*hasReconcileError=*/true,
+                                                         static_cast<int>(VXCORE_ERR_SYNC_NETWORK));
+  QVERIFY2(tip3.contains(QStringLiteral("sync init failed")),
+           "S2 with a non-AUTH_FAILED error must still surface the failure line");
 }
 
 void TestNotebookExplorerSyncState::testT1_OnSyncFailedSurface_InProgressIsSilent() {

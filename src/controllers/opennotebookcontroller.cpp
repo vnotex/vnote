@@ -19,6 +19,7 @@
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
+#include <sync/sync_json_keys.h>
 #include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -486,8 +487,12 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
     // calls out: without it, session restore later cannot find the notebook
     // because root_folder still points at the obsolete staging dir.
     notebookService->closeNotebook(stagingNotebookId);
-    const QString optionsJson =
-        patEmpty ? QStringLiteral("{\"readOnly\":true}") : QStringLiteral("{}");
+    // Both the with-PAT (-> S5) and no-PAT (-> S2) remote-clone paths open the
+    // notebook WRITABLE. The no-PAT path no longer opens read-only; instead it
+    // persists partial sync info (S2) below, so the result is a normal, fully
+    // editable notebook that simply will not sync until the user supplies a
+    // token via the Sync Info dialog (S2 -> S5).
+    const QString optionsJson = QStringLiteral("{}");
     const QString finalNotebookId = notebookService->openNotebookEx(finalDir, optionsJson);
     if (finalNotebookId.isEmpty()) {
       // Re-open failed: best-effort cleanup of the just-created finalDir
@@ -502,14 +507,32 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
 
     const QString notebookName = notebookNameFromConfig(notebookService, finalNotebookId);
 
-    // Step 6: if PAT was supplied, persist + register sync. RO snapshot
-    // path skips this entirely (snapshot-only MVP).
+    // Step 6: if PAT was supplied, persist + register sync (-> S5). The no-PAT
+    // path skips registration and instead persists partial sync info (-> S2).
     if (patEmpty) {
+      // No PAT supplied: land as a normal, fully-writable notebook with partial
+      // sync info persisted (sync state S2). syncEnabled=true + backend="git" +
+      // remoteUrl set, but NO PAT in the keychain and NO vxcore sync
+      // registration -> the notebook opens SILENTLY and will not sync until the
+      // user completes the sync info (adds a token) via the Sync Info dialog
+      // (S2 -> S5). We write the three flat sync keys DIRECTLY here; we MUST NOT
+      // route through SyncService::enableSyncForNotebook / bootstrapAndPersist /
+      // bootstrapApply because those reject an empty PAT by contract. This write
+      // runs AFTER openNotebookEx (the clone wrote syncEnabled=false), so our
+      // true value is the final persisted state.
+      QJsonObject cfg = notebookService->getNotebookConfig(finalNotebookId);
+      cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
+      cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
+      cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = remoteUrl;
+      notebookService->updateNotebookConfig(
+          finalNotebookId, QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact)));
+
       CloneAndOpenResult result;
       result.success = true;
       result.notebookId = finalNotebookId;
       result.notebookName = notebookName;
-      result.isReadOnly = true;
+      result.isReadOnly = false;
+      result.partialSyncNoPat = true;
       emitFinished(result);
       return;
     }

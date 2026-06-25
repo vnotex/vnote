@@ -1178,20 +1178,26 @@ void NotebookExplorer2::importNotebook() {
   // opened notebook, matching the behavior the old QFileDialog path used
   // to provide.
   OpenNotebookDialog2 dialog(m_services, window());
-  connect(&dialog, &OpenNotebookDialog2::notebookOpened, this, [this](const QString &p_notebookId) {
-    // Record the interactively-opened notebook so the reconcileFinished handler
-    // can auto-prompt for a missing PAT (state S2) right after open. Scoped to
-    // this id only, so the startup reconcile sweep never pops a dialog. The
-    // insert runs here (synchronously, before the async credentialsError that
-    // drives the S2 reconcileFinished can fire) so it always wins that race.
-    if (!p_notebookId.isEmpty()) {
-      m_pendingOpenSyncPrompt.insert(p_notebookId);
-    }
-    if (m_notebookSelector) {
-      m_notebookSelector->loadNotebooks();
-      setCurrentNotebook(p_notebookId);
-    }
-  });
+  connect(&dialog, &OpenNotebookDialog2::notebookOpened, this,
+          [this](const QString &p_notebookId, bool p_suppressSyncPrompt) {
+            // Record the interactively-opened notebook so the reconcileFinished handler
+            // can auto-prompt for a missing PAT (state S2) right after open. Scoped to
+            // this id only, so the startup reconcile sweep never pops a dialog.
+            //
+            // EXCEPTION (silent S2 clone): a no-PAT remote clone lands as a writable S2
+            // notebook that must open SILENTLY. The dialog signals that via
+            // p_suppressSyncPrompt == true; in that case we do NOT arm the prompt, so
+            // the AUTH_FAILED that reconcile emits for the tokenless notebook will not
+            // pop the Sync Info dialog. Selector refresh / setCurrentNotebook is
+            // unchanged for both cases.
+            if (!p_suppressSyncPrompt && !p_notebookId.isEmpty()) {
+              m_pendingOpenSyncPrompt.insert(p_notebookId);
+            }
+            if (m_notebookSelector) {
+              m_notebookSelector->loadNotebooks();
+              setCurrentNotebook(p_notebookId);
+            }
+          });
   dialog.exec();
 }
 
@@ -2274,8 +2280,17 @@ void NotebookExplorer2::updateSyncButtonState() {
 
   // Append reconcile error to tooltip if present
   if (m_lastReconcileError.contains(nbId)) {
-    int errorCode = m_lastReconcileError.value(nbId);
-    tooltip += tr("\n\nLast sync init failed: error code %1").arg(errorCode);
+    const int errorCode = m_lastReconcileError.value(nbId);
+    // Cosmetic guard: a freshly-cloned no-PAT notebook (S2) legitimately fails
+    // reconcile with AUTH_FAILED because it has no token yet. That is the
+    // EXPECTED partial state, not an init error to surface -- keep the normal
+    // partial tooltip instead of appending the failure line. All other
+    // states/errors are unaffected.
+    const bool s2AuthExpected =
+        (state == SyncState::S2) && (errorCode == static_cast<int>(VXCORE_ERR_SYNC_AUTH_FAILED));
+    if (!s2AuthExpected) {
+      tooltip += tr("\n\nLast sync init failed: error code %1").arg(errorCode);
+    }
   }
 
   m_syncButton->setToolTip(tooltip);

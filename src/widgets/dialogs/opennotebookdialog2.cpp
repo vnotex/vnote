@@ -182,9 +182,10 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remotePatEdit = new QLineEdit(p_page);
   m_remotePatEdit->setObjectName(QLatin1String(kRemotePatEditName));
   m_remotePatEdit->setEchoMode(QLineEdit::Password);
-  m_remotePatEdit->setPlaceholderText(tr("Optional (empty to open as read-only)"));
+  m_remotePatEdit->setPlaceholderText(tr("Optional — leave empty to open without syncing yet"));
   m_remotePatEdit->setToolTip(
-      tr("If empty, the notebook opens read-only (you cannot edit, only view)."));
+      tr("If empty, the notebook opens normally (fully editable) with sync configured but "
+         "inactive. Add a token later to start syncing."));
   layout->addRow(tr("Personal Access Token:"), m_remotePatEdit);
 
   // Local root folder: project-standard LocationInputWithBrowseButton. Must
@@ -381,7 +382,7 @@ void OpenNotebookDialog2::handleLocalOpen() {
   }
 
   m_openedNotebookId = result.notebookId;
-  emit notebookOpened(m_openedNotebookId);
+  emit notebookOpened(m_openedNotebookId, false);
   accept();
 }
 
@@ -454,7 +455,7 @@ void OpenNotebookDialog2::onCloneFinished(const CloneAndOpenResult &p_result) {
 
   if (p_result.success) {
     m_openedNotebookId = p_result.notebookId;
-    emit notebookOpened(m_openedNotebookId);
+    emit notebookOpened(m_openedNotebookId, p_result.partialSyncNoPat);
     accept();
     return;
   }

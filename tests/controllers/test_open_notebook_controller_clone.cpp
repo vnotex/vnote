@@ -6,11 +6,13 @@
 // destination is never touched if anything fails. This test exercises the
 // four key contract points enumerated in the plan:
 //
-//   1. testCloneRoSnapshotHappyPath
+//   1. testCloneNoPatWritableS2HappyPath
 //      Empty PAT against a real bare-repo fixture seeded with a VNote
 //      bundled-notebook layout. The clone succeeds, the notebook opens
-//      read-only (snapshot-only MVP), the final dir contains the cloned
-//      contents, and no keychain entry is created.
+//      WRITABLE with partial sync info persisted (sync state S2): syncEnabled
+//      + git backend + remote URL on disk, but NO keychain entry and NO vxcore
+//      sync registration. The final dir contains the cloned contents and the
+//      classifier reports S2.
 //
 //   2. testValidationRejectsExistingDestDir
 //      Pre-create the user-chosen destination dir. The controller's
@@ -51,7 +53,12 @@
 #include <controllers/opennotebookcontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/synccredentialsstore.h>
+#include <core/services/syncservice.h>
+#include <core/services/syncstateclassifier.h>
 #include <temp_dir_fixture.h>
+
+#include "../helpers/keychain_guard.h"
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -67,7 +74,7 @@ private slots:
   void initTestCase();
   void cleanupTestCase();
 
-  void testCloneRoSnapshotHappyPath();
+  void testCloneNoPatWritableS2HappyPath();
   void testValidationRejectsExistingDestDir();
   void testNonNotebookRemoteCleansUp();
   void testCloneFailureRollback();
@@ -96,6 +103,7 @@ private:
   // context pointer; see libs/vxcore/include/vxcore/vxcore_types.h:73.
   VxCoreContextHandle m_ctx = nullptr;
   ServiceLocator m_services;
+  tests::KeychainGuard *m_keychainGuard = nullptr;
 };
 
 void TestOpenNotebookControllerClone::initTestCase() {
@@ -112,6 +120,14 @@ void TestOpenNotebookControllerClone::initTestCase() {
   // parented to this so QObject cleanup handles destruction at teardown.
   auto *nbSvc = new NotebookCoreService(m_ctx, this);
   m_services.registerService<NotebookCoreService>(nbSvc);
+
+  // Register the sync services so the test can drive SyncStateClassifier::classify
+  // against the live notebook config written by the no-PAT (S2) clone path.
+  m_services.registerService<SyncCredentialsStore>(new SyncCredentialsStore(m_services));
+  m_services.registerService<SyncService>(new SyncService(m_services));
+  m_services.registerService<SyncStateClassifier>(new SyncStateClassifier(m_services));
+  auto *credStore = m_services.get<SyncCredentialsStore>();
+  m_keychainGuard = new tests::KeychainGuard(credStore, this);
 }
 
 void TestOpenNotebookControllerClone::cleanupTestCase() {
@@ -126,6 +142,11 @@ void TestOpenNotebookControllerClone::cleanupTestCase() {
         nbSvc->closeNotebook(id);
       }
     }
+  }
+  if (m_keychainGuard) {
+    m_keychainGuard->cleanup();
+    delete m_keychainGuard;
+    m_keychainGuard = nullptr;
   }
   if (m_ctx) {
     vxcore_context_destroy(m_ctx);
@@ -255,7 +276,7 @@ QString TestOpenNotebookControllerClone::seedNonVNoteBareRepo(const QString &p_b
   return toFileUrl(p_bareRepoPath);
 }
 
-void TestOpenNotebookControllerClone::testCloneRoSnapshotHappyPath() {
+void TestOpenNotebookControllerClone::testCloneNoPatWritableS2HappyPath() {
   TempDirFixture localTemp;
   QVERIFY(localTemp.isValid());
 
@@ -269,7 +290,7 @@ void TestOpenNotebookControllerClone::testCloneRoSnapshotHappyPath() {
 
   CloneAndOpenInput input;
   input.remoteUrl = remoteUrl;
-  input.pat = QString(); // anonymous -> read-only snapshot
+  input.pat = QString(); // no PAT -> writable partial-sync (S2), opens silently
   input.finalDestDir = localTemp.filePath(QStringLiteral("clone_dest_happy"));
   input.autoSyncEnabled = true;
 
@@ -290,7 +311,8 @@ void TestOpenNotebookControllerClone::testCloneRoSnapshotHappyPath() {
            qPrintable(QStringLiteral("expected success; error: %1").arg(result.errorMessage)));
   QCOMPARE(result.notebookId, notebookGuid);
   QCOMPARE(result.notebookName, notebookName);
-  QVERIFY2(result.isReadOnly, "empty PAT must produce a read-only snapshot");
+  QVERIFY2(!result.isReadOnly, "no-PAT clone must be WRITABLE (partial-sync S2), not read-only");
+  QVERIFY2(result.partialSyncNoPat, "no-PAT clone must set partialSyncNoPat (silent S2 open)");
 
   // Final dir exists and contains the cloned VNote layout. The staging dir
   // must have been renamed away (no leftover .vnote-clone-pending-* sibling).
@@ -310,11 +332,28 @@ void TestOpenNotebookControllerClone::testCloneRoSnapshotHappyPath() {
   QVERIFY2(!QFile::exists(input.finalDestDir + QStringLiteral("/staging-marker.json")),
            "staging-marker.json must not leak into the cloned notebook root");
 
-  // Vxcore confirms read-only state on the just-opened notebook.
-  bool readOnly = false;
+  // Vxcore confirms the notebook is WRITABLE (not read-only) after the no-PAT clone.
+  bool readOnly = true;
   QCOMPARE(vxcore_notebook_is_read_only(m_ctx, result.notebookId.toUtf8().constData(), &readOnly),
            VXCORE_OK);
-  QCOMPARE(readOnly, true);
+  QCOMPARE(readOnly, false);
+
+  // Partial sync info (S2) persisted to notebook config: enabled + git + url, no PAT.
+  auto *nbSvc = m_services.get<NotebookCoreService>();
+  const QJsonObject cfg = nbSvc->getNotebookConfig(result.notebookId);
+  QCOMPARE(cfg.value(QStringLiteral("syncEnabled")).toBool(), true);
+  QCOMPARE(cfg.value(QStringLiteral("syncBackend")).toString(), QStringLiteral("git"));
+  QCOMPARE(cfg.value(QStringLiteral("syncRemoteUrl")).toString(), remoteUrl);
+
+  // No PAT was stored in the keychain (no empty-PAT write).
+  auto *credStore = m_services.get<SyncCredentialsStore>();
+  QVERIFY2(!credStore->hasCredentials(result.notebookId),
+           "no-PAT clone must NOT create a keychain entry");
+
+  // Classifier confirms the canonical partial state S2.
+  auto *classifier = m_services.get<SyncStateClassifier>();
+  QCOMPARE(static_cast<int>(classifier->classify(result.notebookId)),
+           static_cast<int>(SyncState::S2));
 }
 
 void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
