@@ -851,12 +851,12 @@ Remove them from the configuration?</source>
         <translation>交叉复制</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="171"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="173"/>
         <source>Setting up sync</source>
         <translation>正在配置同步</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="172"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="174"/>
         <source>Connecting to remote and syncing... (Sync cannot be cancelled once started.)</source>
         <translation>正在连接远端并同步...（同步一旦开始无法取消。）</translation>
     </message>
@@ -1914,7 +1914,7 @@ Backup file last modified time: %2</source>
     <message>
         <location filename="../../../models/attachmentlistmodel.cpp" line="98"/>
         <source>Failed to rename &quot;%1&quot;.</source>
-        <translation>无法重命名 "%1"。</translation>
+        <translation>无法重命名 &quot;%1&quot;。</translation>
     </message>
 </context>
 <context>
@@ -2080,70 +2080,56 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::CustomCommandProvider</name>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="23"/>
         <source>Custom Command</source>
-        <translation>自定义命令</translation>
+        <translation type="vanished">自定义命令</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="33"/>
         <source>Command is not configured</source>
-        <translation>未配置命令</translation>
+        <translation type="vanished">未配置命令</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="41"/>
         <source>Failed to create temporary file</source>
-        <translation>无法创建临时文件</translation>
+        <translation type="vanished">无法创建临时文件</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="52"/>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="156"/>
         <source>Invalid command: %1</source>
-        <translation>无效的命令：%1</translation>
+        <translation type="vanished">无效的命令：%1</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="64"/>
         <source>Command not found: %1</source>
-        <translation>未找到命令：%1</translation>
+        <translation type="vanished">未找到命令：%1</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="70"/>
         <source>Command timed out after 30 seconds</source>
-        <translation>命令在 30 秒后超时</translation>
+        <translation type="vanished">命令在 30 秒后超时</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="76"/>
         <source>Command failed (exit code %1): %2</source>
-        <translation>命令执行失败（退出码 %1）：%2</translation>
+        <translation type="vanished">命令执行失败（退出码 %1）：%2</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="96"/>
         <source>No URL returned by command</source>
-        <translation>命令未返回 URL</translation>
+        <translation type="vanished">命令未返回 URL</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="114"/>
         <source>Delete is not supported by custom command provider</source>
-        <translation>自定义命令提供方不支持删除</translation>
+        <translation type="vanished">自定义命令提供方不支持删除</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="136"/>
         <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.</source>
-        <translation>兼容 Typora 的上传命令。图片文件路径会作为最后一个参数追加。标准输出的最后一行非空内容会作为上传后的图片 URL。</translation>
+        <translation type="vanished">兼容 Typora 的上传命令。图片文件路径会作为最后一个参数追加。标准输出的最后一行非空内容会作为上传后的图片 URL。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="149"/>
         <source>Command is empty</source>
-        <translation>命令为空</translation>
+        <translation type="vanished">命令为空</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="163"/>
         <source>Program not found in PATH: %1</source>
-        <translation>在 PATH 中未找到程序：%1</translation>
+        <translation type="vanished">在 PATH 中未找到程序：%1</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="167"/>
         <source>Configuration is valid. Program found: %1</source>
-        <translation>配置有效。已找到程序：%1</translation>
+        <translation type="vanished">配置有效。已找到程序：%1</translation>
     </message>
 </context>
 <context>
@@ -2216,114 +2202,138 @@ Backup file last modified time: %2</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="42"/>
         <source>Auto Save</source>
-        <translation>自动保存</translation>
+        <translation type="vanished">自动保存</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="43"/>
         <source>Backup File</source>
-        <translation>备份文件</translation>
+        <translation type="vanished">备份文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="57"/>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="65"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="56"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="64"/>
         <source>Line ending</source>
         <translation>行结尾</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="59"/>
         <source>Follow Platform</source>
-        <translation>跟随平台</translation>
+        <translation type="vanished">跟随平台</translation>
+    </message>
+    <message>
+        <source>Follow File</source>
+        <translation type="vanished">跟随文件</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="42"/>
+        <source>Auto save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="43"/>
+        <source>Backup file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="58"/>
+        <source>Follow platform</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="59"/>
+        <source>Follow file</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="60"/>
-        <source>Follow File</source>
-        <translation>跟随文件</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="61"/>
         <source>LF (Linux/macOS)</source>
         <translation>LF(Linux/macOS)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="62"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="61"/>
         <source>CR LF (Windows)</source>
         <translation>CR LF(Windows)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="63"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="62"/>
         <source>CR</source>
         <translation>CR</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="77"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="75"/>
         <source>Icon size of the editor tool bar</source>
         <translation>编辑器工具栏图标大小</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="82"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="80"/>
         <source>Tool bar icon size</source>
         <translation>工具栏图标大小</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="98"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="95"/>
         <source>Default dictionary used for spell check</source>
         <translation>拼写检查默认词典</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="108"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="105"/>
         <source>Add Dictionary</source>
         <translation>添加词典</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="114"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="111"/>
         <source>VNote uses [Hunspell](http://hunspell.github.io/) for spell check.</source>
         <translation>VNote使用[Hunspell](http://hunspell.github.io/)进行拼写检查。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="115"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="112"/>
         <source>Please download Hunspell&apos;s dictionaries, put them under (%1) and restart VNote.</source>
         <translation>请下载Hunspell的词典，放置于(%1)并重启VNote。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="124"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="121"/>
         <source>Spell check dictionary</source>
         <translation>拼写检查词典</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="137"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="132"/>
         <source>Default content layout mode for editor windows</source>
         <translation>编辑器窗口的默认内容布局模式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="140"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="134"/>
+        <source>Full width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="151"/>
+        <source>Maximum content width in pixels for readable width mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Full Width</source>
-        <translation>全宽</translation>
+        <translation type="vanished">全宽</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="142"/>
         <source>Readable Width</source>
-        <translation>易读宽度</translation>
+        <translation type="vanished">易读宽度</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="144"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="139"/>
         <source>Content layout</source>
         <translation>内容布局</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="157"/>
         <source>Maximum content width in pixels for Readable Width mode</source>
-        <translation>易读宽度模式下的最大内容宽度（像素）</translation>
+        <translation type="vanished">易读宽度模式下的最大内容宽度（像素）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="162"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="136"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="156"/>
         <source>Readable width</source>
         <translation>易读宽度</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="35"/>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="239"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="231"/>
         <source>Editor</source>
         <translation>编辑器</translation>
     </message>
@@ -2331,58 +2341,58 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ExportController</name>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="27"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="29"/>
         <source>Export is already in progress.</source>
         <translation>已有导出任务正在进行中。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="38"/>
-        <location filename="../../../controllers/exportcontroller.cpp" line="180"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="40"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="182"/>
         <source>NotebookCoreService not available.</source>
         <translation>NotebookCoreService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="44"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="46"/>
         <source>Failed to create exporter.</source>
         <translation>无法创建导出器。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="52"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="54"/>
         <source>No current buffer available for export.</source>
         <translation>没有可导出的当前缓冲区。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="60"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="62"/>
         <source>Failed to resolve current buffer path.</source>
         <translation>无法解析当前缓冲区路径。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="84"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="86"/>
         <source>No current note available for export.</source>
         <translation>没有可导出的当前笔记。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="92"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="94"/>
         <source>Failed to resolve current note path.</source>
         <translation>无法解析当前笔记路径。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="111"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="113"/>
         <source>No current folder available for export.</source>
         <translation>没有可导出的当前文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="131"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="133"/>
         <source>No current notebook available for export.</source>
         <translation>没有可导出的当前笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="143"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="145"/>
         <source>Unsupported export source.</source>
         <translation>不支持的导出来源。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="198"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="200"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>无法解析(%1)的文件路径。</translation>
     </message>
@@ -2738,49 +2748,40 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ExportDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="96"/>
         <source>Current Buffer (%1)</source>
-        <translation>当前缓冲区(%1)</translation>
+        <translation type="vanished">当前缓冲区(%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="98"/>
         <source>Current Buffer</source>
-        <translation>当前缓冲区</translation>
+        <translation type="vanished">当前缓冲区</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="102"/>
         <source>Current Note (%1)</source>
-        <translation>当前笔记(%1)</translation>
+        <translation type="vanished">当前笔记(%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="104"/>
         <source>Current Note</source>
-        <translation>当前笔记</translation>
+        <translation type="vanished">当前笔记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="108"/>
         <source>Current Folder (%1)</source>
-        <translation>当前文件夹(%1)</translation>
+        <translation type="vanished">当前文件夹(%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="110"/>
         <source>Current Folder</source>
-        <translation>当前文件夹</translation>
+        <translation type="vanished">当前文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="114"/>
         <source>Current Notebook (%1)</source>
-        <translation>当前笔记本(%1)</translation>
+        <translation type="vanished">当前笔记本(%1)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="116"/>
         <source>Current Notebook</source>
-        <translation>当前笔记本</translation>
+        <translation type="vanished">当前笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="119"/>
         <source>Unknown Source</source>
-        <translation>未知来源</translation>
+        <translation type="vanished">未知来源</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="143"/>
@@ -2868,25 +2869,20 @@ Backup file last modified time: %2</source>
         <translation>处理子文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="276"/>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="432"/>
         <source>Markdown Options</source>
-        <translation>Markdown 选项</translation>
+        <translation type="vanished">Markdown 选项</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="276"/>
         <source>HTML Options</source>
-        <translation>HTML 选项</translation>
+        <translation type="vanished">HTML 选项</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="276"/>
         <source>PDF Options</source>
-        <translation>PDF 选项</translation>
+        <translation type="vanished">PDF 选项</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="277"/>
         <source>Custom Options</source>
-        <translation>自定义选项</translation>
+        <translation type="vanished">自定义选项</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="289"/>
@@ -2954,10 +2950,80 @@ Backup file last modified time: %2</source>
         <translation>Wkhtmltopdf参数:</translation>
     </message>
     <message>
+        <source>All-in-One</source>
+        <translation type="vanished">多合一</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="96"/>
+        <source>Current buffer (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="98"/>
+        <source>Current buffer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="102"/>
+        <source>Current note (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="104"/>
+        <source>Current note</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="108"/>
+        <source>Current folder (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="110"/>
+        <source>Current folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="114"/>
+        <source>Current notebook (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="116"/>
+        <source>Current notebook</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="119"/>
+        <source>Unknown source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="276"/>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="432"/>
+        <source>Markdown options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="276"/>
+        <source>HTML options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="276"/>
+        <source>PDF options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="277"/>
+        <source>Custom options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="376"/>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="415"/>
-        <source>All-in-One</source>
-        <translation>多合一</translation>
+        <source>All-in-one</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="377"/>
@@ -3141,44 +3207,44 @@ Backup file last modified time: %2</source>
         <translation>无法保存文件类型关联。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="155"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="153"/>
         <source>File Associations</source>
         <translation>文件关联</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="181"/>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="257"/>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="299"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="179"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="256"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="298"/>
         <source>Suffixes separated by ;</source>
         <translation>由;分隔的后缀</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="182"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="180"/>
         <source>List of suffixes for this file type</source>
         <translation>该文件类型的后缀列表</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="217"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="215"/>
         <source>Add Program</source>
         <translation>添加程序</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="243"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="241"/>
         <source>Program name</source>
         <translation>程序名</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="244"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="242"/>
         <source>Display name for the external program</source>
         <translation>外部程序的显示名称</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="250"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="248"/>
         <source>Command (%1 = file path)</source>
         <translation>命令 (%1 = 文件路径)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="251"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="250"/>
         <source>Executable path or command. Use %1 as placeholder for the file path</source>
         <translation>可执行文件路径或命令。使用 %1 作为文件路径占位符</translation>
     </message>
@@ -3193,17 +3259,21 @@ Backup file last modified time: %2</source>
         <translation>移除</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="294"/>
-        <source>System Default App</source>
-        <translation>系统默认程序</translation>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="293"/>
+        <source>System default app</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="295"/>
+        <source>System Default App</source>
+        <translation type="vanished">系统默认程序</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="294"/>
         <source>Built-in program that opens files with the OS default application</source>
         <translation>使用操作系统默认程序打开文件的内置程序</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="300"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="299"/>
         <source>File suffixes to open with the system default application</source>
         <translation>使用系统默认程序打开的文件后缀</translation>
     </message>
@@ -3492,6 +3562,19 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
+    <name>vnotex::FirstRunController</name>
+    <message>
+        <location filename="../../../controllers/firstruncontroller.cpp" line="78"/>
+        <source>My Notebook</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/firstruncontroller.cpp" line="79"/>
+        <source>My default notebook in VNote</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>vnotex::FolderFilesFilterWidget</name>
     <message>
         <location filename="../../../widgets/dialogs/folderfilesfilterwidget.cpp" line="40"/>
@@ -3563,88 +3646,108 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::GeneralPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="30"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="31"/>
         <source>Interface language</source>
         <translation>界面语言</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="32"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="33"/>
         <source>Default</source>
         <translation>默认</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="40"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="41"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="51"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="52"/>
         <source>OpenGL implementation used to render application</source>
         <translation>用于渲染应用程序的OpenGL实现</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="53"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="54"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="54"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="55"/>
         <source>Desktop</source>
         <translation>Desktop</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="55"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="56"/>
         <source>OpenGL ES</source>
         <translation>OpenGL ES</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="56"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="57"/>
         <source>Software</source>
         <translation>Software</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="58"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="59"/>
         <source>OpenGL</source>
         <translation>OpenGL</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="70"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="71"/>
         <source>Minimize to system tray</source>
         <translation>最小化到系统托盘</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="72"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="73"/>
         <source>Minimize to system tray when closed</source>
         <translation>关闭时最小化到系统托盘</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="82"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="83"/>
         <source>Recover last session on start</source>
         <translation>启动时恢复上次会话</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="85"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="86"/>
         <source>Recover last session (like buffers) on start of VNote</source>
         <translation>启动VNote时恢复上次会话（如缓冲区）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="95"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="96"/>
         <source>Check for updates on start</source>
         <translation>启动时检查更新</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="97"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="98"/>
         <source>Check for updates on start of VNote</source>
         <translation>VNote启动时检查更新</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="156"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="111"/>
+        <source>Immediate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="113"/>
+        <source>Auto-sync runs at most once per this interval. 0 = sync immediately on every change.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="115"/>
+        <source>Auto-sync interval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="178"/>
         <source>Failed to save recover session setting.</source>
         <translation>无法保存会话恢复设置。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="26"/>
-        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="165"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="186"/>
+        <source>Failed to save auto-sync interval.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="27"/>
+        <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="193"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
@@ -3652,146 +3755,115 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::GitHubProvider</name>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="20"/>
         <source>GitHub Repository</source>
-        <translation>GitHub 仓库</translation>
+        <translation type="vanished">GitHub 仓库</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="41"/>
         <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.</source>
-        <translation>拥有 'repo' 权限的 GitHub 个人访问令牌。在 GitHub → Settings → Developer settings → Personal access tokens 处生成。</translation>
+        <translation type="vanished">拥有 &apos;repo&apos; 权限的 GitHub 个人访问令牌。在 GitHub → Settings → Developer settings → Personal access tokens 处生成。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="44"/>
         <source>Your GitHub username.</source>
-        <translation>您的 GitHub 用户名。</translation>
+        <translation type="vanished">您的 GitHub 用户名。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="47"/>
         <source>Name of the GitHub repository to store images. Must already exist.</source>
-        <translation>用于存放图片的 GitHub 仓库名。必须已存在。</translation>
+        <translation type="vanished">用于存放图片的 GitHub 仓库名。必须已存在。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="69"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>个人令牌/用户名/仓库名不能为空。</translation>
+        <translation type="vanished">个人令牌/用户名/仓库名不能为空。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="86"/>
         <source>Private repository is not supported.</source>
-        <translation>不支持私有仓库。</translation>
+        <translation type="vanished">不支持私有仓库。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="129"/>
         <source>Failed to create image with empty path.</source>
-        <translation>无法从空路径创建图片。</translation>
+        <translation type="vanished">无法从空路径创建图片。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="134"/>
-        <location filename="../../../imagehost/githubprovider.cpp" line="191"/>
         <source>Invalid GitHub image host configuration.</source>
-        <translation>无效的GitHub图床配置。</translation>
+        <translation type="vanished">无效的GitHub图床配置。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="145"/>
         <source>The resource already exists at the image host (%1).</source>
-        <translation>该资源已经存在于图床(%1)。</translation>
+        <translation type="vanished">该资源已经存在于图床(%1)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="148"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床查询资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床查询资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="160"/>
-        <location filename="../../../imagehost/githubprovider.cpp" line="171"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床创建资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床创建资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="233"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
-        <translation>无法获取该资源的SHA值(%1)(%2)。</translation>
+        <translation type="vanished">无法获取该资源的SHA值(%1)(%2)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="245"/>
         <source>Failed to delete resource (%1) (%2).</source>
-        <translation>无法删除资源(%1)(%2)。</translation>
+        <translation type="vanished">无法删除资源(%1)(%2)。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::GiteeProvider</name>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="19"/>
         <source>Gitee Repository</source>
-        <translation>Gitee 仓库</translation>
+        <translation type="vanished">Gitee 仓库</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="40"/>
         <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.</source>
-        <translation>拥有 'projects' 权限的 Gitee 个人访问令牌。在 Gitee → 设置 → 安全设置 → 私人令牌处生成。</translation>
+        <translation type="vanished">拥有 &apos;projects&apos; 权限的 Gitee 个人访问令牌。在 Gitee → 设置 → 安全设置 → 私人令牌处生成。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="43"/>
         <source>Your Gitee username.</source>
-        <translation>您的 Gitee 用户名。</translation>
+        <translation type="vanished">您的 Gitee 用户名。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="46"/>
         <source>Name of the Gitee repository to store images. Must already exist.</source>
-        <translation>用于存放图片的 Gitee 仓库名。必须已存在。</translation>
+        <translation type="vanished">用于存放图片的 Gitee 仓库名。必须已存在。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="67"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>个人令牌/用户名/仓库名不能为空。</translation>
+        <translation type="vanished">个人令牌/用户名/仓库名不能为空。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="84"/>
         <source>Private repository is not supported.</source>
-        <translation>不支持私有仓库。</translation>
+        <translation type="vanished">不支持私有仓库。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="130"/>
         <source>Failed to create image with empty path.</source>
-        <translation>无法从空路径创建图片。</translation>
+        <translation type="vanished">无法从空路径创建图片。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="135"/>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="198"/>
         <source>Invalid Gitee image host configuration.</source>
-        <translation>无效的码云图床配置。</translation>
+        <translation type="vanished">无效的码云图床配置。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="148"/>
         <source>The resource already exists at the image host (%1).</source>
-        <translation>该资源已经存在于图床(%1)。</translation>
+        <translation type="vanished">该资源已经存在于图床(%1)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="152"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床查询资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床查询资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="165"/>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="177"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床创建资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床创建资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="212"/>
         <source>Failed to fetch information about the resource (%1).</source>
-        <translation>无法获取该资源的信息(%1)。</translation>
+        <translation type="vanished">无法获取该资源的信息(%1)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="220"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
-        <translation>无法获取该资源的SHA值(%1)(%2)。</translation>
+        <translation type="vanished">无法获取该资源的SHA值(%1)(%2)。</translation>
     </message>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="233"/>
         <source>Failed to delete resource (%1) (%2).</source>
-        <translation>无法删除资源(%1)(%2)。</translation>
+        <translation type="vanished">无法删除资源(%1)(%2)。</translation>
     </message>
 </context>
 <context>
@@ -4026,29 +4098,24 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ImageHostService</name>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="192"/>
         <source>No provider</source>
-        <translation>无提供方</translation>
+        <translation type="vanished">无提供方</translation>
     </message>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="203"/>
         <source>Upload cancelled by hook</source>
-        <translation>上传已被钩子取消</translation>
+        <translation type="vanished">上传已被钩子取消</translation>
     </message>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="230"/>
         <source>GitHub Repository</source>
-        <translation>GitHub 仓库</translation>
+        <translation type="vanished">GitHub 仓库</translation>
     </message>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="232"/>
         <source>Gitee Repository</source>
-        <translation>Gitee 仓库</translation>
+        <translation type="vanished">Gitee 仓库</translation>
     </message>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="234"/>
         <source>Custom Command</source>
-        <translation>自定义命令</translation>
+        <translation type="vanished">自定义命令</translation>
     </message>
 </context>
 <context>
@@ -4087,42 +4154,42 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ImportFolderController</name>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="23"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="26"/>
         <source>Please specify a folder to import.</source>
         <translation>请指定要导入的文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="30"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="33"/>
         <source>Folder does not exist.</source>
         <translation>文件夹不存在。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="37"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="40"/>
         <source>Please specify a valid folder path.</source>
         <translation>请指定有效的文件夹路径。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="45"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="48"/>
         <source>Please specify a folder, not a file.</source>
         <translation>请指定一个文件夹，而不是文件。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="58"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="61"/>
         <source>Cannot import folder into itself or its subdirectory.</source>
         <translation>无法将文件夹导入到其自身或其子目录中。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="72"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="75"/>
         <source>No notebook specified.</source>
         <translation>未指定笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="96"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="99"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="110"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="113"/>
         <source>Failed to import folder.</source>
         <translation>导入文件夹失败。</translation>
     </message>
@@ -4158,12 +4225,12 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ImportFolderDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="43"/>
+        <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="44"/>
         <source>Import folder into (%1).</source>
         <translation>导入文件夹至(%1)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="58"/>
+        <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="59"/>
         <source>Import Folder</source>
         <translation>导入文件夹</translation>
     </message>
@@ -4285,53 +4352,53 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="99"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="100"/>
         <source>VNote</source>
         <translation>VNote</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="120"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="121"/>
         <source>Loading theme...</source>
         <translation>正在加载主题...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="161"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="168"/>
         <source>Sync conflict</source>
         <translation>同步冲突</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="162"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="169"/>
         <source>Sync conflict could not be resolved after 3 attempts. Please resolve manually or contact support.</source>
         <translation>经 3 次尝试后仍无法解决同步冲突。请手动解决或联系支持。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="315"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="337"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>关闭时，是否将%1最小化到系统托盘而非退出？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="318"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="340"/>
         <source>You could change the option in Settings later.</source>
         <translation>稍后可以在设置里面更改。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="375"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="397"/>
         <source>%1 is still running here.</source>
         <translation>%1仍然在此运行。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="656"/>
-        <location filename="../../../widgets/mainwindow2.cpp" line="702"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="678"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="724"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="921"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="943"/>
         <source>Applying stylesheet...</source>
         <translation>正在应用样式表...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="935"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="957"/>
         <source>Refreshing UI...</source>
         <translation>正在刷新界面...</translation>
     </message>
@@ -4342,7 +4409,7 @@ Backup file last modified time: %2</source>
     </message>
     <message>
         <location filename="../../../widgets/systemtrayhelper.cpp" line="51"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="550"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="553"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
@@ -4357,125 +4424,125 @@ Backup file last modified time: %2</source>
         <translation>新建笔记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="111"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="112"/>
         <source>Quick Note</source>
         <translation>快速笔记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="127"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="129"/>
         <source>New Folder</source>
         <translation>新建文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="135"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="138"/>
         <source>Import Files</source>
         <translation>导入文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="139"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="142"/>
         <source>Import Folder</source>
         <translation>导入文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="142"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="146"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="149"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="152"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="153"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="156"/>
         <source>Open File</source>
         <translation>打开文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="179"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="183"/>
         <source>Quick Access</source>
         <translation>快速访问</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="231"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="490"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="235"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="493"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="289"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="293"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="326"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="330"/>
         <source>Quick Access Not Set</source>
         <translation>快速访问未设置</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="342"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="346"/>
         <source>New Quick Access</source>
         <translation>新建快速访问</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="361"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="365"/>
         <source>Switch Theme</source>
         <translation>切换主题</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="419"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="423"/>
         <source>Expand Content Area</source>
         <translation>扩展内容区</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="452"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="456"/>
         <source>Stay on Top</source>
         <translation>置顶</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="463"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="466"/>
         <source>Windows</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="507"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="510"/>
         <source>Open Configuration Folder</source>
         <translation>打开配置文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="513"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="516"/>
         <source>Reset Main Window Layout</source>
         <translation>重置主窗口布局</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="516"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="519"/>
         <source>View Logs</source>
         <translation>查看日志</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="529"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="532"/>
         <source>No log file found.</source>
         <translation>未找到日志文件。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="535"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="540"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="538"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="543"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="536"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="539"/>
         <source>&lt;h3&gt;%1&lt;/h3&gt;&lt;h4&gt;%2&lt;/h4&gt;</source>
         <translation>&lt;h3&gt;%1&lt;/h3&gt;&lt;h4&gt;%2&lt;/h4&gt;</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="538"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="541"/>
         <source>A pleasant note-taking platform, focusing on native experience, open source since 2016.</source>
         <translation>一个令人愉悦的笔记平台，专注于原生体验，自 2016 年起开源。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="544"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="547"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="547"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="550"/>
         <source>Restart</source>
         <translation>重启</translation>
     </message>
@@ -4606,9 +4673,13 @@ Backup file last modified time: %2</source>
         <translation>在文件管理器中打开根文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="89"/>
         <source>Root Folder:</source>
-        <translation>根文件夹：</translation>
+        <translation type="vanished">根文件夹：</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="89"/>
+        <source>Root folder:</source>
+        <translation type="unfinished">根文件夹:</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="93"/>
@@ -4621,27 +4692,27 @@ Backup file last modified time: %2</source>
         <translation>关闭笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="113"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="112"/>
         <source>Manage Notebooks</source>
         <translation>管理笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="224"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="223"/>
         <source>There are unsaved changes to current notebook.</source>
         <translation>当前笔记本有尚未保存的更改。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="242"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="241"/>
         <source>Close notebook (%1)?</source>
         <translation>关闭笔记本(%1)？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="243"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="242"/>
         <source>The notebook could be opened by VNote again later.</source>
         <translation>稍后可以再次用 VNote 打开该笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="244"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="243"/>
         <source>Notebook location: %1</source>
         <translation>笔记本路径: %1</translation>
     </message>
@@ -4649,14 +4720,12 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkNodeDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="61"/>
         <source>Text Color</source>
-        <translation>文字颜色</translation>
+        <translation type="vanished">文字颜色</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="66"/>
         <source>Background Color</source>
-        <translation>背景颜色</translation>
+        <translation type="vanished">背景颜色</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="71"/>
@@ -4664,9 +4733,23 @@ Backup file last modified time: %2</source>
         <translation>预览</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="74"/>
         <source>Sample Text</source>
-        <translation>示例文本</translation>
+        <translation type="vanished">示例文本</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="61"/>
+        <source>Text color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="66"/>
+        <source>Background color</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="74"/>
+        <source>Sample text</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="92"/>
@@ -4698,23 +4781,23 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="240"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="890"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="241"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="889"/>
         <source>Insert Link</source>
         <translation>插入链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="251"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="252"/>
         <source>Insert Image</source>
         <translation>插入图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="302"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="303"/>
         <source>Insert Table</source>
         <translation>插入表格</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="359"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="360"/>
         <source>Failed to read local image file (%1) (%2).</source>
         <translation>无法读取本地图片文件(%1)(%2)。</translation>
     </message>
@@ -4730,183 +4813,183 @@ Backup file last modified time: %2</source>
         <translation>以关联图片的方式粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="649"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="647"/>
         <source>Pasted with Linked Images</source>
         <translation>已以关联图片的方式粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="655"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="653"/>
         <source>Copied %1 image(s).</source>
         <translation>已复制 %1 张图片。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="658"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="656"/>
         <source>Skipped %1 image(s).</source>
         <translation>已跳过 %1 张图片。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="665"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="663"/>
         <source>Copied:</source>
         <translation>已复制：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="672"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="671"/>
         <source>Skipped:</source>
         <translation>已跳过：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="699"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="736"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="806"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="698"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="735"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="805"/>
         <source>Insert From Clipboard</source>
         <translation>从剪切板插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="700"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="699"/>
         <source>Insert From URL</source>
         <translation>从URL插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="701"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="700"/>
         <source>Insert From Image Data</source>
         <translation>从图片数据插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="702"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="739"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="809"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="701"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="738"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="808"/>
         <source>Insert As Image Link</source>
         <translation>插入为图片链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="737"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="808"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="954"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="736"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="807"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="953"/>
         <source>Insert As Image</source>
         <translation>插入为图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="738"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="826"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="737"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="825"/>
         <source>Insert As Text</source>
         <translation>插入为文本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="811"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="810"/>
         <source>Insert As Relative Image Link</source>
         <translation>插入为相对图片链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="815"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="814"/>
         <source>Insert As Link</source>
         <translation>插入为链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="817"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="816"/>
         <source>Insert As Relative Link</source>
         <translation>插入为相对链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="822"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="958"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="821"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="957"/>
         <source>Attach And Insert Link</source>
         <translation>添加为附件并插入链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="828"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="827"/>
         <source>Insert File Content</source>
         <translation>插入文件内容</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="951"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="950"/>
         <source>Insert From Clipboard (%n items)</source>
         <translation>
             <numerusform>从剪切板插入(%n项)</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1003"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1002"/>
         <source>Insert Image From Clipboard</source>
         <translation>从剪切板插入图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1015"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1014"/>
         <source>Insert Image From URL</source>
         <translation>从URL插入图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1197"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1196"/>
         <source>&amp;Read</source>
         <translation>阅读(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1217"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1216"/>
         <source>Rich Paste</source>
         <translation>多功能粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1705"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1709"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1717"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1721"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1741"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1745"/>
         <source>Copy Image Address</source>
         <translation>复制图片地址</translation>
     </message>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="586"/>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1217"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1216"/>
         <source>Paste as Plain Text</source>
         <translation>粘贴为纯文本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1225"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1224"/>
         <source>Parse to Markdown and Paste</source>
         <translation>解析为Markodwn并粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1237"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1236"/>
         <source>Insert Snippet</source>
         <translation>插入片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1709"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1713"/>
         <source>View Image</source>
         <translation>查看图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1787"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1791"/>
         <source>Copy In-Place Preview</source>
         <translation>复制原地预览</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1842"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1846"/>
         <source>Open Link</source>
         <translation>打开链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1849"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1853"/>
         <source>Copy Link</source>
         <translation>复制链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1328"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1327"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="372"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="373"/>
         <source>Image insertion from local file is not supported without a buffer.</source>
         <translation>无缓冲区时不支持从本地文件插入图片。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="386"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="387"/>
         <source>Failed to insert image from local file (%1).</source>
         <translation>无法从本地文件 (%1) 插入图片。</translation>
     </message>
@@ -4921,17 +5004,17 @@ Backup file last modified time: %2</source>
         <translation>无法从数据插入图片。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1328"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1327"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1330"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1329"/>
         <source>Fetch Images To Local</source>
         <translation>获取图片到本地</translation>
     </message>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1357"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="1356"/>
         <source>Fetching image (%1)</source>
         <translation>正在获取图片(%1)</translation>
     </message>
@@ -4939,361 +5022,385 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="331"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="332"/>
         <source>Insert file name as title</source>
         <translation>将文件名作为标题</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="333"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="334"/>
         <source>Insert file name as title when creating note</source>
         <translation>创建笔记时将文件名作为标题插入</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="226"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="484"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="227"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="487"/>
         <source>Read</source>
         <translation>阅读</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="229"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="230"/>
         <source>Constrain image width</source>
         <translation>限制图片宽度</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="231"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="232"/>
         <source>Constrain image width to the window</source>
         <translation>将图片宽度限制在窗口内</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="240"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="241"/>
         <source>Center image</source>
         <translation>图片居中</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="242"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="243"/>
         <source>Center images</source>
         <translation>居中显示图片</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="253"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="254"/>
         <source>Zoom factor in read mode</source>
         <translation>阅读模式缩放</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="258"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="259"/>
         <source>Zoom factor</source>
         <translation>缩放</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="268"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="269"/>
         <source>HTML tag</source>
         <translation>HTML标签</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="270"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="271"/>
         <source>Allow HTML tags in source</source>
         <translation>源文件中允许HTML标签</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="279"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="280"/>
         <source>Auto break</source>
         <translation>自动换行</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="281"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="282"/>
         <source>Automatically break a line with &apos;\n&apos;</source>
         <translation>遇到&apos;\n&apos;则自动换行</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="291"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="292"/>
         <source>Linkify</source>
         <translation>链接化</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="293"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="294"/>
         <source>Convert URL-like text to links</source>
         <translation>转换类URL的文本为链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="302"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="303"/>
         <source>Indent first line</source>
         <translation>首行缩进</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="304"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="305"/>
         <source>Indent the first line of each paragraph</source>
         <translation>缩进每个段落的第一行</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="314"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="315"/>
         <source>Code block line number</source>
         <translation>代码块行号</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="316"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="317"/>
         <source>Add line number to code block</source>
         <translation>为代码块添加行号</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="328"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="486"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="329"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="489"/>
         <source>Edit</source>
         <translation>编辑</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="343"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="344"/>
         <source>Constrain in-place preview width</source>
         <translation>限制原地预览宽度</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="346"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="347"/>
         <source>Constrain in-place preview width to the window</source>
         <translation>将原地预览宽度限制在窗口内</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="363"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="364"/>
         <source>In-place preview sources</source>
         <translation>原地预览源</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="366"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="368"/>
         <source>Image link</source>
         <translation>图片链接</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="371"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="374"/>
         <source>Code block</source>
         <translation>代码块</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="376"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="379"/>
         <source>Math</source>
         <translation>数学公式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="386"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="389"/>
         <source>Fetch images to local in Parse And Paste</source>
         <translation>在解析并粘贴时，获取图片到本地</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="389"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="392"/>
         <source>Fetch images to local in Parse To Markdown And Paste</source>
         <translation>在解析为Markdown并粘贴时，获取图片到本地</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="399"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="402"/>
         <source>Smart table</source>
         <translation>智能表格</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="401"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="404"/>
         <source>Smart table formation</source>
         <translation>智能表格格式化</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="411"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="413"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="414"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="416"/>
         <source>Spell check</source>
         <translation>拼写检查</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="428"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="431"/>
         <source>Override font</source>
         <translation>覆盖字体</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="430"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="433"/>
         <source>Override editor font family of theme</source>
         <translation>覆盖主题中的编辑器字体</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="459"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="462"/>
         <source>Use Rich Paste by default</source>
         <translation>默认使用多功能粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="461"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="464"/>
         <source>Use Rich Paste by default when pasting text</source>
         <translation>当粘贴文本时默认使用多功能粘贴</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="473"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="476"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="481"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="484"/>
         <source>Section number mode</source>
         <translation>小节序号模式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="482"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="485"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="494"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="497"/>
         <source>Base level to start section numbering in edit mode</source>
         <translation>编辑模式中开始小节序号计数的基础层级</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="503"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="506"/>
         <source>Section number style</source>
         <translation>小节序号样式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="505"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="508"/>
         <source>1.1.</source>
         <translation>1.1.</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="506"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="509"/>
         <source>1.1</source>
         <translation>1.1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="521"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="524"/>
         <source>Section number</source>
         <translation>小节序号</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="530"/>
-        <source>Use Web service or local JAR file to render PlantUml graphs</source>
-        <translation>使用网页服务或者本地JAR文件来渲染PlantUml图表</translation>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="533"/>
+        <source>Use web service or local JAR file to render PlantUml graphs</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="532"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="535"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="605"/>
+        <source>Web service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="588"/>
+        <source>Override the web service used to render PlantUml graphs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="591"/>
+        <source>Override PlantUml web service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="603"/>
+        <source>Use web service or local executable file to render Graphviz graphs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="606"/>
+        <source>Local executable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Web service or local JAR file to render PlantUml graphs</source>
+        <translation type="vanished">使用网页服务或者本地JAR文件来渲染PlantUml图表</translation>
+    </message>
+    <message>
         <source>Web Service</source>
-        <translation>网页服务</translation>
+        <translation type="vanished">网页服务</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="586"/>
         <source>Override the Web service used to render PlantUml graphs</source>
-        <translation>覆盖用于渲染PlantUml图表的网页服务</translation>
+        <translation type="vanished">覆盖用于渲染PlantUml图表的网页服务</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="587"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="658"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="589"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="659"/>
         <source>Empty to use default one</source>
         <translation>留空则使用默认值</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="589"/>
         <source>Override PlantUml Web service</source>
-        <translation>覆盖PlantUml网页服务</translation>
+        <translation type="vanished">覆盖PlantUml网页服务</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="660"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="661"/>
         <source>Override MathJax script</source>
         <translation>覆盖MathJax脚本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="601"/>
         <source>Use Web service or local executable file to render Graphviz graphs</source>
-        <translation>使用网页服务或者本地可执行文件来渲染Graphviz图表</translation>
+        <translation type="vanished">使用网页服务或者本地可执行文件来渲染Graphviz图表</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="533"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="536"/>
         <source>Local JAR</source>
         <translation>本地JAR</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="535"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="538"/>
         <source>PlantUml</source>
         <translation>PlantUml</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="550"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="553"/>
         <source>Local JAR file to render PlantUml graphs</source>
         <translation>用于渲染PlantUml图表的本地JAR文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="553"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="555"/>
         <source>Select PlantUml JAR File</source>
         <translation>选择PlantUml JAR文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="557"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="627"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="559"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="628"/>
         <source>Test</source>
         <translation>测试</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="558"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="560"/>
         <source>Test PlantUml JAR and Java Runtime Environment</source>
         <translation>测试PlantUml JAR以及Java运行时环境</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="563"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="565"/>
         <source>The JAR file (%1) specified does not exist.</source>
         <translation>指定的JAR文件(%1)不存在。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="569"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="640"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="571"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="641"/>
         <source>Test %1.</source>
         <translation>测试%1。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="569"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="640"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="571"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="641"/>
         <source>succeeded</source>
         <translation>成功</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="569"/>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="640"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="571"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="641"/>
         <source>failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="574"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="576"/>
         <source>PlantUml JAR file</source>
         <translation>PlantUml JAR文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="604"/>
         <source>Local Executable</source>
-        <translation>本地可执行文件</translation>
+        <translation type="vanished">本地可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="606"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="608"/>
         <source>Graphviz</source>
         <translation>Graphviz</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="621"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="623"/>
         <source>Local executable file to render Graphviz graphs</source>
         <translation>用于渲染Graphviz图表的本地可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="624"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="625"/>
         <source>Select Graphviz Executable File</source>
         <translation>选择Graphviz可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="628"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="629"/>
         <source>Test Graphviz executable file</source>
         <translation>测试Graphviz可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="633"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="634"/>
         <source>The executable file (%1) specified does not exist.</source>
         <translation>指定的可执行文件(%1)不存在。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="645"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="646"/>
         <source>Graphviz executable file</source>
         <translation>Graphviz可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="657"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="658"/>
         <source>Override the MathJax script used to render math formulas</source>
         <translation>覆盖用于渲染数学公式的MathJax脚本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="220"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="221"/>
         <source>Markdown Editor</source>
         <translation>Markdown编辑器</translation>
     </message>
@@ -5378,34 +5485,34 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="358"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="374"/>
         <source>Markdown Viewer</source>
         <translation>Markdown查看器</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1192"/>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1201"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1224"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1233"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1277"/>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1285"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1309"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1317"/>
         <source>Snippet insertion is not supported in read mode</source>
         <translation>阅读模式下不支持插入代码片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1504"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1554"/>
         <source>Printed to PDF</source>
         <translation>已打印为PDF</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1504"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1554"/>
         <source>Failed to print to PDF</source>
         <translation>无法打印为PDF</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1661"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="1747"/>
         <source>Local</source>
         <translation>本地</translation>
     </message>
@@ -5486,42 +5593,42 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::NewFolderController</name>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="23"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="25"/>
         <source>Please specify a name for the folder.</source>
         <translation>请为文件夹指定一个名字。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="30"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="32"/>
         <source>Please specify a valid name for the folder.</source>
         <translation>请为文件夹指定有效的名称。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="44"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="46"/>
         <source>Name conflicts with existing folder.</source>
         <translation>名字和已有文件夹冲突。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="55"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="57"/>
         <source>Name conflicts with existing note.</source>
         <translation>名字和已有笔记冲突。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="69"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="71"/>
         <source>No notebook specified.</source>
         <translation>未指定笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="92"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="94"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="102"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="104"/>
         <source>Failed to create folder (%1).</source>
         <translation>无法创建文件夹 (%1)。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="110"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="112"/>
         <source>Failed to get path for created folder.</source>
         <translation>无法获取已创建文件夹的路径。</translation>
     </message>
@@ -5603,37 +5710,37 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::NewNoteController</name>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="24"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="26"/>
         <source>Please specify a name for the note.</source>
         <translation>请为笔记指定名称。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="31"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="33"/>
         <source>Please specify a valid name for the note.</source>
         <translation>请为笔记指定一个有效名字。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="45"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="47"/>
         <source>Name conflicts with existing note.</source>
         <translation>名字和已有笔记冲突。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="59"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="61"/>
         <source>No notebook specified.</source>
         <translation>未指定笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="82"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="84"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="92"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="94"/>
         <source>Failed to create note (%1).</source>
         <translation>无法创建笔记 (%1)。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="100"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="102"/>
         <source>Failed to get path for created note.</source>
         <translation>无法获取已创建笔记的路径。</translation>
     </message>
@@ -5697,42 +5804,42 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="32"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="34"/>
         <source>Please specify a name for the notebook.</source>
         <translation>请为笔记本指定一个名字。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="46"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="48"/>
         <source>Please specify a valid root folder for the notebook.</source>
         <translation>请为笔记本指定一个有效的根文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="55"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="57"/>
         <source>Root folder should be a directory.</source>
         <translation>根文件夹应该为一个目录。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="61"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="63"/>
         <source>Root folder of the notebook must be empty. If you want to import existing data, please try other operations.</source>
         <translation>笔记本根文件夹必须为空。如果需要导入已有数据，请尝试其他操作。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="78"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="80"/>
         <source>There already exists a notebook (%1) with the same root folder.</source>
         <translation>已经存在一个使用相同根文件夹的笔记本(%1)。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="123"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="125"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="136"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="138"/>
         <source>Failed to create notebook in (%1).</source>
         <translation>无法在 (%1) 中创建笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="191"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="193"/>
         <source>Sync services not available; cannot bootstrap notebook.</source>
         <translation>同步服务不可用；无法引导笔记本。</translation>
     </message>
@@ -5783,59 +5890,91 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="50"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="51"/>
         <source>Name:</source>
         <translation>名字:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="54"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="55"/>
         <source>Optional description for the notebook</source>
         <translation>笔记本的可选描述</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="56"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="57"/>
         <source>Description:</source>
         <translation>描述:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="67"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="68"/>
         <source>Select Notebook Root Folder</source>
         <translation>选择笔记本根文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="68"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="69"/>
         <source>Select a folder as notebook root</source>
         <translation>选择一个文件夹作为笔记本根目录</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="71"/>
-        <source>Root Folder:</source>
-        <translation>根文件夹：</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="75"/>
-        <source>Bundled Notebook</source>
-        <translation>自包含笔记本</translation>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="72"/>
+        <source>Root folder:</source>
+        <translation type="unfinished">根文件夹:</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="76"/>
-        <source>Raw Notebook</source>
-        <translation>原始笔记本</translation>
+        <source>Bundled notebook</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="77"/>
+        <source>Raw notebook</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="78"/>
+        <source>Bundled: notebook with metadata stored in config files.
+Raw: plain folder structure with minimal VNote metadata.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="107"/>
+        <source>Sync method:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="113"/>
+        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure... button before notebook creation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="169"/>
+        <source>Assets folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Root Folder:</source>
+        <translation type="vanished">根文件夹：</translation>
+    </message>
+    <message>
+        <source>Bundled Notebook</source>
+        <translation type="vanished">自包含笔记本</translation>
+    </message>
+    <message>
+        <source>Raw Notebook</source>
+        <translation type="vanished">原始笔记本</translation>
+    </message>
+    <message>
         <source>Bundled: Notebook with metadata stored in config files.
 Raw: Plain folder structure with minimal VNote metadata.</source>
-        <translation>自包含：元数据保存在配置文件中的笔记本。
+        <translation type="vanished">自包含：元数据保存在配置文件中的笔记本。
 原始：仅含最少 VNote 元数据的普通文件夹结构。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="79"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="80"/>
         <source>Type:</source>
         <translation>类型:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="86"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="87"/>
         <source>Root folder of the notebook.
 For raw notebooks, you can select an existing folder with files.
 The folder&apos;s contents will be indexed as notebook nodes.</source>
@@ -5844,49 +5983,47 @@ The folder&apos;s contents will be indexed as notebook nodes.</source>
 该文件夹的内容会被索引为笔记本节点。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="91"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="92"/>
         <source>Root folder of the notebook.
 A new notebook requires an empty folder or a non-existent path (will be created).</source>
         <translation>笔记本的根文件夹。
 新笔记本需要一个空文件夹或一个不存在的路径（将自动创建）。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="106"/>
         <source>Sync Method:</source>
-        <translation>同步方式：</translation>
+        <translation type="vanished">同步方式：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="110"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="111"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="111"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="112"/>
         <source>Git</source>
         <translation>Git</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="112"/>
         <source>Git sync is supported only for Bundled notebooks. Sync settings are configured immediately via the Configure... button before notebook creation.</source>
-        <translation>Git 同步仅支持自包含笔记本。同步设置会在创建笔记本前通过"配置..."按钮立即配置。</translation>
+        <translation type="vanished">Git 同步仅支持自包含笔记本。同步设置会在创建笔记本前通过&quot;配置...&quot;按钮立即配置。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="116"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="117"/>
         <source>Configure...</source>
         <translation>配置...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="118"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="119"/>
         <source>Configure Git sync remote URL and credentials</source>
         <translation>配置 Git 同步远端 URL 与凭据</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="152"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="153"/>
         <source>Advanced</source>
         <translation>高级</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="165"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="166"/>
         <source>Name or path for the assets folder.
 Can be a folder name (vx_assets), relative path, or absolute path.
 Relative paths resolve against each note file&apos;s parent directory.</source>
@@ -5895,19 +6032,18 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 相对路径相对于每个笔记文件所在目录解析。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="168"/>
         <source>Assets Folder:</source>
-        <translation>资源文件夹：</translation>
+        <translation type="vanished">资源文件夹：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="182"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="183"/>
         <source>New Notebook</source>
         <translation>新建笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="336"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="344"/>
         <source>Click &apos;Configure...&apos; to set up Git sync first</source>
-        <translation>点击"配置..."以先配置 Git 同步</translation>
+        <translation>点击&quot;配置...&quot;以先配置 Git 同步</translation>
     </message>
 </context>
 <context>
@@ -5951,47 +6087,51 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NewQuickAccessItemDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="27"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="28"/>
         <source>File path</source>
         <translation>文件路径</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="28"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="29"/>
         <source>Select Quick Access File</source>
         <translation>选择快速访问文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="29"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="30"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="34"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="35"/>
         <source>Default</source>
         <translation>默认</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="35"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="36"/>
         <source>Read</source>
         <translation>阅读</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="36"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="37"/>
         <source>Edit</source>
         <translation>编辑</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="37"/>
-        <source>Open Mode</source>
-        <translation>打开方式</translation>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="38"/>
+        <source>Open mode</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="42"/>
+        <source>Open Mode</source>
+        <translation type="vanished">打开方式</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="43"/>
         <source>New Quick Access</source>
         <translation>新建快速访问</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="54"/>
+        <location filename="../../../widgets/dialogs/settings/newquickaccessitemdialog.cpp" line="55"/>
         <source>Please specify a file path.</source>
         <translation>请指定文件路径。</translation>
     </message>
@@ -6174,9 +6314,8 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NoteManagementPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="28"/>
         <source>Per-Notebook access history</source>
-        <translation>按笔记本维护访问历史</translation>
+        <translation type="vanished">按笔记本维护访问历史</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="30"/>
@@ -6189,9 +6328,18 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <translation>用于写配置文件的行结尾</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="42"/>
         <source>Follow Platform</source>
-        <translation>跟随平台</translation>
+        <translation type="vanished">跟随平台</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="28"/>
+        <source>Per-notebook access history</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="42"/>
+        <source>Follow platform</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="43"/>
@@ -6284,322 +6432,382 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookExplorer2</name>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="166"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="369"/>
         <source>Select one of all the notebooks as current notebook.&lt;br/&gt;Move mouse on one item to check its details.</source>
         <translation>从全部笔记本中选择一个作为当前笔记本。&lt;br/&gt;移动鼠标到某个项目上查看详情。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="199"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="383"/>
+        <source>Read-only notebook (no PAT)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="416"/>
         <source>This title bar contains buttons and menu to manage notebooks and notes.</source>
         <translation>该标题栏包含管理笔记本和笔记的按钮和菜单。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="204"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="421"/>
         <source>New Notebook</source>
         <translation>新建笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="210"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="427"/>
         <source>Open Notebook</source>
         <translation>打开笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="216"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="433"/>
         <source>Open VNote3 Notebook</source>
         <translation>打开 VNote3 笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="222"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="439"/>
         <source>Sync</source>
         <translation>同步</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="232"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="449"/>
         <source>Manage Notebooks</source>
         <translation>管理笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="234"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="451"/>
         <source>Open Folder as &amp;Raw Notebook</source>
         <translation>作为原始笔记本打开文件夹(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="241"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="458"/>
         <source>Sync Info</source>
         <translation>同步信息</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="245"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="462"/>
         <source>Rebuild Database</source>
         <translation>重建数据库</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="251"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="469"/>
         <source>Notebooks View Order</source>
         <translation>笔记本查看顺序</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="254"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="472"/>
         <source>Notes View Order</source>
         <translation>笔记查看顺序</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="262"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="480"/>
         <source>Show External Files</source>
         <translation>显示外部文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="276"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="494"/>
         <source>Import External Files on Open</source>
         <translation>打开时导入外部文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="288"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="506"/>
         <source>Close File Before External Open</source>
         <translation>外部打开前关闭文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="299"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="517"/>
         <source>Single Click Activation</source>
         <translation>单击激活</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="311"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="534"/>
         <source>Open Recycle Bin</source>
         <translation>打开回收站</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="325"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="548"/>
         <source>Empty Recycle Bin</source>
         <translation>清空回收站</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="336"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="559"/>
         <source>Recycle bin is not supported for this notebook type.</source>
         <translation>该类型的笔记本不支持回收站。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="344"/>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="487"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="567"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="720"/>
         <source>current notebook</source>
         <translation>当前笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="349"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="572"/>
         <source>Are you sure you want to empty the recycle bin of notebook &quot;%1&quot;?
 
 This action is irreversible.</source>
-        <translation>确定要清空笔记本 "%1" 的回收站吗？
+        <translation>确定要清空笔记本 &quot;%1&quot; 的回收站吗？
 
 该操作不可撤销。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="361"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="584"/>
         <source>Recycle bin emptied successfully.</source>
         <translation>回收站已成功清空。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="389"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="622"/>
         <source>Combined View</source>
         <translation>组合视图</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="394"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="627"/>
         <source>Separate View, Double Columns</source>
         <translation>分离视图，双列</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="417"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="650"/>
         <source>View By Configuration</source>
         <translation>按配置查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="423"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="656"/>
         <source>View By Name</source>
         <translation>按名字查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="428"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="661"/>
         <source>View By Name (Reversed)</source>
         <translation>按名字倒序查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="433"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="666"/>
         <source>View By Created Time</source>
         <translation>按创建时间查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="438"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="671"/>
         <source>View By Created Time (Reversed)</source>
         <translation>按创建时间倒序查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="444"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="677"/>
         <source>View By Modified Time</source>
         <translation>按修改时间查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="449"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="682"/>
         <source>View By Modified Time (Reversed)</source>
         <translation>按修改时间倒序查看</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="493"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="726"/>
         <source>Are you sure you want to rebuild the database for notebook &quot;%1&quot;?
 
 This will re-scan all files and rebuild the metadata cache from the filesystem.</source>
-        <translation>确定要重建笔记本 "%1" 的数据库吗？
+        <translation>确定要重建笔记本 &quot;%1&quot; 的数据库吗？
 
 这将重新扫描所有文件并根据文件系统重建元数据缓存。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="502"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="735"/>
         <source>Rebuilding database for &quot;%1&quot;...</source>
-        <translation>正在重建 "%1" 的数据库...</translation>
+        <translation>正在重建 &quot;%1&quot; 的数据库...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="523"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="756"/>
         <source>Database rebuilt successfully for &quot;%1&quot;.</source>
-        <translation>已成功重建 "%1" 的数据库。</translation>
+        <translation>已成功重建 &quot;%1&quot; 的数据库。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="527"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="760"/>
         <source>Failed to rebuild database for &quot;%1&quot;.</source>
-        <translation>无法重建 "%1" 的数据库。</translation>
+        <translation>无法重建 &quot;%1&quot; 的数据库。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="849"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="960"/>
+        <source>&lt;img src=&quot;:/vnotex/data/core/icons/read_only.svg&quot; width=&quot;14&quot; height=&quot;14&quot;&gt; Read-only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1132"/>
         <source>Select Folder to Open as Raw Notebook</source>
         <translation>选择要作为原始笔记本打开的文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="885"/>
         <source>Select Notebook Root Folder</source>
-        <translation>选择笔记本根文件夹</translation>
+        <translation type="vanished">选择笔记本根文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="945"/>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="957"/>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1092"/>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1103"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1231"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1248"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1393"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1409"/>
         <source>Please first create a notebook to hold your data.</source>
         <translation>请先创建一个笔记本来保存数据。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="971"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1272"/>
         <source>Please set up quick note schemes in the Settings dialog first.</source>
         <translation>请先在设置对话框中设置快速笔记方案。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="979"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1280"/>
         <source>New Quick Note</source>
         <translation>新建快速笔记</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1011"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1312"/>
         <source>The quick note folder path (%1) is not within any open notebook.</source>
         <translation>快速笔记文件夹路径 (%1) 不在任何已打开的笔记本中。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1030"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1331"/>
         <source>The quick note should be created within a notebook.</source>
         <translation>快速笔记应该在一个笔记本内进行创建。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1058"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1359"/>
         <source>Failed to create quick note from scheme (%1).</source>
         <translation>无法根据方案 (%1) 创建快速笔记。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1285"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1604"/>
         <source>Delete Permanently</source>
         <translation>永久删除</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1285"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1604"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1289"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1608"/>
         <source>Permanently delete %n node(s)? This cannot be undone.</source>
         <translation>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1291"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1610"/>
         <source>Move %n node(s) to recycle bin?</source>
         <translation>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1310"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1629"/>
         <source>Remove %n node(s) from notebook index? Files will remain on disk.</source>
         <translation>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1313"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1632"/>
         <source>Remove from Notebook</source>
         <translation>从笔记本中移除</translation>
     </message>
+    <message numerus="yes">
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1649"/>
+        <source>%n item(s) indexed in this notebook are missing on disk. Remove them from the notebook index? The files on disk are NOT affected.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1324"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1653"/>
+        <source>Missing Items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1668"/>
         <source>Import Files</source>
         <translation>导入文件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1324"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1668"/>
         <source>All Files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1418"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1762"/>
         <source>Ignore</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1419"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1763"/>
         <source>Add &quot;%1&quot; to the ignore list of the notebook?</source>
-        <translation>将 "%1" 添加到笔记本的忽略列表中？</translation>
+        <translation>将 &quot;%1&quot; 添加到笔记本的忽略列表中？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1444"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="1788"/>
         <source>Failed to update notebook configuration.</source>
         <translation>无法更新笔记本配置。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1691"/>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1704"/>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1751"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2050"/>
+        <source>Sync authentication failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2051"/>
+        <source>Sync failed for notebook &quot;%1&quot;.
+
+GitHub rejected the stored Personal Access Token (HTTP 401). The token may have been revoked, expired, or had its SSO authorization withdrawn.
+
+Update the token to resume syncing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2057"/>
+        <source>Open Sync Info...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2076"/>
+        <source>Sync network error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2077"/>
+        <source>Sync failed for notebook &quot;%1&quot; because of a network error. VNote will retry automatically on the next change.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2092"/>
+        <source>Sync failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2093"/>
+        <source>Sync failed for notebook &quot;%1&quot;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2218"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2231"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2278"/>
         <source>Sync Now</source>
         <translation>立即同步</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1743"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2270"/>
         <source>Enable sync for this notebook</source>
         <translation>为该笔记本启用同步</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1745"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2272"/>
         <source>Sync configured but incomplete</source>
         <translation>已配置同步但尚未完成</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1747"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2274"/>
         <source>Sync in progress</source>
         <translation>同步进行中</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1749"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2276"/>
         <source>Click to bootstrap sync for this notebook.</source>
         <translation>点击以为该笔记本引导同步。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="1757"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="2292"/>
         <source>
 
 Last sync init failed: error code %1</source>
@@ -6742,275 +6950,313 @@ Last sync init failed: error code %1</source>
 <context>
     <name>vnotex::NotebookNodeController</name>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="204"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="262"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="239"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="349"/>
         <source>&amp;Open</source>
         <translation>打开(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="214"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="249"/>
         <source>&amp;Import to Index</source>
         <translation>导入到索引(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="215"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="250"/>
         <source>Add this external item to the notebook index</source>
         <translation>将该外部项添加到笔记本索引</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="223"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="258"/>
         <source>&amp;Ignore</source>
         <translation>忽略(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="231"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="355"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="266"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="313"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="450"/>
         <source>Open &amp;Location</source>
         <translation>打开路径(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="244"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="331"/>
         <source>New &amp;Note</source>
         <translation>新建笔记(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="249"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="336"/>
         <source>New &amp;Folder</source>
         <translation>新建文件夹(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="277"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="364"/>
         <source>&amp;Rename</source>
         <translation>重命名(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="287"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="300"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="374"/>
         <source>&amp;Delete</source>
         <translation>删除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="291"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="285"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="379"/>
         <source>Remove from Notebook</source>
         <translation>从笔记本中移除</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="292"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="380"/>
         <source>Remove from notebook but keep files on disk</source>
         <translation>从笔记本中移除但保留磁盘上的文件</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="303"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="392"/>
         <source>&amp;Copy</source>
         <translation>复制(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="307"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="396"/>
         <source>Cu&amp;t</source>
         <translation>剪切(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="320"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="410"/>
         <source>&amp;Paste</source>
         <translation>粘贴(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="328"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="421"/>
         <source>D&amp;uplicate</source>
         <translation>复制副本(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="340"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="434"/>
         <source>&amp;Export</source>
         <translation>导出(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="351"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="309"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="446"/>
         <source>Copy &amp;Path</source>
         <translation>复制路径(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="360"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="286"/>
+        <source>Remove the missing item(s) from the notebook index</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="318"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="455"/>
         <source>P&amp;roperties</source>
         <translation>属性(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="371"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="466"/>
         <source>&amp;Tags</source>
         <translation>标签(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="383"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="476"/>
         <source>Re&amp;load</source>
         <translation>重新加载(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="388"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="487"/>
+        <source>&amp;Sort</source>
+        <translation type="unfinished">排序(&amp;S)</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="492"/>
         <source>Pin to &amp;Quick Access</source>
         <translation>固定到快速访问(&amp;Q)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="397"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="501"/>
         <source>&amp;Mark</source>
         <translation>标记(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="457"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="568"/>
         <source>Open With</source>
         <translation>打开方式</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="481"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="592"/>
         <source>System Default App</source>
         <translation>系统默认程序</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="627"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="643"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="659"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="667"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="673"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="771"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="777"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="949"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1007"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1044"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1070"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="770"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="786"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="802"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="810"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="816"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="935"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="941"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1118"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1179"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1219"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1248"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1343"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="627"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="770"/>
         <source>Node not found: %1</source>
         <translation>未找到节点：%1</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="643"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="786"/>
         <source>Failed to move %1.</source>
         <translation>无法移动 %1。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="659"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="802"/>
         <source>Failed to get available name for %1.</source>
         <translation>无法为 %1 获取可用名称。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="667"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="810"/>
         <source>Failed to copy folder.</source>
         <translation>复制文件夹失败。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="673"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="816"/>
         <source>Failed to copy file.</source>
         <translation>复制文件失败。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="771"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1089"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="935"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1366"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="777"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="941"/>
         <source>Failed to import external node to index.</source>
         <translation>无法将外部节点导入到索引。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="817"/>
         <source>Sort</source>
-        <translation>排序</translation>
+        <translation type="vanished">排序</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="817"/>
         <source>Sort functionality not yet implemented.</source>
-        <translation>排序功能尚未实现。</translation>
+        <translation type="vanished">排序功能尚未实现。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="924"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1093"/>
         <source>The file &quot;%1&quot; has unsaved changes.</source>
-        <translation>文件 "%1" 有未保存的更改。</translation>
+        <translation>文件 &quot;%1&quot; 有未保存的更改。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="925"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1094"/>
         <source>Save before renaming, discard changes, or cancel?</source>
         <translation>在重命名前保存、放弃更改，还是取消？</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="949"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1118"/>
         <source>Failed to rename %1.</source>
         <translation>无法重命名 %1。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1007"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1179"/>
         <source>Failed to mark %1.</source>
         <translation>无法标记 %1。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1044"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1219"/>
         <source>Failed to delete %1.</source>
         <translation>无法删除 %1。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1070"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1248"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1343"/>
         <source>Failed to remove from notebook.</source>
         <translation>无法从笔记本中移除。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1089"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1115"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1118"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1129"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1366"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1392"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1395"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1406"/>
         <source>Import</source>
         <translation>导入</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1116"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1393"/>
         <source>Imported %1 file(s), %2 failed.</source>
         <translation>已导入 %1 个文件，%2 个失败。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1118"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1395"/>
         <source>Successfully imported %1 file(s).</source>
         <translation>已成功导入 %1 个文件。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1129"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1406"/>
         <source>Folder import not yet implemented in new architecture.</source>
         <translation>新架构尚未实现文件夹导入。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1314"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1316"/>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1318"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1636"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1638"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1640"/>
         <source>Quick Access</source>
         <translation>快速访问</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1314"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1636"/>
         <source>Pinned %1 item(s) to Quick Access.</source>
         <translation>已将 %1 项固定到快速访问。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1316"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1638"/>
         <source>Already in Quick Access.</source>
         <translation>已在快速访问中。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1319"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="1641"/>
         <source>Pinned %1 item(s); %2 already present.</source>
         <translation>已固定 %1 项；%2 项已存在。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="117"/>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="123"/>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="150"/>
+        <source>Reorder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="117"/>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="123"/>
+        <source>Mixed parents not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="150"/>
+        <source>Notebook service not available.</source>
+        <translation type="unfinished">笔记本服务不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="172"/>
+        <source>Reorder Failed</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>vnotex::NotebookNodeModel</name>
     <message>
-        <location filename="../../../models/notebooknodemodel.cpp" line="499"/>
+        <location filename="../../../models/notebooknodemodel.cpp" line="520"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../../models/notebooknodemodel.cpp" line="499"/>
+        <location filename="../../../models/notebooknodemodel.cpp" line="520"/>
         <source>Failed to rename &quot;%1&quot;.</source>
-        <translation>无法重命名 "%1"。</translation>
+        <translation>无法重命名 &quot;%1&quot;。</translation>
     </message>
 </context>
 <context>
@@ -7028,17 +7274,22 @@ Description: %3</source>
 <context>
     <name>vnotex::NotebookSelector2</name>
     <message>
-        <location filename="../../../widgets/notebookselector2.cpp" line="165"/>
+        <location filename="../../../widgets/notebookselector2.cpp" line="136"/>
+        <source>Read-only notebook (no PAT)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookselector2.cpp" line="194"/>
         <source>Raw</source>
         <translation>原始</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookselector2.cpp" line="166"/>
+        <location filename="../../../widgets/notebookselector2.cpp" line="194"/>
         <source>Bundled</source>
         <translation>自包含</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookselector2.cpp" line="167"/>
+        <location filename="../../../widgets/notebookselector2.cpp" line="195"/>
         <source>Notebook: %1
 Type: %2
 Root folder: %3
@@ -7052,144 +7303,158 @@ Description: %4</source>
 <context>
     <name>vnotex::NotebookSyncInfoController</name>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="71"/>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="96"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="72"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="97"/>
         <source>Notebook service not available.</source>
         <translation>笔记本服务不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="106"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="107"/>
         <source>Failed to update notebook configuration.</source>
         <translation>无法更新笔记本配置。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="162"/>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="188"/>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="212"/>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="390"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="163"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="189"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="213"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="391"/>
         <source>Sync service not available.</source>
         <translation>同步服务不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="219"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="220"/>
         <source>Remote URL is required to enable sync.</source>
         <translation>启用同步需要远端 URL。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="226"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="227"/>
         <source>A personal access token (PAT) is required to enable sync.</source>
         <translation>启用同步需要个人访问令牌 (PAT)。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="262"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="263"/>
         <source>Failed to enable sync for notebook.</source>
         <translation>无法为笔记本启用同步。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="317"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="318"/>
         <source>Credentials store not available.</source>
         <translation>凭据存储不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="350"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="351"/>
         <source>URL change failed: cannot read existing credentials. Please retry.</source>
         <translation>URL 更改失败：无法读取现有凭据。请重试。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="415"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="416"/>
         <source>URL change failed: disable error.</source>
         <translation>URL 更改失败：禁用错误。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="502"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="503"/>
         <source>URL change failed: re-enable error. Notebook now in disabled state; use Enable Sync to retry.</source>
-        <translation>URL 更改失败：重新启用错误。笔记本现在处于禁用状态；请使用"启用同步"重试。</translation>
+        <translation>URL 更改失败：重新启用错误。笔记本现在处于禁用状态；请使用&quot;启用同步&quot;重试。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::NotebookSyncInfoDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="78"/>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="189"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="88"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="218"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="578"/>
         <source>Never</source>
         <translation>从不</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="93"/>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="488"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="103"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="570"/>
         <source>Idle</source>
         <translation>空闲</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="130"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="140"/>
         <source>Configure Sync</source>
         <translation>配置同步</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="137"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="147"/>
         <source>Personal Access Token used to authenticate against the remote (optional).</source>
         <translation>用于向远端进行身份验证的个人访问令牌（可选）。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="153"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="165"/>
+        <source>This notebook is currently open in read-only mode. To enable editing, close this notebook and re-open it from the remote URL with a valid Personal Access Token. Adding a PAT here will be saved, but editing will only become available after closing and re-opening the notebook.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="182"/>
         <source>Notebook:</source>
         <translation>笔记本:</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="158"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="187"/>
         <source>https://github.com/example/notes.git</source>
         <translation>https://github.com/example/notes.git</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="159"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="188"/>
         <source>Remote git repository URL used for syncing this notebook.</source>
         <translation>用于同步该笔记本的远端 Git 仓库 URL。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="160"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="189"/>
         <source>Remote URL:</source>
         <translation>远端 URL：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="171"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="200"/>
         <source>The remote repository must already exist. Create an empty repo on your Git host first.</source>
         <translation>远程仓库必须已存在。请先在 Git 主机上创建一个空仓库。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="180"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="209"/>
         <source>Leave blank to keep existing</source>
         <translation>留空以保留现有值</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="181"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="210"/>
         <source>Personal Access Token used to authenticate against the remote.
 Leave blank to keep the existing token.</source>
         <translation>用于向远端进行身份验证的个人访问令牌。
 留空以保留现有令牌。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="183"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="212"/>
         <source>Personal Access Token:</source>
         <translation>个人访问令牌：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="191"/>
         <source>Last Sync:</source>
-        <translation>上次同步：</translation>
+        <translation type="vanished">上次同步：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="197"/>
         <source>Current State:</source>
-        <translation>当前状态：</translation>
+        <translation type="vanished">当前状态：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="205"/>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="331"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="220"/>
+        <source>Last sync:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="226"/>
+        <source>Current state:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="234"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="360"/>
         <source>Disable Sync</source>
         <translation>禁用同步</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="211"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="240"/>
         <source>Disable git sync for this notebook. Local commit history is preserved
 on disk, but no further syncing will occur and the stored credentials
 are deleted from the system keychain.</source>
@@ -7197,22 +7462,22 @@ are deleted from the system keychain.</source>
 但不再进行同步，且存储的凭据会从系统密钥串中删除。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="243"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="272"/>
         <source>Sync Info</source>
         <translation>同步信息</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="284"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="313"/>
         <source>Bootstrap</source>
         <translation>引导</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="284"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="313"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="332"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="361"/>
         <source>Disable git sync for this notebook? Local commit history will be preserved
 on disk but no further syncing will occur. (The PAT will be deleted from
 the keychain.)</source>
@@ -7220,38 +7485,50 @@ the keychain.)</source>
 但不再进行同步。（PAT 将从密钥串中删除。）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="480"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="454"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="537"/>
+        <source>PAT saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="455"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="538"/>
+        <source>Personal Access Token has been saved. Please close and re-open this notebook to enable editing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="562"/>
         <source>Syncing...</source>
         <translation>正在同步...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="491"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="582"/>
         <source>Error (code %1)</source>
         <translation>错误（错误码 %1）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="501"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="592"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="501"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="592"/>
         <source>Error: %1</source>
         <translation>错误：%1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="511"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="602"/>
         <source>Conflicts (%1 file(s))</source>
         <translation>冲突（%1 个文件）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="555"/>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="578"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="676"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="705"/>
         <source>Sync</source>
         <translation>同步</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="556"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="677"/>
         <source>This will wipe local sync state and re-clone from the new URL.
 Old URL: %1
 New URL: %2
@@ -7264,13 +7541,13 @@ Continue?</source>
 是否继续？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="558"/>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="559"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="679"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="680"/>
         <source>(none)</source>
         <translation>（无）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="577"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="701"/>
         <source>Sync operation failed.</source>
         <translation>同步操作失败。</translation>
     </message>
@@ -7278,81 +7555,320 @@ Continue?</source>
 <context>
     <name>vnotex::OpenNotebookController</name>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="24"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="97"/>
         <source>Please specify a folder path.</source>
         <translation>请指定文件夹路径。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="31"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="104"/>
         <source>Please specify a valid folder path.</source>
         <translation>请指定有效的文件夹路径。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="39"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="112"/>
         <source>The specified folder does not exist.</source>
         <translation>指定的文件夹不存在。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="45"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="118"/>
         <source>The specified path is not a folder.</source>
         <translation>指定的路径不是文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="59"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="132"/>
         <source>This notebook (%1) is already open.</source>
         <translation>该笔记本 (%1) 已打开。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="83"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="156"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="301"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="94"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="171"/>
         <source>Failed to open notebook from (%1). The folder may not be a valid VNote notebook.</source>
         <translation>无法从 (%1) 打开笔记本。该文件夹可能不是有效的 VNote 笔记本。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="192"/>
+        <source>Remote URL must not be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="201"/>
+        <source>Remote URL must use HTTPS or file:// scheme (got: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="208"/>
+        <source>Local root folder path must not be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="213"/>
+        <source>Local root folder path is not valid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="227"/>
+        <source>Local root folder must be a directory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="236"/>
+        <source>Local root folder must be empty (contains %1 item(s)).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="249"/>
+        <source>Parent folder of destination does not exist or is not a directory: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="255"/>
+        <source>Parent folder of destination is not writable: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="273"/>
+        <source>A notebook (%1) is already open at this destination.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="315"/>
+        <source>Sync services not available; cannot use a PAT.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="334"/>
+        <source>Failed to create staging directory: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="380"/>
+        <source>Cloning...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="424"/>
+        <source>Clone cancelled by user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="426"/>
+        <source>Failed to clone remote notebook. Verify the URL is reachable, the PAT (if any) is valid, and the remote is an actual VNote notebook.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="463"/>
+        <source>Could not prepare local root folder %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="480"/>
+        <source>Failed to move cloned notebook into destination: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="503"/>
+        <source>Cloned notebook could not be re-opened from %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="583"/>
+        <source>Cloned notebook but failed to enable sync: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::OpenNotebookDialog2</name>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="81"/>
+        <source>Local folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="83"/>
+        <source>Open an existing VNote notebook from a local folder on disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="86"/>
+        <source>Remote URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="89"/>
+        <source>Clone a VNote notebook from a remote git URL or a file:// path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="130"/>
+        <source>Open</source>
+        <translation type="unfinished">打开</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="146"/>
+        <source>Open Notebook</source>
+        <translation type="unfinished">打开笔记本</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="159"/>
+        <source>Select Notebook Root Folder</source>
+        <translation type="unfinished">选择笔记本根文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="160"/>
+        <source>Select the root folder of an existing VNote notebook</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="162"/>
+        <source>Root folder of an existing VNote notebook (must contain a valid notebook config).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="163"/>
+        <source>Root folder path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="176"/>
+        <source>https://github.com/user/repo.git  or  file:///path/to/repo.git</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="177"/>
+        <source>Remote git URL. Only HTTPS and file:// schemes are supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="178"/>
+        <source>Remote URL:</source>
+        <translation type="unfinished">远端 URL：</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="185"/>
+        <source>Optional — leave empty to open without syncing yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="187"/>
+        <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="189"/>
+        <source>Personal Access Token:</source>
+        <translation type="unfinished">个人访问令牌：</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="198"/>
+        <source>Select Local Root Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="199"/>
+        <source>Folder to clone into (must not exist or be empty)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="201"/>
+        <source>Local folder that will receive the cloned notebook. It must either not exist yet (it will be created) or be an existing empty directory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="203"/>
+        <source>Local root folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="292"/>
+        <source>Remote URL must use HTTPS or file:// scheme (got: %1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="304"/>
+        <source>Local root folder path is not valid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="311"/>
+        <source>Local root folder must be a directory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="322"/>
+        <source>Local root folder must be empty (contains %1 item(s)).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="329"/>
+        <source>Parent folder does not exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="334"/>
+        <source>Parent folder is not writable.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="367"/>
+        <source>Cancelling clone...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="419"/>
+        <source>Cloning...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="477"/>
+        <source>Clone cancelled.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>vnotex::OpenVNote3NotebookController</name>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="24"/>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="123"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="26"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="126"/>
         <source>VNote3MigrationService not available.</source>
         <translation>VNote3MigrationService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="36"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="38"/>
         <source>Please specify a destination folder path.</source>
         <translation>请指定目标文件夹路径。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="46"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="48"/>
         <source>Destination folder must be different from the source folder.</source>
         <translation>目标文件夹必须与源文件夹不同。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="53"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="55"/>
         <source>Destination folder must not be inside the source folder.</source>
         <translation>目标文件夹不能位于源文件夹内。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="60"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="62"/>
         <source>Source folder must not be inside the destination folder.</source>
         <translation>源文件夹不能位于目标文件夹内。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="68"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="70"/>
         <source>Destination folder must be empty or non-existent.</source>
         <translation>目标文件夹必须为空或不存在。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="82"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="85"/>
         <source>This path is already opened as notebook (%1).</source>
         <translation>该路径已作为笔记本 (%1) 打开。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="98"/>
+        <location filename="../../../controllers/openvnote3notebookcontroller.cpp" line="101"/>
         <source>Conversion not confirmed by user</source>
         <translation>用户未确认转换</translation>
     </message>
@@ -7370,9 +7886,8 @@ Continue?</source>
         <translation>选择 VNote3 笔记本的根文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="35"/>
         <source>Source Folder:</source>
-        <translation>源文件夹：</translation>
+        <translation type="vanished">源文件夹：</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="39"/>
@@ -7385,14 +7900,27 @@ Continue?</source>
         <translation>选择目标根文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="41"/>
         <source>Destination Folder:</source>
-        <translation>目标文件夹：</translation>
+        <translation type="vanished">目标文件夹：</translation>
+    </message>
+    <message>
+        <source>Notebook Name:</source>
+        <translation type="vanished">笔记本名称：</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="35"/>
+        <source>Source folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="41"/>
+        <source>Destination folder:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="43"/>
-        <source>Notebook Name:</source>
-        <translation>笔记本名称：</translation>
+        <source>Notebook name:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="49"/>
@@ -7407,17 +7935,17 @@ The legacy notebook would be kept for data backup.</source>
 旧笔记本会被保留以作数据备份。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="66"/>
+        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="67"/>
         <source>Open VNote3 Notebook</source>
         <translation>打开 VNote3 笔记本</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="136"/>
+        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="137"/>
         <source>Enter a destination folder.</source>
         <translation>请输入目标文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="166"/>
+        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="167"/>
         <source>Converting notebook...</source>
         <translation>正在转换笔记本...</translation>
     </message>
@@ -7475,9 +8003,8 @@ The legacy notebook would be kept for data backup.</source>
         <translation>快速访问</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="74"/>
         <source>Quick Access:</source>
-        <translation>快速访问:</translation>
+        <translation type="vanished">快速访问:</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="84"/>
@@ -7526,6 +8053,11 @@ The legacy notebook would be kept for data backup.</source>
         <translation>选择快速笔记文件夹</translation>
     </message>
     <message>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="74"/>
+        <source>Quick access:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="138"/>
         <source>Note name</source>
         <translation>文件名</translation>
@@ -7559,23 +8091,23 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::RecycleBinController</name>
     <message>
-        <location filename="../../../controllers/recyclebincontroller.cpp" line="46"/>
-        <location filename="../../../controllers/recyclebincontroller.cpp" line="71"/>
+        <location filename="../../../controllers/recyclebincontroller.cpp" line="49"/>
+        <location filename="../../../controllers/recyclebincontroller.cpp" line="74"/>
         <source>Recycle bin is not supported for this notebook type.</source>
         <translation>该类型的笔记本不支持回收站。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/recyclebincontroller.cpp" line="55"/>
+        <location filename="../../../controllers/recyclebincontroller.cpp" line="58"/>
         <source>Failed to create recycle bin folder.</source>
         <translation>无法创建回收站文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/recyclebincontroller.cpp" line="78"/>
+        <location filename="../../../controllers/recyclebincontroller.cpp" line="81"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/recyclebincontroller.cpp" line="84"/>
+        <location filename="../../../controllers/recyclebincontroller.cpp" line="87"/>
         <source>Failed to empty recycle bin.</source>
         <translation>无法清空回收站。</translation>
     </message>
@@ -7611,42 +8143,42 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SearchController</name>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="83"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="85"/>
         <source>Failed to build search query.</source>
         <translation>无法构建搜索查询。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="91"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="93"/>
         <source>Notebook service is not available.</source>
         <translation>笔记本服务不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="109"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="111"/>
         <source>No current notebook selected.</source>
         <translation>未选择当前笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="121"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="123"/>
         <source>No current folder selected.</source>
         <translation>未选择当前文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="137"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="139"/>
         <source>Buffer service is not available.</source>
         <translation>缓冲区服务不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="166"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="168"/>
         <source>Invalid search scope.</source>
         <translation>无效的搜索范围。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="378"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="380"/>
         <source>Search service is not available.</source>
         <translation>搜索服务不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/searchcontroller.cpp" line="400"/>
+        <location filename="../../../controllers/searchcontroller.cpp" line="402"/>
         <source>Invalid search mode.</source>
         <translation>无效的搜索模式。</translation>
     </message>
@@ -8215,7 +8747,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/snippetpanel2.cpp" line="136"/>
         <source>Delete snippet &quot;%1&quot;?</source>
-        <translation>删除代码片段 "%1"？</translation>
+        <translation>删除代码片段 &quot;%1&quot;？</translation>
     </message>
     <message>
         <location filename="../../../widgets/snippetpanel2.cpp" line="163"/>
@@ -8308,6 +8840,29 @@ The legacy notebook would be kept for data backup.</source>
     </message>
 </context>
 <context>
+    <name>vnotex::SortDialog2</name>
+    <message>
+        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="67"/>
+        <source>Move to &amp;Top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="72"/>
+        <source>Move &amp;Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="77"/>
+        <source>Move &amp;Down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="82"/>
+        <source>Move to &amp;Bottom</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>vnotex::SyncConflictDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="64"/>
@@ -8316,18 +8871,30 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="103"/>
-        <source>Keep Local</source>
-        <translation>保留本地</translation>
+        <source>Keep local</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="107"/>
-        <source>Keep Remote</source>
-        <translation>保留远端</translation>
+        <source>Keep remote</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="110"/>
+        <source>Keep both</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Local</source>
+        <translation type="vanished">保留本地</translation>
+    </message>
+    <message>
+        <source>Keep Remote</source>
+        <translation type="vanished">保留远端</translation>
+    </message>
+    <message>
         <source>Keep Both</source>
-        <translation>两者都保留</translation>
+        <translation type="vanished">两者都保留</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="154"/>
@@ -8338,39 +8905,32 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncService</name>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="148"/>
         <source>Sync is in progress for this notebook. Please wait for sync to complete before closing.</source>
-        <translation>该笔记本正在同步。请等待同步完成后再关闭。</translation>
+        <translation type="vanished">该笔记本正在同步。请等待同步完成后再关闭。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="150"/>
         <source>Sync work is queued for this notebook (%1 item(s)). Cancel the queued sync from the toolbar before closing.</source>
-        <translation>该笔记本有同步任务排队中（%1 项）。请先在工具栏中取消排队的同步任务再关闭。</translation>
+        <translation type="vanished">该笔记本有同步任务排队中（%1 项）。请先在工具栏中取消排队的同步任务再关闭。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="154"/>
         <source>Cannot close notebook</source>
-        <translation>无法关闭笔记本</translation>
+        <translation type="vanished">无法关闭笔记本</translation>
     </message>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="234"/>
         <source>PAT is required to enable sync.</source>
-        <translation>启用同步需要 PAT。</translation>
+        <translation type="vanished">启用同步需要 PAT。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="247"/>
         <source>Remote URL is required to enable sync.</source>
-        <translation>启用同步需要远端 URL。</translation>
+        <translation type="vanished">启用同步需要远端 URL。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="697"/>
         <source>Failed to persist sync configuration to notebook after enable.</source>
-        <translation>启用后无法将同步配置持久化到笔记本。</translation>
+        <translation type="vanished">启用后无法将同步配置持久化到笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="700"/>
         <source>Notebook service not available.</source>
-        <translation>笔记本服务不可用。</translation>
+        <translation type="vanished">笔记本服务不可用。</translation>
     </message>
 </context>
 <context>
@@ -8424,34 +8984,34 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagController</name>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="32"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="42"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="104"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="114"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="130"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="31"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="41"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="103"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="113"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="129"/>
         <source>Tags</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="32"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="104"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="114"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="130"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="156"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="31"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="103"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="113"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="129"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="155"/>
         <location filename="../../../controllers/tagcontroller.cpp" line="188"/>
         <source>No notebook selected.</source>
         <translation>未选择笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="42"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="141"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="167"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="41"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="140"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="166"/>
         <location filename="../../../controllers/tagcontroller.cpp" line="199"/>
         <source>Tag service is not available.</source>
         <translation>标签服务不可用。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="119"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="118"/>
         <location filename="../../../controllers/tagcontroller.cpp" line="188"/>
         <location filename="../../../controllers/tagcontroller.cpp" line="193"/>
         <location filename="../../../controllers/tagcontroller.cpp" line="199"/>
@@ -8460,35 +9020,35 @@ The legacy notebook would be kept for data backup.</source>
         <translation>删除标签</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="119"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="135"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="161"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="118"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="134"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="160"/>
         <location filename="../../../controllers/tagcontroller.cpp" line="193"/>
         <source>Tag name cannot be empty.</source>
         <translation>标签名不能为空。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="135"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="141"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="146"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="134"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="140"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="145"/>
         <source>Move Tag</source>
         <translation>移动标签</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="146"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="145"/>
         <source>Failed to move tag: </source>
         <translation>无法移动标签：</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="156"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="161"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="167"/>
-        <location filename="../../../controllers/tagcontroller.cpp" line="172"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="155"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="160"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="166"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="171"/>
         <source>New Tag</source>
         <translation>新建标签</translation>
     </message>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="172"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="171"/>
         <source>Failed to create tag: </source>
         <translation>无法创建标签：</translation>
     </message>
@@ -8628,7 +9188,7 @@ Notebook: %3</source>
     <message>
         <location filename="../../../widgets/tagexplorer2.cpp" line="280"/>
         <source>Tag path under &quot;%1&quot; (e.g. child1/child2):</source>
-        <translation>"%1" 下的标签路径（例如 child1/child2）：</translation>
+        <translation>&quot;%1&quot; 下的标签路径（例如 child1/child2）：</translation>
     </message>
     <message>
         <location filename="../../../widgets/tagexplorer2.cpp" line="296"/>
@@ -8639,7 +9199,7 @@ Notebook: %3</source>
     <message>
         <location filename="../../../widgets/tagexplorer2.cpp" line="297"/>
         <source>Are you sure you want to delete tag &quot;%1&quot;?</source>
-        <translation>确定要删除标签 "%1" 吗？</translation>
+        <translation>确定要删除标签 &quot;%1&quot; 吗？</translation>
     </message>
     <message>
         <location filename="../../../widgets/tagexplorer2.cpp" line="320"/>
@@ -8804,13 +9364,41 @@ Notebook: %3</source>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="81"/>
-        <source>Always Center</source>
-        <translation>总是居中</translation>
+        <source>Always center</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="83"/>
+        <source>Center on bottom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="99"/>
+        <source>No wrap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="100"/>
+        <source>Word wrap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="101"/>
+        <source>Wrap anywhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="102"/>
+        <source>Word wrap or wrap anywhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always Center</source>
+        <translation type="vanished">总是居中</translation>
+    </message>
+    <message>
         <source>Center On Bottom</source>
-        <translation>在底部时居中</translation>
+        <translation type="vanished">在底部时居中</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="86"/>
@@ -8823,24 +9411,20 @@ Notebook: %3</source>
         <translation>编辑器词换行模式</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="99"/>
         <source>No Wrap</source>
-        <translation>不换行</translation>
+        <translation type="vanished">不换行</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="100"/>
         <source>Word Wrap</source>
-        <translation>按词换行</translation>
+        <translation type="vanished">按词换行</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="101"/>
         <source>Wrap Anywhere</source>
-        <translation>在任意位置换行</translation>
+        <translation type="vanished">在任意位置换行</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="102"/>
         <source>Word Wrap Or Wrap Anywhere</source>
-        <translation>按词换行或者在任意位置换行</translation>
+        <translation type="vanished">按词换行或者在任意位置换行</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="105"/>
@@ -9110,18 +9694,18 @@ Notebook: %3</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="681"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="700"/>
         <source>New Workspace</source>
         <translation>新建工作空间</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="681"/>
-        <location filename="../../../widgets/viewarea2.cpp" line="702"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="700"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="721"/>
         <source>Workspace name:</source>
         <translation>工作区名称：</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="702"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="721"/>
         <source>Rename Workspace</source>
         <translation>重命名工作区</translation>
     </message>
@@ -9137,147 +9721,157 @@ Notebook: %3</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="158"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="164"/>
         <source>Open Windows</source>
         <translation>已打开窗口</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="178"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="184"/>
         <source>Menu</source>
         <translation>菜单</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="205"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="211"/>
         <source>No Window To Show</source>
         <translation>没有可以展示的窗口</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="237"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="243"/>
         <source>Workspaces</source>
         <translation>工作空间</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="255"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="261"/>
         <source>Workspace %1</source>
         <translation>工作空间%1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="274"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="280"/>
         <source>New Workspace</source>
         <translation>新建工作空间</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="280"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="286"/>
         <source>Rename Workspace</source>
         <translation>重命名工作区</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="282"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="288"/>
         <source>Remove Workspace</source>
         <translation>移除工作空间</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="287"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="293"/>
         <source>Split</source>
         <translation>拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="296"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="302"/>
         <source>Vertical Split</source>
         <translation>竖直拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="299"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="305"/>
         <source>Horizontal Split</source>
         <translation>水平拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="302"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="308"/>
         <source>Maximize Split</source>
         <translation>最大化拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="306"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="312"/>
         <source>Distribute Splits</source>
         <translation>平均分配拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="323"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="329"/>
         <source>Remove Split</source>
         <translation>移除拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="326"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="332"/>
         <source>Remove Split and Workspace</source>
         <translation>移除分屏与工作区</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="557"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="575"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="559"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="577"/>
         <source>Close All Tabs</source>
         <translation>关闭所有标签页</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="563"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="581"/>
         <source>Close Other Tabs</source>
         <translation>关闭其他标签页</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="567"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="585"/>
         <source>Close Tabs To The Left</source>
         <translation>关闭左侧标签页</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="572"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="590"/>
         <source>Close Tabs To The Right</source>
         <translation>关闭右侧标签页</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="597"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="615"/>
         <source>Copy Path</source>
         <translation>复制路径</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="604"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="622"/>
         <source>Open Location</source>
         <translation>打开路径</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="614"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="632"/>
         <source>Locate Node</source>
         <translation>定位节点</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="624"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="642"/>
         <source>Move One Split Left</source>
         <translation>向左移动一个拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="628"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="646"/>
         <source>Move One Split Right</source>
         <translation>向右移动一个拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="632"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="650"/>
         <source>Move One Split Up</source>
         <translation>向上移动一个拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="636"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="654"/>
         <source>Move One Split Down</source>
         <translation>向下移动一个拆分</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="654"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="672"/>
+        <source>Reload</source>
+        <translation type="unfinished">重新加载</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewsplit2.cpp" line="673"/>
+        <source>Reload file from disk, discarding unsaved changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewsplit2.cpp" line="677"/>
         <source>Auto Reload</source>
         <translation>自动重新加载</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="657"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="680"/>
         <source>Automatically reload file from disk when modified externally</source>
         <translation>外部修改时自动从磁盘重新加载文件</translation>
     </message>
@@ -9365,47 +9959,71 @@ Notebook: %3</source>
         <translation>选择片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="195"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="208"/>
         <source>Do you want to save changes to &quot;%1&quot;?</source>
-        <translation>是否保存对 "%1" 的更改？</translation>
+        <translation>是否保存对 &quot;%1&quot; 的更改？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="196"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="209"/>
         <source>Your changes will be lost if you don&apos;t save them.</source>
         <translation>不保存的话更改将会丢失。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="215"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="228"/>
         <source>Save Changes</source>
         <translation>保存更改</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="216"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="229"/>
         <source>Failed to save &quot;%1&quot;.</source>
-        <translation>无法保存 "%1"。</translation>
+        <translation>无法保存 &quot;%1&quot;。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="218"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="231"/>
         <source>Would you like to retry, discard changes, or cancel?</source>
         <translation>重试、放弃更改，还是取消？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="219"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="232"/>
         <source>Maximum retries reached. Discard changes or cancel?</source>
         <translation>已达最大重试次数。放弃更改还是取消？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="557"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="376"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="449"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="496"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="544"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="565"/>
+        <source>Read-only notebook — cannot edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindow2.cpp" line="632"/>
         <source>Failed to save note (%1).</source>
         <translation>无法保存笔记(%1)。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="661"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="724"/>
+        <source>Reload note (%1) and discard unsaved changes?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindow2.cpp" line="824"/>
+        <source>This notebook is read-only (%1). Changes cannot be saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindow2.cpp" line="825"/>
+        <source>To enable editing, close this notebook and re-open it from the remote URL with a valid Personal Access Token.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindow2.cpp" line="858"/>
         <source>File Changed</source>
         <translation>文件已更改</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="662"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="859"/>
         <source>The file has been modified outside VNote.
 
 %1</source>
@@ -9414,23 +10032,23 @@ Notebook: %3</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="663"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="860"/>
         <source>Reload</source>
         <translation>重新加载</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="664"/>
-        <location filename="../../../widgets/viewwindow2.cpp" line="686"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="861"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="887"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="684"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="885"/>
         <source>File Missing</source>
         <translation>文件丢失</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="685"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="886"/>
         <source>The file no longer exists on disk.
 
 %1</source>
@@ -9439,50 +10057,51 @@ Notebook: %3</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="687"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="888"/>
         <source>Discard</source>
         <translation>放弃</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="932"/>
-        <location filename="../../../widgets/viewwindow2.cpp" line="940"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1133"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1141"/>
         <source>Pattern not found: %1</source>
         <translation>无法找到模式: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="934"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1135"/>
         <source>Match found: %1/%2</source>
         <translation>找到匹配: %1/%2</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/viewwindow2.cpp" line="942"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1143"/>
         <source>Replaced %n match(es)</source>
         <translation>
             <numerusform>替换 %n 处匹配</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="949"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1150"/>
         <source>Zoomed: %1%</source>
         <translation>缩放: %1%</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="953"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1154"/>
         <source>Zoomed: %1%2</source>
         <translation>缩放: %1%2</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="1134"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1335"/>
         <source>Discard changes to note (%1)?</source>
         <translation>放弃对笔记(%1)的更改？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="1135"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="725"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1336"/>
         <source>Note path (%1).</source>
         <translation>笔记路径(%1)。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/viewwindow2.cpp" line="1216"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="1417"/>
         <source>Attached %n file(s)</source>
         <translation>
             <numerusform>已添加 %n 文件为附件</numerusform>
@@ -9507,7 +10126,7 @@ Notebook: %3</source>
     <message>
         <location filename="../../../widgets/widgetviewwindow2.cpp" line="50"/>
         <source>Do you want to save changes to &quot;%1&quot;?</source>
-        <translation>是否保存对 "%1" 的更改？</translation>
+        <translation>是否保存对 &quot;%1&quot; 的更改？</translation>
     </message>
     <message>
         <location filename="../../../widgets/widgetviewwindow2.cpp" line="51"/>
@@ -9522,7 +10141,7 @@ Notebook: %3</source>
     <message>
         <location filename="../../../widgets/widgetviewwindow2.cpp" line="72"/>
         <source>Failed to save &quot;%1&quot;.</source>
-        <translation>无法保存 "%1"。</translation>
+        <translation>无法保存 &quot;%1&quot;。</translation>
     </message>
     <message>
         <location filename="../../../widgets/widgetviewwindow2.cpp" line="74"/>
