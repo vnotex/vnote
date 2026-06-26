@@ -1,6 +1,7 @@
 import fileinput
 import sys
 import re
+import datetime
 
 if len(sys.argv) < 2:
     print("Please provide a new version string!")
@@ -38,3 +39,17 @@ versionParts = newVersion.replace('.', ', ')
 regExp = re.compile('(const QVersionNumber ConfigMgr2::c_version)\\{\\d+, \\d+, \\d+\\}')
 for line in fileinput.input(['src/core/configmgr2.cpp'], inplace = True):
     print(regExp.sub('\\1{' + versionParts + '}', line), end='')
+
+# AppStream metainfo: prepend a <release> entry to the <releases> list.
+metainfoPath = 'src/data/core/fun.vnote.app.VNote.metainfo.xml'
+today = datetime.date.today().isoformat()
+newReleaseLine = '      <release version="{0}" date="{1}" />\n'.format(newVersion, today)
+releaseLineRe = re.compile('^\\s*<release version="([^"]+)"')
+for line in fileinput.input([metainfoPath], inplace = True):
+    # Drop any pre-existing entry for this version so re-runs stay idempotent.
+    match = releaseLineRe.match(line)
+    if match and match.group(1) == newVersion:
+        continue
+    print(line, end='')
+    if '<releases>' in line:
+        print(newReleaseLine, end='')
