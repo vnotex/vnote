@@ -163,11 +163,13 @@ void TestBufferReadOnlyGuard::setNotebookReadOnly(bool p_readOnly) {
 // =================================================================
 void TestBufferReadOnlyGuard::testMarkDirtyRejectedOnReadOnlyNotebook() {
   // Open the buffer while still writable, then flip the notebook to read-only.
-  QString fileId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("ro_dirty.md"));
+  const QString relPath = QStringLiteral("ro_dirty.md");
+  QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, fileId});
+  // Open by relative path: vxcore gates open on disk existence, and the node
+  // UUID returned by createFile is NOT a valid on-disk path.
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, relPath});
   QVERIFY(buf.isValid());
 
   setNotebookReadOnly(true);
@@ -207,11 +209,13 @@ void TestBufferReadOnlyGuard::testMarkDirtyRejectedOnReadOnlyNotebook() {
 void TestBufferReadOnlyGuard::testEnqueueRejectedOnReadOnlyNotebook() {
   // Create a fresh file and open via BufferCoreService directly so we have a
   // bufferId that the queue's IBufferCoreService reference recognises.
-  QString fileId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("ro_enqueue.md"));
+  const QString relPath = QStringLiteral("ro_enqueue.md");
+  QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
-  QString bufferId = m_bufferCoreService->openBuffer(m_notebookId, fileId);
+  // Open by relative path: vxcore gates open on disk existence, and the node
+  // UUID returned by createFile is NOT a valid on-disk path.
+  QString bufferId = m_bufferCoreService->openBuffer(m_notebookId, relPath);
   QVERIFY(!bufferId.isEmpty());
 
   // Persist a known payload to disk BEFORE flipping read-only. This becomes
@@ -220,7 +224,7 @@ void TestBufferReadOnlyGuard::testEnqueueRejectedOnReadOnlyNotebook() {
   QVERIFY(m_bufferCoreService->setContentRaw(bufferId, initial));
   QVERIFY(m_bufferCoreService->saveBuffer(bufferId));
 
-  const QString diskPath = m_bufferCoreService->getResolvedPath(m_notebookId, fileId);
+  const QString diskPath = m_bufferCoreService->getResolvedPath(m_notebookId, relPath);
   QVERIFY(!diskPath.isEmpty());
   QCOMPARE(readFile(diskPath), initial);
 
@@ -263,11 +267,13 @@ void TestBufferReadOnlyGuard::testEnqueueRejectedOnReadOnlyNotebook() {
 // =================================================================
 void TestBufferReadOnlyGuard::testSaveBufferRejectedOnReadOnlyNotebook() {
   // Open the buffer while still writable, then flip the notebook to read-only.
-  QString fileId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("ro_save.md"));
+  const QString relPath = QStringLiteral("ro_save.md");
+  QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, fileId});
+  // Open by relative path: vxcore gates open on disk existence, and the node
+  // UUID returned by createFile is NOT a valid on-disk path.
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, relPath});
   QVERIFY(buf.isValid());
 
   setNotebookReadOnly(true);
@@ -299,11 +305,13 @@ void TestBufferReadOnlyGuard::testSaveBufferRejectedOnReadOnlyNotebook() {
 // =================================================================
 void TestBufferReadOnlyGuard::testWritableNotebookStillWorks() {
   // -------- Path A: markDirty regression --------
-  QString fileIdA = m_notebookService->createFile(m_notebookId, QString(),
-                                                  QStringLiteral("writable_markdirty.md"));
+  const QString relPathA = QStringLiteral("writable_markdirty.md");
+  QString fileIdA = m_notebookService->createFile(m_notebookId, QString(), relPathA);
   QVERIFY(!fileIdA.isEmpty());
 
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, fileIdA});
+  // Open by relative path: vxcore gates open on disk existence, and the node
+  // UUID returned by createFile is NOT a valid on-disk path.
+  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, relPathA});
   QVERIFY(buf.isValid());
   QVERIFY(!buf.isReadOnly());
 
@@ -320,18 +328,19 @@ void TestBufferReadOnlyGuard::testWritableNotebookStillWorks() {
   QVERIFY(m_bufferService->currentRevision(buf.id()) > revBefore);
 
   // -------- Path B: BufferSaveQueue::enqueue end-to-end regression --------
-  QString fileIdB =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("writable_enqueue.md"));
+  const QString relPathB = QStringLiteral("writable_enqueue.md");
+  QString fileIdB = m_notebookService->createFile(m_notebookId, QString(), relPathB);
   QVERIFY(!fileIdB.isEmpty());
 
-  QString bufferIdB = m_bufferCoreService->openBuffer(m_notebookId, fileIdB);
+  // Open by relative path (see Path A note).
+  QString bufferIdB = m_bufferCoreService->openBuffer(m_notebookId, relPathB);
   QVERIFY(!bufferIdB.isEmpty());
 
   const QByteArray initial = QByteArrayLiteral("INITIAL_WRITABLE");
   QVERIFY(m_bufferCoreService->setContentRaw(bufferIdB, initial));
   QVERIFY(m_bufferCoreService->saveBuffer(bufferIdB));
 
-  const QString diskPath = m_bufferCoreService->getResolvedPath(m_notebookId, fileIdB);
+  const QString diskPath = m_bufferCoreService->getResolvedPath(m_notebookId, relPathB);
   QVERIFY(!diskPath.isEmpty());
   QCOMPARE(readFile(diskPath), initial);
 

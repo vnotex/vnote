@@ -1,6 +1,6 @@
-#include <QtTest>
 #include <QFile>
 #include <QTemporaryDir>
+#include <QtTest>
 
 #include <core/services/buffercoreservice.h>
 #include <core/services/notebookcoreservice.h>
@@ -69,7 +69,8 @@ void TestBufferService::initTestCase() {
   m_notebookId = m_notebookService->createNotebook(nbPath, configJson, NotebookType::Bundled);
   QVERIFY(!m_notebookId.isEmpty());
 
-  QString fileId = m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
+  QString fileId =
+      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
   QVERIFY(!fileId.isEmpty());
 }
 
@@ -108,10 +109,11 @@ void TestBufferService::testOpenBufferInvalidNotebook() {
 }
 
 void TestBufferService::testOpenBufferInvalidFile() {
-  // vxcore allows opening buffers for files that don't exist on disk yet (lazy creation).
-  // Just verify the call doesn't crash and returns a non-empty id.
+  // vxcore gates buffer open on disk existence (vxcore commit a581bb1): a file that
+  // is not present on disk is rejected with VXCORE_ERR_NODE_NOT_EXISTS, so the
+  // returned buffer id is empty. (The old lazy-creation contract is gone.)
   QString bufferId = m_bufferService->openBuffer(m_notebookId, QStringLiteral("nonexistent.md"));
-  QVERIFY(!bufferId.isEmpty());
+  QVERIFY(bufferId.isEmpty());
 }
 
 void TestBufferService::testCloseBuffer() {
@@ -223,8 +225,8 @@ void TestBufferService::testInsertAssetRaw() {
   QString bufferId = m_bufferService->openBuffer(m_notebookId, QStringLiteral("test.md"));
   QVERIFY(!bufferId.isEmpty());
 
-  QString relativePath =
-      m_bufferService->insertAssetRaw(bufferId, QStringLiteral("asset.bin"), QByteArray("\x01\x02\x03", 3));
+  QString relativePath = m_bufferService->insertAssetRaw(bufferId, QStringLiteral("asset.bin"),
+                                                         QByteArray("\x01\x02\x03", 3));
   QVERIFY(!relativePath.isEmpty());
 }
 

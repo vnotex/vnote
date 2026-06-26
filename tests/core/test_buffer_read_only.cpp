@@ -92,8 +92,8 @@ void TestBufferReadOnly::testBufferReadOnlyFalse() {
   // Subtest 1: Open notebook with read_only=false, open a buffer, assert isReadOnly() == false
 
   // Create a test file in root folder
-  QString fileId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
+  const QString relPath = QStringLiteral("test.md");
+  QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
   // Verify notebook is NOT read-only
@@ -103,8 +103,9 @@ void TestBufferReadOnly::testBufferReadOnlyFalse() {
   QCOMPARE(err, VXCORE_OK);
   QCOMPARE(readOnly, false);
 
-  // Open buffer
-  QString bufferId = m_bufferCoreService->openBuffer(m_notebookId, fileId);
+  // Open buffer by relative path. vxcore gates open on disk existence, and the
+  // node UUID returned by createFile is NOT a valid on-disk path.
+  QString bufferId = m_bufferCoreService->openBuffer(m_notebookId, relPath);
   QVERIFY(!bufferId.isEmpty());
 
   // Test BufferCoreService::isBufferReadOnly
@@ -120,8 +121,8 @@ void TestBufferReadOnly::testBufferReadOnlyTrue() {
   // open buffer, assert isReadOnly() == true
 
   // Create a test file in root folder
-  QString fileId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test2.md"));
+  const QString relPath = QStringLiteral("test2.md");
+  QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
   // Set notebook to read-only
@@ -135,8 +136,9 @@ void TestBufferReadOnly::testBufferReadOnlyTrue() {
   QCOMPARE(err, VXCORE_OK);
   QCOMPARE(readOnly, true);
 
-  // Open buffer
-  QString bufferId = m_bufferCoreService->openBuffer(m_notebookId, fileId);
+  // Open buffer by relative path. vxcore gates open on disk existence, and the
+  // node UUID returned by createFile is NOT a valid on-disk path.
+  QString bufferId = m_bufferCoreService->openBuffer(m_notebookId, relPath);
   QVERIFY(!bufferId.isEmpty());
 
   // Test BufferCoreService::isBufferReadOnly
