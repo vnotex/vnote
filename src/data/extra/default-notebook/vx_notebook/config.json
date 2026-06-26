@@ -1,0 +1,14 @@
+{
+  "assetsFolder": "vx_assets",
+  "autoSyncEnabled": true,
+  "description": "My default notebook in VNote",
+  "id": "ca19553e-08ab-4d8c-861a-a8fc6cfe93fe",
+  "ignored": [],
+  "metadata": {},
+  "name": "My Notebook",
+  "syncBackend": "",
+  "syncEnabled": false,
+  "syncRemoteUrl": "",
+  "tags": [],
+  "tagsModifiedUtc": 0
+}
