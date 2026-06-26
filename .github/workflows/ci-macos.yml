@@ -144,6 +144,42 @@ jobs:
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
         working-directory: ${{runner.workspace}}/build
 
+      - name: Build and Run Tests
+        # Build remaining targets (Qt-side tests + vxcore tests; --target pack
+        # above only built the VNote.app bundle) then run them headlessly via
+        # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to ON
+        # in the root CMakeLists.txt, so no extra -D is needed. Runs BEFORE
+        # codesign/dmg so a test failure gates the workflow before packaging.
+        run: |
+          set -e
+          cmake --build .
+          export QT_QPA_PLATFORM=offscreen
+          # Force a UTF-8 locale so std::filesystem::path round-trips through
+          # std::string preserve non-ASCII bytes. Without this, CJK filenames
+          # in tests/data/vnote3_notebooks/* get mangled during VNote3
+          # migration (testConvertFolderWith17FilesAndSubfolder, etc.).
+          # macOS ships en_US.UTF-8 rather than C.UTF-8.
+          export LC_ALL=en_US.UTF-8
+          export LANG=en_US.UTF-8
+          # libVTextEdit.dylib lives next to the parent build's VNote binary;
+          # add it to DYLD_LIBRARY_PATH so Qt-side test exes resolve it at load.
+          export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
+          ctest --output-on-failure
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Re-run failed tests with extra-verbose output (debug aid)
+        # On failure of the previous step, re-run only the failing tests with
+        # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
+        # land in the CI log. Diagnostic only; never gates the workflow.
+        if: failure()
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          export LC_ALL=en_US.UTF-8
+          export LANG=en_US.UTF-8
+          export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
+          ctest --rerun-failed --extra-verbose || true
+        working-directory: ${{runner.workspace}}/build
+
       - name: Codesign Bundle
         # Extract the secrets we defined earlier as environment variables
         env:
