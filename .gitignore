@@ -21,8 +21,6 @@ build*
 dev.sh
 nul
 .sisyphus
-!.sisyphus/fixtures/
-!.sisyphus/fixtures/**
 
 # GitHub Spec Kit related files.
 .claude
