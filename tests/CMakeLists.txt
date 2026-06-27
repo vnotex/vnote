@@ -52,6 +52,20 @@ function(add_qt_test NAME)
   )
 endfunction()
 
+# Tests are never shipped; they run only on the CI runner's native arch. The
+# app is built universal (-DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"), but a
+# universal test build forces an x86_64 link of moc-emitted vtables (e.g.
+# ViewWindow2) whose out-of-line destructors are intentionally not compiled into
+# stubbed test translation units -> the x86_64 link fails (arm64 succeeds),
+# aborting `make all` before the widgets/integration tests build. Narrowing the
+# tests to the host arch eliminates that entire failure class while keeping the
+# shipped app universal. Directory-scoped: inherited by every target created in
+# tests/ and its subdirectories (all route through add_qt_test -> add_executable
+# above). No effect on Linux/Windows (OSX_ARCHITECTURES is Apple-only).
+if(APPLE)
+  set(CMAKE_OSX_ARCHITECTURES "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+endif()
+
 # Subdirectories
 add_subdirectory(helpers)
 add_subdirectory(core)
