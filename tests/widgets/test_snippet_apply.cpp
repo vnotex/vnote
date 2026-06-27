@@ -19,6 +19,15 @@ using namespace vnotex;
 
 namespace vnotex {
 
+// Out-of-line destructor stub. viewwindow2.h is listed in this test's SOURCES so
+// AUTOMOC emits the ViewWindow2 vtable, but viewwindow2.cpp is intentionally not
+// compiled in (it would drag in ~12 transitive widget deps). On macOS/Mach-O the
+// vtable strictly requires its key-function destructor symbol, so define it here
+// (matches the sibling viewwindow2.h stub-injection tests:
+// test_viewsplit2_reload_menu, test_view_window2_readonly_toolbar,
+// test_view_window2_readonly_save_warning).
+ViewWindow2::~ViewWindow2() = default;
+
 void ViewWindow2::findNext(const QString &, FindOptions) {}
 
 void ViewWindow2::replace(const QString &, FindOptions, const QString &) {}
