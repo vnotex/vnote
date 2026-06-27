@@ -1,13 +1,13 @@
-#include "webviewexporter.h"
+﻿#include "webviewexporter.h"
 
 #include <QDir>
+#include <QEventLoop>
 #include <QFileInfo>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
-
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
@@ -650,8 +650,29 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl, const QString &p_f
   return altered;
 }
 
-bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile) {
+bool WebViewExporter::doExportPdf(const ExportPdfOption& p_pdfOption, const QString& p_outputFile) {
   ExportState state = ExportState::Busy;
+
+
+  {
+    QEventLoop loop;
+
+    connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady, &loop,
+                                           [&loop]() {
+                                             loop.quit();
+                                           });
+
+    m_viewer->page()->runJavaScript(
+        "if (typeof vxcore !== 'undefined' && vxcore.getWorker('mathjax')) {"
+        "  vxcore.getWorker('mathjax').convertAllSvgToPng();"
+        "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }");
+
+    loop.exec();
+
+    if (m_askedToStop) {
+      return false;
+    }
+  }
 
   m_viewer->page()->printToPdf(
       [&, this](const QByteArray &p_result) {
