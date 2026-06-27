@@ -172,6 +172,57 @@ class MathJaxRenderer extends VxWorker {
         this.finishWork();
     }
 
+    convertAllSvgToPng() {
+
+        let svgs = this.vxcore.contentContainer.querySelectorAll('svg');
+        if (svgs.length == 0) {
+            window.vxMarkdownAdapter.onPdfRenderReady();
+            return;
+        }
+
+        let pending = svgs.length;
+        svgs.forEach(function (svg) {
+            let serializer = new XMLSerializer();
+            let svgStr = serializer.serializeToString(svg);
+            let canvas = document.createElement('canvas');
+            let bbox = svg.getBoundingClientRect();
+            let scale = 2;
+            canvas.width = bbox.width * scale;
+            canvas.height = bbox.height * scale;
+            let ctx = canvas.getContext('2d');
+
+            let img = new Image();
+            let svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+            let url = URL.createObjectURL(svgBlob);
+            img.onload = function () {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+                let pngDataUrl = canvas.toDataURL('image/png');
+
+                let pngImg = document.createElement('img');
+                pngImg.src = pngDataUrl;
+                pngImg.style.width = bbox.width + 'px';
+                pngImg.style.height = bbox.height + 'px';
+                pngImg.setAttribute('data-math-png', 'true');
+
+                svg.parentNode.replaceChild(pngImg, svg);
+
+                pending--;
+                if (pending == 0) {
+                    window.vxMarkdownAdapter.onPdfRenderReady();
+                }
+            };
+            img.onerror = function () {
+                URL.revokeObjectURL(url);
+                pending--;
+                if (pending == 0) {
+                    window.vxMarkdownAdapter.onPdfRenderReady();
+                }
+            };
+            img.src = url;
+        });
+    }
+
     // Return { text, display }.
     removeTextGuard(p_text) {
         let text = p_text.trim();

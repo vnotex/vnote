@@ -154,6 +154,8 @@ public slots:
   void setSavedContent(const QString &p_headContent, const QString &p_styleContent,
                        const QString &p_content, const QString &p_bodyClassList);
 
+  void onPdfRenderReady();
+
   // Call local CPP code to render graph.
   void renderGraph(quint64 p_id, quint64 p_index, const QString &p_format, const QString &p_lang,
                    const QString &p_text);
@@ -217,6 +219,8 @@ signals:
 
   void contentReady(const QString &p_headContent, const QString &p_styleContent,
                     const QString &p_content, const QString &p_bodyClassList);
+
+  void pdfRenderReady();
 
   void highlightCodeBlockReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
 
