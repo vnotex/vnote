@@ -8,7 +8,7 @@
 #   .\scripts\pack-win.ps1                    # auto-detect everything
 #   .\scripts\pack-win.ps1 -Clean             # wipe build dir first
 #   .\scripts\pack-win.ps1 -BuildOnly         # build but skip pack
-#   .\scripts\pack-win.ps1 -QtDir "C:\Qt\6.8.3\msvc2022_64"
+#   .\scripts\pack-win.ps1 -QtDir "C:\Qt\6.9.3\msvc2022_64"
 #   .\scripts\pack-win.ps1 -VcVars "...\vcvars64.bat"
 
 param(

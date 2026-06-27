@@ -67,12 +67,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{runner.workspace}}/Qt
-          key: ${{ runner.os }}-QtCache-6.8
+          key: ${{ runner.os }}-QtCache-6.9
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: 6.8.3
+          version: 6.9.3
           target: desktop
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           tools: 'tools_opensslv3_src'

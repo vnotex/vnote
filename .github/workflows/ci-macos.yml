@@ -30,15 +30,12 @@ jobs:
       matrix:
         config:
           - name: "Build on Arm64"
-            # Pinned to macos-15 (not macos-latest): the macos-26/Xcode 26 SDK
-            # removed AGL.framework, which Qt 6.8.3's bundled
-            # FindWrapOpenGL.cmake still links unconditionally, breaking the
-            # libVTextEdit.dylib link ("ld: framework 'AGL' not found").
-            # Qt fixed this in 6.8.4 / 6.9.2+ (QTBUG-137687); once the pinned Qt
-            # is bumped past that, this can return to macos-latest.
-            os: macos-15
+            # Qt 6.9.3 includes the QTBUG-137687 fix (FindWrapOpenGL.cmake no
+            # longer unconditionally links the macOS AGL.framework that Xcode 26
+            # removed), so macos-latest is safe again.
+            os: macos-latest
             arch: universal
-            qt: 6.8.3
+            qt: 6.9.3
 
     runs-on: ${{matrix.config.os}}
 
@@ -92,7 +89,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{runner.workspace}}/Qt
-          key: ${{ runner.os }}-QtCache-6.8
+          key: ${{ runner.os }}-QtCache-6.9
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3

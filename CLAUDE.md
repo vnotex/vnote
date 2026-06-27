@@ -170,4 +170,4 @@ When migrating legacy code to new architecture:
 
 ## CI
 
-GitHub Actions workflows in `.github/workflows/`: `ci-win.yml`, `ci-linux.yml`, `ci-macos.yml`. Trigger on push/PR to `master`. Windows builds use Ninja + MSVC 2022 with Qt 6.8.3.
+GitHub Actions workflows in `.github/workflows/`: `ci-win.yml`, `ci-linux.yml`, `ci-macos.yml`. Trigger on push/PR to `master`. Windows builds use Ninja + MSVC 2022 with Qt 6.9.3.
