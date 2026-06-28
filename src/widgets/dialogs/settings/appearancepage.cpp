@@ -31,17 +31,19 @@ void AppearancePage::setupUI() {
 
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Appearance"), QString(), this);
 
+#if !defined(Q_OS_MACOS)
+  // On macOS the system title bar is always used, so this option is hidden.
   {
     const QString label(tr("System title bar"));
     m_systemTitleBarCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_systemTitleBarCheckBox->setToolTip(tr("Use system title bar"));
-    cardLayout->addWidget(
-        SettingsPageHelper::createCheckBoxRow(m_systemTitleBarCheckBox,
-                                              m_systemTitleBarCheckBox->toolTip(), this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_systemTitleBarCheckBox, m_systemTitleBarCheckBox->toolTip(), this));
     addSearchItem(label, m_systemTitleBarCheckBox->toolTip(), m_systemTitleBarCheckBox);
     connect(m_systemTitleBarCheckBox, &QCheckBox::stateChanged, this,
             &AppearancePage::pageIsChangedWithRestartNeeded);
   }
+#endif
 
   {
     m_toolBarIconSizeSpinBox = WidgetsFactory::createSpinBox(this);
@@ -52,9 +54,8 @@ void AppearancePage::setupUI() {
 
     const QString label(tr("Main tool bar icon size"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(label, m_toolBarIconSizeSpinBox->toolTip(),
-                                             m_toolBarIconSizeSpinBox, this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox, this));
     addSearchItem(label, m_toolBarIconSizeSpinBox->toolTip(), m_toolBarIconSizeSpinBox);
     connect(m_toolBarIconSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
             &AppearancePage::pageIsChangedWithRestartNeeded);

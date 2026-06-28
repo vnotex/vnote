@@ -304,7 +304,14 @@ QuickAccessOpenMode SessionConfig::stringToOpenMode(const QString &p_str) {
   return QuickAccessOpenMode::Default;
 }
 
-bool SessionConfig::getSystemTitleBarEnabled() const { return m_systemTitleBarEnabled; }
+bool SessionConfig::getSystemTitleBarEnabled() const {
+#if defined(Q_OS_MACOS)
+  // On macOS, always use the system title bar; the option is hidden in settings.
+  return true;
+#else
+  return m_systemTitleBarEnabled;
+#endif
+}
 
 void SessionConfig::setSystemTitleBarEnabled(bool p_enabled) {
   updateConfig(m_systemTitleBarEnabled, p_enabled, this);
