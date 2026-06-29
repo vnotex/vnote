@@ -1,4 +1,4 @@
-#include "webviewexporter.h"
+﻿#include "webviewexporter.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -7,7 +7,6 @@
 #include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
-
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
@@ -652,6 +651,24 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl, const QString &p_f
 
 bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile) {
   ExportState state = ExportState::Busy;
+
+  bool pdfRenderReady = false;
+  QMetaObject::Connection conn = connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady,
+                                         [&pdfRenderReady]() { pdfRenderReady = true; });
+
+  m_viewer->page()->runJavaScript(
+      "if (typeof vxcore !== 'undefined' && vxcore.getWorker('mathjax')) {"
+      "  vxcore.getWorker('mathjax').convertAllSvgToPng();"
+      "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }");
+
+  while (!pdfRenderReady) {
+    Utils::sleepWait(100);
+    if (m_askedToStop) {
+      disconnect(conn);
+      return false;
+    }
+  }
+  disconnect(conn);
 
   m_viewer->page()->printToPdf(
       [&, this](const QByteArray &p_result) {
