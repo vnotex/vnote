@@ -20,7 +20,8 @@ build*
 .vscode
 dev.sh
 nul
-.sisyphus
+.sisyphus/
+.omo/
 
 # GitHub Spec Kit related files.
 .claude
@@ -31,6 +32,6 @@ plans
 tmp
 /test_*
 resulte.txt
-/.sisyphus/fixtures/log-cleanup/runtime/
+
 
 .codegraph/
