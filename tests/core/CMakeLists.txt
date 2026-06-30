@@ -52,6 +52,20 @@ add_qt_test(test_searchresulttypes
   GUILESS
 )
 
+# T7 (search-drain-pool): SearchService owns a drain-thread pool that drains
+# vxcore's "vxcore.search" content-search work queue. Verifies (1) async
+# searchContent over a >50-file notebook matches the single-threaded baseline
+# result exactly, and (2) idle drain threads block on the condvar (0 items
+# processed across a 500ms idle window) with the pool sized min(hw,8) floor 2.
+add_qt_test(test_search_service_drain
+  SOURCES
+    test_search_service_drain.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_searchresultmodel
   SOURCES
     test_searchresultmodel.cpp

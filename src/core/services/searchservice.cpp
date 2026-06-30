@@ -1,5 +1,7 @@
 #include "searchservice.h"
 
+#include <algorithm>
+
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -186,12 +188,36 @@ SearchService::SearchService(SearchCoreService *p_coreService, QObject *p_parent
   });
 
   m_thread->start();
+
+  unsigned n = std::thread::hardware_concurrency();
+  if (n == 0) {
+    n = 2;
+  }
+  n = std::min(n, 8u);
+
+  VxCoreContextHandle ctx = m_coreService->context();
+  for (unsigned i = 0; i < n; ++i) {
+    m_drainThreads.emplace_back([this, ctx]() {
+      while (!m_stopDrain.load(std::memory_order_relaxed)) {
+        if (vxcore_work_queue_process_next(ctx, "vxcore.search", 100) == 1) {
+          m_drainItemsProcessed.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    });
+  }
 }
 
 SearchService::~SearchService() {
   cancel();
+  m_stopDrain.store(true, std::memory_order_relaxed);
   m_thread->quit();
   m_thread->wait();
+
+  for (auto &t : m_drainThreads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
 
   delete m_mutex;
   m_mutex = nullptr;

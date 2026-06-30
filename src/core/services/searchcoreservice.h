@@ -70,6 +70,10 @@ public:
   Error searchByTags(const QString &p_notebookId, const QString &p_queryJson,
                      const QString &p_inputFilesJson, QJsonArray *p_results) const;
 
+  // Non-owning access to the vxcore context (owned in main(), outlives services).
+  // Used by SearchService to drain the "vxcore.search" content-search work queue.
+  VxCoreContextHandle context() const { return m_context; }
+
 private:
   // Non-owning pointer to vxcore context.
   VxCoreContextHandle m_context = nullptr;

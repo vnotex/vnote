@@ -115,3 +115,15 @@ The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault 
 | S6 startup sweep | `src/core/services/syncservice.cpp:1280` (`onMainWindowAfterStart`) | App start, for each notebook where `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (disk says disabled but keychain still holds a PAT). Backstop for previous-session crashes between the JSON-clear and keychain-delete steps. | Disk and keychain already agree (normal case). |
 
 **Rule for new sync-related code paths**: any time you retire a notebook, roll back an enable, or transition to a state where the on-disk JSON no longer claims sync is enabled, route through one of the five sites above. Do not call `deleteCredentials` from controllers or widgets; the cleanup contract lives in `SyncService` (and the one historical exception in `NewNotebookController::bootstrapSync`, which is documented in `src/controllers/AGENTS.md`).
+
+## SearchService drain pool
+
+`SearchService` owns the pool of drain threads that empty vxcore's `"vxcore.search"` work queue (see the root [Search Threading Contract](../../../AGENTS.md#search-threading-contract)). vxcore owns no search threads; this pool is VNote's side of that contract.
+
+**Size.** `min(std::thread::hardware_concurrency(), 8)`, substituting `2` only when `hardware_concurrency()` returns `0` (count unknown). This is a fallback for the unknown case, not a floor: a genuine single-core host gets `1` drain thread. Each thread loops `vxcore_work_queue_process_next(ctx, "vxcore.search", 100)`.
+
+**Lifetime.** The drain threads are spawned in the `SearchService` constructor AFTER the worker thread has started, and torn down in the destructor by setting `m_stopDrain` and joining every drain thread BEFORE the queue mutex is deleted and while the vxcore context is still alive. Joining first prevents a drain thread from touching a half-destroyed queue or a freed context.
+
+**Idle cost.** Because the `"vxcore.search"` queue is pre-created at `vxcore_context_create`, idle drain threads block on the queue's condvar (~0 CPU). There is no busy-spin and no need to guard against a missing queue.
+
+**Degradation.** The initiating thread help-drains its own enqueued items, so a search stays correct even if this pool is absent or stalled. With no drain threads the search simply runs single-threaded; results, ordering, cancellation, and `max_results` are unaffected.

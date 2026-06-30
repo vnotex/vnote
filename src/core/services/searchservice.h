@@ -2,7 +2,10 @@
 #define SEARCHSERVICE_H
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
+#include <thread>
+#include <vector>
 
 #include <QMap>
 #include <QObject>
@@ -11,6 +14,8 @@
 
 #include <core/error.h>
 #include <core/searchresulttypes.h>
+
+#include <vxcore/vxcore.h>
 
 class QMutex;
 class QThread;
@@ -41,6 +46,11 @@ public:
   bool isSearching() const;
   bool isSearching(int p_token) const;
 
+  size_t testDrainThreadCount() const { return m_drainThreads.size(); }
+  uint64_t testDrainItemsProcessed() const {
+    return m_drainItemsProcessed.load(std::memory_order_relaxed);
+  }
+
 signals:
   void searchFinished(int p_token, const SearchResult &p_result);
   void searchFailed(int p_token, const Error &p_error);
@@ -56,6 +66,10 @@ private:
   QMap<int, std::shared_ptr<std::atomic<int>>> m_cancelFlags;
   QSet<int> m_activeTokens;
   int m_nextToken = 1;
+
+  std::vector<std::thread> m_drainThreads;
+  std::atomic<bool> m_stopDrain{false};
+  std::atomic<uint64_t> m_drainItemsProcessed{0};
 };
 
 } // namespace vnotex

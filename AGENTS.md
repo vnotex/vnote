@@ -501,6 +501,16 @@ The legacy `Buffer` (1-second timer in `src/core/buffer/buffer.cpp`) bypasses vx
 
 ---
 
+## Search Threading Contract
+
+Content search in vxcore owns NO thread pool. `vxcore_search_content` / `vxcore_search_content_ex` enqueue ONE work item per file onto a dedicated `"vxcore.search"` `WorkQueue` that is pre-created at `vxcore_context_create`. The CALLER's threads drain that queue, and the initiating thread help-drains its own enqueued items (caller-helps-drain: it loops `ProcessNext(5ms)` until the batch is done). VNote's [`SearchService`](src/core/services/searchservice.h) owns the drain pool that loops `vxcore_work_queue_process_next(ctx, "vxcore.search", 100)`. Batches under 50 files skip the queue and run inline sequentially.
+
+The initiating thread's self-drain is the correctness floor: a consumer that provides NO external drain threads still gets correct, single-threaded results, and extra drainers only add parallelism. Cancellation, `max_results`, and result ordering are preserved across both paths; an exception thrown mid-scan is caught and surfaces as `VXCORE_ERR_UNKNOWN`.
+
+This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-file search work as facts, VNote owns the drain policy. No vxcore-owned threads remain, the former `BS::thread_pool` search pool having been removed.
+
+---
+
 ## Code Style Guidelines
 
 ### Standards
