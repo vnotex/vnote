@@ -9,12 +9,20 @@ class QJsonObject;
 
 namespace vnotex {
 
-// A single line match within a file (from content search).
-struct SearchLineMatch {
-  int m_lineNumber = -1;  // 0-based line number
+// A single matched column range within a line.
+struct SearchMatchSegment {
   int m_columnStart = 0;
   int m_columnEnd = 0;
+};
+
+// A single matched line within a file (from content search). vxcore emits one
+// match per occurrence; occurrences on the same line are grouped here into one
+// SearchLineMatch carrying one segment per occurrence, so a line with N matches
+// renders as one row with N highlighted ranges (not N duplicated rows).
+struct SearchLineMatch {
+  int m_lineNumber = -1;  // 0-based line number
   QString m_lineText;
+  QVector<SearchMatchSegment> m_segments;
 };
 
 // Type of a search file result.
@@ -27,6 +35,10 @@ struct SearchFileResult {
   QString m_absolutePath;  // Absolute filesystem path (file search only)
   QString m_id;            // Node ID (GUID)
   QString m_notebookId;    // Notebook GUID (set by caller)
+
+  // Total match occurrences in this file (content search only). Distinct from
+  // m_lineMatches.size(), which counts matched LINES after same-line grouping.
+  int m_matchCount = 0;
 
   // Line-level matches (content search only; empty for file search).
   QVector<SearchLineMatch> m_lineMatches;
@@ -54,5 +66,7 @@ struct SearchResult {
 } // namespace vnotex
 
 Q_DECLARE_METATYPE(vnotex::SearchResult)
+Q_DECLARE_METATYPE(vnotex::SearchMatchSegment)
+Q_DECLARE_METATYPE(QVector<vnotex::SearchMatchSegment>)
 
 #endif // SEARCHRESULTTYPES_H

@@ -14,6 +14,8 @@ private slots:
   void testFromContentSearchJsonEmpty();
   void testFromFileSearchJsonEmpty();
   void testFromContentSearchJsonValid();
+  void testFromContentSearchJsonGroupsMatchesByLine();
+  void testFromContentSearchJsonGroupsNonAdjacent();
   void testFromFileSearchJsonValid();
   void testNotebookIdStamped();
 };
@@ -84,20 +86,134 @@ void TestSearchResultTypes::testFromContentSearchJsonValid() {
 
   const vnotex::SearchLineMatch &parsedLine1 = parsedFile1.m_lineMatches[0];
   QCOMPARE(parsedLine1.m_lineNumber, 10);
-  QCOMPARE(parsedLine1.m_columnStart, 3);
-  QCOMPARE(parsedLine1.m_columnEnd, 8);
+  QCOMPARE(parsedLine1.m_segments.size(), 1);
+  QCOMPARE(parsedLine1.m_segments[0].m_columnStart, 3);
+  QCOMPARE(parsedLine1.m_segments[0].m_columnEnd, 8);
   QCOMPARE(parsedLine1.m_lineText, QStringLiteral("hello world"));
 
   const vnotex::SearchLineMatch &parsedLine2 = parsedFile1.m_lineMatches[1];
   QCOMPARE(parsedLine2.m_lineNumber, 42);
-  QCOMPARE(parsedLine2.m_columnStart, 1);
-  QCOMPARE(parsedLine2.m_columnEnd, 6);
+  QCOMPARE(parsedLine2.m_segments.size(), 1);
+  QCOMPARE(parsedLine2.m_segments[0].m_columnStart, 1);
+  QCOMPARE(parsedLine2.m_segments[0].m_columnEnd, 6);
   QCOMPARE(parsedLine2.m_lineText, QStringLiteral("search match"));
 
   const vnotex::SearchFileResult &parsedFile2 = result.m_fileResults[1];
   QCOMPARE(parsedFile2.m_path, QStringLiteral("notes/b.md"));
   QCOMPARE(parsedFile2.m_id, QStringLiteral("file-guid-2"));
   QVERIFY(parsedFile2.m_lineMatches.isEmpty());
+}
+
+// Regression: multiple vxcore matches on the SAME line must collapse into a
+// single SearchLineMatch carrying one segment per occurrence, instead of one
+// duplicated line row per occurrence. See root cause in the search refactor:
+// vxcore emits one match per occurrence (correct facts layer); the Qt display
+// layer is responsible for grouping occurrences by line.
+void TestSearchResultTypes::testFromContentSearchJsonGroupsMatchesByLine() {
+  // Three occurrences on line 7, then two occurrences on line 12, interleaved
+  // exactly as vxcore emits them (sorted by line, then by column).
+  auto makeMatch = [](int p_line, int p_colStart, int p_colEnd,
+                      const QString &p_text) {
+    QJsonObject o;
+    o[QStringLiteral("lineNumber")] = p_line;
+    o[QStringLiteral("columnStart")] = p_colStart;
+    o[QStringLiteral("columnEnd")] = p_colEnd;
+    o[QStringLiteral("lineText")] = p_text;
+    return o;
+  };
+
+  QJsonArray lineMatches;
+  lineMatches.append(makeMatch(7, 2, 5, QStringLiteral("foo foo foo bar")));
+  lineMatches.append(makeMatch(7, 6, 9, QStringLiteral("foo foo foo bar")));
+  lineMatches.append(makeMatch(7, 10, 13, QStringLiteral("foo foo foo bar")));
+  lineMatches.append(makeMatch(12, 0, 3, QStringLiteral("baz baz")));
+  lineMatches.append(makeMatch(12, 4, 7, QStringLiteral("baz baz")));
+
+  QJsonObject file1;
+  file1[QStringLiteral("path")] = QStringLiteral("notes/a.md");
+  file1[QStringLiteral("id")] = QStringLiteral("file-guid-1");
+  file1[QStringLiteral("matches")] = lineMatches;
+
+  QJsonObject json;
+  json[QStringLiteral("matchCount")] = 5;
+  json[QStringLiteral("matches")] = QJsonArray{file1};
+
+  const vnotex::SearchResult result =
+      vnotex::SearchResult::fromContentSearchJson(json, QStringLiteral("nb-1"));
+
+  QCOMPARE(result.m_fileResults.size(), 1);
+  const vnotex::SearchFileResult &parsedFile = result.m_fileResults[0];
+
+  // Two distinct line rows, NOT five.
+  QCOMPARE(parsedFile.m_lineMatches.size(), 2);
+  // ...but the file-level occurrence count still reflects all five matches, so
+  // the result badge does not undercount same-line occurrences.
+  QCOMPARE(parsedFile.m_matchCount, 5);
+
+  const vnotex::SearchLineMatch &line7 = parsedFile.m_lineMatches[0];
+  QCOMPARE(line7.m_lineNumber, 7);
+  QCOMPARE(line7.m_lineText, QStringLiteral("foo foo foo bar"));
+  QCOMPARE(line7.m_segments.size(), 3);
+  QCOMPARE(line7.m_segments[0].m_columnStart, 2);
+  QCOMPARE(line7.m_segments[0].m_columnEnd, 5);
+  QCOMPARE(line7.m_segments[1].m_columnStart, 6);
+  QCOMPARE(line7.m_segments[1].m_columnEnd, 9);
+  QCOMPARE(line7.m_segments[2].m_columnStart, 10);
+  QCOMPARE(line7.m_segments[2].m_columnEnd, 13);
+
+  const vnotex::SearchLineMatch &line12 = parsedFile.m_lineMatches[1];
+  QCOMPARE(line12.m_lineNumber, 12);
+  QCOMPARE(line12.m_lineText, QStringLiteral("baz baz"));
+  QCOMPARE(line12.m_segments.size(), 2);
+  QCOMPARE(line12.m_segments[0].m_columnStart, 0);
+  QCOMPARE(line12.m_segments[0].m_columnEnd, 3);
+  QCOMPARE(line12.m_segments[1].m_columnStart, 4);
+  QCOMPARE(line12.m_segments[1].m_columnEnd, 7);
+}
+
+// Grouping must key on lineNumber and NOT assume same-line matches arrive
+// adjacently: interleaved occurrences (line 7, line 12, line 7) must still
+// collapse to one row per line with every segment retained, in first-seen
+// line order.
+void TestSearchResultTypes::testFromContentSearchJsonGroupsNonAdjacent() {
+  auto makeMatch = [](int p_line, int p_colStart, int p_colEnd) {
+    QJsonObject o;
+    o[QStringLiteral("lineNumber")] = p_line;
+    o[QStringLiteral("columnStart")] = p_colStart;
+    o[QStringLiteral("columnEnd")] = p_colEnd;
+    o[QStringLiteral("lineText")] = QStringLiteral("text");
+    return o;
+  };
+
+  QJsonArray lineMatches;
+  lineMatches.append(makeMatch(7, 2, 5));
+  lineMatches.append(makeMatch(12, 0, 3));
+  lineMatches.append(makeMatch(7, 6, 9));
+
+  QJsonObject file1;
+  file1[QStringLiteral("path")] = QStringLiteral("notes/a.md");
+  file1[QStringLiteral("id")] = QStringLiteral("file-guid-1");
+  file1[QStringLiteral("matches")] = lineMatches;
+
+  QJsonObject json;
+  json[QStringLiteral("matches")] = QJsonArray{file1};
+
+  const vnotex::SearchResult result =
+      vnotex::SearchResult::fromContentSearchJson(json, QStringLiteral("nb-1"));
+
+  QCOMPARE(result.m_fileResults.size(), 1);
+  const vnotex::SearchFileResult &parsedFile = result.m_fileResults[0];
+  QCOMPARE(parsedFile.m_lineMatches.size(), 2);
+
+  // First-seen order: line 7 first, then line 12.
+  QCOMPARE(parsedFile.m_lineMatches[0].m_lineNumber, 7);
+  QCOMPARE(parsedFile.m_lineMatches[0].m_segments.size(), 2);
+  QCOMPARE(parsedFile.m_lineMatches[0].m_segments[0].m_columnStart, 2);
+  QCOMPARE(parsedFile.m_lineMatches[0].m_segments[1].m_columnStart, 6);
+
+  QCOMPARE(parsedFile.m_lineMatches[1].m_lineNumber, 12);
+  QCOMPARE(parsedFile.m_lineMatches[1].m_segments.size(), 1);
+  QCOMPARE(parsedFile.m_lineMatches[1].m_segments[0].m_columnStart, 0);
 }
 
 void TestSearchResultTypes::testFromFileSearchJsonValid() {

@@ -19,6 +19,7 @@ private slots:
   void testIsTruncated();
   void testNodeIdRole();
   void testLineNumberRole();
+  void testSegmentsRole();
   void testIsFileResultRole();
   void testModelTester();
 
@@ -30,14 +31,12 @@ private:
 vnotex::SearchResult TestSearchResultModel::makeContentResult() {
   vnotex::SearchLineMatch m1;
   m1.m_lineNumber = 1;
-  m1.m_columnStart = 2;
-  m1.m_columnEnd = 4;
+  m1.m_segments = {{2, 4}};
   m1.m_lineText = QStringLiteral("first line");
 
   vnotex::SearchLineMatch m2;
   m2.m_lineNumber = 5;
-  m2.m_columnStart = 1;
-  m2.m_columnEnd = 3;
+  m2.m_segments = {{1, 3}};
   m2.m_lineText = QStringLiteral("second line");
 
   vnotex::SearchFileResult file;
@@ -45,6 +44,7 @@ vnotex::SearchResult TestSearchResultModel::makeContentResult() {
   file.m_absolutePath = QStringLiteral("/abs/notes/file.md");
   file.m_id = QStringLiteral("id-file");
   file.m_notebookId = QStringLiteral("nb-1");
+  file.m_matchCount = 2;
   file.m_lineMatches = {m1, m2};
 
   vnotex::SearchResult result;
@@ -166,6 +166,49 @@ void TestSearchResultModel::testLineNumberRole() {
 
   const QModelIndex lineIndex = model.index(1, 0, fileIndex);
   QCOMPARE(model.data(lineIndex, vnotex::SearchResultModel::LineNumberRole).toInt(), 5);
+}
+
+void TestSearchResultModel::testSegmentsRole() {
+  // A line with three matches exposes all three segments via SegmentsRole,
+  // while the single-range Column roles report the FIRST segment (for
+  // navigation / united-entry consumers).
+  vnotex::SearchLineMatch line;
+  line.m_lineNumber = 3;
+  line.m_lineText = QStringLiteral("foo foo foo");
+  line.m_segments = {{0, 3}, {4, 7}, {8, 11}};
+
+  vnotex::SearchFileResult file;
+  file.m_path = QStringLiteral("notes/multi.md");
+  file.m_id = QStringLiteral("id-multi");
+  file.m_notebookId = QStringLiteral("nb-9");
+  file.m_matchCount = 3;
+  file.m_lineMatches = {line};
+
+  vnotex::SearchResult result;
+  result.m_fileResults = {file};
+  result.m_matchCount = 3;
+
+  vnotex::SearchResultModel model;
+  model.setSearchResult(result);
+
+  const QModelIndex fileIndex = model.index(0, 0);
+  // File badge counts occurrences (3), NOT matched lines (1).
+  QCOMPARE(model.data(fileIndex, vnotex::SearchResultModel::MatchCountRole).toInt(), 3);
+  const QModelIndex lineIndex = model.index(0, 0, fileIndex);
+  QVERIFY(lineIndex.isValid());
+
+  QCOMPARE(model.data(lineIndex, vnotex::SearchResultModel::ColumnStartRole).toInt(), 0);
+  QCOMPARE(model.data(lineIndex, vnotex::SearchResultModel::ColumnEndRole).toInt(), 3);
+
+  const auto segments = model.data(lineIndex, vnotex::SearchResultModel::SegmentsRole)
+                            .value<QVector<vnotex::SearchMatchSegment>>();
+  QCOMPARE(segments.size(), 3);
+  QCOMPARE(segments[0].m_columnStart, 0);
+  QCOMPARE(segments[0].m_columnEnd, 3);
+  QCOMPARE(segments[1].m_columnStart, 4);
+  QCOMPARE(segments[1].m_columnEnd, 7);
+  QCOMPARE(segments[2].m_columnStart, 8);
+  QCOMPARE(segments[2].m_columnEnd, 11);
 }
 
 void TestSearchResultModel::testIsFileResultRole() {

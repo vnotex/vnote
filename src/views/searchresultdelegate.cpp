@@ -1,5 +1,7 @@
 #include "searchresultdelegate.h"
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QPainter>
 
@@ -118,8 +120,8 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
   style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
 
   int lineNumber = p_index.data(SearchResultModel::LineNumberRole).toInt();
-  int colStart = p_index.data(SearchResultModel::ColumnStartRole).toInt();
-  int colEnd = p_index.data(SearchResultModel::ColumnEndRole).toInt();
+  const auto segments = p_index.data(SearchResultModel::SegmentsRole)
+                            .value<QVector<SearchMatchSegment>>();
   QString lineText = p_index.data(Qt::DisplayRole).toString();
 
   QColor textColor = (p_option.state & QStyle::State_Selected)
@@ -152,52 +154,86 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
   QRect lineRect = contentRect;
   lineRect.setLeft(prefixRect.right());
 
-  if (colStart >= 0 && colEnd > colStart && colStart < lineText.length()) {
-    // Text before match
-    QString beforeMatch = lineText.left(colStart);
-    int beforeWidth = fm.horizontalAdvance(beforeMatch);
-
-    // Matched segment
-    int clampedEnd = qMin(colEnd, lineText.length());
-    QString matchText = lineText.mid(colStart, clampedEnd - colStart);
-    int matchWidth = fm.horizontalAdvance(matchText);
-
-    // Text after match
-    QString afterMatch = lineText.mid(clampedEnd);
-
-    // Draw before-match text
-    if (!beforeMatch.isEmpty()) {
-      QRect beforeRect = lineRect;
-      beforeRect.setWidth(beforeWidth);
-      p_painter->setPen(textColor);
-      p_painter->drawText(beforeRect, Qt::AlignLeft | Qt::AlignVCenter, beforeMatch);
+  // Build the list of highlight ranges, clamped to the (possibly truncated)
+  // line text and sorted by start column. vxcore emits one segment per match
+  // occurrence on the line; we render one row with every occurrence highlighted.
+  QVector<SearchMatchSegment> ranges;
+  const int textLen = lineText.length();
+  for (const SearchMatchSegment &seg : segments) {
+    if (seg.m_columnStart < 0 || seg.m_columnEnd <= seg.m_columnStart ||
+        seg.m_columnStart >= textLen) {
+      continue;
     }
+    SearchMatchSegment clamped;
+    clamped.m_columnStart = seg.m_columnStart;
+    clamped.m_columnEnd = qMin(seg.m_columnEnd, textLen);
+    ranges.append(clamped);
+  }
+  std::sort(ranges.begin(), ranges.end(),
+            [](const SearchMatchSegment &a, const SearchMatchSegment &b) {
+              return a.m_columnStart < b.m_columnStart;
+            });
 
-    // Draw match highlight background + bold text
-    QRect matchRect = lineRect;
-    matchRect.setLeft(lineRect.left() + beforeWidth);
-    matchRect.setWidth(matchWidth);
-
-    // Highlight background for match
-    QColor highlightBg = p_option.palette.highlight().color();
-    if (!(p_option.state & QStyle::State_Selected)) {
-      highlightBg.setAlpha(60);
-      p_painter->fillRect(matchRect, highlightBg);
-    }
-
+  if (!ranges.isEmpty()) {
     QFont boldFont = p_option.font;
     boldFont.setBold(true);
-    p_painter->setFont(boldFont);
-    p_painter->setPen(textColor);
-    p_painter->drawText(matchRect, Qt::AlignLeft | Qt::AlignVCenter, matchText);
+    QFontMetrics boldFm(boldFont);
+    QColor highlightBg = p_option.palette.highlight().color();
+    const bool selected = (p_option.state & QStyle::State_Selected);
+    if (!selected) {
+      highlightBg.setAlpha(60);
+    }
 
-    // Draw after-match text
-    if (!afterMatch.isEmpty()) {
+    int x = lineRect.left();
+    int cursor = 0;  // Next unpainted character index.
+    for (const SearchMatchSegment &seg : ranges) {
+      // Clamp against already-painted text so partially overlapping segments
+      // still highlight their tail instead of being dropped entirely.
+      int segStart = qMax(seg.m_columnStart, cursor);
+      if (segStart >= seg.m_columnEnd) {
+        continue;
+      }
+
+      // Plain text before this match.
+      if (segStart > cursor) {
+        QString before = lineText.mid(cursor, segStart - cursor);
+        int beforeWidth = fm.horizontalAdvance(before);
+        QRect beforeRect = lineRect;
+        beforeRect.setLeft(x);
+        beforeRect.setWidth(beforeWidth);
+        p_painter->setFont(p_option.font);
+        p_painter->setPen(textColor);
+        p_painter->drawText(beforeRect, Qt::AlignLeft | Qt::AlignVCenter, before);
+        x += beforeWidth;
+      }
+
+      // The matched segment (highlighted background + bold). Width is measured
+      // with the bold font actually used to draw, so the running x-offset does
+      // not drift across multiple highlighted runs.
+      QString matchText = lineText.mid(segStart, seg.m_columnEnd - segStart);
+      int matchWidth = boldFm.horizontalAdvance(matchText);
+      QRect matchRect = lineRect;
+      matchRect.setLeft(x);
+      matchRect.setWidth(matchWidth);
+      if (!selected) {
+        p_painter->fillRect(matchRect, highlightBg);
+      }
+      p_painter->setFont(boldFont);
+      p_painter->setPen(textColor);
+      p_painter->drawText(matchRect, Qt::AlignLeft | Qt::AlignVCenter, matchText);
+      x += matchWidth;
+
+      cursor = seg.m_columnEnd;
+    }
+
+    // Remaining plain text after the last match (elided).
+    if (cursor < textLen) {
+      QString after = lineText.mid(cursor);
       QRect afterRect = lineRect;
-      afterRect.setLeft(matchRect.right());
+      afterRect.setLeft(x);
       p_painter->setFont(p_option.font);
       p_painter->setPen(textColor);
-      QString elidedAfter = fm.elidedText(afterMatch, Qt::ElideRight, afterRect.width());
+      QString elidedAfter = fm.elidedText(after, Qt::ElideRight, afterRect.width());
       p_painter->drawText(afterRect, Qt::AlignLeft | Qt::AlignVCenter, elidedAfter);
     }
   } else {

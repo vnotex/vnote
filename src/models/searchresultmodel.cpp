@@ -113,12 +113,14 @@ QVariant SearchResultModel::data(const QModelIndex &p_index, int p_role) const {
       return 0;
     case ColumnEndRole:
       return 0;
+    case SegmentsRole:
+      return QVariant::fromValue(QVector<SearchMatchSegment>());
     case IsFileResultRole:
       return true;
     case AbsolutePathRole:
       return fileResult.m_absolutePath;
     case MatchCountRole:
-      return fileResult.m_lineMatches.size();
+      return fileResult.m_matchCount;
     default:
       return QVariant();
     }
@@ -148,9 +150,12 @@ QVariant SearchResultModel::data(const QModelIndex &p_index, int p_role) const {
   case LineNumberRole:
     return lineMatch.m_lineNumber;
   case ColumnStartRole:
-    return lineMatch.m_columnStart;
+    // First segment drives single-range consumers (navigation, united-entry).
+    return lineMatch.m_segments.isEmpty() ? 0 : lineMatch.m_segments.first().m_columnStart;
   case ColumnEndRole:
-    return lineMatch.m_columnEnd;
+    return lineMatch.m_segments.isEmpty() ? 0 : lineMatch.m_segments.first().m_columnEnd;
+  case SegmentsRole:
+    return QVariant::fromValue(lineMatch.m_segments);
   case IsFileResultRole:
     return false;
   case AbsolutePathRole:

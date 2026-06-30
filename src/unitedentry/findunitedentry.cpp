@@ -235,25 +235,24 @@ void FindUnitedEntry::populateResultTree() {
       }
 
       QString lineText = m_resultModel->data(lineIdx, Qt::DisplayRole).toString();
-      const int columnStart =
-          m_resultModel->data(lineIdx, SearchResultModel::ColumnStartRole).toInt();
-      const int columnEnd = m_resultModel->data(lineIdx, SearchResultModel::ColumnEndRole).toInt();
+      const auto matchSegments = m_resultModel->data(lineIdx, SearchResultModel::SegmentsRole)
+                                     .value<QVector<SearchMatchSegment>>();
       const int lineNumber =
           m_resultModel->data(lineIdx, SearchResultModel::LineNumberRole).toInt();
 
-      QList<Segment> segments;
-      if (columnEnd > columnStart && columnStart >= 0) {
-        int textLength = lineText.size();
-        if (textLength > 500) {
-          textLength = 500;
-          lineText = lineText.left(500);
-        }
-
-        if (columnStart < textLength) {
-          segments.append(Segment(columnStart, qMin(columnEnd, textLength) - columnStart));
-        }
-      } else if (lineText.size() > 500) {
+      int textLength = lineText.size();
+      if (textLength > 500) {
+        textLength = 500;
         lineText = lineText.left(500);
+      }
+
+      QList<Segment> segments;
+      for (const SearchMatchSegment &seg : matchSegments) {
+        if (seg.m_columnEnd > seg.m_columnStart && seg.m_columnStart >= 0 &&
+            seg.m_columnStart < textLength) {
+          segments.append(
+              Segment(seg.m_columnStart, qMin(seg.m_columnEnd, textLength) - seg.m_columnStart));
+        }
       }
 
       auto *subItem = new QTreeWidgetItem(item);

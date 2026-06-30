@@ -83,10 +83,13 @@ QString TestSearchServiceDrain::canonicalize(const SearchResult &p_result) {
   for (const auto &fileResult : p_result.m_fileResults) {
     lines << QStringLiteral("file=%1").arg(fileResult.m_path);
     for (const auto &lineMatch : fileResult.m_lineMatches) {
-      lines << QStringLiteral("  L%1 C%2-%3 %4")
+      QStringList segs;
+      for (const auto &seg : lineMatch.m_segments) {
+        segs << QStringLiteral("%1-%2").arg(seg.m_columnStart).arg(seg.m_columnEnd);
+      }
+      lines << QStringLiteral("  L%1 C[%2] %3")
                    .arg(lineMatch.m_lineNumber)
-                   .arg(lineMatch.m_columnStart)
-                   .arg(lineMatch.m_columnEnd)
+                   .arg(segs.join(QLatin1Char(',')))
                    .arg(lineMatch.m_lineText);
     }
   }

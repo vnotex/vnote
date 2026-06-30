@@ -16,6 +16,7 @@ public:
     LineNumberRole,
     ColumnStartRole,
     ColumnEndRole,
+    SegmentsRole,
     IsFileResultRole,
     AbsolutePathRole,
     MatchCountRole,

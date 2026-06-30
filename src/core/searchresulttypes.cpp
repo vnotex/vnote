@@ -1,5 +1,6 @@
 #include "searchresulttypes.h"
 
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
 
@@ -26,17 +27,36 @@ SearchResult SearchResult::fromContentSearchJson(const QJsonObject &p_json,
 
     const QJsonArray lineMatches = fileObj.value(QStringLiteral("matches")).toArray();
     fileResult.m_lineMatches.reserve(lineMatches.size());
+    // Every JSON entry is one match occurrence; keep the raw occurrence count for
+    // the file-level badge before same-line grouping collapses rows.
+    fileResult.m_matchCount = lineMatches.size();
 
+    // vxcore emits one match per occurrence. Group every occurrence on the same
+    // line into a single SearchLineMatch (one segment per occurrence) so a line
+    // with N matches renders as one row with N highlighted segments instead of N
+    // duplicated rows. Grouping is keyed on lineNumber and preserves first-seen
+    // line order, so it does not depend on same-line matches being adjacent.
+    QHash<int, int> lineNumberToIndex;
     for (const QJsonValue &lineVal : lineMatches) {
       const QJsonObject lineObj = lineVal.toObject();
 
-      SearchLineMatch lineMatch;
-      lineMatch.m_lineNumber = lineObj.value(QStringLiteral("lineNumber")).toInt(-1);
-      lineMatch.m_columnStart = lineObj.value(QStringLiteral("columnStart")).toInt(0);
-      lineMatch.m_columnEnd = lineObj.value(QStringLiteral("columnEnd")).toInt(0);
-      lineMatch.m_lineText = lineObj.value(QStringLiteral("lineText")).toString();
+      const int lineNumber = lineObj.value(QStringLiteral("lineNumber")).toInt(-1);
 
-      fileResult.m_lineMatches.append(lineMatch);
+      SearchMatchSegment segment;
+      segment.m_columnStart = lineObj.value(QStringLiteral("columnStart")).toInt(0);
+      segment.m_columnEnd = lineObj.value(QStringLiteral("columnEnd")).toInt(0);
+
+      auto it = lineNumberToIndex.find(lineNumber);
+      if (it != lineNumberToIndex.end()) {
+        fileResult.m_lineMatches[it.value()].m_segments.append(segment);
+      } else {
+        SearchLineMatch lineMatch;
+        lineMatch.m_lineNumber = lineNumber;
+        lineMatch.m_lineText = lineObj.value(QStringLiteral("lineText")).toString();
+        lineMatch.m_segments.append(segment);
+        lineNumberToIndex.insert(lineNumber, fileResult.m_lineMatches.size());
+        fileResult.m_lineMatches.append(lineMatch);
+      }
     }
 
     result.m_fileResults.append(fileResult);
