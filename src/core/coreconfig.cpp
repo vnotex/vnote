@@ -9,6 +9,12 @@
 
 using namespace vnotex;
 
+namespace {
+const int c_defaultSearchMaxResults = 1000;
+const int c_minSearchMaxResults = 1;
+const int c_maxSearchMaxResults = 100000;
+} // namespace
+
 #define READSTR(key) readString(p_jobj, (key))
 #define READINT(key) readInt(p_jobj, (key))
 #define READBOOL(key) readBool(p_jobj, (key))
@@ -57,6 +63,13 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
     m_historyMaxCount = 100;
   }
 
+  m_searchMaxResults = READINT(QStringLiteral("searchMaxResults"));
+  if (m_searchMaxResults <= 0) {
+    m_searchMaxResults = c_defaultSearchMaxResults;
+  } else if (m_searchMaxResults > c_maxSearchMaxResults) {
+    m_searchMaxResults = c_maxSearchMaxResults;
+  }
+
   m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("perNotebookHistory"));
 
   {
@@ -82,6 +95,7 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
   obj[QStringLiteral("historyMaxCount")] = m_historyMaxCount;
+  obj[QStringLiteral("searchMaxResults")] = m_searchMaxResults;
   obj[QStringLiteral("perNotebookHistory")] = m_perNotebookHistoryEnabled;
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
   obj[QStringLiteral("unitedEntry")] = saveUnitedEntry();
@@ -166,6 +180,13 @@ void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled) {
 }
 
 int CoreConfig::getHistoryMaxCount() const { return m_historyMaxCount; }
+
+int CoreConfig::getSearchMaxResults() const { return m_searchMaxResults; }
+
+void CoreConfig::setSearchMaxResults(int p_count) {
+  int clamped = qBound(c_minSearchMaxResults, p_count, c_maxSearchMaxResults);
+  updateConfig(m_searchMaxResults, clamped, this);
+}
 
 bool CoreConfig::isPerNotebookHistoryEnabled() const { return m_perNotebookHistoryEnabled; }
 

@@ -113,6 +113,8 @@ const QJsonArray &CoreConfig::getUnitedEntryAlias() const {
   return s;
 }
 
+int CoreConfig::getSearchMaxResults() const { return 1000; }
+
 void TreeWidget::selectParentItem(QTreeWidget *) {}
 
 bool TreeWidget::isExpanded(const QTreeWidget *) { return false; }

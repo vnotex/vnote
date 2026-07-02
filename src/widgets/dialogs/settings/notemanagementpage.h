@@ -5,6 +5,7 @@
 
 class QCheckBox;
 class QComboBox;
+class QSpinBox;
 
 namespace vnotex {
 class NoteManagementPage : public SettingsPage {
@@ -29,6 +30,8 @@ private:
   QComboBox *m_lineEndingComboBox = nullptr;
 
   QComboBox *m_defaultOpenModeComboBox = nullptr;
+
+  QSpinBox *m_searchMaxResultsSpinBox = nullptr;
 };
 } // namespace vnotex
 

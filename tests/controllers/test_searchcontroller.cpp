@@ -13,6 +13,9 @@
 #undef private
 
 #include <core/servicelocator.h>
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/searchcoreservice.h>
 #include <models/searchresultmodel.h>
 
@@ -31,6 +34,7 @@ private slots:
   void testCancelDelegates();
   void testSearchWithNoNotebook();
   void testBuildQueryJsonContentSearch();
+  void testConfiguredMaxResultsAppliedToAllModes();
   void testStaleTokenRejection();
 
 private:
@@ -38,17 +42,27 @@ private:
     vnotex::ServiceLocator services;
     vnotex::SearchCoreService *searchCoreService = nullptr;
     vnotex::SearchService *searchService = nullptr;
+    vnotex::ConfigCoreService *configCoreService = nullptr;
+    vnotex::ConfigMgr2 *configMgr = nullptr;
     vnotex::SearchController *controller = nullptr;
 
     explicit ControllerFixture(VxCoreContextHandle p_ctx) {
       searchCoreService = new vnotex::SearchCoreService(p_ctx);
       searchService = new vnotex::SearchService(searchCoreService);
       services.registerService<vnotex::SearchService>(searchService);
+
+      configCoreService = new vnotex::ConfigCoreService(p_ctx);
+      configMgr = new vnotex::ConfigMgr2(configCoreService);
+      configMgr->init();
+      services.registerService<vnotex::ConfigMgr2>(configMgr);
+
       controller = new vnotex::SearchController(services);
     }
 
     ~ControllerFixture() {
       delete controller;
+      delete configMgr;
+      delete configCoreService;
       delete searchService;
       delete searchCoreService;
     }
@@ -153,6 +167,10 @@ void TestSearchController::testSearchWithNoNotebook() {
 
 void TestSearchController::testBuildQueryJsonContentSearch() {
   ControllerFixture fixture(m_ctx);
+  // Set the value explicitly rather than relying on the persisted default: the
+  // fixture's ConfigMgr2 shares the test-mode config file across runs, so a
+  // sibling test that writes a different value would otherwise leak in here.
+  fixture.configMgr->getCoreConfig().setSearchMaxResults(1000);
   fixture.controller->setCurrentNotebookId(QString());
   fixture.controller->search(QStringLiteral("hello"), vnotex::SearchController::CurrentNotebook,
                              vnotex::SearchController::ContentSearch, true, true,
@@ -166,12 +184,30 @@ void TestSearchController::testBuildQueryJsonContentSearch() {
   QCOMPARE(obj.value(QStringLiteral("caseSensitive")).toBool(), true);
   QCOMPARE(obj.value(QStringLiteral("wholeWord")).toBool(), false);
   QCOMPARE(obj.value(QStringLiteral("regex")).toBool(), true);
-  QCOMPARE(obj.value(QStringLiteral("maxResults")).toInt(), 500);
+  QCOMPARE(obj.value(QStringLiteral("maxResults")).toInt(), 1000);
 
   const QJsonObject scopeObj = obj.value(QStringLiteral("scope")).toObject();
   const QJsonArray patterns = scopeObj.value(QStringLiteral("filePatterns")).toArray();
   QCOMPARE(patterns.size(), 1);
   QCOMPARE(patterns.first().toString(), QStringLiteral("*.md"));
+}
+
+void TestSearchController::testConfiguredMaxResultsAppliedToAllModes() {
+  ControllerFixture fixture(m_ctx);
+  fixture.configMgr->getCoreConfig().setSearchMaxResults(250);
+  fixture.controller->setCurrentNotebookId(QString());
+
+  const int modes[] = {vnotex::SearchController::FileNameSearch,
+                       vnotex::SearchController::ContentSearch,
+                       vnotex::SearchController::TagSearch};
+  for (int mode : modes) {
+    fixture.controller->search(QStringLiteral("hello"), vnotex::SearchController::CurrentNotebook,
+                               mode, false, false, QString());
+    const QString jsonText = fixture.controller->m_queryJson;
+    QVERIFY2(!jsonText.isEmpty(), qPrintable(QStringLiteral("empty query for mode %1").arg(mode)));
+    const QJsonObject obj = QJsonDocument::fromJson(jsonText.toUtf8()).object();
+    QCOMPARE(obj.value(QStringLiteral("maxResults")).toInt(), 250);
+  }
 }
 
 void TestSearchController::testStaleTokenRejection() {

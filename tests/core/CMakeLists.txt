@@ -383,6 +383,16 @@ add_qt_test(test_configmgr2
   GUILESS
 )
 
+add_qt_test(test_coreconfig
+  SOURCES
+    test_coreconfig.cpp
+  LINKS
+    core_services
+    core_configs
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_widgetconfig_search
   SOURCES
     test_widgetconfig_search.cpp

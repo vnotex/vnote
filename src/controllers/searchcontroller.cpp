@@ -10,6 +10,8 @@
 #include <QSet>
 #include <QStringList>
 
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/error.h>
 #include <core/fileopensettings.h>
 #include <core/logging.h>
@@ -300,20 +302,22 @@ QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchM
                                          const QString &p_filePattern) const {
   QJsonObject queryObj;
 
+  const int maxResults = m_services.get<ConfigMgr2>()->getCoreConfig().getSearchMaxResults();
+
   switch (p_searchMode) {
   case ContentSearch:
     queryObj.insert(QStringLiteral("pattern"), QJsonValue(p_keyword));
     queryObj.insert(QStringLiteral("caseSensitive"), QJsonValue(p_caseSensitive));
     queryObj.insert(QStringLiteral("wholeWord"), QJsonValue(false));
     queryObj.insert(QStringLiteral("regex"), QJsonValue(p_useRegex));
-    queryObj.insert(QStringLiteral("maxResults"), QJsonValue(500));
+    queryObj.insert(QStringLiteral("maxResults"), QJsonValue(maxResults));
     break;
 
   case FileNameSearch:
     queryObj.insert(QStringLiteral("pattern"), QJsonValue(p_keyword));
     queryObj.insert(QStringLiteral("includeFiles"), QJsonValue(true));
     queryObj.insert(QStringLiteral("includeFolders"), QJsonValue(true));
-    queryObj.insert(QStringLiteral("maxResults"), QJsonValue(500));
+    queryObj.insert(QStringLiteral("maxResults"), QJsonValue(maxResults));
     break;
 
   case TagSearch: {
@@ -332,7 +336,7 @@ QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchM
 
     queryObj.insert(QStringLiteral("tags"), tags);
     queryObj.insert(QStringLiteral("operator"), QJsonValue(QStringLiteral("AND")));
-    queryObj.insert(QStringLiteral("maxResults"), QJsonValue(500));
+    queryObj.insert(QStringLiteral("maxResults"), QJsonValue(maxResults));
     break;
   }
 

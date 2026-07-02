@@ -31,6 +31,7 @@ add_qt_test(test_searchcontroller
     ${CMAKE_SOURCE_DIR}/src/controllers/searchcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/models/searchresultmodel.cpp
   LINKS
+    core_configs
     core_services
     vxcore
   GUILESS

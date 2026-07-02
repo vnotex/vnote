@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include "settingspagehelper.h"
@@ -69,6 +70,22 @@ void NoteManagementPage::setupUI() {
             &NoteManagementPage::pageIsChanged);
   }
 
+  {
+    m_searchMaxResultsSpinBox = WidgetsFactory::createSpinBox(this);
+    m_searchMaxResultsSpinBox->setObjectName(QStringLiteral("SearchMaxResultsSpinBox"));
+    m_searchMaxResultsSpinBox->setRange(1, 100000);
+    m_searchMaxResultsSpinBox->setSingleStep(100);
+    m_searchMaxResultsSpinBox->setToolTip(tr("Maximum number of results returned by a search."));
+
+    const QString label(tr("Search maximum results"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_searchMaxResultsSpinBox->toolTip(), m_searchMaxResultsSpinBox, this));
+    addSearchItem(label, m_searchMaxResultsSpinBox->toolTip(), m_searchMaxResultsSpinBox);
+    connect(m_searchMaxResultsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &NoteManagementPage::pageIsChanged);
+  }
+
   mainLayout->addStretch();
 }
 
@@ -93,6 +110,8 @@ void NoteManagementPage::loadInternal() {
     }
     m_defaultOpenModeComboBox->setCurrentIndex(idx);
   }
+
+  m_searchMaxResultsSpinBox->setValue(coreConfig.getSearchMaxResults());
 }
 
 bool NoteManagementPage::saveInternal() {
@@ -109,6 +128,8 @@ bool NoteManagementPage::saveInternal() {
     auto mode = m_defaultOpenModeComboBox->currentData().toInt();
     coreConfig.setDefaultOpenMode(static_cast<ViewWindowMode>(mode));
   }
+
+  coreConfig.setSearchMaxResults(m_searchMaxResultsSpinBox->value());
 
   return true;
 }

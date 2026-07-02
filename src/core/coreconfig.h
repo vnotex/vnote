@@ -112,6 +112,9 @@ public:
 
   int getHistoryMaxCount() const;
 
+  int getSearchMaxResults() const;
+  void setSearchMaxResults(int p_count);
+
   bool isPerNotebookHistoryEnabled() const;
   void setPerNotebookHistoryEnabled(bool p_enabled);
 
@@ -168,6 +171,9 @@ private:
 
   // Max count of the history items for each notebook and session config.
   int m_historyMaxCount = 100;
+
+  // Max number of results returned by a search.
+  int m_searchMaxResults = 1000;
 
   // Whether store history in each notebook.
   bool m_perNotebookHistoryEnabled = false;
