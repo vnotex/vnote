@@ -51,6 +51,7 @@ private slots:
   void onSearchFinished(int p_token, const SearchResult &p_result);
   void onSearchFailed(int p_token, const Error &p_error);
   void onSearchCancelled(int p_token);
+  void onSearchBatch(int p_token, const SearchResult &p_result);
 
 private:
   struct SearchTarget {

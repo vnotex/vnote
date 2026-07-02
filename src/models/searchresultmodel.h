@@ -33,6 +33,12 @@ public:
   QVariant data(const QModelIndex &p_index, int p_role = Qt::DisplayRole) const override;
 
   void setSearchResult(const SearchResult &p_result);
+
+  // Incrementally append a chunk of file results without discarding prior rows. Used by the
+  // streaming content-search path to render batches live. New file-result rows are inserted at
+  // the end (with begin/endInsertRows); aggregate matchCount accumulates and truncated ORs in.
+  void appendSearchResult(const SearchResult &p_result);
+
   void clear();
   int totalMatchCount() const;
   bool isTruncated() const;

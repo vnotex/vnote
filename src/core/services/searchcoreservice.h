@@ -2,6 +2,7 @@
 #define SEARCHCORESERVICE_H
 
 #include <atomic>
+#include <functional>
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -59,6 +60,34 @@ public:
   Error searchContentCancellable(const QString &p_notebookId, const QString &p_queryJson,
                                  const QString &p_inputFilesJson, std::atomic<int> *p_cancelFlag,
                                  QJsonObject *p_resultObj) const;
+
+  // Callback invoked once per file-chunk batch during streaming content search.
+  // MAY be invoked concurrently from multiple vxcore drain threads; the callback MUST be
+  // thread-safe and MUST NOT re-enter SearchCoreService / vxcore synchronously.
+  // @p_batchIndex: chunk position in input-file order (chunk 0 == files[0..batchSize)).
+  // @p_totalBatches: total chunk count computed up front. Zero-file search yields
+  //   totalBatches == 0 and the callback never fires.
+  // @p_batchObj: parsed batch JSON in the content-search shape
+  //   ({"matchCount":N,"truncated":false,"matches":[...]}). "truncated" is always false;
+  //   the streaming primitive owns no truncation.
+  using SearchBatchCallback =
+      std::function<void(int p_batchIndex, int p_totalBatches, const QJsonObject &p_batchObj)>;
+
+  // Streaming content search: delivers matches in file-chunk batches via p_onBatch instead of
+  // one aggregated blob. Thin wrapper over vxcore_search_content_streaming.
+  // @p_notebookId: Target notebook ID.
+  // @p_queryJson: JSON search query (pattern, options, etc.).
+  // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays.
+  // @p_batchSize: files per chunk. 0 selects vxcore's internal default.
+  // @p_cancelFlag: Atomic flag that can be set non-zero from another thread to cancel.
+  //   If nullptr, no cancellation. Returns ErrorCode::Cancelled if cancellation was observed.
+  // @p_onBatch: Per-batch callback (see SearchBatchCallback). Must be non-null.
+  // @return: Error code (Ok on success, Cancelled if cancelled). Blocks until the scan
+  //   completes (the calling thread help-drains the "vxcore.search" work queue).
+  Error searchContentStreaming(const QString &p_notebookId, const QString &p_queryJson,
+                               const QString &p_inputFilesJson, int p_batchSize,
+                               std::atomic<int> *p_cancelFlag,
+                               const SearchBatchCallback &p_onBatch) const;
 
   // Search files by tags.
   // @p_notebookId: Target notebook ID.

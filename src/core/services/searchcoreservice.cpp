@@ -6,6 +6,37 @@
 
 using namespace vnotex;
 
+namespace {
+
+// Bridges the vxcore C batch callback back to the Qt SearchBatchCallback. A pointer to this
+// struct is threaded through vxcore as the opaque userdata; it stays alive on the calling
+// thread's stack for the full (blocking) duration of vxcore_search_content_streaming.
+struct StreamingCallbackContext {
+  const SearchCoreService::SearchBatchCallback *onBatch = nullptr;
+};
+
+// C trampoline matching VxCoreSearchBatchCallback. May run concurrently on vxcore drain
+// threads. batch_json is valid ONLY for this call's duration, so it is parsed immediately.
+void streamingBatchTrampoline(int p_batchIndex, int p_totalBatches, const char *p_batchJson,
+                              void *p_userdata) {
+  auto *ctx = static_cast<StreamingCallbackContext *>(p_userdata);
+  if (!ctx || !ctx->onBatch || !(*ctx->onBatch)) {
+    return;
+  }
+
+  QJsonObject batchObj;
+  if (p_batchJson) {
+    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_batchJson));
+    if (doc.isObject()) {
+      batchObj = doc.object();
+    }
+  }
+
+  (*ctx->onBatch)(p_batchIndex, p_totalBatches, batchObj);
+}
+
+} // namespace
+
 SearchCoreService::SearchCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
 
@@ -235,6 +266,56 @@ Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
   qDebug()
       << "SearchCoreService::searchContentCancellable: vxcore call succeeded, parsing response";
   return parseSearchResponseFull(json, p_resultObj);
+}
+
+Error SearchCoreService::searchContentStreaming(const QString &p_notebookId,
+                                                const QString &p_queryJson,
+                                                const QString &p_inputFilesJson, int p_batchSize,
+                                                std::atomic<int> *p_cancelFlag,
+                                                const SearchBatchCallback &p_onBatch) const {
+  qDebug() << "SearchCoreService::searchContentStreaming: notebookId:" << p_notebookId
+           << "batchSize:" << p_batchSize << "hasCancelFlag:" << (p_cancelFlag != nullptr);
+
+  if (!m_context) {
+    qWarning() << "SearchCoreService::searchContentStreaming: context is null";
+    return Error::error(ErrorCode::InvalidArgument, "Context is null");
+  }
+
+  if (!p_onBatch) {
+    qWarning() << "SearchCoreService::searchContentStreaming: batch callback is null";
+    return Error::error(ErrorCode::InvalidArgument, "Batch callback is null");
+  }
+
+  // Local QByteArray variables ensure data lives until vxcore call completes.
+  QByteArray notebookUtf8 = p_notebookId.toUtf8();
+  QByteArray queryUtf8 = p_queryJson.toUtf8();
+  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
+  const char *notebookCStr = notebookUtf8.constData();
+  const char *queryCStr = queryUtf8.constData();
+  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
+
+  // Cast std::atomic<int>* to volatile int* at the C boundary.
+  volatile int *cancelFlagPtr =
+      p_cancelFlag ? reinterpret_cast<volatile int *>(p_cancelFlag) : nullptr;
+
+  // vxcore_search_content_streaming BLOCKS until the scan completes, so cbCtx (and the
+  // p_onBatch it references) remain valid on this stack for every trampoline invocation.
+  StreamingCallbackContext cbCtx;
+  cbCtx.onBatch = &p_onBatch;
+
+  VxCoreError err =
+      vxcore_search_content_streaming(m_context, notebookCStr, queryCStr, inputCStr, p_batchSize,
+                                      streamingBatchTrampoline, &cbCtx, cancelFlagPtr);
+
+  if (err != VXCORE_OK) {
+    qWarning() << "SearchCoreService::searchContentStreaming: vxcore_search_content_streaming "
+                  "failed, error:"
+               << err;
+    return vxcoreErrorToError(err, QStringLiteral("searchContentStreaming"));
+  }
+
+  qDebug() << "SearchCoreService::searchContentStreaming: vxcore call succeeded";
+  return Error::ok();
 }
 
 Error SearchCoreService::parseSearchResponseFull(char *p_json, QJsonObject *p_resultObj) const {

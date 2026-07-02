@@ -56,10 +56,28 @@ private slots:
   // service tears down cleanly with nothing stranded.
   void testCancelWithBacklog();
 
+  // T12: streaming content search delivers results in multiple incremental
+  // batches (searchBatch), and the union of those batches equals the
+  // authoritative searchFinished result.
+  void testStreamingIncrementalBatchDelivery();
+
+  // T12: streaming progress passes through intermediate values (not just
+  // 0 -> 100) as batches complete.
+  void testStreamingProgressIncrements();
+
+  // T12: after a streaming search is cancelled (or finishes), no further
+  // searchBatch signals are delivered - cancellation quiesces delivery.
+  void testStreamingCancellationStopsDelivery();
+
 private:
   // Canonicalize a SearchResult into a deterministic, order-preserving string
   // so two results can be compared for exact equality.
   static QString canonicalize(const SearchResult &p_result);
+
+  // Canonicalize a bag of file results into a deterministic, ORDER-INDEPENDENT
+  // string (sorted by path). Streaming batches race across drain threads, so
+  // their union must be compared without relying on arrival order.
+  static QString canonicalizeFilesSorted(const QVector<SearchFileResult> &p_files);
 
   // Build a bundled notebook named p_name containing p_fileCount files (every
   // third file holds the "needle" needle). Reused by initTestCase for both the
@@ -94,6 +112,27 @@ QString TestSearchServiceDrain::canonicalize(const SearchResult &p_result) {
     }
   }
   return lines.join(QLatin1Char('\n'));
+}
+
+QString TestSearchServiceDrain::canonicalizeFilesSorted(const QVector<SearchFileResult> &p_files) {
+  QStringList perFile;
+  for (const auto &fileResult : p_files) {
+    QStringList lines;
+    lines << QStringLiteral("file=%1").arg(fileResult.m_path);
+    for (const auto &lineMatch : fileResult.m_lineMatches) {
+      QStringList segs;
+      for (const auto &seg : lineMatch.m_segments) {
+        segs << QStringLiteral("%1-%2").arg(seg.m_columnStart).arg(seg.m_columnEnd);
+      }
+      lines << QStringLiteral("  L%1 C[%2] %3")
+                   .arg(lineMatch.m_lineNumber)
+                   .arg(segs.join(QLatin1Char(',')))
+                   .arg(lineMatch.m_lineText);
+    }
+    perFile << lines.join(QLatin1Char('\n'));
+  }
+  perFile.sort();
+  return perFile.join(QLatin1Char('\n'));
 }
 
 void TestSearchServiceDrain::createFilledNotebook(const QString &p_name, int p_fileCount,
@@ -364,6 +403,134 @@ void TestSearchServiceDrain::testCancelWithBacklog() {
                           .arg(elapsedMs)
                           .arg(kTeardownBudgetMs)));
   qInfo() << "cancel-with-backlog dtor elapsed(ms):" << elapsedMs;
+}
+
+void TestSearchServiceDrain::testStreamingIncrementalBatchDelivery() {
+  const QString queryJson = QStringLiteral("{\"pattern\":\"needle\"}");
+
+  SearchCoreService asyncCore(m_context);
+  SearchService service(&asyncCore);
+
+  QSignalSpy batchSpy(&service, &SearchService::searchBatch);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  // 300 files with the needle in every third file. With the default streaming
+  // chunk size (64), this spans multiple file-chunks, each containing matching
+  // files, so the search must be delivered as several incremental batches.
+  const int token = service.searchContent(m_largeNotebookId, queryJson, QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 20000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(QStringLiteral("streaming searchContent failed unexpectedly (%1)")
+                          .arg(failedSpy.isEmpty() ? QString()
+                                                   : failedSpy.takeFirst().at(1).toString())));
+  QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
+
+  // Qt posts the queued batch events (from drain threads) before the worker
+  // posts finished, so by the time we observe finished, every batch has already
+  // been delivered. Delivery must have been incremental (more than one chunk).
+  QVERIFY2(batchSpy.count() >= 2,
+           qPrintable(QStringLiteral("expected multiple incremental batches, got %1")
+                          .arg(batchSpy.count())));
+
+  // Every batch carries the search token and a non-empty slice (zero-match
+  // chunks are suppressed by the worker).
+  int streamedMatchCount = 0;
+  QVector<SearchFileResult> streamedFiles;
+  for (const auto &args : batchSpy) {
+    QCOMPARE(args.at(0).toInt(), token);
+    const SearchResult batchResult = args.at(1).value<SearchResult>();
+    QVERIFY(!batchResult.m_fileResults.isEmpty());
+    QVERIFY(batchResult.m_matchCount > 0);
+    streamedMatchCount += batchResult.m_matchCount;
+    streamedFiles += batchResult.m_fileResults;
+  }
+
+  // The union of the streamed batches must equal the authoritative finished
+  // result (order-independent: batches race across drain threads).
+  const SearchResult finishedResult = finishedSpy.at(0).at(1).value<SearchResult>();
+  QVERIFY(finishedResult.m_matchCount > 0);
+  QCOMPARE(streamedMatchCount, finishedResult.m_matchCount);
+  QCOMPARE(streamedFiles.size(), finishedResult.m_fileResults.size());
+  QCOMPARE(canonicalizeFilesSorted(streamedFiles),
+           canonicalizeFilesSorted(finishedResult.m_fileResults));
+}
+
+void TestSearchServiceDrain::testStreamingProgressIncrements() {
+  const QString queryJson = QStringLiteral("{\"pattern\":\"needle\"}");
+
+  SearchCoreService asyncCore(m_context);
+  SearchService service(&asyncCore);
+
+  QSignalSpy progressSpy(&service, &SearchService::searchProgress);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  const int token = service.searchContent(m_largeNotebookId, queryJson, QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 20000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(QStringLiteral("streaming searchContent failed unexpectedly (%1)")
+                          .arg(failedSpy.isEmpty() ? QString()
+                                                   : failedSpy.takeFirst().at(1).toString())));
+
+  // Progress must move through at least one intermediate value strictly between
+  // 0 and 100 (multi-batch streaming counts completed callbacks), not just the
+  // bare 0 -> 100 endpoints of the blob path.
+  bool sawIntermediate = false;
+  bool sawComplete = false;
+  for (const auto &args : progressSpy) {
+    QCOMPARE(args.at(0).toInt(), token);
+    const int percent = args.at(1).toInt();
+    QVERIFY(percent >= 0 && percent <= 100);
+    if (percent > 0 && percent < 100) {
+      sawIntermediate = true;
+    }
+    if (percent == 100) {
+      sawComplete = true;
+    }
+  }
+  QVERIFY2(sawIntermediate,
+           "streaming progress never reported an intermediate value between 0 and 100");
+  QVERIFY(sawComplete);
+}
+
+void TestSearchServiceDrain::testStreamingCancellationStopsDelivery() {
+  const QString queryJson = QStringLiteral("{\"pattern\":\"needle\"}");
+
+  SearchCoreService asyncCore(m_context);
+  SearchService service(&asyncCore);
+
+  QSignalSpy batchSpy(&service, &SearchService::searchBatch);
+  QSignalSpy cancelledSpy(&service, &SearchService::searchCancelled);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  const int token = service.searchContent(m_largeNotebookId, queryJson, QString());
+  QVERIFY(token > 0);
+
+  // Cancel almost immediately so the streaming scan is interrupted mid-flight.
+  QThread::msleep(2);
+  service.cancel(token);
+
+  QTRY_VERIFY_WITH_TIMEOUT(cancelledSpy.count() > 0 || finishedSpy.count() > 0 ||
+                               failedSpy.count() > 0,
+                           20000);
+  QVERIFY2(cancelledSpy.count() > 0 || finishedSpy.count() > 0,
+           qPrintable(QStringLiteral("search neither cancelled nor finished (failed=%1)")
+                          .arg(failedSpy.count())));
+
+  // Once a terminal signal has been observed, delivery must be quiescent: no
+  // late batch may arrive after cancellation/completion.
+  const int batchesAtTerminal = batchSpy.count();
+  QThread::msleep(300);
+  QCOMPARE(batchSpy.count(), batchesAtTerminal);
+
+  qInfo() << "streaming-cancel winner:" << (cancelledSpy.count() > 0 ? "cancelled" : "finished")
+          << "batches delivered:" << batchesAtTerminal;
 }
 
 } // namespace tests

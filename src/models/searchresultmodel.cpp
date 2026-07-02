@@ -175,6 +175,24 @@ void SearchResultModel::setSearchResult(const SearchResult &p_result) {
   endResetModel();
 }
 
+void SearchResultModel::appendSearchResult(const SearchResult &p_result) {
+  // Fold aggregate counters in regardless (a zero-row chunk may still carry a truncated flag).
+  m_result.m_matchCount += p_result.m_matchCount;
+  m_result.m_truncated = m_result.m_truncated || p_result.m_truncated;
+
+  if (p_result.m_fileResults.isEmpty()) {
+    return;
+  }
+
+  const int first = m_result.m_fileResults.size();
+  const int last = first + p_result.m_fileResults.size() - 1;
+  qDebug() << "SearchResultModel::appendSearchResult: appending fileResults:"
+           << p_result.m_fileResults.size() << "at rows" << first << "-" << last;
+  beginInsertRows(QModelIndex(), first, last);
+  m_result.m_fileResults.append(p_result.m_fileResults);
+  endInsertRows();
+}
+
 void SearchResultModel::clear() {
   qDebug() << "SearchResultModel::clear";
   beginResetModel();

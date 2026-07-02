@@ -1,6 +1,9 @@
 // test_searchservice.cpp - Tests for vnotex::SearchService
 #include <QtTest>
 
+#include <QJsonObject>
+
+#include <core/searchresulttypes.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
 #include <temp_dir_fixture.h>
@@ -9,6 +12,31 @@
 using namespace vnotex;
 
 namespace tests {
+
+// Order-preserving canonical serialization of a content SearchResult. Both the blob baseline
+// and the streaming finished payload are produced in input-file order, so a direct string
+// compare of this canonical form is a full byte-for-byte structural equality check (paths, ids,
+// per-file match count, per-line number/text, and every match segment's column span).
+static QString canonicalizeContentResult(const SearchResult &p_result) {
+  QString out;
+  out += QStringLiteral("matchCount=%1;truncated=%2|")
+             .arg(p_result.m_matchCount)
+             .arg(p_result.m_truncated ? 1 : 0);
+  for (const SearchFileResult &fr : p_result.m_fileResults) {
+    out += QStringLiteral("[path=%1;id=%2;fmc=%3;")
+               .arg(fr.m_path, fr.m_id)
+               .arg(fr.m_matchCount);
+    for (const SearchLineMatch &lm : fr.m_lineMatches) {
+      out += QStringLiteral("(ln=%1;txt=%2;").arg(lm.m_lineNumber).arg(lm.m_lineText);
+      for (const SearchMatchSegment &seg : lm.m_segments) {
+        out += QStringLiteral("<%1,%2>").arg(seg.m_columnStart).arg(seg.m_columnEnd);
+      }
+      out += QStringLiteral(")");
+    }
+    out += QStringLiteral("]");
+  }
+  return out;
+}
 
 class TestSearchService : public QObject {
   Q_OBJECT
@@ -73,6 +101,18 @@ private slots:
 
   // Test safe destruction with in-flight search
   void testDestructionSafety();
+
+  // Test streaming content search: incremental batch union equals the
+  // authoritative finished result.
+  void testSearchContentStreamingBatchUnion();
+
+  // Test that the streaming async searchFinished payload is byte-for-byte equal to the blob
+  // searchContentCancellable baseline, including a maxResults cap that cuts inside a file.
+  void testStreamingFinishedMatchesBlobBaselineWithCap();
+
+  // Test that a query OMITTING "maxResults" applies vxcore's default cap of 100 on the async
+  // streaming path, matching the blob baseline (absent key != uncapped).
+  void testStreamingFinishedMatchesBlobBaselineDefaultCap();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -442,6 +482,199 @@ void TestSearchService::testDestructionSafety() {
   }
 
   QVERIFY(true);
+}
+
+void TestSearchService::testSearchContentStreamingBatchUnion() {
+  // Seed a file with distinctive content so streaming content search yields a
+  // non-empty result set through the async batch path.
+  char *fileId = nullptr;
+  VxCoreError vxerr = vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "",
+                                         "streaming_note.md", &fileId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  QVERIFY(fileId != nullptr);
+  vxcore_string_free(fileId);
+
+  char *bufferId = nullptr;
+  vxerr = vxcore_buffer_open(m_context, m_notebookId.toUtf8().constData(), "streaming_note.md",
+                             &bufferId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  QVERIFY(bufferId != nullptr);
+
+  const QByteArray contentUtf8 =
+      QByteArrayLiteral("# Streaming\n\nthis line has streamneedle inside\nanother streamneedle "
+                        "line here\n");
+  vxerr = vxcore_buffer_set_content_raw(m_context, bufferId, contentUtf8.constData(),
+                                        static_cast<size_t>(contentUtf8.size()));
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxerr = vxcore_buffer_save(m_context, bufferId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxerr = vxcore_buffer_close(m_context, bufferId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxcore_string_free(bufferId);
+
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QSignalSpy batchSpy(&service, &SearchService::searchBatch);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  const int token =
+      service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"streamneedle\"}"),
+                            QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 10000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(QString("streaming searchContent failed unexpectedly (%1)")
+                          .arg(failedSpy.isEmpty() ? QString()
+                                                   : failedSpy.takeFirst().at(1).toString())));
+  QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
+
+  const SearchResult finishedResult = finishedSpy.at(0).at(1).value<SearchResult>();
+  QVERIFY(finishedResult.m_matchCount > 0);
+  QVERIFY(!finishedResult.m_fileResults.isEmpty());
+
+  // Small notebook (single matching file) => exactly one non-empty batch, whose
+  // contents equal the authoritative finished result.
+  QCOMPARE(batchSpy.count(), 1);
+  int streamedMatchCount = 0;
+  int streamedFiles = 0;
+  for (const auto &args : batchSpy) {
+    QCOMPARE(args.at(0).toInt(), token);
+    const SearchResult batchResult = args.at(1).value<SearchResult>();
+    streamedMatchCount += batchResult.m_matchCount;
+    streamedFiles += batchResult.m_fileResults.size();
+  }
+  QCOMPARE(streamedMatchCount, finishedResult.m_matchCount);
+  QCOMPARE(streamedFiles, finishedResult.m_fileResults.size());
+}
+
+void TestSearchService::testStreamingFinishedMatchesBlobBaselineWithCap() {
+  // Seed two files. capfile_a.md has THREE occurrences on three distinct lines; capfile_b.md
+  // has more. With maxResults=2 the deterministic file-boundary cap lands INSIDE a file
+  // (keeps the first two occurrences, drops the third line and every later file), exactly the
+  // case the async streaming worker must reproduce byte-for-byte from the blob baseline.
+  auto seedFile = [&](const char *p_name, const QByteArray &p_content) {
+    char *fileId = nullptr;
+    VxCoreError e = vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "", p_name,
+                                       &fileId);
+    QCOMPARE(e, VXCORE_OK);
+    vxcore_string_free(fileId);
+
+    char *bufferId = nullptr;
+    e = vxcore_buffer_open(m_context, m_notebookId.toUtf8().constData(), p_name, &bufferId);
+    QCOMPARE(e, VXCORE_OK);
+    e = vxcore_buffer_set_content_raw(m_context, bufferId, p_content.constData(),
+                                      static_cast<size_t>(p_content.size()));
+    QCOMPARE(e, VXCORE_OK);
+    e = vxcore_buffer_save(m_context, bufferId);
+    QCOMPARE(e, VXCORE_OK);
+    e = vxcore_buffer_close(m_context, bufferId);
+    QCOMPARE(e, VXCORE_OK);
+    vxcore_string_free(bufferId);
+  };
+
+  seedFile("capfile_a.md",
+           QByteArrayLiteral("capneedle one\nfiller\ncapneedle two\ncapneedle three\n"));
+  seedFile("capfile_b.md", QByteArrayLiteral("capneedle b1\ncapneedle b2\n"));
+
+  const QString queryJson =
+      QStringLiteral("{\"pattern\":\"capneedle\",\"maxResults\":2}");
+
+  // Blob baseline: authoritative capped result the async path must match exactly.
+  SearchCoreService coreService(m_context);
+  QJsonObject blobObj;
+  const Error blobErr =
+      coreService.searchContentCancellable(m_notebookId, queryJson, QString(), nullptr, &blobObj);
+  QVERIFY(!blobErr);
+  const SearchResult blobResult = SearchResult::fromContentSearchJson(blobObj, m_notebookId);
+  // Precondition: the cap actually truncated (otherwise the test would not exercise the path).
+  QVERIFY2(blobResult.m_truncated, "expected blob baseline to be truncated by maxResults=2");
+
+  // Streaming async path.
+  SearchService service(&coreService);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  const int token = service.searchContent(m_notebookId, queryJson, QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 10000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(QString("streaming searchContent failed unexpectedly (%1)")
+                          .arg(failedSpy.isEmpty() ? QString()
+                                                   : failedSpy.takeFirst().at(1).toString())));
+
+  const SearchResult streamedResult = finishedSpy.at(0).at(1).value<SearchResult>();
+
+  // The async streaming finished payload must honor the same cap and be structurally identical
+  // to the blob baseline: same truncated flag, same file/line/segment shape, same order.
+  QVERIFY2(streamedResult.m_truncated,
+           "streaming finished result dropped the maxResults truncation indicator");
+  QCOMPARE(streamedResult.m_matchCount, blobResult.m_matchCount);
+  QCOMPARE(canonicalizeContentResult(streamedResult), canonicalizeContentResult(blobResult));
+}
+
+void TestSearchService::testStreamingFinishedMatchesBlobBaselineDefaultCap() {
+  // Seed a single file with 150 occurrences (one per line). vxcore's SearchContentQuery defaults
+  // maxResults to 100 when the key is ABSENT, so a query that omits "maxResults" must still cap
+  // at 100 and report truncated=true. This guards the async streaming worker against treating a
+  // missing key as "uncapped" (which would diverge from the blob baseline).
+  QByteArray content;
+  for (int i = 0; i < 150; ++i) {
+    content += QByteArrayLiteral("defcapneedle line\n");
+  }
+
+  char *fileId = nullptr;
+  VxCoreError vxerr =
+      vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "", "defcap.md", &fileId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxcore_string_free(fileId);
+
+  char *bufferId = nullptr;
+  vxerr = vxcore_buffer_open(m_context, m_notebookId.toUtf8().constData(), "defcap.md", &bufferId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxerr = vxcore_buffer_set_content_raw(m_context, bufferId, content.constData(),
+                                        static_cast<size_t>(content.size()));
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxerr = vxcore_buffer_save(m_context, bufferId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxerr = vxcore_buffer_close(m_context, bufferId);
+  QCOMPARE(vxerr, VXCORE_OK);
+  vxcore_string_free(bufferId);
+
+  // Query deliberately OMITS "maxResults".
+  const QString queryJson = QStringLiteral("{\"pattern\":\"defcapneedle\"}");
+
+  SearchCoreService coreService(m_context);
+  QJsonObject blobObj;
+  const Error blobErr =
+      coreService.searchContentCancellable(m_notebookId, queryJson, QString(), nullptr, &blobObj);
+  QVERIFY(!blobErr);
+  const SearchResult blobResult = SearchResult::fromContentSearchJson(blobObj, m_notebookId);
+  // Precondition: the implicit default cap of 100 actually truncated the 150 occurrences.
+  QVERIFY2(blobResult.m_truncated,
+           "expected blob baseline to be truncated by the implicit default maxResults=100");
+
+  SearchService service(&coreService);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+
+  const int token = service.searchContent(m_notebookId, queryJson, QString());
+  QVERIFY(token > 0);
+
+  QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 10000);
+  QVERIFY2(finishedSpy.count() > 0,
+           qPrintable(QString("streaming searchContent failed unexpectedly (%1)")
+                          .arg(failedSpy.isEmpty() ? QString()
+                                                   : failedSpy.takeFirst().at(1).toString())));
+
+  const SearchResult streamedResult = finishedSpy.at(0).at(1).value<SearchResult>();
+  QVERIFY2(streamedResult.m_truncated,
+           "streaming finished result ignored the implicit default maxResults=100 cap");
+  QCOMPARE(streamedResult.m_matchCount, blobResult.m_matchCount);
+  QCOMPARE(canonicalizeContentResult(streamedResult), canonicalizeContentResult(blobResult));
 }
 
 } // namespace tests

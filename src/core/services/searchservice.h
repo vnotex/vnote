@@ -58,6 +58,12 @@ signals:
   void searchProgress(int p_token, int p_percent);
   void searchStarted(int p_token);
 
+  // Emitted once per completed file-chunk during streaming content search, carrying that
+  // chunk's slice of results for incremental rendering. Delivered on the GUI thread (queued).
+  // Zero-match chunks are NOT emitted. The authoritative complete result still arrives via
+  // searchFinished(); consumers may render batches live and let searchFinished() finalize.
+  void searchBatch(int p_token, const SearchResult &p_result);
+
 private:
   SearchCoreService *m_coreService = nullptr;
   SearchWorker *m_worker = nullptr;

@@ -36,6 +36,7 @@ SearchController::SearchController(ServiceLocator &p_services, QObject *p_parent
   connect(searchSvc, &SearchService::searchFinished, this, &SearchController::onSearchFinished);
   connect(searchSvc, &SearchService::searchFailed, this, &SearchController::onSearchFailed);
   connect(searchSvc, &SearchService::searchCancelled, this, &SearchController::onSearchCancelled);
+  connect(searchSvc, &SearchService::searchBatch, this, &SearchController::onSearchBatch);
   connect(searchSvc, &SearchService::searchProgress, this, [this](int p_token, int p_percent) {
     if (!m_activeTokens.contains(p_token) && !m_expectingStartSignal) {
       return;
@@ -295,6 +296,28 @@ void SearchController::onSearchCancelled(int p_token) {
   qCDebug(lcUi) << "SearchController::onSearchCancelled";
   emit searchCancelled();
   resetSearchState();
+}
+
+void SearchController::onSearchBatch(int p_token, const SearchResult &p_result) {
+  // Live incremental rendering: append each streamed content-search chunk to the model as it
+  // arrives. The authoritative, deterministically-ordered result is applied once at completion
+  // via setSearchResult() in onSearchFinished(), which supersedes these preview rows.
+  if (m_cancelRequested || !m_activeTokens.contains(p_token)) {
+    qCDebug(lcUi) << "SearchController::onSearchBatch: discarding batch for token:" << p_token;
+    return;
+  }
+
+  if (p_result.m_fileResults.isEmpty()) {
+    return;
+  }
+
+  qCDebug(lcUi) << "SearchController::onSearchBatch: token:" << p_token
+                << "fileResults:" << p_result.m_fileResults.size()
+                << "matchCount:" << p_result.m_matchCount;
+
+  if (m_model) {
+    m_model->appendSearchResult(p_result);
+  }
 }
 
 QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchMode,
