@@ -2,6 +2,7 @@
 // Uses ServiceLocator for dependency injection instead of singletons.
 
 #include <QApplication>
+#include <QByteArray>
 #include <QDebug>
 #include <QDir>
 #include <QGuiApplication>
@@ -144,11 +145,58 @@ void setOpenGLOption(const ConfigMgr2 &configMgr) {
 #endif
 }
 
-void disableSandboxIfNeeded() {
+// Build the QTWEBENGINE_CHROMIUM_FLAGS value by MERGING VNote's default flags
+// with whatever the user already exported, WITHOUT clobbering theirs. Each
+// default flag is appended only if it is not already present (whole-token
+// match), so the user keeps full control.
+//
+// Why this matters: VNote used to set this variable via two separate qputenv()
+// calls, the second of which overwrote the first (so --disable-logging was lost
+// on Linux) AND both unconditionally erased any user-supplied value. That
+// removed the only way for a user to pass Chromium workaround flags (e.g.
+// --single-process / --disable-gpu / --in-process-gpu) needed to survive
+// platform-specific QtWebEngine crashes such as the "Failed to parse extension
+// manifest" abort reported on Ubuntu 26.04 (issue #2705).
+QByteArray buildChromiumFlags(const QByteArray &p_existing) {
+  QByteArray flags = p_existing;
+
+  auto hasFlag = [&flags](const char *p_flag) {
+    // Match both the bare switch ("--foo") and Chromium's valued form
+    // ("--foo=value") as a whole token, so e.g. --enable-logging=stderr still
+    // counts as the user opting into logging.
+    const QByteArray needle(p_flag);
+    const QByteArray valued = needle + '=';
+    const auto tokens = flags.split(' ');
+    for (const auto &token : tokens) {
+      if (token == needle || token.startsWith(valued)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  auto appendFlag = [&flags](const char *p_flag) {
+    if (!flags.isEmpty()) {
+      flags.append(' ');
+    }
+    flags.append(p_flag);
+  };
+
+  // Quiet Chromium's logging by default, unless the user explicitly opted into
+  // logs via --enable-logging. This hides VizNullHypothesis and other verbose
+  // Chromium output (and, as a side effect, some genuine ERROR/WARNING lines).
+  if (!hasFlag("--disable-logging") && !hasFlag("--enable-logging")) {
+    appendFlag("--disable-logging");
+  }
+
 #if defined(Q_OS_LINUX)
-  // Disable sandbox on Linux.
-  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox");
+  // Chromium's sandbox can abort the process on some Linux kernels/distros;
+  // disabling it keeps QtWebEngine usable there.
+  if (!hasFlag("--no-sandbox")) {
+    appendFlag("--no-sandbox");
+  }
 #endif
+
+  return flags;
 }
 
 int main(int argc, char *argv[]) {
@@ -218,11 +266,14 @@ int main(int argc, char *argv[]) {
   // so the first qDebug message respects them
   vnotex::installDefaultLoggingRules();
 
-  // Suppress Chromium logging noise. This hides VizNullHypothesis warnings
-  // and other verbose Chromium debug output, but also hides some genuine
-  // Chromium ERROR/WARNING lines. To restore Chromium logs, unset the env:
-  // set QTWEBENGINE_CHROMIUM_FLAGS= (empty)
-  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-logging");
+  // Set QTWEBENGINE_CHROMIUM_FLAGS by MERGING VNote's defaults (--disable-logging
+  // everywhere, plus --no-sandbox on Linux) with any value the user already
+  // exported, instead of overwriting it. See buildChromiumFlags() above. To see
+  // Chromium logs, run with QTWEBENGINE_CHROMIUM_FLAGS=--enable-logging; to work
+  // around a platform QtWebEngine crash, add flags like --single-process and
+  // VNote will preserve them (issue #2705).
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+          buildChromiumFlags(qgetenv("QTWEBENGINE_CHROMIUM_FLAGS")));
 
   vxcore_set_app_info(ConfigMgr2::c_orgName.toUtf8().constData(),
                       ConfigMgr2::c_appName.toUtf8().constData());
@@ -359,8 +410,6 @@ int main(int argc, char *argv[]) {
     qInfo() << "ViewWindowFactory registered";
 
     setOpenGLOption(configMgr);
-
-    disableSandboxIfNeeded();
 
     // Create Qt application
     QGuiApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);

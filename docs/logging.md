@@ -142,26 +142,34 @@ Get-Content "$env:APPDATA/VNote/vnote.log" -Wait
 
 ### Chromium Logging Suppression
 
-By default, VNote sets the environment variable `QTWEBENGINE_CHROMIUM_FLAGS=--disable-logging` at startup (in `src/main.cpp`). This suppresses verbose Chromium debug output, particularly:
+At startup (in `src/main.cpp`), VNote **merges** its default flags into `QTWEBENGINE_CHROMIUM_FLAGS` instead of overwriting the variable. On every platform it adds `--disable-logging`; on Linux it also adds `--no-sandbox`. Any flags you set yourself are preserved, and a default is skipped when you already supplied it (or its counterpart). `--disable-logging` suppresses verbose Chromium debug output, particularly:
 - `[####:####:date/time:WARNING:viz_main_impl.cc(...)] VizNullHypothesis is disabled` (spurious warning from Chromium's graphics pipeline)
 - Other internal Chromium chatter
 
-**Trade-off**: This flag also hides some genuine Chromium ERROR and WARNING lines that may be useful when debugging WebEngine rendering issues or JavaScript errors in the Markdown viewer.
+**Trade-off**: `--disable-logging` also hides some genuine Chromium ERROR and WARNING lines that may be useful when debugging WebEngine rendering issues or JavaScript errors in the Markdown viewer.
 
-**Workaround**: To restore Chromium logs for debugging, unset the flag before running VNote:
+**Restore Chromium logs**: run VNote with `--enable-logging` in the variable; VNote detects it and skips its own `--disable-logging`:
 
 ```bash
 # Linux/macOS
-export QTWEBENGINE_CHROMIUM_FLAGS=
+export QTWEBENGINE_CHROMIUM_FLAGS=--enable-logging
 vnote
 
 # Windows (PowerShell)
-$env:QTWEBENGINE_CHROMIUM_FLAGS = ""
+$env:QTWEBENGINE_CHROMIUM_FLAGS = "--enable-logging"
 & "path/to/vnote.exe"
 
 # Windows (Command Prompt)
-set QTWEBENGINE_CHROMIUM_FLAGS=
+set QTWEBENGINE_CHROMIUM_FLAGS=--enable-logging
 vnote.exe
+```
+
+**Pass Chromium workaround flags**: because VNote no longer clobbers this variable, you can add your own flags to work around platform-specific QtWebEngine crashes (for example the `Failed to parse extension manifest` abort seen on some Linux stacks) and VNote keeps them alongside its defaults:
+
+```bash
+# Linux example: try single-process / software rendering
+export QTWEBENGINE_CHROMIUM_FLAGS="--single-process --disable-gpu"
+vnote
 ```
 
 ### VTextEdit Debug Suppression
