@@ -182,7 +182,12 @@ class MathJaxRenderer extends VxWorker {
     // canvas, which would make toDataURL() throw.
     convertAllSvgToPng() {
         let container = this.vxcore.contentContainer;
-        let svgs = container ? container.querySelectorAll('mjx-container svg') : [];
+        // Only the root <svg> of each equation (the direct child of
+        // mjx-container). A nested inner <svg> (e.g. MathJax's data-table for
+        // matrices/aligned equations) must NOT be rasterized on its own: it is
+        // captured as part of the root and, sized in relative units, scales to
+        // fill the root's pinned viewport below.
+        let svgs = container ? container.querySelectorAll('mjx-container > svg') : [];
         if (svgs.length == 0) {
             window.vxMarkdownAdapter.onPdfRenderReady();
             return;
@@ -202,14 +207,29 @@ class MathJaxRenderer extends VxWorker {
         svgs.forEach(function (svg) {
             let url = null;
             try {
-                // Inline the resolved color so `fill: currentColor` keeps the
-                // on-screen color once the SVG is loaded as a standalone image.
-                svg.style.color = window.getComputedStyle(svg).color;
-                let svgStr = new XMLSerializer().serializeToString(svg);
-
+                // Measure the live, laid-out viewport first. The export body is
+                // sized to the PDF page (markdownviewercore.js setBodySize), so
+                // this is the true CSS-pixel box the equation occupies.
                 let bbox = svg.getBoundingClientRect();
                 let width = Math.max(1, Math.ceil(bbox.width));
                 let height = Math.max(1, Math.ceil(bbox.height));
+
+                // Serialize a clone so the live DOM stays untouched until the
+                // final replaceChild in the onload handler below.
+                let clone = svg.cloneNode(true);
+                // Inline the resolved color so `fill: currentColor` keeps the
+                // on-screen color once the SVG is loaded as a standalone image.
+                // Read it from the LIVE node: a detached clone reports empty.
+                clone.style.color = window.getComputedStyle(svg).color;
+                // Pin the measured viewport onto the clone. MathJax's root <svg>
+                // can be sized in page-relative units (e.g. width="100%" with a
+                // height in ex) whose only containing block is the live page;
+                // loaded as a standalone image those collapse and squeeze the
+                // equation. Pinning the measured CSS pixels recreates the exact
+                // on-page viewport so the raster matches the screen.
+                clone.setAttribute('width', width + 'px');
+                clone.setAttribute('height', height + 'px');
+                let svgStr = new XMLSerializer().serializeToString(clone);
 
                 let canvas = document.createElement('canvas');
                 canvas.width = width * scale;
