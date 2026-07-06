@@ -172,54 +172,86 @@ class MathJaxRenderer extends VxWorker {
         this.finishWork();
     }
 
+    // Rasterize MathJax's SVG output to PNG before PDF export.
+    //
+    // Qt WebEngine's printToPdf renders MathJax's <use>-referenced SVG glyphs
+    // with the wrong font, so each equation is flattened to a PNG first (issue
+    // #2681). The scope is deliberately limited to MathJax containers: other
+    // inline SVGs (Mermaid, Graphviz, Flowchart, WaveDrom, ...) must stay
+    // vector, and some of them (e.g. Mermaid's <foreignObject>) taint the
+    // canvas, which would make toDataURL() throw.
     convertAllSvgToPng() {
-
-        let svgs = this.vxcore.contentContainer.querySelectorAll('svg');
+        let container = this.vxcore.contentContainer;
+        let svgs = container ? container.querySelectorAll('mjx-container svg') : [];
         if (svgs.length == 0) {
             window.vxMarkdownAdapter.onPdfRenderReady();
             return;
         }
 
         let pending = svgs.length;
+        // Runs exactly once per SVG so a failure on one equation can never
+        // strand the counter and hang the export.
+        let finalizeOne = function () {
+            if (--pending == 0) {
+                window.vxMarkdownAdapter.onPdfRenderReady();
+            }
+        };
+
+        // At least 2x, higher on Hi-DPI displays, to keep the raster crisp.
+        let scale = Math.max(2, window.devicePixelRatio || 1);
         svgs.forEach(function (svg) {
-            let serializer = new XMLSerializer();
-            let svgStr = serializer.serializeToString(svg);
-            let canvas = document.createElement('canvas');
-            let bbox = svg.getBoundingClientRect();
-            let scale = 2;
-            canvas.width = bbox.width * scale;
-            canvas.height = bbox.height * scale;
-            let ctx = canvas.getContext('2d');
+            let url = null;
+            try {
+                // Inline the resolved color so `fill: currentColor` keeps the
+                // on-screen color once the SVG is loaded as a standalone image.
+                svg.style.color = window.getComputedStyle(svg).color;
+                let svgStr = new XMLSerializer().serializeToString(svg);
 
-            let img = new Image();
-            let svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-            let url = URL.createObjectURL(svgBlob);
-            img.onload = function () {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                URL.revokeObjectURL(url);
-                let pngDataUrl = canvas.toDataURL('image/png');
+                let bbox = svg.getBoundingClientRect();
+                let width = Math.max(1, Math.ceil(bbox.width));
+                let height = Math.max(1, Math.ceil(bbox.height));
 
-                let pngImg = document.createElement('img');
-                pngImg.src = pngDataUrl;
-                pngImg.style.width = bbox.width + 'px';
-                pngImg.style.height = bbox.height + 'px';
-                pngImg.setAttribute('data-math-png', 'true');
+                let canvas = document.createElement('canvas');
+                canvas.width = width * scale;
+                canvas.height = height * scale;
+                let ctx = canvas.getContext('2d');
 
-                svg.parentNode.replaceChild(pngImg, svg);
+                let svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+                url = URL.createObjectURL(svgBlob);
 
-                pending--;
-                if (pending == 0) {
-                    window.vxMarkdownAdapter.onPdfRenderReady();
+                let img = new Image();
+                img.onload = function () {
+                    try {
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        let pngImg = document.createElement('img');
+                        pngImg.src = canvas.toDataURL('image/png');
+                        pngImg.style.width = width + 'px';
+                        pngImg.style.height = height + 'px';
+                        pngImg.setAttribute('data-math-png', 'true');
+
+                        if (svg.parentNode) {
+                            svg.parentNode.replaceChild(pngImg, svg);
+                        }
+                    } catch (err) {
+                        console.error('failed to rasterize MathJax SVG', err);
+                    } finally {
+                        URL.revokeObjectURL(url);
+                        finalizeOne();
+                    }
+                };
+                img.onerror = function () {
+                    URL.revokeObjectURL(url);
+                    finalizeOne();
+                };
+                img.src = url;
+            } catch (err) {
+                console.error('failed to prepare MathJax SVG for rasterization', err);
+                if (url) {
+                    URL.revokeObjectURL(url);
                 }
-            };
-            img.onerror = function () {
-                URL.revokeObjectURL(url);
-                pending--;
-                if (pending == 0) {
-                    window.vxMarkdownAdapter.onPdfRenderReady();
-                }
-            };
-            img.src = url;
+                finalizeOne();
+            }
         });
     }
 

@@ -1,6 +1,7 @@
-﻿#include "webviewexporter.h"
+#include "webviewexporter.h"
 
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QProcess>
 #include <QRegularExpression>
@@ -653,19 +654,30 @@ bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QStr
   ExportState state = ExportState::Busy;
 
   bool pdfRenderReady = false;
-  QMetaObject::Connection conn = connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady,
-                                         [&pdfRenderReady]() { pdfRenderReady = true; });
+  QMetaObject::Connection conn =
+      connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady, this,
+              [&pdfRenderReady]() { pdfRenderReady = true; });
 
   m_viewer->page()->runJavaScript(
       "if (typeof vxcore !== 'undefined' && vxcore.getWorker('mathjax')) {"
       "  vxcore.getWorker('mathjax').convertAllSvgToPng();"
       "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }");
 
+  // Bounded wait: if the render-ready signal never arrives (JS bridge not
+  // ready, an uncaught error in the page, ...), fall through to printToPdf
+  // instead of freezing the export. Worst case the math stays as SVG.
+  const qint64 c_pdfRenderReadyTimeoutMs = 30000;
+  QElapsedTimer renderTimer;
+  renderTimer.start();
   while (!pdfRenderReady) {
     Utils::sleepWait(100);
     if (m_askedToStop) {
       disconnect(conn);
       return false;
+    }
+    if (renderTimer.hasExpired(c_pdfRenderReadyTimeoutMs)) {
+      qWarning() << "timed out waiting for PDF math rasterization; proceeding";
+      break;
     }
   }
   disconnect(conn);
