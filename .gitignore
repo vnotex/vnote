@@ -22,6 +22,8 @@ dev.sh
 nul
 .sisyphus/
 .omo/
+.kilo/
+.superpowers/
 
 # GitHub Spec Kit related files.
 .claude
