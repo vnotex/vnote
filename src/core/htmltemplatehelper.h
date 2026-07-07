@@ -54,8 +54,12 @@ struct MarkdownWebGlobalOptions {
   // This is just a hint not mandatory. For now, PlantUML and Graphviz needs this.
   bool m_transformSvgToPngEnabled = false;
 
-  // wkhtmltopdf will make the MathJax formula too small.
+  // wkhtmltopdf mis-measures ex-height, shrinking MathJax to its minScale floor.
+  // m_mathJaxScale: global scale factor (-1 => MathJax default 1).
   qreal m_mathJaxScale = -1;
+  // m_mathJaxMinScale: floor for MathJax's text-matching scale (-1 => MathJax default 0.5).
+  // Set to 1 for wkhtmltopdf export so math is not shrunk below text size.
+  qreal m_mathJaxMinScale = -1;
 
   // Whether remove the tool bar of code blocks added by Prism.js.
   bool m_removeCodeToolBarEnabled = false;
@@ -82,6 +86,8 @@ public:
     bool m_transformSvgToPngEnabled = false;
 
     qreal m_mathJaxScale = -1;
+
+    qreal m_mathJaxMinScale = -1;
 
     bool m_removeCodeToolBarEnabled = false;
   };

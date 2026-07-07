@@ -201,6 +201,7 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   opts.m_bodyHeight = p_paras.m_bodyHeight;
   opts.m_transformSvgToPngEnabled = p_paras.m_transformSvgToPngEnabled;
   opts.m_mathJaxScale = p_paras.m_mathJaxScale;
+  opts.m_mathJaxMinScale = p_paras.m_mathJaxMinScale;
   opts.m_removeCodeToolBarEnabled = p_paras.m_removeCodeToolBarEnabled;
   fillGlobalOptions(htmlTemplate, opts);
 
@@ -478,7 +479,11 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   paras.m_bodyWidth = pageBodySize.width();
   paras.m_bodyHeight = pageBodySize.height();
   paras.m_transformSvgToPngEnabled = p_option.m_transformSvgToPngEnabled;
-  paras.m_mathJaxScale = useWkhtmltopdf ? 2.5 : -1;
+  // wkhtmltopdf's old WebKit mis-measures the surrounding text's ex-height, so MathJax
+  // shrinks each equation to its minScale floor (0.5). Raise that floor to 1.0 instead of
+  // blindly multiplying by 2.5 (which over-enlarged math to 1.25x text).
+  paras.m_mathJaxScale = -1;
+  paras.m_mathJaxMinScale = useWkhtmltopdf ? 1.0 : -1;
   paras.m_removeCodeToolBarEnabled = p_option.m_removeCodeToolBarEnabled;
 
   m_htmlTemplate = generateMarkdownViewerTemplate(*configMgr, config, paras);
