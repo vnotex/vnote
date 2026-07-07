@@ -1,4 +1,4 @@
-﻿#include "exportdialog2.h"
+#include "exportdialog2.h"
 
 #include <QCheckBox>
 #include <QComboBox>
