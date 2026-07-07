@@ -1,4 +1,4 @@
-#include "exportdialog2.h"
+﻿#include "exportdialog2.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -465,8 +465,11 @@ void ExportDialog2::setupUI() {
 
   m_cancelBtn = box->button(QDialogButtonBox::Cancel);
   connect(m_cancelBtn, &QPushButton::clicked, this, [this]() {
-    m_controller->stop();
-    close();
+    if (m_exporting || m_controller->isExporting()) {
+      m_controller->stop();
+    } else {
+      close();
+    }
   });
 
   setWindowTitle(tr("Export"));
@@ -769,6 +772,7 @@ void ExportDialog2::updateUiOnExportState(bool p_exporting) {
 void ExportDialog2::rejectedButtonClicked() {
   if (m_exporting || m_controller->isExporting()) {
     m_controller->stop();
+    return;
   }
 
   Dialog::rejectedButtonClicked();

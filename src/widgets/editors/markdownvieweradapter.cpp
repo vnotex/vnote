@@ -304,6 +304,10 @@ void MarkdownViewerAdapter::highlightCodeBlock(int p_idx, quint64 p_timeStamp,
   }
 }
 
+void MarkdownViewerAdapter::onPdfRenderReady() {
+  emit pdfRenderReady();
+}
+
 void MarkdownViewerAdapter::setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles) {
   QVector<CssRuleStyle> ruleStyles;
   ruleStyles.reserve(p_styles.size());
