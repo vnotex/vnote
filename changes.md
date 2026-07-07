@@ -1,4 +1,19 @@
 # Changes
+## v4.1.1
+A maintenance release with search improvements, PDF export fixes, and editor polish on top of VNote 4.1.0:
+
+* **Search**
+    * Content-search results now stream in incrementally, so matches appear as they are found instead of after the whole search completes
+    * The maximum number of search results is now configurable
+    * Content matches are grouped by line, removing duplicate result rows
+* **Export**: fix squeezed or mis-sized MathJax equations in PDF export, and stop exports from hanging on documents that mix equations with Mermaid/Graphviz/Flowchart/WaveDrom diagrams
+* **Editor**
+    * Fix emoji next to styled text (such as headings) rendering as tofu boxes
+    * Refresh the editor style immediately when switching themes
+* **Notebooks (raw)**: enable image paste, and preserve note timestamps and metadata across rename
+* **Startup**: merge instead of overwrite `QTWEBENGINE_CHROMIUM_FLAGS`, so user-set Chromium workaround flags (e.g. `--single-process`, `--disable-gpu`) are respected
+* **macOS**: always use the system title bar
+
 ## v4.1.0
 VNote 4 is a major release built on a brand-new native core (**vxcore**) that powers notebook management, search, configuration, and synchronization. The whole application has been re-architected (clean MVC + dependency injection) for reliability and future extensibility. Highlights versus VNote 3:
 
