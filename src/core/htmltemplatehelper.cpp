@@ -211,7 +211,6 @@ QString HtmlTemplateHelper::generateMarkdownViewerTemplate(const MarkdownEditorC
     opts.m_bodyHeight = p_paras.m_bodyHeight;
     opts.m_transformSvgToPngEnabled = p_paras.m_transformSvgToPngEnabled;
     opts.m_mathJaxScale = p_paras.m_mathJaxScale;
-    opts.m_mathJaxMinScale = p_paras.m_mathJaxMinScale;
     opts.m_removeCodeToolBarEnabled = p_paras.m_removeCodeToolBarEnabled;
     fillGlobalOptions(htmlTemplate, opts);
   }

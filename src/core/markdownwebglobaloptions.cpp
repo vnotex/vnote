@@ -37,7 +37,6 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
          QStringLiteral("transformSvgToPngEnabled: %1,\n")
              .arg(Utils::boolToString(m_transformSvgToPngEnabled)) +
          QStringLiteral("mathJaxScale: %1,\n").arg(m_mathJaxScale) +
-         QStringLiteral("mathJaxMinScale: %1,\n").arg(m_mathJaxMinScale) +
          QStringLiteral("removeCodeToolBarEnabled: %1,\n")
              .arg(Utils::boolToString(m_removeCodeToolBarEnabled)) +
          QStringLiteral("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel) +
