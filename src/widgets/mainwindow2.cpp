@@ -89,6 +89,24 @@ void MainWindow2::setupWindowAgent() {
 
 bool MainWindow2::isFrameless() const { return m_frameless; }
 
+void MainWindow2::updateWindowTitle() {
+  // Only drive the title when the OS draws the title bar; the custom TitleToolBar2
+  // does not render the window title.
+  if (isFrameless()) {
+    return;
+  }
+
+  QString title = ConfigMgr2::c_appName; // "VNote"
+  auto *win = m_viewArea ? m_viewArea->getCurrentViewWindow() : nullptr;
+  if (win) {
+    const QString name = win->getName();
+    if (!name.isEmpty()) {
+      title = QStringLiteral("%1 - %2").arg(name, ConfigMgr2::c_appName);
+    }
+  }
+  setWindowTitle(title);
+}
+
 ServiceLocator &MainWindow2::getServiceLocator() { return m_serviceLocator; }
 
 NotebookExplorer2 *MainWindow2::getNotebookExplorer() const { return m_notebookExplorer; }
@@ -618,6 +636,16 @@ void MainWindow2::setupDocks() {
           [this]() {
             auto *win = m_viewArea->getCurrentViewWindow();
             m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
+
+            // Keep the OS window title in sync with the current note, and follow renames
+            // of the currently-active window. Drop the previous window's connection first.
+            disconnect(m_currentWindowNameConn);
+            if (win) {
+              m_currentWindowNameConn =
+                  connect(win, &ViewWindow2::nameChanged, this,
+                          [this]() { updateWindowTitle(); });
+            }
+            updateWindowTitle();
           });
 
   // Wire notebook changes to TagExplorer2.

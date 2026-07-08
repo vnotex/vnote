@@ -139,6 +139,10 @@ private:
   // Setup qwindowkit window agent for frameless mode.
   void setupWindowAgent();
 
+  // Update the OS window title to "<current note name> - VNote".
+  // No-op when the custom (frameless) title bar is in use.
+  void updateWindowTitle();
+
   void exportNotes();
 
   void setupSystemTray();
@@ -226,6 +230,9 @@ private:
   QWK::WidgetWindowAgent *m_windowAgent = nullptr;
 
   bool m_frameless = false;
+
+  // Tracks the current ViewWindow2::nameChanged connection so the title updates on rename.
+  QMetaObject::Connection m_currentWindowNameConn;
 
 #if defined(Q_OS_WIN)
   QWebEngineView *m_dummyWebView = nullptr;
