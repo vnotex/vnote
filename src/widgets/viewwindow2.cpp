@@ -529,6 +529,13 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
             [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
     break;
 
+  case ViewWindowToolBarHelper2::InplacePreview:
+    // Visible only in Edit mode. Subclass wires the toggled signal.
+    act->setVisible(false);
+    connect(this, &ViewWindow2::modeChanged, this,
+            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
+    break;
+
   case ViewWindowToolBarHelper2::Tag: {
     auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(act));
     Q_ASSERT(toolBtn);

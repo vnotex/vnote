@@ -54,6 +54,9 @@ public:
     // Live preview toggle (Edit mode only).
     ToggleLivePreview,
 
+    // In-place preview toggle (Edit mode only).
+    InplacePreview,
+
     // Outline popup button.
     Outline,
 

@@ -349,6 +349,14 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     }
     break;
 
+  case Action::InplacePreview:
+    act = p_tb->addAction(
+        generateIcon(p_services, QStringLiteral("inplace_preview_editor.svg")),
+        QObject::tr("Toggle In-Place Preview"));
+    act->setProperty("iconName", QStringLiteral("inplace_preview_editor.svg"));
+    act->setCheckable(true);
+    break;
+
   case Action::Outline: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("outline_editor.svg")),
                           QObject::tr("Outline"));

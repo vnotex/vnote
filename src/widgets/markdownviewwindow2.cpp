@@ -214,6 +214,20 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
       setEditViewMode(mode);
     });
   }
+
+  // In-place preview toggle (visible only in Edit mode).
+  {
+    auto *inplacePreviewAction =
+        addAction(p_toolBar, ViewWindowToolBarHelper2::InplacePreview);
+    // setChecked before connect so this does not fire the toggled handler.
+    inplacePreviewAction->setChecked(m_inplacePreviewEnabled);
+    connect(inplacePreviewAction, &QAction::toggled, this, [this](bool p_checked) {
+      m_inplacePreviewEnabled = p_checked;
+      if (m_mode == ViewWindowMode::Edit && m_editor) {
+        m_editor->setInplacePreviewEnabled(p_checked);
+      }
+    });
+  }
 }
 
 void MarkdownViewWindow2::handlePrint() {
@@ -291,6 +305,9 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Wire PreviewHelper <-> Editor.
   m_previewHelper->setMarkdownEditor(m_editor);
   m_editor->setPreviewHelper(m_previewHelper);
+
+  // Apply the current in-place preview toggle state to the freshly created editor.
+  m_editor->setInplacePreviewEnabled(m_inplacePreviewEnabled);
 
   // Set content path and base path from Buffer2.
   // contentPath: used by MarkdownEditor::getRelativeLink() for generating relative links.

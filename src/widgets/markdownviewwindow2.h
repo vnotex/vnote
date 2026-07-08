@@ -216,6 +216,10 @@ private:
   QString m_pendingAnchor;
   MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
 
+  // Runtime on/off for in-place preview (toolbar toggle). Not persisted; mirrors
+  // the editor default (VMarkdownEditor::m_inplacePreviewEnabled = true).
+  bool m_inplacePreviewEnabled = true;
+
   QTimer *m_syncPreviewTimer = nullptr;
   QSharedPointer<QPrinter> m_printer;
 
