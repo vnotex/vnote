@@ -67,6 +67,10 @@ void HistoryUnitedEntry::processInternal(
     return;
   }
 
+  if (auto *listView = qobject_cast<QListView *>(m_listView.data())) {
+    listView->setCurrentIndex(m_proxyModel->index(0, 0));
+  }
+
   p_popupWidgetFunc(m_listView);
   finish();
 }
