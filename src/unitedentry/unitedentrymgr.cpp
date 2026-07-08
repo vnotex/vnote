@@ -59,6 +59,33 @@ QSharedPointer<IUnitedEntry> UnitedEntryMgr::findEntry(const QString &p_name) co
   return it.value();
 }
 
+QString UnitedEntryMgr::resolveEntryName(const QList<QString> &p_names, const QString &p_name) {
+  if (p_name.isEmpty()) {
+    return QString(); // guard: QString::startsWith("") is true.
+  }
+  if (p_names.contains(p_name)) {
+    return p_name; // exact match wins.
+  }
+  QString match;
+  for (const auto &name : p_names) {
+    if (name.startsWith(p_name)) {
+      if (!match.isEmpty()) {
+        return QString(); // ambiguous.
+      }
+      match = name;
+    }
+  }
+  return match; // empty if no prefix match.
+}
+
+QSharedPointer<IUnitedEntry> UnitedEntryMgr::resolveEntry(const QString &p_name) const {
+  const auto name = resolveEntryName(m_entries.keys(), p_name);
+  if (name.isEmpty()) {
+    return nullptr;
+  }
+  return findEntry(name);
+}
+
 bool UnitedEntryMgr::isInitialized() const { return m_initialized; }
 
 bool UnitedEntryMgr::getExpandAllEnabled() const { return m_expandAllEnabled; }

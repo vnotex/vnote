@@ -368,7 +368,7 @@ void UnitedEntry::processInput() {
     }
   } else {
     if (!m_lastEntry || m_lastEntry->name() != entry.m_name) {
-      m_lastEntry = m_mgr->findEntry(entry.m_name);
+      m_lastEntry = m_mgr->resolveEntry(entry.m_name);
     }
 
     if (m_lastEntry) {

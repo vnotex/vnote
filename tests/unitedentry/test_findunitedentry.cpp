@@ -34,6 +34,16 @@ private slots:
 
   void testContextGetterSetter();
 
+  void testResolveEntryNameExact();
+  void testResolveEntryNameUniquePrefix();
+  void testResolveEntryNameAmbiguous();
+  void testResolveEntryNameNoMatch();
+  void testResolveEntryNameEmptyInput();
+  void testResolveEntryNameExactWinsOverPrefix();
+  void testResolveEntryNameEmptyList();
+  void testResolveEntryNameSingletonEmptyInput();
+  void testResolveEntryNameAliasParticipation();
+
 private:
   static void setupParser(QCommandLineParser &p_parser);
 };
@@ -211,6 +221,65 @@ void TestFindUnitedEntry::testContextGetterSetter() {
 
   QCOMPARE(mgr.currentNotebookId(), notebookId);
   QCOMPARE(mgr.currentFolderId(), folderId);
+}
+
+void TestFindUnitedEntry::testResolveEntryNameExact() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
+                             QStringLiteral("history")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("find")),
+           QStringLiteral("find"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("history")),
+           QStringLiteral("history"));
+}
+
+void TestFindUnitedEntry::testResolveEntryNameUniquePrefix() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
+                             QStringLiteral("history")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("fi")), QStringLiteral("find"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("hi")),
+           QStringLiteral("history"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("he")), QStringLiteral("help"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("f")), QStringLiteral("find"));
+}
+
+void TestFindUnitedEntry::testResolveEntryNameAmbiguous() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
+                             QStringLiteral("history")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("h")), QString());
+}
+
+void TestFindUnitedEntry::testResolveEntryNameNoMatch() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
+                             QStringLiteral("history")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("z")), QString());
+}
+
+void TestFindUnitedEntry::testResolveEntryNameEmptyInput() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
+                             QStringLiteral("history")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QString()), QString());
+}
+
+void TestFindUnitedEntry::testResolveEntryNameExactWinsOverPrefix() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("finder")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("find")),
+           QStringLiteral("find"));
+}
+
+void TestFindUnitedEntry::testResolveEntryNameEmptyList() {
+  const QList<QString> names;
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("x")), QString());
+}
+
+void TestFindUnitedEntry::testResolveEntryNameSingletonEmptyInput() {
+  const QList<QString> names{QStringLiteral("find")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QString()), QString());
+}
+
+void TestFindUnitedEntry::testResolveEntryNameAliasParticipation() {
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("history"),
+                             QStringLiteral("jump")};
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("j")), QStringLiteral("jump"));
 }
 
 } // namespace tests
