@@ -196,7 +196,7 @@ bool ConfigCoreService::setRecoverLastSessionEnabled(bool p_enabled) {
 
 int ConfigCoreService::getAutoSyncDebounceSeconds() const {
   QJsonObject config = getConfig();
-  int value = config.value(QStringLiteral("autoSyncDebounceSeconds")).toInt(60);
+  int value = config.value(QStringLiteral("autoSyncDebounceSeconds")).toInt(120);
   // Clamp to valid range
   if (value < c_minAutoSyncDebounceSeconds) {
     value = c_minAutoSyncDebounceSeconds;
