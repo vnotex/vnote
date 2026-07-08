@@ -47,6 +47,12 @@ private:
 
   void handleFocusChanged(QWidget *p_old, QWidget *p_now);
 
+  void handleAppStateChanged(Qt::ApplicationState p_state);
+
+  void scheduleRestorePopup();
+
+  void restorePopupVisibility();
+
   const QSharedPointer<QTreeWidget> &getEntryListWidget();
 
   QSharedPointer<QLabel> getInfoWidget(const QString &p_info);
@@ -92,6 +98,13 @@ private:
   bool m_activated = false;
 
   bool m_deactivatePending = false;
+
+  bool m_restorePending = false;
+
+  // Set only when the app is deactivated while activated (the OS natively hides
+  // the Qt::Tool popup). Gates the re-map restore so repeated clicks while the
+  // app stays active do not needlessly hide/show the already-visible popup.
+  bool m_popupNeedsRestore = false;
 
   QWidget *m_previousFocusWidget = nullptr;
 

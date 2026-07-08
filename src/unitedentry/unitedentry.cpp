@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include <QCursor>
 #include <QEvent>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
@@ -48,6 +49,9 @@ UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QWid
   setupUI();
 
   connect(qApp, &QApplication::focusChanged, this, &UnitedEntry::handleFocusChanged);
+
+  connect(qApp, &QGuiApplication::applicationStateChanged, this,
+          &UnitedEntry::handleAppStateChanged);
 
   connect(m_mgr, &UnitedEntryMgr::entryFinished, this, &UnitedEntry::handleEntryFinished);
   connect(m_mgr, &UnitedEntryMgr::entryItemActivated, this, &UnitedEntry::handleEntryItemActivated);
@@ -180,6 +184,7 @@ void UnitedEntry::deactivate() {
 
   m_activated = false;
   m_previousFocusWidget = nullptr;
+  m_popupNeedsRestore = false;
 
   m_popup->hide();
   m_comboBox->lineEdit()->clearFocus();
@@ -495,6 +500,11 @@ bool UnitedEntry::eventFilter(QObject *p_watched, QEvent *p_event) {
       if (handleLineEditKeyPress(eve)) {
         return true;
       }
+    } else if (p_event->type() == QEvent::MouseButtonPress) {
+      // Returning by clicking the input keeps focus unchanged, so focusChanged
+      // never fires; re-show the popup if we are still activated. Do NOT consume
+      // the event, or the click won't position the text cursor.
+      scheduleRestorePopup();
     }
   }
 
@@ -569,6 +579,70 @@ void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
       }
       deactivate();
     });
+  }
+}
+
+void UnitedEntry::handleAppStateChanged(Qt::ApplicationState p_state) {
+  if (p_state != Qt::ApplicationActive) {
+    // The app is deactivating; Windows hides the parentless Qt::Tool popup at
+    // the native level. Remember to re-map it when we become active again.
+    if (m_activated) {
+      m_popupNeedsRestore = true;
+    }
+    return;
+  }
+  if (!m_activated) {
+    return;
+  }
+  scheduleRestorePopup();
+}
+
+void UnitedEntry::scheduleRestorePopup() {
+  if (!m_activated || !m_popupNeedsRestore || m_restorePending) {
+    return;
+  }
+  m_restorePending = true;
+  // Defer so focus restoration / the activating click settle first.
+  QTimer::singleShot(0, this, [this]() {
+    m_restorePending = false;
+    restorePopupVisibility();
+  });
+}
+
+void UnitedEntry::restorePopupVisibility() {
+  if (!m_activated) {
+    return;
+  }
+
+  // Only restore while the input still holds focus; otherwise the normal
+  // deactivate flow in handleFocusChanged should win. Return without clearing
+  // m_popupNeedsRestore so a later trigger can retry once focus settles.
+  auto *fw = QApplication::focusWidget();
+  if (fw != m_comboBox && fw != m_comboBox->lineEdit()) {
+    return;
+  }
+
+  // Suppress when the native combo dropdown is showing history items.
+  if (m_comboBox->view()->isVisible() && m_comboBox->count() > 0) {
+    return;
+  }
+
+  m_popupNeedsRestore = false;
+
+  if (m_popup->hasWidget()) {
+    // Re-show existing content WITHOUT reprocessing, so an ongoing async entry
+    // (e.g. find) is not cancelled. Force a native re-map: Windows hides
+    // Qt::Tool windows at the native level without clearing the widget's
+    // visible state, so a plain show() can be a no-op.
+    updatePopupGeometry();
+    m_popup->hide();
+    m_popup->show();
+    m_popup->raise();
+  } else {
+    // No content yet (native dropdown suppressed the initial processInput); no
+    // entry can be ongoing here, so building content is safe.
+    m_processTimer->stop();
+    processInput();
   }
 }
 

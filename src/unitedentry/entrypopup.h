@@ -15,6 +15,8 @@ public:
 
   void setWidget(const QSharedPointer<QWidget> &p_widget);
 
+  bool hasWidget() const { return !m_widget.isNull(); }
+
 private:
   void takeWidget(QWidget *p_widget);
 
