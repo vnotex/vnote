@@ -65,6 +65,7 @@ void SettingsPage::pageIsChangedWithRestartNeeded() {}
 #include <widgets/dialogs/settings/vipage.h>
 #include <widgets/dialogs/settings/texteditorpage.h>
 #include <widgets/dialogs/settings/markdowneditorpage.h>
+#include <widgets/dialogs/settings/syncpage.h>
 #include <widgets/dialogs/settings/fileassociationpage.h>
 
 namespace vnotex {
@@ -151,6 +152,14 @@ QString MarkdownEditorPage::title() const { return QStringLiteral("Markdown Edit
 QString MarkdownEditorPage::slug() const { return QStringLiteral("markdowneditor"); }
 void MarkdownEditorPage::loadInternal() {}
 bool MarkdownEditorPage::saveInternal() { return true; }
+
+// --- SyncPage ---
+SyncPage::SyncPage(ServiceLocator &p_services, QWidget *p_parent)
+    : SettingsPage(p_services, p_parent) {}
+QString SyncPage::title() const { return QStringLiteral("Sync"); }
+QString SyncPage::slug() const { return QStringLiteral("sync"); }
+void SyncPage::loadInternal() {}
+bool SyncPage::saveInternal() { return true; }
 
 // --- FileAssociationPage ---
 FileAssociationPage::FileAssociationPage(ServiceLocator &p_services, QWidget *p_parent)
@@ -250,6 +259,10 @@ void TestSettingsSlug::initTestCase() {
     m_allSlugs << p.slug();
   }
   {
+    SyncPage p(m_services);
+    m_allSlugs << p.slug();
+  }
+  {
     FileAssociationPage p(m_services);
     m_allSlugs << p.slug();
   }
@@ -275,7 +288,8 @@ void TestSettingsSlug::testPageSlug_data() {
   QTest::newRow("vi") << 7 << "vi";
   QTest::newRow("texteditor") << 8 << "texteditor";
   QTest::newRow("markdowneditor") << 9 << "markdowneditor";
-  QTest::newRow("fileassociation") << 10 << "fileassociation";
+  QTest::newRow("sync") << 10 << "sync";
+  QTest::newRow("fileassociation") << 11 << "fileassociation";
 }
 
 void TestSettingsSlug::testPageSlug() {
@@ -290,8 +304,8 @@ void TestSettingsSlug::testPageSlug() {
 void TestSettingsSlug::testSlugsAreUnique() {
   QVERIFY(m_slugsCollected);
   QSet<QString> slugSet(m_allSlugs.begin(), m_allSlugs.end());
-  QCOMPARE(slugSet.size(), 11);
-  QCOMPARE(m_allSlugs.size(), 11);
+  QCOMPARE(slugSet.size(), 12);
+  QCOMPARE(m_allSlugs.size(), 12);
 }
 
 void TestSettingsSlug::testSlugFormat_data() {

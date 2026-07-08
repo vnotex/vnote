@@ -5,7 +5,6 @@
 
 class QComboBox;
 class QCheckBox;
-class QSpinBox;
 
 namespace vnotex {
 class GeneralPage : public SettingsPage {
@@ -34,8 +33,6 @@ private:
   QCheckBox *m_recoverLastSessionCheckBox = nullptr;
 
   QCheckBox *m_checkForUpdatesCheckBox = nullptr;
-
-  QSpinBox *m_autoSyncDebounceSpinBox = nullptr;
 };
 } // namespace vnotex
 

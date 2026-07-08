@@ -32,6 +32,7 @@
 #include "dialogs/settings/markdowneditorpage.h"
 #include "dialogs/settings/notemanagementpage.h"
 #include "dialogs/settings/quickaccesspage.h"
+#include "dialogs/settings/syncpage.h"
 #include "dialogs/settings/texteditorpage.h"
 #include "dialogs/settings/themepage.h"
 #include "dialogs/settings/vipage.h"
@@ -262,6 +263,11 @@ void SettingsWidget::setupPages() {
       auto *subPage = new MarkdownEditorPage(m_services, this);
       addSubPage(subPage, item);
     }
+  }
+
+  {
+    auto *page = new SyncPage(m_services, this);
+    addPage(page);
   }
 
   {

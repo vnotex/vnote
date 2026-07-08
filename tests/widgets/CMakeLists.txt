@@ -163,6 +163,7 @@ add_qt_test(test_settings_slug
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/vipage.h
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/texteditorpage.h
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/markdowneditorpage.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/syncpage.h
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/fileassociationpage.h
   LINKS
     core_services

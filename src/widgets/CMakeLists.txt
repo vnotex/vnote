@@ -59,6 +59,7 @@ target_sources(vnote PRIVATE
     dialogs/settings/quickaccesspage.cpp dialogs/settings/quickaccesspage.h
     dialogs/settings/settingspage.cpp dialogs/settings/settingspage.h
     dialogs/settings/settingspagehelper.cpp dialogs/settings/settingspagehelper.h
+    dialogs/settings/syncpage.cpp dialogs/settings/syncpage.h
     dialogs/settings/texteditorpage.cpp dialogs/settings/texteditorpage.h
     dialogs/settings/themepage.cpp dialogs/settings/themepage.h
     dialogs/settings/vipage.cpp dialogs/settings/vipage.h
