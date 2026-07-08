@@ -65,6 +65,14 @@ signals:
   void searchBatch(int p_token, const SearchResult &p_result);
 
 private:
+  // Lazily start the worker QThread on first search. Deferred out of the
+  // constructor because SearchService is constructed in main() BEFORE the
+  // QApplication exists; starting the QThread there would run QThread::exec()
+  // -> QEventLoop with no QCoreApplication, emitting
+  // "QEventLoop: Cannot be used without QCoreApplication". Called on the GUI
+  // thread from the search entry points only, so it needs no locking.
+  void ensureWorkerThreadStarted();
+
   SearchCoreService *m_coreService = nullptr;
   SearchWorker *m_worker = nullptr;
   QThread *m_thread = nullptr;

@@ -287,8 +287,13 @@ SearchService::SearchService(SearchCoreService *p_coreService, QObject *p_parent
   qRegisterMetaType<Error>();
   qRegisterMetaType<std::atomic<int> *>("std::atomic<int>*");
 
-  m_worker = new SearchWorker(m_coreService, m_mutex);
-  m_worker->moveToThread(m_thread);
+  // Parent the worker to this service. If no search runs this session the
+  // worker QThread never starts, so the finished->deleteLater below never
+  // fires; QObject child deletion then reclaims the worker. On the first
+  // search, ensureWorkerThreadStarted() unparents it and moves it onto
+  // m_thread (deferred out of this constructor because it runs before
+  // QApplication exists), after which finished->deleteLater owns it.
+  m_worker = new SearchWorker(m_coreService, m_mutex, this);
 
   connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
 
@@ -317,8 +322,12 @@ SearchService::SearchService(SearchCoreService *p_coreService, QObject *p_parent
     emit searchCancelled(p_token);
   });
 
-  m_thread->start();
-
+  // NOTE: m_thread is started lazily on the first search (see
+  // ensureWorkerThreadStarted()), NOT here. This constructor runs in main()
+  // BEFORE the QApplication is created, so starting the QThread now would run
+  // QThread::exec() -> QEventLoop while QCoreApplication::instance() is still
+  // null, emitting "QEventLoop: Cannot be used without QCoreApplication". The
+  // std::thread drain pool below runs no event loop, so it stays here.
   unsigned n = std::thread::hardware_concurrency();
   if (n == 0) {
     n = 2;
@@ -353,6 +362,18 @@ SearchService::~SearchService() {
   m_mutex = nullptr;
 }
 
+void SearchService::ensureWorkerThreadStarted() {
+  // Idempotent and GUI-thread-only, so no lock is needed. Unparent before
+  // moveToThread (Qt forbids moving a parented object across threads); after
+  // this the finished->deleteLater connection owns the worker.
+  if (m_thread->isRunning()) {
+    return;
+  }
+  m_worker->setParent(nullptr);
+  m_worker->moveToThread(m_thread);
+  m_thread->start();
+}
+
 int SearchService::searchFiles(const QString &p_notebookId, const QString &p_queryJson,
                                const QString &p_inputFilesJson) {
   qDebug() << "SearchService::searchFiles: notebookId:" << p_notebookId;
@@ -363,6 +384,7 @@ int SearchService::searchFiles(const QString &p_notebookId, const QString &p_que
   m_activeTokens.insert(token);
   emit searchStarted(token);
 
+  ensureWorkerThreadStarted();
   const bool invoked = QMetaObject::invokeMethod(
       m_worker, "doSearchFiles", Qt::QueuedConnection, Q_ARG(int, token),
       Q_ARG(QString, p_notebookId), Q_ARG(QString, p_queryJson), Q_ARG(QString, p_inputFilesJson),
@@ -386,6 +408,7 @@ int SearchService::searchContent(const QString &p_notebookId, const QString &p_q
   m_activeTokens.insert(token);
   emit searchStarted(token);
 
+  ensureWorkerThreadStarted();
   const bool invoked = QMetaObject::invokeMethod(
       m_worker, "doSearchContent", Qt::QueuedConnection, Q_ARG(int, token),
       Q_ARG(QString, p_notebookId), Q_ARG(QString, p_queryJson), Q_ARG(QString, p_inputFilesJson),
@@ -409,6 +432,7 @@ int SearchService::searchByTags(const QString &p_notebookId, const QString &p_qu
   m_activeTokens.insert(token);
   emit searchStarted(token);
 
+  ensureWorkerThreadStarted();
   const bool invoked = QMetaObject::invokeMethod(
       m_worker, "doSearchByTags", Qt::QueuedConnection, Q_ARG(int, token),
       Q_ARG(QString, p_notebookId), Q_ARG(QString, p_queryJson), Q_ARG(QString, p_inputFilesJson),

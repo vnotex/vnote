@@ -119,6 +119,14 @@ private slots:
   void onRemoveCompleted(int p_token, const ImageHostAsyncResult &p_result);
 
 private:
+  // Lazily start the worker QThread on the first async operation. Deferred out
+  // of the constructor because ImageHostService is constructed in main() BEFORE
+  // the QApplication exists; starting the QThread there would run
+  // QThread::exec() -> QEventLoop with no QCoreApplication, emitting
+  // "QEventLoop: Cannot be used without QCoreApplication". Called on the GUI
+  // thread from the *Async entry points only, so it needs no locking.
+  void ensureWorkerThreadStarted();
+
   HookManager *m_hookMgr = nullptr;
 
   QVector<IImageHostProvider *> m_providers;

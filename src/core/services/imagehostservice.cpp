@@ -25,8 +25,13 @@ ImageHostService::ImageHostService(HookManager *p_hookMgr, QObject *p_parent)
   qRegisterMetaType<ImageHostAsyncResult>();
 
   m_thread = new QThread(this);
-  m_worker = new ImageHostWorker();
-  m_worker->moveToThread(m_thread);
+  // Parent the worker to this service. If no async op runs this session the
+  // worker QThread never starts, so the finished->deleteLater below never
+  // fires; QObject child deletion then reclaims the worker. On the first async
+  // op, ensureWorkerThreadStarted() unparents it and moves it onto m_thread
+  // (deferred out of this constructor because it runs before QApplication
+  // exists), after which finished->deleteLater owns it.
+  m_worker = new ImageHostWorker(nullptr, this);
 
   connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
 
@@ -45,6 +50,22 @@ ImageHostService::ImageHostService(HookManager *p_hookMgr, QObject *p_parent)
             emit uploadFinished(p_token, result);
           });
 
+  // NOTE: m_thread is started lazily on the first async op (see
+  // ensureWorkerThreadStarted()), NOT here. This constructor runs in main()
+  // BEFORE the QApplication is created, so starting the QThread now would run
+  // QThread::exec() -> QEventLoop while QCoreApplication::instance() is still
+  // null, emitting "QEventLoop: Cannot be used without QCoreApplication".
+}
+
+void ImageHostService::ensureWorkerThreadStarted() {
+  // Idempotent and GUI-thread-only, so no lock is needed. Unparent before
+  // moveToThread (Qt forbids moving a parented object across threads); after
+  // this the finished->deleteLater connection owns the worker.
+  if (m_thread->isRunning()) {
+    return;
+  }
+  m_worker->setParent(nullptr);
+  m_worker->moveToThread(m_thread);
   m_thread->start();
 }
 
@@ -263,6 +284,7 @@ int ImageHostService::uploadAsync(IImageHostProvider *p_provider, const QByteArr
   item.path = p_path;
   item.providerName = p_provider->getName();
 
+  ensureWorkerThreadStarted();
   QMetaObject::invokeMethod(m_worker, "doUpload", Qt::QueuedConnection,
                             Q_ARG(ImageHostWorkItem, item));
   return item.token;
@@ -292,6 +314,7 @@ int ImageHostService::removeAsync(IImageHostProvider *p_provider, const QString 
   item.path = p_url;
   item.providerName = p_provider->getName();
 
+  ensureWorkerThreadStarted();
   QMetaObject::invokeMethod(m_worker, "doRemove", Qt::QueuedConnection,
                             Q_ARG(ImageHostWorkItem, item));
   return item.token;
@@ -304,6 +327,7 @@ int ImageHostService::testConfigAsync(const QString &p_typeId, const QJsonObject
   item.typeId = p_typeId;
   item.config = p_config;
 
+  ensureWorkerThreadStarted();
   QMetaObject::invokeMethod(m_worker, "doTestConfig", Qt::QueuedConnection,
                             Q_ARG(ImageHostWorkItem, item));
   return item.token;
