@@ -4534,7 +4534,7 @@ Backup file last modified time: %2</source>
     <message>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="541"/>
         <source>A pleasant note-taking platform, focusing on native experience, open source since 2016.</source>
-        <translation>一个令人愉悦的笔记平台，专注于原生体验，自 2016 年起开源。</translation>
+        <translation>一个令人愉悦的笔记平台，专注于原生体验，开发并开源于2016。</translation>
     </message>
     <message>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="547"/>
