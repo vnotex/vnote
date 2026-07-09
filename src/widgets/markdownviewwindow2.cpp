@@ -186,6 +186,11 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
       connect(m_imageHostController, &ImageHostController::providerChanged, this,
               &MarkdownViewWindow2::updateImageHostMenu);
     }
+
+    // Image host button is only relevant while editing.
+    act->setVisible(m_mode == ViewWindowMode::Edit);
+    connect(this, &ViewWindow2::modeChanged, this,
+            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
   }
 
   // Outline popup button (right corner, first): wire it to this window's outline provider.
