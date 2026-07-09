@@ -143,7 +143,6 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdow
 
   // Wrap the text editor config in a markdown editor config.
   auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
-  editorConfig->overrideTextFontFamily(p_mdConfig.getEditorOverriddenFontFamily());
 
   editorConfig->m_constrainInplacePreviewWidthEnabled =
       p_mdConfig.getConstrainInplacePreviewWidthEnabled();
@@ -278,7 +277,6 @@ MarkdownEditorController::buildMarkdownEditorConfigFromContent(
 
   // Wrap the text editor config in a markdown editor config.
   auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
-  editorConfig->overrideTextFontFamily(p_mdConfig.getEditorOverriddenFontFamily());
 
   editorConfig->m_constrainInplacePreviewWidthEnabled =
       p_mdConfig.getConstrainInplacePreviewWidthEnabled();

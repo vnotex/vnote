@@ -852,7 +852,6 @@ MarkdownViewWindow::createMarkdownEditorConfig(const EditorConfig &p_editorConfi
       themeMgr.getMarkdownEditorHighlightTheme(), p_editorConfig.getLineEndingPolicy());
 
   auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
-  editorConfig->overrideTextFontFamily(p_config.getEditorOverriddenFontFamily());
 
   editorConfig->m_constrainInplacePreviewWidthEnabled =
       p_config.getConstrainInplacePreviewWidthEnabled();

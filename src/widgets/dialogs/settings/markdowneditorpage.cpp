@@ -4,8 +4,6 @@
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFileInfo>
-#include <QFont>
-#include <QFontComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -119,16 +117,6 @@ void MarkdownEditorPage::loadInternal() {
 
   m_mathJaxScriptLineEdit->setText(markdownConfig.getMathJaxScript());
 
-  {
-    const auto &fontFamily = markdownConfig.getEditorOverriddenFontFamily();
-    m_editorOverriddenFontFamilyCheckBox->setChecked(!fontFamily.isEmpty());
-    if (!fontFamily.isEmpty()) {
-      QFont font;
-      font.setFamily(fontFamily);
-      m_editorOverriddenFontFamilyComboBox->setCurrentFont(font);
-    }
-  }
-
   m_richPasteByDefaultCheckBox->setChecked(markdownConfig.getRichPasteByDefaultEnabled());
 }
 
@@ -204,12 +192,6 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setGraphvizExe(m_graphvizFileInput->text());
 
   markdownConfig.setMathJaxScript(m_mathJaxScriptLineEdit->text());
-
-  {
-    bool checked = m_editorOverriddenFontFamilyCheckBox->isChecked();
-    markdownConfig.setEditorOverriddenFontFamily(
-        checked ? m_editorOverriddenFontFamilyComboBox->currentFont().family() : QString());
-  }
 
   markdownConfig.setRichPasteByDefaultEnabled(m_richPasteByDefaultCheckBox->isChecked());
 
@@ -420,42 +402,6 @@ void MarkdownEditorPage::setupEditGroup() {
     addSearchItem(label, m_spellCheckCheckBox->toolTip(), m_spellCheckCheckBox);
     connect(m_spellCheckCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
-  }
-
-  {
-    auto *fontWidget = new QWidget(this);
-    fontWidget->setStyleSheet("background-color: transparent;");
-    auto *fontLayout = new QHBoxLayout(fontWidget);
-    fontLayout->setContentsMargins(0, 0, 0, 0);
-
-    const QString label(tr("Override font"));
-    m_editorOverriddenFontFamilyCheckBox = WidgetsFactory::createCheckBox(label, this);
-    m_editorOverriddenFontFamilyCheckBox->setToolTip(tr("Override editor font family of theme"));
-    fontLayout->addWidget(m_editorOverriddenFontFamilyCheckBox);
-    addSearchItem(label, m_editorOverriddenFontFamilyCheckBox->toolTip(),
-                  m_editorOverriddenFontFamilyCheckBox);
-
-    m_editorOverriddenFontFamilyComboBox = new QFontComboBox(this);
-    m_editorOverriddenFontFamilyComboBox->setEnabled(false);
-    fontLayout->addWidget(m_editorOverriddenFontFamilyComboBox, 1);
-    connect(m_editorOverriddenFontFamilyComboBox,
-            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &MarkdownEditorPage::pageIsChanged);
-
-    connect(m_editorOverriddenFontFamilyCheckBox, &QCheckBox::stateChanged, this,
-            [this](int state) {
-              m_editorOverriddenFontFamilyComboBox->setEnabled(state == Qt::Checked);
-              emit pageIsChanged();
-            });
-
-    auto *fontRow = new QWidget(this);
-    fontRow->setProperty(PropertyDefs::c_settingsRow, true);
-    auto *fontRowLayout = new QVBoxLayout(fontRow);
-    fontRowLayout->setContentsMargins(16, 6, 16, 6);
-    fontRowLayout->addWidget(fontWidget);
-
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(fontRow);
   }
 
   {

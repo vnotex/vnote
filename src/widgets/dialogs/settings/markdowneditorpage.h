@@ -7,7 +7,6 @@ class QCheckBox;
 class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
-class QFontComboBox;
 class QLineEdit;
 
 namespace vnotex {
@@ -85,10 +84,6 @@ private:
   LocationInputWithBrowseButton *m_graphvizFileInput = nullptr;
 
   QLineEdit *m_mathJaxScriptLineEdit = nullptr;
-
-  QCheckBox *m_editorOverriddenFontFamilyCheckBox = nullptr;
-
-  QFontComboBox *m_editorOverriddenFontFamilyComboBox = nullptr;
 
   QCheckBox *m_richPasteByDefaultCheckBox = nullptr;
 };

@@ -64,8 +64,6 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 
-  m_editorOverriddenFontFamily = READSTR(QStringLiteral("editorOverriddenFontFamily"));
-
   {
     m_inplacePreviewSources = InplacePreviewSource::NoInplacePreview;
     auto srcs = READSTR(QStringLiteral("inplacePreviewSources")).split(QLatin1Char(';'));
@@ -112,7 +110,6 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
   obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
-  obj[QStringLiteral("editorOverriddenFontFamily")] = m_editorOverriddenFontFamily;
 
   {
     QStringList srcs;
@@ -394,14 +391,6 @@ bool MarkdownEditorConfig::isSpellCheckEnabled() const { return m_spellCheckEnab
 
 void MarkdownEditorConfig::setSpellCheckEnabled(bool p_enabled) {
   updateConfig(m_spellCheckEnabled, p_enabled, this);
-}
-
-const QString &MarkdownEditorConfig::getEditorOverriddenFontFamily() const {
-  return m_editorOverriddenFontFamily;
-}
-
-void MarkdownEditorConfig::setEditorOverriddenFontFamily(const QString &p_family) {
-  updateConfig(m_editorOverriddenFontFamily, p_family, this);
 }
 
 MarkdownEditorConfig::InplacePreviewSources MarkdownEditorConfig::getInplacePreviewSources() const {

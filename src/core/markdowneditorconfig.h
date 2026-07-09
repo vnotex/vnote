@@ -119,9 +119,6 @@ public:
   bool isSpellCheckEnabled() const;
   void setSpellCheckEnabled(bool p_enabled);
 
-  const QString &getEditorOverriddenFontFamily() const;
-  void setEditorOverriddenFontFamily(const QString &p_family);
-
   InplacePreviewSources getInplacePreviewSources() const;
   void setInplacePreviewSources(InplacePreviewSources p_src);
 
@@ -239,9 +236,6 @@ private:
 
   // Override the config in TextEditorConfig.
   bool m_spellCheckEnabled = false;
-
-  // Font family to override the editor's theme.
-  QString m_editorOverriddenFontFamily;
 
   InplacePreviewSources m_inplacePreviewSources = InplacePreviewSources(InplacePreviewSource::ImageLink | InplacePreviewSource::CodeBlock | InplacePreviewSource::Math);
 
