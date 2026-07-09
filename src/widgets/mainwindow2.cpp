@@ -155,6 +155,12 @@ void MainWindow2::setupUI() {
   connect(m_notebookExplorer, &NotebookExplorer2::currentExploredFolderChanged,
           m_toolBarHelper->unitedEntryMgr(), &UnitedEntryMgr::setCurrentFolderId);
 
+  // Inject the view window navigator (ViewAreaController) into UnitedEntryMgr so
+  // the "windows" united entry can enumerate and focus open view windows.
+  if (m_toolBarHelper->unitedEntryMgr() && m_viewArea && m_viewArea->getController()) {
+    m_toolBarHelper->unitedEntryMgr()->setViewWindowNavigator(m_viewArea->getController());
+  }
+
   // Read-only affordance: disable the File-toolbar mutation actions when the
   // current notebook is read-only (Export stays enabled). Loose coupling — the
   // explorer only emits; MainWindow2 drives the toolbar helper.

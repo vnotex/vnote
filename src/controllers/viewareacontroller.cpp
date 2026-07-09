@@ -784,6 +784,114 @@ ID ViewAreaController::getCurrentWindowId() const { return m_currentWindowId; }
 
 QString ViewAreaController::getCurrentWorkspaceId() const { return m_currentWorkspaceId; }
 
+QVector<OpenWindowEntry> ViewAreaController::listOpenWindows() const {
+  QVector<OpenWindowEntry> entries;
+
+  for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+    auto *wrapper = it.value();
+    if (!wrapper) {
+      continue;
+    }
+
+    const QString workspaceId = wrapper->workspaceId();
+    const bool visible = wrapper->isVisible();
+    const QString workspaceName = getWorkspaceName(workspaceId);
+
+    QVector<OpenWindowEntry> wsEntries;
+
+    if (visible) {
+      // Visible workspace: windows live in the split. Resolve display info
+      // (name/icon) via the view layer.
+      if (m_view) {
+        const auto infos = m_view->getViewWindowNavInfos(workspaceId);
+        for (const auto &info : infos) {
+          OpenWindowEntry entry;
+          entry.workspaceId = workspaceId;
+          entry.workspaceName = workspaceName;
+          entry.workspaceVisible = true;
+          entry.windowId = info.windowId;
+          entry.bufferId = info.bufferId;
+          entry.windowName = info.name;
+          entry.windowTitle = info.title;
+          entry.windowIcon = info.icon;
+          entry.windowCurrent = (info.windowId == m_currentWindowId);
+          wsEntries.append(entry);
+        }
+      }
+    } else {
+      // Hidden workspace: windows are cached in the wrapper as QObject*.
+      const auto &windows = wrapper->viewWindows();
+      for (auto *obj : windows) {
+        auto *win = qobject_cast<ViewWindow2 *>(obj);
+        if (!win) {
+          continue;
+        }
+        OpenWindowEntry entry;
+        entry.workspaceId = workspaceId;
+        entry.workspaceName = workspaceName;
+        entry.workspaceVisible = false;
+        entry.windowId = win->getViewWindowId();
+        entry.bufferId = win->getBuffer().id();
+        entry.windowName = win->getName();
+        entry.windowTitle = win->getTitle();
+        entry.windowIcon = win->getIcon();
+        entry.windowCurrent = (entry.windowId == m_currentWindowId);
+        wsEntries.append(entry);
+      }
+    }
+
+    // Skip workspaces that end up with zero windows.
+    if (!wsEntries.isEmpty()) {
+      entries.append(wsEntries);
+    }
+  }
+
+  return entries;
+}
+
+void ViewAreaController::focusWindow(const QString &p_workspaceId, const QString &p_bufferId) {
+  if (p_workspaceId.isEmpty() || !m_view) {
+    return;
+  }
+
+  // Validate the workspace is known this session.
+  if (!m_workspaces.contains(p_workspaceId)) {
+    qWarning() << "ViewAreaController::focusWindow: unknown workspace" << p_workspaceId;
+    return;
+  }
+
+  const QStringList visibleIds = m_view->getVisibleWorkspaceIds();
+
+  if (visibleIds.contains(p_workspaceId)) {
+    // Target visible: focus its split, then activate the buffer's tab.
+    setCurrentViewSplit(p_workspaceId, true);
+    if (!p_bufferId.isEmpty()) {
+      m_view->setCurrentBuffer(p_workspaceId, p_bufferId, true);
+    }
+    return;
+  }
+
+  // Target hidden: surface it by switching a visible split to it.
+  if (visibleIds.isEmpty()) {
+    // No visible split to switch from. switchWorkspace cannot create the first
+    // split, so this is an intentional no-op (the entry is only reachable from
+    // a running main window that always has >=1 split).
+    qWarning() << "ViewAreaController::focusWindow: no visible workspace to surface"
+               << p_workspaceId;
+    return;
+  }
+
+  QString sourceWs = (!m_currentWorkspaceId.isEmpty() && visibleIds.contains(m_currentWorkspaceId))
+                         ? m_currentWorkspaceId
+                         : visibleIds.first();
+
+  switchWorkspace(sourceWs, p_workspaceId);
+
+  if (!p_bufferId.isEmpty()) {
+    m_view->setCurrentBuffer(p_workspaceId, p_bufferId, true);
+  }
+}
+
 void ViewAreaController::setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) {
   if (m_currentWorkspaceId == p_workspaceId && !p_workspaceId.isEmpty()) {
     if (p_focus && m_view) {

@@ -4,6 +4,7 @@
 #include "helpunitedentry.h"
 #include "historyunitedentry.h"
 #include "unitedentryalias.h"
+#include "windowsunitedentry.h"
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -26,6 +27,8 @@ void UnitedEntryMgr::init() {
   addEntry(QSharedPointer<HelpUnitedEntry>::create(m_services, this));
 
   addEntry(QSharedPointer<HistoryUnitedEntry>::create(m_services, this));
+
+  addEntry(QSharedPointer<WindowsUnitedEntry>::create(m_services, this));
 
   // Alias from config.
   const auto &config = m_services.get<ConfigMgr2>()->getCoreConfig();
@@ -103,3 +106,9 @@ void UnitedEntryMgr::setCurrentFolderId(const NodeIdentifier &p_folderId) {
 const QString &UnitedEntryMgr::currentNotebookId() const { return m_currentNotebookId; }
 
 const NodeIdentifier &UnitedEntryMgr::currentFolderId() const { return m_currentFolderId; }
+
+void UnitedEntryMgr::setViewWindowNavigator(IViewWindowNavigator *p_navigator) {
+  m_windowNavigator = p_navigator;
+}
+
+IViewWindowNavigator *UnitedEntryMgr::viewWindowNavigator() const { return m_windowNavigator; }

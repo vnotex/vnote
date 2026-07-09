@@ -5,8 +5,10 @@ target_sources(vnote PRIVATE
     helpunitedentry.cpp helpunitedentry.h
     historyunitedentry.cpp historyunitedentry.h
     iunitedentry.cpp iunitedentry.h
+    iviewwindownavigator.h
     unitedentry.cpp unitedentry.h
     unitedentryalias.cpp unitedentryalias.h
     unitedentryhelper.cpp unitedentryhelper.h
     unitedentrymgr.cpp unitedentrymgr.h
+    windowsunitedentry.cpp windowsunitedentry.h
 )

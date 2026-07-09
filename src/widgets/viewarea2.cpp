@@ -1289,6 +1289,29 @@ QString ViewArea2::getCurrentBufferIdForWorkspace(const QString &p_workspaceId) 
   return win->getBuffer().id();
 }
 
+QVector<ViewWindowNavInfo> ViewArea2::getViewWindowNavInfos(const QString &p_workspaceId) const {
+  QVector<ViewWindowNavInfo> infos;
+  auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) {
+    return infos;
+  }
+
+  const auto windows = split->getAllViewWindows();
+  for (auto *win : windows) {
+    if (!win) {
+      continue;
+    }
+    ViewWindowNavInfo info;
+    info.windowId = win->getViewWindowId();
+    info.bufferId = win->getBuffer().id();
+    info.name = win->getName();
+    info.title = win->getTitle();
+    info.icon = win->getIcon();
+    infos.append(info);
+  }
+  return infos;
+}
+
 void ViewArea2::onNodeRenamed(const NodeIdentifier &p_oldNodeId,
                               const NodeIdentifier &p_newNodeId) {
   for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {

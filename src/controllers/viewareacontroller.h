@@ -16,6 +16,7 @@
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
 #include <core/nodeidentifier.h>
+#include <unitedentry/iviewwindownavigator.h>
 
 class QTimer;
 
@@ -50,7 +51,7 @@ class WorkspaceWrapper;
 //   User action  ->  ViewArea2  ->  ViewAreaController method (carries IDs, not pointers)
 //   Controller decision  ->  m_view->method() (carries IDs)  ->  ViewArea2 (resolves to pointer,
 //   updates GUI)
-class ViewAreaController : public QObject {
+class ViewAreaController : public QObject, public IViewWindowNavigator {
   Q_OBJECT
 
 public:
@@ -185,6 +186,16 @@ public:
 
   // Get the ID of the current active workspace (empty if none).
   QString getCurrentWorkspaceId() const;
+
+  // ============ IViewWindowNavigator ============
+
+  // Enumerate open windows grouped by workspace (known this session), in
+  // workspace insertion order; only workspaces with >=1 window are returned.
+  QVector<OpenWindowEntry> listOpenWindows() const override;
+
+  // Focus a specific window by workspace + buffer id, surfacing a hidden
+  // workspace first if needed. No-op when the target cannot be resolved.
+  void focusWindow(const QString &p_workspaceId, const QString &p_bufferId) override;
 
   // Called by the view when a split gains focus (workspace ID of that split).
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus);

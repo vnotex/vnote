@@ -9,19 +9,23 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <unitedentry/entrywidgetfactory.h>
+#include <unitedentry/findunitedentry.h>
 #include <unitedentry/helpunitedentry.h>
 #include <unitedentry/historyunitedentry.h>
 #include <unitedentry/unitedentryalias.h>
 #include <unitedentry/unitedentryhelper.h>
-#include <unitedentry/windowsunitedentry.h>
 #include <utils/utils.h>
 #include <widgets/treewidget.h>
 
 using namespace vnotex;
 
+// Use the real (lightweight) EntryWidgetFactory backed by plain Qt widgets so
+// the "windows" entry can build an actual QTreeWidget / QLabel under a
+// QApplication without pulling in the enhanced TreeWidget dependencies.
 QSharedPointer<QTreeWidget> EntryWidgetFactory::createTreeWidget(int p_columnCount) {
   auto tree = QSharedPointer<QTreeWidget>::create();
   tree->setColumnCount(p_columnCount);
+  tree->setHeaderHidden(true);
   return tree;
 }
 
@@ -29,6 +33,24 @@ QSharedPointer<QLabel> EntryWidgetFactory::createLabel(const QString &p_info) {
   return QSharedPointer<QLabel>::create(p_info);
 }
 
+// --- FindUnitedEntry stub (referenced by UnitedEntryMgr::init) ---
+FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                                 QObject *p_parent)
+    : IUnitedEntry(QStringLiteral("find"), QString(), p_mgr, p_parent), m_services(p_services),
+      m_helper(nullptr) {}
+
+void FindUnitedEntry::stop() { IUnitedEntry::stop(); }
+
+QSharedPointer<QWidget> FindUnitedEntry::currentPopupWidget() const { return {}; }
+
+void FindUnitedEntry::initOnFirstProcess() {}
+
+void FindUnitedEntry::processInternal(
+    const QString &, const std::function<void(const QSharedPointer<QWidget> &)> &) {
+  emit finished();
+}
+
+// --- HelpUnitedEntry stub ---
 HelpUnitedEntry::HelpUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
                                  QObject *p_parent)
     : IUnitedEntry(QStringLiteral("help"), QString(), p_mgr, p_parent), m_services(p_services) {}
@@ -42,6 +64,7 @@ void HelpUnitedEntry::processInternal(
   emit finished();
 }
 
+// --- UnitedEntryAlias stub ---
 UnitedEntryAlias::UnitedEntryAlias(const QString &p_name, const QString &p_description,
                                    const QString &p_value, UnitedEntryMgr *p_mgr, QObject *p_parent)
     : IUnitedEntry(p_name, p_description, p_mgr, p_parent), m_value(p_value) {
@@ -72,6 +95,7 @@ QSharedPointer<QWidget> UnitedEntryAlias::currentPopupWidget() const { return {}
 
 bool UnitedEntryAlias::isAliasOf(const IUnitedEntry *) const { return false; }
 
+// --- UnitedEntryHelper / ThemeService / IconUtils stubs ---
 UnitedEntryHelper::UnitedEntryHelper(ThemeService *) {}
 
 UnitedEntryHelper::UserEntry UnitedEntryHelper::parseUserEntry(const QString &) { return {}; }
@@ -93,6 +117,7 @@ QString ThemeService::paletteColor(const QString &) const { return QString(); }
 
 QIcon IconUtils::fetchIcon(const QString &p_iconFile, const QString &) { return QIcon(p_iconFile); }
 
+// --- ConfigMgr2 / CoreConfig stubs ---
 ConfigMgr2::~ConfigMgr2() = default;
 
 void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) { Q_UNUSED(p_jobj); }
@@ -116,10 +141,12 @@ const QJsonArray &CoreConfig::getUnitedEntryAlias() const {
 
 int CoreConfig::getSearchMaxResults() const { return 1000; }
 
+// --- TreeWidget stubs ---
 void TreeWidget::selectParentItem(QTreeWidget *) {}
 
 bool TreeWidget::isExpanded(const QTreeWidget *) { return false; }
 
+// --- HistoryUnitedEntry stub ---
 HistoryUnitedEntry::HistoryUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
                                        QObject *p_parent)
     : IUnitedEntry(QStringLiteral("history"), QString(), p_mgr, p_parent), m_services(p_services),
@@ -130,21 +157,6 @@ QSharedPointer<QWidget> HistoryUnitedEntry::currentPopupWidget() const { return 
 void HistoryUnitedEntry::initOnFirstProcess() {}
 
 void HistoryUnitedEntry::processInternal(
-    const QString &, const std::function<void(const QSharedPointer<QWidget> &)> &) {
-  emit finished();
-}
-
-WindowsUnitedEntry::WindowsUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
-                                       QObject *p_parent)
-    : IUnitedEntry(QStringLiteral("windows"), QString(), p_mgr, p_parent) {
-  Q_UNUSED(p_services);
-}
-
-QSharedPointer<QWidget> WindowsUnitedEntry::currentPopupWidget() const { return {}; }
-
-void WindowsUnitedEntry::initOnFirstProcess() {}
-
-void WindowsUnitedEntry::processInternal(
     const QString &, const std::function<void(const QSharedPointer<QWidget> &)> &) {
   emit finished();
 }

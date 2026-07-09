@@ -114,6 +114,7 @@ public:
   ID findWindowIdByBufferId(const QString &p_workspaceId, const QString &p_bufferId) const override;
   QVector<ID> findWindowIdsByNode(const NodeIdentifier &p_nodeId, bool p_isFolder) const override;
   QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const override;
+  QVector<ViewWindowNavInfo> getViewWindowNavInfos(const QString &p_workspaceId) const override;
   void getCurrentWindowInfoForWorkspace(const QString &p_workspaceId, ID &p_windowId,
                                         QString &p_bufferId) const override;
   void onNodeRenamed(const NodeIdentifier &p_oldNodeId, const NodeIdentifier &p_newNodeId) override;

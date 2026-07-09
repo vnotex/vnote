@@ -11,6 +11,7 @@
 
 namespace vnotex {
 class IUnitedEntry;
+class IViewWindowNavigator;
 
 class UnitedEntryMgr : public QObject, private Noncopyable {
   Q_OBJECT
@@ -39,6 +40,11 @@ public:
   const QString &currentNotebookId() const;
   const NodeIdentifier &currentFolderId() const;
 
+  // View window navigator seam (set by MainWindow2). Used by WindowsUnitedEntry
+  // to enumerate and focus open view windows. May be null in tests / early init.
+  void setViewWindowNavigator(IViewWindowNavigator *p_navigator);
+  IViewWindowNavigator *viewWindowNavigator() const;
+
 public slots:
   void setCurrentNotebookId(const QString &p_notebookId);
   void setCurrentFolderId(const NodeIdentifier &p_folderId);
@@ -58,6 +64,8 @@ private:
   QMap<QString, QSharedPointer<IUnitedEntry>> m_entries;
 
   bool m_expandAllEnabled = false;
+
+  IViewWindowNavigator *m_windowNavigator = nullptr;
 
   QString m_currentNotebookId;
 

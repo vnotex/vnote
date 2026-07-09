@@ -1,6 +1,7 @@
 #ifndef VIEWAREAVIEW_H
 #define VIEWAREAVIEW_H
 
+#include <QIcon>
 #include <QJsonObject>
 #include <QString>
 #include <QStringList>
@@ -14,6 +15,17 @@ namespace vnotex {
 
 class Buffer2;
 class IViewWindowContent;
+
+// Display info for a single view window living in a visible split.
+// Used by the controller to enumerate visible windows for the "windows"
+// united entry (name/icon come from the live ViewWindow2, not vxcore buffers).
+struct ViewWindowNavInfo {
+  ID windowId = 0;
+  QString bufferId;
+  QString name;
+  QString title;
+  QIcon icon;
+};
 
 // Abstract interface for the view layer of the ViewArea MVC.
 // The controller calls these methods to command the view.
@@ -100,6 +112,11 @@ public:
   // Get the buffer ID of the current (active) tab in the given workspace.
   // Returns empty string if the workspace has no tabs.
   virtual QString getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const = 0;
+
+  // Get display info (name/title/icon/bufferId) for every window in a visible
+  // workspace's split, in tab order. Empty if the workspace has no split.
+  virtual QVector<ViewWindowNavInfo>
+  getViewWindowNavInfos(const QString &p_workspaceId) const = 0;
 
   // Fills p_windowId and p_bufferId with the current ViewWindow's IDs in the
   // split owning p_workspaceId. Sets p_windowId to ViewAreaController::InvalidViewWindowId
