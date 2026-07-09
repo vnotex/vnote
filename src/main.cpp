@@ -22,6 +22,7 @@
 #include <core/logger.h>
 #include <core/logging.h>
 #include <core/servicelocator.h>
+#include <core/services/activityservice.h>
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/configservice.h>
@@ -449,6 +450,11 @@ int main(int argc, char *argv[]) {
           if (bridge) {
             bridge->shutdown();
           }
+          // Flush any pending focused-time delta into vxcore before teardown.
+          auto *activitySvc = serviceLocator.get<vnotex::ActivityService>();
+          if (activitySvc) {
+            activitySvc->flush();
+          }
         },
         Qt::DirectConnection);
 
@@ -556,9 +562,17 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // Activity tracking (Qt side): must be constructed BEFORE MainWindow2 so
+    // it subscribes to FileAfterOpen / MainWindowBeforeClose before those hooks
+    // can fire during window startup. Focus-time is computed here and pushed
+    // into vxcore's app-global activity.db; note created/edited are captured
+    // natively inside vxcore.
+    ActivityService activityService(context, &hookManager);
+    serviceLocator.registerService<ActivityService>(&activityService);
+    qInfo() << "ActivityService registered";
+
     // Create MainWindow2 with ServiceLocator
     MainWindow2 mainWindow(serviceLocator);
-
     // Create NavigationModeService AFTER MainWindow2 (needs top-level widget)
     NavigationModeService navigationModeService(configMgr.getCoreConfig(), &mainWindow);
     serviceLocator.registerService<NavigationModeService>(&navigationModeService);
