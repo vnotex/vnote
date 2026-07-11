@@ -5,6 +5,7 @@
 
 #include "global.h"
 
+#include <QJsonObject>
 #include <QString>
 
 namespace vnotex {
@@ -96,6 +97,10 @@ public:
   const QString &getSearchFilePattern() const;
   void setSearchFilePattern(const QString &p_pattern);
 
+  // Home dashboard layout blob (opaque schema owned by DashboardBoard).
+  QJsonObject getDashboardLayout() const;
+  void setDashboardLayout(const QJsonObject &p_layout);
+
 private:
   int m_outlineAutoExpandedLevel = 6;
 
@@ -155,6 +160,9 @@ private:
 
   // Search panel: file pattern filter (empty = no filter).
   QString m_searchFilePattern;
+
+  // Home dashboard layout blob (see DashboardBoard for schema).
+  QJsonObject m_dashboardLayout;
 
   void initDefaults();
 };

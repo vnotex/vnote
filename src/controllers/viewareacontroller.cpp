@@ -29,6 +29,7 @@
 #include <core/sessionconfig.h>
 #include <gui/services/viewwindowfactory.h>
 #include <utils/processutils.h>
+#include <widgets/dashboard/dashboardcontent.h>
 #include <widgets/settingswidget.h>
 #include <widgets/viewwindow2.h>
 
@@ -212,6 +213,35 @@ void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content
         m_view->navigateWidgetContent(existingWindowId, p_pathSegments, p_fragment);
         delete p_content;
         return;
+      }
+    }
+  }
+
+  // Also dedup against HIDDEN workspaces: their windows are detached from any
+  // ViewSplit2 and held in the WorkspaceWrapper, so findWindowIdByBufferId
+  // (which only scans visible splits) cannot see them. Without this, reopening
+  // e.g. vx://home while its tab lives in a hidden workspace would build a second
+  // content instance for the same virtual buffer (two DashboardBoards that
+  // independently persist and can clobber each other).
+  if (m_view) {
+    for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+      WorkspaceWrapper *wrapper = it.value();
+      if (!wrapper || wrapper->isVisible()) {
+        continue;
+      }
+      for (QObject *obj : wrapper->viewWindows()) {
+        auto *win = qobject_cast<ViewWindow2 *>(obj);
+        if (win && win->getBuffer().id() == buffer.id()) {
+          qDebug() << "ViewAreaController::openWidgetContent: content open in hidden workspace"
+                   << it.key() << "- surfacing it";
+          focusWindow(it.key(), buffer.id());
+          const ID existingWindowId = win->getViewWindowId();
+          if (existingWindowId != InvalidViewWindowId) {
+            m_view->navigateWidgetContent(existingWindowId, p_pathSegments, p_fragment);
+          }
+          delete p_content;
+          return;
+        }
       }
     }
   }
@@ -1472,6 +1502,9 @@ void ViewAreaController::openVxUrl(const QUrl &p_url) {
 
   if (authority == QStringLiteral("settings")) {
     auto *content = new SettingsWidget(m_services, nullptr);
+    openWidgetContent(content, pathSegments, fragment);
+  } else if (authority == QStringLiteral("home")) {
+    auto *content = new DashboardContent(m_services, nullptr);
     openWidgetContent(content, pathSegments, fragment);
   } else {
     qWarning() << "ViewAreaController::openVxUrl: unknown authority:" << authority;

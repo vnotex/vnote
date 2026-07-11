@@ -314,6 +314,14 @@ inline const QLatin1String ImageHostBeforeRemove("vnote.imagehost.before_remove"
 // After an image is removed from a host
 inline const QLatin1String ImageHostAfterRemove("vnote.imagehost.after_remove");
 
+// ===== Dashboard Events =====
+// Triggered by the PKM home dashboard and its stickers so stickers can
+// communicate with each other over the hook bus.
+
+// After the user changes the selected date in the Calendar sticker.
+// Payload: { "date": "yyyy-MM-dd" }
+inline const QLatin1String DashboardCalendarDateChanged("vnote.dashboard.calendar.date_changed");
+
 } // namespace HookNames
 
 } // namespace vnotex

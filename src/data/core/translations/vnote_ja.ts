@@ -9713,14 +9713,6 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ViewAreaHomeWidget</name>
-    <message>
-        <location filename="../../../widgets/viewareahomewidget.cpp" line="13"/>
-        <source>&lt;h2&gt;Read, Write, and Think&lt;/h2&gt;</source>
-        <translation>&lt;h2&gt;読む、書く、考える&lt;/h2&gt;</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ViewSplit2</name>
     <message>
         <location filename="../../../widgets/viewsplit2.cpp" line="164"/>

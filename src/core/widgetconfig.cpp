@@ -83,6 +83,8 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
   m_searchCaseSensitive = READBOOL(QStringLiteral("searchCaseSensitive"));
   m_searchRegex = READBOOL(QStringLiteral("searchRegex"));
   m_searchFilePattern = readString(p_jobj, QStringLiteral("searchFilePattern"));
+
+  m_dashboardLayout = p_jobj[QStringLiteral("dashboardLayout")].toObject();
 }
 
 QJsonObject WidgetConfig::toJson() const {
@@ -118,6 +120,9 @@ QJsonObject WidgetConfig::toJson() const {
   obj[QStringLiteral("searchCaseSensitive")] = m_searchCaseSensitive;
   obj[QStringLiteral("searchRegex")] = m_searchRegex;
   obj[QStringLiteral("searchFilePattern")] = m_searchFilePattern;
+  if (!m_dashboardLayout.isEmpty()) {
+    obj[QStringLiteral("dashboardLayout")] = m_dashboardLayout;
+  }
   return obj;
 }
 
@@ -325,4 +330,10 @@ const QString &WidgetConfig::getSearchFilePattern() const { return m_searchFileP
 
 void WidgetConfig::setSearchFilePattern(const QString &p_pattern) {
   updateConfig(m_searchFilePattern, p_pattern, this);
+}
+
+QJsonObject WidgetConfig::getDashboardLayout() const { return m_dashboardLayout; }
+
+void WidgetConfig::setDashboardLayout(const QJsonObject &p_layout) {
+  updateConfigWithoutCheck(m_dashboardLayout, p_layout, this);
 }

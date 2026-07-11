@@ -7,6 +7,8 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/navigationmodeservice.h
     ${CMAKE_CURRENT_SOURCE_DIR}/themeservice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/themeservice.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/stickerfactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stickerfactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewwindowfactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewwindowfactory.h
 )

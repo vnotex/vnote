@@ -6,8 +6,8 @@
 #include <QLabel>
 #include <QShortcut>
 #include <QSplitter>
-#include <QStackedLayout>
 #include <QTimer>
+#include <QUrl>
 #include <QVBoxLayout>
 
 #include <controllers/viewareacontroller.h>
@@ -19,13 +19,13 @@
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
+#include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 
-#include "viewareahomewidget.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
 #include "widgetviewwindow2.h"
@@ -39,22 +39,18 @@ ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
   setContentsMargins(0, 0, 0, 0);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-  m_stackedLayout = new QStackedLayout(this);
-  m_stackedLayout->setContentsMargins(0, 0, 0, 0);
+  // The home dashboard (vx://home) is a real virtual-buffer tab, so the view
+  // area no longer needs a separate placeholder "home" page. A single contents
+  // surface holds the splitter tree; maybeOpenHome() opens the dashboard tab
+  // whenever the area becomes empty.
+  auto *outerLayout = new QVBoxLayout(this);
+  outerLayout->setContentsMargins(0, 0, 0, 0);
 
-  // Page 0: Home screen.
-  m_homeWidget = new ViewAreaHomeWidget(this);
-  m_stackedLayout->addWidget(m_homeWidget);
-
-  // Page 1: Contents screen (container for the splitter tree).
   m_contentsWidget = new QWidget(this);
   m_contentsWidget->setContentsMargins(0, 0, 0, 0);
   m_contentsLayout = new QVBoxLayout(m_contentsWidget);
   m_contentsLayout->setContentsMargins(0, 0, 0, 0);
-  m_stackedLayout->addWidget(m_contentsWidget);
-
-  // Start on the Home screen.
-  m_stackedLayout->setCurrentIndex(HomeScreen);
+  outerLayout->addWidget(m_contentsWidget);
 
   setupController();
   setupShortcuts();
@@ -101,6 +97,13 @@ void ViewArea2::setupController() {
                                   : ViewAreaController::InvalidViewWindowId;
             QString bufferId = currentWin ? currentWin->getBuffer().id() : QString();
             m_controller->setCurrentViewWindow(winId, bufferId);
+
+            // If nothing was restored (virtual buffers like vx://home are
+            // session-excluded), open the home dashboard so the area is never
+            // empty on startup.
+            if (m_windows.isEmpty()) {
+              maybeOpenHome();
+            }
           });
         },
         10);
@@ -536,7 +539,6 @@ QSize ViewArea2::sizeHint() const {
 // ============ Top Widget ============
 
 QWidget *ViewArea2::getTopWidget() const { return m_topWidget; }
-
 void ViewArea2::setTopWidget(QWidget *p_widget) {
   if (m_topWidget) {
     m_contentsLayout->removeWidget(m_topWidget);
@@ -547,12 +549,25 @@ void ViewArea2::setTopWidget(QWidget *p_widget) {
   }
 }
 
+bool ViewArea2::hasRestorableWindows() const {
+  auto *bufferSvc = m_services.get<BufferService>();
+  for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+    ViewWindow2 *win = it.value();
+    if (win && (!bufferSvc || !bufferSvc->isVirtualBuffer(win->getBuffer().id()))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 QJsonObject ViewArea2::saveLayout() const {
-  // If no buffers are open, save an empty layout so that on next startup
-  // loadLayout() sees an empty splitterTree and shows the home screen.
-  // This avoids persisting workspace IDs that saveSession() will later delete.
-  if (m_windows.isEmpty()) {
-    qCDebug(lcWorkspace) << "ViewArea2::saveLayout: no open buffers, saving empty layout";
+  // If no restorable (non-virtual) buffers are open, save an empty layout so that
+  // on next startup loadLayout() sees an empty splitterTree. Virtual buffers
+  // (e.g. vx://home, vx://settings) are session-excluded by vxcore and must not
+  // pin a workspace/splitter layout that references a buffer that won't exist
+  // after restart.
+  if (!hasRestorableWindows()) {
+    qCDebug(lcWorkspace) << "ViewArea2::saveLayout: no restorable buffers, saving empty layout";
     return QJsonObject();
   }
 
@@ -572,6 +587,7 @@ void ViewArea2::loadLayoutFromSession(const QJsonObject &p_layout) {
 void ViewArea2::saveSession() {
   qCDebug(lcWorkspace) << "ViewArea2::saveSession: syncing buffer order and persisting session";
 
+  auto *bufferSvc = m_services.get<BufferService>();
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (wsSvc) {
     // Sync tab order and current buffer from each visible ViewSplit2 to vxcore.
@@ -582,6 +598,15 @@ void ViewArea2::saveSession() {
       auto windows = it.value()->getAllViewWindows();
       for (auto *win : windows) {
         QString bufferId = win->getBuffer().id();
+        // Virtual buffers (vx://home, vx://settings, ...) are not restorable.
+        // Explicitly REMOVE them from the workspace: setBufferOrder() alone is
+        // reorder-only (vxcore re-appends any existing ID omitted from the new
+        // order), so omission does not drop them. removeBuffer() also clears the
+        // workspace's currentBufferId if it pointed at the virtual buffer.
+        if (bufferSvc && bufferSvc->isVirtualBuffer(bufferId)) {
+          wsSvc->removeBuffer(it.key(), bufferId);
+          continue;
+        }
         bufferIds.append(bufferId);
 
         // Persist per-buffer metadata (mode, cursor, scroll position).
@@ -597,7 +622,10 @@ void ViewArea2::saveSession() {
 
       auto *currentWin = it.value()->getCurrentViewWindow();
       if (currentWin) {
-        wsSvc->setCurrentBuffer(it.key(), currentWin->getBuffer().id());
+        const QString currentBufferId = currentWin->getBuffer().id();
+        if (!bufferSvc || !bufferSvc->isVirtualBuffer(currentBufferId)) {
+          wsSvc->setCurrentBuffer(it.key(), currentBufferId);
+        }
       }
 
       qCDebug(lcWorkspace) << "  Synced workspace" << it.key() << "buffer order:" << bufferIds
@@ -1328,10 +1356,26 @@ void ViewArea2::notifyEditorConfigChanged() {
   }
 }
 
-QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {
+QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) const {
   QJsonObject node;
   auto *splitter = qobject_cast<const QSplitter *>(p_widget);
   if (splitter) {
+    QJsonArray children;
+    for (int i = 0; i < splitter->count(); ++i) {
+      QJsonObject child = serializeWidget(splitter->widget(i));
+      // Drop pruned (virtual-only) subtrees so they are not restored blank.
+      if (!child.isEmpty()) {
+        children.append(child);
+      }
+    }
+    // Collapse: an empty splitter contributes nothing; a single surviving child
+    // replaces the splitter node entirely.
+    if (children.isEmpty()) {
+      return QJsonObject();
+    }
+    if (children.size() == 1) {
+      return children.first().toObject();
+    }
     node[QStringLiteral("type")] = QStringLiteral("splitter");
     node[QStringLiteral("orientation")] = (splitter->orientation() == Qt::Horizontal)
                                               ? QStringLiteral("horizontal")
@@ -1341,19 +1385,34 @@ QJsonObject ViewArea2::serializeWidget(const QWidget *p_widget) {
       sizes.append(s);
     }
     node[QStringLiteral("sizes")] = sizes;
-    QJsonArray children;
-    for (int i = 0; i < splitter->count(); ++i) {
-      children.append(serializeWidget(splitter->widget(i)));
-    }
     node[QStringLiteral("children")] = children;
   } else {
     auto *split = qobject_cast<const ViewSplit2 *>(p_widget);
     if (split) {
+      // Prune workspace nodes whose only windows are virtual (e.g. vx://home):
+      // their buffers are not restored, so persisting them yields a blank split.
+      if (!splitHasRestorableWindows(split)) {
+        return QJsonObject();
+      }
       node[QStringLiteral("type")] = QStringLiteral("workspace");
       node[QStringLiteral("workspaceId")] = split->getWorkspaceId();
     }
   }
   return node;
+}
+
+bool ViewArea2::splitHasRestorableWindows(const ViewSplit2 *p_split) const {
+  if (!p_split) {
+    return false;
+  }
+  auto *bufferSvc = m_services.get<BufferService>();
+  const auto windows = p_split->getAllViewWindows();
+  for (auto *win : windows) {
+    if (win && (!bufferSvc || !bufferSvc->isVirtualBuffer(win->getBuffer().id()))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void ViewArea2::deserializeSplitterNode(const QJsonObject &p_node, QSplitter *p_splitter) {
@@ -1483,13 +1542,24 @@ ViewSplit2 *ViewArea2::findLastViewSplit(QWidget *p_widget) {
 
 // ============ Screen switching ============
 
-void ViewArea2::showHomeScreen() { m_stackedLayout->setCurrentIndex(HomeScreen); }
-
-void ViewArea2::showContentsScreen() { m_stackedLayout->setCurrentIndex(ContentsScreen); }
-
 void ViewArea2::updateScreenVisibility() {
-  const int targetPage = m_windows.isEmpty() ? HomeScreen : ContentsScreen;
-  if (m_stackedLayout->currentIndex() != targetPage) {
-    m_stackedLayout->setCurrentIndex(targetPage);
+  if (m_windows.isEmpty()) {
+    maybeOpenHome();
   }
+}
+
+void ViewArea2::maybeOpenHome() {
+  if (m_openingHome || !m_windows.isEmpty()) {
+    return;
+  }
+  m_openingHome = true;
+  // Defer so the current close/delete stack (win->deleteLater()) unwinds first,
+  // and so opening home during teardown doesn't re-enter close paths. Dedup by
+  // virtualAddress() in ViewAreaController prevents duplicate home tabs.
+  QTimer::singleShot(0, this, [this]() {
+    m_openingHome = false;
+    if (m_windows.isEmpty() && m_controller) {
+      m_controller->openVxUrl(QUrl(QStringLiteral("vx://home")));
+    }
+  });
 }

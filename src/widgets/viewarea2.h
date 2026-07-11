@@ -15,7 +15,6 @@
 
 class QLabel;
 class QSplitter;
-class QStackedLayout;
 class QVBoxLayout;
 
 namespace vnotex {
@@ -24,7 +23,6 @@ class ServiceLocator;
 class ViewSplit2;
 class ViewWindow2;
 class ViewAreaController;
-class ViewAreaHomeWidget;
 class Buffer2;
 class ViewWindowFactory;
 class IViewWindowContent;
@@ -144,41 +142,43 @@ private:
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;
   ViewWindow2 *windowForId(ID p_windowId) const;
 
+  // Whether any open window is backed by a restorable (non-virtual) buffer.
+  bool hasRestorableWindows() const;
+
   void collectViewSplits(QWidget *p_widget, QVector<ViewSplit2 *> &p_splits) const;
   static void distributeSplitter(QSplitter *p_splitter);
   QSplitter *findParentSplitter(QWidget *p_widget) const;
   void unwrapSingleChildSplitter(QSplitter *p_splitter);
   static ViewSplit2 *findFirstViewSplit(QWidget *p_widget);
   static ViewSplit2 *findLastViewSplit(QWidget *p_widget);
-  static QJsonObject serializeWidget(const QWidget *p_widget);
+  QJsonObject serializeWidget(const QWidget *p_widget) const;
+  // Whether a split hosts at least one restorable (non-virtual) window.
+  bool splitHasRestorableWindows(const ViewSplit2 *p_split) const;
   void deserializeSplitterNode(const QJsonObject &p_node, QSplitter *p_splitter);
 
-  // Screen switching: show Home when no windows, Contents when >= 1.
-  void showHomeScreen();
-  void showContentsScreen();
+  // Auto-open the vx://home dashboard when the view area is empty. Recursion-safe
+  // via m_openingHome + a deferred singleShot so the current close/delete stack
+  // unwinds first.
+  void maybeOpenHome();
+
   void updateScreenVisibility();
 
-  // Stack page indices.
-  enum StackPage { HomeScreen = 0, ContentsScreen = 1 };
-
   ServiceLocator &m_services;
-  QStackedLayout *m_stackedLayout = nullptr;
 
-  // Page 0: placeholder home widget.
-  ViewAreaHomeWidget *m_homeWidget = nullptr;
-
-  // Page 1: container for the splitter tree / single ViewSplit2.
+  // Container for the splitter tree / single ViewSplit2.
   QWidget *m_contentsWidget = nullptr;
   QVBoxLayout *m_contentsLayout = nullptr;
 
   QWidget *m_topWidget = nullptr;
   ViewAreaController *m_controller = nullptr;
-
   // ID -> widget maps.  ViewArea2 is the sole owner of these mappings.
   QMap<QString, ViewSplit2 *> m_splits; // workspaceId -> split
   QMap<ID, ViewWindow2 *> m_windows;    // windowId -> window
   QVector<ViewSplit2::TabNavigationInfo> m_navigationItems;
   ID m_nextWindowId = 1;
+
+  // Reentrancy guard for maybeOpenHome().
+  bool m_openingHome = false;
 };
 
 } // namespace vnotex

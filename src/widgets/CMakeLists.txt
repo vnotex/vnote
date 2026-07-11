@@ -7,6 +7,10 @@ target_sources(vnote PRIVATE
     buttonpopup.cpp buttonpopup.h
     combobox.cpp combobox.h
     consoleviewer.cpp consoleviewer.h
+    dashboard/calendarsticker.cpp dashboard/calendarsticker.h
+    dashboard/dashboardboard.cpp dashboard/dashboardboard.h
+    dashboard/dashboardcontent.cpp dashboard/dashboardcontent.h
+    dashboard/sticker.cpp dashboard/sticker.h
     dialogs/deleteconfirmdialog.cpp dialogs/deleteconfirmdialog.h
     dialogs/dialog.cpp dialogs/dialog.h
     dialogs/exportdialog.cpp dialogs/exportdialog.h
@@ -164,7 +168,6 @@ target_sources(vnote PRIVATE
     treewidgetitem.cpp treewidgetitem.h
     viewarea.cpp viewarea.h
     viewarea2.cpp viewarea2.h
-    viewareahomewidget.cpp viewareahomewidget.h
     viewareasession.cpp viewareasession.h
     viewsplit.cpp viewsplit.h
     viewsplit2.cpp viewsplit2.h

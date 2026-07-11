@@ -226,6 +226,25 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     tb->addWidget(toolBtn);
   }
 
+  // Home dashboard.
+  {
+    auto toolBtn = WidgetsFactory::createToolButton(tb);
+    // No drop-down menu on this button; createToolButton defaults to
+    // MenuButtonPopup which would otherwise draw a spurious menu-arrow section.
+    toolBtn->setPopupMode(QToolButton::DelayedPopup);
+
+    const auto text = MainWindow2::tr("Home");
+    auto homeAct = new QAction(text, toolBtn);
+    setActionIcon(homeAct, QStringLiteral("home_dashboard.svg"));
+    MainWindow2::connect(homeAct, &QAction::triggered, m_mainWindow, [this]() {
+      auto *controller = m_mainWindow->getViewArea()->getController();
+      controller->openVxUrl(QUrl(QStringLiteral("vx://home")));
+    });
+    toolBtn->addAction(homeAct);
+    toolBtn->setDefaultAction(homeAct);
+    tb->addWidget(toolBtn);
+  }
+
   return tb;
 }
 

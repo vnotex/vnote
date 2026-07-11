@@ -50,6 +50,7 @@
 #include <core/vxcorelogbridge.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/stickerfactory.h>
 #include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
@@ -409,6 +410,12 @@ int main(int argc, char *argv[]) {
     viewWindowFactory.registerBuiltInCreators();
     serviceLocator.registerService<ViewWindowFactory>(&viewWindowFactory);
     qInfo() << "ViewWindowFactory registered";
+
+    // Create StickerFactory and register built-in dashboard sticker creators
+    StickerFactory stickerFactory;
+    stickerFactory.registerBuiltInCreators();
+    serviceLocator.registerService<StickerFactory>(&stickerFactory);
+    qInfo() << "StickerFactory registered";
 
     setOpenGLOption(configMgr);
 
