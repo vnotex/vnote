@@ -1086,7 +1086,15 @@ void ViewArea2::loadLayout(const QJsonObject &p_layout) {
 
   // Note: currentWorkspaceId is NOT restored here. It is restored by
   // ViewAreaController::restoreSession() from vxcore state.
-  updateScreenVisibility();
+  //
+  // Deliberately do NOT call updateScreenVisibility() here. At this point the
+  // split(s) just built from the saved layout are still EMPTY — restoreSession()
+  // (fired later from MainWindowAfterStart) has not yet reopened their buffers.
+  // Calling updateScreenVisibility() now sees m_windows empty and arms
+  // maybeOpenHome(), which races the restore and can surface an unwanted Home
+  // dashboard tab alongside the restored files. The "nothing was restored, open
+  // Home" decision is made post-restore in setupController()'s
+  // MainWindowAfterStart handler, which checks emptiness AFTER restoreSession().
 }
 
 void ViewArea2::switchWorkspace(const QString &p_currentWorkspaceId,
