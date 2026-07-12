@@ -50,6 +50,18 @@ Each dialog is driven by a corresponding controller in `../controllers/`.
 - `SearchPanel2`, `SnippetPanel2`
 - `TagExplorer2`, `TagViewer2`, `TagPopup2`
 
+### Dashboard (`dashboard/`)
+
+The home dashboard shown at `vx://home`. Pure **view** layer — all layout logic
+and persistence live in `DashboardController` (`../controllers/`).
+
+- `DashboardContent` — `IViewWindowContent` host at `vx://home`; owns the board
+- `DashboardBoard` — fixed-column `QGridLayout` of stickers; creates/owns its
+  `DashboardController`, forwards user gestures as intents, and reacts to
+  controller signals to build/move/remove sticker frames
+- `Sticker` — abstract sticker content widget; `CalendarSticker` is the concrete built-in
+- `StickerFactory` (in `../gui/services/`) — registry mapping sticker type-ids to creators
+
 ### Other
 
 - `LocationList2` — results list (search hits, backlinks, etc.)

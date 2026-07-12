@@ -4,16 +4,13 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QInputDialog>
-#include <QJsonArray>
 #include <QLabel>
 #include <QMenu>
 #include <QScrollArea>
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#include <core/configmgr2.h>
 #include <core/servicelocator.h>
-#include <core/widgetconfig.h>
 #include <gui/services/stickerfactory.h>
 
 #include "sticker.h"
@@ -21,29 +18,29 @@
 using namespace vnotex;
 
 namespace {
-constexpr int kDefaultColumns = 12;
-constexpr int kDefaultRowSpan = 3;
-constexpr int kDefaultColSpan = 4;
 constexpr int kColumnMinWidth = 60;
-// Defensive bounds so a corrupt/hand-edited vnotex.json cannot hang the app.
-constexpr int kMaxColumns = 64;
-constexpr int kMaxRows = 4096;
-constexpr int kMaxRowSpan = 256;
-constexpr int kMaxStickers = 512;
 } // namespace
 
 DashboardBoard::DashboardBoard(ServiceLocator &p_services, QWidget *p_parent)
     : QWidget(p_parent), m_services(p_services) {
   setupUI();
-  loadFromConfig();
+
+  m_controller = new DashboardController(m_services, this);
+  connect(m_controller, &DashboardController::layoutReloaded, this,
+          &DashboardBoard::onLayoutReloaded);
+  connect(m_controller, &DashboardController::stickerPlaced, this,
+          &DashboardBoard::onStickerPlaced);
+  connect(m_controller, &DashboardController::stickerMoved, this,
+          &DashboardBoard::onStickerMoved);
+  connect(m_controller, &DashboardController::stickerRemoved, this,
+          &DashboardBoard::onStickerRemoved);
+  connect(m_controller, &DashboardController::contentChanged, this,
+          &DashboardBoard::contentChanged);
+
+  m_controller->load();
 }
 
-DashboardBoard::~DashboardBoard() {
-  // Item is a plain (non-QObject) record; the frames/stickers it points to are
-  // owned by the Qt parent hierarchy, but the Item structs themselves are not.
-  qDeleteAll(m_items);
-  m_items.clear();
-}
+DashboardBoard::~DashboardBoard() = default;
 
 void DashboardBoard::setupUI() {
   auto *outer = new QVBoxLayout(this);
@@ -79,140 +76,103 @@ void DashboardBoard::applyColumnSizing() {
   }
 }
 
-StickerFactory *DashboardBoard::factory() const {
-  return m_services.get<StickerFactory>();
-}
-
 QStringList DashboardBoard::availableStickerTypes() const {
-  auto *fac = factory();
-  return fac ? fac->registeredTypes() : QStringList();
+  return m_controller ? m_controller->availableStickerTypes() : QStringList();
 }
 
-// ============ Persistence ============
+bool DashboardBoard::addStickerOfType(const QString &p_typeId) {
+  return m_controller && m_controller->addStickerOfType(p_typeId);
+}
 
-void DashboardBoard::loadFromConfig() {
-  m_loading = true;
+// ============ Controller signal handlers ============
 
-  auto *configMgr = m_services.get<ConfigMgr2>();
-  QJsonObject layout;
-  if (configMgr) {
-    layout = configMgr->getWidgetConfig().getDashboardLayout();
-  }
-
-  if (layout.isEmpty()) {
-    seedDefaultLayout();
-    m_loading = false;
-    persist();
-    return;
-  }
-
-  m_columns = layout.value(QStringLiteral("columns")).toInt(kDefaultColumns);
-  if (m_columns <= 0) {
-    m_columns = kDefaultColumns;
-  }
-  m_columns = qBound(1, m_columns, kMaxColumns);
+void DashboardBoard::onLayoutReloaded(
+    const QVector<DashboardController::StickerRecord> &p_records, int p_columns) {
+  clearAllViews();
+  m_columns = p_columns;
   applyColumnSizing();
-
-  const QJsonArray stickers = layout.value(QStringLiteral("stickers")).toArray();
-  const int count = qMin(stickers.size(), kMaxStickers);
-  for (int i = 0; i < count; ++i) {
-    const QJsonObject obj = stickers.at(i).toObject();
-    placeSticker(obj.value(QStringLiteral("type")).toString(),
-                 obj.value(QStringLiteral("row")).toInt(0),
-                 obj.value(QStringLiteral("col")).toInt(0),
-                 obj.value(QStringLiteral("rowSpan")).toInt(1),
-                 obj.value(QStringLiteral("colSpan")).toInt(1),
-                 obj.value(QStringLiteral("settings")).toObject());
-  }
-
-  m_loading = false;
-}
-
-void DashboardBoard::seedDefaultLayout() {
-  m_columns = kDefaultColumns;
-  // Seed a single Calendar sticker if the factory knows how to make one.
-  auto *fac = factory();
-  if (fac && fac->hasCreator(QStringLiteral("calendar"))) {
-    placeSticker(QStringLiteral("calendar"), 0, 0, kDefaultRowSpan, kDefaultColSpan,
-                 QJsonObject());
+  // Iterate a local copy: createViewForRecord may roll a record back via the
+  // controller (mutating its records) if a sticker widget fails to build.
+  const QVector<DashboardController::StickerRecord> records = p_records;
+  for (const DashboardController::StickerRecord &rec : records) {
+    createViewForRecord(rec);
   }
 }
 
-void DashboardBoard::persist() {
-  if (m_loading) {
+void DashboardBoard::onStickerPlaced(const DashboardController::StickerRecord &p_record) {
+  createViewForRecord(p_record);
+}
+
+void DashboardBoard::onStickerMoved(const DashboardController::StickerRecord &p_record) {
+  auto it = m_views.find(p_record.id);
+  if (it == m_views.end()) {
     return;
   }
-
-  QJsonObject layout;
-  layout[QStringLiteral("columns")] = m_columns;
-
-  QJsonArray stickers;
-  for (const Item *item : m_items) {
-    QJsonObject obj;
-    obj[QStringLiteral("type")] = item->m_type;
-    obj[QStringLiteral("row")] = item->m_row;
-    obj[QStringLiteral("col")] = item->m_col;
-    obj[QStringLiteral("rowSpan")] = item->m_rowSpan;
-    obj[QStringLiteral("colSpan")] = item->m_colSpan;
-    obj[QStringLiteral("settings")] =
-        item->m_sticker ? item->m_sticker->saveSettings() : QJsonObject();
-    stickers.append(obj);
-  }
-  layout[QStringLiteral("stickers")] = stickers;
-
-  auto *configMgr = m_services.get<ConfigMgr2>();
-  if (configMgr) {
-    configMgr->getWidgetConfig().setDashboardLayout(layout);
-  }
-
-  emit contentChanged();
+  ViewItem &view = it.value();
+  view.m_row = p_record.row;
+  view.m_col = p_record.col;
+  view.m_rowSpan = p_record.rowSpan;
+  view.m_colSpan = p_record.colSpan;
+  m_grid->removeWidget(view.m_frame);
+  m_grid->addWidget(view.m_frame, p_record.row, p_record.col, p_record.rowSpan,
+                    p_record.colSpan);
 }
 
-// ============ Placement ============
-
-DashboardBoard::Item *DashboardBoard::placeSticker(const QString &p_typeId, int p_row, int p_col,
-                                                   int p_rowSpan, int p_colSpan,
-                                                   const QJsonObject &p_settings) {
-  auto *fac = factory();
-  if (!fac || !fac->hasCreator(p_typeId)) {
-    return nullptr;
+void DashboardBoard::onStickerRemoved(const QString &p_id) {
+  auto it = m_views.find(p_id);
+  if (it == m_views.end()) {
+    return;
   }
-
-  const int rowSpan = qBound(1, p_rowSpan, kMaxRowSpan);
-  const int colSpan = qBound(1, p_colSpan, m_columns);
-  const int row = qBound(0, p_row, kMaxRows);
-  const int col = qBound(0, p_col, m_columns - colSpan);
-
-  if (m_items.size() >= kMaxStickers) {
-    return nullptr;
+  ViewItem view = it.value();
+  m_views.erase(it);
+  if (view.m_frame) {
+    m_grid->removeWidget(view.m_frame);
+    view.m_frame->deleteLater();
   }
+}
 
-  if (!regionFree(row, col, rowSpan, colSpan)) {
-    return nullptr;
+// ============ View building ============
+
+bool DashboardBoard::createViewForRecord(const DashboardController::StickerRecord &p_record) {
+  auto *fac = m_services.get<StickerFactory>();
+  if (!fac) {
+    return false;
   }
-
-  Sticker *sticker = fac->create(p_typeId, m_services, p_settings, nullptr);
+  Sticker *sticker = fac->create(p_record.type, m_services, p_record.settings, nullptr);
   if (!sticker) {
-    return nullptr;
+    // Model placed a record the view cannot realize; roll it back so the two
+    // stay consistent (guarded against re-entrant deletion of a missing view).
+    m_controller->removeSticker(p_record.id);
+    return false;
   }
 
-  auto *item = new Item();
-  item->m_sticker = sticker;
-  item->m_type = p_typeId.toLower();
-  item->m_row = row;
-  item->m_col = col;
-  item->m_rowSpan = rowSpan;
-  item->m_colSpan = colSpan;
-  item->m_frame = buildFrame(item);
+  ViewItem view;
+  view.m_sticker = sticker;
+  view.m_row = p_record.row;
+  view.m_col = p_record.col;
+  view.m_rowSpan = p_record.rowSpan;
+  view.m_colSpan = p_record.colSpan;
+  view.m_frame = buildFrame(p_record.id, sticker);
+  m_views.insert(p_record.id, view);
 
-  connect(sticker, &Sticker::settingsChanged, this, [this]() { persist(); });
+  // Capture the widget's effective (normalized) settings into the record before
+  // the controller's single persist runs, matching the legacy live-settings
+  // serialization. Non-persisting; the following persist (add/seed) writes them.
+  m_controller->setInitialStickerSettings(p_record.id, sticker->saveSettings());
 
-  m_items.append(item);
-  m_grid->addWidget(item->m_frame, row, col, rowSpan, colSpan);
-  return item;
+  const QString id = p_record.id;
+  connect(sticker, &Sticker::settingsChanged, this, [this, id, sticker]() {
+    if (m_controller) {
+      m_controller->updateStickerSettings(id, sticker->saveSettings());
+    }
+  });
+
+  m_grid->addWidget(view.m_frame, p_record.row, p_record.col, p_record.rowSpan,
+                    p_record.colSpan);
+  return true;
 }
 
-QWidget *DashboardBoard::buildFrame(Item *p_item) {
+QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
   auto *frame = new QFrame(m_container);
   frame->setFrameShape(QFrame::StyledPanel);
 
@@ -225,7 +185,7 @@ QWidget *DashboardBoard::buildFrame(Item *p_item) {
   auto *headerLayout = new QHBoxLayout(header);
   headerLayout->setContentsMargins(0, 0, 0, 0);
 
-  auto *titleLabel = new QLabel(p_item->m_sticker->titleText(), header);
+  auto *titleLabel = new QLabel(p_sticker->titleText(), header);
   headerLayout->addWidget(titleLabel);
   headerLayout->addStretch();
 
@@ -233,145 +193,72 @@ QWidget *DashboardBoard::buildFrame(Item *p_item) {
   moveBtn->setText(tr("Move"));
   moveBtn->setPopupMode(QToolButton::InstantPopup);
   auto *moveMenu = new QMenu(moveBtn);
-  moveMenu->addAction(tr("Move Up"), this, [this, p_item]() { moveItem(p_item, -1, 0); });
-  moveMenu->addAction(tr("Move Down"), this, [this, p_item]() { moveItem(p_item, 1, 0); });
-  moveMenu->addAction(tr("Move Left"), this, [this, p_item]() { moveItem(p_item, 0, -1); });
-  moveMenu->addAction(tr("Move Right"), this, [this, p_item]() { moveItem(p_item, 0, 1); });
+  moveMenu->addAction(tr("Move Up"), this,
+                      [this, p_id]() { m_controller->moveSticker(p_id, -1, 0); });
+  moveMenu->addAction(tr("Move Down"), this,
+                      [this, p_id]() { m_controller->moveSticker(p_id, 1, 0); });
+  moveMenu->addAction(tr("Move Left"), this,
+                      [this, p_id]() { m_controller->moveSticker(p_id, 0, -1); });
+  moveMenu->addAction(tr("Move Right"), this,
+                      [this, p_id]() { m_controller->moveSticker(p_id, 0, 1); });
   moveMenu->addSeparator();
   moveMenu->addAction(tr("Set Position/Size..."), this,
-                      [this, p_item]() { showMoveDialog(p_item); });
+                      [this, p_id]() { showMoveDialog(p_id); });
   moveBtn->setMenu(moveMenu);
   headerLayout->addWidget(moveBtn);
 
   auto *closeBtn = new QToolButton(header);
   closeBtn->setText(tr("X"));
   closeBtn->setToolTip(tr("Remove sticker"));
-  connect(closeBtn, &QToolButton::clicked, this, [this, p_item]() { removeItem(p_item); });
+  connect(closeBtn, &QToolButton::clicked, this,
+          [this, p_id]() { m_controller->removeSticker(p_id); });
   headerLayout->addWidget(closeBtn);
 
   layout->addWidget(header);
 
-  p_item->m_sticker->setParent(frame);
-  layout->addWidget(p_item->m_sticker, 1);
+  p_sticker->setParent(frame);
+  layout->addWidget(p_sticker, 1);
 
   return frame;
 }
 
-// ============ Mutations ============
-
-bool DashboardBoard::addStickerOfType(const QString &p_typeId) {
-  auto *fac = factory();
-  if (!fac || !fac->hasCreator(p_typeId)) {
-    return false;
-  }
-  const QPair<int, int> cell = nextFreeCell(kDefaultRowSpan, kDefaultColSpan);
-  Item *item = placeSticker(p_typeId, cell.first, cell.second, kDefaultRowSpan,
-                            kDefaultColSpan, QJsonObject());
-  if (!item) {
-    return false;
-  }
-  persist();
-  return true;
-}
-
-void DashboardBoard::removeItem(Item *p_item) {
-  const int idx = m_items.indexOf(p_item);
-  if (idx < 0) {
+void DashboardBoard::showMoveDialog(const QString &p_id) {
+  auto it = m_views.constFind(p_id);
+  if (it == m_views.constEnd()) {
     return;
   }
-  m_grid->removeWidget(p_item->m_frame);
-  p_item->m_frame->deleteLater();
-  m_items.remove(idx);
-  delete p_item;
-  persist();
-}
+  const ViewItem &view = it.value();
 
-void DashboardBoard::moveItem(Item *p_item, int p_dRow, int p_dCol) {
-  setItemGeometry(p_item, p_item->m_row + p_dRow, p_item->m_col + p_dCol, p_item->m_rowSpan,
-                  p_item->m_colSpan);
-}
-
-void DashboardBoard::setItemGeometry(Item *p_item, int p_row, int p_col, int p_rowSpan,
-                                     int p_colSpan) {
-  const int rowSpan = qBound(1, p_rowSpan, kMaxRowSpan);
-  const int colSpan = qBound(1, p_colSpan, m_columns);
-  const int row = qBound(0, p_row, kMaxRows);
-  const int col = qBound(0, p_col, m_columns - colSpan);
-
-  if (row == p_item->m_row && col == p_item->m_col && rowSpan == p_item->m_rowSpan &&
-      colSpan == p_item->m_colSpan) {
-    return;
-  }
-
-  // Reject-and-noop on collision (this iteration's policy).
-  if (!regionFree(row, col, rowSpan, colSpan, p_item)) {
-    return;
-  }
-
-  p_item->m_row = row;
-  p_item->m_col = col;
-  p_item->m_rowSpan = rowSpan;
-  p_item->m_colSpan = colSpan;
-
-  m_grid->removeWidget(p_item->m_frame);
-  m_grid->addWidget(p_item->m_frame, row, col, rowSpan, colSpan);
-  persist();
-}
-
-void DashboardBoard::showMoveDialog(Item *p_item) {
   bool ok = false;
-  const int row = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Row:"), p_item->m_row,
+  const int row = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Row:"), view.m_row,
                                        0, 999, 1, &ok);
   if (!ok) {
     return;
   }
   const int col = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Column:"),
-                                       p_item->m_col, 0, m_columns - 1, 1, &ok);
+                                       view.m_col, 0, m_columns - 1, 1, &ok);
   if (!ok) {
     return;
   }
   const int rowSpan = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Row span:"),
-                                           p_item->m_rowSpan, 1, 999, 1, &ok);
+                                           view.m_rowSpan, 1, 999, 1, &ok);
   if (!ok) {
     return;
   }
   const int colSpan = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Column span:"),
-                                           p_item->m_colSpan, 1, m_columns, 1, &ok);
+                                           view.m_colSpan, 1, m_columns, 1, &ok);
   if (!ok) {
     return;
   }
-  setItemGeometry(p_item, row, col, rowSpan, colSpan);
+  m_controller->setStickerGeometry(p_id, row, col, rowSpan, colSpan);
 }
 
-// ============ Occupancy ============
-
-bool DashboardBoard::regionFree(int p_row, int p_col, int p_rowSpan, int p_colSpan,
-                                const Item *p_exclude) const {
-  if (p_col < 0 || p_col + p_colSpan > m_columns || p_row < 0) {
-    return false;
-  }
-  for (const Item *item : m_items) {
-    if (item == p_exclude) {
-      continue;
-    }
-    const bool rowOverlap =
-        p_row < item->m_row + item->m_rowSpan && item->m_row < p_row + p_rowSpan;
-    const bool colOverlap =
-        p_col < item->m_col + item->m_colSpan && item->m_col < p_col + p_colSpan;
-    if (rowOverlap && colOverlap) {
-      return false;
+void DashboardBoard::clearAllViews() {
+  for (ViewItem &view : m_views) {
+    if (view.m_frame) {
+      m_grid->removeWidget(view.m_frame);
+      view.m_frame->deleteLater();
     }
   }
-  return true;
-}
-
-QPair<int, int> DashboardBoard::nextFreeCell(int p_rowSpan, int p_colSpan) const {
-  const int colSpan = qBound(1, p_colSpan, m_columns);
-  for (int row = 0;; ++row) {
-    for (int col = 0; col + colSpan <= m_columns; ++col) {
-      if (regionFree(row, col, p_rowSpan, colSpan)) {
-        return qMakePair(row, col);
-      }
-    }
-  }
+  m_views.clear();
 }

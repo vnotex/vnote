@@ -27,6 +27,7 @@ target_sources(vnote PRIVATE
     exportcontroller.cpp exportcontroller.h
     searchcontroller.cpp searchcontroller.h
     imagehostcontroller.cpp imagehostcontroller.h
+    dashboardcontroller.cpp dashboardcontroller.h
 )
 
 target_include_directories(vnote PRIVATE

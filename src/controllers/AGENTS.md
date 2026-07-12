@@ -47,6 +47,7 @@ When adding a multi-target action that requires user input via a dialog, the MVC
 | `MindMapViewWindowController` | Mind map viewing |
 | `NotebookSyncInfoController` | Sync enable/disable, PAT refresh, URL change, bootstrap recovery |
 | `NewNotebookController` (sync portion) | New-notebook bootstrap via `bootstrapSync` (deletes notebook on enable failure) |
+| `DashboardController` | Home dashboard (vx://home) layout model, occupancy math, seed/default, and WidgetConfig persistence; the `DashboardBoard` widget is its pure view |
 
 ## NotebookSyncInfoController: bootstrapApply vs applyChanges
 

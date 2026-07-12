@@ -1,11 +1,12 @@
 #ifndef DASHBOARDBOARD_H
 #define DASHBOARDBOARD_H
 
-#include <QJsonObject>
-#include <QPair>
+#include <QHash>
 #include <QString>
 #include <QVector>
 #include <QWidget>
+
+#include <controllers/dashboardcontroller.h>
 
 class QGridLayout;
 
@@ -13,20 +14,14 @@ namespace vnotex {
 
 class ServiceLocator;
 class Sticker;
-class StickerFactory;
 
-// The grid-based board of stickers shown at vx://home. Owns a QScrollArea
-// wrapping a container laid out with a fixed-column QGridLayout. Persists its
-// layout to WidgetConfig (vnotex.json) via ConfigMgr2 on every mutation.
+// The grid-based board of stickers shown at vx://home (pure view).
 //
-// Layout blob schema:
-//   {
-//     "columns": 12,
-//     "stickers": [
-//       { "type": "calendar", "row": 0, "col": 0, "rowSpan": 3, "colSpan": 4,
-//         "settings": {} }
-//     ]
-//   }
+// Owns a QScrollArea wrapping a container laid out with a fixed-column
+// QGridLayout, plus the Sticker/frame widgets. All layout logic and
+// persistence lives in DashboardController (src/controllers/): the board
+// creates and owns the controller, forwards user gestures to it as intents,
+// and reacts to its signals to build/move/remove frames.
 class DashboardBoard : public QWidget {
   Q_OBJECT
 public:
@@ -34,11 +29,10 @@ public:
 
   ~DashboardBoard() override;
 
-  // Type-ids the user can add (from StickerFactory).
+  // Type-ids the user can add (delegated to the controller).
   QStringList availableStickerTypes() const;
 
-  // Add a sticker of the given type at the next free cell (default span).
-  // Returns true on success.
+  // Add a sticker of the given type at the next free cell (delegated).
   bool addStickerOfType(const QString &p_typeId);
 
 signals:
@@ -46,11 +40,11 @@ signals:
   void contentChanged();
 
 private:
-  // One placed sticker plus its chrome frame and grid geometry.
-  struct Item {
-    Sticker *m_sticker = nullptr;
+  // View-side handle for one placed sticker: its chrome frame + content widget
+  // plus a cache of its current geometry (for dialog defaults).
+  struct ViewItem {
     QWidget *m_frame = nullptr;
-    QString m_type;
+    Sticker *m_sticker = nullptr;
     int m_row = 0;
     int m_col = 0;
     int m_rowSpan = 1;
@@ -60,38 +54,30 @@ private:
   void setupUI();
   void applyColumnSizing();
 
-  void loadFromConfig();
-  void seedDefaultLayout();
-  void persist();
+  // Controller signal handlers.
+  void onLayoutReloaded(const QVector<DashboardController::StickerRecord> &p_records,
+                        int p_columns);
+  void onStickerPlaced(const DashboardController::StickerRecord &p_record);
+  void onStickerMoved(const DashboardController::StickerRecord &p_record);
+  void onStickerRemoved(const QString &p_id);
 
-  // Add a sticker from persisted/explicit geometry+settings. Returns the new
-  // Item (nullptr if creation failed or the region collides).
-  Item *placeSticker(const QString &p_typeId, int p_row, int p_col, int p_rowSpan,
-                     int p_colSpan, const QJsonObject &p_settings);
+  // Build the chrome frame + content widget for a record; returns false if the
+  // sticker widget could not be created.
+  bool createViewForRecord(const DashboardController::StickerRecord &p_record);
+  QWidget *buildFrame(const QString &p_id, Sticker *p_sticker);
 
-  void removeItem(Item *p_item);
-  void moveItem(Item *p_item, int p_dRow, int p_dCol);
-  void setItemGeometry(Item *p_item, int p_row, int p_col, int p_rowSpan, int p_colSpan);
-  void showMoveDialog(Item *p_item);
+  void showMoveDialog(const QString &p_id);
 
-  QWidget *buildFrame(Item *p_item);
-
-  // Occupancy helpers (simple grid; reject-on-overlap).
-  bool regionFree(int p_row, int p_col, int p_rowSpan, int p_colSpan,
-                  const Item *p_exclude = nullptr) const;
-  QPair<int, int> nextFreeCell(int p_rowSpan, int p_colSpan) const;
-
-  StickerFactory *factory() const;
+  void clearAllViews();
 
   ServiceLocator &m_services;
+  DashboardController *m_controller = nullptr;
+
   QGridLayout *m_grid = nullptr;
   QWidget *m_container = nullptr;
 
   int m_columns = 12;
-  QVector<Item *> m_items;
-
-  // Suppress persistence while (re)building from config.
-  bool m_loading = false;
+  QHash<QString, ViewItem> m_views;
 };
 
 } // namespace vnotex
