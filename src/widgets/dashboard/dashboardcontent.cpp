@@ -1,5 +1,6 @@
 #include "dashboardcontent.h"
 
+#include <QAction>
 #include <QMenu>
 #include <QToolBar>
 #include <QToolButton>
@@ -45,8 +46,27 @@ void DashboardContent::setupToolBar(QToolBar *p_toolBar) {
     return;
   }
 
-  auto *addAct = p_toolBar->addAction(tr("Add Sticker"));
+  auto *btn = new QToolButton(p_toolBar);
+  btn->setPopupMode(QToolButton::InstantPopup);
+
+  // Hide the dropdown arrow indicator, matching the main window Theme button.
+  btn->setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));
+
+  auto *addAct = new QAction(tr("Add Sticker"), btn);
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
+    const auto disabledFg =
+        themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
+    QVector<IconUtils::OverriddenColor> colors;
+    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    addAct->setIcon(
+        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg")), colors));
+  }
+  btn->setDefaultAction(addAct);
+
   auto *menu = new QMenu(p_toolBar);
+  btn->setMenu(menu);
   connect(menu, &QMenu::aboutToShow, menu, [this, menu]() {
     menu->clear();
     const QStringList types = m_board->availableStickerTypes();
@@ -54,14 +74,8 @@ void DashboardContent::setupToolBar(QToolBar *p_toolBar) {
       menu->addAction(type, this, [this, type]() { m_board->addStickerOfType(type); });
     }
   });
-  addAct->setMenu(menu);
 
-  // Ensure the action shows its menu when triggered from the toolbar button.
-  for (QWidget *w : addAct->associatedWidgets()) {
-    if (auto *btn = qobject_cast<QToolButton *>(w)) {
-      btn->setPopupMode(QToolButton::InstantPopup);
-    }
-  }
+  p_toolBar->addWidget(btn);
 }
 
 bool DashboardContent::isDirty() const { return false; }
