@@ -382,6 +382,8 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
       setTabToolTip(idx, tooltip.isEmpty() ? win->getTitle() : tooltip);
     }
   });
+
+  updateTabBarVisibility();
 }
 
 void ViewSplit2::takeViewWindow(ViewWindow2 *p_win) {
@@ -400,10 +402,23 @@ void ViewSplit2::takeViewWindow(ViewWindow2 *p_win) {
 
   p_win->setVisible(false);
   p_win->setParent(nullptr);
+
+  updateTabBarVisibility();
 }
 
 ViewWindow2 *ViewSplit2::getCurrentViewWindow() const {
   return qobject_cast<ViewWindow2 *>(currentWidget());
+}
+
+void ViewSplit2::updateTabBarVisibility() {
+  bool hideBar = false;
+  if (count() == 1) {
+    auto *win = getViewWindow(0);
+    if (win && win->getBuffer().nodeId().relativePath == QStringLiteral("vx://home")) {
+      hideBar = true;
+    }
+  }
+  tabBar()->setVisible(!hideBar);
 }
 
 void ViewSplit2::setCurrentViewWindow(ViewWindow2 *p_win) {

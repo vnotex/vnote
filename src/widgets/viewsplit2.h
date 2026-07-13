@@ -181,6 +181,10 @@ private:
 
   ViewWindow2 *getViewWindow(int p_idx) const;
 
+  // Hide the tab bar when the only open tab is the Home dashboard (vx://home),
+  // so the home screen reads as a clean surface; show it otherwise.
+  void updateTabBarVisibility();
+
   void focusCurrentViewWindow();
 
   // Resolve the icon to display on p_win's tab. Returns the themed read-only

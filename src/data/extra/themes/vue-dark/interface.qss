@@ -328,6 +328,19 @@ QToolButton::menu-arrow {
     height: 16px;
 }
 
+/* Calendar (dashboard sticker) month selector dropdown — match the toolbar chevron */
+QCalendarWidget QToolButton#qt_calendar_monthbutton {
+    padding-right: 16px;
+}
+
+QCalendarWidget QToolButton#qt_calendar_monthbutton::menu-indicator {
+    image: url(arrow_dropdown.svg);
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+    width: 16px;
+    height: 16px;
+}
+
 /* Only for MenuButtonPopup */
 QToolButton[popupMode="1"] {
     padding-right: 16px;

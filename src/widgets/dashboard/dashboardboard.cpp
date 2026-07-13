@@ -12,6 +12,8 @@
 
 #include <core/servicelocator.h>
 #include <gui/services/stickerfactory.h>
+#include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 
 #include "sticker.h"
 
@@ -190,8 +192,20 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
   headerLayout->addStretch();
 
   auto *moveBtn = new QToolButton(header);
-  moveBtn->setText(tr("Move"));
+  moveBtn->setToolTip(tr("Move"));
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
+    const auto disabledFg =
+        themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
+    QVector<IconUtils::OverriddenColor> colors;
+    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    moveBtn->setIcon(
+        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("move.svg")), colors));
+  }
   moveBtn->setPopupMode(QToolButton::InstantPopup);
+  // Hide the dropdown arrow indicator for an icon-only button.
+  moveBtn->setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));
   auto *moveMenu = new QMenu(moveBtn);
   moveMenu->addAction(tr("Move Up"), this,
                       [this, p_id]() { m_controller->moveSticker(p_id, -1, 0); });
