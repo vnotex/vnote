@@ -67,7 +67,7 @@ private:
   bool createViewForRecord(const DashboardController::StickerRecord &p_record);
   QWidget *buildFrame(const QString &p_id, Sticker *p_sticker);
 
-  void showMoveDialog(const QString &p_id);
+  void showResizeDialog(const QString &p_id);
 
   void clearAllViews();
 

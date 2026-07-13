@@ -3,7 +3,6 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QLabel>
 #include <QMenu>
 #include <QScrollArea>
@@ -15,6 +14,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 
+#include "resizestickerdialog.h"
 #include "sticker.h"
 
 using namespace vnotex;
@@ -239,8 +239,8 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
   moveMenu->addAction(tr("Move Right"), this,
                       [this, p_id]() { m_controller->moveSticker(p_id, 0, 1); });
   moveMenu->addSeparator();
-  moveMenu->addAction(tr("Set Position/Size..."), this,
-                      [this, p_id]() { showMoveDialog(p_id); });
+  moveMenu->addAction(tr("Resize..."), this,
+                      [this, p_id]() { showResizeDialog(p_id); });
   moveBtn->setMenu(moveMenu);
   headerLayout->addWidget(moveBtn);
 
@@ -259,35 +259,24 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
   return frame;
 }
 
-void DashboardBoard::showMoveDialog(const QString &p_id) {
+void DashboardBoard::showResizeDialog(const QString &p_id) {
   auto it = m_views.constFind(p_id);
   if (it == m_views.constEnd()) {
     return;
   }
   const ViewItem &view = it.value();
 
-  bool ok = false;
-  const int row = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Row:"), view.m_row,
-                                       0, 999, 1, &ok);
-  if (!ok) {
+  // Cap the column span to the space available from the sticker's current
+  // column so the controller never has to clamp (and thus shift) its position.
+  const int maxColSpan = m_columns - view.m_col;
+  ResizeStickerDialog dialog(view.m_rowSpan, view.m_colSpan,
+                             DashboardController::kMaxRowSpan, maxColSpan, this);
+  if (dialog.exec() != QDialog::Accepted) {
     return;
   }
-  const int col = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Column:"),
-                                       view.m_col, 0, m_columns - 1, 1, &ok);
-  if (!ok) {
-    return;
-  }
-  const int rowSpan = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Row span:"),
-                                           view.m_rowSpan, 1, 999, 1, &ok);
-  if (!ok) {
-    return;
-  }
-  const int colSpan = QInputDialog::getInt(this, tr("Set Position/Size"), tr("Column span:"),
-                                           view.m_colSpan, 1, m_columns, 1, &ok);
-  if (!ok) {
-    return;
-  }
-  m_controller->setStickerGeometry(p_id, row, col, rowSpan, colSpan);
+
+  m_controller->setStickerGeometry(p_id, view.m_row, view.m_col, dialog.rowSpan(),
+                                   dialog.colSpan());
 }
 
 void DashboardBoard::clearAllViews() {

@@ -16,7 +16,6 @@ constexpr int kDefaultColSpan = 4;
 // Defensive bounds so a corrupt/hand-edited vnotex.json cannot hang the app.
 constexpr int kMaxColumns = 64;
 constexpr int kMaxRows = 4096;
-constexpr int kMaxRowSpan = 256;
 constexpr int kMaxStickers = 512;
 } // namespace
 

@@ -32,6 +32,9 @@ class StickerFactory;
 class DashboardController : public QObject {
   Q_OBJECT
 public:
+  // Upper bound on a sticker's row span (see setStickerGeometry clamp).
+  static constexpr int kMaxRowSpan = 256;
+
   // Plain geometry record for one placed sticker. No Qt widget types.
   struct StickerRecord {
     QString id;
