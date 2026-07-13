@@ -21,6 +21,7 @@ using namespace vnotex;
 
 namespace {
 constexpr int kColumnMinWidth = 60;
+constexpr int kRowMinHeight = 48;
 } // namespace
 
 DashboardBoard::DashboardBoard(ServiceLocator &p_services, QWidget *p_parent)
@@ -78,6 +79,24 @@ void DashboardBoard::applyColumnSizing() {
   }
 }
 
+void DashboardBoard::applyRowSizing() {
+  if (!m_grid) {
+    return;
+  }
+  // Rows are dynamic (unlike the fixed column count), so reserve a minimum
+  // height for every row up to the highest occupied one. Without this, an empty
+  // row collapses to zero height under Qt::AlignTop and a Move Up/Down into it
+  // is invisible even though the model updated correctly.
+  int maxRow = 0;
+  for (const ViewItem &view : m_views) {
+    maxRow = qMax(maxRow, view.m_row + view.m_rowSpan);
+  }
+  const int prevRows = m_grid->rowCount();
+  for (int r = 0; r < qMax(prevRows, maxRow); ++r) {
+    m_grid->setRowMinimumHeight(r, r < maxRow ? kRowMinHeight : 0);
+  }
+}
+
 QStringList DashboardBoard::availableStickerTypes() const {
   return m_controller ? m_controller->availableStickerTypes() : QStringList();
 }
@@ -99,10 +118,12 @@ void DashboardBoard::onLayoutReloaded(
   for (const DashboardController::StickerRecord &rec : records) {
     createViewForRecord(rec);
   }
+  applyRowSizing();
 }
 
 void DashboardBoard::onStickerPlaced(const DashboardController::StickerRecord &p_record) {
   createViewForRecord(p_record);
+  applyRowSizing();
 }
 
 void DashboardBoard::onStickerMoved(const DashboardController::StickerRecord &p_record) {
@@ -118,6 +139,7 @@ void DashboardBoard::onStickerMoved(const DashboardController::StickerRecord &p_
   m_grid->removeWidget(view.m_frame);
   m_grid->addWidget(view.m_frame, p_record.row, p_record.col, p_record.rowSpan,
                     p_record.colSpan);
+  applyRowSizing();
 }
 
 void DashboardBoard::onStickerRemoved(const QString &p_id) {
@@ -131,6 +153,7 @@ void DashboardBoard::onStickerRemoved(const QString &p_id) {
     m_grid->removeWidget(view.m_frame);
     view.m_frame->deleteLater();
   }
+  applyRowSizing();
 }
 
 // ============ View building ============

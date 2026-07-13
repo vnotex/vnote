@@ -53,6 +53,7 @@ private:
 
   void setupUI();
   void applyColumnSizing();
+  void applyRowSizing();
 
   // Controller signal handlers.
   void onLayoutReloaded(const QVector<DashboardController::StickerRecord> &p_records,
