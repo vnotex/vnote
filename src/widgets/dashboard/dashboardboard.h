@@ -9,6 +9,7 @@
 #include <controllers/dashboardcontroller.h>
 
 class QGridLayout;
+class QToolButton;
 
 namespace vnotex {
 
@@ -35,9 +36,17 @@ public:
   // Add a sticker of the given type at the next free cell (delegated).
   bool addStickerOfType(const QString &p_typeId);
 
+  // Locked mode hides the per-sticker Move/Remove affordances so the layout
+  // cannot be changed by accident. Defaults to locked.
+  bool isLocked() const;
+  void setLocked(bool p_locked);
+
 signals:
   // Emitted whenever the board layout changes (add/remove/move/settings).
   void contentChanged();
+
+  // Emitted when the locked/unlocked mode changes.
+  void lockedChanged(bool p_locked);
 
 private:
   // View-side handle for one placed sticker: its chrome frame + content widget
@@ -45,6 +54,8 @@ private:
   struct ViewItem {
     QWidget *m_frame = nullptr;
     Sticker *m_sticker = nullptr;
+    QToolButton *m_moveBtn = nullptr;
+    QToolButton *m_closeBtn = nullptr;
     int m_row = 0;
     int m_col = 0;
     int m_rowSpan = 1;
@@ -54,6 +65,10 @@ private:
   void setupUI();
   void applyColumnSizing();
   void applyRowSizing();
+
+  // Toggle between Locked (customization hidden) and Unlocked (Move/Remove
+  // affordances shown) modes, reflecting the state on every sticker frame.
+  void applyLockState();
 
   // Controller signal handlers.
   void onLayoutReloaded(const QVector<DashboardController::StickerRecord> &p_records,
@@ -65,7 +80,8 @@ private:
   // Build the chrome frame + content widget for a record; returns false if the
   // sticker widget could not be created.
   bool createViewForRecord(const DashboardController::StickerRecord &p_record);
-  QWidget *buildFrame(const QString &p_id, Sticker *p_sticker);
+  QWidget *buildFrame(const QString &p_id, Sticker *p_sticker, QToolButton **p_moveBtn,
+                      QToolButton **p_closeBtn);
 
   void showResizeDialog(const QString &p_id);
 
@@ -76,6 +92,10 @@ private:
 
   QGridLayout *m_grid = nullptr;
   QWidget *m_container = nullptr;
+
+  // Locked mode hides the per-sticker Move/Remove affordances so the layout
+  // cannot be changed by accident. Defaults to locked.
+  bool m_locked = true;
 
   int m_columns = 12;
   QHash<QString, ViewItem> m_views;

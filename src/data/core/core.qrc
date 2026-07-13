@@ -67,6 +67,8 @@
         <file>icons/type_table_editor.svg</file>
         <file>icons/add.svg</file>
         <file>icons/move.svg</file>
+        <file>icons/lock.svg</file>
+        <file>icons/unlock.svg</file>
         <file>icons/open_notebook.svg</file>
         <file>icons/open_legacy_notebook.svg</file>
         <file>icons/sync_now.svg</file>

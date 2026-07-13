@@ -177,7 +177,7 @@ bool DashboardBoard::createViewForRecord(const DashboardController::StickerRecor
   view.m_col = p_record.col;
   view.m_rowSpan = p_record.rowSpan;
   view.m_colSpan = p_record.colSpan;
-  view.m_frame = buildFrame(p_record.id, sticker);
+  view.m_frame = buildFrame(p_record.id, sticker, &view.m_moveBtn, &view.m_closeBtn);
   m_views.insert(p_record.id, view);
 
   // Capture the widget's effective (normalized) settings into the record before
@@ -197,7 +197,8 @@ bool DashboardBoard::createViewForRecord(const DashboardController::StickerRecor
   return true;
 }
 
-QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
+QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker,
+                                    QToolButton **p_moveBtn, QToolButton **p_closeBtn) {
   auto *frame = new QFrame(m_container);
   frame->setFrameShape(QFrame::StyledPanel);
 
@@ -242,11 +243,13 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
   moveMenu->addAction(tr("Resize..."), this,
                       [this, p_id]() { showResizeDialog(p_id); });
   moveBtn->setMenu(moveMenu);
+  moveBtn->setVisible(!m_locked);
   headerLayout->addWidget(moveBtn);
 
   auto *closeBtn = new QToolButton(header);
   closeBtn->setText(tr("X"));
   closeBtn->setToolTip(tr("Remove sticker"));
+  closeBtn->setVisible(!m_locked);
   connect(closeBtn, &QToolButton::clicked, this,
           [this, p_id]() { m_controller->removeSticker(p_id); });
   headerLayout->addWidget(closeBtn);
@@ -256,7 +259,36 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker) {
   p_sticker->setParent(frame);
   layout->addWidget(p_sticker, 1);
 
+  if (p_moveBtn) {
+    *p_moveBtn = moveBtn;
+  }
+  if (p_closeBtn) {
+    *p_closeBtn = closeBtn;
+  }
+
   return frame;
+}
+
+void DashboardBoard::setLocked(bool p_locked) {
+  if (m_locked == p_locked) {
+    return;
+  }
+  m_locked = p_locked;
+  applyLockState();
+  emit lockedChanged(m_locked);
+}
+
+bool DashboardBoard::isLocked() const { return m_locked; }
+
+void DashboardBoard::applyLockState() {
+  for (const ViewItem &view : m_views) {
+    if (view.m_moveBtn) {
+      view.m_moveBtn->setVisible(!m_locked);
+    }
+    if (view.m_closeBtn) {
+      view.m_closeBtn->setVisible(!m_locked);
+    }
+  }
 }
 
 void DashboardBoard::showResizeDialog(const QString &p_id) {
