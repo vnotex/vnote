@@ -1,59 +1,16 @@
 #include "historylistmodel.h"
 
-#include <QDateTime>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <algorithm>
-
-#include <core/services/notebookcoreservice.h>
+#include <core/services/historyservice.h>
 
 using namespace vnotex;
 
-HistoryListModel::HistoryListModel(NotebookCoreService *p_notebookService, QObject *p_parent)
-    : QAbstractListModel(p_parent), m_notebookService(p_notebookService) {
+HistoryListModel::HistoryListModel(HistoryService *p_historyService, QObject *p_parent)
+    : QAbstractListModel(p_parent), m_historyService(p_historyService) {
 }
 
 void HistoryListModel::loadHistory() {
   beginResetModel();
-  m_nodes.clear();
-
-  if (!m_notebookService) {
-    endResetModel();
-    return;
-  }
-
-  const QJsonArray notebooks = m_notebookService->listNotebooks();
-  for (const auto &nbVal : notebooks) {
-    const QJsonObject nbObj = nbVal.toObject();
-    const QString notebookId = nbObj.value(QStringLiteral("id")).toString();
-    if (notebookId.isEmpty()) {
-      continue;
-    }
-
-    const QJsonArray history = m_notebookService->getHistoryResolved(notebookId);
-    for (const auto &entryVal : history) {
-      const QJsonObject entry = entryVal.toObject();
-
-      NodeInfo info;
-      info.id.notebookId = notebookId;
-      info.id.relativePath = entry.value(QStringLiteral("relativePath")).toString();
-      info.name = entry.value(QStringLiteral("name")).toString();
-      info.isFolder = false;
-      info.isExternal = false;
-      info.modifiedTimeUtc =
-          QDateTime::fromMSecsSinceEpoch(
-              static_cast<qint64>(entry.value(QStringLiteral("openedUtc")).toDouble()));
-
-      m_nodes.append(info);
-    }
-  }
-
-  // Sort by openedUtc descending (most recent first).
-  std::sort(m_nodes.begin(), m_nodes.end(),
-            [](const NodeInfo &a, const NodeInfo &b) {
-              return a.modifiedTimeUtc > b.modifiedTimeUtc;
-            });
-
+  m_nodes = m_historyService ? m_historyService->getAllHistory() : QVector<NodeInfo>();
   endResetModel();
 }
 
@@ -96,9 +53,9 @@ QVariant HistoryListModel::data(const QModelIndex &p_index, int p_role) const {
     return info.id.relativePath;
 
   case INodeListModel::PreviewRole:
-    if (info.preview.isEmpty() && m_notebookService) {
+    if (info.preview.isEmpty() && m_historyService) {
       NodeInfo &mutableInfo = const_cast<NodeInfo &>(m_nodes[row]);
-      mutableInfo.preview = m_notebookService->peekFile(info.id.notebookId, info.id.relativePath);
+      mutableInfo.preview = m_historyService->previewFor(info.id);
     }
     return info.preview;
 

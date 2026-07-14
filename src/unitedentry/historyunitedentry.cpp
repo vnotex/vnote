@@ -9,7 +9,7 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
-#include <core/services/notebookcoreservice.h>
+#include <core/services/historyservice.h>
 #include <gui/services/themeservice.h>
 #include <models/historylistmodel.h>
 #include <models/inodelistmodel.h>
@@ -27,7 +27,7 @@ HistoryUnitedEntry::HistoryUnitedEntry(ServiceLocator &p_services, UnitedEntryMg
 }
 
 void HistoryUnitedEntry::initOnFirstProcess() {
-  m_model = new HistoryListModel(m_services.get<NotebookCoreService>(), this);
+  m_model = new HistoryListModel(m_services.get<HistoryService>(), this);
 
   m_proxyModel = new QSortFilterProxyModel(this);
   m_proxyModel->setSourceModel(m_model);

@@ -6,6 +6,7 @@
 #include <core/nodeidentifier.h>
 #include <core/nodeinfo.h>
 #include <core/services/buffercoreservice.h>
+#include <core/services/historyservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <models/historylistmodel.h>
 #include <models/inodelistmodel.h>
@@ -97,7 +98,8 @@ void TestHistoryListModel::test_emptyHistory() {
   QString nbId = createTestNotebook(QStringLiteral("empty_nb"));
   QVERIFY(!nbId.isEmpty());
 
-  HistoryListModel model(m_notebookService);
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
   model.loadHistory();
   QCOMPARE(model.rowCount(), 0);
 }
@@ -120,7 +122,8 @@ void TestHistoryListModel::test_singleNotebookHistory() {
   QString buf2 = m_bufferService->openBuffer(nbId, QStringLiteral("note2.md"));
   QVERIFY(!buf2.isEmpty());
 
-  HistoryListModel model(m_notebookService);
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
   model.loadHistory();
   QCOMPARE(model.rowCount(), 2);
 
@@ -155,7 +158,8 @@ void TestHistoryListModel::test_multiNotebookMerge() {
   QString bufB = m_bufferService->openBuffer(nbId2, QStringLiteral("fileB.md"));
   QVERIFY(!bufB.isEmpty());
 
-  HistoryListModel model(m_notebookService);
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
   model.loadHistory();
   QCOMPARE(model.rowCount(), 2);
 
@@ -179,7 +183,8 @@ void TestHistoryListModel::test_nodeIdFromIndex() {
   QString buf = m_bufferService->openBuffer(nbId, QStringLiteral("test.md"));
   QVERIFY(!buf.isEmpty());
 
-  HistoryListModel model(m_notebookService);
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
   model.loadHistory();
   QVERIFY(model.rowCount() > 0);
 
@@ -202,7 +207,8 @@ void TestHistoryListModel::test_indexFromNodeId() {
   QString buf = m_bufferService->openBuffer(nbId, QStringLiteral("lookup.md"));
   QVERIFY(!buf.isEmpty());
 
-  HistoryListModel model(m_notebookService);
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
   model.loadHistory();
   QVERIFY(model.rowCount() > 0);
 
@@ -222,7 +228,8 @@ void TestHistoryListModel::test_dataRoles() {
   QString buf = m_bufferService->openBuffer(nbId, QStringLiteral("roles.md"));
   QVERIFY(!buf.isEmpty());
 
-  HistoryListModel model(m_notebookService);
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
   model.loadHistory();
   QVERIFY(model.rowCount() > 0);
 

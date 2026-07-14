@@ -63,6 +63,7 @@ MyWidget::MyWidget(ServiceLocator &p_services, QWidget *p_parent)
 | `ConfigMgr2` | High-level config manager (owns `MainConfig`, `SessionConfig`, resolves paths) | `getConfig()`, `getEditorConfig()`, `getCoreConfig()`, `getFileFromConfigFolder()`, `getAppDataPath()` |
 | `ConfigCoreService` | Low-level app configuration via vxcore C API | `getConfig()`, `getSessionConfig()`, `getDataPath()`, `updateConfigByName()` |
 | `NotebookCoreService` | Notebook/folder/file operations | `createNotebook()`, `openNotebook()`, `createFile()`, `listFolderChildren()` |
+| `HistoryService` | Aggregate per-notebook history across notebooks | `getAllHistory()`, `previewFor()` |
 | `BufferCoreService` | Low-level buffer operations via vxcore | `openBuffer()`, `closeBuffer()`, `saveBuffer()`, `getContentRaw()`, `setContentRaw()`, `getState()`, `insertAsset()`, `listAttachments()` |
 | `BufferService` | Hook-aware buffer wrapper; returns `Buffer2` handles | `openBuffer(NodeIdentifier)` → `Buffer2`, `closeBuffer()`, `listBuffers()`, `autoSaveTick()` |
 | `SearchCoreService` | Content and file search | `searchFiles()`, `searchContent()`, `searchByTags()` |

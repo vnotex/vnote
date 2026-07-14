@@ -346,6 +346,7 @@ src/
 │   │   ├── bufferservice.h/.cpp    # Hook-aware wrapper, returns Buffer2
 │   │   ├── buffer2.h/.cpp          # Lightweight buffer handle (like QModelIndex)
 │   │   ├── templateservice.h/.cpp
+│   │   ├── historyservice.h/.cpp   # Aggregate per-notebook history across notebooks
 │   │   ├── workspacecoreservice.h/.cpp  # Workspace operations (split pane ↔ vxcore workspace)
 │   │   └── hookmanager.h/.cpp
 │   ├── hookcontext.h       # Hook callback context

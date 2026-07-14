@@ -9,13 +9,13 @@
 
 namespace vnotex {
 
-class NotebookCoreService;
+class HistoryService;
 
 class HistoryListModel : public QAbstractListModel, public INodeListModel {
   Q_OBJECT
 
 public:
-  explicit HistoryListModel(NotebookCoreService *p_notebookService,
+  explicit HistoryListModel(HistoryService *p_historyService,
                             QObject *p_parent = nullptr);
   ~HistoryListModel() override = default;
 
@@ -40,7 +40,7 @@ public:
   QString getNotebookId() const override;
 
 private:
-  NotebookCoreService *m_notebookService = nullptr;
+  HistoryService *m_historyService = nullptr;
   QVector<NodeInfo> m_nodes;
 };
 

@@ -32,6 +32,7 @@
 #include <core/services/htmltemplateservice.h>
 #include <core/services/imagehostservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/historyservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
@@ -304,6 +305,7 @@ int main(int argc, char *argv[]) {
     HookManager hookManager;
     ConfigService configService(context, &hookManager);
     NotebookCoreService notebookService(context);
+    HistoryService historyService(&notebookService);
     SearchCoreService searchService(context);
     SearchService searchAsyncService(&searchService);
     WorkspaceCoreService workspaceService(context);
@@ -319,6 +321,7 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
+    serviceLocator.registerService<HistoryService>(&historyService);
     VNote3MigrationService migrationService(&notebookService, &tagCoreService);
     serviceLocator.registerService<VNote3MigrationService>(&migrationService);
     serviceLocator.registerService<BufferService>(&bufferService);
