@@ -1,3 +1,16 @@
+# issue #2656: "Insert As Relative Link" must preserve heading anchors. The
+# anchor-append logic is extracted into the dependency-free LinkInsertUtils so
+# it can be unit-tested without the full MarkdownEditor / clipboard / dialog
+# stack. GUILESS — pure string helper, no widgets needed.
+add_qt_test(test_linkinsertutils
+  SOURCES
+    test_linkinsertutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/linkinsertutils.cpp
+  LINKS
+    Qt6::Core
+  GUILESS
+)
+
 add_qt_test(test_snippet_apply
   SOURCES
     test_snippet_apply.cpp

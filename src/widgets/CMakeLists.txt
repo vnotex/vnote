@@ -85,6 +85,7 @@ target_sources(vnote PRIVATE
     dragdropareaindicator.cpp dragdropareaindicator.h
     editors/graphhelper.cpp editors/graphhelper.h
     editors/graphvizhelper.cpp editors/graphvizhelper.h
+    editors/linkinsertutils.cpp editors/linkinsertutils.h
     editors/markdowneditor.cpp editors/markdowneditor.h
     editors/markdowntable.cpp editors/markdowntable.h
     editors/markdowntablehelper.cpp editors/markdowntablehelper.h

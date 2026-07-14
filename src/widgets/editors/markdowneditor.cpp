@@ -57,6 +57,7 @@
 #include <utils/widgetutils.h>
 
 #include "../outlineprovider.h"
+#include "linkinsertutils.h"
 #include "markdowntablehelper.h"
 #include "previewhelper.h"
 
@@ -788,6 +789,9 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
   }
 
   const bool isImage = PathUtils::isImageUrl(PathUtils::urlToPath(url));
+  // Preserve any heading anchor (fragment) so relative links keep pointing to the
+  // specific section, e.g. FileName#My-Heading (issue #2656).
+  const QString urlFragment = url.fragment(QUrl::FullyEncoded);
   QString localFile = url.toLocalFile();
   if (!url.isLocalFile() || !QFileInfo::exists(localFile)) {
     localFile.clear();
@@ -882,6 +886,12 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
       if (relativeLink) {
         Q_ASSERT(!localFile.isEmpty());
         linkUrl = getRelativeLink(localFile);
+        // Re-append the heading anchor stripped by url.toLocalFile(). Skip for the
+        // "Attach And Insert Link" flow (selection 6), whose target is a freshly
+        // attached copy where the original fragment no longer applies.
+        if (dialog.getSelection() == 3) {
+          linkUrl = LinkInsertUtils::appendFragmentToLink(linkUrl, urlFragment);
+        }
       } else {
         linkUrl = url.toString(QUrl::EncodeSpaces);
       }
