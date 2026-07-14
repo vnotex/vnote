@@ -33,8 +33,8 @@ QVector<NodeInfo> HistoryService::getHistoryForDate(const QDate &p_date, int p_l
 
   const QVector<NodeInfo> all = buildAllHistory();
   for (const auto &info : all) {
-    // Calendar dates are local; compare against the local-time day.
-    if (info.modifiedTimeUtc.toLocalTime().date() == p_date) {
+    // Calendar dates are local; compare the file's local-time access day.
+    if (info.accessedTimeUtc.toLocalTime().date() == p_date) {
       filtered.append(info);
       if (p_limit > 0 && filtered.size() >= p_limit) {
         break;
@@ -69,9 +69,10 @@ QVector<NodeInfo> HistoryService::buildAllHistory() const {
       info.name = entry.value(QStringLiteral("name")).toString();
       info.isFolder = false;
       info.isExternal = false;
-      // NodeInfo::modifiedTimeUtc is documented UTC; pass Qt::UTC explicitly so
-      // downstream local-time conversions (e.g. getHistoryForDate) are correct.
-      info.modifiedTimeUtc =
+      // vxcore history stores only an open/access time (openedUtc, epoch-ms UTC).
+      // Keep it in the dedicated accessedTimeUtc field rather than overloading
+      // modifiedTimeUtc (which means file-modification time to tree/sort/props).
+      info.accessedTimeUtc =
           QDateTime::fromMSecsSinceEpoch(
               static_cast<qint64>(entry.value(QStringLiteral("openedUtc")).toDouble()),
               Qt::UTC);
@@ -83,7 +84,7 @@ QVector<NodeInfo> HistoryService::buildAllHistory() const {
   // Sort by openedUtc descending (most recent first).
   std::sort(nodes.begin(), nodes.end(),
             [](const NodeInfo &a, const NodeInfo &b) {
-              return a.modifiedTimeUtc > b.modifiedTimeUtc;
+              return a.accessedTimeUtc > b.accessedTimeUtc;
             });
 
   return nodes;

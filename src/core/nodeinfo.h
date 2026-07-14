@@ -25,6 +25,7 @@ struct NodeInfo {
   QString name;              // Display name (last path component or notebook name for root)
   QDateTime createdTimeUtc;  // Creation timestamp
   QDateTime modifiedTimeUtc; // Last modification timestamp
+  QDateTime accessedTimeUtc; // Last access/open timestamp (files only; e.g. history entries)
   int childCount = 0;        // Number of direct children (folders only)
   QStringList tags;          // Associated tags (files only)
   QString preview;           // Content preview (first N chars, files only)
