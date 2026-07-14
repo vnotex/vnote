@@ -14,6 +14,37 @@ HistoryService::HistoryService(NotebookCoreService *p_notebookService, QObject *
 }
 
 QVector<NodeInfo> HistoryService::getAllHistory() const {
+  return buildAllHistory();
+}
+
+QVector<NodeInfo> HistoryService::getRecentHistory(int p_limit) const {
+  QVector<NodeInfo> nodes = buildAllHistory();
+  if (p_limit > 0 && nodes.size() > p_limit) {
+    nodes.resize(p_limit);
+  }
+  return nodes;
+}
+
+QVector<NodeInfo> HistoryService::getHistoryForDate(const QDate &p_date, int p_limit) const {
+  QVector<NodeInfo> filtered;
+  if (!p_date.isValid()) {
+    return filtered;
+  }
+
+  const QVector<NodeInfo> all = buildAllHistory();
+  for (const auto &info : all) {
+    // Calendar dates are local; compare against the local-time day.
+    if (info.modifiedTimeUtc.toLocalTime().date() == p_date) {
+      filtered.append(info);
+      if (p_limit > 0 && filtered.size() >= p_limit) {
+        break;
+      }
+    }
+  }
+  return filtered;
+}
+
+QVector<NodeInfo> HistoryService::buildAllHistory() const {
   QVector<NodeInfo> nodes;
 
   if (!m_notebookService) {
@@ -38,9 +69,12 @@ QVector<NodeInfo> HistoryService::getAllHistory() const {
       info.name = entry.value(QStringLiteral("name")).toString();
       info.isFolder = false;
       info.isExternal = false;
+      // NodeInfo::modifiedTimeUtc is documented UTC; pass Qt::UTC explicitly so
+      // downstream local-time conversions (e.g. getHistoryForDate) are correct.
       info.modifiedTimeUtc =
           QDateTime::fromMSecsSinceEpoch(
-              static_cast<qint64>(entry.value(QStringLiteral("openedUtc")).toDouble()));
+              static_cast<qint64>(entry.value(QStringLiteral("openedUtc")).toDouble()),
+              Qt::UTC);
 
       nodes.append(info);
     }

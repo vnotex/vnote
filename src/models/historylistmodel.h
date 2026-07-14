@@ -2,6 +2,7 @@
 #define HISTORYLISTMODEL_H
 
 #include <QAbstractListModel>
+#include <QDate>
 #include <QVector>
 
 #include <core/nodeinfo.h>
@@ -22,6 +23,13 @@ public:
   // Fetch and merge history from all open notebooks.
   void loadHistory();
 
+  // Fetch the p_limit most-recent history entries across all notebooks.
+  void loadRecent(int p_limit);
+
+  // Fetch history entries opened on the given local calendar day, capped to
+  // p_limit.
+  void loadForDate(const QDate &p_date, int p_limit);
+
   // QAbstractListModel overrides.
   int rowCount(const QModelIndex &p_parent = QModelIndex()) const override;
   int columnCount(const QModelIndex &p_parent = QModelIndex()) const override;
@@ -40,6 +48,11 @@ public:
   QString getNotebookId() const override;
 
 private:
+  // Swap in a new node list while preserving any previews already lazily loaded
+  // for nodes that survive the reload (matched by NodeIdentifier). Avoids
+  // re-reading unchanged files from disk on every reload.
+  void resetNodesPreservingPreviews(QVector<NodeInfo> p_newNodes);
+
   HistoryService *m_historyService = nullptr;
   QVector<NodeInfo> m_nodes;
 };

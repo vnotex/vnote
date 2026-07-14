@@ -1,6 +1,7 @@
 #ifndef HISTORYSERVICE_H
 #define HISTORYSERVICE_H
 
+#include <QDate>
 #include <QObject>
 #include <QVector>
 
@@ -26,6 +27,15 @@ public:
   // notebook id, and sorts by modified (opened) time descending.
   QVector<NodeInfo> getAllHistory() const;
 
+  // Aggregate history capped to the p_limit most-recent entries. A p_limit
+  // <= 0 means no cap (returns the full list).
+  QVector<NodeInfo> getRecentHistory(int p_limit) const;
+
+  // Aggregate history filtered to entries opened on the given local calendar
+  // day (modifiedTimeUtc converted to local time), then capped to p_limit.
+  // A p_limit <= 0 means no cap.
+  QVector<NodeInfo> getHistoryForDate(const QDate &p_date, int p_limit) const;
+
   // Fetch a short preview for a history entry (delegates to
   // NotebookCoreService::peekFile). Returns empty string if the service is
   // unavailable or the file cannot be read.
@@ -39,6 +49,10 @@ signals:
   void historyChanged();
 
 private:
+  // Build the full, sorted-descending aggregate history across all open
+  // notebooks. Shared by getAllHistory / getRecentHistory / getHistoryForDate.
+  QVector<NodeInfo> buildAllHistory() const;
+
   NotebookCoreService *m_notebookService = nullptr;
 };
 

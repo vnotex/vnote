@@ -1,5 +1,7 @@
 #include "historylistmodel.h"
 
+#include <QHash>
+
 #include <core/services/historyservice.h>
 
 using namespace vnotex;
@@ -8,10 +10,48 @@ HistoryListModel::HistoryListModel(HistoryService *p_historyService, QObject *p_
     : QAbstractListModel(p_parent), m_historyService(p_historyService) {
 }
 
-void HistoryListModel::loadHistory() {
+void HistoryListModel::resetNodesPreservingPreviews(QVector<NodeInfo> p_newNodes) {
+  // Carry over previews already lazily loaded (via peekFile in data()) for nodes
+  // that survive the reload, so a re-show / date-change does not re-read them.
+  if (!m_nodes.isEmpty()) {
+    QHash<NodeIdentifier, QString> cachedPreviews;
+    cachedPreviews.reserve(m_nodes.size());
+    for (const auto &node : m_nodes) {
+      if (!node.preview.isEmpty()) {
+        cachedPreviews.insert(node.id, node.preview);
+      }
+    }
+    if (!cachedPreviews.isEmpty()) {
+      for (auto &node : p_newNodes) {
+        if (node.preview.isEmpty()) {
+          const auto it = cachedPreviews.constFind(node.id);
+          if (it != cachedPreviews.constEnd()) {
+            node.preview = it.value();
+          }
+        }
+      }
+    }
+  }
+
   beginResetModel();
-  m_nodes = m_historyService ? m_historyService->getAllHistory() : QVector<NodeInfo>();
+  m_nodes = std::move(p_newNodes);
   endResetModel();
+}
+
+void HistoryListModel::loadHistory() {
+  resetNodesPreservingPreviews(m_historyService ? m_historyService->getAllHistory()
+                                                : QVector<NodeInfo>());
+}
+
+void HistoryListModel::loadRecent(int p_limit) {
+  resetNodesPreservingPreviews(m_historyService ? m_historyService->getRecentHistory(p_limit)
+                                                : QVector<NodeInfo>());
+}
+
+void HistoryListModel::loadForDate(const QDate &p_date, int p_limit) {
+  resetNodesPreservingPreviews(
+      m_historyService ? m_historyService->getHistoryForDate(p_date, p_limit)
+                       : QVector<NodeInfo>());
 }
 
 int HistoryListModel::rowCount(const QModelIndex &p_parent) const {

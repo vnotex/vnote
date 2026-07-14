@@ -32,6 +32,8 @@ private slots:
   void test_nodeIdFromIndex();
   void test_indexFromNodeId();
   void test_dataRoles();
+  void test_loadRecentCapsAndOrders();
+  void test_loadForDateFiltersLocalDay();
 
 private:
   QString createTestNotebook(const QString &p_name);
@@ -250,6 +252,70 @@ void TestHistoryListModel::test_dataRoles() {
   // IsFolderRole returns false.
   QVariant folderVal = model.data(idx, INodeListModel::IsFolderRole);
   QCOMPARE(folderVal.toBool(), false);
+}
+
+void TestHistoryListModel::test_loadRecentCapsAndOrders() {
+  QString nbId = createTestNotebook(QStringLiteral("recent_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  // Create and open 5 files with distinct open timestamps.
+  const int fileCount = 5;
+  QStringList names;
+  for (int i = 0; i < fileCount; ++i) {
+    const QString name = QStringLiteral("recent%1.md").arg(i);
+    QString fileId = m_notebookService->createFile(nbId, QString(), name);
+    QVERIFY(!fileId.isEmpty());
+    QString buf = m_bufferService->openBuffer(nbId, name);
+    QVERIFY(!buf.isEmpty());
+    names.append(name);
+    QTest::qWait(20);
+  }
+
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
+
+  // Cap to 3: row count equals the limit.
+  const int limit = 3;
+  model.loadRecent(limit);
+  QCOMPARE(model.rowCount(), limit);
+
+  // Most-recent-first: the last-opened file appears at row 0.
+  NodeIdentifier id0 = model.nodeIdFromIndex(model.index(0, 0));
+  QCOMPARE(id0.relativePath, names.last());
+
+  // A limit <= 0 means no cap: all entries returned.
+  model.loadRecent(0);
+  QCOMPARE(model.rowCount(), fileCount);
+}
+
+void TestHistoryListModel::test_loadForDateFiltersLocalDay() {
+  QString nbId = createTestNotebook(QStringLiteral("fordate_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  const int fileCount = 3;
+  for (int i = 0; i < fileCount; ++i) {
+    const QString name = QStringLiteral("day%1.md").arg(i);
+    QString fileId = m_notebookService->createFile(nbId, QString(), name);
+    QVERIFY(!fileId.isEmpty());
+    QString buf = m_bufferService->openBuffer(nbId, name);
+    QVERIFY(!buf.isEmpty());
+  }
+
+  HistoryService historyService(m_notebookService);
+  HistoryListModel model(&historyService);
+
+  // Files were opened now, so they fall on today's LOCAL calendar day.
+  const QDate today = QDate::currentDate();
+  model.loadForDate(today, 20);
+  QCOMPARE(model.rowCount(), fileCount);
+
+  // A different local date excludes all of today's entries.
+  model.loadForDate(today.addDays(-1), 20);
+  QCOMPARE(model.rowCount(), 0);
+
+  // The limit caps the filtered result.
+  model.loadForDate(today, 2);
+  QCOMPARE(model.rowCount(), 2);
 }
 
 } // namespace tests

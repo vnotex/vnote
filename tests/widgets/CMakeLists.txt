@@ -830,3 +830,48 @@ add_custom_command(TARGET test_notebook_sync_info_dialog2_readonly POST_BUILD
     $<TARGET_FILE_DIR:test_notebook_sync_info_dialog2_readonly>
 )
 
+# HistorySticker dashboard sticker test. NOT GUILESS — constructs a real
+# QListView + FileNodeDelegate (needs QApplication). Compiles the sticker +
+# its model/view/factory deps inline (there is no widgets static library) plus
+# the ThemeService chain so FileNodeDelegate::paletteColor symbols link (the
+# delegate paint path is never reached, so ThemeService is left unregistered).
+# mainwindow.h is listed so AUTOMOC provides MainWindow::staticMetaObject used
+# transitively by widgetutils.cpp's MainWindow::tr(...).
+add_qt_test(test_historysticker
+  SOURCES
+    test_historysticker.cpp
+    test_mainwindow_stub.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/historysticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/calendarsticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_historysticker PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_historysticker POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_historysticker>
+)
+
