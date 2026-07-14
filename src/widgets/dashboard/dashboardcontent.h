@@ -6,6 +6,7 @@
 #include <core/iviewwindowcontent.h>
 
 class QToolBar;
+class QAction;
 
 namespace vnotex {
 
@@ -29,14 +30,25 @@ public:
   void reset() override;
   bool canClose(bool p_force) override;
   QWidget *contentWidget() override;
+  void handleThemeChanged() override;
 
 signals:
   // Required by WidgetViewWindow2 (connected via string-based SIGNAL()).
   void contentChanged();
 
 private:
+  // Re-tint the toolbar buttons from the current theme. Safe no-ops until the
+  // toolbar has been built (m_addAct / m_lockAct still null).
+  void refreshAddStickerIcon();
+  void updateLockAction();
+
   ServiceLocator &m_services;
   DashboardBoard *m_board = nullptr;
+
+  // Toolbar actions, owned by the toolbar. Held so their theme-colored icons
+  // (and the lock action's checked/text state) can be refreshed on demand.
+  QAction *m_addAct = nullptr;
+  QAction *m_lockAct = nullptr;
 };
 
 } // namespace vnotex

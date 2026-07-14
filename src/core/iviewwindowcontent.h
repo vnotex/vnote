@@ -62,6 +62,14 @@ public:
   // Return the QWidget to embed in the view area.
   virtual QWidget *contentWidget() = 0;
 
+  // --- Theme ---
+
+  // Called when the application theme changes so the content can re-fetch
+  // theme-colored icons/styles for its toolbar widgets. The host toolbar's
+  // standard actions are refreshed by ViewWindow2; this hook covers the custom
+  // widgets/actions the content added in setupToolBar(). Default no-op.
+  virtual void handleThemeChanged() {}
+
   // --- Navigation ---
 
   // Navigate to a subpage identified by path segments, optionally scrolling to a

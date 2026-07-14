@@ -53,16 +53,8 @@ void DashboardContent::setupToolBar(QToolBar *p_toolBar) {
   btn->setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));
 
   auto *addAct = new QAction(tr("Add Sticker"), btn);
-  if (auto *themeService = m_services.get<ThemeService>()) {
-    const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
-    const auto disabledFg =
-        themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
-    QVector<IconUtils::OverriddenColor> colors;
-    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
-    addAct->setIcon(
-        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg")), colors));
-  }
+  m_addAct = addAct;
+  refreshAddStickerIcon();
   btn->setDefaultAction(addAct);
 
   auto *menu = new QMenu(p_toolBar);
@@ -81,29 +73,48 @@ void DashboardContent::setupToolBar(QToolBar *p_toolBar) {
   // Move/Remove affordances so the layout cannot be changed by accident.
   auto *lockAct = new QAction(p_toolBar);
   lockAct->setCheckable(true);
-  auto updateLockAct = [this, lockAct]() {
-    const bool locked = m_board->isLocked();
-    lockAct->setChecked(!locked);
-    lockAct->setText(locked ? tr("Unlock Dashboard") : tr("Lock Dashboard"));
-    lockAct->setToolTip(locked ? tr("Locked") : tr("Unlocked"));
-    if (auto *themeService = m_services.get<ThemeService>()) {
-      const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
-      const auto disabledFg =
-          themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
-      QVector<IconUtils::OverriddenColor> colors;
-      colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-      colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
-      const QString iconName =
-          locked ? QStringLiteral("lock.svg") : QStringLiteral("unlock.svg");
-      lockAct->setIcon(IconUtils::fetchIcon(themeService->getIconFile(iconName), colors));
-    }
-  };
-  updateLockAct();
+  m_lockAct = lockAct;
+  updateLockAction();
   connect(lockAct, &QAction::triggered, this,
           [this]() { m_board->setLocked(!m_board->isLocked()); });
-  connect(m_board, &DashboardBoard::lockedChanged, lockAct,
-          [updateLockAct]() { updateLockAct(); });
+  connect(m_board, &DashboardBoard::lockedChanged, lockAct, [this]() { updateLockAction(); });
   p_toolBar->addAction(lockAct);
+}
+
+void DashboardContent::refreshAddStickerIcon() {
+  if (!m_addAct) {
+    return;
+  }
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
+    const auto disabledFg =
+        themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
+    QVector<IconUtils::OverriddenColor> colors;
+    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    m_addAct->setIcon(
+        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg")), colors));
+  }
+}
+
+void DashboardContent::updateLockAction() {
+  if (!m_lockAct || !m_board) {
+    return;
+  }
+  const bool locked = m_board->isLocked();
+  m_lockAct->setChecked(!locked);
+  m_lockAct->setText(locked ? tr("Unlock Dashboard") : tr("Lock Dashboard"));
+  m_lockAct->setToolTip(locked ? tr("Locked") : tr("Unlocked"));
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
+    const auto disabledFg =
+        themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
+    QVector<IconUtils::OverriddenColor> colors;
+    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    const QString iconName = locked ? QStringLiteral("lock.svg") : QStringLiteral("unlock.svg");
+    m_lockAct->setIcon(IconUtils::fetchIcon(themeService->getIconFile(iconName), colors));
+  }
 }
 
 bool DashboardContent::isDirty() const { return false; }
@@ -118,3 +129,8 @@ bool DashboardContent::canClose(bool p_force) {
 }
 
 QWidget *DashboardContent::contentWidget() { return this; }
+
+void DashboardContent::handleThemeChanged() {
+  refreshAddStickerIcon();
+  updateLockAction();
+}

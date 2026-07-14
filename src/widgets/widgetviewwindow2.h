@@ -35,6 +35,7 @@ public:
   bool aboutToClose(bool p_force) override;
 
 protected:
+  void handleThemeChanged() override;
   void syncEditorFromBuffer() override;
   void setModified(bool p_modified) override;
   void scrollUp() override;

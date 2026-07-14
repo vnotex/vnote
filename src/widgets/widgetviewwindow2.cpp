@@ -113,6 +113,13 @@ bool WidgetViewWindow2::aboutToClose(bool p_force) {
   return true;
 }
 
+void WidgetViewWindow2::handleThemeChanged() {
+  ViewWindow2::handleThemeChanged(); // base: refreshes standard toolbar icons
+  if (m_content) {
+    m_content->handleThemeChanged(); // content: refreshes its custom toolbar widgets
+  }
+}
+
 void WidgetViewWindow2::syncEditorFromBuffer() {}
 
 void WidgetViewWindow2::setModified(bool p_modified) {
