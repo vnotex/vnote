@@ -13,7 +13,6 @@
 #include "fileopenparameters.h"
 #include "quickaccesshelper.h"
 
-#include <task/taskmgr.h>
 #include <utils/docsutils.h>
 
 using namespace vnotex;
@@ -22,8 +21,6 @@ VNoteX::VNoteX(QObject *p_parent) : QObject(p_parent) {
   m_instanceId = QRandomGenerator::global()->generate64();
 
   initThemeMgr();
-
-  initTaskMgr();
 
   initNotebookMgr();
 
@@ -37,7 +34,6 @@ VNoteX::VNoteX(QObject *p_parent) : QObject(p_parent) {
 void VNoteX::initLoad() {
   qDebug() << "start init which may take a while";
   m_notebookMgr->loadNotebooks();
-  m_taskMgr->init();
 }
 
 void VNoteX::initThemeMgr() {
@@ -50,15 +46,7 @@ void VNoteX::initThemeMgr() {
   m_themeMgr = new ThemeMgr(configMgr.getCoreConfig().getTheme(), this);
 }
 
-void VNoteX::initTaskMgr() {
-  Q_ASSERT(!m_taskMgr);
-  m_taskMgr = new TaskMgr(this);
-  connect(m_taskMgr, &TaskMgr::taskOutputRequested, this, &VNoteX::showOutputRequested);
-}
-
 ThemeMgr &VNoteX::getThemeMgr() const { return *m_themeMgr; }
-
-TaskMgr &VNoteX::getTaskMgr() const { return *m_taskMgr; }
 
 void VNoteX::setMainWindow(MainWindow *p_mainWindow) {
   Q_ASSERT(!m_mainWindow);

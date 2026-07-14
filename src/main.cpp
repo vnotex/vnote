@@ -43,6 +43,7 @@
 #include <core/services/syncworkqueuemanager.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
+#include <core/services/taskservice.h>
 #include <core/services/templateservice.h>
 #include <core/services/vnote3migrationservice.h>
 #include <core/services/workspacecoreservice.h>
@@ -376,6 +377,16 @@ int main(int argc, char *argv[]) {
     configMgr.init();
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";
+
+    // TaskService: new-arch replacement for the legacy TaskMgr. Constructed
+    // after ConfigMgr2 (needs initialized config), NotebookCoreService, and
+    // SnippetCoreService. No production ITaskContext implementer exists yet, so
+    // a null context is injected (all context-derived variables resolve empty).
+    TaskService taskService(&configMgr, &notebookService, &snippetCoreService,
+                            /*ITaskContext*/ nullptr);
+    serviceLocator.registerService<TaskService>(&taskService);
+    taskService.init();
+    qInfo() << "TaskService registered";
 
     // Set initial auto-save policy from config.
     bufferService.syncAutoSavePolicy(

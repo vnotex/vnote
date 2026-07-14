@@ -2,7 +2,6 @@
 
 #include <QAction>
 #include <QDebug>
-#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -14,23 +13,21 @@
 #include <QTextCodec>
 #include <QVersionNumber>
 
-#include <buffer/buffer.h>
 #include <core/exception.h>
-#include <core/vnotex.h>
-#include <notebook/notebook.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 
 #include "shellexecution.h"
-#include "taskmgr.h"
+#include "taskservice.h"
+#include "taskvariablemgr.h"
 
 using namespace vnotex;
 
 QString Task::s_latestVersion = "0.1.3";
 
 QSharedPointer<Task> Task::fromFile(const QString &p_file, const QString &p_locale,
-                                    TaskMgr *p_taskMgr) {
-  QSharedPointer<Task> task(new Task(p_locale, p_file, p_taskMgr, nullptr));
+                                    TaskService *p_taskService) {
+  QSharedPointer<Task> task(new Task(p_locale, p_file, p_taskService, nullptr));
   const auto obj = FileUtils::readJsonFile(p_file);
   if (fromJson(task.data(), obj)) {
     return task;
@@ -142,7 +139,7 @@ bool Task::fromJsonV0(Task *p_task, const QJsonObject &p_obj, bool p_mergeTasks)
     auto arr = p_obj["tasks"].toArray();
     for (int i = 0; i < arr.size(); ++i) {
       QScopedPointer<Task> childTask(
-          new Task(p_task->m_locale, p_task->getFile(), p_task->m_taskMgr, p_task));
+          new Task(p_task->m_locale, p_task->getFile(), p_task->m_taskService, p_task));
       if (fromJson(childTask.data(), arr[i].toObject())) {
         connect(childTask.data(), &Task::outputRequested, p_task, &Task::outputRequested);
         p_task->m_children.append(childTask.take());
@@ -279,18 +276,16 @@ QString Task::getOptionsCwd() {
     return variableMgr().evaluate(this, cwd);
   }
 
-  auto notebook = TaskVariableMgr::getCurrentNotebook();
-  if (notebook) {
-    cwd = notebook->getRootFolderAbsolutePath();
-  }
+  if (m_taskService) {
+    const auto root = m_taskService->currentNotebookRootFolder();
+    if (!root.isEmpty()) {
+      return root;
+    }
 
-  if (!cwd.isNull()) {
-    return cwd;
-  }
-
-  auto buffer = TaskVariableMgr::getCurrentBuffer();
-  if (buffer) {
-    return QFileInfo(buffer->getPath()).dir().absolutePath();
+    const auto bufferPath = m_taskService->currentBufferPath();
+    if (!bufferPath.isEmpty()) {
+      return QFileInfo(bufferPath).dir().absolutePath();
+    }
   }
 
   return QFileInfo(m_dto._source).dir().absolutePath();
@@ -336,8 +331,9 @@ const MessageDTO *Task::findMessage(const QString &p_id) const {
 
 const QString &Task::getFile() const { return m_dto._source; }
 
-Task::Task(const QString &p_locale, const QString &p_file, TaskMgr *p_taskMgr, QObject *p_parent)
-    : QObject(p_parent), m_taskMgr(p_taskMgr), m_locale(p_locale) {
+Task::Task(const QString &p_locale, const QString &p_file, TaskService *p_taskService,
+           QObject *p_parent)
+    : QObject(p_parent), m_taskService(p_taskService), m_locale(p_locale) {
   m_dto._source = p_file;
   m_dto.version = s_latestVersion;
   m_dto.type = "shell";
@@ -501,7 +497,7 @@ QStringList Task::getStringList(const QJsonValue &p_value) {
   return strs;
 }
 
-const TaskVariableMgr &Task::variableMgr() const { return m_taskMgr->getVariableMgr(); }
+const TaskVariableMgr &Task::variableMgr() const { return m_taskService->getVariableMgr(); }
 
 bool Task::isCancelled() const { return m_cancelled; }
 

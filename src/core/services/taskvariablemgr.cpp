@@ -1,30 +1,23 @@
 #include "taskvariablemgr.h"
 
 #include <QApplication>
-#include <QInputDialog>
+#include <QFileInfo>
 #include <QProcess>
 #include <QRandomGenerator>
 #include <QRegularExpression>
 #include <QTimeZone>
 
-#include <buffer/buffer.h>
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/exception.h>
-#include <core/mainconfig.h>
-#include <core/notebookmgr.h>
-#include <core/vnotex.h>
-#include <notebook/node.h>
-#include <notebook/notebook.h>
-#include <snippet/snippetmgr.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/snippetcoreservice.h>
 #include <utils/pathutils.h>
-#include <widgets/dialogs/selectdialog.h>
-#include <widgets/mainwindow.h>
-#include <widgets/viewarea.h>
-#include <widgets/viewwindow.h>
+#include <vxcore/notebook_json_keys.h>
 
+#include "itaskcontext.h"
 #include "shellexecution.h"
 #include "task.h"
-#include "taskmgr.h"
+#include "taskservice.h"
 
 using namespace vnotex;
 
@@ -38,7 +31,11 @@ QString TaskVariable::evaluate(Task *p_task, const QString &p_value) const {
 const QString TaskVariableMgr::c_variableSymbolRegExp =
     QString(R"(\$\{([^${}:]+)(?::([^${}:]+))?\})");
 
-TaskVariableMgr::TaskVariableMgr(TaskMgr *p_taskMgr) : m_taskMgr(p_taskMgr) {}
+TaskVariableMgr::TaskVariableMgr(TaskService *p_taskService) : m_taskService(p_taskService) {}
+
+ITaskContext *TaskVariableMgr::context() const {
+  return m_taskService ? m_taskService->taskContext() : nullptr;
+}
 
 void TaskVariableMgr::init() { initVariables(); }
 
@@ -65,104 +62,126 @@ void TaskVariableMgr::initVariables() {
 }
 
 void TaskVariableMgr::initNotebookVariables() {
-  addVariable("notebookFolder", [](Task *, const QString &) {
-    auto notebook = TaskVariableMgr::getCurrentNotebook();
-    if (notebook) {
-      return PathUtils::cleanPath(notebook->getRootFolderAbsolutePath());
-    } else {
-      return QString();
-    }
+  addVariable("notebookFolder", [this](Task *, const QString &) {
+    const auto root = m_taskService ? m_taskService->currentNotebookRootFolder() : QString();
+    return root.isEmpty() ? QString() : PathUtils::cleanPath(root);
   });
-  addVariable("notebookFolderName", [](Task *, const QString &) {
-    auto notebook = TaskVariableMgr::getCurrentNotebook();
-    if (notebook) {
-      return PathUtils::dirName(notebook->getRootFolderPath());
-    } else {
-      return QString();
-    }
+  addVariable("notebookFolderName", [this](Task *, const QString &) {
+    const auto root = m_taskService ? m_taskService->currentNotebookRootFolder() : QString();
+    return root.isEmpty() ? QString() : PathUtils::dirName(root);
   });
-  addVariable("notebookName", [](Task *, const QString &) {
-    auto notebook = TaskVariableMgr::getCurrentNotebook();
-    if (notebook) {
-      return notebook->getName();
-    } else {
-      return QString();
+  addVariable("notebookName", [this](Task *, const QString &) {
+    auto *ctx = context();
+    auto *nbService = m_taskService ? m_taskService->notebookService() : nullptr;
+    if (ctx && nbService) {
+      const auto id = ctx->currentNotebookId();
+      if (!id.isEmpty()) {
+        return nbService->getNotebookConfig(id)
+            .value(QLatin1String(vxcore::kJsonKeyName))
+            .toString();
+      }
     }
+    return QString();
   });
-  addVariable("notebookDescription", [](Task *, const QString &) {
-    auto notebook = TaskVariableMgr::getCurrentNotebook();
-    if (notebook) {
-      return notebook->getDescription();
-    } else {
-      return QString();
+  addVariable("notebookDescription", [this](Task *, const QString &) {
+    auto *ctx = context();
+    auto *nbService = m_taskService ? m_taskService->notebookService() : nullptr;
+    if (ctx && nbService) {
+      const auto id = ctx->currentNotebookId();
+      if (!id.isEmpty()) {
+        return nbService->getNotebookConfig(id)
+            .value(QLatin1String(vxcore::kJsonKeyDescription))
+            .toString();
+      }
     }
+    return QString();
   });
 }
 
 void TaskVariableMgr::initBufferVariables() {
-  addVariable("buffer", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      return PathUtils::cleanPath(buffer->getPath());
-    }
-    return QString();
-  });
-  addVariable("bufferNotebookFolder", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      auto node = buffer->getNode();
-      if (node) {
-        return PathUtils::cleanPath(node->getNotebook()->getRootFolderAbsolutePath());
+  addVariable("buffer", [this](Task *, const QString &) {
+    auto *ctx = context();
+    if (ctx) {
+      const auto path = ctx->currentBufferPath();
+      if (!path.isEmpty()) {
+        return PathUtils::cleanPath(path);
       }
     }
     return QString();
   });
-  addVariable("bufferRelativePath", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      auto node = buffer->getNode();
-      if (node) {
-        return PathUtils::cleanPath(node->fetchPath());
-      } else {
-        return PathUtils::cleanPath(buffer->getPath());
+  addVariable("bufferNotebookFolder", [this](Task *, const QString &) {
+    auto *ctx = context();
+    auto *nbService = m_taskService ? m_taskService->notebookService() : nullptr;
+    if (ctx && nbService) {
+      const auto id = ctx->currentBufferNotebookId();
+      if (!id.isEmpty()) {
+        const auto root = nbService->getNotebookConfig(id)
+                              .value(QLatin1String(vxcore::kJsonKeyRootFolder))
+                              .toString();
+        if (!root.isEmpty()) {
+          return PathUtils::cleanPath(root);
+        }
       }
     }
     return QString();
   });
-  addVariable("bufferName", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      return PathUtils::fileName(buffer->getPath());
+  addVariable("bufferRelativePath", [this](Task *, const QString &) {
+    auto *ctx = context();
+    if (ctx) {
+      const auto relPath = ctx->currentBufferRelativePath();
+      if (!relPath.isEmpty()) {
+        return PathUtils::cleanPath(relPath);
+      }
+      const auto path = ctx->currentBufferPath();
+      if (!path.isEmpty()) {
+        return PathUtils::cleanPath(path);
+      }
     }
     return QString();
   });
-  addVariable("bufferBaseName", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      return QFileInfo(buffer->getPath()).completeBaseName();
+  addVariable("bufferName", [this](Task *, const QString &) {
+    auto *ctx = context();
+    if (ctx) {
+      const auto path = ctx->currentBufferPath();
+      if (!path.isEmpty()) {
+        return PathUtils::fileName(path);
+      }
     }
     return QString();
   });
-  addVariable("bufferDir", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      return PathUtils::parentDirPath(buffer->getPath());
+  addVariable("bufferBaseName", [this](Task *, const QString &) {
+    auto *ctx = context();
+    if (ctx) {
+      const auto path = ctx->currentBufferPath();
+      if (!path.isEmpty()) {
+        return QFileInfo(path).completeBaseName();
+      }
     }
     return QString();
   });
-  addVariable("bufferExt", [](Task *, const QString &) {
-    auto buffer = getCurrentBuffer();
-    if (buffer) {
-      return QFileInfo(buffer->getPath()).suffix();
+  addVariable("bufferDir", [this](Task *, const QString &) {
+    auto *ctx = context();
+    if (ctx) {
+      const auto path = ctx->currentBufferPath();
+      if (!path.isEmpty()) {
+        return PathUtils::parentDirPath(path);
+      }
     }
     return QString();
   });
-  addVariable("selectedText", [](Task *, const QString &) {
-    auto win = getCurrentViewWindow();
-    if (win) {
-      return win->selectedText();
+  addVariable("bufferExt", [this](Task *, const QString &) {
+    auto *ctx = context();
+    if (ctx) {
+      const auto path = ctx->currentBufferPath();
+      if (!path.isEmpty()) {
+        return QFileInfo(path).suffix();
+      }
     }
     return QString();
+  });
+  addVariable("selectedText", [this](Task *, const QString &) {
+    auto *ctx = context();
+    return ctx ? ctx->selectedText() : QString();
   });
 }
 
@@ -180,27 +199,41 @@ void TaskVariableMgr::initTaskVariables() {
   });
   addVariable("pathSeparator", [](Task *, const QString &) { return QDir::separator(); });
   addVariable("notebookTaskFolder", [this](Task *, const QString &) {
-    return PathUtils::cleanPath(m_taskMgr->getNotebookTaskFolder());
+    const auto folder = m_taskService ? m_taskService->getNotebookTaskFolder() : QString();
+    return folder.isEmpty() ? QString() : PathUtils::cleanPath(folder);
   });
-  addVariable("taskFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(
-        ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Tasks));
+  addVariable("taskFolder", [this](Task *, const QString &) {
+    auto *configMgr = m_taskService ? m_taskService->configMgr() : nullptr;
+    if (configMgr) {
+      return PathUtils::cleanPath(configMgr->getConfigDataFolder(ConfigMgr2::Tasks));
+    }
+    return QString();
   });
-  addVariable("themeFolder", [](Task *, const QString &) {
-    return PathUtils::cleanPath(
-        ConfigMgr::getInst().getConfigDataFolder(ConfigMgr::ConfigDataType::Themes));
+  addVariable("themeFolder", [this](Task *, const QString &) {
+    auto *configMgr = m_taskService ? m_taskService->configMgr() : nullptr;
+    if (configMgr) {
+      return PathUtils::cleanPath(configMgr->getConfigDataFolder(ConfigMgr2::Themes));
+    }
+    return QString();
   });
 }
 
 void TaskVariableMgr::initMagicVariables() {
-  addVariable("magic", [](Task *, const QString &val) {
+  addVariable("magic", [this](Task *, const QString &val) {
     if (val.isEmpty()) {
       return QString();
     }
 
-    auto overrides = SnippetMgr::generateOverrides(getCurrentBuffer());
-    return SnippetMgr::getInst().applySnippetBySymbol(SnippetMgr::generateSnippetSymbol(val),
-                                                      overrides);
+    auto *snippetService = m_taskService ? m_taskService->snippetService() : nullptr;
+    if (!snippetService) {
+      qWarning() << "cannot resolve ${magic:} variable: no snippet service";
+      return QString();
+    }
+    // The new SnippetCoreService only exposes applySnippetBySymbol(content),
+    // which resolves %name% symbols in arbitrary text. Legacy per-buffer
+    // override injection (SnippetMgr::generateOverrides) is not available here;
+    // pass the snippet symbol directly.
+    return snippetService->applySnippetBySymbol(QLatin1Char('%') + val + QLatin1Char('%'));
   });
 }
 
@@ -219,11 +252,15 @@ void TaskVariableMgr::initEnvironmentVariables() {
 
 void TaskVariableMgr::initConfigVariables() {
   // ${config:main.core.shortcuts.FullScreen}.
-  addVariable("config", [](Task *, const QString &val) {
+  addVariable("config", [this](Task *, const QString &val) {
     if (val.isEmpty()) {
       return QString();
     }
-    auto jsonVal = ConfigMgr::getInst().parseAndReadConfig(val);
+    auto *configMgr = m_taskService ? m_taskService->configMgr() : nullptr;
+    if (!configMgr) {
+      return QString();
+    }
+    auto jsonVal = configMgr->parseAndReadConfig(val);
     switch (jsonVal.type()) {
     case QJsonValue::Bool:
       return jsonVal.toBool() ? QStringLiteral("1") : QStringLiteral("0");
@@ -259,38 +296,25 @@ void TaskVariableMgr::initInputVariables() {
     }
 
     if (input->type == "promptString") {
+      auto *ctx = context();
+      if (!ctx) {
+        // No UI context yet: cannot prompt, cancel the task.
+        task->setCancelled(true);
+        return QString();
+      }
       const auto desc = evaluate(task, input->description);
       const auto defaultText = evaluate(task, input->default_);
-      QInputDialog dialog(VNoteX::getInst().getMainWindow());
-      dialog.setInputMode(QInputDialog::TextInput);
-      dialog.setTextEchoMode(input->password ? QLineEdit::Password : QLineEdit::Normal);
-      dialog.setWindowTitle(task->getLabel());
-      dialog.setLabelText(desc);
-      dialog.setTextValue(defaultText);
-      if (dialog.exec() == QDialog::Accepted) {
-        return dialog.textValue();
-      } else {
+      bool cancelled = false;
+      const auto result =
+          ctx->promptString(task->getLabel(), desc, defaultText, input->password, cancelled);
+      if (cancelled) {
         task->setCancelled(true);
         return QString();
       }
+      return result;
     } else if (input->type == "pickString") {
-      // TODO: migrate to new SelectDialog constructor with explicit theme colors
-      /*
-      const auto desc = evaluate(task, input->description);
-      SelectDialog dialog(task->getLabel(), desc, VNoteX::getInst().getMainWindow());
-      for (int i = 0; i < input->options.size(); i++) {
-        dialog.addSelection(input->options.at(i), i);
-      }
-
-      if (dialog.exec() == QDialog::Accepted) {
-        int selection = dialog.getSelection();
-        return input->options.at(selection);
-      } else {
-        task->setCancelled(true);
-        return QString();
-      }
-      */
-      // Stub: cancel task until dialog is migrated
+      // TODO: migrate pickString to a UI-provided selection dialog. Until then,
+      // cancel the task (matches the prior stubbed behavior).
       task->setCancelled(true);
       return QString();
     } else {
@@ -324,22 +348,6 @@ void TaskVariableMgr::addVariable(const QString &p_name, const TaskVariable::Fun
   Q_ASSERT(!m_variables.contains(p_name));
 
   m_variables.insert(p_name, TaskVariable(p_name, p_func));
-}
-
-const ViewWindow *TaskVariableMgr::getCurrentViewWindow() {
-  return VNoteX::getInst().getMainWindow()->getViewArea()->getCurrentViewWindow();
-}
-
-Buffer *TaskVariableMgr::getCurrentBuffer() {
-  auto win = getCurrentViewWindow();
-  if (win) {
-    return win->getBuffer();
-  }
-  return nullptr;
-}
-
-QSharedPointer<Notebook> TaskVariableMgr::getCurrentNotebook() {
-  return VNoteX::getInst().getNotebookMgr().getCurrentNotebook();
 }
 
 QString TaskVariableMgr::evaluate(Task *p_task, const QString &p_text) const {

@@ -17,7 +17,6 @@ struct FileOpenParameters;
 class Event;
 class Notebook;
 struct ComplexLocation;
-class TaskMgr;
 
 // DEPRECATED: Use ServiceLocator pattern to access services instead.
 class VNoteX : public QObject, private Noncopyable {
@@ -33,8 +32,6 @@ public:
   void initLoad();
 
   ThemeMgr &getThemeMgr() const;
-
-  TaskMgr &getTaskMgr() const;
 
   void setMainWindow(MainWindow *p_mainWindow);
   MainWindow *getMainWindow() const;
@@ -80,9 +77,6 @@ signals:
   // Requested to new a folder in current notebook.
   void newFolderRequested();
 
-  // Requested to show output message.
-  void showOutputRequested(const QString &p_text);
-
   // Requested to show status message.
   void statusMessageRequested(const QString &p_message, int p_timeoutMilliseconds);
 
@@ -121,8 +115,6 @@ private:
 
   void initThemeMgr();
 
-  void initTaskMgr();
-
   void initNotebookMgr();
 
   void initBufferMgr();
@@ -135,9 +127,6 @@ private:
 
   // QObject managed.
   ThemeMgr *m_themeMgr = nullptr;
-
-  // QObject managed.
-  TaskMgr *m_taskMgr = nullptr;
 
   // QObject managed.
   NotebookMgr *m_notebookMgr = nullptr;

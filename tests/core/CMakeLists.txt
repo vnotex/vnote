@@ -251,6 +251,20 @@ add_qt_test(test_snippetservice
   GUILESS
 )
 
+# Task subsystem migrated to new-arch service layer (TaskService). Covers app
+# task JSON loading and variable resolution (buffer/notebook/selectedText/
+# config folders/input prompt+cancel) via a MockTaskContext, plus null-context
+# safety.
+add_qt_test(test_taskservice
+  SOURCES
+    test_taskservice.cpp
+  LINKS
+    core_services
+    core_configs
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_tagviewer2
   SOURCES
     test_tagviewer2.cpp

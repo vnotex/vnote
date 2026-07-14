@@ -22,6 +22,10 @@ set(SERVICES_SOURCES
   imagehostservice.cpp
   imagehostworker.cpp
   workspacecoreservice.cpp
+  shellexecution.cpp
+  task.cpp
+  taskservice.cpp
+  taskvariablemgr.cpp
   vnote3migrationservice.cpp
   synccredentialsstore.cpp
   syncops.cpp
@@ -70,6 +74,11 @@ set(SERVICES_HEADERS
   imagehostservice.h
   imagehostworker.h
   workspacecoreservice.h
+  shellexecution.h
+  task.h
+  taskservice.h
+  taskvariablemgr.h
+  itaskcontext.h
   vnote3migrationservice.h
   synccredentialsstore.h
   syncops.h
@@ -83,6 +92,11 @@ set(SERVICES_HEADERS
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
+
+# Task::decodeText uses QTextCodec, which lives in Qt6::Core5Compat.
+if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND TARGET Qt6::Core5Compat)
+  target_link_libraries(core_services PUBLIC Qt6::Core5Compat)
+endif()
 
 target_link_libraries(core_services
   PUBLIC

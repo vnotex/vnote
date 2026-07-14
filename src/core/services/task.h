@@ -88,7 +88,7 @@ struct TaskDTO {
   QString _source;
 };
 
-class TaskMgr;
+class TaskService;
 class TaskVariableMgr;
 
 class Task : public QObject {
@@ -98,7 +98,7 @@ public:
 
   // For top level Task, use QSharedPointer instead of QObject to manage ownership.
   static QSharedPointer<Task> fromFile(const QString &p_file, const QString &p_locale,
-                                       TaskMgr *p_taskMgr);
+                                       TaskService *p_taskService);
 
   void run();
 
@@ -154,7 +154,7 @@ signals:
   void outputRequested(const QString &p_text) const;
 
 private:
-  Task(const QString &p_locale, const QString &p_file, TaskMgr *p_taskMgr,
+  Task(const QString &p_locale, const QString &p_file, TaskService *p_taskService,
        QObject *p_parent = nullptr);
 
   // Must call start() or delete the returned QProcess.
@@ -172,7 +172,7 @@ private:
 
   QVector<Task *> m_children;
 
-  TaskMgr *m_taskMgr = nullptr;
+  TaskService *m_taskService = nullptr;
 
   TaskDTO m_dto;
 

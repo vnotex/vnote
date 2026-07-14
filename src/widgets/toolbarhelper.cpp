@@ -28,7 +28,7 @@
 #include <core/notebookmgr.h>
 #include <core/sessionconfig.h>
 #include <core/vnotex.h>
-#include <task/taskmgr.h>
+
 // LEGACY: UnitedEntry migrated to new architecture in toolbarhelper2.cpp.
 // #include <unitedentry/unitedentry.h>
 #include <gui/utils/iconutils.h>

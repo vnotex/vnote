@@ -490,13 +490,12 @@ void MainWindow::setupOutlineViewer() {
 }
 
 void MainWindow::setupConsoleViewer() {
+  // NOTE: The task-output feed (VNoteX::showOutputRequested) was removed with
+  // the legacy TaskMgr during the TaskService migration. This console is now
+  // created but not fed; it is reserved pending task-output wiring in the new
+  // architecture (TaskService::taskOutputRequested + a MainWindow2 panel).
   m_consoleViewer = new ConsoleViewer(this);
   m_consoleViewer->setObjectName("ConsoleViewer.vnotex");
-
-  connect(&VNoteX::getInst(), &VNoteX::showOutputRequested, this, [this](const QString &p_text) {
-    m_consoleViewer->append(p_text);
-    // m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
-  });
 }
 
 /*

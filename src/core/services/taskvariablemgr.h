@@ -13,10 +13,8 @@
 
 namespace vnotex {
 class Task;
-class Notebook;
-class Buffer;
-class ViewWindow;
-class TaskMgr;
+class TaskService;
+class ITaskContext;
 
 class TaskVariable {
 public:
@@ -34,7 +32,7 @@ private:
 
 class TaskVariableMgr : private Noncopyable {
 public:
-  explicit TaskVariableMgr(TaskMgr *p_taskMgr);
+  explicit TaskVariableMgr(TaskService *p_taskService);
 
   void init();
 
@@ -44,10 +42,6 @@ public:
 
   // Used for UT.
   void overrideVariable(const QString &p_name, const TaskVariable::Func &p_func);
-
-  static Buffer *getCurrentBuffer();
-
-  static QSharedPointer<Notebook> getCurrentNotebook();
 
 private:
   void initVariables();
@@ -72,17 +66,10 @@ private:
 
   const TaskVariable *findVariable(const QString &p_name) const;
 
-  /*
-  QString evaluateInputVariables(const QString &p_text,
-                                 const Task *p_task) const;
+  // Returns the injected UI context, or nullptr if unavailable.
+  ITaskContext *context() const;
 
-  QString evaluateShellVariables(const QString &p_text,
-                                 const Task *p_task) const;
- */
-
-  static const ViewWindow *getCurrentViewWindow();
-
-  TaskMgr *m_taskMgr = nullptr;
+  TaskService *m_taskService = nullptr;
 
   QHash<QString, TaskVariable> m_variables;
 
