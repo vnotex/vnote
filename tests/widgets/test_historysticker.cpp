@@ -12,6 +12,7 @@
 #include <QJsonObject>
 #include <QListView>
 #include <QShowEvent>
+#include <QToolButton>
 #include <QVariantMap>
 
 #include <core/hookcontext.h>
@@ -51,6 +52,7 @@ private slots:
   void test_secondShowRefreshesActiveMode();
   void test_destructorUnregistersCallback();
   void test_activationOpensExpectedNode();
+  void test_clearFilterReturnsToRecent();
 
 private:
   QString createTestNotebook(const QString &p_name);
@@ -301,6 +303,40 @@ void TestHistorySticker::test_activationOpensExpectedNode() {
   // Remove the action before the captured stack references go out of scope so a
   // later test opening a file can never invoke a dangling callback.
   m_hookManager->removeAction(hookId);
+  sticker.hide();
+}
+
+void TestHistorySticker::test_clearFilterReturnsToRecent() {
+  openFile(m_nbId, QStringLiteral("f.md"));
+  openFile(m_nbId, QStringLiteral("g.md"));
+
+  HistorySticker sticker(*m_services);
+  sendShow(&sticker);
+  QListView *lv = listViewOf(&sticker);
+  QCOMPARE(lv->model()->rowCount(), 2);
+
+  // Recent mode: the filter bar is hidden.
+  auto *filterBar = sticker.findChild<QWidget *>(QStringLiteral("historyFilterBar"));
+  QVERIFY(filterBar != nullptr);
+  QVERIFY(filterBar->isHidden());
+
+  // Switch to today's date: filter bar becomes visible.
+  QVariantMap args;
+  args[QStringLiteral("date")] = QDate::currentDate().toString(QStringLiteral("yyyy-MM-dd"));
+  m_hookManager->doAction(HookNames::DashboardCalendarDateChanged, args);
+  QVERIFY(!filterBar->isHidden());
+
+  // Click the clear button: back to recent mode, bar hidden.
+  auto *clearButton = sticker.findChild<QToolButton *>(QStringLiteral("historyClearFilter"));
+  QVERIFY(clearButton != nullptr);
+  clearButton->click();
+  QCOMPARE(lv->model()->rowCount(), 2);
+  QVERIFY(filterBar->isHidden());
+
+  // A subsequent show keeps recent mode, proving m_activeDate was cleared.
+  sendShow(&sticker);
+  QCOMPARE(lv->model()->rowCount(), 2);
+  QVERIFY(filterBar->isHidden());
   sticker.hide();
 }
 

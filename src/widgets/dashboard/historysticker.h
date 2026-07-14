@@ -9,6 +9,8 @@
 class QListView;
 class QModelIndex;
 class QShowEvent;
+class QLabel;
+class QToolButton;
 
 namespace vnotex {
 
@@ -38,6 +40,9 @@ protected:
 private slots:
   void onItemActivated(const QModelIndex &p_index);
 
+  // Clear the active day filter and return to recent mode.
+  void clearDateFilter();
+
 private:
   // React to the calendar-date-changed hook. Parses the raw string payload and
   // switches to day-filter mode only for a valid date; otherwise preserves the
@@ -47,9 +52,16 @@ private:
   // Reload whichever mode is currently active.
   void reloadCurrentMode();
 
+  // Sync the filter bar's visibility and label text to the current mode.
+  void updateFilterBar();
+
   HistoryListModel *m_model = nullptr;
   QListView *m_listView = nullptr;
   FileNodeDelegate *m_delegate = nullptr;
+
+  QWidget *m_filterBar = nullptr;
+  QLabel *m_filterLabel = nullptr;
+  QToolButton *m_clearButton = nullptr;
 
   // Invalid = recent mode; valid = day-filter mode for that local date.
   QDate m_activeDate;

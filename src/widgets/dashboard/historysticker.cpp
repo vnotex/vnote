@@ -1,7 +1,11 @@
 #include "historysticker.h"
 
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QListView>
+#include <QLocale>
 #include <QShowEvent>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include <core/fileopensettings.h>
@@ -23,6 +27,25 @@ HistorySticker::HistorySticker(ServiceLocator &p_services, QWidget *p_parent)
   layout->setContentsMargins(0, 0, 0, 0);
 
   m_model = new HistoryListModel(m_services.get<HistoryService>(), this);
+
+  // Filter bar shown only in day-filter mode; lets the user return to recent.
+  m_filterBar = new QWidget(this);
+  m_filterBar->setObjectName(QStringLiteral("historyFilterBar"));
+  auto *filterLayout = new QHBoxLayout(m_filterBar);
+  filterLayout->setContentsMargins(4, 2, 4, 2);
+  m_filterLabel = new QLabel(m_filterBar);
+  filterLayout->addWidget(m_filterLabel);
+  filterLayout->addStretch();
+  m_clearButton = new QToolButton(m_filterBar);
+  m_clearButton->setObjectName(QStringLiteral("historyClearFilter"));
+  m_clearButton->setText(QStringLiteral("\u2715"));
+  m_clearButton->setAutoRaise(true);
+  m_clearButton->setToolTip(tr("Show recent files"));
+  filterLayout->addWidget(m_clearButton);
+  m_filterBar->setVisible(false);
+  layout->addWidget(m_filterBar);
+
+  connect(m_clearButton, &QToolButton::clicked, this, &HistorySticker::clearDateFilter);
 
   m_listView = new QListView(this);
   m_listView->setModel(m_model);
@@ -70,9 +93,7 @@ void HistorySticker::onCalendarDateChanged(const QVariantMap &p_args) {
     return;
   }
   m_activeDate = d;
-  if (m_model) {
-    m_model->loadForDate(m_activeDate, kHistoryLimit);
-  }
+  reloadCurrentMode();
 }
 
 void HistorySticker::reloadCurrentMode() {
@@ -84,6 +105,27 @@ void HistorySticker::reloadCurrentMode() {
   } else {
     m_model->loadRecent(kHistoryLimit);
   }
+  updateFilterBar();
+}
+
+void HistorySticker::updateFilterBar() {
+  if (!m_filterBar) {
+    return;
+  }
+  if (m_activeDate.isValid()) {
+    if (m_filterLabel) {
+      m_filterLabel->setText(
+          tr("Opened on %1").arg(QLocale().toString(m_activeDate, QLocale::ShortFormat)));
+    }
+    m_filterBar->setVisible(true);
+  } else {
+    m_filterBar->setVisible(false);
+  }
+}
+
+void HistorySticker::clearDateFilter() {
+  m_activeDate = QDate();
+  reloadCurrentMode();
 }
 
 void HistorySticker::onItemActivated(const QModelIndex &p_index) {
