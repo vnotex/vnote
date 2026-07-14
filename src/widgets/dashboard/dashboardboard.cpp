@@ -22,6 +22,11 @@ using namespace vnotex;
 namespace {
 constexpr int kColumnMinWidth = 60;
 constexpr int kRowMinHeight = 48;
+// Fixed pixel height of a single logical grid row. A sticker's frame is pinned
+// to rowSpan * this (plus inter-row spacing), so the board is a true fixed-size
+// grid: spans map to proportional pixel heights and a tall sticker (e.g. the
+// History list) scrolls inside its cell instead of inflating every shared row.
+constexpr int kRowUnitHeight = 100;
 } // namespace
 
 DashboardBoard::DashboardBoard(ServiceLocator &p_services, QWidget *p_parent)
@@ -97,12 +102,24 @@ void DashboardBoard::applyRowSizing() {
   }
 }
 
+int DashboardBoard::frameHeightForRowSpan(int p_rowSpan) const {
+  const int span = qMax(p_rowSpan, 1);
+  const int spacing = m_grid ? qMax(m_grid->verticalSpacing(), 0) : 0;
+  return span * kRowUnitHeight + (span - 1) * spacing;
+}
+
 QStringList DashboardBoard::availableStickerTypes() const {
   return m_controller ? m_controller->availableStickerTypes() : QStringList();
 }
 
 bool DashboardBoard::addStickerOfType(const QString &p_typeId) {
   return m_controller && m_controller->addStickerOfType(p_typeId);
+}
+
+void DashboardBoard::resetLayout() {
+  if (m_controller) {
+    m_controller->resetLayout();
+  }
 }
 
 // ============ Controller signal handlers ============
@@ -178,6 +195,7 @@ bool DashboardBoard::createViewForRecord(const DashboardController::StickerRecor
   view.m_rowSpan = p_record.rowSpan;
   view.m_colSpan = p_record.colSpan;
   view.m_frame = buildFrame(p_record.id, sticker, &view.m_moveBtn, &view.m_closeBtn);
+  view.m_frame->setFixedHeight(frameHeightForRowSpan(p_record.rowSpan));
   m_views.insert(p_record.id, view);
 
   // Capture the widget's effective (normalized) settings into the record before
@@ -212,6 +230,7 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker,
   headerLayout->setContentsMargins(0, 0, 0, 0);
 
   auto *titleLabel = new QLabel(p_sticker->titleText(), header);
+  titleLabel->setVisible(p_sticker->shouldShowTitle());
   headerLayout->addWidget(titleLabel);
   headerLayout->addStretch();
 

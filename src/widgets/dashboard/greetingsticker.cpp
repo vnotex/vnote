@@ -1,5 +1,6 @@
 #include "greetingsticker.h"
 
+#include <QFont>
 #include <QLabel>
 #include <QShowEvent>
 #include <QTime>
@@ -13,13 +14,23 @@ GreetingSticker::GreetingSticker(ServiceLocator &p_services, QWidget *p_parent)
   layout->setContentsMargins(0, 0, 0, 0);
 
   m_label = new QLabel(this);
+  // Fill the frame and center the text both ways. The frame height is already
+  // capped by the board's fixed-size grid (setFixedHeight), so letting the
+  // label expand keeps the banner compact while truly centering the greeting.
   m_label->setAlignment(Qt::AlignCenter);
+  // Larger, emphasized greeting text so the banner reads as a prominent header.
+  QFont font = m_label->font();
+  font.setPointSizeF(font.pointSizeF() * 1.6);
+  font.setBold(true);
+  m_label->setFont(font);
   layout->addWidget(m_label);
 }
 
 QString GreetingSticker::typeId() const { return QStringLiteral("greeting"); }
 
 QString GreetingSticker::titleText() const { return tr("Greetings"); }
+
+bool GreetingSticker::shouldShowTitle() const { return false; }
 
 QString GreetingSticker::greetingForHour(int p_hour) {
   if (p_hour >= 5 && p_hour < 12) {

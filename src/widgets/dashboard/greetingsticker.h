@@ -20,6 +20,7 @@ public:
 
   QString typeId() const override;
   QString titleText() const override;
+  bool shouldShowTitle() const override;
 
   // Pure mapping from a 24-hour hour value to a greeting string. Static and
   // clock-free so the mapping is unit-testable without mocking the clock:

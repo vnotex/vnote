@@ -29,6 +29,12 @@ public:
   // Human-readable title shown in the sticker chrome header.
   virtual QString titleText() const { return typeId(); }
 
+  // Whether the board chrome should show titleText() in the header bar. Stickers
+  // that render their own self-explanatory content (e.g. a greeting banner) can
+  // override this to false to suppress the redundant title. The header (with its
+  // move/close affordances) is still built.
+  virtual bool shouldShowTitle() const { return true; }
+
   // Serialize per-sticker settings into an opaque JSON object. Default: empty.
   virtual QJsonObject saveSettings() const { return QJsonObject(); }
 

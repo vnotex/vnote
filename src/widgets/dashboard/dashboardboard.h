@@ -36,6 +36,10 @@ public:
   // Add a sticker of the given type at the next free cell (delegated).
   bool addStickerOfType(const QString &p_typeId);
 
+  // Discard the current layout and restore the built-in default stickers
+  // (delegated to the controller, which rebuilds and persists).
+  void resetLayout();
+
   // Locked mode hides the per-sticker Move/Remove affordances so the layout
   // cannot be changed by accident. Defaults to locked.
   bool isLocked() const;
@@ -65,6 +69,10 @@ private:
   void setupUI();
   void applyColumnSizing();
   void applyRowSizing();
+
+  // Fixed pixel height for a frame spanning p_rowSpan logical rows (accounts for
+  // the inter-row spacing swallowed by the span).
+  int frameHeightForRowSpan(int p_rowSpan) const;
 
   // Toggle between Locked (customization hidden) and Unlocked (Move/Remove
   // affordances shown) modes, reflecting the state on every sticker frame.

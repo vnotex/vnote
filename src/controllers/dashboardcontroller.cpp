@@ -92,19 +92,39 @@ void DashboardController::load() {
   emit layoutReloaded(m_records, m_columns);
 }
 
+void DashboardController::resetLayout() {
+  // Discard the current layout and rebuild from the built-in defaults, then
+  // persist so the reset survives a restart. Mirrors the empty-config branch of
+  // load(): seed, notify the view to rebuild, then write once.
+  m_loading = true;
+  m_records.clear();
+  m_nextId = 0;
+  seedDefaultLayout();
+  m_loading = false;
+  emit layoutReloaded(m_records, m_columns);
+  persist();
+}
+
 void DashboardController::seedDefaultLayout() {
   m_columns = kDefaultColumns;
-  // Seed a single Calendar sticker if the factory knows how to make one.
   auto *fac = factory();
-  if (fac && fac->hasCreator(QStringLiteral("calendar"))) {
-    placeRecord(QStringLiteral("calendar"), 0, 0, kDefaultRowSpan, kDefaultColSpan,
+  // Seed a short Greeting banner across the top of the left column.
+  if (fac && fac->hasCreator(QStringLiteral("greeting"))) {
+    constexpr int kGreetingRowSpan = 1;
+    placeRecord(QStringLiteral("greeting"), 0, 0, kGreetingRowSpan, kDefaultColSpan,
                 QJsonObject());
   }
-  // Seed a History sticker immediately to the right of the Calendar. Give it a
-  // taller span than the Calendar so several recent files are visible at once.
+  // Seed a Calendar sticker directly below the Greeting banner.
+  if (fac && fac->hasCreator(QStringLiteral("calendar"))) {
+    placeRecord(QStringLiteral("calendar"), 1, 0, kDefaultRowSpan, kDefaultColSpan,
+                QJsonObject());
+  }
+  // Seed a History sticker in the second column. Give it a taller span so
+  // several recent files are visible at once, and one extra column of width.
   if (fac && fac->hasCreator(QStringLiteral("history"))) {
-    constexpr int kHistoryRowSpan = 6;
-    placeRecord(QStringLiteral("history"), 0, kDefaultColSpan, kHistoryRowSpan, kDefaultColSpan,
+    constexpr int kHistoryRowSpan = 4;
+    constexpr int kHistoryColSpan = kDefaultColSpan + 1;
+    placeRecord(QStringLiteral("history"), 0, kDefaultColSpan, kHistoryRowSpan, kHistoryColSpan,
                 QJsonObject());
   }
 }

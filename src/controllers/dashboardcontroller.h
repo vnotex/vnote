@@ -57,6 +57,10 @@ public:
   // calendar sticker (and persists once) when the stored layout is empty.
   void load();
 
+  // Discard the current layout and rebuild from the built-in defaults, then
+  // persist. Emits layoutReloaded so the view rebuilds all frames.
+  void resetLayout();
+
   // Intents forwarded by the view. Each mutates the model and persists.
   bool addStickerOfType(const QString &p_typeId);
   void moveSticker(const QString &p_id, int p_dRow, int p_dCol);

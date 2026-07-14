@@ -41,6 +41,7 @@ private:
   // toolbar has been built (m_addAct / m_lockAct still null).
   void refreshAddStickerIcon();
   void updateLockAction();
+  void refreshResetIcon();
 
   ServiceLocator &m_services;
   DashboardBoard *m_board = nullptr;
@@ -49,6 +50,7 @@ private:
   // (and the lock action's checked/text state) can be refreshed on demand.
   QAction *m_addAct = nullptr;
   QAction *m_lockAct = nullptr;
+  QAction *m_resetAct = nullptr;
 };
 
 } // namespace vnotex
