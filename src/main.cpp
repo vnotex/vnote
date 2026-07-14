@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QProcess>
@@ -525,13 +526,26 @@ int main(int argc, char *argv[]) {
     case CommandLineOptions::HelpRequested:
       Q_FALLTHROUGH();
     default:
-      qInfo() << cmdOptions.m_helpText;
+      // Print help to stdout verbatim. Using qInfo() would escape the newlines
+      // in the help text and render it as a single garbled line (issue #2710).
+      fprintf(stdout, "%s", qPrintable(cmdOptions.m_helpText));
       ret = 0;
       earlyExit = true;
       break;
     }
     if (earlyExit) {
       break;
+    }
+
+    // Resolve positional paths to absolute in THIS process, so they carry the
+    // caller's working directory whether we go on to open them ourselves or
+    // forward them over IPC to an already-running instance (whose working
+    // directory is unrelated). Command-line args like "./note.md" would
+    // otherwise be resolved against the wrong CWD in the primary instance.
+    for (auto &path : cmdOptions.m_pathsToOpen) {
+      if (!path.isEmpty()) {
+        path = QFileInfo(path).absoluteFilePath();
+      }
     }
 
     // Guarding.
@@ -590,6 +604,13 @@ int main(int argc, char *argv[]) {
 
     // Register all navigation targets after NavigationModeService is available.
     mainWindow.setupNavigationMode();
+
+    // Handle requests forwarded from a second instance (files passed to
+    // "Open with VNote" while VNote is already running, plus raise/show).
+    QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &mainWindow,
+                     &MainWindow2::openFiles);
+    QObject::connect(&guard, &SingleInstanceGuard::showRequested, &mainWindow,
+                     &MainWindow2::showMainWindow);
 
     mainWindow.show();
     qInfo() << "MainWindow2 shown";

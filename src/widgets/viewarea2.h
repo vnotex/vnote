@@ -77,6 +77,14 @@ public:
   // Called after loadLayout() has created the splitter tree.
   void restoreSession();
 
+signals:
+  // Emitted once, shortly after startup, when session restore has completed and
+  // core propagation has been re-enabled. Consumers (e.g. MainWindow2) may then
+  // safely open buffers into the view area.
+  void corePropagationReady();
+
+public:
+
   // ============ ViewAreaView Interface (overrides) ============
   void addFirstViewSplit(const QString &p_workspaceId) override;
   void split(const QString &p_workspaceId, Direction p_direction,

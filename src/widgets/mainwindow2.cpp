@@ -33,7 +33,9 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/exportcontext.h>
+#include <core/fileopensettings.h>
 #include <core/hooknames.h>
+#include <core/nodeidentifier.h>
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
@@ -296,13 +298,79 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
     // Initialize snippet panel (load snippets from config).
     m_snippetPanel->initialize();
 
-    // Fire after-start hook so components can restore session state.
+    // Fire after-start hook so components can restore session state. The
+    // view area's MainWindowAfterStart handler runs session restore and, once
+    // core propagation is re-enabled, emits ViewArea2::corePropagationReady,
+    // which drains any files queued below (see setupViewArea()).
     auto *hookMgr = m_serviceLocator.get<HookManager>();
     if (hookMgr) {
       QVariantMap args;
       hookMgr->doAction(HookNames::MainWindowAfterStart, args);
     }
   });
+
+  // Queue the initial command-line paths so they are opened by the
+  // corePropagationReady handler once the view area is ready. Queuing here
+  // (before the deferred lambda above) guarantees the paths are present when
+  // the ready signal fires.
+  m_pendingOpenPaths.append(p_pathsToOpen);
+}
+
+void MainWindow2::openFiles(const QStringList &p_paths) {
+  if (p_paths.isEmpty()) {
+    return;
+  }
+
+  // If startup is still in progress, queue the paths and let the post-init
+  // drain open them once the view area is ready.
+  if (!m_postInitComplete) {
+    m_pendingOpenPaths.append(p_paths);
+    return;
+  }
+
+  doOpenFiles(p_paths);
+}
+
+void MainWindow2::doOpenFiles(const QStringList &p_paths) {
+  if (p_paths.isEmpty()) {
+    return;
+  }
+
+  auto *bufferSvc = m_serviceLocator.get<BufferService>();
+  if (!bufferSvc) {
+    qWarning() << "MainWindow2::doOpenFiles: BufferService unavailable";
+    return;
+  }
+
+  for (const auto &path : p_paths) {
+    if (path.isEmpty()) {
+      continue;
+    }
+
+    // Resolve to an absolute path relative to the current working directory so
+    // relative command-line arguments (e.g. "./note.md") open correctly.
+    const QFileInfo finfo(path);
+    const QString absolutePath = finfo.absoluteFilePath();
+
+    if (!finfo.exists()) {
+      qWarning() << "MainWindow2::doOpenFiles: path does not exist:" << absolutePath;
+      continue;
+    }
+
+    if (finfo.isDir()) {
+      // Folders are not opened as buffers; skip for now.
+      qInfo() << "MainWindow2::doOpenFiles: skipping directory:" << absolutePath;
+      continue;
+    }
+
+    // Open as an external file: empty notebookId, absolute path. The
+    // FileAfterOpen hook drives ViewAreaController to display the buffer.
+    NodeIdentifier nodeId;
+    nodeId.relativePath = absolutePath;
+
+    FileOpenSettings settings;
+    bufferSvc->openBuffer(nodeId, settings);
+  }
 }
 
 void MainWindow2::restoreWindowGeometry() {
@@ -514,6 +582,18 @@ void MainWindow2::exportNotes() {
 void MainWindow2::setupViewArea() {
   m_viewArea = new ViewArea2(m_serviceLocator, this);
   setCentralWidget(m_viewArea);
+
+  // Once the view area has finished session restore and re-enabled core
+  // propagation, mark post-init complete and open any files that were queued
+  // during startup (command-line paths or requests forwarded from a second
+  // instance). This is an explicit handoff rather than relying on timer
+  // ordering, so buffers are always registered in their vxcore workspace.
+  connect(m_viewArea, &ViewArea2::corePropagationReady, this, [this]() {
+    m_postInitComplete = true;
+    const auto pending = m_pendingOpenPaths;
+    m_pendingOpenPaths.clear();
+    doOpenFiles(pending);
+  });
 }
 
 void MainWindow2::setupOutlineViewer() {

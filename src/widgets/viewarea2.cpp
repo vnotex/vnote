@@ -104,6 +104,11 @@ void ViewArea2::setupController() {
             if (m_windows.isEmpty()) {
               maybeOpenHome();
             }
+
+            // Propagation is now enabled and the view area is ready to receive
+            // buffers; notify consumers (e.g. MainWindow2 opens command-line /
+            // forwarded files here).
+            emit corePropagationReady();
           });
         },
         10);

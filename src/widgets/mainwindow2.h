@@ -62,6 +62,13 @@ public:
 
   void kickOffPostInit(const QStringList &p_pathsToOpen);
 
+  // Open the given files/folders (e.g. command-line paths or files forwarded
+  // from a second instance). Files are opened as external buffers so they can
+  // be viewed/edited without a notebook. If post-initialization has not yet
+  // completed (workspace/core propagation still disabled during session
+  // restore), the paths are queued and opened once startup finishes.
+  void openFiles(const QStringList &p_paths);
+
   void setupNavigationMode();
 
   // Content area expansion.
@@ -145,6 +152,9 @@ private:
 
   void exportNotes();
 
+  // Actually open the resolved paths as external buffers. Assumes the view
+  // area is ready to receive buffers.
+  void doOpenFiles(const QStringList &p_paths);
   void setupSystemTray();
 
   // Restore only window geometry and dock state (safe to call before event loop).
@@ -220,6 +230,15 @@ private:
   QStringList m_visibleDocksBeforeExpand;
 
   bool m_layoutReset = false;
+
+  // True once kickOffPostInit's deferred startup work has completed and the
+  // view area has re-enabled core propagation. Until then, openFiles() queues
+  // its paths in m_pendingOpenPaths instead of opening immediately.
+  bool m_postInitComplete = false;
+
+  // Paths received (command-line or forwarded from a second instance) before
+  // post-init completed; drained once startup finishes.
+  QStringList m_pendingOpenPaths;
 
   // -1: do not request to quit;
   // 0 and above: exit code.
