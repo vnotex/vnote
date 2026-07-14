@@ -63,7 +63,13 @@ void DashboardContent::setupToolBar(QToolBar *p_toolBar) {
     menu->clear();
     const QStringList types = m_board->availableStickerTypes();
     for (const QString &type : types) {
-      menu->addAction(type, this, [this, type]() { m_board->addStickerOfType(type); });
+      // Show a human-friendly, capitalized label (e.g. "calendar" -> "Calendar")
+      // while still dispatching on the raw lower-cased type id.
+      QString label = type;
+      if (!label.isEmpty()) {
+        label[0] = label[0].toUpper();
+      }
+      menu->addAction(label, this, [this, type]() { m_board->addStickerOfType(type); });
     }
   });
 

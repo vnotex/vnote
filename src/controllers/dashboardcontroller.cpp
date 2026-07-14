@@ -100,6 +100,13 @@ void DashboardController::seedDefaultLayout() {
     placeRecord(QStringLiteral("calendar"), 0, 0, kDefaultRowSpan, kDefaultColSpan,
                 QJsonObject());
   }
+  // Seed a History sticker immediately to the right of the Calendar. Give it a
+  // taller span than the Calendar so several recent files are visible at once.
+  if (fac && fac->hasCreator(QStringLiteral("history"))) {
+    constexpr int kHistoryRowSpan = 6;
+    placeRecord(QStringLiteral("history"), 0, kDefaultColSpan, kHistoryRowSpan, kDefaultColSpan,
+                QJsonObject());
+  }
 }
 
 void DashboardController::persist() {
