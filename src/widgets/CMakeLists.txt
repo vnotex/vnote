@@ -10,6 +10,7 @@ target_sources(vnote PRIVATE
     dashboard/calendarsticker.cpp dashboard/calendarsticker.h
     dashboard/dashboardboard.cpp dashboard/dashboardboard.h
     dashboard/dashboardcontent.cpp dashboard/dashboardcontent.h
+    dashboard/greetingsticker.cpp dashboard/greetingsticker.h
     dashboard/historysticker.cpp dashboard/historysticker.h
     dashboard/resizestickerdialog.cpp dashboard/resizestickerdialog.h
     dashboard/sticker.cpp dashboard/sticker.h
