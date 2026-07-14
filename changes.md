@@ -1,4 +1,27 @@
 # Changes
+## v4.2.0
+A feature release that adds a Personal Knowledge Management **home dashboard**, cross-notebook history, activity tracking, and a dedicated Sync settings page on top of VNote 4.1.1:
+
+* **Dashboard** (new): a customizable PKM home tab built from movable, resizable **stickers**
+    * Built-in **Calendar**, **Greeting**, and **History** stickers
+    * **History** sticker with recent-files and calendar-day modes, plus a one-click clear-date-filter
+    * **Lock/Unlock** mode to prevent accidental layout changes, an **Add Sticker** menu, a per-sticker **Resize** dialog, and **Reset Dashboard** to restore the default layout
+    * Toolbar and calendar icons follow the active theme
+* **History**: reworked into a cross-notebook `HistoryService`, so recent files are aggregated across all notebooks (the legacy per-notebook history panel and option were removed)
+* **Activity tracking**: focus time and note activity are now tracked via vxcore
+* **Settings**: new **Sync** page; the auto-sync interval moved there and now defaults to 120s
+* **Editor**
+    * Re-added the **In-Place Preview** toggle to the Markdown toolbar
+    * The image-host button now appears only in edit mode
+    * Removed the markdown editor **Override Font** option and its settings UI
+* **Windows switcher**: a new **Windows** entry lists open view windows across workspaces, with prefix-matching and focus-restore fixes
+* **Title bar**: the current note name is now shown in the system title bar
+* **Fixes**
+    * Fix opening files from the command line / "Open with VNote", and absolutize forwarded open-file paths at the IPC boundary
+    * Preserve heading anchors in **Insert As Relative Link**
+    * Avoid a pre-`QApplication` event-loop warning by lazily starting the search/image-host worker threads
+* **Translations**: updated Simplified Chinese and Japanese translations
+
 ## v4.1.1
 A maintenance release with search improvements, PDF export fixes, and editor polish on top of VNote 4.1.0:
 
