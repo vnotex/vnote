@@ -5,7 +5,6 @@
 #include <QByteArray>
 #include <QDebug>
 #include <QDir>
-#include <QFileInfo>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QProcess>
@@ -535,17 +534,6 @@ int main(int argc, char *argv[]) {
     }
     if (earlyExit) {
       break;
-    }
-
-    // Resolve positional paths to absolute in THIS process, so they carry the
-    // caller's working directory whether we go on to open them ourselves or
-    // forward them over IPC to an already-running instance (whose working
-    // directory is unrelated). Command-line args like "./note.md" would
-    // otherwise be resolved against the wrong CWD in the primary instance.
-    for (auto &path : cmdOptions.m_pathsToOpen) {
-      if (!path.isEmpty()) {
-        path = QFileInfo(path).absoluteFilePath();
-      }
     }
 
     // Guarding.

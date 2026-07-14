@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QDataStream>
 #include <QDebug>
+#include <QFileInfo>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QLockFile>
@@ -73,7 +74,23 @@ void SingleInstanceGuard::requestOpenFiles(const QStringList &p_files) {
     return;
   }
 
-  sendRequest(m_client.data(), OpCode::OpenFiles, p_files.join(c_stringListSeparator));
+  // Resolve to absolute paths against THIS (sending) process's working
+  // directory before crossing the socket. The receiving primary instance has a
+  // different, unrelated working directory and cannot correctly resolve a
+  // relative path, so relative paths must never be sent over the wire.
+  QStringList absFiles;
+  absFiles.reserve(p_files.size());
+  for (const auto &file : p_files) {
+    if (file.isEmpty()) {
+      continue;
+    }
+    absFiles << QFileInfo(file).absoluteFilePath();
+  }
+  if (absFiles.isEmpty()) {
+    return;
+  }
+
+  sendRequest(m_client.data(), OpCode::OpenFiles, absFiles.join(c_stringListSeparator));
 }
 
 void SingleInstanceGuard::requestShow() {
