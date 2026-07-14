@@ -25,7 +25,6 @@
 #include "buffermgr.h"
 #include "consoleviewer.h"
 #include "dialogs/updater.h"
-#include "historypanel.h"
 #include "locationlist.h"
 #include "messageboxhelper.h"
 #include "navigationmodemgr.h"
@@ -221,8 +220,6 @@ void MainWindow::setupDocks() {
 
   setupConsoleViewer();
 
-  setupHistoryPanel();
-
   setupSearchPanel();
 
   setupSnippetPanel();
@@ -253,11 +250,6 @@ void MainWindow::setupSnippetPanel() {
               viewWindow->setFocus();
             }
           });
-}
-
-void MainWindow::setupHistoryPanel() {
-  m_historyPanel = new HistoryPanel(this);
-  m_historyPanel->setObjectName("HistoryPanel.vnotex");
 }
 
 void MainWindow::setupLocationList() {
@@ -754,7 +746,5 @@ void MainWindow::setupTagExplorer() {
 }
 
 void MainWindow::loadWidgetsData() {
-  m_historyPanel->initialize();
-
   m_snippetPanel->initialize();
 }

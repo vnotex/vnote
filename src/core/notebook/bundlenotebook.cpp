@@ -3,8 +3,10 @@
 #include <QCoreApplication>
 #include <QDebug>
 
+#include <core/configmgr.h>
+#include <core/coreconfig.h>
 #include <core/exception.h>
-#include <core/historymgr.h>
+#include <core/historyitem.h>
 #include <notebookbackend/inotebookbackend.h>
 #include <notebookconfigmgr/bundlenotebookconfigmgr.h>
 #include <notebookconfigmgr/notebookconfig.h>
@@ -14,6 +16,29 @@
 #include "notebooktagmgr.h"
 
 using namespace vnotex;
+
+namespace {
+// Local helpers for maintaining a notebook's history list (previously the
+// static HistoryMgr::removeHistoryItem / insertHistoryItem helpers).
+void removeHistoryItem(QVector<HistoryItem> &p_history, const QString &p_itemPath) {
+  for (int i = p_history.size() - 1; i >= 0; --i) {
+    if (p_history[i].m_path == p_itemPath) {
+      p_history.remove(i);
+      break;
+    }
+  }
+}
+
+void insertHistoryItem(QVector<HistoryItem> &p_history, const HistoryItem &p_item) {
+  removeHistoryItem(p_history, p_item.m_path);
+  p_history.append(p_item);
+
+  const int maxHistoryCount = ConfigMgr::getInst().getCoreConfig().getHistoryMaxCount();
+  if (p_history.size() > maxHistoryCount) {
+    p_history.remove(0, p_history.size() - maxHistoryCount);
+  }
+}
+} // namespace
 
 BundleNotebook::BundleNotebook(const NotebookParameters &p_paras,
                                const QSharedPointer<NotebookConfig> &p_notebookConfig,
@@ -88,7 +113,7 @@ HistoryI *BundleNotebook::history() { return this; }
 const QVector<HistoryItem> &BundleNotebook::getHistory() const { return m_history; }
 
 void BundleNotebook::removeHistory(const QString &p_itemPath) {
-  HistoryMgr::removeHistoryItem(m_history, p_itemPath);
+  removeHistoryItem(m_history, p_itemPath);
 
   updateNotebookConfig();
 }
@@ -96,7 +121,7 @@ void BundleNotebook::removeHistory(const QString &p_itemPath) {
 void BundleNotebook::addHistory(const HistoryItem &p_item) {
   HistoryItem item(p_item);
   item.m_path = getBackend()->getRelativePath(item.m_path);
-  HistoryMgr::insertHistoryItem(m_history, item);
+  insertHistoryItem(m_history, item);
 
   updateNotebookConfig();
 }

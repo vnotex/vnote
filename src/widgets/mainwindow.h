@@ -30,7 +30,6 @@ class OutlineViewer;
 class LocationList;
 class SearchPanel;
 class SnippetPanel;
-class HistoryPanel;
 class ExportDialog;
 class ConsoleViewer;
 
@@ -123,8 +122,6 @@ private:
 
   void setupSnippetPanel();
 
-  void setupHistoryPanel();
-
   void setupNotebookExplorer();
 
   void setupTagExplorer();
@@ -184,8 +181,6 @@ private:
   SearchPanel *m_searchPanel = nullptr;
 
   SnippetPanel *m_snippetPanel = nullptr;
-
-  HistoryPanel *m_historyPanel = nullptr;
 
   ExportDialog *m_exportDialog = nullptr;
 

@@ -1,6 +1,5 @@
 #include "notemanagementpage.h"
 
-#include <QCheckBox>
 #include <QComboBox>
 #include <QSpinBox>
 #include <QVBoxLayout>
@@ -26,17 +25,6 @@ void NoteManagementPage::setupUI() {
       SettingsPageHelper::addSection(mainLayout, tr("Note Management"), QString(), this);
 
   {
-    const QString label(tr("Per-notebook access history"));
-    m_perNotebookHistoryCheckBox = WidgetsFactory::createCheckBox(label, this);
-    m_perNotebookHistoryCheckBox->setToolTip(tr("Store note access history in its notebook"));
-    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
-        m_perNotebookHistoryCheckBox, m_perNotebookHistoryCheckBox->toolTip(), this));
-    addSearchItem(label, m_perNotebookHistoryCheckBox->toolTip(), m_perNotebookHistoryCheckBox);
-    connect(m_perNotebookHistoryCheckBox, &QCheckBox::stateChanged, this,
-            &NoteManagementPage::pageIsChanged);
-  }
-
-  {
     m_lineEndingComboBox = WidgetsFactory::createComboBox(this);
     m_lineEndingComboBox->setToolTip(tr("Line ending used to write configuration files"));
 
@@ -46,7 +34,6 @@ void NoteManagementPage::setupUI() {
     m_lineEndingComboBox->addItem(tr("CR"), (int)LineEndingPolicy::CR);
 
     const QString label(tr("Line ending"));
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox, this));
     addSearchItem(label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox);
@@ -92,8 +79,6 @@ void NoteManagementPage::setupUI() {
 void NoteManagementPage::loadInternal() {
   const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
-  m_perNotebookHistoryCheckBox->setChecked(coreConfig.isPerNotebookHistoryEnabled());
-
   {
     int idx = m_lineEndingComboBox->findData(static_cast<int>(coreConfig.getLineEndingPolicy()));
     if (idx == -1) {
@@ -116,8 +101,6 @@ void NoteManagementPage::loadInternal() {
 
 bool NoteManagementPage::saveInternal() {
   auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
-
-  coreConfig.setPerNotebookHistoryEnabled(m_perNotebookHistoryCheckBox->isChecked());
 
   {
     auto ending = m_lineEndingComboBox->currentData().toInt();

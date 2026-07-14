@@ -3,7 +3,6 @@
 
 #include "settingspage.h"
 
-class QCheckBox;
 class QComboBox;
 class QSpinBox;
 
@@ -24,8 +23,6 @@ protected:
 
 private:
   void setupUI();
-
-  QCheckBox *m_perNotebookHistoryCheckBox = nullptr;
 
   QComboBox *m_lineEndingComboBox = nullptr;
 

@@ -115,9 +115,6 @@ public:
   int getSearchMaxResults() const;
   void setSearchMaxResults(int p_count);
 
-  bool isPerNotebookHistoryEnabled() const;
-  void setPerNotebookHistoryEnabled(bool p_enabled);
-
   const QString &getShortcutLeaderKey() const;
 
   LineEndingPolicy getLineEndingPolicy() const;
@@ -174,9 +171,6 @@ private:
 
   // Max number of results returned by a search.
   int m_searchMaxResults = 1000;
-
-  // Whether store history in each notebook.
-  bool m_perNotebookHistoryEnabled = false;
 
   LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
 

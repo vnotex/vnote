@@ -32,7 +32,6 @@ target_sources(vnote PRIVATE
     fileopensettings.h
     global.cpp global.h
     historyitem.cpp historyitem.h
-    historymgr.cpp historymgr.h
     htmltemplatehelper.cpp htmltemplatehelper.h
     hookcontext.h
     hooknames.h

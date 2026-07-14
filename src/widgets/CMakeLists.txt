@@ -103,7 +103,6 @@ target_sources(vnote PRIVATE
     findandreplacewidget2.cpp findandreplacewidget2.h
     floatingwidget.cpp floatingwidget.h
     fullscreentoggleaction.cpp fullscreentoggleaction.h
-    historypanel.cpp historypanel.h
     itemproxystyle.cpp itemproxystyle.h
     labelwithbuttonswidget.cpp labelwithbuttonswidget.h
     lineedit.cpp lineedit.h

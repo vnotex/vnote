@@ -70,8 +70,6 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
     m_searchMaxResults = c_maxSearchMaxResults;
   }
 
-  m_perNotebookHistoryEnabled = READBOOL(QStringLiteral("perNotebookHistory"));
-
   {
     auto lineEnding = READSTR(QStringLiteral("lineEnding"));
     m_lineEnding = stringToLineEndingPolicy(lineEnding);
@@ -96,7 +94,6 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
   obj[QStringLiteral("historyMaxCount")] = m_historyMaxCount;
   obj[QStringLiteral("searchMaxResults")] = m_searchMaxResults;
-  obj[QStringLiteral("perNotebookHistory")] = m_perNotebookHistoryEnabled;
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
   obj[QStringLiteral("unitedEntry")] = saveUnitedEntry();
   obj[QStringLiteral("defaultOpenMode")] = viewWindowModeToString(m_defaultOpenMode);
@@ -186,12 +183,6 @@ int CoreConfig::getSearchMaxResults() const { return m_searchMaxResults; }
 void CoreConfig::setSearchMaxResults(int p_count) {
   int clamped = qBound(c_minSearchMaxResults, p_count, c_maxSearchMaxResults);
   updateConfig(m_searchMaxResults, clamped, this);
-}
-
-bool CoreConfig::isPerNotebookHistoryEnabled() const { return m_perNotebookHistoryEnabled; }
-
-void CoreConfig::setPerNotebookHistoryEnabled(bool p_enabled) {
-  updateConfig(m_perNotebookHistoryEnabled, p_enabled, this);
 }
 
 const QString &CoreConfig::getShortcutLeaderKey() const { return m_shortcutLeaderKey; }
