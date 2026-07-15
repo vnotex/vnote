@@ -147,6 +147,8 @@ target_sources(vnote PRIVATE
     simplesegmenthighlighter.cpp simplesegmenthighlighter.h
     snippetpanel.cpp snippetpanel.h
     snippetpanel2.cpp snippetpanel2.h
+    consoleviewer.cpp consoleviewer.h
+    taskpanel2.cpp taskpanel2.h
     statusbarhelper.cpp statusbarhelper.h
     styleditemdelegate.cpp styleditemdelegate.h
     systemtrayhelper.cpp systemtrayhelper.h

@@ -26,6 +26,7 @@ public:
     TagDock,
     SearchDock,
     SnippetDock,
+    TaskDock,
     OutlineDock,
     ConsoleDock,
     LocationListDock,

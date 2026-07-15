@@ -76,6 +76,10 @@ public:
   // Get the node identifier (notebook + relative path) for this window's file.
   const NodeIdentifier &getNodeId() const;
 
+  // Public accessor for the current selection (used by task context to resolve
+  // ${selectedText}). Delegates to the protected virtual selectedText().
+  QString getSelectedText() const { return selectedText(); }
+
   // ============ Rename Support ============
 
   // Called when the underlying file has been renamed on disk.

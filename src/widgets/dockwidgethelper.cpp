@@ -63,6 +63,8 @@ QString DockWidgetHelper::iconFileName(DockType p_dockType) {
     return "search_dock.svg";
   case DockType::SnippetDock:
     return "snippet_dock.svg";
+  case DockType::TaskDock:
+    return "task_dock.svg";
   case DockType::LocationListDock:
     return "location_list_dock.svg";
   case DockType::ConsoleDock:
@@ -118,6 +120,11 @@ void DockWidgetHelper::setupDocks() {
   if (setupDock(DockType::SnippetDock, tr("Snippets"), QStringLiteral("SnippetDock.vnotex"),
                 Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
     tabifiedDockIndex.append(DockType::SnippetDock);
+  }
+
+  if (setupDock(DockType::TaskDock, tr("Tasks"), QStringLiteral("TaskDock.vnotex"),
+                Qt::LeftDockWidgetArea, Qt::AllDockWidgetAreas, true)) {
+    tabifiedDockIndex.append(DockType::TaskDock);
   }
 
   setupDock(DockType::OutlineDock, tr("Outline"), QStringLiteral("OutlineDock.vnotex"),

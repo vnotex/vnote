@@ -30,6 +30,9 @@ class SearchPanel2;
 class LocationList2;
 class ViewArea2;
 class ExportDialog2;
+class TaskPanel2;
+class ConsoleViewer;
+class MainWindowTaskContext;
 
 class ToolBarHelper2;
 class SyncConflictController;
@@ -128,6 +131,12 @@ private:
   // Setup SnippetPanel2 as dock widget.
   void setupSnippetExplorer();
 
+  // Setup TaskPanel2 as dock widget.
+  void setupTaskPanel();
+
+  // Setup ConsoleViewer as dock widget.
+  void setupConsoleViewer();
+
   // Setup SearchPanel2 as dock widget.
   void setupSearchPanel();
 
@@ -187,6 +196,16 @@ private:
 
   // SnippetPanel2 dock widget.
   SnippetPanel2 *m_snippetPanel = nullptr;
+
+  // TaskPanel2 dock widget.
+  TaskPanel2 *m_taskPanel = nullptr;
+
+  // ConsoleViewer dock widget (bottom ConsoleDock).
+  ConsoleViewer *m_consoleViewer = nullptr;
+
+  // Production ITaskContext injected into TaskService. Owned by MainWindow2;
+  // reset to nullptr on TaskService before destruction.
+  MainWindowTaskContext *m_taskContext = nullptr;
 
   // SearchPanel2 dock widget.
   SearchPanel2 *m_searchPanel = nullptr;

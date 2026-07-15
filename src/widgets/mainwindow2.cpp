@@ -62,8 +62,13 @@
 #include <widgets/searchpanel2.h>
 #include <widgets/snippetpanel2.h>
 #include <widgets/tagexplorer2.h>
+#include <widgets/taskpanel2.h>
+#include <widgets/consoleviewer.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
+
+#include <core/services/mainwindowtaskcontext.h>
+#include <core/services/taskservice.h>
 
 using namespace vnotex;
 
@@ -82,7 +87,18 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
   restoreWindowGeometry();
 }
 
-MainWindow2::~MainWindow2() {}
+MainWindow2::~MainWindow2() {
+  // Detach the injected task context before it is destroyed, since TaskService
+  // (owned in main.cpp) outlives this window.
+  if (m_taskContext) {
+    auto *taskService = m_serviceLocator.get<TaskService>();
+    if (taskService) {
+      taskService->setTaskContext(nullptr);
+    }
+    delete m_taskContext;
+    m_taskContext = nullptr;
+  }
+}
 
 void MainWindow2::setupWindowAgent() {
   m_windowAgent = new QWK::WidgetWindowAgent(this);
@@ -610,6 +626,16 @@ void MainWindow2::setupSnippetExplorer() {
   m_snippetPanel->setObjectName("SnippetPanel2.vnotex");
 }
 
+void MainWindow2::setupTaskPanel() {
+  m_taskPanel = new TaskPanel2(m_serviceLocator, this);
+  m_taskPanel->setObjectName("TaskPanel2.vnotex");
+}
+
+void MainWindow2::setupConsoleViewer() {
+  m_consoleViewer = new ConsoleViewer(m_serviceLocator, this);
+  m_consoleViewer->setObjectName("ConsoleViewer.vnotex");
+}
+
 void MainWindow2::setupSearchPanel() { m_searchPanel = new SearchPanel2(m_serviceLocator, this); }
 
 void MainWindow2::setupLocationList() {
@@ -624,6 +650,10 @@ void MainWindow2::setupDocks() {
   setupTagExplorer();
 
   setupSnippetExplorer();
+
+  setupTaskPanel();
+
+  setupConsoleViewer();
 
   setupSearchPanel();
 
@@ -757,6 +787,60 @@ void MainWindow2::setupDocks() {
               qWarning() << "No active view window for snippet apply";
             }
           });
+
+  // Tasks + Console wiring.
+  auto *taskService = m_serviceLocator.get<TaskService>();
+  if (taskService) {
+    // Inject the production task context now that the notebook explorer and
+    // view area exist. TaskVariableMgr resolves context lazily, so this takes
+    // effect immediately for subsequent task runs without re-init.
+    MainWindowTaskContext::Providers providers;
+    providers.currentNotebookId = [this]() -> QString {
+      return m_notebookExplorer ? m_notebookExplorer->currentNotebookId() : QString();
+    };
+    providers.currentBufferPath = [this]() -> QString {
+      auto *win = m_viewArea ? m_viewArea->getCurrentViewWindow() : nullptr;
+      return win ? win->getBuffer().resolvedPath() : QString();
+    };
+    providers.currentBufferNotebookId = [this]() -> QString {
+      auto *win = m_viewArea ? m_viewArea->getCurrentViewWindow() : nullptr;
+      return win ? win->getBuffer().nodeId().notebookId : QString();
+    };
+    providers.currentBufferRelativePath = [this]() -> QString {
+      auto *win = m_viewArea ? m_viewArea->getCurrentViewWindow() : nullptr;
+      return win ? win->getBuffer().nodeId().relativePath : QString();
+    };
+    providers.selectedText = [this]() -> QString {
+      auto *win = m_viewArea ? m_viewArea->getCurrentViewWindow() : nullptr;
+      return win ? win->getSelectedText() : QString();
+    };
+    m_taskContext = new MainWindowTaskContext(std::move(providers), this);
+    taskService->setTaskContext(m_taskContext);
+
+    // Stream task output to the Console viewer, auto-showing the Console dock
+    // whenever output arrives (i.e. when a task runs).
+    connect(taskService, &TaskService::taskOutputRequested, this,
+            [this](const QString &p_text) {
+              // Auto-show the Console dock only when it is hidden, so streaming
+              // output does not repeatedly steal focus.
+              auto *consoleDock = m_dockWidgetHelper.getDock(DockWidgetHelper::ConsoleDock);
+              if (consoleDock && !consoleDock->isVisible()) {
+                m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
+              }
+              if (m_consoleViewer) {
+                m_consoleViewer->appendOutput(p_text);
+              }
+            });
+
+    // Reload notebook-scoped tasks when the current notebook changes.
+    connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged, taskService,
+            [taskService](const QString &) { taskService->reloadNotebookTasks(); });
+  }
+
+  // Initialize the tasks panel now that context + wiring are in place.
+  if (m_taskPanel) {
+    m_taskPanel->initialize();
+  }
 }
 
 QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const {
@@ -769,6 +853,10 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
     return m_tagExplorer;
   case DockWidgetHelper::DockType::SnippetDock:
     return m_snippetPanel;
+  case DockWidgetHelper::DockType::TaskDock:
+    return m_taskPanel;
+  case DockWidgetHelper::DockType::ConsoleDock:
+    return m_consoleViewer;
   case DockWidgetHelper::DockType::SearchDock:
     return m_searchPanel;
   case DockWidgetHelper::DockType::LocationListDock:

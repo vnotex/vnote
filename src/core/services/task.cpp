@@ -406,31 +406,41 @@ QProcess *Task::setupProcess() {
     auto text = process->readAllStandardError();
     emit outputRequested(decodeText(text));
   });
-  connect(process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+  connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
     emit outputRequested(tr("[Task (%1) error occurred (%2)]\n").arg(getLabel()).arg(error));
+    // If the process never started (e.g. bad command), no finished() will come
+    // from QProcess; surface completion here so owners release their ref.
+    if (error == QProcess::FailedToStart) {
+      emit finished(process);
+    }
   });
   connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
           [this, process](int exitCode) {
             emit outputRequested(tr("\n[Task (%1) finished (%2)]\n").arg(getLabel()).arg(exitCode));
+            emit finished(process);
             process->deleteLater();
           });
 
   return process;
 }
 
-void Task::run() {
+void Task::run() { runStarted(); }
+
+QProcess *Task::runStarted() {
   QProcess *process;
   try {
     process = setupProcess();
   } catch (const char *msg) {
     qWarning() << "exception while setup process" << msg;
-    return;
+    return nullptr;
   }
 
   if (process) {
     qDebug() << "run task" << process->program() << process->arguments();
     process->start();
+    return process;
   }
+  return nullptr;
 }
 
 const TaskDTO &Task::getDTO() const { return m_dto; }

@@ -30,6 +30,67 @@ void TaskService::init() {
 
 void TaskService::reload() { loadAllTasks(); }
 
+namespace {
+// True if p_task is p_root or a descendant of p_root.
+bool subtreeContains(Task *p_root, Task *p_task) {
+  if (p_root == p_task) {
+    return true;
+  }
+  for (auto *child : p_root->getChildren()) {
+    if (subtreeContains(child, p_task)) {
+      return true;
+    }
+  }
+  return false;
+}
+} // namespace
+
+void TaskService::runTask(Task *p_task) {
+  if (!p_task) {
+    return;
+  }
+
+  // Find the owning root QSharedPointer so we can keep it alive during
+  // execution (a sub-task's raw pointer is owned by its top-level task).
+  QSharedPointer<Task> root;
+  for (const auto &lists : {&m_appTasks, &m_notebookTasks}) {
+    for (const auto &sp : *lists) {
+      if (subtreeContains(sp.data(), p_task)) {
+        root = sp;
+        break;
+      }
+    }
+    if (root) {
+      break;
+    }
+  }
+
+  QProcess *process = p_task->runStarted();
+  if (!process) {
+    // No process was started (empty command / cancelled input); nothing to
+    // keep alive.
+    return;
+  }
+
+  if (root) {
+    // Keep the root alive for THIS run only, keyed by its process. Isolating by
+    // process (rather than the aggregate Task::finished()) makes concurrent
+    // runs of the same task independent: each completion releases only its own
+    // reference.
+    m_runningTasks.insert(process, root);
+    auto conn = QSharedPointer<QMetaObject::Connection>::create();
+    *conn = connect(p_task, &Task::finished, this, [this, process, conn](QProcess *p_finished) {
+      if (p_finished != process) {
+        return;
+      }
+      m_runningTasks.remove(process);
+      QObject::disconnect(*conn);
+    });
+  }
+}
+
+void TaskService::setTaskContext(ITaskContext *p_context) { m_context = p_context; }
+
 void TaskService::reloadNotebookTasks() {
   loadNotebookTasks();
   emit tasksUpdated();
@@ -104,12 +165,10 @@ void TaskService::loadNotebookTasks() {
   loadTasksFromFolder(m_notebookTasks, getNotebookTaskFolder());
 }
 
-void TaskService::loadGlobalTasks() {
-  QString folder;
-  if (m_configMgr) {
-    folder = m_configMgr->getConfigDataFolder(ConfigMgr2::Tasks);
-  }
-  loadTasksFromFolder(m_appTasks, folder);
+void TaskService::loadGlobalTasks() { loadTasksFromFolder(m_appTasks, getAppTaskFolder()); }
+
+QString TaskService::getAppTaskFolder() const {
+  return m_configMgr ? m_configMgr->getConfigDataFolder(ConfigMgr2::Tasks) : QString();
 }
 
 void TaskService::loadTasksFromFolder(QVector<QSharedPointer<Task>> &p_tasks,

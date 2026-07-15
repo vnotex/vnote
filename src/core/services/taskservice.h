@@ -4,11 +4,14 @@
 #include <QObject>
 #include <core/noncopyable.h>
 
+#include <QHash>
 #include <QSharedPointer>
 #include <QVector>
 
 #include "task.h"
 #include "taskvariablemgr.h"
+
+class QProcess;
 
 namespace vnotex {
 class ConfigMgr2;
@@ -30,7 +33,19 @@ public:
   // Loads all tasks. Call once after construction and registration.
   void init();
 
+  // Inject (or replace) the live editor/notebook context used to resolve
+  // context-derived task variables (${notebook*}, ${buffer*}, ${input:*},
+  // ${selectedText}). Safe to call after init(): TaskVariableMgr resolves the
+  // context lazily at evaluate-time, so no re-init is required.
+  void setTaskContext(ITaskContext *p_context);
+
   void reload();
+
+  // Runs the given task, keeping the owning root task alive for the duration of
+  // its process even if reload()/reloadNotebookTasks() replaces the loaded task
+  // lists in the meantime. Prevents a reload or notebook switch from destroying
+  // a Task (and its QProcess) mid-execution.
+  void runTask(Task *p_task);
 
   // Reload only the notebook-scoped tasks (e.g. after the current notebook
   // changes). Emits tasksUpdated().
@@ -43,6 +58,11 @@ public:
   // Absolute path to the current notebook's task folder, or "" if there is no
   // current notebook (or no context).
   QString getNotebookTaskFolder() const;
+
+  // Absolute path of the app (global) tasks folder, or "" if unavailable. This
+  // is the single source of truth shared by task loading and the controller's
+  // create/open operations.
+  QString getAppTaskFolder() const;
 
   const TaskVariableMgr &getVariableMgr() const;
 
@@ -86,6 +106,11 @@ private:
   QVector<QSharedPointer<Task>> m_appTasks;
 
   QVector<QSharedPointer<Task>> m_notebookTasks;
+
+  // Root tasks kept alive while one of their (sub)tasks is executing, keyed by
+  // the specific QProcess of each run, so a concurrent reload does not destroy
+  // a running Task/QProcess and concurrent runs of the same task are isolated.
+  QHash<QProcess *, QSharedPointer<Task>> m_runningTasks;
 
   TaskVariableMgr m_variableMgr;
 };

@@ -102,6 +102,12 @@ public:
 
   void run();
 
+  // Runs the task and returns the started QProcess (so the caller can keep a
+  // strong reference alive until finished(process) fires for that same run).
+  // Returns nullptr if the task produced no process (empty command / cancelled
+  // input).
+  QProcess *runStarted();
+
   const TaskDTO &getDTO() const;
 
   const QString &getVersion() const;
@@ -152,6 +158,12 @@ public:
 
 signals:
   void outputRequested(const QString &p_text) const;
+
+  // Emitted once the given process finishes (or fails to start / errors out),
+  // so owners can release the strong reference kept alive for THAT specific
+  // run. Carries the emitting QProcess* as a per-run token, since one Task may
+  // have several concurrent processes.
+  void finished(QProcess *p_process);
 
 private:
   Task(const QString &p_locale, const QString &p_file, TaskService *p_taskService,

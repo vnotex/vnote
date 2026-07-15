@@ -17,6 +17,7 @@ target_sources(vnote PRIVATE
     importfoldercontroller.cpp importfoldercontroller.h
     tagcontroller.cpp tagcontroller.h
     snippetcontroller.cpp snippetcontroller.h
+    taskcontroller.cpp taskcontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h
     mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h

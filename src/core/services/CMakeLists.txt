@@ -26,6 +26,7 @@ set(SERVICES_SOURCES
   task.cpp
   taskservice.cpp
   taskvariablemgr.cpp
+  mainwindowtaskcontext.cpp
   vnote3migrationservice.cpp
   synccredentialsstore.cpp
   syncops.cpp
@@ -79,6 +80,7 @@ set(SERVICES_HEADERS
   taskservice.h
   taskvariablemgr.h
   itaskcontext.h
+  mainwindowtaskcontext.h
   vnote3migrationservice.h
   synccredentialsstore.h
   syncops.h
