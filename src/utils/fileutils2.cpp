@@ -1,6 +1,7 @@
 #include "fileutils2.h"
 
 #include <QDateTime>
+#include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
 #include <QMimeDatabase>
@@ -122,6 +123,12 @@ Error FileUtils2::copyFile(const QString &p_filePath, const QString &p_destPath,
 
   // Remove existing destination file to allow overwrite.
   if (QFileInfo::exists(p_destPath)) {
+    // Clear the read-only attribute first; QFile::remove fails on read-only
+    // files on Windows. Destinations dumped from a read-only .rcc resource are
+    // themselves read-only, so this is required for upgrades to overwrite them.
+    QFile::setPermissions(p_destPath,
+                          QFile::permissions(p_destPath) | QFileDevice::WriteOwner |
+                              QFileDevice::WriteUser);
     if (!QFile::remove(p_destPath)) {
       return Error::error(
           ErrorCode::FailToRemoveFile,
@@ -140,6 +147,18 @@ Error FileUtils2::copyFile(const QString &p_filePath, const QString &p_destPath,
   if (!success) {
     return Error::error(ErrorCode::FailToCopyFile,
                         QStringLiteral("failed to copy file: %1 %2").arg(p_filePath, p_destPath));
+  }
+
+  if (!p_move) {
+    // QFile::copy propagates the source's permissions to the destination. When
+    // the source is a read-only .rcc resource, the new file is read-only, which
+    // would break the next upgrade's overwrite. Make it writable.
+    if (!QFile::setPermissions(p_destPath,
+                               QFile::permissions(p_destPath) | QFileDevice::WriteOwner |
+                                   QFileDevice::WriteUser)) {
+      qWarning() << "failed to make copied file writable, subsequent overwrites may fail:"
+                 << p_destPath;
+    }
   }
 
   return Error::ok();

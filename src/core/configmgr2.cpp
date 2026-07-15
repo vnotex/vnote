@@ -309,40 +309,36 @@ void ConfigMgr2::upgradeMainConfigOnVersionChange() {
 
   const QString extraDataRoot(QStringLiteral(":/vnotex/data/extra"));
 
+  auto copyExtraDir = [](const QString &p_src, const QString &p_dest) {
+    if (qApp) {
+      qApp->processEvents();
+    }
+    Error err = FileUtils2::copyDir(p_src, p_dest);
+    if (err) {
+      qWarning() << "Failed to copy extra data directory from" << p_src << "to" << p_dest << ":"
+                 << err.what();
+    }
+  };
+
   // Copy themes.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/themes"),
-                      getConfigDataFolder(ConfigDataType::Themes));
+  copyExtraDir(extraDataRoot + QStringLiteral("/themes"),
+               getConfigDataFolder(ConfigDataType::Themes));
 
   // Copy tasks.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/tasks"),
-                      getConfigDataFolder(ConfigDataType::Tasks));
+  copyExtraDir(extraDataRoot + QStringLiteral("/tasks"),
+               getConfigDataFolder(ConfigDataType::Tasks));
 
   // Copy syntax-highlighting.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
-                      getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
+  copyExtraDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
+               getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
 
   // Copy web.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/web"),
-                      getConfigDataFolder(ConfigDataType::Web));
+  copyExtraDir(extraDataRoot + QStringLiteral("/web"),
+               getConfigDataFolder(ConfigDataType::Web));
 
   // Copy dicts.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/dicts"),
-                      getConfigDataFolder(ConfigDataType::Dicts));
+  copyExtraDir(extraDataRoot + QStringLiteral("/dicts"),
+               getConfigDataFolder(ConfigDataType::Dicts));
 
   m_mainConfig->setVersion(c_version.toString());
   m_mainConfig->update();
@@ -369,26 +365,28 @@ void ConfigMgr2::copyNecessaryExtraData() {
 
   const QString extraDataRoot(QStringLiteral(":/vnotex/data/extra"));
 
+  auto copyExtraDir = [](const QString &p_src, const QString &p_dest) {
+    if (qApp) {
+      qApp->processEvents();
+    }
+    Error err = FileUtils2::copyDir(p_src, p_dest);
+    if (err) {
+      qWarning() << "Failed to copy extra data directory from" << p_src << "to" << p_dest << ":"
+                 << err.what();
+    }
+  };
+
   // Copy themes.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/themes"),
-                      getConfigDataFolder(ConfigDataType::Themes));
+  copyExtraDir(extraDataRoot + QStringLiteral("/themes"),
+               getConfigDataFolder(ConfigDataType::Themes));
 
   // Copy syntax-highlighting.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
-                      getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
+  copyExtraDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
+               getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
 
   // Copy web.
-  if (qApp) {
-    qApp->processEvents();
-  }
-  FileUtils2::copyDir(extraDataRoot + QStringLiteral("/web"),
-                      getConfigDataFolder(ConfigDataType::Web));
+  copyExtraDir(extraDataRoot + QStringLiteral("/web"),
+               getConfigDataFolder(ConfigDataType::Web));
 }
 
 void ConfigMgr2::initAppPrefixPath() {

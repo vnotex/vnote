@@ -19,6 +19,8 @@ private slots:
   // copyFile tests
   void testCopyFile_basic();
   void testCopyFile_overwriteExisting();
+  void testCopyFile_overwriteReadOnlyExisting();
+  void testCopyFile_readOnlySourceProducesWritableDest();
   void testCopyFile_moveBasic();
   void testCopyFile_moveOverwrite();
   void testCopyFile_samePath();
@@ -28,6 +30,7 @@ private slots:
   void testCopyDir_basic();
   void testCopyDir_mergeDirectories();
   void testCopyDir_mergeOverwritesFiles();
+  void testCopyDir_mergeOverwritesReadOnlyFiles();
   void testCopyDir_mergeNestedDirs();
   void testCopyDir_moveBasic();
   void testCopyDir_moveMerge();
@@ -81,6 +84,48 @@ void TestFileUtils2::testCopyFile_overwriteExisting() {
   QVERIFY(QFile::exists(destPath));
   // Dest should now have new content
   QCOMPARE(readFileContent(destPath), QString("new content"));
+}
+
+void TestFileUtils2::testCopyFile_overwriteReadOnlyExisting() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcPath = tmp.createTextFile("source.txt", "new content");
+  QString destPath = tmp.createTextFile("dest.txt", "old content");
+
+  // Make the destination read-only, mirroring a file previously dumped from a
+  // read-only .rcc resource. On Windows QFile::remove fails on such files.
+  QVERIFY(QFile::setPermissions(destPath, QFileDevice::ReadOwner | QFileDevice::ReadUser));
+
+  Error err = FileUtils2::copyFile(srcPath, destPath);
+  QVERIFY(!err);
+  QVERIFY(QFile::exists(destPath));
+  QCOMPARE(readFileContent(destPath), QString("new content"));
+
+  // The overwritten destination must be writable so future overwrites work.
+  QVERIFY(QFile::permissions(destPath) & QFileDevice::WriteOwner);
+}
+
+void TestFileUtils2::testCopyFile_readOnlySourceProducesWritableDest() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  // A read-only source mirrors a file living inside a read-only .rcc resource.
+  // QFile::copy propagates the source permissions, so without the post-copy
+  // fix the fresh destination would be read-only too.
+  QString srcPath = tmp.createTextFile("source.txt", "resource content");
+  QVERIFY(QFile::setPermissions(srcPath, QFileDevice::ReadOwner | QFileDevice::ReadUser));
+
+  QString destPath = tmp.filePath("dest.txt");
+  QVERIFY(!QFile::exists(destPath));
+
+  Error err = FileUtils2::copyFile(srcPath, destPath);
+  QVERIFY(!err);
+  QVERIFY(QFile::exists(destPath));
+  QCOMPARE(readFileContent(destPath), QString("resource content"));
+
+  // Even though the source was read-only, the new destination must be writable.
+  QVERIFY(QFile::permissions(destPath) & QFileDevice::WriteOwner);
 }
 
 void TestFileUtils2::testCopyFile_moveBasic() {
@@ -208,6 +253,29 @@ void TestFileUtils2::testCopyDir_mergeOverwritesFiles() {
 
   // File should be overwritten
   QCOMPARE(readFileContent(destDir + "/common.txt"), QString("new version"));
+}
+
+void TestFileUtils2::testCopyDir_mergeOverwritesReadOnlyFiles() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  // Create source directory with a nested file.
+  QString srcDir = tmp.createDir("src");
+  tmp.createDir("src/sub");
+  tmp.createTextFile("src/sub/common.txt", "new version");
+
+  // Create destination directory with a same-named nested file, set read-only.
+  QString destDir = tmp.createDir("dest");
+  tmp.createDir("dest/sub");
+  QString destFile = tmp.createTextFile("dest/sub/common.txt", "old version");
+  QVERIFY(QFile::setPermissions(destFile, QFileDevice::ReadOwner | QFileDevice::ReadUser));
+
+  Error err = FileUtils2::copyDir(srcDir, destDir);
+  QVERIFY(!err);
+
+  // The read-only nested file should be overwritten and left writable.
+  QCOMPARE(readFileContent(destFile), QString("new version"));
+  QVERIFY(QFile::permissions(destFile) & QFileDevice::WriteOwner);
 }
 
 void TestFileUtils2::testCopyDir_mergeNestedDirs() {
