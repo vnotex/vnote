@@ -6,7 +6,6 @@ target_sources(vnote PRIVATE
     biaction.cpp biaction.h
     buttonpopup.cpp buttonpopup.h
     combobox.cpp combobox.h
-    consoleviewer.cpp consoleviewer.h
     dashboard/calendarsticker.cpp dashboard/calendarsticker.h
     dashboard/dashboardboard.cpp dashboard/dashboardboard.h
     dashboard/dashboardcontent.cpp dashboard/dashboardcontent.h

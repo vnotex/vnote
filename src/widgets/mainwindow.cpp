@@ -23,7 +23,6 @@
 #include <QWindowStateChangeEvent>
 
 #include "buffermgr.h"
-#include "consoleviewer.h"
 #include "dialogs/updater.h"
 #include "locationlist.h"
 #include "messageboxhelper.h"
@@ -217,8 +216,6 @@ void MainWindow::setupDocks() {
   setupTagExplorer();
 
   setupOutlineViewer();
-
-  setupConsoleViewer();
 
   setupSearchPanel();
 
@@ -487,15 +484,6 @@ void MainWindow::setupOutlineViewer() {
   // OutlineViewer now requires ServiceLocator (DI) and no longer exposes
   // getNavigationModeWrapper(). This stub prevents link errors only.
   m_outlineViewer = nullptr;
-}
-
-void MainWindow::setupConsoleViewer() {
-  // NOTE: The task-output feed (VNoteX::showOutputRequested) was removed with
-  // the legacy TaskMgr during the TaskService migration. This console is now
-  // created but not fed; it is reserved pending task-output wiring in the new
-  // architecture (TaskService::taskOutputRequested + a MainWindow2 panel).
-  m_consoleViewer = new ConsoleViewer(this);
-  m_consoleViewer->setObjectName("ConsoleViewer.vnotex");
 }
 
 /*

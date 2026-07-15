@@ -31,7 +31,6 @@ class LocationList;
 class SearchPanel;
 class SnippetPanel;
 class ExportDialog;
-class ConsoleViewer;
 
 enum { RESTART_EXIT_CODE = 1000 };
 
@@ -114,8 +113,6 @@ private:
 
   void setupOutlineViewer();
 
-  void setupConsoleViewer();
-
   void setupSearchPanel();
 
   void setupLocationList();
@@ -173,8 +170,6 @@ private:
   QWidget *m_viewAreaStatusWidget = nullptr;
 
   OutlineViewer *m_outlineViewer = nullptr;
-
-  ConsoleViewer *m_consoleViewer = nullptr;
 
   LocationList *m_locationList = nullptr;
 
