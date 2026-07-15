@@ -32,6 +32,8 @@ class PlantUml extends GraphRenderer {
         if (!this.useWeb) {
             this.extraScripts = [];
         }
+        console.log('plantuml registerInternal: vxOptions.webPlantUml=', window.vxOptions.webPlantUml,
+                    'useWeb=', this.useWeb, 'workerId=', this.id);
     }
 
     initialize(p_callback) {
@@ -76,6 +78,8 @@ class PlantUml extends GraphRenderer {
                               p_node.textContent,
                               func(this, p_node));
         } else {
+            console.log('plantuml renderOne(local): idx=', p_idx, 'format=', this.format,
+                        'textLen=', p_node.textContent.length);
             this.renderLocal(this.format, p_node.textContent, func(this, p_node));
         }
         return true;
@@ -139,17 +143,25 @@ class PlantUml extends GraphRenderer {
 
     // A helper function to render PlantUml via local JAR.
     renderLocal(p_format, p_text, p_callback) {
+        let index = this.nextLocalGraphIndex++;
+        console.log('plantuml renderLocal: workerId=', this.id, 'index=', index,
+                    'format=', p_format, 'textLen=', p_text.length);
         this.vxcore.renderGraph(this.id,
-            this.nextLocalGraphIndex++,
+            index,
             p_format,
             'puml',
             p_text,
             function(id, index, format, data) {
+                console.log('plantuml renderLocal result: id=', id, 'index=', index,
+                            'format=', format, 'dataLen=', data ? data.length : 0);
                 p_callback(format, data);
             });
     }
 
     handlePlantUmlResult(p_node, p_format, p_result) {
+        console.log('plantuml handlePlantUmlResult: format=', p_format,
+                    'resultLen=', p_result ? p_result.length : 0,
+                    'hasNode=', !!p_node);
         if (p_node && p_result.length > 0) {
             let obj = null;
             if (p_format == 'svg') {

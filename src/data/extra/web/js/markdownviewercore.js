@@ -378,7 +378,10 @@ class MarkdownViewerCore extends VXCore {
 
     graphRenderDataReady(p_id, p_index, p_format, p_data) {
         let key = p_id + '_' + p_index;
-        if (key in this.renderGraphCallbacks) {
+        let found = key in this.renderGraphCallbacks;
+        console.log('markdownviewercore graphRenderDataReady: key=', key, 'format=', p_format,
+                    'dataLen=', p_data ? p_data.length : 0, 'callbackFound=', found);
+        if (found) {
             this.renderGraphCallbacks[key](p_id, p_index, p_format, p_data);
             delete this.renderGraphCallbacks[key];
         }

@@ -269,6 +269,8 @@ void MarkdownViewerAdapter::reset() {
 
 void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QString &p_format,
                                         const QString &p_lang, const QString &p_text) {
+  qInfo() << "MarkdownViewerAdapter::renderGraph id=" << p_id << "index=" << p_index
+          << "format=" << p_format << "lang=" << p_lang << "textLen=" << p_text.size();
   if (p_text.isEmpty()) {
     emit graphRenderDataReady(p_id, p_index, p_format, QString());
     return;
@@ -290,6 +292,8 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
           emit graphRenderDataReady(id, timeStamp, format, data);
         });
   } else {
+    qWarning() << "MarkdownViewerAdapter::renderGraph unhandled lang=" << p_lang
+               << "id=" << p_id << "index=" << p_index;
     Q_ASSERT(false);
   }
 }

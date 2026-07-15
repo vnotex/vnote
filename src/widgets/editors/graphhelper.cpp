@@ -66,7 +66,9 @@ void GraphHelper::processOneTask() {
   }
 
   if (!m_programValid) {
-    qWarning() << "program to execute for rendering is not valid" << m_program;
+    qWarning() << "GraphHelper: program to execute for rendering is not valid. program="
+               << m_program << "overriddenCommand=" << m_overriddenCommand
+               << "task id=" << task.m_id << "format=" << task.m_format;
     finishOneTask(QString());
     return;
   }
@@ -84,9 +86,17 @@ void GraphHelper::processOneTask() {
     Q_ASSERT(!m_program.isEmpty());
     QStringList args(m_args);
     args << getFormatArgs(task.m_format);
-    process->start(m_program, getArgsToUse(args));
+    const auto argsToUse = getArgsToUse(args);
+    qInfo() << "GraphHelper: starting render task id=" << task.m_id
+            << "timeStamp=" << task.m_timeStamp << "format=" << task.m_format
+            << "textLen=" << task.m_text.size() << "program=" << m_program
+            << "args=" << argsToUse;
+    process->start(m_program, argsToUse);
   } else {
     auto cmd = getCommandToUse(m_overriddenCommand, task.m_format);
+    qInfo() << "GraphHelper: starting render task id=" << task.m_id
+            << "timeStamp=" << task.m_timeStamp << "format=" << task.m_format
+            << "textLen=" << task.m_text.size() << "overriddenCommand=" << cmd;
     process->start(cmd);
   }
 
@@ -113,10 +123,12 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
   bool failed = true;
   if (p_exitStatus == QProcess::NormalExit) {
     if (p_exitCode < 0) {
-      qWarning() << "Graph task" << id << "failed:" << p_exitCode;
+      qWarning() << "Graph task" << id << "failed: negative exitCode" << p_exitCode;
     } else {
       failed = false;
       const auto outBa = p_process->readAllStandardOutput();
+      qInfo() << "Graph task" << id << "normal exit, exitCode=" << p_exitCode
+              << "outputBytes=" << outBa.size() << "format=" << task.m_format;
       QString data;
       if (task.m_format == QStringLiteral("svg")) {
         data = QString::fromUtf8(outBa);
@@ -132,7 +144,9 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
       m_cache.set(task.m_text, item);
     }
   } else {
-    qWarning() << "Graph task" << id << "failed to start" << p_exitCode << p_exitStatus;
+    qWarning() << "Graph task" << id << "failed to start / crashed. exitCode=" << p_exitCode
+               << "exitStatus=" << p_exitStatus << "processError=" << p_process->error()
+               << "errorString=" << p_process->errorString();
   }
 
   const QByteArray errBa = p_process->readAllStandardError();
@@ -146,6 +160,7 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
   }
 
   if (failed) {
+    qWarning() << "Graph task" << id << "produced no data; delivering empty result";
     callbackOneTask(task, id, task.m_timeStamp, task.m_format, QString());
   }
 
@@ -186,6 +201,8 @@ void GraphHelper::checkValidProgram() {
       m_programValid = !finfo.isAbsolute() || finfo.isExecutable();
     }
   }
+  qInfo() << "GraphHelper::checkValidProgram program=" << m_program
+          << "overriddenCommand=" << m_overriddenCommand << "valid=" << m_programValid;
 }
 
 void GraphHelper::callbackOneTask(const Task &p_task, quint64 p_id, TimeStamp p_timeStamp,

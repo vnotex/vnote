@@ -48,7 +48,9 @@
 #include "../utils/scrollpreservationpolicy.h"
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
+#include "editors/graphvizhelper.h"
 #include "editors/markdownvieweradapter.h"
+#include "editors/plantumlhelper.h"
 #include "editors/previewhelper.h"
 #include "editors/statuswidget.h"
 #include "outlinepopup.h"
@@ -1150,6 +1152,35 @@ void MarkdownViewWindow2::updatePreviewHelperFromConfig(const MarkdownEditorConf
   m_previewHelper->setWebGraphvizEnabled(phConfig.webGraphvizEnabled);
   m_previewHelper->setInplacePreviewCodeBlocksEnabled(phConfig.inplacePreviewCodeBlocksEnabled);
   m_previewHelper->setInplacePreviewMathBlocksEnabled(phConfig.inplacePreviewMathBlocksEnabled);
+
+  // Feed the local-render helpers from the new-architecture config (ConfigMgr2).
+  // These are process-wide singletons used by both the in-place preview
+  // (PreviewHelper) and the read-mode viewer (MarkdownViewerAdapter). The legacy
+  // ViewArea::editorConfigChanged path that used to call update() does not run in
+  // the new ViewArea2/MarkdownViewWindow2 UI, and the legacy ConfigMgr singleton
+  // they lazy-init from is never loaded from disk, so without this they render
+  // with an empty PlantUml JAR / Graphviz path (a broken `java -jar <dir>` command).
+  //
+  // update() clears the shared render cache, and this method runs on every
+  // MarkdownViewWindow2 setup (per note open), so only push into the singletons
+  // when the resolved inputs actually change to avoid thrashing the cache and
+  // re-spawning java for already-rendered graphs on each note open.
+  const auto plantUmlJar = p_mdConfig.getPlantUmlJar();
+  const auto graphvizExe = p_mdConfig.getGraphvizExe();
+  const auto plantUmlCommand = p_mdConfig.getPlantUmlCommand();
+  static QString s_plantUmlJar;
+  static QString s_graphvizExe;
+  static QString s_plantUmlCommand;
+  static bool s_graphHelpersInitialized = false;
+  if (!s_graphHelpersInitialized || plantUmlJar != s_plantUmlJar ||
+      graphvizExe != s_graphvizExe || plantUmlCommand != s_plantUmlCommand) {
+    s_graphHelpersInitialized = true;
+    s_plantUmlJar = plantUmlJar;
+    s_graphvizExe = graphvizExe;
+    s_plantUmlCommand = plantUmlCommand;
+    PlantUmlHelper::getInst().update(plantUmlJar, graphvizExe, plantUmlCommand);
+    GraphvizHelper::getInst().update(graphvizExe);
+  }
 }
 
 void MarkdownViewWindow2::updateWebViewerConfig() {

@@ -230,6 +230,8 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
 
   if (!m_webPlantUmlEnabled && checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang)) {
     // Local PlantUml.
+    qInfo() << "PreviewHelper: local PlantUml in-place preview idx=" << p_blockPreviewIdx
+            << "lang=" << blockData.m_lang;
     PlantUmlHelper::getInst().process(
         static_cast<quint64>(p_blockPreviewIdx), m_codeBlockTimeStamp, QStringLiteral("svg"),
         vte::TextUtils::removeCodeBlockFence(blockData.m_text), this,
