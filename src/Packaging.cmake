@@ -43,7 +43,9 @@ function(windeployqt target)
             --dir "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
             $<TARGET_FILE:${target}>
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/generic/"
-        COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/styles/"
+        # Keep winqt/styles/: it holds qwindows11style.dll, without which Qt 6
+        # falls back to the legacy windowsvista style on Windows 11 (beveled
+        # QFrame::StyledPanel borders instead of the modern rounded panels).
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/qmltooling/"
         COMMENT "Deploying Qt..."
         DEPENDS vnote lrelease
