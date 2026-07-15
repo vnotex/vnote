@@ -723,6 +723,9 @@ void ExportDialog2::onExportClicked() {
   m_logEdit->clear();
   saveCurrentCustomScheme();
 
+  // Scroll the log viewer into view so the user can sense the progress.
+  ensureWidgetVisible(m_logEdit);
+
   updateUiOnExportState(true);
   m_controller->doExport(collectFields(), m_context);
 }

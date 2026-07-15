@@ -42,3 +42,10 @@ void ScrollDialog::showEvent(QShowEvent *p_event) {
 void ScrollDialog::resizeToHideScrollBarLater(bool p_vertical, bool p_horizontal) {
   WidgetUtils::resizeToHideScrollBarLater(m_scrollArea, p_vertical, p_horizontal);
 }
+
+void ScrollDialog::ensureWidgetVisible(QWidget *p_widget) {
+  if (!p_widget) {
+    return;
+  }
+  m_scrollArea->ensureWidgetVisible(p_widget);
+}

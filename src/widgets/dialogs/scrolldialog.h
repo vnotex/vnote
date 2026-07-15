@@ -13,6 +13,9 @@ public:
 
   void resizeToHideScrollBarLater(bool p_vertical, bool p_horizontal);
 
+  // Scroll the central scroll area so that @p_widget becomes visible.
+  void ensureWidgetVisible(QWidget *p_widget);
+
 protected:
   void setCentralWidget(QWidget *p_widget) Q_DECL_OVERRIDE;
 
