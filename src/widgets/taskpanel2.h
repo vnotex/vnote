@@ -11,6 +11,7 @@ class ServiceLocator;
 class TitleBar;
 class TaskTreeModel;
 class TaskController;
+class TreeFilterProxyModel;
 
 // Tasks dock view (left, tabified with Snippets). Lists app + notebook tasks in
 // a grouped tree, and routes Run / Open file / Delete / New / Refresh through
@@ -45,6 +46,8 @@ private:
   QTreeView *m_treeView = nullptr;
 
   TaskTreeModel *m_model = nullptr;
+
+  TreeFilterProxyModel *m_proxyModel = nullptr;
 
   TaskController *m_controller = nullptr;
 };

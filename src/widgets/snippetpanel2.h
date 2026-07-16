@@ -11,6 +11,7 @@ class ServiceLocator;
 class TitleBar;
 class SnippetListModel;
 class SnippetController;
+class TreeFilterProxyModel;
 
 class SnippetPanel2 : public QFrame, private Noncopyable {
   Q_OBJECT
@@ -41,6 +42,7 @@ private:
   TitleBar *m_titleBar = nullptr;
   QListView *m_listView = nullptr;
   SnippetListModel *m_model = nullptr;
+  TreeFilterProxyModel *m_proxyModel = nullptr;
   SnippetController *m_controller = nullptr;
   bool m_builtInSnippetsVisible = true;
 };

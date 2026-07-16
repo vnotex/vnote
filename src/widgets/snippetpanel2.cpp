@@ -14,6 +14,7 @@
 #include <core/services/snippetcoreservice.h>
 #include <gui/services/themeservice.h>
 #include <models/snippetlistmodel.h>
+#include <models/treefilterproxymodel.h>
 #include <widgets/titlebar.h>
 
 #include "dialogs/newsnippetdialog2.h"
@@ -37,8 +38,11 @@ void SnippetPanel2::setupUI() {
   m_controller = new SnippetController(m_services, this);
   m_model = new SnippetListModel(m_services.get<SnippetCoreService>(), this);
 
+  m_proxyModel = new TreeFilterProxyModel(this);
+  m_proxyModel->setSourceModel(m_model);
+
   m_listView = new QListView(this);
-  m_listView->setModel(m_model);
+  m_listView->setModel(m_proxyModel);
   m_listView->setContextMenuPolicy(Qt::CustomContextMenu);
   m_listView->setSelectionMode(QAbstractItemView::SingleSelection);
   m_listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -62,13 +66,18 @@ void SnippetPanel2::setupUI() {
   connect(m_controller, &SnippetController::errorOccurred,
           this, [](const QString &p_msg) { qWarning() << p_msg; });
 
+  connect(m_titleBar, &TitleBar::searchTextChanged,
+          m_proxyModel, &TreeFilterProxyModel::setFilterText);
+
   setFocusProxy(m_listView);
 }
 
 void SnippetPanel2::setupTitleBar() {
   m_titleBar =
-      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Menu, this);
+      new TitleBar(m_services.get<ThemeService>(), QString(), false,
+                   TitleBar::Action::Menu | TitleBar::Action::Search, this);
   m_titleBar->setActionButtonsAlwaysShown(true);
+  m_titleBar->setSearchPlaceholder(tr("Search snippets"));
 
   auto *newBtn = m_titleBar->addActionButton(QStringLiteral("add.svg"), tr("New Snippet"));
   connect(newBtn, &QToolButton::clicked, this, [this]() {
@@ -122,7 +131,8 @@ void SnippetPanel2::saveBuiltInVisibility(bool p_visible) {
 }
 
 void SnippetPanel2::onItemActivated(const QModelIndex &p_index) {
-  const QString name = m_model->snippetAt(p_index.row());
+  const QModelIndex src = m_proxyModel->mapToSource(p_index);
+  const QString name = m_model->snippetAt(src.row());
   if (!name.isEmpty()) {
     m_controller->requestApplySnippet(name);
   }
@@ -154,7 +164,8 @@ void SnippetPanel2::onContextMenuRequested(const QPoint &p_pos) {
     return;
   }
 
-  const QString name = m_model->snippetAt(idx.row());
+  const QModelIndex src = m_proxyModel->mapToSource(idx);
+  const QString name = m_model->snippetAt(src.row());
   if (name.isEmpty()) {
     return;
   }

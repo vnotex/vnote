@@ -13,6 +13,7 @@
 #include <core/services/taskservice.h>
 #include <gui/services/themeservice.h>
 #include <models/tasktreemodel.h>
+#include <models/treefilterproxymodel.h>
 #include <widgets/titlebar.h>
 
 using namespace vnotex;
@@ -33,8 +34,11 @@ void TaskPanel2::setupUI() {
   m_controller = new TaskController(m_services, this);
   m_model = new TaskTreeModel(m_services.get<TaskService>(), this);
 
+  m_proxyModel = new TreeFilterProxyModel(this);
+  m_proxyModel->setSourceModel(m_model);
+
   m_treeView = new QTreeView(this);
-  m_treeView->setModel(m_model);
+  m_treeView->setModel(m_proxyModel);
   m_treeView->setHeaderHidden(true);
   m_treeView->setContextMenuPolicy(Qt::CustomContextMenu);
   m_treeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -51,6 +55,11 @@ void TaskPanel2::setupUI() {
     QMessageBox::warning(window(), tr("Task"), p_msg);
   });
 
+  connect(m_titleBar, &TitleBar::searchTextChanged,
+          m_proxyModel, &TreeFilterProxyModel::setFilterText);
+  connect(m_proxyModel, &TreeFilterProxyModel::filterActiveChanged, this,
+          [this]() { m_treeView->expandAll(); });
+
   // Rebuild the model whenever the task set changes (reload / notebook switch).
   auto *taskService = m_services.get<TaskService>();
   if (taskService) {
@@ -65,8 +74,9 @@ void TaskPanel2::setupUI() {
 
 void TaskPanel2::setupTitleBar() {
   m_titleBar =
-      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::None, this);
+      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Search, this);
   m_titleBar->setActionButtonsAlwaysShown(true);
+  m_titleBar->setSearchPlaceholder(tr("Search tasks"));
 
   auto *newBtn = m_titleBar->addActionButton(QStringLiteral("add.svg"), tr("New Task"));
   connect(newBtn, &QToolButton::clicked, this, [this]() {
@@ -91,7 +101,8 @@ void TaskPanel2::initialize() {
 }
 
 void TaskPanel2::onItemActivated(const QModelIndex &p_index) {
-  auto *task = m_model->taskForIndex(p_index);
+  const QModelIndex src = m_proxyModel->mapToSource(p_index);
+  auto *task = m_model->taskForIndex(src);
   if (task) {
     m_controller->runTask(task);
   } else {
@@ -106,7 +117,8 @@ void TaskPanel2::onContextMenuRequested(const QPoint &p_pos) {
     return;
   }
 
-  auto *task = m_model->taskForIndex(idx);
+  const QModelIndex src = m_proxyModel->mapToSource(idx);
+  auto *task = m_model->taskForIndex(src);
   if (!task) {
     return;
   }
@@ -120,7 +132,7 @@ void TaskPanel2::onContextMenuRequested(const QPoint &p_pos) {
 
   // Delete removes the whole .json task file, so only offer it on top-level
   // task rows (a sub-task shares its parent's file).
-  if (m_model->isTopLevelTask(idx)) {
+  if (m_model->isTopLevelTask(src)) {
     menu.addAction(tr("Delete"), this, [this, task]() {
       const int ret = QMessageBox::question(
           window(), tr("Delete Task"),
