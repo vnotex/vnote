@@ -141,7 +141,7 @@ private:
   bool m_nodeExplorerSingleClickActivation = false;
 
   // Default layout mode for view windows.
-  ViewWindowLayoutMode m_viewWindowLayoutMode = ViewWindowLayoutMode::ReadableWidth;
+  ViewWindowLayoutMode m_viewWindowLayoutMode = ViewWindowLayoutMode::FullWidth;
 
   // Maximum content width in pixels for Readable Width mode.
   int m_readableWidthMaxPx = 900;

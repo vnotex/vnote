@@ -63,8 +63,10 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("unitedEntryExpandAll"));
 
-  m_viewWindowLayoutMode =
-      static_cast<ViewWindowLayoutMode>(READINT(QStringLiteral("viewWindowLayoutMode")));
+  if (p_jobj.contains(QStringLiteral("viewWindowLayoutMode"))) {
+    m_viewWindowLayoutMode =
+        static_cast<ViewWindowLayoutMode>(READINT(QStringLiteral("viewWindowLayoutMode")));
+  }
   m_readableWidthMaxPx = READINT(QStringLiteral("readableWidthMaxPx"));
   if (m_readableWidthMaxPx <= 0) {
     m_readableWidthMaxPx = 720;
