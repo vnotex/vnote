@@ -839,6 +839,11 @@ void MainWindow2::setupDocks() {
 
   // Initialize the tasks panel now that context + wiring are in place.
   if (m_taskPanel) {
+    // Route task-file editing through the generic external-file open flow so
+    // the .json opens in the built-in editor rather than the OS handler.
+    connect(m_taskPanel, &TaskPanel2::editTaskFileRequested, this,
+            [this](const QString &p_filePath) { openFiles({p_filePath}); });
+
     m_taskPanel->initialize();
   }
 }

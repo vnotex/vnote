@@ -67,18 +67,6 @@ void TaskController::openTaskFolder() {
   QDesktopServices::openUrl(QUrl::fromLocalFile(folder));
 }
 
-void TaskController::openTaskFile(Task *p_task) {
-  if (!p_task) {
-    return;
-  }
-  const auto file = p_task->getFile();
-  if (file.isEmpty() || !QFileInfo::exists(file)) {
-    emit errorOccurred(tr("Task file does not exist: %1").arg(file));
-    return;
-  }
-  QDesktopServices::openUrl(QUrl::fromLocalFile(file));
-}
-
 QString TaskController::newTask() {
   const auto folder = getAppTaskFolderPath();
   if (folder.isEmpty()) {
@@ -112,7 +100,6 @@ QString TaskController::newTask() {
     m_taskService->reload();
   }
 
-  QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
   return filePath;
 }
 

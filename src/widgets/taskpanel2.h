@@ -24,6 +24,12 @@ public:
 
   void initialize();
 
+signals:
+  // Request the host to open a task .json file for editing through the generic
+  // file-open flow (external buffer in the built-in editor), rather than the OS
+  // default handler.
+  void editTaskFileRequested(const QString &p_filePath);
+
 private slots:
   void onItemActivated(const QModelIndex &p_index);
   void onContextMenuRequested(const QPoint &p_pos);

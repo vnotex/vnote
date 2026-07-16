@@ -81,6 +81,9 @@ void SnippetPanel2::setupTitleBar() {
     QDesktopServices::openUrl(QUrl::fromLocalFile(m_controller->getSnippetFolderPath()));
   });
 
+  auto *reloadBtn = m_titleBar->addActionButton(QStringLiteral("reload.svg"), tr("Reload"));
+  connect(reloadBtn, &QToolButton::clicked, this, [this]() { m_model->refresh(); });
+
   auto *showAct =
       m_titleBar->addMenuAction(tr("Show Built-In Snippets"), this, [this](bool p_checked) {
         m_builtInSnippetsVisible = p_checked;

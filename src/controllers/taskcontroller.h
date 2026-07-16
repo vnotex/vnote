@@ -28,11 +28,9 @@ public:
   // Open the app tasks folder in the OS file browser (created if missing).
   void openTaskFolder();
 
-  // Open a task's .json file in the OS default editor.
-  void openTaskFile(Task *p_task);
-
-  // Create a starter task .json in the app tasks folder and open it for
-  // editing. Returns the created file path, or "" on failure.
+  // Create a starter task .json in the app tasks folder and reload tasks.
+  // Returns the created file path, or "" on failure. The caller opens the file
+  // for editing via the generic file-open flow.
   QString newTask();
 
   // Delete a task's .json file and reload tasks. Returns true on success.

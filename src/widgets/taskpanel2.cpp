@@ -69,14 +69,19 @@ void TaskPanel2::setupTitleBar() {
   m_titleBar->setActionButtonsAlwaysShown(true);
 
   auto *newBtn = m_titleBar->addActionButton(QStringLiteral("add.svg"), tr("New Task"));
-  connect(newBtn, &QToolButton::clicked, this, [this]() { m_controller->newTask(); });
+  connect(newBtn, &QToolButton::clicked, this, [this]() {
+    const auto path = m_controller->newTask();
+    if (!path.isEmpty()) {
+      emit editTaskFileRequested(path);
+    }
+  });
 
   auto *openFolderBtn =
       m_titleBar->addActionButton(QStringLiteral("open_folder.svg"), tr("Open Task Folder"));
   connect(openFolderBtn, &QToolButton::clicked, this,
           [this]() { m_controller->openTaskFolder(); });
 
-  auto *refreshBtn = m_titleBar->addActionButton(QStringLiteral("sync_now.svg"), tr("Refresh"));
+  auto *refreshBtn = m_titleBar->addActionButton(QStringLiteral("reload.svg"), tr("Reload"));
   connect(refreshBtn, &QToolButton::clicked, this, [this]() { m_controller->refreshTasks(); });
 }
 
@@ -110,14 +115,15 @@ void TaskPanel2::onContextMenuRequested(const QPoint &p_pos) {
 
   menu.addAction(tr("Run"), this, [this, task]() { m_controller->runTask(task); });
 
-  menu.addAction(tr("Open Task File"), this, [this, task]() { m_controller->openTaskFile(task); });
+  menu.addAction(tr("Edit"), this,
+                 [this, task]() { emit editTaskFileRequested(task->getFile()); });
 
   // Delete removes the whole .json task file, so only offer it on top-level
   // task rows (a sub-task shares its parent's file).
   if (m_model->isTopLevelTask(idx)) {
-    menu.addAction(tr("Delete Task File"), this, [this, task]() {
+    menu.addAction(tr("Delete"), this, [this, task]() {
       const int ret = QMessageBox::question(
-          window(), tr("Delete Task File"),
+          window(), tr("Delete Task"),
           tr("Delete the task file for \"%1\"?\n\nThis removes the file and any sub-tasks it "
              "contains: %2")
               .arg(task->getLabel(), task->getFile()),
