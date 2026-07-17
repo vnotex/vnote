@@ -11,7 +11,8 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
-#include <core/htmltemplatehelper.h>
+#include <core/htmltemplateutils.h>
+#include <core/markdownwebglobaloptions.h>
 #include <core/markdowneditorconfig.h>
 #include <gui/services/themeservice.h>
 #include <utils/fileutils.h>
@@ -20,9 +21,10 @@
 #include <utils/processutils.h>
 #include <utils/utils.h>
 #include <utils/webutils.h>
+#include <widgets/editors/graphvizhelper.h>
 #include <widgets/editors/markdownviewer.h>
 #include <widgets/editors/markdownvieweradapter.h>
-
+#include <widgets/editors/plantumlhelper.h>
 using namespace vnotex;
 
 static const QString c_imgRegExp = "<img ([^>]*)src=\"(?!data:)([^\"]+)\"([^>]*)>";
@@ -168,7 +170,7 @@ void fillResourcesByContent(QString &p_template, const WebResource &p_resource,
 
 QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
                                        const MarkdownEditorConfig &p_config,
-                                       const HtmlTemplateHelper::MarkdownParas &p_paras) {
+                                       const HtmlTemplateUtils::MarkdownParas &p_paras) {
   const auto &viewerResource = p_config.getViewerResource();
   const auto templateFile = resolveConfigFile(p_configMgr, viewerResource.m_template);
   auto htmlTemplate = readTemplateFile(templateFile, "failed to read HTML template");
@@ -220,7 +222,7 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
   }
 
   fillGlobalStyles(htmlTemplate, exportResource, p_configMgr, QString());
-  HtmlTemplateHelper::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
+  HtmlTemplateUtils::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
   fillResourcesByContent(htmlTemplate, exportResource, p_configMgr);
   return htmlTemplate;
 }
@@ -374,15 +376,15 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl
   auto htmlContent = m_exportHtmlTemplate;
 
   const auto title = QStringLiteral("%1").arg(baseName);
-  HtmlTemplateHelper::fillTitle(htmlContent, title);
+  HtmlTemplateUtils::fillTitle(htmlContent, title);
 
   if (!p_styleContent.isEmpty() && p_embedStyles) {
     embedStyleResources(p_styleContent);
-    HtmlTemplateHelper::fillStyleContent(htmlContent, p_styleContent);
+    HtmlTemplateUtils::fillStyleContent(htmlContent, p_styleContent);
   }
 
   if (!p_headContent.isEmpty()) {
-    HtmlTemplateHelper::fillHeadContent(htmlContent, p_headContent);
+    HtmlTemplateUtils::fillHeadContent(htmlContent, p_headContent);
   }
 
   if (p_completePage) {
@@ -393,13 +395,13 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl
       fixBodyResources(p_baseUrl, resourceFolder, content);
     }
 
-    HtmlTemplateHelper::fillContent(htmlContent, content);
+    HtmlTemplateUtils::fillContent(htmlContent, content);
   } else {
-    HtmlTemplateHelper::fillContent(htmlContent, p_content);
+    HtmlTemplateUtils::fillContent(htmlContent, p_content);
   }
 
   if (!p_bodyClassList.isEmpty()) {
-    HtmlTemplateHelper::fillBodyClassList(htmlContent, p_bodyClassList);
+    HtmlTemplateUtils::fillBodyClassList(htmlContent, p_bodyClassList);
   }
 
   FileUtils::writeFile(p_file, htmlContent);
@@ -448,6 +450,13 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   }
 
   const auto &config = configMgr->getEditorConfig().getMarkdownEditorConfig();
+
+  // Configure the shared Graphviz/PlantUML helpers with the resolved executables. Export may
+  // render diagrams without a MarkdownViewWindow having configured them, so seed them here.
+  GraphvizHelper::getInst().update(config.getGraphvizExe());
+  PlantUmlHelper::getInst().update(config.getPlantUmlJar(), config.getGraphvizExe(),
+                                   config.getPlantUmlCommand());
+
   bool useWkhtmltopdf = false;
   QSize pageBodySize(1024, 768);
   if (p_option.m_targetFormat == ExportFormat::PDF) {
@@ -457,7 +466,7 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
 
   qDebug() << "export page body size" << pageBodySize;
 
-  HtmlTemplateHelper::MarkdownParas paras;
+  HtmlTemplateUtils::MarkdownParas paras;
   auto webStyleFile = p_option.m_renderingStyleFile;
   if (webStyleFile.isEmpty()) {
     const auto webStyles = themeService->getWebStyles();

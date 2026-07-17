@@ -6,7 +6,6 @@
 #include <QHash>
 #include <QSet>
 
-#include <notebook/node.h>
 #include <notebookbackend/inotebookbackend.h>
 
 #include <buffer/filetypehelper.h>
@@ -14,22 +13,10 @@
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/textutils.h>
 
-#include <core/exception.h>
-#include <core/file.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
-
-void ContentMediaUtils::copyMediaFiles(Node *p_node, INotebookBackend *p_backend,
-                                       const QString &p_destFilePath) {
-  Q_ASSERT(p_node->hasContent());
-  auto file = p_node->getContentFile();
-  if (file->getContentType().isMarkdown()) {
-    copyMarkdownMediaFiles(file->read(), PathUtils::parentDirPath(file->getContentPath()),
-                           p_backend, p_destFilePath);
-  }
-}
 
 void ContentMediaUtils::copyMediaFiles(const QString &p_filePath, INotebookBackend *p_backend,
                                        const QString &p_destFilePath) {
@@ -37,12 +24,6 @@ void ContentMediaUtils::copyMediaFiles(const QString &p_filePath, INotebookBacke
   if (fileType.isMarkdown()) {
     copyMarkdownMediaFiles(FileUtils::readTextFile(p_filePath),
                            PathUtils::parentDirPath(p_filePath), p_backend, p_destFilePath);
-  }
-}
-
-void ContentMediaUtils::copyMediaFiles(const File *p_file, const QString &p_destFilePath) {
-  if (p_file->getContentType().isMarkdown()) {
-    copyMarkdownMediaFiles(p_file->read(), p_file->getResourcePath(), nullptr, p_destFilePath);
   }
 }
 
@@ -118,77 +99,4 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content, const Q
       FileUtils::writeFile(p_destFilePath, content);
     }
   }
-}
-
-void ContentMediaUtils::removeMediaFiles(Node *p_node) {
-  Q_ASSERT(p_node->hasContent());
-  auto file = p_node->getContentFile();
-  if (file->getContentType().isMarkdown()) {
-    removeMarkdownMediaFiles(file.data(), p_node->getBackend());
-  }
-}
-
-void ContentMediaUtils::removeMarkdownMediaFiles(const File *p_file, INotebookBackend *p_backend) {
-  auto content = p_file->read();
-
-  // Images.
-  const auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
-      content, p_file->getResourcePath(), vte::MarkdownLink::TypeFlag::LocalRelativeInternal);
-
-  QSet<QString> handledImages;
-  for (const auto &link : images) {
-    if (handledImages.contains(link.m_path)) {
-      continue;
-    }
-
-    handledImages.insert(link.m_path);
-
-    if (!QFileInfo::exists(link.m_path)) {
-      qWarning() << "image of Markdown file does not exist" << link.m_path << link.m_urlInLink;
-      continue;
-    }
-    p_backend->removeFile(link.m_path);
-  }
-}
-
-void ContentMediaUtils::copyAttachment(Node *p_node, INotebookBackend *p_backend,
-                                       const QString &p_destFilePath,
-                                       const QString &p_destAttachmentFolderPath) {
-  Q_ASSERT(p_node->hasContent());
-  Q_ASSERT(!p_node->getAttachmentFolder().isEmpty());
-
-  // Copy the whole folder.
-  const auto srcAttachmentFolderPath = p_node->fetchAttachmentFolderPath();
-  try {
-    if (p_backend) {
-      p_backend->copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
-    } else {
-      FileUtils::copyDir(srcAttachmentFolderPath, p_destAttachmentFolderPath);
-    }
-  } catch (Exception &e) {
-    qWarning() << "failed to copy attachment folder" << srcAttachmentFolderPath << e.what();
-    return;
-  }
-
-  // Check if we need to modify links in content.
-  // FIXME: check the whole relative path.
-  if (p_node->getAttachmentFolder() == PathUtils::dirName(p_destAttachmentFolderPath)) {
-    return;
-  }
-
-  auto file = p_node->getContentFile();
-  if (file->getContentType().isMarkdown()) {
-    fixMarkdownLinks(srcAttachmentFolderPath, p_backend, p_destFilePath,
-                     p_destAttachmentFolderPath);
-  }
-}
-
-void ContentMediaUtils::fixMarkdownLinks(const QString &p_srcFolderPath,
-                                         INotebookBackend *p_backend, const QString &p_destFilePath,
-                                         const QString &p_destFolderPath) {
-  // TODO.
-  Q_UNUSED(p_srcFolderPath);
-  Q_UNUSED(p_backend);
-  Q_UNUSED(p_destFilePath);
-  Q_UNUSED(p_destFolderPath);
 }

@@ -250,7 +250,8 @@ void MarkdownEditor::typeLink() {
 }
 
 void MarkdownEditor::typeImage() {
-  ImageInsertDialog dialog(tr("Insert Image"), "", "", "", true, this);
+  ImageInsertDialog dialog(tr("Insert Image"), "", "", "", m_services.get<ConfigMgr2>(), true,
+                           this);
 
   // Try fetch image from clipboard.
   {
@@ -1009,7 +1010,8 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source) {
     return;
   }
 
-  ImageInsertDialog dialog(tr("Insert Image From Clipboard"), "", "", "", false, this);
+  ImageInsertDialog dialog(tr("Insert Image From Clipboard"), "", "", "", m_services.get<ConfigMgr2>(),
+                           false, this);
   dialog.setImage(image);
   if (dialog.exec() == QDialog::Accepted) {
     enterInsertModeIfApplicable();
@@ -1021,7 +1023,8 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
   if (p_quiet) {
     insertImageToBufferFromLocalFile("", "", p_url);
   } else {
-    ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", false, this);
+    ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", m_services.get<ConfigMgr2>(),
+                             false, this);
     dialog.setImagePath(p_url);
     if (dialog.exec() == QDialog::Accepted) {
       enterInsertModeIfApplicable();
@@ -1535,7 +1538,7 @@ void MarkdownEditor::updateFromConfig(bool p_initialized) {
 }
 
 void MarkdownEditor::setupTableHelper() {
-  m_tableHelper = new MarkdownTableHelper(this, this);
+  m_tableHelper = new MarkdownTableHelper(this, getEditorConfig().getMarkdownEditorConfig(), this);
   connect(getHighlighter(), &vte::MarkdownHighlighter::tableBlocksUpdated, m_tableHelper,
           &MarkdownTableHelper::updateTableBlocks);
 }

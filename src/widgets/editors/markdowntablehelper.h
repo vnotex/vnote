@@ -12,10 +12,13 @@ class VTextEditor;
 }
 
 namespace vnotex {
+class MarkdownEditorConfig;
+
 class MarkdownTableHelper : public QObject {
   Q_OBJECT
 public:
-  MarkdownTableHelper(vte::VTextEditor *p_editor, QObject *p_parent = nullptr);
+  MarkdownTableHelper(vte::VTextEditor *p_editor, const MarkdownEditorConfig &p_config,
+                      QObject *p_parent = nullptr);
 
   void insertTable(int p_bodyRow, int p_col, Alignment p_alignment);
 
@@ -33,6 +36,9 @@ private:
   QTimer *getTimer();
 
   vte::VTextEditor *m_editor = nullptr;
+
+  // Owner-supplied config (ConfigMgr2-backed); replaces legacy global ConfigMgr access.
+  const MarkdownEditorConfig &m_config;
 
   // Use getTimer() to access.
   QTimer *m_timer = nullptr;

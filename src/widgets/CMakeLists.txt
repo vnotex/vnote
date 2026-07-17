@@ -1,7 +1,5 @@
 target_sources(vnote PRIVATE
-    attachmentdragdropareaindicator.cpp attachmentdragdropareaindicator.h
     attachmentdragdropareaindicator2.cpp attachmentdragdropareaindicator2.h
-    attachmentpopup.cpp attachmentpopup.h
     attachmentpopup2.cpp attachmentpopup2.h
     biaction.cpp biaction.h
     buttonpopup.cpp buttonpopup.h
@@ -13,42 +11,23 @@ target_sources(vnote PRIVATE
     dashboard/historysticker.cpp dashboard/historysticker.h
     dashboard/resizestickerdialog.cpp dashboard/resizestickerdialog.h
     dashboard/sticker.cpp dashboard/sticker.h
-    dialogs/deleteconfirmdialog.cpp dialogs/deleteconfirmdialog.h
     dialogs/dialog.cpp dialogs/dialog.h
-    dialogs/exportdialog.cpp dialogs/exportdialog.h
     dialogs/exportdialog2.cpp dialogs/exportdialog2.h
-    dialogs/filepropertiesdialog.cpp dialogs/filepropertiesdialog.h
     dialogs/folderfilesfilterwidget.cpp dialogs/folderfilesfilterwidget.h
-    dialogs/folderpropertiesdialog.cpp dialogs/folderpropertiesdialog.h
     dialogs/imageinsertdialog.cpp dialogs/imageinsertdialog.h
-    dialogs/importfolderdialog.cpp dialogs/importfolderdialog.h
     dialogs/importfolderdialog2.cpp dialogs/importfolderdialog2.h
-    dialogs/importfolderutils.cpp dialogs/importfolderutils.h
-    dialogs/importnotebookdialog.cpp dialogs/importnotebookdialog.h
-    dialogs/levellabelwithupbutton.cpp dialogs/levellabelwithupbutton.h
     dialogs/linkinsertdialog.cpp dialogs/linkinsertdialog.h
-    dialogs/managenotebooksdialog.cpp dialogs/managenotebooksdialog.h
     dialogs/managenotebooksdialog2.cpp dialogs/managenotebooksdialog2.h
     dialogs/marknodedialog2.cpp dialogs/marknodedialog2.h
-    dialogs/newfolderdialog.cpp dialogs/newfolderdialog.h
     dialogs/newfolderdialog2.cpp dialogs/newfolderdialog2.h
-    dialogs/newnotebookdialog.cpp dialogs/newnotebookdialog.h
     dialogs/newnotebookdialog2.cpp dialogs/newnotebookdialog2.h
-    dialogs/newnotebookfromfolderdialog.cpp dialogs/newnotebookfromfolderdialog.h
-    dialogs/newnotedialog.cpp dialogs/newnotedialog.h
     dialogs/newnotedialog2.cpp dialogs/newnotedialog2.h
-    dialogs/newsnippetdialog.cpp dialogs/newsnippetdialog.h
     dialogs/newsnippetdialog2.cpp dialogs/newsnippetdialog2.h
-    dialogs/newtagdialog.cpp dialogs/newtagdialog.h
-    dialogs/nodeinfowidget.cpp dialogs/nodeinfowidget.h
     dialogs/nodepropertiesdialog2.cpp dialogs/nodepropertiesdialog2.h
-    dialogs/notebookinfowidget.cpp dialogs/notebookinfowidget.h
     dialogs/notebooksyncinfodialog2.cpp dialogs/notebooksyncinfodialog2.h
-    dialogs/notepropertiesdialog.cpp dialogs/notepropertiesdialog.h
     dialogs/notetemplateselector.cpp dialogs/notetemplateselector.h
     dialogs/opennotebookdialog2.cpp dialogs/opennotebookdialog2.h
     dialogs/openvnote3notebookdialog2.cpp dialogs/openvnote3notebookdialog2.h
-    dialogs/renametagdialog.cpp dialogs/renametagdialog.h
     dialogs/scrolldialog.cpp dialogs/scrolldialog.h
     dialogs/selectdialog.cpp dialogs/selectdialog.h
     dialogs/selectionitemwidget.cpp dialogs/selectionitemwidget.h
@@ -58,7 +37,6 @@ target_sources(vnote PRIVATE
     dialogs/settings/generalpage.cpp dialogs/settings/generalpage.h
     dialogs/settings/imagehostpage.cpp dialogs/settings/imagehostpage.h
     dialogs/settings/markdowneditorpage.cpp dialogs/settings/markdowneditorpage.h
-    dialogs/settings/miscpage.cpp dialogs/settings/miscpage.h
     dialogs/settings/newimagehostdialog.cpp dialogs/settings/newimagehostdialog.h
     dialogs/settings/newquickaccessitemdialog.cpp dialogs/settings/newquickaccessitemdialog.h
     dialogs/settings/notemanagementpage.cpp dialogs/settings/notemanagementpage.h
@@ -69,19 +47,13 @@ target_sources(vnote PRIVATE
     dialogs/settings/texteditorpage.cpp dialogs/settings/texteditorpage.h
     dialogs/settings/themepage.cpp dialogs/settings/themepage.h
     dialogs/settings/vipage.cpp dialogs/settings/vipage.h
-    dialogs/snippetinfowidget.cpp dialogs/snippetinfowidget.h
     dialogs/snippetinfowidget2.cpp dialogs/snippetinfowidget2.h
-    dialogs/snippetpropertiesdialog.cpp dialogs/snippetpropertiesdialog.h
     dialogs/snippetpropertiesdialog2.cpp dialogs/snippetpropertiesdialog2.h
-    dialogs/sortdialog.cpp dialogs/sortdialog.h
     dialogs/sortdialog2.cpp dialogs/sortdialog2.h
     dialogs/syncconflictdialog2.cpp dialogs/syncconflictdialog2.h
     dialogs/tableinsertdialog.cpp dialogs/tableinsertdialog.h
-    dialogs/updater.cpp dialogs/updater.h
-    dialogs/viewtagsdialog.cpp dialogs/viewtagsdialog.h
     dialogs/viewtagsdialog2.cpp dialogs/viewtagsdialog2.h
     dockwidgethelper.cpp dockwidgethelper.h
-    dragdropareaindicator.cpp dragdropareaindicator.h
     editors/graphhelper.cpp editors/graphhelper.h
     editors/graphvizhelper.cpp editors/graphvizhelper.h
     editors/linkinsertutils.cpp editors/linkinsertutils.h
@@ -100,91 +72,54 @@ target_sources(vnote PRIVATE
     editors/texteditor.cpp editors/texteditor.h
     editors/webviewadapter.cpp editors/webviewadapter.h
     editreaddiscardaction.cpp editreaddiscardaction.h
-    filesystemviewer.cpp filesystemviewer.h
-    findandreplacewidget.cpp findandreplacewidget.h
     findandreplacewidget2.cpp findandreplacewidget2.h
     floatingwidget.cpp floatingwidget.h
     fullscreentoggleaction.cpp fullscreentoggleaction.h
-    itemproxystyle.cpp itemproxystyle.h
-    labelwithbuttonswidget.cpp labelwithbuttonswidget.h
     lineedit.cpp lineedit.h
-    lineeditdelegate.cpp lineeditdelegate.h
     lineeditwithsnippet.cpp lineeditwithsnippet.h
     listwidget.cpp listwidget.h
     locationinputwithbrowsebutton.cpp locationinputwithbrowsebutton.h
-    locationlist.cpp locationlist.h
     locationlist2.cpp locationlist2.h
-    mainwindow.cpp mainwindow.h
     mainwindow2.cpp mainwindow2.h
-    markdownviewwindow.cpp markdownviewwindow.h
     markdownviewwindow2.cpp markdownviewwindow2.h
     messageboxhelper.cpp messageboxhelper.h
-    mindmapviewwindow.cpp mindmapviewwindow.h
     mindmapviewwindow2.cpp mindmapviewwindow2.h
     navigationmode.cpp navigationmode.h
-    navigationmodemgr.cpp navigationmodemgr.h
     navigationmodeviewwrapper.h
-    navigationmodewrapper.h
-    notebookexplorer.cpp notebookexplorer.h
     notebookexplorer2.cpp notebookexplorer2.h
     notebookexplorer2_sortseam.cpp notebookexplorer2_sortseam.h
-    notebookexplorersession.cpp notebookexplorersession.h
-    notebooknodeexplorer.cpp notebooknodeexplorer.h
-    notebookselector.cpp notebookselector.h
     notebookselector2.cpp notebookselector2.h
     outlinepopup.cpp outlinepopup.h
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h
-    pdfviewwindow.cpp pdfviewwindow.h
     pdfviewwindow2.cpp pdfviewwindow2.h
     propertydefs.cpp propertydefs.h
-    qtreewidgetstatecache.h
     quickselector.cpp quickselector.h
-    searchinfoprovider.cpp searchinfoprovider.h
-    searchpanel.cpp searchpanel.h
     searchpanel2.cpp searchpanel2.h
     settingswidget.cpp settingswidget.h
     simplesegmenthighlighter.cpp simplesegmenthighlighter.h
-    snippetpanel.cpp snippetpanel.h
     snippetpanel2.cpp snippetpanel2.h
     consoleviewer.cpp consoleviewer.h
     taskpanel2.cpp taskpanel2.h
-    statusbarhelper.cpp statusbarhelper.h
     styleditemdelegate.cpp styleditemdelegate.h
     systemtrayhelper.cpp systemtrayhelper.h
-    tagexplorer.cpp tagexplorer.h
     tagexplorer2.cpp tagexplorer2.h
-    tagpopup.cpp tagpopup.h
     tagpopup2.cpp tagpopup2.h
-    tagviewer.cpp tagviewer.h
     tagviewer2.cpp tagviewer2.h
-    textviewwindow.cpp textviewwindow.h
     textviewwindow2.cpp textviewwindow2.h
     textviewwindowhelper.h
     titlebar.cpp titlebar.h
-    titletoolbar.cpp titletoolbar.h
     titletoolbar2.cpp titletoolbar2.h
-    toolbarhelper.cpp toolbarhelper.h
     toolbarhelper2.cpp toolbarhelper2.h
-    toolbox.cpp toolbox.h
-    treeview.cpp treeview.h
     treewidget.cpp treewidget.h
-    treewidgetitem.cpp treewidgetitem.h
-    viewarea.cpp viewarea.h
     viewarea2.cpp viewarea2.h
-    viewareasession.cpp viewareasession.h
-    viewsplit.cpp viewsplit.h
     viewsplit2.cpp viewsplit2.h
-    viewwindow.cpp viewwindow.h
     viewwindow2.cpp viewwindow2.h
-    viewwindowsession.cpp viewwindowsession.h
-    viewwindowtoolbarhelper.cpp viewwindowtoolbarhelper.h
     viewwindowtoolbarhelper2.cpp viewwindowtoolbarhelper2.h
     webpage.cpp webpage.h
     webviewer.cpp webviewer.h
     widgetviewwindow2.cpp widgetviewwindow2.h
     widgetsfactory.cpp widgetsfactory.h
     wordcountpanel.cpp wordcountpanel.h
-    wordcountpopup.cpp wordcountpopup.h
     wordcountpopup2.cpp wordcountpopup2.h
 )

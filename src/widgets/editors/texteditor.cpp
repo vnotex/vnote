@@ -6,7 +6,6 @@
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/vtextedit.h>
 
-#include <core/configmgr.h>
 #include <core/editorconfig.h>
 #include <utils/widgetutils.h>
 
@@ -17,6 +16,10 @@ TextEditor::TextEditor(const QSharedPointer<vte::TextEditorConfig> &p_config,
     : vte::VTextEditor(p_config, p_paras, p_parent) {
   connect(m_textEdit, &vte::VTextEdit::contextMenuEventRequested, this,
           &TextEditor::handleContextMenuEvent);
+}
+
+void TextEditor::setApplySnippetShortcut(const QString &p_shortcut) {
+  m_applySnippetShortcut = p_shortcut;
 }
 
 void TextEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled,
@@ -30,9 +33,9 @@ void TextEditor::handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_hand
 
     auto snippetAct =
         menu->addAction(tr("Insert Snippet"), this, &TextEditor::applySnippetRequested);
-    WidgetUtils::addActionShortcutText(
-        snippetAct,
-        ConfigMgr::getInst().getEditorConfig().getShortcut(EditorConfig::Shortcut::ApplySnippet));
+    if (!m_applySnippetShortcut.isEmpty()) {
+      WidgetUtils::addActionShortcutText(snippetAct, m_applySnippetShortcut);
+    }
   }
 
   appendSpellCheckMenu(p_event, menu);

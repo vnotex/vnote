@@ -19,14 +19,16 @@ struct NetworkReply;
 } // namespace vte
 
 namespace vnotex {
+class ConfigMgr2;
+
 class ImageInsertDialog : public Dialog {
   Q_OBJECT
 public:
   enum Source { LocalFile, ImageData };
 
   ImageInsertDialog(const QString &p_title, const QString &p_imageTitle, const QString &p_imageAlt,
-                    const QString &p_imagePath, bool p_browserEnabled = true,
-                    QWidget *p_parent = nullptr);
+                    const QString &p_imagePath, ConfigMgr2 *p_configMgr,
+                    bool p_browserEnabled = true, QWidget *p_parent = nullptr);
 
   QString getImageTitle() const;
 
@@ -60,6 +62,9 @@ private:
   void setImageControlsVisible(bool p_visible);
 
   bool m_browserEnabled = true;
+
+  // ConfigMgr2 (owner-supplied) for the session-scoped default media path.
+  ConfigMgr2 *m_configMgr = nullptr;
 
   Source m_source = Source::LocalFile;
 

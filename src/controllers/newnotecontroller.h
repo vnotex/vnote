@@ -54,7 +54,7 @@ public:
   NewNoteResult createNote(const NewNoteInput &p_input);
 
   // Evaluate template content with snippets.
-  static QString evaluateTemplateContent(const QString &p_content, const QString &p_name);
+  QString evaluateTemplateContent(const QString &p_content, const QString &p_name);
 
 private:
   ServiceLocator &m_services;

@@ -17,7 +17,7 @@
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/networkutils.h>
 
-#include <core/configmgr.h>
+#include <core/configmgr2.h>
 #include <core/sessionconfig.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
@@ -28,8 +28,9 @@ using namespace vnotex;
 
 ImageInsertDialog::ImageInsertDialog(const QString &p_title, const QString &p_imageTitle,
                                      const QString &p_imageAlt, const QString &p_imagePath,
-                                     bool p_browserEnabled, QWidget *p_parent)
-    : Dialog(p_parent), m_browserEnabled(p_browserEnabled) {
+                                     ConfigMgr2 *p_configMgr, bool p_browserEnabled,
+                                     QWidget *p_parent)
+    : Dialog(p_parent), m_browserEnabled(p_browserEnabled), m_configMgr(p_configMgr) {
   m_imagePathCheckTimer = new QTimer(this);
   m_imagePathCheckTimer->setSingleShot(true);
   m_imagePathCheckTimer->setInterval(500);
@@ -153,7 +154,10 @@ void ImageInsertDialog::checkImagePathInput() {
 void ImageInsertDialog::checkInput() { setButtonEnabled(QDialogButtonBox::Ok, !m_image.isNull()); }
 
 void ImageInsertDialog::browseFile() {
-  auto &sessionConfig = ConfigMgr::getInst().getSessionConfig();
+  if (!m_configMgr) {
+    return;
+  }
+  auto &sessionConfig = m_configMgr->getSessionConfig();
   QString filePath = QFileDialog::getOpenFileName(
       this, tr("Select Image To Insert"), sessionConfig.getExternalMediaDefaultPath(),
       tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg *.webp);;All (*.*)"));

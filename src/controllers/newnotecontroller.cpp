@@ -1,10 +1,11 @@
 #include "newnotecontroller.h"
 
+#include <QFileInfo>
 #include <QJsonObject>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
-#include <snippet/snippetmgr.h>
+#include <core/services/snippetcoreservice.h>
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
 
@@ -122,7 +123,10 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
 
 QString NewNoteController::evaluateTemplateContent(const QString &p_content,
                                                    const QString &p_name) {
-  int cursorOffset = 0;
-  return SnippetMgr::getInst().applySnippetBySymbol(p_content, QString(), cursorOffset,
-                                                    SnippetMgr::generateOverrides(p_name));
+  // Provide magic-symbol overrides (%note%, %no%) derived from the note name,
+  // mirroring the legacy SnippetMgr::generateOverrides(fileName).
+  QJsonObject overrides;
+  overrides.insert(QStringLiteral("note"), p_name);
+  overrides.insert(QStringLiteral("no"), QFileInfo(p_name).completeBaseName());
+  return m_services.get<SnippetCoreService>()->applySnippetBySymbol(p_content, overrides);
 }

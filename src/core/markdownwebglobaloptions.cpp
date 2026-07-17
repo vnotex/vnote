@@ -1,9 +1,9 @@
-// MarkdownWebGlobalOptions::toJavascriptObject() — extracted from htmltemplatehelper.cpp
-// so that HtmlTemplateService (in core_services) can link this symbol without dragging
-// in the legacy singletons (ConfigMgr/ThemeMgr/VNoteX) that the rest of HtmlTemplateHelper
-// depends on. Belongs to the core_services library.
+// MarkdownWebGlobalOptions::toJavascriptObject() — extracted so that HtmlTemplateService
+// (in core_services) can link this symbol without dragging in the legacy singletons
+// (ConfigMgr/ThemeMgr/VNoteX) that the rest of HtmlTemplateHelper depends on.
+// Belongs to the core_services library.
 
-#include "htmltemplatehelper.h"
+#include "markdownwebglobaloptions.h"
 
 #include <utils/utils.h>
 

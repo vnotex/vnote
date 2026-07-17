@@ -3,9 +3,6 @@
 #include <QDebug>
 #include <QDir>
 
-#include <core/configmgr.h>
-#include <core/editorconfig.h>
-#include <core/markdowneditorconfig.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
 
@@ -16,10 +13,9 @@ PlantUmlHelper &PlantUmlHelper::getInst() {
   static PlantUmlHelper inst;
   if (!initialized) {
     initialized = true;
-    const auto &markdownEditorConfig =
-        ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
-    inst.update(markdownEditorConfig.getPlantUmlJar(), markdownEditorConfig.getGraphvizExe(),
-                markdownEditorConfig.getPlantUmlCommand());
+    // Seed with defaults; the owning view window re-configures the resolved
+    // PlantUML jar / Graphviz / command via update() using ConfigMgr2.
+    inst.update(QString(), QString(), QString());
   }
   return inst;
 }

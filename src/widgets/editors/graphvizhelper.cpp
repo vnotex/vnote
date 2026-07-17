@@ -3,9 +3,6 @@
 #include <QDebug>
 #include <QDir>
 
-#include <core/configmgr.h>
-#include <core/editorconfig.h>
-#include <core/markdowneditorconfig.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
 
@@ -16,9 +13,9 @@ GraphvizHelper &GraphvizHelper::getInst() {
   static GraphvizHelper inst;
   if (!initialized) {
     initialized = true;
-    const auto &markdownEditorConfig =
-        ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig();
-    inst.update(markdownEditorConfig.getGraphvizExe());
+    // Seed with the default program; the owning view window re-configures the
+    // resolved Graphviz path via update() using ConfigMgr2.
+    inst.update(QString());
   }
   return inst;
 }

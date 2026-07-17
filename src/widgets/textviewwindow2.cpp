@@ -62,6 +62,9 @@ void TextViewWindow2::setupUI() {
         TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig), this);
     setCentralWidget(m_editor);
 
+    m_editor->setApplySnippetShortcut(
+        editorConfig.getShortcut(EditorConfig::Shortcut::ApplySnippet));
+
     updateEditorFromConfig();
   }
 

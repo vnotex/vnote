@@ -7,25 +7,23 @@
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/vtexteditor.h>
 
-#include <core/configmgr.h>
-#include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
 
 using namespace vnotex;
 
-MarkdownTableHelper::MarkdownTableHelper(vte::VTextEditor *p_editor, QObject *p_parent)
-    : QObject(p_parent), m_editor(p_editor) {}
+MarkdownTableHelper::MarkdownTableHelper(vte::VTextEditor *p_editor,
+                                         const MarkdownEditorConfig &p_config, QObject *p_parent)
+    : QObject(p_parent), m_editor(p_editor), m_config(p_config) {}
 
 bool MarkdownTableHelper::isSmartTableEnabled() const {
-  return ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getSmartTableEnabled();
+  return m_config.getSmartTableEnabled();
 }
 
 QTimer *MarkdownTableHelper::getTimer() {
   if (!m_timer) {
     m_timer = new QTimer(this);
     m_timer->setSingleShot(true);
-    m_timer->setInterval(
-        ConfigMgr::getInst().getEditorConfig().getMarkdownEditorConfig().getSmartTableInterval());
+    m_timer->setInterval(m_config.getSmartTableInterval());
     connect(m_timer, &QTimer::timeout, this, &MarkdownTableHelper::formatTable);
 
     connect(m_editor->getTextEdit(), &QTextEdit::cursorPositionChanged, this, [this]() {

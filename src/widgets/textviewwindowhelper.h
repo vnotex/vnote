@@ -9,18 +9,15 @@
 #include <QTextBlock>
 #include <QTextCursor>
 
-#include <core/configmgr.h>
 #include <core/services/snippetcoreservice.h>
 #include <core/texteditorconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/widgetutils.h>
 #include <search/searchtoken.h>
-#include <snippet/snippetmgr.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/vtextedit.h>
 
 #include "quickselector.h"
-#include "viewwindow.h"
 #include "viewwindow2.h"
 #include "wordcountpanel.h"
 
@@ -221,84 +218,6 @@ public:
     p_win->m_editor->clearSearchHighlight();
   }
 
-  template <typename _ViewWindow>
-  static void applySnippet(_ViewWindow *p_win, const QString &p_name) {
-    if (p_win->m_editor->isReadOnly() || p_name.isEmpty()) {
-      qWarning() << "failed to apply snippet" << p_name << "to a read-only buffer";
-      return;
-    }
-
-    SnippetMgr::getInst().applySnippet(p_name, p_win->m_editor->getTextEdit(),
-                                       SnippetMgr::generateOverrides(p_win->getBuffer()));
-    p_win->m_editor->enterInsertModeIfApplicable();
-    p_win->showMessage(vnotex::ViewWindow::tr("Snippet applied: %1").arg(p_name));
-  }
-
-  template <typename _ViewWindow> static void applySnippet(_ViewWindow *p_win) {
-    if (p_win->m_editor->isReadOnly()) {
-      qWarning() << "failed to apply snippet to a read-only buffer";
-      return;
-    }
-
-    QString snippetName;
-
-    auto textEdit = p_win->m_editor->getTextEdit();
-    if (!textEdit->hasSelection()) {
-      // Fetch the snippet symbol containing current cursor.
-      auto cursor = textEdit->textCursor();
-      const auto block = cursor.block();
-      const auto text = block.text();
-      const int pib = cursor.positionInBlock();
-      QRegularExpression regExp(SnippetMgr::c_snippetSymbolRegExp);
-      QRegularExpressionMatch match;
-      int idx = text.lastIndexOf(regExp, pib, &match);
-      if (idx >= 0 && (idx + match.capturedLength(0) >= pib)) {
-        // Found one symbol under current cursor.
-        snippetName = match.captured(1);
-        if (!SnippetMgr::getInst().find(snippetName)) {
-          p_win->showMessage(vnotex::ViewWindow::tr("Snippet (%1) not found").arg(snippetName));
-          return;
-        }
-
-        // Remove the symbol and apply snippet later.
-        cursor.setPosition(block.position() + idx);
-        cursor.setPosition(block.position() + idx + match.capturedLength(0),
-                           QTextCursor::KeepAnchor);
-        cursor.removeSelectedText();
-        textEdit->setTextCursor(cursor);
-      }
-    }
-
-    if (snippetName.isEmpty()) {
-      // Prompt for snippet.
-      snippetName = promptForSnippet(p_win);
-    }
-
-    if (!snippetName.isEmpty()) {
-      applySnippet(p_win, snippetName);
-    }
-  }
-
-  template <typename _ViewWindow> static QString promptForSnippet(_ViewWindow *p_win) {
-    const auto snippets = SnippetMgr::getInst().getSnippets();
-    if (snippets.isEmpty()) {
-      p_win->showMessage(vnotex::ViewWindow::tr("Snippet not available"));
-      return QString();
-    }
-
-    QVector<QuickSelectorItem> items;
-    for (const auto &snip : snippets) {
-      items.push_back(QuickSelectorItem(snip->getName(), snip->getName(), snip->getDescription(),
-                                        snip->getShortcutString()));
-    }
-
-    // Ownership will be transferred to showFloatingWidget().
-    auto selector =
-        new QuickSelector(nullptr, vnotex::ViewWindow::tr("Select Snippet"), items, true, p_win);
-    auto ret = p_win->showFloatingWidget(selector);
-    return ret.toString();
-  }
-
   template <typename _ViewWindow> static QPoint getFloatingWidgetPosition(_ViewWindow *p_win) {
     auto textEdit = p_win->m_editor->getTextEdit();
     auto localPos = textEdit->cursorRect().bottomRight();
@@ -316,10 +235,6 @@ public:
     const auto result = p_win->m_editor->findText(
         patterns.first, toEditorFindFlags(patterns.second), 0, -1, p_currentMatchLine);
     p_win->showFindResult(patterns.first, result.m_totalMatches, result.m_currentMatchIndex);
-  }
-
-  static ViewWindow::WordCountInfo calculateWordCountInfo(const QString &p_text) {
-    return WordCountPanel::calculateWordCount(p_text);
   }
 
   // ============ Snippet Support (New Architecture) ============

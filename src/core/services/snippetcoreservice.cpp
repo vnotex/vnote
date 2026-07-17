@@ -159,7 +159,8 @@ QJsonObject SnippetCoreService::applySnippet(const QString &p_name, const QStrin
   return parseJsonObjectFromCStr(json);
 }
 
-QString SnippetCoreService::applySnippetBySymbol(const QString &p_content) const {
+QString SnippetCoreService::applySnippetBySymbol(const QString &p_content,
+                                                 const QJsonObject &p_overrides) const {
   QString content(p_content);
 
   // Regex matches %name% patterns (same as legacy SnippetMgr::c_snippetSymbolRegExp)
@@ -184,8 +185,8 @@ QString SnippetCoreService::applySnippetBySymbol(const QString &p_content) const
       continue;
     }
 
-    // Apply the snippet (no selected text, no indentation, no overrides)
-    QJsonObject result = applySnippet(snippetName, QString(), QString(), QJsonObject());
+    // Apply the snippet (no selected text, no indentation; overrides supply magic symbols)
+    QJsonObject result = applySnippet(snippetName, QString(), QString(), p_overrides);
     QString afterText = result.value(QString::fromLatin1("text")).toString();
 
     content.replace(idx, match.capturedLength(0), afterText);

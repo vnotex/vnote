@@ -71,9 +71,7 @@ add_custom_command(TARGET test_notebookexplorer2_state POST_BUILD
 add_qt_test(test_node_explorer_reload_expansion
   SOURCES
     test_node_explorer_reload_expansion.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
@@ -117,10 +115,8 @@ add_custom_command(TARGET test_node_explorer_reload_expansion POST_BUILD
 add_qt_test(test_explorer_selection_after_save
   SOURCES
     test_explorer_selection_after_save.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/notebookpathhelpers.cpp
     ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
@@ -251,7 +247,6 @@ add_custom_command(TARGET test_syncservice_lifecycle POST_BUILD
 add_qt_test(test_notebooksyncinfodialog2
   SOURCES
     test_notebooksyncinfodialog2.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -261,7 +256,6 @@ add_qt_test(test_notebooksyncinfodialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
@@ -288,7 +282,6 @@ add_custom_command(TARGET test_notebooksyncinfodialog2 POST_BUILD
 add_qt_test(test_notebooksyncinfodialog2_url_change
   SOURCES
     test_notebooksyncinfodialog2_url_change.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -298,7 +291,6 @@ add_qt_test(test_notebooksyncinfodialog2_url_change
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
@@ -321,7 +313,6 @@ add_custom_command(TARGET test_notebooksyncinfodialog2_url_change POST_BUILD
 add_qt_test(test_notebooksyncinfodialog2_error
   SOURCES
     test_notebooksyncinfodialog2_error.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -331,7 +322,6 @@ add_qt_test(test_notebooksyncinfodialog2_error
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
@@ -358,7 +348,6 @@ add_custom_command(TARGET test_notebooksyncinfodialog2_error POST_BUILD
 add_qt_test(test_notebooksyncinfodialog2_disable
   SOURCES
     test_notebooksyncinfodialog2_disable.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -368,7 +357,6 @@ add_qt_test(test_notebooksyncinfodialog2_disable
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
@@ -448,7 +436,6 @@ add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
 add_qt_test(test_open_notebook_dialog2
   SOURCES
     test_open_notebook_dialog2.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -459,7 +446,6 @@ add_qt_test(test_open_notebook_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
@@ -493,7 +479,6 @@ add_custom_command(TARGET test_open_notebook_dialog2 POST_BUILD
 add_qt_test(test_open_notebook_dialog2_cancel
   SOURCES
     test_open_notebook_dialog2_cancel.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -504,7 +489,6 @@ add_qt_test(test_open_notebook_dialog2_cancel
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
@@ -632,7 +616,6 @@ add_custom_command(TARGET test_view_window2_readonly_save_warning POST_BUILD
 # ConfigMgr2 / SessionConfig via ServiceLocator under nullptr-guards, so the
 # test omits ConfigMgr2/ThemeService registration but still links
 # core_configs to satisfy the dead-but-linked ConfigMgr2 symbol references.
-# Reuses test_mainwindow_stub.cpp for MainWindow::staticMetaObject (pulled
 # in transitively via WidgetUtils::safelyOpenUrl → MainWindow::tr) and a
 # local ThemeService::paletteColor stub since the navigation label code
 # path is dead in the read-only badge scenario but the linker still needs
@@ -641,14 +624,12 @@ add_custom_command(TARGET test_view_window2_readonly_save_warning POST_BUILD
 add_qt_test(test_notebook_selector2_readonly_badge
   SOURCES
     test_notebook_selector2_readonly_badge.cpp
-    test_mainwindow_stub.cpp
     test_themeservice_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/data/core/core.qrc
     ${CMAKE_SOURCE_DIR}/src/widgets/notebookselector2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
@@ -704,9 +685,7 @@ add_qt_test(test_sort_dialog2
 add_qt_test(test_notebook_explorer2_sort
   SOURCES
     test_notebook_explorer2_sort.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/widgets/notebookexplorer2_sortseam.h
     ${CMAKE_SOURCE_DIR}/src/widgets/notebookexplorer2_sortseam.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/sortdialog2.cpp
@@ -761,9 +740,7 @@ add_custom_command(TARGET test_notebook_explorer2_sort POST_BUILD
 add_qt_test(test_two_columns_node_explorer_sort
   SOURCES
     test_two_columns_node_explorer_sort.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
@@ -813,7 +790,6 @@ add_custom_command(TARGET test_two_columns_node_explorer_sort POST_BUILD
 add_qt_test(test_notebook_sync_info_dialog2_readonly
   SOURCES
     test_notebook_sync_info_dialog2_readonly.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
@@ -823,7 +799,6 @@ add_qt_test(test_notebook_sync_info_dialog2_readonly
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
@@ -853,7 +828,6 @@ add_custom_command(TARGET test_notebook_sync_info_dialog2_readonly POST_BUILD
 add_qt_test(test_historysticker
   SOURCES
     test_historysticker.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/historysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/calendarsticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/greetingsticker.cpp
@@ -863,7 +837,6 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
@@ -895,7 +868,6 @@ add_custom_command(TARGET test_historysticker POST_BUILD
 add_qt_test(test_greetingsticker
   SOURCES
     test_greetingsticker.cpp
-    test_mainwindow_stub.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/greetingsticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/historysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/calendarsticker.cpp
@@ -905,7 +877,6 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow.h
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp

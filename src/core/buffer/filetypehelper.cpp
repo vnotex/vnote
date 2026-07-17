@@ -6,7 +6,6 @@
 
 // MIGRATION: Buffer removed - use QCoreApplication::translate for translations
 // #include "buffer.h"
-#include <core/configmgr.h>
 #include <core/coreconfig.h>
 #include <utils/fileutils.h>
 

@@ -32,8 +32,10 @@ public:
                            const QJsonObject &p_overrides) const;
   // Resolve %snippet_name% symbols in arbitrary text.
   // For each match, looks up snippet by name via getSnippet() and applySnippet(),
-  // then replaces the %name% with the expanded text.
-  QString applySnippetBySymbol(const QString &p_content) const;
+  // then replaces the %name% with the expanded text. p_overrides supplies values
+  // for magic symbols (e.g. "note"/"no") consumed during snippet expansion.
+  QString applySnippetBySymbol(const QString &p_content,
+                               const QJsonObject &p_overrides = QJsonObject()) const;
 
 private:
   bool checkContext() const;

@@ -54,7 +54,7 @@
 #include <vxcore/notebook_json_keys.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
 #include <core/services/templateservice.h>
-#include <snippet/snippetmgr.h>
+#include <core/services/snippetcoreservice.h>
 #include <widgets/dialogs/importfolderdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
 #include <widgets/dialogs/marknodedialog2.h>
@@ -1332,7 +1332,8 @@ void NotebookExplorer2::newQuickNote() {
   }
 
   // Generate filename using snippet expansion.
-  QString expandedName = SnippetMgr::getInst().applySnippetBySymbol(scheme.m_noteName);
+  QString expandedName =
+      m_services.get<SnippetCoreService>()->applySnippetBySymbol(scheme.m_noteName);
   QFileInfo finfo(expandedName);
 
   // Get notebook root path to generate unique filename.

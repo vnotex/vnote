@@ -40,6 +40,7 @@ set(SERVICES_SOURCES
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdownwebglobaloptions.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/htmltemplateutils.cpp
   ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp

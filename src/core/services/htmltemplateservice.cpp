@@ -4,8 +4,8 @@
 
 #include <core/configmgr2.h>
 #include <core/exception.h>
-#include <core/htmltemplatehelper.h>
 #include <core/markdowneditorconfig.h>
+#include <core/markdownwebglobaloptions.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/pdfviewerconfig.h>
 #include <core/webresource.h>

@@ -1,8 +1,8 @@
 target_sources(vnote PRIVATE
+    contentmediautils.cpp contentmediautils.h
     asyncworker.cpp asyncworker.h
     callbackpool.cpp callbackpool.h
     clipboardutils.cpp clipboardutils.h
-    contentmediautils.cpp contentmediautils.h
     docsutils.cpp docsutils.h
     fileutils.cpp fileutils.h
     fileutils2.cpp fileutils2.h

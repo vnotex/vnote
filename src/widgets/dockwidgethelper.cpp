@@ -10,7 +10,6 @@
 #include <QTabBar>
 #include <QToolTip>
 
-#include <core/configmgr.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/widgetconfig.h>
@@ -228,7 +227,7 @@ QDockWidget *DockWidgetHelper::getDock(DockType p_dockType) const {
 }
 
 void DockWidgetHelper::setupShortcuts() {
-  const auto &coreConfig = ConfigMgr::getInst().getCoreConfig();
+  const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
   // Map each DockType to its CoreConfig::Shortcut.  ConsoleDock has no shortcut.
   auto shortcutForDock = [](DockType p_type) -> int {
@@ -304,7 +303,7 @@ void DockWidgetHelper::updateDockWidgetTabBar() {
 
     tabBar->setDrawBase(false);
 
-    const int sz = ConfigMgr::getInst().getCoreConfig().getDocksTabBarIconSize();
+    const int sz = m_services.get<ConfigMgr2>()->getCoreConfig().getDocksTabBarIconSize();
     tabBar->setIconSize(QSize(sz, sz));
 
     auto tabShape = tabBar->shape();
