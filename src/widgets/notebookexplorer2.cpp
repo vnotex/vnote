@@ -68,7 +68,6 @@
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/dialogs/sortdialog2.h>
 #include <widgets/dialogs/viewtagsdialog2.h>
-#include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 #include <widgets/notebookexplorer2_sortseam.h>
 #include <widgets/notebookselector2.h>

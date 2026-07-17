@@ -29,7 +29,6 @@
 
 #include <core/global.h>
 #include <core/logging.h>
-#include <widgets/mainwindow.h>
 #include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
@@ -78,8 +77,11 @@ void WidgetUtils::openUrlByDesktop(const QUrl &p_url) {
     // Prompt for user.
     int ret = MessageBoxHelper::questionYesNo(
         MessageBoxHelper::Warning,
-        MainWindow::tr("Are you sure to open link (%1)?").arg(p_url.toString()),
-        MainWindow::tr("Malicious link might do harm to your device."), QString(), nullptr);
+        QCoreApplication::translate("MainWindow", "Are you sure to open link (%1)?")
+            .arg(p_url.toString()),
+        QCoreApplication::translate("MainWindow",
+                                    "Malicious link might do harm to your device."),
+        QString(), nullptr);
     if (ret == QMessageBox::No) {
       return;
     }

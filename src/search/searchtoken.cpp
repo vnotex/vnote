@@ -1,10 +1,10 @@
 #include "searchtoken.h"
 
 #include <QCommandLineParser>
+#include <QCoreApplication>
 #include <QDebug>
 
 #include <utils/processutils.h>
-#include <widgets/searchpanel.h>
 
 using namespace vnotex;
 
@@ -146,9 +146,11 @@ QCommandLineParser *SearchToken::getCommandLineParser() {
   }
 
   parser.reset(new QCommandLineParser());
-  parser->setApplicationDescription(SearchPanel::tr("Full-text search."));
+  parser->setApplicationDescription(
+      QCoreApplication::translate("SearchPanel", "Full-text search."));
 
-  parser->addPositionalArgument("keywords", SearchPanel::tr("Keywords to search for."));
+  parser->addPositionalArgument(
+      "keywords", QCoreApplication::translate("SearchPanel", "Keywords to search for."));
 
   addSearchOptionsToCommand(parser.data());
 
@@ -156,25 +158,30 @@ QCommandLineParser *SearchToken::getCommandLineParser() {
 }
 
 void SearchToken::addSearchOptionsToCommand(QCommandLineParser *p_parser) {
-  QCommandLineOption caseSensitiveOpt(QStringList() << "c" << "case-sensitive",
-                                      SearchPanel::tr("Search in case sensitive."));
+  QCommandLineOption caseSensitiveOpt(
+      QStringList() << "c" << "case-sensitive",
+      QCoreApplication::translate("SearchPanel", "Search in case sensitive."));
   p_parser->addOption(caseSensitiveOpt);
 
-  QCommandLineOption regularExpressionOpt(QStringList() << "r" << "regular-expression",
-                                          SearchPanel::tr("Search by regular expression."));
+  QCommandLineOption regularExpressionOpt(
+      QStringList() << "r" << "regular-expression",
+      QCoreApplication::translate("SearchPanel", "Search by regular expression."));
   p_parser->addOption(regularExpressionOpt);
 
-  QCommandLineOption wholeWordOnlyOpt(QStringList() << "w" << "whole-word-only",
-                                      SearchPanel::tr("Search whole word only."));
+  QCommandLineOption wholeWordOnlyOpt(
+      QStringList() << "w" << "whole-word-only",
+      QCoreApplication::translate("SearchPanel", "Search whole word only."));
   p_parser->addOption(wholeWordOnlyOpt);
 
   QCommandLineOption fuzzySearchOpt(
       QStringList() << "f" << "fuzzy-search",
-      SearchPanel::tr("Do a fuzzy search (not applicable to content search)."));
+      QCoreApplication::translate("SearchPanel",
+                                  "Do a fuzzy search (not applicable to content search)."));
   p_parser->addOption(fuzzySearchOpt);
 
-  QCommandLineOption orOpt(QStringList() << "o" << "or",
-                           SearchPanel::tr("Do an OR combination of keywords."));
+  QCommandLineOption orOpt(
+      QStringList() << "o" << "or",
+      QCoreApplication::translate("SearchPanel", "Do an OR combination of keywords."));
   p_parser->addOption(orOpt);
 }
 

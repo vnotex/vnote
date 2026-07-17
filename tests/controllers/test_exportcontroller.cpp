@@ -9,8 +9,8 @@
 #include <cstring>
 
 #include <controllers/exportcontroller.h>
-#include <core/buffer/filetypehelper.h>
 #include <core/servicelocator.h>
+#include <core/services/filetype.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <export/exportdata.h>
@@ -29,8 +29,6 @@ namespace vnotex_test_stubs {} // namespace vnotex_test_stubs
 } // namespace tests
 
 namespace vnotex {
-
-bool FileType::isMarkdown() const { return m_type == Type::Markdown; }
 
 WebViewExporter::WebViewExporter(ServiceLocator &p_services, QWidget *p_parent)
     : QObject(p_parent), m_services(p_services) {}

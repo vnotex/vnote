@@ -14,7 +14,6 @@
 #include <QAbstractProxyModel>
 
 #include <controllers/notebooknodecontroller.h>
-#include <core/fileopenparameters.h>
 #include <core/global.h>
 #include <models/inodelistmodel.h>
 #include <models/notebooknodeproxymodel.h>

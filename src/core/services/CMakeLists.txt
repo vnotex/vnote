@@ -16,6 +16,7 @@ set(SERVICES_SOURCES
   tagcoreservice.cpp
   tagservice.cpp
   filetypecoreservice.cpp
+  filetype.cpp
   templateservice.cpp
   htmltemplateservice.cpp
   hookmanager.cpp
@@ -69,6 +70,7 @@ set(SERVICES_HEADERS
   tagcoreservice.h
   tagservice.h
   filetypecoreservice.h
+  filetype.h
   templateservice.h
   htmltemplateservice.h
   hookmanager.h

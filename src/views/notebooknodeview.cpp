@@ -14,7 +14,6 @@
 #include <QUrl>
 
 #include <controllers/notebooknodecontroller.h>
-#include <core/fileopenparameters.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
 #include <qmenu.h>

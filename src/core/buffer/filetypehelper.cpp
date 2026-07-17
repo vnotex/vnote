@@ -12,12 +12,6 @@
 
 using namespace vnotex;
 
-QString FileType::preferredSuffix() const {
-  return m_suffixes.isEmpty() ? QString() : m_suffixes.first();
-}
-
-bool FileType::isMarkdown() const { return m_type == Type::Markdown; }
-
 QString FileTypeHelper::s_systemDefaultProgram = QStringLiteral("System");
 
 FileTypeHelper::FileTypeHelper() { reload(); }

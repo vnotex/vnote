@@ -8,8 +8,8 @@
 
 #include <vxcore/vxcore.h>
 
-#include <core/buffer/filetypehelper.h>
 #include <core/noncopyable.h>
+#include <core/services/filetype.h>
 
 namespace vnotex {
 

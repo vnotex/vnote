@@ -8,8 +8,6 @@
 #include <QPolygonF>
 #include <QRegularExpression>
 
-#include <core/vnotex.h>
-
 #include <utils/fileutils.h>
 
 using namespace vnotex;
