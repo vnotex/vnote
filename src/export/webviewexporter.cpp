@@ -1,5 +1,7 @@
 #include "webviewexporter.h"
 
+#include "exportstyleresolver.h"
+
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
@@ -223,6 +225,29 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
 
   fillGlobalStyles(htmlTemplate, exportResource, p_configMgr, QString());
   HtmlTemplateUtils::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
+
+  // Always inject the self-contained code-block copy handler + styling, independent of the
+  // user-mutable exportResource config (an existing config persisted before issue #2674 would
+  // otherwise omit them, leaving the copy button non-functional/unstyled in exports). Injected
+  // ahead of the placeholder so fillResourcesByContent() still appends any config resources.
+  {
+    const auto copyScript = readTemplateFile(
+        resolveConfigFile(p_configMgr, QStringLiteral("web/js/exportcodecopy.js")),
+        "failed to read code-block copy script");
+    if (!copyScript.isEmpty()) {
+      htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
+                           copyScript + QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
+    }
+
+    const auto copyStyle = readTemplateFile(
+        resolveConfigFile(p_configMgr, QStringLiteral("web/css/codeblockactions.css")),
+        "failed to read code-block copy style");
+    if (!copyStyle.isEmpty()) {
+      htmlTemplate.replace(QStringLiteral("/* VX_STYLES_PLACEHOLDER */"),
+                           copyStyle + QStringLiteral("\n/* VX_STYLES_PLACEHOLDER */"));
+    }
+  }
+
   fillResourcesByContent(htmlTemplate, exportResource, p_configMgr);
   return htmlTemplate;
 }
@@ -242,6 +267,7 @@ void WebViewExporter::clear() {
 
   m_htmlTemplate.clear();
   m_exportHtmlTemplate.clear();
+  m_syntaxHighlightStyleFile.clear();
 
   m_exportOngoing = false;
 }
@@ -379,6 +405,17 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl
   HtmlTemplateUtils::fillTitle(htmlContent, title);
 
   if (!p_styleContent.isEmpty() && p_embedStyles) {
+    // Utils.fetchStyleContent() serializes the viewer's live stylesheets, but it can miss the
+    // syntax-highlight <link> (leaving exported code blocks uncolored and the copy-button
+    // toolbar unpositioned). Prepend the highlight stylesheet content so the static file is
+    // self-contained. Prepended (not appended) so the serialized rules can still override.
+    if (!m_syntaxHighlightStyleFile.isEmpty()) {
+      const auto highlightContent =
+          readTemplateFile(m_syntaxHighlightStyleFile, "failed to read highlight stylesheet");
+      if (!highlightContent.isEmpty()) {
+        p_styleContent = highlightContent + QStringLiteral("\n") + p_styleContent;
+      }
+    }
     embedStyleResources(p_styleContent);
     HtmlTemplateUtils::fillStyleContent(htmlContent, p_styleContent);
   }
@@ -469,19 +506,23 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   HtmlTemplateUtils::MarkdownParas paras;
   auto webStyleFile = p_option.m_renderingStyleFile;
   if (webStyleFile.isEmpty()) {
-    const auto webStyles = themeService->getWebStyles();
-    if (!webStyles.isEmpty()) {
-      webStyleFile = webStyles.constFirst().second;
-    }
+    // Render with the CURRENT theme's web.css (matches the dialog default) rather than an
+    // arbitrary first theme, so an empty ExportOption produces a consistent result.
+    webStyleFile = themeService->getFile(Theme::File::WebStyleSheet);
   }
 
   paras.m_webStyleSheetFile = webStyleFile;
-  auto highlightStyleFile = p_option.m_syntaxHighlightStyleFile;
-  if (highlightStyleFile.isEmpty()) {
-    highlightStyleFile = themeService->getFile(Theme::File::HighlightStyleSheet);
-  }
+  // Guarantee a real highlight.css: honor the selected syntax style only when it truly is a
+  // highlight.css, else fall back to the current theme's highlight.css. Fixes the regression
+  // where a persisted web.css left code blocks without Prism .token colors.
+  const auto highlightStyleFile = resolveSyntaxHighlightFile(
+      p_option.m_syntaxHighlightStyleFile, themeService->getFile(Theme::File::HighlightStyleSheet));
 
   paras.m_highlightStyleSheetFile = highlightStyleFile;
+  // Remember the resolved highlight stylesheet so writeHtmlFile() can embed its content
+  // directly (see m_syntaxHighlightStyleFile). This guarantees syntax colors and the
+  // code-block copy-button toolbar styling survive into the static exported file.
+  m_syntaxHighlightStyleFile = highlightStyleFile;
   paras.m_transparentBackgroundEnabled = p_option.m_useTransparentBg;
   paras.m_scrollable = scrollable;
   paras.m_bodyWidth = pageBodySize.width();
@@ -493,7 +534,13 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   // v3 SVG output has no matchFontHeight, so the `minScale` option is a no-op (verified by
   // measuring rendered equation height across scale/minScale combinations).
   paras.m_mathJaxScale = useWkhtmltopdf ? 1.5 : -1;
-  paras.m_removeCodeToolBarEnabled = p_option.m_removeCodeToolBarEnabled;
+  // Keep the code-block toolbar (copy button) only for genuine HTML export. For PDF/Custom,
+  // force it off. The intermediate HTML feeding PDF/custom has target format HTML but sets
+  // m_removeCodeToolBarEnabled = true explicitly, so it is honored here and still drops the
+  // toolbar; genuine HTML export leaves the option at its false default.
+  paras.m_removeCodeToolBarEnabled = p_option.m_targetFormat == ExportFormat::HTML
+                                         ? p_option.m_removeCodeToolBarEnabled
+                                         : true;
 
   m_htmlTemplate = generateMarkdownViewerTemplate(*configMgr, config, paras);
 

@@ -1,3 +1,4 @@
-div.code-toolbar > div.toolbar {
+/* The collapse button is JS-only and non-functional in a static exported file. */
+div.code-toolbar > .toolbar .vx-collapse-btn {
     display: none;
 }

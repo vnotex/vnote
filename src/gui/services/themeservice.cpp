@@ -205,32 +205,37 @@ void ThemeService::switchTheme(const QString &p_name) { loadCurrentTheme(p_name)
 
 void ThemeService::setHookManager(HookManager *p_hookMgr) { m_hookMgr = p_hookMgr; }
 
-QVector<QPair<QString, QString>> ThemeService::getWebStyles() const {
+QVector<QPair<QString, QString>> ThemeService::collectThemeStyles(Theme::File p_themeFileType,
+                                                                  bool p_includeSearchPathCss) const {
   QVector<QPair<QString, QString>> styles;
 
   // From themes.
   for (const auto &th : m_themes) {
-    auto filePath = Theme::getFile(th.m_folderPath, Theme::File::WebStyleSheet);
-    if (!filePath.isEmpty()) {
-      styles.push_back(qMakePair(
-          tr("[Theme] %1 %2").arg(th.m_displayName, PathUtils::fileName(filePath)), filePath));
-    }
-
-    filePath = Theme::getFile(th.m_folderPath, Theme::File::HighlightStyleSheet);
+    auto filePath = Theme::getFile(th.m_folderPath, p_themeFileType);
     if (!filePath.isEmpty()) {
       styles.push_back(qMakePair(
           tr("[Theme] %1 %2").arg(th.m_displayName, PathUtils::fileName(filePath)), filePath));
     }
   }
 
-  // From search paths.
-  for (const auto &pa : m_webStylesSearchPaths) {
-    QDir dir(pa);
-    auto styleFiles = dir.entryList({"*.css"}, QDir::Files);
-    for (const auto &file : styleFiles) {
-      styles.push_back(qMakePair(file, dir.filePath(file)));
+  // From search paths (loose rendering css only).
+  if (p_includeSearchPathCss) {
+    for (const auto &pa : m_webStylesSearchPaths) {
+      QDir dir(pa);
+      auto styleFiles = dir.entryList({"*.css"}, QDir::Files);
+      for (const auto &file : styleFiles) {
+        styles.push_back(qMakePair(file, dir.filePath(file)));
+      }
     }
   }
 
   return styles;
+}
+
+QVector<QPair<QString, QString>> ThemeService::getWebStyles() const {
+  return collectThemeStyles(Theme::File::WebStyleSheet, true);
+}
+
+QVector<QPair<QString, QString>> ThemeService::getSyntaxStyles() const {
+  return collectThemeStyles(Theme::File::HighlightStyleSheet, false);
 }

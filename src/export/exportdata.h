@@ -114,7 +114,11 @@ struct ExportOption {
 
   bool m_transformSvgToPngEnabled = false;
 
-  bool m_removeCodeToolBarEnabled = true;
+  // Defaults to false so direct HTML export keeps the code-block toolbar (copy button).
+  // The intermediate HTML feeding PDF/custom explicitly sets this true
+  // (Exporter::getExportOptionForIntermediateHtml), and WebViewExporter::prepare() forces
+  // it true for non-HTML target formats (PDF/Custom), so those paths still drop the toolbar.
+  bool m_removeCodeToolBarEnabled = false;
 };
 
 inline QString exportFormatString(ExportFormat p_format) {

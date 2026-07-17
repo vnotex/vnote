@@ -87,6 +87,12 @@ private:
 
   QString m_exportHtmlTemplate;
 
+  // Resolved theme syntax-highlight stylesheet path (holds Prism .token colors AND the
+  // div.code-toolbar/.toolbar positioning used by the code-block copy button). Embedded
+  // directly into the exported HTML so a static file is self-contained even when
+  // Utils.fetchStyleContent() fails to capture the highlight <link>.
+  QString m_syntaxHighlightStyleFile;
+
   QStringList m_wkhtmltopdfArgs;
 };
 } // namespace vnotex

@@ -94,8 +94,14 @@ public:
   // Switch to a different theme by name.
   void switchTheme(const QString &p_name);
 
-  // Get all web stylesheets <DisplayName, FilePath>.
+  // Get all rendering (web) stylesheets <DisplayName, FilePath>: each theme's web.css plus any
+  // loose css found under the web_styles search paths.
   QVector<QPair<QString, QString>> getWebStyles() const;
+
+  // Get all syntax-highlight stylesheets <DisplayName, FilePath>: ONLY each theme's highlight.css
+  // (holds the Prism .token colors). Loose web_styles/*.css are intentionally excluded so every
+  // listed option is a real highlight.css (see ExportStyleResolver's basename contract).
+  QVector<QPair<QString, QString>> getSyntaxStyles() const;
 
   // Set the HookManager for firing theme hooks.
   void setHookManager(HookManager *p_hookMgr);
@@ -119,6 +125,11 @@ private:
   Theme *loadTheme(const QString &p_themeFolder);
 
   QString findThemeFolder(const QString &p_name) const;
+
+  // Collect one entry per theme for the given theme file type; when p_includeSearchPathCss is
+  // true, also append any loose *.css found under the web_styles search paths.
+  QVector<QPair<QString, QString>> collectThemeStyles(Theme::File p_themeFileType,
+                                                      bool p_includeSearchPathCss) const;
 
   // Locale for display names.
   QString m_locale;

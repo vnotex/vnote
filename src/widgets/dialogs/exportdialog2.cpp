@@ -242,12 +242,16 @@ void ExportDialog2::setupUI() {
   commonLayout->addWidget(m_outputDirInput, 1, 1, 1, 3);
 
   // Row 2: Rendering style + Syntax style.
-  const auto webStyles = m_services.get<ThemeService>()->getWebStyles();
+  auto *themeService = m_services.get<ThemeService>();
+  const auto webStyles = themeService->getWebStyles();
+  const auto syntaxStyles = themeService->getSyntaxStyles();
 
   m_renderingStyleCombo = WidgetsFactory::createComboBox(optionsGroupBox);
   m_syntaxStyleCombo = WidgetsFactory::createComboBox(optionsGroupBox);
   for (const auto &style : webStyles) {
     m_renderingStyleCombo->addItem(style.first, style.second);
+  }
+  for (const auto &style : syntaxStyles) {
     m_syntaxStyleCombo->addItem(style.first, style.second);
   }
 
@@ -515,15 +519,23 @@ void ExportDialog2::restoreFields(const ExportOption &p_option) {
   m_recursiveCheck->setChecked(p_option.m_recursive);
   m_exportAttachmentsCheck->setChecked(p_option.m_exportAttachments);
 
+  auto *themeService = m_services.get<ThemeService>();
+
   idx = m_renderingStyleCombo->findData(p_option.m_renderingStyleFile);
-  if (idx >= 0) {
-    m_renderingStyleCombo->setCurrentIndex(idx);
+  if (idx < 0) {
+    // Persisted value not available (e.g. stale/removed). Fall back to the current theme's
+    // web.css so the combo defaults to a sensible, matching rendering style.
+    idx = m_renderingStyleCombo->findData(themeService->getFile(Theme::File::WebStyleSheet));
   }
+  m_renderingStyleCombo->setCurrentIndex(idx >= 0 ? idx : 0);
 
   idx = m_syntaxStyleCombo->findData(p_option.m_syntaxHighlightStyleFile);
-  if (idx >= 0) {
-    m_syntaxStyleCombo->setCurrentIndex(idx);
+  if (idx < 0) {
+    // Persisted value not available OR a stale non-highlight value: fall back to the current
+    // theme's highlight.css so syntax colors always resolve to a real Prism stylesheet.
+    idx = m_syntaxStyleCombo->findData(themeService->getFile(Theme::File::HighlightStyleSheet));
   }
+  m_syntaxStyleCombo->setCurrentIndex(idx >= 0 ? idx : 0);
 
   restoreHtmlFields(p_option.m_htmlOption);
   restorePdfFields(p_option.m_pdfOption);
