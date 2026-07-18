@@ -215,6 +215,11 @@ void MarkdownViewerAdapter::setCodeBlockHighlightHtml(int p_idx, quint64 p_timeS
   emit highlightCodeBlockReady(p_idx, p_timeStamp, p_html);
 }
 
+void MarkdownViewerAdapter::setMathHighlightHtml(int p_idx, quint64 p_timeStamp,
+                                                 const QString &p_html) {
+  emit highlightMathReady(p_idx, p_timeStamp, p_html);
+}
+
 void MarkdownViewerAdapter::setCrossCopyTargets(const QJsonArray &p_targets) {
   m_crossCopyTargets.clear();
   for (const auto &target : p_targets) {
@@ -305,6 +310,14 @@ void MarkdownViewerAdapter::highlightCodeBlock(int p_idx, quint64 p_timeStamp,
   } else {
     pendAction(
         std::bind(&MarkdownViewerAdapter::highlightCodeBlock, this, p_idx, p_timeStamp, p_text));
+  }
+}
+
+void MarkdownViewerAdapter::highlightMath(int p_idx, quint64 p_timeStamp, const QString &p_text) {
+  if (isReady()) {
+    emit highlightMathRequested(p_idx, p_timeStamp, p_text);
+  } else {
+    pendAction(std::bind(&MarkdownViewerAdapter::highlightMath, this, p_idx, p_timeStamp, p_text));
   }
 }
 

@@ -39,6 +39,10 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.highlightCodeBlock(p_idx, p_timeStamp, p_text);
         });
 
+        adapter.highlightMathRequested.connect(function(p_idx, p_timeStamp, p_text) {
+            window.vxcore.highlightMath(p_idx, p_timeStamp, p_text);
+        });
+
         adapter.parseStyleSheetRequested.connect(function(p_id, p_styleSheet) {
             window.vxcore.parseStyleSheet(p_id, p_styleSheet);
         });

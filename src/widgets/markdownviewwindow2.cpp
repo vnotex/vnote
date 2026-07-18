@@ -350,6 +350,12 @@ void MarkdownViewWindow2::setupTextEditor() {
   connect(adapter(), &MarkdownViewerAdapter::highlightCodeBlockReady, m_editor,
           &MarkdownEditor::handleExternalCodeBlockHighlightData);
 
+  // External display math ($$...$$) source highlighting pipeline.
+  connect(m_editor, &MarkdownEditor::externalMathHighlightRequested, this,
+          &MarkdownViewWindow2::handleExternalMathHighlightRequest);
+  connect(adapter(), &MarkdownViewerAdapter::highlightMathReady, m_editor,
+          &MarkdownEditor::handleExternalMathHighlightData);
+
   // Switch to read mode when editor requests it.
   // Save first to avoid losing unsaved changes (legacy: read(true) calls save).
   connect(m_editor, &MarkdownEditor::readRequested, this, [this]() {
@@ -1552,52 +1558,63 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
 
 void MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
                                                                   const QString &p_text) {
-  if (!m_codeBlockStylesInitialized) {
-    m_codeBlockStylesInitialized = true;
-    auto *themeService = getServices().get<ThemeService>();
-    const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
-    if (file.isEmpty()) {
-      qWarning() << "no highlight style sheet specified for external code block highlight";
-    } else {
-      QString content;
-      Error err = FileUtils2::readTextFile(file, &content);
-      if (err) {
-        qWarning() << "failed to read highlight style sheet for external code block highlight"
-                   << file << err.what();
-      }
-      adapter()->fetchStylesFromStyleSheet(
-          content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
-            MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
+  ensureExternalHighlightStyles();
+  adapter()->highlightCodeBlock(p_idx, p_timeStamp, p_text);
+}
 
-            const QString prefix(".token.");
-            for (const auto &rule : *rules) {
-              bool isFirst = true;
-              QTextCharFormat fmt;
+void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 p_timeStamp,
+                                                             const QString &p_text) {
+  ensureExternalHighlightStyles();
+  adapter()->highlightMath(p_idx, p_timeStamp, p_text);
+}
 
-              // Just fetch `.token.attr` styles.
-              auto selects = rule.m_selector.split(QLatin1Char(','));
-              for (const auto &sel : selects) {
-                const auto ts = sel.trimmed();
-                if (!ts.startsWith(prefix)) {
-                  continue;
-                }
-                auto classList = ts.mid(prefix.size()).split(QLatin1Char('.'));
-                for (const auto &cla : classList) {
-                  if (isFirst) {
-                    fmt = rule.toTextCharFormat();
-                    isFirst = false;
-                  }
-                  styles.insert(cla, fmt);
-                }
-              }
-            }
-
-            MarkdownEditor::setExternalCodeBlockHighlihgtStyles(styles);
-          });
-    }
+void MarkdownViewWindow2::ensureExternalHighlightStyles() {
+  if (m_codeBlockStylesInitialized) {
+    return;
+  }
+  m_codeBlockStylesInitialized = true;
+  auto *themeService = getServices().get<ThemeService>();
+  const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
+  if (file.isEmpty()) {
+    qWarning() << "no highlight style sheet specified for external code block highlight";
+    return;
   }
 
-  adapter()->highlightCodeBlock(p_idx, p_timeStamp, p_text);
+  QString content;
+  Error err = FileUtils2::readTextFile(file, &content);
+  if (err) {
+    qWarning() << "failed to read highlight style sheet for external code block highlight" << file
+               << err.what();
+  }
+  adapter()->fetchStylesFromStyleSheet(
+      content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
+        MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
+
+        const QString prefix(".token.");
+        for (const auto &rule : *rules) {
+          bool isFirst = true;
+          QTextCharFormat fmt;
+
+          // Just fetch `.token.attr` styles.
+          auto selects = rule.m_selector.split(QLatin1Char(','));
+          for (const auto &sel : selects) {
+            const auto ts = sel.trimmed();
+            if (!ts.startsWith(prefix)) {
+              continue;
+            }
+            auto classList = ts.mid(prefix.size()).split(QLatin1Char('.'));
+            for (const auto &cla : classList) {
+              if (isFirst) {
+                fmt = rule.toTextCharFormat();
+                isFirst = false;
+              }
+              styles.insert(cla, fmt);
+            }
+          }
+        }
+
+        MarkdownEditor::setExternalCodeBlockHighlihgtStyles(styles);
+      });
 }
 
 void MarkdownViewWindow2::onPrintFinished(bool p_succeeded) {

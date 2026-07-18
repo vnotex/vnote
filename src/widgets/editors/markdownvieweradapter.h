@@ -112,6 +112,8 @@ public:
 
   void highlightCodeBlock(int p_idx, quint64 p_timeStamp, const QString &p_text);
 
+  void highlightMath(int p_idx, quint64 p_timeStamp, const QString &p_text);
+
   // Parse style sheet and fetch the styles.
   void
   fetchStylesFromStyleSheet(const QString &p_styleSheet,
@@ -146,6 +148,8 @@ public slots:
   void setMarkdownFromHtml(quint64 p_id, quint64 p_timeStamp, const QString &p_text);
 
   void setCodeBlockHighlightHtml(int p_idx, quint64 p_timeStamp, const QString &p_html);
+
+  void setMathHighlightHtml(int p_idx, quint64 p_timeStamp, const QString &p_html);
 
   void setCrossCopyTargets(const QJsonArray &p_targets);
 
@@ -194,6 +198,8 @@ signals:
 
   void highlightCodeBlockRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
 
+  void highlightMathRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
+
   void parseStyleSheetRequested(quint64 p_id, const QString &p_styleSheet);
 
   // Signals to be connected at cpp side.
@@ -223,6 +229,8 @@ signals:
   void pdfRenderReady();
 
   void highlightCodeBlockReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
+
+  void highlightMathReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
 
 private:
   void scrollToLine(int p_lineNumber);

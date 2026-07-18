@@ -273,6 +273,26 @@ class MarkdownViewerCore extends VXCore {
         }
     }
 
+    highlightMath(p_idx, p_timeStamp, p_text) {
+        // Highlight the display math source line by line, so that no Prism token
+        // span ever crosses a newline. Prism's LaTeX grammar wraps whole
+        // dollar-delimited formulas and \begin{...}\end{...} environments in a
+        // single (multi-line) token; if we highlighted the whole block at once,
+        // such a span would be split into malformed fragments by the per-line
+        // HTML matcher on the C++ side. Highlighting each line on its own keeps
+        // every returned fragment self-contained at the cost of cross-line
+        // grammar context, which is acceptable for source-level highlighting.
+        if (!(Prism && Prism.languages.latex)) {
+            window.vxMarkdownAdapter.setMathHighlightHtml(p_idx, p_timeStamp, '');
+            return;
+        }
+
+        let htmlLines = p_text.split('\n').map(function(line) {
+            return Prism.highlight(line, Prism.languages.latex, 'latex');
+        });
+        window.vxMarkdownAdapter.setMathHighlightHtml(p_idx, p_timeStamp, htmlLines.join('\n'));
+    }
+
     parseStyleSheet(p_id, p_styleSheet) {
         let doc = document.implementation.createHTMLDocument('');
         let styleEle = document.createElement('style');

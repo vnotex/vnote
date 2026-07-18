@@ -163,6 +163,12 @@ private:
   void handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
                                                const QString &p_text);
 
+  void handleExternalMathHighlightRequest(int p_idx, quint64 p_timeStamp, const QString &p_text);
+
+  // Fetch the Prism .token styles from the theme's highlight style sheet once and
+  // push them to the editor. Shared by the code block and math highlight paths.
+  void ensureExternalHighlightStyles();
+
   void onPrintFinished(bool p_succeeded);
 
   int getEditLineNumber() const;
