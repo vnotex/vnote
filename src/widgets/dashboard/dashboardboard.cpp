@@ -21,11 +21,14 @@ using namespace vnotex;
 
 namespace {
 constexpr int kColumnMinWidth = 60;
-constexpr int kRowMinHeight = 48;
 // Fixed pixel height of a single logical grid row. A sticker's frame is pinned
 // to rowSpan * this (plus inter-row spacing), so the board is a true fixed-size
 // grid: spans map to proportional pixel heights and a tall sticker (e.g. the
 // History list) scrolls inside its cell instead of inflating every shared row.
+// The grid reserves this SAME height for every occupied row (see applyRowSizing)
+// so a frame's fixed height matches its cell exactly — otherwise Qt would center
+// the shorter frame in an oversized cell, producing gaps above/below stickers and
+// misaligning the tops of side-by-side columns.
 constexpr int kRowUnitHeight = 100;
 } // namespace
 
@@ -88,17 +91,20 @@ void DashboardBoard::applyRowSizing() {
   if (!m_grid) {
     return;
   }
-  // Rows are dynamic (unlike the fixed column count), so reserve a minimum
-  // height for every row up to the highest occupied one. Without this, an empty
-  // row collapses to zero height under Qt::AlignTop and a Move Up/Down into it
-  // is invisible even though the model updated correctly.
+  // Rows are dynamic (unlike the fixed column count), so reserve a fixed height
+  // for every row up to the highest occupied one. This MUST equal kRowUnitHeight
+  // (the per-span height a frame is pinned to) so a frame fills its cell exactly:
+  // N spanned rows give N*kRowUnitHeight + (N-1)*spacing == frameHeightForRowSpan.
+  // Any mismatch leaves slack that Qt centers the frame within, creating the gaps
+  // above/below stickers and misaligning side-by-side column tops. It also keeps
+  // an empty row visible so a Move Up/Down into it is not lost under Qt::AlignTop.
   int maxRow = 0;
   for (const ViewItem &view : m_views) {
     maxRow = qMax(maxRow, view.m_row + view.m_rowSpan);
   }
   const int prevRows = m_grid->rowCount();
   for (int r = 0; r < qMax(prevRows, maxRow); ++r) {
-    m_grid->setRowMinimumHeight(r, r < maxRow ? kRowMinHeight : 0);
+    m_grid->setRowMinimumHeight(r, r < maxRow ? kRowUnitHeight : 0);
   }
 }
 
@@ -153,9 +159,13 @@ void DashboardBoard::onStickerMoved(const DashboardController::StickerRecord &p_
   view.m_col = p_record.col;
   view.m_rowSpan = p_record.rowSpan;
   view.m_colSpan = p_record.colSpan;
+  // A resize arrives here too (the resize dialog changes rowSpan via the move
+  // signal), so re-pin the frame height to the new span; otherwise the cell and
+  // the fixed-height frame diverge and the gap/centering returns.
+  view.m_frame->setFixedHeight(frameHeightForRowSpan(p_record.rowSpan));
   m_grid->removeWidget(view.m_frame);
   m_grid->addWidget(view.m_frame, p_record.row, p_record.col, p_record.rowSpan,
-                    p_record.colSpan);
+                    p_record.colSpan, Qt::AlignTop);
   applyRowSizing();
 }
 
@@ -211,7 +221,7 @@ bool DashboardBoard::createViewForRecord(const DashboardController::StickerRecor
   });
 
   m_grid->addWidget(view.m_frame, p_record.row, p_record.col, p_record.rowSpan,
-                    p_record.colSpan);
+                    p_record.colSpan, Qt::AlignTop);
   return true;
 }
 
@@ -234,17 +244,21 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker,
   headerLayout->addWidget(titleLabel);
   headerLayout->addStretch();
 
-  auto *moveBtn = new QToolButton(header);
-  moveBtn->setToolTip(tr("Move"));
-  if (auto *themeService = m_services.get<ThemeService>()) {
+  auto *themeService = m_services.get<ThemeService>();
+  QVector<IconUtils::OverriddenColor> iconColors;
+  if (themeService) {
     const auto fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
     const auto disabledFg =
         themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg"));
-    QVector<IconUtils::OverriddenColor> colors;
-    colors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
-    colors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+    iconColors.push_back(IconUtils::OverriddenColor(fg, QIcon::Normal));
+    iconColors.push_back(IconUtils::OverriddenColor(disabledFg, QIcon::Disabled));
+  }
+
+  auto *moveBtn = new QToolButton(header);
+  moveBtn->setToolTip(tr("Move"));
+  if (themeService) {
     moveBtn->setIcon(
-        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("move.svg")), colors));
+        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("move.svg")), iconColors));
   }
   moveBtn->setPopupMode(QToolButton::InstantPopup);
   // Hide the dropdown arrow indicator for an icon-only button.
@@ -266,8 +280,13 @@ QWidget *DashboardBoard::buildFrame(const QString &p_id, Sticker *p_sticker,
   headerLayout->addWidget(moveBtn);
 
   auto *closeBtn = new QToolButton(header);
-  closeBtn->setText(tr("X"));
-  closeBtn->setToolTip(tr("Remove sticker"));
+  if (themeService) {
+    closeBtn->setIcon(
+        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("close.svg")), iconColors));
+  } else {
+    closeBtn->setText(tr("X"));
+  }
+  closeBtn->setToolTip(tr("Remove"));
   closeBtn->setVisible(!m_locked);
   connect(closeBtn, &QToolButton::clicked, this,
           [this, p_id]() { m_controller->removeSticker(p_id); });

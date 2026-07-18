@@ -119,21 +119,22 @@ void DashboardController::seedDefaultLayout() {
     placeRecord(QStringLiteral("calendar"), 1, 0, kDefaultRowSpan, kDefaultColSpan,
                 QJsonObject());
   }
-  // Seed a History sticker in the second column. Give it a taller span so
-  // several recent files are visible at once, and one extra column of width.
-  if (fac && fac->hasCreator(QStringLiteral("history"))) {
-    constexpr int kHistoryRowSpan = 4;
-    constexpr int kHistoryColSpan = kDefaultColSpan + 1;
-    placeRecord(QStringLiteral("history"), 0, kDefaultColSpan, kHistoryRowSpan, kHistoryColSpan,
+  // The right column (starting at kDefaultColSpan) stacks the Activity sticker
+  // at the top with the History sticker directly below it. Both share the same
+  // width (one extra column wider than the default) so the column aligns.
+  constexpr int kRightColSpan = kDefaultColSpan + 1;
+  constexpr int kActivityRowSpan = 2;
+  // Seed an Activity sticker at the top of the right column.
+  if (fac && fac->hasCreator(QStringLiteral("activity"))) {
+    placeRecord(QStringLiteral("activity"), 0, kDefaultColSpan, kActivityRowSpan, kRightColSpan,
                 QJsonObject());
   }
-  // Seed an Activity sticker in the left column, below the Calendar (which ends
-  // at row 4: greeting row 0, calendar rows 1-3).
-  if (fac && fac->hasCreator(QStringLiteral("activity"))) {
-    constexpr int kActivityRow = 4;
-    constexpr int kActivityRowSpan = 2;
-    placeRecord(QStringLiteral("activity"), kActivityRow, 0, kActivityRowSpan, kDefaultColSpan,
-                QJsonObject());
+  // Seed a History sticker in the right column, directly below Activity. Give it
+  // a taller span so several recent files are visible at once.
+  if (fac && fac->hasCreator(QStringLiteral("history"))) {
+    constexpr int kHistoryRowSpan = 4;
+    placeRecord(QStringLiteral("history"), kActivityRowSpan, kDefaultColSpan, kHistoryRowSpan,
+                kRightColSpan, QJsonObject());
   }
 }
 
