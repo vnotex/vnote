@@ -85,14 +85,17 @@ class PlantUml extends GraphRenderer {
         return true;
     }
 
-    // Render a graph from @p_text in SVG format.
+    // Render a graph from @p_text as PNG for the in-place popup preview.
+    // PNG (raster) is used instead of SVG because the preview is rasterized by
+    // Qt's QSvgRenderer, which cannot render <foreignObject>/embedded HTML that
+    // PlantUml emits for some labels (e.g. line breaks), leaving a blank popup.
     // p_callback(format, data).
     renderText(p_text, p_callback) {
         console.assert(this.useWeb, "renderText() should be called only when web PlantUml is enabled");
 
         let func = () => {
             this.renderOnline(this.serverUrl,
-                              'svg',
+                              'png',
                               p_text,
                               p_callback);
         }

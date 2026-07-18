@@ -63,7 +63,13 @@ class GraphPreviewer {
                 let id = p_id;
                 let timeStamp = p_timeStamp;
                 return function(p_format, p_data) {
-                    previewer.setGraphPreviewData(id, timeStamp, p_format, p_data, false, true);
+                    // PlantUml preview is rendered to PNG (raster) rather than
+                    // SVG: the popup renders SVG via Qt's QSvgRenderer, which
+                    // does not support <foreignObject>/embedded HTML that
+                    // PlantUml emits for some labels, yielding a blank preview.
+                    // PNG from the server sidesteps that limitation.
+                    previewer.setGraphPreviewData(id, timeStamp, p_format, p_data,
+                                                  p_format === 'png', true);
                 };
             };
             this.vxcore.getWorker('plantuml').renderText(p_text, func(this, p_id, p_timeStamp));
@@ -150,7 +156,13 @@ class GraphPreviewer {
 
         this.scaleSvg(p_svgNode);
 
-        SvgToImage.svgToImage(p_svgNode.outerHTML,
+        // Serialize as well-formed XML rather than using outerHTML. In an HTML
+        // document, outerHTML emits void/empty elements without a self-closing
+        // slash (e.g. Mermaid's <br> inside a <foreignObject> label), which is
+        // not valid XML and makes the browser fail to load the SVG as an image,
+        // leaving the popup preview blank. XMLSerializer self-closes them.
+        let svgString = new XMLSerializer().serializeToString(p_svgNode);
+        SvgToImage.svgToImage(svgString,
             { crossOrigin: 'Anonymous' },
             (p_err, p_image) => {
                 if (p_err) {
@@ -186,7 +198,11 @@ class GraphPreviewer {
             return;
         }
 
-        if (p_svgNode.getAttribute('width').indexOf('%') != -1) {
+        let width = p_svgNode.getAttribute('width');
+        if (width === null) {
+            return;
+        }
+        if (width.indexOf('%') != -1) {
             // Try maxWidth.
             if (p_svgNode.style.maxWidth && p_svgNode.style.maxWidth.endsWith('px') && p_svgNode.style.maxWidth != "0px") {
                 p_svgNode.setAttribute('width', p_svgNode.style.maxWidth);
