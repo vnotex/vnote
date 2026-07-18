@@ -7,6 +7,7 @@
 
 #include <utils/fileutils.h>
 #include <utils/pathutils.h>
+#include <utils/processutils.h>
 
 #include "iconfigmgr.h"
 #include "mainconfig.h"
@@ -92,10 +93,16 @@ bool SessionConfig::ExternalProgram::matchesSuffix(const QString &p_suffix) cons
   return false;
 }
 
-QString SessionConfig::ExternalProgram::fetchCommand(const QString &p_file) const {
-  auto command(m_command);
-  command.replace(QStringLiteral("%1"), QStringLiteral("\"%1\"").arg(p_file));
-  return command;
+QStringList SessionConfig::ExternalProgram::fetchCommandArgs(const QString &p_file) const {
+  if (m_command.isEmpty()) {
+    return QStringList();
+  }
+
+  QStringList tokens = ProcessUtils::parseCombinedArgString(m_command);
+  for (auto &token : tokens) {
+    token.replace(QStringLiteral("%1"), p_file);
+  }
+  return tokens;
 }
 
 const QString SessionConfig::ExternalProgram::c_systemProgramName = QStringLiteral("system");

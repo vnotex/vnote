@@ -68,7 +68,7 @@ public:
 
     QJsonObject toJson() const;
 
-    QString fetchCommand(const QString &p_file) const;
+    QStringList fetchCommandArgs(const QString &p_file) const;
 
     QString m_name;
 

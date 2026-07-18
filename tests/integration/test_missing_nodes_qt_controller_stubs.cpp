@@ -26,6 +26,8 @@
 namespace vnotex {
 
 void ProcessUtils::startDetached(const QString &) {}
+void ProcessUtils::startDetached(const QString &, const QStringList &) {}
+QStringList ProcessUtils::parseCombinedArgString(const QString &) { return {}; }
 
 int MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Type, const QString &,
                                                 const QString &, const QString &, QWidget *) {

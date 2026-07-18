@@ -470,6 +470,7 @@ add_qt_test(test_mark_metadata
 add_qt_test(test_sessionconfig_extprog
   SOURCES
     test_sessionconfig_extprog.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
   LINKS
     core_configs
   GUILESS

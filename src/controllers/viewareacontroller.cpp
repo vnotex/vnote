@@ -98,11 +98,11 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
             }
             return;
           }
-          const QString command = program->fetchCommand(absolutePath);
-          if (!command.isEmpty()) {
+          const QStringList argv = program->fetchCommandArgs(absolutePath);
+          if (!argv.isEmpty()) {
             qInfo() << "ViewAreaController::openBuffer: launching external program for"
-                    << absolutePath << "command:" << command;
-            ProcessUtils::startDetached(command);
+                    << absolutePath << "command:" << argv;
+            ProcessUtils::startDetached(argv.first(), argv.mid(1));
             auto *bufferSvc = m_services.get<BufferService>();
             if (bufferSvc) {
               bufferSvc->closeBuffer(p_buffer.id());

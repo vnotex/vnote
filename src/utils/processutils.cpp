@@ -167,3 +167,8 @@ void ProcessUtils::startDetached(const QString &p_command) {
                    &QProcess::deleteLater);
   process->start(p_command);
 }
+
+void ProcessUtils::startDetached(const QString &p_program, const QStringList &p_args) {
+  Q_ASSERT(!p_program.isEmpty());
+  QProcess::startDetached(p_program, p_args);
+}

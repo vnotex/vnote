@@ -24,6 +24,13 @@ private slots:
   void testSuffixNormalization();
   void testFetchCommand();
   void testEmptyCommand();
+  void testFetchCommandArgs_injectionInert();
+  void testFetchCommandArgs_quotedTemplate();
+  void testFetchCommandArgs_extraFlags();
+  void testFetchCommandArgs_pathWithSpacesNoQuotes();
+  void testFetchCommandArgs_whitespaceOnly();
+  void testFetchCommandArgs_embeddedInToken();
+  void testFetchCommandArgs_quotedProgramPath();
   void testIsSystemProgram();
   void testSystemProgramConstant();
   void testSystemAlwaysLast();
@@ -175,16 +182,87 @@ void TestSessionConfigExtProg::testFetchCommand() {
   SessionConfig::ExternalProgram prog;
   prog.m_command = "code %1";
 
-  QString result = prog.fetchCommand("/path/to/file.py");
-  QCOMPARE(result, QStringLiteral("code \"/path/to/file.py\""));
+  QStringList result = prog.fetchCommandArgs("/path/to/file.py");
+  QCOMPARE(result, (QStringList{QStringLiteral("code"), QStringLiteral("/path/to/file.py")}));
 }
 
 void TestSessionConfigExtProg::testEmptyCommand() {
   SessionConfig::ExternalProgram prog;
   prog.m_command = "";
 
-  QString result = prog.fetchCommand("/some/file");
+  QStringList result = prog.fetchCommandArgs("/some/file");
   QVERIFY(result.isEmpty());
+}
+
+void TestSessionConfigExtProg::testFetchCommandArgs_injectionInert() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "gvim %1";
+
+  QStringList result = prog.fetchCommandArgs("a\" -c \":!touch /tmp/pwn\" note.md");
+  QCOMPARE(result,
+           (QStringList{QStringLiteral("gvim"),
+                        QStringLiteral("a\" -c \":!touch /tmp/pwn\" note.md")}));
+}
+
+// The quoted-template form must tokenize identically to the bare form: grouping
+// quotes around %1 are stripped so the path lands in exactly one argv element.
+void TestSessionConfigExtProg::testFetchCommandArgs_quotedTemplate() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "code \"%1\"";
+
+  QStringList result = prog.fetchCommandArgs("/path/to/file.py");
+  QCOMPARE(result, (QStringList{QStringLiteral("code"), QStringLiteral("/path/to/file.py")}));
+}
+
+// Extra flags before %1 stay as their own argv elements and are preserved in order.
+void TestSessionConfigExtProg::testFetchCommandArgs_extraFlags() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "gvim -c startinsert %1";
+
+  QStringList result = prog.fetchCommandArgs("/notes/todo.md");
+  QCOMPARE(result, (QStringList{QStringLiteral("gvim"), QStringLiteral("-c"),
+                                QStringLiteral("startinsert"), QStringLiteral("/notes/todo.md")}));
+}
+
+// A path with spaces but no quotes must remain a single argv element (substitution
+// happens after tokenization, so the path is never re-split).
+void TestSessionConfigExtProg::testFetchCommandArgs_pathWithSpacesNoQuotes() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "code %1";
+
+  QStringList result = prog.fetchCommandArgs("/home/user/My Notes/todo list.md");
+  QCOMPARE(result, (QStringList{QStringLiteral("code"),
+                                QStringLiteral("/home/user/My Notes/todo list.md")}));
+}
+
+// A whitespace-only template tokenizes to nothing → empty list; both call-site
+// guards rely on this to skip launching.
+void TestSessionConfigExtProg::testFetchCommandArgs_whitespaceOnly() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "   ";
+
+  QStringList result = prog.fetchCommandArgs("/some/file");
+  QVERIFY(result.isEmpty());
+}
+
+// %1 embedded inside a larger token is substituted in place, keeping one element.
+void TestSessionConfigExtProg::testFetchCommandArgs_embeddedInToken() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "myeditor --file=%1";
+
+  QStringList result = prog.fetchCommandArgs("/path/to/file.md");
+  QCOMPARE(result, (QStringList{QStringLiteral("myeditor"),
+                                QStringLiteral("--file=/path/to/file.md")}));
+}
+
+// A quoted program path containing spaces stays a single argv[0] element.
+void TestSessionConfigExtProg::testFetchCommandArgs_quotedProgramPath() {
+  SessionConfig::ExternalProgram prog;
+  prog.m_command = "\"C:/Program Files/App/app.exe\" %1";
+
+  QStringList result = prog.fetchCommandArgs("C:/notes/todo.md");
+  QCOMPARE(result, (QStringList{QStringLiteral("C:/Program Files/App/app.exe"),
+                                QStringLiteral("C:/notes/todo.md")}));
 }
 
 void TestSessionConfigExtProg::testIsSystemProgram() {

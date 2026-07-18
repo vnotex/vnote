@@ -1502,11 +1502,11 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
     }
     SessionConfig::ExternalProgram tempProg;
     tempProg.m_command = p_commandTemplate;
-    QString cmd = tempProg.fetchCommand(path);
-    if (cmd.isEmpty()) {
+    const QStringList argv = tempProg.fetchCommandArgs(path);
+    if (argv.isEmpty()) {
       continue;
     }
-    ProcessUtils::startDetached(cmd);
+    ProcessUtils::startDetached(argv.first(), argv.mid(1));
     closeOrphanedBuffer(id);
   }
 

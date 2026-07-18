@@ -27,6 +27,8 @@ public:
 
   static void startDetached(const QString &p_command);
 
+  static void startDetached(const QString &p_program, const QStringList &p_args);
+
   // Copied from QProcess code.
   static QStringList parseCombinedArgString(const QString &p_args);
 
