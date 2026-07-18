@@ -5,6 +5,7 @@ target_sources(vnote PRIVATE
     buttonpopup.cpp buttonpopup.h
     combobox.cpp combobox.h
     dashboard/calendarsticker.cpp dashboard/calendarsticker.h
+    dashboard/activitysticker.cpp dashboard/activitysticker.h
     dashboard/dashboardboard.cpp dashboard/dashboardboard.h
     dashboard/dashboardcontent.cpp dashboard/dashboardcontent.h
     dashboard/greetingsticker.cpp dashboard/greetingsticker.h

@@ -2,6 +2,7 @@
 
 #include <QDebug>
 
+#include <widgets/dashboard/activitysticker.h>
 #include <widgets/dashboard/calendarsticker.h>
 #include <widgets/dashboard/greetingsticker.h>
 #include <widgets/dashboard/historysticker.h>
@@ -31,6 +32,13 @@ void StickerFactory::registerBuiltInCreators() {
                   [](ServiceLocator &p_services, const QJsonObject &p_settings,
                      QWidget *p_parent) -> Sticker * {
                     auto *sticker = new GreetingSticker(p_services, p_parent);
+                    sticker->loadSettings(p_settings);
+                    return sticker;
+                  });
+  registerCreator(QStringLiteral("activity"),
+                  [](ServiceLocator &p_services, const QJsonObject &p_settings,
+                     QWidget *p_parent) -> Sticker * {
+                    auto *sticker = new ActivitySticker(p_services, p_parent);
                     sticker->loadSettings(p_settings);
                     return sticker;
                   });

@@ -127,6 +127,14 @@ void DashboardController::seedDefaultLayout() {
     placeRecord(QStringLiteral("history"), 0, kDefaultColSpan, kHistoryRowSpan, kHistoryColSpan,
                 QJsonObject());
   }
+  // Seed an Activity sticker in the left column, below the Calendar (which ends
+  // at row 4: greeting row 0, calendar rows 1-3).
+  if (fac && fac->hasCreator(QStringLiteral("activity"))) {
+    constexpr int kActivityRow = 4;
+    constexpr int kActivityRowSpan = 2;
+    placeRecord(QStringLiteral("activity"), kActivityRow, 0, kActivityRowSpan, kDefaultColSpan,
+                QJsonObject());
+  }
 }
 
 void DashboardController::persist() {

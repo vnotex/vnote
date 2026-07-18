@@ -27,6 +27,15 @@ add_qt_test(test_servicelocator
   GUILESS
 )
 
+add_qt_test(test_activitystatsservice
+  SOURCES
+    test_activitystatsservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_theme_core
   SOURCES
     test_theme.cpp

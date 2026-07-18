@@ -23,6 +23,7 @@
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/activityservice.h>
+#include <core/services/activitystatsservice.h>
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/configservice.h>
@@ -593,6 +594,13 @@ int main(int argc, char *argv[]) {
     ActivityService activityService(context, &hookManager);
     serviceLocator.registerService<ActivityService>(&activityService);
     qInfo() << "ActivityService registered";
+
+    // Read-only companion to ActivityService: exposes activity.db metrics to
+    // the dashboard Activity sticker. Registered before MainWindow2 so the
+    // lazily-built home dashboard can resolve it.
+    ActivityStatsService activityStatsService(context);
+    serviceLocator.registerService<ActivityStatsService>(&activityStatsService);
+    qInfo() << "ActivityStatsService registered";
 
     // Create MainWindow2 with ServiceLocator
     MainWindow2 mainWindow(serviceLocator);

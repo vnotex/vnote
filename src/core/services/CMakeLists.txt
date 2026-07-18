@@ -1,6 +1,7 @@
 # Core services library
 set(SERVICES_SOURCES
   activityservice.cpp
+  activitystatsservice.cpp
   buffer2.cpp
   buffercoreservice.cpp
   bufferservice.cpp
@@ -58,6 +59,7 @@ set(SERVICES_HEADERS
   bufferservice.h
   buffersavequeue.h
   activityservice.h
+  activitystatsservice.h
   ibuffercoreservice.h
   isyncnotebookservice.h
   configcoreservice.h

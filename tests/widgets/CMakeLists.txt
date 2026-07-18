@@ -831,6 +831,7 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/historysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/calendarsticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/greetingsticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/activitysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
@@ -862,6 +863,48 @@ add_custom_command(TARGET test_historysticker POST_BUILD
     $<TARGET_FILE_DIR:test_historysticker>
 )
 
+# ActivitySticker dashboard sticker test. NOT GUILESS — constructs real
+# QWidgets (needs QApplication). Compiles the full built-in sticker source set
+# because stickerfactory.cpp references every built-in sticker (calendar /
+# history / greeting / activity) plus their transitive model/view/theme deps.
+add_qt_test(test_activitysticker
+  SOURCES
+    test_activitysticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/activitysticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/historysticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/calendarsticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/greetingsticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_activitysticker PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_activitysticker POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_activitysticker>
+)
+
 # GUI test for GreetingSticker. NOT GUILESS (QLabel needs QApplication). Pulls in
 # the full sticker source set because stickerfactory.cpp references every
 # built-in sticker (calendar/history/greeting) and their transitive deps.
@@ -871,6 +914,7 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/greetingsticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/historysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/calendarsticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/activitysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
