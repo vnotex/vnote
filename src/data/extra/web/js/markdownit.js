@@ -195,7 +195,7 @@ class MarkdownIt extends VxWorker {
                 detailsNode.appendChild(summaryNode);
 
                 let preNode = document.createElement('pre');
-                preNode.innerHTML = p_metaData;
+                preNode.textContent = p_metaData;
                 detailsNode.appendChild(preNode);
 
                 this.frontMatterNode = detailsNode;
