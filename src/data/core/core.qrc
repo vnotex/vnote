@@ -3,11 +3,8 @@
         <file>icons/vnote.icns</file>
         <file>icons/vnote.ico</file>
         <file>icons/new_note.svg</file>
-        <file>icons/notebook_menu.svg</file>
-        <file>icons/task_menu.svg</file>
         <file>icons/united_entry.svg</file>
         <file>icons/busy.svg</file>
-        <file>icons/advanced_settings.svg</file>
         <file>icons/discard_editor.svg</file>
         <file>icons/edit_editor.svg</file>
         <file>icons/rename.svg</file>
@@ -22,24 +19,14 @@
         <file>icons/tag_selected.svg</file>
         <file>icons/menu.svg</file>
         <file>icons/settings.svg</file>
-        <file>icons/view.svg</file>
         <file>icons/inplace_preview_editor.svg</file>
         <file>icons/image_host_editor.svg</file>
-        <file>icons/import_menu.svg</file>
-        <file>icons/export_menu.svg</file>
-        <file>icons/flash_page_menu.svg</file>
         <file>icons/quick_access_menu.svg</file>
         <file>icons/home_dashboard.svg</file>
         <file>icons/notebook_default.svg</file>
         <file>icons/file_node.svg</file>
         <file>icons/folder_node.svg</file>
         <file>icons/other_item.svg</file>
-        <file>icons/manage_notebooks.svg</file>
-        <file>icons/up_level.svg</file>
-        <file>icons/properties.svg</file>
-        <file>icons/recycle_bin.svg</file>
-        <file>icons/scan_import.svg</file>
-        <file>icons/search_location_list.svg</file>
         <file>icons/save_editor.svg</file>
         <file>icons/apply_editor.svg</file>
         <file>icons/buffer.svg</file>
@@ -79,8 +66,6 @@
         <file>icons/open_folder.svg</file>
         <file>icons/open_file.svg</file>
         <file>icons/copy_path.svg</file>
-        <file>icons/new_file.svg</file>
-        <file>icons/new_folder.svg</file>
         <file>icons/decrease_outline_level.svg</file>
         <file>icons/increase_outline_level.svg</file>
         <file>icons/minimize.svg</file>
@@ -88,16 +73,12 @@
         <file>icons/maximize_restore.svg</file>
         <file>icons/close.svg</file>
         <file>icons/delete.svg</file>
-        <file>icons/debug_editor.svg</file>
         <file>icons/print_editor.svg</file>
         <file>icons/stay_on_top.svg</file>
         <file>icons/outline_editor.svg</file>
         <file>icons/readable_width_editor.svg</file>
         <file>icons/find_replace_editor.svg</file>
         <file>icons/search.svg</file>
-        <file>icons/cancel.svg</file>
-        <file>icons/section_number_editor.svg</file>
-        <file>icons/sort.svg</file>
         <file>icons/navigation_dock.svg</file>
         <file>icons/history_dock.svg</file>
         <file>icons/outline_dock.svg</file>
