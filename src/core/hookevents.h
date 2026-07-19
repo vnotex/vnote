@@ -70,6 +70,7 @@ struct FileOpenEvent {
   bool newFile = false;
   bool readOnly = false;
   int lineNumber = -1;
+  int cursorOffset = -1; // QTextDocument caret position from a template "@@" mark, or -1.
   QString anchor; // Heading anchor for scroll-to-heading navigation.
   bool alwaysNewWindow = false;
   QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)

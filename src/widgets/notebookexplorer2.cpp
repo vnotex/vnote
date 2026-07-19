@@ -22,6 +22,7 @@
 #include <QVBoxLayout>
 
 #include <controllers/newnotebookcontroller.h>
+#include <controllers/newnotecontroller.h>
 #include <controllers/notebooknodecontroller.h>
 #include <controllers/opennotebookcontroller.h>
 #include <controllers/recyclebincontroller.h>
@@ -1336,33 +1337,6 @@ void NotebookExplorer2::newQuickNote() {
     return;
   }
 
-  // Generate filename using snippet expansion.
-  QString expandedName =
-      m_services.get<SnippetCoreService>()->applySnippetBySymbol(scheme.m_noteName);
-  QFileInfo finfo(expandedName);
-
-  // Get notebook root path to generate unique filename.
-  auto &notebookService = *m_services.get<NotebookCoreService>();
-
-  // Ensure the (possibly newly expanded/date-based) target folder exists before creating
-  // the file: vxcore createFile requires the parent folder node to exist.
-  if (!folderPath.isEmpty()) {
-    QString folderId = notebookService.createFolderPath(notebookId, folderPath);
-    if (folderId.isEmpty()) {
-      MessageBoxHelper::notify(
-          MessageBoxHelper::Information,
-          tr("Failed to create the quick note folder (%1).").arg(folderPath), window());
-      return;
-    }
-  }
-
-  QJsonObject notebookConfig = notebookService.getNotebookConfig(notebookId);
-  QString rootFolder = notebookConfig[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
-  QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
-
-  QString newFileName = FileUtils2::generateFileNameWithSequence(
-      parentAbsPath, finfo.completeBaseName(), finfo.suffix());
-
   // Get template content if specified.
   QString templateContent;
   if (!scheme.m_template.isEmpty()) {
@@ -1370,29 +1344,28 @@ void NotebookExplorer2::newQuickNote() {
     templateContent = templateService.getTemplateContent(scheme.m_template);
   }
 
-  // Create the file via NotebookService.
-  QString fileId = notebookService.createFile(notebookId, folderPath, newFileName);
-  if (fileId.isEmpty()) {
-    MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("Failed to create quick note from scheme (%1).").arg(scheme.m_name),
-                             window());
+  // Delegate the create+expand+write business logic to the controller (MVC).
+  QuickNoteInput input;
+  input.notebookId = notebookId;
+  input.parentFolderPath = folderPath;
+  input.noteNameScheme = scheme.m_noteName;
+  input.templateContent = templateContent;
+
+  NewNoteController controller(m_services);
+  NewNoteResult result = controller.createQuickNote(input);
+  if (!result.success) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information, result.errorMessage, window());
     return;
   }
 
-  // Write template content if present.
-  if (!templateContent.isEmpty()) {
-    QString filePath = QDir(parentAbsPath).filePath(newFileName);
-    QFile file(filePath);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-      file.write(templateContent.toUtf8());
-      file.close();
-    }
+  const NodeIdentifier &newNodeId = result.nodeId;
+  // Only refresh the explorer selection when the new note lives in the notebook
+  // currently displayed; a scheme may resolve into a different open notebook, whose
+  // nodes are not in the current model (the buffer still opens via the identifier).
+  if (newNodeId.notebookId == m_currentNotebookId) {
+    m_nodeExplorer->reloadNode(currentExploredFolderId());
+    setCurrentNode(newNodeId);
   }
-
-  NodeIdentifier newNodeId;
-  newNodeId.notebookId = notebookId;
-  newNodeId.relativePath =
-      folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName;
 
   auto *bufferSvc = m_services.get<BufferService>();
   if (bufferSvc) {
@@ -1400,6 +1373,7 @@ void NotebookExplorer2::newQuickNote() {
     settings.m_mode = ViewWindowMode::Edit;
     settings.m_forceMode = true;
     settings.m_newFile = true;
+    settings.m_cursorOffset = result.cursorOffset;
     bufferSvc->openBuffer(newNodeId, settings);
   }
 }
@@ -1581,6 +1555,7 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
         settings.m_mode = ViewWindowMode::Edit;
         settings.m_forceMode = true;
         settings.m_newFile = true;
+        settings.m_cursorOffset = dialog.getNewCursorOffset();
         bufferSvc->openBuffer(newNodeId, settings);
       }
     }

@@ -1,5 +1,7 @@
 #include "widgetutils.h"
 
+#include <vtextedit/vtextedit.h>
+
 #include <QAbstractScrollArea>
 #include <QAction>
 #include <QActionGroup>
@@ -455,4 +457,17 @@ bool WidgetUtils::isOrAncestorOf(const QWidget *p_widget, const QWidget *p_child
   }
 
   return false;
+}
+
+void WidgetUtils::applyCursorOffset(vte::VTextEdit *p_textEdit, int p_offset) {
+  if (!p_textEdit || p_offset < 0) {
+    return;
+  }
+
+  const int maxPos = p_textEdit->toPlainText().size();
+  const int pos = qBound(0, p_offset, maxPos);
+  auto cursor = p_textEdit->textCursor();
+  cursor.setPosition(pos);
+  p_textEdit->setTextCursor(cursor);
+  p_textEdit->ensureCursorVisible();
 }

@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <core/fileopensettings.h>
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
@@ -21,6 +22,7 @@ private slots:
   void testNodeRenameEventRoundTrip();
   void testNodeMoveEventRoundTrip();
   void testFileOpenEventRoundTrip();
+  void testFileOpenSettingsCursorOffsetTransport();
   void testBufferEventRoundTrip();
   void testFileExternalChangeEventRoundTrip();
   void testViewWindowOpenEventRoundTrip();
@@ -155,6 +157,7 @@ void TestHookEvents::testFileOpenEventRoundTrip() {
   orig.newFile = true;
   orig.readOnly = true;
   orig.lineNumber = 55;
+  orig.cursorOffset = 123;
   orig.alwaysNewWindow = true;
 
   QVariantMap map = orig.toVariantMap();
@@ -169,7 +172,33 @@ void TestHookEvents::testFileOpenEventRoundTrip() {
   QCOMPARE(restored.newFile, orig.newFile);
   QCOMPARE(restored.readOnly, orig.readOnly);
   QCOMPARE(restored.lineNumber, orig.lineNumber);
+  QCOMPARE(restored.cursorOffset, orig.cursorOffset);
   QCOMPARE(restored.alwaysNewWindow, orig.alwaysNewWindow);
+}
+
+// Mirrors the production transport: BufferService projects FileOpenSettings into a
+// FileOpenEvent (bufferservice.cpp), the event serializes/deserializes across the
+// hook boundary, and ViewAreaController reconstructs a FileOpenSettings from it
+// (viewareacontroller.cpp). The cursor offset must survive the full chain.
+void TestHookEvents::testFileOpenSettingsCursorOffsetTransport() {
+  FileOpenSettings src;
+  src.m_mode = ViewWindowMode::Edit;
+  src.m_cursorOffset = 77;
+
+  // 1. BufferService projection (field copies).
+  FileOpenEvent event;
+  event.mode = static_cast<int>(src.m_mode);
+  event.cursorOffset = src.m_cursorOffset;
+
+  // 2. Hook-boundary serialization round-trip.
+  FileOpenEvent afterBoundary = FileOpenEvent::fromVariantMap(event.toVariantMap());
+
+  // 3. ViewAreaController reconstruction.
+  FileOpenSettings restored;
+  restored.m_mode = static_cast<ViewWindowMode>(afterBoundary.mode);
+  restored.m_cursorOffset = afterBoundary.cursorOffset;
+
+  QCOMPARE(restored.m_cursorOffset, 77);
 }
 
 void TestHookEvents::testBufferEventRoundTrip() {

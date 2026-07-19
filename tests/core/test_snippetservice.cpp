@@ -29,6 +29,11 @@ private slots:
   void testDeleteBuiltInSnippetFails();
   void testApplySnippetDate();
   void testApplySnippetNonexistent();
+  void testExpandContentCursorMark();
+  void testExpandContentNoMark();
+  void testExpandContentEmojiBeforeCursor();
+  void testExpandContentCrlfBeforeCursor();
+  void testExpandContentOverrides();
 
 private:
   static QJsonObject makeValidSnippet(const QString &p_content = QStringLiteral("hello @@world"));
@@ -204,6 +209,41 @@ void TestSnippetService::testApplySnippetNonexistent() {
       QStringLiteral("nonexistent"), QString(), QString(), QJsonObject());
   QCOMPARE(result.value(QLatin1String("text")).toString(), QString());
   QCOMPARE(result.value(QLatin1String("cursorOffset")).toInt(), -1);
+}
+
+void TestSnippetService::testExpandContentCursorMark() {
+  QJsonObject r = m_service->expandContent(QStringLiteral("hello @@world"));
+  QCOMPARE(r.value(QLatin1String("text")).toString(), QStringLiteral("hello world"));
+  QCOMPARE(r.value(QLatin1String("cursorOffset")).toInt(), 6);
+}
+
+void TestSnippetService::testExpandContentNoMark() {
+  QJsonObject r = m_service->expandContent(QStringLiteral("plain text no mark"));
+  QCOMPARE(r.value(QLatin1String("text")).toString(), QStringLiteral("plain text no mark"));
+  QCOMPARE(r.value(QLatin1String("cursorOffset")).toInt(), -1);
+}
+
+void TestSnippetService::testExpandContentEmojiBeforeCursor() {
+  // Emoji U+1F600 is 4 UTF-8 bytes but 2 UTF-16 code units. The caret sits right
+  // after the emoji, so the mapped QTextDocument position must be 2, not 4.
+  QJsonObject r = m_service->expandContent(QString::fromUtf8("\xF0\x9F\x98\x80@@x"));
+  QCOMPARE(r.value(QLatin1String("text")).toString(), QString::fromUtf8("\xF0\x9F\x98\x80x"));
+  QCOMPARE(r.value(QLatin1String("cursorOffset")).toInt(), 2);
+}
+
+void TestSnippetService::testExpandContentCrlfBeforeCursor() {
+  // "a\r\n@@b": the caret is after the CRLF. In the editor's QTextDocument the CRLF
+  // collapses to a single line separator, so the position is 2 (a + newline), not 3.
+  QJsonObject r = m_service->expandContent(QStringLiteral("a\r\n@@b"));
+  QCOMPARE(r.value(QLatin1String("cursorOffset")).toInt(), 2);
+}
+
+void TestSnippetService::testExpandContentOverrides() {
+  QJsonObject overrides;
+  overrides.insert(QStringLiteral("note"), QStringLiteral("foo.md"));
+  QJsonObject r = m_service->expandContent(QStringLiteral("File: %note%@@"), overrides);
+  QCOMPARE(r.value(QLatin1String("text")).toString(), QStringLiteral("File: foo.md"));
+  QCOMPARE(r.value(QLatin1String("cursorOffset")).toInt(), 12);
 }
 
 } // namespace tests

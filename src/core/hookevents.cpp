@@ -105,6 +105,7 @@ QVariantMap FileOpenEvent::toVariantMap() const {
   m[QStringLiteral("newFile")] = newFile;
   m[QLatin1String(vxcore::kJsonKeyReadOnly)] = readOnly;
   m[QStringLiteral("lineNumber")] = lineNumber;
+  m[QStringLiteral("cursorOffset")] = cursorOffset;
   m[QStringLiteral("anchor")] = anchor;
   m[QStringLiteral("alwaysNewWindow")] = alwaysNewWindow;
   if (!searchPatterns.isEmpty()) {
@@ -126,6 +127,7 @@ FileOpenEvent FileOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   e.newFile = p_args.value(QStringLiteral("newFile")).toBool();
   e.readOnly = p_args.value(QLatin1String(vxcore::kJsonKeyReadOnly)).toBool();
   e.lineNumber = p_args.value(QStringLiteral("lineNumber"), -1).toInt();
+  e.cursorOffset = p_args.value(QStringLiteral("cursorOffset"), -1).toInt();
   e.anchor = p_args.value(QStringLiteral("anchor")).toString();
   e.alwaysNewWindow = p_args.value(QStringLiteral("alwaysNewWindow")).toBool();
   e.searchPatterns = p_args.value(QStringLiteral("searchPatterns")).toStringList();

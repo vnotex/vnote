@@ -382,6 +382,12 @@ void TextViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) 
     m_editor->scrollToLine(p_settings.m_lineNumber, true);
   }
 
+  // Place the caret at an explicit document position (e.g. a template "@@" mark).
+  // Applied after content load; clamped to the document bounds.
+  if (p_settings.m_cursorOffset >= 0 && m_editor && !m_editor->isReadOnly()) {
+    WidgetUtils::applyCursorOffset(m_editor->getTextEdit(), p_settings.m_cursorOffset);
+  }
+
   if (p_settings.m_searchHighlight.m_isValid && m_editor) {
     const auto result = m_editor->findText(
         p_settings.m_searchHighlight.m_patterns,

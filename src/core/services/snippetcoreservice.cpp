@@ -205,6 +205,65 @@ QString SnippetCoreService::applySnippetBySymbol(const QString &p_content,
   return content;
 }
 
+QJsonObject SnippetCoreService::expandContent(const QString &p_content,
+                                              const QJsonObject &p_overrides) const {
+  QJsonObject result;
+  result.insert(QString::fromLatin1("text"), p_content);
+  result.insert(QString::fromLatin1("cursorOffset"), -1);
+
+  if (!checkContext()) {
+    return result;
+  }
+
+  const QByteArray overridesJson = QJsonDocument(p_overrides).toJson(QJsonDocument::Compact);
+  const QByteArray content = p_content.toUtf8();
+
+  char *json = nullptr;
+  VxCoreError err = vxcore_snippet_expand(m_context, content.constData(), "", "",
+                                          overridesJson.constData(), &json);
+  if (err != VXCORE_OK) {
+    qWarning() << "expandContent failed:" << vxcore_error_message(err);
+    return result;
+  }
+
+  const QJsonObject obj = parseJsonObjectFromCStr(json);
+  const QString expandedText = obj.value(QString::fromLatin1("text")).toString();
+  const int byteOffset = obj.value(QString::fromLatin1("cursorOffset")).toInt(-1);
+
+  result.insert(QString::fromLatin1("text"), expandedText);
+  result.insert(QString::fromLatin1("cursorOffset"),
+                mapUtf8OffsetToDocumentPosition(expandedText.toUtf8(), byteOffset));
+  return result;
+}
+
+int SnippetCoreService::mapUtf8OffsetToDocumentPosition(const QByteArray &p_utf8Text,
+                                                        int p_byteOffset) {
+  if (p_byteOffset < 0) {
+    return -1;
+  }
+
+  int byteOffset = p_byteOffset;
+  if (byteOffset > p_utf8Text.size()) {
+    byteOffset = p_utf8Text.size();
+  }
+
+  // UTF-8 byte offset → UTF-16 QString index.
+  const QString prefix = QString::fromUtf8(p_utf8Text.left(byteOffset));
+
+  // The editor loads content via VTextEditor::setText() → QPlainTextEdit::setPlainText(),
+  // which collapses a CRLF pair to a single QTextDocument line-separator position. A lone
+  // CR is normalized to LF (no length change). Subtract one position for every CRLF pair
+  // preceding the offset so the mapped index matches the editor's document positions.
+  int collapsed = 0;
+  for (int i = 0; i + 1 < prefix.size(); ++i) {
+    if (prefix.at(i) == QLatin1Char('\r') && prefix.at(i + 1) == QLatin1Char('\n')) {
+      ++collapsed;
+    }
+  }
+
+  return prefix.size() - collapsed;
+}
+
 bool SnippetCoreService::checkContext() const {
   if (!m_context) {
     qWarning() << "SnippetCoreService: VxCore context not initialized";

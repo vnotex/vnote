@@ -73,6 +73,10 @@ struct FileOpenSettings {
   // 0-based.
   int m_lineNumber = -1;
 
+  // If m_cursorOffset > -1, the QTextDocument caret position to place after opening
+  // the file (e.g. from a template "@@" mark). Edit-mode only. -1 means unset.
+  int m_cursorOffset = -1;
+
   // Anchor (e.g. heading slug) to scroll to after opening the file.
   QString m_anchor;
 
@@ -91,6 +95,7 @@ struct FileOpenSettings {
     map[QStringLiteral("newFile")] = m_newFile;
     map[QStringLiteral("readOnly")] = m_readOnly;
     map[QStringLiteral("lineNumber")] = m_lineNumber;
+    map[QStringLiteral("cursorOffset")] = m_cursorOffset;
     map[QStringLiteral("alwaysNewWindow")] = m_alwaysNewWindow;
     if (!m_anchor.isEmpty()) {
       map[QStringLiteral("anchor")] = m_anchor;
@@ -122,6 +127,9 @@ struct FileOpenSettings {
     }
     if (p_map.contains(QStringLiteral("lineNumber"))) {
       s.m_lineNumber = p_map.value(QStringLiteral("lineNumber")).toInt();
+    }
+    if (p_map.contains(QStringLiteral("cursorOffset"))) {
+      s.m_cursorOffset = p_map.value(QStringLiteral("cursorOffset")).toInt();
     }
     if (p_map.contains(QStringLiteral("alwaysNewWindow"))) {
       s.m_alwaysNewWindow = p_map.value(QStringLiteral("alwaysNewWindow")).toBool();

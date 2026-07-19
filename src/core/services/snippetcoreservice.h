@@ -37,6 +37,21 @@ public:
   QString applySnippetBySymbol(const QString &p_content,
                                const QJsonObject &p_overrides = QJsonObject()) const;
 
+  // Expand arbitrary inline content (e.g. a note template body) via vxcore's
+  // snippet engine: processes a top-level "@@" cursor mark, "$$" selection mark,
+  // and nested %name% symbols (user snippets + built-in dynamic variables).
+  // Returns { "text": <expanded QString>, "cursorOffset": <int> } where
+  // cursorOffset is a QTextDocument position (UTF-16 index, newline-normalized)
+  // suitable for QTextCursor::setPosition, or -1 when no "@@" mark was present.
+  QJsonObject expandContent(const QString &p_content,
+                            const QJsonObject &p_overrides = QJsonObject()) const;
+
+  // Map a UTF-8 byte offset into |p_utf8Text| to a QTextDocument position
+  // (UTF-16 code-unit index with CRLF collapsed to a single line separator).
+  // Passes through -1 unchanged. Exposed so the quick-note path can reuse the
+  // exact same offset semantics.
+  static int mapUtf8OffsetToDocumentPosition(const QByteArray &p_utf8Text, int p_byteOffset);
+
 private:
   bool checkContext() const;
   static QString cstrToQString(char *p_str);

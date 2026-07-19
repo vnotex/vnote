@@ -1,6 +1,7 @@
 #include "newnotecontroller.h"
 
 #include <QFileInfo>
+#include <QDir>
 #include <QJsonObject>
 #include <QDebug>
 
@@ -107,19 +108,20 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
 
   // Write template content if provided.
   if (!p_input.templateContent.isEmpty()) {
-    QString evaluatedContent = evaluateTemplateContent(p_input.templateContent, p_input.name);
+    EvaluatedTemplate evaluated = evaluateTemplateContent(p_input.templateContent, p_input.name);
 
     // Get the full path and write content.
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
     QString rootPath = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
     QString fullPath = PathUtils::concatenateFilePath(rootPath, filePath);
-    Error err = FileUtils2::writeFile(fullPath, evaluatedContent);
+    Error err = FileUtils2::writeFile(fullPath, evaluated.content.toUtf8());
     if (err) {
       qWarning() << err.what();
       result.success = false;
       result.errorMessage = tr("Failed to write note content.");
       return result;
     }
+    result.cursorOffset = evaluated.cursorOffset;
   }
 
   result.success = true;
@@ -128,12 +130,88 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
   return result;
 }
 
-QString NewNoteController::evaluateTemplateContent(const QString &p_content,
-                                                   const QString &p_name) {
+NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) {
+  NewNoteResult result;
+
+  if (p_input.notebookId.isEmpty()) {
+    result.success = false;
+    result.errorMessage = tr("No notebook specified.");
+    return result;
+  }
+
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  auto *snippetService = m_services.get<SnippetCoreService>();
+  if (!notebookService || !snippetService) {
+    result.success = false;
+    result.errorMessage = tr("NotebookService not available.");
+    return result;
+  }
+
+  // Expand the filename scheme (e.g. "%date%.md").
+  QString expandedName = snippetService->applySnippetBySymbol(p_input.noteNameScheme);
+  QFileInfo finfo(expandedName);
+
+  // Ensure the (possibly newly expanded/date-based) target folder exists before
+  // creating the file: vxcore createFile requires the parent folder node to exist.
+  const QString folderPath = p_input.parentFolderPath;
+  if (!folderPath.isEmpty()) {
+    QString folderId = notebookService->createFolderPath(p_input.notebookId, folderPath);
+    if (folderId.isEmpty()) {
+      result.success = false;
+      result.errorMessage = tr("Failed to create the quick note folder (%1).").arg(folderPath);
+      return result;
+    }
+  }
+
+  QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
+  QString rootFolder = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
+  QString parentAbsPath =
+      folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
+
+  QString newFileName = FileUtils2::generateFileNameWithSequence(
+      parentAbsPath, finfo.completeBaseName(), finfo.suffix());
+
+  QString fileId = notebookService->createFile(p_input.notebookId, folderPath, newFileName);
+  if (fileId.isEmpty()) {
+    result.success = false;
+    result.errorMessage = tr("Failed to create quick note (%1).").arg(newFileName);
+    return result;
+  }
+
+  if (!p_input.templateContent.isEmpty()) {
+    // note/no overrides derive from the FINAL sequenced filename.
+    EvaluatedTemplate evaluated = evaluateTemplateContent(p_input.templateContent, newFileName);
+    QString fullPath = QDir(parentAbsPath).filePath(newFileName);
+    Error err = FileUtils2::writeFile(fullPath, evaluated.content.toUtf8());
+    if (err) {
+      qWarning() << err.what();
+      result.success = false;
+      result.errorMessage = tr("Failed to write note content.");
+      return result;
+    }
+    result.cursorOffset = evaluated.cursorOffset;
+  }
+
+  result.success = true;
+  result.nodeId.notebookId = p_input.notebookId;
+  result.nodeId.relativePath =
+      folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName;
+  return result;
+}
+
+EvaluatedTemplate NewNoteController::evaluateTemplateContent(const QString &p_content,
+                                                            const QString &p_name) {
   // Provide magic-symbol overrides (%note%, %no%) derived from the note name,
-  // mirroring the legacy SnippetMgr::generateOverrides(fileName).
+  // mirroring the legacy SnippetMgr::generateOverrides(fileName). expandContent
+  // additionally processes a top-level "@@" cursor mark and "$$" selection mark.
   QJsonObject overrides;
   overrides.insert(QStringLiteral("note"), p_name);
   overrides.insert(QStringLiteral("no"), QFileInfo(p_name).completeBaseName());
-  return m_services.get<SnippetCoreService>()->applySnippetBySymbol(p_content, overrides);
+
+  QJsonObject r = m_services.get<SnippetCoreService>()->expandContent(p_content, overrides);
+
+  EvaluatedTemplate evaluated;
+  evaluated.content = r.value(QStringLiteral("text")).toString();
+  evaluated.cursorOffset = r.value(QStringLiteral("cursorOffset")).toInt(-1);
+  return evaluated;
 }

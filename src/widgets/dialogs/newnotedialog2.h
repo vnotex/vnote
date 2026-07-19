@@ -30,6 +30,9 @@ public:
   // Get the identifier of the newly created note (valid after accept()).
   NodeIdentifier getNewNodeId() const;
 
+  // Get the caret offset from a template "@@" mark (valid after accept()), or -1.
+  int getNewCursorOffset() const;
+
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
@@ -67,6 +70,7 @@ private:
 
   // Result.
   NodeIdentifier m_newNodeId;
+  int m_newCursorOffset = -1;
 
   // Remember last template selection.
   static QString s_lastTemplate;

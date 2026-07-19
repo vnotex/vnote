@@ -1388,8 +1388,14 @@ void MarkdownViewWindow2::clearHighlights() {
 
 void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
   if (p_settings.m_lineNumber < 0 && p_settings.m_anchor.isEmpty() &&
-      !p_settings.m_searchHighlight.m_isValid) {
+      p_settings.m_cursorOffset < 0 && !p_settings.m_searchHighlight.m_isValid) {
     return;
+  }
+
+  // Place the caret at an explicit document position (e.g. a template "@@" mark).
+  // Edit mode only — ignored in read mode. Applied after content load; clamped.
+  if (p_settings.m_cursorOffset >= 0 && !isReadMode() && m_editor && !m_editor->isReadOnly()) {
+    WidgetUtils::applyCursorOffset(m_editor->getTextEdit(), p_settings.m_cursorOffset);
   }
 
   // Anchor takes precedence over lineNumber when both are set.

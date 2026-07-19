@@ -14,6 +14,7 @@ private slots:
   void testEmptyAnchorNotSerialized();
   void testExistingFieldsUnaffected();
   void testDefaultAnchorIsEmpty();
+  void testCursorOffsetRoundTrip();
 };
 
 void TestFileOpenSettings::testAnchorRoundTrip() {
@@ -51,6 +52,26 @@ void TestFileOpenSettings::testExistingFieldsUnaffected() {
 void TestFileOpenSettings::testDefaultAnchorIsEmpty() {
   FileOpenSettings settings;
   QVERIFY(settings.m_anchor.isEmpty());
+}
+
+void TestFileOpenSettings::testCursorOffsetRoundTrip() {
+  // Default is -1 and round-trips.
+  {
+    FileOpenSettings settings;
+    QCOMPARE(settings.m_cursorOffset, -1);
+    FileOpenSettings restored = FileOpenSettings::fromVariantMap(settings.toVariantMap());
+    QCOMPARE(restored.m_cursorOffset, -1);
+  }
+
+  // A concrete offset round-trips through the variant map.
+  {
+    FileOpenSettings settings;
+    settings.m_cursorOffset = 123;
+    QVariantMap map = settings.toVariantMap();
+    QCOMPARE(map.value(QStringLiteral("cursorOffset")).toInt(), 123);
+    FileOpenSettings restored = FileOpenSettings::fromVariantMap(map);
+    QCOMPARE(restored.m_cursorOffset, 123);
+  }
 }
 
 } // namespace tests

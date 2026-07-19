@@ -24,6 +24,10 @@ class QSplitter;
 class QScreen;
 class QFormLayout;
 
+namespace vte {
+class VTextEdit;
+}
+
 namespace vnotex {
 class WidgetUtils {
 public:
@@ -89,6 +93,12 @@ public:
   static void clearLayout(QFormLayout *p_layout);
 
   static bool isOrAncestorOf(const QWidget *p_widget, const QWidget *p_child);
+
+  // Place the caret at document position @p_offset in @p_textEdit, clamped to the
+  // valid document range [0, toPlainText().size()], then ensure it is visible.
+  // No-op when @p_textEdit is null or @p_offset < 0. Callers own any mode/read-only
+  // guarding before invoking this.
+  static void applyCursorOffset(vte::VTextEdit *p_textEdit, int p_offset);
 
 private:
   static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);

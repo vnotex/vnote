@@ -24,6 +24,21 @@ struct NewNoteResult {
   bool success = false;
   NodeIdentifier nodeId; // Identifier of the created note
   QString errorMessage;
+  int cursorOffset = -1; // QTextDocument caret position from a template "@@" mark, or -1.
+};
+
+// Input data structure for the quick-note-scheme flow.
+struct QuickNoteInput {
+  QString notebookId;
+  QString parentFolderPath; // Relative path within notebook (may be empty = root)
+  QString noteNameScheme;   // Filename scheme, may contain %name% symbols (e.g. "%date%.md")
+  QString templateContent;  // Optional raw template body
+};
+
+// Result of evaluating template content (expanded text + caret position).
+struct EvaluatedTemplate {
+  QString content;
+  int cursorOffset = -1;
 };
 
 // Validation result structure.
@@ -53,8 +68,14 @@ public:
   // Returns result with success status and node identifier or error message.
   NewNoteResult createNote(const NewNoteInput &p_input);
 
-  // Evaluate template content with snippets.
-  QString evaluateTemplateContent(const QString &p_content, const QString &p_name);
+  // Create a quick note from a scheme (filename expansion + folder creation +
+  // template body expansion + write). Encapsulates the MVC-correct business logic
+  // formerly inlined in NotebookExplorer2.
+  NewNoteResult createQuickNote(const QuickNoteInput &p_input);
+
+  // Evaluate template content with snippets. Returns expanded content plus the
+  // caret position derived from a top-level "@@" cursor mark (-1 if absent).
+  EvaluatedTemplate evaluateTemplateContent(const QString &p_content, const QString &p_name);
 
 private:
   ServiceLocator &m_services;

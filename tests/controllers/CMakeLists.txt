@@ -63,6 +63,18 @@ add_qt_test(test_newnotebookcontroller
   GUILESS
 )
 
+add_qt_test(test_newnotecontroller
+  SOURCES
+    test_newnotecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+  LINKS
+    core_configs
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_firstruncontroller
   SOURCES
     test_firstruncontroller.cpp

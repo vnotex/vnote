@@ -192,6 +192,7 @@ void NewNoteDialog2::acceptedButtonClicked() {
 
   if (result.success) {
     m_newNodeId = result.nodeId;
+    m_newCursorOffset = result.cursorOffset;
     accept();
   } else {
     setInformationText(result.errorMessage, ScrollDialog::InformationLevel::Error);
@@ -199,3 +200,5 @@ void NewNoteDialog2::acceptedButtonClicked() {
 }
 
 NodeIdentifier NewNoteDialog2::getNewNodeId() const { return m_newNodeId; }
+
+int NewNoteDialog2::getNewCursorOffset() const { return m_newCursorOffset; }
