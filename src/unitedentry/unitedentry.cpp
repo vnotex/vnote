@@ -274,6 +274,8 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
   case Qt::Key_Return:
     if (m_lastEntry) {
       m_lastEntry->handleAction(IUnitedEntry::Action::Activate);
+    } else if (m_entryListWidget && m_entryListWidget->isVisible()) {
+      handleEntryListItemActivated(m_entryListWidget->currentItem());
     }
     return true;
 
@@ -446,6 +448,9 @@ const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget() {
       m_entryListWidget->addTopLevelItem(
           new QTreeWidgetItem({entry->name(), entry->description()}));
     }
+
+    connect(m_entryListWidget.data(), &QTreeWidget::itemActivated, this,
+            [this](QTreeWidgetItem *p_item, int) { handleEntryListItemActivated(p_item); });
   }
 
   return m_entryListWidget;
@@ -473,6 +478,26 @@ bool UnitedEntry::filterEntryListWidgetEntries(const QString &p_name) {
     item->setHidden(false);
   }
   return !items.isEmpty();
+}
+
+void UnitedEntry::handleEntryListItemActivated(QTreeWidgetItem *p_item) {
+  if (!p_item) {
+    return;
+  }
+
+  const auto name = p_item->text(0);
+  if (name.isEmpty()) {
+    return;
+  }
+
+  auto *lineEdit = m_comboBox->lineEdit();
+  lineEdit->setText(name + QLatin1Char(' '));
+  lineEdit->setFocus();
+
+  // setText's textChanged only debounce-starts the timer; call directly for
+  // immediate resolution.
+  m_processTimer->stop();
+  processInput();
 }
 
 void UnitedEntry::handleEntryFinished(IUnitedEntry *p_entry) {

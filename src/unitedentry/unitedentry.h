@@ -8,6 +8,7 @@
 class QAction;
 class QTimer;
 class QTreeWidget;
+class QTreeWidgetItem;
 class QLabel;
 class QComboBox;
 class QKeyEvent;
@@ -66,6 +67,8 @@ private:
   bool filterEntryListWidgetEntries(const QString &p_name);
 
   void handleEntryFinished(IUnitedEntry *p_entry);
+
+  void handleEntryListItemActivated(QTreeWidgetItem *p_item);
 
   void handleEntryItemActivated(IUnitedEntry *p_entry, bool p_quit, bool p_restoreFocus);
 
