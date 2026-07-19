@@ -36,6 +36,14 @@ add_qt_test(test_activitystatsservice
   GUILESS
 )
 
+add_qt_test(test_notificationservice
+  SOURCES
+    test_notificationservice.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
 add_qt_test(test_theme_core
   SOURCES
     test_theme.cpp

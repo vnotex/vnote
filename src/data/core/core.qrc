@@ -87,6 +87,11 @@
         <file>icons/location_list_dock.svg</file>
         <file>icons/console_dock.svg</file>
         <file>icons/task_dock.svg</file>
+        <file>icons/notification.svg</file>
+        <file>icons/info.svg</file>
+        <file>icons/success.svg</file>
+        <file>icons/warning.svg</file>
+        <file>icons/error.svg</file>
         <file>logo/vnote.svg</file>
         <file>logo/vnote.png</file>
         <file>logo/256x256/vnote.png</file>

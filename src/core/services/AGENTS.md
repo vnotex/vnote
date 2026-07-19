@@ -4,6 +4,14 @@ Qt-side service layer wrapping the vxcore C library. Services here are the bridg
 
 For the canonical service catalog, DI rules, and Buffer2/HookManager patterns, see the parent `src/core/AGENTS.md`.
 
+## NotificationService
+
+`NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageDismissed` / `messagesCleared`. All presentation (severity→icon mapping, popup, badge) lives in the widget layer (`NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).
+
+- `NotificationMessage` is a copyable value type carrying `Severity`, `Duration`, and `QVector<NotificationAction>` (each action = label + `std::function<void()>`). It is registered via `Q_DECLARE_METATYPE` + `qRegisterMetaType` in the ctor so `messageAdded` survives a queued (cross-thread) connection if a future producer calls `notify()` off the GUI thread.
+- Current usage is GUI-thread only; the service has no internal locking. If you add an off-thread producer, keep the metatype registration and rely on auto/queued connections rather than adding a mutex.
+- `dismiss()` marks a message dismissed (it stays in the list but is excluded from `activeCount()` and hidden by the popup); `clearAll()` removes all messages. `Duration` is a UI auto-hide hint only, not a retention policy.
+
 ## Threading rules for SyncService
 
 `SyncService` is the Qt-side facade for `vxcore::SyncManager`. It must respect the contract documented in `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract. The Qt-specific obligations are:

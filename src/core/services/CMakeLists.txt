@@ -13,6 +13,7 @@ set(SERVICES_SOURCES
   notebookcoreservice.cpp
   notebookiogate.cpp
   historyservice.cpp
+  notificationservice.cpp
   snippetcoreservice.cpp
   tagcoreservice.cpp
   tagservice.cpp
@@ -69,6 +70,7 @@ set(SERVICES_HEADERS
   notebookcoreservice.h
   notebookiogate.h
   historyservice.h
+  notificationservice.h
   snippetcoreservice.h
   tagcoreservice.h
   tagservice.h

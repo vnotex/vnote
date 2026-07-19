@@ -90,6 +90,8 @@ target_sources(vnote PRIVATE
     notebookexplorer2.cpp notebookexplorer2.h
     notebookexplorer2_sortseam.cpp notebookexplorer2_sortseam.h
     notebookselector2.cpp notebookselector2.h
+    notificationbutton2.cpp notificationbutton2.h
+    notificationpopup2.cpp notificationpopup2.h
     outlinepopup.cpp outlinepopup.h
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h

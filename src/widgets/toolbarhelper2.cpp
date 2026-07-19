@@ -16,6 +16,7 @@
 #include "fullscreentoggleaction.h"
 #include "mainwindow2.h"
 #include "messageboxhelper.h"
+#include "notificationbutton2.h"
 #include "settingswidget.h"
 #include "viewarea2.h"
 #include "widgetsfactory.h"
@@ -260,6 +261,8 @@ QToolBar *ToolBarHelper2::setupSettingsToolBar(QToolBar *p_toolBar) {
 
   setupThemeSwitcherButton(tb);
 
+  setupNotificationButton(tb);
+
   return tb;
 }
 
@@ -428,6 +431,11 @@ void ToolBarHelper2::setupThemeSwitcherButton(QToolBar *p_toolBar) {
     themeService->switchTheme(themeName);
   });
 
+  p_toolBar->addWidget(btn);
+}
+
+void ToolBarHelper2::setupNotificationButton(QToolBar *p_toolBar) {
+  auto *btn = new NotificationButton2(m_services, p_toolBar->iconSize(), p_toolBar);
   p_toolBar->addWidget(btn);
 }
 

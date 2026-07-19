@@ -79,6 +79,8 @@ private:
 
   void setupThemeSwitcherButton(QToolBar *p_toolBar);
 
+  void setupNotificationButton(QToolBar *p_toolBar);
+
   void setupSettingsButton(QToolBar *p_toolBar);
 
   void activateQuickAccess(const SessionConfig::QuickAccessItem &p_item);

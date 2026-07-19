@@ -68,6 +68,25 @@ and persistence live in `DashboardController` (`../controllers/`).
 - `FindAndReplaceWidget2` — in-editor find/replace bar
 - `AttachmentPopup2` — attachment management popup
 - `WordCountPopup2` — word/character count display
+- `NotificationButton2` / `NotificationPopup2` — toolbar notification button + popup (see below)
+
+## Notification System
+
+The in-app notification UI is the **View** layer over `NotificationService` (data/signals only, `src/core/services/notificationservice.{h,cpp}` — Qt-Widgets-free). Producers call `NotificationService::notify(NotificationMessage)`; deciding which subsystems emit is out of scope of the widgets.
+
+- `NotificationButton2` (`QToolButton`) lives on the settings toolbar **immediately after the Theme button** (added by `ToolBarHelper2::setupNotificationButton`, called right after `setupThemeSwitcherButton` in `setupSettingsToolBar` — covers both unified and split toolbar paths). It paints a red badge with `NotificationService::activeCount()`, refreshes its bell icon on `ThemeService::themeChanged`, and auto-shows the popup on `messageAdded`.
+- `NotificationPopup2` (extends `ButtonPopup`) lists messages newest-first with severity icon + title + text + per-message action buttons + Dismiss, and reuses the shared **`TitleBar`** class (same as every dock panel) for its header holding the "Notifications" title and the Clear All action button. Do NOT hand-roll a titlebar — construct `TitleBar(themeService, title, /*hasInfoLabel*/false, TitleBar::Action::None, parent)` and `addActionButton(iconName, text)`; it self-manages theme QSS and icon refresh.
+
+### Lifetime-safety rules (MUST FOLLOW)
+
+`NotificationAction::m_callback` is arbitrary application code. The popup keeps NO copy of it across a rebuild:
+
+- Rows are rebuilt from `service.messages()` on every show and on `messageDismissed` / `messagesCleared` / `themeChanged` (while visible), so a stale row's callback can never fire after `clearAll()`.
+- Action buttons capture only the message id + action index and re-resolve the callback from the **current** service state at click time (a cleared/dismissed message becomes an inert no-op).
+- Because a callback may synchronously destroy the popup (e.g. restart the main window), every post-callback access to `this`/`m_services` is guarded with `QPointer<NotificationPopup2>`.
+
+`Duration` controls only the auto-popup's auto-hide (`Short` ~3s, `Long` ~7s, `Persist` = no timer, owned by the popup's `QTimer`); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed or cleared.
+
 
 ## MVC Rule for Widgets
 

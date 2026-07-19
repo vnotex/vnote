@@ -35,6 +35,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/historyservice.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/notificationservice.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/snippetcoreservice.h>
@@ -329,11 +330,13 @@ int main(int argc, char *argv[]) {
     TagCoreService tagCoreService(context);
     TagService tagService(context, &hookManager);
     SnippetCoreService snippetCoreService(context);
+    NotificationService notificationService;
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
     serviceLocator.registerService<NotebookCoreService>(&notebookService);
     serviceLocator.registerService<HistoryService>(&historyService);
+    serviceLocator.registerService<NotificationService>(&notificationService);
     VNote3MigrationService migrationService(&notebookService, &tagCoreService);
     serviceLocator.registerService<VNote3MigrationService>(&migrationService);
     serviceLocator.registerService<BufferService>(&bufferService);
