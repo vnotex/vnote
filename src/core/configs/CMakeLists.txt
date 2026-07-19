@@ -13,6 +13,7 @@ set(CONFIGS_SOURCES
   ${CMAKE_SOURCE_DIR}/src/core/global.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
   ${CMAKE_SOURCE_DIR}/src/export/exportdata.cpp
   ${CMAKE_SOURCE_DIR}/src/search/searchdata.cpp
 )
