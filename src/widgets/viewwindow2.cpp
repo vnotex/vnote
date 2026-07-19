@@ -631,6 +631,9 @@ bool ViewWindow2::save() {
 
   if (ok) {
     m_lastKnownRevision = m_buffer.getRevision();
+    // An explicit save resolves any dismissed external-change state (sticky
+    // FileChanged ignore or FileMissing token), so future changes re-prompt.
+    m_externalChangeDismissed = false;
     // statusChanged() is emitted by onBufferModifiedChanged() via BufferService signal.
   } else {
     // Save failed — restore dirty state.
@@ -835,14 +838,25 @@ void ViewWindow2::showReadOnlyWarning() {
 }
 
 void ViewWindow2::handleExternalChange(BufferState p_state) {
-  // Dismiss tracking: if user previously clicked Cancel, check if file changed again.
+  // Dismiss tracking: if user previously clicked Cancel, suppress re-prompt.
   if (m_externalChangeDismissed) {
-    QString filePath = m_buffer.resolvedPath();
-    QDateTime currentMtime = QFileInfo(filePath).lastModified();
-    if (currentMtime == m_dismissedMtime) {
-      return; // Same change the user already dismissed.
+    if (m_dismissedState == p_state) {
+      if (p_state == BufferState::FileChanged) {
+        // Sticky ignore: suppress ALL further FileChanged prompts regardless of
+        // mtime, until an explicit reload/save clears the flag. This avoids the
+        // dialog re-appearing on every write to a frequently-changing file.
+        return;
+      }
+      // FileMissing: use the mtime/null-token comparison so a genuine existence
+      // change still re-prompts.
+      QString filePath = m_buffer.resolvedPath();
+      QDateTime currentMtime = QFileInfo(filePath).lastModified();
+      if (currentMtime == m_dismissedMtime) {
+        return; // Same existence state the user already dismissed.
+      }
     }
-    // File changed again since dismiss — re-prompt.
+    // Either the state changed since dismiss (e.g. FileChanged -> FileMissing),
+    // or a FileMissing existence change occurred — re-prompt.
     m_externalChangeDismissed = false;
   }
 
@@ -883,9 +897,10 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
       save();
       m_externalChangeDismissed = false;
     } else {
-      // Cancel
+      // Cancel — sticky ignore all further FileChanged prompts until the user
+      // performs an explicit reload/save. mtime is no longer consulted here.
       m_externalChangeDismissed = true;
-      m_dismissedMtime = QFileInfo(filePath).lastModified();
+      m_dismissedState = BufferState::FileChanged;
     }
   } else if (p_state == BufferState::FileMissing) {
     QMessageBox msgBox(this);
@@ -913,6 +928,7 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
     } else {
       // Cancel — for file-missing, store null QDateTime as dismiss token.
       m_externalChangeDismissed = true;
+      m_dismissedState = BufferState::FileMissing;
       m_dismissedMtime = QDateTime(); // Any future existence change re-prompts.
     }
   }
@@ -1360,6 +1376,9 @@ void ViewWindow2::discardChangesAndRead() {
         return;
       }
       m_lastKnownRevision = m_buffer.getRevision();
+      // An explicit disk reload resolves any dismissed external-change state,
+      // so a later genuine external change re-prompts (mirrors reload()).
+      m_externalChangeDismissed = false;
       // statusChanged() is emitted by onBufferModifiedChanged() via BufferService signal.
       break;
 

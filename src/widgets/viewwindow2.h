@@ -15,6 +15,7 @@
 #include <core/fileopensettings.h>
 #include <core/global.h>
 #include <core/services/buffer2.h>
+#include <core/services/buffercoreservice.h>
 
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
@@ -565,10 +566,17 @@ private:
   bool m_autoReload = false;
 
   // Suppress re-prompt flag — set when user clicks Cancel on external change dialog.
+  // FileChanged: sticky ignore — suppresses all further FileChanged prompts
+  // (mtime-independent) until an explicit reload/save clears it.
+  // FileMissing: paired with m_dismissedMtime as a null dismiss token.
   bool m_externalChangeDismissed = false;
 
-  // File mtime at time of Cancel — acts as dismiss token.
-  // Re-prompt triggers if file's mtime differs from this on next notification.
+  // Which BufferState was dismissed. Guards cross-state transitions: a dismissed
+  // FileChanged must NOT suppress a later FileMissing (and vice versa).
+  BufferState m_dismissedState = BufferState::Normal;
+
+  // Dismiss token for FileMissing only — a null QDateTime stored on Cancel so
+  // any future existence change re-prompts. Not consulted for FileChanged.
   QDateTime m_dismissedMtime;
 
   // Update the attachment action icon based on whether the buffer has attachments.
