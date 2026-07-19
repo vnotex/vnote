@@ -317,15 +317,12 @@ void ToolBarHelper2::setupUnitedEntry(QToolBar *p_toolBar) {
   m_unitedEntryMgr->init();
 
   // Create the UnitedEntry toolbar widget.
-  m_unitedEntry = new UnitedEntry(m_services, m_unitedEntryMgr, tb);
+  m_unitedEntry = new UnitedEntry(m_services, m_unitedEntryMgr, tb->iconSize(), tb);
 
-  // Left spacer.
-  addSpacer(tb);
-
-  // Add the UnitedEntry widget.
+  // Add the UnitedEntry widget right after the file toolbar (Home button).
   tb->addWidget(m_unitedEntry);
 
-  // Right spacer.
+  // Right spacer pushes the following toolbars to the far right.
   addSpacer(tb);
 
   // Create activation action (Ctrl+G,G shortcut).

@@ -15,6 +15,7 @@
 #include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QTimer>
+#include <QToolButton>
 #include <QTreeWidget>
 #include <functional>
 
@@ -37,8 +38,9 @@
 
 using namespace vnotex;
 
-UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QWidget *p_parent)
-    : QWidget(p_parent), m_services(p_services), m_mgr(p_mgr) {
+UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                         const QSize &p_iconSize, QWidget *p_parent)
+    : QWidget(p_parent), m_services(p_services), m_mgr(p_mgr), m_iconSize(p_iconSize) {
   Q_ASSERT(m_mgr);
 
   m_processTimer = new QTimer(this);
@@ -66,6 +68,17 @@ void UnitedEntry::setupUI() {
   auto mainLayout = new QHBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
 
+  m_toggleButton = new QToolButton(this);
+  m_toggleButton->setAutoRaise(true);
+  m_toggleButton->setToolTip(tr("United Entry"));
+  // Match the toolbar's icon size (passed in by the toolbar helper); the
+  // toolbar's setIconSize only propagates to buttons it creates for actions,
+  // not to this nested custom widget.
+  if (m_iconSize.isValid()) {
+    m_toggleButton->setIconSize(m_iconSize);
+  }
+  m_toggleButton->setDefaultAction(getActivateAction());
+
   m_comboBox = WidgetsFactory::createEditableComboBox(this);
   m_comboBox->setInsertPolicy(QComboBox::NoInsert);
   m_comboBox->setCompleter(nullptr);
@@ -82,7 +95,20 @@ void UnitedEntry::setupUI() {
     processInput();
   });
   setFocusProxy(m_comboBox);
+
+  mainLayout->addWidget(m_toggleButton, 0, Qt::AlignVCenter);
   mainLayout->addWidget(m_comboBox);
+
+  // Reserve the combo box's height (plus a small margin, since a focused input
+  // box can grow slightly) on the whole widget so the toolbar height stays
+  // constant when toggling between the icon and the input box. Reserving it on
+  // the container (not the button) keeps the icon vertically centered and
+  // aligned with the other toolbar icons.
+  setMinimumHeight(m_comboBox->sizeHint().height() + 2);
+
+  // Collapsed by default: show only the icon button. A hidden combo box
+  // contributes no width, so the widget shrinks to the icon.
+  m_comboBox->hide();
 
   setupActions();
 
@@ -129,18 +155,23 @@ void UnitedEntry::setupActions() {
 }
 
 QAction *UnitedEntry::getActivateAction() {
+  if (m_activateAction) {
+    return m_activateAction;
+  }
+
   auto *themeService = m_services.get<ThemeService>();
-  const auto fg = themeService->paletteColor("widgets#unitedentry#icon#fg");
+  // Use the theme's master/accent color so the button stands out and invites use.
+  const auto fg = themeService->paletteColor("base#master#bg");
   const auto icon = IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), fg);
 
-  auto act = new QAction(icon, tr("United Entry"), this);
-  connect(act, &QAction::triggered, this, &UnitedEntry::activate);
+  m_activateAction = new QAction(icon, tr("United Entry"), this);
+  connect(m_activateAction, &QAction::triggered, this, &UnitedEntry::activate);
 
   auto *configMgr = m_services.get<ConfigMgr2>();
   const auto shortcut = configMgr->getCoreConfig().getShortcut(CoreConfig::Shortcut::UnitedEntry);
-  WidgetUtils::addActionShortcut(act, shortcut, Qt::ApplicationShortcut);
+  WidgetUtils::addActionShortcut(m_activateAction, shortcut, Qt::ApplicationShortcut);
 
-  return act;
+  return m_activateAction;
 }
 
 void UnitedEntry::activate() {
@@ -154,6 +185,9 @@ void UnitedEntry::activate() {
 
   m_activated = true;
   m_previousFocusWidget = QApplication::focusWidget();
+
+  m_toggleButton->hide();
+  m_comboBox->show();
 
   populateHistoryItems();
   m_processTimer->stop();
@@ -174,6 +208,8 @@ void UnitedEntry::ensureActivated(QWidget *p_previousFocus) {
 
   m_activated = true;
   m_previousFocusWidget = p_previousFocus;
+  m_toggleButton->hide();
+  m_comboBox->show();
   populateHistoryItems();
 }
 
@@ -188,6 +224,8 @@ void UnitedEntry::deactivate() {
 
   m_popup->hide();
   m_comboBox->lineEdit()->clearFocus();
+  m_comboBox->hide();
+  m_toggleButton->show();
 }
 
 bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
@@ -653,6 +691,13 @@ void UnitedEntry::refreshIcons() {
 
   m_menuIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("menu.svg"), fg));
   m_busyIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg));
+
+  if (m_activateAction) {
+    // Master/accent color to keep the button prominent.
+    const auto masterFg = themeService->paletteColor("base#master#bg");
+    m_activateAction->setIcon(
+        IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), masterFg));
+  }
 }
 
 void UnitedEntry::populateHistoryItems() {

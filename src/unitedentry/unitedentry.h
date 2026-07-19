@@ -2,6 +2,7 @@
 #define UNITEDENTRY_H
 
 #include <QSharedPointer>
+#include <QSize>
 #include <QWidget>
 
 class QAction;
@@ -10,6 +11,8 @@ class QTreeWidget;
 class QLabel;
 class QComboBox;
 class QKeyEvent;
+class QToolButton;
+class QHBoxLayout;
 
 namespace vnotex {
 class ServiceLocator;
@@ -22,7 +25,7 @@ class UnitedEntry : public QWidget {
   Q_OBJECT
 public:
   explicit UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
-                       QWidget *p_parent = nullptr);
+                       const QSize &p_iconSize, QWidget *p_parent = nullptr);
 
   ~UnitedEntry();
 
@@ -88,6 +91,12 @@ private:
   UnitedEntryMgr *m_mgr = nullptr;
 
   QComboBox *m_comboBox = nullptr;
+
+  QToolButton *m_toggleButton = nullptr;
+
+  QSize m_iconSize;
+
+  QAction *m_activateAction = nullptr;
 
   EntryPopup *m_popup = nullptr;
 
