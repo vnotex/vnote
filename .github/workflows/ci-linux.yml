@@ -164,6 +164,13 @@ jobs:
           ./VNote*.AppImage --appimage-extract
           # Remove libnss3.so and libnssutil3.so
           rm ./squashfs-root/usr/lib/libnss*.so
+          # Remove the bundled libfontconfig so the host's libfontconfig +
+          # /etc/fonts config is used at runtime. The linuxdeploy Qt plugin
+          # otherwise ships a fontconfig config that only scans system font dirs
+          # (/usr/share/fonts) and drops the XDG user dir (~/.local/share/fonts),
+          # hiding user-installed fonts from QFontDatabase so an interface.qss
+          # font-family fails to resolve unless copied to a system dir (#2712).
+          rm ./squashfs-root/usr/lib/libfontconfig.so*
           # Re-package
           rm VNote*.AppImage
           linuxdeploy-plugin-appimage-x86_64.AppImage --appdir=./squashfs-root
