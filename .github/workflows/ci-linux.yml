@@ -185,20 +185,35 @@ jobs:
           name: VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
 
-      - name: Update Tag
-        if: github.ref == 'refs/heads/master'
-        run: |
-          git tag --force continuous-build ${GITHUB_SHA}
-          git push --force --tags
-
       - name: Update Continuous Build Release
         if: github.ref == 'refs/heads/master'
-        uses: johnwbyrd/update-release@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
-          release: Continuous Build
-          tag: continuous-build
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          # Ensure the release + tag exist (idempotent; all jobs share GITHUB_SHA).
+          gh release create continuous-build \
+            --target "$GITHUB_SHA" \
+            --title "Continuous Build" \
+            --prerelease \
+            --notes "Continuous build from master ($GITHUB_SHA)." || true
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/continuous-build" \
+            -F sha="$GITHUB_SHA" -F force=true || true
+
+          # Copy the built artifact to a stable, non-versioned name.
+          cp "VNote-${VNOTE_VER}-linux-x64.AppImage" "VNote-continuous-linux-x64.AppImage"
+
+          # Prune this job's own asset family (old 4.x versioned + previous stable).
+          for asset in $(gh release view continuous-build \
+              --json assets --jq '.assets[].name' \
+              | grep -E 'linux-x64\.AppImage$'); do
+            gh release delete-asset continuous-build "$asset" -y || true
+          done
+
+          # Upload the stable-named asset.
+          gh release upload continuous-build "VNote-continuous-linux-x64.AppImage" --clobber
 
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
