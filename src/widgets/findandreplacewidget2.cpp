@@ -48,7 +48,7 @@ void FindAndReplaceWidget2::setupUI() {
     titleLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->addLayout(titleLayout);
 
-    auto label = new QLabel(tr("Find And Replace"), this);
+    auto label = new QLabel(tr("Find & Replace"), this);
     titleLayout->addWidget(label);
 
     auto *themeService = m_services.get<ThemeService>();
