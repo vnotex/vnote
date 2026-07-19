@@ -208,10 +208,15 @@ void MarkdownEditor::typeLink() {
   QString linkText;
   QString linkUrl;
 
-  // Try get Url or text from selection.
-  auto cursor = m_textEdit->textCursor();
+  // Try get Url or text from selection. Use VTextEdit's selection accessor so
+  // that the Vi visual-mode overridden selection (inclusive of the character
+  // under the cursor) is respected, not the off-by-one visible QTextCursor.
   QRegularExpression urlReg("[\\.\\\\/]");
-  if (cursor.hasSelection()) {
+  const auto &selection = m_textEdit->getSelection();
+  if (selection.isValid()) {
+    auto cursor = m_textEdit->textCursor();
+    cursor.setPosition(selection.start());
+    cursor.setPosition(selection.end(), QTextCursor::KeepAnchor);
     auto text = vte::TextEditUtils::getSelectedText(cursor).trimmed();
     if (!text.isEmpty() && !text.contains(QLatin1Char('\n'))) {
       if (text.contains(urlReg) && QUrl::fromUserInput(text).isValid()) {
