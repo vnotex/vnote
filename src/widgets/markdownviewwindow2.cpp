@@ -26,7 +26,6 @@
 #include <controllers/markdownviewwindowcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
-#include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
@@ -40,7 +39,7 @@
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
 #include <imagehost/iimagehostprovider.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
 #include <vxcore/notebook_json_keys.h>
@@ -1561,11 +1560,10 @@ void MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest(int p_idx, qui
       qWarning() << "no highlight style sheet specified for external code block highlight";
     } else {
       QString content;
-      try {
-        content = FileUtils::readTextFile(file);
-      } catch (Exception &e) {
+      Error err = FileUtils2::readTextFile(file, &content);
+      if (err) {
         qWarning() << "failed to read highlight style sheet for external code block highlight"
-                   << file << e.what();
+                   << file << err.what();
       }
       adapter()->fetchStylesFromStyleSheet(
           content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {

@@ -4,9 +4,9 @@
 #include <QImageReader>
 #include <QUrl>
 
-#include "fileutils.h"
+#include "fileutils2.h"
 #include "pathutils.h"
-#include <core/exception.h>
+#include <QDebug>
 #include <vtextedit/networkutils.h>
 
 using namespace vnotex;
@@ -36,7 +36,11 @@ QString WebUtils::toDataUri(const QUrl &p_url, bool p_keepTitle) {
     // Download it.
     data = vte::NetworkAccess::request(p_url).m_data;
   } else if (finfo.exists()) {
-    data = FileUtils::readFile(filePath);
+    Error err = FileUtils2::readFile(filePath, &data);
+    if (err) {
+      qWarning() << err.what();
+      return uri;
+    }
   }
 
   if (data.isEmpty()) {
@@ -78,24 +82,27 @@ QString WebUtils::copyResource(const QUrl &p_url, const QString &p_folder) {
   QString file = p_url.isLocalFile() ? p_url.toLocalFile() : p_url.toString();
   QFileInfo finfo(file);
   auto fileName =
-      FileUtils::generateFileNameWithSequence(p_folder, finfo.completeBaseName(), finfo.suffix());
+      FileUtils2::generateFileNameWithSequence(p_folder, finfo.completeBaseName(), finfo.suffix());
   QString targetFile = dir.absoluteFilePath(fileName);
 
   bool succ = true;
-  try {
-    if (p_url.scheme() == "https" || p_url.scheme() == "http") {
-      // Download it.
-      auto data = vte::NetworkAccess::request(p_url).m_data;
-      if (!data.isEmpty()) {
-        FileUtils::writeFile(targetFile, data);
+  if (p_url.scheme() == "https" || p_url.scheme() == "http") {
+    // Download it.
+    auto data = vte::NetworkAccess::request(p_url).m_data;
+    if (!data.isEmpty()) {
+      Error err = FileUtils2::writeFile(targetFile, data);
+      if (err) {
+        qWarning() << err.what();
+        succ = false;
       }
-    } else if (finfo.exists()) {
-      // Do a copy.
-      FileUtils::copyFile(file, targetFile, false);
     }
-  } catch (Exception &p_e) {
-    Q_UNUSED(p_e);
-    succ = false;
+  } else if (finfo.exists()) {
+    // Do a copy.
+    Error err = FileUtils2::copyFile(file, targetFile, false);
+    if (err) {
+      qWarning() << err.what();
+      succ = false;
+    }
   }
 
   return succ ? targetFile : QString();

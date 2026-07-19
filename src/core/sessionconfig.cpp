@@ -5,7 +5,6 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
-#include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
 

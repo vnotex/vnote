@@ -8,7 +8,7 @@
 #include <QSettings>
 
 #include "exception.h"
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 
@@ -188,7 +188,12 @@ QString Theme::fetchQtStyleSheet() const {
   if (qtStyleFile.isEmpty()) {
     return "";
   }
-  auto style = FileUtils::readTextFile(qtStyleFile);
+  QString style;
+  Error err = FileUtils2::readTextFile(qtStyleFile, &style);
+  if (err) {
+    qWarning() << err.what();
+    return "";
+  }
   translateStyleByPalette(m_palette, style);
   translateUrlToAbsolute(m_themeFolderPath, style);
   translateFontFamilyList(style);
@@ -323,7 +328,12 @@ QString Theme::paletteColor(const QString &p_name) const {
 }
 
 QJsonObject Theme::readJsonFile(const QString &p_filePath) {
-  auto bytes = FileUtils::readFile(p_filePath);
+  QByteArray bytes;
+  Error err = FileUtils2::readFile(p_filePath, &bytes);
+  if (err) {
+    qWarning() << err.what();
+    return QJsonObject();
+  }
   return QJsonDocument::fromJson(bytes).object();
 }
 

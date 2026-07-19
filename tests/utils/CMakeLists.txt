@@ -54,7 +54,8 @@ add_qt_test(test_clipboard_image
     ${CMAKE_SOURCE_DIR}/src/utils/clipboardutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/imageresolutionutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/global.cpp
   LINKS

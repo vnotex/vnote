@@ -11,7 +11,6 @@
 #include <core/widgetconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
-#include <utils/fileutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 

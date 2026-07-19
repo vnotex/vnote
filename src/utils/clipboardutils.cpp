@@ -9,7 +9,7 @@
 #include <QStringLiteral>
 #include <QUrl>
 
-#include "fileutils.h"
+#include "fileutils2.h"
 #include "pathutils.h"
 #include "utils.h"
 
@@ -234,7 +234,7 @@ std::unique_ptr<QMimeData> ClipboardUtils::linkMimeData(const QString &p_link) {
 void ClipboardUtils::setLocalFileToClipboard(QClipboard *p_clipboard, const QString &p_filePath,
                                              QClipboard::Mode p_mode) {
   // Check if the file exists
-  if (!FileUtils::existsCaseInsensitive(p_filePath)) {
+  if (!FileUtils2::existsCaseInsensitive(p_filePath)) {
     qWarning() << "ClipboardUtils::setLocalFileToClipboard: file does not exist:" << p_filePath;
     return;
   }

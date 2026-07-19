@@ -1,15 +1,14 @@
 #include "exporter.h"
 
 #include <QDir>
+#include <QDebug>
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QWidget>
 
-#include <core/exception.h>
-
 #include "webviewexporter.h"
 #include <utils/contentmediautils.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
 
@@ -19,7 +18,7 @@ Exporter::Exporter(ServiceLocator &p_services, QWidget *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
 static QString makeOutputFolder(const QString &p_outputDir, const QString &p_folderName) {
-  const auto name = FileUtils::generateFileNameWithSequence(p_outputDir, p_folderName);
+  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, p_folderName);
   const auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
   if (!QDir().mkpath(outputFolder)) {
     return QString();
@@ -105,11 +104,10 @@ QString Exporter::doExport(const ExportOption &p_option, const QString &p_output
                            const ExportFileInfo &p_file, const QString &p_content) {
   auto content = p_content;
   if (content.isEmpty() && !p_file.filePath.isEmpty()) {
-    try {
-      content = FileUtils::readTextFile(p_file.filePath);
-    } catch (const Exception &e) {
+    Error err = FileUtils2::readTextFile(p_file.filePath, &content);
+    if (err) {
       emit logRequested(
-          tr("Failed to read file (%1): %2").arg(p_file.filePath, QString::fromUtf8(e.what())));
+          tr("Failed to read file (%1): %2").arg(p_file.filePath, err.what()));
       return QString();
     }
   }
@@ -164,7 +162,7 @@ QString Exporter::doExportMarkdown(const ExportOption &p_option, const QString &
     outputName = QFileInfo(p_filePath).fileName();
   }
 
-  const auto name = FileUtils::generateFileNameWithSequence(p_outputDir, outputName, "");
+  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, outputName, "");
   const auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
   QDir outDir(outputFolder);
   if (!outDir.mkpath(outputFolder)) {
@@ -174,9 +172,17 @@ QString Exporter::doExportMarkdown(const ExportOption &p_option, const QString &
 
   auto destFilePath = outDir.filePath(outputName);
   if (!p_content.isEmpty()) {
-    FileUtils::writeFile(destFilePath, p_content);
+    Error err = FileUtils2::writeFile(destFilePath, p_content);
+    if (err) {
+      emit logRequested(tr("Failed to write file (%1): %2").arg(destFilePath, err.what()));
+      return QString();
+    }
   } else if (!p_filePath.isEmpty()) {
-    FileUtils::copyFile(p_filePath, destFilePath, false);
+    Error err = FileUtils2::copyFile(p_filePath, destFilePath, false);
+    if (err) {
+      emit logRequested(tr("Failed to copy file (%1): %2").arg(p_filePath, err.what()));
+      return QString();
+    }
   } else {
     emit logRequested(tr("Failed to export markdown due to empty content and file path."));
     return QString();
@@ -207,8 +213,12 @@ void Exporter::exportAttachments(const QString &p_attachmentFolderPath,
   }
 
   auto destAttachmentFolderPath = QDir(p_outputFolder).filePath(relativePath);
-  destAttachmentFolderPath = FileUtils::renameIfExistsCaseInsensitive(destAttachmentFolderPath);
-  FileUtils::copyDir(p_attachmentFolderPath, destAttachmentFolderPath, false);
+  destAttachmentFolderPath = FileUtils2::renameIfExistsCaseInsensitive(destAttachmentFolderPath);
+  Error err = FileUtils2::copyDir(p_attachmentFolderPath, destAttachmentFolderPath, false);
+  if (err) {
+    emit logRequested(
+        tr("Failed to copy attachment folder (%1): %2").arg(p_attachmentFolderPath, err.what()));
+  }
 
   Q_UNUSED(p_destFilePath);
 }
@@ -257,7 +267,7 @@ QString Exporter::doExportPdfAllInOne(const ExportOption &p_option,
   }
 
   auto fileName =
-      FileUtils::generateFileNameWithSequence(outputFolder, tr("all_in_one_export"), "pdf");
+      FileUtils2::generateFileNameWithSequence(outputFolder, tr("all_in_one_export"), "pdf");
   auto destFilePath = PathUtils::concatenateFilePath(outputFolder, fileName);
   if (getWebViewExporter(p_option)->htmlToPdfViaWkhtmltopdf(p_option.m_pdfOption, htmlFiles,
                                                             destFilePath)) {
@@ -333,7 +343,7 @@ QString Exporter::doExportCustomAllInOne(const ExportOption &p_option,
 
   auto suffix = p_option.m_customOption ? p_option.m_customOption->m_targetSuffix : QString();
   auto fileName =
-      FileUtils::generateFileNameWithSequence(outputFolder, tr("all_in_one_export"), suffix);
+      FileUtils2::generateFileNameWithSequence(outputFolder, tr("all_in_one_export"), suffix);
   auto destFilePath = PathUtils::concatenateFilePath(outputFolder, fileName);
   bool success = doExportCustom(p_option, inputFiles, resourcePaths, destFilePath);
   if (success) {
@@ -356,7 +366,7 @@ QString Exporter::doExportHtml(const ExportOption &p_option, const QString &p_ou
     if (baseName.isEmpty()) {
       baseName = QFileInfo(p_filePath).completeBaseName();
     }
-    auto fileName = FileUtils::generateFileNameWithSequence(p_outputDir, baseName, suffix);
+    auto fileName = FileUtils2::generateFileNameWithSequence(p_outputDir, baseName, suffix);
     outputFilePath = PathUtils::concatenateFilePath(p_outputDir, fileName);
   }
 
@@ -420,7 +430,7 @@ QString Exporter::doExportPdf(const ExportOption &p_option, const QString &p_out
     if (baseName.isEmpty()) {
       baseName = QFileInfo(p_filePath).completeBaseName();
     }
-    auto fileName = FileUtils::generateFileNameWithSequence(p_outputDir, baseName, "pdf");
+    auto fileName = FileUtils2::generateFileNameWithSequence(p_outputDir, baseName, "pdf");
     outputFilePath = PathUtils::concatenateFilePath(p_outputDir, fileName);
   }
 
@@ -478,7 +488,7 @@ QString Exporter::doExportCustom(const ExportOption &p_option, const QString &p_
     if (baseName.isEmpty()) {
       baseName = QFileInfo(p_filePath).completeBaseName();
     }
-    auto fileName = FileUtils::generateFileNameWithSequence(
+    auto fileName = FileUtils2::generateFileNameWithSequence(
         p_outputDir, baseName, p_option.m_customOption->m_targetSuffix);
     outputFilePath = PathUtils::concatenateFilePath(p_outputDir, fileName);
   }

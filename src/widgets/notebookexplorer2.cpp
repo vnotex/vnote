@@ -45,7 +45,7 @@
 #include <core/widgetconfig.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/notebookpathhelpers.h>
 #include <utils/widgetutils.h>
 #include <views/combinednodeexplorer.h>
@@ -1342,7 +1342,7 @@ void NotebookExplorer2::newQuickNote() {
   QString rootFolder = notebookConfig[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
   QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
 
-  QString newFileName = FileUtils::generateFileNameWithSequence(
+  QString newFileName = FileUtils2::generateFileNameWithSequence(
       parentAbsPath, finfo.completeBaseName(), finfo.suffix());
 
   // Get template content if specified.

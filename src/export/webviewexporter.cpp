@@ -12,12 +12,11 @@
 #include <QWidget>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
-#include <core/exception.h>
 #include <core/htmltemplateutils.h>
 #include <core/markdownwebglobaloptions.h>
 #include <core/markdowneditorconfig.h>
 #include <gui/services/themeservice.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
@@ -38,12 +37,13 @@ QString resolveConfigFile(ConfigMgr2 &p_configMgr, const QString &p_filePath) {
 }
 
 QString readTemplateFile(const QString &p_filePath, const QString &p_logPrefix) {
-  try {
-    return FileUtils::readTextFile(p_filePath);
-  } catch (Exception &p_e) {
-    qWarning() << p_logPrefix << p_filePath << p_e.what();
+  QString text;
+  Error err = FileUtils2::readTextFile(p_filePath, &text);
+  if (err) {
+    qWarning() << p_logPrefix << p_filePath << err.what();
     return QString();
   }
+  return text;
 }
 
 QString errorPage() {
@@ -441,7 +441,11 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl
     HtmlTemplateUtils::fillBodyClassList(htmlContent, p_bodyClassList);
   }
 
-  FileUtils::writeFile(p_file, htmlContent);
+  Error err = FileUtils2::writeFile(p_file, htmlContent);
+  if (err) {
+    qWarning() << "failed to write exported HTML file" << p_file << err.what();
+    return false;
+  }
 
   // Delete empty resource folder.
   QDir dir(resourceFolder);
@@ -753,7 +757,12 @@ bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QStr
 
         Q_ASSERT(!p_outputFile.isEmpty());
 
-        FileUtils::writeFile(p_outputFile, p_result);
+        Error err = FileUtils2::writeFile(p_outputFile, p_result);
+        if (err) {
+          qWarning() << "failed to write exported PDF file" << p_outputFile << err.what();
+          state = ExportState::Failed;
+          return;
+        }
 
         state = ExportState::Finished;
       },
@@ -852,7 +861,11 @@ bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption
   bool ret = startProcess(QDir::toNativeSeparators(p_pdfOption.m_wkhtmltopdfExePath), args);
   if (ret && QFileInfo::exists(tmpFile)) {
     emit logRequested(tr("Copy output file (%1) to (%2).").arg(tmpFile, p_outputFile));
-    FileUtils::copyFile(tmpFile, p_outputFile);
+    Error err = FileUtils2::copyFile(tmpFile, p_outputFile);
+    if (err) {
+      qWarning() << "failed to copy exported PDF file" << tmpFile << err.what();
+      return false;
+    }
   }
 
   return ret;

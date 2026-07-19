@@ -38,7 +38,6 @@
 #include <core/clipboarddata.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
-#include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
@@ -47,7 +46,6 @@
 #include <gui/utils/imageutils.h>
 #include <imagehost/imagehosttypes.h>
 #include <utils/clipboardutils.h>
-#include <utils/fileutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/imageresolutionutils.h>
@@ -354,12 +352,11 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
   if (m_imageHostController && m_imageHostController->getDefaultProvider()) {
     // Save to image host.
     QByteArray ba;
-    try {
-      ba = FileUtils::readFile(p_srcImagePath);
-    } catch (Exception &e) {
+    Error err = FileUtils2::readFile(p_srcImagePath, &ba);
+    if (err) {
       MessageBoxHelper::notify(
           MessageBoxHelper::Warning,
-          tr("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, e.what()), this);
+          tr("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, err.what()), this);
       return false;
     }
     int token = saveToImageHost(ba, destFileName);
@@ -925,7 +922,13 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
       // Insert File Content.
       Q_ASSERT(!localFile.isEmpty() && isTextFile);
       enterInsertModeIfApplicable();
-      m_textEdit->insertPlainText(FileUtils::readTextFile(localFile));
+      QString fileContent;
+      Error err = FileUtils2::readTextFile(localFile, &fileContent);
+      if (err) {
+        qWarning() << err.what();
+        return true;
+      }
+      m_textEdit->insertPlainText(fileContent);
       return true;
     }
 
@@ -1413,7 +1416,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
         } else if (fileInfo.suffix() != suffix) {
           qWarning() << "guess a different suffix from image data" << fileInfo.suffix() << suffix;
         }
-        tmpFile.reset(FileUtils::createTemporaryFile(suffix));
+        tmpFile.reset(FileUtils2::createTemporaryFile(suffix));
         if (tmpFile->open() && tmpFile->write(data) > -1) {
           srcImagePath = tmpFile->fileName();
         }
@@ -1738,12 +1741,12 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
 
       // Copy local GIF to clipboard to ensure no frame loss
       if (imgPath.endsWith(QStringLiteral(".gif"), Qt::CaseInsensitive) &&
-          FileUtils::existsCaseInsensitive(imgPath)) {
+          FileUtils2::existsCaseInsensitive(imgPath)) {
         ClipboardUtils::setLocalFileToClipboard(clipboard, imgPath, QClipboard::Clipboard);
         return;
       }
 
-      auto img = FileUtils::imageFromFile(imgPath);
+      auto img = ImageUtils::imageFromFile(imgPath);
       if (!img.isNull()) {
         ClipboardUtils::setImageToClipboard(clipboard, img);
       }

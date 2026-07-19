@@ -43,7 +43,7 @@ set(SERVICES_SOURCES
   ${CMAKE_SOURCE_DIR}/src/core/markdownwebglobaloptions.cpp
   ${CMAKE_SOURCE_DIR}/src/core/htmltemplateutils.cpp
   ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
-  ${CMAKE_SOURCE_DIR}/src/utils/fileutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/webutils.cpp

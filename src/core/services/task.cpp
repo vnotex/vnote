@@ -14,7 +14,7 @@
 #include <QVersionNumber>
 
 #include <core/exception.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
 #include "shellexecution.h"
@@ -28,7 +28,12 @@ QString Task::s_latestVersion = "0.1.3";
 QSharedPointer<Task> Task::fromFile(const QString &p_file, const QString &p_locale,
                                     TaskService *p_taskService) {
   QSharedPointer<Task> task(new Task(p_locale, p_file, p_taskService, nullptr));
-  const auto obj = FileUtils::readJsonFile(p_file);
+  QJsonObject obj;
+  Error err = FileUtils2::readJsonFile(p_file, &obj);
+  if (err) {
+    qWarning() << err.what();
+    return nullptr;
+  }
   if (fromJson(task.data(), obj)) {
     return task;
   }

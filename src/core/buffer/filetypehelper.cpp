@@ -7,7 +7,7 @@
 // MIGRATION: Buffer removed - use QCoreApplication::translate for translations
 // #include "buffer.h"
 #include <core/coreconfig.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 
 using namespace vnotex;
 
@@ -117,7 +117,7 @@ const FileType &FileTypeHelper::getFileType(const QString &p_filePath) const {
   }
 
   // Treat all unknown text files as plain text files.
-  if (FileUtils::isText(p_filePath)) {
+  if (FileUtils2::isText(p_filePath)) {
     return m_fileTypes[FileType::Text];
   }
 

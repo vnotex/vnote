@@ -6,7 +6,7 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/services/notebookcoreservice.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -180,7 +180,7 @@ void TaskService::loadTasksFromFolder(QVector<QSharedPointer<Task>> &p_tasks,
     return;
   }
 
-  const auto taskFiles = FileUtils::entryListRecursively(p_folder, {"*.json"}, QDir::Files);
+  const auto taskFiles = FileUtils2::entryListRecursively(p_folder, {"*.json"}, QDir::Files);
   for (const auto &file : taskFiles) {
     auto task = loadTask(file);
     if (task) {

@@ -1,9 +1,10 @@
 #include "templateservice.h"
 
 #include <QDir>
+#include <QDebug>
 
 #include <core/configmgr2.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 
 using namespace vnotex;
 
@@ -43,5 +44,11 @@ QString TemplateService::getTemplateContent(const QString &p_name) const {
   if (filePath.isEmpty()) {
     return QString();
   }
-  return FileUtils::readTextFile(filePath);
+  QString text;
+  Error err = FileUtils2::readTextFile(filePath, &text);
+  if (err) {
+    qWarning() << err.what();
+    return QString();
+  }
+  return text;
 }

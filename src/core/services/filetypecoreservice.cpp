@@ -8,7 +8,7 @@
 
 #include <vxcore/vxcore.h>
 
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 
 using namespace vnotex;
 
@@ -100,7 +100,7 @@ FileType FileTypeCoreService::getFileType(const QString &p_filePath) const {
   FileType type = getFileTypeBySuffix(suffix);
 
   // If suffix not found (returns Others), check if it's a text file
-  if (type.m_typeName == "Others" && FileUtils::isText(p_filePath)) {
+  if (type.m_typeName == "Others" && FileUtils2::isText(p_filePath)) {
     return getFileType("Text");
   }
 

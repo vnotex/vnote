@@ -21,7 +21,7 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <utils/clipboardutils.h>
-#include <utils/fileutils.h>
+#include <gui/utils/imageutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
 
@@ -276,7 +276,7 @@ void MarkdownViewer::copyImage() {
     }
 
     if (!imgPath.isEmpty()) {
-      QImage img = FileUtils::imageFromFile(imgPath);
+      QImage img = ImageUtils::imageFromFile(imgPath);
       if (!img.isNull()) {
         m_copyImageTriggered = false;
         ClipboardUtils::setImageToClipboard(clipboard, img, QClipboard::Clipboard);

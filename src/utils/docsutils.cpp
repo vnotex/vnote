@@ -1,8 +1,9 @@
 #include "docsutils.h"
 
 #include <QDir>
+#include <QDebug>
 
-#include "fileutils.h"
+#include "fileutils2.h"
 
 using namespace vnotex;
 
@@ -15,7 +16,13 @@ void DocsUtils::addSearchPath(const QString &p_path) { s_searchPaths.append(p_pa
 QString DocsUtils::getDocText(const QString &p_baseName) {
   auto filePath = getDocFile(p_baseName);
   if (!filePath.isEmpty()) {
-    return FileUtils::readTextFile(filePath);
+    QString text;
+    Error err = FileUtils2::readTextFile(filePath, &text);
+    if (err) {
+      qWarning() << err.what();
+      return "";
+    }
+    return text;
   }
 
   return "";

@@ -4,6 +4,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QWidget>
+#include <QDebug>
 #include <exception>
 
 #include <core/exception.h>
@@ -11,7 +12,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <export/exporter.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 
 #include <vxcore/notebook_json_keys.h>
 
@@ -95,8 +96,17 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
           break;
         }
 
+        QString fileContent;
+        {
+          Error err = FileUtils2::readTextFile(filePath, &fileContent);
+          if (err) {
+            qWarning() << err.what();
+            emit logRequested(tr("Failed to read current note content."));
+            break;
+          }
+        }
         const auto outputFile = exporter->doExportFile(
-            p_option, FileUtils::readTextFile(filePath), filePath, QFileInfo(filePath).fileName(),
+            p_option, fileContent, filePath, QFileInfo(filePath).fileName(),
             QFileInfo(filePath).absolutePath(),
             p_option.m_exportAttachments ? notebookService->getAttachmentsFolder(
                                                p_context.currentNodeId.notebookId, relativePath)

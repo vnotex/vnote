@@ -3,13 +3,12 @@
 #include <QDebug>
 
 #include <core/configmgr2.h>
-#include <core/exception.h>
 #include <core/markdowneditorconfig.h>
 #include <core/markdownwebglobaloptions.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/pdfviewerconfig.h>
 #include <core/webresource.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
@@ -24,12 +23,13 @@ QString HtmlTemplateService::resolveConfigFile(const QString &p_relativePath) co
 }
 
 QString HtmlTemplateService::readFile(const QString &p_filePath) const {
-  try {
-    return FileUtils::readTextFile(p_filePath);
-  } catch (Exception &p_e) {
-    qWarning() << "HtmlTemplateService: failed to read file" << p_filePath << p_e.what();
+  QString text;
+  Error err = FileUtils2::readTextFile(p_filePath, &text);
+  if (err) {
+    qWarning() << "HtmlTemplateService: failed to read file" << p_filePath << err.what();
     return QString();
   }
+  return text;
 }
 
 QString HtmlTemplateService::errorPage() {

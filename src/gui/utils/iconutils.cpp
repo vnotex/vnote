@@ -8,7 +8,7 @@
 #include <QPolygonF>
 #include <QRegularExpression>
 
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 
 using namespace vnotex;
 
@@ -23,7 +23,12 @@ QIcon IconUtils::fetchIcon(const QString &p_iconFile,
     return QIcon(p_iconFile);
   }
 
-  auto content = FileUtils::readTextFile(p_iconFile);
+  QString content;
+  Error err = FileUtils2::readTextFile(p_iconFile, &content);
+  if (err) {
+    qWarning() << err.what();
+    return QIcon();
+  }
   if (content.isEmpty()) {
     return QIcon();
   }

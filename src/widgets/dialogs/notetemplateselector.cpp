@@ -1,15 +1,15 @@
 #include "notetemplateselector.h"
 
 #include <QComboBox>
+#include <QDebug>
 #include <QHBoxLayout>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include <core/exception.h>
 #include <core/servicelocator.h>
 #include <core/services/templateservice.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/widgetutils.h>
 
 #include <widgets/widgetsfactory.h>
@@ -73,13 +73,13 @@ void NoteTemplateSelector::updateCurrentTemplate() {
   }
 
   const auto filePath = m_services.get<TemplateService>()->getTemplateFilePath(templateName);
-  try {
-    m_templateContent = FileUtils::readTextFile(filePath);
-    m_templateTextEdit->setPlainText(m_templateContent);
-  } catch (Exception &p_e) {
-    QString msg = tr("Failed to load template (%1) (%2).").arg(filePath, p_e.what());
+  Error err = FileUtils2::readTextFile(filePath, &m_templateContent);
+  if (err) {
+    QString msg = tr("Failed to load template (%1) (%2).").arg(filePath, err.what());
     qCritical() << msg;
     m_templateTextEdit->setPlainText(msg);
+  } else {
+    m_templateTextEdit->setPlainText(m_templateContent);
   }
   m_templateTextEdit->show();
   emit templateChanged();

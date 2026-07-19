@@ -19,7 +19,8 @@
 
 #include <core/configmgr2.h>
 #include <core/sessionconfig.h>
-#include <utils/fileutils.h>
+#include <gui/utils/imageutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <widgets/lineedit.h>
 #include <widgets/widgetsfactory.h>
@@ -127,7 +128,7 @@ void ImageInsertDialog::checkImagePathInput() {
   if (url.isLocalFile()) {
     const auto localFile = url.toLocalFile();
     if (QFileInfo::exists(localFile)) {
-      setImage(FileUtils::imageFromFile(localFile));
+      setImage(ImageUtils::imageFromFile(localFile));
     } else {
       setImage(QImage());
     }
@@ -220,7 +221,7 @@ void ImageInsertDialog::handleImageDownloaded(const vte::NetworkReply &p_data,
   bool savedToFile = false;
   if (!p_data.m_data.isEmpty()) {
     auto format = QFileInfo(PathUtils::removeUrlParameters(p_url)).suffix();
-    m_tempFile.reset(FileUtils::createTemporaryFile(format));
+    m_tempFile.reset(FileUtils2::createTemporaryFile(format));
     if (m_tempFile->open()) {
       savedToFile = -1 != m_tempFile->write(p_data.m_data);
       m_tempFile->close();

@@ -2,11 +2,12 @@
 
 #include <QFileInfo>
 #include <QJsonObject>
+#include <QDebug>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/snippetcoreservice.h>
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
 #include <vxcore/notebook_json_keys.h>
@@ -112,7 +113,13 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
     QString rootPath = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
     QString fullPath = PathUtils::concatenateFilePath(rootPath, filePath);
-    FileUtils::writeFile(fullPath, evaluatedContent);
+    Error err = FileUtils2::writeFile(fullPath, evaluatedContent);
+    if (err) {
+      qWarning() << err.what();
+      result.success = false;
+      result.errorMessage = tr("Failed to write note content.");
+      return result;
+    }
   }
 
   result.success = true;

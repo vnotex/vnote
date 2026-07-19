@@ -13,7 +13,7 @@
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/textutils.h>
 
-#include <utils/fileutils.h>
+#include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
@@ -22,8 +22,13 @@ void ContentMediaUtils::copyMediaFiles(const QString &p_filePath, INotebookBacke
                                        const QString &p_destFilePath) {
   const auto &fileType = FileTypeHelper::getInst().getFileType(p_filePath);
   if (fileType.isMarkdown()) {
-    copyMarkdownMediaFiles(FileUtils::readTextFile(p_filePath),
-                           PathUtils::parentDirPath(p_filePath), p_backend, p_destFilePath);
+    QString text;
+    Error err = FileUtils2::readTextFile(p_filePath, &text);
+    if (err) {
+      qWarning() << err.what();
+      return;
+    }
+    copyMarkdownMediaFiles(text, PathUtils::parentDirPath(p_filePath), p_backend, p_destFilePath);
   }
 }
 
@@ -66,7 +71,7 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content, const Q
     const auto oldDestFilePath = destDir.filePath(decodedUrlInLink);
     destDir.mkpath(PathUtils::parentDirPath(oldDestFilePath));
     auto destFilePath = p_backend ? p_backend->renameIfExistsCaseInsensitive(oldDestFilePath)
-                                  : FileUtils::renameIfExistsCaseInsensitive(oldDestFilePath);
+                                  : FileUtils2::renameIfExistsCaseInsensitive(oldDestFilePath);
     if (oldDestFilePath != destFilePath) {
       // Rename happens.
       const auto oldFileName = PathUtils::fileName(oldDestFilePath);
@@ -88,7 +93,10 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content, const Q
     if (p_backend) {
       p_backend->copyFile(link.m_path, destFilePath);
     } else {
-      FileUtils::copyFile(link.m_path, destFilePath);
+      Error err = FileUtils2::copyFile(link.m_path, destFilePath);
+      if (err) {
+        qWarning() << err.what();
+      }
     }
   }
 
@@ -96,7 +104,10 @@ void ContentMediaUtils::copyMarkdownMediaFiles(const QString &p_content, const Q
     if (p_backend) {
       p_backend->writeFile(p_destFilePath, content);
     } else {
-      FileUtils::writeFile(p_destFilePath, content);
+      Error err = FileUtils2::writeFile(p_destFilePath, content);
+      if (err) {
+        qWarning() << err.what();
+      }
     }
   }
 }
