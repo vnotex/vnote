@@ -38,12 +38,17 @@ public:
 
   static QString peekVersion(const QJsonObject &p_jboj);
 
+  // Force-overwrite specific config values when upgrading FROM @p_previousVersion,
+  // bypassing the usual "merged user config wins" behavior. Each override is gated
+  // on the version it was introduced in, so it fires only for the relevant upgrade
+  // (never on downgrade, unrelated future upgrades, or forced-debug refreshes where
+  // previous == current). Schedules a persistence write via the parent update chain.
+  void doVersionSpecificOverride(const QString &p_previousVersion);
+
 private:
   void loadMetadata(const QJsonObject &p_jobj);
 
   QJsonObject saveMetaData() const;
-
-  void doVersionSpecificOverride();
 
   QString m_version;
 

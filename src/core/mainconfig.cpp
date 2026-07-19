@@ -64,8 +64,20 @@ QJsonObject MainConfig::toJson() const {
   return obj;
 }
 
-void MainConfig::doVersionSpecificOverride() {
-  // In a new version, we may want to change one value by force.
+void MainConfig::doVersionSpecificOverride(const QString &p_previousVersion) {
+  // In a new version, we may want to change one value by force so that a stale
+  // user override no longer masks a new default. Each override MUST be gated on
+  // the version it was introduced in, so it runs only once for the relevant
+  // upgrade and never destroys config on downgrade or later upgrades.
+  const auto prev = QVersionNumber::fromString(p_previousVersion);
+
+  // 4.2.0 added the Activity sticker to the default dashboard. Clearing the
+  // persisted layout makes DashboardController::load() fall back to
+  // seedDefaultLayout() (which includes the new sticker). This discards the
+  // user's dashboard customization, but only for pre-4.2.0 layouts.
+  if (prev < QVersionNumber(4, 2, 0)) {
+    getWidgetConfig().setDashboardLayout(QJsonObject());
+  }
 }
 
 QString MainConfig::peekVersion(const QJsonObject &p_jboj) {

@@ -340,6 +340,10 @@ void ConfigMgr2::upgradeMainConfigOnVersionChange() {
   copyExtraDir(extraDataRoot + QStringLiteral("/dicts"),
                getConfigDataFolder(ConfigDataType::Dicts));
 
+  // Apply version-gated forced overrides using the still-persisted previous
+  // version, BEFORE stamping the new version below.
+  m_mainConfig->doVersionSpecificOverride(m_mainConfig->getVersion());
+
   m_mainConfig->setVersion(c_version.toString());
   m_mainConfig->update();
 }
