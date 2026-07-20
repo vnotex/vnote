@@ -144,7 +144,12 @@ class MarkdownIt extends VxWorker {
         this.defaultValidateLink = this.mdit.validateLink;
         this.mdit.validateLink = (p_url) => {
             let str = p_url.trim().toLowerCase();
-            return /^file:/.test(str) ? true : this.defaultValidateLink(p_url);
+            // Enable file: schema and SVG data URIs (markdown-it's default only
+            // allows gif/png/jpeg/webp data images, blocking data:image/svg+xml).
+            if (/^file:/.test(str) || /^data:image\/svg\+xml[;,]/.test(str)) {
+                return true;
+            }
+            return this.defaultValidateLink(p_url);
         };
 
         this.mdit.use(window.markdownitTaskLists);
