@@ -1295,26 +1295,31 @@ void NotebookExplorer2::newQuickNote() {
   QString notebookId = m_currentNotebookId;
   QString folderPath;
 
-  if (!scheme.m_folderPath.isEmpty()) {
+  // Expand snippet magic words (e.g. date tokens) in the scheme folder path so a
+  // quick note can target a dynamic, date-based directory such as journal/%yyyy%/%MM%.
+  QString expandedFolder =
+      m_services.get<SnippetCoreService>()->applySnippetBySymbol(scheme.m_folderPath);
+
+  if (!expandedFolder.isEmpty()) {
     // Try to resolve the scheme folder path to a notebook.
     auto &notebookService = *m_services.get<NotebookCoreService>();
-    QJsonObject resolved = notebookService.resolvePathToNotebook(scheme.m_folderPath);
+    QJsonObject resolved = notebookService.resolvePathToNotebook(expandedFolder);
     if (!resolved.isEmpty()) {
       notebookId = resolved[QLatin1String(vxcore::kJsonKeyNotebookId)].toString();
       folderPath = resolved[QStringLiteral("relativePath")].toString();
     } else {
-      // Path not found in any notebook - use scheme.m_folderPath as-is if current notebook is
+      // Path not found in any notebook - use expandedFolder as-is if current notebook is
       // valid.
       if (notebookId.isEmpty()) {
         MessageBoxHelper::notify(
             MessageBoxHelper::Information,
             tr("The quick note folder path (%1) is not within any open notebook.")
-                .arg(scheme.m_folderPath),
+                .arg(expandedFolder),
             window());
         return;
       }
       // Assume relative path within current notebook.
-      folderPath = scheme.m_folderPath;
+      folderPath = expandedFolder;
     }
   } else {
     // Use current explored folder.
@@ -1338,6 +1343,19 @@ void NotebookExplorer2::newQuickNote() {
 
   // Get notebook root path to generate unique filename.
   auto &notebookService = *m_services.get<NotebookCoreService>();
+
+  // Ensure the (possibly newly expanded/date-based) target folder exists before creating
+  // the file: vxcore createFile requires the parent folder node to exist.
+  if (!folderPath.isEmpty()) {
+    QString folderId = notebookService.createFolderPath(notebookId, folderPath);
+    if (folderId.isEmpty()) {
+      MessageBoxHelper::notify(
+          MessageBoxHelper::Information,
+          tr("Failed to create the quick note folder (%1).").arg(folderPath), window());
+      return;
+    }
+  }
+
   QJsonObject notebookConfig = notebookService.getNotebookConfig(notebookId);
   QString rootFolder = notebookConfig[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
   QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
