@@ -27,6 +27,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
   const QCommandLineOption logStderrOpt("log-stderr", QCoreApplication::translate(c_context, "Log to stderr."));
   parser.addOption(logStderrOpt);
 
+  const QCommandLineOption quietOpt("quiet",
+                                    QCoreApplication::translate(c_context, "Suppress non-critical console logs."));
+  parser.addOption(quietOpt);
+
   const QCommandLineOption watchThemesOpt("watch-themes",
                                           QCoreApplication::translate(c_context, "Watch theme folder for changes."));
   parser.addOption(watchThemesOpt);
@@ -74,6 +78,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
 
   if (parser.isSet(logStderrOpt)) {
     m_logToStderr = true;
+  }
+
+  if (parser.isSet(quietOpt)) {
+    m_quiet = true;
   }
 
   if (parser.isSet(watchThemesOpt)) {

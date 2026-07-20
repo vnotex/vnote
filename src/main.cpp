@@ -205,6 +205,12 @@ QByteArray buildChromiumFlags(const QByteArray &p_existing) {
 }
 
 int main(int argc, char *argv[]) {
+  // Install the log message handler at the very beginning so early startup logs
+  // (vxcore context creation, service registration, etc.) are captured into an
+  // in-memory buffer instead of leaking to the console via Qt's default handler.
+  // Logger::configure() below resolves the final state and flushes or drops them.
+  vnotex::Logger::installEarly();
+
   // Set UTF-8 codec for locale
   QTextCodec *codec = QTextCodec::codecForName("UTF8");
   if (codec) {
@@ -264,7 +270,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Route all vxcore logs through Qt's logging system so they reach
-  // VNote's unified log pipeline (installed by Logger::init() later).
+  // VNote's unified log pipeline (installed by Logger::installEarly() above).
   vnotex::installVxCoreLogBridge();
 
   // Install default logging rules before QApplication creation
@@ -287,6 +293,10 @@ int main(int argc, char *argv[]) {
   VxCoreContextHandle context = nullptr;
   VxCoreError err = vxcore_context_create(nullptr, &context);
   if (err != VXCORE_OK || !context) {
+    // Logger is not configured yet at this point (its buffer would be dropped on
+    // this early return), so surface the fatal startup diagnostic to stderr
+    // directly.
+    fprintf(stderr, "Failed to create vxcore context: %s\n", vxcore_error_message(err));
     qCritical() << "Failed to create vxcore context:" << vxcore_error_message(err);
     return -1;
   }
@@ -528,7 +538,9 @@ int main(int argc, char *argv[]) {
     case CommandLineOptions::VersionRequested: {
       auto versionStr =
           QStringLiteral("%1 %2").arg(app.applicationName(), app.applicationVersion());
-      qInfo() << versionStr;
+      // Print to stdout directly. qInfo() would be captured by the buffered log
+      // handler (installEarly) and, on this early-exit path, never flushed.
+      fprintf(stdout, "%s\n", qPrintable(versionStr));
       ret = 0;
       earlyExit = true;
       break;
@@ -558,8 +570,12 @@ int main(int argc, char *argv[]) {
       break;
     }
 
-    // Init logger after app info is set.
-    Logger::init(configMgr.getLogFile(), cmdOptions.m_verbose, cmdOptions.m_logToStderr);
+    // Resolve the final logger state and flush the buffered startup logs
+    // (dropping below-threshold ones, e.g. when --quiet is set). Reached only on
+    // the normal run path; early-exit paths (version/help/second-instance) leave
+    // the buffered startup logs unflushed, which is the desired quiet behavior.
+    Logger::configure(configMgr.getLogFile(), cmdOptions.m_verbose, cmdOptions.m_logToStderr,
+                      cmdOptions.m_quiet);
 
     qInfo() << QStringLiteral("%1 (v%2) started at %3 (%4)")
                    .arg(ConfigMgr2::c_appName, app.applicationVersion(),

@@ -21,6 +21,9 @@ public:
 
   bool m_logToStderr = false;
 
+  // Whether to suppress non-critical console logs.
+  bool m_quiet = false;
+
   // Whether to watch theme folder for changes
   bool m_watchThemes = false;
 };
