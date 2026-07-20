@@ -105,6 +105,25 @@ public:
   // Cleans up auto-save state and closes the buffer in vxcore.
   bool closeBuffer(const QString &p_bufferId);
 
+  // ============ Per-Buffer Encoding (transient) ============
+
+  // Encoding used to decode/encode this buffer's raw bytes. Defaults to
+  // "UTF-8" when no override has been set. Transient — not persisted; a
+  // reopened buffer resets to UTF-8.
+  QString bufferEncoding(const QString &p_bufferId) const;
+
+  // Override the encoding used for this buffer. Pass an empty name to reset
+  // back to the UTF-8 default.
+  void setBufferEncoding(const QString &p_bufferId, const QString &p_codecName);
+
+  // Encode editor text to raw bytes using the buffer's current encoding.
+  // Falls back to UTF-8 when the codec name is empty or unknown.
+  QByteArray encodeContent(const QString &p_bufferId, const QString &p_text) const;
+
+  // Decode raw bytes to text using the buffer's current encoding.
+  // Falls back to UTF-8 when the codec name is empty or unknown.
+  QString decodeContent(const QString &p_bufferId, const QByteArrayViewCompat &p_raw) const;
+
   // ============ Buffer Handle ============
 
   // Get a Buffer2 handle for an already-open buffer by ID.
@@ -323,6 +342,10 @@ private:
     quint64 m_lastSavedRevision = 0;
   };
   QHash<QString, BufferRecord> m_revisions;
+
+  // Transient per-buffer encoding override (codec name). Absence means the
+  // UTF-8 default. Cleared on closeBuffer; never persisted. GUI-thread only.
+  QHash<QString, QString> m_bufferEncodings;
 };
 
 } // namespace vnotex

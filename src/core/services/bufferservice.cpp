@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QLoggingCategory>
+#include <QTextCodec>
 #include <QTimer>
 #include <QtGlobal>
 
@@ -18,6 +19,17 @@ using namespace vnotex;
 
 namespace {
 Q_LOGGING_CATEGORY(perfSave, "vnote.perf.save")
+
+// Resolve a codec by name, falling back to UTF-8 when the name is empty or
+// unknown. Never returns null (QTextCodec::codecForName("UTF-8") always exists).
+QTextCodec *resolveCodec(const QString &p_codecName) {
+  if (!p_codecName.isEmpty()) {
+    if (QTextCodec *codec = QTextCodec::codecForName(p_codecName.toUtf8())) {
+      return codec;
+    }
+  }
+  return QTextCodec::codecForName("UTF-8");
+}
 } // namespace
 
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
@@ -197,11 +209,45 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
   m_virtualBufferIds.remove(p_bufferId);
   m_forcedReadOnlyBuffers.remove(p_bufferId);
   m_revisions.remove(p_bufferId);
+  m_bufferEncodings.remove(p_bufferId);
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
   }
 
   return BufferCoreService::closeBuffer(p_bufferId);
+}
+
+// ============ Per-Buffer Encoding ============
+
+QString BufferService::bufferEncoding(const QString &p_bufferId) const {
+  return m_bufferEncodings.value(p_bufferId, QStringLiteral("UTF-8"));
+}
+
+void BufferService::setBufferEncoding(const QString &p_bufferId, const QString &p_codecName) {
+  if (p_codecName.isEmpty()) {
+    m_bufferEncodings.remove(p_bufferId);
+  } else {
+    m_bufferEncodings.insert(p_bufferId, p_codecName);
+  }
+}
+
+QByteArray BufferService::encodeContent(const QString &p_bufferId, const QString &p_text) const {
+  // Fast path: no override → plain UTF-8, identical to the pre-encoding code
+  // path (no codec-registry lookup, no virtual dispatch).
+  auto it = m_bufferEncodings.constFind(p_bufferId);
+  if (it == m_bufferEncodings.constEnd()) {
+    return p_text.toUtf8();
+  }
+  return resolveCodec(it.value())->fromUnicode(p_text);
+}
+
+QString BufferService::decodeContent(const QString &p_bufferId,
+                                     const QByteArrayViewCompat &p_raw) const {
+  auto it = m_bufferEncodings.constFind(p_bufferId);
+  if (it == m_bufferEncodings.constEnd()) {
+    return QString::fromUtf8(p_raw);
+  }
+  return resolveCodec(it.value())->toUnicode(p_raw.data(), static_cast<int>(p_raw.size()));
 }
 
 // ============ Buffer Handle ============
@@ -621,7 +667,7 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
   switch (m_autoSavePolicy) {
   case AutoSavePolicy::None: {
     // Sync to in-memory vxcore buffer only — no disk write, fast.
-    if (BufferCoreService::setContentRaw(p_bufferId, content.toUtf8())) {
+    if (BufferCoreService::setContentRaw(p_bufferId, encodeContent(p_bufferId, content))) {
       emit bufferContentSynced(p_bufferId);
       emit bufferModifiedChanged(p_bufferId);
     } else {
@@ -640,14 +686,17 @@ void BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     // the editor view can drop any "syncing" hint. The actual disk write
     // completes asynchronously via onSaveFinished.
     emit bufferContentSynced(p_bufferId);
-    m_saveQueue->enqueue(notebookId, p_bufferId, content, capturedRev);
+    // Pass the raw override (empty when none) so the worker's UTF-8 fast path
+    // is used for buffers without an encoding override.
+    m_saveQueue->enqueue(notebookId, p_bufferId, content, capturedRev,
+                         m_bufferEncodings.value(p_bufferId));
     break;
   }
 
   case AutoSavePolicy::BackupFile: {
     // Backup file does NOT contend with libgit2 (writes to .vswp, not the working tree)
     // and so remains inline. Still cheap (in-memory + sibling-file write).
-    if (!BufferCoreService::setContentRaw(p_bufferId, content.toUtf8())) {
+    if (!BufferCoreService::setContentRaw(p_bufferId, encodeContent(p_bufferId, content))) {
       qWarning() << "BufferService: failed to set content for buffer" << p_bufferId;
       break;
     }

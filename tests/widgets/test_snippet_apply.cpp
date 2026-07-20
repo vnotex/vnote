@@ -78,6 +78,8 @@ void ViewWindow2::handleEditorConfigChange() {}
 
 void ViewWindow2::handleThemeChanged() {}
 
+void ViewWindow2::reinterpretWithEncoding(const QString &) {}
+
 void ViewWindow2::handleFindTextChanged(const QString &, FindOptions) {}
 
 void ViewWindow2::handleFindNext(const QStringList &, FindOptions) {}

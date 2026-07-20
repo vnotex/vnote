@@ -165,6 +165,7 @@ void ViewWindow2::clearHighlights() {}
 void ViewWindow2::applyFileOpenSettings(const FileOpenSettings &) {}
 void ViewWindow2::handleEditorConfigChange() {}
 void ViewWindow2::handleThemeChanged() {}
+void ViewWindow2::reinterpretWithEncoding(const QString &) {}
 
 // Protected slots
 void ViewWindow2::handleFindTextChanged(const QString &, FindOptions) {}

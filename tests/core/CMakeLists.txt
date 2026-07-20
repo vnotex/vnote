@@ -210,6 +210,15 @@ add_qt_test(test_buffer_revision
   GUILESS
 )
 
+add_qt_test(test_buffer_encoding
+  SOURCES
+    test_buffer_encoding.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_buffer_read_only
   SOURCES
     test_buffer_read_only.cpp

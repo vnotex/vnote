@@ -73,6 +73,7 @@ target_sources(vnote PRIVATE
     editors/texteditor.cpp editors/texteditor.h
     editors/webviewadapter.cpp editors/webviewadapter.h
     editreaddiscardaction.cpp editreaddiscardaction.h
+    encodingbutton.cpp encodingbutton.h
     findandreplacewidget2.cpp findandreplacewidget2.h
     floatingwidget.cpp floatingwidget.h
     fullscreentoggleaction.cpp fullscreentoggleaction.h

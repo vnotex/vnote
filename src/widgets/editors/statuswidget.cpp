@@ -1,6 +1,7 @@
 #include "statuswidget.h"
 
 #include <QDebug>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QStackedLayout>
 #include <QTimer>
@@ -8,11 +9,17 @@
 using namespace vnotex;
 
 StatusWidget::StatusWidget(QWidget *p_parent) : QWidget(p_parent) {
-  m_mainLayout = new QStackedLayout(this);
+  m_outerLayout = new QHBoxLayout(this);
+  m_outerLayout->setContentsMargins(0, 0, 0, 0);
+  m_outerLayout->setSpacing(0);
+
+  m_stackHost = new QWidget(this);
+  m_mainLayout = new QStackedLayout(m_stackHost);
   m_mainLayout->setContentsMargins(0, 0, 0, 0);
   m_mainLayout->setSpacing(0);
+  m_outerLayout->addWidget(m_stackHost, 1);
 
-  m_messageLabel = new QLabel(this);
+  m_messageLabel = new QLabel(m_stackHost);
   m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   m_mainLayout->addWidget(m_messageLabel);
 
@@ -44,8 +51,18 @@ void StatusWidget::showMessage(const QString &p_msg, int p_milliseconds) {
 void StatusWidget::setEditorStatusWidget(const QSharedPointer<QWidget> &p_editorWidget) {
   Q_ASSERT(!m_editorWidget);
   m_editorWidget = p_editorWidget;
+  m_editorWidget->setParent(m_stackHost);
   m_mainLayout->addWidget(m_editorWidget.data());
   m_mainLayout->setCurrentWidget(m_editorWidget.data());
+}
+
+void StatusWidget::addCornerWidget(QWidget *p_widget) {
+  if (!p_widget) {
+    return;
+  }
+  p_widget->setParent(this);
+  m_outerLayout->addWidget(p_widget, 0);
+  p_widget->show();
 }
 
 void StatusWidget::resizeEvent(QResizeEvent *p_event) {

@@ -79,6 +79,20 @@ public:
   // Set buffer content from raw bytes.
   bool setContentRaw(const QByteArray &p_data);
 
+  // ============ Encoding ============
+
+  // Codec name used to decode/encode this buffer's raw bytes.
+  // Defaults to "UTF-8" when no override is set. Transient (not persisted).
+  QString encoding() const;
+
+  // Override the codec used for this buffer. Pass an empty name to reset to
+  // the UTF-8 default. Returns false if the handle is invalid.
+  bool setEncoding(const QString &p_codecName);
+
+  // Decode raw bytes to text using this buffer's current encoding.
+  // Falls back to UTF-8 when the codec is unknown.
+  QString decode(const QByteArrayViewCompat &p_raw) const;
+
   // ============ Buffer State ============
 
   // Get buffer state.

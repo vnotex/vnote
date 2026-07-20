@@ -4,7 +4,7 @@ Widgets are UI components that receive `ServiceLocator&` via constructor injecti
 
 ## `2` Suffix Convention
 
-Most files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the normal name for these classes. Do NOT introduce a `3` suffix for new code; follow the existing naming. See [root AGENTS.md](../../AGENTS.md#widget-construction-pattern) for the constructor-injection pattern all widgets follow.
+Many existing files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the retained name for those existing classes (renaming them would be needless churn). **New code does NOT get a suffix unless the name genuinely conflicts with an existing type.** Since the migration is finished, a brand-new widget with no `1`/legacy counterpart should use the plain name (e.g. `EncodingButton`, not `EncodingButton2`). Never introduce a `3` suffix. See [root AGENTS.md](../../AGENTS.md#widget-construction-pattern) for the constructor-injection pattern all widgets follow.
 
 ## Widget Families
 

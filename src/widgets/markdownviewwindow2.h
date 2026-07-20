@@ -49,6 +49,8 @@ public:
 
   QString getLatestContent() const Q_DECL_OVERRIDE;
 
+  bool isEncodingSupported() const Q_DECL_OVERRIDE { return true; }
+
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
   int getCursorPosition() const Q_DECL_OVERRIDE;

@@ -3,6 +3,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QSignalSpy>
+#include <QTextCodec>
 #include <QThread>
 #include <QThreadPool>
 #include <QVector>
@@ -86,6 +87,7 @@ private slots:
   void testShutdownDrainsInFlight();
   void testErrorPath();
   void testIsBusyReflectsPendingAndRunning();
+  void testWorkerEncodesWithJobEncoding();
 };
 
 // Helper: wait until the QSignalSpy collects @p_target signals or timeout.
@@ -317,6 +319,46 @@ void TestBufferSaveQueue::testIsBusyReflectsPendingAndRunning() {
   QVERIFY(queue.isBusy("nb1", "bufA") == false);
 
   QVERIFY(queue.shutdown(2000));
+}
+
+// The worker must encode job.content with the per-job encoding captured on the
+// UI thread — GB18030 bytes for a GB18030 job, and a UTF-8 fallback for an
+// empty (default) or unknown codec name. This exercises the buffersavequeue
+// encodeWith() path that the async AutoSave save route depends on.
+void TestBufferSaveQueue::testWorkerEncodesWithJobEncoding() {
+  FakeBufferCoreService fake;
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferSaveQueue queue(fake, gate);
+  QSignalSpy spy(&queue, &vnotex::BufferSaveQueue::saveFinished);
+
+  const QString cjk = QString::fromUtf8("\xE4\xBD\xA0\xE5\xA5\xBD"); // 你好
+  QTextCodec *gb = QTextCodec::codecForName("GB18030");
+  QVERIFY(gb != nullptr);
+
+  // Default (empty) encoding → UTF-8 bytes.
+  queue.enqueue("nb1", "bufDefault", cjk, 1, QString());
+  // Explicit GB18030 → GB18030 bytes.
+  queue.enqueue("nb1", "bufGb", cjk, 1, QStringLiteral("GB18030"));
+  // Unknown codec → UTF-8 fallback.
+  queue.enqueue("nb1", "bufBad", cjk, 1, QStringLiteral("NoSuchCodec-XYZ"));
+
+  QVERIFY(waitForSignalCount(spy, 3));
+  QVERIFY(queue.shutdown(2000));
+
+  QByteArray defaultBytes, gbBytes, badBytes;
+  for (const auto &c : fake.setContentCalls()) {
+    if (c.bufferId == "bufDefault")
+      defaultBytes = c.data;
+    else if (c.bufferId == "bufGb")
+      gbBytes = c.data;
+    else if (c.bufferId == "bufBad")
+      badBytes = c.data;
+  }
+
+  QCOMPARE(defaultBytes, cjk.toUtf8());
+  QCOMPARE(gbBytes, gb->fromUnicode(cjk));
+  QVERIFY(gbBytes != cjk.toUtf8());
+  QCOMPARE(badBytes, cjk.toUtf8());
 }
 
 } // namespace tests

@@ -263,7 +263,7 @@ TextViewWindowController::prepareBufferState(const Buffer2 &p_buffer) {
     const auto &nodeId = p_buffer.nodeId();
     state.syntaxSuffix = QFileInfo(nodeId.relativePath).suffix();
     state.readOnly = p_buffer.isReadOnly();
-    state.content = QString::fromUtf8(p_buffer.peekContentRaw());
+    state.content = p_buffer.decode(p_buffer.peekContentRaw());
     state.modified = p_buffer.isModified();
     state.valid = true;
     state.revision = p_buffer.getRevision();

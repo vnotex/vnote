@@ -946,3 +946,16 @@ add_custom_command(TARGET test_greetingsticker POST_BUILD
     $<TARGET_FILE_DIR:test_greetingsticker>
 )
 
+
+# EncodingButton: reusable pure-view encoding picker (no services / no Buffer2).
+# NOT GUILESS — QToolButton/QMenu need QApplication. Only needs Qt6::Widgets
+# plus Qt6::Core5Compat (QTextCodec::availableCodecs); no VTextEdit runtime dep,
+# so no DLL copy step is required.
+add_qt_test(test_encoding_button
+  SOURCES
+    test_encoding_button.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/encodingbutton.cpp
+  LINKS
+    Qt6::Widgets
+    Qt6::Core5Compat
+)

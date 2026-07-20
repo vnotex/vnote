@@ -308,7 +308,7 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentI
 | Services wrap vxcore C API | Qt-friendly interface; encapsulates C interop |
 | Controllers are QObject, not QWidget | Testable business logic without GUI dependencies |
 | Widgets receive `ServiceLocator&` | Constructor injection; no global state |
-| Files carry a `2` suffix (`MainWindow2`, `Buffer2`, …) | Historical artifact of the now-complete migration off the legacy singleton architecture. The pre-migration counterparts have been removed; the suffix is retained only to avoid a churny rename and is the normal name for these classes. New code follows the existing naming rather than introducing a `3` suffix. |
+| Some files carry a `2` suffix (`MainWindow2`, `Buffer2`, …) | Historical artifact of the now-complete migration off the legacy singleton architecture. The pre-migration counterparts have been removed; the suffix is retained on those existing classes only to avoid a churny rename. The migration is finished, so **new code uses the plain, unsuffixed name unless it genuinely conflicts with an existing type** (e.g. a brand-new `EncodingButton` gets no suffix). Never introduce a `3` suffix. |
 | `Buffer2` is a lightweight copyable handle (like `QModelIndex`) | Returned by `BufferService::openBuffer()`, delegates to `BufferCoreService`; NOT a `QObject`, not heap-allocated |
 | `BufferService` privately inherits `BufferCoreService` | Hook-aware wrapper that fires `vnote.file.*` hooks around core operations |
 | `NodeIdentifier` is a standalone value type | Identifies a node by `notebookId` + `relativePath`; used by `Buffer2`, controllers, and views |

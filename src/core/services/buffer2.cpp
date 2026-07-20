@@ -105,6 +105,30 @@ bool Buffer2::setContentRaw(const QByteArray &p_data) {
   return m_bufferService->setContentRaw(m_bufferId, p_data);
 }
 
+// ============ Encoding ============
+
+QString Buffer2::encoding() const {
+  if (!isValid()) {
+    return QStringLiteral("UTF-8");
+  }
+  return m_bufferService->bufferEncoding(m_bufferId);
+}
+
+bool Buffer2::setEncoding(const QString &p_codecName) {
+  if (!isValid()) {
+    return false;
+  }
+  m_bufferService->setBufferEncoding(m_bufferId, p_codecName);
+  return true;
+}
+
+QString Buffer2::decode(const QByteArrayViewCompat &p_raw) const {
+  if (!isValid()) {
+    return QString::fromUtf8(p_raw);
+  }
+  return m_bufferService->decodeContent(m_bufferId, p_raw);
+}
+
 // ============ Buffer State ============
 
 BufferState Buffer2::getState() const {

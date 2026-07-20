@@ -46,8 +46,10 @@ public:
 
   // Schedule an async save. Returns immediately. Result delivered via
   // queued saveFinished signal.
+  // @p_encoding: codec name captured on the UI thread; the worker encodes
+  //   p_content with it (falling back to UTF-8 when empty/unknown).
   void enqueue(const QString &p_notebookId, const QString &p_bufferId, const QString &p_content,
-               quint64 p_revision);
+               quint64 p_revision, const QString &p_encoding = QString());
 
   // Stop accepting new jobs and wait up to @p_timeoutMs for in-flight workers
   // to drain. Returns true if drained; false on timeout.
@@ -80,6 +82,7 @@ private:
     QString bufferId;
     QString content;
     quint64 revision = 0;
+    QString encoding;
   };
 
   // Composite key "notebookId::bufferId" — pin buffer-level serialisation

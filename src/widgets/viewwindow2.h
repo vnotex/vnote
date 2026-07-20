@@ -32,6 +32,7 @@ namespace vnotex {
 class AttachmentDragDropAreaIndicator2;
 class AttachmentPopup2;
 class EditReadDiscardAction;
+class EncodingButton;
 class FloatingWidget;
 class OutlineProvider;
 class ServiceLocator;
@@ -169,6 +170,12 @@ public:
   // Whether this window has unsaved modifications.
   bool isModified() const;
 
+  // ============ Encoding ============
+
+  // Whether this window offers the manual encoding-override picker.
+  // Default: false (no picker). Text/Markdown windows override to return true.
+  virtual bool isEncodingSupported() const { return false; }
+
   // ============ Lifecycle ============
 
   // Called before the window is closed.
@@ -222,6 +229,12 @@ public slots:
   // Base implementation refreshes toolbar icons.
   // Subclasses override to refresh theme-dependent content (editor themes, web viewer CSS, etc.).
   virtual void handleThemeChanged();
+
+  // Reinterpret the buffer's raw bytes with a different encoding.
+  // Wired to EncodingButton::encodingChangeRequested. Prompts to discard
+  // unsaved edits when the buffer is modified, then updates the buffer's
+  // encoding and re-decodes via syncEditorFromBuffer().
+  void reinterpretWithEncoding(const QString &p_codecName);
 
 signals:
   // Emitted when this window gains keyboard focus.
@@ -555,6 +568,10 @@ private:
 
   // Print action. Managed by QObject.
   QAction *m_printAction = nullptr;
+
+  // Encoding picker button (only created when isEncodingSupported()). Managed
+  // by QObject (parented to the toolbar). Nullptr otherwise.
+  EncodingButton *m_encodingButton = nullptr;
 
   // Attachment drag-drop area indicator. Managed by QObject. Lazily created.
   AttachmentDragDropAreaIndicator2 *m_attachmentDragDropIndicator = nullptr;

@@ -19,6 +19,7 @@ endif()
 # =============================================================================
 
 find_package(Qt6 REQUIRED COMPONENTS Core Test Gui Widgets Concurrent)
+find_package(Qt6 OPTIONAL_COMPONENTS Core5Compat)
 
 # Helper function to create a test executable
 function(add_qt_test NAME)

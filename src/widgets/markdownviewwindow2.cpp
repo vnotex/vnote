@@ -903,7 +903,7 @@ QString MarkdownViewWindow2::getLatestContent() const {
     return m_editor->getText();
   }
   // In read mode, m_editor is null. Fall back to buffer content.
-  return QString::fromUtf8(getBuffer().getContentRaw());
+  return getBuffer().decode(getBuffer().getContentRaw());
 }
 
 void MarkdownViewWindow2::setModified(bool p_modified) {
@@ -1652,7 +1652,7 @@ int MarkdownViewWindow2::getReadLineNumber() const {
 bool MarkdownViewWindow2::isReadMode() const { return m_mode == ViewWindowMode::Read; }
 
 void MarkdownViewWindow2::snapshotInitialImages() {
-  auto content = QString::fromUtf8(getBuffer().getContentRaw());
+  auto content = getBuffer().decode(getBuffer().getContentRaw());
   auto resolved = getBuffer().resolvedPath();
   if (content.isEmpty() || resolved.isEmpty()) {
     return;
@@ -1675,7 +1675,7 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     return;
   }
 
-  const auto content = QString::fromUtf8(buffer.getContentRaw());
+  const auto content = buffer.decode(buffer.getContentRaw());
   const auto resourcePath = QFileInfo(buffer.resolvedPath()).path();
   const int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal;
   const auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(

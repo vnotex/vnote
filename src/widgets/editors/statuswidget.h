@@ -7,6 +7,7 @@
 class QLabel;
 class QTimer;
 class QStackedLayout;
+class QHBoxLayout;
 
 namespace vnotex {
 // A status widget wrapper for ViewWindow.
@@ -21,11 +22,23 @@ public:
 
   void setEditorStatusWidget(const QSharedPointer<QWidget> &p_editorWidget);
 
+  // Add a widget to the right-hand corner of the status bar (e.g. the encoding
+  // picker). The corner sits beside the message/editor stack and stays visible
+  // regardless of which stacked page is shown. Ownership passes to this widget
+  // via reparenting.
+  void addCornerWidget(QWidget *p_widget);
+
 protected:
   void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
   void clearMessage();
+
+  // Outer left-to-right layout: [stack host (stretch)] [corner widgets...].
+  QHBoxLayout *m_outerLayout = nullptr;
+
+  // Hosts the message/editor QStackedLayout.
+  QWidget *m_stackHost = nullptr;
 
   QStackedLayout *m_mainLayout = nullptr;
 

@@ -37,6 +37,7 @@
 #include "attachmentpopup2.h"
 #include "editors/statuswidget.h"
 #include "editreaddiscardaction.h"
+#include "encodingbutton.h"
 #include "findandreplacewidget2.h"
 #include "floatingwidget.h"
 #include "messageboxhelper.h"
@@ -310,6 +311,18 @@ void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) 
   m_statusWidget = p_widget;
   m_bottomLayout->addWidget(p_widget.data());
   p_widget->show();
+
+  // Host the encoding picker in the status bar's right corner for windows that
+  // opt in. Created here (not in the toolbar) so it lives beside the editor's
+  // status indicators. One window = one buffer, so a single creation suffices.
+  if (isEncodingSupported() && !m_encodingButton) {
+    m_encodingButton = new EncodingButton(p_widget.data());
+    m_encodingButton->setCurrentEncoding(m_buffer.isValid() ? m_buffer.encoding()
+                                                            : QStringLiteral("UTF-8"));
+    connect(m_encodingButton, &EncodingButton::encodingChangeRequested, this,
+            &ViewWindow2::reinterpretWithEncoding);
+    p_widget->addCornerWidget(m_encodingButton);
+  }
 }
 
 void ViewWindow2::showMessage(const QString &p_msg) {
@@ -643,6 +656,58 @@ bool ViewWindow2::save() {
   }
 
   return ok;
+}
+
+void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
+  if (!m_buffer.isValid()) {
+    return;
+  }
+
+  // No-op if the encoding is unchanged.
+  if (m_buffer.encoding() == p_codecName) {
+    return;
+  }
+
+  // Reinterpreting re-decodes the on-disk bytes and discards any in-memory
+  // edits. Guard modified buffers behind a confirmation prompt.
+  if (isModified()) {
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Change Encoding"));
+    msgBox.setText(tr("Reinterpreting with a different encoding will discard "
+                      "your unsaved changes.\n\nContinue?"));
+    QAbstractButton *discardBtn =
+        msgBox.addButton(tr("Discard && Reinterpret"), QMessageBox::DestructiveRole);
+    msgBox.addButton(QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    msgBox.exec();
+    if (msgBox.clickedButton() != discardBtn) {
+      // Cancelled — restore the button label to the still-current encoding.
+      if (m_encodingButton) {
+        m_encodingButton->setCurrentEncoding(m_buffer.encoding());
+      }
+      return;
+    }
+    // Drop the local dirty flag so syncEditorFromBuffer re-decodes cleanly.
+    m_editorDirty = false;
+    setModified(false);
+  }
+
+  m_buffer.setEncoding(p_codecName);
+
+  // Re-decode the ORIGINAL on-disk bytes with the new codec. Reload first so
+  // any in-memory edits (which the prompt above told the user we would
+  // discard, and which under None/BackupFile were already encoded into the
+  // vxcore buffer) are dropped in favour of the file's true content. Skip for
+  // unbound/untitled buffers that have no disk path.
+  if (!m_buffer.resolvedPath().isEmpty()) {
+    m_buffer.reload();
+  }
+  syncEditorFromBuffer();
+  m_lastKnownRevision = m_buffer.getRevision();
+
+  if (m_encodingButton) {
+    m_encodingButton->setCurrentEncoding(m_buffer.encoding());
+  }
 }
 
 void ViewWindow2::onFocusGained() {

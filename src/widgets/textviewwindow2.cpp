@@ -159,7 +159,7 @@ QString TextViewWindow2::getLatestContent() const {
   if (m_editor) {
     return m_editor->getText();
   }
-  return QString::fromUtf8(getBuffer().getContentRaw());
+  return getBuffer().decode(getBuffer().getContentRaw());
 }
 
 void TextViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_modified); }

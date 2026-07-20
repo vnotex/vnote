@@ -20,6 +20,7 @@
 
 #include <QLoggingCategory>
 #include <QMutexLocker>
+#include <QTextCodec>
 #include <QThread>
 #include <QThreadPool>
 
@@ -30,6 +31,18 @@ using namespace vnotex;
 
 namespace {
 Q_LOGGING_CATEGORY(bufferSaveQueueLog, "vnote.buffer.savequeue")
+
+// Encode text with the named codec, falling back to UTF-8 when the name is
+// empty or unknown. Mirrors BufferService::encodeContent so the async save
+// path and the inline sync paths stay byte-symmetric.
+QByteArray encodeWith(const QString &p_encoding, const QString &p_text) {
+  if (!p_encoding.isEmpty()) {
+    if (QTextCodec *codec = QTextCodec::codecForName(p_encoding.toUtf8())) {
+      return codec->fromUnicode(p_text);
+    }
+  }
+  return p_text.toUtf8();
+}
 } // namespace
 
 BufferSaveQueue::BufferSaveQueue(IBufferCoreService &p_coreService, NotebookIoGate &p_gate,
@@ -43,7 +56,8 @@ QString BufferSaveQueue::compositeKey(const QString &p_notebookId, const QString
 }
 
 void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_bufferId,
-                              const QString &p_content, quint64 p_revision) {
+                              const QString &p_content, quint64 p_revision,
+                              const QString &p_encoding) {
   // Guard: refuse to write to a read-only notebook's buffer (T16).
   // Checked BEFORE any mutex acquisition, queue insertion, or worker dispatch
   // so the disk file is NEVER touched. Notebook RO state is immutable for
@@ -84,6 +98,7 @@ void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_buff
     job.bufferId = p_bufferId;
     job.content = p_content;
     job.revision = p_revision;
+    job.encoding = p_encoding;
     m_pending.insert(key, job);
 
     if (!m_running.value(key, false)) {
@@ -132,7 +147,7 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       // Acquire gate OUTSIDE m_mutex. Worker thread only.
       NotebookIoGate::ScopedLock lock(m_gate, job.notebookId);
 
-      const QByteArray bytes = job.content.toUtf8();
+      const QByteArray bytes = encodeWith(job.encoding, job.content);
       if (!m_coreService.setContentRaw(job.bufferId, bytes)) {
         errMsg = QStringLiteral("setContentRaw failed");
       } else if (!m_coreService.saveBuffer(job.bufferId)) {
