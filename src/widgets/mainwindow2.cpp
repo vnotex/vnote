@@ -20,6 +20,8 @@
 #include <QWindow>
 #include <QWindowStateChangeEvent>
 
+#include <QHotkey>
+
 #include <QWKWidgets/widgetwindowagent.h>
 
 #ifdef Q_OS_WIN
@@ -1132,6 +1134,26 @@ void MainWindow2::showMainWindow() {
 void MainWindow2::setupSystemTray() {
   m_trayIcon = SystemTrayHelper::setupSystemTray(this, m_serviceLocator.get<ConfigMgr2>());
   m_trayIcon->show();
+
+  setupGlobalHotkey();
+}
+
+void MainWindow2::setupGlobalHotkey() {
+  const auto &coreConfig = m_serviceLocator.get<ConfigMgr2>()->getCoreConfig();
+  const auto keySeq = QKeySequence(coreConfig.getShortcut(CoreConfig::Global_WakeUp));
+  if (keySeq.isEmpty()) {
+    return;
+  }
+
+  // Register a global (system-wide) hotkey to wake up / show the main window.
+  // Owned by this MainWindow2 (auto-unregistered on destruction).
+  auto hotkey = new QHotkey(keySeq, true, this);
+  if (!hotkey->isRegistered()) {
+    qWarning() << "failed to register global wake-up hotkey" << keySeq.toString();
+    return;
+  }
+
+  connect(hotkey, &QHotkey::activated, this, [this]() { showMainWindow(); });
 }
 
 void MainWindow2::quitApp() {

@@ -166,6 +166,10 @@ private:
   void doOpenFiles(const QStringList &p_paths);
   void setupSystemTray();
 
+  // Register the global (system-wide) wake-up hotkey (Global_WakeUp) to show the
+  // main window. No-op if the configured shortcut is empty or registration fails.
+  void setupGlobalHotkey();
+
   // Restore only window geometry and dock state (safe to call before event loop).
   void restoreWindowGeometry();
 
