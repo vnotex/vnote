@@ -42,6 +42,20 @@ class Graphviz extends GraphRenderer {
         });
     }
 
+    // viz.js corrupts its underlying WASM instance once a render throws, so any
+    // later render reads garbage from the poisoned heap (bogus "syntax error"
+    // messages). Discard the poisoned instance and build a fresh one.
+    recreateViz() {
+        if (this.useWeb) {
+            try {
+                this.viz = new Viz();
+            } catch (err) {
+                console.error('failed to recreate Viz instance', err);
+                this.viz = null;
+            }
+        }
+    }
+
     // Interface 1.
     render(p_node, p_classList, p_format) {
         this.format = p_format;
@@ -92,14 +106,21 @@ class Graphviz extends GraphRenderer {
         if (this.format === 'svg') {
             this.viz.renderSVGElement(p_node.textContent)
                 .then(func(this, p_node))
-                .catch(function(p_err) {
+                .catch((p_err) => {
                     console.error('failed to render Graphviz', p_err);
+                    // viz.js leaves its WASM instance in a corrupted state after
+                    // a failed render; recreate it so a single bad graph does not
+                    // poison every subsequent render.
+                    this.recreateViz();
+                    this.finishRenderingOne();
                 });
         } else {
             this.viz.renderImageElement(p_node.textContent)
                 .then(func(this, p_node))
-                .catch(function(p_err) {
+                .catch((p_err) => {
                     console.error('failed to render Graphviz', p_err);
+                    this.recreateViz();
+                    this.finishRenderingOne();
                 });
 
         }
@@ -160,8 +181,10 @@ class Graphviz extends GraphRenderer {
             }
             this.viz.renderSVGElement(p_text)
                 .then(p_callback)
-                .catch(function(err) {
+                .catch((err) => {
                     console.error('failed to render Graphviz', err);
+                    // Recreate the poisoned WASM instance so later previews work.
+                    this.recreateViz();
                     p_callback(null);
                 });
         };

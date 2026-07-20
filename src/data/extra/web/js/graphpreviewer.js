@@ -80,6 +80,11 @@ class GraphPreviewer {
                 let id = p_id;
                 let timeStamp = p_timeStamp;
                 return function(p_svgNode) {
+                    if (!p_svgNode) {
+                        console.warn('failed to preview graph', id, timeStamp);
+                        previewer.setGraphPreviewData(id, timeStamp);
+                        return;
+                    }
                     previewer.setGraphPreviewData(id, timeStamp, 'svg', p_svgNode.outerHTML, false, true);
                 };
             };
