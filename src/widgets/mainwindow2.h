@@ -9,6 +9,8 @@
 #include <widgets/dockwidgethelper.h>
 
 class QCloseEvent;
+class QDragEnterEvent;
+class QDropEvent;
 class QDockWidget;
 class QToolBar;
 class QWebEngineView;
@@ -114,6 +116,9 @@ protected:
   void closeEvent(QCloseEvent *p_event) override;
 
   void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
+
+  void dragEnterEvent(QDragEnterEvent *p_event) override;
+  void dropEvent(QDropEvent *p_event) override;
 
 private:
   // Setup basic window properties (title, size, central widget).

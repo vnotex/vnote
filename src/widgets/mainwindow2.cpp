@@ -5,16 +5,20 @@
 #include <QCoreApplication>
 #include <QDialog>
 #include <QDockWidget>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QProgressDialog>
 #include <QStyle>
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QWindow>
@@ -82,6 +86,8 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
     setupWindowAgent();
   }
   setupUI();
+
+  setAcceptDrops(true);
 
   // Restore window geometry/state early so the window appears at the right
   // size and position.  View-area layout is deferred to kickOffPostInit()
@@ -1096,6 +1102,45 @@ void MainWindow2::changeEvent(QEvent *p_event) {
   }
 
   QMainWindow::changeEvent(p_event);
+}
+
+void MainWindow2::dragEnterEvent(QDragEnterEvent *p_event) {
+  const auto *mimeData = p_event->mimeData();
+  if (mimeData && mimeData->hasUrls()) {
+    const auto urls = mimeData->urls();
+    for (const auto &url : urls) {
+      if (url.isLocalFile()) {
+        p_event->acceptProposedAction();
+        return;
+      }
+    }
+  }
+
+  p_event->ignore();
+}
+
+void MainWindow2::dropEvent(QDropEvent *p_event) {
+  const auto *mimeData = p_event->mimeData();
+  if (mimeData && mimeData->hasUrls()) {
+    QStringList paths;
+    const auto urls = mimeData->urls();
+    for (const auto &url : urls) {
+      if (url.isLocalFile()) {
+        const auto path = url.toLocalFile();
+        if (!path.isEmpty()) {
+          paths.append(path);
+        }
+      }
+    }
+
+    if (!paths.isEmpty()) {
+      openFiles(paths);
+      p_event->acceptProposedAction();
+      return;
+    }
+  }
+
+  p_event->ignore();
 }
 
 void MainWindow2::showMainWindow() {
