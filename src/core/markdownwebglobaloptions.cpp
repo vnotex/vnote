@@ -27,6 +27,8 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
              .arg(Utils::boolToString(m_indentFirstLineEnabled)) +
          QStringLiteral("codeBlockLineNumberEnabled: %1,\n")
              .arg(Utils::boolToString(m_codeBlockLineNumberEnabled)) +
+         QStringLiteral("codeBlockLineWrapEnabled: %1,\n")
+             .arg(Utils::boolToString(m_codeBlockLineWrapEnabled)) +
          QStringLiteral("sectionNumberEnabled: %1,\n")
              .arg(Utils::boolToString(m_sectionNumberEnabled)) +
          QStringLiteral("transparentBackgroundEnabled: %1,\n")

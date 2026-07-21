@@ -94,6 +94,7 @@ void MarkdownEditorPage::loadInternal() {
   m_indentFirstLineCheckBox->setChecked(markdownConfig.getIndentFirstLineEnabled());
 
   m_codeBlockLineNumberCheckBox->setChecked(markdownConfig.getCodeBlockLineNumberEnabled());
+  m_codeBlockLineWrapCheckBox->setChecked(markdownConfig.getCodeBlockLineWrapEnabled());
 
   m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
@@ -176,6 +177,7 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setIndentFirstLineEnabled(m_indentFirstLineCheckBox->isChecked());
 
   markdownConfig.setCodeBlockLineNumberEnabled(m_codeBlockLineNumberCheckBox->isChecked());
+  markdownConfig.setCodeBlockLineWrapEnabled(m_codeBlockLineWrapCheckBox->isChecked());
 
   markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
@@ -302,6 +304,18 @@ void MarkdownEditorPage::setupReadGroup() {
         m_codeBlockLineNumberCheckBox, m_codeBlockLineNumberCheckBox->toolTip(), this));
     addSearchItem(label, m_codeBlockLineNumberCheckBox->toolTip(), m_codeBlockLineNumberCheckBox);
     connect(m_codeBlockLineNumberCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Code block line wrap"));
+    m_codeBlockLineWrapCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_codeBlockLineWrapCheckBox->setToolTip(tr("Wrap long lines in code blocks in read mode."));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_codeBlockLineWrapCheckBox, m_codeBlockLineWrapCheckBox->toolTip(), this));
+    addSearchItem(label, m_codeBlockLineWrapCheckBox->toolTip(), m_codeBlockLineWrapCheckBox);
+    connect(m_codeBlockLineWrapCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 }

@@ -61,6 +61,8 @@ private:
 
   QCheckBox *m_codeBlockLineNumberCheckBox = nullptr;
 
+  QCheckBox *m_codeBlockLineWrapCheckBox = nullptr;
+
   QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
 
   QComboBox *m_sectionNumberComboBox = nullptr;

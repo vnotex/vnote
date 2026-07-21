@@ -38,6 +38,8 @@ struct MarkdownWebGlobalOptions {
 
   bool m_codeBlockLineNumberEnabled = true;
 
+  bool m_codeBlockLineWrapEnabled = false;
+
   // Force to use transparent background.
   bool m_transparentBackgroundEnabled = false;
 

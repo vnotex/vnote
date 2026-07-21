@@ -58,6 +58,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_linkifyEnabled = READBOOL(QStringLiteral("linkify"));
   m_indentFirstLineEnabled = READBOOL(QStringLiteral("indentFirstLine"));
   m_codeBlockLineNumberEnabled = READBOOL(QStringLiteral("codeBlockLineNumber"));
+  m_codeBlockLineWrapEnabled = READBOOL(QStringLiteral("codeBlockLineWrap"));
 
   m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
   m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
@@ -107,6 +108,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("linkify")] = m_linkifyEnabled;
   obj[QStringLiteral("indentFirstLine")] = m_indentFirstLineEnabled;
   obj[QStringLiteral("codeBlockLineNumber")] = m_codeBlockLineNumberEnabled;
+  obj[QStringLiteral("codeBlockLineWrap")] = m_codeBlockLineWrapEnabled;
   obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
   obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
@@ -280,6 +282,14 @@ bool MarkdownEditorConfig::getCodeBlockLineNumberEnabled() const {
 
 void MarkdownEditorConfig::setCodeBlockLineNumberEnabled(bool p_enabled) {
   updateConfig(m_codeBlockLineNumberEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getCodeBlockLineWrapEnabled() const {
+  return m_codeBlockLineWrapEnabled;
+}
+
+void MarkdownEditorConfig::setCodeBlockLineWrapEnabled(bool p_enabled) {
+  updateConfig(m_codeBlockLineWrapEnabled, p_enabled, this);
 }
 
 QString MarkdownEditorConfig::sectionNumberModeToString(SectionNumberMode p_mode) const {

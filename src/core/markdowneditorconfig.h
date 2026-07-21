@@ -111,6 +111,9 @@ public:
   bool getCodeBlockLineNumberEnabled() const;
   void setCodeBlockLineNumberEnabled(bool p_enabled);
 
+  bool getCodeBlockLineWrapEnabled() const;
+  void setCodeBlockLineWrapEnabled(bool p_enabled);
+
   bool getSmartTableEnabled() const;
   void setSmartTableEnabled(bool p_enabled);
 
@@ -228,6 +231,9 @@ private:
 
   // Whether enable code block line number in read mode.
   bool m_codeBlockLineNumberEnabled = true;
+
+  // Whether wrap long lines in code blocks in read mode.
+  bool m_codeBlockLineWrapEnabled = false;
 
   bool m_smartTableEnabled = true;
 

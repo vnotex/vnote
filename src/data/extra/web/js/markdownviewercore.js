@@ -61,6 +61,8 @@ class MarkdownViewerCore extends VXCore {
                                        window.vxOptions.indentFirstLineEnabled);
         this.setContentContainerOption('line-numbers',
                                        window.vxOptions.codeBlockLineNumberEnabled);
+        this.setContentContainerOption('vx-code-wrap',
+                                       window.vxOptions.codeBlockLineWrapEnabled);
         this.setBodyOption('vx-transparent-background',
                            window.vxOptions.transparentBackgroundEnabled);
         this.setContentContainerOption('vx-nonscrollable',

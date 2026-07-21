@@ -243,6 +243,7 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
     opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
     opts.m_indentFirstLineEnabled = p_config.getIndentFirstLineEnabled();
     opts.m_codeBlockLineNumberEnabled = p_config.getCodeBlockLineNumberEnabled();
+    opts.m_codeBlockLineWrapEnabled = p_config.getCodeBlockLineWrapEnabled();
     m_markdownViewerTemplate.m_template.replace(
         QStringLiteral("/* VX_GLOBAL_OPTIONS_PLACEHOLDER */"), opts.toJavascriptObject());
   }

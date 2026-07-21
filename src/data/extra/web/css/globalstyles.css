@@ -181,3 +181,13 @@ body.vx-transparent-background {
 #vx-content.vx-nonscrollable a {
     word-break: break-all !important;
 }
+
+#vx-content.vx-code-wrap pre {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+}
+
+#vx-content.vx-code-wrap pre code {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+}
