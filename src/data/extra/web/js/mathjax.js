@@ -115,6 +115,16 @@ class MathJaxRenderer extends VxWorker {
 
             let mathNode = null;
             try {
+                // Reset MathJax's persistent label/equation-number state before
+                // each preview render. Without this, an equation containing a
+                // \label registers that label permanently (tags: 'ams'), so any
+                // subsequent render of a labeled equation (a duplicate label, or
+                // just a re-render on keystroke) triggers a "Label ... multiply
+                // defined" error. MathJax renders that error as an <merror> box
+                // whose background <rect> has no fill attribute; when rasterized
+                // standalone (SvgToImage), the stylesheet is absent and the rect
+                // defaults to black, showing a solid black square in the editor.
+                MathJax.texReset();
                 mathNode = MathJax.tex2svg(check.text, options);
             } catch (err) {
                 console.error('failed to render MathJax', err);
