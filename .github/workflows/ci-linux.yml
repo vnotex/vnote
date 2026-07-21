@@ -170,7 +170,10 @@ jobs:
           # (/usr/share/fonts) and drops the XDG user dir (~/.local/share/fonts),
           # hiding user-installed fonts from QFontDatabase so an interface.qss
           # font-family fails to resolve unless copied to a system dir (#2712).
-          rm ./squashfs-root/usr/lib/libfontconfig.so*
+          # Use find -delete so the step is robust to the library living under a
+          # different dir (e.g. usr/lib/x86_64-linux-gnu) or not being bundled at
+          # all; a plain globbed rm aborts the -e shell when nothing matches.
+          find ./squashfs-root -name 'libfontconfig.so*' -delete
           # Re-package
           rm VNote*.AppImage
           linuxdeploy-plugin-appimage-x86_64.AppImage --appdir=./squashfs-root
