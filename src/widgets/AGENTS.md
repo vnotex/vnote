@@ -4,7 +4,7 @@ Widgets are UI components that receive `ServiceLocator&` via constructor injecti
 
 ## `2` Suffix Convention
 
-New architecture files use a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`) to coexist with legacy code during migration. Legacy files without the suffix remain for reference but should not be used as templates for new code. See [Migration Guide](../../AGENTS.md#migration-guide) for full details.
+Most files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the normal name for these classes. Do NOT introduce a `3` suffix for new code; follow the existing naming. See [root AGENTS.md](../../AGENTS.md#widget-construction-pattern) for the constructor-injection pattern all widgets follow.
 
 ## Widget Families
 
@@ -32,6 +32,7 @@ The split-pane editor area, designed around vxcore workspaces:
 - `TextViewWindow2` — plain text editor
 - `PdfViewWindow2` — PDF viewer
 - `MindMapViewWindow2` — mind map viewer
+- `WidgetViewWindow2` — generic widget-hosting window
 
 ### Toolbar
 

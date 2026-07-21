@@ -8,8 +8,7 @@
 |-------|---------|
 | `PathUtils` | Path manipulation, normalization, and resolution |
 | `HtmlUtils` | HTML processing and sanitization |
-| `FileUtils2` | File operations (new architecture) |
-| `FileUtils` | File operations (legacy) |
+| `FileUtils2` | File operations |
 | `StringUtils` | String manipulation utilities |
 | `ProcessUtils` | External process execution |
 | `ClipboardUtils` | Clipboard read/write operations |

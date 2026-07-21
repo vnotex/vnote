@@ -308,7 +308,7 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentI
 | Services wrap vxcore C API | Qt-friendly interface; encapsulates C interop |
 | Controllers are QObject, not QWidget | Testable business logic without GUI dependencies |
 | Widgets receive `ServiceLocator&` | Constructor injection; no global state |
-| New files use `2` suffix | Coexist with legacy code during migration |
+| Files carry a `2` suffix (`MainWindow2`, `Buffer2`, …) | Historical artifact of the now-complete migration off the legacy singleton architecture. The pre-migration counterparts have been removed; the suffix is retained only to avoid a churny rename and is the normal name for these classes. New code follows the existing naming rather than introducing a `3` suffix. |
 | `Buffer2` is a lightweight copyable handle (like `QModelIndex`) | Returned by `BufferService::openBuffer()`, delegates to `BufferCoreService`; NOT a `QObject`, not heap-allocated |
 | `BufferService` privately inherits `BufferCoreService` | Hook-aware wrapper that fires `vnote.file.*` hooks around core operations |
 | `NodeIdentifier` is a standalone value type | Identifies a node by `notebookId` + `relativePath`; used by `Buffer2`, controllers, and views |
@@ -327,9 +327,9 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentI
 | `ViewWindowFactory` maps file types to creators | Registry pattern; plugins register creators for new file types |
 | Splitter orientation follows Vim convention | Left/Right split → `Qt::Horizontal`, Up/Down split → `Qt::Vertical` |
 | Session layout stored as JSON in `SessionConfig` | Recursive splitter tree + workspace IDs for full layout persistence |
-| Framework only — no concrete ViewWindow implementations | `MarkdownViewWindow2`, etc. will be added separately |
+| Concrete ViewWindows live alongside the framework | `MarkdownViewWindow2`, `TextViewWindow2`, `PdfViewWindow2`, `MindMapViewWindow2`, and `WidgetViewWindow2` are registered with `ViewWindowFactory` per file type |
 
-### Directory Structure (New Architecture)
+### Directory Structure
 
 ```
 src/
@@ -381,23 +381,27 @@ src/
 │   ├── recyclebincontroller.h/.cpp
 │   └── viewareacontroller.h/.cpp      # View area orchestrator (open/close/split/move)
 ├── widgets/                # UI widgets (views receiving ServiceLocator&)
-│   ├── mainwindow.h        # Legacy main window
-│   ├── mainwindow2.h/.cpp  # New main window shell
+│   ├── mainwindow2.h/.cpp  # Main window shell
 │   ├── notebookexplorer2.h/.cpp
 │   ├── notebookselector2.h/.cpp
 │   ├── toolbarhelper2.h/.cpp
 │   ├── viewwindow2.h/.cpp  # Abstract base for file viewer windows
+│   ├── markdownviewwindow2.h/.cpp  # Markdown editor/preview window
+│   ├── textviewwindow2.h/.cpp      # Plain text editor window
+│   ├── pdfviewwindow2.h/.cpp       # PDF viewer window
+│   ├── mindmapviewwindow2.h/.cpp   # Mind map viewer window
+│   ├── widgetviewwindow2.h/.cpp    # Generic widget-hosting window
 │   ├── viewsplit2.h/.cpp   # QTabWidget-based split pane (one vxcore workspace)
 │   ├── viewarea2.h/.cpp    # Splitter tree view (manages ViewSplit2 layout)
-│   └── dialogs/            # Dialog widgets (new architecture)
+│   └── dialogs/            # Dialog widgets
 │       ├── newnotedialog2.h/.cpp
 │       ├── newfolderdialog2.h/.cpp
 │       ├── newnotebookdialog2.h/.cpp
 │       ├── managenotebooksdialog2.h/.cpp
 │       └── importfolderdialog2.h/.cpp
 ├── utils/
-│   └── fileutils2.h/.cpp   # File utilities (new architecture)
-└── ... (legacy code remains for reference)
+│   └── fileutils2.h/.cpp   # File utilities
+└── ...
 ```
 
 ---
@@ -493,8 +497,6 @@ The `Buffer2` / [`BufferService`](src/core/services/bufferservice.h) auto-save p
 Save work and any git-stage / git-commit work on the SAME notebook are serialized by [`NotebookIoGate`](src/core/services/notebookiogate.h), a per-notebook async mutex. `BufferSaveQueue` workers acquire `NotebookIoGate::ScopedLock(notebookId)` for the full duration of their disk write. [`SyncOps::triggerSync`](src/core/services/syncops.cpp) now runs sync as two phases: it holds the gate ONLY around [`vxcore_sync_stage_only`](libs/vxcore/include/vxcore/vxcore.h) (StageAll + CommitIndex, working-tree-touching), then releases it BEFORE calling [`vxcore_sync_network_phase`](libs/vxcore/include/vxcore/vxcore.h) (FetchOrigin + RebaseOntoOrigin + PushOrigin). The result: a sync never reads a half-written file, a save never lands inside someone else's `git add`/commit, AND a queued save on the same notebook resumes the moment the local commit lands, regardless of how long the network round-trip takes.
 
 vxcore's `mark_dirty` → `MaybeEnqueueSync` → `Emit("sync.should_run")` chain remains synchronous on the caller thread BY DESIGN. In steady state it is microseconds, and pushing it onto another thread would buy nothing while costing event-ordering guarantees. **This contract does NOT change vxcore.** The threading discipline is consumer-side only: keep `vxcore_buffer_save` off the UI thread, and the `mark_dirty` tail it triggers stays off the UI thread for free.
-
-The legacy `Buffer` (1-second timer in `src/core/buffer/buffer.cpp`) bypasses vxcore entirely and does not participate in this contract. It is out of scope here and will be retired alongside the rest of the legacy code path.
 
 > **Forbidden Patterns (post-T7):**
 > - Calling `vxcore_buffer_save` directly from the UI thread. Use [`BufferSaveQueue::enqueue`](src/core/services/buffersavequeue.h) instead.
@@ -663,28 +665,16 @@ m_themeMgr = new ThemeMgr(this);  // 'this' takes ownership
 
 ---
 
-## Migration Guide
+## Widget Construction Pattern
 
-### Migrating a Widget to New Architecture
+The migration off the legacy singleton architecture (`VNoteX::getInst()`, `ConfigMgr::getInst()`, the legacy `MainWindow`/`Buffer`) is complete; those types have been removed. All widgets, controllers, models, and views take their dependencies via constructor injection with `ServiceLocator&`. Follow this pattern for new code:
 
-**Before (legacy):**
-```cpp
-// Uses global singletons
-class OldWidget : public QWidget {
-  void doSomething() {
-    auto &config = ConfigMgr::getInst();
-    auto &notebooks = VNoteX::getInst().getNotebookMgr();
-  }
-};
-```
-
-**After (new architecture):**
 ```cpp
 // Receives dependencies via constructor
-class NewWidget : public QWidget {
+class MyWidget : public QWidget {
   Q_OBJECT
 public:
-  explicit NewWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+  explicit MyWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
 private:
   ServiceLocator &m_services;
@@ -696,40 +686,14 @@ private:
 };
 ```
 
-### Migration Checklist
+### Checklist for a new widget
 
-- [ ] Create new file with `2` suffix (e.g., `mywidget2.h`)
-- [ ] Add `ServiceLocator &p_services` to constructor
+- [ ] Add `ServiceLocator &p_services` as the first constructor parameter
 - [ ] Store reference: `ServiceLocator &m_services`
-- [ ] Replace `ConfigMgr::getInst()` → `m_services.get<ConfigCoreService>()`
-- [ ] Replace `VNoteX::getInst().getNotebookMgr()` → `m_services.get<NotebookCoreService>()`
-- [ ] Update parent widget to pass `ServiceLocator&`
-- [ ] Add to CMakeLists.txt
-- [ ] Write unit test with mock services
-
----
-
-## Legacy Architecture (Reference Only)
-
-The following patterns exist in legacy code. **Do NOT use for new code.**
-
-### Legacy Singleton Pattern
-```cpp
-// LEGACY - Do not use in new code
-class VNoteX : public QObject {
-public:
-  static VNoteX &getInst();  // Global singleton
-};
-
-// LEGACY usage
-auto &themeMgr = VNoteX::getInst().getThemeMgr();
-```
-
-### Legacy ConfigMgr
-```cpp
-// LEGACY - Use ConfigCoreService via ServiceLocator instead
-auto &config = ConfigMgr::getInst();
-```
+- [ ] Resolve dependencies via `m_services.get<XxxCoreService>()` — never global state
+- [ ] Have the parent widget pass its `ServiceLocator&` down
+- [ ] Register the file in the relevant `CMakeLists.txt`
+- [ ] Write a unit test with mock services
 
 ---
 
