@@ -320,7 +320,8 @@ bool vnotex::WebViewExporter::doExport(const ExportOption &p_option, const QStri
   case ExportFormat::HTML:
     // TODO: MIME HTML format is not supported yet.
     Q_ASSERT(!p_option.m_htmlOption.m_useMimeHtmlFormat);
-    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl);
+    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl,
+                       p_option.m_transformSvgToPngEnabled);
     break;
 
   case ExportFormat::PDF:
@@ -349,7 +350,8 @@ bool WebViewExporter::isWebViewReady() const {
 bool WebViewExporter::isWebViewFailed() const { return m_webViewStates & WebViewState::Failed; }
 
 bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
-                                   const QString &p_outputFile, const QUrl &p_baseUrl) {
+                                   const QString &p_outputFile, const QUrl &p_baseUrl,
+                                   bool p_rasterizeMathSvg) {
   ExportState state = ExportState::Busy;
 
   connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
@@ -373,6 +375,17 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
 
             state = ExportState::Finished;
           });
+
+  // For custom/docx (intermediate HTML) export, flatten MathJax's inline SVG to PNG first so
+  // downstream tools (e.g. Pandoc without rsvg-convert) can embed the equations. saveContent()
+  // serializes the live DOM, so the rasterized <img> nodes are captured. Direct HTML export
+  // keeps math as vector (p_rasterizeMathSvg == false).
+  if (p_rasterizeMathSvg) {
+    if (!waitForMathSvgRasterization()) {
+      disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
+      return false;
+    }
+  }
 
   m_viewer->adapter()->saveContent();
 
@@ -746,9 +759,7 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl, const QString &p_f
   return altered;
 }
 
-bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile) {
-  ExportState state = ExportState::Busy;
-
+bool WebViewExporter::waitForMathSvgRasterization() {
   bool pdfRenderReady = false;
   QMetaObject::Connection conn =
       connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady, this,
@@ -760,8 +771,8 @@ bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QStr
       "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }");
 
   // Bounded wait: if the render-ready signal never arrives (JS bridge not
-  // ready, an uncaught error in the page, ...), fall through to printToPdf
-  // instead of freezing the export. Worst case the math stays as SVG.
+  // ready, an uncaught error in the page, ...), fall through instead of
+  // freezing the export. Worst case the math stays as SVG.
   const qint64 c_pdfRenderReadyTimeoutMs = 30000;
   QElapsedTimer renderTimer;
   renderTimer.start();
@@ -772,11 +783,20 @@ bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QStr
       return false;
     }
     if (renderTimer.hasExpired(c_pdfRenderReadyTimeoutMs)) {
-      qWarning() << "timed out waiting for PDF math rasterization; proceeding";
+      qWarning() << "timed out waiting for math SVG rasterization; proceeding";
       break;
     }
   }
   disconnect(conn);
+  return true;
+}
+
+bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile) {
+  ExportState state = ExportState::Busy;
+
+  if (!waitForMathSvgRasterization()) {
+    return false;
+  }
 
   m_viewer->page()->printToPdf(
       [&, this](const QByteArray &p_result) {

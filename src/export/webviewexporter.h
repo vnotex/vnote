@@ -50,7 +50,12 @@ private:
   bool isWebViewFailed() const;
 
   bool doExportHtml(const ExportHtmlOption &p_htmlOption, const QString &p_outputFile,
-                    const QUrl &p_baseUrl);
+                    const QUrl &p_baseUrl, bool p_rasterizeMathSvg = false);
+
+  // Trigger MathJax SVG->PNG rasterization in the live page and block (bounded) until the
+  // page reports it is done. Shared by the PDF and custom/docx (intermediate HTML) paths so
+  // Pandoc/printToPdf never sees raw MathJax SVG. Returns false if the export was asked to stop.
+  bool waitForMathSvgRasterization();
 
   bool writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl, const QString &p_headContent,
                      QString p_styleContent, const QString &p_content,
