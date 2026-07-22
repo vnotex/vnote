@@ -19,6 +19,7 @@
 
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
+#include "editors/statusbar.h"
 
 class QHBoxLayout;
 class QVBoxLayout;
@@ -342,6 +343,14 @@ protected:
   // Set the status widget at the bottom. Takes shared ownership.
   void setStatusWidget(const QSharedPointer<StatusWidget> &p_widget);
 
+  // Register the column-based status bar for this window. Call once in a
+  // subclass constructor. An empty def is a no-op (no bar created). A non-empty
+  // def creates a StatusBar and adds it to the bottom layout.
+  void setStatusBarDef(const StatusBarDef &p_def);
+
+  // Access the column-based status bar (nullptr if none registered).
+  StatusBar *statusBar() const { return m_statusBar; }
+
   // Show a transient message in the status widget (or fallback).
   void showMessage(const QString &p_msg);
 
@@ -547,6 +556,10 @@ private:
 
   // Shared ownership — StatusWidget may be reparented to global status bar.
   QSharedPointer<StatusWidget> m_statusWidget;
+
+  // Column-based status bar (phase 1 infra). Managed by QObject. nullptr until
+  // a subclass registers a non-empty StatusBarDef via setStatusBarDef.
+  StatusBar *m_statusBar = nullptr;
 
   // Find and replace widget. Managed by QObject.
   FindAndReplaceWidget2 *m_findAndReplace = nullptr;

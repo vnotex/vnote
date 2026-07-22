@@ -959,3 +959,14 @@ add_qt_test(test_encoding_button
     Qt6::Widgets
     Qt6::Core5Compat
 )
+
+# StatusBar: reusable column-based status bar infra (no services / no Buffer2).
+# NOT GUILESS — QLabel/QToolButton/QLineEdit/QMenu need QApplication. Only needs
+# Qt6::Widgets; no VTextEdit runtime dep, so no DLL copy step is required.
+add_qt_test(test_statusbar
+  SOURCES
+    test_statusbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/statusbar.cpp
+  LINKS
+    Qt6::Widgets
+)

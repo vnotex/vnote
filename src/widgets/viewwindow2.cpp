@@ -35,6 +35,7 @@
 
 #include "attachmentdragdropareaindicator2.h"
 #include "attachmentpopup2.h"
+#include "editors/statusbar.h"
 #include "editors/statuswidget.h"
 #include "editreaddiscardaction.h"
 #include "encodingbutton.h"
@@ -329,6 +330,23 @@ void ViewWindow2::showMessage(const QString &p_msg) {
   if (m_statusWidget) {
     m_statusWidget->showMessage(p_msg);
   }
+}
+
+void ViewWindow2::setStatusBarDef(const StatusBarDef &p_def) {
+  // Empty def => no bar. Leave m_statusBar null so callers/tests see "absent".
+  if (p_def.isEmpty()) {
+    return;
+  }
+
+  // Register at most one status bar per window.
+  if (m_statusBar) {
+    return;
+  }
+
+  m_statusBar = new StatusBar(p_def, this);
+  // Place below the existing status widget slot for deterministic ordering.
+  m_bottomLayout->addWidget(m_statusBar);
+  m_statusBar->show();
 }
 
 QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
