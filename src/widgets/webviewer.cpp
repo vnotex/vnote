@@ -4,6 +4,7 @@
 
 #include <QWebEnginePage>
 
+#include <gui/utils/widgetutils.h>
 #include <utils/utils.h>
 
 using namespace vnotex;
@@ -17,6 +18,8 @@ WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_
 
   connect(viewPage, &QWebEnginePage::linkHovered, this, &WebViewer::linkHovered);
   connect(viewPage, &WebPage::localFileOpenRequested, this, &WebViewer::localFileOpenRequested);
+  connect(viewPage, &WebPage::externalLinkRequested, this,
+          &WebViewer::handleExternalLinkRequested);
 
   // Avoid white flash before loading content.
   // Setting Qt::transparent will force GrayScale antialias rendering.
@@ -33,6 +36,16 @@ WebViewer::WebViewer(const QColor &p_background, QWidget *p_parent)
     : WebViewer(p_background, 1.0, p_parent) {}
 
 WebViewer::~WebViewer() {}
+
+void WebViewer::handleExternalLinkRequested(const QUrl &p_url) {
+  // If a consumer (e.g. MarkdownViewWindow2) wants to apply its own link policy,
+  // forward to it; otherwise fall back to opening with the system.
+  if (receivers(SIGNAL(externalLinkRequested(QUrl))) > 0) {
+    emit externalLinkRequested(p_url);
+  } else {
+    WidgetUtils::openUrlByDesktop(p_url);
+  }
+}
 
 void WebViewer::findText(const QString &p_text, FindOptions p_options) {
   if (p_options & FindOption::RegularExpression) {

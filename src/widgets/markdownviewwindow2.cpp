@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QCoreApplication>
+#include <QDesktopServices>
 #include <QDir>
 #include <QEvent>
 #include <QFileInfo>
@@ -16,6 +17,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QUrl>
 
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/markdownutils.h>
@@ -48,6 +50,7 @@
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
 #include "editors/graphvizhelper.h"
+#include "messageboxhelper.h"
 #include "editors/markdownvieweradapter.h"
 #include "editors/plantumlhelper.h"
 #include "editors/previewhelper.h"
@@ -477,6 +480,11 @@ void MarkdownViewWindow2::setupViewer() {
     }
     handleOpenFileRequest(combined);
   });
+
+  // Read-mode external link interception: route through the same policy sink as
+  // edit mode so the security prompt lives in one place.
+  connect(m_viewer, &WebViewer::externalLinkRequested, this,
+          [this](const QUrl &p_url) { handleOpenFileRequest(p_url.toString()); });
 }
 
 // ============ setupPreviewHelper ============
@@ -588,6 +596,22 @@ void MarkdownViewWindow2::connectEditorSignals() {
 void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   if (p_filePath.startsWith(QLatin1Char('#'))) {
     handleAnchorJump(p_filePath.mid(1));
+    return;
+  }
+
+  // External links (http/https/ftp/mailto) are opened by the system. This is the
+  // single policy sink shared by edit-mode (Ctrl+click, context-menu "Open Link")
+  // and read-mode navigation, so the security prompt lives in one place.
+  const QUrl url(p_filePath);
+  const auto scheme = url.scheme();
+  if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https") ||
+      scheme == QStringLiteral("ftp") || scheme == QStringLiteral("mailto")) {
+    int ret = MessageBoxHelper::questionYesNo(
+        MessageBoxHelper::Warning, tr("Are you sure to open link (%1)?").arg(url.toString()),
+        tr("Malicious link might do harm to your device."), QString(), this);
+    if (ret == QMessageBox::Yes) {
+      QDesktopServices::openUrl(url);
+    }
     return;
   }
 

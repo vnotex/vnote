@@ -21,6 +21,14 @@ signals:
   void linkHovered(const QString &p_url);
 
   void localFileOpenRequested(const QUrl &p_url);
+
+  // Emitted for external (non-local) main-frame link navigations when a consumer
+  // is connected. When there is no consumer, the viewer falls back to opening the
+  // link with the system (WidgetUtils::openUrlByDesktop).
+  void externalLinkRequested(const QUrl &p_url);
+
+private slots:
+  void handleExternalLinkRequested(const QUrl &p_url);
 };
 } // namespace vnotex
 

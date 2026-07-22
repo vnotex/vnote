@@ -3,7 +3,6 @@
 #include <QDebug>
 
 #include <core/logging.h>
-#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
@@ -28,7 +27,7 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
     return true;
   }
 
-  WidgetUtils::openUrlByDesktop(p_url);
+  emit externalLinkRequested(p_url);
   return false;
 }
 

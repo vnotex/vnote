@@ -13,6 +13,8 @@ public:
 signals:
   void localFileOpenRequested(const QUrl &p_url);
 
+  void externalLinkRequested(const QUrl &p_url);
+
 protected:
   bool acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
                                bool p_isMainFrame) Q_DECL_OVERRIDE;
