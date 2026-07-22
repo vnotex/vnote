@@ -6,7 +6,13 @@
 class QPageLayout;
 
 namespace vnotex {
-enum class ExportSource { CurrentBuffer = 0, CurrentNote, CurrentFolder, CurrentNotebook };
+enum class ExportSource {
+  CurrentBuffer = 0,
+  CurrentNote,
+  CurrentFolder,
+  CurrentNotebook,
+  Workspace
+};
 
 enum class ExportFormat { Markdown = 0, HTML, PDF, Custom };
 
@@ -115,6 +121,11 @@ struct ExportOption {
   bool operator==(const ExportOption &p_other) const;
 
   ExportSource m_source = ExportSource::CurrentBuffer;
+
+  // Runtime-only: identifies the workspace to export when m_source ==
+  // ExportSource::Workspace. Intentionally NOT serialized (toJson/fromJson) so a
+  // workspace can never become the sticky default source.
+  QString m_workspaceId;
 
   ExportFormat m_targetFormat = ExportFormat::HTML;
 

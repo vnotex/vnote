@@ -30,6 +30,12 @@ public:
   void stop();
   bool isExporting() const;
 
+  // Returns true if a resolved buffer node identifies a real, on-disk exportable
+  // file (i.e. not a virtual/unsaved buffer such as vx://home). Shared by the
+  // export dialog's availability check and collectWorkspaceFiles so the two
+  // cannot drift out of sync.
+  static bool isExportableNode(const NodeIdentifier &p_nodeId);
+
 signals:
   void exportFinished(const QStringList &p_outputFiles);
   void progressUpdated(int p_val, int p_maximum);
@@ -40,10 +46,13 @@ private:
   void collectExportFiles(const QString &p_notebookId, const QString &p_folderPath,
                           bool p_recursive, bool p_exportAttachments,
                           QVector<ExportFileInfo> &p_files);
+  void collectWorkspaceFiles(const QString &p_workspaceId, bool p_exportAttachments,
+                             QVector<ExportFileInfo> &p_files);
   bool isMarkdownFile(const QString &p_filePath) const;
   QString normalizedRelativePath(const QString &p_relativePath) const;
   QString notebookBatchName(const QString &p_notebookId) const;
   QString folderBatchName(const QString &p_notebookId, const QString &p_folderPath) const;
+  QString workspaceBatchName(const QString &p_workspaceId) const;
 
   ServiceLocator &m_services;
   QPointer<QWidget> m_widgetParent;

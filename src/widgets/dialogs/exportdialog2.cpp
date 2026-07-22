@@ -11,6 +11,8 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -31,6 +33,9 @@
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
+#include <core/services/buffer2.h>
+#include <core/services/bufferservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 
@@ -169,6 +174,36 @@ QString sourceUnavailableReason(ExportSource p_source) {
   return QString();
 }
 
+// Returns true if the workspace has at least one buffer that resolves to a real
+// (non-virtual, on-disk) file. Mirrors ExportController::collectWorkspaceFiles so
+// the greyed-out state matches what the controller will actually export.
+bool workspaceHasExportableBuffers(BufferService *p_bufferService, const QJsonObject &p_wsObj) {
+  const auto bufferIds = p_wsObj.value(QStringLiteral("bufferIds")).toArray();
+  if (bufferIds.isEmpty()) {
+    return false;
+  }
+  if (!p_bufferService) {
+    // Cannot resolve; fall back to "has ids" so the item stays selectable and the
+    // controller's own empty-result guard handles any residual mismatch.
+    return true;
+  }
+
+  for (const auto &bufferValue : bufferIds) {
+    const auto bufferId = bufferValue.toString();
+    if (bufferId.isEmpty()) {
+      continue;
+    }
+    const Buffer2 buffer = p_bufferService->getBufferHandle(bufferId);
+    if (!buffer.isValid()) {
+      continue;
+    }
+    if (ExportController::isExportableNode(buffer.nodeId())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int findCustomOption(const QVector<ExportCustomOption> &p_options, const QString &p_name) {
   if (p_name.isEmpty()) {
     return -1;
@@ -234,6 +269,45 @@ void ExportDialog2::setupUI() {
         }
       }
       m_sourceCombo->setItemData(idx, sourceUnavailableReason(source), Qt::ToolTipRole);
+    }
+  }
+
+  // Append one entry per split-pane workspace. These are ephemeral (never
+  // persisted / never a preset). Item data mirrors the fixed enum at
+  // Qt::UserRole (so currentData().toInt() still yields the enum), with the
+  // workspace id carried at Qt::UserRole + 1.
+  if (auto *workspaceService = m_services.get<WorkspaceCoreService>()) {
+    auto *bufferService = m_services.get<BufferService>();
+    const auto workspaces = workspaceService->listWorkspaces();
+    for (const auto &wsValue : workspaces) {
+      const auto wsObj = wsValue.toObject();
+      const auto wsId = wsObj.value(QStringLiteral("id")).toString();
+      if (wsId.isEmpty()) {
+        continue;
+      }
+
+      auto wsName = wsObj.value(QStringLiteral("name")).toString();
+      if (wsName.isEmpty()) {
+        wsName = wsId;
+      }
+
+      m_sourceCombo->addItem(tr("Workspace: %1").arg(wsName),
+                             static_cast<int>(ExportSource::Workspace));
+      const int idx = m_sourceCombo->count() - 1;
+      m_sourceCombo->setItemData(idx, wsId, Qt::UserRole + 1);
+
+      // Grey out a workspace that resolves to zero exportable buffers (empty, or
+      // only stale/virtual vx:// buffers). Mirrors ExportController::collectWorkspaceFiles.
+      if (!workspaceHasExportableBuffers(bufferService, wsObj)) {
+        auto *stdModel = qobject_cast<QStandardItemModel *>(m_sourceCombo->model());
+        if (stdModel) {
+          if (auto *stdItem = stdModel->item(idx)) {
+            stdItem->setEnabled(false);
+          }
+        }
+        m_sourceCombo->setItemData(idx, tr("Workspace has no exportable buffers"),
+                                   Qt::ToolTipRole);
+      }
     }
   }
 
@@ -557,7 +631,15 @@ void ExportDialog2::loadConfig() {
 }
 
 void ExportDialog2::saveConfig() {
-  m_services.get<ConfigMgr2>()->getSessionConfig().setExportOption(collectFields());
+  // Workspace is an ephemeral source: it must never be persisted as the default.
+  // Strip it (and its runtime-only workspace id) before writing to session config
+  // so reopening the dialog in the same process never restores a workspace source.
+  ExportOption option = collectFields();
+  if (option.m_source == ExportSource::Workspace) {
+    option.m_source = ExportSource::CurrentBuffer;
+    option.m_workspaceId.clear();
+  }
+  m_services.get<ConfigMgr2>()->getSessionConfig().setExportOption(option);
 
   // Never persist built-in schemes; they are re-seeded from code on load.
   m_services.get<ConfigMgr2>()->getSessionConfig().setCustomExportOptions(
@@ -616,6 +698,9 @@ void ExportDialog2::restoreFields(const ExportOption &p_option) {
 ExportOption ExportDialog2::collectFields() {
   ExportOption option;
   option.m_source = static_cast<ExportSource>(m_sourceCombo->currentData().toInt());
+  if (option.m_source == ExportSource::Workspace) {
+    option.m_workspaceId = m_sourceCombo->currentData(Qt::UserRole + 1).toString();
+  }
   option.m_targetFormat = static_cast<ExportFormat>(m_formatCombo->currentData().toInt());
   option.m_outputDir = m_outputDirInput->text();
   option.m_useTransparentBg = m_transparentBgCheck->isChecked();

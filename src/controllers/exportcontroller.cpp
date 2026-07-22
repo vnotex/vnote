@@ -3,14 +3,18 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QWidget>
 #include <QDebug>
 #include <exception>
 
 #include <core/exception.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
+#include <core/services/buffer2.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <export/exporter.h>
 #include <utils/fileutils2.h>
 
@@ -151,6 +155,23 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
         break;
       }
 
+      case ExportSource::Workspace: {
+        if (p_option.m_workspaceId.isEmpty()) {
+          emit logRequested(tr("No workspace selected for export."));
+          break;
+        }
+
+        QVector<ExportFileInfo> files;
+        collectWorkspaceFiles(p_option.m_workspaceId, p_option.m_exportAttachments, files);
+        if (files.isEmpty()) {
+          emit logRequested(tr("Workspace has no exportable buffers."));
+          break;
+        }
+        outputFiles =
+            exporter->doExportBatch(p_option, files, workspaceBatchName(p_option.m_workspaceId));
+        break;
+      }
+
       default:
         emit logRequested(tr("Unsupported export source."));
         break;
@@ -239,6 +260,64 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
   }
 }
 
+bool ExportController::isExportableNode(const NodeIdentifier &p_nodeId) {
+  if (p_nodeId.notebookId.isEmpty() || p_nodeId.relativePath.isEmpty() ||
+      p_nodeId.relativePath == QStringLiteral(".") ||
+      p_nodeId.relativePath.startsWith(QStringLiteral("vx://"))) {
+    return false;
+  }
+  return true;
+}
+
+void ExportController::collectWorkspaceFiles(const QString &p_workspaceId, bool p_exportAttachments,
+                                             QVector<ExportFileInfo> &p_files) {
+  auto *workspaceService = m_services.get<WorkspaceCoreService>();
+  auto *bufferService = m_services.get<BufferService>();
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!workspaceService || !bufferService || !notebookService) {
+    emit logRequested(tr("Required services not available for workspace export."));
+    return;
+  }
+
+  const auto wsConfig = workspaceService->getWorkspace(p_workspaceId);
+  const auto bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
+  for (const auto &bufferValue : bufferIds) {
+    const auto bufferId = bufferValue.toString();
+    if (bufferId.isEmpty()) {
+      continue;
+    }
+
+    // Resolve the buffer id to notebookId + relativePath WITHOUT opening it.
+    const Buffer2 buffer = bufferService->getBufferHandle(bufferId);
+    if (!buffer.isValid()) {
+      continue;
+    }
+
+    const auto &nodeId = buffer.nodeId();
+    // Skip virtual/unsaved buffers (e.g. vx://home).
+    if (!isExportableNode(nodeId)) {
+      continue;
+    }
+    const auto relativePath = normalizedRelativePath(nodeId.relativePath);
+
+    const auto filePath = notebookService->buildAbsolutePath(nodeId.notebookId, relativePath);
+    if (filePath.isEmpty()) {
+      emit logRequested(tr("Failed to resolve file path for (%1).").arg(relativePath));
+      continue;
+    }
+
+    ExportFileInfo info;
+    info.filePath = filePath;
+    info.fileName = QFileInfo(filePath).fileName();
+    info.resourcePath = QFileInfo(filePath).absolutePath();
+    info.attachmentFolderPath =
+        p_exportAttachments ? notebookService->getAttachmentsFolder(nodeId.notebookId, relativePath)
+                            : QString();
+    info.isMarkdown = isMarkdownFile(filePath);
+    p_files.append(info);
+  }
+}
+
 bool ExportController::isMarkdownFile(const QString &p_filePath) const {
   auto *fileTypeService = m_services.get<FileTypeCoreService>();
   if (!fileTypeService) {
@@ -274,4 +353,44 @@ QString ExportController::folderBatchName(const QString &p_notebookId,
 
   const auto name = QFileInfo(folderPath).fileName();
   return name.isEmpty() ? notebookBatchName(p_notebookId) : name;
+}
+
+QString ExportController::workspaceBatchName(const QString &p_workspaceId) const {
+  // Reduce arbitrary text to a single safe filename leaf: strip path separators /
+  // drive markers / platform-invalid characters and ASCII control chars, drop
+  // trailing dots/spaces, and reject pure-dot names and Windows reserved device
+  // names so the result can never escape or break the selected output directory.
+  const auto sanitizeLeaf = [](const QString &p_raw) -> QString {
+    QString leaf = p_raw;
+    leaf.replace(QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")), QStringLiteral("_"));
+    leaf.remove(QRegularExpression(QStringLiteral("[\\x00-\\x1f]")));
+    leaf = leaf.trimmed();
+    while (leaf.endsWith(QLatin1Char('.')) || leaf.endsWith(QLatin1Char(' '))) {
+      leaf.chop(1);
+    }
+    leaf = leaf.trimmed();
+    if (leaf.isEmpty() || leaf == QStringLiteral(".") || leaf == QStringLiteral("..")) {
+      return QString();
+    }
+    static const QRegularExpression reserved(
+        QStringLiteral("^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$"),
+        QRegularExpression::CaseInsensitiveOption);
+    if (reserved.match(leaf).hasMatch()) {
+      return QString();
+    }
+    return leaf;
+  };
+
+  const QString fallback = sanitizeLeaf(QStringLiteral("workspace-") + p_workspaceId);
+
+  auto *workspaceService = m_services.get<WorkspaceCoreService>();
+  if (workspaceService) {
+    const auto wsConfig = workspaceService->getWorkspace(p_workspaceId);
+    const QString name = sanitizeLeaf(wsConfig.value(QStringLiteral("name")).toString());
+    if (!name.isEmpty()) {
+      return name;
+    }
+  }
+
+  return fallback.isEmpty() ? QStringLiteral("workspace") : fallback;
 }
