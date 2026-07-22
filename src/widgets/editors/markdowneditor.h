@@ -15,6 +15,7 @@
 class QMimeData;
 class QMenu;
 class QTimer;
+class QMouseEvent;
 
 namespace vte {
 class MarkdownEditorConfig;
@@ -158,6 +159,8 @@ private slots:
   void handleContextMenuEvent(QContextMenuEvent *p_event, bool *p_handled,
                               QScopedPointer<QMenu> *p_menu);
 
+  void handleMouseReleased(QMouseEvent *p_event);
+
   void altPaste();
 
   void parseToMarkdownAndPaste();
@@ -233,6 +236,10 @@ private:
 
   bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                        const QTextBlock &p_block);
+
+  // Resolve the markdown link URL at the given cursor position within p_block.
+  // Returns an empty string when there is no link at the position.
+  QString resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_block) const;
 
   static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 

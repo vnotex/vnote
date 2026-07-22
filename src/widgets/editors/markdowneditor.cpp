@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QMimeDatabase>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QProgressDialog>
 #include <QRegularExpression>
@@ -99,6 +100,9 @@ void MarkdownEditor::init() {
           });
   connect(m_textEdit, &vte::VTextEdit::contextMenuEventRequested, this,
           &MarkdownEditor::handleContextMenuEvent);
+
+  connect(m_textEdit, &vte::VTextEdit::mouseReleased, this,
+          &MarkdownEditor::handleMouseReleased);
 
   connect(getHighlighter(), &vte::MarkdownHighlighter::headersUpdated, this,
           &MarkdownEditor::updateHeadings);
@@ -1832,35 +1836,9 @@ bool MarkdownEditor::prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before,
 
 bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                                      const QTextBlock &p_block) {
-  const auto text = p_block.text();
-
-  QRegularExpression regExp(vte::MarkdownUtils::c_linkRegExp);
-  QString linkText;
-  const int pib = p_cursorPos - p_block.position();
-  auto matchIter = regExp.globalMatch(text);
-  while (matchIter.hasNext()) {
-    auto match = matchIter.next();
-    if (pib >= match.capturedStart() && pib < match.capturedEnd()) {
-      linkText = match.captured(2);
-      break;
-    }
-  }
-
-  if (linkText.isEmpty()) {
+  const QString linkUrl = resolveLinkUrlAt(p_cursorPos, p_block);
+  if (linkUrl.isEmpty()) {
     return false;
-  }
-
-  QString linkUrl;
-  if (linkText.startsWith(QLatin1Char('#'))) {
-    linkUrl = linkText;
-  } else {
-    auto fragResult = vnotex::splitUrlFragment(linkText);
-    QString resolvedPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), fragResult.path);
-    if (!fragResult.fragment.isEmpty()) {
-      linkUrl = resolvedPath + QLatin1Char('#') + fragResult.fragment;
-    } else {
-      linkUrl = resolvedPath;
-    }
   }
 
   {
@@ -1880,4 +1858,55 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
   p_menu->insertSeparator(p_before);
 
   return true;
+}
+
+QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_block) const {
+  const auto text = p_block.text();
+
+  QRegularExpression regExp(vte::MarkdownUtils::c_linkRegExp);
+  QString linkText;
+  const int pib = p_cursorPos - p_block.position();
+  auto matchIter = regExp.globalMatch(text);
+  while (matchIter.hasNext()) {
+    auto match = matchIter.next();
+    if (pib >= match.capturedStart() && pib < match.capturedEnd()) {
+      linkText = match.captured(2);
+      break;
+    }
+  }
+
+  if (linkText.isEmpty()) {
+    return QString();
+  }
+
+  QString linkUrl;
+  if (linkText.startsWith(QLatin1Char('#'))) {
+    linkUrl = linkText;
+  } else {
+    auto fragResult = vnotex::splitUrlFragment(linkText);
+    QString resolvedPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), fragResult.path);
+    if (!fragResult.fragment.isEmpty()) {
+      linkUrl = resolvedPath + QLatin1Char('#') + fragResult.fragment;
+    } else {
+      linkUrl = resolvedPath;
+    }
+  }
+
+  return linkUrl;
+}
+
+void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
+  if (p_event->button() != Qt::LeftButton ||
+      !(p_event->modifiers() & Qt::ControlModifier)) {
+    return;
+  }
+
+  auto cursor = m_textEdit->cursorForPosition(p_event->pos());
+  const QString linkUrl = resolveLinkUrlAt(cursor.position(), cursor.block());
+  if (linkUrl.isEmpty()) {
+    return;
+  }
+
+  emit openFileRequested(linkUrl);
+  p_event->accept();
 }
