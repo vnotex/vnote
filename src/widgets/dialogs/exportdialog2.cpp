@@ -33,6 +33,16 @@
 #include "../locationinputwithbrowsebutton.h"
 #include "../widgetsfactory.h"
 
+namespace {
+// Object names used for test discovery (findChild<>). See dialogs/AGENTS.md.
+constexpr const char *kPdfHeaderLeftName = "pdfHeaderLeftEdit";
+constexpr const char *kPdfHeaderCenterName = "pdfHeaderCenterEdit";
+constexpr const char *kPdfHeaderRightName = "pdfHeaderRightEdit";
+constexpr const char *kPdfFooterLeftName = "pdfFooterLeftEdit";
+constexpr const char *kPdfFooterCenterName = "pdfFooterCenterEdit";
+constexpr const char *kPdfFooterRightName = "pdfFooterRightEdit";
+} // namespace
+
 class StackedScrollWidget : public QWidget {
 public:
   explicit StackedScrollWidget(QWidget *p_parent = nullptr)
@@ -377,6 +387,32 @@ void ExportDialog2::setupUI() {
     m_wkhtmltopdfArgsEdit = WidgetsFactory::createLineEdit(page);
     layout->addRow(tr("Wkhtmltopdf arguments:"), m_wkhtmltopdfArgsEdit);
 
+    m_pdfHeaderLeftEdit = WidgetsFactory::createLineEdit(page);
+    m_pdfHeaderLeftEdit->setObjectName(QLatin1String(kPdfHeaderLeftName));
+    layout->addRow(tr("Header left:"), m_pdfHeaderLeftEdit);
+
+    m_pdfHeaderCenterEdit = WidgetsFactory::createLineEdit(page);
+    m_pdfHeaderCenterEdit->setObjectName(QLatin1String(kPdfHeaderCenterName));
+    layout->addRow(tr("Header center:"), m_pdfHeaderCenterEdit);
+
+    m_pdfHeaderRightEdit = WidgetsFactory::createLineEdit(page);
+    m_pdfHeaderRightEdit->setObjectName(QLatin1String(kPdfHeaderRightName));
+    layout->addRow(tr("Header right:"), m_pdfHeaderRightEdit);
+
+    m_pdfFooterLeftEdit = WidgetsFactory::createLineEdit(page);
+    m_pdfFooterLeftEdit->setObjectName(QLatin1String(kPdfFooterLeftName));
+    layout->addRow(tr("Footer left:"), m_pdfFooterLeftEdit);
+
+    m_pdfFooterCenterEdit = WidgetsFactory::createLineEdit(page);
+    m_pdfFooterCenterEdit->setObjectName(QLatin1String(kPdfFooterCenterName));
+    layout->addRow(tr("Footer center:"), m_pdfFooterCenterEdit);
+
+    m_pdfFooterRightEdit = WidgetsFactory::createLineEdit(page);
+    m_pdfFooterRightEdit->setObjectName(QLatin1String(kPdfFooterRightName));
+    m_pdfFooterRightEdit->setToolTip(
+        tr("Supports placeholders such as [page], [title] and [date]."));
+    layout->addRow(tr("Footer right:"), m_pdfFooterRightEdit);
+
     m_pdfAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);
     m_pdfAllInOneCheck->setToolTip(tr("Export all source files into one file"));
     layout->addRow(m_pdfAllInOneCheck);
@@ -598,6 +634,12 @@ void ExportDialog2::restorePdfFields(const ExportPdfOption &p_option) {
   m_useWkhtmltopdfCheck->setChecked(p_option.m_useWkhtmltopdf);
   m_wkhtmltopdfExePathEdit->setText(p_option.m_wkhtmltopdfExePath);
   m_wkhtmltopdfArgsEdit->setText(p_option.m_wkhtmltopdfArgs);
+  m_pdfHeaderLeftEdit->setText(p_option.m_headerLeft);
+  m_pdfHeaderCenterEdit->setText(p_option.m_headerCenter);
+  m_pdfHeaderRightEdit->setText(p_option.m_headerRight);
+  m_pdfFooterLeftEdit->setText(p_option.m_footerLeft);
+  m_pdfFooterCenterEdit->setText(p_option.m_footerCenter);
+  m_pdfFooterRightEdit->setText(p_option.m_footerRight);
   m_pdfAllInOneCheck->setChecked(p_option.m_allInOne);
 
   updatePdfWidgetsByWkhtmltopdf();
@@ -609,6 +651,12 @@ void ExportDialog2::savePdfFields(ExportPdfOption &p_option) const {
   p_option.m_useWkhtmltopdf = m_useWkhtmltopdfCheck->isChecked();
   p_option.m_wkhtmltopdfExePath = m_wkhtmltopdfExePathEdit->text();
   p_option.m_wkhtmltopdfArgs = m_wkhtmltopdfArgsEdit->text();
+  p_option.m_headerLeft = m_pdfHeaderLeftEdit->text();
+  p_option.m_headerCenter = m_pdfHeaderCenterEdit->text();
+  p_option.m_headerRight = m_pdfHeaderRightEdit->text();
+  p_option.m_footerLeft = m_pdfFooterLeftEdit->text();
+  p_option.m_footerCenter = m_pdfFooterCenterEdit->text();
+  p_option.m_footerRight = m_pdfFooterRightEdit->text();
   p_option.m_allInOne = m_pdfAllInOneCheck->isChecked();
 }
 
@@ -767,6 +815,12 @@ void ExportDialog2::updatePdfWidgetsByWkhtmltopdf() {
   const bool enabled = m_useWkhtmltopdfCheck->isChecked();
   m_wkhtmltopdfExePathEdit->setEnabled(enabled);
   m_wkhtmltopdfArgsEdit->setEnabled(enabled);
+  m_pdfHeaderLeftEdit->setEnabled(enabled);
+  m_pdfHeaderCenterEdit->setEnabled(enabled);
+  m_pdfHeaderRightEdit->setEnabled(enabled);
+  m_pdfFooterLeftEdit->setEnabled(enabled);
+  m_pdfFooterCenterEdit->setEnabled(enabled);
+  m_pdfFooterRightEdit->setEnabled(enabled);
   m_pdfAllInOneCheck->setEnabled(enabled);
 }
 

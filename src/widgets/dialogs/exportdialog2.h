@@ -98,6 +98,12 @@ private:
   QCheckBox *m_useWkhtmltopdfCheck = nullptr;
   QLineEdit *m_wkhtmltopdfExePathEdit = nullptr;
   QLineEdit *m_wkhtmltopdfArgsEdit = nullptr;
+  QLineEdit *m_pdfHeaderLeftEdit = nullptr;
+  QLineEdit *m_pdfHeaderCenterEdit = nullptr;
+  QLineEdit *m_pdfHeaderRightEdit = nullptr;
+  QLineEdit *m_pdfFooterLeftEdit = nullptr;
+  QLineEdit *m_pdfFooterCenterEdit = nullptr;
+  QLineEdit *m_pdfFooterRightEdit = nullptr;
   QCheckBox *m_pdfAllInOneCheck = nullptr;
   QSharedPointer<QPageLayout> m_pageLayout;
 

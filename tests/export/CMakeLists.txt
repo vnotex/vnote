@@ -6,6 +6,16 @@ add_qt_test(test_exportstyleresolver
   GUILESS
 )
 
+# GUI-free round-trip test for ExportPdfOption JSON serialization (header/footer fields).
+add_qt_test(test_exportdata
+  SOURCES
+    test_exportdata.cpp
+    ${CMAKE_SOURCE_DIR}/src/export/exportdata.cpp
+  LINKS
+    Qt6::Gui
+  GUILESS
+)
+
 # New-subdir requirement (tests/AGENTS.md): copy VTextEdit.dll next to the test exes so any
 # future VTextEdit-linking test in this dir resolves it at runtime. Anchored on this target.
 add_custom_command(TARGET test_exportstyleresolver POST_BUILD

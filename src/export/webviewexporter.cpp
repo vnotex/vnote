@@ -578,9 +578,40 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
     m_wkhtmltopdfArgs << "--margin-right" << marginToStrMM(marginsMM.right());
     m_wkhtmltopdfArgs << "--margin-top" << marginToStrMM(marginsMM.top());
 
-    // Footer.
-    m_wkhtmltopdfArgs << "--footer-right" << "[page]"
-                      << "--footer-spacing" << QString::number(marginsMM.bottom() / 3, 'f', 2);
+    // Header/footer. Emit each non-empty field; values are unicode-encoded so
+    // non-ASCII (e.g. CJK) content survives, matching the TOC header handling.
+    const bool hasHeader = !p_pdfOption.m_headerLeft.isEmpty() ||
+                           !p_pdfOption.m_headerCenter.isEmpty() ||
+                           !p_pdfOption.m_headerRight.isEmpty();
+    const bool hasFooter = !p_pdfOption.m_footerLeft.isEmpty() ||
+                           !p_pdfOption.m_footerCenter.isEmpty() ||
+                           !p_pdfOption.m_footerRight.isEmpty();
+
+    if (!p_pdfOption.m_headerLeft.isEmpty()) {
+      m_wkhtmltopdfArgs << "--header-left" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerLeft);
+    }
+    if (!p_pdfOption.m_headerCenter.isEmpty()) {
+      m_wkhtmltopdfArgs << "--header-center" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerCenter);
+    }
+    if (!p_pdfOption.m_headerRight.isEmpty()) {
+      m_wkhtmltopdfArgs << "--header-right" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerRight);
+    }
+    if (hasHeader) {
+      m_wkhtmltopdfArgs << "--header-spacing" << QString::number(marginsMM.top() / 3, 'f', 2);
+    }
+
+    if (!p_pdfOption.m_footerLeft.isEmpty()) {
+      m_wkhtmltopdfArgs << "--footer-left" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerLeft);
+    }
+    if (!p_pdfOption.m_footerCenter.isEmpty()) {
+      m_wkhtmltopdfArgs << "--footer-center" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerCenter);
+    }
+    if (!p_pdfOption.m_footerRight.isEmpty()) {
+      m_wkhtmltopdfArgs << "--footer-right" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerRight);
+    }
+    if (hasFooter) {
+      m_wkhtmltopdfArgs << "--footer-spacing" << QString::number(marginsMM.bottom() / 3, 'f', 2);
+    }
   }
 
   m_wkhtmltopdfArgs << "--encoding" << "utf-8";

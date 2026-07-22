@@ -52,6 +52,16 @@ struct ExportPdfOption {
   QString m_wkhtmltopdfExePath;
 
   QString m_wkhtmltopdfArgs;
+
+  // Running header/footer text (wkhtmltopdf path only). Support wkhtmltopdf
+  // placeholders such as [page], [topage], [title], [date].
+  QString m_headerLeft;
+  QString m_headerCenter;
+  QString m_headerRight;
+  QString m_footerLeft;
+  QString m_footerCenter;
+  // Defaults to "[page]" in the ctor to preserve the historical page-number footer.
+  QString m_footerRight;
 };
 
 struct ExportCustomOption {

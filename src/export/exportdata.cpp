@@ -73,7 +73,8 @@ static void jsonObjectToPageLayout(const QJsonObject &p_obj, QPageLayout &p_layo
 
 ExportPdfOption::ExportPdfOption()
     : m_layout(new QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait,
-                               QMarginsF(10, 16, 10, 10), QPageLayout::Millimeter)) {}
+                               QMarginsF(10, 16, 10, 10), QPageLayout::Millimeter)),
+      m_footerRight("[page]") {}
 
 QJsonObject ExportPdfOption::toJson() const {
   QJsonObject obj;
@@ -82,6 +83,12 @@ QJsonObject ExportPdfOption::toJson() const {
   obj["allInOne"] = m_allInOne;
   obj["wkhtmltopdfExePath"] = m_wkhtmltopdfExePath;
   obj["wkhtmltopdfArgs"] = m_wkhtmltopdfArgs;
+  obj["headerLeft"] = m_headerLeft;
+  obj["headerCenter"] = m_headerCenter;
+  obj["headerRight"] = m_headerRight;
+  obj["footerLeft"] = m_footerLeft;
+  obj["footerCenter"] = m_footerCenter;
+  obj["footerRight"] = m_footerRight;
   obj["layout"] = pageLayoutToJsonObject(*m_layout);
   return obj;
 }
@@ -96,6 +103,13 @@ void ExportPdfOption::fromJson(const QJsonObject &p_obj) {
   m_allInOne = p_obj["allInOne"].toBool();
   m_wkhtmltopdfExePath = p_obj["wkhtmltopdfExePath"].toString();
   m_wkhtmltopdfArgs = p_obj["wkhtmltopdfArgs"].toString();
+  m_headerLeft = p_obj["headerLeft"].toString();
+  m_headerCenter = p_obj["headerCenter"].toString();
+  m_headerRight = p_obj["headerRight"].toString();
+  m_footerLeft = p_obj["footerLeft"].toString();
+  m_footerCenter = p_obj["footerCenter"].toString();
+  // Keep the ctor "[page]" default for old configs that lack this key.
+  m_footerRight = p_obj["footerRight"].toString(m_footerRight);
   jsonObjectToPageLayout(p_obj["layout"].toObject(), *m_layout);
 }
 
@@ -103,7 +117,10 @@ bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const {
   return m_addTableOfContents == p_other.m_addTableOfContents &&
          m_useWkhtmltopdf == p_other.m_useWkhtmltopdf && m_allInOne == p_other.m_allInOne &&
          m_wkhtmltopdfExePath == p_other.m_wkhtmltopdfExePath &&
-         m_wkhtmltopdfArgs == p_other.m_wkhtmltopdfArgs;
+         m_wkhtmltopdfArgs == p_other.m_wkhtmltopdfArgs &&
+         m_headerLeft == p_other.m_headerLeft && m_headerCenter == p_other.m_headerCenter &&
+         m_headerRight == p_other.m_headerRight && m_footerLeft == p_other.m_footerLeft &&
+         m_footerCenter == p_other.m_footerCenter && m_footerRight == p_other.m_footerRight;
 }
 
 QJsonObject ExportCustomOption::toJson() const {
