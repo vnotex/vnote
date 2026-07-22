@@ -287,6 +287,27 @@ int main(int argc, char *argv[]) {
   qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
           buildChromiumFlags(qgetenv("QTWEBENGINE_CHROMIUM_FLAGS")));
 
+  // Enable QtWebEngine remote debugging (DevTools) when --remote-debugging-port
+  // is passed. On Qt 6 the bare argv switch is NOT honored by QtWebEngine; the
+  // sanctioned mechanism is the QTWEBENGINE_REMOTE_DEBUGGING environment
+  // variable, which must be set BEFORE QtWebEngine initializes (before the first
+  // QWebEngineView). CommandLineOptions::parse() runs far too late (after
+  // QApplication), so scan argv literally here, mirroring the --verbose early
+  // scan above. Only inject if the user hasn't already exported the env var.
+  if (qgetenv("QTWEBENGINE_REMOTE_DEBUGGING").isEmpty()) {
+    const QLatin1String prefix("--remote-debugging-port=");
+    for (int i = 1; i < argc; ++i) {
+      const QString arg = QString::fromLocal8Bit(argv[i]);
+      if (arg.startsWith(prefix)) {
+        const QString port = arg.mid(prefix.size());
+        if (!port.isEmpty()) {
+          qputenv("QTWEBENGINE_REMOTE_DEBUGGING", port.toLocal8Bit());
+        }
+        break;
+      }
+    }
+  }
+
   vxcore_set_app_info(ConfigMgr2::c_orgName.toUtf8().constData(),
                       ConfigMgr2::c_appName.toUtf8().constData());
 
