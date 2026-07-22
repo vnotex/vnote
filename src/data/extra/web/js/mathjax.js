@@ -261,7 +261,16 @@ class MathJaxRenderer extends VxWorker {
                         pngImg.setAttribute('data-math-png', 'true');
 
                         if (svg.parentNode) {
+                            let mjxContainer = svg.parentNode;
                             svg.parentNode.replaceChild(pngImg, svg);
+                            // MathJax also emits a hidden <mjx-assistive-mml> (MathML) sibling.
+                            // Tools that read MathML (e.g. Pandoc -> docx) would turn it into a
+                            // second, native equation alongside our PNG, duplicating the formula.
+                            // Drop it so only the rasterized image remains.
+                            let assistiveMml = mjxContainer.querySelector('mjx-assistive-mml');
+                            if (assistiveMml) {
+                                assistiveMml.parentNode.removeChild(assistiveMml);
+                            }
                         }
                     } catch (err) {
                         console.error('failed to rasterize MathJax SVG', err);
