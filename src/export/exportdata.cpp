@@ -3,6 +3,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QPageLayout>
+#include <QVector>
 
 using namespace vnotex;
 
@@ -150,11 +151,82 @@ void ExportCustomOption::fromJson(const QJsonObject &p_obj) {
 }
 
 bool ExportCustomOption::operator==(const ExportCustomOption &p_other) const {
+  // m_builtin is runtime-only and intentionally excluded so persisted equality
+  // (used by updateConfig dirty-checking) is unaffected.
   return m_name == p_other.m_name && m_useHtmlInput == p_other.m_useHtmlInput &&
          m_targetSuffix == p_other.m_targetSuffix && m_command == p_other.m_command &&
          m_allInOne == p_other.m_allInOne &&
          m_targetPageScrollable == p_other.m_targetPageScrollable &&
          m_resourcePathSeparator == p_other.m_resourcePathSeparator;
+}
+
+QVector<ExportCustomOption> ExportCustomOption::builtinSchemes() {
+  QVector<ExportCustomOption> schemes;
+
+  // Docx via pandoc (HTML input), mirroring VNote's documented invocation.
+  {
+    ExportCustomOption docx;
+    docx.m_name = QStringLiteral("Docx");
+    docx.m_targetSuffix = QStringLiteral("docx");
+    docx.m_useHtmlInput = true;
+    docx.m_allInOne = false;
+    docx.m_targetPageScrollable = false;
+    docx.m_builtin = true;
+#if defined(Q_OS_WIN)
+    docx.m_resourcePathSeparator = QStringLiteral(";");
+    docx.m_command = QStringLiteral("pandoc --resource-path=.;%2 --css=%3 --css=%4 -s -o %5 %1");
+#else
+    docx.m_resourcePathSeparator = QStringLiteral(":");
+    docx.m_command = QStringLiteral("pandoc --resource-path=.:%2 --css=%3 --css=%4 -s -o %5 %1");
+#endif
+    schemes.append(docx);
+  }
+
+  // PNG via wkhtmltoimage (HTML input). pandoc has no PNG writer.
+  {
+    ExportCustomOption png;
+    png.m_name = QStringLiteral("PNG");
+    png.m_targetSuffix = QStringLiteral("png");
+    png.m_useHtmlInput = true;
+    png.m_allInOne = false;
+    png.m_targetPageScrollable = false;
+    png.m_builtin = true;
+    // %1 (input) and %5 (output) are already quoted by Exporter::evaluateCommand,
+    // so do NOT add quotes here (that would double-quote and break paths with spaces).
+    png.m_command = QStringLiteral("wkhtmltoimage %1 %5");
+    schemes.append(png);
+  }
+
+  return schemes;
+}
+
+void ExportCustomOption::seedBuiltins(QVector<ExportCustomOption> &p_options) {
+  int insertPos = 0;
+  for (const auto &builtin : builtinSchemes()) {
+    bool collides = false;
+    for (const auto &opt : p_options) {
+      if (opt.m_name == builtin.m_name) {
+        collides = true;
+        break;
+      }
+    }
+    if (collides) {
+      continue;
+    }
+    p_options.insert(insertPos++, builtin);
+  }
+}
+
+QVector<ExportCustomOption>
+ExportCustomOption::withoutBuiltins(const QVector<ExportCustomOption> &p_options) {
+  QVector<ExportCustomOption> out;
+  out.reserve(p_options.size());
+  for (const auto &opt : p_options) {
+    if (!opt.m_builtin) {
+      out.append(opt);
+    }
+  }
+  return out;
 }
 
 QJsonObject ExportOption::toJson() const {

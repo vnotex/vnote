@@ -493,6 +493,15 @@ add_qt_test(test_sessionconfig_extprog
   GUILESS
 )
 
+add_qt_test(test_export_builtin_schemes
+  SOURCES
+    test_export_builtin_schemes.cpp
+    ${CMAKE_SOURCE_DIR}/src/export/exportdata.cpp
+  LINKS
+    Qt6::Gui
+  GUILESS
+)
+
 add_qt_test(test_imagehostservice
   SOURCES
     test_imagehostservice.cpp

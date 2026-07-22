@@ -1,5 +1,6 @@
 #include "exportdialog2.h"
 
+#include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
@@ -12,6 +13,7 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPageLayout>
 #include <QPageSetupDialog>
 #include <QPlainTextEdit>
@@ -21,6 +23,7 @@
 #include <QStackedLayout>
 #include <QStandardItemModel>
 #include <QTextCursor>
+#include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -29,6 +32,7 @@
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 
 #include "../locationinputwithbrowsebutton.h"
 #include "../widgetsfactory.h"
@@ -433,13 +437,28 @@ void ExportDialog2::setupUI() {
     m_customSchemeCombo = WidgetsFactory::createComboBox(page);
     schemeLayout->addWidget(m_customSchemeCombo, 1);
 
-    auto *newSchemeBtn = new QPushButton(tr("New"), page);
-    schemeLayout->addWidget(newSchemeBtn);
-    connect(newSchemeBtn, &QPushButton::clicked, this, &ExportDialog2::addCustomScheme);
+    // Single split button: clicking the body runs the default "New" action;
+    // the dropdown menu holds "Duplicate" and "Delete".
+    auto *schemeMenuBtn = new QToolButton(page);
+    schemeMenuBtn->setPopupMode(QToolButton::MenuButtonPopup);
+    schemeMenuBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-    auto *deleteSchemeBtn = new QPushButton(tr("Delete"), page);
-    schemeLayout->addWidget(deleteSchemeBtn);
-    connect(deleteSchemeBtn, &QPushButton::clicked, this, &ExportDialog2::removeCustomScheme);
+    auto *themeService = m_services.get<ThemeService>();
+    auto *newSchemeAction = new QAction(
+        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg"))), tr("New"),
+        schemeMenuBtn);
+    connect(newSchemeAction, &QAction::triggered, this, &ExportDialog2::addCustomScheme);
+    schemeMenuBtn->setDefaultAction(newSchemeAction);
+
+    auto *schemeMenu = new QMenu(schemeMenuBtn);
+    auto *duplicateSchemeAction = schemeMenu->addAction(tr("Duplicate"));
+    connect(duplicateSchemeAction, &QAction::triggered, this,
+            &ExportDialog2::duplicateCustomScheme);
+    m_deleteSchemeAction = schemeMenu->addAction(tr("Delete"));
+    connect(m_deleteSchemeAction, &QAction::triggered, this, &ExportDialog2::removeCustomScheme);
+    schemeMenuBtn->setMenu(schemeMenu);
+
+    schemeLayout->addWidget(schemeMenuBtn);
 
     layout->addRow(tr("Scheme:"), schemeLayout);
 
@@ -519,6 +538,13 @@ void ExportDialog2::loadConfig() {
   auto *cfg = m_services.get<ConfigMgr2>();
   const auto option = cfg->getSessionConfig().getExportOption();
   m_customOptions = cfg->getSessionConfig().getCustomExportOptions();
+
+  // Prepend read-only built-in schemes, skipping any whose name collides with a
+  // loaded user scheme (user scheme wins / clone-to-edit upgrade path). Built-ins
+  // live in m_customOptions at runtime so export can resolve them, but they are
+  // filtered out again in saveConfig() so they are never persisted.
+  ExportCustomOption::seedBuiltins(m_customOptions);
+
   refreshCustomSchemes(option.m_customExport);
   restoreFields(option);
 
@@ -532,7 +558,10 @@ void ExportDialog2::loadConfig() {
 
 void ExportDialog2::saveConfig() {
   m_services.get<ConfigMgr2>()->getSessionConfig().setExportOption(collectFields());
-  m_services.get<ConfigMgr2>()->getSessionConfig().setCustomExportOptions(m_customOptions);
+
+  // Never persist built-in schemes; they are re-seeded from code on load.
+  m_services.get<ConfigMgr2>()->getSessionConfig().setCustomExportOptions(
+      ExportCustomOption::withoutBuiltins(m_customOptions));
 }
 
 void ExportDialog2::restoreFields(const ExportOption &p_option) {
@@ -663,7 +692,10 @@ void ExportDialog2::savePdfFields(ExportPdfOption &p_option) const {
 void ExportDialog2::refreshCustomSchemes(const QString &p_currentName) {
   m_customSchemeCombo->clear();
   for (const auto &opt : m_customOptions) {
-    m_customSchemeCombo->addItem(opt.m_name, opt.m_name);
+    // Keep data = raw name so findCustomOption/collectFields still resolve; only
+    // decorate the display text for built-ins.
+    const QString display = opt.m_builtin ? opt.m_name + tr(" (built-in)") : opt.m_name;
+    m_customSchemeCombo->addItem(display, opt.m_name);
   }
 
   int idx = findCustomOption(m_customOptions, p_currentName);
@@ -700,6 +732,18 @@ void ExportDialog2::onCustomSchemeChanged(int p_comboIdx) {
   m_customAllInOneCheck->setChecked(opt.m_allInOne);
   m_targetScrollableCheck->setChecked(opt.m_targetPageScrollable);
   m_customCommandEdit->setPlainText(opt.m_command);
+
+  // Built-in schemes are read-only; users clone them via "New" to customize.
+  const bool builtin = opt.m_builtin;
+  m_targetSuffixEdit->setReadOnly(builtin);
+  m_resourceSeparatorEdit->setReadOnly(builtin);
+  m_useHtmlInputCheck->setEnabled(!builtin);
+  m_customAllInOneCheck->setEnabled(!builtin);
+  m_targetScrollableCheck->setEnabled(!builtin);
+  m_customCommandEdit->setReadOnly(builtin);
+  if (m_deleteSchemeAction) {
+    m_deleteSchemeAction->setEnabled(!builtin);
+  }
 }
 
 void ExportDialog2::addCustomScheme() {
@@ -721,11 +765,51 @@ void ExportDialog2::addCustomScheme() {
     break;
   }
 
+  // "New" creates a blank, editable user scheme with default fields.
   ExportCustomOption option;
-  if (m_customSchemeCombo->currentIndex() >= 0) {
-    option = m_customOptions[m_customSchemeCombo->currentIndex()];
-  }
   option.m_name = name;
+  option.m_builtin = false;
+
+  m_customOptions.append(option);
+  refreshCustomSchemes(name);
+}
+
+void ExportDialog2::duplicateCustomScheme() {
+  const int idx = m_customSchemeCombo->currentIndex();
+  if (idx < 0) {
+    return;
+  }
+
+  saveCurrentCustomScheme();
+
+  // Suggest a unique default name derived from the source scheme.
+  const QString baseName = m_customOptions[idx].m_name;
+  QString suggested = tr("%1 (copy)").arg(baseName);
+  for (int i = 2; findCustomOption(m_customOptions, suggested) != -1; ++i) {
+    suggested = tr("%1 (copy %2)").arg(baseName).arg(i);
+  }
+
+  QString name;
+  while (true) {
+    name = QInputDialog::getText(this, tr("Duplicate Custom Export Scheme"), tr("Scheme name:"),
+                                 QLineEdit::Normal, suggested);
+    if (name.isEmpty()) {
+      return;
+    }
+
+    if (findCustomOption(m_customOptions, name) != -1) {
+      setInformationText(tr("Name conflicts with existing scheme."),
+                         ScrollDialog::InformationLevel::Warning);
+      continue;
+    }
+
+    break;
+  }
+
+  // Clone the current selection (built-in or user) into a new editable user scheme.
+  ExportCustomOption option = m_customOptions[idx];
+  option.m_name = name;
+  option.m_builtin = false;
 
   m_customOptions.append(option);
   refreshCustomSchemes(name);
@@ -737,6 +821,11 @@ void ExportDialog2::removeCustomScheme() {
     return;
   }
 
+  // Built-in schemes cannot be removed.
+  if (m_customOptions[idx].m_builtin) {
+    return;
+  }
+
   m_customOptions.remove(idx);
   refreshCustomSchemes();
 }
@@ -744,6 +833,11 @@ void ExportDialog2::removeCustomScheme() {
 void ExportDialog2::saveCurrentCustomScheme() {
   const int idx = m_customSchemeCombo->currentIndex();
   if (idx < 0) {
+    return;
+  }
+
+  // Built-in schemes are read-only; never write the edit widgets back into them.
+  if (m_customOptions[idx].m_builtin) {
     return;
   }
 

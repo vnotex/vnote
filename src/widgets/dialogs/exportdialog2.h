@@ -17,6 +17,7 @@ class QPushButton;
 class QGroupBox;
 class QPageLayout;
 class QStackedLayout;
+class QAction;
 
 namespace vnotex {
 
@@ -53,6 +54,7 @@ private:
   void refreshCustomSchemes(const QString &p_currentName = QString());
   void onCustomSchemeChanged(int p_comboIdx);
   void addCustomScheme();
+  void duplicateCustomScheme();
   void removeCustomScheme();
   void saveCurrentCustomScheme();
 
@@ -109,6 +111,7 @@ private:
 
   // Custom page.
   QComboBox *m_customSchemeCombo = nullptr;
+  QAction *m_deleteSchemeAction = nullptr;
   QLineEdit *m_targetSuffixEdit = nullptr;
   QLineEdit *m_resourceSeparatorEdit = nullptr;
   QCheckBox *m_useHtmlInputCheck = nullptr;

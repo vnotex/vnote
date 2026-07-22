@@ -70,6 +70,19 @@ struct ExportCustomOption {
 
   bool operator==(const ExportCustomOption &p_other) const;
 
+  // Read-only built-in schemes shipped in code (Docx via pandoc, PNG via
+  // wkhtmltoimage). Always present in the dialog, never persisted to session config.
+  static QVector<ExportCustomOption> builtinSchemes();
+
+  // Prepend builtinSchemes() to p_options in place, skipping any built-in whose
+  // m_name already exists among the loaded user schemes (user scheme wins /
+  // clone-to-edit upgrade path). Used by the Export dialog on load.
+  static void seedBuiltins(QVector<ExportCustomOption> &p_options);
+
+  // Return a copy of p_options with all m_builtin entries removed. Used by the
+  // Export dialog before persisting so built-ins are never written to config.
+  static QVector<ExportCustomOption> withoutBuiltins(const QVector<ExportCustomOption> &p_options);
+
   QString m_name;
 
   QString m_targetSuffix;
@@ -82,6 +95,10 @@ struct ExportCustomOption {
 
   // Whether the page of target format is scrollable.
   bool m_targetPageScrollable = false;
+
+  // Runtime-only: true for shipped built-in schemes. Not persisted (excluded from
+  // toJson/fromJson and operator==), used by the dialog to make fields read-only.
+  bool m_builtin = false;
 
   // The default value here follows the rules of Pandoc.
 #if defined(Q_OS_WIN)
