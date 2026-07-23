@@ -1140,8 +1140,21 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
   if (m_workspaces.contains(p_workspaceId)) {
     auto *wrapper = m_workspaces.take(p_workspaceId);
     auto leftover = wrapper->takeAllViewWindows();
+    // For a hidden workspace the windows were parked in the wrapper and never
+    // lived in a ViewSplit2, so Step 2's getViewWindowIdsForWorkspace() (which
+    // only searches visible splits) returned nothing and they were never closed
+    // through the view. Route them through closeViewWindow() now so they are
+    // dropped from ViewArea2::m_windows and updateScreenVisibility() runs — this
+    // is what reopens the home dashboard (maybeOpenHome) once the area is empty.
+    // Deleting them directly here would skip that path and leave the view area
+    // blank with no home screen.
     for (auto *obj : leftover) {
-      delete qobject_cast<QWidget *>(obj);
+      auto *win = qobject_cast<ViewWindow2 *>(obj);
+      if (win && m_view && win->getViewWindowId() != InvalidViewWindowId) {
+        m_view->closeViewWindow(win->getViewWindowId(), /*p_force=*/true);
+      } else {
+        delete qobject_cast<QWidget *>(obj);
+      }
     }
     delete wrapper;
   }
