@@ -719,6 +719,11 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
   connect(p_split, &ViewSplit2::distributeSplitsRequested, this,
           [this]() { m_controller->distributeViewSplits(); });
 
+  // Double click on the empty tab bar area: trigger a quick note using the same
+  // logic as the New -> Quick Note action in the main window toolbar.
+  connect(p_split, &ViewSplit2::newQuickNoteRequested, this,
+          [this]() { m_controller->requestQuickNote(); });
+
   // Signals handled by ViewArea2 (need pointer context).
   connect(p_split, &ViewSplit2::removeSplitRequested, this, &ViewArea2::onRemoveSplitRequested);
   connect(p_split, &ViewSplit2::removeSplitAndWorkspaceRequested, this,

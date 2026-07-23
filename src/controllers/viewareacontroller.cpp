@@ -1490,6 +1490,19 @@ void ViewAreaController::notifyCurrentViewWindowChanged() {
   emit currentViewWindowChanged();
 }
 
+void ViewAreaController::requestQuickNote() {
+  // If no quick note schemes are configured, deep-link into the settings page
+  // so the user can create one; otherwise emit the request for the explorer.
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (configMgr && configMgr->getSessionConfig().getQuickNoteSchemes().isEmpty()) {
+    openVxUrl(QUrl(QStringLiteral("vx://settings/quickaccess#quicknote")));
+    return;
+  }
+
+  emit quickNoteRequested();
+}
+
+
 void ViewAreaController::openVxUrl(const QUrl &p_url) {
   if (p_url.scheme() != QStringLiteral("vx")) {
     qWarning() << "ViewAreaController::openVxUrl: unsupported scheme:" << p_url.scheme();

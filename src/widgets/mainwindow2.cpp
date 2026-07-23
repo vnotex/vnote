@@ -548,8 +548,6 @@ void MainWindow2::setupNotebookExplorer() {
 
   // Connect MainWindow2 signals to NotebookExplorer2 slots
   connect(this, &MainWindow2::newNoteRequested, m_notebookExplorer, &NotebookExplorer2::newNote);
-  connect(this, &MainWindow2::newQuickNoteRequested, m_notebookExplorer,
-          &NotebookExplorer2::newQuickNote);
   connect(this, &MainWindow2::newFolderRequested, m_notebookExplorer,
           &NotebookExplorer2::newFolder);
   connect(this, &MainWindow2::importFileRequested, m_notebookExplorer,
@@ -746,6 +744,11 @@ void MainWindow2::setupDocks() {
   // Auto-show the Location List dock when a search starts.
   connect(m_searchPanel->getController(), &SearchController::searchStarted, this,
           [this]() { m_dockWidgetHelper.activateDock(DockWidgetHelper::LocationListDock); });
+
+  // Quick note requested by the view area (e.g. double click on the empty tab
+  // bar area). Same destination as the toolbar's New -> Quick Note action.
+  connect(m_viewArea->getController(), &ViewAreaController::quickNoteRequested, m_notebookExplorer,
+          &NotebookExplorer2::newQuickNote);
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   // Activate the navigation dock first so the notebook explorer is visible.

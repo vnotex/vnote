@@ -239,8 +239,16 @@ public:
   // Force-emit currentViewWindowChanged (e.g. after session restore settles).
   void notifyCurrentViewWindowChanged();
 
+  // Request a quick note. If no quick note schemes are configured, open the
+  // quick access settings page; otherwise emit quickNoteRequested(). Shared by
+  // the main window toolbar action and the tab bar double-click gesture.
+  void requestQuickNote();
+
 signals:
   // ============ Notification Signals (external consumers) ============
+
+  // Emitted when a quick note should be created (schemes are configured).
+  void quickNoteRequested();
 
   // Emitted when the current view window changes.
   void currentViewWindowChanged();

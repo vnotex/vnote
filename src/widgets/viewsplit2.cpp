@@ -566,6 +566,11 @@ bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
           closeTab(idx);
           // closeTab may trigger removal of this split. Return immediately.
           return true;
+        } else {
+          // Double click on the empty area of the tab bar triggers a quick note,
+          // mirroring the New -> Quick Note action in the main window toolbar.
+          emit newQuickNoteRequested();
+          return true;
         }
       }
     }

@@ -106,7 +106,6 @@ signals:
 
   // File operations.
   void newNoteRequested();
-  void newQuickNoteRequested();
   void newFolderRequested();
   void importFileRequested();
   void importFolderRequested();

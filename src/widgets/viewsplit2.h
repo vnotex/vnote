@@ -157,6 +157,9 @@ signals:
   // Tab context menu: locate node in notebook explorer.
   void locateNodeRequested(const NodeIdentifier &p_nodeId);
 
+  // Double click on the empty area of the tab bar: request a new quick note.
+  void newQuickNoteRequested();
+
 protected:
   void mousePressEvent(QMouseEvent *p_event) override;
 
