@@ -328,8 +328,6 @@ MarkdownEditorController::currentEditorConfig() const {
 
   snapshot.zoomDelta = mdConfig.getTextEditorConfig().getZoomDelta();
   snapshot.shortcutLeaderKey = coreConfig.getShortcutLeaderKey();
-  snapshot.sectionNumberEnabled =
-      mdConfig.getSectionNumberMode() != MarkdownEditorConfig::SectionNumberMode::None;
 
   return snapshot;
 }
@@ -352,19 +350,6 @@ MarkdownEditorController::prepareBufferState(const Buffer2 &p_buffer) {
   }
 
   return state;
-}
-
-bool MarkdownEditorController::shouldEnableSectionNumber(
-    MarkdownEditorConfig::SectionNumberMode p_sectionNumberMode, int p_mode) {
-  switch (p_sectionNumberMode) {
-  case MarkdownEditorConfig::SectionNumberMode::None:
-    return false;
-  case MarkdownEditorConfig::SectionNumberMode::Read:
-    return p_mode == static_cast<int>(ViewWindowMode::Read);
-  case MarkdownEditorConfig::SectionNumberMode::Edit:
-    return p_mode == static_cast<int>(ViewWindowMode::Edit);
-  }
-  return false;
 }
 
 int MarkdownEditorController::persistZoomDelta(int p_delta) {

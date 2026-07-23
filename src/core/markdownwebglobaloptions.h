@@ -18,10 +18,6 @@ struct MarkdownWebGlobalOptions {
 
   QString m_mathJaxScript;
 
-  bool m_sectionNumberEnabled = true;
-
-  int m_sectionNumberBaseLevel = 2;
-
   bool m_constrainImageWidthEnabled = true;
 
   bool m_imageAlignCenterEnabled = true;

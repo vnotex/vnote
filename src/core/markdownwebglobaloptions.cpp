@@ -29,8 +29,6 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
              .arg(Utils::boolToString(m_codeBlockLineNumberEnabled)) +
          QStringLiteral("codeBlockLineWrapEnabled: %1,\n")
              .arg(Utils::boolToString(m_codeBlockLineWrapEnabled)) +
-         QStringLiteral("sectionNumberEnabled: %1,\n")
-             .arg(Utils::boolToString(m_sectionNumberEnabled)) +
          QStringLiteral("transparentBackgroundEnabled: %1,\n")
              .arg(Utils::boolToString(m_transparentBackgroundEnabled)) +
          QStringLiteral("scrollable: %1,\n").arg(Utils::boolToString(m_scrollable)) +
@@ -39,8 +37,7 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
          QStringLiteral("transformSvgToPngEnabled: %1,\n")
              .arg(Utils::boolToString(m_transformSvgToPngEnabled)) +
          QStringLiteral("mathJaxScale: %1,\n").arg(m_mathJaxScale) +
-         QStringLiteral("removeCodeToolBarEnabled: %1,\n")
+         QStringLiteral("removeCodeToolBarEnabled: %1\n")
              .arg(Utils::boolToString(m_removeCodeToolBarEnabled)) +
-         QStringLiteral("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel) +
          QStringLiteral("}");
 }

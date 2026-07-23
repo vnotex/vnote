@@ -14,15 +14,6 @@ class IConfigMgr;
 
 class MarkdownEditorConfig : public IConfig {
 public:
-  enum SectionNumberMode { None, Read, Edit };
-
-  enum SectionNumberStyle {
-    // 1.1.
-    DigDotDigDot,
-    // 1.1
-    DigDotDig
-  };
-
   enum InplacePreviewSource { NoInplacePreview = 0, ImageLink = 0x1, CodeBlock = 0x2, Math = 0x4 };
   Q_DECLARE_FLAGS(InplacePreviewSources, InplacePreviewSource);
 
@@ -69,15 +60,6 @@ public:
 
   bool getInsertFileNameAsTitle() const;
   void setInsertFileNameAsTitle(bool p_enabled);
-
-  SectionNumberMode getSectionNumberMode() const;
-  void setSectionNumberMode(SectionNumberMode p_mode);
-
-  int getSectionNumberBaseLevel() const;
-  void setSectionNumberBaseLevel(int p_level);
-
-  SectionNumberStyle getSectionNumberStyle() const;
-  void setSectionNumberStyle(SectionNumberStyle p_style);
 
   bool getConstrainImageWidthEnabled() const;
   void setConstrainImageWidthEnabled(bool p_enabled);
@@ -134,12 +116,6 @@ public:
 private:
   friend class MainConfig;
 
-  QString sectionNumberModeToString(SectionNumberMode p_mode) const;
-  SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
-
-  QString sectionNumberStyleToString(SectionNumberStyle p_style) const;
-  SectionNumberStyle stringToSectionNumberStyle(const QString &p_str) const;
-
   void loadViewerResource(const QJsonObject &p_jobj);
   QJsonObject saveViewerResource() const;
 
@@ -191,15 +167,6 @@ private:
 
   // Whether insert the name of the new file as title.
   bool m_insertFileNameAsTitle = true;
-
-  // Whether enable section numbering.
-  SectionNumberMode m_sectionNumberMode = SectionNumberMode::None;
-
-  // 1 based.
-  int m_sectionNumberBaseLevel = 2;
-
-  // Section number style.
-  SectionNumberStyle m_sectionNumberStyle = SectionNumberStyle::DigDotDigDot;
 
   // Whether enable image width constraint.
   bool m_constrainImageWidthEnabled = true;

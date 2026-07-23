@@ -7,7 +7,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
-#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include <core/configmgr2.h>
@@ -49,20 +48,6 @@ void MarkdownEditorPage::loadInternal() {
       m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
 
   m_insertFileNameAsTitleCheckBox->setChecked(markdownConfig.getInsertFileNameAsTitle());
-
-  {
-    int idx =
-        m_sectionNumberComboBox->findData(static_cast<int>(markdownConfig.getSectionNumberMode()));
-    Q_ASSERT(idx != -1);
-    m_sectionNumberComboBox->setCurrentIndex(idx);
-
-    m_sectionNumberBaseLevelSpinBox->setValue(markdownConfig.getSectionNumberBaseLevel());
-
-    idx = m_sectionNumberStyleComboBox->findData(
-        static_cast<int>(markdownConfig.getSectionNumberStyle()));
-    Q_ASSERT(idx != -1);
-    m_sectionNumberStyleComboBox->setCurrentIndex(idx);
-  }
 
   m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
 
@@ -125,21 +110,6 @@ bool MarkdownEditorPage::saveInternal() {
   auto &markdownConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
 
   markdownConfig.setInsertFileNameAsTitle(m_insertFileNameAsTitleCheckBox->isChecked());
-
-  {
-    auto mode = m_sectionNumberComboBox->currentData().toInt();
-    markdownConfig.setSectionNumberMode(static_cast<MarkdownEditorConfig::SectionNumberMode>(mode));
-
-    if (m_sectionNumberBaseLevelSpinBox->isEnabled()) {
-      markdownConfig.setSectionNumberBaseLevel(m_sectionNumberBaseLevelSpinBox->value());
-    }
-
-    if (m_sectionNumberStyleComboBox->isEnabled()) {
-      auto style = m_sectionNumberStyleComboBox->currentData().toInt();
-      markdownConfig.setSectionNumberStyle(
-          static_cast<MarkdownEditorConfig::SectionNumberStyle>(style));
-    }
-  }
 
   markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
 
@@ -436,58 +406,6 @@ void MarkdownEditorPage::setupGeneralGroup() {
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("General"), QString(), this);
 
   {
-    auto *sectionWidget = new QWidget(this);
-    auto *sectionLayout = new QHBoxLayout(sectionWidget);
-    sectionLayout->setContentsMargins(0, 0, 0, 0);
-
-    m_sectionNumberComboBox = WidgetsFactory::createComboBox(this);
-    m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
-    m_sectionNumberComboBox->addItem(tr("None"),
-                                     (int)MarkdownEditorConfig::SectionNumberMode::None);
-    m_sectionNumberComboBox->addItem(tr("Read"),
-                                     (int)MarkdownEditorConfig::SectionNumberMode::Read);
-    m_sectionNumberComboBox->addItem(tr("Edit"),
-                                     (int)MarkdownEditorConfig::SectionNumberMode::Edit);
-    sectionLayout->addWidget(m_sectionNumberComboBox);
-    connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &MarkdownEditorPage::pageIsChanged);
-
-    m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(this);
-    m_sectionNumberBaseLevelSpinBox->setToolTip(
-        tr("Base level to start section numbering in edit mode"));
-    m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
-    m_sectionNumberBaseLevelSpinBox->setSingleStep(1);
-    m_sectionNumberBaseLevelSpinBox->setEnabled(false);
-    sectionLayout->addWidget(m_sectionNumberBaseLevelSpinBox);
-    connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
-            &MarkdownEditorPage::pageIsChanged);
-
-    m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(this);
-    m_sectionNumberStyleComboBox->setToolTip(tr("Section number style"));
-    m_sectionNumberStyleComboBox->addItem(
-        tr("1.1."), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot);
-    m_sectionNumberStyleComboBox->addItem(tr("1.1"),
-                                          (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDig);
-    m_sectionNumberStyleComboBox->setEnabled(false);
-    sectionLayout->addWidget(m_sectionNumberStyleComboBox);
-    connect(m_sectionNumberStyleComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &MarkdownEditorPage::pageIsChanged);
-
-    connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int p_index) {
-              m_sectionNumberBaseLevelSpinBox->setEnabled(
-                  p_index != MarkdownEditorConfig::SectionNumberMode::None);
-              m_sectionNumberStyleComboBox->setEnabled(
-                  p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
-            });
-
-    const QString label(tr("Section number"));
-    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_sectionNumberComboBox->toolTip(), sectionWidget, this));
-    addSearchItem(label, m_sectionNumberComboBox->toolTip(), m_sectionNumberComboBox);
-  }
-
-  {
     m_plantUmlModeComboBox = WidgetsFactory::createComboBox(this);
     m_plantUmlModeComboBox->setToolTip(
         tr("Use web service or local JAR file to render PlantUml graphs"));
@@ -496,7 +414,6 @@ void MarkdownEditorPage::setupGeneralGroup() {
     m_plantUmlModeComboBox->addItem(tr("Local JAR"), 1);
 
     const QString label(tr("PlantUml"));
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox, this));
     addSearchItem(label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox);

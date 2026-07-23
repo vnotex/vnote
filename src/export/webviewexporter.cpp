@@ -188,9 +188,6 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
   opts.m_webGraphviz = p_config.getWebGraphviz();
   opts.m_mathJaxScript = p_config.getMathJaxScript();
-  opts.m_sectionNumberEnabled =
-      p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
-  opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
   opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
   opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
   opts.m_protectFromXss = p_config.getProtectFromXss();

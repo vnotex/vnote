@@ -75,8 +75,6 @@ enum FindOption {
 };
 Q_DECLARE_FLAGS(FindOptions, FindOption);
 
-enum OverrideState { NoOverride = 0, ForceEnable = 1, ForceDisable = 2 };
-
 enum class Alignment { None, Left, Center, Right };
 
 enum class ViewWindowMode { Read, Edit, Invalid };

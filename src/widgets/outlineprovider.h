@@ -32,12 +32,6 @@ struct Outline {
   bool isEmpty() const;
 
   QVector<Heading> m_headings;
-
-  // 1-based.
-  // -1 to disable section number by force.
-  int m_sectionNumberBaseLevel = 1;
-
-  bool m_sectionNumberEndingDot = true;
 };
 
 // Used to hold toc-related data of one ViewWindow.

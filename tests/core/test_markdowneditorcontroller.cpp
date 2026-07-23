@@ -5,7 +5,6 @@
 
 #include <controllers/markdowneditorcontroller.h>
 #include <core/editorconfig.h>
-#include <core/global.h>
 #include <core/markdowneditorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/services/buffer2.h>
@@ -33,15 +32,6 @@ class TestMarkdownEditorController : public QObject {
   Q_OBJECT
 
 private slots:
-  // ============ Group 1: shouldEnableSectionNumber (static) ============
-
-  void testSectionNumber_noneModeRead();
-  void testSectionNumber_noneModeEdit();
-  void testSectionNumber_readModeRead();
-  void testSectionNumber_readModeEdit();
-  void testSectionNumber_editModeEdit();
-  void testSectionNumber_editModeRead();
-
   // ============ Group 2: getPreviewHelperConfig (static) ============
 
   void testPreviewHelper_allDefaults();
@@ -78,9 +68,6 @@ private slots:
 private:
   EditorConfig makeEditorConfig() { return EditorConfig(nullptr, nullptr); }
 
-  static const int c_readMode = static_cast<int>(ViewWindowMode::Read);
-  static const int c_editMode = static_cast<int>(ViewWindowMode::Edit);
-
   // Group 4 members
   VxCoreContextHandle m_context = nullptr;
   BufferService *m_bufferService = nullptr;
@@ -89,44 +76,6 @@ private:
   TempDirFixture m_tempDir;
   QString m_notebookId;
 };
-
-// ============ Group 1: shouldEnableSectionNumber ============
-
-void TestMarkdownEditorController::testSectionNumber_noneModeRead() {
-  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
-               MarkdownEditorConfig::SectionNumberMode::None, c_readMode),
-           false);
-}
-
-void TestMarkdownEditorController::testSectionNumber_noneModeEdit() {
-  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
-               MarkdownEditorConfig::SectionNumberMode::None, c_editMode),
-           false);
-}
-
-void TestMarkdownEditorController::testSectionNumber_readModeRead() {
-  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
-               MarkdownEditorConfig::SectionNumberMode::Read, c_readMode),
-           true);
-}
-
-void TestMarkdownEditorController::testSectionNumber_readModeEdit() {
-  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
-               MarkdownEditorConfig::SectionNumberMode::Read, c_editMode),
-           false);
-}
-
-void TestMarkdownEditorController::testSectionNumber_editModeEdit() {
-  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
-               MarkdownEditorConfig::SectionNumberMode::Edit, c_editMode),
-           true);
-}
-
-void TestMarkdownEditorController::testSectionNumber_editModeRead() {
-  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
-               MarkdownEditorConfig::SectionNumberMode::Edit, c_readMode),
-           false);
-}
 
 // ============ Group 2: getPreviewHelperConfig ============
 

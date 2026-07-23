@@ -23,8 +23,6 @@ class MarkdownViewerCore extends VXCore {
 
         this.turndown = null;
 
-        this.sectionNumberBaseLevel = 2;
-
         // Dict mapping from {id, index} to callback for renderGraph().
         this.renderGraphCallbacks = {}
     }
@@ -46,12 +44,6 @@ class MarkdownViewerCore extends VXCore {
         this.crossCopyer = new CrossCopy(this);
 
         this.searcher = new MarkJs(this, this.contentContainer);
-
-        this.sectionNumberBaseLevel = window.vxOptions.sectionNumberBaseLevel;
-        if (this.sectionNumberBaseLevel > 3) {
-            console.warn('only support section number base level less than 3', this.sectionNumberBaseLevel);
-            this.sectionNumberBaseLevel = 3;
-        }
 
         this.setContentContainerOption('vx-constrain-image-width',
                                        window.vxOptions.constrainImageWidthEnabled || !window.vxOptions.scrollable);
@@ -227,13 +219,6 @@ class MarkdownViewerCore extends VXCore {
 
     setCurrentHeadingAnchor(p_idx, p_anchor) {
         window.vxMarkdownAdapter.setCurrentHeadingAnchor(p_idx, p_anchor);
-    }
-
-    setSectionNumberEnabled(p_enabled) {
-        let sectionClass = 'vx-section-number';
-        let sectionLevelClass = 'vx-section-number-' + this.sectionNumberBaseLevel;
-        this.setContentContainerOption(sectionClass, p_enabled);
-        this.setContentContainerOption(sectionLevelClass, p_enabled);
     }
 
     scroll(p_up) {

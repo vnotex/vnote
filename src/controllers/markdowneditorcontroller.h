@@ -38,7 +38,6 @@ public:
   struct EditorConfigSnapshot {
     int zoomDelta = 0;
     QString shortcutLeaderKey; // raw key string from CoreConfig
-    bool sectionNumberEnabled = false;
   };
 
   // Preview helper configuration extracted from MarkdownEditorConfig.
@@ -98,14 +97,6 @@ public:
   // Prepare buffer state for the view to apply to the editor.
   // Extracts content, basePath, modified flag, revision from Buffer2.
   static BufferState prepareBufferState(const Buffer2 &p_buffer);
-
-  // ============ Section Number ============
-
-  // Determine whether section numbering should be enabled for current mode.
-  // @p_sectionNumberMode: from MarkdownEditorConfig::getSectionNumberMode().
-  // @p_mode: current ViewWindowMode (Edit or Read).
-  static bool shouldEnableSectionNumber(MarkdownEditorConfig::SectionNumberMode p_sectionNumberMode,
-                                        int p_mode);
 
   // ============ Zoom Persistence ============
 
