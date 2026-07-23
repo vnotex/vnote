@@ -59,6 +59,8 @@ void SearchPanel2::setupUI() {
   m_keywordCombo->lineEdit()->setClearButtonEnabled(true);
   m_keywordCombo->setMaxVisibleItems(10);
   m_keywordCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  m_keywordCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+  m_keywordCombo->setMinimumContentsLength(10);
   mainLayout->addWidget(m_keywordCombo);
 
   auto *modeLabel = new QLabel(tr("Mode:"), this);
