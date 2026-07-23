@@ -18,7 +18,8 @@ MarkdownViewWindowController::MarkdownViewWindowController(ServiceLocator &p_ser
 QMenu *MarkdownViewWindowController::createContextMenu(
     const MarkdownViewerContextInfo &p_info, QMenu *p_standardMenu,
     const std::function<void()> &p_copyImageHandler, const std::function<void()> &p_editHandler,
-    const std::function<void(const QString &)> &p_crossCopyHandler, QWidget *p_parent) {
+    const std::function<void(const QString &)> &p_crossCopyHandler,
+    const std::function<void()> &p_viewImageHandler, QWidget *p_parent) {
   Q_UNUSED(p_parent)
 
   const QList<QAction *> actions = p_standardMenu->actions();
@@ -32,6 +33,14 @@ QMenu *MarkdownViewWindowController::createContextMenu(
     if (firstAct) {
       p_standardMenu->insertSeparator(firstAct);
     }
+  }
+
+  if (p_info.inReadMode && p_info.imageUrl.isValid()) {
+    auto *viewAct = new QAction(QObject::tr("&View"), p_standardMenu);
+    connect(viewAct, &QAction::triggered, p_standardMenu, p_viewImageHandler);
+    // Place next to the image actions; fall back to appending if unknown.
+    QAction *anchor = p_info.defaultCopyImageAction; // may be nullptr
+    p_standardMenu->insertAction(anchor, viewAct);
   }
 
   if (p_info.defaultCopyImageAction && actions.contains(p_info.defaultCopyImageAction)) {

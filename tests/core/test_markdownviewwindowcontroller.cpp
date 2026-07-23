@@ -60,6 +60,9 @@ private slots:
   void testContextMenu_noCrossCopyTargets();
   void testContextMenu_copyImagePresent();
   void testContextMenu_noCopyImage();
+  void testContextMenu_viewImageReadMode();
+  void testContextMenu_viewImageNotInReadMode();
+  void testContextMenu_viewImageInvalidUrl();
 
 private:
   static const int c_readMode = static_cast<int>(ViewWindowMode::Read);
@@ -284,7 +287,7 @@ void TestMarkdownViewWindowController::testContextMenu_readModeNoSelection() {
   info.editShortcutText = "Ctrl+T";
 
   auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
 
   QCOMPARE(result, &menu);
   auto actions = result->actions();
@@ -303,7 +306,7 @@ void TestMarkdownViewWindowController::testContextMenu_readModeWithSelection() {
   info.inReadMode = true;
 
   auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
 
   for (auto *act : result->actions()) {
     QVERIFY(!act->text().contains("Edit"));
@@ -321,7 +324,7 @@ void TestMarkdownViewWindowController::testContextMenu_editMode() {
   info.inReadMode = false;
 
   auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
 
   for (auto *act : result->actions()) {
     QVERIFY(!act->text().contains("Edit"));
@@ -341,7 +344,7 @@ void TestMarkdownViewWindowController::testContextMenu_crossCopyTargets() {
   info.crossCopyDisplayNames = {"HTML", "Plain Text"};
 
   auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
 
   bool foundCrossCopy = false;
   for (auto *act : result->actions()) {
@@ -367,7 +370,7 @@ void TestMarkdownViewWindowController::testContextMenu_noCrossCopyTargets() {
   info.copyAction = copyAct;
 
   auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
 
   for (auto *act : result->actions()) {
     if (act->menu()) {
@@ -388,7 +391,7 @@ void TestMarkdownViewWindowController::testContextMenu_copyImagePresent() {
   bool copyImageCalled = false;
   auto *result = controller.createContextMenu(
       info, &menu, [&copyImageCalled]() { copyImageCalled = true; }, []() {},
-      [](const QString &) {});
+      [](const QString &) {}, []() {});
 
   QVERIFY(!defaultCopyImageAct->isVisible());
 
@@ -413,7 +416,7 @@ void TestMarkdownViewWindowController::testContextMenu_noCopyImage() {
   MarkdownViewerContextInfo info;
 
   auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {});
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
 
   int copyImageCount = 0;
   for (auto *act : result->actions()) {
@@ -422,6 +425,81 @@ void TestMarkdownViewWindowController::testContextMenu_noCopyImage() {
     }
   }
   QCOMPARE(copyImageCount, 0);
+}
+
+void TestMarkdownViewWindowController::testContextMenu_viewImageReadMode() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  auto *defaultCopyImageAct = menu.addAction("Copy image");
+
+  MarkdownViewerContextInfo info;
+  info.inReadMode = true;
+  info.imageUrl = QUrl("file:///tmp/pic.png");
+  info.defaultCopyImageAction = defaultCopyImageAct;
+
+  bool viewCalled = false;
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {},
+      [&viewCalled]() { viewCalled = true; });
+
+  QAction *viewAct = nullptr;
+  int viewIdx = -1;
+  int copyImageIdx = -1;
+  const auto acts = result->actions();
+  for (int i = 0; i < acts.size(); ++i) {
+    if (acts[i]->text().contains("View")) {
+      viewAct = acts[i];
+      viewIdx = i;
+    }
+    if (acts[i] == defaultCopyImageAct) {
+      copyImageIdx = i;
+    }
+  }
+  QVERIFY(viewAct);
+  // "View" should be inserted before the default copy-image action.
+  QVERIFY(viewIdx >= 0);
+  QVERIFY(copyImageIdx >= 0);
+  QVERIFY(viewIdx < copyImageIdx);
+
+  viewAct->trigger();
+  QVERIFY(viewCalled);
+}
+
+void TestMarkdownViewWindowController::testContextMenu_viewImageNotInReadMode() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.inReadMode = false;
+  info.imageUrl = QUrl("file:///tmp/pic.png");
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+
+  for (auto *act : result->actions()) {
+    QVERIFY(!act->text().contains("View"));
+  }
+}
+
+void TestMarkdownViewWindowController::testContextMenu_viewImageInvalidUrl() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.inReadMode = true;
+  // imageUrl left default-constructed (invalid).
+
+  auto *result =
+      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+
+  for (auto *act : result->actions()) {
+    QVERIFY(!act->text().contains("View"));
+  }
 }
 
 } // namespace tests

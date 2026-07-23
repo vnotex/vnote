@@ -9,6 +9,11 @@
 #include <QUrl>
 #include <QWebChannel>
 #include <QWebEngineSettings>
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+#include <QWebEngineContextMenuData>
+#else
+#include <QWebEngineContextMenuRequest>
+#endif
 
 #include <controllers/markdownviewwindowcontroller.h>
 
@@ -24,6 +29,7 @@
 #include <gui/utils/imageutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
+#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
@@ -94,6 +100,18 @@ MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
   info.editShortcutText = getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead);
   info.copyAction = pageAction(QWebEnginePage::Copy);
   info.defaultCopyImageAction = pageAction(QWebEnginePage::CopyImageToClipboard);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+  const auto data = page()->contextMenuData();
+  if (data.mediaType() == QWebEngineContextMenuData::MediaTypeImage) {
+    info.imageUrl = data.mediaUrl();
+  }
+#else
+  if (auto *req = lastContextMenuRequest()) {
+    if (req->mediaType() == QWebEngineContextMenuRequest::MediaTypeImage) {
+      info.imageUrl = req->mediaUrl();
+    }
+  }
+#endif
   return info;
 }
 
@@ -146,14 +164,17 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
 #endif
 
   if (m_controller) {
+    auto info = populateContextInfo();
+    const QUrl imageUrl = info.imageUrl;
     m_controller->createContextMenu(
-        populateContextInfo(), menu, [this]() { copyImage(); }, [this]() { emit editRequested(); },
+        info, menu, [this]() { copyImage(); }, [this]() { emit editRequested(); },
         [this](const QString &target) {
           m_crossCopyTarget = target;
           auto *clipboard = QApplication::clipboard();
           clipboard->setProperty(c_propertyCrossCopy, true);
           triggerPageAction(QWebEnginePage::Copy);
-        });
+        },
+        [this, imageUrl]() { openImageExternally(imageUrl); });
   } else {
     // Fallback: inline logic for when no controller is set (e.g., WebViewExporter).
     // This preserves the exact original behavior.
@@ -252,6 +273,28 @@ void MarkdownViewer::handleCopyImageUrlAction() {
       }
     }
   }
+}
+
+void MarkdownViewer::openImageExternally(const QUrl &p_url) {
+  if (!p_url.isValid()) {
+    return;
+  }
+  const auto scheme = p_url.scheme();
+  if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https")) {
+    int ret = MessageBoxHelper::questionYesNo(
+        MessageBoxHelper::Warning, tr("Are you sure to open link (%1)?").arg(p_url.toString()),
+        tr("Malicious link might do harm to your device."), QString(), this);
+    if (ret == QMessageBox::Yes) {
+      QDesktopServices::openUrl(p_url);
+    }
+    return;
+  }
+
+  // Local file (or file:// URL): open with the default application.
+  if (p_url.isLocalFile()) {
+    WidgetUtils::openUrlByDesktop(p_url);
+  }
+  // Other schemes (data:/blob:/ftp:) are unsupported for external viewing; ignore.
 }
 
 void MarkdownViewer::copyImage() {

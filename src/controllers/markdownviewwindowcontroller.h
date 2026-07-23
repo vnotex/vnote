@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QUrl>
 
 #include <functional>
 
@@ -33,6 +34,9 @@ struct MarkdownViewerContextInfo {
   // Any of these may be nullptr if the action is not present in the menu.
   QAction *copyAction = nullptr;             // QWebEnginePage::Copy
   QAction *defaultCopyImageAction = nullptr; // QWebEnginePage::CopyImageToClipboard
+
+  // Media URL of the image under the cursor, if any (read mode only).
+  QUrl imageUrl;
 };
 
 class MarkdownViewWindowController : public QObject {
@@ -46,6 +50,7 @@ public:
                            const std::function<void()> &p_copyImageHandler,
                            const std::function<void()> &p_editHandler,
                            const std::function<void(const QString &)> &p_crossCopyHandler,
+                           const std::function<void()> &p_viewImageHandler,
                            QWidget *p_parent = nullptr);
 
   // Result of computing what needs to happen for a mode transition.
