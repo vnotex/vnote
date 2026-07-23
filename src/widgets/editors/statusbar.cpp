@@ -164,43 +164,30 @@ void StatusBar::rebuildMenu(int p_index) {
   menu->clear();
 
   const auto &items = m_columns[p_index].menuItems;
-  if (!items.isEmpty()) {
-    auto onMenuTriggered = m_columns[p_index].onMenuTriggered;
-    QHash<int, QActionGroup *> groups;
-    for (int i = 0; i < items.size(); ++i) {
-      const StatusBarMenuItem &item = items.at(i);
-      if (item.separator) {
-        menu->addSeparator();
-        continue;
-      }
-
-      QAction *action = menu->addAction(item.text);
-      if (item.checkable) {
-        action->setCheckable(true);
-        action->setChecked(item.checked);
-      }
-      if (item.exclusiveGroupId >= 0) {
-        QActionGroup *&group = groups[item.exclusiveGroupId];
-        if (!group) {
-          group = new QActionGroup(menu);
-        }
-        group->addAction(action);
-      }
-      if (onMenuTriggered) {
-        connect(action, &QAction::triggered, this,
-                [onMenuTriggered, i](bool p_checked) { onMenuTriggered(i, p_checked); });
-      }
+  auto onMenuTriggered = m_columns[p_index].onMenuTriggered;
+  QHash<int, QActionGroup *> groups;
+  for (int i = 0; i < items.size(); ++i) {
+    const StatusBarMenuItem &item = items.at(i);
+    if (item.separator) {
+      menu->addSeparator();
+      continue;
     }
-    return;
-  }
 
-  // Legacy flat path.
-  const QStringList actions = m_columns[p_index].menuActions;
-  auto onTriggered = m_columns[p_index].onTriggered;
-  for (int i = 0; i < actions.size(); ++i) {
-    QAction *action = menu->addAction(actions.at(i));
-    if (onTriggered) {
-      connect(action, &QAction::triggered, this, [onTriggered, i]() { onTriggered(i); });
+    QAction *action = menu->addAction(item.text);
+    if (item.checkable) {
+      action->setCheckable(true);
+      action->setChecked(item.checked);
+    }
+    if (item.exclusiveGroupId >= 0) {
+      QActionGroup *&group = groups[item.exclusiveGroupId];
+      if (!group) {
+        group = new QActionGroup(menu);
+      }
+      group->addAction(action);
+    }
+    if (onMenuTriggered) {
+      connect(action, &QAction::triggered, this,
+              [onMenuTriggered, i](bool p_checked) { onMenuTriggered(i, p_checked); });
     }
   }
 }
@@ -355,19 +342,6 @@ void StatusBar::setColumnIcon(int p_index, const QIcon &p_icon) {
   }
 }
 
-void StatusBar::setColumnMenuActions(int p_index, const QStringList &p_actions) {
-  if (!isValidIndex(p_index)) {
-    return;
-  }
-  if (m_columns[p_index].type != StatusBarColumnType::Menu) {
-    return;
-  }
-
-  m_columns[p_index].menuActions = p_actions;
-  m_columns[p_index].menuItems.clear();
-  rebuildMenu(p_index);
-}
-
 void StatusBar::setColumnMenuItems(int p_index, const QVector<StatusBarMenuItem> &p_items) {
   if (!isValidIndex(p_index)) {
     return;
@@ -378,18 +352,4 @@ void StatusBar::setColumnMenuItems(int p_index, const QVector<StatusBarMenuItem>
 
   m_columns[p_index].menuItems = p_items;
   rebuildMenu(p_index);
-}
-
-void StatusBar::setColumnEditText(int p_index, const QString &p_text) {
-  if (!isValidIndex(p_index)) {
-    return;
-  }
-  if (m_columns[p_index].type != StatusBarColumnType::Edit) {
-    return;
-  }
-
-  m_columns[p_index].text = p_text;
-  if (auto *edit = qobject_cast<QLineEdit *>(m_widgets[p_index])) {
-    edit->setText(p_text);
-  }
 }

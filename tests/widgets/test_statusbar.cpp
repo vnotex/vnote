@@ -26,12 +26,11 @@ private slots:
   void testSetColumnVisible();
   void testSetColumnStyle();
   void testSetColumnIcon();
-  void testSetColumnMenuActions();
-  void testSetColumnEditText();
+  void testSetColumnMenuItems();
+  void testSetColumnTextOnEdit();
   void testOutOfRangeIsNoOp();
   void testWrongTypeIsNoOp();
   void testOnClickedFires();
-  void testOnTriggeredFires();
   void testOnTextEditedFires();
   void testWidgetColumnMountAndSwap();
   void testWidgetColumnNullClears();
@@ -137,11 +136,17 @@ void TestStatusBar::testSetColumnIcon() {
   QVERIFY(!childAt<QToolButton>(bar, 0)->icon().isNull());
 }
 
-void TestStatusBar::testSetColumnMenuActions() {
+void TestStatusBar::testSetColumnMenuItems() {
   StatusBarDef def;
   StatusBarColumn menu;
   menu.type = StatusBarColumnType::Menu;
-  menu.menuActions = QStringList{QStringLiteral("a"), QStringLiteral("b")};
+  QVector<StatusBarMenuItem> items;
+  StatusBarMenuItem a;
+  a.text = QStringLiteral("a");
+  StatusBarMenuItem b;
+  b.text = QStringLiteral("b");
+  items << a << b;
+  menu.menuItems = items;
   def << menu;
   StatusBar bar(def);
 
@@ -149,19 +154,24 @@ void TestStatusBar::testSetColumnMenuActions() {
   QVERIFY(button && button->menu());
   QCOMPARE(button->menu()->actions().size(), 2);
 
-  bar.setColumnMenuActions(0, QStringList{QStringLiteral("x")});
+  QVector<StatusBarMenuItem> replaced;
+  StatusBarMenuItem x;
+  x.text = QStringLiteral("x");
+  replaced << x;
+  bar.setColumnMenuItems(0, replaced);
   QCOMPARE(button->menu()->actions().size(), 1);
   QCOMPARE(button->menu()->actions().first()->text(), QStringLiteral("x"));
 }
 
-void TestStatusBar::testSetColumnEditText() {
+void TestStatusBar::testSetColumnTextOnEdit() {
   StatusBarDef def;
   StatusBarColumn edit;
   edit.type = StatusBarColumnType::Edit;
   def << edit;
   StatusBar bar(def);
 
-  bar.setColumnEditText(0, QStringLiteral("typed"));
+  // setColumnText handles Edit columns.
+  bar.setColumnText(0, QStringLiteral("typed"));
   QCOMPARE(childAt<QLineEdit>(bar, 0)->text(), QStringLiteral("typed"));
 }
 
@@ -186,9 +196,8 @@ void TestStatusBar::testWrongTypeIsNoOp() {
   def << label;
   StatusBar bar(def);
 
-  // Edit/menu/icon setters on a Label are safe no-ops.
-  bar.setColumnEditText(0, QStringLiteral("x"));
-  bar.setColumnMenuActions(0, QStringList{QStringLiteral("y")});
+  // Menu/icon setters on a Label are safe no-ops.
+  bar.setColumnMenuItems(0, QVector<StatusBarMenuItem>{});
   bar.setColumnIcon(0, QIcon());
   QVERIFY(childAt<QLabel>(bar, 0)->text().isEmpty());
 }
@@ -204,20 +213,6 @@ void TestStatusBar::testOnClickedFires() {
 
   childAt<QToolButton>(bar, 0)->click();
   QCOMPARE(calls, 1);
-}
-
-void TestStatusBar::testOnTriggeredFires() {
-  int triggered = -1;
-  StatusBarDef def;
-  StatusBarColumn menu;
-  menu.type = StatusBarColumnType::Menu;
-  menu.menuActions = QStringList{QStringLiteral("a"), QStringLiteral("b")};
-  menu.onTriggered = [&triggered](int p_i) { triggered = p_i; };
-  def << menu;
-  StatusBar bar(def);
-
-  childAt<QToolButton>(bar, 0)->menu()->actions().at(1)->trigger();
-  QCOMPARE(triggered, 1);
 }
 
 void TestStatusBar::testOnTextEditedFires() {

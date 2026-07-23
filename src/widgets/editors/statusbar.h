@@ -22,9 +22,9 @@ namespace vnotex {
 // by the runtime setters.
 enum class StatusBarColumnType { Label, Button, Menu, Edit, Spacer, Widget };
 
-// Declarative description of one entry in a structured Menu column. Unlike the
-// legacy flat menuActions list, this supports checkable items, separators, an
-// exclusive (radio) group, and an opaque data payload.
+// Declarative description of one entry in a structured Menu column. Supports
+// checkable items, separators, an exclusive (radio) group, and an opaque data
+// payload.
 struct StatusBarMenuItem {
   QString text;
   bool separator = false;
@@ -45,14 +45,12 @@ struct StatusBarColumn {
   QString text;             // Label / Button / Edit initial text.
   QIcon icon;               // Button / Menu.
   QString placeholder;      // Edit.
-  QStringList menuActions;  // Menu action labels (legacy flat path).
-  QVector<StatusBarMenuItem> menuItems; // Menu structured path (takes priority).
+  QVector<StatusBarMenuItem> menuItems; // Menu items.
   int stretch = 1;          // Spacer stretch factor.
 
   // Callbacks (owning ViewWindow sets these when building the def):
   std::function<void()> onClicked;                   // Button.
-  std::function<void(int actionIndex)> onTriggered;  // Menu (legacy flat path).
-  std::function<void(int itemIndex, bool checked)> onMenuTriggered; // Menu (structured).
+  std::function<void(int itemIndex, bool checked)> onMenuTriggered; // Menu.
   std::function<void(const QString &)> onTextEdited; // Edit.
 };
 
@@ -80,9 +78,7 @@ public:
   void setColumnVisible(int p_index, bool p_visible);
   void setColumnStyle(int p_index, const QString &p_qss);
   void setColumnIcon(int p_index, const QIcon &p_icon);         // Button/Menu.
-  void setColumnMenuActions(int p_index, const QStringList &p_actions); // Menu (legacy).
   void setColumnMenuItems(int p_index, const QVector<StatusBarMenuItem> &p_items); // Menu.
-  void setColumnEditText(int p_index, const QString &p_text);   // Edit.
 
   // Widget column setters. Passing null detaches the current widget and leaves
   // the column empty/hidden. On swap, the previously hosted widget is detached
@@ -106,8 +102,7 @@ private:
   // stretch and store a nullptr widget pointer.
   void buildColumn(const StatusBarColumn &p_column);
 
-  // Rebuild a Menu column's QMenu from its menuItems (structured) or
-  // menuActions (legacy), wiring the appropriate callback.
+  // Rebuild a Menu column's QMenu from its menuItems.
   void rebuildMenu(int p_index);
 
   // Detach whatever is currently hosted in a Widget column mount.
