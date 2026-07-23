@@ -1149,6 +1149,30 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
   return true;
 }
 
+void ViewAreaController::removeOtherWorkspaces(const QString &p_keepWorkspaceId) {
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return;
+  }
+
+  // Snapshot the target IDs first — the workspace list mutates as each removal runs.
+  QStringList targetIds;
+  QJsonArray allWorkspaces = wsSvc->listWorkspaces();
+  for (int i = 0; i < allWorkspaces.size(); ++i) {
+    QString wsId = allWorkspaces[i].toObject().value(QStringLiteral("id")).toString();
+    if (!wsId.isEmpty() && wsId != p_keepWorkspaceId) {
+      targetIds.append(wsId);
+    }
+  }
+
+  for (const QString &wsId : targetIds) {
+    // Abort the batch if the user cancels an unsaved-changes prompt.
+    if (!removeWorkspace(wsId, false)) {
+      return;
+    }
+  }
+}
+
 void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
                                          const QString &p_targetWorkspaceId) {
   if (p_currentWorkspaceId.isEmpty() || p_targetWorkspaceId.isEmpty()) {

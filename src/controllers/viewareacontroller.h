@@ -173,6 +173,10 @@ public:
   // the split's workspace ID during this call.
   bool removeWorkspace(QString p_workspaceId, bool p_force);
 
+  // Remove every workspace except p_keepWorkspaceId. Reuses removeWorkspace for
+  // each; aborts if the user cancels an unsaved-changes prompt on any workspace.
+  void removeOtherWorkspaces(const QString &p_keepWorkspaceId);
+
   // Switch the given split to a different workspace.
   void switchWorkspace(const QString &p_currentWorkspaceId, const QString &p_targetWorkspaceId);
 

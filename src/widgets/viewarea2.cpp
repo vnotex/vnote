@@ -752,6 +752,11 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
     QString wsId = s->getWorkspaceId();
     m_controller->removeWorkspace(wsId, false);
   });
+  connect(p_split, &ViewSplit2::removeOtherWorkspacesRequested, this, [this](ViewSplit2 *s) {
+    // Copy the workspace ID since the split's ID may change during teardown.
+    QString keepId = s->getWorkspaceId();
+    m_controller->removeOtherWorkspaces(keepId);
+  });
   connect(p_split, &ViewSplit2::renameWorkspaceRequested, this, [this](ViewSplit2 *s) {
     QString wsId = s->getWorkspaceId();
     QString currentName = m_controller->getWorkspaceName(wsId);

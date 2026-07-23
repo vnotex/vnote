@@ -286,6 +286,11 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
     p_menu->addAction(tr("Rename Workspace"), [this]() { emit renameWorkspaceRequested(this); });
 
     p_menu->addAction(tr("Remove Workspace"), [this]() { emit removeWorkspaceRequested(this); });
+
+    bool hasOtherWorkspaces = wsSvc && wsSvc->listWorkspaces().size() > 1;
+    auto *removeOthersAct = p_menu->addAction(
+        tr("Remove Other Workspaces"), [this]() { emit removeOtherWorkspacesRequested(this); });
+    removeOthersAct->setEnabled(hasOtherWorkspaces);
   }
 
   // Splits section.

@@ -142,6 +142,9 @@ signals:
   // Request to remove the workspace of this split.
   void removeWorkspaceRequested(ViewSplit2 *p_split);
 
+  // Request to remove every workspace except the one shown in this split.
+  void removeOtherWorkspacesRequested(ViewSplit2 *p_split);
+
   // Request to rename the workspace of this split.
   void renameWorkspaceRequested(ViewSplit2 *p_split);
 
