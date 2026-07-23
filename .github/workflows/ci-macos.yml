@@ -257,6 +257,10 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # gh release commands run from build/ (not a git checkout), so gh's
+          # git-based repo auto-detection fails ("fatal: not a git repository").
+          # GH_REPO makes every gh command target the repo without needing git.
+          GH_REPO: ${{ github.repository }}
         run: |
           set -e
           # Ensure the release + tag exist (idempotent; all jobs share GITHUB_SHA).
