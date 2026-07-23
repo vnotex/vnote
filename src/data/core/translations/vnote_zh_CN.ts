@@ -2,772 +2,16 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
-    <name>LocationList</name>
-    <message>
-        <location filename="../../../widgets/locationlist.cpp" line="+42"/>
-        <source>Path</source>
-        <translation>路径</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Line</source>
-        <translation>行号</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Text</source>
-        <translation>文本</translation>
-    </message>
-    <message>
-        <location line="+56"/>
-        <source>Clear</source>
-        <translation>清空</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+122"/>
-        <source>%n Item(s)</source>
-        <translation>
-            <numerusform>%n 项</numerusform>
-        </translation>
-    </message>
-</context>
-<context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../../gui/utils/widgetutils.cpp" line="+81"/>
+        <location filename="../../../gui/utils/widgetutils.cpp" line="+82"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确认打开链接 (%1)？</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Malicious link might do harm to your device.</source>
         <translation>可疑的链接可能会损坏设备。</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/mainwindow.cpp" line="+102"/>
-        <source>Initializing core components...</source>
-        <translation>正在初始化核心组件...</translation>
-    </message>
-    <message>
-        <location line="+230"/>
-        <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
-        <translation>关闭时，是否将%1最小化到系统托盘而非退出？</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>You could change the option in Settings later.</source>
-        <translation>稍后可以在设置里面更改。</translation>
-    </message>
-    <message>
-        <location line="+53"/>
-        <source>%1 is still running here.</source>
-        <translation>%1仍然在此运行。</translation>
-    </message>
-    <message>
-        <location line="+131"/>
-        <source>Global</source>
-        <translation>全局</translation>
-    </message>
-    <message>
-        <location line="+92"/>
-        <source>There is one export dialog running. Please close it first.</source>
-        <translation>已有导出对话框运行。请先将其关闭。</translation>
-    </message>
-    <message>
-        <location line="+35"/>
-        <source>Export functionality is being migrated to the new architecture.</source>
-        <translation>导出功能正在迁移到新架构。</translation>
-    </message>
-    <message>
-        <location line="+71"/>
-        <source>Failed to check for updates (%1)</source>
-        <translation>无法检查更新(%1)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Updates available: %1</source>
-        <translation>有可用更新: %1</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+13"/>
-        <source>Failed to load %n notebook(s).</source>
-        <translation>
-            <numerusform>无法加载 %n 个笔记本。</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>These notebooks may be moved or deleted. It is recommended to remove them from configuration and open them with the correct root folder path later.
-Remove them from the configuration?</source>
-        <translation>这些笔记本可能已被移动或者删除。推荐将其从配置中移除并稍后使用正确的根文件夹路径重新打开。
-从配置中移除它们？</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/toolbarhelper.cpp" line="+51"/>
-        <source>File</source>
-        <translation>文件</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>New Note</source>
-        <translation>新建笔记</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Quick Note</source>
-        <translation>快速笔记</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>New Folder</source>
-        <translation>新建文件夹</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Import File</source>
-        <translation>导入文件</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Import Folder</source>
-        <translation>导入文件夹</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Export (Convert Format)</source>
-        <translation>导出(转换格式)</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <location line="+2"/>
-        <source>Open File</source>
-        <translation>打开文件</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>Quick Access</source>
-        <translation>快速访问</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Please pin files to Quick Access first.</source>
-        <translation>请先将文件固定到快速访问。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Files could be pinned to Quick Access via context menu.</source>
-        <translation>文件可以通过上下文菜单固定到快速访问。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Quick Access could be managed in the Settings dialog.</source>
-        <translation>可以在设置对话框中管理快速访问。</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <location line="+182"/>
-        <source>Settings</source>
-        <translation>设置</translation>
-    </message>
-    <message>
-        <location line="-107"/>
-        <source>Quick Access Not Set</source>
-        <translation>快速访问未设置</translation>
-    </message>
-    <message>
-        <location line="+35"/>
-        <source>Expand Content Area</source>
-        <translation>扩展内容区</translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>Press %1 To Exit Full Screen</source>
-        <translation>按%1退出全屏</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Stay on Top</source>
-        <translation>置顶</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Windows</source>
-        <translation>窗口</translation>
-    </message>
-    <message>
-        <location line="+44"/>
-        <source>Open Configuration Folder</source>
-        <translation>打开配置文件夹</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Reset Main Window Layout</source>
-        <translation>重置主窗口布局</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>View Logs</source>
-        <translation>查看日志</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <location line="+4"/>
-        <source>About</source>
-        <translation>关于</translation>
-    </message>
-    <message>
-        <location line="-3"/>
-        <source>&lt;h3&gt;%1&lt;/h3&gt;
-&lt;span&gt;%2&lt;/span&gt;
-</source>
-        <translation>&lt;h3&gt;%1&lt;/h3&gt;
-&lt;span&gt;%2&lt;/span&gt;
-</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Check for Updates</source>
-        <translation>检查更新</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Restart</source>
-        <translation>重启</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Quit</source>
-        <translation>退出</translation>
-    </message>
-</context>
-<context>
-    <name>MindMapViewWindow</name>
-    <message>
-        <location filename="../../../widgets/mindmapviewwindow.cpp" line="+242"/>
-        <location line="+8"/>
-        <source>Replace is not supported yet</source>
-        <translation>不支持替换</translation>
-    </message>
-    <message>
-        <location line="+116"/>
-        <location line="+140"/>
-        <source>File does not exist or unsupported URL format: %1</source>
-        <translation>文件不存在或者URL格式不支持：%1</translation>
-    </message>
-</context>
-<context>
-    <name>NotebookExplorer</name>
-    <message>
-        <location filename="../../../widgets/notebookexplorer.cpp" line="+75"/>
-        <source>Select one of all the notebooks as current notebook.&lt;br/&gt;Move mouse on one item to check its details.</source>
-        <translation>从全部笔记本中选择一个作为当前笔记本。&lt;br/&gt;移动鼠标到某个项目上查看详情。</translation>
-    </message>
-    <message>
-        <location line="+41"/>
-        <source>This title bar contains buttons and menu to manage notebooks and notes.</source>
-        <translation>该标题栏包含管理笔记本和笔记的按钮和菜单。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>New Notebook</source>
-        <translation>新建笔记本</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Open Notebook</source>
-        <translation>打开笔记本</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Manage Notebooks</source>
-        <translation>管理笔记本</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Rebuild Database</source>
-        <translation>重建数据库</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Notebooks View Order</source>
-        <translation>笔记本查看顺序</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Notes View Order</source>
-        <translation>笔记查看顺序</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Show External Files</source>
-        <translation>显示外部文件</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Import External Files when Activated</source>
-        <translation>激活时自动导入外部文件</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Close File Before Opening Externally</source>
-        <translation>在外部打开前先关闭文件</translation>
-    </message>
-    <message>
-        <location line="+81"/>
-        <source>Please set up quick note schemes in the Settings dialog first.</source>
-        <translation>请先在设置对话框中设置快速笔记方案。</translation>
-    </message>
-    <message>
-        <location line="+84"/>
-        <source>Please first create a notebook to hold your data.</source>
-        <translation>请先创建一个笔记本来保存数据。</translation>
-    </message>
-    <message>
-        <location line="+23"/>
-        <source>Select Files To Import</source>
-        <translation>选择文件导入</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Failed to add file (%1) as node (%2).
-</source>
-        <translation>无法添加文件 (%1) 为节点 (%2)。
-</translation>
-    </message>
-    <message>
-        <location line="+50"/>
-        <source>View By Configuration</source>
-        <translation>按配置查看</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>View By Name</source>
-        <translation>按名字查看</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>View By Name (Reversed)</source>
-        <translation>按名字倒序查看</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>View By Created Time</source>
-        <translation>按创建时间查看</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>View By Created Time (Reversed)</source>
-        <translation>按创建时间倒序查看</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>View By Modified Time</source>
-        <translation>按修改时间查看</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>View By Modified Time (Reversed)</source>
-        <translation>按修改时间倒序查看</translation>
-    </message>
-    <message>
-        <location line="+31"/>
-        <source>Open Recycle Bin</source>
-        <translation>打开回收站</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Empty Recycle Bin</source>
-        <translation>清空回收站</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Empty the recycle bin of notebook (%1)?</source>
-        <translation>清空笔记本(%1)的回收站？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>CAUTION! All the files under the recycle bin folder will be deleted and unrecoverable!</source>
-        <translation>注意！回收站文件夹下面的所有文件都会被删除且不可恢复！</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Recycle bin folder: %1</source>
-        <translation>回收站文件夹: %1</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Combined View</source>
-        <translation>组合视图</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Separate View, Single Column</source>
-        <translation>分离视图，单列</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Separate View, Double Columns</source>
-        <translation>分离视图，双列</translation>
-    </message>
-    <message>
-        <location line="+84"/>
-        <source>Rebuild the database of notebook (%1)?</source>
-        <translation>重建笔记本(%1)的数据库？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>This operation will rebuild the notebook database from configuration files. It may take time.</source>
-        <translation>该操作会根据配置文件重建笔记本数据库。可能会需要一定时间。</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>A notebook may use a database for cache, such as IDs of nodes and tags.</source>
-        <translation>一个笔记本可能会使用一个数据库作为缓存，例如节点的标识号和标签。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Rebuilding notebook database...</source>
-        <translation>正在重建笔记本数据库...</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Notebook database has been rebuilt.</source>
-        <translation>笔记本数据库已重建。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Failed to rebuild notebook database.</source>
-        <translation>无法重建笔记本数据库。</translation>
-    </message>
-</context>
-<context>
-    <name>NotebookNodeExplorer</name>
-    <message>
-        <location filename="../../../widgets/notebooknodeexplorer.cpp" line="+414"/>
-        <source>Failed to load nodes of notebook (%1) (%2).</source>
-        <translation>无法加载笔记本(%1)节点(%2)。</translation>
-    </message>
-    <message>
-        <location line="+141"/>
-        <location line="+16"/>
-        <source>[External] %1</source>
-        <translation>[外部]%1</translation>
-    </message>
-    <message>
-        <location line="+598"/>
-        <source>Visual Settings</source>
-        <translation>样式设置</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Cascade Color Settings</source>
-        <translation>级联色设置</translation>
-    </message>
-    <message>
-        <location line="+77"/>
-        <source>New &amp;Note</source>
-        <translation>新建笔记(&amp;N)</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>New &amp;Folder</source>
-        <translation>新建文件夹(&amp;F)</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>&amp;Properties (Rename)</source>
-        <translation>属性(重命名)(&amp;P)</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Open Locat&amp;ion</source>
-        <translation>打开路径(&amp;I)</translation>
-    </message>
-    <message>
-        <location line="+37"/>
-        <source>Cop&amp;y Path</source>
-        <translation>复制路径(&amp;Y)</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Copied path: %1</source>
-        <translation>已复制路径: %1</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;Copy</source>
-        <translation>复制(&amp;C)</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>C&amp;ut</source>
-        <translation>剪切(&amp;U)</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>&amp;Paste</source>
-        <translation>粘贴(&amp;P)</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;Delete</source>
-        <translation>删除(&amp;D)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Remo&amp;ve From Index</source>
-        <translation>从索引中移除(&amp;V)</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;Sort</source>
-        <translation>排序(&amp;S)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Re&amp;load</source>
-        <translation>重新加载(&amp;L)</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Relo&amp;ad Index Of Notebook From Disk</source>
-        <translation>从磁盘重新加载笔记本索引(&amp;A)</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>&amp;Import To Index</source>
-        <translation>导入到索引（&amp;I）</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>&amp;Open</source>
-        <translation>打开(&amp;O)</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>&amp;Edit</source>
-        <translation>编辑(&amp;E)</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>&amp;Read</source>
-        <translation>阅读(&amp;R)</translation>
-    </message>
-    <message>
-        <location line="+32"/>
-        <source>E&amp;xpand All	*</source>
-        <translation>逐层展开(&amp;X)	*</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Pin To &amp;Quick Access</source>
-        <translation>固定到快速访问(&amp;Q)</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>&amp;Tags</source>
-        <translation>标签(&amp;T)</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Set Background Color</source>
-        <translation>设置背景颜色</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Select Background Color</source>
-        <translation>选择背景颜色</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Set Border Color</source>
-        <translation>设置边框颜色</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Select Border Color</source>
-        <translation>选择边框颜色</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Set Name Color</source>
-        <translation>设置文字颜色</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Select Name Color</source>
-        <translation>选择文字颜色</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Set Cascade Background Color</source>
-        <translation>设置背景级联色</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Select Cascade Background Color</source>
-        <translation>选择背景级联色</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Set Cascade Border Color</source>
-        <translation>设置边框级联色</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Select Cascade Border Color</source>
-        <translation>选择边框级联色</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Clear Cascade Colors</source>
-        <translation>清空级联色</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Clear Colors</source>
-        <translation>清空颜色</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+56"/>
-        <source>Copied %n item(s)</source>
-        <translation>
-            <numerusform>已复制 %n 项</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+106"/>
-        <source>Invalid clipboard data to paste.</source>
-        <translation>无效的剪切板数据用于粘贴。</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Destination is detected in sources (%1). Operation is cancelled.</source>
-        <translation>目标包含在源(%1)中。操作取消。</translation>
-    </message>
-    <message>
-        <location line="+33"/>
-        <source>Failed to copy source (%1) to destination (%2) (%3).</source>
-        <translation>无法复制源(%1)至目标(%2)(%3)。</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+25"/>
-        <source>Pasted %n item(s)</source>
-        <translation>
-            <numerusform>已粘贴 %n 项</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+40"/>
-        <source>Delete these folders and notes?</source>
-        <translation>删除这些文件夹和笔记？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Deleted files could be found in the recycle bin of notebook.</source>
-        <translation>被删除的文件可以在笔记本回收站中找回。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Confirm Deletion</source>
-        <translation>确认删除</translation>
-    </message>
-    <message>
-        <location line="+64"/>
-        <source>Failed to delete/remove item (%1) (%2) (%3).</source>
-        <translation>无法删除或移除项目(%1)(%2)(%3)。</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+11"/>
-        <source>Deleted/Removed %n item(s)</source>
-        <translation>
-            <numerusform>删除或移除 %n 项</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Confirm Removal</source>
-        <translation>确认移除</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Remove these folders and notes from index?</source>
-        <translation>从索引中移除这些文件夹和笔记？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Files are not touched but just removed from notebook index.</source>
-        <translation>文件不会被改动，仅仅是从笔记本索引中移除。</translation>
-    </message>
-    <message>
-        <location line="+180"/>
-        <source>Sort Folders</source>
-        <translation>排序文件夹</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Sort Notes</source>
-        <translation>排序笔记</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Sort nodes under %1 (%2) in the configuration file.</source>
-        <translation>在配置文件中对%1(%2)下的节点进行排序。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>notebook</source>
-        <translation>笔记本</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>folder</source>
-        <translation>文件夹</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Name</source>
-        <translation>名字</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Created Time</source>
-        <translation>创建时间</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Modified Time</source>
-        <translation>修改时间</translation>
-    </message>
-    <message>
-        <location line="+193"/>
-        <source>Invalid node (%1).</source>
-        <translation>无效的节点(%1)。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Please check if the node exists on the disk.</source>
-        <translation>请检查该节点在磁盘上是否存在。</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Open &amp;With</source>
-        <translation>打开方式(&amp;W)</translation>
-    </message>
-    <message>
-        <location line="+33"/>
-        <source>System Default Program</source>
-        <translation>系统默认程序</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Add External Program</source>
-        <translation>添加外部程序</translation>
-    </message>
-    <message>
-        <location line="+153"/>
-        <source>[Invalid] %1</source>
-        <translation>[无效]%1</translation>
     </message>
 </context>
 <context>
@@ -796,52 +40,17 @@ Remove them from the configuration?</source>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../../core/notebook/bundlenotebookfactory.cpp" line="+20"/>
-        <source>Bundle Notebook</source>
-        <translation>自包含笔记本</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>A notebook with configuration files to track its content</source>
-        <translation>使用配置文件来索引内容的笔记本</translation>
-    </message>
-    <message>
-        <location filename="../../../core/notebookbackend/localnotebookbackendfactory.cpp" line="+14"/>
-        <source>Local Notebook Backend</source>
-        <translation>本地笔记本后端</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Local file system</source>
-        <translation>本地文件系统</translation>
-    </message>
-    <message>
-        <location filename="../../../core/notebookconfigmgr/vxnotebookconfigmgrfactory.cpp" line="+13"/>
-        <source>VNoteX Notebook Configuration</source>
-        <translation>VNoteX笔记本配置</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Built-in VNoteX notebook configuration</source>
-        <translation>内建的VNoteX笔记本配置</translation>
-    </message>
-    <message>
-        <location filename="../../../core/versioncontroller/dummyversioncontrollerfactory.cpp" line="+14"/>
-        <source>No Version Control</source>
-        <translation>无版本控制</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Disable version control</source>
-        <translation>禁用版本控制</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/markdownviewwindowcontroller.cpp" line="+28"/>
+        <location filename="../../../controllers/markdownviewwindowcontroller.cpp" line="+29"/>
         <source>&amp;Edit</source>
         <translation>编辑(&amp;E)</translation>
     </message>
     <message>
         <location line="+10"/>
+        <source>&amp;View</source>
+        <translation>查看(&amp;V)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
@@ -861,7 +70,7 @@ Remove them from the configuration?</source>
         <translation>正在连接远端并同步...（同步一旦开始无法取消。）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+61"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+62"/>
         <source> (Read)</source>
         <translation> （阅读）</translation>
     </message>
@@ -1039,7 +248,7 @@ Remove them from the configuration?</source>
 <context>
     <name>QWebEnginePage</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+343"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+386"/>
         <source>&amp;Back</source>
         <translation>后退(&amp;B)</translation>
     </message>
@@ -1057,27 +266,27 @@ Remove them from the configuration?</source>
 <context>
     <name>SearchPanel</name>
     <message>
-        <location filename="../../../search/searchtoken.cpp" line="+149"/>
+        <location filename="../../../search/searchtoken.cpp" line="+150"/>
         <source>Full-text search.</source>
         <translation>全文搜索。</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Keywords to search for.</source>
         <translation>搜索的关键词。</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Search in case sensitive.</source>
         <translation>大小写敏感搜索。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Search by regular expression.</source>
         <translation>以正则表达式搜索。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Search whole word only.</source>
         <translation>按完整词搜索。</translation>
     </message>
@@ -1087,751 +296,72 @@ Remove them from the configuration?</source>
         <translation>模糊搜索（对内容搜索无效）。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
         <source>Do an OR combination of keywords.</source>
         <translation>用或来组合关键词。</translation>
     </message>
+</context>
+<context>
+    <name>vnotex::ActivitySticker</name>
     <message>
-        <location filename="../../../widgets/searchpanel.cpp" line="+91"/>
-        <source>Keyword:</source>
-        <translation>关键词:</translation>
+        <location filename="../../../widgets/dashboard/activitysticker.cpp" line="+28"/>
+        <source>%1h %2m</source>
+        <translation>%1小时 %2分钟</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>%1m</source>
+        <translation>%1分钟</translation>
+    </message>
+    <message>
+        <location line="+121"/>
+        <source>Today (%1)</source>
+        <translation>今天 (%1)</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Buffers</source>
-        <translation>缓冲区</translation>
+        <source>%1 active</source>
+        <translation>%1 活跃</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Current Folder</source>
-        <translation>当前文件夹</translation>
+        <source>No activity</source>
+        <translation>无活动</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Current Notebook</source>
-        <translation>当前笔记本</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>All Notebooks</source>
-        <translation>全部笔记本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Scope:</source>
-        <translation>范围:</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>Wildcard pattern of files to search</source>
-        <translation>需要搜索的文件的通配符模式</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>File pattern:</source>
-        <translation>文件模式:</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Search</source>
-        <translation>搜索</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Toggle Location List</source>
-        <translation>打开或关闭位置列表</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Advanced Settings</source>
-        <translation>高级设置</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Object:</source>
-        <translation>对象:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Name</source>
-        <translation>名字</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Content</source>
-        <translation>内容</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Tag</source>
-        <translation>标签</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Path</source>
-        <translation>路径</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Target:</source>
-        <translation>目标:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>File</source>
-        <translation>文件</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Folder</source>
-        <translation>文件夹</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Notebook</source>
-        <translation>笔记本</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Option:</source>
-        <translation>选项:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&amp;Case sensitive</source>
-        <translation>大小写敏感(&amp;C)</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;Plain text</source>
-        <translation>纯文本(&amp;P)</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>&amp;Whole word only</source>
-        <translation>匹配完整词(&amp;W)</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>&amp;Fuzzy search</source>
-        <translation>模糊搜索(&amp;F)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Re&amp;gular expression</source>
-        <translation>正则表达式(&amp;G)</translation>
-    </message>
-    <message>
-        <location line="+96"/>
-        <source>Search finished: %1</source>
-        <translation>搜索完成: %1</translation>
-    </message>
-</context>
-<context>
-    <name>Searcher</name>
-    <message numerus="yes">
-        <location filename="../../../search/searcher.cpp" line="+50"/>
-        <source>Searching %n buffer(s)</source>
-        <translation>
-            <numerusform>正在搜索 %n 缓冲区</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+40"/>
-        <source>Searching folder (%1)</source>
-        <translation>正在搜索文件夹(%1)</translation>
-    </message>
-    <message>
-        <location line="+32"/>
-        <source>Searching notebook (%1)</source>
-        <translation>正在搜索笔记本(%1)</translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>Failed to compile tokens (%1)</source>
-        <translation>无法编译令牌(%1)</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Failed to search due to worker is busy</source>
-        <translation>正忙，无法搜索</translation>
-    </message>
-    <message>
-        <location line="+168"/>
-        <source>Failed to load node to search (%1) (%2).</source>
-        <translation>无法加载节点进行搜索(%1)(%2)。</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+133"/>
-        <source>Start second-phase search: %n files(s)</source>
-        <translation>
-            <numerusform>开始第二阶段搜索: %n 文件</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location filename="../../../search/searchhelper.cpp" line="+9"/>
-        <source>Invalid keyword</source>
-        <translation>无效关键词</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>No object specified</source>
-        <translation>没有指定对象</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>No target specified</source>
-        <translation>没有指定目标</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Fuzzy search is not allowed when searching content</source>
-        <translation>模糊搜索不可用于搜索内容</translation>
-    </message>
-</context>
-<context>
-    <name>TitleToolBar</name>
-    <message>
-        <location filename="../../../widgets/titletoolbar.cpp" line="+29"/>
-        <source>Minimize</source>
-        <translation>最小化</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <location line="+17"/>
-        <source>Maximize</source>
-        <translation>最大化</translation>
-    </message>
-    <message>
-        <location line="-14"/>
-        <source>Close</source>
-        <translation>关闭</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Restore Down</source>
-        <translation>向下还原</translation>
-    </message>
-</context>
-<context>
-    <name>ViewArea</name>
-    <message>
-        <source>No recently closed file</source>
-        <translation type="vanished">没有最近关闭文件</translation>
-    </message>
-</context>
-<context>
-    <name>ViewSplit</name>
-    <message>
-        <location filename="../../../widgets/viewsplit.cpp" line="+120"/>
-        <source>Open Windows</source>
-        <translation>已打开窗口</translation>
-    </message>
-    <message>
-        <location line="+20"/>
-        <source>Menu</source>
-        <translation>菜单</translation>
-    </message>
-    <message>
-        <location line="+244"/>
-        <source>No Window To Show</source>
-        <translation>没有可以展示的窗口</translation>
-    </message>
-    <message>
-        <location line="+27"/>
-        <source>Workspaces</source>
-        <translation>工作空间</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Workspace %1</source>
-        <translation>工作空间%1</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>New Workspace</source>
-        <translation>新建工作空间</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Remove Workspace</source>
-        <translation>移除工作空间</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Split</source>
-        <translation>拆分</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Vertical Split</source>
-        <translation>竖直拆分</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Horizontal Split</source>
-        <translation>水平拆分</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Maximize Split</source>
-        <translation>最大化拆分</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Distribute Splits</source>
-        <translation>平均分配拆分</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Remove Split</source>
-        <translation>移除拆分</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Remove Split And Workspace</source>
-        <translation>移除拆分和工作空间</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Close Tab</source>
-        <translation>关闭标签页</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Close All Tabs</source>
-        <translation>关闭所有标签页</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Close Other Tabs</source>
-        <translation>关闭其他标签页</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Close Tabs To The Left</source>
-        <translation>关闭左侧标签页</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Close Tabs To The Right</source>
-        <translation>关闭右侧标签页</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Auto Reload</source>
-        <translation>自动重新加载</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Reload file from disk automatically if it is changed outside</source>
-        <translation>当发生外部修改时，自动从磁盘重新加载文件</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Copy Path</source>
-        <translation>复制路径</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Copied path: %1</source>
-        <translation>已复制路径: %1</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Open Location</source>
-        <translation>打开路径</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Locate Node</source>
-        <translation>定位节点</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Pin To Quick Access</source>
-        <translation>固定到快速访问</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Move One Split Left</source>
-        <translation>向左移动一个拆分</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Move One Split Right</source>
-        <translation>向右移动一个拆分</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Move One Split Up</source>
-        <translation>向上移动一个拆分</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Move One Split Down</source>
-        <translation>向下移动一个拆分</translation>
-    </message>
-</context>
-<context>
-    <name>ViewWindow</name>
-    <message numerus="yes">
-        <location filename="../../../widgets/attachmentdragdropareaindicator.cpp" line="+34"/>
-        <source>Attached %n file(s)</source>
-        <translation>
-            <numerusform>已添加 %n 文件为附件</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindow.cpp" line="+191"/>
-        <location line="+12"/>
-        <source>[No Buffer]</source>
-        <translation>[无缓冲区]</translation>
-    </message>
-    <message>
-        <location line="+354"/>
-        <source>Save changes before closing note (%1)?</source>
-        <translation>关闭笔记(%1)前是否保存更改？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <location line="+52"/>
-        <source>Note path (%1).</source>
-        <translation>笔记路径(%1)。</translation>
+        <source>Back to today</source>
+        <translation>回到今天</translation>
     </message>
     <message>
-        <location line="-1"/>
-        <source>Discard changes to note (%1)?</source>
-        <translation>放弃对笔记(%1)的更改？</translation>
-    </message>
-    <message>
-        <location line="+65"/>
-        <source>Found backup file (%1) of file (%2). Do you want to recover from backup file?</source>
-        <translation>发现文件(%2)的备份文件(%1)。是否要从备份文件中恢复？</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&apos;Yes&apos; to recover from backup file, &apos;No&apos; to discard it, and &apos;Cancel&apos; to exit.</source>
-        <translation>“是”以从备份文件中恢复，“否”以放弃该备份文件，“取消”以退出。</translation>
+        <location line="+16"/>
+        <source>Active</source>
+        <translation>活跃</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>It may be caused by crash while editing this file before.
-
-File last modified time: %1
-Backup file last modified time: %2</source>
-        <translation>可能是由于此前编辑该文件时发生崩溃。
-
-文件最后修改时间: %1
-备份文件最后修改时间: %2</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Drag And Drop Files To Attach</source>
-        <translation>拖拽文件以添加为附件</translation>
-    </message>
-    <message>
-        <location line="+58"/>
-        <source>File is missing on disk (%1).</source>
-        <translation>文件在磁盘中丢失(%1)。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Do you want to force to save the buffer to the file?</source>
-        <translation>是否强制保存缓冲区内容到文件？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>The file may be deleted from outside. Please choose to save the buffer to a new file or just discard it.</source>
-        <translation>该文件可能已经被删除。请选择将缓冲区的内容保存为新文件或者放弃缓冲区。</translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>File is changed from outside (%1).</source>
-        <translation>文件被更改(%1)。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Do you want to save the buffer to the file to override, or discard the buffer?</source>
-        <translation>是否保存缓冲区覆盖到文件，或者放弃缓冲区？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>The file is changed from outside. Please choose to save the buffer to the file or just discard the buffer and reload the file.</source>
-        <translation>该文件已经被更改。请选择保存缓冲区到该文件或者放弃缓冲区并重新加载文件。</translation>
-    </message>
-    <message>
-        <location line="+47"/>
-        <source>This is a read-only note (%1), on which modification is not allowed.</source>
-        <translation>这是一个只读笔记(%1)，不支持修改。</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Please save your changes to another note.</source>
-        <translation>请保存更改到另一个笔记。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Failed to save note (%1).</source>
-        <translation>无法保存笔记(%1)。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Please check the file (%1) and try it again.</source>
-        <translation>请检查文件(%1)并重试。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Maybe the file is occupied by another service temporarily.</source>
-        <translation>可能该文件正在被第三方应用临时占用。</translation>
-    </message>
-    <message>
-        <location line="+84"/>
-        <source>Zoomed: %1%</source>
-        <translation>缩放: %1%</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Zoomed: %1%2</source>
-        <translation>缩放: %1%2</translation>
-    </message>
-    <message>
-        <location line="+128"/>
-        <location line="+8"/>
-        <source>Pattern not found: %1</source>
-        <translation>无法找到模式: %1</translation>
-    </message>
-    <message>
-        <location line="-6"/>
-        <source>Match found: %1/%2</source>
-        <translation>找到匹配: %1/%2</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+8"/>
-        <source>Replaced %n match(es)</source>
-        <translation>
-            <numerusform>替换 %n 处匹配</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+102"/>
-        <source>View Mode Not Supported</source>
-        <translation>不支持查看模式</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper.cpp" line="+87"/>
-        <source>Save</source>
-        <translation>保存</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Edit</source>
-        <translation>编辑</translation>
+        <source>Created</source>
+        <translation>已创建</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Read</source>
-        <translation>阅读</translation>
+        <translation>已阅读</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Discard</source>
-        <translation>放弃</translation>
+        <source>Edited</source>
+        <translation>已编辑</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>View Mode</source>
-        <translation>查看模式</translation>
+        <location line="+24"/>
+        <source>Activity</source>
+        <translation>活动</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <source>Heading</source>
-        <translation>标题</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Heading 1</source>
-        <translation>标题1</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Heading 2</source>
-        <translation>标题2</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Heading 3</source>
-        <translation>标题3</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Heading 4</source>
-        <translation>标题4</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Heading 5</source>
-        <translation>标题5</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Heading 6</source>
-        <translation>标题6</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Clear</source>
-        <translation>清空</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Bold</source>
-        <translation>粗体</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Italic</source>
-        <translation>斜体</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Strikethrough</source>
-        <translation>删除线</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Unordered List</source>
-        <translation>无序列表</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Ordered List</source>
-        <translation>有序列表</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Todo List</source>
-        <translation>待办列表</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Checked Todo List</source>
-        <translation>已完成待办列表</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Code</source>
-        <translation>代码</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Code Block</source>
-        <translation>代码块</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Math</source>
-        <translation>数学公式</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Math Block</source>
-        <translation>数学公式块</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Quote</source>
-        <translation>引用块</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Link</source>
-        <translation>链接</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Image</source>
-        <translation>图片</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Table</source>
-        <translation>表格</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Mark</source>
-        <translation>标记</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Attachments</source>
-        <translation>附件</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Tags</source>
-        <translation>标签</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Outline</source>
-        <translation>大纲</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Find And Replace</source>
-        <translation>查找替换</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Section Number</source>
-        <translation>小节序号</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Follow Configuration</source>
-        <translation>跟随配置</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Enabled</source>
-        <translation>启用</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Disabled</source>
-        <translation>禁用</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Toggle In-Place Preview</source>
-        <translation>启用/关闭原地预览</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Image Host</source>
-        <translation>图床</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Debug</source>
-        <translation>调试</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Print</source>
-        <translation>打印</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Word Count</source>
-        <translation>字词计数</translation>
+        <location line="+77"/>
+        <source>Activity on %1</source>
+        <translation>%1 的活动</translation>
     </message>
 </context>
 <context>
@@ -1922,85 +452,6 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::AttachmentPopup</name>
-    <message>
-        <location filename="../../../widgets/attachmentpopup.cpp" line="+61"/>
-        <source>Add</source>
-        <translation>添加</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Select Files As Attachments</source>
-        <translation>选择文件作为附件</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>New File</source>
-        <translation>新建文件</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <location line="+21"/>
-        <source>New Attachment</source>
-        <translation>新建附件</translation>
-    </message>
-    <message>
-        <location line="-21"/>
-        <source>File name:</source>
-        <translation>文件名:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>New Folder</source>
-        <translation>新建文件夹</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Folder name:</source>
-        <translation>文件夹名:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Open Folder</source>
-        <translation>打开文件夹</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Open</source>
-        <translation>打开</translation>
-    </message>
-    <message>
-        <location line="+20"/>
-        <source>Delete</source>
-        <translation>删除</translation>
-    </message>
-    <message>
-        <location line="+37"/>
-        <source>Copy Path</source>
-        <translation>复制路径</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Properties</source>
-        <translation>属性</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Failed to rename attachment (%1) to (%2).</source>
-        <translation>无法将附件(%1)重命名为(%2)。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Please try another name again.</source>
-        <translation>请尝试其他名字。</translation>
-    </message>
-    <message>
-        <location line="+35"/>
-        <source>Please select one directory to continue.</source>
-        <translation>请选择一个目录并继续。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::AttachmentPopup2</name>
     <message>
         <location filename="../../../widgets/attachmentpopup2.cpp" line="+86"/>
@@ -2048,7 +499,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::Buffer</name>
     <message>
-        <location filename="../../../core/buffer/filetypehelper.cpp" line="+41"/>
+        <location filename="../../../core/buffer/filetypehelper.cpp" line="+34"/>
         <source>Markdown</source>
         <translation>Markdown</translation>
     </message>
@@ -2084,7 +535,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ConsoleViewer</name>
     <message>
-        <location filename="../../../widgets/consoleviewer.cpp" line="+39"/>
+        <location filename="../../../widgets/consoleviewer.cpp" line="+47"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
@@ -2161,12 +612,12 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::DashboardBoard</name>
     <message>
-        <location filename="../../../widgets/dashboard/dashboardboard.cpp" line="+238"/>
+        <location filename="../../../widgets/dashboard/dashboardboard.cpp" line="+258"/>
         <source>Move</source>
         <translation>移动</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+9"/>
         <source>Move Up</source>
         <translation>上移</translation>
     </message>
@@ -2191,14 +642,14 @@ Backup file last modified time: %2</source>
         <translation>调整大小...</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+11"/>
         <source>X</source>
         <translation>X</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Remove sticker</source>
-        <translation>移除挂件</translation>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>移除</translation>
     </message>
 </context>
 <context>
@@ -2255,22 +706,9 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::DeleteConfirmDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/deleteconfirmdialog.cpp" line="+55"/>
-        <source>Do not ask again</source>
-        <translation>不再询问</translation>
-    </message>
-    <message>
-        <location line="+139"/>
-        <source>%1/%2 Items</source>
-        <translation>%1/%2项</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::DockWidgetHelper</name>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="+123"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="+129"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
@@ -2280,7 +718,7 @@ Backup file last modified time: %2</source>
         <translation>控制台</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-18"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
@@ -2305,7 +743,12 @@ Backup file last modified time: %2</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+15"/>
+        <source>Tasks</source>
+        <translation>任务</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Location List</source>
         <translation>位置列表</translation>
     </message>
@@ -2324,26 +767,10 @@ Backup file last modified time: %2</source>
         <translation>无</translation>
     </message>
     <message>
-        <source>Auto Save</source>
-        <translation type="vanished">自动保存</translation>
-    </message>
-    <message>
-        <source>Backup File</source>
-        <translation type="vanished">备份文件</translation>
-    </message>
-    <message>
         <location line="+15"/>
         <location line="+8"/>
         <source>Line ending</source>
         <translation>行结尾</translation>
-    </message>
-    <message>
-        <source>Follow Platform</source>
-        <translation type="vanished">跟随平台</translation>
-    </message>
-    <message>
-        <source>Follow File</source>
-        <translation type="vanished">跟随文件</translation>
     </message>
     <message>
         <location line="-22"/>
@@ -2431,21 +858,9 @@ Backup file last modified time: %2</source>
         <translation>可读宽度模式下内容的最大宽度（像素）</translation>
     </message>
     <message>
-        <source>Full Width</source>
-        <translation type="vanished">全宽</translation>
-    </message>
-    <message>
-        <source>Readable Width</source>
-        <translation type="vanished">易读宽度</translation>
-    </message>
-    <message>
         <location line="-12"/>
         <source>Content layout</source>
         <translation>内容布局</translation>
-    </message>
-    <message>
-        <source>Maximum content width in pixels for Readable Width mode</source>
-        <translation type="vanished">易读宽度模式下的最大内容宽度（像素）</translation>
     </message>
     <message>
         <location line="-3"/>
@@ -2461,20 +876,51 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
+    <name>vnotex::EditorStatusBarBinder</name>
+    <message>
+        <location filename="../../../widgets/editors/editorstatusbarbinder.cpp" line="+24"/>
+        <source>Line: %1 - %2 (%3%)   Col: %4</source>
+        <translation>行：%1 - %2 (%3%)   列：%4</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Enable Spell Check</source>
+        <translation>启用拼写检查</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Auto Detect Language</source>
+        <translation>自动检测语言</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>Spelling</source>
+        <translation>拼写</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::EncodingButton</name>
+    <message>
+        <location filename="../../../widgets/encodingbutton.cpp" line="+22"/>
+        <source>Reinterpret the file with a different encoding</source>
+        <translation>使用其他编码重新解析文件</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::ExportController</name>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="+29"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="+34"/>
         <source>Export is already in progress.</source>
         <translation>已有导出任务正在进行中。</translation>
     </message>
     <message>
         <location line="+11"/>
-        <location line="+142"/>
+        <location line="+168"/>
         <source>NotebookCoreService not available.</source>
         <translation>NotebookCoreService 不可用。</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-162"/>
         <source>Failed to create exporter.</source>
         <translation>无法创建导出器。</translation>
     </message>
@@ -2499,6 +945,11 @@ Backup file last modified time: %2</source>
         <translation>无法解析当前笔记路径。</translation>
     </message>
     <message>
+        <location line="+9"/>
+        <source>Failed to read current note content.</source>
+        <translation>无法读取当前笔记内容。</translation>
+    </message>
+    <message>
         <location line="+19"/>
         <source>No current folder available for export.</source>
         <translation>没有可导出的当前文件夹。</translation>
@@ -2509,404 +960,36 @@ Backup file last modified time: %2</source>
         <translation>没有可导出的当前笔记本。</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
+        <source>No workspace selected for export.</source>
+        <translation>未选择要导出的工作区。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Workspace has no exportable buffers.</source>
+        <translation>工作区没有可导出的内容。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Unsupported export source.</source>
         <translation>不支持的导出来源。</translation>
     </message>
     <message>
         <location line="+55"/>
+        <location line="+74"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>无法解析(%1)的文件路径。</translation>
     </message>
-</context>
-<context>
-    <name>vnotex::ExportDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog.cpp" line="+81"/>
-        <location line="+140"/>
-        <source>Export</source>
-        <translation>导出</translation>
-    </message>
-    <message>
-        <location line="-136"/>
-        <source>Source</source>
-        <translation>源</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Current Buffer (%1)</source>
-        <translation>当前缓冲区(%1)</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Current Note (%1)</source>
-        <translation>当前笔记(%1)</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Current Folder (%1)</source>
-        <translation>当前文件夹(%1)</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Current Notebook (%1)</source>
-        <translation>当前笔记本(%1)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Source:</source>
-        <translation>源:</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>vnote_exports</source>
-        <translation>vnote导出</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Target</source>
-        <translation>目标</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Markdown</source>
-        <translation>Markdown</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>HTML</source>
-        <translation>HTML网页</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>PDF</source>
-        <translation>PDF</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Custom</source>
-        <translation>自定义</translation>
-    </message>
-    <message>
-        <location line="+23"/>
-        <source>Format:</source>
-        <translation>格式:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Use transparent background</source>
-        <translation>使用透明背景</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Rendering style:</source>
-        <translation>渲染样式:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Syntax highlighting style:</source>
-        <translation>语法高亮样式:</translation>
-    </message>
-    <message>
-        <location line="+231"/>
-        <source>Please specify a valid scheme</source>
-        <translation>请指定一个有效的方案</translation>
-    </message>
-    <message>
-        <location line="+209"/>
-        <source>Add Table-of-Contents</source>
-        <translation>添加内容导航表格</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Use wkhtmltopdf (outline supported)</source>
-        <translation>使用wkhtmltopdf(支持大纲)</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <location line="+93"/>
-        <source>Export all source files into one file</source>
-        <translation>导出所有的源文件到一个文件中</translation>
-    </message>
-    <message>
-        <location line="-80"/>
-        <source>Browse</source>
-        <translation>浏览</translation>
-    </message>
-    <message>
-        <location line="+95"/>
-        <source>Command:
-	%1: List of input files.
-	%2: List of paths to search for images and other resources.
-	%3: Path of rendering CSS style sheet.
-	%4: Path of syntax highlighting CSS style sheet.
-	%5: Path of output file.</source>
-        <translation>命令:
-	%1: 输入文件列表。
-	%2: 搜索图片和其他资源的路径列表。
-	%3: 用于渲染的 CSS 样式表文件路径。
-	%4: 用于语法高亮的 CSS 样式表文件路径。
-	%5: 输出文件路径。</translation>
-    </message>
-    <message>
-        <location line="+114"/>
-        <source>New Custom Export Scheme</source>
-        <translation>新建自定义导出方案</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Scheme name:</source>
-        <translation>方案名字:</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Name conflicts with existing scheme.</source>
-        <translation>名字和已有方案冲突。</translation>
-    </message>
-    <message>
-        <location line="+32"/>
-        <source>Delete scheme (%1)?</source>
-        <translation>删除方案(%1)?</translation>
-    </message>
-    <message>
-        <location line="-714"/>
-        <source>Select Export Output Directory</source>
-        <translation>选择导出输出目录</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Output directory:</source>
-        <translation>输出目录:</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Advanced</source>
-        <translation>高级</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Process sub-folders</source>
-        <translation>处理子文件夹</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Export attachments</source>
-        <translation>导出附件</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Open Directory</source>
-        <translation>打开目录</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Copy Content</source>
-        <translation>复制内容</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Copy exported file content</source>
-        <translation>复制已导出文件的内容</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+113"/>
-        <source>%n file(s) exported</source>
-        <translation>
-            <numerusform>已导出 %n 个文件</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Cancelling the export</source>
-        <translation>正在取消导出</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Export migration in progress. Stop request is ignored.</source>
-        <translation>导出迁移进行中。忽略停止请求。</translation>
-    </message>
-    <message>
-        <location line="+28"/>
-        <source>Please specify a valid wkhtmltopdf executable file (%1)</source>
-        <translation>请指定一个有效的wkhtmltopdf可执行文件(%1)</translation>
-    </message>
-    <message>
-        <location line="+59"/>
-        <source>Export migration in progress. Please use ExportDialog2 + ExportController.</source>
-        <translation>导出迁移进行中。请使用 ExportDialog2 + ExportController。</translation>
-    </message>
-    <message>
-        <location line="+36"/>
-        <source>Embed styles</source>
-        <translation>嵌入样式</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Embed images</source>
-        <translation>嵌入图片</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Complete page</source>
-        <translation>完整页面</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Export the whole page along with images which may change the links structure</source>
-        <translation>导出包括图像的完整页面，可能改变链接结构</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Mime HTML format</source>
-        <translation>Mime HTML格式</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Add outline panel</source>
-        <translation>添加大纲面板</translation>
-    </message>
-    <message>
-        <location line="+67"/>
-        <source>Settings</source>
-        <translation>设置</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Page layout:</source>
-        <translation>页面布局:</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Download</source>
-        <translation>下载</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <location line="+93"/>
-        <source>All-in-One</source>
-        <translation>多合一</translation>
-    </message>
-    <message>
-        <location line="-76"/>
-        <source>Select wkhtmltopdf Executable</source>
-        <translation>选择wkhtmltopdf可执行文件</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Wkhtmltopdf path:</source>
-        <translation>Wkhtmltopdf路径:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Wkhtmltopdf arguments:</source>
-        <translation>Wkhtmltopdf参数:</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>Scheme:</source>
-        <translation>方案:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>New</source>
-        <translation>新建</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Delete</source>
-        <translation>删除</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Suffix of the target file like docs/pdf/epub</source>
-        <translation>目标文件的后缀，如docs/pdf/epub</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Target file suffix:</source>
-        <translation>目标文件后缀:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Separator used to concatenate resource folder paths</source>
-        <translation>用于连接资源文件夹路径的分隔符</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Resource path separator:</source>
-        <translation>资源路径分隔符:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Use HTML format as input</source>
-        <translation>使用HTML格式作为输入</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Convert to HTMl format first as the input of the custom export command</source>
-        <translation>首先转换为HTML格式然后作为自定义输出命令的输入</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Target page scrollable</source>
-        <translation>目标页面可滚动</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Whether the page of the target file is scrollable</source>
-        <translation>目标文件的页面是否可滚动的</translation>
-    </message>
-    <message>
-        <location line="+100"/>
-        <source>Portrait</source>
-        <translation>纵向</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Landscape</source>
-        <translation>横向</translation>
+        <location line="-27"/>
+        <source>Required services not available for workspace export.</source>
+        <translation>工作区导出所需的服务不可用。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::ExportDialog2</name>
     <message>
-        <source>Current Buffer (%1)</source>
-        <translation type="vanished">当前缓冲区(%1)</translation>
-    </message>
-    <message>
-        <source>Current Buffer</source>
-        <translation type="vanished">当前缓冲区</translation>
-    </message>
-    <message>
-        <source>Current Note (%1)</source>
-        <translation type="vanished">当前笔记(%1)</translation>
-    </message>
-    <message>
-        <source>Current Note</source>
-        <translation type="vanished">当前笔记</translation>
-    </message>
-    <message>
-        <source>Current Folder (%1)</source>
-        <translation type="vanished">当前文件夹(%1)</translation>
-    </message>
-    <message>
-        <source>Current Folder</source>
-        <translation type="vanished">当前文件夹</translation>
-    </message>
-    <message>
-        <source>Current Notebook (%1)</source>
-        <translation type="vanished">当前笔记本(%1)</translation>
-    </message>
-    <message>
-        <source>Current Notebook</source>
-        <translation type="vanished">当前笔记本</translation>
-    </message>
-    <message>
-        <source>Unknown Source</source>
-        <translation type="vanished">未知来源</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="+143"/>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="+162"/>
         <source>No current buffer content available</source>
         <translation>没有可用的当前缓冲区内容</translation>
     </message>
@@ -2926,12 +1009,12 @@ Backup file last modified time: %2</source>
         <translation>没有可用的当前笔记本</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+79"/>
         <source>Options</source>
         <translation>选项</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+65"/>
         <source>Markdown</source>
         <translation>Markdown</translation>
     </message>
@@ -2971,7 +1054,7 @@ Backup file last modified time: %2</source>
         <translation>输出目录:</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+17"/>
         <source>Rendering style:</source>
         <translation>渲染样式:</translation>
     </message>
@@ -2989,22 +1072,6 @@ Backup file last modified time: %2</source>
         <location line="+1"/>
         <source>Process sub-folders</source>
         <translation>处理子文件夹</translation>
-    </message>
-    <message>
-        <source>Markdown Options</source>
-        <translation type="vanished">Markdown 选项</translation>
-    </message>
-    <message>
-        <source>HTML Options</source>
-        <translation type="vanished">HTML 选项</translation>
-    </message>
-    <message>
-        <source>PDF Options</source>
-        <translation type="vanished">PDF 选项</translation>
-    </message>
-    <message>
-        <source>Custom Options</source>
-        <translation type="vanished">自定义选项</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -3072,11 +1139,7 @@ Backup file last modified time: %2</source>
         <translation>Wkhtmltopdf参数:</translation>
     </message>
     <message>
-        <source>All-in-One</source>
-        <translation type="vanished">多合一</translation>
-    </message>
-    <message>
-        <location line="-278"/>
+        <location line="-351"/>
         <source>Current buffer (%1)</source>
         <translation>当前缓冲区 (%1)</translation>
     </message>
@@ -3121,13 +1184,23 @@ Backup file last modified time: %2</source>
         <translation>未知来源</translation>
     </message>
     <message>
-        <location line="+157"/>
         <location line="+156"/>
+        <source>Workspace: %1</source>
+        <translation>工作区：%1</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Workspace has no exportable buffers</source>
+        <translation>工作区没有可导出的内容</translation>
+    </message>
+    <message>
+        <location line="+60"/>
+        <location line="+197"/>
         <source>Markdown options</source>
         <translation>Markdown 选项</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-197"/>
         <source>HTML options</source>
         <translation>HTML 选项</translation>
     </message>
@@ -3142,29 +1215,69 @@ Backup file last modified time: %2</source>
         <translation>自定义选项</translation>
     </message>
     <message>
-        <location line="+99"/>
-        <location line="+39"/>
+        <location line="+101"/>
+        <source>Header left:</source>
+        <translation>页眉左侧：</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Header center:</source>
+        <translation>页眉中间：</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Header right:</source>
+        <translation>页眉右侧：</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Footer left:</source>
+        <translation>页脚左侧：</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Footer center:</source>
+        <translation>页脚中间：</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Supports placeholders such as [page], [title] and [date].</source>
+        <translation>支持诸如 [page]、[title] 和 [date] 之类的占位符。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Footer right:</source>
+        <translation>页脚右侧：</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+54"/>
         <source>All-in-one</source>
         <translation>合并为单个文件</translation>
     </message>
     <message>
-        <location line="-38"/>
-        <location line="+39"/>
+        <location line="-53"/>
+        <location line="+54"/>
         <source>Export all source files into one file</source>
         <translation>导出所有的源文件到一个文件中</translation>
     </message>
     <message>
-        <location line="-20"/>
+        <location line="-27"/>
         <source>New</source>
         <translation>新建</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
+        <source>Duplicate</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
         <source>Scheme:</source>
         <translation>方案:</translation>
     </message>
@@ -3205,22 +1318,44 @@ Backup file last modified time: %2</source>
         <translation>打开输出目录</translation>
     </message>
     <message>
-        <location line="+192"/>
+        <location line="+191"/>
+        <source> (built-in)</source>
+        <translation>（内置）</translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>New Custom Export Scheme</source>
         <translation>新建自定义导出方案</translation>
     </message>
     <message>
         <location line="+0"/>
+        <location line="+40"/>
         <source>Scheme name:</source>
         <translation>方案名字:</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="-34"/>
+        <location line="+41"/>
         <source>Name conflicts with existing scheme.</source>
         <translation>名字和已有方案冲突。</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="-14"/>
+        <source>%1 (copy)</source>
+        <translation>%1（副本）</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>%1 (copy %2)</source>
+        <translation>%1（副本 %2）</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Duplicate Custom Export Scheme</source>
+        <translation>复制自定义导出方案</translation>
+    </message>
+    <message>
+        <location line="+70"/>
         <source>Portrait</source>
         <translation>纵向</translation>
     </message>
@@ -3235,7 +1370,7 @@ Backup file last modified time: %2</source>
         <translation>vnote导出</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+21"/>
         <source>Export finished: %1 file(s)</source>
         <translation>导出完成：%1 个文件</translation>
     </message>
@@ -3243,31 +1378,46 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::Exporter</name>
     <message>
-        <location filename="../../../export/exporter.cpp" line="+38"/>
+        <location filename="../../../export/exporter.cpp" line="+37"/>
         <location line="+24"/>
         <source>Failed to create output folder (%1).</source>
         <translation>无法创建输出文件夹(%1)。</translation>
     </message>
     <message>
         <location line="+19"/>
-        <location line="+90"/>
-        <location line="+50"/>
+        <location line="+89"/>
+        <location line="+62"/>
         <location line="+55"/>
         <source>Failed to create output folder under (%1).</source>
         <translation>无法在(%1)中创建输出文件夹。</translation>
     </message>
     <message>
-        <location line="-164"/>
+        <location line="-176"/>
         <source>Failed to read file (%1): %2</source>
         <translation>无法读取文件 (%1)：%2</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+67"/>
+        <source>Failed to write file (%1): %2</source>
+        <translation>无法写入文件（%1）：%2</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Failed to copy file (%1): %2</source>
+        <translation>无法复制文件（%1）：%2</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Failed to export markdown due to empty content and file path.</source>
         <translation>由于内容和文件路径均为空，无法导出 Markdown。</translation>
     </message>
     <message>
-        <location line="+79"/>
+        <location line="+33"/>
+        <source>Failed to copy attachment folder (%1): %2</source>
+        <translation>无法复制附件文件夹（%1）：%2</translation>
+    </message>
+    <message>
+        <location line="+50"/>
         <location line="+76"/>
         <source>all_in_one_export</source>
         <translation>多合一导出</translation>
@@ -3279,7 +1429,7 @@ Backup file last modified time: %2</source>
         <translation>输出到(%1)。</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-210"/>
         <source>Unknown target format %1.</source>
         <translation>未知的目标格式%1。</translation>
     </message>
@@ -3294,7 +1444,7 @@ Backup file last modified time: %2</source>
         <translation>无法导出文件(%1)</translation>
     </message>
     <message>
-        <location line="+374"/>
+        <location line="+386"/>
         <source>Custom command: %1</source>
         <translation>自定义命令: %1</translation>
     </message>
@@ -3386,10 +1536,6 @@ Backup file last modified time: %2</source>
         <translation>系统默认应用</translation>
     </message>
     <message>
-        <source>System Default App</source>
-        <translation type="vanished">系统默认程序</translation>
-    </message>
-    <message>
         <location line="+1"/>
         <source>Built-in program that opens files with the OS default application</source>
         <translation>使用操作系统默认程序打开文件的内置程序</translation>
@@ -3401,153 +1547,11 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::FilePropertiesDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/filepropertiesdialog.cpp" line="+34"/>
-        <source>Location:</source>
-        <translation>路径:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Size:</source>
-        <translation>大小:</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>%1 Bytes</source>
-        <translation>%1字节</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Properties</source>
-        <translation>属性</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FileSearchEngineWorker</name>
-    <message>
-        <location filename="../../../search/filesearchengine.cpp" line="+34"/>
-        <source>Skip binary file (%1)</source>
-        <translation>跳过二进制文件(%1)</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FileSystemViewer</name>
-    <message>
-        <location filename="../../../widgets/filesystemviewer.cpp" line="+128"/>
-        <source>&amp;Open</source>
-        <translation>打开(&amp;O)</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>&amp;Delete</source>
-        <translation>删除(&amp;D)</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>&amp;Properties</source>
-        <translation>属性(&amp;P)</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Cop&amp;y Path</source>
-        <translation>复制路径(&amp;Y)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Copied path: %1</source>
-        <translation>已复制路径: %1</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FindAndReplaceWidget</name>
-    <message>
-        <location filename="../../../widgets/findandreplacewidget.cpp" line="+49"/>
-        <source>Find And Replace</source>
-        <translation>查找替换</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Close</source>
-        <translation>关闭</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Find:</source>
-        <translation>查找:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Search</source>
-        <translation>查找</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Find &amp;Next</source>
-        <translation>查找下一个(&amp;N)</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Find &amp;Previous</source>
-        <translation>查找上一个(&amp;P)</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Replace with:</source>
-        <translation>替换为:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>\1, \2 for back reference in regular expression</source>
-        <translation>在正则表达式中使用\1和\2来后向引用</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Replace</source>
-        <translation>替换</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Replace And Find</source>
-        <translation>替换并查找</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Replace All</source>
-        <translation>替换全部</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>&amp;Case sensitive</source>
-        <translation>大小写敏感(&amp;C)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>&amp;Whole word only</source>
-        <translation>匹配完整词(&amp;W)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Re&amp;gular expression</source>
-        <translation>正则表达式(&amp;G)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>&amp;Incremental search</source>
-        <translation>增量查找(&amp;I)</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::FindAndReplaceWidget2</name>
     <message>
         <location filename="../../../widgets/findandreplacewidget2.cpp" line="+51"/>
-        <source>Find And Replace</source>
-        <translation>查找替换</translation>
+        <source>Find &amp; Replace</source>
+        <translation>查找和替换</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -3714,29 +1718,6 @@ Backup file last modified time: %2</source>
         <location line="+9"/>
         <source>Clear</source>
         <translation>清空</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FolderPropertiesDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/folderpropertiesdialog.cpp" line="+31"/>
-        <source>Properties</source>
-        <translation>属性</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Please specify a name for the folder.</source>
-        <translation>请为文件夹指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Name conflicts with existing folder.</source>
-        <translation>名字和已有文件夹冲突。</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Failed to save folder (%1) in (%2) (%3).</source>
-        <translation>无法保存笔记本(%2)中的文件夹(%1)(%3)。</translation>
     </message>
 </context>
 <context>
@@ -4078,53 +2059,6 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::HistoryPanel</name>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">清空</translation>
-    </message>
-    <message>
-        <source>&amp;Open</source>
-        <translation type="vanished">打开(&amp;O)</translation>
-    </message>
-    <message>
-        <source>&amp;Locate Node</source>
-        <translation type="vanished">定位节点(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Clear all the history?</source>
-        <translation type="vanished">清空所有历史？</translation>
-    </message>
-    <message>
-        <source>Older</source>
-        <translation type="vanished">更早</translation>
-    </message>
-    <message>
-        <source>Today</source>
-        <translation type="vanished">今天</translation>
-    </message>
-    <message>
-        <source>Yesterday</source>
-        <translation type="vanished">昨天</translation>
-    </message>
-    <message>
-        <source>Last 7 Days</source>
-        <translation type="vanished">过去7天</translation>
-    </message>
-    <message>
-        <source>%1
-%2</source>
-        <translation type="vanished">%1
-%2</translation>
-    </message>
-    <message>
-        <source>[%1] %2
-%3</source>
-        <translation type="vanished">[%1] %2
-%3</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::HistorySticker</name>
     <message>
         <location filename="../../../widgets/dashboard/historysticker.cpp" line="+43"/>
@@ -4277,7 +2211,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::ImageInsertDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+58"/>
+        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+60"/>
         <source>From:</source>
         <translation>源:</translation>
     </message>
@@ -4297,7 +2231,7 @@ Backup file last modified time: %2</source>
         <translation>替换文本:</translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+79"/>
         <source>Select Image To Insert</source>
         <translation>选择图片插入</translation>
     </message>
@@ -4351,34 +2285,6 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ImportFolderDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/importfolderdialog.cpp" line="+31"/>
-        <source>Import folder into (%1).</source>
-        <translation>导入文件夹至(%1)。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Import Folder</source>
-        <translation>导入文件夹</translation>
-    </message>
-    <message>
-        <location line="+23"/>
-        <source>Please specify a valid folder to import.</source>
-        <translation>请指定一个有效文件夹进行导入。</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Failed to add folder (%1) as node under (%2).</source>
-        <translation>无法在(%2)下将文件夹(%1)添加为节点。</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Failed to add folder (%1) as node (%2).</source>
-        <translation>无法添加文件夹(%1)为节点(%2)。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ImportFolderDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="+44"/>
@@ -4389,78 +2295,6 @@ Backup file last modified time: %2</source>
         <location line="+15"/>
         <source>Import Folder</source>
         <translation>导入文件夹</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::ImportFolderUtilsTranslate</name>
-    <message>
-        <location filename="../../../widgets/dialogs/importfolderutils.cpp" line="+28"/>
-        <source>Failed to add folder (%1) as node (%2).</source>
-        <translation>无法添加文件夹(%1)为节点(%2)。</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Failed to add file (%1) as node (%2).</source>
-        <translation>无法添加文件(%1)为节点(%2)。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::ImportNotebookDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/importnotebookdialog.cpp" line="+34"/>
-        <source>Open Notebook</source>
-        <translation>打开笔记本</translation>
-    </message>
-    <message>
-        <location line="+39"/>
-        <source>The root folder specified does not exist.</source>
-        <translation>指定的根文件夹不存在。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>There already exists a notebook (%1) with the same root folder.</source>
-        <translation>已经存在一个使用相同根文件夹的笔记本(%1)。</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Not a valid (%1) root folder (%2).</source>
-        <translation>无效的(%1)根文件夹(%2)。</translation>
-    </message>
-    <message>
-        <location line="+20"/>
-        <source>Failed to create notebook from root folder (%1) (%2).</source>
-        <translation>无法从根文件夹(%1)创建笔记本(%2)。</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Failed to open notebook.</source>
-        <translation>无法打开笔记本。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Failed to open notebook (%1).</source>
-        <translation>无法打开笔记本(%1)。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::LabelWithButtonsWidget</name>
-    <message>
-        <location filename="../../../widgets/labelwithbuttonswidget.cpp" line="+53"/>
-        <source>Delete</source>
-        <translation>删除</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::LevelLabelWithUpButton</name>
-    <message>
-        <location filename="../../../widgets/dialogs/levellabelwithupbutton.cpp" line="+22"/>
-        <source>Up</source>
-        <translation>向上</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Go one level up</source>
-        <translation>向上一层</translation>
     </message>
 </context>
 <context>
@@ -4508,7 +2342,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="+120"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="+144"/>
         <source>VNote</source>
         <translation>VNote</translation>
     </message>
@@ -4543,13 +2377,13 @@ Backup file last modified time: %2</source>
         <translation>%1仍然在此运行。</translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+383"/>
         <location line="+46"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location line="+219"/>
+        <location line="+278"/>
         <source>Applying stylesheet...</source>
         <translation>正在应用样式表...</translation>
     </message>
@@ -4565,12 +2399,12 @@ Backup file last modified time: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+509"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+508"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-487"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-486"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
@@ -4585,7 +2419,7 @@ Backup file last modified time: %2</source>
         <translation>快速笔记</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+11"/>
         <source>New Folder</source>
         <translation>新建文件夹</translation>
     </message>
@@ -4622,17 +2456,17 @@ Backup file last modified time: %2</source>
     </message>
     <message>
         <location line="+18"/>
-        <location line="+258"/>
+        <location line="+263"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location line="-200"/>
+        <location line="-203"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+34"/>
         <source>Quick Access Not Set</source>
         <translation>快速访问未设置</translation>
     </message>
@@ -4642,12 +2476,12 @@ Backup file last modified time: %2</source>
         <translation>新建快速访问</translation>
     </message>
     <message>
-        <location line="+19"/>
-        <source>Switch Theme</source>
-        <translation>切换主题</translation>
+        <location line="+20"/>
+        <source>Themes</source>
+        <translation>主题</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+63"/>
         <source>Expand Content Area</source>
         <translation>扩展内容区</translation>
     </message>
@@ -4743,65 +2577,6 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ManageNotebooksDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog.cpp" line="+72"/>
-        <source>Delete</source>
-        <translation>删除</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Manage Notebooks</source>
-        <translation>管理笔记本</translation>
-    </message>
-    <message>
-        <location line="-24"/>
-        <source>Close Noteboook</source>
-        <translation>关闭笔记本</translation>
-    </message>
-    <message>
-        <location line="+150"/>
-        <source>Please specify a name for the notebook.</source>
-        <translation>请为笔记本指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+27"/>
-        <source>Close notebook (%1)?</source>
-        <translation>关闭笔记本(%1)？</translation>
-    </message>
-    <message>
-        <location line="+27"/>
-        <source>Press &quot;Ok&quot; to close the notebook and open the location of the notebook root folder.</source>
-        <translation>按“确认”关闭该笔记本并打开笔记本根文件夹所在位置。</translation>
-    </message>
-    <message>
-        <location line="-25"/>
-        <location line="+26"/>
-        <source>Notebook location: %1</source>
-        <translation>笔记本路径: %1</translation>
-    </message>
-    <message>
-        <location line="-27"/>
-        <source>The notebook could be opened by VNote again via &quot;Open Other Notebooks&quot; operation.</source>
-        <translation>该笔记本可以使用VNote中的“打开其他笔记本”操作重新打开。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Failed to close notebook (%1)</source>
-        <translation>无法关闭笔记本(%1)</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Please close the notebook in VNote first and delete the notebook root folder files manually.</source>
-        <translation>请先在VNote中关闭该笔记本，然后手动删除该笔记本的根文件夹等文件。</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>There are unsaved changes to current notebook.</source>
-        <translation>当前笔记本有尚未保存的更改。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ManageNotebooksDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="+60"/>
@@ -4832,10 +2607,6 @@ Backup file last modified time: %2</source>
         <location line="+1"/>
         <source>Open root folder in file explorer</source>
         <translation>在文件管理器中打开根文件夹</translation>
-    </message>
-    <message>
-        <source>Root Folder:</source>
-        <translation type="vanished">根文件夹：</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -4881,21 +2652,9 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkNodeDialog2</name>
     <message>
-        <source>Text Color</source>
-        <translation type="vanished">文字颜色</translation>
-    </message>
-    <message>
-        <source>Background Color</source>
-        <translation type="vanished">背景颜色</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="+71"/>
         <source>Preview</source>
         <translation>预览</translation>
-    </message>
-    <message>
-        <source>Sample Text</source>
-        <translation type="vanished">示例文本</translation>
     </message>
     <message>
         <location line="-10"/>
@@ -4953,12 +2712,12 @@ Backup file last modified time: %2</source>
         <translation>插入图片</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+52"/>
         <source>Insert Table</source>
         <translation>插入表格</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+56"/>
         <source>Failed to read local image file (%1) (%2).</source>
         <translation>无法读取本地图片文件(%1)(%2)。</translation>
     </message>
@@ -5025,12 +2784,12 @@ Backup file last modified time: %2</source>
     <message>
         <location line="-75"/>
         <location line="+74"/>
-        <location line="+152"/>
+        <location line="+158"/>
         <source>Insert As Image</source>
         <translation>插入为图片</translation>
     </message>
     <message>
-        <location line="-225"/>
+        <location line="-231"/>
         <location line="+91"/>
         <source>Insert As Text</source>
         <translation>插入为文本</translation>
@@ -5052,17 +2811,17 @@ Backup file last modified time: %2</source>
     </message>
     <message>
         <location line="+5"/>
-        <location line="+142"/>
+        <location line="+148"/>
         <source>Attach And Insert Link</source>
         <translation>添加为附件并插入链接</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-142"/>
         <source>Insert File Content</source>
         <translation>插入文件内容</translation>
     </message>
     <message numerus="yes">
-        <location line="+129"/>
+        <location line="+135"/>
         <source>Insert From Clipboard (%n items)</source>
         <translation>
             <numerusform>从剪切板插入(%n项)</numerusform>
@@ -5074,12 +2833,12 @@ Backup file last modified time: %2</source>
         <translation>从剪切板插入图片</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>Insert Image From URL</source>
         <translation>从URL插入图片</translation>
     </message>
     <message>
-        <location line="+182"/>
+        <location line="+160"/>
         <source>&amp;Read</source>
         <translation>阅读(&amp;R)</translation>
     </message>
@@ -5089,7 +2848,7 @@ Backup file last modified time: %2</source>
         <translation>多功能粘贴</translation>
     </message>
     <message>
-        <location line="+493"/>
+        <location line="+413"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
@@ -5104,8 +2863,8 @@ Backup file last modified time: %2</source>
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <location line="-1168"/>
-        <location line="+639"/>
+        <location line="-1073"/>
+        <location line="+624"/>
         <source>Paste as Plain Text</source>
         <translation>粘贴为纯文本</translation>
     </message>
@@ -5120,7 +2879,7 @@ Backup file last modified time: %2</source>
         <translation>插入片段</translation>
     </message>
     <message>
-        <location line="+477"/>
+        <location line="+397"/>
         <source>View Image</source>
         <translation>查看图片</translation>
     </message>
@@ -5130,7 +2889,7 @@ Backup file last modified time: %2</source>
         <translation>复制原地预览</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+29"/>
         <source>Open Link</source>
         <translation>打开链接</translation>
     </message>
@@ -5140,12 +2899,12 @@ Backup file last modified time: %2</source>
         <translation>复制链接</translation>
     </message>
     <message>
-        <location line="-526"/>
+        <location line="-420"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
     </message>
     <message>
-        <location line="-963"/>
+        <location line="-948"/>
         <source>Image insertion from local file is not supported without a buffer.</source>
         <translation>无缓冲区时不支持从本地文件插入图片。</translation>
     </message>
@@ -5165,7 +2924,7 @@ Backup file last modified time: %2</source>
         <translation>无法从数据插入图片。</translation>
     </message>
     <message>
-        <location line="+893"/>
+        <location line="+878"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
@@ -5183,7 +2942,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+314"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+350"/>
         <source>Insert file name as title</source>
         <translation>将文件名作为标题</translation>
     </message>
@@ -5193,13 +2952,12 @@ Backup file last modified time: %2</source>
         <translation>创建笔记时将文件名作为标题插入</translation>
     </message>
     <message>
-        <location line="-107"/>
-        <location line="+224"/>
+        <location line="-168"/>
         <source>Read</source>
         <translation>阅读</translation>
     </message>
     <message>
-        <location line="-221"/>
+        <location line="+3"/>
         <source>Constrain image width</source>
         <translation>限制图片宽度</translation>
     </message>
@@ -5279,13 +3037,32 @@ Backup file last modified time: %2</source>
         <translation>为代码块添加行号</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+124"/>
+        <location line="+10"/>
+        <source>Code block line wrap</source>
+        <translation>代码块自动换行</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Wrap long lines in code blocks in read mode.</source>
+        <translation>在阅读模式下对代码块中的长行自动换行。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Customize global styles</source>
+        <translation>自定义全局样式</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open user.css to add global styles applied in read mode under every theme</source>
+        <translation>打开 user.css 以添加在每个主题的阅读模式下应用的全局样式</translation>
+    </message>
+    <message>
+        <location line="+40"/>
         <source>Edit</source>
         <translation>编辑</translation>
     </message>
     <message>
-        <location line="-109"/>
+        <location line="+15"/>
         <source>Constrain in-place preview width</source>
         <translation>限制原地预览宽度</translation>
     </message>
@@ -5341,14 +3118,6 @@ Backup file last modified time: %2</source>
         <translation>拼写检查</translation>
     </message>
     <message>
-        <source>Override font</source>
-        <translation type="vanished">覆盖字体</translation>
-    </message>
-    <message>
-        <source>Override editor font family of theme</source>
-        <translation type="vanished">覆盖主题中的编辑器字体</translation>
-    </message>
-    <message>
         <location line="+10"/>
         <source>Use Rich Paste by default</source>
         <translation>默认使用多功能粘贴</translation>
@@ -5364,48 +3133,13 @@ Backup file last modified time: %2</source>
         <translation>通用</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <source>Section number mode</source>
-        <translation>小节序号模式</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>None</source>
-        <translation>无</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Base level to start section numbering in edit mode</source>
-        <translation>编辑模式中开始小节序号计数的基础层级</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Section number style</source>
-        <translation>小节序号样式</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>1.1.</source>
-        <translation>1.1.</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>1.1</source>
-        <translation>1.1</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Section number</source>
-        <translation>小节序号</translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+5"/>
         <source>Use web service or local JAR file to render PlantUml graphs</source>
         <translation>使用网络服务或本地 JAR 文件渲染 PlantUml 图</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+70"/>
+        <location line="+69"/>
         <source>Web service</source>
         <translation>网络服务</translation>
     </message>
@@ -5430,26 +3164,10 @@ Backup file last modified time: %2</source>
         <translation>本地可执行文件</translation>
     </message>
     <message>
-        <source>Use Web service or local JAR file to render PlantUml graphs</source>
-        <translation type="vanished">使用网页服务或者本地JAR文件来渲染PlantUml图表</translation>
-    </message>
-    <message>
-        <source>Web Service</source>
-        <translation type="vanished">网页服务</translation>
-    </message>
-    <message>
-        <source>Override the Web service used to render PlantUml graphs</source>
-        <translation type="vanished">覆盖用于渲染PlantUml图表的网页服务</translation>
-    </message>
-    <message>
         <location line="-17"/>
         <location line="+70"/>
         <source>Empty to use default one</source>
         <translation>留空则使用默认值</translation>
-    </message>
-    <message>
-        <source>Override PlantUml Web service</source>
-        <translation type="vanished">覆盖PlantUml网页服务</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -5457,11 +3175,7 @@ Backup file last modified time: %2</source>
         <translation>覆盖MathJax脚本</translation>
     </message>
     <message>
-        <source>Use Web service or local executable file to render Graphviz graphs</source>
-        <translation type="vanished">使用网页服务或者本地可执行文件来渲染Graphviz图表</translation>
-    </message>
-    <message>
-        <location line="-125"/>
+        <location line="-124"/>
         <source>Local JAR</source>
         <translation>本地JAR</translation>
     </message>
@@ -5471,7 +3185,7 @@ Backup file last modified time: %2</source>
         <translation>PlantUml</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+14"/>
         <source>Local JAR file to render PlantUml graphs</source>
         <translation>用于渲染PlantUml图表的本地JAR文件</translation>
     </message>
@@ -5520,10 +3234,6 @@ Backup file last modified time: %2</source>
         <translation>PlantUml JAR文件</translation>
     </message>
     <message>
-        <source>Local Executable</source>
-        <translation type="vanished">本地可执行文件</translation>
-    </message>
-    <message>
         <location line="+32"/>
         <source>Graphviz</source>
         <translation>Graphviz</translation>
@@ -5559,97 +3269,25 @@ Backup file last modified time: %2</source>
         <translation>覆盖用于渲染数学公式的MathJax脚本</translation>
     </message>
     <message>
-        <location line="-401"/>
+        <location line="-409"/>
         <source>Markdown Editor</source>
         <translation>Markdown编辑器</translation>
     </message>
 </context>
 <context>
-    <name>vnotex::MarkdownViewWindow</name>
+    <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow.cpp" line="+431"/>
-        <source>Markdown Viewer</source>
-        <translation>Markdown查看器</translation>
-    </message>
-    <message>
-        <location line="+324"/>
-        <location line="+28"/>
-        <source>Clear Obsolete Images</source>
-        <translation>清空无用图片</translation>
-    </message>
-    <message>
-        <location line="-27"/>
-        <source>These images seems to be not in use anymore. Please confirm the deletion of them.</source>
-        <translation>这些图片似乎已经不再使用。请确认并删除。</translation>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+595"/>
+        <source>Are you sure to open link (%1)?</source>
+        <translation>确定要打开链接（%1）吗？</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Deleted local images could be found in the recycle bin of notebook if it is from a bundle notebook.</source>
-        <translation>如果这是一个自包含笔记本，已删除的本地图片可以在笔记本回收站中找回。</translation>
+        <source>Malicious link might do harm to your device.</source>
+        <translation>恶意链接可能会危害您的设备。</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <source>Clearing obsolete images...</source>
-        <translation>正在清空无用图片...</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Abort</source>
-        <translation>终止</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Clear image (%1)</source>
-        <translation>清空图片(%1)</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+8"/>
-        <source>Cleared %n obsolete images</source>
-        <translation>
-            <numerusform>清空 %n 无用图片</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+373"/>
-        <source>View Mode Not Supported In Read Mode</source>
-        <translation>阅读模式不支持查看模式</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Edit Only</source>
-        <translation>纯编辑</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Edit with Preview</source>
-        <translation>预览辅助的编辑</translation>
-    </message>
-    <message>
-        <location line="+102"/>
-        <source>Printed to PDF</source>
-        <translation>已打印为PDF</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Failed to print to PDF</source>
-        <translation>无法打印为PDF</translation>
-    </message>
-    <message>
-        <location line="-351"/>
-        <location line="+9"/>
-        <source>Replace is not supported in read mode</source>
-        <translation>阅读模式不支持替换</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::MarkdownViewWindow2</name>
-    <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+396"/>
-        <source>Markdown Viewer</source>
-        <translation>Markdown查看器</translation>
-    </message>
-    <message>
-        <location line="+850"/>
+        <location line="+692"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
@@ -5661,7 +3299,7 @@ Backup file last modified time: %2</source>
         <translation>阅读模式下不支持插入代码片段</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+234"/>
         <source>Printed to PDF</source>
         <translation>已打印为PDF</translation>
     </message>
@@ -5679,7 +3317,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkdownViewer</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="-176"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="-198"/>
         <source>&amp;Edit</source>
         <translation>编辑(&amp;E)</translation>
     </message>
@@ -5694,7 +3332,17 @@ Backup file last modified time: %2</source>
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <location line="+239"/>
+        <location line="+59"/>
+        <source>Are you sure to open link (%1)?</source>
+        <translation>确定要打开链接（%1）吗？</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Malicious link might do harm to your device.</source>
+        <translation>恶意链接可能会危害您的设备。</translation>
+    </message>
+    <message>
+        <location line="+201"/>
         <source>Cross Copy</source>
         <translation>交叉复制</translation>
     </message>
@@ -5702,7 +3350,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::MarkdownViewerAdapter</name>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="+230"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="+235"/>
         <source>No Background</source>
         <translation>无背景</translation>
     </message>
@@ -5739,14 +3387,6 @@ Backup file last modified time: %2</source>
         <location line="+8"/>
         <source>Replace is not supported yet</source>
         <translation>不支持替换</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::MiscPage</name>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/miscpage.cpp" line="+21"/>
-        <source>Misc</source>
-        <translation>杂项</translation>
     </message>
 </context>
 <context>
@@ -5790,29 +3430,6 @@ Backup file last modified time: %2</source>
         <location line="+8"/>
         <source>Failed to get path for created folder.</source>
         <translation>无法获取已创建文件夹的路径。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NewFolderDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/newfolderdialog.cpp" line="+28"/>
-        <source>New Folder</source>
-        <translation>新建文件夹</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Please specify a name for the folder.</source>
-        <translation>请为文件夹指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Name conflicts with existing or built-in folder.</source>
-        <translation>名字和已有或内建文件夹冲突。</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>Failed to create folder under (%1) in (%2) (%3).</source>
-        <translation>无法在笔记本(%2)中文件夹(%1)下创建文件夹(%3)。</translation>
     </message>
 </context>
 <context>
@@ -5869,7 +3486,7 @@ Backup file last modified time: %2</source>
 <context>
     <name>vnotex::NewNoteController</name>
     <message>
-        <location filename="../../../controllers/newnotecontroller.cpp" line="+26"/>
+        <location filename="../../../controllers/newnotecontroller.cpp" line="+29"/>
         <source>Please specify a name for the note.</source>
         <translation>请为笔记指定名称。</translation>
     </message>
@@ -5885,16 +3502,18 @@ Backup file last modified time: %2</source>
     </message>
     <message>
         <location line="+14"/>
+        <location line="+74"/>
         <source>No notebook specified.</source>
         <translation>未指定笔记本。</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="-51"/>
+        <location line="+59"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-49"/>
         <source>Failed to create note (%1).</source>
         <translation>无法创建笔记 (%1)。</translation>
     </message>
@@ -5903,39 +3522,27 @@ Backup file last modified time: %2</source>
         <source>Failed to get path for created note.</source>
         <translation>无法获取已创建笔记的路径。</translation>
     </message>
-</context>
-<context>
-    <name>vnotex::NewNoteDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog.cpp" line="+50"/>
-        <source>New Note</source>
-        <translation>新建笔记</translation>
+        <location line="+16"/>
+        <location line="+68"/>
+        <source>Failed to write note content.</source>
+        <translation>无法写入笔记内容。</translation>
     </message>
     <message>
-        <location line="+22"/>
-        <source>Please specify a valid name for the note.</source>
-        <translation>请为笔记指定一个有效名字。</translation>
+        <location line="-28"/>
+        <source>Failed to create the quick note folder (%1).</source>
+        <translation>无法创建快速笔记文件夹（%1）。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Name conflicts with existing or built-in note.</source>
-        <translation>名字和已有或内建笔记冲突。</translation>
-    </message>
-    <message>
-        <location line="+42"/>
-        <source>Failed to create note under (%1) in (%2) (%3).</source>
-        <translation>无法在笔记本(%2)中文件夹(%1)下创建笔记(%3)。</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>note</source>
-        <translation>笔记</translation>
+        <location line="+16"/>
+        <source>Failed to create quick note (%1).</source>
+        <translation>无法创建快速笔记（%1）。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::NewNoteDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog2.cpp" line="+60"/>
+        <location filename="../../../widgets/dialogs/newnotedialog2.cpp" line="+59"/>
         <source>Type:</source>
         <translation>类型:</translation>
     </message>
@@ -6004,49 +3611,6 @@ Backup file last modified time: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::NewNotebookDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog.cpp" line="+30"/>
-        <source>New Notebook</source>
-        <translation>新建笔记本</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>&lt;br/&gt;Both absolute and relative paths are supported. ~ and environment variable are not supported now.</source>
-        <translation>&lt;br/&gt;支持绝对路径和相对路径。~和环境变量暂时不支持。</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>Please specify a name for the notebook.</source>
-        <translation>请为笔记本指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Please specify a valid root folder for the notebook.</source>
-        <translation>请为笔记本指定一个有效的根文件夹。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Root folder of the notebook must be empty. If you want to import existing data, please try other operations.</source>
-        <translation>笔记本根文件夹必须为空。如果需要导入已有数据，请尝试其他操作。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Root folder should be a directory.</source>
-        <translation>根文件夹应该为一个目录。</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>There already exists a notebook (%1) with the same root folder.</source>
-        <translation>已经存在一个使用相同根文件夹的笔记本(%1)。</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Failed to create notebook in (%1) (%2).</source>
-        <translation>无法在(%1)创建笔记本(%2)。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+51"/>
@@ -6111,24 +3675,6 @@ Raw: plain folder structure with minimal VNote metadata.</source>
         <translation>资源文件夹：</translation>
     </message>
     <message>
-        <source>Root Folder:</source>
-        <translation type="vanished">根文件夹：</translation>
-    </message>
-    <message>
-        <source>Bundled Notebook</source>
-        <translation type="vanished">自包含笔记本</translation>
-    </message>
-    <message>
-        <source>Raw Notebook</source>
-        <translation type="vanished">原始笔记本</translation>
-    </message>
-    <message>
-        <source>Bundled: Notebook with metadata stored in config files.
-Raw: Plain folder structure with minimal VNote metadata.</source>
-        <translation type="vanished">自包含：元数据保存在配置文件中的笔记本。
-原始：仅含最少 VNote 元数据的普通文件夹结构。</translation>
-    </message>
-    <message>
         <location line="-89"/>
         <source>Type:</source>
         <translation>类型:</translation>
@@ -6150,10 +3696,6 @@ A new notebook requires an empty folder or a non-existent path (will be created)
 新笔记本需要一个空文件夹或一个不存在的路径（将自动创建）。</translation>
     </message>
     <message>
-        <source>Sync Method:</source>
-        <translation type="vanished">同步方式：</translation>
-    </message>
-    <message>
         <location line="+19"/>
         <source>None</source>
         <translation>无</translation>
@@ -6162,10 +3704,6 @@ A new notebook requires an empty folder or a non-existent path (will be created)
         <location line="+1"/>
         <source>Git</source>
         <translation>Git</translation>
-    </message>
-    <message>
-        <source>Git sync is supported only for Bundled notebooks. Sync settings are configured immediately via the Configure... button before notebook creation.</source>
-        <translation type="vanished">Git 同步仅支持自包含笔记本。同步设置会在创建笔记本前通过&quot;配置...&quot;按钮立即配置。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -6192,10 +3730,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 相对路径相对于每个笔记文件所在目录解析。</translation>
     </message>
     <message>
-        <source>Assets Folder:</source>
-        <translation type="vanished">资源文件夹：</translation>
-    </message>
-    <message>
         <location line="+17"/>
         <source>New Notebook</source>
         <translation>新建笔记本</translation>
@@ -6204,44 +3738,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <location line="+161"/>
         <source>Click &apos;Configure...&apos; to set up Git sync first</source>
         <translation>点击&quot;配置...&quot;以先配置 Git 同步</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NewNotebookFromFolderDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/newnotebookfromfolderdialog.cpp" line="+35"/>
-        <source>Source Folder</source>
-        <translation>源文件夹</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>New Notebook From Folder</source>
-        <translation>从文件夹新建笔记本</translation>
-    </message>
-    <message>
-        <location line="+33"/>
-        <source>Please specify a name for the notebook.</source>
-        <translation>请为笔记本指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Please specify a valid folder for the new notebook.</source>
-        <translation>请为笔记本指定一个有效的根文件夹。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>There already exists a notebook (%1) with the same root folder.</source>
-        <translation>已经存在一个使用相同根文件夹的笔记本(%1)。</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>The folder is likely to be the root folder of a valid bundle notebook. You may want to use &quot;Open Other Notebooks&quot; to open it. If continue, all existing information of the notebook may be lost.</source>
-        <translation>该文件夹很有可能是一个有限的自包含笔记本的根文件夹。建议可以通过“打开其他笔记本”操作打开该笔记本。如果继续，原有笔记本的信息可能会丢失。</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>Failed to create notebook in %1 (%2).</source>
-        <translation>无法在(%1)创建笔记本(%2)。</translation>
     </message>
 </context>
 <context>
@@ -6282,10 +3778,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <translation>打开方式</translation>
     </message>
     <message>
-        <source>Open Mode</source>
-        <translation type="vanished">打开方式</translation>
-    </message>
-    <message>
         <location line="+5"/>
         <source>New Quick Access</source>
         <translation>新建快速访问</translation>
@@ -6294,29 +3786,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <location line="+12"/>
         <source>Please specify a file path.</source>
         <translation>请指定文件路径。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NewSnippetDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/newsnippetdialog.cpp" line="+22"/>
-        <source>New Snippet</source>
-        <translation>新建片段</translation>
-    </message>
-    <message>
-        <location line="+32"/>
-        <source>Failed to add snippet (%1) (%2).</source>
-        <translation>无法添加片段(%1)(%2)。</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Please specify a name for the snippet.</source>
-        <translation>请为片段指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Name conflicts with existing snippet.</source>
-        <translation>名字和已有片段冲突。</translation>
     </message>
 </context>
 <context>
@@ -6340,72 +3809,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <location line="+21"/>
         <source>Failed to add snippet (%1).</source>
         <translation>无法添加代码片段 (%1)。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NewTagDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/newtagdialog.cpp" line="+45"/>
-        <source>Location:</source>
-        <translation>路径:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>New Tag</source>
-        <translation>新建标签</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Please specify a valid name for the tag.</source>
-        <translation>请为标签指定一个有效名字。</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Name conflicts with existing tag.</source>
-        <translation>名字和已有标签冲突。</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Failed to create tag (%1).</source>
-        <translation>无法创建标签(%1)。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NodeInfoWidget</name>
-    <message>
-        <location filename="../../../widgets/dialogs/nodeinfowidget.cpp" line="+51"/>
-        <source>Notebook:</source>
-        <translation>笔记本:</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Location:</source>
-        <translation>路径:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>File type:</source>
-        <translation>文件类型:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Created time:</source>
-        <translation>创建时间:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Modified time:</source>
-        <translation>修改时间:</translation>
     </message>
 </context>
 <context>
@@ -6474,21 +3877,9 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NoteManagementPage</name>
     <message>
-        <source>Per-Notebook access history</source>
-        <translation type="vanished">按笔记本维护访问历史</translation>
-    </message>
-    <message>
-        <source>Store note access history in its notebook</source>
-        <translation type="vanished">保存笔记访问历史到其所在笔记本中</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="+29"/>
         <source>Line ending used to write configuration files</source>
         <translation>用于写配置文件的行结尾</translation>
-    </message>
-    <message>
-        <source>Follow Platform</source>
-        <translation type="vanished">跟随平台</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -6553,29 +3944,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
 </context>
 <context>
-    <name>vnotex::NotePropertiesDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/notepropertiesdialog.cpp" line="+32"/>
-        <source>%1 Properties</source>
-        <translation>%1属性</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Please specify a valid name for the note.</source>
-        <translation>请为笔记指定一个有效名字。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Name conflicts with existing note.</source>
-        <translation>名字和已有笔记冲突。</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Failed to save note (%1) in (%2) (%3).</source>
-        <translation>无法保存笔记本(%2)中的笔记(%1)(%3)。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::NoteTemplateSelector</name>
     <message>
         <location filename="../../../widgets/dialogs/notetemplateselector.cpp" line="+32"/>
@@ -6588,7 +3956,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <translation>无</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+29"/>
         <source>Failed to load template (%1) (%2).</source>
         <translation>无法加载模板(%1)(%2)。</translation>
     </message>
@@ -6848,19 +4216,15 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>选择要作为原始笔记本打开的文件夹</translation>
     </message>
     <message>
-        <source>Select Notebook Root Folder</source>
-        <translation type="vanished">选择笔记本根文件夹</translation>
-    </message>
-    <message>
         <location line="+99"/>
         <location line="+17"/>
-        <location line="+145"/>
+        <location line="+137"/>
         <location line="+16"/>
         <source>Please first create a notebook to hold your data.</source>
         <translation>请先创建一个笔记本来保存数据。</translation>
     </message>
     <message>
-        <location line="-137"/>
+        <location line="-129"/>
         <source>Please set up quick note schemes in the Settings dialog first.</source>
         <translation>请先在设置对话框中设置快速笔记方案。</translation>
     </message>
@@ -6870,7 +4234,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>新建快速笔记</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+37"/>
         <source>The quick note folder path (%1) is not within any open notebook.</source>
         <translation>快速笔记文件夹路径 (%1) 不在任何已打开的笔记本中。</translation>
     </message>
@@ -6880,12 +4244,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>快速笔记应该在一个笔记本内进行创建。</translation>
     </message>
     <message>
-        <location line="+28"/>
-        <source>Failed to create quick note from scheme (%1).</source>
-        <translation>无法根据方案 (%1) 创建快速笔记。</translation>
-    </message>
-    <message>
-        <location line="+245"/>
+        <location line="+261"/>
         <source>Delete Permanently</source>
         <translation>永久删除</translation>
     </message>
@@ -7035,137 +4394,6 @@ Last sync init failed: error code %1</source>
         <translation>
 
 上次同步初始化失败：错误码 %1</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NotebookInfoWidget</name>
-    <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="+43"/>
-        <source>Basic Information</source>
-        <translation>基本信息</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Type:</source>
-        <translation>类型:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Name of notebook</source>
-        <translation>笔记本名字</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Icon:</source>
-        <translation>图标:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Description of notebook</source>
-        <translation>笔记本描述</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Description:</source>
-        <translation>描述:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Root folder:</source>
-        <translation>根文件夹:</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Type of notebook</source>
-        <translation>笔记本类型</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Specify the type of notebook.&lt;br/&gt;</source>
-        <translation>指定笔记本类型。&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <location line="+67"/>
-        <location line="+14"/>
-        <location line="+14"/>
-        <source>&lt;b&gt;%1&lt;/b&gt;: %2&lt;br/&gt;</source>
-        <translation>&lt;b&gt;%1&lt;/b&gt;: %2&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <location line="-87"/>
-        <source>Path of notebook root folder</source>
-        <translation>笔记本根文件夹路径</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&lt;b&gt;Notebook Root Folder&lt;/b&gt; is the folder containing all data of one notebook in %1.</source>
-        <translation>&lt;b&gt;笔记本根文件夹&lt;/b&gt;是在%1中包含一个笔记本的全部数据。</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Browse</source>
-        <translation>浏览</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Select Notebook Root Folder</source>
-        <translation>选择笔记本根文件夹</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Advanced Information</source>
-        <translation>高级信息</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Configuration manager:</source>
-        <translation>配置管理器:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Version control:</source>
-        <translation>版本管理:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Backend:</source>
-        <translation>后端:</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Configuration manager of notebook</source>
-        <translation>笔记本的配置管理器</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Specify configruation manager of notebook.&lt;br/&gt;</source>
-        <translation>指定笔记本的配置管理器。&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Version control of notebook</source>
-        <translation>笔记本的版本管理</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Specify version control of notebook.&lt;br/&gt;</source>
-        <translation>指定笔记本的版本管理。&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Backend of notebook</source>
-        <translation>笔记本后端</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Specify backend of notebook.&lt;br/&gt;</source>
-        <translation>指定笔记本后端。&lt;br/&gt;</translation>
     </message>
 </context>
 <context>
@@ -7360,14 +4588,6 @@ Last sync init failed: error code %1</source>
         <translation>无法将外部节点导入到索引。</translation>
     </message>
     <message>
-        <source>Sort</source>
-        <translation type="vanished">排序</translation>
-    </message>
-    <message>
-        <source>Sort functionality not yet implemented.</source>
-        <translation type="vanished">排序功能尚未实现。</translation>
-    </message>
-    <message>
         <location line="+152"/>
         <source>The file &quot;%1&quot; has unsaved changes.</source>
         <translation>文件 &quot;%1&quot; 有未保存的更改。</translation>
@@ -7478,18 +4698,6 @@ Last sync init failed: error code %1</source>
         <location line="+0"/>
         <source>Failed to rename &quot;%1&quot;.</source>
         <translation>无法重命名 &quot;%1&quot;。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NotebookSelector</name>
-    <message>
-        <location filename="../../../widgets/notebookselector.cpp" line="+127"/>
-        <source>Notebook: %1
-Root folder: %2
-Description: %3</source>
-        <translation>笔记本: %1
-根文件夹: %2
-描述: %3</translation>
     </message>
 </context>
 <context>
@@ -7651,14 +4859,6 @@ Leave blank to keep the existing token.</source>
         <translation>个人访问令牌：</translation>
     </message>
     <message>
-        <source>Last Sync:</source>
-        <translation type="vanished">上次同步：</translation>
-    </message>
-    <message>
-        <source>Current State:</source>
-        <translation type="vanished">当前状态：</translation>
-    </message>
-    <message>
         <location line="+8"/>
         <source>Last sync:</source>
         <translation>上次同步：</translation>
@@ -7771,6 +4971,38 @@ Continue?</source>
         <location line="+21"/>
         <source>Sync operation failed.</source>
         <translation>同步操作失败。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NotificationButton2</name>
+    <message>
+        <location filename="../../../widgets/notificationbutton2.cpp" line="+30"/>
+        <location line="+5"/>
+        <source>Notifications</source>
+        <translation>通知</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NotificationPopup2</name>
+    <message>
+        <location filename="../../../widgets/notificationpopup2.cpp" line="+77"/>
+        <source>Notifications</source>
+        <translation>通知</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Clear All</source>
+        <translation>全部清除</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>No notifications</source>
+        <translation>无通知</translation>
+    </message>
+    <message>
+        <location line="+143"/>
+        <source>Dismiss</source>
+        <translation>忽略</translation>
     </message>
 </context>
 <context>
@@ -8107,10 +5339,6 @@ Continue?</source>
         <translation>选择 VNote3 笔记本的根文件夹</translation>
     </message>
     <message>
-        <source>Source Folder:</source>
-        <translation type="vanished">源文件夹：</translation>
-    </message>
-    <message>
         <location line="+5"/>
         <source>Select Destination Folder</source>
         <translation>选择目标文件夹</translation>
@@ -8119,14 +5347,6 @@ Continue?</source>
         <location line="+1"/>
         <source>Select the destination root folder</source>
         <translation>选择目标根文件夹</translation>
-    </message>
-    <message>
-        <source>Destination Folder:</source>
-        <translation type="vanished">目标文件夹：</translation>
-    </message>
-    <message>
-        <source>Notebook Name:</source>
-        <translation type="vanished">笔记本名称：</translation>
     </message>
     <message>
         <location line="-5"/>
@@ -8182,7 +5402,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::OutlineProvider</name>
     <message>
-        <location filename="../../../widgets/outlineprovider.h" line="+101"/>
+        <location filename="../../../widgets/outlineprovider.h" line="+95"/>
         <source>[EMPTY]</source>
         <translation>[空]</translation>
     </message>
@@ -8219,16 +5439,12 @@ The legacy notebook would be kept for data backup.</source>
     <name>vnotex::QuickAccessPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="+46"/>
-        <location line="+187"/>
+        <location line="+189"/>
         <source>Quick Access</source>
         <translation>快速访问</translation>
     </message>
     <message>
-        <source>Quick Access:</source>
-        <translation type="vanished">快速访问:</translation>
-    </message>
-    <message>
-        <location line="-149"/>
+        <location line="-151"/>
         <source>Quick Note</source>
         <translation>快速笔记</translation>
     </message>
@@ -8279,7 +5495,12 @@ The legacy notebook would be kept for data backup.</source>
         <translation>快速访问：</translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+58"/>
+        <source>Snippet variables are supported, e.g. journal/%yyyy%/%MM%.</source>
+        <translation>支持代码片段变量，例如 journal/%yyyy%/%MM%。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Note name</source>
         <translation>文件名</translation>
     </message>
@@ -8331,34 +5552,6 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+6"/>
         <source>Failed to empty recycle bin.</source>
         <translation>无法清空回收站。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::RenameTagDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/renametagdialog.cpp" line="+29"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Rename Tag</source>
-        <translation>重命名标签</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Please specify a valid name for the tag.</source>
-        <translation>请为标签指定一个有效名字。</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Name conflicts with existing tag.</source>
-        <translation>名字和已有标签冲突。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Failed to rename tag (%1) to (%2).</source>
-        <translation>无法重命名标签(%1)为(%2)。</translation>
     </message>
 </context>
 <context>
@@ -8435,7 +5628,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>搜索...</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Mode:</source>
         <translation>模式：</translation>
     </message>
@@ -8621,79 +5814,6 @@ The legacy notebook would be kept for data backup.</source>
     </message>
 </context>
 <context>
-    <name>vnotex::SnippetInfoWidget</name>
-    <message>
-        <location filename="../../../widgets/dialogs/snippetinfowidget.cpp" line="+36"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Description:</source>
-        <translation>描述:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Type:</source>
-        <translation>类型:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Shortcut:</source>
-        <translation>快捷键:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>A mark in the snippet content indicating the cursor position after the application</source>
-        <translation>一个用于在片段内容中指定应用片段后光标位置的标记</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Cursor mark:</source>
-        <translation>光标标记:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>A mark in the snippet content that will be replaced with the selected text before the application</source>
-        <translation>一个用于在片段内容中指代应用片段前所选择文本的标记</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Selection mark:</source>
-        <translation>选择标记:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Indent as first line</source>
-        <translation>与第一行同步缩进</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Nested snippet is supported, like `%time%` to embed the snippet `time`</source>
-        <translation>支持嵌套的片段，如`%time%`会内嵌片段`time`</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Content:</source>
-        <translation>内容:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Text</source>
-        <translation>文本</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Dynamic</source>
-        <translation>动态</translation>
-    </message>
-    <message>
-        <location line="+77"/>
-        <source>None</source>
-        <translation>无</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::SnippetInfoWidget2</name>
     <message>
         <location filename="../../../widgets/dialogs/snippetinfowidget2.cpp" line="+75"/>
@@ -8768,203 +5888,14 @@ The legacy notebook would be kept for data backup.</source>
     </message>
 </context>
 <context>
-    <name>vnotex::SnippetMgr</name>
-    <message>
-        <location filename="../../../snippet/snippetmgr.cpp" line="+291"/>
-        <source>the day as number without a leading zero (`1` to `31`)</source>
-        <translation>没有前导零的日期数字(`1`到`31`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the day as number with a leading zero (`01` to `31`)</source>
-        <translation>带前导零的日期数字(`01`到`31`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the abbreviated localized day name (e.g. `Mon` to `Sun`)</source>
-        <translation>缩写的本地化日期名字(如`一`到`日`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the long localized day name (e.g. `Monday` to `Sunday`)</source>
-        <translation>本地化日期名字(如`星期一`到`星期日`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the month as number without a leading zero (`1` to `12`)</source>
-        <translation>没有前导零的月份数字(如`1`到`12`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the month as number with a leading zero (`01` to `12`)</source>
-        <translation>带前导零的月份数字(`01`到`12`)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>the abbreviated localized month name (e.g. `Jan` to `Dec`)</source>
-        <translation>缩写的本地化月份名字(如`一`到`十二`)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>the long localized month name (e.g. `January` to `December`)</source>
-        <translation>本地化月份名字(如`一月`到`十二月`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the year as two digit numbers (`00` to `99`)</source>
-        <translation>两位数的年份数字(`00`到`99`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the year as four digit numbers</source>
-        <translation>四位数的年份数字</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>the week number without a leading zero (`1` to `53`)</source>
-        <translation>没有前导零的星期数字(`1`到`53`)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>the week number with a leading zero (`01` to `53`)</source>
-        <translation>带前导零的星期数字(`1`到`53`)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>the hour without a leading zero (`0` to `23` even with AM/PM display)</source>
-        <translation>没有前导零的小时(`0`到`23`)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>the hour with a leading zero (`00` to `23` even with AM/PM display)</source>
-        <translation>带前导零的小时(`00`到`23`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the minute without a leading zero (`0` to `59`)</source>
-        <translation>没有前导零的分(`0`到`59`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the minute with a leading zero (`00` to `59`)</source>
-        <translation>带前导零的分(`00`到`59`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the second without a leading zero (`0` to `59`)</source>
-        <translation>没有前导零的秒(`0`到`59`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the second with a leading zero (`00` to `59`)</source>
-        <translation>带前导零的秒(`00`到`59`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>date (`2021-02-24`)</source>
-        <translation>日期(`2021-02-24`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>the abbreviated date (`20210224`)</source>
-        <translation>缩写的日期(`20210224`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>time (`16:51:02`)</source>
-        <translation>时间(`16:51:02`)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>date and time (`2021-02-24_16:51:02`)</source>
-        <translation>日期时间(`2021-02-24_16:51:02`)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>name of current note</source>
-        <translation>当前笔记名字</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+2"/>
-        <source>[Value Not Available]</source>
-        <translation>[没有可用值]</translation>
-    </message>
-    <message>
-        <location line="-1"/>
-        <source>complete base name of current note</source>
-        <translation>当前笔记的完整基本名字</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::SnippetPanel</name>
-    <message>
-        <location filename="../../../widgets/snippetpanel.cpp" line="+60"/>
-        <source>New Snippet</source>
-        <translation>新建片段</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Open Folder</source>
-        <translation>打开文件夹</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Show Built-In Snippets</source>
-        <translation>显示内建片段</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+28"/>
-        <source>%n Item(s)</source>
-        <translation>
-            <numerusform>%n 项</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>%1%2 [%3]</source>
-        <translation>%1%2 [%3]</translation>
-    </message>
-    <message>
-        <location line="+20"/>
-        <source>&amp;Apply</source>
-        <translation>应用(&amp;A)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>&amp;Delete</source>
-        <translation>删除(&amp;D)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>&amp;Properties (Rename)</source>
-        <translation>属性(重命名)(&amp;P)</translation>
-    </message>
-    <message>
-        <location line="+38"/>
-        <source>Confirm Deletion</source>
-        <translation>确认删除</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Delete these snippets permanently?</source>
-        <translation>永久删除这些片段？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Files will be deleted permanently and could not be found even in operating system&apos;s recycle bin.</source>
-        <translation>文件将会被永久删除，即使在操作系统的回收站中也无法找回。</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>Failed to remove snippet (%1) (%2).</source>
-        <translation>无法删除片段(%1)(%2)。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::SnippetPanel2</name>
     <message>
-        <location filename="../../../widgets/snippetpanel2.cpp" line="+73"/>
+        <location filename="../../../widgets/snippetpanel2.cpp" line="+80"/>
+        <source>Search snippets</source>
+        <translation>搜索代码片段</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>New Snippet</source>
         <translation>新建片段</translation>
     </message>
@@ -8974,12 +5905,17 @@ The legacy notebook would be kept for data backup.</source>
         <translation>打开代码片段文件夹</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
+        <source>Reload</source>
+        <translation>重新加载</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Show Built-In Snippets</source>
         <translation>显示内建片段</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+51"/>
         <source>Delete Snippet</source>
         <translation>删除代码片段</translation>
     </message>
@@ -8989,7 +5925,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>删除代码片段 &quot;%1&quot;？</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Apply</source>
         <translation>应用</translation>
     </message>
@@ -9002,29 +5938,6 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+5"/>
         <source>Properties</source>
         <translation>属性</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::SnippetPropertiesDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/snippetpropertiesdialog.cpp" line="+28"/>
-        <source>%1 Properties</source>
-        <translation>%1属性</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Please specify a name for the snippet.</source>
-        <translation>请为片段指定一个名字。</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Name conflicts with existing snippet.</source>
-        <translation>名字和已有片段冲突。</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Failed to update snippet (%1) (%2).</source>
-        <translation>无法更新片段(%1)(%2)。</translation>
     </message>
 </context>
 <context>
@@ -9053,29 +5966,6 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+13"/>
         <source>Failed to rename snippet from %1 to %2.</source>
         <translation>无法将代码片段从 %1 重命名为 %2。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::SortDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/sortdialog.cpp" line="+50"/>
-        <source>&amp;Top</source>
-        <translation>置顶(&amp;T)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>&amp;Up</source>
-        <translation>上移(&amp;U)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>&amp;Down</source>
-        <translation>下移(&amp;D)</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>&amp;Bottom</source>
-        <translation>置底(&amp;B)</translation>
     </message>
 </context>
 <context>
@@ -9122,18 +6012,6 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+3"/>
         <source>Keep both</source>
         <translation>两者都保留</translation>
-    </message>
-    <message>
-        <source>Keep Local</source>
-        <translation type="vanished">保留本地</translation>
-    </message>
-    <message>
-        <source>Keep Remote</source>
-        <translation type="vanished">保留远端</translation>
-    </message>
-    <message>
-        <source>Keep Both</source>
-        <translation type="vanished">两者都保留</translation>
     </message>
     <message>
         <location line="+44"/>
@@ -9334,74 +6212,6 @@ The legacy notebook would be kept for data backup.</source>
     </message>
 </context>
 <context>
-    <name>vnotex::TagExplorer</name>
-    <message>
-        <location filename="../../../widgets/tagexplorer.cpp" line="+93"/>
-        <source>Two Columns</source>
-        <translation>双列</translation>
-    </message>
-    <message>
-        <location line="-28"/>
-        <source></source>
-        <translation></translation>
-    </message>
-    <message>
-        <location line="+301"/>
-        <source>Search of tags succeeded: %1</source>
-        <translation>标签搜索成功: %1</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>&amp;Open</source>
-        <translation>打开(&amp;O)</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>&amp;Locate Node</source>
-        <translation>定位节点(&amp;L)</translation>
-    </message>
-    <message>
-        <location line="+39"/>
-        <source>&amp;New Tag</source>
-        <translation>新建标签(&amp;N)</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>&amp;Rename</source>
-        <translation>重命名(&amp;R)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>&amp;Delete</source>
-        <translation>删除(&amp;D)</translation>
-    </message>
-    <message>
-        <location line="+44"/>
-        <source>Delete the tag and all its chlidren tags?</source>
-        <translation>删除该标签以及其子标签？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Only tags and the references of them will be deleted.</source>
-        <translation>只会删除标签以及标签的引用。</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Tag deleted</source>
-        <translation>标签已删除</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Failed to delete tag: %1</source>
-        <translation>无法删除标签: %1</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Failed to move tag (%1).</source>
-        <translation>无法移动标签(%1)。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::TagExplorer2</name>
     <message>
         <location filename="../../../widgets/tagexplorer2.cpp" line="+119"/>
@@ -9501,29 +6311,6 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::TagViewer</name>
-    <message>
-        <location filename="../../../widgets/tagviewer.cpp" line="+42"/>
-        <source>Enter to add a tag</source>
-        <translation>回车以添加一个标签</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>[Shift+Enter] to add current selected tag in the list</source>
-        <translation>[Shift+Enter]以添加列表中当前选择的标签</translation>
-    </message>
-    <message>
-        <location line="+255"/>
-        <source>Tags updated: %1</source>
-        <translation>标签已更新: %1</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Failed to update tags of node (%1).</source>
-        <translation>无法更新节点(%1)的标签。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::TagViewer2</name>
     <message>
         <location filename="../../../widgets/tagviewer2.cpp" line="+48"/>
@@ -9534,7 +6321,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
-        <location filename="../../../task/task.cpp" line="+403"/>
+        <location filename="../../../core/services/task.cpp" line="+404"/>
         <source>[Task (%1) started]
 </source>
         <translation>[任务(%1)已启动]
@@ -9548,7 +6335,7 @@ Notebook: %3</source>
 </translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+9"/>
         <source>
 [Task (%1) finished (%2)]
 </source>
@@ -9558,9 +6345,109 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
+    <name>vnotex::TaskController</name>
+    <message>
+        <location filename="../../../controllers/taskcontroller.cpp" line="+59"/>
+        <location line="+14"/>
+        <source>Task folder is not available.</source>
+        <translation>任务文件夹不可用。</translation>
+    </message>
+    <message>
+        <location line="-9"/>
+        <location line="+15"/>
+        <source>Failed to create task folder: %1</source>
+        <translation>无法创建任务文件夹：%1</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Failed to create task file: %1</source>
+        <translation>无法创建任务文件：%1</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Task file is not available.</source>
+        <translation>任务文件不可用。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Failed to delete task file: %1</source>
+        <translation>无法删除任务文件：%1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskPanel2</name>
+    <message>
+        <location filename="../../../widgets/taskpanel2.cpp" line="+55"/>
+        <source>Task</source>
+        <translation>任务</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Search tasks</source>
+        <translation>搜索任务</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>New Task</source>
+        <translation>新建任务</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Open Task Folder</source>
+        <translation>打开任务文件夹</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Reload</source>
+        <translation>重新加载</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Run</source>
+        <translation>运行</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete Task</source>
+        <translation>删除任务</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete the task file for &quot;%1&quot;?
+
+This removes the file and any sub-tasks it contains: %2</source>
+        <translation>确定要删除 “%1” 的任务文件吗？
+
+这将移除该文件及其包含的所有子任务：%2</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskTreeModel</name>
+    <message>
+        <location filename="../../../models/tasktreemodel.cpp" line="+47"/>
+        <source>App Tasks</source>
+        <translation>应用任务</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Notebook Tasks</source>
+        <translation>笔记本任务</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::TextEditor</name>
     <message>
-        <location filename="../../../widgets/editors/texteditor.cpp" line="+32"/>
+        <location filename="../../../widgets/editors/texteditor.cpp" line="+35"/>
         <source>Insert Snippet</source>
         <translation>插入片段</translation>
     </message>
@@ -9668,14 +6555,6 @@ Notebook: %3</source>
         <translation>按词换行或任意位置换行</translation>
     </message>
     <message>
-        <source>Always Center</source>
-        <translation type="vanished">总是居中</translation>
-    </message>
-    <message>
-        <source>Center On Bottom</source>
-        <translation type="vanished">在底部时居中</translation>
-    </message>
-    <message>
         <location line="-16"/>
         <source>Center cursor</source>
         <translation>光标居中</translation>
@@ -9684,22 +6563,6 @@ Notebook: %3</source>
         <location line="+11"/>
         <source>Word wrap mode of editor</source>
         <translation>编辑器词换行模式</translation>
-    </message>
-    <message>
-        <source>No Wrap</source>
-        <translation type="vanished">不换行</translation>
-    </message>
-    <message>
-        <source>Word Wrap</source>
-        <translation type="vanished">按词换行</translation>
-    </message>
-    <message>
-        <source>Wrap Anywhere</source>
-        <translation type="vanished">在任意位置换行</translation>
-    </message>
-    <message>
-        <source>Word Wrap Or Wrap Anywhere</source>
-        <translation type="vanished">按词换行或者在任意位置换行</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -9770,15 +6633,6 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ThemeMgr</name>
-    <message>
-        <location filename="../../../core/thememgr.cpp" line="+205"/>
-        <location line="+6"/>
-        <source>[Theme] %1 %2</source>
-        <translation>[主题]%1 %2</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ThemePage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/themepage.cpp" line="+41"/>
@@ -9801,8 +6655,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::ThemeService</name>
     <message>
-        <location filename="../../../gui/services/themeservice.cpp" line="+216"/>
-        <location line="+6"/>
+        <location filename="../../../gui/services/themeservice.cpp" line="+217"/>
         <source>[Theme] %1 %2</source>
         <translation>[主题]%1 %2</translation>
     </message>
@@ -9853,17 +6706,18 @@ Notebook: %3</source>
 <context>
     <name>vnotex::UnitedEntry</name>
     <message>
-        <location filename="../../../unitedentry/unitedentry.cpp" line="+136"/>
+        <location filename="../../../unitedentry/unitedentry.cpp" line="+73"/>
+        <location line="+94"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
     </message>
     <message>
-        <location line="-62"/>
+        <location line="-80"/>
         <source>Type to command</source>
         <translation>输入命令</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+42"/>
         <source>Options</source>
         <translation>选项</translation>
     </message>
@@ -9878,7 +6732,7 @@ Notebook: %3</source>
         <translation>忙</translation>
     </message>
     <message>
-        <location line="+261"/>
+        <location line="+275"/>
         <source>Unknown entry: %1</source>
         <translation>未知入口: %1</translation>
     </message>
@@ -9907,47 +6761,6 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::Updater</name>
-    <message>
-        <location filename="../../../widgets/dialogs/updater.cpp" line="+29"/>
-        <source>Version:</source>
-        <translation>版本:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Fetching information...</source>
-        <translation>正在获取信息...</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Latest version:</source>
-        <translation>最新版本:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>View Releases</source>
-        <translation>查看发布</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Check for Updates</source>
-        <translation>检查更新</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <source>Failed to fetch information (%1).</source>
-        <translation>无法获取信息(%1)。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::VNoteX</name>
-    <message>
-        <location filename="../../../core/htmltemplatehelper.cpp" line="+293"/>
-        <source>Failed to load HTML template. Check the logs for details. Try deleting the user configuration file and the default configuration file.</source>
-        <translation>无法加载HTML模板。详情请查看日志。可以尝试删除用户配置文件以及默认配置文件。</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ViPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="+32"/>
@@ -9969,13 +6782,13 @@ Notebook: %3</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+733"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+738"/>
         <source>New Workspace</source>
         <translation>新建工作空间</translation>
     </message>
     <message>
         <location line="+0"/>
-        <location line="+21"/>
+        <location line="+26"/>
         <source>Workspace name:</source>
         <translation>工作区名称：</translation>
     </message>
@@ -10028,7 +6841,12 @@ Notebook: %3</source>
         <translation>移除工作空间</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
+        <source>Remove Other Workspaces</source>
+        <translation>移除其他工作区</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Split</source>
         <translation>拆分</translation>
     </message>
@@ -10063,7 +6881,7 @@ Notebook: %3</source>
         <translation>移除分屏与工作区</translation>
     </message>
     <message>
-        <location line="+258"/>
+        <location line="+263"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
@@ -10144,24 +6962,6 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ViewTagsDialog</name>
-    <message>
-        <location filename="../../../widgets/dialogs/viewtagsdialog.cpp" line="+29"/>
-        <source>Name:</source>
-        <translation>名字:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Tags:</source>
-        <translation>标签:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Tags</source>
-        <translation>标签</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ViewTagsDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/viewtagsdialog2.cpp" line="+33"/>
@@ -10180,32 +6980,9 @@ Notebook: %3</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ViewWindow</name>
-    <message>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="+234"/>
-        <source>Snippet applied: %1</source>
-        <translation>片段已应用: %1</translation>
-    </message>
-    <message>
-        <location line="+25"/>
-        <source>Snippet (%1) not found</source>
-        <translation>无法找到片段(%1)</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Snippet not available</source>
-        <translation>没有可用片段</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Select Snippet</source>
-        <translation>选择片段</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ViewWindow2</name>
     <message>
-        <location line="+113"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="+325"/>
         <location line="+41"/>
         <source>Snippet (%1) not found</source>
         <translation>无法找到片段(%1)</translation>
@@ -10226,7 +7003,7 @@ Notebook: %3</source>
         <translation>选择片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="+208"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="+210"/>
         <source>Do you want to save changes to &quot;%1&quot;?</source>
         <translation>是否保存对 &quot;%1&quot; 的更改？</translation>
     </message>
@@ -10256,7 +7033,7 @@ Notebook: %3</source>
         <translation>已达最大重试次数。放弃更改还是取消？</translation>
     </message>
     <message>
-        <location line="+144"/>
+        <location line="+181"/>
         <location line="+73"/>
         <location line="+47"/>
         <location line="+55"/>
@@ -10265,12 +7042,31 @@ Notebook: %3</source>
         <translation>只读笔记本 — 无法编辑</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+70"/>
         <source>Failed to save note (%1).</source>
         <translation>无法保存笔记(%1)。</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+20"/>
+        <source>Change Encoding</source>
+        <translation>更改编码</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Reinterpreting with a different encoding will discard your unsaved changes.
+
+Continue?</source>
+        <translation>使用其他编码重新解析将丢弃您未保存的更改。
+
+是否继续？</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Discard &amp;&amp; Reinterpret</source>
+        <translation>丢弃并重新解析</translation>
+    </message>
+    <message>
+        <location line="+120"/>
         <source>Reload note (%1) and discard unsaved changes?</source>
         <translation>重新加载笔记 (%1) 并放弃未保存的更改？</translation>
     </message>
@@ -10285,7 +7081,7 @@ Notebook: %3</source>
         <translation>若要启用编辑，请关闭此笔记本并使用有效的个人访问令牌从远程 URL 重新打开。</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+44"/>
         <source>File Changed</source>
         <translation>文件已更改</translation>
     </message>
@@ -10305,7 +7101,7 @@ Notebook: %3</source>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+26"/>
+        <location line="+27"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -10329,7 +7125,7 @@ Notebook: %3</source>
         <translation>放弃</translation>
     </message>
     <message>
-        <location line="+245"/>
+        <location line="+246"/>
         <location line="+8"/>
         <source>Pattern not found: %1</source>
         <translation>无法找到模式: %1</translation>
@@ -10362,13 +7158,13 @@ Notebook: %3</source>
         <translation>放弃对笔记(%1)的更改？</translation>
     </message>
     <message>
-        <location line="-610"/>
-        <location line="+611"/>
+        <location line="-623"/>
+        <location line="+624"/>
         <source>Note path (%1).</source>
         <translation>笔记路径(%1)。</translation>
     </message>
     <message numerus="yes">
-        <location line="+81"/>
+        <location line="+84"/>
         <source>Attached %n file(s)</source>
         <translation>
             <numerusform>已添加 %n 文件为附件</numerusform>
@@ -10378,12 +7174,12 @@ Notebook: %3</source>
 <context>
     <name>vnotex::WebViewExporter</name>
     <message>
-        <location filename="../../../export/webviewexporter.cpp" line="+542"/>
+        <location filename="../../../export/webviewexporter.cpp" line="+643"/>
         <source>Table of Contents</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location line="+256"/>
+        <location line="+268"/>
         <source>Copy output file (%1) to (%2).</source>
         <translation>复制输出文件(%1)为(%2)。</translation>
     </message>

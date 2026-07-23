@@ -1,4 +1,41 @@
 # Changes
+## v4.3.0
+A feature release that adds an in-app notification system, a Tasks dock, a reworked export experience, and a column-based editor status bar on top of VNote 4.2.0:
+
+* **Notifications** (new): an in-app notification system with a toolbar button and popup, plus **Clear All** / **Dismiss** actions
+* **Tasks**
+    * New **Tasks** dock and **Console** log viewer, with in-app editing of task files
+    * The task subsystem was migrated to the ServiceLocator/DI architecture (the legacy task-output console was removed)
+    * Snippets and Tasks docks gained a title-bar search filter
+* **Status bar**: Text and Markdown view windows now use a column-based status bar with Material-style chip theming and a **Spelling** control (enable spell check / auto-detect language)
+* **Export**
+    * Built-in export schemes with a **New / Duplicate / Delete** split button
+    * Split-pane workspaces can now be selected as export sources
+    * Configurable **PDF header/footer** for wkhtmltopdf export (supports `[page]`, `[title]`, `[date]` placeholders)
+    * MathJax equations are rasterized to PNG for docx/custom export, and exported syntax colors resolve the real `highlight.css`
+* **Editor & Markdown**
+    * **Code block line wrap** option for read mode
+    * **Customize global styles** button to open `user.css` for styles applied under every theme
+    * Syntax highlighting for display math (`$$`) source in the editor
+    * `Ctrl+Left-Click` opens a Markdown link in edit mode; external links now prompt before opening
+    * Snippet expansion and the `@@` cursor mark are honored in note templates and Quick Note folder paths
+    * Manual **file-encoding override** to fix non-UTF-8 mojibake
+* **Workspaces & views**
+    * **Remove Other Workspaces** corner-menu action
+    * Double-clicking the empty tab-bar area triggers Quick Note
+    * A **View** action was added to the read-mode image context menu
+* **United Entry**: collapses to an accent toolbar icon and expands to an input, with trigger on list-row activation
+* **General**: a global wake-up hotkey to show the main window, a `--quiet` startup flag, `--remote-debugging-port` for QtWebEngine, and updated bundled Mermaid (v11.16.0)
+* **Security**
+    * Fix stored XSS via YAML frontmatter (GHSA-vfhj-c636-h59x)
+    * Prevent external-program argument injection (CWE-88)
+* **Fixes**
+    * Fix the search keyword combobox growing unshrinkably wide
+    * Fix a missing home dashboard after removing a hidden workspace
+    * Fix `\label` equations rendering as black boxes, Graphviz render errors cascading, SVG data-URI images not displaying, and graph popup preview for nodes with line breaks
+    * Make Cancel on the external-change dialog a sticky ignore
+* **Translations**: updated Simplified Chinese and Japanese translations
+
 ## v4.2.0
 A feature release that adds a Personal Knowledge Management **home dashboard**, cross-notebook history, activity tracking, and a dedicated Sync settings page on top of VNote 4.1.1:
 

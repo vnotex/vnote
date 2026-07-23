@@ -18,7 +18,7 @@ for line in fileinput.input(['CMakeLists.txt'], inplace = True):
 
 # ci-xxx.yml
 regExp = re.compile('(\\s+)VNOTE_VER: \\S+')
-for line in fileinput.input(['.github/workflows/ci-win.yml', '.github/workflows/ci-linux.yml', '.github/workflows/ci-macos.yml'], inplace = True):
+for line in fileinput.input(['.github/workflows/ci-win.yml', '.github/workflows/ci-linux.yml', '.github/workflows/ci-macos.yml', '.github/workflows/ci-linux-tsan.yml'], inplace = True):
     print(regExp.sub('\\1VNOTE_VER: ' + newVersion, line), end='')
 
 # Info.plist
