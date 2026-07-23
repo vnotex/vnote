@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -11,10 +12,12 @@
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/fileopensettings.h>
 #include <core/markdowneditorconfig.h>
+#include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
-#include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
 #include "editorpage.h"
@@ -287,6 +290,55 @@ void MarkdownEditorPage::setupReadGroup() {
     addSearchItem(label, m_codeBlockLineWrapCheckBox->toolTip(), m_codeBlockLineWrapCheckBox);
     connect(m_codeBlockLineWrapCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+
+    auto *row = new QWidget(this);
+    row->setProperty(PropertyDefs::c_settingsRow, true);
+    auto *rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(16, 6, 16, 6);
+    rowLayout->setSpacing(12);
+
+    const QString label(tr("Customize global styles"));
+    auto *btn = new QPushButton(label, this);
+    btn->setToolTip(
+        tr("Open user.css to add global styles applied in read mode under every theme"));
+    rowLayout->addWidget(btn, 0, Qt::AlignLeft | Qt::AlignVCenter);
+    rowLayout->addStretch(1);
+
+    cardLayout->addWidget(row);
+    addSearchItem(label, btn->toolTip(), btn);
+
+    connect(btn, &QPushButton::clicked, this, [this]() {
+      const QString path = m_services.get<ConfigMgr2>()->getMarkdownUserStyleFile();
+      if (!QFileInfo::exists(path)) {
+        // Seed from bundled default; fall back to an empty file.
+        if (QFile::copy(QStringLiteral(":/vnotex/data/extra/web/css/user.css"), path)) {
+          // Copied qrc resources are read-only; make it writable so the user can edit.
+          QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner);
+        } else {
+          QFile f(path);
+          f.open(QIODevice::WriteOnly);  // create empty file
+          f.close();
+        }
+      }
+      if (!QFileInfo::exists(path)) {
+        return;
+      }
+
+      // Open in VNote's built-in editor, mirroring MainWindow2::doOpenFiles: an
+      // external file is addressed by an empty notebookId and an absolute path;
+      // the FileAfterOpen hook drives ViewAreaController to display the buffer.
+      auto *bufferSvc = m_services.get<BufferService>();
+      if (!bufferSvc) {
+        return;
+      }
+      NodeIdentifier nodeId;
+      nodeId.relativePath = QFileInfo(path).absoluteFilePath();
+      bufferSvc->openBuffer(nodeId, FileOpenSettings());
+    });
   }
 }
 
