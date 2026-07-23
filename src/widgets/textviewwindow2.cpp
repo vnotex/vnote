@@ -17,8 +17,9 @@
 #include <gui/utils/widgetutils.h>
 
 #include "../utils/scrollpreservationpolicy.h"
-#include "editors/statuswidget.h"
+#include "editors/editorstatusbarbinder.h"
 #include "editors/texteditor.h"
+#include "encodingbutton.h"
 #include "findandreplacewidget2.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
@@ -70,11 +71,26 @@ void TextViewWindow2::setupUI() {
 
   connectEditorSignals();
 
-  // Status widget.
+  // Column-based status bar driven by editor signals via the binder.
   {
-    auto statusWidget = QSharedPointer<StatusWidget>::create();
-    statusWidget->setEditorStatusWidget(m_editor->statusWidget());
-    setStatusWidget(statusWidget);
+    m_statusBinder = new EditorStatusBarBinder(this);
+    auto def = m_statusBinder->buildDef(m_editor);
+
+    // Mount the encoding picker as a trailing Widget column.
+    int encodingIndex = -1;
+    if (isEncodingSupported()) {
+      StatusBarColumn encoding;
+      encoding.type = StatusBarColumnType::Widget;
+      encodingIndex = def.size();
+      def << encoding;
+    }
+
+    setStatusBarDef(def);
+    m_statusBinder->attach(m_editor, statusBar());
+
+    if (encodingIndex >= 0 && statusBar()) {
+      statusBar()->setColumnWidget(encodingIndex, ensureEncodingButton());
+    }
   }
 
   // Toolbar.

@@ -70,6 +70,7 @@ target_sources(vnote PRIVATE
     editors/plantumlhelper.cpp editors/plantumlhelper.h
     editors/previewhelper.cpp editors/previewhelper.h
     editors/statusbar.cpp editors/statusbar.h
+    editors/editorstatusbarbinder.cpp editors/editorstatusbarbinder.h
     editors/statuswidget.cpp editors/statuswidget.h
     editors/texteditor.cpp editors/texteditor.h
     editors/webviewadapter.cpp editors/webviewadapter.h

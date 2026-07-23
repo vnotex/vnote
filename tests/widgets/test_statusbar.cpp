@@ -5,6 +5,8 @@
 #include <QToolButton>
 #include <QtTest>
 
+#include <algorithm>
+
 #include <widgets/editors/statusbar.h>
 
 using namespace vnotex;
@@ -31,11 +33,26 @@ private slots:
   void testOnClickedFires();
   void testOnTriggeredFires();
   void testOnTextEditedFires();
+  void testWidgetColumnMountAndSwap();
+  void testWidgetColumnNullClears();
+  void testStructuredMenuBuildsCheckableAndSeparator();
+  void testStructuredMenuExclusiveGroup();
+  void testOnMenuTriggeredFires();
+  void testShowMessageSwapsAndRestores();
 
 private:
-  // Find the Nth direct child widget of type T in layout order.
+  // Find the Nth column child widget of type T in child/creation order. Columns
+  // live under a host page inside the bar's QStackedLayout, so the search is
+  // recursive; the internal transient message label is excluded so column
+  // lookups stay stable.
   template <typename T> static T *childAt(StatusBar &p_bar, int p_n) {
-    const auto children = p_bar.findChildren<T *>(QString(), Qt::FindDirectChildrenOnly);
+    auto children = p_bar.findChildren<T *>();
+    children.erase(std::remove_if(children.begin(), children.end(),
+                                  [](T *p_w) {
+                                    return p_w->objectName() ==
+                                           QStringLiteral("StatusBarMessageLabel");
+                                  }),
+                   children.end());
     return p_n >= 0 && p_n < children.size() ? children.at(p_n) : nullptr;
   }
 };
@@ -215,6 +232,156 @@ void TestStatusBar::testOnTextEditedFires() {
   auto *line = childAt<QLineEdit>(bar, 0);
   QTest::keyClicks(line, QStringLiteral("hi"));
   QCOMPARE(edited, QStringLiteral("hi"));
+}
+
+void TestStatusBar::testWidgetColumnMountAndSwap() {
+  StatusBarDef def;
+  StatusBarColumn w;
+  w.type = StatusBarColumnType::Widget;
+  def << w;
+  StatusBar bar(def);
+
+  // Raw widget mounts (reparented under the bar).
+  auto *raw = new QLabel(QStringLiteral("raw"));
+  bar.setColumnWidget(0, raw);
+  QVERIFY(bar.isAncestorOf(raw));
+
+  // Shared widget swaps in and detaches the previous raw widget.
+  auto shared = QSharedPointer<QWidget>::create();
+  bar.setColumnWidget(0, shared);
+  QVERIFY(bar.isAncestorOf(shared.data()));
+  QVERIFY(!bar.isAncestorOf(raw));
+  QCOMPARE(raw->parent(), nullptr);
+  delete raw;
+
+  // Shared pointer is kept alive while mounted.
+  QVERIFY(!shared.isNull());
+}
+
+void TestStatusBar::testWidgetColumnNullClears() {
+  StatusBarDef def;
+  StatusBarColumn w;
+  w.type = StatusBarColumnType::Widget;
+  def << w;
+  StatusBar bar(def);
+
+  auto shared = QSharedPointer<QWidget>::create();
+  bar.setColumnWidget(0, shared);
+  QVERIFY(bar.isAncestorOf(shared.data()));
+
+  // Null detaches and releases the shared widget; our local ref keeps it alive.
+  bar.setColumnWidget(0, QSharedPointer<QWidget>());
+  QVERIFY(!bar.isAncestorOf(shared.data()));
+  QVERIFY(!shared.isNull());
+}
+
+void TestStatusBar::testStructuredMenuBuildsCheckableAndSeparator() {
+  StatusBarDef def;
+  StatusBarColumn menu;
+  menu.type = StatusBarColumnType::Menu;
+  QVector<StatusBarMenuItem> items;
+  StatusBarMenuItem enable;
+  enable.text = QStringLiteral("Enable");
+  enable.checkable = true;
+  enable.checked = true;
+  StatusBarMenuItem sep;
+  sep.separator = true;
+  StatusBarMenuItem plain;
+  plain.text = QStringLiteral("Plain");
+  items << enable << sep << plain;
+  menu.menuItems = items;
+  def << menu;
+  StatusBar bar(def);
+
+  auto *btn = childAt<QToolButton>(bar, 0);
+  QVERIFY(btn && btn->menu());
+  const auto acts = btn->menu()->actions();
+  QCOMPARE(acts.size(), 3);
+  QVERIFY(acts.at(0)->isCheckable());
+  QVERIFY(acts.at(0)->isChecked());
+  QVERIFY(acts.at(1)->isSeparator());
+  QVERIFY(!acts.at(2)->isCheckable());
+}
+
+void TestStatusBar::testStructuredMenuExclusiveGroup() {
+  StatusBarDef def;
+  StatusBarColumn menu;
+  menu.type = StatusBarColumnType::Menu;
+  QVector<StatusBarMenuItem> items;
+  StatusBarMenuItem a;
+  a.text = QStringLiteral("A");
+  a.checkable = true;
+  a.checked = true;
+  a.exclusiveGroupId = 0;
+  StatusBarMenuItem b;
+  b.text = QStringLiteral("B");
+  b.checkable = true;
+  b.exclusiveGroupId = 0;
+  items << a << b;
+  menu.menuItems = items;
+  def << menu;
+  StatusBar bar(def);
+
+  auto acts = childAt<QToolButton>(bar, 0)->menu()->actions();
+  QCOMPARE(acts.size(), 2);
+  QVERIFY(acts.at(0)->isChecked());
+  // Exclusive group: checking B unchecks A.
+  acts.at(1)->trigger();
+  QVERIFY(acts.at(1)->isChecked());
+  QVERIFY(!acts.at(0)->isChecked());
+}
+
+void TestStatusBar::testOnMenuTriggeredFires() {
+  int firedIndex = -1;
+  bool firedChecked = false;
+  StatusBarDef def;
+  StatusBarColumn menu;
+  menu.type = StatusBarColumnType::Menu;
+  QVector<StatusBarMenuItem> items;
+  StatusBarMenuItem enable;
+  enable.text = QStringLiteral("Enable");
+  enable.checkable = true;
+  StatusBarMenuItem sep;
+  sep.separator = true;
+  StatusBarMenuItem dict;
+  dict.text = QStringLiteral("Dict");
+  dict.checkable = true;
+  items << enable << sep << dict;
+  menu.menuItems = items;
+  menu.onMenuTriggered = [&firedIndex, &firedChecked](int p_i, bool p_c) {
+    firedIndex = p_i;
+    firedChecked = p_c;
+  };
+  def << menu;
+  StatusBar bar(def);
+
+  // Item index 2 (dict) — separators keep their index slot.
+  auto acts = childAt<QToolButton>(bar, 0)->menu()->actions();
+  acts.at(2)->trigger();
+  QCOMPARE(firedIndex, 2);
+  QVERIFY(firedChecked);
+}
+
+void TestStatusBar::testShowMessageSwapsAndRestores() {
+  StatusBarDef def;
+  StatusBarColumn label;
+  label.type = StatusBarColumnType::Label;
+  label.text = QStringLiteral("L");
+  def << label;
+  StatusBar bar(def);
+  bar.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&bar));
+
+  // The single column label (message label is excluded by childAt).
+  QLabel *columnLabel = childAt<QLabel>(bar, 0);
+  QVERIFY(columnLabel);
+  QVERIFY(columnLabel->isVisible());
+
+  bar.showMessage(QStringLiteral("hi"), 100);
+  QVERIFY(!columnLabel->isVisible());
+
+  // Restored after the timer fires.
+  QTRY_VERIFY_WITH_TIMEOUT(columnLabel->isVisible(), 2000);
 }
 
 } // namespace tests

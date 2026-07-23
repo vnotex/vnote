@@ -351,6 +351,13 @@ protected:
   // Access the column-based status bar (nullptr if none registered).
   StatusBar *statusBar() const { return m_statusBar; }
 
+  // Lazily create the encoding picker button (once) and wire it to
+  // reinterpretWithEncoding. Returns the shared instance. The button is NOT
+  // mounted anywhere by this call; the caller mounts it (legacy corner-widget
+  // path, or a StatusBar Widget column). Only meaningful when
+  // isEncodingSupported() is true.
+  EncodingButton *ensureEncodingButton();
+
   // Show a transient message in the status widget (or fallback).
   void showMessage(const QString &p_msg);
 

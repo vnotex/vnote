@@ -1,25 +1,58 @@
 #include "statusbar.h"
 
+#include <QActionGroup>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QStackedLayout>
+#include <QTimer>
 #include <QToolButton>
 
 using namespace vnotex;
 
 StatusBar::StatusBar(const StatusBarDef &p_def, QWidget *p_parent) : QWidget(p_parent) {
-  m_layout = new QHBoxLayout(this);
+  m_stackLayout = new QStackedLayout(this);
+  m_stackLayout->setContentsMargins(0, 0, 0, 0);
+  m_stackLayout->setStackingMode(QStackedLayout::StackOne);
+
+  // Page 0: columns host.
+  m_columnsHost = new QWidget(this);
+  m_layout = new QHBoxLayout(m_columnsHost);
   m_layout->setContentsMargins(0, 0, 0, 0);
   m_layout->setSpacing(0);
+  m_stackLayout->addWidget(m_columnsHost);
 
   for (const auto &column : p_def) {
     buildColumn(column);
   }
 
+  // Page 1: transient message label. Created after the columns so column
+  // widgets keep their leading position in child-order lookups.
+  m_messageLabel = new QLabel(this);
+  m_messageLabel->setObjectName(QStringLiteral("StatusBarMessageLabel"));
+  m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+  m_stackLayout->addWidget(m_messageLabel);
+
+  m_stackLayout->setCurrentWidget(m_columnsHost);
+
+  m_messageTimer = new QTimer(this);
+  m_messageTimer->setSingleShot(true);
+  connect(m_messageTimer, &QTimer::timeout, this, &StatusBar::clearMessage);
+
   // Empty def => nothing to show. Keep the bar hidden so it takes no space.
   if (m_columns.isEmpty()) {
     hide();
+  }
+}
+
+StatusBar::~StatusBar() {
+  // Detach shared-owned widgets so their real owner (e.g. the editor's input
+  // mode) is not left with a dangling child pointer.
+  for (auto it = m_widgetColumnShared.begin(); it != m_widgetColumnShared.end(); ++it) {
+    if (it.value()) {
+      it.value()->setParent(nullptr);
+    }
   }
 }
 
@@ -31,14 +64,14 @@ void StatusBar::buildColumn(const StatusBarColumn &p_column) {
 
   switch (column.type) {
   case StatusBarColumnType::Label: {
-    auto *label = new QLabel(column.text, this);
+    auto *label = new QLabel(column.text, m_columnsHost);
     label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     widget = label;
     break;
   }
 
   case StatusBarColumnType::Button: {
-    auto *button = new QToolButton(this);
+    auto *button = new QToolButton(m_columnsHost);
     button->setText(column.text);
     if (!column.icon.isNull()) {
       button->setIcon(column.icon);
@@ -52,7 +85,7 @@ void StatusBar::buildColumn(const StatusBarColumn &p_column) {
   }
 
   case StatusBarColumnType::Menu: {
-    auto *button = new QToolButton(this);
+    auto *button = new QToolButton(m_columnsHost);
     button->setText(column.text);
     if (!column.icon.isNull()) {
       button->setIcon(column.icon);
@@ -65,7 +98,7 @@ void StatusBar::buildColumn(const StatusBarColumn &p_column) {
   }
 
   case StatusBarColumnType::Edit: {
-    auto *edit = new QLineEdit(column.text, this);
+    auto *edit = new QLineEdit(column.text, m_columnsHost);
     edit->setPlaceholderText(column.placeholder);
     if (column.onTextEdited) {
       auto callback = column.onTextEdited;
@@ -73,6 +106,16 @@ void StatusBar::buildColumn(const StatusBarColumn &p_column) {
               [callback](const QString &p_text) { callback(p_text); });
     }
     widget = edit;
+    break;
+  }
+
+  case StatusBarColumnType::Widget: {
+    // Empty mount; a widget is inserted later via setColumnWidget.
+    auto *mount = new QWidget(m_columnsHost);
+    auto *mountLayout = new QHBoxLayout(mount);
+    mountLayout->setContentsMargins(0, 0, 0, 0);
+    mountLayout->setSpacing(0);
+    widget = mount;
     break;
   }
 
@@ -120,6 +163,38 @@ void StatusBar::rebuildMenu(int p_index) {
   QMenu *menu = button->menu();
   menu->clear();
 
+  const auto &items = m_columns[p_index].menuItems;
+  if (!items.isEmpty()) {
+    auto onMenuTriggered = m_columns[p_index].onMenuTriggered;
+    QHash<int, QActionGroup *> groups;
+    for (int i = 0; i < items.size(); ++i) {
+      const StatusBarMenuItem &item = items.at(i);
+      if (item.separator) {
+        menu->addSeparator();
+        continue;
+      }
+
+      QAction *action = menu->addAction(item.text);
+      if (item.checkable) {
+        action->setCheckable(true);
+        action->setChecked(item.checked);
+      }
+      if (item.exclusiveGroupId >= 0) {
+        QActionGroup *&group = groups[item.exclusiveGroupId];
+        if (!group) {
+          group = new QActionGroup(menu);
+        }
+        group->addAction(action);
+      }
+      if (onMenuTriggered) {
+        connect(action, &QAction::triggered, this,
+                [onMenuTriggered, i](bool p_checked) { onMenuTriggered(i, p_checked); });
+      }
+    }
+    return;
+  }
+
+  // Legacy flat path.
   const QStringList actions = m_columns[p_index].menuActions;
   auto onTriggered = m_columns[p_index].onTriggered;
   for (int i = 0; i < actions.size(); ++i) {
@@ -128,6 +203,91 @@ void StatusBar::rebuildMenu(int p_index) {
       connect(action, &QAction::triggered, this, [onTriggered, i]() { onTriggered(i); });
     }
   }
+}
+
+QHBoxLayout *StatusBar::widgetColumnMountLayout(int p_index) const {
+  if (!isValidIndex(p_index) || m_columns[p_index].type != StatusBarColumnType::Widget) {
+    return nullptr;
+  }
+  QWidget *mount = m_widgets[p_index];
+  return mount ? qobject_cast<QHBoxLayout *>(mount->layout()) : nullptr;
+}
+
+void StatusBar::detachColumnWidget(int p_index) {
+  auto *mountLayout = widgetColumnMountLayout(p_index);
+  if (!mountLayout) {
+    return;
+  }
+
+  // Remove any currently hosted widget from the mount.
+  while (QLayoutItem *item = mountLayout->takeAt(0)) {
+    if (QWidget *w = item->widget()) {
+      w->hide();
+      w->setParent(nullptr);
+    }
+    delete item;
+  }
+
+  // Release shared ownership (if any).
+  m_widgetColumnShared.remove(p_index);
+}
+
+void StatusBar::setColumnWidget(int p_index, const QSharedPointer<QWidget> &p_widget) {
+  auto *mountLayout = widgetColumnMountLayout(p_index);
+  if (!mountLayout) {
+    return;
+  }
+
+  detachColumnWidget(p_index);
+
+  QWidget *mount = m_widgets[p_index];
+  if (p_widget) {
+    m_widgetColumnShared.insert(p_index, p_widget);
+    p_widget->setParent(mount);
+    mountLayout->addWidget(p_widget.data());
+    p_widget->show();
+    mount->setVisible(m_columns[p_index].visible);
+  } else {
+    mount->hide();
+  }
+}
+
+void StatusBar::setColumnWidget(int p_index, QWidget *p_widget) {
+  auto *mountLayout = widgetColumnMountLayout(p_index);
+  if (!mountLayout) {
+    return;
+  }
+
+  detachColumnWidget(p_index);
+
+  QWidget *mount = m_widgets[p_index];
+  if (p_widget) {
+    p_widget->setParent(mount);
+    mountLayout->addWidget(p_widget);
+    p_widget->show();
+    mount->setVisible(m_columns[p_index].visible);
+  } else {
+    mount->hide();
+  }
+}
+
+void StatusBar::showMessage(const QString &p_msg, int p_milliseconds) {
+  if (p_msg.isEmpty()) {
+    clearMessage();
+    return;
+  }
+
+  m_messageLabel->setText(p_msg);
+  m_stackLayout->setCurrentWidget(m_messageLabel);
+
+  if (p_milliseconds > 0) {
+    m_messageTimer->start(p_milliseconds);
+  }
+}
+
+void StatusBar::clearMessage() {
+  m_messageLabel->clear();
+  m_stackLayout->setCurrentWidget(m_columnsHost);
 }
 
 bool StatusBar::isValidIndex(int p_index) const {
@@ -204,6 +364,19 @@ void StatusBar::setColumnMenuActions(int p_index, const QStringList &p_actions) 
   }
 
   m_columns[p_index].menuActions = p_actions;
+  m_columns[p_index].menuItems.clear();
+  rebuildMenu(p_index);
+}
+
+void StatusBar::setColumnMenuItems(int p_index, const QVector<StatusBarMenuItem> &p_items) {
+  if (!isValidIndex(p_index)) {
+    return;
+  }
+  if (m_columns[p_index].type != StatusBarColumnType::Menu) {
+    return;
+  }
+
+  m_columns[p_index].menuItems = p_items;
   rebuildMenu(p_index);
 }
 

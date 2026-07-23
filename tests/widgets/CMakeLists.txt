@@ -970,3 +970,21 @@ add_qt_test(test_statusbar
   LINKS
     Qt6::Widgets
 )
+
+# EditorStatusBarBinder: wires a real vte::VTextEditor to a StatusBar. NOT
+# GUILESS (needs QApplication); links VTextEdit (loaded at runtime -> DLL copy).
+add_qt_test(test_editorstatusbarbinder
+  SOURCES
+    test_editorstatusbarbinder.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/statusbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/editorstatusbarbinder.cpp
+  LINKS
+    Qt6::Widgets
+    VTextEdit
+)
+
+add_custom_command(TARGET test_editorstatusbarbinder POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_editorstatusbarbinder>
+)

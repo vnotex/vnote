@@ -6,6 +6,7 @@
 namespace vnotex {
 class TextEditor;
 class TextViewWindowController;
+class EditorStatusBarBinder;
 
 // Concrete ViewWindow2 subclass for plain text files.
 // Provides a text editor (TextEditor) for viewing/editing text files
@@ -99,6 +100,9 @@ private:
 
   // Managed by QObject.
   TextEditor *m_editor = nullptr;
+
+  // Builds and binds the status bar columns to the editor. Managed by QObject.
+  EditorStatusBarBinder *m_statusBinder = nullptr;
 
   // Whether to propagate editor state changes to the buffer.
   bool m_propagateEditorToBuffer = false;

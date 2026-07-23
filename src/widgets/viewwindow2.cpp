@@ -316,18 +316,26 @@ void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) 
   // Host the encoding picker in the status bar's right corner for windows that
   // opt in. Created here (not in the toolbar) so it lives beside the editor's
   // status indicators. One window = one buffer, so a single creation suffices.
-  if (isEncodingSupported() && !m_encodingButton) {
-    m_encodingButton = new EncodingButton(p_widget.data());
+  if (isEncodingSupported()) {
+    p_widget->addCornerWidget(ensureEncodingButton());
+  }
+}
+
+EncodingButton *ViewWindow2::ensureEncodingButton() {
+  if (!m_encodingButton) {
+    m_encodingButton = new EncodingButton(this);
     m_encodingButton->setCurrentEncoding(m_buffer.isValid() ? m_buffer.encoding()
                                                             : QStringLiteral("UTF-8"));
     connect(m_encodingButton, &EncodingButton::encodingChangeRequested, this,
             &ViewWindow2::reinterpretWithEncoding);
-    p_widget->addCornerWidget(m_encodingButton);
   }
+  return m_encodingButton;
 }
 
 void ViewWindow2::showMessage(const QString &p_msg) {
-  if (m_statusWidget) {
+  if (m_statusBar) {
+    m_statusBar->showMessage(p_msg);
+  } else if (m_statusWidget) {
     m_statusWidget->showMessage(p_msg);
   }
 }
