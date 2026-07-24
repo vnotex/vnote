@@ -15,9 +15,10 @@ EncodingButton::EncodingButton(QWidget *p_parent)
   setPopupMode(QToolButton::InstantPopup);
   setToolButtonStyle(Qt::ToolButtonTextOnly);
   setAutoRaise(true);
-  // Drop the dropdown arrow to match the editor's status-bar buttons (e.g.
-  // the "Spelling" indicator), which are plain text triggers.
-  setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));
+  // Drop the dropdown arrow to match the editor's status-bar menu buttons (e.g.
+  // the "Spelling" indicator). Uses the theme-wide NoMenuIndicator property (see
+  // src/widgets/AGENTS.md § Hiding the QToolButton Menu Indicator).
+  setProperty("NoMenuIndicator", true);
   setToolTip(tr("Reinterpret the file with a different encoding"));
 
   // Defer the (relatively expensive) codec enumeration off the window-open

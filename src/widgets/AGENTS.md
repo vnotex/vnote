@@ -6,6 +6,26 @@ Widgets are UI components that receive `ServiceLocator&` via constructor injecti
 
 Many existing files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the retained name for those existing classes (renaming them would be needless churn). **New code does NOT get a suffix unless the name genuinely conflicts with an existing type.** Since the migration is finished, a brand-new widget with no `1`/legacy counterpart should use the plain name (e.g. `EncodingButton`, not `EncodingButton2`). Never introduce a `3` suffix. See [root AGENTS.md](../../AGENTS.md#widget-construction-pattern) for the constructor-injection pattern all widgets follow.
 
+## Hiding the QToolButton Menu Indicator
+
+Plain-text status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
+(e.g. the status bar "Spelling" menu, the `EncodingButton`, the toolbar theme
+switcher) must NOT show the built-in dropdown-arrow menu indicator. Use the
+single shared mechanism — the dynamic property:
+
+```cpp
+btn->setProperty("NoMenuIndicator", true);
+```
+
+Every bundled theme's `src/data/extra/themes/<theme>/interface.qss` styles this
+away with `QToolButton[NoMenuIndicator="true"]::menu-indicator { image: none; }`,
+so all such buttons share one look. Do NOT hand-roll a per-button inline
+stylesheet (`setStyleSheet("QToolButton::menu-indicator { image: none; }")`) —
+that bypasses theming and drifts from the shared style. When adding a new theme,
+carry the `NoMenuIndicator` rule forward. Pair the property with
+`setToolButtonStyle(Qt::ToolButtonTextOnly)` + `setAutoRaise(true)` for the flat,
+text-only status-bar look.
+
 ## Widget Families
 
 ### MainWindow

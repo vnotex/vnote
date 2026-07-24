@@ -372,10 +372,11 @@ void ToolBarHelper2::setupThemeSwitcherButton(QToolBar *p_toolBar) {
   auto *btn = new QToolButton(p_toolBar);
   btn->setPopupMode(QToolButton::InstantPopup);
 
-  // Hide the dropdown arrow indicator.
-  btn->setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));
+  // Hide the dropdown arrow indicator via the shared theme-wide property (see
+  // src/widgets/AGENTS.md § Hiding the QToolButton Menu Indicator).
+  btn->setProperty("NoMenuIndicator", true);
 
-  auto *act = new QAction(MainWindow2::tr("Switch Theme"), btn);
+  auto *act = new QAction(MainWindow2::tr("Themes"), btn);
   setActionIcon(act, QStringLiteral("theme_switcher.svg"));
   btn->setDefaultAction(act);
 

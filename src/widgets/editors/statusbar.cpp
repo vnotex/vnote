@@ -19,8 +19,10 @@ StatusBar::StatusBar(const StatusBarDef &p_def, QWidget *p_parent) : QWidget(p_p
   // Page 0: columns host.
   m_columnsHost = new QWidget(this);
   m_layout = new QHBoxLayout(m_columnsHost);
-  m_layout->setContentsMargins(0, 0, 0, 0);
-  m_layout->setSpacing(0);
+  // Small outer left/right margins plus inter-column spacing so adjacent
+  // columns (cursor / spelling / syntax / mode / encoding) are not cramped.
+  m_layout->setContentsMargins(6, 0, 6, 0);
+  m_layout->setSpacing(8);
   m_stackLayout->addWidget(m_columnsHost);
 
   for (const auto &column : p_def) {
@@ -91,6 +93,12 @@ void StatusBar::buildColumn(const StatusBarColumn &p_column) {
       button->setIcon(column.icon);
     }
     button->setPopupMode(QToolButton::InstantPopup);
+    // Match EncodingButton's flat, arrow-less look so all status-bar menu
+    // triggers share one style via the theme-wide NoMenuIndicator property (see
+    // src/widgets/AGENTS.md § Hiding the QToolButton Menu Indicator).
+    button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    button->setAutoRaise(true);
+    button->setProperty("NoMenuIndicator", true);
     auto *menu = new QMenu(button);
     button->setMenu(menu);
     widget = button;
