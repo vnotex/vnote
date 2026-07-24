@@ -8,12 +8,10 @@
 #include <QEvent>
 #include <QFileInfo>
 #include <QJsonArray>
-#include <QLabel>
 #include <QMenu>
 #include <QPrinter>
 #include <QScrollBar>
 #include <QSplitter>
-#include <QStackedWidget>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -54,7 +52,9 @@
 #include "editors/markdownvieweradapter.h"
 #include "editors/plantumlhelper.h"
 #include "editors/previewhelper.h"
-#include "editors/statuswidget.h"
+#include "editors/editorstatusbarbinder.h"
+#include "editors/statusbar.h"
+#include "encodingbutton.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
 #include "textviewwindowhelper.h"
@@ -95,17 +95,9 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
     disconnect(m_imageHostController, nullptr, this, nullptr);
   }
 
-  // Remove status widgets from QStackedWidget and reparent to nullptr
-  // to prevent double-free with QSharedPointer.
-  if (m_textEditorStatusWidget) {
-    m_mainStatusWidget->removeWidget(m_textEditorStatusWidget.get());
-    m_textEditorStatusWidget->setParent(nullptr);
-  }
-  if (m_viewerStatusWidget) {
-    m_mainStatusWidget->removeWidget(m_viewerStatusWidget.get());
-    m_viewerStatusWidget->setParent(nullptr);
-  }
-  m_mainStatusWidget->setParent(nullptr);
+  // The StatusBar is a QObject child of the window and the binder is parented to
+  // this; both are cleaned up automatically. The encoding button is owned by the
+  // bar's Widget-column mount (raw overload).
 }
 
 // ============ setupUI ============
@@ -118,21 +110,33 @@ void MarkdownViewWindow2::setupUI() {
   // Get the focus event from splitter.
   m_splitter->installEventFilter(this);
 
-  // Status widget: QStackedWidget to switch between editor/viewer status.
+  // Column-based status bar. Built eagerly with the editor columns empty (no
+  // editor yet in Read mode) plus a trailing encoding column; the binder is
+  // attached to the editor later in setupTextEditor().
   {
-    auto statusWidget = QSharedPointer<StatusWidget>::create();
-    m_mainStatusWidget = QSharedPointer<QStackedWidget>(new QStackedWidget());
-    m_mainStatusWidget->setContentsMargins(0, 0, 0, 0);
-    statusWidget->setEditorStatusWidget(m_mainStatusWidget.staticCast<QWidget>());
-    setStatusWidget(statusWidget);
+    m_statusBinder = new EditorStatusBarBinder(this);
+    auto def = m_statusBinder->buildDef(); // no editor yet
 
-    // Capture non-owning handle for read-mode auto-hide.
-    m_statusWidgetWrapper = statusWidget.data();
-    // The wrapper has a single QLabel child (m_messageLabel inside StatusWidget).
-    // Watch its show/hide events so we know when a transient message is on-screen.
-    m_statusMessageLabel = statusWidget->findChild<QLabel *>();
-    if (m_statusMessageLabel) {
-      m_statusMessageLabel->installEventFilter(this);
+    int encodingIndex = -1;
+    if (isEncodingSupported()) {
+      StatusBarColumn encoding;
+      encoding.type = StatusBarColumnType::Widget;
+      encodingIndex = def.size();
+      def << encoding;
+    }
+
+    setStatusBarDef(def);
+    if (encodingIndex >= 0 && statusBar()) {
+      statusBar()->setColumnWidget(encodingIndex, ensureEncodingButton());
+    }
+
+    // Read-mode auto-hide: collapse the bar unless a transient message is shown.
+    if (statusBar()) {
+      connect(statusBar(), &StatusBar::messageVisibilityChanged, this, [this](bool p_visible) {
+        if (m_mode == ViewWindowMode::Read && statusBar()) {
+          statusBar()->setMaximumHeight(p_visible ? QWIDGETSIZE_MAX : 0);
+        }
+      });
     }
   }
 
@@ -306,10 +310,10 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Connect editor signals.
   connectEditorSignals();
 
-  // Status widget for editor.
-  m_textEditorStatusWidget = m_editor->statusWidget();
-  m_mainStatusWidget->addWidget(m_textEditorStatusWidget.get());
-  m_textEditorStatusWidget->show();
+  // Bind the editor to the status bar columns.
+  if (m_statusBinder && statusBar()) {
+    m_statusBinder->attach(m_editor, statusBar());
+  }
 
   // Wire PreviewHelper <-> Editor.
   m_previewHelper->setMarkdownEditor(m_editor);
@@ -400,15 +404,6 @@ void MarkdownViewWindow2::setupViewer() {
   // Read mode or EditPreview mode. This avoids a visible blank pane
   // in the QSplitter while WebEngine loads the HTML template.
   m_viewer->hide();
-
-  // Viewer status widget.
-  {
-    auto *label = new QLabel(tr("Markdown Viewer"), this);
-    label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    m_viewerStatusWidget.reset(label);
-    m_mainStatusWidget->addWidget(m_viewerStatusWidget.get());
-    m_viewerStatusWidget->show();
-  }
 
   m_viewer->setPreviewHelper(m_previewHelper);
 
@@ -730,16 +725,14 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       // Hide splitter handle to avoid visible border in readable-width mode.
       m_splitter->handle(1)->setVisible(false);
     }
-    m_mainStatusWidget->setCurrentWidget(m_viewerStatusWidget.get());
-    // Collapse the wrapper StatusWidget to zero height in Read mode. We use
-    // setMaximumHeight(0) rather than setVisible(false) so the wrapper stays
-    // technically visible — that way StatusWidget's internal QStackedLayout
-    // still delivers QEvent::Show to m_messageLabel when a transient message
-    // arrives, and our eventFilter can expand the wrapper back to natural
-    // height. (Qt does not deliver Show events to children of a hidden
-    // parent, so setVisible(false) would silently break the auto-show path.)
-    if (m_statusWidgetWrapper) {
-      m_statusWidgetWrapper->setMaximumHeight(0);
+    // Clear any in-flight message first: a mode change emits no
+    // messageVisibilityChanged(true), so an already-visible message would
+    // otherwise get stuck hidden with no way to reopen. Then collapse the bar;
+    // subsequent transient messages expand it via the messageVisibilityChanged
+    // handler wired in setupUI().
+    showMessage(QString());
+    if (statusBar()) {
+      statusBar()->setMaximumHeight(0);
     }
     break;
 
@@ -757,9 +750,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     // Clear any transient message left over from Read mode (e.g. a hovered link
     // URL) so we don't carry it into Edit's editor status surface.
     showMessage(QString());
-    m_mainStatusWidget->setCurrentWidget(m_textEditorStatusWidget.get());
-    if (m_statusWidgetWrapper) {
-      m_statusWidgetWrapper->setMaximumHeight(QWIDGETSIZE_MAX);
+    if (statusBar()) {
+      statusBar()->setMaximumHeight(QWIDGETSIZE_MAX);
     }
     break;
 
@@ -1548,25 +1540,6 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 // ============ Helpers ============
 
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
-  if (p_obj == m_statusMessageLabel.data() && m_statusMessageLabel) {
-    if (p_event->type() == QEvent::Show) {
-      // A transient message just became visible — expand the wrapper to its
-      // natural height so the message is actually displayed. Works in both
-      // modes; harmless in Edit mode where the wrapper is already expanded.
-      if (m_statusWidgetWrapper) {
-        m_statusWidgetWrapper->setMaximumHeight(QWIDGETSIZE_MAX);
-      }
-    } else if (p_event->type() == QEvent::Hide) {
-      // The transient message just disappeared. In Read mode, collapse the
-      // wrapper back to zero height so the empty "Markdown Viewer" page is
-      // not revealed. In Edit mode, leave the wrapper at natural height.
-      if (m_mode == ViewWindowMode::Read && m_statusWidgetWrapper) {
-        m_statusWidgetWrapper->setMaximumHeight(0);
-      }
-    }
-    // Do not consume the event — let the label process it normally.
-  }
-
   if (p_obj == m_splitter) {
     if (p_event->type() == QEvent::FocusIn) {
       focusEditor();

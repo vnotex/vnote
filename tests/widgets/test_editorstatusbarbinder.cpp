@@ -27,6 +27,7 @@ private slots:
   void testSyntaxUpdate();
   void testSpellCheckMenuRebuild();
   void testViWidgetMountOnInputModeChange();
+  void testBuildDefWithNullEditor();
 
 private:
   // First column QLabel whose text contains p_needle (order-independent).
@@ -117,6 +118,23 @@ void TestEditorStatusBarBinder::testViWidgetMountOnInputModeChange() {
   // Leaving Vi mode detaches the widget from the bar.
   editor.setInputMode(vte::NormalMode);
   QVERIFY(!bar.isAncestorOf(viWidget.data()));
+}
+
+void TestEditorStatusBarBinder::testBuildDefWithNullEditor() {
+  EditorStatusBarBinder binder;
+  // No editor yet: def has the 6 columns with empty editor-derived text.
+  auto def = binder.buildDef();
+  QCOMPARE(def.size(), 6);
+  QVERIFY(def.at(EditorStatusBarBinder::ColCursor).text.isEmpty());
+  QVERIFY(def.at(EditorStatusBarBinder::ColSyntax).text.isEmpty());
+  QVERIFY(def.at(EditorStatusBarBinder::ColMode).text.isEmpty());
+  QVERIFY(def.at(EditorStatusBarBinder::ColSpellCheck).menuItems.isEmpty());
+
+  // Attaching an editor later populates the columns.
+  StatusBar bar(def);
+  vte::VTextEditor editor(nullptr, nullptr);
+  binder.attach(&editor, &bar);
+  QVERIFY(labelContaining(bar, QStringLiteral("Line:")) != nullptr);
 }
 
 } // namespace tests

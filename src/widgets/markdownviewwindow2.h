@@ -3,7 +3,6 @@
 
 #include "viewwindow2.h"
 
-#include <QPointer>
 #include <QSet>
 #include <QSharedPointer>
 
@@ -12,12 +11,10 @@
 #include "outlineprovider.h"
 
 class QSplitter;
-class QStackedWidget;
 class QTimer;
 class QPrinter;
 class QAction;
 class QMenu;
-class QLabel;
 
 namespace vnotex {
 class MarkdownEditor;
@@ -28,7 +25,7 @@ class PreviewHelper;
 class MarkdownEditorController;
 class MarkdownViewWindowController;
 class ImageHostController;
-class StatusWidget;
+class EditorStatusBarBinder;
 
 // Concrete ViewWindow2 subclass for Markdown files.
 // Supports dual-mode (Edit/Read) with lazy-initialized editor and viewer,
@@ -203,16 +200,9 @@ private:
   PreviewHelper *m_previewHelper = nullptr;
   QMenu *m_imageHostMenu = nullptr;
 
-  // Status widgets.
-  QSharedPointer<QWidget> m_textEditorStatusWidget;
-  QSharedPointer<QWidget> m_viewerStatusWidget;
-  QSharedPointer<QStackedWidget> m_mainStatusWidget;
-
-  // Non-owning handles for read-mode auto-hide logic.
-  // Wrapper StatusWidget is owned by ViewWindow2::m_statusWidget (QSharedPointer);
-  // we only need non-owning access to toggle its visibility on mode switch.
-  QPointer<StatusWidget> m_statusWidgetWrapper;
-  QPointer<QLabel> m_statusMessageLabel;
+  // Column-based status bar glue (built eagerly in setupUI, attached to the
+  // editor once it exists). Managed by QObject (this).
+  EditorStatusBarBinder *m_statusBinder = nullptr;
 
   // State.
   bool m_propagateEditorToBuffer = false;

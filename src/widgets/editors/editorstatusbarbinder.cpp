@@ -82,7 +82,7 @@ StatusBarDef EditorStatusBarBinder::buildDef(vte::VTextEditor *p_editor) {
 
   StatusBarColumn cursor;
   cursor.type = StatusBarColumnType::Label;
-  cursor.text = formatCursorText(p_editor);
+  cursor.text = p_editor ? formatCursorText(p_editor) : QString();
 
   StatusBarColumn spacer;
   spacer.type = StatusBarColumnType::Spacer;
@@ -118,11 +118,11 @@ StatusBarDef EditorStatusBarBinder::buildDef(vte::VTextEditor *p_editor) {
 
   StatusBarColumn syntax;
   syntax.type = StatusBarColumnType::Label;
-  syntax.text = p_editor->getSyntax().toUpper();
+  syntax.text = p_editor ? p_editor->getSyntax().toUpper() : QString();
 
   StatusBarColumn mode;
   mode.type = StatusBarColumnType::Label;
-  mode.text = formatModeText(p_editor);
+  mode.text = p_editor ? formatModeText(p_editor) : QString();
 
   def << viWidget << cursor << spacer << spellCheck << syntax << mode;
   return def;

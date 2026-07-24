@@ -97,6 +97,15 @@ public:
   // after p_milliseconds (or immediately on an empty message).
   void showMessage(const QString &p_msg, int p_milliseconds = 3000);
 
+  // Whether the transient message page is currently shown (as opposed to the
+  // columns page).
+  bool isMessageVisible() const;
+
+signals:
+  // Emitted true when a non-empty transient message becomes visible, and false
+  // when it is cleared (via timeout, explicit clear, or an empty showMessage).
+  void messageVisibilityChanged(bool p_visible);
+
 private:
   // Build one widget for a column and wire its callbacks. Spacers add a
   // stretch and store a nullptr widget pointer.

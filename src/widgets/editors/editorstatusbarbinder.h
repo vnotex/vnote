@@ -37,9 +37,11 @@ public:
     ColMode = 5,
   };
 
-  // Build the 6-column def for @p_editor. Also records the editor so the
-  // spellcheck callback can drive its setters. Call before setStatusBarDef().
-  StatusBarDef buildDef(vte::VTextEditor *p_editor);
+  // Build the 6-column def for @p_editor (may be null). Also records the editor
+  // so the spellcheck callback can drive its setters. Call before
+  // setStatusBarDef(). A null editor yields empty editor-derived columns; call
+  // attach() later to populate them once the editor exists.
+  StatusBarDef buildDef(vte::VTextEditor *p_editor = nullptr);
 
   // Connect the editor's signals to the bar and perform an initial sync.
   void attach(vte::VTextEditor *p_editor, StatusBar *p_bar);

@@ -38,6 +38,7 @@ private slots:
   void testStructuredMenuExclusiveGroup();
   void testOnMenuTriggeredFires();
   void testShowMessageSwapsAndRestores();
+  void testMessageVisibilitySignal();
 
 private:
   // Find the Nth column child widget of type T in child/creation order. Columns
@@ -377,6 +378,42 @@ void TestStatusBar::testShowMessageSwapsAndRestores() {
 
   // Restored after the timer fires.
   QTRY_VERIFY_WITH_TIMEOUT(columnLabel->isVisible(), 2000);
+}
+
+void TestStatusBar::testMessageVisibilitySignal() {
+  StatusBarDef def;
+  StatusBarColumn label;
+  label.type = StatusBarColumnType::Label;
+  label.text = QStringLiteral("L");
+  def << label;
+  StatusBar bar(def);
+
+  QSignalSpy spy(&bar, &StatusBar::messageVisibilityChanged);
+
+  // Persistent message (0 timeout) -> one true, stays visible.
+  bar.showMessage(QStringLiteral("persistent"), 0);
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.takeFirst().at(0).toBool(), true);
+  QVERIFY(bar.isMessageVisible());
+
+  // A stale timer from a prior message must not clear the persistent one.
+  QTest::qWait(50);
+  QVERIFY(bar.isMessageVisible());
+  QCOMPARE(spy.count(), 0);
+
+  // Explicit empty message clears -> one false.
+  bar.showMessage(QString());
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.takeFirst().at(0).toBool(), false);
+  QVERIFY(!bar.isMessageVisible());
+
+  // Timed message auto-clears via the timer -> emits false after timeout.
+  bar.showMessage(QStringLiteral("timed"), 50);
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.takeFirst().at(0).toBool(), true);
+  QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2000);
+  QCOMPARE(spy.takeFirst().at(0).toBool(), false);
+  QVERIFY(!bar.isMessageVisible());
 }
 
 } // namespace tests

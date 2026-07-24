@@ -272,17 +272,37 @@ void StatusBar::showMessage(const QString &p_msg, int p_milliseconds) {
     return;
   }
 
+  // Stop any pending timer from a previous message so it cannot later clear
+  // this (possibly persistent) message.
+  m_messageTimer->stop();
+
+  const bool wasVisible = isMessageVisible();
   m_messageLabel->setText(p_msg);
   m_stackLayout->setCurrentWidget(m_messageLabel);
 
   if (p_milliseconds > 0) {
     m_messageTimer->start(p_milliseconds);
   }
+
+  if (!wasVisible) {
+    emit messageVisibilityChanged(true);
+  }
 }
 
 void StatusBar::clearMessage() {
+  m_messageTimer->stop();
+
+  const bool wasVisible = isMessageVisible();
   m_messageLabel->clear();
   m_stackLayout->setCurrentWidget(m_columnsHost);
+
+  if (wasVisible) {
+    emit messageVisibilityChanged(false);
+  }
+}
+
+bool StatusBar::isMessageVisible() const {
+  return m_stackLayout->currentWidget() == m_messageLabel;
 }
 
 bool StatusBar::isValidIndex(int p_index) const {
