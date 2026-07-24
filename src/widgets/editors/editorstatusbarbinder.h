@@ -53,6 +53,9 @@ private:
 
   static QString formatCursorText(vte::VTextEditor *p_editor);
 
+  // Editor mode label text with the " (Vi)" suffix stripped.
+  static QString formatModeText(vte::VTextEditor *p_editor);
+
   QVector<StatusBarMenuItem> buildSpellCheckItems() const;
 
   vte::VTextEditor *m_editor = nullptr;

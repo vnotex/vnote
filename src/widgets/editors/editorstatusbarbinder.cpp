@@ -28,6 +28,13 @@ QString EditorStatusBarBinder::formatCursorText(vte::VTextEditor *p_editor) {
       .arg(column, -3);
 }
 
+QString EditorStatusBarBinder::formatModeText(vte::VTextEditor *p_editor) {
+  // Drop the " (Vi)" qualifier the vtextedit label carries (e.g. "Normal (Vi)"
+  // -> "Normal"); the mode column already sits next to the Vi indicator widget.
+  QString text = vte::editorModeToString(p_editor->getEditorMode());
+  return text.remove(QStringLiteral(" (Vi)"));
+}
+
 QVector<StatusBarMenuItem> EditorStatusBarBinder::buildSpellCheckItems() const {
   QVector<StatusBarMenuItem> items;
   if (!m_editor) {
@@ -115,7 +122,7 @@ StatusBarDef EditorStatusBarBinder::buildDef(vte::VTextEditor *p_editor) {
 
   StatusBarColumn mode;
   mode.type = StatusBarColumnType::Label;
-  mode.text = vte::editorModeToString(p_editor->getEditorMode());
+  mode.text = formatModeText(p_editor);
 
   def << viWidget << cursor << spacer << spellCheck << syntax << mode;
   return def;
@@ -159,7 +166,7 @@ void EditorStatusBarBinder::syncSyntax() {
 
 void EditorStatusBarBinder::syncMode() {
   if (m_bar && m_editor) {
-    m_bar->setColumnText(ColMode, vte::editorModeToString(m_editor->getEditorMode()));
+    m_bar->setColumnText(ColMode, formatModeText(m_editor));
   }
 }
 
