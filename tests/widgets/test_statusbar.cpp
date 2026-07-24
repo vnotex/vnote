@@ -39,6 +39,7 @@ private slots:
   void testOnMenuTriggeredFires();
   void testShowMessageSwapsAndRestores();
   void testMessageVisibilitySignal();
+  void testColumnIndexProperty();
 
 private:
   // Find the Nth column child widget of type T in child/creation order. Columns
@@ -414,6 +415,35 @@ void TestStatusBar::testMessageVisibilitySignal() {
   QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2000);
   QCOMPARE(spy.takeFirst().at(0).toBool(), false);
   QVERIFY(!bar.isMessageVisible());
+}
+
+void TestStatusBar::testColumnIndexProperty() {
+  StatusBarDef def;
+  StatusBarColumn label;
+  label.type = StatusBarColumnType::Label;
+  label.text = QStringLiteral("L");
+  StatusBarColumn spacer;
+  spacer.type = StatusBarColumnType::Spacer;
+  StatusBarColumn menu;
+  menu.type = StatusBarColumnType::Menu;
+  StatusBarColumn widget;
+  widget.type = StatusBarColumnType::Widget;
+  def << label << spacer << menu << widget;
+
+  StatusBar bar(def);
+
+  // The Label(0) and Menu(2) columns each carry a StatusBarCol property equal to
+  // their index. The Spacer(1) has no widget, and the Widget(3) mount is
+  // intentionally not tagged (it hosts a foreign, self-styled child).
+  QList<int> indices;
+  for (auto *w : bar.findChildren<QWidget *>()) {
+    const QVariant v = w->property("StatusBarCol");
+    if (v.isValid()) {
+      indices << v.toInt();
+    }
+  }
+  std::sort(indices.begin(), indices.end());
+  QCOMPARE(indices, (QList<int>{0, 2}));
 }
 
 } // namespace tests

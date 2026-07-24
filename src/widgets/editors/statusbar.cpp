@@ -141,6 +141,15 @@ void StatusBar::buildColumn(const StatusBarColumn &p_column) {
   }
 
   if (widget) {
+    // Tag the column widget with its index so themes can target each column via
+    // QSS (e.g. `QWidget[StatusBarCol="1"] { ... }`). Widget-mount columns host a
+    // foreign, self-styled child (encoding button, Vi status bar) and are skipped
+    // so the theme chip is not painted on an empty/mismatched mount; Spacer
+    // columns have no widget at all.
+    if (column.type != StatusBarColumnType::Widget) {
+      widget->setProperty("StatusBarCol", idx);
+    }
+
     if (!column.style.isEmpty()) {
       widget->setStyleSheet(column.style);
     }

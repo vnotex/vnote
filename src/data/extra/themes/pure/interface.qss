@@ -358,6 +358,24 @@ QToolButton[NoMenuIndicator="true"]::menu-indicator {
     image: none;
 }
 
+/* Status bar columns: rounded Material chips, keyed by StatusBar::buildColumn's
+ * `StatusBarCol` index property. Only StatusBar-owned Label/Menu columns are
+ * tagged; Widget mounts (Vi=0, encoding=6) and the spacer (2) are not. */
+QWidget[StatusBarCol="1"],
+QWidget[StatusBarCol="3"],
+QWidget[StatusBarCol="4"],
+QWidget[StatusBarCol="5"] {
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 1px 8px;
+    margin: 2px 0px;
+}
+QWidget[StatusBarCol="1"] { background-color: #1565c0; } /* cursor   - Blue 800 */
+QWidget[StatusBarCol="3"] { background-color: #00695c; } /* spelling - Teal 800 */
+QWidget[StatusBarCol="4"] { background-color: #4527a0; } /* syntax   - Deep Purple 800 */
+QWidget[StatusBarCol="5"] { background-color: #ef6c00; } /* mode     - Orange 800 */
+
 QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
     color: @widgets#qwidget#danger#fg;
     background-color: @widgets#qwidget#danger#bg;
