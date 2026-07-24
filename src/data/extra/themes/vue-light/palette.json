@@ -494,6 +494,27 @@
             "fg" : "@base#footer#fg",
             "bg" : "@base#footer#bg"
         },
+        "statusbarcolumn" : {
+            "fg" : "#ffffff",
+            "cursor" : {
+                "bg" : "#1565c0"
+            },
+            "spelling" : {
+                "bg" : "#00695c",
+                "hover" : {
+                    "bg" : "#00897b"
+                },
+                "pressed" : {
+                    "bg" : "#004d40"
+                }
+            },
+            "syntax" : {
+                "bg" : "#4527a0"
+            },
+            "mode" : {
+                "bg" : "#ef6c00"
+            }
+        },
         "qscrollbar" : {
             "bg" : "transparent",
             "addpage" : {

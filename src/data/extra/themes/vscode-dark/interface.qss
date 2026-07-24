@@ -360,21 +360,27 @@ QToolButton[NoMenuIndicator="true"]::menu-indicator {
 
 /* Status bar columns: rounded Material chips, keyed by StatusBar::buildColumn's
  * `StatusBarCol` index property. Only StatusBar-owned Label/Menu columns are
- * tagged; Widget mounts (Vi=0, encoding=6) and the spacer (2) are not. */
+ * tagged; Widget mounts (Vi=0, encoding=6) and the spacer (2) are not.
+ * Vertical padding is 4px (matching the base QToolButton padding) so the Spelling
+ * QToolButton chip is as tall as the QLabel chips (cursor/syntax/mode), which
+ * stretch to the row height set by the default-padded encoding button.
+ * Colors are defined in palette.json under widgets.statusbarcolumn. */
 QWidget[StatusBarCol="1"],
 QWidget[StatusBarCol="3"],
 QWidget[StatusBarCol="4"],
 QWidget[StatusBarCol="5"] {
-    color: #ffffff;
+    color: @widgets#statusbarcolumn#fg;
     border: none;
     border-radius: 6px;
-    padding: 1px 8px;
+    padding: 4px 8px;
     margin: 2px 0px;
 }
-QWidget[StatusBarCol="1"] { background-color: #1565c0; } /* cursor   - Blue 800 */
-QWidget[StatusBarCol="3"] { background-color: #00695c; } /* spelling - Teal 800 */
-QWidget[StatusBarCol="4"] { background-color: #4527a0; } /* syntax   - Deep Purple 800 */
-QWidget[StatusBarCol="5"] { background-color: #ef6c00; } /* mode     - Orange 800 */
+QWidget[StatusBarCol="1"] { background-color: @widgets#statusbarcolumn#cursor#bg; }
+QWidget[StatusBarCol="3"] { background-color: @widgets#statusbarcolumn#spelling#bg; }
+QWidget[StatusBarCol="3"]:hover { background-color: @widgets#statusbarcolumn#spelling#hover#bg; }
+QWidget[StatusBarCol="3"]:pressed { background-color: @widgets#statusbarcolumn#spelling#pressed#bg; }
+QWidget[StatusBarCol="4"] { background-color: @widgets#statusbarcolumn#syntax#bg; }
+QWidget[StatusBarCol="5"] { background-color: @widgets#statusbarcolumn#mode#bg; }
 
 QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
     color: @widgets#qwidget#danger#fg;
