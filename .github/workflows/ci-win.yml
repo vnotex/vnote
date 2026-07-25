@@ -277,8 +277,10 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # glob not supported
-          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}
+          # glob not supported; upload the packaged .zip (ncipollo cannot upload a
+          # directory). Both matrix jobs target the same draft (allowUpdates:true):
+          # Qt6 -> VNote-<ver>-win64.zip, Qt5.15 -> VNote-<ver>-win64-windows7.zip.
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true

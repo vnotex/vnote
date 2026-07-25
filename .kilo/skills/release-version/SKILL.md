@@ -142,8 +142,31 @@ gh run download <run-id> -D _artifacts
 gh release upload vX.Y.Z "_artifacts\<path>\VNote-X.Y.Z-...zip" --clobber
 ```
 
+### Set the release description from `changes.md`
+
+The draft's body MUST be the `## vX.Y.Z` section of `changes.md` (the same
+changelog written in step 3) — nothing more, nothing less. CI seeds a generic
+body, so overwrite it. Extract exactly that one section (from its `## vX.Y.Z`
+heading up to, but not including, the next `## ` heading) and set it as the notes:
+
+```pwsh
+# Extract the ## vX.Y.Z section into a temp notes file...
+$ver = "X.Y.Z"
+$md  = Get-Content changes.md -Raw
+$sec = [regex]::Match($md, "(?ms)^## v$([regex]::Escape($ver))\b.*?(?=^## |\z)").Value.TrimEnd()
+Set-Content -Path notes.md -Value $sec -NoNewline -Encoding utf8
+
+# ...and apply it as the draft's description.
+gh release edit vX.Y.Z --notes-file notes.md
+```
+
+Drop the leading `## vX.Y.Z` line if you prefer the version to appear only as the
+release title; keep the bullet body either way. Verify with `gh release view vX.Y.Z`.
+
+### Publish
+
 Only when the draft `vX.Y.Z` release shows all **4** artifacts (linux / macos /
-win64 / windows7) do you publish it:
+win64 / windows7) AND its body matches the `changes.md` section do you publish it:
 
 ```pwsh
 gh release edit vX.Y.Z --draft=false
@@ -158,7 +181,8 @@ gh release edit vX.Y.Z --draft=false
 | Fill translations | edit `vnote_zh_CN.ts`, `vnote_ja.ts` until 0 `unfinished` |
 | Changelog | prepend `## vX.Y.Z` to `changes.md` |
 | Release trigger | commit on `master` with message starting `[Release]` |
-| Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 4 artifacts, then `gh release edit vX.Y.Z --draft=false` |
+| Set description | `gh release edit vX.Y.Z --notes-file notes.md` (the `## vX.Y.Z` section of `changes.md`) |
+| Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 4 artifacts + changelog body, then `gh release edit vX.Y.Z --draft=false` |
 
 ## Release artifacts (must all be present before publishing)
 
