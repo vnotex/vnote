@@ -112,7 +112,7 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
     if (job->error() == QKeychain::NoError) {
       emit credentialsStored(notebookId);
     } else {
-      emit credentialsError(notebookId, job->errorString());
+      emit credentialsStoreError(notebookId, job->errorString());
     }
     job->deleteLater();
   });
@@ -125,7 +125,7 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
   QMetaObject::invokeMethod(
       this,
       [this, notebookId]() {
-        emit credentialsError(notebookId, QString::fromLatin1(c_keychainUnavailableError));
+        emit credentialsStoreError(notebookId, QString::fromLatin1(c_keychainUnavailableError));
       },
       Qt::QueuedConnection);
 #endif
@@ -185,7 +185,12 @@ void SyncCredentialsStore::deleteCredentials(const QString &p_notebookId) {
 
   const QString notebookId = p_notebookId;
   connect(job, &QKeychain::Job::finished, this, [this, job, notebookId](QKeychain::Job *) {
-    if (job->error() == QKeychain::NoError) {
+    // A missing entry is the desired end-state of a delete, so treat
+    // EntryNotFound as success. Apple's DeletePasswordJob reports errSecItemNotFound
+    // as an error (see keychain_apple.mm StartDeletePassword); Windows/libsecret
+    // return NoError. Normalizing here makes deletion idempotent on all platforms
+    // (issue #2718).
+    if (job->error() == QKeychain::NoError || job->error() == QKeychain::EntryNotFound) {
       emit credentialsDeleted(notebookId);
     } else {
       emit credentialsError(notebookId, job->errorString());

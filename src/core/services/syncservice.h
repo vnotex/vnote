@@ -74,8 +74,10 @@ public:
   //   1. Store @p_pat in the OS keychain via SyncCredentialsStore.
   //   2. On credentialsStored, build the credentials JSON and invoke
   //      SyncWorker::enableSync via QueuedConnection.
-  //   3. On credentialsError, emit enableFinished with VXCORE_ERR_UNKNOWN
-  //      and the keychain error message; the worker is NOT called.
+  //   3. On credentialsStoreError, emit enableFinished with VXCORE_ERR_UNKNOWN
+  //      and the keychain error message; the worker is NOT called. (A generic
+  //      credentialsError for the same id from a concurrent retrieve/delete is
+  //      intentionally ignored here so it cannot abort the enable.)
   //
   // The PAT lives only in the lambda capture between (1) and (2); it is never
   // assigned to a SyncService member.

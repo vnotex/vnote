@@ -376,7 +376,7 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
           });
 
   *errorConn =
-      connect(m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
+      connect(m_credentialsStore, &SyncCredentialsStore::credentialsStoreError, this,
               [this, notebookId, cleanup](const QString &p_errNotebookId, const QString &p_errMsg) {
                 if (p_errNotebookId != notebookId) {
                   return;
@@ -1020,7 +1020,7 @@ void SyncService::updateCredentials(const QString &p_notebookId, const QString &
               });
 
   *errorConn =
-      connect(m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
+      connect(m_credentialsStore, &SyncCredentialsStore::credentialsStoreError, this,
               [this, notebookId, cleanup](const QString &p_errNotebookId, const QString &p_errMsg) {
                 if (p_errNotebookId != notebookId) {
                   return;

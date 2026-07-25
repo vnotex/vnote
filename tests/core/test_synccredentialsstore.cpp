@@ -9,6 +9,7 @@
 //     output via qInstallMessageHandler)
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QSignalSpy>
 #include <QString>
 #include <QThread>
@@ -49,6 +50,7 @@ private slots:
   void serviceNameValue();
   void storeRetrieve();
   void delete_();
+  void deleteMissingEntryEmitsDeleted();
   void keychainUnavailableEmitsError();
   void patNotLogged();
 
@@ -143,7 +145,7 @@ void TestSyncCredentialsStore::storeRetrieve() {
 
   // Store
   QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
-  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
+  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsStoreError);
   store.storeCredentials(notebookId, pat);
   int which = waitForEither(storedSpy, errorSpy, 5000);
   if (which == 2) {
@@ -179,7 +181,7 @@ void TestSyncCredentialsStore::delete_() {
 
   // Store first
   QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
-  QSignalSpy errSpy1(&store, &SyncCredentialsStore::credentialsError);
+  QSignalSpy errSpy1(&store, &SyncCredentialsStore::credentialsStoreError);
   store.storeCredentials(notebookId, pat);
   int which = waitForEither(storedSpy, errSpy1, 5000);
   if (which == 2) {
@@ -213,6 +215,33 @@ void TestSyncCredentialsStore::delete_() {
 #endif
 }
 
+void TestSyncCredentialsStore::deleteMissingEntryEmitsDeleted() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot exercise real keychain delete");
+#else
+  // Regression for issue #2718: deleting a PAT that was never stored must be
+  // idempotent (credentialsDeleted, NOT credentialsError). On macOS the Apple
+  // DeletePasswordJob reports errSecItemNotFound as an error; the store now
+  // normalizes QKeychain::EntryNotFound to success on all platforms.
+  SyncCredentialsStore store(m_services);
+  tests::KeychainGuard guard(&store);
+  const QString notebookId =
+      QStringLiteral("nb_never_stored_") +
+      QString::number(QDateTime::currentMSecsSinceEpoch());
+
+  QSignalSpy deletedSpy(&store, &SyncCredentialsStore::credentialsDeleted);
+  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
+  store.deleteCredentials(notebookId);
+  const int which = waitForEither(deletedSpy, errorSpy, 5000);
+  QCOMPARE(which, 1);
+  QCOMPARE(deletedSpy.count(), 1);
+  QCOMPARE(deletedSpy.first().at(0).toString(), notebookId);
+  QCOMPARE(errorSpy.count(), 0);
+
+  guard.cleanup();
+#endif
+}
+
 void TestSyncCredentialsStore::keychainUnavailableEmitsError() {
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
   QSKIP("requires VNOTE_USE_KEYCHAIN=OFF build to test fallback path");
@@ -221,7 +250,7 @@ void TestSyncCredentialsStore::keychainUnavailableEmitsError() {
   tests::KeychainGuard guard(&store);
   const QString notebookId = QStringLiteral("nb_t4_unavailable");
 
-  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
+  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsStoreError);
   store.storeCredentials(notebookId, QStringLiteral("any_pat"));
   QVERIFY(errorSpy.wait(5000));
   QCOMPARE(errorSpy.count(), 1);
@@ -248,7 +277,7 @@ void TestSyncCredentialsStore::patNotLogged() {
   // error path), the PAT MUST NOT appear in any captured log message.
   {
     QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsStored);
-    QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+    QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsStoreError);
     store.storeCredentials(notebookId, uniquePat);
     waitForEither(doneSpy, errSpy, 5000);
   }
@@ -313,7 +342,7 @@ void TestSyncCredentialsStore::testHasCredentialsAfterStore() {
   QVERIFY(!store.hasCredentials(notebookId));
 
   QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
-  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
+  QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsStoreError);
   store.storeCredentials(notebookId, pat);
   int which = waitForEither(storedSpy, errorSpy, 5000);
   if (which == 2) {
@@ -346,7 +375,7 @@ void TestSyncCredentialsStore::testHasCredentialsAfterDelete() {
   // Seed.
   {
     QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
-    QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+    QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsStoreError);
     store.storeCredentials(notebookId, pat);
     int which = waitForEither(storedSpy, errSpy, 5000);
     if (which == 2) {
@@ -398,7 +427,7 @@ void TestSyncCredentialsStore::testRefreshKnownIdsPopulatesCache() {
   {
     SyncCredentialsStore seedStore(m_services);
     QSignalSpy storedSpy(&seedStore, &SyncCredentialsStore::credentialsStored);
-    QSignalSpy errSpy(&seedStore, &SyncCredentialsStore::credentialsError);
+    QSignalSpy errSpy(&seedStore, &SyncCredentialsStore::credentialsStoreError);
     seedStore.storeCredentials(notebookId, pat);
     int which = waitForEither(storedSpy, errSpy, 5000);
     if (which == 2) {
@@ -462,7 +491,7 @@ void TestSyncCredentialsStore::testStoreSafeFromWorkerThread() {
   QThread *worker =
       QThread::create([&store, notebookId, pat]() { store.storeCredentials(notebookId, pat); });
   QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsStored);
-  QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsError);
+  QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsStoreError);
   worker->start();
   QVERIFY2(worker->wait(2000), "worker thread must finish (the call returns immediately "
                                "after the QueuedConnection invoke)");

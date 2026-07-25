@@ -71,6 +71,27 @@ public:
   }
 };
 
+// Simulates the issue #2718 race: on storeCredentials the store emits a stray
+// generic credentialsError (as a concurrent NotebookAfterClose delete on the
+// same id would on macOS) WITHOUT emitting credentialsStored. The enable flow
+// must ignore the generic credentialsError (it now filters on the dedicated
+// credentialsStoreError), so it must NOT abort with VXCORE_ERR_UNKNOWN.
+class StrayErrorCredentialsStore : public SyncCredentialsStore {
+public:
+  using SyncCredentialsStore::SyncCredentialsStore;
+
+  void storeCredentials(const QString &p_notebookId, const QString & /*p_pat*/) override {
+    QMetaObject::invokeMethod(
+        this,
+        [this, p_notebookId]() {
+          emit credentialsError(
+              p_notebookId,
+              QStringLiteral("Could not remove private key from keystore: not found"));
+        },
+        Qt::QueuedConnection);
+  }
+};
+
 // Exposes test-only helpers to synthesize the enableFinished / disableFinished
 // signals that the cleanup paths react to.
 class TestableSyncService : public SyncService {
@@ -106,6 +127,7 @@ private slots:
   void testNotebookDeletion_CallsDeleteCredentials();
   void testSyncDisableSuccess_CallsDeleteCredentials();
   void testSyncDisableFailure_DoesNotCallDeleteCredentials();
+  void testStrayCredentialsError_DoesNotAbortEnable();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -262,6 +284,43 @@ void TestSyncServiceCredentialsCleanup::testSyncDisableFailure_DoesNotCallDelete
                                      "disable failure (PAT preserved for retry); "
                                      "deleteCalls=[%2]")
                           .arg(notebookId, fakeStore.deleteCalls.join(QLatin1Char(',')))));
+
+  syncSvc.shutdown();
+}
+
+void TestSyncServiceCredentialsCleanup::testStrayCredentialsError_DoesNotAbortEnable() {
+  ServiceLocator services;
+
+  NotebookCoreService notebookSvc(m_context);
+  services.registerService<NotebookCoreService>(&notebookSvc);
+
+  StrayErrorCredentialsStore strayStore(services);
+  services.registerService<SyncCredentialsStore>(&strayStore);
+
+  TestableSyncService syncSvc(services);
+  services.registerService<SyncService>(&syncSvc);
+
+  const QString notebookId = QStringLiteral("nb-stray-error");
+
+  QSignalSpy enableSpy(&syncSvc, &SyncService::enableFinished);
+
+  syncSvc.enableSyncForNotebook(notebookId, QStringLiteral("https://example.invalid/repo.git"),
+                                QStringLiteral("fake-pat"));
+
+  // Let the store emit its stray generic credentialsError.
+  pumpEvents();
+
+  // The enable flow filters on credentialsStoreError, so the stray generic
+  // credentialsError must NOT drive an enable failure. Since credentialsStored
+  // was never emitted either, the enable simply stays pending and no
+  // enableFinished(VXCORE_ERR_UNKNOWN, <stray msg>) is produced.
+  for (int i = 0; i < enableSpy.count(); ++i) {
+    const auto args = enableSpy.at(i);
+    const auto code = static_cast<VxCoreError>(args.at(1).toInt());
+    const QString msg = args.at(2).toString();
+    QVERIFY2(!(code == VXCORE_ERR_UNKNOWN && msg.contains(QStringLiteral("not found"))),
+             qPrintable(QStringLiteral("Stray credentialsError wrongly aborted enable: %1").arg(msg)));
+  }
 
   syncSvc.shutdown();
 }

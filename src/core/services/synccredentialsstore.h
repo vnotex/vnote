@@ -16,13 +16,16 @@ class ServiceLocator;
 //
 // Per ADR-9, this store has NO plaintext fallback. When QtKeychain is
 // unavailable (built with VNOTE_USE_KEYCHAIN=OFF, or runtime keychain init
-// failure), every public method emits credentialsError(notebookId,
-// "secure-keychain-unavailable") instead of falling back to plaintext storage.
+// failure), every public method emits an error signal
+// (credentialsStoreError for storeCredentials, credentialsError for
+// retrieve/delete) carrying "secure-keychain-unavailable" instead of falling
+// back to plaintext storage.
 //
 // All public methods are asynchronous: they return immediately and emit a
 // completion signal (credentialsStored / credentialsRetrieved /
-// credentialsDeleted) or credentialsError on the caller's thread on the next
-// event-loop tick.
+// credentialsDeleted) or an error signal (credentialsStoreError for the store
+// path, credentialsError for retrieve/delete) on the caller's thread on the
+// next event-loop tick.
 //
 // PAT values are never held in memory. Each async call routes directly to the
 // OS keychain. Only a lightweight existence cache (notebook IDs only, no PATs)
@@ -61,7 +64,9 @@ public:
 
 public slots:
   // Asynchronously store a PAT for the given notebook.
-  // Emits credentialsStored on success, credentialsError on failure.
+  // Emits credentialsStored on success, credentialsStoreError on failure
+  // (a dedicated signal so store-awaiting callers can filter store failures
+  // without catching unrelated retrieve/delete errors for the same id).
   virtual void storeCredentials(const QString &p_notebookId, const QString &p_pat);
 
   // Asynchronously retrieve the PAT for the given notebook.
@@ -87,6 +92,12 @@ signals:
   void credentialsRetrieved(const QString &p_notebookId, const QString &p_pat);
   void credentialsDeleted(const QString &p_notebookId);
   void credentialsError(const QString &p_notebookId, const QString &p_errorString);
+
+  // Emitted ONLY on storeCredentials() failure paths, so callers awaiting a
+  // specific store can filter it without catching unrelated retrieve/delete
+  // errors for the same notebook id. Generic credentialsError remains for
+  // retrieve/delete failures and cache maintenance.
+  void credentialsStoreError(const QString &p_notebookId, const QString &p_errorString);
 
 private:
   ServiceLocator &m_services;
