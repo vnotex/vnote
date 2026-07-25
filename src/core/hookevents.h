@@ -73,6 +73,7 @@ struct FileOpenEvent {
   int cursorOffset = -1; // QTextDocument caret position from a template "@@" mark, or -1.
   QString anchor; // Heading anchor for scroll-to-heading navigation.
   bool alwaysNewWindow = false;
+  bool detachedView = false; // Open in a detached view split (--detached-view).
   QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
   int searchOptions = 0;           // FindOptions serialized as int
   int searchCurrentMatchLine = -1; // line for current-match bias

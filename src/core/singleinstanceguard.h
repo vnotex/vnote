@@ -30,15 +30,19 @@ public:
 public:
   void requestOpenFiles(const QStringList &p_files);
 
+  void requestOpenFilesDetached(const QStringList &p_files);
+
   void requestShow();
 
 signals:
   void openFilesRequested(const QStringList &p_files);
 
+  void openFilesDetachedRequested(const QStringList &p_files);
+
   void showRequested();
 
 private:
-  enum OpCode { Null = 0, Show, OpenFiles };
+  enum OpCode { Null = 0, Show, OpenFiles, OpenFilesDetached };
 
   struct Command {
     void clear() {
@@ -57,6 +61,11 @@ private:
   void setupServer();
 
   void receiveCommand(QLocalSocket *p_socket);
+
+  // Shared body for requestOpenFiles / requestOpenFilesDetached: validates the
+  // connection, resolves each path to absolute against THIS process's working
+  // directory, and sends it under p_code. p_what labels the operation in logs.
+  void sendOpenFilesRequest(const QStringList &p_files, OpCode p_code, const char *p_what);
 
   void sendRequest(QLocalSocket *p_socket, OpCode p_code, const QString &p_payload);
 

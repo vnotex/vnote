@@ -122,46 +122,15 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   if (wsSvc && wsSvc->fireViewWindowBeforeOpen(event)) {
     return;
   }
-  if (m_currentWorkspaceId.isEmpty()) {
-    QString wsId;
-    if (wsSvc) {
-      wsId = wsSvc->createWorkspace(generateWorkspaceName());
-    }
-    if (wsId.isEmpty()) {
-      qWarning() << "ViewAreaController::openBuffer: failed to create workspace";
-      return;
-    }
-    auto *wrapper = new WorkspaceWrapper(wsId, this);
-    wrapper->setVisible(true);
-    m_workspaces.insert(wsId, wrapper);
-    if (!m_view) {
-      return;
-    }
-    m_view->addFirstViewSplit(wsId);
-  }
-
-  if (m_currentWorkspaceId.isEmpty()) {
-    qWarning() << "ViewAreaController: no current workspace";
-    return;
-  }
   if (!m_view) {
     return;
   }
 
-  // Check if the buffer is already open in the current workspace.
-  // If so, just activate the existing tab instead of creating a duplicate.
-  ID existingWindowId = m_view->findWindowIdByBufferId(m_currentWorkspaceId, p_buffer.id());
-  if (existingWindowId != InvalidViewWindowId) {
-    qDebug() << "ViewAreaController::openBuffer: buffer already open in workspace,"
-             << "activating existing window:" << existingWindowId;
-    m_view->setCurrentBuffer(m_currentWorkspaceId, p_buffer.id(), true);
-    setCurrentViewWindow(existingWindowId, p_buffer.id());
-    // Apply file open settings to the existing window (scroll + highlight).
-    m_view->applyFileOpenSettings(existingWindowId, p_settings);
-    return;
-  }
+  const bool detached = p_settings.m_detachedView;
 
-  // System default fallback: if no built-in editor exists, open with system default.
+  // System default fallback: if no built-in editor exists, open with system
+  // default. Decided BEFORE creating any workspace so a detached open does not
+  // leave an empty DetachedWindow behind for a non-editable file type.
   auto *factory = m_services.get<ViewWindowFactory>();
   if (!factory || !factory->hasCreator(fileType)) {
     const QString absolutePath = p_buffer.resolvedPath();
@@ -175,8 +144,114 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     return;
   }
 
-  m_view->openBuffer(p_buffer, fileType, m_currentWorkspaceId, p_settings);
+  // Resolve the destination workspace. For a detached (--detached-view) open,
+  // route into the shared per-batch detached workspace instead of the main
+  // current workspace, so all files from one CLI invocation group as tabs in a
+  // single DetachedWindow and the main window's current workspace is untouched.
+  QString targetWs;
+  if (detached) {
+    targetWs = ensureCliDetachedWorkspace();
+    if (targetWs.isEmpty()) {
+      qWarning() << "ViewAreaController::openBuffer: failed to create detached workspace";
+      return;
+    }
+  } else {
+    if (m_currentWorkspaceId.isEmpty()) {
+      QString wsId;
+      if (wsSvc) {
+        wsId = wsSvc->createWorkspace(generateWorkspaceName());
+      }
+      if (wsId.isEmpty()) {
+        qWarning() << "ViewAreaController::openBuffer: failed to create workspace";
+        return;
+      }
+      auto *wrapper = new WorkspaceWrapper(wsId, this);
+      wrapper->setVisible(true);
+      m_workspaces.insert(wsId, wrapper);
+      m_view->addFirstViewSplit(wsId);
+    }
+
+    if (m_currentWorkspaceId.isEmpty()) {
+      qWarning() << "ViewAreaController: no current workspace";
+      return;
+    }
+    targetWs = m_currentWorkspaceId;
+  }
+
+  // Check if the buffer is already open in the target workspace.
+  // If so, just activate the existing tab instead of creating a duplicate.
+  ID existingWindowId = m_view->findWindowIdByBufferId(targetWs, p_buffer.id());
+  if (existingWindowId != InvalidViewWindowId) {
+    qDebug() << "ViewAreaController::openBuffer: buffer already open in workspace,"
+             << "activating existing window:" << existingWindowId;
+    m_view->setCurrentBuffer(targetWs, p_buffer.id(), true);
+    // For a detached open, activate only the detached tab; do NOT mutate the
+    // main window's current-window / current-buffer tracking.
+    if (!detached) {
+      setCurrentViewWindow(existingWindowId, p_buffer.id());
+    }
+    // Apply file open settings to the existing window (scroll + highlight).
+    m_view->applyFileOpenSettings(existingWindowId, p_settings);
+    return;
+  }
+
+  // ViewArea2::openBuffer synchronously calls back into onViewWindowOpened; for
+  // a detached open it passes targetWs as the detached workspace id so the
+  // buffer registers there without disturbing the main window's current state.
+  m_view->openBuffer(p_buffer, fileType, targetWs, p_settings);
 }
+
+QString ViewAreaController::ensureCliDetachedWorkspace() {
+  if (!m_cliDetachedWorkspaceId.isEmpty()) {
+    return m_cliDetachedWorkspaceId;
+  }
+  if (!m_view) {
+    return QString();
+  }
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+
+  // Model the CLI detached window as a view-split creation so plugins observe it
+  // through the same hooks as a manual detach (parity with detachViewWindow).
+  ViewSplitCreateEvent createEvent;
+  createEvent.direction = static_cast<int>(Direction::Right);
+  if (wsSvc && wsSvc->fireViewSplitBeforeCreate(createEvent)) {
+    return QString();
+  }
+
+  QString newWsId;
+  if (wsSvc) {
+    newWsId = wsSvc->createWorkspace(generateWorkspaceName());
+  }
+  if (newWsId.isEmpty()) {
+    qWarning() << "ViewAreaController::ensureCliDetachedWorkspace: failed to create workspace";
+    return QString();
+  }
+
+  auto *wrapper = new WorkspaceWrapper(newWsId, this);
+  // The detached workspace hosts a real (visible) ViewSplit2 inside the
+  // DetachedWindow; mark the wrapper visible (mirrors detachViewWindow).
+  wrapper->setVisible(true);
+  m_workspaces.insert(newWsId, wrapper);
+  m_detachedWorkspaceIds.insert(newWsId);
+
+  m_view->hostWorkspaceInDetachedWindow(newWsId);
+
+  if (wsSvc) {
+    createEvent.newWorkspaceId = newWsId;
+    wsSvc->fireViewSplitAfterCreate(createEvent);
+  }
+
+  m_cliDetachedWorkspaceId = newWsId;
+  // Reset after the current synchronous CLI batch completes so the next
+  // invocation opens into a fresh detached window. Between queued startup
+  // batches MainWindow2 also calls resetCliDetachedBatch() synchronously; this
+  // singleShot then becomes a harmless no-op (id already cleared).
+  QTimer::singleShot(0, this, [this]() { m_cliDetachedWorkspaceId.clear(); });
+  return newWsId;
+}
+
+void ViewAreaController::resetCliDetachedBatch() { m_cliDetachedWorkspaceId.clear(); }
 
 void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content,
                                            const QStringList &p_pathSegments,
@@ -278,23 +353,32 @@ void ViewAreaController::openWidgetContent(vnotex::IViewWindowContent *p_content
 }
 
 void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
-                                            const FileOpenSettings &p_settings) {
+                                            const FileOpenSettings &p_settings,
+                                            const QString &p_detachedWorkspaceId) {
   if (p_windowId == InvalidViewWindowId) {
     return;
   }
 
+  // For a detached (--detached-view) open, register the buffer into the detached
+  // workspace and leave the main window's current window/split untouched. This
+  // is threaded in explicitly (no controller-global state mutation), so it is
+  // safe even if a hook below reentrantly opens another buffer.
+  const bool detached = !p_detachedWorkspaceId.isEmpty();
+  const QString registerWs = detached ? p_detachedWorkspaceId : m_currentWorkspaceId;
+
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (m_shouldPropagateToCore) {
-    if (wsSvc && !m_currentWorkspaceId.isEmpty()) {
-      wsSvc->addBuffer(m_currentWorkspaceId, p_buffer.id());
+    if (wsSvc && !registerWs.isEmpty()) {
+      wsSvc->addBuffer(registerWs, p_buffer.id());
     }
   }
   // Only track the current window during normal operation, not during session
   // restore. During restore, every opened buffer would overwrite m_currentWindowId,
   // leaving it pointing to the last-opened buffer instead of the intended current
   // one. The singleShot(0) in ViewArea2 re-syncs from ground-truth UI state after
-  // all deferred Qt signals have settled.
-  if (m_shouldPropagateToCore) {
+  // all deferred Qt signals have settled. For a detached open, do NOT retarget
+  // the main window's current window either.
+  if (m_shouldPropagateToCore && !detached) {
     m_currentWindowId = p_windowId;
   }
 
@@ -305,7 +389,7 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
     wsSvc->fireViewWindowAfterOpen(ha);
   }
 
-  if (p_settings.m_focus) {
+  if (p_settings.m_focus && !detached) {
     if (m_view) {
       m_view->setCurrentViewSplit(m_currentWorkspaceId, true);
     }
@@ -1823,6 +1907,7 @@ void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
   settings.m_cursorOffset = p_event.cursorOffset;
   settings.m_anchor = p_event.anchor;
   settings.m_alwaysNewWindow = p_event.alwaysNewWindow;
+  settings.m_detachedView = p_event.detachedView;
   // Reconstruct SearchHighlightContext from event's search fields.
   if (!p_event.searchPatterns.isEmpty()) {
     settings.m_searchHighlight.m_patterns = p_event.searchPatterns;

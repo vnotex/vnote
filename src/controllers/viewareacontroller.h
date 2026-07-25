@@ -82,9 +82,14 @@ public:
   // Called by the view after it has successfully created a ViewWindow2
   // in response to m_view->openBuffer().
   // @p_windowId: the ID the view assigned to the new window.
+  // @p_detachedWorkspaceId: when non-empty, the buffer was opened into a
+  //   detached (--detached-view) workspace; register it there and do NOT retarget
+  //   the main window's current window/split. When empty, normal behavior using
+  //   the current workspace.
   // Fires the after-open hook and updates current window/workspace tracking.
   void onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
-                          const FileOpenSettings &p_settings);
+                          const FileOpenSettings &p_settings,
+                          const QString &p_detachedWorkspaceId = QString());
 
   // Called by the view after a window was successfully destroyed.
   // Updates tracking state, records closed tab for reopen, and emits windowsChanged.
@@ -177,6 +182,11 @@ public:
   // Generate a default workspace name like "Workspace 1", "Workspace 2", etc.
   // Finds the next available number by scanning existing workspace names.
   QString generateWorkspaceName() const;
+
+  // Clear the cached per-batch CLI detached workspace so the next
+  // --detached-view invocation opens into a fresh detached window. Called by
+  // MainWindow2 between queued detached batches (deterministic, no timer race).
+  void resetCliDetachedBatch();
 
   // Get the display name of a workspace by ID. Returns empty string if not found.
   QString getWorkspaceName(const QString &p_workspaceId) const;
@@ -300,6 +310,12 @@ private:
   // Handle FileAfterOpen hook: open a ViewWindow2 for the newly opened buffer.
   void onFileAfterOpen(const FileOpenEvent &p_event);
 
+  // Lazily create (once per synchronous CLI batch) the shared detached workspace
+  // used to host --detached-view file opens, host it in a DetachedWindow, and
+  // return its id. The cached id is cleared via a QTimer::singleShot(0) after the
+  // batch finishes so a subsequent invocation gets a fresh detached window.
+  QString ensureCliDetachedWorkspace();
+
   // Handle NodeAfterRename hook: update buffer paths and tab titles.
   void onNodeAfterRename(const NodeRenameEvent &p_event);
 
@@ -362,6 +378,12 @@ private:
   // tree). Used to suppress the generic empty-workspace auto-remove path in
   // onViewWindowClosed for detached workspaces, which are torn down by ViewArea2.
   QSet<QString> m_detachedWorkspaceIds;
+
+  // Shared detached workspace id for the current synchronous CLI --detached-view
+  // batch. Empty between batches; set by ensureCliDetachedWorkspace() and reset
+  // to empty via a queued singleShot once the batch completes (or synchronously
+  // by resetCliDetachedBatch() between queued batches at startup).
+  QString m_cliDetachedWorkspaceId;
 
   // Timer for periodic external file change polling (active buffer only).
   QTimer *m_fileCheckTimer = nullptr;

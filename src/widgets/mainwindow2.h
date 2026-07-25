@@ -4,6 +4,8 @@
 #include <QHash>
 #include <QMainWindow>
 #include <QString>
+#include <QStringList>
+#include <QVector>
 
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
@@ -65,14 +67,15 @@ public:
 
   QWidget *getDockWidget(DockWidgetHelper::DockType p_dockType) const;
 
-  void kickOffPostInit(const QStringList &p_pathsToOpen);
+  void kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached = false);
 
   // Open the given files/folders (e.g. command-line paths or files forwarded
   // from a second instance). Files are opened as external buffers so they can
   // be viewed/edited without a notebook. If post-initialization has not yet
   // completed (workspace/core propagation still disabled during session
   // restore), the paths are queued and opened once startup finishes.
-  void openFiles(const QStringList &p_paths);
+  // @p_detached: open the files in a single detached view split.
+  void openFiles(const QStringList &p_paths, bool p_detached = false);
 
   void setupNavigationMode();
 
@@ -167,7 +170,14 @@ private:
 
   // Actually open the resolved paths as external buffers. Assumes the view
   // area is ready to receive buffers.
-  void doOpenFiles(const QStringList &p_paths);
+  // @p_detached: open the files in a single detached view split.
+  void doOpenFiles(const QStringList &p_paths, bool p_detached = false);
+
+  // Drain m_pendingOpenBatches in arrival order once startup finishes. Detached
+  // batches reset the controller's per-batch detached workspace synchronously
+  // after each batch, so every queued --detached-view invocation opens into its
+  // own detached window without relying on timer-ordering.
+  void drainPendingOpenBatches();
   void setupSystemTray();
 
   // Register the global (system-wide) wake-up hotkey (Global_WakeUp) to show the
@@ -260,12 +270,18 @@ private:
 
   // True once kickOffPostInit's deferred startup work has completed and the
   // view area has re-enabled core propagation. Until then, openFiles() queues
-  // its paths in m_pendingOpenPaths instead of opening immediately.
+  // its paths in m_pendingOpenBatches instead of opening immediately.
   bool m_postInitComplete = false;
 
-  // Paths received (command-line or forwarded from a second instance) before
-  // post-init completed; drained once startup finishes.
-  QStringList m_pendingOpenPaths;
+  // Command-line / forwarded paths queued before post-init completed; drained
+  // in arrival order once startup finishes. Each batch is one invocation so the
+  // normal/detached ordering between separate invocations is preserved, and a
+  // detached batch opens into its own detached window.
+  struct PendingOpenBatch {
+    QStringList m_paths;
+    bool m_detached = false;
+  };
+  QVector<PendingOpenBatch> m_pendingOpenBatches;
 
   // -1: do not request to quit;
   // 0 and above: exit code.

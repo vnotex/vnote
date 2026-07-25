@@ -64,13 +64,23 @@ bool SingleInstanceGuard::tryRun() {
 }
 
 void SingleInstanceGuard::requestOpenFiles(const QStringList &p_files) {
+  sendOpenFilesRequest(p_files, OpCode::OpenFiles, "open files");
+}
+
+void SingleInstanceGuard::requestOpenFilesDetached(const QStringList &p_files) {
+  sendOpenFilesRequest(p_files, OpCode::OpenFilesDetached, "open files detached");
+}
+
+void SingleInstanceGuard::sendOpenFilesRequest(const QStringList &p_files, OpCode p_code,
+                                               const char *p_what) {
   if (p_files.isEmpty()) {
     return;
   }
 
   Q_ASSERT(!m_online);
   if (!m_client || m_client->state() != QLocalSocket::ConnectedState) {
-    qWarning() << "failed to request open files" << m_client->errorString();
+    qWarning() << "failed to request" << p_what
+               << (m_client ? m_client->errorString() : QStringLiteral("no client"));
     return;
   }
 
@@ -90,7 +100,7 @@ void SingleInstanceGuard::requestOpenFiles(const QStringList &p_files) {
     return;
   }
 
-  sendRequest(m_client.data(), OpCode::OpenFiles, absFiles.join(c_stringListSeparator));
+  sendRequest(m_client.data(), p_code, absFiles.join(c_stringListSeparator));
 }
 
 void SingleInstanceGuard::requestShow() {
@@ -220,6 +230,15 @@ void SingleInstanceGuard::receiveCommand(QLocalSocket *p_socket) {
       inStream >> payload;
       const auto files = payload.split(c_stringListSeparator);
       emit openFilesRequested(files);
+      break;
+    }
+
+    case OpCode::OpenFilesDetached: {
+      Q_ASSERT(m_command.m_size != 0);
+      QString payload;
+      inStream >> payload;
+      const auto files = payload.split(c_stringListSeparator);
+      emit openFilesDetachedRequested(files);
       break;
     }
 

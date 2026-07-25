@@ -299,7 +299,7 @@ void MainWindow2::setupNavigationMode() {
   }
 }
 
-void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
+void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached) {
   // Restore notebook explorer state from session config.
   auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
 
@@ -337,10 +337,14 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen) {
   // corePropagationReady handler once the view area is ready. Queuing here
   // (before the deferred lambda above) guarantees the paths are present when
   // the ready signal fires.
-  m_pendingOpenPaths.append(p_pathsToOpen);
+  if (p_detached) {
+    m_pendingOpenBatches.append({p_pathsToOpen, true});
+  } else {
+    m_pendingOpenBatches.append({p_pathsToOpen, false});
+  }
 }
 
-void MainWindow2::openFiles(const QStringList &p_paths) {
+void MainWindow2::openFiles(const QStringList &p_paths, bool p_detached) {
   if (p_paths.isEmpty()) {
     return;
   }
@@ -348,14 +352,14 @@ void MainWindow2::openFiles(const QStringList &p_paths) {
   // If startup is still in progress, queue the paths and let the post-init
   // drain open them once the view area is ready.
   if (!m_postInitComplete) {
-    m_pendingOpenPaths.append(p_paths);
+    m_pendingOpenBatches.append({p_paths, p_detached});
     return;
   }
 
-  doOpenFiles(p_paths);
+  doOpenFiles(p_paths, p_detached);
 }
 
-void MainWindow2::doOpenFiles(const QStringList &p_paths) {
+void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
   if (p_paths.isEmpty()) {
     return;
   }
@@ -393,7 +397,25 @@ void MainWindow2::doOpenFiles(const QStringList &p_paths) {
     nodeId.relativePath = absolutePath;
 
     FileOpenSettings settings;
+    settings.m_detachedView = p_detached;
     bufferSvc->openBuffer(nodeId, settings);
+  }
+}
+
+void MainWindow2::drainPendingOpenBatches() {
+  const auto batches = m_pendingOpenBatches;
+  m_pendingOpenBatches.clear();
+
+  ViewAreaController *controller = m_viewArea ? m_viewArea->getController() : nullptr;
+  for (const auto &batch : batches) {
+    doOpenFiles(batch.m_paths, batch.m_detached);
+    // Reset the controller's per-batch detached workspace synchronously after
+    // each detached invocation so the NEXT detached invocation opens into a
+    // fresh detached window. This is deterministic and does not depend on
+    // timer-firing order.
+    if (batch.m_detached && controller) {
+      controller->resetCliDetachedBatch();
+    }
   }
 }
 
@@ -612,9 +634,9 @@ void MainWindow2::setupViewArea() {
   // ordering, so buffers are always registered in their vxcore workspace.
   connect(m_viewArea, &ViewArea2::corePropagationReady, this, [this]() {
     m_postInitComplete = true;
-    const auto pending = m_pendingOpenPaths;
-    m_pendingOpenPaths.clear();
-    doOpenFiles(pending);
+    // Drain queued opens in arrival order; detached batches each get a fresh
+    // detached window.
+    drainPendingOpenBatches();
   });
 }
 

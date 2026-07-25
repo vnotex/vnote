@@ -83,6 +83,10 @@ struct FileOpenSettings {
   // Whether always open a new window for file.
   bool m_alwaysNewWindow = false;
 
+  // Whether to open the file in a detached view split (top-level DetachedWindow
+  // hosting a dedicated vxcore workspace). Used by the --detached-view CLI flow.
+  bool m_detachedView = false;
+
   // Search highlight context for in-page highlighting after open.
   SearchHighlightContext m_searchHighlight;
 
@@ -97,6 +101,7 @@ struct FileOpenSettings {
     map[QStringLiteral("lineNumber")] = m_lineNumber;
     map[QStringLiteral("cursorOffset")] = m_cursorOffset;
     map[QStringLiteral("alwaysNewWindow")] = m_alwaysNewWindow;
+    map[QStringLiteral("detachedView")] = m_detachedView;
     if (!m_anchor.isEmpty()) {
       map[QStringLiteral("anchor")] = m_anchor;
     }
@@ -133,6 +138,9 @@ struct FileOpenSettings {
     }
     if (p_map.contains(QStringLiteral("alwaysNewWindow"))) {
       s.m_alwaysNewWindow = p_map.value(QStringLiteral("alwaysNewWindow")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("detachedView"))) {
+      s.m_detachedView = p_map.value(QStringLiteral("detachedView")).toBool();
     }
     if (p_map.contains(QStringLiteral("anchor"))) {
       s.m_anchor = p_map.value(QStringLiteral("anchor")).toString();

@@ -35,6 +35,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
                                           QCoreApplication::translate(c_context, "Watch theme folder for changes."));
   parser.addOption(watchThemesOpt);
 
+  const QCommandLineOption detachedViewOpt(
+      "detached-view", QCoreApplication::translate(c_context, "Open files in a detached view split."));
+  parser.addOption(detachedViewOpt);
+
   // WebEngine options.
   // No need to handle them. Just add them to the parser to avoid parse error.
   {
@@ -86,6 +90,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
 
   if (parser.isSet(watchThemesOpt)) {
     m_watchThemes = true;
+  }
+
+  if (parser.isSet(detachedViewOpt)) {
+    m_detachedView = true;
   }
 
   return ParseResult::Ok;

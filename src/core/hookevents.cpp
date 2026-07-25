@@ -108,6 +108,7 @@ QVariantMap FileOpenEvent::toVariantMap() const {
   m[QStringLiteral("cursorOffset")] = cursorOffset;
   m[QStringLiteral("anchor")] = anchor;
   m[QStringLiteral("alwaysNewWindow")] = alwaysNewWindow;
+  m[QStringLiteral("detachedView")] = detachedView;
   if (!searchPatterns.isEmpty()) {
     m[QStringLiteral("searchPatterns")] = QVariant::fromValue(searchPatterns);
     m[QStringLiteral("searchOptions")] = searchOptions;
@@ -130,6 +131,7 @@ FileOpenEvent FileOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   e.cursorOffset = p_args.value(QStringLiteral("cursorOffset"), -1).toInt();
   e.anchor = p_args.value(QStringLiteral("anchor")).toString();
   e.alwaysNewWindow = p_args.value(QStringLiteral("alwaysNewWindow")).toBool();
+  e.detachedView = p_args.value(QStringLiteral("detachedView")).toBool();
   e.searchPatterns = p_args.value(QStringLiteral("searchPatterns")).toStringList();
   e.searchOptions = p_args.value(QStringLiteral("searchOptions")).toInt();
   e.searchCurrentMatchLine = p_args.value(QStringLiteral("searchCurrentMatchLine"), -1).toInt();

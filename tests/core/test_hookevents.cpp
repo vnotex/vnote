@@ -23,6 +23,7 @@ private slots:
   void testNodeMoveEventRoundTrip();
   void testFileOpenEventRoundTrip();
   void testFileOpenSettingsCursorOffsetTransport();
+  void testFileOpenSettingsDetachedViewTransport();
   void testBufferEventRoundTrip();
   void testFileExternalChangeEventRoundTrip();
   void testViewWindowOpenEventRoundTrip();
@@ -159,6 +160,7 @@ void TestHookEvents::testFileOpenEventRoundTrip() {
   orig.lineNumber = 55;
   orig.cursorOffset = 123;
   orig.alwaysNewWindow = true;
+  orig.detachedView = true;
 
   QVariantMap map = orig.toVariantMap();
   FileOpenEvent restored = FileOpenEvent::fromVariantMap(map);
@@ -174,6 +176,7 @@ void TestHookEvents::testFileOpenEventRoundTrip() {
   QCOMPARE(restored.lineNumber, orig.lineNumber);
   QCOMPARE(restored.cursorOffset, orig.cursorOffset);
   QCOMPARE(restored.alwaysNewWindow, orig.alwaysNewWindow);
+  QCOMPARE(restored.detachedView, orig.detachedView);
 }
 
 // Mirrors the production transport: BufferService projects FileOpenSettings into a
@@ -199,6 +202,38 @@ void TestHookEvents::testFileOpenSettingsCursorOffsetTransport() {
   restored.m_cursorOffset = afterBoundary.cursorOffset;
 
   QCOMPARE(restored.m_cursorOffset, 77);
+}
+
+// The --detached-view flag must survive the full transport: FileOpenSettings ↔
+// its variant map, the settings→event field copy (bufferservice.cpp), the event
+// hook-boundary serialization, and the event→settings reconstruction
+// (viewareacontroller.cpp). Missing any layer silently drops the flag.
+void TestHookEvents::testFileOpenSettingsDetachedViewTransport() {
+  FileOpenSettings src;
+  src.m_detachedView = true;
+
+  // FileOpenSettings variant-map round-trip (used by hook argument bridging).
+  FileOpenSettings viaMap = FileOpenSettings::fromVariantMap(src.toVariantMap());
+  QCOMPARE(viaMap.m_detachedView, true);
+
+  // 1. BufferService projection (field copy).
+  FileOpenEvent event;
+  event.detachedView = src.m_detachedView;
+
+  // 2. Hook-boundary serialization round-trip.
+  FileOpenEvent afterBoundary = FileOpenEvent::fromVariantMap(event.toVariantMap());
+  QCOMPARE(afterBoundary.detachedView, true);
+
+  // 3. ViewAreaController reconstruction.
+  FileOpenSettings restored;
+  restored.m_detachedView = afterBoundary.detachedView;
+  QCOMPARE(restored.m_detachedView, true);
+
+  // Default stays false when unset.
+  FileOpenSettings def;
+  FileOpenEvent defEvent = FileOpenEvent::fromVariantMap(FileOpenEvent().toVariantMap());
+  QCOMPARE(def.m_detachedView, false);
+  QCOMPARE(defEvent.detachedView, false);
 }
 
 void TestHookEvents::testBufferEventRoundTrip() {

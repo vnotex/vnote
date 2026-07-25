@@ -888,6 +888,12 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                            const QString &p_workspaceId, const FileOpenSettings &p_settings) {
   auto *split = splitForWorkspace(p_workspaceId);
   if (!split) {
+    // Detached splits live outside m_splits (tracked in m_detachedWindows);
+    // fall back to them so a CLI --detached-view open can target a detached
+    // workspace that has no entry in the main splitter tree.
+    split = detachedSplitForWorkspace(p_workspaceId);
+  }
+  if (!split) {
     qWarning() << "ViewArea2::openBuffer: workspace not found:" << p_workspaceId;
     return;
   }
@@ -907,7 +913,10 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   split->addViewWindow(win);
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
-  m_controller->onViewWindowOpened(id, p_buffer, p_settings);
+  // For a detached (--detached-view) open, pass the target workspace so the
+  // controller registers the buffer there without touching main-window state.
+  m_controller->onViewWindowOpened(id, p_buffer, p_settings,
+                                   p_settings.m_detachedView ? p_workspaceId : QString());
 
   // QTabWidget::addTab does not make the new tab current (except the first).
   // When focus is requested (e.g., restoring the current buffer), explicitly
@@ -1445,6 +1454,11 @@ void ViewArea2::updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
 void ViewArea2::setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
                                  bool p_focus) {
   auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) {
+    // Detached splits live outside m_splits; resolve them so a --detached-view
+    // duplicate open can activate the existing tab in its DetachedWindow.
+    split = detachedSplitForWorkspace(p_workspaceId);
+  }
   if (!split) {
     qWarning() << "ViewArea2::setCurrentBuffer: no split for workspace:" << p_workspaceId;
     return;

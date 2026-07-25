@@ -588,8 +588,14 @@ int main(int argc, char *argv[]) {
     SingleInstanceGuard guard;
     bool canRun = guard.tryRun();
     if (!canRun) {
-      guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
-      guard.requestShow();
+      if (cmdOptions.m_detachedView) {
+        // Forward as a detached-view open. Do NOT raise/show the running main
+        // window; only the new detached window should appear.
+        guard.requestOpenFilesDetached(cmdOptions.m_pathsToOpen);
+      } else {
+        guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
+        guard.requestShow();
+      }
       ret = 0;
       break;
     }
@@ -655,18 +661,26 @@ int main(int argc, char *argv[]) {
     // Handle requests forwarded from a second instance (files passed to
     // "Open with VNote" while VNote is already running, plus raise/show).
     QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &mainWindow,
-                     &MainWindow2::openFiles);
+                     [&mainWindow](const QStringList &p_files) { mainWindow.openFiles(p_files); });
+    QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &mainWindow,
+                     [&mainWindow](const QStringList &p_files) {
+                       mainWindow.openFiles(p_files, true);
+                     });
     QObject::connect(&guard, &SingleInstanceGuard::showRequested, &mainWindow,
                      &MainWindow2::showMainWindow);
 
-    mainWindow.show();
+    if (cmdOptions.m_detachedView) {
+      mainWindow.showMinimized();
+    } else {
+      mainWindow.show();
+    }
     qInfo() << "MainWindow2 shown";
 
     // Let MainWindow show first to decide the screen on which app is running.
     WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
     themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
 
-    mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen);
+    mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen, cmdOptions.m_detachedView);
 
     // Run event loop
     ret = app.exec();

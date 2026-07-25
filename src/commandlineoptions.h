@@ -26,6 +26,9 @@ public:
 
   // Whether to watch theme folder for changes
   bool m_watchThemes = false;
+
+  // Whether to open the provided files in a detached view split.
+  bool m_detachedView = false;
 };
 
 #endif // COMMANDLINEOPTIONS_H
