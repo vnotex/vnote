@@ -349,7 +349,8 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   // If single split, try to switch to a hidden workspace instead.
   // Suppressed during bulk close operations (removeWorkspace, closeAll).
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
-  if (!m_suppressAutoRemove && m_shouldPropagateToCore && !p_workspaceId.isEmpty()) {
+  if (!m_suppressAutoRemove && m_shouldPropagateToCore && !p_workspaceId.isEmpty() &&
+      !m_detachedWorkspaceIds.contains(p_workspaceId)) {
     if (wsSvc) {
       QJsonObject wsConfig = wsSvc->getWorkspace(p_workspaceId);
       QJsonArray bufferIds = wsConfig.value(QStringLiteral("bufferIds")).toArray();
@@ -786,19 +787,9 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
     return;
   }
 
-  // Transfer buffer registration between workspaces in vxcore.
-  // Order matters: addBuffer(dst) BEFORE removeBuffer(src) so the buffer never
-  // becomes orphan. WorkspaceManager::RemoveBufferFromWorkspace auto-closes a
-  // buffer that is no longer in any workspace (workspace_manager.cpp:244-249);
-  // a removeBuffer-first ordering would destroy the buffer mid-move and leave
-  // the view window with a dead ID. addBuffer is idempotent so the case where
-  // dst already holds the buffer (legacy clone-on-split path) remains safe.
-  if (m_shouldPropagateToCore && !p_bufferId.isEmpty()) {
-    if (wsSvc) {
-      wsSvc->addBuffer(p_dstWorkspaceId, p_bufferId);
-      wsSvc->removeBuffer(p_srcWorkspaceId, p_bufferId);
-    }
-  }
+  // Transfer buffer registration between workspaces in vxcore (add-before-remove
+  // to avoid vxcore orphan auto-close; see transferBufferRegistration).
+  transferBufferRegistration(p_srcWorkspaceId, p_dstWorkspaceId, p_bufferId);
 
   if (m_view) {
     m_view->moveViewWindowToSplit(p_windowId, p_srcWorkspaceId, p_dstWorkspaceId);
@@ -808,6 +799,195 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
     wsSvc->fireViewWindowAfterMove(event);
   }
   emit windowsChanged();
+}
+
+bool ViewAreaController::transferBufferRegistration(const QString &p_srcWorkspaceId,
+                                                    const QString &p_dstWorkspaceId,
+                                                    const QString &p_bufferId) {
+  // Order matters: addBuffer(dst) BEFORE removeBuffer(src) so the buffer never
+  // becomes orphan. WorkspaceManager::RemoveBufferFromWorkspace auto-closes a
+  // buffer that is no longer in any workspace (workspace_manager.cpp:244-249);
+  // a removeBuffer-first ordering would destroy the buffer mid-move and leave
+  // the view window with a dead ID. addBuffer is idempotent so the case where
+  // dst already holds the buffer (legacy clone-on-split path) remains safe.
+  if (!m_shouldPropagateToCore || p_bufferId.isEmpty()) {
+    return true;
+  }
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return true;
+  }
+  if (!wsSvc->addBuffer(p_dstWorkspaceId, p_bufferId)) {
+    qWarning() << "ViewAreaController::transferBufferRegistration: addBuffer to" << p_dstWorkspaceId
+               << "failed for buffer" << p_bufferId << "- leaving source registration intact";
+    return false;
+  }
+  wsSvc->removeBuffer(p_srcWorkspaceId, p_bufferId);
+  return true;
+}
+
+bool ViewAreaController::detachViewWindow(const QString &p_srcWorkspaceId, ID p_windowId,
+                                          const QString &p_bufferId) {
+  if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId || !m_view) {
+    return false;
+  }
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+
+  // Let plugins veto the detach up-front (models it as a view-split creation).
+  ViewSplitCreateEvent createEvent;
+  createEvent.workspaceId = p_srcWorkspaceId;
+  createEvent.direction = static_cast<int>(Direction::Right);
+  if (wsSvc && wsSvc->fireViewSplitBeforeCreate(createEvent)) {
+    return false;
+  }
+
+  QString newWsId;
+  if (wsSvc) {
+    newWsId = wsSvc->createWorkspace(generateWorkspaceName());
+  }
+  if (newWsId.isEmpty()) {
+    qWarning() << "ViewAreaController::detachViewWindow: failed to create workspace";
+    return false;
+  }
+
+  auto *wrapper = new WorkspaceWrapper(newWsId, this);
+  // A detached workspace hosts a real (visible) ViewSplit2 inside the
+  // DetachedWindow, so mark the wrapper visible; its cached-window list stays
+  // empty because the split owns the windows directly.
+  wrapper->setVisible(true);
+  m_workspaces.insert(newWsId, wrapper);
+  m_detachedWorkspaceIds.insert(newWsId);
+
+  // Lambda to fully undo the just-created workspace on any failure below.
+  auto rollback = [this, wsSvc, newWsId]() {
+    if (wsSvc) {
+      wsSvc->deleteWorkspace(newWsId);
+    }
+    if (m_workspaces.contains(newWsId)) {
+      delete m_workspaces.take(newWsId);
+    }
+    m_detachedWorkspaceIds.remove(newWsId);
+  };
+
+  // Register the buffer in the destination BEFORE removing it from the source so
+  // vxcore never sees the buffer as orphaned (which would auto-close it).
+  if (m_shouldPropagateToCore && wsSvc && !p_bufferId.isEmpty()) {
+    if (!wsSvc->addBuffer(newWsId, p_bufferId)) {
+      qWarning() << "ViewAreaController::detachViewWindow: addBuffer failed, aborting";
+      rollback();
+      return false;
+    }
+  }
+
+  // Model the tab transfer as a ViewWindow move so move hooks can veto it.
+  ViewWindowMoveEvent moveEvent;
+  moveEvent.windowId = p_windowId;
+  moveEvent.srcWorkspaceId = p_srcWorkspaceId;
+  moveEvent.dstWorkspaceId = newWsId;
+  moveEvent.direction = static_cast<int>(Direction::Right);
+  moveEvent.bufferId = p_bufferId;
+  if (wsSvc && wsSvc->fireViewWindowBeforeMove(moveEvent)) {
+    if (m_shouldPropagateToCore && wsSvc && !p_bufferId.isEmpty()) {
+      wsSvc->removeBuffer(newWsId, p_bufferId);
+    }
+    rollback();
+    return false;
+  }
+
+  m_view->hostWorkspaceInDetachedWindow(newWsId);
+  if (!m_view->moveViewWindowToDetached(p_windowId, p_srcWorkspaceId, newWsId)) {
+    // The view destroyed the empty detached-window shell; undo core state. The
+    // window is still in the source split, so leave the source registration.
+    if (m_shouldPropagateToCore && wsSvc && !p_bufferId.isEmpty()) {
+      wsSvc->removeBuffer(newWsId, p_bufferId);
+    }
+    rollback();
+    return false;
+  }
+
+  // Transfer succeeded: drop the source registration.
+  if (m_shouldPropagateToCore && wsSvc && !p_bufferId.isEmpty()) {
+    wsSvc->removeBuffer(p_srcWorkspaceId, p_bufferId);
+  }
+
+  if (wsSvc) {
+    createEvent.newWorkspaceId = newWsId;
+    wsSvc->fireViewSplitAfterCreate(createEvent);
+    wsSvc->fireViewWindowAfterMove(moveEvent);
+  }
+
+  emit windowsChanged();
+  emit viewSplitsCountChanged();
+  return true;
+}
+
+void ViewAreaController::reattachDetachedWorkspace(const QString &p_detachedWorkspaceId,
+                                                   const QString &p_targetWorkspaceId,
+                                                   const QStringList &p_bufferIds) {
+  if (p_detachedWorkspaceId.isEmpty()) {
+    return;
+  }
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+
+  // Detached teardown is not user-cancellable (the window is already gone), so we
+  // fire the remove hooks observe-only rather than honoring a veto.
+  ViewSplitRemoveEvent removeEvent;
+  removeEvent.workspaceId = p_detachedWorkspaceId;
+  removeEvent.keepWorkspace = false;
+  if (wsSvc) {
+    wsSvc->fireViewSplitBeforeRemove(removeEvent);
+  }
+
+  // Transfer buffer registration to the reattach target (add before remove to
+  // avoid vxcore orphan auto-close). Skipped when there is no target (last-tab
+  // close teardown), in which case the buffers were already removed by
+  // onViewWindowClosed.
+  bool allTransferred = true;
+  if (m_shouldPropagateToCore && wsSvc && !p_targetWorkspaceId.isEmpty()) {
+    for (const auto &bufferId : p_bufferIds) {
+      if (!bufferId.isEmpty()) {
+        if (!transferBufferRegistration(p_detachedWorkspaceId, p_targetWorkspaceId, bufferId)) {
+          allTransferred = false;
+        }
+      }
+    }
+  }
+
+  if (!allTransferred) {
+    // At least one buffer could not be registered in the target. Deleting the
+    // detached workspace now would strand that buffer (DeleteWorkspace does NOT
+    // run the orphan auto-close path), so keep the detached workspace + wrapper
+    // + tracking intact to avoid losing/leaking the buffer.
+    qCritical() << "ViewAreaController::reattachDetachedWorkspace: some buffers failed to"
+                << "transfer to target" << p_targetWorkspaceId << "- keeping detached workspace"
+                << p_detachedWorkspaceId << "to avoid buffer loss";
+    emit windowsChanged();
+    return;
+  }
+
+  if (wsSvc) {
+    wsSvc->deleteWorkspace(p_detachedWorkspaceId);
+  }
+
+  if (m_workspaces.contains(p_detachedWorkspaceId)) {
+    auto *wrapper = m_workspaces.take(p_detachedWorkspaceId);
+    delete wrapper;
+  }
+  m_detachedWorkspaceIds.remove(p_detachedWorkspaceId);
+
+  if (m_currentWorkspaceId == p_detachedWorkspaceId) {
+    m_currentWorkspaceId.clear();
+    m_currentWindowId = InvalidViewWindowId;
+  }
+
+  if (wsSvc) {
+    wsSvc->fireViewSplitAfterRemove(removeEvent);
+  }
+
+  emit windowsChanged();
+  emit viewSplitsCountChanged();
 }
 
 ID ViewAreaController::getCurrentWindowId() const { return m_currentWindowId; }
@@ -1987,11 +2167,19 @@ void ViewAreaController::onNotebookBeforeClose(HookContext &p_ctx,
 }
 
 void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event) {
-  // Phase 1: Close tabs in visible workspaces.
+  // Phase 1: Close tabs in visible workspaces and detached windows.
   if (m_view) {
-    QStringList visibleWsIds = m_view->getVisibleWorkspaceIds();
+    QStringList targetWsIds = m_view->getVisibleWorkspaceIds();
+    // Detached windows are hosted outside the main splitter tree; include their
+    // workspaces so their tabs are closed too (closeViewWindow tears down an
+    // emptied detached window).
+    for (const auto &detWsId : m_detachedWorkspaceIds) {
+      if (!targetWsIds.contains(detWsId)) {
+        targetWsIds.append(detWsId);
+      }
+    }
     for (const auto &bufferId : m_pendingNotebookCloseBufferIds) {
-      for (const auto &wsId : visibleWsIds) {
+      for (const auto &wsId : targetWsIds) {
         ID winId = m_view->findWindowIdByBufferId(wsId, bufferId);
         if (winId != InvalidViewWindowId) {
           closeViewWindow(winId, true);

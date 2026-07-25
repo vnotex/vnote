@@ -41,8 +41,12 @@ public:
   // @p_services: ServiceLocator for dependency injection.
   // @p_workspaceId: vxcore workspace ID this split is mapped to.
   // @p_parent: Parent widget (optional).
+  // @p_detached: When true this split lives inside a DetachedWindow. It hides the
+  //   corner "Open Windows"/"Menu" buttons, installs no split/workspace/tab
+  //   shortcuts, and its tab context menu exposes only Copy Path / Open Location /
+  //   Reload / Auto Reload.
   explicit ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId,
-                      QWidget *p_parent = nullptr);
+                      QWidget *p_parent = nullptr, bool p_detached = false);
 
   ~ViewSplit2() override;
 
@@ -136,6 +140,9 @@ signals:
   void moveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
                                        Direction p_direction);
 
+  // Request to detach a view window into a separate top-level window.
+  void detachViewWindowRequested(ViewSplit2 *p_split, ViewWindow2 *p_win);
+
   // Request to create a new workspace for this split.
   void newWorkspaceRequested(ViewSplit2 *p_split);
 
@@ -210,6 +217,9 @@ private:
   ServiceLocator &m_services;
 
   QString m_workspaceId;
+
+  // True when this split is hosted in a DetachedWindow (reduced UI/actions).
+  bool m_detached = false;
 
   bool m_active = false;
 

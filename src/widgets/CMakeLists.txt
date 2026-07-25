@@ -118,6 +118,7 @@ target_sources(vnote PRIVATE
     titletoolbar2.cpp titletoolbar2.h
     toolbarhelper2.cpp toolbarhelper2.h
     treewidget.cpp treewidget.h
+    detachedwindow.cpp detachedwindow.h
     viewarea2.cpp viewarea2.h
     viewsplit2.cpp viewsplit2.h
     viewwindow2.cpp viewwindow2.h

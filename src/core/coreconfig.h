@@ -69,6 +69,7 @@ public:
     MoveOneSplitDown,
     MoveOneSplitUp,
     MoveOneSplitRight,
+    Detach,
     OpenLastClosedFile,
     UnitedEntry,
     Copy,

@@ -18,11 +18,6 @@ GreetingSticker::GreetingSticker(ServiceLocator &p_services, QWidget *p_parent)
   // capped by the board's fixed-size grid (setFixedHeight), so letting the
   // label expand keeps the banner compact while truly centering the greeting.
   m_label->setAlignment(Qt::AlignCenter);
-  // Larger, emphasized greeting text so the banner reads as a prominent header.
-  QFont font = m_label->font();
-  font.setPointSizeF(font.pointSizeF() * 1.6);
-  font.setBold(true);
-  m_label->setFont(font);
   layout->addWidget(m_label);
 }
 
@@ -49,6 +44,7 @@ void GreetingSticker::showEvent(QShowEvent *p_event) {
 
 void GreetingSticker::updateGreeting() {
   if (m_label) {
-    m_label->setText(greetingForHour(QTime::currentTime().hour()));
+    m_label->setText("<h3>" + greetingForHour(QTime::currentTime().hour()) + "</h3>"
+                     + "<p>" + tr("Read, write, and think") + "</p>");
   }
 }

@@ -29,6 +29,7 @@
 #include "viewsplit2.h"
 #include "viewwindow2.h"
 #include "widgetviewwindow2.h"
+#include "detachedwindow.h"
 
 using namespace vnotex;
 
@@ -56,7 +57,19 @@ ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
   setupShortcuts();
 }
 
-ViewArea2::~ViewArea2() {}
+ViewArea2::~ViewArea2() {
+  // Detached windows are parent-less top-level widgets; delete them explicitly so
+  // they don't leak (or keep the app alive) if the view area is torn down while
+  // any remain open.
+  const auto detached = m_detachedWindows;
+  m_detachedWindows.clear();
+  for (auto *dw : detached) {
+    if (dw) {
+      dw->setReattaching(true);
+      delete dw;
+    }
+  }
+}
 
 void ViewArea2::setupController() {
   m_controller = new ViewAreaController(m_services, this);
@@ -116,6 +129,9 @@ void ViewArea2::setupController() {
         HookNames::MainWindowBeforeClose,
         [this](HookContext &p_ctx, const QVariantMap &p_args) {
           Q_UNUSED(p_args)
+          // Reattach any detached windows first so their buffers route through
+          // the normal close-all path and no top-level window keeps the app alive.
+          reattachAllDetachedWindows();
           saveSession();
           // Close all buffers with save prompts.
           if (!m_controller->closeAllBuffersForQuit()) {
@@ -324,6 +340,24 @@ void ViewArea2::setupShortcuts() {
     if (shortcut) {
       connect(shortcut, &QShortcut::activated, this,
               [this]() { m_controller->openLastClosedFile(); });
+    }
+  }
+
+  // Detach the current tab of the current split into a new window.
+  {
+    auto shortcut =
+        WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::Detach), this);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() {
+        auto *split = getCurrentViewSplit();
+        if (!split) {
+          return;
+        }
+        auto *win = split->getCurrentViewWindow();
+        if (win) {
+          onDetachViewWindowRequested(split, win);
+        }
+      });
     }
   }
 }
@@ -730,6 +764,8 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           &ViewArea2::onRemoveSplitAndWorkspaceRequested);
   connect(p_split, &ViewSplit2::moveViewWindowOneSplitRequested, this,
           &ViewArea2::onMoveViewWindowOneSplitRequested);
+  connect(p_split, &ViewSplit2::detachViewWindowRequested, this,
+          &ViewArea2::onDetachViewWindowRequested);
 
   // Workspace signals.
   connect(p_split, &ViewSplit2::newWorkspaceRequested, this, [this](ViewSplit2 *s) {
@@ -947,6 +983,7 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
 
   // Find the owning split.
   ViewSplit2 *ownerSplit = nullptr;
+  DetachedWindow *ownerDetached = nullptr;
   QString bufferId;
   QString workspaceId;
   for (auto it = m_splits.begin(); it != m_splits.end(); ++it) {
@@ -954,6 +991,17 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
       ownerSplit = it.value();
       workspaceId = it.key();
       break;
+    }
+  }
+  if (!ownerSplit) {
+    // The window may live inside a detached window's split (not in m_splits).
+    for (auto *dw : m_detachedWindows) {
+      if (dw->getViewSplit() && dw->getViewSplit()->indexOf(win) != -1) {
+        ownerSplit = dw->getViewSplit();
+        ownerDetached = dw;
+        workspaceId = dw->getWorkspaceId();
+        break;
+      }
     }
   }
   if (ownerSplit) {
@@ -977,6 +1025,18 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
   win->deleteLater();
 
   m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, closedTab);
+
+  // If the closed window was the last tab of a detached window, tear it down.
+  if (ownerDetached && ownerDetached->getViewSplit() &&
+      ownerDetached->getViewSplit()->getViewWindowCount() == 0) {
+    m_detachedWindows.removeAll(ownerDetached);
+    ownerDetached->setReattaching(true);
+    // No target: buffers were already removed from the detached workspace by
+    // onViewWindowClosed; just drop the now-empty workspace.
+    m_controller->reattachDetachedWorkspace(workspaceId, QString(), {});
+    ownerDetached->deleteLater();
+  }
+
   updateScreenVisibility();
   return true;
 }
@@ -1074,6 +1134,151 @@ void ViewArea2::onRemoveSplitRequested(ViewSplit2 *p_split) {
 void ViewArea2::onRemoveSplitAndWorkspaceRequested(ViewSplit2 *p_split) {
   // Full removal mode: workspace is closed (with abort-on-cancel), then split is removed.
   m_controller->removeViewSplit(p_split->getWorkspaceId(), false, false);
+}
+
+// ============ Detach / Reattach ============
+
+ViewSplit2 *ViewArea2::detachedSplitForWorkspace(const QString &p_workspaceId) const {
+  for (auto *dw : m_detachedWindows) {
+    if (dw->getWorkspaceId() == p_workspaceId) {
+      return dw->getViewSplit();
+    }
+  }
+  return nullptr;
+}
+
+void ViewArea2::onDetachViewWindowRequested(ViewSplit2 *p_split, ViewWindow2 *p_win) {
+  if (!p_split || !p_win) {
+    return;
+  }
+  const QString srcWsId = p_split->getWorkspaceId();
+  const bool detached = m_controller->detachViewWindow(srcWsId, p_win->getViewWindowId(),
+                                                       p_win->getBuffer().id());
+  if (!detached) {
+    return;
+  }
+
+  // Auto-remove the source split if it is now empty and other main splits remain
+  // (parity with onMoveViewWindowOneSplitRequested). When it was the only split,
+  // the emptied main area re-opens Home via updateScreenVisibility().
+  auto *srcSplit = splitForWorkspace(srcWsId);
+  if (srcSplit && srcSplit->getViewWindowCount() == 0 && getViewSplitCount() > 1) {
+    m_controller->removeViewSplit(srcWsId, /*p_keepWorkspace=*/false, /*p_force=*/true);
+  }
+}
+
+void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
+  auto *dw = new DetachedWindow(m_services, p_workspaceId, nullptr);
+  m_detachedWindows.append(dw);
+
+  auto *split = dw->getViewSplit();
+
+  connect(dw, &DetachedWindow::reattachRequested, this, &ViewArea2::onReattachDetachedWindow);
+
+  // Wire the minimal subset of split signals needed for a detached window:
+  // tab close (routes through the controller) and current-tab tracking (updates
+  // the window title). Splitting/moving/workspace ops from a detached window are
+  // out of scope for now.
+  connect(split, &ViewSplit2::viewWindowCloseRequested, this,
+          [this](ViewWindow2 *w) { m_controller->closeViewWindow(w->getViewWindowId(), false); });
+  connect(split, &ViewSplit2::currentViewWindowChanged, dw, [dw](ViewWindow2 *w) {
+    dw->setWindowTitle(w ? w->getTitle() : DetachedWindow::tr("VNote"));
+  });
+
+  dw->show();
+}
+
+bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWorkspaceId,
+                                         const QString &p_detachedWorkspaceId) {
+  auto *win = windowForId(p_windowId);
+  auto *srcSplit = splitForWorkspace(p_srcWorkspaceId);
+  auto *dstSplit = detachedSplitForWorkspace(p_detachedWorkspaceId);
+  if (!win || !srcSplit || !dstSplit) {
+    // Transfer cannot proceed. Destroy the empty detached-window shell so the
+    // controller can roll back the just-created workspace cleanly.
+    for (auto *dw : m_detachedWindows) {
+      if (dw->getWorkspaceId() == p_detachedWorkspaceId) {
+        m_detachedWindows.removeAll(dw);
+        dw->setReattaching(true);
+        dw->deleteLater();
+        break;
+      }
+    }
+    return false;
+  }
+
+  srcSplit->takeViewWindow(win);
+  dstSplit->addViewWindow(win);
+  dstSplit->setCurrentViewWindow(win);
+
+  // The source split may now be empty (e.g. detaching its only tab); refresh so
+  // the Home dashboard is opened if the main area became empty.
+  updateScreenVisibility();
+  return true;
+}
+
+void ViewArea2::onReattachDetachedWindow(DetachedWindow *p_window) {
+  reattachDetachedWindow(p_window);
+}
+
+void ViewArea2::reattachDetachedWindow(DetachedWindow *p_window) {
+  if (!p_window || !m_detachedWindows.contains(p_window)) {
+    return;
+  }
+
+  auto *detSplit = p_window->getViewSplit();
+  const QString detWsId = p_window->getWorkspaceId();
+
+  // Resolve a main split to receive the windows.
+  ViewSplit2 *target = getCurrentViewSplit();
+  if (!target && !m_splits.isEmpty()) {
+    target = m_splits.first();
+  }
+
+  // No main split exists to receive the windows. Rather than dropping them
+  // (which would orphan their buffers), abort the reattach and keep the detached
+  // window alive/visible so no data is lost. This is an extreme edge case since
+  // the main area normally always hosts at least the Home dashboard.
+  if (!target) {
+    qWarning() << "ViewArea2::reattachDetachedWindow: no main split to reattach into; "
+                  "keeping detached window open";
+    p_window->setReattaching(false);
+    p_window->show();
+    return;
+  }
+
+  QStringList bufferIds;
+  ViewWindow2 *lastWin = nullptr;
+  if (detSplit) {
+    const auto windows = detSplit->getAllViewWindows();
+    for (auto *win : windows) {
+      bufferIds.append(win->getBuffer().id());
+      detSplit->takeViewWindow(win);
+      target->addViewWindow(win);
+      lastWin = win;
+    }
+  }
+  if (lastWin) {
+    target->setCurrentViewWindow(lastWin);
+  }
+
+  m_detachedWindows.removeAll(p_window);
+  p_window->setReattaching(true);
+
+  m_controller->reattachDetachedWorkspace(detWsId, target->getWorkspaceId(), bufferIds);
+
+  m_controller->setCurrentViewSplit(target->getWorkspaceId(), true);
+
+  p_window->deleteLater();
+  updateScreenVisibility();
+}
+
+void ViewArea2::reattachAllDetachedWindows() {
+  const auto detached = m_detachedWindows; // copy: reattach mutates m_detachedWindows
+  for (auto *dw : detached) {
+    dw->setReattaching(true);
+    reattachDetachedWindow(dw);
+  }
 }
 
 // ============ Layout serialization/deserialization ============
@@ -1292,6 +1497,10 @@ QVector<ID> ViewArea2::getViewWindowIdsForWorkspace(const QString &p_workspaceId
 ID ViewArea2::findWindowIdByBufferId(const QString &p_workspaceId,
                                      const QString &p_bufferId) const {
   auto *split = splitForWorkspace(p_workspaceId);
+  if (!split) {
+    // May be a detached workspace (hosted outside the main splitter tree).
+    split = detachedSplitForWorkspace(p_workspaceId);
+  }
   if (!split) {
     return ViewAreaController::InvalidViewWindowId;
   }
@@ -1566,13 +1775,22 @@ ViewSplit2 *ViewArea2::findLastViewSplit(QWidget *p_widget) {
 // ============ Screen switching ============
 
 void ViewArea2::updateScreenVisibility() {
-  if (m_windows.isEmpty()) {
+  if (isMainAreaEmpty()) {
     maybeOpenHome();
   }
 }
 
+bool ViewArea2::isMainAreaEmpty() const {
+  for (auto it = m_splits.constBegin(); it != m_splits.constEnd(); ++it) {
+    if (it.value() && it.value()->getViewWindowCount() > 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void ViewArea2::maybeOpenHome() {
-  if (m_openingHome || !m_windows.isEmpty()) {
+  if (m_openingHome || !isMainAreaEmpty()) {
     return;
   }
   m_openingHome = true;
@@ -1581,7 +1799,7 @@ void ViewArea2::maybeOpenHome() {
   // virtualAddress() in ViewAreaController prevents duplicate home tabs.
   QTimer::singleShot(0, this, [this]() {
     m_openingHome = false;
-    if (m_windows.isEmpty() && m_controller) {
+    if (isMainAreaEmpty() && m_controller) {
       m_controller->openVxUrl(QUrl(QStringLiteral("vx://home")));
     }
   });

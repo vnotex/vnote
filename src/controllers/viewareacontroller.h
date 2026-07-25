@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QMap>
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QUrl>
@@ -151,6 +152,22 @@ public:
   void moveViewWindowOneSplit(const QString &p_srcWorkspaceId, ID p_windowId, Direction p_direction,
                               const QString &p_dstWorkspaceId, const QString &p_bufferId);
 
+  // Detach a view window into a new top-level DetachedWindow. Creates a fresh
+  // vxcore workspace to host it, registers the buffer in the new workspace
+  // before removing it from the source (to avoid vxcore orphan auto-close), then
+  // asks the view to build the DetachedWindow and transfer the window. Fires the
+  // ViewSplit create + ViewWindow move hooks; returns false (rolling back the new
+  // workspace) if a hook cancels or the transfer fails.
+  bool detachViewWindow(const QString &p_srcWorkspaceId, ID p_windowId, const QString &p_bufferId);
+
+  // Tear down a detached workspace after its windows have been moved back into a
+  // main split (reattach) or after its last tab was closed. Transfers buffer
+  // registration from the detached workspace to p_targetWorkspaceId (skipped when
+  // empty), deletes the detached workspace in vxcore, and drops its wrapper.
+  void reattachDetachedWorkspace(const QString &p_detachedWorkspaceId,
+                                 const QString &p_targetWorkspaceId,
+                                 const QStringList &p_bufferIds);
+
   // Create a new workspace with the given name and switch to it.
   void newWorkspace(const QString &p_currentWorkspaceId, const QString &p_name);
 
@@ -267,6 +284,16 @@ signals:
   void locateNodeRequested(const NodeIdentifier &p_nodeId);
 
 private:
+  // Move a buffer's vxcore workspace registration from source to destination.
+  // Enforces the add-before-remove ordering (addBuffer(dst) BEFORE
+  // removeBuffer(src)) so the buffer is never momentarily orphaned — vxcore
+  // auto-closes a buffer that belongs to no workspace. Returns true when the
+  // buffer is safely registered in the destination (or there was nothing to
+  // propagate); returns false (leaving the source registration intact) when the
+  // destination addBuffer failed, so callers must not tear down the source.
+  bool transferBufferRegistration(const QString &p_srcWorkspaceId,
+                                  const QString &p_dstWorkspaceId, const QString &p_bufferId);
+
   // Emit currentViewWindowChanged if the active window has changed.
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
 
@@ -330,6 +357,11 @@ private:
   // Owns all WorkspaceWrapper instances. Each workspace known to the controller
   // has an entry here. Hidden workspaces cache their ViewWindows in the wrapper.
   QMap<QString, WorkspaceWrapper *> m_workspaces;
+
+  // Workspace IDs that are hosted in DetachedWindows (out of the main splitter
+  // tree). Used to suppress the generic empty-workspace auto-remove path in
+  // onViewWindowClosed for detached workspaces, which are torn down by ViewArea2.
+  QSet<QString> m_detachedWorkspaceIds;
 
   // Timer for periodic external file change polling (active buffer only).
   QTimer *m_fileCheckTimer = nullptr;

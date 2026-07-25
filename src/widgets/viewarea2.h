@@ -26,6 +26,7 @@ class ViewAreaController;
 class Buffer2;
 class ViewWindowFactory;
 class IViewWindowContent;
+class DetachedWindow;
 
 // ViewArea2: composite widget owning the GUI (splitter tree + ViewSplit2s) and
 // ViewAreaController.  The controller knows nothing about ViewArea2.
@@ -104,6 +105,9 @@ public:
   void focusViewSplit(const QString &p_workspaceId) override;
   void moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                              const QString &p_dstWorkspaceId) override;
+  void hostWorkspaceInDetachedWindow(const QString &p_workspaceId) override;
+  bool moveViewWindowToDetached(ID p_windowId, const QString &p_srcWorkspaceId,
+                                const QString &p_detachedWorkspaceId) override;
   void switchWorkspace(const QString &p_currentWorkspaceId,
                        const QString &p_newWorkspaceId) override;
   QVector<QObject *> takeViewWindowsFromSplit(const QString &p_workspaceId,
@@ -141,6 +145,8 @@ private slots:
                                          Direction p_direction);
   void onRemoveSplitRequested(ViewSplit2 *p_split);
   void onRemoveSplitAndWorkspaceRequested(ViewSplit2 *p_split);
+  void onDetachViewWindowRequested(ViewSplit2 *p_split, ViewWindow2 *p_win);
+  void onReattachDetachedWindow(DetachedWindow *p_window);
 
 private:
   void setupController();
@@ -149,6 +155,19 @@ private:
 
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;
   ViewWindow2 *windowForId(ID p_windowId) const;
+
+  // Resolve the ViewSplit2 hosted by the DetachedWindow for p_workspaceId, or
+  // nullptr if no detached window hosts that workspace.
+  ViewSplit2 *detachedSplitForWorkspace(const QString &p_workspaceId) const;
+
+  // Move all windows from a detached window back into a main split and tear down
+  // the detached workspace. Safe to call whether triggered by the window's close
+  // event or by app-quit teardown (reattachAllDetachedWindows).
+  void reattachDetachedWindow(DetachedWindow *p_window);
+
+  // Reattach every open detached window (used on app quit so their buffers route
+  // through the normal close-all path and no top-level window keeps the app alive).
+  void reattachAllDetachedWindows();
 
   // Whether any open window is backed by a restorable (non-virtual) buffer.
   bool hasRestorableWindows() const;
@@ -169,6 +188,11 @@ private:
   // unwinds first.
   void maybeOpenHome();
 
+  // Whether the main splitter tree has no visible view windows. Detached windows
+  // (tracked separately) do NOT count, so detaching the last main tab correctly
+  // reports the main area as empty and opens the Home dashboard there.
+  bool isMainAreaEmpty() const;
+
   void updateScreenVisibility();
 
   ServiceLocator &m_services;
@@ -182,6 +206,10 @@ private:
   // ID -> widget maps.  ViewArea2 is the sole owner of these mappings.
   QMap<QString, ViewSplit2 *> m_splits; // workspaceId -> split
   QMap<ID, ViewWindow2 *> m_windows;    // windowId -> window
+
+  // Top-level detached windows (kept OUT of m_splits / the main splitter tree so
+  // they are excluded from layout serialization and main-tree navigation).
+  QVector<DetachedWindow *> m_detachedWindows;
   QVector<ViewSplit2::TabNavigationInfo> m_navigationItems;
   ID m_nextWindowId = 1;
 

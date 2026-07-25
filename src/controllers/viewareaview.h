@@ -72,6 +72,19 @@ public:
   virtual void moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                                      const QString &p_dstWorkspaceId) = 0;
 
+  // Detach: host a workspace in a separate top-level DetachedWindow (kept OUT of
+  // the main splitter tree, so it is excluded from layout serialization and
+  // main-tree navigation). Used by the "Detach" action.
+  virtual void hostWorkspaceInDetachedWindow(const QString &p_workspaceId) = 0;
+
+  // Transfer a view window from a main split into the detached window hosting
+  // p_detachedWorkspaceId. Mirrors moveViewWindowToSplit but resolves the
+  // destination split from the detached-window list rather than m_splits.
+  // Returns true on success. On failure the (empty) detached window shell is
+  // destroyed so the caller can roll back the workspace cleanly.
+  virtual bool moveViewWindowToDetached(ID p_windowId, const QString &p_srcWorkspaceId,
+                                        const QString &p_detachedWorkspaceId) = 0;
+
   // Workspace switching
   virtual void switchWorkspace(const QString &p_currentWorkspaceId,
                                const QString &p_newWorkspaceId) = 0;

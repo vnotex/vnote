@@ -291,6 +291,7 @@ void CoreConfig::initDefaults() {
   m_shortcuts[Shortcut::MoveOneSplitDown] = QStringLiteral("Ctrl+G, Shift+J");
   m_shortcuts[Shortcut::MoveOneSplitUp] = QStringLiteral("Ctrl+G, Shift+K");
   m_shortcuts[Shortcut::MoveOneSplitRight] = QStringLiteral("Ctrl+G, Shift+L");
+  m_shortcuts[Shortcut::Detach] = QStringLiteral("Ctrl+G, Shift+D");
   m_shortcuts[Shortcut::OpenLastClosedFile] = QStringLiteral("Ctrl+Shift+T");
   m_shortcuts[Shortcut::UnitedEntry] = QStringLiteral("Ctrl+G, G");
   m_shortcuts[Shortcut::Copy] = QStringLiteral("Ctrl+C");

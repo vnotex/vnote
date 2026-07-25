@@ -36,10 +36,16 @@ const QString ViewSplit2::c_activeActionButtonForegroundName =
 const QString ViewSplit2::c_actionButtonForegroundName =
     QStringLiteral("widgets#viewsplit#action_button#fg");
 
-ViewSplit2::ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId, QWidget *p_parent)
-    : QTabWidget(p_parent), m_services(p_services), m_workspaceId(p_workspaceId) {
+ViewSplit2::ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId, QWidget *p_parent,
+                       bool p_detached)
+    : QTabWidget(p_parent), m_services(p_services), m_workspaceId(p_workspaceId),
+      m_detached(p_detached) {
   setupUI();
-  setupShortcuts();
+  // A detached split hosts a single tab and cannot split or switch workspaces, so
+  // it installs none of the split/workspace/tab-navigation shortcuts.
+  if (!m_detached) {
+    setupShortcuts();
+  }
 
   auto *themeService = m_services.get<ThemeService>();
   if (themeService) {
@@ -148,6 +154,12 @@ void ViewSplit2::initIcons() {
 
 void ViewSplit2::setupCornerWidget() {
   initIcons();
+
+  // Detached splits hide the "Open Windows" and "Menu" corner buttons: a detached
+  // window holds a single tab and offers no split/workspace operations.
+  if (m_detached) {
+    return;
+  }
 
   // Container.
   auto widget = new QWidget(this);
@@ -596,41 +608,44 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   QMenu menu(this);
 
   // ---- Close Actions ----
-  auto *closeTabAct =
-      menu.addAction(tr("Close Tab"), [this, p_tabIndex]() { closeTab(p_tabIndex); });
+  // A detached window hosts a single tab and exposes only file/reload actions.
+  if (!m_detached) {
+    auto *closeTabAct =
+        menu.addAction(tr("Close Tab"), [this, p_tabIndex]() { closeTab(p_tabIndex); });
 
-  auto *closeAllAct = menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
-    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::All);
-  });
+    auto *closeAllAct = menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::All);
+    });
 
-  auto *closeOtherAct = menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
-    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::Others);
-  });
+    auto *closeOtherAct = menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::Others);
+    });
 
-  auto *closeLeftAct = menu.addAction(tr("Close Tabs To The Left"), [this, p_tabIndex]() {
-    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheLeft);
-  });
-  closeLeftAct->setEnabled(p_tabIndex > 0);
+    auto *closeLeftAct = menu.addAction(tr("Close Tabs To The Left"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheLeft);
+    });
+    closeLeftAct->setEnabled(p_tabIndex > 0);
 
-  auto *closeRightAct = menu.addAction(tr("Close Tabs To The Right"), [this, p_tabIndex]() {
-    emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheRight);
-  });
-  closeRightAct->setEnabled(p_tabIndex < count() - 1);
+    auto *closeRightAct = menu.addAction(tr("Close Tabs To The Right"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheRight);
+    });
+    closeRightAct->setEnabled(p_tabIndex < count() - 1);
 
-  if (coreConfig) {
-    WidgetUtils::addActionShortcutText(closeTabAct,
-                                       coreConfig->getShortcut(CoreConfig::Shortcut::CloseTab));
-    WidgetUtils::addActionShortcutText(closeAllAct,
-                                       coreConfig->getShortcut(CoreConfig::Shortcut::CloseAllTabs));
-    WidgetUtils::addActionShortcutText(
-        closeOtherAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
-    WidgetUtils::addActionShortcutText(
-        closeLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft));
-    WidgetUtils::addActionShortcutText(
-        closeRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(closeTabAct,
+                                         coreConfig->getShortcut(CoreConfig::Shortcut::CloseTab));
+      WidgetUtils::addActionShortcutText(
+          closeAllAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseAllTabs));
+      WidgetUtils::addActionShortcutText(
+          closeOtherAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
+      WidgetUtils::addActionShortcutText(
+          closeLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft));
+      WidgetUtils::addActionShortcutText(
+          closeRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
+    }
+
+    menu.addSeparator();
   }
-
-  menu.addSeparator();
 
   // ---- File Actions ----
   // Resolve the absolute path (notebook file or external file).
@@ -652,7 +667,7 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   });
   openLocAct->setEnabled(!absPath.isEmpty());
 
-  if (nodeId.isValid()) {
+  if (nodeId.isValid() && !m_detached) {
     auto *locateAct =
         menu.addAction(tr("Locate Node"), [this, nodeId]() { emit locateNodeRequested(nodeId); });
     if (coreConfig) {
@@ -664,34 +679,42 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   menu.addSeparator();
 
   // ---- Move Actions ----
-  auto *moveLeftAct = menu.addAction(tr("Move One Split Left"), [this, win]() {
-    emit moveViewWindowOneSplitRequested(this, win, Direction::Left);
-  });
+  // Detached windows cannot move tabs to other splits or re-detach.
+  if (!m_detached) {
+    auto *moveLeftAct = menu.addAction(tr("Move One Split Left"), [this, win]() {
+      emit moveViewWindowOneSplitRequested(this, win, Direction::Left);
+    });
 
-  auto *moveRightAct = menu.addAction(tr("Move One Split Right"), [this, win]() {
-    emit moveViewWindowOneSplitRequested(this, win, Direction::Right);
-  });
+    auto *moveRightAct = menu.addAction(tr("Move One Split Right"), [this, win]() {
+      emit moveViewWindowOneSplitRequested(this, win, Direction::Right);
+    });
 
-  auto *moveUpAct = menu.addAction(tr("Move One Split Up"), [this, win]() {
-    emit moveViewWindowOneSplitRequested(this, win, Direction::Up);
-  });
+    auto *moveUpAct = menu.addAction(tr("Move One Split Up"), [this, win]() {
+      emit moveViewWindowOneSplitRequested(this, win, Direction::Up);
+    });
 
-  auto *moveDownAct = menu.addAction(tr("Move One Split Down"), [this, win]() {
-    emit moveViewWindowOneSplitRequested(this, win, Direction::Down);
-  });
+    auto *moveDownAct = menu.addAction(tr("Move One Split Down"), [this, win]() {
+      emit moveViewWindowOneSplitRequested(this, win, Direction::Down);
+    });
 
-  if (coreConfig) {
-    WidgetUtils::addActionShortcutText(
-        moveLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitLeft));
-    WidgetUtils::addActionShortcutText(
-        moveRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitRight));
-    WidgetUtils::addActionShortcutText(
-        moveUpAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitUp));
-    WidgetUtils::addActionShortcutText(
-        moveDownAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
+    auto *detachAct = menu.addAction(tr("Detach"),
+                                     [this, win]() { emit detachViewWindowRequested(this, win); });
+
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(
+          moveLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitLeft));
+      WidgetUtils::addActionShortcutText(
+          moveRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitRight));
+      WidgetUtils::addActionShortcutText(
+          moveUpAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitUp));
+      WidgetUtils::addActionShortcutText(
+          moveDownAct, coreConfig->getShortcut(CoreConfig::Shortcut::MoveOneSplitDown));
+      WidgetUtils::addActionShortcutText(detachAct,
+                                         coreConfig->getShortcut(CoreConfig::Shortcut::Detach));
+    }
+
+    menu.addSeparator();
   }
-
-  menu.addSeparator();
 
   // ---- Reload ----
   auto *reloadAct = menu.addAction(tr("Reload"), [win]() { win->reload(); });
