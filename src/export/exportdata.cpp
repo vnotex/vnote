@@ -311,7 +311,9 @@ bool ExportOption::operator==(const ExportOption &p_other) const {
   bool ret = m_targetFormat == p_other.m_targetFormat &&
              m_useTransparentBg == p_other.m_useTransparentBg &&
              m_outputDir == p_other.m_outputDir && m_recursive == p_other.m_recursive &&
-             m_exportAttachments == p_other.m_exportAttachments;
+             m_exportAttachments == p_other.m_exportAttachments &&
+             m_renderingStyleFile == p_other.m_renderingStyleFile &&
+             m_syntaxHighlightStyleFile == p_other.m_syntaxHighlightStyleFile;
 
   if (!ret) {
     return false;

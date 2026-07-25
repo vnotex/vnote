@@ -18,6 +18,8 @@ private slots:
   void testFromEmptyKeepsDefaults();
   void testOldConfigKeepsFooterDefault();
   void testEquality();
+  void testExportOptionStyleEquality();
+  void testExportOptionStyleRoundTrip();
 };
 
 void TestExportData::testDefaultFooterRight() {
@@ -77,6 +79,32 @@ void TestExportData::testEquality() {
 
   b.m_headerCenter = QStringLiteral("x");
   QVERIFY(!(a == b));
+}
+
+void TestExportData::testExportOptionStyleEquality() {
+  vnotex::ExportOption a;
+  vnotex::ExportOption b;
+  QVERIFY(a == b);
+
+  b.m_renderingStyleFile = QStringLiteral("custom-render.css");
+  QVERIFY(!(a == b));
+
+  vnotex::ExportOption c;
+  c.m_syntaxHighlightStyleFile = QStringLiteral("custom-syntax.css");
+  QVERIFY(!(a == c));
+}
+
+void TestExportData::testExportOptionStyleRoundTrip() {
+  vnotex::ExportOption opt;
+  opt.m_renderingStyleFile = QStringLiteral("custom-render.css");
+  opt.m_syntaxHighlightStyleFile = QStringLiteral("custom-syntax.css");
+
+  vnotex::ExportOption restored;
+  restored.fromJson(opt.toJson());
+
+  QCOMPARE(restored.m_renderingStyleFile, opt.m_renderingStyleFile);
+  QCOMPARE(restored.m_syntaxHighlightStyleFile, opt.m_syntaxHighlightStyleFile);
+  QVERIFY(restored == opt);
 }
 
 } // namespace tests
