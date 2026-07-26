@@ -184,6 +184,13 @@ private:
   // main window. No-op if the configured shortcut is empty or registration fails.
   void setupGlobalHotkey();
 
+  // Register the single window-level CloseFocus shortcut. Its handler inspects
+  // QApplication::focusWidget(): if focus is inside a dock, that dock is hidden;
+  // otherwise the current view window (tab) is closed. A single registration is
+  // used deliberately: two same-sequence Qt::WindowShortcut shortcuts in one
+  // window would trigger activatedAmbiguously and neither would fire.
+  void setupCloseFocusedShortcut();
+
   // Restore only window geometry and dock state (safe to call before event loop).
   void restoreWindowGeometry();
 

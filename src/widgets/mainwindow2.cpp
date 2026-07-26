@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QProgressDialog>
+#include <QShortcut>
 #include <QStyle>
 #include <QSystemTrayIcon>
 #include <QTimer>
@@ -51,6 +52,7 @@
 #include <core/sessionconfig.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/widgetutils.h>
 
 #include <controllers/firstruncontroller.h>
 #include <controllers/searchcontroller.h>
@@ -194,6 +196,8 @@ void MainWindow2::setupUI() {
           [this](bool p_readOnly) { m_toolBarHelper->setMutationActionsEnabled(!p_readOnly); });
 
   setupNavigationMode();
+
+  setupCloseFocusedShortcut();
 
   setupSystemTray();
 
@@ -1224,6 +1228,56 @@ void MainWindow2::setupGlobalHotkey() {
   }
 
   connect(hotkey, &QHotkey::activated, this, [this]() { showMainWindow(); });
+}
+
+void MainWindow2::setupCloseFocusedShortcut() {
+  auto *configMgr = m_serviceLocator.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  const auto &coreConfig = configMgr->getCoreConfig();
+
+  auto *shortcut = WidgetUtils::createShortcut(
+      coreConfig.getShortcut(CoreConfig::Shortcut::CloseFocus), this);
+  if (!shortcut) {
+    return;
+  }
+
+  connect(shortcut, &QShortcut::activated, this, [this]() {
+    QWidget *focused = QApplication::focusWidget();
+
+    // 1. Focus inside a dock -> hide that dock.
+    // QWidget::isAncestorOf(nullptr) is false, so a null focus widget is safe.
+    const auto &docks = m_dockWidgetHelper.getDocks();
+    for (auto *dock : docks) {
+      if (dock && (dock == focused || dock->isAncestorOf(focused))) {
+        dock->hide();
+        // Hiding the focus holder makes Qt hand focus to the next widget in the
+        // focus chain, which is arbitrary (often another dock). Steer it back to
+        // the content area so a repeated press closes the tab instead of hiding
+        // an unrelated dock. Mirrors the FocusContentArea handler in ViewArea2.
+        if (m_viewArea) {
+          auto *win = m_viewArea->getCurrentViewWindow();
+          if (win) {
+            win->setFocus();
+          } else {
+            m_viewArea->setFocus();
+          }
+        }
+        return;
+      }
+    }
+
+    // 2. Otherwise close the current view window (tab).
+    if (!m_viewArea) {
+      return;
+    }
+    auto *controller = m_viewArea->getController();
+    auto *win = m_viewArea->getCurrentViewWindow();
+    if (controller && win) {
+      controller->closeViewWindow(win->getViewWindowId(), false);
+    }
+  });
 }
 
 void MainWindow2::quitApp() {

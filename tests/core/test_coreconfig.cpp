@@ -26,6 +26,8 @@ private slots:
   void testSetterClampsToBounds();
   void testConsoleDockShortcutDefaultsToEmpty();
   void testConsoleDockShortcutRoundTripByName();
+  void testLegacyCloseTabShortcutMigratesToCloseFocus();
+  void testCloseFocusShortcutWinsOverLegacyCloseTab();
 
 private:
   MockConfigMgr m_mockMgr;
@@ -141,6 +143,46 @@ void TestCoreConfig::testConsoleDockShortcutRoundTripByName() {
   QCOMPARE(out.value(QStringLiteral("ConsoleDock")).toString(), consoleKeys);
   QCOMPARE(out.value(QStringLiteral("LocationListDock")).toString(), locationKeys);
   QCOMPARE(out.value(QStringLiteral("Search")).toString(), searchKeys);
+}
+
+// The CloseTab shortcut was renamed to CloseFocus (it now also hides a focused
+// dock). Shortcuts serialize by enum name, so a config written before the rename
+// carries the legacy key; the user's customized binding must survive.
+void TestCoreConfig::testLegacyCloseTabShortcutMigratesToCloseFocus() {
+  // Deliberately NOT the initDefaults() value, so this can only pass if the
+  // value came from the legacy JSON key.
+  const auto legacyKeys = QStringLiteral("Ctrl+G, Shift+X");
+
+  QJsonObject shortcuts;
+  shortcuts[QStringLiteral("CloseTab")] = legacyKeys;
+  QJsonObject json;
+  json[QStringLiteral("shortcuts")] = shortcuts;
+
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.fromJson(json);
+  QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::CloseFocus), legacyKeys);
+
+  // Saving emits only the new key.
+  const auto out = cfg.toJson().value(QStringLiteral("shortcuts")).toObject();
+  QCOMPARE(out.value(QStringLiteral("CloseFocus")).toString(), legacyKeys);
+  QVERIFY(!out.contains(QStringLiteral("CloseTab")));
+}
+
+// Once the config has been re-saved, both keys may coexist in a hand-edited
+// file. The new key is authoritative.
+void TestCoreConfig::testCloseFocusShortcutWinsOverLegacyCloseTab() {
+  const auto legacyKeys = QStringLiteral("Ctrl+G, Shift+X");
+  const auto currentKeys = QStringLiteral("Ctrl+G, Alt+X");
+
+  QJsonObject shortcuts;
+  shortcuts[QStringLiteral("CloseTab")] = legacyKeys;
+  shortcuts[QStringLiteral("CloseFocus")] = currentKeys;
+  QJsonObject json;
+  json[QStringLiteral("shortcuts")] = shortcuts;
+
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.fromJson(json);
+  QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::CloseFocus), currentKeys);
 }
 
 } // namespace tests

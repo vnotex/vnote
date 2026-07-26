@@ -23,7 +23,7 @@ public:
     NewNote,
     NewQuickNote,
     NewFolder,
-    CloseTab,
+    CloseFocus,
     CloseAllTabs,
     CloseOtherTabs,
     CloseTabsToTheLeft,

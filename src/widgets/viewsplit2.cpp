@@ -633,7 +633,7 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
     if (coreConfig) {
       WidgetUtils::addActionShortcutText(closeTabAct,
-                                         coreConfig->getShortcut(CoreConfig::Shortcut::CloseTab));
+                                         coreConfig->getShortcut(CoreConfig::Shortcut::CloseFocus));
       WidgetUtils::addActionShortcutText(
           closeAllAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseAllTabs));
       WidgetUtils::addActionShortcutText(

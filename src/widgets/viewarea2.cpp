@@ -159,19 +159,8 @@ void ViewArea2::setupShortcuts() {
   }
   const auto &coreConfig = configMgr->getCoreConfig();
 
-  // CloseTab.
-  {
-    auto shortcut =
-        WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::CloseTab), this);
-    if (shortcut) {
-      connect(shortcut, &QShortcut::activated, this, [this]() {
-        auto *win = getCurrentViewWindow();
-        if (win) {
-          m_controller->closeViewWindow(win->getViewWindowId(), false);
-        }
-      });
-    }
-  }
+  // CloseFocus (Ctrl+G, X) is handled by MainWindow2::setupCloseFocusedShortcut(),
+  // which dispatches on the focused widget (hide focused dock, else close tab).
 
   // CloseAllTabs.
   {

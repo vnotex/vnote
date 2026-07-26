@@ -125,6 +125,13 @@ void CoreConfig::loadShortcuts(const QJsonObject &p_jobj) {
   for (int i = 0; i < metaEnum.keyCount() - 1; ++i) {
     m_shortcuts[i] = readString(p_jobj, metaEnum.key(i));
   }
+
+  // Back-compat: CloseTab was renamed to CloseFocus. Preserve a user's
+  // customized legacy binding. Saving will thereafter emit only "CloseFocus".
+  if (!p_jobj.contains(QStringLiteral("CloseFocus")) &&
+      p_jobj.contains(QStringLiteral("CloseTab"))) {
+    m_shortcuts[Shortcut::CloseFocus] = readString(p_jobj, QStringLiteral("CloseTab"));
+  }
 }
 
 void CoreConfig::loadNoteManagement(const QJsonObject &p_jobj) {
@@ -245,7 +252,7 @@ void CoreConfig::initDefaults() {
   m_shortcuts[Shortcut::NewNote] = QStringLiteral("Ctrl+Alt+N");
   m_shortcuts[Shortcut::NewQuickNote] = QStringLiteral("Ctrl+Alt+Q");
   m_shortcuts[Shortcut::NewFolder] = QStringLiteral("Ctrl+Alt+S");
-  m_shortcuts[Shortcut::CloseTab] = QStringLiteral("Ctrl+G, X");
+  m_shortcuts[Shortcut::CloseFocus] = QStringLiteral("Ctrl+G, X");
   m_shortcuts[Shortcut::CloseAllTabs] = QStringLiteral("");
   m_shortcuts[Shortcut::CloseOtherTabs] = QStringLiteral("");
   m_shortcuts[Shortcut::CloseTabsToTheLeft] = QStringLiteral("");
