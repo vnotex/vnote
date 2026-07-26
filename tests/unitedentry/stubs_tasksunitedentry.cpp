@@ -1,6 +1,7 @@
 #include <QLabel>
 #include <QTreeWidget>
 
+#include <gui/services/themeservice.h>
 #include <unitedentry/entrywidgetfactory.h>
 #include <widgets/treewidget.h>
 
@@ -24,3 +25,7 @@ QSharedPointer<QLabel> EntryWidgetFactory::createLabel(const QString &p_info) {
 void TreeWidget::selectParentItem(QTreeWidget *) {}
 
 bool TreeWidget::isExpanded(const QTreeWidget *) { return false; }
+
+// --- ThemeService stub (referenced by TaskEntryDelegate) ---
+// Returns an empty string so the delegate falls back to the option palette.
+QString ThemeService::paletteColor(const QString &) const { return QString(); }

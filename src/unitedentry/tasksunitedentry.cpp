@@ -95,7 +95,7 @@ void TasksUnitedEntry::initOnFirstProcess() {
   m_tree->setSelectionMode(QAbstractItemView::SingleSelection);
   m_tree->setEditTriggers(QAbstractItemView::NoEditTriggers);
   // Two-line rows: task label, then its dimmed scope path.
-  m_tree->setItemDelegate(new TaskEntryDelegate(m_tree.data()));
+  m_tree->setItemDelegate(new TaskEntryDelegate(m_services, m_tree.data()));
   connect(m_tree.data(), &QTreeWidget::itemActivated, this,
           &TasksUnitedEntry::handleItemActivated);
 }

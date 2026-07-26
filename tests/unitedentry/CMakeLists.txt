@@ -87,11 +87,16 @@ add_qt_test(test_tasksunitedentry
     ${CMAKE_SOURCE_DIR}/src/unitedentry/taskentrydelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/iunitedentry.cpp
     stubs_tasksunitedentry.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
   LINKS
     core_services
     core_configs
     vxcore
     Qt6::Widgets
+)
+
+target_include_directories(test_tasksunitedentry PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
 )
 
 # Copy VTextEdit DLL next to test executable so CTest can find it at runtime.

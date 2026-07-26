@@ -5,9 +5,13 @@
 #include <QIcon>
 #include <QPainter>
 
+#include <core/servicelocator.h>
+#include <gui/services/themeservice.h>
+
 using namespace vnotex;
 
-TaskEntryDelegate::TaskEntryDelegate(QObject *p_parent) : QStyledItemDelegate(p_parent) {}
+TaskEntryDelegate::TaskEntryDelegate(ServiceLocator &p_services, QObject *p_parent)
+    : QStyledItemDelegate(p_parent), m_services(p_services) {}
 
 QFont TaskEntryDelegate::pathFont(const QFont &p_baseFont) {
   QFont font = p_baseFont;
@@ -19,6 +23,39 @@ QFont TaskEntryDelegate::pathFont(const QFont &p_baseFont) {
     font.setPixelSize(font.pixelSize() - 1);
   }
   return font;
+}
+
+QColor TaskEntryDelegate::resolveTextColor(const QStyleOptionViewItem &p_option) const {
+  QColor color;
+
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    if (p_option.state & QStyle::State_Selected) {
+      if (p_option.state & QStyle::State_Active) {
+        color = QColor(themeService->paletteColor(
+            QStringLiteral("widgets#qtreeview#item#selected#active#fg")));
+      } else {
+        color = QColor(themeService->paletteColor(
+            QStringLiteral("widgets#qtreeview#item#selected#inactive#fg")));
+      }
+      if (!color.isValid()) {
+        color = QColor(
+            themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#selected#fg")));
+      }
+    } else if (p_option.state & QStyle::State_MouseOver) {
+      color =
+          QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#hover#fg")));
+    }
+
+    if (!color.isValid()) {
+      color = QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#fg")));
+    }
+  }
+
+  if (!color.isValid()) {
+    color = p_option.palette.text().color();
+  }
+
+  return color;
 }
 
 void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
@@ -61,11 +98,10 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
     contentRect.setLeft(iconRect.right() + m_hPadding);
   }
 
-  const QColor textColor = (p_option.state & QStyle::State_Selected)
-                               ? p_option.palette.highlightedText().color()
-                               : p_option.palette.text().color();
+  const QColor textColor = resolveTextColor(p_option);
   QColor dimColor = textColor;
-  dimColor.setAlpha(150);
+  // The selected row's background reduces contrast, so dim less there.
+  dimColor.setAlpha((p_option.state & QStyle::State_Selected) ? 200 : 150);
 
   const QFont nameFont = p_option.font;
   const QFont smallFont = pathFont(nameFont);
