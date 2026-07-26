@@ -6,9 +6,11 @@ target_sources(vnote PRIVATE
     historyunitedentry.cpp historyunitedentry.h
     iunitedentry.cpp iunitedentry.h
     iviewwindownavigator.h
+    taskentrydelegate.cpp taskentrydelegate.h
     unitedentry.cpp unitedentry.h
     unitedentryalias.cpp unitedentryalias.h
     unitedentryhelper.cpp unitedentryhelper.h
     unitedentrymgr.cpp unitedentrymgr.h
+    tasksunitedentry.cpp tasksunitedentry.h
     windowsunitedentry.cpp windowsunitedentry.h
 )

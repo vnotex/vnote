@@ -8,6 +8,7 @@ add_qt_test(test_findunitedentry
     ${CMAKE_SOURCE_DIR}/src/unitedentry/iunitedentry.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/helpunitedentry.h
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentryalias.h
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/tasksunitedentry.h
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentrymgr.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/historyunitedentry.h
@@ -52,6 +53,7 @@ add_qt_test(test_windowsunitedentry
   SOURCES
     test_windowsunitedentry.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/windowsunitedentry.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/tasksunitedentry.h
     ${CMAKE_SOURCE_DIR}/src/unitedentry/iunitedentry.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentrymgr.cpp
     ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
@@ -76,4 +78,25 @@ add_custom_command(TARGET test_windowsunitedentry POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_windowsunitedentry>
+)
+
+add_qt_test(test_tasksunitedentry
+  SOURCES
+    test_tasksunitedentry.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/tasksunitedentry.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/taskentrydelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/iunitedentry.cpp
+    stubs_tasksunitedentry.cpp
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    Qt6::Widgets
+)
+
+# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
+add_custom_command(TARGET test_tasksunitedentry POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_tasksunitedentry>
 )

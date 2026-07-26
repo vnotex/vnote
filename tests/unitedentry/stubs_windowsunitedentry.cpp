@@ -12,6 +12,7 @@
 #include <unitedentry/findunitedentry.h>
 #include <unitedentry/helpunitedentry.h>
 #include <unitedentry/historyunitedentry.h>
+#include <unitedentry/tasksunitedentry.h>
 #include <unitedentry/unitedentryalias.h>
 #include <unitedentry/unitedentryhelper.h>
 #include <utils/utils.h>
@@ -60,6 +61,20 @@ QSharedPointer<QWidget> HelpUnitedEntry::currentPopupWidget() const { return {};
 void HelpUnitedEntry::initOnFirstProcess() {}
 
 void HelpUnitedEntry::processInternal(
+    const QString &, const std::function<void(const QSharedPointer<QWidget> &)> &) {
+  emit finished();
+}
+
+// --- TasksUnitedEntry stub ---
+TasksUnitedEntry::TasksUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
+                                   QObject *p_parent)
+    : IUnitedEntry(QStringLiteral("task"), QString(), p_mgr, p_parent), m_services(p_services) {}
+
+QSharedPointer<QWidget> TasksUnitedEntry::currentPopupWidget() const { return {}; }
+
+void TasksUnitedEntry::initOnFirstProcess() {}
+
+void TasksUnitedEntry::processInternal(
     const QString &, const std::function<void(const QSharedPointer<QWidget> &)> &) {
   emit finished();
 }

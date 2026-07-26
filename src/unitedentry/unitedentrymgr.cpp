@@ -3,6 +3,7 @@
 #include "findunitedentry.h"
 #include "helpunitedentry.h"
 #include "historyunitedentry.h"
+#include "tasksunitedentry.h"
 #include "unitedentryalias.h"
 #include "windowsunitedentry.h"
 
@@ -29,6 +30,8 @@ void UnitedEntryMgr::init() {
   addEntry(QSharedPointer<HistoryUnitedEntry>::create(m_services, this));
 
   addEntry(QSharedPointer<WindowsUnitedEntry>::create(m_services, this));
+
+  addEntry(QSharedPointer<TasksUnitedEntry>::create(m_services, this));
 
   // Alias from config.
   const auto &config = m_services.get<ConfigMgr2>()->getCoreConfig();
