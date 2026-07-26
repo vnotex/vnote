@@ -24,6 +24,8 @@ private slots:
   void testClampAboveMax();
   void testZeroAndNegativeFallBackToDefault();
   void testSetterClampsToBounds();
+  void testConsoleDockShortcutDefaultsToEmpty();
+  void testConsoleDockShortcutRoundTripByName();
 
 private:
   MockConfigMgr m_mockMgr;
@@ -88,6 +90,57 @@ void TestCoreConfig::testSetterClampsToBounds() {
 
   cfg.setSearchMaxResults(250);
   QCOMPARE(cfg.getSearchMaxResults(), 250);
+}
+
+// The ConsoleDock shortcut ships blank so nothing changes out of the box until a
+// user assigns a key.
+void TestCoreConfig::testConsoleDockShortcutDefaultsToEmpty() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  QVERIFY(cfg.getShortcut(CoreConfig::Shortcut::ConsoleDock).isEmpty());
+
+  // An older config predating the key must load blank without disturbing the
+  // shortcuts that ARE present. Deliberately NOT the initDefaults() value for
+  // LocationListDock, so this can only pass if the value came from the JSON.
+  const auto locationKeys = QStringLiteral("Ctrl+G, Z");
+  QJsonObject shortcuts;
+  shortcuts[QStringLiteral("LocationListDock")] = locationKeys;
+  QJsonObject json;
+  json[QStringLiteral("shortcuts")] = shortcuts;
+
+  cfg.fromJson(json);
+  QVERIFY(cfg.getShortcut(CoreConfig::Shortcut::ConsoleDock).isEmpty());
+  QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::LocationListDock), locationKeys);
+}
+
+// Shortcuts serialize by enum name, not index, so the new entry must survive a
+// toJson()/fromJson() round trip under the key "ConsoleDock" without shifting
+// the shortcuts declared after it in the enum.
+void TestCoreConfig::testConsoleDockShortcutRoundTripByName() {
+  // None of these match an initDefaults() value, so every assertion below fails
+  // if the JSON is ignored and the defaults survive.
+  const auto consoleKeys = QStringLiteral("Ctrl+G, Shift+O");
+  const auto locationKeys = QStringLiteral("Ctrl+G, Z");
+  // Declared after ConsoleDock in the enum; would be corrupted by index-based
+  // serialization.
+  const auto searchKeys = QStringLiteral("Ctrl+Alt+Y");
+
+  QJsonObject shortcuts;
+  shortcuts[QStringLiteral("ConsoleDock")] = consoleKeys;
+  shortcuts[QStringLiteral("LocationListDock")] = locationKeys;
+  shortcuts[QStringLiteral("Search")] = searchKeys;
+  QJsonObject json;
+  json[QStringLiteral("shortcuts")] = shortcuts;
+
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.fromJson(json);
+  QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::ConsoleDock), consoleKeys);
+  QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::LocationListDock), locationKeys);
+  QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::Search), searchKeys);
+
+  const auto out = cfg.toJson().value(QStringLiteral("shortcuts")).toObject();
+  QCOMPARE(out.value(QStringLiteral("ConsoleDock")).toString(), consoleKeys);
+  QCOMPARE(out.value(QStringLiteral("LocationListDock")).toString(), locationKeys);
+  QCOMPARE(out.value(QStringLiteral("Search")).toString(), searchKeys);
 }
 
 } // namespace tests

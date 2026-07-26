@@ -229,7 +229,7 @@ QDockWidget *DockWidgetHelper::getDock(DockType p_dockType) const {
 void DockWidgetHelper::setupShortcuts() {
   const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
-  // Map each DockType to its CoreConfig::Shortcut.  ConsoleDock has no shortcut.
+  // Map dock types with a configurable CoreConfig shortcut. TaskDock has none.
   auto shortcutForDock = [](DockType p_type) -> int {
     switch (p_type) {
     case DockType::NavigationDock:
@@ -244,10 +244,12 @@ void DockWidgetHelper::setupShortcuts() {
       return CoreConfig::Shortcut::SnippetDock;
     case DockType::OutlineDock:
       return CoreConfig::Shortcut::OutlineDock;
+    case DockType::ConsoleDock:
+      return CoreConfig::Shortcut::ConsoleDock;
     case DockType::LocationListDock:
       return CoreConfig::Shortcut::LocationListDock;
     default:
-      return -1; // No shortcut defined (e.g. ConsoleDock).
+      return -1; // No shortcut defined (e.g. TaskDock).
     }
   };
 

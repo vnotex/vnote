@@ -257,6 +257,7 @@ void CoreConfig::initDefaults() {
   m_shortcuts[Shortcut::LocationListDock] = QStringLiteral("Ctrl+G, C");
   m_shortcuts[Shortcut::HistoryDock] = QStringLiteral("");
   m_shortcuts[Shortcut::TagDock] = QStringLiteral("");
+  m_shortcuts[Shortcut::ConsoleDock] = QStringLiteral("");
   m_shortcuts[Shortcut::Search] = QStringLiteral("Ctrl+Alt+F");
   m_shortcuts[Shortcut::NavigationMode] = QStringLiteral("Ctrl+G, W");
   m_shortcuts[Shortcut::LocateNode] = QStringLiteral("Ctrl+G, D");

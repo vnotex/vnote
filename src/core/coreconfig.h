@@ -35,6 +35,7 @@ public:
     LocationListDock,
     HistoryDock,
     TagDock,
+    ConsoleDock,
     Search,
     NavigationMode,
     LocateNode,
