@@ -19,6 +19,7 @@
 #include <core/services/snippetcoreservice.h>
 #include <core/sessionconfig.h>
 #include <utils/widgetutils.h>
+#include <widgets/dialogs/notetemplateselector.h>
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 #include <widgets/messageboxhelper.h>
@@ -26,9 +27,6 @@
 
 #include "newquickaccessitemdialog.h"
 #include "settingspagehelper.h"
-
-// LEGACY: NoteTemplateSelector now requires ServiceLocator - disabled until migration
-// LEGACY: NotebookMgr not yet in ServiceLocator - getCurrentNotebook disabled
 
 using namespace vnotex;
 
@@ -146,7 +144,14 @@ void QuickAccessPage::setupUI() {
                 &QuickAccessPage::pageIsChanged);
       }
 
-      // LEGACY: NoteTemplateSelector now requires ServiceLocator
+      {
+        const QString label(tr("Template"));
+        m_quickNoteTemplateSelector = new NoteTemplateSelector(m_services, m_quickNoteInfoGroupBox);
+        infoLayout->addRow(label, m_quickNoteTemplateSelector);
+        addSearchItem(label, m_quickNoteTemplateSelector);
+        connect(m_quickNoteTemplateSelector, &NoteTemplateSelector::templateChanged, this,
+                &QuickAccessPage::pageIsChanged);
+      }
 
       m_quickNoteInfoGroupBox->setVisible(false);
       cardLayout->addWidget(m_quickNoteInfoGroupBox);
@@ -366,14 +371,14 @@ void QuickAccessPage::saveCurrentQuickNote() {
   scheme.m_folderPath = m_quickNoteFolderPathInput->text();
   // No need to apply the snippet for now.
   scheme.m_noteName = m_quickNoteNoteNameLineEdit->text();
-  // LEGACY: m_quickNoteTemplateSelector disabled - requires ServiceLocator
+  scheme.m_template = m_quickNoteTemplateSelector->getCurrentTemplate();
 }
 
 void QuickAccessPage::loadCurrentQuickNote() {
   if (m_quickNoteCurrentIndex < 0) {
     m_quickNoteFolderPathInput->setText(QString());
     m_quickNoteNoteNameLineEdit->setText(QString());
-    // LEGACY: m_quickNoteTemplateSelector disabled - requires ServiceLocator
+    m_quickNoteTemplateSelector->setCurrentTemplate(QString());
     return;
   }
 
@@ -381,7 +386,11 @@ void QuickAccessPage::loadCurrentQuickNote() {
   const auto &scheme = m_quickNoteSchemes[m_quickNoteCurrentIndex];
   m_quickNoteFolderPathInput->setText(scheme.m_folderPath);
   m_quickNoteNoteNameLineEdit->setText(scheme.m_noteName);
-  // LEGACY: m_quickNoteTemplateSelector disabled - requires ServiceLocator
+  if (!m_quickNoteTemplateSelector->setCurrentTemplate(scheme.m_template)) {
+    // The template no longer exists on disk. Fall back to "None" instead of leaking the
+    // previously selected scheme's template.
+    m_quickNoteTemplateSelector->setCurrentTemplate(QString());
+  }
 }
 
 void QuickAccessPage::setCurrentQuickNote(int idx) {

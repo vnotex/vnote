@@ -463,6 +463,14 @@ add_qt_test(test_quickaccessitem
   GUILESS
 )
 
+add_qt_test(test_quicknotescheme
+  SOURCES
+    test_quicknotescheme.cpp
+  LINKS
+    core_configs
+  GUILESS
+)
+
 add_qt_test(test_vxurl_parsing
   SOURCES
     test_vxurl_parsing.cpp
