@@ -77,6 +77,16 @@ public:
     QString m_fontStyle;
   };
 
+  // Result of resolving the anchor id of a heading at the web side.
+  struct HeadingAnchorResult {
+    // Whether a heading was found at the requested line.
+    bool m_found = false;
+
+    // The anchor id. May legitimately be empty for an empty heading, hence the
+    // explicit @m_found flag.
+    QString m_anchor;
+  };
+
   explicit MarkdownViewerAdapter(QObject *p_parent = nullptr);
 
   // ServiceLocator-aware constructor for new architecture.
@@ -118,6 +128,12 @@ public:
   void
   fetchStylesFromStyleSheet(const QString &p_styleSheet,
                             const std::function<void(const QVector<CssRuleStyle> *)> &p_callback);
+
+  // Resolve the anchor id of the heading starting at 0-based source line
+  // @p_lineNumber of @p_text, using the web side markdown-it instance so that
+  // the anchor matches the rendered one exactly.
+  void fetchHeadingAnchor(const QString &p_text, int p_lineNumber,
+                          const std::function<void(const HeadingAnchorResult &)> &p_callback);
 
   // Functions to be called from web side.
 public slots:
@@ -166,6 +182,8 @@ public slots:
 
   void setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles);
 
+  void setHeadingAnchor(quint64 p_id, bool p_found, const QString &p_anchor);
+
   // Signals to be connected at web side.
 signals:
   // Current Markdown text is updated.
@@ -201,6 +219,8 @@ signals:
   void highlightMathRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
 
   void parseStyleSheetRequested(quint64 p_id, const QString &p_styleSheet);
+
+  void headingAnchorRequested(quint64 p_id, const QString &p_text, int p_lineNumber);
 
   // Signals to be connected at cpp side.
 signals:

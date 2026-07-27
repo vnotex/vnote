@@ -1,8 +1,10 @@
 #include "markdowneditorcontroller.h"
 
 #include <QFileInfo>
+#include <QUrl>
 
 #include <vtextedit/markdowneditorconfig.h>
+#include <vtextedit/markdownutils.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/theme.h>
 #include <vtextedit/vtextedit.h>
@@ -15,6 +17,7 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/texteditorconfig.h>
+#include <utils/pathutils.h>
 
 using namespace vnotex;
 
@@ -377,4 +380,27 @@ MarkdownEditorController::getPreviewHelperConfig(const MarkdownEditorConfig &p_m
   config.inplacePreviewMathBlocksEnabled = srcs & MarkdownEditorConfig::Math;
 
   return config;
+}
+
+bool MarkdownEditorController::isLinkableHeadingLine(const QString &p_blockText) {
+  const auto match = vte::MarkdownUtils::matchHeader(p_blockText);
+  // m_header is already trimmed, so an empty one rejects lines like "## ",
+  // whose anchor would be the empty string and whose link a bare '#'.
+  return match.m_matched && !match.m_header.isEmpty();
+}
+
+QString MarkdownEditorController::composeHeadingLink(const QString &p_resolvedNotePath,
+                                                     const QString &p_anchor) {
+  QUrl url = PathUtils::pathToUrl(p_resolvedNotePath);
+  // DecodedMode: the anchor arrives already decoded from the web side, so a
+  // literal '%' must be encoded rather than parsed as the start of an escape.
+  url.setFragment(p_anchor, QUrl::DecodedMode);
+  // The returned string is NOT what finally lands on the clipboard verbatim:
+  // ClipboardUtils::setLinkToClipboard feeds it back through
+  // PathUtils::pathToUrl and re-serializes it (on Windows local files as
+  // toString(QUrl::EncodeSpaces)). The percent-encoding of the clipboard text
+  // is therefore decided there, not here; only the anchor content has to
+  // survive that round trip (covered by test_markdown_heading_link's
+  // anchorSurvivesClipboardReparse).
+  return url.toString();
 }

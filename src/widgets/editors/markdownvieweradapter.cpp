@@ -353,3 +353,30 @@ void MarkdownViewerAdapter::fetchStylesFromStyleSheet(
                          p_callback));
   }
 }
+
+void MarkdownViewerAdapter::setHeadingAnchor(quint64 p_id, bool p_found, const QString &p_anchor) {
+  HeadingAnchorResult result;
+  result.m_found = p_found;
+  result.m_anchor = p_anchor;
+
+  invokeCallback(p_id, &result);
+}
+
+void MarkdownViewerAdapter::fetchHeadingAnchor(
+    const QString &p_text, int p_lineNumber,
+    const std::function<void(const HeadingAnchorResult &)> &p_callback) {
+  if (p_lineNumber < 0) {
+    p_callback(HeadingAnchorResult());
+    return;
+  }
+
+  if (isReady()) {
+    const quint64 id = addCallback([p_callback](void *data) {
+      p_callback(*reinterpret_cast<const HeadingAnchorResult *>(data));
+    });
+    emit headingAnchorRequested(id, p_text, p_lineNumber);
+  } else {
+    pendAction(std::bind(&MarkdownViewerAdapter::fetchHeadingAnchor, this, p_text, p_lineNumber,
+                         p_callback));
+  }
+}

@@ -112,6 +112,19 @@ public:
   // Used by MarkdownViewWindow2 to configure PreviewHelper.
   static PreviewHelperConfig getPreviewHelperConfig(const MarkdownEditorConfig &p_mdConfig);
 
+  // ============ Heading Link ============
+
+  // Whether @p_blockText is an ATX heading line for which an edit-mode
+  // "Copy Link" action should be offered. Only ATX (#) syntax is supported,
+  // consistent with the outline; a heading with an empty title is rejected
+  // since its anchor would be the empty string.
+  static bool isLinkableHeadingLine(const QString &p_blockText);
+
+  // Compose the read-mode-equivalent absolute link for a heading anchor.
+  // @p_resolvedNotePath: absolute file path of the note.
+  // @p_anchor: anchor id resolved by the web side.
+  static QString composeHeadingLink(const QString &p_resolvedNotePath, const QString &p_anchor);
+
 private:
   ServiceLocator &m_services;
   int m_editorConfigRevision = 0;

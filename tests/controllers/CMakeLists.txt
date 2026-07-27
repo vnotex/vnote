@@ -246,6 +246,22 @@ add_qt_test(test_controllers_readonly_state
   GUILESS
 )
 
+# Edit-mode "Copy Link" for Markdown headings: the two pure seams
+# (MarkdownEditorController::isLinkableHeadingLine / composeHeadingLink). The
+# anchor itself is computed on the web side and is covered by the manual parity
+# matrix instead. pathutils.cpp comes from core_services -- do NOT add it to
+# SOURCES or MSVC reports duplicate symbols.
+add_qt_test(test_markdown_heading_link
+  SOURCES
+    test_markdown_heading_link.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
+  LINKS
+    core_configs
+    core_services
+    vxcore
+  GUILESS
+)
+
 # T22 (open-notebook-remote-readonly): OpenNotebookController::cloneAndOpen
 # async clone + staging-dir-safe rollback. Tests exercise the worker
 # dispatch (QtConcurrent::run inside the controller), pre-flight validation,

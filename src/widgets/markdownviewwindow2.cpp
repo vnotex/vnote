@@ -371,6 +371,21 @@ void MarkdownViewWindow2::setupTextEditor() {
     }
   });
 
+  // Resolve heading anchors for the edit-mode "Copy Link" action via the web
+  // side, so the anchor matches the one read mode renders.
+  m_editor->setHeadingLinkResolver([this](const QString &p_text, int p_line,
+                                          std::function<void(bool, const QString &)> p_cb) {
+    adapter()->fetchHeadingAnchor(
+        p_text, p_line, [this, p_cb](const MarkdownViewerAdapter::HeadingAnchorResult &p_result) {
+          if (!p_result.m_found) {
+            p_cb(false, QString());
+            return;
+          }
+          p_cb(true, MarkdownEditorController::composeHeadingLink(getBuffer().resolvedPath(),
+                                                                  p_result.m_anchor));
+        });
+  });
+
   applyReadableWidth();
 }
 

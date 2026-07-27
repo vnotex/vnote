@@ -1,6 +1,8 @@
 #ifndef MARKDOWNEDITOR_H
 #define MARKDOWNEDITOR_H
 
+#include <functional>
+
 #include <QHash>
 #include <QScopedPointer>
 
@@ -53,6 +55,14 @@ public:
     QString title;
     QString altText;
   };
+
+  // Resolves the final clipboard link for the heading on 0-based line
+  // @lineNumber of @text. Installed by MarkdownViewWindow2, which owns both
+  // the buffer path and the viewer adapter. The completion callback is invoked
+  // with ok == false when the heading could not be resolved.
+  using HeadingLinkResolver =
+      std::function<void(const QString & /*text*/, int /*lineNumber*/,
+                         std::function<void(bool /*ok*/, const QString & /*link*/)>)>;
 
   MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
                  const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
@@ -113,6 +123,8 @@ public:
   QRgb getPreviewBackground() const;
 
   void setImageHostController(ImageHostController *p_controller);
+
+  void setHeadingLinkResolver(HeadingLinkResolver p_resolver);
 
   // Static helpers for placeholder generation and replacement (testable).
   static QString generatePlaceholder(int p_token, const QString &p_fileName);
@@ -228,9 +240,18 @@ private:
   bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                        const QTextBlock &p_block);
 
+  // Offer a "Copy Link" action for the ATX heading on @p_block. The anchor is
+  // resolved asynchronously on trigger via the installed HeadingLinkResolver.
+  bool prependHeaderMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
+                         const QTextBlock &p_block);
+
   // Resolve the markdown link URL at the given cursor position within p_block.
   // Returns an empty string when there is no link at the position.
   QString resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_block) const;
+
+  // Whether @p_filePath is the file this editor is currently editing.
+  // Returns false when the editor has no buffer or @p_filePath is empty.
+  bool isCurrentFile(const QString &p_filePath) const;
 
   static QString generateImageFileNameToInsertAs(const QString &p_title, const QString &p_suffix);
 
@@ -251,6 +272,8 @@ private:
   MarkdownTableHelper *m_tableHelper = nullptr;
 
   ImageHostController *m_imageHostController = nullptr;
+
+  HeadingLinkResolver m_headingLinkResolver;
 
   QHash<int, PlaceholderInfo> m_pendingUploads;
 

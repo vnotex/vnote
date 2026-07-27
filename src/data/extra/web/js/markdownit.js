@@ -339,6 +339,34 @@ class MarkdownIt extends VxWorker {
         return this.codeNodesStore.getNodes(p_langs);
     }
 
+    // Resolve the anchor id of the heading starting at 0-based source line
+    // @p_lineNumber in @p_text. Parses the whole document with the live
+    // markdown-it instance so the id matches the render path exactly, including
+    // reference-style links, footnotes and duplicate-heading numbering.
+    getHeadingAnchor(p_text, p_lineNumber) {
+        // Swap in fresh dedup state so we never disturb the live render.
+        const savedHeaderIds = this.headerIds;
+        const savedFrontMatterNode = this.frontMatterNode;
+        this.headerIds = [new Set(), new Set()];
+
+        try {
+            let tokens = this.mdit.parse(p_text, {});
+            for (let i = 0; i < tokens.length; ++i) {
+                let token = tokens[i];
+                if (token.type === 'heading_open'
+                    && token.map
+                    && token.map[0] === p_lineNumber) {
+                    return { found: true, anchor: token.attrGet('id') || '' };
+                }
+            }
+        } finally {
+            this.headerIds = savedHeaderIds;
+            this.frontMatterNode = savedFrontMatterNode;
+        }
+
+        return { found: false, anchor: '' };
+    }
+
     generateHeaderId(p_headerIds, p_str) {
         // Step 1: Strip VNote heading sequence numbers.
         let regExp = Utils.headingSequenceRegExp();

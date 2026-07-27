@@ -305,6 +305,16 @@ class MarkdownViewerCore extends VXCore {
         window.vxMarkdownAdapter.setStyleSheetStyles(p_id, styles);
     }
 
+    // Resolve the anchor id of the heading at 0-based source line @p_lineNumber
+    // of @p_text via the MarkdownIt worker, which owns the live markdown-it
+    // instance.
+    getHeadingAnchor(p_id, p_text, p_lineNumber) {
+        let worker = this.getWorker('markdownit');
+        let result = worker ? worker.getHeadingAnchor(p_text, p_lineNumber)
+                            : { found: false, anchor: '' };
+        window.vxMarkdownAdapter.setHeadingAnchor(p_id, result.found, result.anchor);
+    }
+
     setCrossCopyTargets(p_targets) {
         window.vxMarkdownAdapter.setCrossCopyTargets(p_targets);
     }

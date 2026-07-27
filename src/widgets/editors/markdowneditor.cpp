@@ -12,6 +12,7 @@
 #include <QMimeDatabase>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPointer>
 #include <QProgressDialog>
 #include <QRegularExpression>
 #include <QShortcut>
@@ -36,6 +37,7 @@
 #include <widgets/dialogs/selectdialog.h>
 
 #include <controllers/imagehostcontroller.h>
+#include <controllers/markdowneditorcontroller.h>
 #include <core/clipboarddata.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -890,7 +892,10 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
         // "Attach And Insert Link" flow (selection 6), whose target is a freshly
         // attached copy where the original fragment no longer applies.
         if (dialog.getSelection() == 3) {
-          linkUrl = LinkInsertUtils::appendFragmentToLink(linkUrl, urlFragment);
+          // A link to a heading in the file being edited collapses to a bare
+          // "#anchor" -- the file part would just be a self-reference.
+          linkUrl =
+              LinkInsertUtils::composeRelativeLink(linkUrl, urlFragment, isCurrentFile(localFile));
         }
       } else {
         linkUrl = url.toString(QUrl::EncodeSpaces);
@@ -1058,6 +1063,19 @@ QString MarkdownEditor::getRelativeLink(const QString &p_path) {
   } else {
     return p_path;
   }
+}
+
+bool MarkdownEditor::isCurrentFile(const QString &p_filePath) const {
+  if (p_filePath.isEmpty() || !m_buffer2) {
+    return false;
+  }
+
+  const auto currentPath = m_buffer2->resolvedPath();
+  if (currentPath.isEmpty()) {
+    return false;
+  }
+
+  return PathUtils::areSamePaths(currentPath, p_filePath);
 }
 
 const QVector<MarkdownEditor::Heading> &MarkdownEditor::getHeadings() const { return m_headings; }
@@ -1583,6 +1601,11 @@ void MarkdownEditor::insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_p
     return;
   }
 
+  ret = prependHeaderMenu(p_menu, p_before, pos, block);
+  if (ret) {
+    return;
+  }
+
   if (prependInPlacePreviewMenu(p_menu, p_before, pos, block)) {
     p_menu->insertSeparator(p_before);
   }
@@ -1744,6 +1767,49 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
             [linkUrl]() { ClipboardUtils::setLinkToClipboard(linkUrl); });
     p_menu->insertAction(p_before, act);
   }
+
+  p_menu->insertSeparator(p_before);
+
+  return true;
+}
+
+void MarkdownEditor::setHeadingLinkResolver(HeadingLinkResolver p_resolver) {
+  m_headingLinkResolver = std::move(p_resolver);
+}
+
+bool MarkdownEditor::prependHeaderMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
+                                       const QTextBlock &p_block) {
+  Q_UNUSED(p_cursorPos);
+
+  if (!m_headingLinkResolver) {
+    return false;
+  }
+
+  // The whole clicked block qualifies, so there is no need to test the cursor
+  // position against a region (and no end-exclusive pitfall to work around).
+  if (!MarkdownEditorController::isLinkableHeadingLine(p_block.text())) {
+    return false;
+  }
+
+  // Capture the block number, NOT the QTextBlock: the latter is a handle into
+  // the document and may dangle once the document is edited.
+  const int blockNumber = p_block.blockNumber();
+
+  auto act = new QAction(tr("Copy Link"), p_menu);
+  connect(act, &QAction::triggered, p_menu, [this, blockNumber]() {
+    QPointer<MarkdownEditor> self(this);
+    m_headingLinkResolver(getText(), blockNumber, [self](bool p_ok, const QString &p_link) {
+      if (!self) {
+        return;
+      }
+      if (!p_ok) {
+        qWarning() << "failed to resolve the anchor of the heading to copy its link";
+        return;
+      }
+      ClipboardUtils::setLinkToClipboard(p_link);
+    });
+  });
+  p_menu->insertAction(p_before, act);
 
   p_menu->insertSeparator(p_before);
 

@@ -47,6 +47,10 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.parseStyleSheet(p_id, p_styleSheet);
         });
 
+        adapter.headingAnchorRequested.connect(function(p_id, p_text, p_lineNumber) {
+            window.vxcore.getHeadingAnchor(p_id, p_text, p_lineNumber);
+        });
+
         adapter.crossCopyRequested.connect(function(p_id, p_timeStamp, p_target, p_baseUrl, p_html) {
             window.vxcore.crossCopy(p_id, p_timeStamp, p_target, p_baseUrl, p_html);
         });

@@ -988,3 +988,26 @@ add_custom_command(TARGET test_editorstatusbarbinder POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_editorstatusbarbinder>
 )
+
+# MarkdownViewerAdapter heading-anchor plumbing: the C++ request/response
+# bridge for the edit-mode "Copy Link" heading action. No web view is created;
+# the web side is simulated by listening for headingAnchorRequested and calling
+# the setHeadingAnchor slot. NOT GUILESS — MarkdownViewerAdapter pulls in
+# GuiUtils/QTextCharFormat, which need a QApplication.
+add_qt_test(test_markdownvieweradapter_anchor
+  SOURCES
+    test_markdownvieweradapter_anchor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/markdownvieweradapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/plantumlhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphvizhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/guiutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+  LINKS
+    Qt6::Widgets
+    core_services
+    vxcore
+)
