@@ -2,8 +2,10 @@
 #define VNOTE3MIGRATIONSERVICE_H
 
 #include <QDir>
+#include <QHash>
 #include <QList>
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 
@@ -87,6 +89,13 @@ private:
 
   NotebookCoreService *m_notebookService = nullptr;
   TagCoreService *m_tagService = nullptr;
+
+  // Legacy attachment children whose bytes were verifiably migrated into the destination
+  // notebook's own attachment folder during importFolder(). Key: QDir::cleanPath() of the
+  // ABSOLUTE legacy attachment container path (e.g. "<src>/notes/vx_attachments").
+  // Value: names of the container's immediate children that were consumed.
+  // copyRemainingFiles() consults this to avoid duplicating those bytes.
+  QHash<QString, QSet<QString>> m_consumedAttachmentChildren;
 
   int m_progressCurrent = 0;
   int m_progressTotal = 0;

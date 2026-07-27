@@ -19,6 +19,7 @@ using namespace vnotex;
 // Test-only failpoint declared in vnote3migrationservice.cpp
 namespace vnotex {
 extern void vnote3MigrationService_setFailAfterCreate(bool p_fail);
+extern void vnote3MigrationService_setFailAttachmentCopy(bool p_fail);
 } // namespace vnotex
 
 namespace tests {
@@ -99,6 +100,13 @@ private slots:
   void testCopyRemainingCopiesUnindexedFiles();
   void testCopyRemainingSkipsExclusions();
   void testCopyRemainingDoesNotOverwriteImportedFiles();
+
+  // Legacy attachment deduplication
+  void testDedupRealFixtureRemovesLegacyAttachments();
+  void testDedupPartialConsumption();
+  void testDedupLooseFileBesideConsumedDir();
+  void testDedupNestedSubfolderConsumedWithWarning();
+  void testDedupPreservesLegacyOnCopyFailure();
 
 private:
   // Returns absolute path to a test data fixture, or empty string if not found.
@@ -1118,6 +1126,13 @@ void TestVNote3MigrationService::testConvertMigratesAttachments() {
   QVERIFY2(!attachDir.isEmpty(), "getAttachmentsFolder returned empty");
   QVERIFY2(QFile::exists(attachDir + QStringLiteral("/report.pdf")),
            qPrintable(QStringLiteral("report.pdf not on disk at: %1").arg(attachDir)));
+
+  // Dedup: the consumed legacy attachment dir must NOT be duplicated into the destination.
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/434314329027059")),
+           "Consumed legacy attachment dir should not be copied into the destination");
+  // The container had no other children, so it must not be created at all.
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_attachments")),
+           "Fully consumed legacy attachment container should not exist in the destination");
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -2357,6 +2372,283 @@ void TestVNote3MigrationService::testCopyRemainingDoesNotOverwriteImportedFiles(
   QCOMPARE(actualModified, expectedModified);
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+// --- Legacy attachment deduplication ---
+
+void TestVNote3MigrationService::testDedupRealFixtureRemovesLegacyAttachments() {
+  // The database_notebook fixture references all three numeric attachment dirs, so the whole
+  // vx_attachments container is consumed and must not appear anywhere in the destination.
+  const QString fixturePath =
+      findFixture(QStringLiteral("../data/vnote3_notebooks/database_notebook"));
+  if (fixturePath.isEmpty()) {
+    QSKIP("Test fixture 'database_notebook' not found");
+  }
+
+  TempDirFixture workDir;
+  QVERIFY(workDir.isValid());
+  const QString sourcePath = workDir.copyFrom(fixturePath, QStringLiteral("source"));
+  QVERIFY2(QDir(sourcePath).exists(), "Failed to copy fixture");
+
+  const QString destPath = m_tempDir.filePath(QStringLiteral("dedup_fixture_dest"));
+  auto result = m_service->convertNotebook(sourcePath, destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QStringList leftovers;
+  QDirIterator it(destPath, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+  while (it.hasNext()) {
+    it.next();
+    if (it.fileName() == QStringLiteral("vx_attachments")) {
+      leftovers.append(it.filePath());
+    }
+  }
+  QVERIFY2(leftovers.isEmpty(),
+           qPrintable(QStringLiteral("Legacy vx_attachments still present in dest: %1")
+                          .arg(leftovers.join(QStringLiteral(", ")))));
+
+  // The bytes still made it across, via the new attachment folders.
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+  const QString attachDir =
+      m_notebookService->getAttachmentsFolder(nbId, QStringLiteral("hive.md"));
+  QVERIFY2(!attachDir.isEmpty(), "getAttachmentsFolder returned empty for hive.md");
+  QVERIFY2(QFile::exists(attachDir + QStringLiteral("/schema.sql")),
+           qPrintable(QStringLiteral("schema.sql not on disk at: %1").arg(attachDir)));
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+}
+
+void TestVNote3MigrationService::testDedupPartialConsumption() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("noted.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with attachments");
+    f.close();
+  }
+
+  // Referenced numeric dir.
+  base.mkpath(QStringLiteral("vx_attachments/111"));
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/111/report.pdf")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("referenced attachment");
+    f.close();
+  }
+  // Unreferenced numeric dir (orphan of a deleted note).
+  base.mkpath(QStringLiteral("vx_attachments/222"));
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/222/orphan.pdf")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("orphan attachment");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("noted.md");
+  fileEntry[QStringLiteral("attachment_folder")] = QStringLiteral("111");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  const QString destPath = m_tempDir.filePath(QStringLiteral("dedup_partial_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/111")),
+           "Consumed attachment dir should be skipped");
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/222/orphan.pdf")),
+           "Unreferenced attachment dir should still be copied wholesale");
+}
+
+void TestVNote3MigrationService::testDedupLooseFileBesideConsumedDir() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("noted.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with attachments");
+    f.close();
+  }
+
+  base.mkpath(QStringLiteral("vx_attachments/111"));
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/111/report.pdf")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("referenced attachment");
+    f.close();
+  }
+  // Loose file directly inside the container.
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/loose.txt")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("loose file beside the numeric dirs");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("noted.md");
+  fileEntry[QStringLiteral("attachment_folder")] = QStringLiteral("111");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  const QString destPath = m_tempDir.filePath(QStringLiteral("dedup_loose_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/loose.txt")),
+           "Loose file beside a consumed dir should still be copied");
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/111")),
+           "Consumed attachment dir should be skipped");
+}
+
+void TestVNote3MigrationService::testDedupNestedSubfolderConsumedWithWarning() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("noted.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with nested attachments");
+    f.close();
+  }
+
+  base.mkpath(QStringLiteral("vx_attachments/111/nested"));
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/111/report.pdf")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("root level attachment");
+    f.close();
+  }
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/111/nested/deep.txt")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("nested attachment bytes");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("noted.md");
+  fileEntry[QStringLiteral("attachment_folder")] = QStringLiteral("111");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  const QString destPath = m_tempDir.filePath(QStringLiteral("dedup_nested_dest"));
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QVERIFY2(!pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/111")),
+           "Consumed attachment dir should be skipped even when it has subfolders");
+
+  QString nbId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
+  const QString attachDir =
+      m_notebookService->getAttachmentsFolder(nbId, QStringLiteral("noted.md"));
+  QVERIFY2(!attachDir.isEmpty(), "getAttachmentsFolder returned empty");
+  QVERIFY2(QFile::exists(attachDir + QStringLiteral("/report.pdf")),
+           "Root-level attachment should be migrated");
+  QVERIFY2(QFile::exists(attachDir + QStringLiteral("/nested/deep.txt")),
+           "Nested attachment bytes should be migrated");
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+
+  bool foundSubfolderWarning = false;
+  for (const QString &w : result.warnings) {
+    if (w.contains(QStringLiteral("noted.md")) && w.contains(QStringLiteral("subfolder"))) {
+      foundSubfolderWarning = true;
+      break;
+    }
+  }
+  QVERIFY2(foundSubfolderWarning,
+           qPrintable(QStringLiteral("Expected a subfolder warning naming the note. Got: %1")
+                          .arg(result.warnings.join(QStringLiteral("; ")))));
+}
+
+void TestVNote3MigrationService::testDedupPreservesLegacyOnCopyFailure() {
+  TempDirFixture sourceDir;
+  QVERIFY(sourceDir.isValid());
+  QDir base(sourceDir.path());
+
+  QJsonObject cfgOvr;
+  cfgOvr[QStringLiteral("image_folder")] = QStringLiteral("vx_images");
+  cfgOvr[QStringLiteral("attachment_folder")] = QStringLiteral("vx_attachments");
+  writeNotebookConfig(sourceDir.path(), makeConfigJson(cfgOvr));
+
+  {
+    QFile f(base.filePath(QStringLiteral("noted.md")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("# Note with attachments");
+    f.close();
+  }
+
+  base.mkpath(QStringLiteral("vx_attachments/111"));
+  {
+    QFile f(base.filePath(QStringLiteral("vx_attachments/111/report.pdf")));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("referenced attachment");
+    f.close();
+  }
+
+  QJsonObject fileEntry;
+  fileEntry[QStringLiteral("name")] = QStringLiteral("noted.md");
+  fileEntry[QStringLiteral("attachment_folder")] = QStringLiteral("111");
+  QJsonArray filesArr;
+  filesArr.append(fileEntry);
+  QJsonObject rootVx;
+  rootVx[QStringLiteral("files")] = filesArr;
+  rootVx[QStringLiteral("folders")] = QJsonArray();
+  writeVxJson(sourceDir.path(), rootVx);
+
+  const QString destPath = m_tempDir.filePath(QStringLiteral("dedup_copyfail_dest"));
+  vnote3MigrationService_setFailAttachmentCopy(true);
+  auto result = m_service->convertNotebook(sourceDir.path(), destPath);
+  vnote3MigrationService_setFailAttachmentCopy(false);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Copy was reported as failed, so the legacy tree must be preserved as the fallback.
+  QVERIFY2(pathExistsInNotebook(destPath, QStringLiteral("vx_attachments/111/report.pdf")),
+           "Legacy attachment dir must be preserved when the migration copy is unverified");
+
+  bool foundWarning = false;
+  for (const QString &w : result.warnings) {
+    if (w.contains(QStringLiteral("noted.md")) && w.contains(QStringLiteral("incomplete"))) {
+      foundWarning = true;
+      break;
+    }
+  }
+  QVERIFY2(foundWarning,
+           qPrintable(QStringLiteral("Expected an incomplete-copy warning. Got: %1")
+                          .arg(result.warnings.join(QStringLiteral("; ")))));
 }
 
 } // namespace tests

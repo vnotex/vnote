@@ -18,9 +18,15 @@ using namespace vnotex;
 // Test-only failpoint: when true, convertNotebook() fails immediately after notebook creation.
 static bool s_failAfterCreate = false;
 
+// Test-only failpoint: when true, attachment migration (step 7) is treated as failed so the
+// legacy attachment tree is preserved by the supplementary copy.
+static bool s_failAttachmentCopy = false;
+
 namespace vnotex {
 
 void vnote3MigrationService_setFailAfterCreate(bool p_fail) { s_failAfterCreate = p_fail; }
+
+void vnote3MigrationService_setFailAttachmentCopy(bool p_fail) { s_failAttachmentCopy = p_fail; }
 
 } // namespace vnotex
 
@@ -56,22 +62,29 @@ LegacyTimestamp parseLegacyTimestamp(const QJsonValue &p_val) {
 
 // Recursively copy a directory tree using raw filesystem operations.
 // Does NOT use importFile/createFolderPath — purely filesystem copy.
-void copyDirectoryRecursively(const QString &p_srcDir, const QString &p_destDir) {
+// Returns true only if every directory creation and file copy succeeded. Copying continues
+// on failure (best effort); the return value is the aggregate outcome.
+bool copyDirectoryRecursively(const QString &p_srcDir, const QString &p_destDir) {
   QDir srcDir(p_srcDir);
   if (!srcDir.exists()) {
-    return;
+    return false;
   }
-  QDir().mkpath(p_destDir);
+  bool allOk = QDir().mkpath(p_destDir);
   const auto entries =
       srcDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
   for (const QFileInfo &fi : entries) {
     const QString destPath = p_destDir + QStringLiteral("/") + fi.fileName();
     if (fi.isDir()) {
-      copyDirectoryRecursively(fi.absoluteFilePath(), destPath);
+      if (!copyDirectoryRecursively(fi.absoluteFilePath(), destPath)) {
+        allOk = false;
+      }
     } else {
-      QFile::copy(fi.absoluteFilePath(), destPath);
+      if (!QFile::copy(fi.absoluteFilePath(), destPath)) {
+        allOk = false;
+      }
     }
   }
+  return allOk;
 }
 
 } // namespace
@@ -232,6 +245,7 @@ VNote3ConversionResult VNote3MigrationService::convertNotebook(const QString &p_
   // Pass 2: Main import — recursive, vx.json-driven.
   m_progressCurrent = 0;
   m_progressTotal = countImportItems(p_sourcePath);
+  m_consumedAttachmentChildren.clear();
   const QDir sourceRoot(p_sourcePath);
   importFolder(notebookId, sourceRoot, QString(), p_destPath, inspection, result.warnings);
 
@@ -352,43 +366,87 @@ void VNote3MigrationService::importFolder(const QString &p_notebookId,
 
     // 7. Migrate attachments.
     if (!entry.attachmentFolder.isEmpty()) {
-      const QString srcAttachDir = absFolderPath + QStringLiteral("/") +
-          p_inspection.attachmentFolder + QStringLiteral("/") + entry.attachmentFolder;
-      if (QDir(srcAttachDir).exists()) {
-        try {
-          const QString destAttachDir =
-              m_notebookService->getAttachmentsFolder(p_notebookId, filePath);
-          if (!destAttachDir.isEmpty()) {
-            QDir().mkpath(destAttachDir);
-            // Copy root-level files and collect names; recurse into subdirs.
-            QStringList rootFileNames;
-            const QDir srcAttDir(srcAttachDir);
-            const auto attachEntries =
-                srcAttDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
-            for (const QFileInfo &afi : attachEntries) {
-              if (afi.isFile()) {
-                QFile::copy(afi.absoluteFilePath(),
-                            destAttachDir + QStringLiteral("/") + afi.fileName());
-                rootFileNames.append(afi.fileName());
-              } else if (afi.isDir()) {
-                copyDirectoryRecursively(
-                    afi.absoluteFilePath(),
-                    destAttachDir + QStringLiteral("/") + afi.fileName());
+      if (p_inspection.attachmentFolder.isEmpty()) {
+        // Without a notebook-level attachment folder the source path would degenerate to
+        // "<folder>//<id>", i.e. the note's own content folder. Skip and record nothing so the
+        // supplementary copy keeps whatever is on disk.
+        p_warnings.append(
+            tr("File '%1': notebook has no attachment folder configured, skipping attachments")
+                .arg(filePath));
+      } else {
+        const QString attachContainer = QDir::cleanPath(
+            absFolderPath + QStringLiteral("/") + p_inspection.attachmentFolder);
+        const QString srcAttachDir =
+            attachContainer + QStringLiteral("/") + entry.attachmentFolder;
+        if (QDir(srcAttachDir).exists()) {
+          // Consumption of the legacy folder is gated on a fully verified copy: the legacy
+          // tree is the only remaining copy of these bytes once it is skipped.
+          bool allOk = !s_failAttachmentCopy;
+          bool hasSubdir = false;
+          try {
+            const QString destAttachDir =
+                m_notebookService->getAttachmentsFolder(p_notebookId, filePath);
+            if (destAttachDir.isEmpty()) {
+              allOk = false;
+            } else {
+              if (!QDir().mkpath(destAttachDir)) {
+                allOk = false;
+              }
+              // Copy root-level files and collect names; recurse into subdirs.
+              QStringList rootFileNames;
+              const QDir srcAttDir(srcAttachDir);
+              const auto attachEntries =
+                  srcAttDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+              for (const QFileInfo &afi : attachEntries) {
+                if (afi.isFile()) {
+                  if (QFile::copy(afi.absoluteFilePath(),
+                                  destAttachDir + QStringLiteral("/") + afi.fileName())) {
+                    rootFileNames.append(afi.fileName());
+                  } else {
+                    allOk = false;
+                  }
+                } else if (afi.isDir()) {
+                  hasSubdir = true;
+                  if (!copyDirectoryRecursively(
+                          afi.absoluteFilePath(),
+                          destAttachDir + QStringLiteral("/") + afi.fileName())) {
+                    allOk = false;
+                  }
+                }
+              }
+              if (!rootFileNames.isEmpty()) {
+                // A failed registration leaves the copied bytes unlisted in the attachment
+                // panel, so it must NOT consume the legacy folder.
+                if (!m_notebookService->updateFileAttachments(
+                        p_notebookId, filePath, rootFileNames)) {
+                  allOk = false;
+                }
               }
             }
-            if (!rootFileNames.isEmpty()) {
-              m_notebookService->updateFileAttachments(
-                  p_notebookId, filePath, rootFileNames);
-            }
+          } catch (...) {
+            allOk = false;
+            p_warnings.append(
+                QStringLiteral("File '%1': failed to migrate attachments").arg(filePath));
           }
-        } catch (...) {
+
+          if (allOk) {
+            m_consumedAttachmentChildren[attachContainer].insert(entry.attachmentFolder);
+            if (hasSubdir) {
+              p_warnings.append(
+                  tr("File '%1': attachment subfolders are not listed in the attachment panel; "
+                     "use 'Open Folder' to reach them")
+                      .arg(filePath));
+            }
+          } else {
+            p_warnings.append(
+                tr("File '%1': attachment copy incomplete, keeping the legacy attachment folder")
+                    .arg(filePath));
+          }
+        } else {
           p_warnings.append(
-              QStringLiteral("File '%1': failed to migrate attachments").arg(filePath));
+              QStringLiteral("File '%1': attachment source dir not found, skipping")
+                  .arg(filePath));
         }
-      } else {
-        p_warnings.append(
-            QStringLiteral("File '%1': attachment source dir not found, skipping")
-                .arg(filePath));
       }
     }
   }
@@ -616,10 +674,20 @@ void VNote3MigrationService::copyRemainingFiles(const QString &p_sourcePath,
     return;
   }
 
+  // Children of this directory whose bytes were already migrated into the destination
+  // notebook's own attachment folders during importFolder(). Copying them again would
+  // duplicate the data.
+  const QSet<QString> consumed =
+      m_consumedAttachmentChildren.value(QDir::cleanPath(p_sourcePath));
+
   const auto entries =
       sourceDir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
   for (const QFileInfo &fi : entries) {
     const QString name = fi.fileName();
+
+    if (consumed.contains(name)) {
+      continue;
+    }
 
     // Skip excluded directories.
     if (fi.isDir()) {
@@ -629,11 +697,16 @@ void VNote3MigrationService::copyRemainingFiles(const QString &p_sourcePath,
         continue;
       }
       const QString destSubDir = p_destPath + QStringLiteral("/") + name;
-      if (!QDir(destSubDir).exists()) {
-        copyDirectoryRecursively(fi.absoluteFilePath(), destSubDir);
-      } else {
-        // Directory exists in dest — recurse to copy individual missing files.
+      // A legacy attachment container may have had some (or all) of its children consumed;
+      // recurse so the remainder is copied and fully consumed containers create nothing.
+      const bool isAttachmentContainer =
+          m_consumedAttachmentChildren.contains(QDir::cleanPath(fi.absoluteFilePath()));
+      if (isAttachmentContainer || QDir(destSubDir).exists()) {
+        // Directory exists in dest (or is a partially consumed container) — recurse to copy
+        // individual missing files.
         copyRemainingFiles(fi.absoluteFilePath(), destSubDir);
+      } else {
+        copyDirectoryRecursively(fi.absoluteFilePath(), destSubDir);
       }
       continue;
     }

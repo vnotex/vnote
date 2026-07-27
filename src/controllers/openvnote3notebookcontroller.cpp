@@ -151,5 +151,8 @@ OpenVNote3NotebookController::convertAndOpen(const OpenVNote3NotebookInput &p_in
   result.notebookId = openResult.notebookId;
   result.notebookName = openResult.notebookName;
   result.errorMessage = openResult.errorMessage;
+  // The conversion already happened; surface its warnings on both the success and the
+  // open-failure paths.
+  result.warnings = convResult.warnings;
   return result;
 }

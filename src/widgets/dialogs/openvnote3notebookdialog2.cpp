@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFormLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QProgressDialog>
 
 #include <controllers/openvnote3notebookcontroller.h>
@@ -180,6 +181,20 @@ void OpenVNote3NotebookDialog2::acceptedButtonClicked() {
 
   auto result = m_controller->convertAndOpen(input);
   progress.close();
+
+  // The conversion writes the destination notebook before the open is attempted, so its
+  // warnings are relevant on both outcomes.
+  if (!result.warnings.isEmpty()) {
+    QMessageBox box(QMessageBox::Information, tr("Conversion Completed"),
+                    tr("The notebook was converted with %n note(s) about degraded items.",
+                       nullptr, result.warnings.size()),
+                    QMessageBox::Ok, this);
+    box.setInformativeText(
+        tr("Some items were degraded or skipped. Review the details before removing the "
+           "original VNote3 notebook."));
+    box.setDetailedText(result.warnings.join(QLatin1Char('\n')));
+    box.exec();
+  }
 
   if (result.success) {
     m_openedNotebookId = result.notebookId;

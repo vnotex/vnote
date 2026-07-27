@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 #include <controllers/opennotebookcontroller.h>
 #include <core/services/vnote3migrationservice.h>
@@ -24,6 +25,9 @@ struct OpenVNote3NotebookResult {
   QString notebookId;
   QString notebookName;
   QString errorMessage;
+  // Per-step degradation messages collected during the conversion. Populated whenever the
+  // conversion itself ran, regardless of whether the subsequent open succeeded.
+  QStringList warnings;
 };
 
 // Controller for converting and opening VNote3 notebooks.
