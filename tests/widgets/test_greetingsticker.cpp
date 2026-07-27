@@ -87,7 +87,12 @@ void TestGreetingSticker::test_showUpdatesLabel() {
 
   const QString expectedBefore = GreetingSticker::greetingForHour(hourBefore);
   const QString expectedAfter = GreetingSticker::greetingForHour(hourAfter);
-  QVERIFY(label->text() == expectedBefore || label->text() == expectedAfter);
+  // The label holds rich text (greeting header plus a subtitle line), so match
+  // by containment instead of equality.
+  const QString text = label->text();
+  QVERIFY2(text.contains(expectedBefore) || text.contains(expectedAfter),
+           qPrintable(QStringLiteral("label text %1 contains neither %2 nor %3")
+                          .arg(text, expectedBefore, expectedAfter)));
   sticker.hide();
 }
 
