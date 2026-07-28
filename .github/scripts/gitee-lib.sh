@@ -43,11 +43,9 @@ REMOTE="https://gitee.com/${GITEE_OWNER}/${GITEE_REPO}.git"
 #
 # Gitee's OpenAPI v5 declares `access_token` as a query/form parameter, but it
 # also accepts an `Authorization: token <pat>` header. The header keeps the
-# token out of every URL, so probe for it once per job and fall back to the
-# query parameter only if the probe says no.
-#
-# TODO(maintainer): once the first production run has logged the answer, delete
-# the losing branch and hard-code the winner.
+# token out of every URL. Run 30447287744 confirmed the header works for this
+# token, so `header` is the expected mode; the query fallback is retained for
+# the case where a future token or endpoint rejects it.
 # -----------------------------------------------------------------------------
 if [ -r "$RUNNER_TEMP/gitee-auth-mode" ]; then
   GITEE_AUTH_MODE="$(cat "$RUNNER_TEMP/gitee-auth-mode")"
@@ -176,17 +174,52 @@ api_require_2xx() {  # $1 = human description of the call
 # `@` or `<` as a file path, and changelog text legitimately contains both.
 #
 # Swagger is self-contradictory about the content type (`consumes:
-# application/json` while listing the parameters as `formData`), so try
-# multipart first and retry once with a JSON body on 400/415. A 4xx means the
-# request was rejected before anything was created, so the retry is safe.
-#
-# TODO(maintainer): once the first production run has logged which one Gitee
-# accepts, delete the losing branch.
+# application/json` while listing the parameters as `formData`). Run
+# 30447448351 settled it: a multipart PATCH was parsed and reached Gitee's
+# business validation (it answered `{"message":"发行版不存在"}`), so multipart
+# IS accepted. The JSON retry is kept only for a 415, the unambiguous
+# "unsupported media type" signal. A 400 is a semantic rejection - retrying it
+# as JSON would only hide the real error message.
 # -----------------------------------------------------------------------------
 _gitee_json_auth_arg() {  # echoes nothing in header mode
   if [ "$GITEE_AUTH_MODE" != "header" ]; then
     printf '%s' "$GITEE_TOKEN"
   fi
+}
+
+# Gitee answers GET /releases/tags/{tag} with HTTP 200 and a literal `null`
+# body when the release does not exist - it never returns 404 for this
+# endpoint. "Found" therefore means: 2xx AND a JSON object carrying an id.
+#
+# Sets the global FOUND_RELEASE_ID (deliberately a global, not stdout: a
+# command substitution would run `api` in a subshell and lose $API_CODE /
+# $API_BODY, which the caller needs for diagnostics).
+#
+# Returns 0 = found, 1 = definitely absent, 2 = API error.
+gitee_find_release_id() {  # $1 = tag
+  local tag="$1"
+  FOUND_RELEASE_ID=""
+  api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${tag}" \
+    --retry 3 --retry-delay 5
+  if ! api_is_2xx; then
+    if [ "${API_CODE:-000}" = "404" ]; then
+      return 1
+    fi
+    return 2
+  fi
+  # A parse failure must NOT be reported as "absent": that would drive the
+  # caller into an unnecessary create attempt. Surface it as an API error.
+  if ! FOUND_RELEASE_ID="$(printf '%s' "$API_BODY" \
+      | jq -r 'if type == "object" then (.id // empty) else empty end')"; then
+    echo "could not parse the release lookup response for $tag" >&2
+    FOUND_RELEASE_ID=""
+    return 2
+  fi
+  if [ -z "$FOUND_RELEASE_ID" ] || [ "$FOUND_RELEASE_ID" = "null" ]; then
+    FOUND_RELEASE_ID=""
+    return 1
+  fi
+  return 0
 }
 
 gitee_create_release() {  # $1 tag, $2 name, $3 body, $4 target_commitish
@@ -197,8 +230,8 @@ gitee_create_release() {  # $1 tag, $2 name, $3 body, $4 target_commitish
     --form-string "body=${body}" \
     --form-string "target_commitish=${target}" \
     --form-string "prerelease=false"
-  if [ "${API_CODE:-000}" = "400" ] || [ "${API_CODE:-000}" = "415" ]; then
-    echo "multipart create rejected (HTTP $API_CODE); retrying with a JSON body"
+  if [ "${API_CODE:-000}" = "415" ]; then
+    echo "multipart create rejected (HTTP 415); retrying with a JSON body"
     json="$(jq -n --arg t "$tag" --arg n "$name" --arg b "$body" \
                   --arg c "$target" --arg k "$(_gitee_json_auth_arg)" \
       '{tag_name:$t, name:$n, body:$b, target_commitish:$c, prerelease:false}
@@ -215,8 +248,8 @@ gitee_patch_release() {  # $1 id, $2 tag, $3 name, $4 body
     --form-string "tag_name=${tag}" \
     --form-string "name=${name}" \
     --form-string "body=${body}"
-  if [ "${API_CODE:-000}" = "400" ] || [ "${API_CODE:-000}" = "415" ]; then
-    echo "multipart update rejected (HTTP $API_CODE); retrying with a JSON body"
+  if [ "${API_CODE:-000}" = "415" ]; then
+    echo "multipart update rejected (HTTP 415); retrying with a JSON body"
     json="$(jq -n --arg t "$tag" --arg n "$name" --arg b "$body" \
                   --arg k "$(_gitee_json_auth_arg)" \
       '{tag_name:$t, name:$n, body:$b}

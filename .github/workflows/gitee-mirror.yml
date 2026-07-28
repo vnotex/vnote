@@ -272,59 +272,55 @@ jobs:
           BASE_BODY="$(printf '%s' "$BODY" | strip_oversize_block)"
 
           # --- 1. create or update -------------------------------------------
-          api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${TAG}" \
-            --retry 3 --retry-delay 5
-          case "$API_CODE" in
-            200)
-              RELEASE_ID="$(printf '%s' "$API_BODY" | jq -r '.id')"
-              echo "gitee release for $TAG already exists (id=$RELEASE_ID); updating"
-              gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" "$BASE_BODY"
-              api_require_2xx "update release"
-              ;;
-            404)
-              echo "creating gitee release for $TAG"
-              gitee_create_release "$TAG" "$NAME" "$BASE_BODY" "$SHA"
-              if ! api_is_2xx; then
-                # Ambiguous mutating call: re-query instead of blindly re-POSTing.
-                echo "create returned HTTP $API_CODE; re-querying before deciding"
-                api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${TAG}" \
-                  --retry 3 --retry-delay 5
-                case "$API_CODE" in
-                  200)
-                    echo "release exists after all; adopting it"
-                    ;;
-                  404)
-                    # A definite 404 proves the create never landed, so exactly
-                    # one re-POST is safe (and is the only safe retry here).
-                    echo "release still absent; retrying the create once"
-                    gitee_create_release "$TAG" "$NAME" "$BASE_BODY" "$SHA"
-                    if ! api_is_2xx; then
-                      echo "second create returned HTTP $API_CODE; re-querying"
-                      api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${TAG}" \
-                        --retry 3 --retry-delay 5
-                      if [ "$API_CODE" != "200" ]; then
-                        echo "release create failed (HTTP $API_CODE)" >&2
-                        printf '%s\n' "$API_BODY" >&2
-                        exit 1
-                      fi
-                      echo "release exists after the second attempt; adopting it"
-                    fi
-                    ;;
-                  *)
-                    echo "release create recovery failed (HTTP $API_CODE)" >&2
-                    printf '%s\n' "$API_BODY" >&2
-                    exit 1
-                    ;;
-                esac
-              fi
-              RELEASE_ID="$(printf '%s' "$API_BODY" | jq -r '.id')"
-              ;;
-            *)
-              echo "unexpected status looking up release by tag: HTTP $API_CODE" >&2
+          # NOTE: Gitee answers GET /releases/tags/{tag} with 200 + a literal
+          # `null` body when the release is absent; it never 404s. That is why
+          # existence is decided by gitee_find_release_id, not by the status
+          # code, and why the id is always re-resolved by lookup instead of
+          # being read out of a POST response.
+          if gitee_find_release_id "$TAG"; then
+            RELEASE_ID="$FOUND_RELEASE_ID"
+            echo "gitee release for $TAG already exists (id=$RELEASE_ID); updating"
+            gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" "$BASE_BODY"
+            api_require_2xx "update release"
+          else
+            lookup_rc=$?
+            if [ "$lookup_rc" -ne 1 ]; then
+              echo "looking up the release by tag failed (HTTP $API_CODE)" >&2
               printf '%s\n' "$API_BODY" >&2
               exit 1
-              ;;
-          esac
+            fi
+
+            # Absent. Create, then re-resolve authoritatively. A definite
+            # "still absent" proves the POST never landed, so exactly one
+            # re-POST is safe; anything else is a hard failure.
+            RELEASE_ID=""
+            attempt=1
+            while [ "$attempt" -le 2 ]; do
+              echo "creating gitee release for $TAG (attempt $attempt)"
+              gitee_create_release "$TAG" "$NAME" "$BASE_BODY" "$SHA"
+              create_code="${API_CODE:-000}"
+              if gitee_find_release_id "$TAG"; then
+                RELEASE_ID="$FOUND_RELEASE_ID"
+                echo "gitee release created (id=$RELEASE_ID)"
+                break
+              else
+                lookup_rc=$?
+                if [ "$lookup_rc" -ne 1 ]; then
+                  echo "looking up the release after create failed (HTTP $API_CODE)" >&2
+                  printf '%s\n' "$API_BODY" >&2
+                  exit 1
+                fi
+                echo "release still absent (create returned HTTP $create_code)"
+                printf '%s\n' "$API_BODY" >&2
+              fi
+              attempt=$((attempt + 1))
+            done
+
+            if [ -z "$RELEASE_ID" ]; then
+              echo "failed to create the gitee release for $TAG" >&2
+              exit 1
+            fi
+          fi
 
           if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
             echo "could not determine the gitee release id" >&2
