@@ -172,6 +172,19 @@ win64 / windows7) AND its body matches the `changes.md` section do you publish i
 gh release edit vX.Y.Z --draft=false
 ```
 
+Publishing fires the `Gitee Mirror` workflow (`.github/workflows/gitee-mirror.yml`),
+which mirrors the release to `gitee.com/vnotex/vnote`. Confirm it started and check
+its result:
+
+```pwsh
+gh run list --workflow "Gitee Mirror" --limit 3
+curl.exe -s "https://gitee.com/api/v5/repos/vnotex/vnote/releases" |
+  ConvertFrom-Json | Select-Object tag_name, name
+```
+
+Expect exactly one Gitee release with `tag_name = vX.Y.Z`. If no run appeared,
+re-drive it manually with `gh workflow run "Gitee Mirror" -f tag=vX.Y.Z`.
+
 ## Quick reference
 
 | Step | Command / File |

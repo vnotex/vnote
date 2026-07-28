@@ -30,6 +30,17 @@ VNote不是一个简单的Markdown编辑器。通过提供强大的笔记管理�
 * [天翼云盘](https://cloud.189.cn/t/Av67NvmEJVBv)
 * [百度云盘](https://pan.baidu.com/s/1lX69oMBw8XuJshQDN3HiHw?pwd=f8fk)
 
+### Gitee 镜像
+
+[gitee.com/vnotex/vnote](https://gitee.com/vnotex/vnote) 是面向国内用户的只读镜像，GitHub 仍是上游仓库：
+
+* 代码：`master` 分支与发布标签（`v*`）自动同步；`continuous-build` 标签**不**同步。
+* 发布：Gitee 上只保留**最新**的稳定版本，历史版本请到 GitHub 查看。
+* 超过 Gitee 附件大小限制（200 MB）的文件（目前是 macOS 安装包）不会上传，发布说明中会给出 GitHub 下载链接。
+* 子模块仍指向 GitHub，因此从 Gitee 克隆后编译仍需要能访问 GitHub。
+
+Pull Request 和 Issue 请统一提交到 GitHub。
+
 ## 支持
 * [GitHub Issues](https://github.com/vnotex/vnote/issues)；
 * 邮件：`tamlokveer at gmail.com`；

@@ -1,0 +1,461 @@
+name: Gitee Mirror
+
+# Mirrors github.com/vnotex/vnote to gitee.com/vnotex/vnote:
+#   * Job A (sync-code)     - pushes master + release tags on every push to master.
+#   * Job B (mirror-release) - on a published GitHub release (or manual dispatch),
+#                              creates/updates the matching Gitee release, attaches
+#                              its assets, and prunes older Gitee releases.
+#
+# The `continuous-build` tag/release is deliberately NOT mirrored: it is the only
+# mutable tag, CI force-moves it after the push event, and Gitee has no matching
+# release. See the job guards below.
+#
+# Credentials live in the `GiteeMirror` repository environment as the secrets
+# GITEE_USERNAME (the Gitee account login/path) and GITEE_TOKEN (a 私人令牌 with
+# the `projects` scope). Both jobs must declare `environment:` to see them.
+
+on:
+  push:
+    branches: [ master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to mirror to Gitee (e.g. v4.3.0)'
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  GITEE_OWNER: vnotex
+  GITEE_REPO: vnote
+  # Conservative decimal 200 MB. Gitee's documented per-attachment cap is 200 MB
+  # for GVP projects; the exact byte definition is unconfirmed.
+  SIZE_LIMIT: '200000000'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job A - push master + release tags to Gitee.
+  # ---------------------------------------------------------------------------
+  sync-code:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: GiteeMirror
+    timeout-minutes: 30
+    concurrency:
+      group: gitee-mirror-code
+      cancel-in-progress: true   # a newer master push supersedes an older sync
+    env:
+      GITEE_USERNAME: ${{ secrets.GITEE_USERNAME }}
+      GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+    steps:
+      - name: Mask credentials
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          echo "::add-mask::$GITEE_USERNAME"
+          test -n "$GITEE_TOKEN" || { echo "GITEE_TOKEN is empty" >&2; exit 1; }
+          test -n "$GITEE_USERNAME" || { echo "GITEE_USERNAME is empty" >&2; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # full history
+          fetch-tags: true    # ... and tags; required by the refs/tags/v* push
+          submodules: false   # D8: submodules keep pointing at GitHub
+
+      - name: Push master and release tags to Gitee
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          . .github/scripts/gitee-lib.sh
+
+          git push "$REMOTE" refs/heads/master:refs/heads/master
+
+          # Release tags only. `continuous-build` (the sole mutable tag) is excluded:
+          # CI force-moves it AFTER the push event using GITHUB_TOKEN, so any
+          # push-time mirror would be stale, and a plain `git push --tags` would
+          # hard-fail on it forever.
+          #
+          # Fast path: one batched round trip. `refs/tags/v*:refs/tags/v*` is a valid
+          # git pattern refspec (exactly one `*` on each side); quote it so the shell
+          # does not glob it.
+          if ! git push "$REMOTE" "refs/tags/v*:refs/tags/v*"; then
+            echo "batched tag push failed; falling back to per-tag pushes"
+            # Per-tag, so a tag Job B pushed concurrently does not fail the sync.
+            # NOT the default: this is ~90 round trips.
+            git tag -l 'v*' | while read -r t; do
+              push_tag_idempotent "$t" "$(git rev-parse "refs/tags/$t^{commit}")" || exit 1
+            done
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Job B - mirror one published release to Gitee.
+  # ---------------------------------------------------------------------------
+  mirror-release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'release' &&
+       !github.event.release.draft &&
+       !github.event.release.prerelease &&
+       github.event.release.tag_name != 'continuous-build')
+    runs-on: ubuntu-latest
+    environment: GiteeMirror
+    timeout-minutes: 180   # large attachments to a CN host are slow
+    concurrency:
+      group: gitee-mirror-release
+      cancel-in-progress: false
+      # `single` (the default) would cancel a PENDING release run when a second
+      # one arrives. `max` keeps up to 100 pending runs instead. It may not be
+      # combined with `cancel-in-progress: true`.
+      # NOTE: actionlint <=1.7.12 does not know this key yet and reports
+      # `unexpected key "queue"`. That is a stale-schema false positive; `queue`
+      # is documented current GitHub Actions syntax. Do not remove it.
+      queue: max
+    env:
+      GITEE_USERNAME: ${{ secrets.GITEE_USERNAME }}
+      GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Mask credentials
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          echo "::add-mask::$GITEE_USERNAME"
+          test -n "$GITEE_TOKEN" || { echo "GITEE_TOKEN is empty" >&2; exit 1; }
+          test -n "$GITEE_USERNAME" || { echo "GITEE_USERNAME is empty" >&2; exit 1; }
+
+      - name: Resolve tag
+        env:
+          # Indirection through env: never interpolate event/input data straight
+          # into a shell script.
+          INPUT_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          TAG="${INPUT_TAG:-}"
+          if [ -z "$TAG" ]; then TAG="${RELEASE_TAG:-}"; fi
+          if [ -z "$TAG" ]; then
+            echo "could not resolve a tag to mirror" >&2
+            exit 1
+          fi
+          if [ "$TAG" = "continuous-build" ]; then
+            echo "refusing to mirror the continuous-build tag" >&2
+            exit 1
+          fi
+          case "$TAG" in
+            *[!A-Za-z0-9._/-]*)
+              echo "tag contains unexpected characters: $TAG" >&2
+              exit 1
+              ;;
+          esac
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "mirroring tag: $TAG"
+
+      # On a `release` event github.ref is refs/tags/<tag>, so the default checkout
+      # is a detached tag with no local master branch. Pin master explicitly; that
+      # also removes the manual-dispatch ref ambiguity.
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: false
+
+      - name: Fetch GitHub release metadata
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" \
+            --json tagName,name,body,isDraft,isPrerelease,assets \
+            > "$RUNNER_TEMP/release.json"
+
+          if [ "$(jq -r '.isDraft' "$RUNNER_TEMP/release.json")" = "true" ]; then
+            echo "release $TAG is still a draft; refusing to mirror" >&2
+            exit 1
+          fi
+          if [ "$(jq -r '.isPrerelease' "$RUNNER_TEMP/release.json")" = "true" ]; then
+            echo "release $TAG is a prerelease; refusing to mirror" >&2
+            exit 1
+          fi
+
+          NAME="$(jq -r '.name // ""' "$RUNNER_TEMP/release.json")"
+          [ -n "$NAME" ] || NAME="$TAG"
+          printf '%s' "$NAME" > "$RUNNER_TEMP/name.txt"
+
+          # Gitee requires a non-empty body.
+          BODY="$(jq -r '.body // ""' "$RUNNER_TEMP/release.json")"
+          [ -n "$BODY" ] || BODY="$NAME"
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.txt"
+
+          echo "release name: $NAME"
+          echo "assets on GitHub:"
+          jq -r '.assets[].name' "$RUNNER_TEMP/release.json" || true
+
+      - name: Push the tag to Gitee
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          . .github/scripts/gitee-lib.sh
+
+          # Belt and braces: `ref: master` checks out a branch, and the tag may
+          # have been created after that ref was resolved. Fetch it explicitly
+          # instead of trusting checkout's tag handling.
+          git fetch --force origin "+refs/tags/${TAG}:refs/tags/${TAG}"
+
+          SHA="$(git rev-parse "refs/tags/$TAG^{commit}")"
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+
+          # Only the tag - Job A owns refs/heads/master, and pushing a tag ref
+          # transfers its commit plus every missing reachable object, so $SHA is
+          # resolvable on Gitee (needed for target_commitish) even when Gitee's
+          # master has not advanced yet.
+          push_tag_idempotent "$TAG" "$SHA"
+
+      - name: Download release assets
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/dist"
+
+          # `gh release download` also exits non-zero for auth/network/disk
+          # failures, so `|| true` would let a PARTIAL download through and the
+          # prune step would then replace a complete Gitee release with it.
+          # Use the authoritative asset list from the metadata step instead.
+          expected="$(jq -r '.assets | length' "$RUNNER_TEMP/release.json")"
+          if [ "$expected" -eq 0 ]; then
+            echo "release $TAG carries no assets; nothing to download"
+            exit 0
+          fi
+
+          gh release download "$TAG" -D "$RUNNER_TEMP/dist"
+          ls -l "$RUNNER_TEMP/dist"
+
+          missing=0
+          seen=0
+          while IFS=$'\t' read -r name size; do
+            [ -n "$name" ] || continue
+            seen=$((seen + 1))
+            f="$RUNNER_TEMP/dist/$name"
+            if [ ! -f "$f" ]; then
+              echo "asset not downloaded: $name" >&2
+              missing=1
+              continue
+            fi
+            got="$(stat -c %s "$f")"
+            if [ "$got" != "$size" ]; then
+              echo "asset $name is truncated: got $got bytes, expected $size" >&2
+              missing=1
+            fi
+          done < <(jq -r '.assets[] | [.name, (.size|tostring)] | @tsv' \
+                     "$RUNNER_TEMP/release.json")
+          if [ "$missing" -ne 0 ]; then
+            echo "refusing to mirror an incomplete asset set" >&2
+            exit 1
+          fi
+          # bash does not propagate a process substitution's exit status, so
+          # assert the loop actually saw every record instead of trusting jq.
+          if [ "$seen" -ne "$expected" ]; then
+            echo "verified only $seen of $expected asset records" >&2
+            exit 1
+          fi
+          echo "all $expected assets downloaded and size-verified"
+
+      - name: Create or update the Gitee release and attach assets
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          . .github/scripts/gitee-lib.sh
+
+          NAME="$(cat "$RUNNER_TEMP/name.txt")"
+          BODY="$(cat "$RUNNER_TEMP/body.txt")"
+          BASE_BODY="$(printf '%s' "$BODY" | strip_oversize_block)"
+
+          # --- 1. create or update -------------------------------------------
+          api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${TAG}" \
+            --retry 3 --retry-delay 5
+          case "$API_CODE" in
+            200)
+              RELEASE_ID="$(printf '%s' "$API_BODY" | jq -r '.id')"
+              echo "gitee release for $TAG already exists (id=$RELEASE_ID); updating"
+              gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" "$BASE_BODY"
+              api_require_2xx "update release"
+              ;;
+            404)
+              echo "creating gitee release for $TAG"
+              gitee_create_release "$TAG" "$NAME" "$BASE_BODY" "$SHA"
+              if ! api_is_2xx; then
+                # Ambiguous mutating call: re-query instead of blindly re-POSTing.
+                echo "create returned HTTP $API_CODE; re-querying before deciding"
+                api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${TAG}" \
+                  --retry 3 --retry-delay 5
+                case "$API_CODE" in
+                  200)
+                    echo "release exists after all; adopting it"
+                    ;;
+                  404)
+                    # A definite 404 proves the create never landed, so exactly
+                    # one re-POST is safe (and is the only safe retry here).
+                    echo "release still absent; retrying the create once"
+                    gitee_create_release "$TAG" "$NAME" "$BASE_BODY" "$SHA"
+                    if ! api_is_2xx; then
+                      echo "second create returned HTTP $API_CODE; re-querying"
+                      api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${TAG}" \
+                        --retry 3 --retry-delay 5
+                      if [ "$API_CODE" != "200" ]; then
+                        echo "release create failed (HTTP $API_CODE)" >&2
+                        printf '%s\n' "$API_BODY" >&2
+                        exit 1
+                      fi
+                      echo "release exists after the second attempt; adopting it"
+                    fi
+                    ;;
+                  *)
+                    echo "release create recovery failed (HTTP $API_CODE)" >&2
+                    printf '%s\n' "$API_BODY" >&2
+                    exit 1
+                    ;;
+                esac
+              fi
+              RELEASE_ID="$(printf '%s' "$API_BODY" | jq -r '.id')"
+              ;;
+            *)
+              echo "unexpected status looking up release by tag: HTTP $API_CODE" >&2
+              printf '%s\n' "$API_BODY" >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+            echo "could not determine the gitee release id" >&2
+            exit 1
+          fi
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "gitee release id: $RELEASE_ID"
+
+          # --- 2. attach assets, size aware ----------------------------------
+          gitee_list_attachments "$RELEASE_ID" > "$RUNNER_TEMP/attached.txt"
+
+          : > "$RUNNER_TEMP/oversize.txt"
+          shopt -s nullglob
+          for f in "$RUNNER_TEMP"/dist/*; do
+            [ -f "$f" ] || continue
+            base="$(basename "$f")"
+            size="$(stat -c %s "$f")"
+
+            if [ "$size" -gt "$SIZE_LIMIT" ]; then
+              echo "SKIP (oversize, ${size} > ${SIZE_LIMIT}): $base"
+              printf '%s\n' "$base" >> "$RUNNER_TEMP/oversize.txt"
+              continue
+            fi
+
+            if grep -Fxq -- "$base" "$RUNNER_TEMP/attached.txt"; then
+              echo "SKIP (already attached): $base"
+              continue
+            fi
+
+            echo "uploading ($size bytes): $base"
+            # No --max-time: a 160+ MiB upload to a CN host is slow by nature.
+            gitee_upload_attachment "$RELEASE_ID" "$f"
+            if ! api_is_2xx; then
+              # Ambiguous upload: re-list and accept an exact filename match
+              # rather than re-uploading a file Gitee may already have stored.
+              echo "upload returned HTTP $API_CODE; re-listing attachments"
+              gitee_list_attachments "$RELEASE_ID" > "$RUNNER_TEMP/attached.txt"
+              if grep -Fxq -- "$base" "$RUNNER_TEMP/attached.txt"; then
+                echo "attachment $base is present after all; continuing"
+              else
+                echo "failed to attach $base (HTTP $API_CODE)" >&2
+                printf '%s\n' "$API_BODY" >&2
+                exit 1
+              fi
+            fi
+          done
+          shopt -u nullglob
+
+          # --- 3. link fallback for oversize assets --------------------------
+          if [ -s "$RUNNER_TEMP/oversize.txt" ]; then
+            {
+              printf '%s\n' "$BASE_BODY"
+              printf '\n%s\n' '<!-- gitee-oversize-assets:start -->'
+              printf '%s\n' '---'
+              printf '%s\n\n' '以下文件超过 Gitee 附件大小限制（200 MB），请从 GitHub 下载：'
+              while read -r name; do
+                [ -n "$name" ] || continue
+                printf -- '- [%s](https://github.com/%s/releases/download/%s/%s)\n' \
+                  "$name" "$GH_REPO" "$TAG" "$name"
+              done < "$RUNNER_TEMP/oversize.txt"
+              printf '%s\n' '<!-- gitee-oversize-assets:end -->'
+            } > "$RUNNER_TEMP/final_body.txt"
+
+            echo "appending an oversize-asset link block for:"
+            cat "$RUNNER_TEMP/oversize.txt"
+            gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" \
+              "$(cat "$RUNNER_TEMP/final_body.txt")"
+            api_require_2xx "append oversize link block"
+          fi
+
+      - name: Prune older Gitee releases
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          . .github/scripts/gitee-lib.sh
+
+          # D7a: prune ONLY when the mirrored tag is GitHub's current latest stable
+          # release, so a dispatch for an older tag can never delete a newer Gitee
+          # release. /releases/latest already excludes drafts and prereleases.
+          #
+          # A failed lookup must NOT be downgraded to "skip prune, exit 0": that
+          # would leave two Gitee releases while reporting success, breaking D7
+          # and hiding the need for a rerun. Fail red instead - nothing has been
+          # deleted at this point, so a rerun is safe.
+          if ! LATEST="$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)"; then
+            echo "could not query GitHub's latest release; refusing to prune" >&2
+            exit 1
+          fi
+          if [ -z "$LATEST" ]; then
+            echo "GitHub's latest release has an empty tag_name; refusing to prune" >&2
+            exit 1
+          fi
+          if [ "$LATEST" != "$TAG" ]; then
+            echo "GitHub's latest release is $LATEST, not $TAG; skipping prune"
+            exit 0
+          fi
+
+          # Collect every id FIRST. Deleting while paginating shifts pages and
+          # silently skips releases.
+          : > "$RUNNER_TEMP/ids.txt"
+          page=1
+          while : ; do
+            api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases?page=${page}&per_page=100" \
+              --retry 3 --retry-delay 5
+            if [ "$API_CODE" != "200" ]; then
+              echo "listing gitee releases failed (HTTP $API_CODE)" >&2
+              printf '%s\n' "$API_BODY" >&2
+              exit 1
+            fi
+            n="$(printf '%s' "$API_BODY" | jq 'length')"
+            if [ "$n" -eq 0 ]; then break; fi
+            printf '%s' "$API_BODY" | jq -r '.[].id' >> "$RUNNER_TEMP/ids.txt"
+            if [ "$n" -lt 100 ]; then break; fi
+            page=$((page + 1))
+          done
+
+          count="$(grep -Fxc -- "$RELEASE_ID" "$RUNNER_TEMP/ids.txt" || true)"
+          if [ "${count:-0}" != "1" ]; then
+            echo "expected the mirrored release id $RELEASE_ID exactly once in the listing, got ${count:-0}" >&2
+            exit 1
+          fi
+
+          # Read the ids into an array first: a `while read < file` loop would
+          # share its stdin with curl.
+          mapfile -t ids < "$RUNNER_TEMP/ids.txt"
+          for id in ${ids[@]+"${ids[@]}"}; do
+            [ -n "$id" ] || continue
+            [ "$id" != "$RELEASE_ID" ] || continue
+            echo "deleting older gitee release id=$id"
+            api DELETE "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${id}"
+            api_require_2xx "delete release $id"
+          done
+
+          echo "prune done; git tags are untouched"
