@@ -219,7 +219,7 @@ void TestSyncCredentialsStore::deleteMissingEntryEmitsDeleted() {
 #ifndef VNOTE_KEYCHAIN_AVAILABLE
   QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot exercise real keychain delete");
 #else
-  // Regression for issue #2718: deleting a PAT that was never stored must be
+  // Regression for issue #2718: deleting a PAT that is not present must be
   // idempotent (credentialsDeleted, NOT credentialsError). On macOS the Apple
   // DeletePasswordJob reports errSecItemNotFound as an error; the store now
   // normalizes QKeychain::EntryNotFound to success on all platforms.
@@ -229,6 +229,36 @@ void TestSyncCredentialsStore::deleteMissingEntryEmitsDeleted() {
       QStringLiteral("nb_never_stored_") +
       QString::number(QDateTime::currentMSecsSinceEpoch());
 
+  // Probe backend usability first with a real store, then delete it, so the
+  // notebookId is guaranteed absent for the idempotency assertion below. A
+  // headless CI runner with no Secret Service daemon ("org.freedesktop.secrets
+  // was not provided") fails this store and skips — WITHOUT this probe a blanket
+  // "credentialsError => skip" would also swallow the very macOS regression this
+  // test guards (issue #2718: Apple's DeletePasswordJob reports errSecItemNotFound
+  // as an error that the store MUST normalize to credentialsDeleted). On macOS,
+  // Windows, and a keyring-backed Linux the backend is usable, so we never skip
+  // and the normalization contract is enforced.
+  {
+    QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
+    QSignalSpy storeErrSpy(&store, &SyncCredentialsStore::credentialsStoreError);
+    store.storeCredentials(notebookId, QStringLiteral("ghp_PROBE"));
+    const int stored = waitForEither(storedSpy, storeErrSpy, 5000);
+    if (stored == 2) {
+      const QString errMsg = storeErrSpy.first().at(1).toString();
+      QSKIP(qPrintable(
+          QStringLiteral("OS keychain backend not usable in this test environment: %1")
+              .arg(errMsg)));
+    }
+    QCOMPARE(stored, 1);
+
+    QSignalSpy seedDelSpy(&store, &SyncCredentialsStore::credentialsDeleted);
+    QSignalSpy seedDelErrSpy(&store, &SyncCredentialsStore::credentialsError);
+    store.deleteCredentials(notebookId);
+    QCOMPARE(waitForEither(seedDelSpy, seedDelErrSpy, 5000), 1);
+  }
+
+  // Backend is usable and the entry is now absent: deleting it again must be
+  // idempotent (credentialsDeleted, NOT credentialsError).
   QSignalSpy deletedSpy(&store, &SyncCredentialsStore::credentialsDeleted);
   QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsError);
   store.deleteCredentials(notebookId);
