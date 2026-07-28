@@ -173,8 +173,8 @@ gh release edit vX.Y.Z --draft=false
 ```
 
 Publishing fires the `Gitee Mirror` workflow (`.github/workflows/gitee-mirror.yml`),
-which mirrors the release to `gitee.com/vnotex/vnote`. Confirm it started and check
-its result:
+which creates the matching release on `gitee.com/vnotex/vnote` and prunes all but
+the two most recent ones. Confirm it started and check its result:
 
 ```pwsh
 gh run list --workflow "Gitee Mirror" --limit 3
@@ -182,8 +182,19 @@ curl.exe -s "https://gitee.com/api/v5/repos/vnotex/vnote/releases" |
   ConvertFrom-Json | Select-Object tag_name, name
 ```
 
-Expect exactly one Gitee release with `tag_name = vX.Y.Z`. If no run appeared,
-re-drive it manually with `gh workflow run "Gitee Mirror" -f tag=vX.Y.Z`.
+Expect at most two Gitee releases, the newest with `tag_name = vX.Y.Z`. If no run
+appeared, re-drive it manually with `gh workflow run "Gitee Mirror" -f tag=vX.Y.Z`.
+
+The workflow does **not** upload binaries — Gitee's attachment endpoint runs at
+well under 50 KB/s from a GitHub-hosted runner. Download the 4 artifacts from the
+GitHub release and attach them to the Gitee release by hand:
+
+```pwsh
+gh release download vX.Y.Z -D gitee-assets
+```
+
+Then upload them at `https://gitee.com/vnotex/vnote/releases` → edit the release.
+Re-running the workflow never deletes attachments, so ordering does not matter.
 
 ## Quick reference
 

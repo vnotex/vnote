@@ -3,8 +3,13 @@ name: Gitee Mirror
 # Mirrors github.com/vnotex/vnote to gitee.com/vnotex/vnote:
 #   * Job A (sync-code)     - pushes master + release tags on every push to master.
 #   * Job B (mirror-release) - on a published GitHub release (or manual dispatch),
-#                              creates/updates the matching Gitee release, attaches
-#                              its assets, and prunes older Gitee releases.
+#                              creates/updates the matching Gitee release and
+#                              prunes all but the two most recent ones.
+#
+# Release BINARIES are not mirrored: Gitee's attachment endpoint runs at well
+# under 50 KB/s from a GitHub-hosted runner, so the maintainer uploads the
+# artifacts to the Gitee release by hand. This workflow never touches
+# attachments.
 #
 # The `continuous-build` tag/release is deliberately NOT mirrored: it is the only
 # mutable tag, CI force-moves it after the push event, and Gitee has no matching
@@ -31,9 +36,6 @@ permissions:
 env:
   GITEE_OWNER: vnotex
   GITEE_REPO: vnote
-  # Conservative decimal 200 MB. Gitee's documented per-attachment cap is 200 MB
-  # for GVP projects; the exact byte definition is unconfirmed.
-  SIZE_LIMIT: '200000000'
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -102,7 +104,7 @@ jobs:
        github.event.release.tag_name != 'continuous-build')
     runs-on: ubuntu-latest
     environment: GiteeMirror
-    timeout-minutes: 180   # large attachments to a CN host are slow
+    timeout-minutes: 30
     concurrency:
       group: gitee-mirror-release
       cancel-in-progress: false
@@ -213,55 +215,7 @@ jobs:
           # master has not advanced yet.
           push_tag_idempotent "$TAG" "$SHA"
 
-      - name: Download release assets
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/dist"
-
-          # `gh release download` also exits non-zero for auth/network/disk
-          # failures, so `|| true` would let a PARTIAL download through and the
-          # prune step would then replace a complete Gitee release with it.
-          # Use the authoritative asset list from the metadata step instead.
-          expected="$(jq -r '.assets | length' "$RUNNER_TEMP/release.json")"
-          if [ "$expected" -eq 0 ]; then
-            echo "release $TAG carries no assets; nothing to download"
-            exit 0
-          fi
-
-          gh release download "$TAG" -D "$RUNNER_TEMP/dist"
-          ls -l "$RUNNER_TEMP/dist"
-
-          missing=0
-          seen=0
-          while IFS=$'\t' read -r name size; do
-            [ -n "$name" ] || continue
-            seen=$((seen + 1))
-            f="$RUNNER_TEMP/dist/$name"
-            if [ ! -f "$f" ]; then
-              echo "asset not downloaded: $name" >&2
-              missing=1
-              continue
-            fi
-            got="$(stat -c %s "$f")"
-            if [ "$got" != "$size" ]; then
-              echo "asset $name is truncated: got $got bytes, expected $size" >&2
-              missing=1
-            fi
-          done < <(jq -r '.assets[] | [.name, (.size|tostring)] | @tsv' \
-                     "$RUNNER_TEMP/release.json")
-          if [ "$missing" -ne 0 ]; then
-            echo "refusing to mirror an incomplete asset set" >&2
-            exit 1
-          fi
-          # bash does not propagate a process substitution's exit status, so
-          # assert the loop actually saw every record instead of trusting jq.
-          if [ "$seen" -ne "$expected" ]; then
-            echo "verified only $seen of $expected asset records" >&2
-            exit 1
-          fi
-          echo "all $expected assets downloaded and size-verified"
-
-      - name: Create or update the Gitee release and attach assets
+      - name: Create or update the Gitee release
         run: |
           set -euo pipefail
           echo "::add-mask::$GITEE_TOKEN"
@@ -269,9 +223,13 @@ jobs:
 
           NAME="$(cat "$RUNNER_TEMP/name.txt")"
           BODY="$(cat "$RUNNER_TEMP/body.txt")"
-          BASE_BODY="$(printf '%s' "$BODY" | strip_oversize_block)"
 
-          # --- 1. create or update -------------------------------------------
+          # Binaries are NOT mirrored. Gitee's attach_files endpoint sustained
+          # well under 50 KB/s from a GitHub-hosted runner (run 30447854128:
+          # 55 minutes without finishing the first 164 MiB asset, against a
+          # ~400 MiB payload), so the maintainer attaches the artifacts to the
+          # Gitee release by hand. This job owns the release object and its
+          # notes only; it never deletes attachments.
           # NOTE: Gitee answers GET /releases/tags/{tag} with 200 + a literal
           # `null` body when the release is absent; it never 404s. That is why
           # existence is decided by gitee_find_release_id, not by the status
@@ -280,7 +238,7 @@ jobs:
           if gitee_find_release_id "$TAG"; then
             RELEASE_ID="$FOUND_RELEASE_ID"
             echo "gitee release for $TAG already exists (id=$RELEASE_ID); updating"
-            gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" "$BASE_BODY"
+            gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" "$BODY"
             api_require_2xx "update release"
           else
             lookup_rc=$?
@@ -297,7 +255,7 @@ jobs:
             attempt=1
             while [ "$attempt" -le 2 ]; do
               echo "creating gitee release for $TAG (attempt $attempt)"
-              gitee_create_release "$TAG" "$NAME" "$BASE_BODY" "$SHA"
+              gitee_create_release "$TAG" "$NAME" "$BODY" "$SHA"
               create_code="${API_CODE:-000}"
               if gitee_find_release_id "$TAG"; then
                 RELEASE_ID="$FOUND_RELEASE_ID"
@@ -329,68 +287,6 @@ jobs:
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
           echo "gitee release id: $RELEASE_ID"
 
-          # --- 2. attach assets, size aware ----------------------------------
-          gitee_list_attachments "$RELEASE_ID" > "$RUNNER_TEMP/attached.txt"
-
-          : > "$RUNNER_TEMP/oversize.txt"
-          shopt -s nullglob
-          for f in "$RUNNER_TEMP"/dist/*; do
-            [ -f "$f" ] || continue
-            base="$(basename "$f")"
-            size="$(stat -c %s "$f")"
-
-            if [ "$size" -gt "$SIZE_LIMIT" ]; then
-              echo "SKIP (oversize, ${size} > ${SIZE_LIMIT}): $base"
-              printf '%s\n' "$base" >> "$RUNNER_TEMP/oversize.txt"
-              continue
-            fi
-
-            if grep -Fxq -- "$base" "$RUNNER_TEMP/attached.txt"; then
-              echo "SKIP (already attached): $base"
-              continue
-            fi
-
-            echo "uploading ($size bytes): $base"
-            # No --max-time: a 160+ MiB upload to a CN host is slow by nature.
-            gitee_upload_attachment "$RELEASE_ID" "$f"
-            if ! api_is_2xx; then
-              # Ambiguous upload: re-list and accept an exact filename match
-              # rather than re-uploading a file Gitee may already have stored.
-              echo "upload returned HTTP $API_CODE; re-listing attachments"
-              gitee_list_attachments "$RELEASE_ID" > "$RUNNER_TEMP/attached.txt"
-              if grep -Fxq -- "$base" "$RUNNER_TEMP/attached.txt"; then
-                echo "attachment $base is present after all; continuing"
-              else
-                echo "failed to attach $base (HTTP $API_CODE)" >&2
-                printf '%s\n' "$API_BODY" >&2
-                exit 1
-              fi
-            fi
-          done
-          shopt -u nullglob
-
-          # --- 3. link fallback for oversize assets --------------------------
-          if [ -s "$RUNNER_TEMP/oversize.txt" ]; then
-            {
-              printf '%s\n' "$BASE_BODY"
-              printf '\n%s\n' '<!-- gitee-oversize-assets:start -->'
-              printf '%s\n' '---'
-              printf '%s\n\n' '以下文件超过 Gitee 附件大小限制（200 MB），请从 GitHub 下载：'
-              while read -r name; do
-                [ -n "$name" ] || continue
-                printf -- '- [%s](https://github.com/%s/releases/download/%s/%s)\n' \
-                  "$name" "$GH_REPO" "$TAG" "$name"
-              done < "$RUNNER_TEMP/oversize.txt"
-              printf '%s\n' '<!-- gitee-oversize-assets:end -->'
-            } > "$RUNNER_TEMP/final_body.txt"
-
-            echo "appending an oversize-asset link block for:"
-            cat "$RUNNER_TEMP/oversize.txt"
-            gitee_patch_release "$RELEASE_ID" "$TAG" "$NAME" \
-              "$(cat "$RUNNER_TEMP/final_body.txt")"
-            api_require_2xx "append oversize link block"
-          fi
-
       - name: Prune older Gitee releases
         run: |
           set -euo pipefail
@@ -402,9 +298,9 @@ jobs:
           # release. /releases/latest already excludes drafts and prereleases.
           #
           # A failed lookup must NOT be downgraded to "skip prune, exit 0": that
-          # would leave two Gitee releases while reporting success, breaking D7
-          # and hiding the need for a rerun. Fail red instead - nothing has been
-          # deleted at this point, so a rerun is safe.
+          # would leave surplus Gitee releases while reporting success and hide
+          # the need for a rerun. Fail red instead - nothing has been deleted at
+          # this point, so a rerun is safe.
           if ! LATEST="$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)"; then
             echo "could not query GitHub's latest release; refusing to prune" >&2
             exit 1
@@ -419,8 +315,9 @@ jobs:
           fi
 
           # Collect every id FIRST. Deleting while paginating shifts pages and
-          # silently skips releases.
-          : > "$RUNNER_TEMP/ids.txt"
+          # silently skips releases. Store `id<TAB>created_at` so the keep set
+          # can be chosen by recency.
+          : > "$RUNNER_TEMP/releases.tsv"
           page=1
           while : ; do
             api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases?page=${page}&per_page=100" \
@@ -432,26 +329,44 @@ jobs:
             fi
             n="$(printf '%s' "$API_BODY" | jq 'length')"
             if [ "$n" -eq 0 ]; then break; fi
-            printf '%s' "$API_BODY" | jq -r '.[].id' >> "$RUNNER_TEMP/ids.txt"
+            printf '%s' "$API_BODY" \
+              | jq -r '.[] | [(.id|tostring), (.created_at // "")] | @tsv' \
+              >> "$RUNNER_TEMP/releases.tsv"
             if [ "$n" -lt 100 ]; then break; fi
             page=$((page + 1))
           done
 
-          count="$(grep -Fxc -- "$RELEASE_ID" "$RUNNER_TEMP/ids.txt" || true)"
+          count="$(cut -f1 "$RUNNER_TEMP/releases.tsv" | grep -Fxc -- "$RELEASE_ID" || true)"
           if [ "${count:-0}" != "1" ]; then
             echo "expected the mirrored release id $RELEASE_ID exactly once in the listing, got ${count:-0}" >&2
             exit 1
           fi
 
+          # D7: Gitee keeps the TWO most recent releases. The mirrored one is
+          # always kept; the second slot goes to the most recently created of
+          # the others (created_at first, id as the tiebreak - Gitee ids are
+          # monotonically increasing, so a missing created_at still sorts
+          # sensibly).
+          KEEP_SECOND="$(awk -F'\t' -v self="$RELEASE_ID" '$1 != self' \
+              "$RUNNER_TEMP/releases.tsv" \
+            | sort -t"$(printf '\t')" -k2,2r -k1,1nr \
+            | head -n 1 | cut -f1)"
+          if [ -n "$KEEP_SECOND" ]; then
+            echo "keeping gitee releases: $RELEASE_ID (mirrored) and $KEEP_SECOND (previous)"
+          else
+            echo "keeping gitee release: $RELEASE_ID (mirrored); no other release exists"
+          fi
+
           # Read the ids into an array first: a `while read < file` loop would
           # share its stdin with curl.
-          mapfile -t ids < "$RUNNER_TEMP/ids.txt"
+          mapfile -t ids < <(cut -f1 "$RUNNER_TEMP/releases.tsv")
           for id in ${ids[@]+"${ids[@]}"}; do
             [ -n "$id" ] || continue
             [ "$id" != "$RELEASE_ID" ] || continue
+            [ "$id" != "$KEEP_SECOND" ] || continue
             echo "deleting older gitee release id=$id"
             api DELETE "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${id}"
             api_require_2xx "delete release $id"
           done
 
-          echo "prune done; git tags are untouched"
+          echo "prune done; git tags and attachments are untouched"

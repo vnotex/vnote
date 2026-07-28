@@ -35,8 +35,8 @@ Latest stable builds could be found at the [latest release](https://github.com/v
 [gitee.com/vnotex/vnote](https://gitee.com/vnotex/vnote) is a read-only mirror for users in mainland China. GitHub remains the upstream:
 
 * Code: the `master` branch and release tags (`v*`) are pushed automatically. The `continuous-build` tag is *not* mirrored.
-* Releases: only the **latest** stable release is kept on Gitee; older ones stay on GitHub.
-* Assets larger than Gitee's 200 MB attachment limit (currently the macOS build) are not attached — the release notes link to the GitHub download instead.
+* Releases: the **two most recent** releases are kept on Gitee; older ones stay on GitHub.
+* Binaries are uploaded to Gitee manually, so a freshly published release may have no attachments there for a while — GitHub always has them first.
 * Submodules still point at GitHub, so cloning from Gitee needs GitHub reachability to build.
 
 Pull requests and issues are only accepted on GitHub.

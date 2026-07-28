@@ -15,11 +15,9 @@
 #   push_tag_idempotent <tag> <sha>
 #   api <METHOD> <path> [curl args...]   -> $API_CODE, $API_BODY
 #   api_is_2xx / api_require_2xx <what>
+#   gitee_find_release_id <tag>          -> $FOUND_RELEASE_ID, rc 0/1/2
 #   gitee_create_release <tag> <name> <body> <target_commitish>
 #   gitee_patch_release <id> <tag> <name> <body>
-#   gitee_list_attachments <id>          -> one filename per line on stdout
-#   gitee_upload_attachment <id> <file>
-#   strip_oversize_block                 - stdin -> stdout
 
 GITEE_API="https://gitee.com/api/v5"
 
@@ -260,34 +258,12 @@ gitee_patch_release() {  # $1 id, $2 tag, $3 name, $4 body
 }
 
 # -----------------------------------------------------------------------------
-# Attachments.
-# -----------------------------------------------------------------------------
-gitee_list_attachments() {  # $1 = release id; prints one filename per line
-  local id="$1"
-  api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${id}/attach_files?page=1&per_page=100" \
-    --retry 3 --retry-delay 5
-  api_require_2xx "list attachments of release $id" || return 1
-  printf '%s' "$API_BODY" | jq -r '.[].name'
-}
-
-gitee_upload_attachment() {  # $1 = release id, $2 = path to file
-  local id="$1" file="$2"
-  # -F (not --form-string) is required here: this really is a file upload.
-  api POST "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${id}/attach_files" \
-    -F "file=@${file}"
-}
-
-# -----------------------------------------------------------------------------
-# Oversize-asset link block.
+# Attachments are NOT handled here.
 #
-# Strips a previously appended sentinel-delimited region so re-runs cannot stack
-# duplicates. Deliberately keyed on the HTML comment sentinels, never on a bare
-# `---`: changelog bodies legitimately contain Markdown horizontal rules.
+# Gitee's POST .../attach_files sustained well under 50 KB/s from a
+# GitHub-hosted runner (run 30447854128 spent 55 minutes without finishing the
+# first 164 MiB asset, against a ~400 MiB payload), so mirroring binaries is not
+# viable inside a workflow job. The maintainer attaches the artifacts to the
+# Gitee release by hand; the workflow owns the release object and its notes
+# only, and never touches attachments.
 # -----------------------------------------------------------------------------
-strip_oversize_block() {  # stdin -> stdout
-  awk '
-    /<!-- gitee-oversize-assets:start -->/ { skip = 1 }
-    !skip                                  { print }
-    /<!-- gitee-oversize-assets:end -->/   { skip = 0 }
-  '
-}
