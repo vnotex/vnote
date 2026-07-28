@@ -1,6 +1,7 @@
 #include "tagview.h"
 
 #include <QItemSelectionModel>
+#include <QKeyEvent>
 #include <QSortFilterProxyModel>
 
 #include <models/tagmodel.h>
@@ -52,6 +53,18 @@ void TagView::selectionChanged(const QItemSelection &p_selected,
                                const QItemSelection &p_deselected) {
   QTreeView::selectionChanged(p_selected, p_deselected);
   emit tagsSelectionChanged(selectedTagNames());
+}
+
+void TagView::keyPressEvent(QKeyEvent *p_event) {
+  if (p_event->key() == Qt::Key_Escape && p_event->modifiers() == Qt::NoModifier) {
+    if (selectionModel() && selectionModel()->hasSelection()) {
+      clearSelection();
+      setCurrentIndex(QModelIndex());
+      p_event->accept();
+      return;
+    }
+  }
+  QTreeView::keyPressEvent(p_event);
 }
 
 void TagView::onItemActivated(const QModelIndex &p_index) {

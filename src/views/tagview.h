@@ -38,6 +38,8 @@ protected:
   void selectionChanged(const QItemSelection &p_selected,
                         const QItemSelection &p_deselected) override;
 
+  void keyPressEvent(QKeyEvent *p_event) override;
+
 private slots:
   void onItemActivated(const QModelIndex &p_index);
   void onContextMenuRequested(const QPoint &p_pos);

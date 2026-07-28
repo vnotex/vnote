@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QIODevice>
 #include <QInputDialog>
+#include <QKeySequence>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSplitter>
@@ -207,8 +208,10 @@ void TagExplorer2::setupTitleBar() {
   });
 
   // Clear selection button
+  const QString clearSelText = QStringLiteral("%1\t%2").arg(
+      tr("Clear Selection"), QKeySequence(Qt::Key_Escape).toString(QKeySequence::NativeText));
   auto *clearSelBtn =
-      m_titleBar->addActionButton(QStringLiteral("clear_selection.svg"), tr("Clear Selection"));
+      m_titleBar->addActionButton(QStringLiteral("clear_selection.svg"), clearSelText);
   connect(clearSelBtn, &QToolButton::clicked, this, [this]() {
     m_tagView->clearSelection();
   });
