@@ -35,8 +35,12 @@ bool PdfViewWindowController::checkAndUpdateConfigRevision() {
 }
 
 QString PdfViewWindowController::buildAbsolutePath(const NodeIdentifier &p_nodeId) const {
-  if (!p_nodeId.isValid()) {
-    return QString();
+  // External file (e.g. drag&dropped into the main window): empty notebookId,
+  // relativePath already holds the absolute on-disk path. vxcore's
+  // path-build-absolute requires a valid notebook and would return NOT_FOUND,
+  // so short-circuit here and return the absolute path directly.
+  if (p_nodeId.notebookId.isEmpty()) {
+    return p_nodeId.relativePath;
   }
 
   auto *notebookService = m_services.get<NotebookCoreService>();
