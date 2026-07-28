@@ -67,7 +67,46 @@ function(windeployqt target)
     install(FILES ${OPENSSL_EXTRA_LIB_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
+
+    # InstallRequiredSystemLibraries is CMake-version-bound: for a toolset newer
+    # than the running CMake (e.g. VS 18 / MSVC v145 under CMake 3.30) it mis-maps
+    # MSVC_TOOLSET_VERSION to 143, looks for a non-existent "Microsoft.VC143.CRT"
+    # folder under a "MSVC_REDIST_DIR-NOTFOUND" path, and emits a noisy "system
+    # runtime library file does not exist" warning for every CRT DLL while
+    # bundling nothing. Silence those warnings; the module still resolves the
+    # UCRT / MFC pieces and, on a toolset it DOES understand, the VC CRT.
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE)
     include(InstallRequiredSystemLibraries)
+
+    # Fallback ONLY when the module failed to resolve the VC C runtime (unknown
+    # toolset): locate the real "Microsoft.VC*.CRT" redist folder from the
+    # compiler path and install its DLLs ourselves. Gating on the module having
+    # failed keeps it the sole CRT installer for known toolsets, so a machine
+    # with several toolsets never gets two competing / mismatched install rules.
+    if(MSVC AND (NOT DEFINED MSVC_CRT_DIR OR NOT EXISTS "${MSVC_CRT_DIR}"))
+        # .../VC/Tools/MSVC/<ver>/bin/Host<arch>/<target-arch>/cl.exe
+        get_filename_component(_vc_arch_dir "${CMAKE_CXX_COMPILER}" DIRECTORY) # .../<target-arch>
+        get_filename_component(_vc_redist_arch "${_vc_arch_dir}" NAME)        # x64 / x86 / arm / arm64
+        get_filename_component(_vc_root "${_vc_arch_dir}" DIRECTORY)          # .../Host<arch>
+        get_filename_component(_vc_root "${_vc_root}" DIRECTORY)              # .../bin
+        get_filename_component(_vc_root "${_vc_root}" DIRECTORY)              # .../<ver>
+        get_filename_component(_vc_root "${_vc_root}" DIRECTORY)              # .../MSVC
+        get_filename_component(_vc_root "${_vc_root}" DIRECTORY)              # .../Tools
+        get_filename_component(_vc_root "${_vc_root}" DIRECTORY)              # .../VC
+
+        file(GLOB _vc_crt_dirs
+            "${_vc_root}/Redist/MSVC/*/${_vc_redist_arch}/Microsoft.VC*.CRT")
+        if(_vc_crt_dirs)
+            list(SORT _vc_crt_dirs COMPARE NATURAL)
+            list(GET _vc_crt_dirs -1 _vc_crt_dir) # highest version
+            file(GLOB _vc_crt_dlls "${_vc_crt_dir}/*.dll")
+            install(FILES ${_vc_crt_dlls} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+            message(STATUS "Bundling MSVC CRT from: ${_vc_crt_dir}")
+        else()
+            message(WARNING "MSVC CRT redist not found under ${_vc_root}/Redist"
+                            " - the packaged app may require the VC++ redistributable")
+        endif()
+    endif()
 endfunction()
 
 set(CPACK_PACKAGE_VENDOR "VNoteX")
