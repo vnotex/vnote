@@ -8,8 +8,8 @@ name: Gitee Mirror
 #
 # Release BINARIES are not mirrored: Gitee's attachment endpoint runs at well
 # under 50 KB/s from a GitHub-hosted runner, so the maintainer uploads the
-# artifacts to the Gitee release by hand. This workflow never touches
-# attachments.
+# artifacts to the Gitee release by hand. This workflow calls no attachment
+# endpoint, so it can never strip attachments off a release it keeps.
 #
 # The `continuous-build` tag/release is deliberately NOT mirrored: it is the only
 # mutable tag, CI force-moves it after the push event, and Gitee has no matching
@@ -229,7 +229,9 @@ jobs:
           # 55 minutes without finishing the first 164 MiB asset, against a
           # ~400 MiB payload), so the maintainer attaches the artifacts to the
           # Gitee release by hand. This job owns the release object and its
-          # notes only; it never deletes attachments.
+          # notes only; it calls no attachment endpoint, so it can never
+          # remove an attachment from a release it keeps. (Pruning an OLDER
+          # release naturally takes that release's attachments with it.)
           # NOTE: Gitee answers GET /releases/tags/{tag} with 200 + a literal
           # `null` body when the release is absent; it never 404s. That is why
           # existence is decided by gitee_find_release_id, not by the status
@@ -336,30 +338,57 @@ jobs:
             page=$((page + 1))
           done
 
-          count="$(cut -f1 "$RUNNER_TEMP/releases.tsv" | grep -Fxc -- "$RELEASE_ID" || true)"
+          cut -f1 "$RUNNER_TEMP/releases.tsv" > "$RUNNER_TEMP/release-ids.txt"
+          count="$(grep -Fxc -- "$RELEASE_ID" "$RUNNER_TEMP/release-ids.txt" || true)"
           if [ "${count:-0}" != "1" ]; then
             echo "expected the mirrored release id $RELEASE_ID exactly once in the listing, got ${count:-0}" >&2
             exit 1
           fi
 
           # D7: Gitee keeps the TWO most recent releases. The mirrored one is
-          # always kept; the second slot goes to the most recently created of
-          # the others (created_at first, id as the tiebreak - Gitee ids are
-          # monotonically increasing, so a missing created_at still sorts
-          # sensibly).
-          KEEP_SECOND="$(awk -F'\t' -v self="$RELEASE_ID" '$1 != self' \
-              "$RUNNER_TEMP/releases.tsv" \
-            | sort -t"$(printf '\t')" -k2,2r -k1,1nr \
-            | head -n 1 | cut -f1)"
+          # always kept; the second slot goes to the newest of the others.
+          #
+          # Recency is keyed on the release id, NOT created_at: Gitee assigns
+          # ids from a monotonically increasing counter, and unlike created_at
+          # the id is always present and always numeric. Sorting on created_at
+          # would be actively unsafe with mixed data - an empty timestamp sorts
+          # last under `-k2,2r`, so a higher-id release lacking a timestamp
+          # would be deleted rather than kept.
+          #
+          # created_at is used only to CROSS-CHECK the choice: if some other
+          # candidate claims a strictly newer timestamp, the two signals
+          # disagree and we fail closed before deleting anything.
+          #
+          # Every step writes to a file rather than piping into `head`: under
+          # `set -o pipefail`, `head` closing the pipe early makes the producer
+          # exit 141 (SIGPIPE) once the output outgrows the pipe buffer.
+          awk -F'\t' -v self="$RELEASE_ID" '$1 != self' \
+            "$RUNNER_TEMP/releases.tsv" > "$RUNNER_TEMP/others.tsv"
+          sort -t"$(printf '\t')" -k1,1nr "$RUNNER_TEMP/others.tsv" \
+            > "$RUNNER_TEMP/others_sorted.tsv"
+          KEEP_SECOND="$(head -n 1 "$RUNNER_TEMP/others_sorted.tsv" | cut -f1)"
+
           if [ -n "$KEEP_SECOND" ]; then
+            KEEP_SECOND_AT="$(awk -F'\t' -v id="$KEEP_SECOND" \
+              '$1 == id { print $2; exit }' "$RUNNER_TEMP/others_sorted.tsv")"
+            if [ -n "$KEEP_SECOND_AT" ]; then
+              NEWER="$(awk -F'\t' -v id="$KEEP_SECOND" -v at="$KEEP_SECOND_AT" \
+                '$1 != id && $2 != "" && $2 > at { print $1; exit }' \
+                "$RUNNER_TEMP/others_sorted.tsv")"
+              if [ -n "$NEWER" ]; then
+                echo "id order and created_at disagree: release $NEWER is newer than the chosen $KEEP_SECOND ($KEEP_SECOND_AT); refusing to prune" >&2
+                exit 1
+              fi
+            fi
             echo "keeping gitee releases: $RELEASE_ID (mirrored) and $KEEP_SECOND (previous)"
           else
             echo "keeping gitee release: $RELEASE_ID (mirrored); no other release exists"
           fi
 
-          # Read the ids into an array first: a `while read < file` loop would
-          # share its stdin with curl.
-          mapfile -t ids < <(cut -f1 "$RUNNER_TEMP/releases.tsv")
+          # Read the ids from a file, not `< <(cut ...)`: mapfile reports its
+          # own status, so a failing process substitution would silently yield
+          # a short delete set.
+          mapfile -t ids < "$RUNNER_TEMP/release-ids.txt"
           for id in ${ids[@]+"${ids[@]}"}; do
             [ -n "$id" ] || continue
             [ "$id" != "$RELEASE_ID" ] || continue
@@ -369,4 +398,8 @@ jobs:
             api_require_2xx "delete release $id"
           done
 
-          echo "prune done; git tags and attachments are untouched"
+          # Attachments on the two retained releases are never touched - this
+          # workflow calls no attachment endpoint at all. Deleting an older
+          # release does of course remove that release and whatever was
+          # attached to it.
+          echo "prune done; git tags are untouched"

@@ -194,7 +194,10 @@ gh release download vX.Y.Z -D gitee-assets
 ```
 
 Then upload them at `https://gitee.com/vnotex/vnote/releases` → edit the release.
-Re-running the workflow never deletes attachments, so ordering does not matter.
+Ordering does not matter: the workflow calls no attachment endpoint, and the
+release it just mirrored is always one of the two it keeps, so re-running it can
+never strip the files you uploaded. (Pruning does delete older releases along
+with whatever was attached to them.)
 
 ## Quick reference
 
