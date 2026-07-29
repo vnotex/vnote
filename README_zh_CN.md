@@ -18,33 +18,16 @@ VNote不是一个简单的Markdown编辑器。通过提供强大的笔记管理�
 
 得益于Qt，VNote当前可以高效地运行在**Linux**，**Windows**，以及**macOS**平台上。
 
-![主界面](pics/main.png)
-
-![主界面2](pics/main2.png)
+![主界面](pics/main.webp)
 
 ## 下载
 基于`master`分支的[持续构建版本发布](https://github.com/vnotex/vnote/releases/tag/continuous-build)。
 
-最新的[稳定版本发布](https://github.com/vnotex/vnote/releases/latest)。其他下载选项：
-
-* [天翼云盘](https://cloud.189.cn/t/Av67NvmEJVBv)
-* [百度云盘](https://pan.baidu.com/s/1lX69oMBw8XuJshQDN3HiHw?pwd=f8fk)
-
-### Gitee 镜像
-
-[gitee.com/vnotex/vnote](https://gitee.com/vnotex/vnote) 是面向国内用户的只读镜像，GitHub 仍是上游仓库：
-
-* 代码：`master` 分支与发布标签（`v*`）自动同步；`continuous-build` 标签**不**同步。
-* 发布：Gitee 上保留**最近两个**版本，更早的版本请到 GitHub 查看。
-* 安装包由维护者手动上传到 Gitee，因此新版本发布后一段时间内 Gitee 上可能还没有附件，GitHub 上始终是最先有的。
-* 子模块仍指向 GitHub，因此从 Gitee 克隆后编译仍需要能访问 GitHub。
-
-Pull Request 和 Issue 请统一提交到 GitHub。
+最新的[稳定版本发布](https://github.com/vnotex/vnote/releases/latest)，或者[Gitee发布](https://gitee.com/vnotex/vnote/releases)。
 
 ## 支持
 * [GitHub Issues](https://github.com/vnotex/vnote/issues)；
-* 邮件：`tamlokveer at gmail.com`；
-* [Telegram](https://t.me/vnotex)；
+* 邮件：`tamlokx at gmail.com`；
 * 微信公众号：`vnotex`；
 
 感谢这些[捐赠用户](https://github.com/vnotex/vnote/wiki/Donate-List)！
@@ -71,4 +54,4 @@ scripts\init.cmd
 更多开发指南，请参考 [AGENTS.md](AGENTS.md)。
 
 ## 许可
-VNote遵循[GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0)许可。VNote项目的代码可以自由给VNoteX项目使用。
+VNote遵循[GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0)许可。

@@ -7,7 +7,7 @@
 
 A pleasant note-taking platform.
 
-For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote).
+For more information, please visit [**VNote's Home Page**](https://docs.vnote.fun).
 
 ![VNote](pics/vnote.png)
 
@@ -18,34 +18,16 @@ VNote is **NOT** just a simple editor for Markdown. By providing notes managemen
 
 Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
-![Main](pics/main.png)
-
-![Main2](pics/main2.png)
+![Main](pics/main.webp)
 
 ## Downloads
 Continuous builds on `master` branch could be found at the [Continuous Build](https://github.com/vnotex/vnote/releases/tag/continuous-build) release.
 
-Latest stable builds could be found at the [latest release](https://github.com/vnotex/vnote/releases/latest). Alternative download services are available:
-
-* [Tianyi Netdisk](https://cloud.189.cn/t/Av67NvmEJVBv)
-* [Baidu Netdisk](https://pan.baidu.com/s/1lX69oMBw8XuJshQDN3HiHw?pwd=f8fk)
-
-### Gitee mirror
-
-[gitee.com/vnotex/vnote](https://gitee.com/vnotex/vnote) is a read-only mirror for users in mainland China. GitHub remains the upstream:
-
-* Code: the `master` branch and release tags (`v*`) are pushed automatically. The `continuous-build` tag is *not* mirrored.
-* Releases: the **two most recent** releases are kept on Gitee; older ones stay on GitHub.
-* Binaries are uploaded to Gitee manually, so a freshly published release may have no attachments there for a while — GitHub always has them first.
-* Submodules still point at GitHub, so cloning from Gitee needs GitHub reachability to build.
-
-Pull requests and issues are only accepted on GitHub.
+Latest stable builds could be found at the [latest release](https://github.com/vnotex/vnote/releases/latest) or [Gitee release](https://gitee.com/vnotex/vnote/releases)
 
 ## Supports
 * [GitHub Issues](https://github.com/vnotex/vnote/issues);
-* Email: `tamlokveer at gmail.com`;
-* [Telegram](https://t.me/vnotex);
-* WeChat Public Account: vnotex;
+* Email: `tamlokx at gmail.com`;
 
 Thank [users who donated to VNote](https://github.com/vnotex/vnote/wiki/Donate-List)!
 
@@ -71,4 +53,4 @@ This script will:
 For more development guidelines, see [AGENTS.md](AGENTS.md).
 
 ## License
-VNote is licensed under [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0). Code base of VNote could be used freely by VNoteX.
+VNote is licensed under [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0).
