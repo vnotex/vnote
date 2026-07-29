@@ -70,8 +70,9 @@
     Produces `VNote-<ver>-<variant>.manifest.json.minisig`, which the client
     REQUIRES: `UpdateService` refuses any manifest it cannot verify.
 
-    Defaults to $env:MINISIGN_SECRET_KEY_FILE. The key password comes from
-    $env:MINISIGN_PASSWORD (use an empty password for an unattended CI key).
+    Defaults to $env:MINISIGN_SECRET_KEY_FILE. The key MUST have an empty
+    password: minisign reads a passphrase from the console, not stdin, so a
+    protected key would hang an unattended job rather than fail.
 
     Omitting it emits an unsigned manifest and a loud warning; that is only
     useful for local experimentation, since released artifacts without a
@@ -568,18 +569,28 @@ else {
     # want to confirm when auditing a release by hand.
     $trustedComment = "VNote $Version $Variant $Channel commit $Commit"
 
-    # -W: the CI key has an empty password. minisign reads the password from
-    # stdin when one is set; MINISIGN_PASSWORD covers that case.
+    # -W signs without prompting, which REQUIRES the key to have an empty
+    # password.
+    #
+    # minisign reads a password from the console, not from stdin, so there is no
+    # way to feed one to an unattended job: a password-protected key would make
+    # this step hang until the CI timeout rather than fail. The CI key is
+    # therefore password-less by design -- its protection is the secret store it
+    # lives in, not a passphrase that would have to be kept in the same place.
+    # The offline spare key SHOULD have a strong password; it is only ever used
+    # by a human during a rotation.
     if ($env:MINISIGN_PASSWORD) {
-        $env:MINISIGN_PASSWORD | & $minisign.Source -S -s $MinisignSecretKey `
-            -m $releaseManifestPath -x $sigPath -t $trustedComment | Out-Null
+        throw ("MINISIGN_PASSWORD is set, but minisign cannot accept a password " +
+            "non-interactively and would hang. Use a password-less key for automated " +
+            "signing; see docs/update-signing.md.")
     }
-    else {
-        & $minisign.Source -S -s $MinisignSecretKey -m $releaseManifestPath `
-            -x $sigPath -t $trustedComment -W | Out-Null
-    }
+
+    & $minisign.Source -S -s $MinisignSecretKey -m $releaseManifestPath `
+        -x $sigPath -t $trustedComment -W | Out-Null
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $sigPath)) {
-        throw "minisign failed to sign $releaseManifestPath"
+        throw ("minisign failed to sign $releaseManifestPath. If the key is " +
+            "password-protected, re-create it with an empty password: automated " +
+            "signing cannot answer a prompt.")
     }
 
     # Verify what was just produced, with the PUBLIC half derived from the

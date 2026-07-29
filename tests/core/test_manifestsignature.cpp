@@ -314,26 +314,46 @@ void TestManifestSignature::testMalformedSignatures() {
 
 // ------------------------------------------------------------- production
 
-// The compiled-in list is empty in-tree (the maintainer pastes real keys in),
-// so this asserts the CONSEQUENCE rather than the contents: with no keys, the
-// updater must be inert rather than permissive.
+// Guards the SHIPPED key configuration. This is deliberately specific: a typo,
+// an accidental deletion, or a well-meaning "cleanup" that drops the spare key
+// would otherwise be invisible until a release could no longer be verified --
+// or, worse, until a rotation became impossible because only one key shipped.
 void TestManifestSignature::testProductionKeyListIsCoherent() {
   ManifestSignature::testSetTrustedKeys({});
 
-  for (const auto &k : ManifestSignature::trustedKeys()) {
+  const auto &configured = ManifestSignature::trustedKeys();
+  for (const auto &k : configured) {
     QVERIFY2(k.isValid(), "a compiled-in trusted key is malformed");
   }
 
-  if (!ManifestSignature::hasTrustedKeys()) {
-    QCOMPARE(ManifestSignature::verify(message(), signatureKey1()),
-             ManifestSignature::Result::NoTrustedKeys);
-  } else {
-    // Once real keys are configured, at least two must be present so the build
-    // can rotate without stranding installed clients.
-    QVERIFY2(ManifestSignature::trustedKeys().size() >= 2,
-             "ship a cold spare key alongside the active one; see the rotation "
-             "contract in manifestsignature.cpp");
+  QVERIFY2(ManifestSignature::hasTrustedKeys(),
+           "no update signing key is configured; the updater is inert. See "
+           "docs/update-signing.md");
+
+  // At least two, so the active key can be retired without stranding every
+  // installed client (the keys are compiled in and cannot be pushed later).
+  QVERIFY2(configured.size() >= 2,
+           "ship a cold spare key alongside the active one; see the rotation "
+           "contract in manifestsignature.cpp");
+
+  // minisign prints key ids byte-reversed relative to how they are stored, so
+  // these are the STORED forms of the ids minisign displays as
+  // 334F7ED65256CDE8 (active) and B56AD74F9A82C266 (spare).
+  QStringList configuredIds;
+  for (const auto &k : configured) {
+    configuredIds.append(QString::fromLatin1(k.keyId.toHex().toUpper()));
   }
+  QVERIFY2(configuredIds.contains(QStringLiteral("E8CD5652D67E4F33")),
+           qPrintable(QStringLiteral("the ACTIVE signing key is missing; configured: %1")
+                          .arg(configuredIds.join(QLatin1Char(',')))));
+  QVERIFY2(configuredIds.contains(QStringLiteral("66C2829A4FD76AB5")),
+           qPrintable(QStringLiteral("the COLD SPARE signing key is missing; configured: %1")
+                          .arg(configuredIds.join(QLatin1Char(',')))));
+
+  // Distinct keys: pasting the same key twice would look like a spare while
+  // providing no rotation path at all.
+  QSet<QString> unique(configuredIds.begin(), configuredIds.end());
+  QCOMPARE(unique.size(), configuredIds.size());
 }
 
 } // namespace tests

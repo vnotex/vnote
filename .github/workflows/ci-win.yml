@@ -205,7 +205,6 @@ jobs:
           # manifest it cannot verify, so an unsigned release is inert. Absent
           # on forks and on PRs from forks, where the generator warns instead.
           MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
-          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
         run: |
           # Channel is derived from THIS workflow's real release predicate,
           # identical to the `Release` step's condition below. It must NOT be
@@ -233,6 +232,19 @@ jobs:
             $keyPath = Join-Path $env:RUNNER_TEMP 'minisign.key'
             Set-Content -LiteralPath $keyPath -Value $env:MINISIGN_SECRET_KEY -NoNewline
             $signArgs = @('-MinisignSecretKey', $keyPath)
+          }
+          elseif ($isRelease) {
+            # HARD FAIL. Publishing an unsigned manifest is worse than failing
+            # the build: every client REFUSES a manifest it cannot verify, so
+            # the release would look fine and silently break updates for
+            # everyone. The most likely cause is the secret being defined as an
+            # ENVIRONMENT secret while this job declares no `environment:`, in
+            # which case ${{ secrets.* }} silently resolves to an empty string.
+            Write-Error ("MINISIGN_SECRET_KEY is not available, but this is a RELEASE build. " +
+              "Refusing to publish an unsigned manifest. If the secret is defined under " +
+              "Settings > Environments, either move it to Settings > Secrets and variables > " +
+              "Actions, or add an `environment:` key to this job. See docs/update-signing.md.")
+            exit 1
           }
           else {
             Write-Warning "MINISIGN_SECRET_KEY is not set; this build's manifest will be UNSIGNED."
