@@ -7,7 +7,7 @@
 
 一个舒适的笔记平台！
 
-更多信息，请访问[VNote主页](https://vnotex.github.io/vnote)。
+更多信息，请访问[VNote主页](https://docs.vnote.fun)。
 
 ![VNote](pics/vnote.png)
 
