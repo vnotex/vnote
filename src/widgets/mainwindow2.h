@@ -41,6 +41,7 @@ class MainWindowTaskContext;
 class ToolBarHelper2;
 class SyncConflictController;
 class FirstRunController;
+class UpdateController;
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
 // Framework only - NO toolbar, dock widgets, menu bar, or status bar.
@@ -95,6 +96,16 @@ public:
   void resetStateAndGeometry();
 
   void restart();
+
+  // Menu entry point. Delegates to UpdateController, which decides between the
+  // in-app update flow and simply opening the releases page.
+  void checkForUpdates();
+
+  // Quits with kExitToApplyUpdate so main() applies the staged incremental
+  // update (after every service and Application are destroyed) and then spawns
+  // the replacement. Sets only m_requestQuit; the update lease is owned by
+  // main() and is never touched from here.
+  void restartForUpdate();
 
   void showMainWindow();
 
@@ -253,6 +264,9 @@ private:
   // by the defaultNotebookCreated connection in setupUI().
   FirstRunController *m_firstRunController = nullptr;
 
+  // Owns all incremental-update policy (throttle, skip, prompts, notifications).
+  UpdateController *m_updateController = nullptr;
+
   // Per-notebook retry counter for sync conflict resolution. Incremented each
   // time conflictsDetected fires for a notebook. When the count exceeds 3, the
   // conflict dialog is suppressed and a QMessageBox::warning is shown instead
@@ -311,3 +325,4 @@ private:
 } // namespace vnotex
 
 #endif // MAINWINDOW2_H
+

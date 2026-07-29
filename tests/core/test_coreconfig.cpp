@@ -28,6 +28,11 @@ private slots:
   void testConsoleDockShortcutRoundTripByName();
   void testLegacyCloseTabShortcutMigratesToCloseFocus();
   void testCloseFocusShortcutWinsOverLegacyCloseTab();
+  void testSkippedUpdateVersionDefaultsEmptyAndRoundTrips();
+  void testLastUpdateCheckTimeStoredAsDecimalString();
+  void testLastUpdateCheckTimeSurvives32BitRange();
+  void testLastUpdateCheckTimeBackwardCompatibleParsing();
+  void testUpdateCheckDue();
 
 private:
   MockConfigMgr m_mockMgr;
@@ -170,6 +175,8 @@ void TestCoreConfig::testLegacyCloseTabShortcutMigratesToCloseFocus() {
 
 // Once the config has been re-saved, both keys may coexist in a hand-edited
 // file. The new key is authoritative.
+// Once the config has been re-saved, both keys may coexist in a hand-edited
+// file. The new key is authoritative.
 void TestCoreConfig::testCloseFocusShortcutWinsOverLegacyCloseTab() {
   const auto legacyKeys = QStringLiteral("Ctrl+G, Shift+X");
   const auto currentKeys = QStringLiteral("Ctrl+G, Alt+X");
@@ -183,6 +190,104 @@ void TestCoreConfig::testCloseFocusShortcutWinsOverLegacyCloseTab() {
   CoreConfig cfg(&m_mockMgr, nullptr);
   cfg.fromJson(json);
   QCOMPARE(cfg.getShortcut(CoreConfig::Shortcut::CloseFocus), currentKeys);
+}
+
+void TestCoreConfig::testSkippedUpdateVersionDefaultsEmptyAndRoundTrips() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.fromJson(QJsonObject());
+  QVERIFY(cfg.getSkippedUpdateVersion().isEmpty());
+
+  cfg.setSkippedUpdateVersion(QStringLiteral("4.3.2"));
+  QCOMPARE(cfg.getSkippedUpdateVersion(), QStringLiteral("4.3.2"));
+
+  const auto out = cfg.toJson();
+  QCOMPARE(out.value(QStringLiteral("skippedUpdateVersion")).toString(), QStringLiteral("4.3.2"));
+
+  CoreConfig reloaded(&m_mockMgr, nullptr);
+  reloaded.fromJson(out);
+  QCOMPARE(reloaded.getSkippedUpdateVersion(), QStringLiteral("4.3.2"));
+}
+
+// The timestamp is persisted as a decimal STRING, not a JSON number, because
+// IConfig::readInt (and QJsonValue::toInt) are 32-bit.
+void TestCoreConfig::testLastUpdateCheckTimeStoredAsDecimalString() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.fromJson(QJsonObject());
+  QCOMPARE(cfg.getLastUpdateCheckTime(), Q_INT64_C(0));
+
+  const qint64 stamp = Q_INT64_C(1785337074532);
+  cfg.setLastUpdateCheckTime(stamp);
+
+  const auto out = cfg.toJson();
+  const auto value = out.value(QStringLiteral("lastUpdateCheckTime"));
+  QVERIFY2(value.isString(), "lastUpdateCheckTime must serialize as a string, not a number");
+  QCOMPARE(value.toString(), QString::number(stamp));
+}
+
+void TestCoreConfig::testLastUpdateCheckTimeSurvives32BitRange() {
+  // Well beyond INT32_MAX (2147483647): a 32-bit read would truncate this.
+  const qint64 stamp = Q_INT64_C(1785337074532);
+  QVERIFY(stamp > Q_INT64_C(2147483647));
+
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.setLastUpdateCheckTime(stamp);
+
+  CoreConfig reloaded(&m_mockMgr, nullptr);
+  reloaded.fromJson(cfg.toJson());
+  QCOMPARE(reloaded.getLastUpdateCheckTime(), stamp);
+}
+
+void TestCoreConfig::testLastUpdateCheckTimeBackwardCompatibleParsing() {
+  const qint64 stamp = Q_INT64_C(1785337074532);
+
+  // A bare JSON number (hand-edited config) is tolerated.
+  {
+    QJsonObject json;
+    json[QStringLiteral("lastUpdateCheckTime")] = static_cast<double>(stamp);
+    CoreConfig cfg(&m_mockMgr, nullptr);
+    cfg.fromJson(json);
+    QCOMPARE(cfg.getLastUpdateCheckTime(), stamp);
+  }
+
+  // Garbage and negative values degrade to "never checked" rather than
+  // poisoning the throttle.
+  const QVector<QJsonValue> junk{QJsonValue(QStringLiteral("not-a-number")), QJsonValue(true),
+                                 QJsonValue(QStringLiteral("-1")), QJsonValue(-5.0),
+                                 QJsonValue(QJsonValue::Null)};
+  for (const auto &v : junk) {
+    QJsonObject json;
+    json[QStringLiteral("lastUpdateCheckTime")] = v;
+    CoreConfig cfg(&m_mockMgr, nullptr);
+    cfg.fromJson(json);
+    QCOMPARE(cfg.getLastUpdateCheckTime(), Q_INT64_C(0));
+  }
+}
+
+void TestCoreConfig::testUpdateCheckDue() {
+  const qint64 day = CoreConfig::c_updateCheckIntervalMs;
+  const qint64 now = Q_INT64_C(1785337074532);
+
+  CoreConfig cfg(&m_mockMgr, nullptr);
+
+  // Never checked -> due.
+  QVERIFY(cfg.isUpdateCheckDue(now, day));
+
+  // Checked just now -> not due.
+  cfg.setLastUpdateCheckTime(now);
+  QVERIFY(!cfg.isUpdateCheckDue(now, day));
+
+  // One ms short of the interval -> not due.
+  cfg.setLastUpdateCheckTime(now - day + 1);
+  QVERIFY(!cfg.isUpdateCheckDue(now, day));
+
+  // Exactly the interval -> due.
+  cfg.setLastUpdateCheckTime(now - day);
+  QVERIFY(cfg.isUpdateCheckDue(now, day));
+
+  // Future-dated (clock moved backwards) -> treated as stale, so the throttle
+  // cannot wedge the user out of update checks.
+  cfg.setLastUpdateCheckTime(now + day);
+  QVERIFY(cfg.isUpdateCheckDue(now, day));
 }
 
 } // namespace tests

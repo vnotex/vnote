@@ -18,13 +18,24 @@ const QString SingleInstanceGuard::c_serverName = "vnote";
 const QChar SingleInstanceGuard::c_stringListSeparator = '>';
 
 QString SingleInstanceGuard::lockFilePath() const {
+  if (!m_lockFilePathOverride.isEmpty()) {
+    return m_lockFilePathOverride;
+  }
   return QStandardPaths::writableLocation(QStandardPaths::TempLocation) +
          QStringLiteral("/vnote.lock");
 }
 
+QString SingleInstanceGuard::serverName() const {
+  return m_serverNameOverride.isEmpty() ? c_serverName : m_serverNameOverride;
+}
+
+SingleInstanceGuard::SingleInstanceGuard(const QString &p_serverName,
+                                         const QString &p_lockFilePath)
+    : m_serverNameOverride(p_serverName), m_lockFilePathOverride(p_lockFilePath) {}
+
 SingleInstanceGuard::~SingleInstanceGuard() { exit(); }
 
-bool SingleInstanceGuard::tryRun() {
+SingleInstanceGuard::TryRunResult SingleInstanceGuard::tryRun() {
   Q_ASSERT(!m_online);
 
   // Use a lock file for cross-platform single-instance detection.
@@ -38,15 +49,20 @@ bool SingleInstanceGuard::tryRun() {
     // Another instance holds the lock. Connect to it for IPC.
     m_client = tryConnect();
     if (m_client) {
-      return false;
+      return TryRunResult::Secondary;
     }
 
     // Lock is held but we cannot connect. Stale lock from a crash?
     // Try to remove and re-acquire.
     m_lockFile->removeStaleLockFile();
     if (!m_lockFile->tryLock(0)) {
-      // Still cannot acquire. Fallback: allow running anyway.
-      qWarning() << "failed to acquire lock or connect to existing instance; proceeding anyway";
+      // FAIL CLOSED. This branch historically warned and proceeded anyway,
+      // producing a second primary. With the incremental updater that second
+      // primary could reach normal initialization -- mapping Qt, VTextEdit and
+      // vxcore modules -- while an applier is swapping those very files. The
+      // caller must exit instead.
+      qWarning() << "lock is held but the holder is unreachable over IPC; refusing to run";
+      return TryRunResult::BusyUnreachable;
     }
   }
 
@@ -60,7 +76,7 @@ bool SingleInstanceGuard::tryRun() {
   setupServer();
 
   m_online = true;
-  return true;
+  return TryRunResult::Primary;
 }
 
 void SingleInstanceGuard::requestOpenFiles(const QStringList &p_files) {
@@ -133,11 +149,12 @@ void SingleInstanceGuard::exit() {
 }
 
 QSharedPointer<QLocalSocket> SingleInstanceGuard::tryConnect() {
+  const QString name = serverName();
   auto socket = QSharedPointer<QLocalSocket>::create();
-  socket->connectToServer(c_serverName);
+  socket->connectToServer(name);
   if (socket->waitForConnected(200)) {
     // Connected.
-    qDebug() << "socket connected to server" << c_serverName;
+    qDebug() << "socket connected to server" << name;
     return socket;
   } else {
     qDebug() << "socket connect timeout";
@@ -146,17 +163,18 @@ QSharedPointer<QLocalSocket> SingleInstanceGuard::tryConnect() {
 }
 
 QSharedPointer<QLocalServer> SingleInstanceGuard::tryListen() {
+  const QString name = serverName();
   auto server = QSharedPointer<QLocalServer>::create();
-  bool ret = server->listen(c_serverName);
+  bool ret = server->listen(name);
   if (!ret && server->serverError() == QAbstractSocket::AddressInUseError) {
     // On Unix, a previous crash may leave a server running.
     // Clean up and try again.
-    QLocalServer::removeServer(c_serverName);
-    ret = server->listen(c_serverName);
+    QLocalServer::removeServer(name);
+    ret = server->listen(name);
   }
 
   if (ret) {
-    qDebug() << "local server listening on" << c_serverName;
+    qDebug() << "local server listening on" << name;
     return server;
   } else {
     qDebug() << "failed to start local server";

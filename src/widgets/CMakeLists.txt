@@ -53,6 +53,7 @@ target_sources(vnote PRIVATE
     dialogs/sortdialog2.cpp dialogs/sortdialog2.h
     dialogs/syncconflictdialog2.cpp dialogs/syncconflictdialog2.h
     dialogs/tableinsertdialog.cpp dialogs/tableinsertdialog.h
+    dialogs/updatedialog.cpp dialogs/updatedialog.h
     dialogs/viewtagsdialog2.cpp dialogs/viewtagsdialog2.h
     dockwidgethelper.cpp dockwidgethelper.h
     editors/graphhelper.cpp editors/graphhelper.h

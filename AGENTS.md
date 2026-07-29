@@ -514,6 +514,201 @@ This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-fil
 
 ---
 
+## Incremental Update (Windows x64)
+
+VNote can update itself by downloading only what changed. A release publishes a
+**manifest** (`<path, size, sha256>` for every file in the bundle) plus an optional
+**delta ZIP** containing only the files that changed since the previous stable release. The
+client diffs manifests, downloads the delta chain, stages files inside the install
+directory, swaps them in under a durable journal **at exit**, and restarts.
+
+**Scope: Windows x64 only** (`win64` Qt6 and `win64-windows7` Qt5 variants). Everywhere else
+the menu item opens the releases page.
+
+### Ownership map
+
+| Layer | Unit | Responsibility |
+|---|---|---|
+| Pure value type | [`UpdateManifest`](src/core/updatemanifest.h) | parse/serialize, diff, `expectedChanged`, chain resolution + caps, base-identity validation, path normalization |
+| Pure | [`ZipExtractor`](src/core/zipextractor.h) | miniz-backed archive validation (before any byte is written) + containment-checked extraction |
+| Pure, pre-Qt | [`UpdateLease`](src/core/updatelease.h) | machine-wide, cross-session mutual exclusion |
+| Pure, post-teardown | [`UpdateInstaller`](src/core/updateinstaller.h) | journal, swap, `ReplaceExecutable`, rollback, crash recovery, probes, WebEngine reaping |
+| Service | [`UpdateService`](src/core/services/updateservice.h) | eligibility, network, planning, download, staging, `pending.json` |
+| Controller | [`UpdateController`](src/controllers/updatecontroller.h) | ALL policy: throttle, skipped version, prompts, notifications |
+| View | [`UpdateDialog`](src/widgets/dialogs/updatedialog.h) | version, notes, progress, Update / Skip / Later / Restart Now |
+
+`UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
+`core_services`, so the reverse dependency would be circular. The installed version is
+injected and every config-dependent decision lives in `UpdateController`.
+
+### Manifest contract
+
+Two artifacts per release variant, both produced by `scripts/gen-update-package.ps1`:
+
+- **In-package** `manifest.json` at the install root, inside the ZIP.
+- **Release asset** `VNote-<ver>-<variant>.manifest.json` — the same object plus
+  `fullPackage` and, when built, `delta { baseVersion, asset, size, sha256 }`.
+
+Rules:
+
+- `files[]` paths are forward-slash, install-root-relative, and **exclude `manifest.json`
+  itself**.
+- Path comparison is case-insensitive (Windows); stored casing is preserved.
+- `channel` is `"stable"` or `"continuous"`. **Only `channel == "stable"` is eligible as a
+  delta base.** CI derives it from the real release predicate
+  (`refs/heads/master` + a `[Release]` head commit), never from "was this a tag build" —
+  this repo cuts releases from a master push and creates the tag afterwards.
+- Deletions are **derived**, never stored.
+- Asset URLs are deterministic:
+  `https://github.com/vnotex/vnote/releases/download/v<ver>/VNote-<ver>-<variant>.manifest.json`.
+
+### Staging layout
+
+```
+<installDir>/.vnote-update.lease         exclusive sentinel (SIBLING of the directory below)
+<installDir>/.vnote-update/download/     downloaded archives
+<installDir>/.vnote-update/staged/       extracted new files, mirroring the install layout
+<installDir>/.vnote-update/pending.json  the plan
+<installDir>/.vnote-update/journal.json  durable write-ahead journal
+<installDir>/.vnote-update/result.json   apply outcome, consumed at the next launch
+<installDir>/.vnote-old/<timestamp>/     backups + RECOVERY.txt
+```
+
+There is deliberately **no lock file inside `.vnote-update/`**: the lease sentinel is a
+sibling, so committing can delete that whole directory without a lock-vs-directory ordering
+race. On commit the staging root is removed and `result.json` is re-written afterwards, so
+it is the only survivor for the next launch to consume.
+
+### Lease protocol (what it does and does not guarantee)
+
+- **Every launch** acquires the lease as the **first executable statement of `main()`**,
+  before `Logger::installEarly()`, and holds it across `recoverInterrupted()` **and**
+  `guard.tryRun()`. On timeout it shows a Win32 `MessageBoxW` and exits — never falls
+  through to initialization.
+- **Guaranteed:** no process reaches VNote's own initialization (vxcore context, services,
+  config, windows) while another is applying an update.
+- **NOT guaranteed (accepted residual risk 5):** the Windows loader resolves and maps this
+  executable's static imports **before `main()` runs**, so a launch that races an in-progress
+  apply may already have mapped a mixed old/new DLL set, or fail in the loader outright. No
+  in-process lease can close that window — only the external-helper/bootstrap follow-up can.
+  Do not write comments or docs claiming the lease prevents module mapping.
+- **Release timing depends on the guard outcome:**
+  - `Primary` → released immediately after `tryRun()`.
+  - `Secondary` / `BusyUnreachable` → **held until teardown is complete**, released as the
+    last statement of `main()`. A rejected starter has already mapped those modules;
+    releasing earlier would let an applier swap files still mapped into it.
+- `SingleInstanceGuard::tryRun()` is **fail-closed**: its historical "lock held, IPC
+  unreachable → proceed anyway" branch now returns `BusyUnreachable` and the caller exits.
+- **The applying primary** re-acquires the lease after `app.exec()` returns, **while its
+  guard is still held**, and keeps it until the replacement process has been spawned.
+
+No ABBA deadlock: a starter holding the lease never blocks on the guard
+(`QLockFile::tryLock(0)` is non-blocking and the IPC connect is bounded to 200 ms), so the
+applier's wait on the lease always terminates.
+
+### Journal invariants
+
+- Every operation — add, replace, **delete**, path-type-conflict removal,
+  `ReplaceExecutable` — has a durable journal entry **before** the corresponding move.
+- Ordinary operations move through four durable checkpoints
+  (`Intent → dirs recorded+created → backup → BackedUp → move → Done`), so a kill at any
+  point leaves the journal describing exactly what happened.
+- **Every checkpoint write is checked.** A `saveJournal` failure after a mutation stops the
+  transaction and marks it `MANUAL_RECOVERY`; it must never continue into the next
+  irreversible rename with a stale journal. The only unchecked writes are the best-effort
+  final ones inside terminal `MANUAL_RECOVERY` paths.
+- **Rollback is replay-safe.** `rollback()` can only journal `Reverted` *after* the
+  filesystem work returns, so a crash in between replays `performReverse()` against a
+  half-reversed tree. For `Replace`/`Delete`/`ConflictRemove` the deciding fact is
+  **the backup's existence, not the journal state** (`backup exists ⇔ restore not yet done`);
+  re-running the `Done` path unconditionally would move the freshly restored original into
+  staging and find no backup left to put back, deleting a production file.
+- **Directories created by an operation are recorded in that operation's entry**, so
+  rollback removes them bottom-up when empty.
+- **Deletions are blocking**: a failed deletion rolls the transaction back, because a stale
+  DLL that survived would also vanish from the new manifest and could never be cleaned up.
+- Manifest-commit failure is a transaction failure and rolls everything back.
+- **`RECOVERY.txt` is mandatory**: if it cannot be written the apply aborts *before* the
+  first mutation, because it is the only mitigation for residual risks 1 and 4. It lists the
+  paths this transaction **adds**, since overlaying the backup cannot remove those.
+- After a successful rollback the terminal journal is copied beside the backups and the live
+  `journal.json` is **removed**, so the staged tree stays retryable instead of making
+  `applyPending()` re-enter recovery forever.
+- `recoverInterrupted()` runs at the very top of `main()` and is idempotent and re-entrant —
+  a crash *during* recovery must be safe.
+
+### `ReplaceExecutable`: two renames, not one
+
+**A running executable is mapped as an IMAGE section, and Windows refuses to unlink the name
+of such a file.** Measured on Windows 11 24H2 / NTFS against a real PE:
+
+| target state | `FileRenameInfoEx` POSIX\|REPLACE | `FileRenameInfoEx` REPLACE only | `MoveFileExW` (aside) |
+|---|---|---|---|
+| no open handle | OK | OK | OK |
+| open handle, no section | OK | `ERROR_ACCESS_DENIED` | OK |
+| data section mapped | OK | `ERROR_ACCESS_DENIED` | OK |
+| **IMAGE section mapped** | **`ERROR_ACCESS_DENIED`** | `ERROR_ACCESS_DENIED` | **OK** |
+
+So the swap is two renames:
+
+1. canonical `vnote.exe` → `<backupDir>/vnote.exe` (allowed on a mapped image);
+2. `staged/vnote.exe` → canonical (the destination no longer exists).
+
+POSIX semantics is still preferred for both (strictly more permissive when any handle is
+open), with a `MoveFileExW` fallback taken **only** when `SetFileInformationByHandle`
+reports the info class itself is unimplemented — never on an `ERROR_ACCESS_DENIED`. That
+fallback is what keeps the Windows 7 / 8.1 `win64-windows7` variant eligible.
+
+The capability probe exercises exactly this sequence against a SEC_IMAGE-mapped copy of a
+real PE, at planning time **and** again in apply preflight.
+
+### Accepted residual risks
+
+1. **Mixed binary set after an interrupted apply.** The journal plus the two-rename sequence
+   normally let recovery run on the next launch. But if the Windows loader cannot start a
+   partially-swapped DLL set (e.g. a new `Qt6Core.dll` beside an old `Qt6Gui.dll`), the
+   process dies before `main()` and recovery never runs. Mitigation: `RECOVERY.txt` written
+   into `.vnote-old/<timestamp>/` at transaction start; the backup is retained until the
+   next successful launch. Eliminating this requires the external-helper follow-up.
+2. **Handle contention**, in three honest tiers: detected during preflight or the WebEngine
+   wait → **abort before any mutation**; detected mid-transaction → **rollback**; contention
+   also blocks the rollback → the install is left mixed with journal and backups intact and
+   degenerates into risk 1. Rare, but real: the design does **not** claim "never a broken
+   install".
+3. **Hosts without a usable rename sequence.** Probed by actual API result (never by OS
+   version) at planning time and re-probed in apply preflight; such installs are marked
+   ineligible and offered the download page.
+4. **The canonical executable does not exist between the two renames.** One syscall wide,
+   journaled as `ReplaceExecutable` state `BackedUp`, with the complete old image already in
+   `.vnote-old/<ts>/`. A machine death inside that window leaves no `vnote.exe`, so recovery
+   cannot run and the user must restore from the backup using `RECOVERY.txt`. This is
+   strictly weaker than a single atomic operation would be, and it is unavoidable on
+   Windows (see the table above).
+5. **A concurrent launch can map modules before its lease check.** The Windows loader
+   resolves static imports before `main()`, so the lease cannot stop a process started
+   during an apply from mapping a mixed DLL set. See "Lease protocol" above. Only the
+   external-helper/bootstrap follow-up removes this.
+
+### Forbidden patterns
+
+- **Never** touch the install tree outside `UpdateInstaller`.
+- **Never** apply before `vxcore_context_destroy()`; the apply runs only in the post-scope
+  block of `main()`, after every service, `ConfigMgr2`, `Application` and the guard are gone.
+- **Never** use `qApp`, a service, a widget, `QtConcurrent`, the network, or
+  `QCoreApplication::applicationFilePath()` after that scope exit. Use
+  `UpdateInstaller::exePathFromModulePath()` and re-read the plan from `pending.json`.
+- **Never** rely on `SingleInstanceGuard` alone for update serialization (its pre-tri-state
+  behavior was fail-open).
+- **Never** route `vnote.exe` through the generic swap or the generic reverse rollback; it
+  has its own state machine for the reasons in the table above.
+- **Never** release the update lease before the replacement process has been spawned, and
+  remember `exit(0)` does not unwind C++ objects — release it explicitly.
+
+Full design rationale, the recovery state table, and the manual E2E checklist live in
+`.kilo/plans/1785337074532-incremental-update-plan.md`.
+
+---
+
 ## Code Style Guidelines
 
 ### Standards

@@ -562,9 +562,8 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
     QMessageBox::about(m_mainWindow, MainWindow2::tr("About"), info + text);
   });
 
-  // TODO: Updater dialog not yet migrated.
   menu->addAction(MainWindow2::tr("Check for Updates"), menu,
-                  [this]() { qDebug() << "Check for updates requested (stub)"; });
+                  [this]() { m_mainWindow->checkForUpdates(); });
 
   menu->addAction(MainWindow2::tr("Restart"), menu, [this]() { m_mainWindow->restart(); });
 

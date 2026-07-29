@@ -13,6 +13,18 @@
 #include <QTextCodec>
 #include <QTranslator>
 
+#include <utility>
+
+#ifdef Q_OS_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 #include <controllers/imagehostcontroller.h>
 #include <core/configmgr2.h>
 #include <core/constants.h>
@@ -47,10 +59,13 @@
 #include <core/services/tagservice.h>
 #include <core/services/taskservice.h>
 #include <core/services/templateservice.h>
+#include <core/services/updateservice.h>
 #include <core/services/vnote3migrationservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/singleinstanceguard.h>
+#include <core/updateinstaller.h>
+#include <core/updatelease.h>
 #include <core/vxcorelogbridge.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
@@ -206,6 +221,66 @@ QByteArray buildChromiumFlags(const QByteArray &p_existing) {
 }
 
 int main(int argc, char *argv[]) {
+  // =========================================================================
+  // Incremental-update interlock. These are the FIRST executable statements of
+  // main(), before Logger::installEarly() and everything else below, and well
+  // before vxcore_set_app_info / vxcore_context_create.
+  //
+  // What this DOES guarantee: no process reaches VNote's own initialization --
+  // vxcore context creation, service construction, config load, window setup --
+  // while another process is applying an update.
+  //
+  // What it does NOT guarantee (accepted residual risk): the Windows loader
+  // resolves and maps this executable's static imports (Qt, VTextEdit, vxcore)
+  // BEFORE main() runs, so a launch that races an in-progress apply can already
+  // have mapped a mixed old/new DLL set, or fail in the loader outright. No
+  // in-process lease can close that window; only the external-helper /
+  // bootstrap-executable follow-up can. The apply is therefore kept as short as
+  // possible and journaled so the next launch recovers.
+  //
+  // installDir / exePath come from GetModuleFileNameW, so no QCoreApplication
+  // is required (and none exists yet).
+  const QString installDir = vnotex::UpdateInstaller::installDirFromModulePath();
+  const QString exePath = vnotex::UpdateInstaller::exePathFromModulePath();
+
+  // Outer-scope so it survives destruction of every service, ConfigMgr2,
+  // Application and the guard, all of which happen before the apply runs.
+  vnotex::UpdateLease lease;
+
+  {
+    vnotex::UpdateLease::AcquireError leaseError = vnotex::UpdateLease::AcquireError::None;
+    vnotex::UpdateLease startupLease =
+        vnotex::UpdateLease::acquire(installDir, vnotex::UpdateLease::c_defaultTimeoutMs,
+                                     &leaseError);
+    if (!startupLease) {
+      // FAIL CLOSED. Never fall through to initialization: another process may
+      // be swapping binaries this one is about to use. No Qt exists yet, so the
+      // message has to be a raw Win32 one.
+#ifdef Q_OS_WIN
+      ::MessageBoxW(nullptr, L"VNote is finishing an update. Please try again in a moment.",
+                    L"VNote", MB_OK | MB_ICONINFORMATION);
+#else
+      fprintf(stderr, "VNote is finishing an update. Please try again in a moment.\n");
+#endif
+      Q_UNUSED(leaseError);
+      return 1;
+    }
+
+    // Complete or reverse an interrupted apply before VNote creates its vxcore
+    // context, services, configuration or windows, then reclaim the backups of
+    // a transaction that already reached a terminal state (this is the "first
+    // successful post-update launch").
+    //
+    // NOT "before anything maps a module": the loader mapped this process's
+    // static imports before main() was entered. See the guarantee note above.
+    vnotex::UpdateInstaller::recoverInterrupted(installDir);
+    vnotex::UpdateInstaller::cleanupOldBackups(installDir);
+
+    // Hand the lease to the outer scope; it is released per the tri-state rule
+    // below (immediately on Primary, at the very end of main() otherwise).
+    lease = std::move(startupLease);
+  }
+
   // Install the log message handler at the very beginning so early startup logs
   // (vxcore context creation, service registration, etc.) are captured into an
   // in-memory buffer instead of leaking to the console via Qt's default handler.
@@ -413,6 +488,14 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<ConfigMgr2>(&configMgr);
     qInfo() << "ConfigMgr2 registered";
 
+    // Incremental updater. Mechanism only: eligibility, network, planning and
+    // staging. All policy that needs config (skipped version, check throttle,
+    // "check on start") lives in UpdateController, because core_configs links
+    // core_services and the reverse dependency would be circular.
+    UpdateService updateService(installDir, ConfigMgr2::getApplicationVersion());
+    serviceLocator.registerService<UpdateService>(&updateService);
+    qInfo() << "UpdateService registered";
+
     // TaskService: new-arch replacement for the legacy TaskMgr. Constructed
     // after ConfigMgr2 (needs initialized config), NotebookCoreService, and
     // SnippetCoreService. No production ITaskContext implementer exists yet, so
@@ -586,19 +669,35 @@ int main(int argc, char *argv[]) {
 
     // Guarding.
     SingleInstanceGuard guard;
-    bool canRun = guard.tryRun();
-    if (!canRun) {
-      if (cmdOptions.m_detachedView) {
-        // Forward as a detached-view open. Do NOT raise/show the running main
-        // window; only the new detached window should appear.
-        guard.requestOpenFilesDetached(cmdOptions.m_pathsToOpen);
+    const auto guardResult = guard.tryRun();
+    if (guardResult != SingleInstanceGuard::TryRunResult::Primary) {
+      if (guardResult == SingleInstanceGuard::TryRunResult::Secondary) {
+        if (cmdOptions.m_detachedView) {
+          // Forward as a detached-view open. Do NOT raise/show the running main
+          // window; only the new detached window should appear.
+          guard.requestOpenFilesDetached(cmdOptions.m_pathsToOpen);
+        } else {
+          guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
+          guard.requestShow();
+        }
+        ret = 0;
       } else {
-        guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
-        guard.requestShow();
+        // BusyUnreachable: the lock is held but the holder cannot be reached.
+        // This used to fail OPEN and become a second primary. Exit instead.
+        qWarning() << "another VNote instance holds the lock but is unreachable; exiting";
+        ret = 1;
       }
-      ret = 0;
+      // The update lease is deliberately NOT released here. A rejected starter
+      // has already mapped Qt, VTextEdit and vxcore; releasing now would let an
+      // applier start swapping files that are still mapped into this process.
+      // It is released as the very last action of main(), after teardown.
       break;
     }
+
+    // Primary: this process owns the instance, so an applier can no longer
+    // start without going through the guard. Release the startup lease; the
+    // apply path re-acquires it after app.exec() returns.
+    lease.release();
 
     // Resolve the final logger state and flush the buffered startup logs
     // (dropping below-threshold ones, e.g. when --quiet is set). Reached only on
@@ -684,25 +783,83 @@ int main(int argc, char *argv[]) {
 
     // Run event loop
     ret = app.exec();
-    if (ret == kExitToRestart) {
-      // Asked to restart VNote.
-      guard.exit();
-      QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
-      // Services and configMgr will be destroyed when leaving this scope,
-      // then vxcore_context_destroy() will be called below.
+
+    if (ret == kExitToRestart || ret == kExitToApplyUpdate) {
+      // Re-acquire the update lease WHILE the SingleInstanceGuard is still
+      // held, so no other process can slip in between the guard's release (at
+      // scope exit, below) and the swap. If acquisition fails we degrade to a
+      // plain restart -- never to an unserialized apply.
+      vnotex::UpdateLease::AcquireError leaseError = vnotex::UpdateLease::AcquireError::None;
+      lease = vnotex::UpdateLease::acquire(installDir, vnotex::UpdateLease::c_defaultTimeoutMs,
+                                           &leaseError);
+      if (!lease && ret == kExitToApplyUpdate) {
+        qWarning() << "could not acquire the update lease; deferring the update to the next quit";
+        vnotex::UpdateInstaller::writeRetryableResult(
+            installDir, QStringLiteral("another process held the update lease"));
+        ret = kExitToRestart;
+      }
     }
-    // All services destroyed here before vxcore context
+
+    // The explicit guard.exit() that used to live here is redundant: the guard
+    // destructor calls it at scope exit, which is also when the QLocalServer it
+    // owns must die (it must not outlive QApplication).
+    //
+    // All services destroyed here before vxcore context.
   } while (false);
 
   // Cleanup: destroy vxcore context (after all services are destroyed)
   vxcore_context_destroy(context);
   qInfo() << "VxCore context destroyed";
 
-  if (ret == kExitToRestart) {
+  // =========================================================================
+  // Post-scope: services, ConfigMgr2, Application and the guard are all gone,
+  // and the vxcore context is destroyed. From here on there is NO qApp, no
+  // widgets, no translations, no queued signals, no QtConcurrent, no network,
+  // and no pointer into ServiceLocator / ConfigMgr2 / UpdateService remains
+  // valid. UpdateInstaller re-reads its plan from pending.json and uses only
+  // synchronous QtCore plus Win32.
+  // =========================================================================
+  if (ret == kExitToApplyUpdate && lease) {
+    // Re-probe: a pending update can outlive an OS, driver or filesystem change.
+    if (!vnotex::UpdateInstaller::probeAtomicRenameSupport(installDir)) {
+      vnotex::UpdateInstaller::writeRetryableResult(
+          installDir, QStringLiteral("this system can no longer replace a running program file"));
+    } else {
+      // QtWebEngine descendants must be gone before anything under the install
+      // tree is touched. TimedOut / Error abort BEFORE the first journaled
+      // operation, so nothing changes and the update is retried next time.
+      const auto waitResult = vnotex::UpdateInstaller::waitForWebEngineChildren(installDir, 30000);
+      if (waitResult == vnotex::UpdateInstaller::WaitResult::NoChildren ||
+          waitResult == vnotex::UpdateInstaller::WaitResult::Exited) {
+        vnotex::UpdateInstaller::applyPending(installDir);
+      } else {
+        vnotex::UpdateInstaller::writeRetryableResult(
+            installDir, vnotex::UpdateInstaller::waitResultToString(waitResult));
+      }
+    }
+  }
+
+  if (ret == kExitToRestart || ret == kExitToApplyUpdate) {
+    // Spawn WHILE still holding the lease: the child blocks at its own
+    // top-of-main() acquisition, so no third launcher can win both the lease
+    // and the already-released guard before the intended replacement exists.
+    const bool spawned = QProcess::startDetached(exePath, QStringList());
+    if (!spawned) {
+      qCritical() << "failed to start the replacement process at" << exePath;
+      vnotex::UpdateInstaller::writeSpawnFailure(installDir);
+    }
+
+    // exit() does NOT unwind C++ objects, so the lease must be released by hand.
+    lease.release();
+
     // Must use exit() in Linux to quit the parent process in Qt 5.12.
     // Thanks to @ygcaicn.
     exit(0);
   }
+
+  // Rejected starters (Secondary / BusyUnreachable) held the lease through the
+  // whole teardown; this is the last statement before returning.
+  lease.release();
 
   return ret;
 }

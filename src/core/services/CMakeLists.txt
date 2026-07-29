@@ -38,9 +38,18 @@ set(SERVICES_SOURCES
   syncerrorpresenter.cpp
   syncworkqueuemanager.cpp
   eventbridge.cpp
+  updateservice.cpp
   ${CMAKE_SOURCE_DIR}/src/core/hookevents.cpp
   ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  # Incremental updater. These live in src/core/ but are compiled INTO
+  # core_services (not src/core/CMakeLists.txt, which builds into the vnote
+  # executable target that tests cannot link). Same pattern as hookevents.cpp.
+  ${CMAKE_SOURCE_DIR}/src/core/updatemanifest.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/manifestsignature.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/zipextractor.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/updatelease.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/updateinstaller.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdownwebglobaloptions.cpp
   ${CMAKE_SOURCE_DIR}/src/core/htmltemplateutils.cpp
   ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
@@ -97,7 +106,13 @@ set(SERVICES_HEADERS
   syncworkqueuemanager.h
   synclog.h
   eventbridge.h
+  updateservice.h
   ${CMAKE_SOURCE_DIR}/src/core/logging.h
+  ${CMAKE_SOURCE_DIR}/src/core/updatemanifest.h
+  ${CMAKE_SOURCE_DIR}/src/core/manifestsignature.h
+  ${CMAKE_SOURCE_DIR}/src/core/zipextractor.h
+  ${CMAKE_SOURCE_DIR}/src/core/updatelease.h
+  ${CMAKE_SOURCE_DIR}/src/core/updateinstaller.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
@@ -121,6 +136,10 @@ target_link_libraries(core_services
     # vxcore_folder_set_children_order. The target is the INTERFACE library
     # exposed by libs/vxcore/third_party/CMakeLists.txt.
     nlohmann_json
+    # Vendored ZIP reader/writer for the incremental updater (ZipExtractor).
+    miniz
+    # Vendored verify-only Ed25519 + BLAKE2b for update-manifest signatures.
+    minicrypto
 )
 
 target_include_directories(core_services
@@ -165,3 +184,4 @@ if(VNOTE_KEYCHAIN_AVAILABLE)
     )
   endif()
 endif()
+

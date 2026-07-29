@@ -953,3 +953,69 @@ add_qt_test(test_notebook_core_service_reorder
     core_services
     vxcore
 )
+
+# Incremental updater: UpdateManifest is the pure value type (parse, diff,
+# chain resolution, path normalization). No widgets, network, or filesystem.
+add_qt_test(test_updatemanifest
+  SOURCES
+    test_updatemanifest.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+# Incremental updater: ZipExtractor is the hardened miniz-backed reader. All
+# validation must happen before any byte is written.
+add_qt_test(test_zipextractor
+  SOURCES
+    test_zipextractor.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+
+# Incremental updater: UpdateLease. Defines its own main() so the very same
+# executable can also run as the CHILD helper process for the multi-process
+# contention cases (that is the whole point of a file-handle lease).
+add_qt_test(test_updatelease
+  SOURCES
+    test_updatelease.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+# The multi-process cases spawn children that hold the lease for up to a second
+# each; the default 60s ctest timeout is comfortable but keep it explicit.
+set_tests_properties(test_updatelease PROPERTIES TIMEOUT 120)
+# Incremental updater: UpdateInstaller (journaled swap, rollback, crash
+# recovery, ReplaceExecutable state machine). Defines its own main() so the same
+# executable doubles as the child process that is hard-killed mid-apply.
+add_qt_test(test_updateinstaller
+  SOURCES
+    test_updateinstaller.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+# The subprocess recovery matrix spawns one child per state boundary.
+set_tests_properties(test_updateinstaller PROPERTIES TIMEOUT 180)
+# SingleInstanceGuard tri-state tryRun(). The important case is BusyUnreachable:
+# the branch that used to fail OPEN and produce a second primary. Uses the
+# guard's testing constructor so it never touches the real "vnote" IPC names.
+add_qt_test(test_singleinstanceguard
+  SOURCES
+    test_singleinstanceguard.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/singleinstanceguard.cpp
+  LINKS
+    core_services
+  GUILESS
+)
+# Incremental updater: minisign verification of the update manifest. Every
+# vector is produced by the REFERENCE minisign implementation (0.11), never by
+# the code under test.
+add_qt_test(test_manifestsignature
+  SOURCES
+    test_manifestsignature.cpp
+  LINKS
+    core_services
+  GUILESS
+)

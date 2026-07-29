@@ -55,6 +55,7 @@
 #include <gui/utils/widgetutils.h>
 
 #include <controllers/firstruncontroller.h>
+#include <controllers/updatecontroller.h>
 #include <controllers/searchcontroller.h>
 #include <controllers/syncconflictcontroller.h>
 #include <controllers/viewareacontroller.h>
@@ -259,6 +260,23 @@ void MainWindow2::setupUI() {
         }
       },
       Qt::QueuedConnection);
+
+  // Incremental updater. Constructed BEFORE kickOffPostInit() so its
+  // MainWindowAfterStart subscription is registered before the hook fires.
+  // It owns all update policy; MainWindow2 only forwards the menu action and
+  // the quit prompt.
+  m_updateController = new UpdateController(m_serviceLocator, this, this);
+  if (auto *hookMgr = m_serviceLocator.get<HookManager>()) {
+    hookMgr->addAction(
+        HookNames::MainWindowAfterStart,
+        [this](HookContext &, const QVariantMap &) {
+          if (m_updateController) {
+            m_updateController->runStartupTasks();
+          }
+        },
+        // Late: never compete with session restore for the startup window.
+        200);
+  }
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
@@ -465,7 +483,7 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
   auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
   const int toTray = sessionConfig.getMinimizeToSystemTray();
   bool isExit = m_requestQuit > -1 || toTray == 0;
-  const int exitCode = m_requestQuit;
+  int exitCode = m_requestQuit;
   m_requestQuit = -1;
 
 #if defined(Q_OS_MACOS)
@@ -511,6 +529,17 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
   }
 
   if (isExit || !m_trayIcon->isVisible()) {
+    // A staged update is applied on the way out, not while VNote is running.
+    // Ask BEFORE the before-close hook so a user who declines still gets the
+    // normal shutdown, and one who accepts gets kExitToApplyUpdate carried
+    // through to main(). Skipped when the exit code is already set (the user
+    // came here via "Restart to finish update" or an explicit restart).
+    if (exitCode < 0 && m_updateController && m_updateController->hasPendingUpdate()) {
+      if (m_updateController->promptToApplyPendingOnQuit()) {
+        exitCode = kExitToApplyUpdate;
+      }
+    }
+
     // Fire before-close hook. Subscribers (ViewArea2, ConfigService) handle:
     // - Tab order sync and buffer close with save prompts (ViewArea2, priority 10)
     // - Session snapshot to disk (ConfigService, priority 100)
@@ -519,6 +548,15 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
     if (hookMgr) {
       if (hookMgr->doAction(HookNames::MainWindowBeforeClose)) {
         // User cancelled — undo shutdown preparation.
+        //
+        // m_requestQuit was consumed into `exitCode` and reset at the top of
+        // this function, BEFORE the hook could cancel. Restoring it here keeps
+        // a requested restart / update-apply alive across a cancelled close;
+        // otherwise the next close would silently exit with 0 and the staged
+        // update would never be applied. Nothing else needs undoing: no lease
+        // has been acquired at this point (main() takes it only after
+        // app.exec() returns).
+        m_requestQuit = exitCode;
         hookMgr->doAction(HookNames::MainWindowShutdownCancelled);
         p_event->ignore();
         return;
@@ -1123,6 +1161,23 @@ void MainWindow2::restart() {
   close();
 }
 
+void MainWindow2::checkForUpdates() {
+  if (m_updateController) {
+    m_updateController->checkForUpdatesManually();
+  }
+}
+
+void MainWindow2::restartForUpdate() {
+  // Mirrors restart(), but with the exit code main() interprets as "apply the
+  // staged update before spawning the replacement".
+  //
+  // Deliberately NO lease handling here: the update lease is a main() local
+  // (every service, including UpdateService, is destroyed before the apply
+  // runs), so ownership stays entirely in main().
+  m_requestQuit = kExitToApplyUpdate;
+  close();
+}
+
 void MainWindow2::changeEvent(QEvent *p_event) {
   if (p_event->type() == QEvent::WindowStateChange) {
     QWindowStateChangeEvent *eve = static_cast<QWindowStateChangeEvent *>(p_event);
@@ -1318,3 +1373,4 @@ void MainWindow2::onThemeChanged() {
     m_progressDialog->setValue(3);
   }
 }
+

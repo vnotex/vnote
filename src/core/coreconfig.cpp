@@ -22,6 +22,11 @@ const int c_maxSearchMaxResults = 100000;
 
 QStringList CoreConfig::s_availableLocales;
 
+// Out-of-line definition required by C++14 when the constant is odr-used
+// (e.g. bound to a qint64 reference). Redundant, but harmless, from C++17 on.
+constexpr qint64 CoreConfig::c_updateCheckIntervalMs;
+
+
 CoreConfig::CoreConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("core");
   initDefaults();
@@ -58,6 +63,11 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("checkForUpdatesOnStart"));
 
+  m_skippedUpdateVersion = READSTR(QStringLiteral("skippedUpdateVersion"));
+
+  m_lastUpdateCheckTime =
+      parseLastUpdateCheckTime(read(p_jobj, QStringLiteral("lastUpdateCheckTime")));
+
   m_historyMaxCount = READINT(QStringLiteral("historyMaxCount"));
   if (m_historyMaxCount < 0) {
     m_historyMaxCount = 100;
@@ -92,6 +102,10 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
   obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
+  obj[QStringLiteral("skippedUpdateVersion")] = m_skippedUpdateVersion;
+  // Decimal string: IConfig::readInt is 32-bit and QJsonValue::toInt() would
+  // truncate an epoch-millisecond value.
+  obj[QStringLiteral("lastUpdateCheckTime")] = QString::number(m_lastUpdateCheckTime);
   obj[QStringLiteral("historyMaxCount")] = m_historyMaxCount;
   obj[QStringLiteral("searchMaxResults")] = m_searchMaxResults;
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
@@ -181,6 +195,50 @@ bool CoreConfig::isCheckForUpdatesOnStartEnabled() const { return m_checkForUpda
 
 void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled) {
   updateConfig(m_checkForUpdatesOnStartEnabled, p_enabled, this);
+}
+
+const QString &CoreConfig::getSkippedUpdateVersion() const { return m_skippedUpdateVersion; }
+
+void CoreConfig::setSkippedUpdateVersion(const QString &p_version) {
+  updateConfig(m_skippedUpdateVersion, p_version, this);
+}
+
+qint64 CoreConfig::getLastUpdateCheckTime() const { return m_lastUpdateCheckTime; }
+
+void CoreConfig::setLastUpdateCheckTime(qint64 p_msSinceEpoch) {
+  updateConfig(m_lastUpdateCheckTime, p_msSinceEpoch, this);
+}
+
+bool CoreConfig::isUpdateCheckDue(qint64 p_nowMsSinceEpoch, qint64 p_intervalMs) const {
+  if (m_lastUpdateCheckTime <= 0) {
+    // Never checked.
+    return true;
+  }
+
+  if (m_lastUpdateCheckTime > p_nowMsSinceEpoch) {
+    // Future-dated (clock moved backwards, or a corrupted value): treat as stale
+    // so the throttle can never wedge a user out of update checks forever.
+    return true;
+  }
+
+  return (p_nowMsSinceEpoch - m_lastUpdateCheckTime) >= p_intervalMs;
+}
+
+qint64 CoreConfig::parseLastUpdateCheckTime(const QJsonValue &p_value) {
+  if (p_value.isString()) {
+    bool ok = false;
+    const qint64 val = p_value.toString().toLongLong(&ok);
+    return (ok && val > 0) ? val : 0;
+  }
+
+  if (p_value.isDouble()) {
+    // Backward/forward compatibility with a bare JSON number. Values beyond
+    // 2^53 are not representable exactly, but epoch ms stays far below that.
+    const double val = p_value.toDouble();
+    return val > 0 ? static_cast<qint64>(val) : 0;
+  }
+
+  return 0;
 }
 
 int CoreConfig::getHistoryMaxCount() const { return m_historyMaxCount; }

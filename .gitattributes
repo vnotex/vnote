@@ -40,3 +40,11 @@ CMakeLists.txt text eol=lf
 *.woff binary
 *.woff2 binary
 *.eot binary
+
+# Vendored third-party sources are stored EXACTLY as shipped upstream so the
+# SHA-256 values pinned in each libs/<dep>/PROVENANCE.md stay verifiable.
+# Normalizing their line endings would silently invalidate those hashes (and,
+# with core.safecrlf=true, blocks `git add` outright). -text disables eol
+# conversion while still keeping them diffable.
+libs/miniz/** -text
+libs/minicrypto/** -text

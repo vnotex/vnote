@@ -185,6 +185,107 @@ jobs:
           mv VNote-${VNOTE_VER}-win64 VNote-${VNOTE_VER}-win64-windows7 || true
           mv VNote-${VNOTE_VER}-win64.zip VNote-${VNOTE_VER}-win64-windows7.zip || true
 
+      # Incremental update artifacts. MUST run after the Qt5 rename (so the
+      # variant name is final) and before the composition check below (which
+      # inspects the extracted directory, now including manifest.json).
+      #
+      # The MSI was produced earlier by `cmake --build . --target=pack`, so it
+      # does NOT contain manifest.json. That is intentional: MSI installs land
+      # under Program Files and are deliberately ineligible for self-update.
+      - name: Generate update manifest and delta
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        env:
+          # The token at the continuous-build step is scoped to that step only,
+          # so the generator needs its own. It uses `gh` to resolve the previous
+          # STABLE release and download its published manifest.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          # Ed25519 signing key for the release manifest. The client REFUSES any
+          # manifest it cannot verify, so an unsigned release is inert. Absent
+          # on forks and on PRs from forks, where the generator warns instead.
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+        run: |
+          # Channel is derived from THIS workflow's real release predicate,
+          # identical to the `Release` step's condition below. It must NOT be
+          # keyed on "was this a tag build": this repo cuts releases from a
+          # master push and creates the tag afterwards via ncipollo, so a
+          # tag-based rule would stamp every official release "continuous".
+          $isRelease = ('${{ github.ref }}' -eq 'refs/heads/master') -and
+                       ('${{ startsWith(github.event.head_commit.message, '[Release]') }}' -eq 'true')
+          $channel = if ($isRelease) { 'stable' } else { 'continuous' }
+          Write-Host "Update channel: $channel"
+
+          $signArgs = @()
+          if ($env:MINISIGN_SECRET_KEY) {
+            # minisign is not preinstalled on the runner image.
+            $msVer = '0.11'
+            $msZip = Join-Path $env:RUNNER_TEMP 'minisign.zip'
+            $msDir = Join-Path $env:RUNNER_TEMP 'minisign'
+            curl.exe -sSL -o $msZip "https://github.com/jedisct1/minisign/releases/download/$msVer/minisign-$msVer-win64.zip"
+            Expand-Archive -Path $msZip -DestinationPath $msDir -Force
+            $msExe = (Get-ChildItem $msDir -Recurse -Filter minisign.exe | Select-Object -First 1).DirectoryName
+            $env:PATH = "$msExe;$env:PATH"
+
+            # Materialize the key outside the workspace so it can never be
+            # picked up by a packaging glob, and remove it in the finally block.
+            $keyPath = Join-Path $env:RUNNER_TEMP 'minisign.key'
+            Set-Content -LiteralPath $keyPath -Value $env:MINISIGN_SECRET_KEY -NoNewline
+            $signArgs = @('-MinisignSecretKey', $keyPath)
+          }
+          else {
+            Write-Warning "MINISIGN_SECRET_KEY is not set; this build's manifest will be UNSIGNED."
+          }
+
+          try {
+            $variant = 'win64${{matrix.config.suffix}}'
+            & "$env:GITHUB_WORKSPACE/scripts/gen-update-package.ps1" `
+                -ExtractedDir "VNote-${{env.VNOTE_VER}}-$variant" `
+                -Version "${{env.VNOTE_VER}}" `
+                -Variant $variant `
+                -Commit "${{ github.sha }}" `
+                -Channel $channel `
+                @signArgs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          finally {
+            $keyPath = Join-Path $env:RUNNER_TEMP 'minisign.key'
+            if (Test-Path -LiteralPath $keyPath) {
+              Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
+            }
+          }
+
+      - name: Assert update manifest channel
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          # The channel field is what stops a continuous build from ever being
+          # accepted as a delta base, so it is asserted rather than trusted.
+          $isRelease = ('${{ github.ref }}' -eq 'refs/heads/master') -and
+                       ('${{ startsWith(github.event.head_commit.message, '[Release]') }}' -eq 'true')
+          $expected = if ($isRelease) { 'stable' } else { 'continuous' }
+
+          $variant = 'win64${{matrix.config.suffix}}'
+          foreach ($path in @("VNote-${{env.VNOTE_VER}}-$variant/manifest.json",
+                              "VNote-${{env.VNOTE_VER}}-$variant.manifest.json")) {
+            if (-not (Test-Path -LiteralPath $path)) { Write-Error "Missing $path"; exit 1 }
+            $manifest = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+            if ($manifest.channel -ne $expected) {
+              Write-Error "$path declares channel '$($manifest.channel)', expected '$expected'"
+              exit 1
+            }
+            if ($manifest.variant -ne $variant) {
+              Write-Error "$path declares variant '$($manifest.variant)', expected '$variant'"
+              exit 1
+            }
+            if ($manifest.version -ne '${{env.VNOTE_VER}}') {
+              Write-Error "$path declares version '$($manifest.version)', expected '${{env.VNOTE_VER}}'"
+              exit 1
+            }
+          }
+          Write-Host "Manifest channel/variant/version verified ($expected)"
+
       - name: Verify Qt5 zip composition
         if: ${{ startsWith(matrix.config.qt, '5.15') }}
         shell: pwsh
@@ -230,7 +331,14 @@ jobs:
           path: ${{runner.workspace}}/build/VNote*.msi
 
       - name: Update Continuous Build Release
-        if: github.ref == 'refs/heads/master'
+        # Release pushes are EXCLUDED. Without this a `[Release]` push would
+        # generate one `stable`-stamped ZIP and then copy that same ZIP to the
+        # `continuous-build` prerelease, which (a) makes the two channel
+        # assertions unsatisfiable and (b) republishes the official release as a
+        # continuous prerelease.
+        if: >-
+          github.ref == 'refs/heads/master' &&
+          !startsWith(github.event.head_commit.message, '[Release]')
         shell: bash
         working-directory: ${{runner.workspace}}/build
         env:
@@ -258,6 +366,10 @@ jobs:
 
           # Prune only this job's own asset family. The two regexes are mutually
           # exclusive: win64\.zip$ does NOT match ...win64-windows7.zip.
+          # The incremental-update assets (.manifest.json / .delta.zip) are
+          # deliberately NOT published to continuous-build, and neither regex
+          # matches them (both end in \.zip$ and the delta ends in .delta.zip,
+          # which win64\.zip$ / win64-windows7\.zip$ cannot match).
           if [ -n "$SUFFIX" ]; then
             PRUNE_RE='win64-windows7\.zip$'
           else
@@ -277,11 +389,20 @@ jobs:
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # glob not supported; upload the packaged .zip (ncipollo cannot upload a
-          # directory). Both matrix jobs target the same draft (allowUpdates:true):
-          # Qt6 -> VNote-<ver>-win64.zip, Qt5.15 -> VNote-<ver>-win64-windows7.zip.
-          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip
+          # ncipollo/release-action@v1.11.0 accepts a COMMA-SEPARATED list and
+          # expands globs. Both matrix jobs target the same draft
+          # (allowUpdates:true): Qt6 -> ...win64.*, Qt5.15 -> ...win64-windows7.*
+          #
+          # The delta is optional (the first release shipping this feature has
+          # no predecessor manifest), which is why it is a glob rather than a
+          # literal path -- a missing glob match is not an error.
+          artifacts: >-
+            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip,
+            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.manifest.json,
+            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.manifest.json.minisig,
+            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.delta.zip
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
           draft: true
+

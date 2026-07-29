@@ -137,3 +137,94 @@ The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault 
 **Idle cost.** Because the `"vxcore.search"` queue is pre-created at `vxcore_context_create`, idle drain threads block on the queue's condvar (~0 CPU). There is no busy-spin and no need to guard against a missing queue.
 
 **Degradation.** The initiating thread help-drains its own enqueued items, so a search stays correct even if this pool is absent or stalled. With no drain threads the search simply runs single-threaded; results, ordering, cancellation, and `max_results` are unaffected.
+
+## UpdateService
+
+Mechanism half of the incremental updater: eligibility, network, planning, download and
+staging. The apply half lives in [`UpdateInstaller`](../updateinstaller.h) and runs AFTER
+this service has been destroyed. The full contract (manifest format, staging layout, lease
+protocol, journal invariants, the two-rename executable swap and the accepted residual
+risks) is in the root [Incremental Update](../../../AGENTS.md#incremental-update-windows-x64)
+section; only the service-specific rules are repeated here.
+
+### No ConfigMgr2 dependency
+
+`UpdateService` takes `(installDir, currentVersion)` as plain values and never touches
+`ConfigMgr2`. This is NOT a style preference: `core_configs` links `core_services`, so a
+dependency the other way would be a CMake cycle. Every config-driven decision -
+`checkForUpdatesOnStart`, the 24 h throttle (`lastUpdateCheckTime`), and
+`skippedUpdateVersion` - therefore lives in `UpdateController`, which is compiled into the
+`vnote` target and may use `ConfigMgr2` freely.
+
+Corollary: do NOT "fix" a future need for config inside the service by registering
+`ConfigMgr2` with it. Add the policy to the controller and pass the decision down.
+
+### Threading
+
+Both public operations (`checkForUpdates`, `startDownload`) return immediately and do their
+work on a `QtConcurrent` worker, because they block on nested event loops (network) and hash
+hundreds of megabytes (verification).
+
+- **`QNetworkAccessManager` is created on the WORKER'S STACK**, never as a member. QNAM is
+  not thread-safe and belongs to the thread that created it, so every network helper takes
+  it by reference. There is deliberately no QNAM member; adding one would reintroduce the
+  cross-thread bug.
+- All signals (`checkFinished`, `progress`, `readyToApply`, `failed`) are emitted through
+  `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` so receivers see them on the GUI
+  thread.
+- The destructor calls `cancel()` and then WAITS on the stored `QFuture`. The worker holds a
+  raw `this`; letting it outlive the object is a use-after-free.
+
+### Redirects and the host allowlist
+
+Redirects are followed MANUALLY (`QNetworkRequest::ManualRedirectPolicy` set on EVERY
+request, because Qt 5 and Qt 6 differ in their default) so each hop can be checked. A hop is
+accepted only when it is `https` AND the host is `api.github.com`, `github.com`,
+`codeload.github.com`, or any host under `.githubusercontent.com` (release assets redirect
+there; the exact subdomain has moved from `objects.` to `release-assets.`, which is why the
+suffix rather than a fixed host is pinned). At most 5 hops, and there is no HTTPS -> HTTP
+downgrade path.
+
+`testSetEndpointOverride` / `testSetExtraAllowedHost` exist for the local end-to-end harness
+described in the plan's Validation section; the plain-HTTP exemption they enable applies
+ONLY to the explicitly nominated host.
+
+### Delta path preconditions
+
+`buildPlan` falls back to the full package - never to a partial update - unless ALL of these
+hold. Each fallback is logged with its reason:
+
+1. `<installDir>/manifest.json` exists, parses, is `channel == "stable"`, and describes the
+   installed version;
+2. the chain of `delta.baseVersion` pointers reaches the installed version within
+   `UpdateManifest::c_maxChainHops`, with every hop publishing a delta;
+3. the PUBLISHED manifest for the installed version is fetched and
+   `UpdateManifest::validateBaseIdentity` matches it against the local one exactly (version,
+   variant, platform, commit, and the full `files[]` map);
+4. every file in that verified base still hashes correctly on disk (drift check);
+5. total delta bytes are within `UpdateManifest::c_maxChainSizeRatio` of the target's
+   expanded size.
+
+### Staging equality rules
+
+- Per hop, the archive's file entry set must EQUAL `UpdateManifest::hopArchiveSet(hopBase,
+  hopTarget)` exactly, enforced through `ZipExtractor::Options::expectedEntries`.
+- Hops are extracted OLDEST FIRST so newer blobs win.
+- Afterwards, staged paths outside `UpdateManifest::expectedChanged(base, target)` are
+  PRUNED - this is what handles a file changed by a hop and reverted by a later one, and a
+  file that only ever existed in an intermediate release. Pruning is enabled ONLY on the
+  delta path; on the full-package path an unexpected entry is an error, because the archive
+  is supposed to equal the target exactly.
+- Then `stagedPaths == expectedChanged` is required, and every staged file is verified by
+  size AND SHA-256.
+- `manifest.json` is handled out of band: extracted with everything else, compared against
+  the published manifest, then REMOVED from `staged/` so the swap never moves it (the
+  installer commits it separately at the end of the transaction).
+
+### Pending-update lifecycle
+
+`revalidatePending()` runs at startup and silently discards a plan whose schema is wrong,
+whose target version is not strictly newer than the installed one, whose variant does not
+match, or whose staged files no longer verify. `consumeStoredResult()` reads and clears
+`result.json`, which is how an apply outcome crosses the restart - `NotificationService` is
+in-memory only and cannot.

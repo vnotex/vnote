@@ -29,8 +29,10 @@ target_sources(vnote PRIVATE
     searchcontroller.cpp searchcontroller.h
     imagehostcontroller.cpp imagehostcontroller.h
     dashboardcontroller.cpp dashboardcontroller.h
+    updatecontroller.cpp updatecontroller.h
 )
 
 target_include_directories(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
