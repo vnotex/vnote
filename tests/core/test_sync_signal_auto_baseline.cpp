@@ -149,6 +149,7 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
   // vxcore_off_event on a destroyed ctx and hang the process (60s ctest
   // Timeout instead of clean SKIP).
   bool keychainUnavailable = false;
+  bool seedFailed = false;
 
   // Scope all Qt objects that hold ctx so they destruct BEFORE
   // vxcore_context_destroy. Otherwise EventBridge's dtor calls
@@ -176,11 +177,15 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
     QString remoteUrl = seedBareRepo(bareDir, localTemp);
     if (remoteUrl.isEmpty()) {
-      vxcore_context_destroy(ctx);
-      QSKIP("git not available or bare-repo seeding failed");
+      // Do NOT destroy ctx here: EventBridge / BufferService dtors run as this
+      // scope unwinds and would call vxcore_off_event on a freed context
+      // (SEGFAULT). Flag the failure, let the scope close, then destroy ctx and
+      // QSKIP below — mirroring the keychainUnavailable path.
+      seedFailed = true;
     }
 
-    QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
+    if (!seedFailed) {
+      QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
     QDir().mkpath(nbRoot);
     QString nbId = notebookService.createNotebook(
         nbRoot, R"({"name":"Auto Sync NB","description":"","version":"1"})", NotebookType::Bundled);
@@ -304,7 +309,8 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
             static_cast<VxCoreError>(bridgeFinishedSpy.at(i).at(1).toInt());
         QCOMPARE(finishedResult, VXCORE_OK);
       }
-    }
+    } // close if (!keychainUnavailable)
+    } // close if (!seedFailed)
 
     // ---- Tear down -------------------------------------------------------------
     syncService.shutdown();
@@ -314,6 +320,9 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
     guard.cleanup();
   } // close ctx-holders scope before destroying the context
   vxcore_context_destroy(ctx);
+  if (seedFailed) {
+    QSKIP("git not available or bare-repo seeding failed");
+  }
   if (keychainUnavailable) {
     QSKIP("OS keychain backend not usable in this test environment");
   }

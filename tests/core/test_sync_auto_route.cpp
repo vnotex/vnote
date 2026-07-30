@@ -121,6 +121,7 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
   // test_sync_signal_auto_baseline for the full rationale (destroying ctx
   // inside the scope hangs the process and ctest reports Timeout).
   bool keychainUnavailable = false;
+  bool seedFailed = false;
   {
     ServiceLocator services;
     NotebookCoreService notebookService(ctx);
@@ -144,11 +145,13 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
     QString remoteUrl = seedBareRepo(bareDir, localTemp);
     if (remoteUrl.isEmpty()) {
-      guard.cleanup();
-      vxcore_context_destroy(ctx);
-      QSKIP("git not available or bare-repo seeding failed");
+      // Do NOT destroy ctx here: EventBridge / BufferService dtors run as this
+      // scope unwinds and would call vxcore_off_event on a freed context
+      // (SEGFAULT). Flag it, let the scope close, then destroy ctx + QSKIP below.
+      seedFailed = true;
     }
 
+    if (!seedFailed) {
     QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
     QDir().mkpath(nbRoot);
     QString nbId = notebookService.createNotebook(
@@ -210,11 +213,15 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
       QVERIFY(finishedSpy.count() >= 1);
       QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
     }
+    } // close if (!seedFailed)
 
     syncService.shutdown();
     guard.cleanup();
   }
   vxcore_context_destroy(ctx);
+  if (seedFailed) {
+    QSKIP("git not available or bare-repo seeding failed");
+  }
   if (keychainUnavailable) {
     QSKIP("OS keychain backend not usable in this test environment");
   }
@@ -224,6 +231,7 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
   VxCoreContextHandle ctx = nullptr;
   QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
   QVERIFY(ctx != nullptr);
+  bool seedFailed = false;
   {
     ServiceLocator services;
     NotebookCoreService notebookService(ctx);
@@ -244,10 +252,12 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
     QString bareDir = localTemp.filePath(QStringLiteral("remote.git"));
     QString remoteUrl = seedBareRepo(bareDir, localTemp);
     if (remoteUrl.isEmpty()) {
-      guard.cleanup();
-      vxcore_context_destroy(ctx);
-      QSKIP("git not available or bare-repo seeding failed");
+      // Do NOT destroy ctx here (EventBridge dtor would use-after-free). Flag,
+      // unwind the scope, then destroy + QSKIP below.
+      seedFailed = true;
     }
+
+    if (!seedFailed) {
     QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
     QDir().mkpath(nbRoot);
     QString nbId = notebookService.createNotebook(
@@ -329,8 +339,12 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
     }
     syncService.shutdown();
     guard.cleanup();
+    } // close if (!seedFailed)
   }
   vxcore_context_destroy(ctx);
+  if (seedFailed) {
+    QSKIP("git not available or bare-repo seeding failed");
+  }
 }
 
 void TestSyncAutoRoute::test_auto_route_disabled_bail() {
