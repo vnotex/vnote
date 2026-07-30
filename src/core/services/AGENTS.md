@@ -228,3 +228,41 @@ whose target version is not strictly newer than the installed one, whose variant
 match, or whose staged files no longer verify. `consumeStoredResult()` reads and clears
 `result.json`, which is how an apply outcome crosses the restart - `NotificationService` is
 in-memory only and cannot.
+
+### Test coverage and its seams
+
+`tests/core/test_updateservice.cpp` (35 cases) drives the REAL
+`QNetworkAccessManager` against a local `QTcpServer`, and signs its manifest fixtures
+in-process with the vendored minicrypto primitives - Ed25519 SIGNING needs no randomness,
+so `libs/minicrypto/randombytes_stub.c` (which aborts by design) is never reached. If a run
+ever aborts inside `randombytes`, something started calling key GENERATION.
+
+The suite `QSKIP`s itself from `initTestCase()` off Windows. `checkEligibility()` returns
+"only available on Windows" before anything else there, so almost every case would be
+asserting behavior the feature never promises. The target still BUILDS on Linux and macOS
+CI, which is what catches compile breakage; only the assertions are skipped. Add new cases
+inside this suite rather than creating a second, unguarded one.
+
+Two seams exist purely for it, both unconditional per ADR-6:
+
+- `ManifestSignature::testClearTrustedKeys()` forces a genuinely EMPTY trusted-key list, so
+  the fail-closed branch of `checkEligibility()` is reachable.
+  `testSetTrustedKeys({})` cannot do this: an empty vector means "restore the production
+  keys", which is what makes it safe to call from a test's `cleanup()`.
+- `testSetEndpointOverride()` / `testSetExtraAllowedHost()` redirect the service at the
+  local server. The plain-HTTP exemption applies ONLY to the explicitly nominated host.
+
+Two behaviors that look like bugs and are not, so please do not "fix" them without reading
+the tests that pin them down:
+
+- an INELIGIBLE install still fetches the release metadata. `UpdateController` needs
+  `latestVersion` / `releaseUrl` to send the user to the download page. What must never
+  happen is a manifest or archive fetch, and `testNoTrustedKeysMakesTheInstallIneligible`
+  asserts exactly that (no `/download/` request, nothing staged).
+- a forged or unverifiable INTERMEDIATE hop (or published base) falls back to the full
+  package rather than failing the check. That is strictly safer: the target manifest is
+  itself signature-verified, and the full archive is then checked against the signed size,
+  SHA-256 and complete file map.
+
+The suite's acceptance property is that a signature bypass at ANY ONE of the three manifest
+fetch sites - target, intermediate hop, published base - is caught individually.

@@ -1019,3 +1019,22 @@ add_qt_test(test_manifestsignature
     core_services
   GUILESS
 )
+
+# Incremental updater: UpdateService, the CHECK -> PLAN -> DOWNLOAD -> STAGE
+# half. Drives the REAL QNetworkAccessManager path against a local HTTP server
+# (redirects, host allowlist, byte caps, cancellation) and signs its manifest
+# fixtures in-process with the vendored minicrypto primitives -- Ed25519
+# SIGNING needs no randomness, so the aborting randombytes stub is never
+# reached. minicrypto is linked explicitly for its headers: core_services links
+# it PRIVATE, which propagates the library but not the include directory.
+add_qt_test(test_updateservice
+  SOURCES
+    test_updateservice.cpp
+  LINKS
+    core_services
+    minicrypto
+  GUILESS
+)
+# ~30 end-to-end flows, each running the executable-rename capability probe and
+# hashing the staged tree; the default 60s ctest timeout is too tight.
+set_tests_properties(test_updateservice PROPERTIES TIMEOUT 300)

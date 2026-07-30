@@ -220,6 +220,11 @@ void ManifestSignature::testSetTrustedKeys(const QVector<PublicKey> &p_keys) {
   *testKeysOverrideActive() = !p_keys.isEmpty();
 }
 
+void ManifestSignature::testClearTrustedKeys() {
+  testKeysOverride()->clear();
+  *testKeysOverrideActive() = true;
+}
+
 ManifestSignature::Result ManifestSignature::verify(const QByteArray &p_message,
                                                     const QByteArray &p_signatureFile,
                                                     QString *p_trustedComment) {

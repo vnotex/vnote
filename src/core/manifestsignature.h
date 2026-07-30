@@ -107,6 +107,15 @@ public:
   // needing the real private key.
   static void testSetTrustedKeys(const QVector<PublicKey> &p_keys);
 
+  // Forces the trusted-key list to be genuinely EMPTY, which is what an
+  // unconfigured build looks like and is the only way to reach the fail-closed
+  // path from the outside.
+  //
+  // This needs its own seam because testSetTrustedKeys({}) deliberately means
+  // "restore the production keys" -- that is what makes it a safe cleanup call
+  // in a test's cleanup() -- and so cannot express "trusts nothing".
+  static void testClearTrustedKeys();
+
 private:
   ManifestSignature() = delete;
 };
