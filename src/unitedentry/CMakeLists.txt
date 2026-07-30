@@ -1,5 +1,6 @@
 target_sources(vnote PRIVATE
     entrypopup.cpp entrypopup.h
+    entrypopupgeometry.cpp entrypopupgeometry.h
     entrywidgetfactory.cpp entrywidgetfactory.h
     findunitedentry.cpp findunitedentry.h
     helpunitedentry.cpp helpunitedentry.h

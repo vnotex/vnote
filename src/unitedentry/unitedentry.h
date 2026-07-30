@@ -81,8 +81,6 @@ private:
 
   bool isUnitedEntryShortcut(QKeyEvent *p_event) const;
 
-  QSize calculatePopupSize() const;
-
   void updatePopupGeometry();
 
   void refreshIcons();

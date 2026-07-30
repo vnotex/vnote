@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QScreen>
 #include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QTimer>
@@ -31,6 +32,7 @@
 #include <widgets/widgetsfactory.h>
 
 #include "entrypopup.h"
+#include "entrypopupgeometry.h"
 #include "entrywidgetfactory.h"
 #include "iunitedentry.h"
 #include "unitedentryhelper.h"
@@ -585,29 +587,31 @@ void UnitedEntry::exitUnitedEntry() {
   deactivate();
 }
 
-QSize UnitedEntry::calculatePopupSize() const {
-  const int minWidth = 400;
-  const int maxWidth = 900;
-  const int minHeight = 200;
-  const int maxHeight = 600;
-
-  int w = qMax(minWidth, static_cast<int>(window()->width() * 0.8));
-  w = qMin(w, maxWidth);
-  int h = qMax(minHeight, qMin(maxHeight, 400));
-  return QSize(w, h);
-}
-
 void UnitedEntry::updatePopupGeometry() {
-  QSize popupSize = calculatePopupSize();
+  EntryPopupGeometry::Metrics metrics;
+  metrics.m_anchorCenterX = m_comboBox->mapToGlobal(QPoint(m_comboBox->width() / 2, 0)).x();
+  metrics.m_anchorBottomY = m_comboBox->mapToGlobal(QPoint(0, m_comboBox->height())).y();
 
-  // Center the popup horizontally under the combo box.
-  int comboCenter = m_comboBox->mapToGlobal(QPoint(m_comboBox->width() / 2, 0)).x();
-  int x = comboCenter - popupSize.width() / 2;
+  // The stylesheet is applied before any widget is constructed (main.cpp), but
+  // polish the popup explicitly so its font is final before it is measured.
+  // Measure the popup's own font (not this widget's): the popup and its tree
+  // use the application font, whereas UnitedEntry carries the toolbar font.
+  m_popup->ensurePolished();
+  metrics.m_charWidth = m_popup->fontMetrics().averageCharWidth();
 
-  // Anchor vertically below the combo box.
-  int y = m_comboBox->mapToGlobal(QPoint(0, m_comboBox->height())).y();
+  // Clamp against the screen that actually contains the anchor, not merely the
+  // one this widget's window is associated with: a main window straddling two
+  // monitors can have the toolbar on the other one.
+  const QPoint anchor(metrics.m_anchorCenterX, metrics.m_anchorBottomY);
+  const QScreen *scr = QGuiApplication::screenAt(anchor);
+  if (!scr) {
+    scr = screen();
+  }
+  if (scr) {
+    metrics.m_availableRect = scr->availableGeometry();
+  }
 
-  m_popup->setGeometry(x, y, popupSize.width(), popupSize.height());
+  m_popup->setGeometry(EntryPopupGeometry::calculateGeometry(metrics));
 }
 
 void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {

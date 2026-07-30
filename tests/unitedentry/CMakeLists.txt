@@ -105,3 +105,12 @@ add_custom_command(TARGET test_tasksunitedentry POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_tasksunitedentry>
 )
+
+# Pure geometry policy: links nothing beyond Qt Core/Test, so it needs neither
+# extra LINKS nor a VTextEdit copy of its own.
+add_qt_test(test_entrypopupgeometry
+  SOURCES
+    test_entrypopupgeometry.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/entrypopupgeometry.cpp
+  GUILESS
+)
