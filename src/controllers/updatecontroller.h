@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QString>
 
+#include <core/services/notificationservice.h>
 #include <core/services/updateservice.h>
 
 namespace vnotex {
@@ -62,6 +63,11 @@ private:
 
   void openReleasesPage() const;
 
+  // Pushes the configured release source into UpdateService. Called from the
+  // constructor and again at the top of every check, so a Settings change takes
+  // effect without a restart.
+  void applyConfiguredSource();
+
   void notifyPendingUpdate(const QString &p_version);
 
   void consumeStoredResult();
@@ -71,6 +77,29 @@ private:
 
   void showDialog(const UpdateInfo &p_info);
 
+  // Starts a download that reports into the notification (never the dialog) and
+  // switches the tracked message to its in-progress state. Used by both the
+  // Update and the Retry actions.
+  void startNotificationDownload();
+
+  // Applies p_msg to the tracked notification, posting a NEW message when the
+  // tracked one is gone or dismissed (terminal states must always be visible).
+  void updateOrRepostNotification(const NotificationMessage &p_msg);
+
+  // Action that opens the release page of @p_info, falling back to the current
+  // source's releases page. Takes the info explicitly: the dialog and the
+  // notification can be describing different checks.
+  NotificationAction makeCheckReleaseAction(const UpdateInfo &p_info) const;
+
+  // Drops the tracked offer/retry notification. A new check invalidates the
+  // plan those actions would start, so their buttons must not outlive it.
+  void invalidateTrackedNotification();
+
+  // Which surface the CURRENT transfer reports into. Routing must not key off
+  // m_dialog / m_manualCheck: those describe the last CHECK, and a startup
+  // notification can coexist with an open non-modal UpdateDialog.
+  enum class TransferSurface { None, Dialog, Notification };
+
   ServiceLocator &m_services;
   MainWindow2 *m_mainWindow = nullptr;
 
@@ -78,6 +107,29 @@ private:
 
   // Distinguishes the menu-driven check from the silent startup one.
   bool m_manualCheck = false;
+
+  // Set at the exact action that calls startDownload(), reset on every terminal
+  // outcome.
+  TransferSurface m_transfer = TransferSurface::None;
+
+  // The notification carrying the offer, then the progress, then the terminal
+  // state. 0 when there is none.
+  quint64 m_progressNotificationId = 0;
+
+  // The version currently being offered / downloaded through the notification.
+  UpdateInfo m_offeredInfo;
+
+  // The version the currently open (or last opened) UpdateDialog describes.
+  // Kept separate from m_offeredInfo: a startup notification and a manual
+  // dialog can be about different checks.
+  UpdateInfo m_dialogInfo;
+
+  // Coalescing state for the notification progress bar. Every update() rebuilds
+  // the popup, and QNetworkReply::downloadProgress fires far too often to do
+  // that per tick, so a tick is forwarded only when the whole-percent bucket or
+  // the stage text actually changes. -1 means "nothing sent yet".
+  int m_lastProgressBucket = -1;
+  QString m_lastProgressStage;
 
   // Set once the user has answered the quit prompt, so a cancelled close does
   // not ask again on the next attempt within the same session.

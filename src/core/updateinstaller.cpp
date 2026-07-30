@@ -882,6 +882,32 @@ bool UpdateInstaller::isUnderProgramFiles(const QString &p_installDir) {
 #endif
 }
 
+bool UpdateInstaller::isMicrosoftStoreInstall() {
+#ifdef Q_OS_WIN
+  // GetCurrentPackageFullName ships in kernel32 from Windows 8 onwards. Resolve
+  // it dynamically so the Windows 7 variant simply reports "not packaged"
+  // instead of failing to load.
+  using GetCurrentPackageFullNameFn = LONG(WINAPI *)(UINT32 *, PWSTR);
+  HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+  if (!kernel32) {
+    return false;
+  }
+  auto fn = reinterpret_cast<GetCurrentPackageFullNameFn>(
+      reinterpret_cast<void *>(GetProcAddress(kernel32, "GetCurrentPackageFullName")));
+  if (!fn) {
+    return false;
+  }
+
+  // Probe with a zero-length buffer: a packaged process answers
+  // ERROR_INSUFFICIENT_BUFFER, an unpackaged one APPMODEL_ERROR_NO_PACKAGE.
+  UINT32 length = 0;
+  const LONG rc = fn(&length, nullptr);
+  return rc == ERROR_INSUFFICIENT_BUFFER;
+#else
+  return false;
+#endif
+}
+
 bool UpdateInstaller::isSameVolume(const QString &p_pathA, const QString &p_pathB) {
   if (p_pathA.isEmpty() || p_pathB.isEmpty()) {
     return false;

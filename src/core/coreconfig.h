@@ -112,6 +112,14 @@ public:
   bool isCheckForUpdatesOnStartEnabled() const;
   void setCheckForUpdatesOnStartEnabled(bool p_enabled);
 
+  // Where VNote checks for and downloads updates: "github" or "gitee".
+  // Anything else (including an absent key) normalizes to "github".
+  const QString &getUpdateSource() const;
+  void setUpdateSource(const QString &p_source);
+
+  // Lower-cases p_source and maps anything outside {github, gitee} to "github".
+  static QString normalizeUpdateSource(const QString &p_source);
+
   // Version string the user chose to skip (e.g. "4.3.2"). Empty when nothing is skipped.
   const QString &getSkippedUpdateVersion() const;
   void setSkippedUpdateVersion(const QString &p_version);
@@ -190,6 +198,10 @@ private:
   QStringList m_externalNodeExcludePatterns;
 
   bool m_checkForUpdatesOnStartEnabled = true;
+
+  // Release source used by the updater. Defaults live in C++; there is no
+  // bundled vnotex.json entry for any of the update keys.
+  QString m_updateSource{QStringLiteral("github")};
 
   // Version the user explicitly skipped in the update dialog.
   QString m_skippedUpdateVersion;

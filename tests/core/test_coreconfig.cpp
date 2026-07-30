@@ -33,6 +33,9 @@ private slots:
   void testLastUpdateCheckTimeSurvives32BitRange();
   void testLastUpdateCheckTimeBackwardCompatibleParsing();
   void testUpdateCheckDue();
+  void testUpdateSourceDefaultsToGithub();
+  void testUpdateSourceNormalizesUnknownAndCaseVariants();
+  void testUpdateSourceRoundTrips();
 
 private:
   MockConfigMgr m_mockMgr;
@@ -290,7 +293,63 @@ void TestCoreConfig::testUpdateCheckDue() {
   QVERIFY(cfg.isUpdateCheckDue(now, day));
 }
 
-} // namespace tests
+// The default lives in C++ (there is no bundled vnotex.json entry for any of
+// the update keys), so an absent OR empty value must still land on github.
+void TestCoreConfig::testUpdateSourceDefaultsToGithub() {
+  {
+    CoreConfig cfg(&m_mockMgr, nullptr);
+    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+    cfg.fromJson(QJsonObject());
+    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+  }
+  {
+    QJsonObject json;
+    json[QStringLiteral("updateSource")] = QString();
+    CoreConfig cfg(&m_mockMgr, nullptr);
+    cfg.fromJson(json);
+    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+  }
+}
 
+// A hand-edited or future-written value must never reach UpdateService as-is:
+// anything outside {github, gitee} degrades to github rather than to "no
+// source at all".
+void TestCoreConfig::testUpdateSourceNormalizesUnknownAndCaseVariants() {
+  const QVector<QPair<QString, QString>> cases{
+      {QStringLiteral("gitee"), QStringLiteral("gitee")},
+      {QStringLiteral("GiTee"), QStringLiteral("gitee")},
+      {QStringLiteral("  GITEE  "), QStringLiteral("gitee")},
+      {QStringLiteral("GitHub"), QStringLiteral("github")},
+      {QStringLiteral("gitlab"), QStringLiteral("github")},
+      {QStringLiteral("sourceforge"), QStringLiteral("github")},
+  };
+
+  for (const auto &c : cases) {
+    QJsonObject json;
+    json[QStringLiteral("updateSource")] = c.first;
+    CoreConfig cfg(&m_mockMgr, nullptr);
+    cfg.fromJson(json);
+    QCOMPARE(cfg.getUpdateSource(), c.second);
+
+    // The setter normalizes on the same rules as the loader.
+    CoreConfig viaSetter(&m_mockMgr, nullptr);
+    viaSetter.setUpdateSource(c.first);
+    QCOMPARE(viaSetter.getUpdateSource(), c.second);
+  }
+}
+
+void TestCoreConfig::testUpdateSourceRoundTrips() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.setUpdateSource(QStringLiteral("gitee"));
+
+  const auto out = cfg.toJson();
+  QCOMPARE(out.value(QStringLiteral("updateSource")).toString(), QStringLiteral("gitee"));
+
+  CoreConfig reloaded(&m_mockMgr, nullptr);
+  reloaded.fromJson(out);
+  QCOMPARE(reloaded.getUpdateSource(), QStringLiteral("gitee"));
+}
+
+} // namespace tests
 QTEST_GUILESS_MAIN(tests::TestCoreConfig)
 #include "test_coreconfig.moc"

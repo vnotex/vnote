@@ -33,6 +33,8 @@ private:
   QCheckBox *m_recoverLastSessionCheckBox = nullptr;
 
   QCheckBox *m_checkForUpdatesCheckBox = nullptr;
+
+  QComboBox *m_updateSourceComboBox = nullptr;
 };
 } // namespace vnotex
 

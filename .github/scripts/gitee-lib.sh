@@ -258,12 +258,21 @@ gitee_patch_release() {  # $1 id, $2 tag, $3 name, $4 body
 }
 
 # -----------------------------------------------------------------------------
-# Attachments are NOT handled here.
+# Attachments.
 #
-# Gitee's POST .../attach_files sustained well under 50 KB/s from a
+# There is no dedicated helper: the workflow posts to
+# POST /repos/{owner}/{repo}/releases/{id}/attach_files through `api` directly
+# with `-F "file=@<path>"`, which the multipart branch of `api` already handles
+# (including the query-mode token split).
+#
+# Only the SMALL in-app-update assets are mirrored (*.manifest.json,
+# *.manifest.json.minisig, *.delta.zip). The ~158 MB platform ZIPs are NOT:
+# Gitee's attach_files endpoint sustained well under 50 KB/s from a
 # GitHub-hosted runner (run 30447854128 spent 55 minutes without finishing the
-# first 164 MiB asset, against a ~400 MiB payload), so mirroring binaries is not
-# viable inside a workflow job. The maintainer attaches the artifacts to the
-# Gitee release by hand; the workflow owns the release object and its notes
-# only, and never touches attachments.
+# first 164 MiB asset, against a ~400 MiB payload), so the maintainer attaches
+# those by hand.
+#
+# Gitee offers no replace semantics, so uploads are strictly ADDITIVE: the
+# workflow lists the existing attachments first and skips any name that is
+# already present. Nothing here ever deletes an attachment.
 # -----------------------------------------------------------------------------

@@ -102,6 +102,22 @@ void GeneralPage::setupUI() {
     connect(m_checkForUpdatesCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::pageIsChanged);
   }
 
+  {
+    m_updateSourceComboBox = WidgetsFactory::createComboBox(this);
+    m_updateSourceComboBox->setToolTip(tr("Where VNote checks for and downloads updates."));
+
+    m_updateSourceComboBox->addItem(QStringLiteral("GitHub"), QStringLiteral("github"));
+    m_updateSourceComboBox->addItem(QStringLiteral("Gitee"), QStringLiteral("gitee"));
+
+    const QString label(tr("Update source"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_updateSourceComboBox->toolTip(), m_updateSourceComboBox, this));
+    addSearchItem(label, m_updateSourceComboBox->toolTip(), m_updateSourceComboBox);
+    connect(m_updateSourceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &GeneralPage::pageIsChanged);
+  }
+
   mainLayout->addStretch();
 }
 
@@ -130,6 +146,11 @@ void GeneralPage::loadInternal() {
       m_services.get<ConfigCoreService>()->isRecoverLastSessionEnabled());
 
   m_checkForUpdatesCheckBox->setChecked(coreConfig.isCheckForUpdatesOnStartEnabled());
+
+  {
+    const int idx = m_updateSourceComboBox->findData(coreConfig.getUpdateSource());
+    m_updateSourceComboBox->setCurrentIndex(idx >= 0 ? idx : 0);
+  }
 }
 
 bool GeneralPage::saveInternal() {
@@ -158,6 +179,8 @@ bool GeneralPage::saveInternal() {
   }
 
   coreConfig.setCheckForUpdatesOnStartEnabled(m_checkForUpdatesCheckBox->isChecked());
+
+  coreConfig.setUpdateSource(m_updateSourceComboBox->currentData().toString());
 
   return true;
 }

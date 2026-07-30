@@ -61,10 +61,10 @@
 #include <QUrl>
 
 #include <core/manifestsignature.h>
+#include <core/services/updateservice.h>
 #include <core/updateinstaller.h>
 #include <core/updatemanifest.h>
 #include <core/zipextractor.h>
-#include <core/services/updateservice.h>
 
 // blake2.h carries its own extern "C" guards; tweetnacl.h does NOT.
 extern "C" {
@@ -105,20 +105,18 @@ TestKey makeKey(const char *p_seedHex, const char *p_publicHex, const char *p_ke
 
 // The key the tests configure as trusted.
 const TestKey &trustedKey() {
-  static const TestKey key =
-      makeKey("5ac7f6ef198576ea422679bb4d1f4951abd2e0d388dbe1e785b229cf3bcd6c59",
-              "334549b605c1a1c2c0e92d0165cce2846971d8f900235b2465f454a7da58e7b9",
-              "1122334455667788");
+  static const TestKey key = makeKey(
+      "5ac7f6ef198576ea422679bb4d1f4951abd2e0d388dbe1e785b229cf3bcd6c59",
+      "334549b605c1a1c2c0e92d0165cce2846971d8f900235b2465f454a7da58e7b9", "1122334455667788");
   return key;
 }
 
 // An independent key that is never trusted: stands in for a compromised or
 // simply foreign signer.
 const TestKey &foreignKey() {
-  static const TestKey key =
-      makeKey("0d45da736e7582141a3554c7831e80159c1800db051e58a0cd8887d7f860ce28",
-              "183a79a7aff319886c446c6fdf32d94ca0f51629be257e953e814f33f56c8446",
-              "99aabbccddeeff00");
+  static const TestKey key = makeKey(
+      "0d45da736e7582141a3554c7831e80159c1800db051e58a0cd8887d7f860ce28",
+      "183a79a7aff319886c446c6fdf32d94ca0f51629be257e953e814f33f56c8446", "99aabbccddeeff00");
   return key;
 }
 
@@ -131,8 +129,8 @@ ManifestSignature::PublicKey publicKeyOf(const TestKey &p_key) {
 
 QByteArray blake2b512(const QByteArray &p_data) {
   QByteArray digest(64, Qt::Uninitialized);
-  const int rc = blake2b(digest.data(), 64, p_data.constData(),
-                         static_cast<size_t>(p_data.size()), nullptr, 0);
+  const int rc = blake2b(digest.data(), 64, p_data.constData(), static_cast<size_t>(p_data.size()),
+                         nullptr, 0);
   return rc == 0 ? digest : QByteArray();
 }
 
@@ -188,9 +186,7 @@ QByteArray sha256Hex(const QByteArray &p_data) {
 // Highly compressible payloads keep the delta archives far below
 // UpdateManifest::c_maxChainSizeRatio of the target's expanded size, so the
 // chain is accepted for the reason under test rather than rejected as TooLarge.
-QByteArray blobOf(const char *p_marker) {
-  return QByteArray(p_marker).repeated(2048);
-}
+QByteArray blobOf(const char *p_marker) { return QByteArray(p_marker).repeated(2048); }
 
 bool writeFileAt(const QString &p_path, const QByteArray &p_data) {
   QDir().mkpath(QFileInfo(p_path).absolutePath());
@@ -320,8 +316,7 @@ private:
     // Only one request per connection: every response says Connection: close.
     p_socket->setProperty(c_bufferProperty, QByteArray());
 
-    const Response response =
-        m_routes.contains(path) ? m_routes.value(path) : notFoundResponse();
+    const Response response = m_routes.contains(path) ? m_routes.value(path) : notFoundResponse();
 
     if (response.delayMs > 0) {
       // Bound to the socket, so a client that aborts (the cancellation case)
@@ -433,6 +428,23 @@ private slots:
   void testTooManyRedirectsAreRefused();
   void testDownloadLargerThanDeclaredIsAborted();
   void testCancelDuringDownloadReturnsPromptly();
+
+  // Release source.
+  void testSourceStringRoundTrip();
+  void testAllowlistIsPerSource();
+  void testGiteeRedirectToGitHubHostsIsRefused();
+  void testGitHubRedirectToGiteeHostsIsRefused();
+  void testReleasesPageUrlFollowsTheSource();
+  void testGiteeSynthesizesTheReleasePageUrl();
+  void testMissingManifestDegradesToCheckOnly();
+
+  // Eligibility.
+  void testPackagedAppIsIneligibleWithAStoreReason();
+
+  // startDownload() acceptance contract.
+  void testStartDownloadWithoutAPlanReportsNoPlan();
+  void testStartDownloadRefusesAStaleExpectedVersion();
+  void testStartDownloadIsBusyWhileACheckIsRunning();
 
 private:
   // ---- fixture plumbing -------------------------------------------------
@@ -629,8 +641,7 @@ void TestUpdateService::publish(const QString &p_version, const FileSet &p_files
                                QJsonDocument(inPackage).toJson(QJsonDocument::Indented)));
     }
 
-    const QString archivePath =
-        m_scratchDir + QLatin1Char('/') + fullPackageAsset(p_version);
+    const QString archivePath = m_scratchDir + QLatin1Char('/') + fullPackageAsset(p_version);
     QVERIFY(ZipExtractor::createArchive(archivePath, entries));
     release.fullZip = readFileAt(archivePath);
     QVERIFY(!release.fullZip.isEmpty());
@@ -680,8 +691,8 @@ void TestUpdateService::publish(const QString &p_version, const FileSet &p_files
   // --- manifest + signature ----------------------------------------------
   const QByteArray manifestBytes = QJsonDocument(published).toJson(QJsonDocument::Indented);
   const TestKey &key = p_options.key ? *p_options.key : trustedKey();
-  const QByteArray signature = makeSignature(
-      key, manifestBytes, QStringLiteral("VNote %1").arg(p_version).toUtf8());
+  const QByteArray signature =
+      makeSignature(key, manifestBytes, QStringLiteral("VNote %1").arg(p_version).toUtf8());
 
   QByteArray servedManifest = manifestBytes;
   if (p_options.tamperManifestAfterSigning) {
@@ -734,8 +745,7 @@ UpdateService *TestUpdateService::makeService(const QString &p_currentVersion) {
   return service;
 }
 
-TestUpdateService::Outcome TestUpdateService::runCheck(UpdateService *p_service,
-                                                       int p_timeoutMs) {
+TestUpdateService::Outcome TestUpdateService::runCheck(UpdateService *p_service, int p_timeoutMs) {
   Outcome outcome;
   QEventLoop loop;
 
@@ -1122,8 +1132,8 @@ void TestUpdateService::testLocalDriftFallsBackToFullPackage() {
   installRelease(QStringLiteral("4.3.0"));
 
   // A file that the delta does NOT touch, so only the drift check can catch it.
-  QVERIFY(writeFileAt(m_installDir + QStringLiteral("/Qt6Gui.dll"),
-                      blobOf("QTGUI-locally-patched-")));
+  QVERIFY(
+      writeFileAt(m_installDir + QStringLiteral("/Qt6Gui.dll"), blobOf("QTGUI-locally-patched-")));
 
   m_service.reset(makeService(QStringLiteral("4.3.0")));
   const Outcome outcome = runCheck(m_service.data());
@@ -1205,8 +1215,7 @@ void TestUpdateService::testDeltaStagingAppliesHopsOldestFirstAndPrunes() {
   QCOMPARE(pending.variant, variant());
   QCOMPARE(pending.staged, QStringList{QStringLiteral("vnote.exe")});
   QCOMPARE(pending.deletions, QStringList{QStringLiteral("obsolete.dll")});
-  QCOMPARE(pending.executablePath,
-           QFileInfo(QCoreApplication::applicationFilePath()).fileName());
+  QCOMPARE(pending.executablePath, QFileInfo(QCoreApplication::applicationFilePath()).fileName());
 
   // The installer commits manifest.json itself; it must never be part of the
   // staged set that the swap moves.
@@ -1220,8 +1229,7 @@ void TestUpdateService::testHopArchiveWithAnExtraEntryIsRejected() {
   publish(QStringLiteral("4.3.0"), filesV0());
 
   PublishOptions options;
-  options.extraDeltaEntries.append(
-      qMakePair(QStringLiteral("smuggled.dll"), blobOf("SMUGGLED-")));
+  options.extraDeltaEntries.append(qMakePair(QStringLiteral("smuggled.dll"), blobOf("SMUGGLED-")));
   publish(QStringLiteral("4.3.1"), filesV1(), QStringLiteral("4.3.0"), options);
   setLatestRelease(QStringLiteral("4.3.1"));
   installRelease(QStringLiteral("4.3.0"));
@@ -1471,8 +1479,7 @@ void TestUpdateService::testRedirectWithinTheAllowlistIsFollowed() {
 
   // Redirect the API entry point rather than an asset, so the manifest keeps
   // being served from its canonical route and its signature stays meaningful.
-  m_server->serveRedirect(QStringLiteral("/api/latest-redirect"),
-                          QStringLiteral("/api/latest"));
+  m_server->serveRedirect(QStringLiteral("/api/latest-redirect"), QStringLiteral("/api/latest"));
 
   m_service.reset(new UpdateService(m_installDir, QStringLiteral("4.3.0")));
   m_service->testSetEndpointOverride(m_server->urlFor(QStringLiteral("/api/latest-redirect")),
@@ -1542,8 +1549,7 @@ void TestUpdateService::testTooManyRedirectsAreRefused() {
   const Outcome outcome = runCheck(m_service.data());
   QVERIFY(outcome.finished);
   QVERIFY2(!outcome.ok, "an unbounded redirect chain was followed");
-  QVERIFY2(outcome.error.contains(QStringLiteral("Too many redirects")),
-           qPrintable(outcome.error));
+  QVERIFY2(outcome.error.contains(QStringLiteral("Too many redirects")), qPrintable(outcome.error));
 }
 
 void TestUpdateService::testDownloadLargerThanDeclaredIsAborted() {
@@ -1605,16 +1611,15 @@ void TestUpdateService::testCancelDuringDownloadReturnsPromptly() {
 
   QElapsedTimer sinceRequest;
   bool requestSeen = false;
-  const auto onRequest =
-      connect(m_server, &TestHttpServer::requestReceived, &loop,
-              [this, route, &sinceRequest, &requestSeen](const QString &p_path) {
-                if (requestSeen || p_path != route) {
-                  return;
-                }
-                requestSeen = true;
-                sinceRequest.start();
-                m_service->cancel();
-              });
+  const auto onRequest = connect(m_server, &TestHttpServer::requestReceived, &loop,
+                                 [this, route, &sinceRequest, &requestSeen](const QString &p_path) {
+                                   if (requestSeen || p_path != route) {
+                                     return;
+                                   }
+                                   requestSeen = true;
+                                   sinceRequest.start();
+                                   m_service->cancel();
+                                 });
 
   m_service->startDownload();
   QTimer::singleShot(20000, &loop, &QEventLoop::quit);
@@ -1631,6 +1636,273 @@ void TestUpdateService::testCancelDuringDownloadReturnsPromptly() {
   QVERIFY2(sinceRequest.elapsed() < 10000,
            qPrintable(QStringLiteral("cancellation took %1 ms after the request went out")
                           .arg(sinceRequest.elapsed())));
+}
+
+// ------------------------------------------------------------ release source
+
+void TestUpdateService::testSourceStringRoundTrip() {
+  QCOMPARE(UpdateService::sourceFromString(QStringLiteral("gitee")), UpdateService::Source::Gitee);
+  QCOMPARE(UpdateService::sourceFromString(QStringLiteral("GiTee")), UpdateService::Source::Gitee);
+  QCOMPARE(UpdateService::sourceFromString(QStringLiteral("github")),
+           UpdateService::Source::GitHub);
+  // Anything unrecognized falls back to GitHub rather than to "no source".
+  QCOMPARE(UpdateService::sourceFromString(QStringLiteral("gitlab")),
+           UpdateService::Source::GitHub);
+  QCOMPARE(UpdateService::sourceFromString(QString()), UpdateService::Source::GitHub);
+
+  QCOMPARE(UpdateService::sourceToString(UpdateService::Source::Gitee), QStringLiteral("gitee"));
+  QCOMPARE(UpdateService::sourceToString(UpdateService::Source::GitHub), QStringLiteral("github"));
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  QCOMPARE(m_service->source(), UpdateService::Source::GitHub);
+  m_service->setSource(UpdateService::Source::Gitee);
+  QCOMPARE(m_service->source(), UpdateService::Source::Gitee);
+}
+
+// The two allowlists are disjoint: a client pointed at one forge must not even
+// know the other forge's host names.
+void TestUpdateService::testAllowlistIsPerSource() {
+  const QStringList github = UpdateService::allowedHosts(UpdateService::Source::GitHub);
+  const QStringList gitee = UpdateService::allowedHosts(UpdateService::Source::Gitee);
+
+  QVERIFY(github.contains(QStringLiteral("api.github.com")));
+  QVERIFY(github.contains(QStringLiteral("github.com")));
+  QVERIFY(!github.contains(QStringLiteral("gitee.com")));
+
+  QVERIFY(gitee.contains(QStringLiteral("gitee.com")));
+  QVERIFY(!gitee.contains(QStringLiteral("github.com")));
+  QVERIFY(!gitee.contains(QStringLiteral("api.github.com")));
+}
+
+// A cross-forge redirect is the cheapest way to move a download somewhere the
+// user did not choose, so it is refused BEFORE the request goes out. Both
+// directions get a case; a one-sided check would pass even if one allowlist
+// silently contained the other's hosts.
+void TestUpdateService::testGiteeRedirectToGitHubHostsIsRefused() {
+  publish(QStringLiteral("4.3.1"), filesV1());
+  m_server->serveRedirect(
+      QStringLiteral("/api/latest"),
+      QStringLiteral("https://api.github.com/repos/vnotex/vnote/releases/latest"));
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  m_service->setSource(UpdateService::Source::Gitee);
+
+  const Outcome outcome = runCheck(m_service.data());
+  QVERIFY(outcome.finished);
+  QVERIFY2(!outcome.ok, "a Gitee client followed a redirect to a GitHub host");
+  QVERIFY2(outcome.error.contains(QStringLiteral("unexpected host")), qPrintable(outcome.error));
+}
+
+void TestUpdateService::testGitHubRedirectToGiteeHostsIsRefused() {
+  publish(QStringLiteral("4.3.1"), filesV1());
+  m_server->serveRedirect(QStringLiteral("/api/latest"),
+                          QStringLiteral("https://gitee.com/vnotex/vnote/releases/latest"));
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  QCOMPARE(m_service->source(), UpdateService::Source::GitHub);
+
+  const Outcome outcome = runCheck(m_service.data());
+  QVERIFY(outcome.finished);
+  QVERIFY2(!outcome.ok, "a GitHub client followed a redirect to a Gitee host");
+  QVERIFY2(outcome.error.contains(QStringLiteral("unexpected host")), qPrintable(outcome.error));
+}
+
+void TestUpdateService::testReleasesPageUrlFollowsTheSource() {
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+
+  QCOMPARE(m_service->releasesPageUrl().toString(),
+           QStringLiteral("https://github.com/vnotex/vnote/releases"));
+
+  m_service->setSource(UpdateService::Source::Gitee);
+  QCOMPARE(m_service->releasesPageUrl().toString(),
+           QStringLiteral("https://gitee.com/vnotex/vnote/releases"));
+}
+
+// Gitee's release JSON carries no html_url, so the page URL has to be
+// synthesized from the tag. The API fixture here DOES serve an html_url; a
+// Gitee client must ignore it rather than send the user to github.com.
+//
+// The exact shape is pinned on purpose: it was VERIFIED against the live
+// https://gitee.com/vnotex/vnote/releases/tag/v4.3.0 page. Note the `tag/`
+// segment -- the asset download path (/releases/download/v<ver>/...) does not
+// have it, and an earlier version of this code wrongly reused that shape.
+void TestUpdateService::testGiteeSynthesizesTheReleasePageUrl() {
+  publish(QStringLiteral("4.3.1"), filesV1());
+  setLatestRelease(QStringLiteral("4.3.1"));
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  m_service->setSource(UpdateService::Source::Gitee);
+
+  const Outcome outcome = runCheck(m_service.data());
+  QVERIFY(outcome.finished);
+  QVERIFY2(outcome.ok, qPrintable(outcome.error));
+  QCOMPARE(outcome.info.releaseUrl,
+           QStringLiteral("https://gitee.com/vnotex/vnote/releases/tag/v4.3.1"));
+
+  // The GitHub path keeps using the API's own html_url.
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  const Outcome github = runCheck(m_service.data());
+  QVERIFY2(github.ok, qPrintable(github.error));
+  QCOMPARE(github.info.releaseUrl,
+           QStringLiteral("https://github.com/vnotex/vnote/releases/tag/v4.3.1"));
+}
+
+// D10. A source that mirrors the release object but not the update assets
+// answers 404 for the MANIFEST. That is a degradation, not an attack: report
+// the update as available but ineligible, so the caller can offer the release
+// page. Reporting failed() instead would surface as "could not check for
+// updates", which is both wrong and unactionable.
+//
+// This is deliberately narrow: testMissingSignatureIsRefused() covers the case
+// where the manifest DOES arrive and only the .minisig 404s, which stays a hard
+// refusal. Absence is only ever inferred from the manifest fetch itself.
+void TestUpdateService::testMissingManifestDegradesToCheckOnly() {
+  // No publish() at all: the manifest route falls through to the server's 404.
+  setLatestRelease(QStringLiteral("4.3.1"));
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  const Outcome outcome = runCheck(m_service.data());
+
+  QVERIFY(outcome.finished);
+  QVERIFY2(
+      outcome.ok,
+      qPrintable(QStringLiteral("a missing manifest reported failure: %1").arg(outcome.error)));
+  QVERIFY2(outcome.info.updateAvailable, "the available update was hidden");
+  QCOMPARE(outcome.info.latestVersion, QStringLiteral("4.3.1"));
+  QVERIFY2(!outcome.info.eligible, "an unplannable update was offered in-place");
+  QVERIFY2(outcome.info.ineligibleReason.contains(QStringLiteral("release page")),
+           qPrintable(outcome.info.ineligibleReason));
+  QVERIFY(!outcome.info.releaseUrl.isEmpty());
+
+  // Nothing was planned and nothing was staged.
+  QCOMPARE(outcome.info.downloadSize, static_cast<qint64>(0));
+  QVERIFY(!QFileInfo::exists(stagedDir()));
+
+  // The manifest WAS attempted; the signature was not, because there is nothing
+  // to verify.
+  const QStringList requested = m_server->requestedPaths();
+  QVERIFY(requested.contains(
+      assetPath(QStringLiteral("4.3.1"), manifestAsset(QStringLiteral("4.3.1")))));
+  QVERIFY(!requested.contains(
+      assetPath(QStringLiteral("4.3.1"),
+                manifestAsset(QStringLiteral("4.3.1")) + QStringLiteral(".minisig"))));
+}
+
+// ------------------------------------------------------------- eligibility
+
+// An MSIX install lives under C:\Program Files\WindowsApps, so the Store gate
+// must fire BEFORE the Program Files check -- otherwise the user is told to
+// "use the installer package", which does not exist for a Store install.
+void TestUpdateService::testPackagedAppIsIneligibleWithAStoreReason() {
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+
+  // Baseline: this temp install dir is eligible on a normal build.
+  m_service->testSetPackagedAppOverride(0);
+  const auto unpackaged = m_service->checkEligibility();
+  QVERIFY2(unpackaged.eligible, qPrintable(unpackaged.reason));
+
+  m_service->testSetPackagedAppOverride(1);
+  const auto packaged = m_service->checkEligibility();
+  QVERIFY2(!packaged.eligible, "a Microsoft Store install reported itself eligible");
+  QVERIFY2(packaged.reason.contains(QStringLiteral("Microsoft Store")),
+           qPrintable(packaged.reason));
+  QVERIFY2(!packaged.reason.contains(QStringLiteral("Program Files")),
+           qPrintable(QStringLiteral("the Store gate ran after the Program Files gate: %1")
+                          .arg(packaged.reason)));
+
+  // -1 restores auto-detection; the test process is not packaged.
+  m_service->testSetPackagedAppOverride(-1);
+  QVERIFY(m_service->checkEligibility().eligible);
+}
+
+// -------------------------------------------------- startDownload contract
+//
+// UpdateController keys which UI surface owns a transfer off this return value.
+// Getting it wrong either strands that surface forever (a refusal that emits no
+// terminal signal) or routes one transfer's result into another's widgets, so
+// each outcome gets a case.
+
+void TestUpdateService::testStartDownloadWithoutAPlanReportsNoPlan() {
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+
+  // NoPlan DOES own a terminal signal: the caller must claim its surface to
+  // receive the failed() that follows.
+  QSignalSpy failures(m_service.data(), &UpdateService::failed);
+  QCOMPARE(m_service->startDownload(), UpdateService::DownloadStart::NoPlan);
+  QVERIFY(failures.wait(5000));
+  QCOMPARE(failures.size(), 1);
+  QVERIFY2(failures.at(0).at(0).toString().contains(QStringLiteral("planned")),
+           qPrintable(failures.at(0).at(0).toString()));
+
+  // The busy flag was released again, so a later legitimate download still runs.
+  publish(QStringLiteral("4.3.1"), filesV1());
+  setLatestRelease(QStringLiteral("4.3.1"));
+  QVERIFY(runCheck(m_service.data()).ok);
+  QCOMPARE(m_service->startDownload(QStringLiteral("4.3.1")),
+           UpdateService::DownloadStart::Started);
+}
+
+// A notification or a non-modal dialog can outlive the check it came from. Its
+// Update button must NOT download whatever plan the service holds now while
+// still advertising the old version.
+void TestUpdateService::testStartDownloadRefusesAStaleExpectedVersion() {
+  publish(QStringLiteral("4.3.1"), filesV1());
+  setLatestRelease(QStringLiteral("4.3.1"));
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+  const Outcome check = runCheck(m_service.data());
+  QVERIFY2(check.ok, qPrintable(check.error));
+  QCOMPARE(check.info.latestVersion, QStringLiteral("4.3.1"));
+
+  QSignalSpy failures(m_service.data(), &UpdateService::failed);
+
+  // Stale starts nothing AND emits nothing: the caller must not claim a surface.
+  QCOMPARE(m_service->startDownload(QStringLiteral("4.2.9")), UpdateService::DownloadStart::Stale);
+  QVERIFY2(!failures.wait(1000), "a stale refusal emitted a terminal signal");
+  QVERIFY(!QFileInfo::exists(stagedDir()));
+
+  // The matching version is still accepted afterwards; Stale released the flag.
+  QCOMPARE(m_service->startDownload(QStringLiteral("4.3.1")),
+           UpdateService::DownloadStart::Started);
+}
+
+// Busy must win over NoPlan. A download requested mid-check would otherwise read
+// m_plan while the check worker is assigning it, and would answer NoPlan --
+// which emits failed() and hands the caller ownership of a terminal signal that
+// belongs to the check.
+void TestUpdateService::testStartDownloadIsBusyWhileACheckIsRunning() {
+  publish(QStringLiteral("4.3.1"), filesV1());
+  setLatestRelease(QStringLiteral("4.3.1"));
+  // Stall the API response so the check is provably still in flight below.
+  m_server->setDelay(QStringLiteral("/api/latest"), 3000);
+
+  m_service.reset(makeService(QStringLiteral("4.3.0")));
+
+  QEventLoop loop;
+  bool finished = false;
+  const auto onFinished = connect(m_service.data(), &UpdateService::checkFinished, &loop,
+                                  [&finished, &loop](const UpdateInfo &) {
+                                    finished = true;
+                                    loop.quit();
+                                  });
+  const auto onFailed = connect(m_service.data(), &UpdateService::failed, &loop,
+                                [&loop](const QString &) { loop.quit(); });
+
+  UpdateService::DownloadStart duringCheck = UpdateService::DownloadStart::Started;
+  QTimer::singleShot(500, m_service.data(), [this, &duringCheck]() {
+    duringCheck = m_service->startDownload(QStringLiteral("4.3.1"));
+  });
+
+  QTimer::singleShot(20000, &loop, &QEventLoop::quit);
+  m_service->checkForUpdates();
+  loop.exec();
+
+  QObject::disconnect(onFinished);
+  QObject::disconnect(onFailed);
+
+  QVERIFY2(finished, "the check never completed");
+  QCOMPARE(duringCheck, UpdateService::DownloadStart::Busy);
+  QVERIFY2(!QFileInfo::exists(stagedDir()), "a refused download staged bytes");
 }
 
 } // namespace tests

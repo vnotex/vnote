@@ -536,6 +536,20 @@ the menu item opens the releases page.
 | Service | [`UpdateService`](src/core/services/updateservice.h) | eligibility, network, planning, download, staging, `pending.json` |
 | Controller | [`UpdateController`](src/controllers/updatecontroller.h) | ALL policy: throttle, skipped version, prompts, notifications |
 | View | [`UpdateDialog`](src/widgets/dialogs/updatedialog.h) | version, notes, progress, Update / Skip / Later / Restart Now |
+| View | [`NotificationPopup2`](src/widgets/notificationpopup2.h) | the startup surface: Update / Check Release, then an in-place progress bar, then Restart / Retry |
+
+`UpdateController` routes transfer signals on an explicit `TransferSurface`
+(`None` / `Dialog` / `Notification`) claimed **only for a `startDownload()` call the service
+accepted** (`UpdateService::DownloadStart` = `Started` / `Busy` / `NoPlan` / `Stale`),
+**not** on the `m_dialog` pointer — a startup notification can coexist with an open
+non-modal `UpdateDialog`, and `m_dialog` / `m_manualCheck` describe the last *check*, not
+the current *transfer*. `Busy` and `Stale` start nothing and emit nothing, so claiming a
+surface before the call would strand it forever. Every download request also passes the
+version it was OFFERED, so a button that outlived its check is refused as `Stale` rather
+than silently downloading a different plan; `startCheck()` additionally dismisses the
+tracked offer notification, since a new check invalidates the plan its actions would start.
+`onFailed` with `TransferSurface::None` is a CHECK failure and keeps the old rules (silent
+`qWarning` on the startup path, message box on the manual path).
 
 `UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
 `core_services`, so the reverse dependency would be circular. The installed version is
@@ -559,8 +573,53 @@ Rules:
   (`refs/heads/master` + a `[Release]` head commit), never from "was this a tag build" —
   this repo cuts releases from a master push and creates the tag afterwards.
 - Deletions are **derived**, never stored.
-- Asset URLs are deterministic:
-  `https://github.com/vnotex/vnote/releases/download/v<ver>/VNote-<ver>-<variant>.manifest.json`.
+- Asset URLs are deterministic **and per-source** (`<base>/v<ver>/VNote-<ver>-<variant>.manifest.json`):
+  - GitHub — `https://github.com/vnotex/vnote/releases/download`
+  - Gitee — `https://gitee.com/vnotex/vnote/releases/download`
+
+### Release source (GitHub or Gitee)
+
+`CoreConfig::updateSource` (`"github"` | `"gitee"`, default `github`, Settings › General)
+selects which forge the updater talks to. `UpdateController` **pushes** it into
+`UpdateService::setSource()`; the service never reads config (see the ownership note
+above). A change while a check or download is in flight is ignored and logged, so one plan
+can never mix manifests and archives from two origins.
+
+| | GitHub | Gitee |
+|---|---|---|
+| latest-release API | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
+| `Accept` header | `application/vnd.github+json, …` | `application/json, …` |
+| release page | the API's `html_url` | synthesized `https://gitee.com/vnotex/vnote/releases/tag/v<tag>` (Gitee's JSON has no `html_url`; the pattern is verified against the live v4.3.0 page, and note the `tag/` segment the asset download path does **not** have) |
+| host allowlist | exact `api.github.com`, `github.com`, `codeload.github.com` + suffix `.githubusercontent.com` | exact `gitee.com` + suffix `.gitee.com` (covers `foruda.gitee.com`) |
+
+The allowlists are **disjoint and source-scoped**: a client on one source must never follow
+a redirect to the other's hosts. Everything else about the transport is unchanged —
+manually followed redirects, at most `c_maxRedirects` hops, no HTTPS→HTTP downgrade, and
+signature verification over the bytes as received with the compiled-in Ed25519 key. That
+last property is what makes downloading from a mirror safe; do not weaken it for Gitee.
+
+`gitee-mirror.yml` mirrors the small update assets (`*.manifest.json`,
+`*.manifest.json.minisig`, `*.delta.zip`) automatically; the ~158 MB platform ZIPs stay a
+manual upload. Gitee also keeps only the two most recent releases, so a delta base older
+than that is simply unavailable there and the client falls back to the full package.
+
+### Ineligibility, and the check-only degradation
+
+`checkEligibility()` gates in this order: Windows → 64-bit → install dir valid →
+**Microsoft Store** → Program Files → writable → same volume → trusted keys → rename probe.
+
+The Store gate (`UpdateInstaller::isMicrosoftStoreInstall()`, a dynamic
+`GetCurrentPackageFullName` probe so the Windows 7 variant still loads) must stay **before**
+the Program Files check: MSIX installs live under `C:\Program Files\WindowsApps`, and the
+Program Files reason tells the user to "use the installer package", which does not exist
+for a Store install.
+
+Separately, when the selected source publishes the release but **the manifest itself 404s**,
+the check degrades to check-only rather than failing: `eligible = false`,
+`updateAvailable = true`, and an `ineligibleReason` pointing at the release page. This
+absence is inferred **only** from the manifest fetch. Once manifest bytes have been
+received, any signature problem — including a 404 on the `.minisig` — remains a **hard
+failure**. `testMissingSignatureIsRefused()` pins that fail-closed property.
 
 ### Staging layout
 

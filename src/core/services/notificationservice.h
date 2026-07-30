@@ -17,6 +17,10 @@ namespace vnotex {
 struct NotificationAction {
   QString m_label;
   std::function<void()> m_callback;
+
+  // When false, triggering the action does NOT dismiss the message, so the
+  // producer can keep updating it in place (progress -> success/failure).
+  bool m_dismissOnTrigger = true;
 };
 
 // Value type describing one notification. Copyable (std::function is copyable).
@@ -35,6 +39,13 @@ public:
   Duration m_duration = Duration::Short;
   QVector<NotificationAction> m_actions;
   bool m_dismissed = false;
+
+  // Progress rendering hints for the widget layer.
+  //   m_progressPermille < 0            -> no progress bar
+  //   m_progressPermille in [0, 1000]   -> determinate bar
+  //   m_progressIndeterminate == true   -> busy bar (wins over the permille)
+  int m_progressPermille = -1;
+  bool m_progressIndeterminate = false;
 };
 
 // In-memory notification store. Qt-minimal (no Qt Widgets): stores data and
@@ -49,6 +60,17 @@ public:
   // Assign id + timestamp, append, emit messageAdded. Returns the new id.
   quint64 notify(NotificationMessage p_msg);
 
+  // Replace the content of an existing message IN PLACE: title, text, severity,
+  // duration, actions and the progress fields. The id, timestamp and dismissed
+  // flag are PRESERVED -- update() never un-dismisses a message and never
+  // changes activeCount().
+  //
+  // Returns false (and emits nothing) for an unknown id.
+  bool update(quint64 p_id, const NotificationMessage &p_msg);
+
+  // True when a message with this id exists and has not been dismissed.
+  bool isActive(quint64 p_id) const;
+
   // Mark the message with @p_id as dismissed and emit messageDismissed.
   void dismiss(quint64 p_id);
 
@@ -62,6 +84,7 @@ public:
 
 signals:
   void messageAdded(const NotificationMessage &p_msg);
+  void messageUpdated(const NotificationMessage &p_msg);
   void messageDismissed(quint64 p_id);
   void messagesCleared();
 

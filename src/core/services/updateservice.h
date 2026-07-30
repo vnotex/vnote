@@ -58,9 +58,32 @@ class UpdateService : public QObject {
   Q_OBJECT
 
 public:
+  // Where releases are fetched from. The client contacts exactly ONE source at
+  // a time and never follows a redirect from one source's hosts to the other's.
+  enum class Source { GitHub, Gitee };
+
+  static Source sourceFromString(const QString &p_source);
+  static QString sourceToString(Source p_source);
+
+  // Outcome of startDownload(). Only Started and NoPlan own a later terminal
+  // signal for THAT call; Busy and Stale start nothing and emit nothing.
+  enum class DownloadStart {
+    Started,
+    // A check or another download is already running. Reported BEFORE the plan
+    // is even looked at, so "busy" always wins over "no plan": the running
+    // check may be in the middle of writing that very plan.
+    Busy,
+    // No usable plan (never checked, or the plan was invalidated). failed() is
+    // emitted, so this call does own its terminal signal.
+    NoPlan,
+    // A plan exists but is not the one the caller was offered -- a newer check
+    // replaced it. Refused rather than silently downloading something else.
+    Stale,
+  };
+
   // Only these hosts are ever contacted, on https, with at most c_maxRedirects
-  // hops and no HTTPS->HTTP downgrade.
-  static const QStringList &allowedHosts();
+  // hops and no HTTPS->HTTP downgrade. The list is per-source.
+  static const QStringList &allowedHosts(Source p_source);
   static constexpr int c_maxRedirects = 5;
 
   // Overall cap on a single download, as a sanity bound independent of the
@@ -87,6 +110,17 @@ public:
   // probe. The probe result is cached for the process lifetime unless
   // p_forceProbe is set (apply preflight re-runs it).
   Eligibility checkEligibility(bool p_forceProbe = false) const;
+
+  // The release source in use. Pushed in by UpdateController from CoreConfig;
+  // the service deliberately never reads config itself (see the class comment).
+  // A change requested while a check or download is in flight is IGNORED (and
+  // logged), so an in-flight plan cannot end up half-fetched from two origins.
+  void setSource(Source p_source);
+  Source source() const { return m_source; }
+
+  // Human-facing releases page for the current source, used when a release
+  // carries no usable page URL of its own.
+  QUrl releasesPageUrl() const;
 
   const QString &installDir() const { return m_installDir; }
   const QString &currentVersion() const { return m_currentVersion; }
@@ -128,13 +162,26 @@ public:
   // testSetEndpointOverride.
   void testSetExtraAllowedHost(const QString &p_host);
 
+  // Forces the Microsoft Store (packaged app) detection used by
+  // checkEligibility(): -1 auto-detect, 0 force not packaged, 1 force packaged.
+  void testSetPackagedAppOverride(int p_state);
+
 public slots:
   // Asynchronous. Emits checkFinished() or failed().
   void checkForUpdates();
 
   // Downloads and stages the plan produced by the last successful check.
-  // Emits progress(), then readyToApply() or failed().
-  void startDownload();
+  //
+  // p_expectedTargetVersion is the version the CALLER was offered. It is
+  // matched against the planned target so a UI element that outlived the check
+  // it came from cannot start a different plan than the one it advertises;
+  // pass an empty string only when no expectation is meaningful.
+  //
+  // Returns whether the operation was ACCEPTED. Only Started will ever produce
+  // progress()/readyToApply()/failed() for this call, except NoPlan which
+  // emits failed(). A caller that tracks which UI surface owns the transfer
+  // must key off the return value rather than assuming the request landed.
+  DownloadStart startDownload(const QString &p_expectedTargetVersion = QString());
 
   // Aborts an in-flight check or download. Staged bytes are left for a retry.
   void cancel();
@@ -178,8 +225,13 @@ private:
 
   // Synchronous GET with redirect following, host allowlist, and a hard byte
   // cap. Runs on a WORKER thread only (it spins a nested event loop).
+  //
+  // p_notFound, when non-null, is set to true ONLY for an HTTP 404 on the final
+  // hop, so a caller can tell "the asset is not published" apart from every
+  // other failure.
   bool fetchToMemory(QNetworkAccessManager &p_nam, const QUrl &p_url, QByteArray *p_out,
-                     QString *p_error, qint64 p_maxBytes = 16LL * 1024 * 1024);
+                     QString *p_error, qint64 p_maxBytes = 16LL * 1024 * 1024,
+                     bool *p_notFound = nullptr);
 
   bool downloadToFile(QNetworkAccessManager &p_nam, const QUrl &p_url, const QString &p_destPath,
                       const QString &p_expectedSha, qint64 p_expectedSize, QString *p_error);
@@ -187,6 +239,27 @@ private:
   QUrl assetUrl(const QString &p_version, const QString &p_assetName) const;
   QUrl manifestAssetUrl(const QString &p_version) const;
   QUrl manifestSignatureUrl(const QString &p_version) const;
+
+  // Entry point of the release metadata API for the current source.
+  QUrl apiLatestUrl() const;
+
+  // Human-facing release page for p_tag. GitHub supplies html_url in the API
+  // response; Gitee does not, so it is synthesized as
+  // https://gitee.com/vnotex/vnote/releases/tag/v<tag> (verified against the
+  // live v4.3.0 page -- the `tag/` segment is NOT present in the asset
+  // download path).
+  QString releasePageUrl(const QString &p_tag, const QString &p_htmlUrlFromApi) const;
+
+  // Outcome of fetchVerifiedManifest.
+  enum class ManifestFetch {
+    Ok,
+    // The MANIFEST ITSELF 404s: this release publishes no in-app update package
+    // on the selected source. Never returned once manifest bytes are in hand --
+    // a missing or unfetchable .minisig stays Error, which is the fail-closed
+    // property.
+    Absent,
+    Error,
+  };
 
   // Fetches a release manifest AND its detached minisign signature, verifies
   // the signature over the EXACT bytes received, and only then parses.
@@ -197,6 +270,12 @@ private:
   // the chain walk attacker-controlled.
   bool fetchVerifiedManifest(QNetworkAccessManager &p_nam, const QString &p_version,
                              UpdateManifest *p_out, QString *p_error);
+
+  // Tri-state form of the above. fetchVerifiedManifest() is the bool wrapper
+  // used where Absent and Error are equally fatal (the chain walk falls back to
+  // the full package either way).
+  ManifestFetch fetchVerifiedManifestEx(QNetworkAccessManager &p_nam, const QString &p_version,
+                                        UpdateManifest *p_out, QString *p_error);
 
   // --- Planning -----------------------------------------------------------
   Plan buildPlan(QNetworkAccessManager &p_nam, const UpdateManifest &p_target, QString *p_error);
@@ -220,6 +299,8 @@ private:
   const QString m_installDir;
   const QString m_currentVersion;
 
+  Source m_source = Source::GitHub;
+
   std::atomic<bool> m_cancelled{false};
   std::atomic<bool> m_busy{false};
 
@@ -237,6 +318,10 @@ private:
   QUrl m_apiLatestOverride;
   QUrl m_assetBaseOverride;
   QString m_extraAllowedHost;
+
+  // -1 auto, 0 force not packaged, 1 force packaged. See
+  // testSetPackagedAppOverride().
+  int m_packagedAppOverride = -1;
 };
 
 } // namespace vnotex

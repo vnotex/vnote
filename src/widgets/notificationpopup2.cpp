@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPointer>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QTimer>
 #include <QToolButton>
@@ -51,6 +52,15 @@ NotificationPopup2::NotificationPopup2(ServiceLocator &p_services, QToolButton *
         rebuild();
       }
     });
+    // An in-place content change (e.g. download progress) refreshes the rows
+    // only when the popup is ALREADY open: an update must never re-pop the
+    // popup and steal focus the way a brand-new message does.
+    connect(service, &NotificationService::messageUpdated, this,
+            [this](const NotificationMessage &) {
+              if (isVisible()) {
+                rebuild();
+              }
+            });
   }
 
   // Recolor severity icons if the theme changes while the popup is open. The
@@ -190,6 +200,21 @@ void NotificationPopup2::rebuild() {
       rowLayout->addWidget(textLabel);
     }
 
+    if (msg.m_progressIndeterminate || msg.m_progressPermille >= 0) {
+      auto *progress = new QProgressBar(row);
+      if (msg.m_progressIndeterminate) {
+        // Busy indicator: wins over any permille value.
+        progress->setRange(0, 0);
+      } else {
+        // Permille rather than percent so a multi-hundred-megabyte download
+        // still moves the bar smoothly, matching UpdateDialog.
+        progress->setRange(0, 1000);
+        progress->setValue(qBound(0, msg.m_progressPermille, 1000));
+      }
+      progress->setTextVisible(false);
+      rowLayout->addWidget(progress);
+    }
+
     // Actions + Dismiss.
     auto *actionLayout = new QHBoxLayout();
     actionLayout->setContentsMargins(0, 0, 0, 0);
@@ -207,10 +232,18 @@ void NotificationPopup2::rebuild() {
         }
         // Resolve the callback from the CURRENT service state at click time, so
         // a message cleared/dismissed since render becomes an inert no-op.
+        //
+        // BOTH the callback and its dismiss policy are snapshotted here, in the
+        // SAME lookup, and the action index is never resolved again afterwards:
+        // an Update/Retry callback synchronously replaces the action vector
+        // (with Cancel / Restart), so a post-callback re-lookup would read a
+        // different action's flag.
         std::function<void()> callback;
+        bool dismissOnTrigger = true;
         for (const auto &m : service->messages()) {
           if (m.m_id == id && !m.m_dismissed && actionIndex < m.m_actions.size()) {
             callback = m.m_actions.at(actionIndex).m_callback;
+            dismissOnTrigger = m.m_actions.at(actionIndex).m_dismissOnTrigger;
             break;
           }
         }
@@ -225,6 +258,14 @@ void NotificationPopup2::rebuild() {
           return;
         }
         auto *svc = m_services.get<NotificationService>();
+        if (!dismissOnTrigger) {
+          // The message lives on so the producer can keep updating it in place.
+          // messageUpdated may already have rebuilt the rows during the
+          // callback, which is exactly why nothing below may touch the widgets
+          // that were alive when this lambda started.
+          rebuild();
+          return;
+        }
         if (svc) {
           svc->dismiss(id);
         }

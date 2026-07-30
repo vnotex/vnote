@@ -14,12 +14,6 @@
 
 using namespace vnotex;
 
-namespace {
-
-const QString c_releasesPageUrl = QStringLiteral("https://github.com/vnotex/vnote/releases");
-
-} // namespace
-
 UpdateController::UpdateController(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
                                    QObject *p_parent)
     : QObject(p_parent), m_services(p_services), m_mainWindow(p_mainWindow) {
@@ -28,6 +22,8 @@ UpdateController::UpdateController(ServiceLocator &p_services, MainWindow2 *p_ma
     return;
   }
 
+  applyConfiguredSource();
+
   connect(service, &UpdateService::checkFinished, this, &UpdateController::onCheckFinished);
   connect(service, &UpdateService::progress, this, &UpdateController::onProgress);
   connect(service, &UpdateService::readyToApply, this, &UpdateController::onReadyToApply);
@@ -35,6 +31,17 @@ UpdateController::UpdateController(ServiceLocator &p_services, MainWindow2 *p_ma
 }
 
 UpdateController::~UpdateController() = default;
+
+void UpdateController::applyConfiguredSource() {
+  auto *service = m_services.get<UpdateService>();
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!service || !configMgr) {
+    return;
+  }
+  // The service deliberately never reads config itself (core_configs links
+  // core_services, so the reverse dependency would be a CMake cycle).
+  service->setSource(UpdateService::sourceFromString(configMgr->getCoreConfig().getUpdateSource()));
+}
 
 // ===========================================================================
 // Startup
@@ -111,8 +118,8 @@ void UpdateController::consumeStoredResult() {
   case UpdateInstaller::ResultOutcome::Failed:
     message.m_severity = NotificationMessage::Severity::Warning;
     message.m_duration = NotificationMessage::Duration::Persist;
-    message.m_text = tr("The update failed and the previous version was restored: %1")
-                         .arg(stored.reason);
+    message.m_text =
+        tr("The update failed and the previous version was restored: %1").arg(stored.reason);
     break;
 
   case UpdateInstaller::ResultOutcome::ManualRecovery:
@@ -145,8 +152,8 @@ void UpdateController::notifyPendingUpdate(const QString &p_version) {
 
   NotificationMessage message;
   message.m_title = tr("Update Ready");
-  message.m_text = tr("VNote %1 has been downloaded and will be installed when VNote closes.")
-                       .arg(p_version);
+  message.m_text =
+      tr("VNote %1 has been downloaded and will be installed when VNote closes.").arg(p_version);
   message.m_severity = NotificationMessage::Severity::Info;
   // Persist: the user must be able to find this action whenever they are ready.
   message.m_duration = NotificationMessage::Duration::Persist;
@@ -198,6 +205,15 @@ void UpdateController::startCheck(bool p_manual) {
 
   m_manualCheck = p_manual;
 
+  // A check replaces the plan, so any Update/Retry button still sitting in the
+  // notification list would start something other than what it advertises.
+  // Drop it here, in ONE place, rather than trying to reconcile it afterwards.
+  invalidateTrackedNotification();
+
+  // Pick up a Settings change without a restart. Ignored by the service while
+  // an operation is in flight, which is the correct behavior.
+  applyConfiguredSource();
+
   // Advance the throttle on check START, not on completion: a failing network
   // must not cause a check on every single launch. Manual checks bypass the
   // throttle entirely but still record the timestamp.
@@ -225,24 +241,150 @@ void UpdateController::onCheckFinished(const vnotex::UpdateInfo &p_info) {
     // focus with a modal dialog.
     auto *notifications = m_services.get<NotificationService>();
     if (notifications) {
+      m_offeredInfo = p_info;
+
       NotificationMessage message;
       message.m_title = tr("Update Available");
       message.m_text = tr("VNote %1 is available.").arg(p_info.latestVersion);
       message.m_severity = NotificationMessage::Severity::Info;
       message.m_duration = NotificationMessage::Duration::Persist;
 
-      NotificationAction show;
-      show.m_label = tr("Details");
-      const UpdateInfo info = p_info;
-      show.m_callback = [this, info]() { showDialog(info); };
-      message.m_actions.append(show);
+      if (p_info.eligible) {
+        // Only offered when an in-place update is actually possible: false off
+        // Windows, for Microsoft Store installs, and for a source that
+        // publishes no manifest for this release.
+        NotificationAction update;
+        update.m_label = tr("Update");
+        // The message must survive the click so it can carry the progress bar.
+        update.m_dismissOnTrigger = false;
+        update.m_callback = [this]() { startNotificationDownload(); };
+        message.m_actions.append(update);
+      }
 
-      notifications->notify(message);
+      message.m_actions.append(makeCheckReleaseAction(p_info));
+
+      m_progressNotificationId = notifications->notify(message);
     }
     return;
   }
 
   showDialog(p_info);
+}
+
+void UpdateController::invalidateTrackedNotification() {
+  if (m_progressNotificationId == 0) {
+    return;
+  }
+  if (m_transfer == TransferSurface::Notification) {
+    // The tracked message is currently rendering a live transfer. Dismissing it
+    // would orphan the progress ticks and the terminal state; the service will
+    // refuse the concurrent check anyway.
+    return;
+  }
+  if (auto *notifications = m_services.get<NotificationService>()) {
+    notifications->dismiss(m_progressNotificationId);
+  }
+  m_progressNotificationId = 0;
+  m_offeredInfo = UpdateInfo();
+}
+
+NotificationAction UpdateController::makeCheckReleaseAction(const UpdateInfo &p_info) const {
+  NotificationAction check;
+  check.m_label = tr("Check Release");
+
+  QString url = p_info.releaseUrl;
+  if (url.isEmpty()) {
+    if (auto *service = m_services.get<UpdateService>()) {
+      url = service->releasesPageUrl().toString();
+    }
+  }
+  check.m_callback = [url]() {
+    if (!url.isEmpty()) {
+      QDesktopServices::openUrl(QUrl(url));
+    }
+  };
+  return check;
+}
+
+void UpdateController::startNotificationDownload() {
+  auto *service = m_services.get<UpdateService>();
+  auto *notifications = m_services.get<NotificationService>();
+  if (!service || !notifications) {
+    return;
+  }
+
+  // One transfer at a time. Claiming a surface for a request the service is
+  // about to refuse would either strand m_transfer forever (a Busy refusal
+  // produces no terminal signal) or hand an already-running transfer's result
+  // to the wrong surface.
+  if (m_transfer != TransferSurface::None) {
+    qWarning() << "update: a transfer is already in flight; ignoring the request";
+    return;
+  }
+
+  const auto started = service->startDownload(m_offeredInfo.latestVersion);
+  if (started == UpdateService::DownloadStart::Busy) {
+    // Nothing started and nothing will be emitted: leave every surface alone.
+    return;
+  }
+  if (started == UpdateService::DownloadStart::Stale) {
+    // The offer this button came from has been superseded. Say so instead of
+    // doing nothing; startCheck() normally dismisses such a message first, so
+    // this is the belt-and-braces path.
+    NotificationMessage message;
+    message.m_title = tr("Update");
+    message.m_text = tr("This update offer is out of date. Please check for updates again.");
+    message.m_severity = NotificationMessage::Severity::Warning;
+    message.m_duration = NotificationMessage::Duration::Persist;
+    message.m_actions.append(makeCheckReleaseAction(m_offeredInfo));
+    updateOrRepostNotification(message);
+    return;
+  }
+  if (started == UpdateService::DownloadStart::NoPlan) {
+    // failed() IS emitted for this call, so the notification does own the
+    // outcome and must be claimed to receive it.
+    m_transfer = TransferSurface::Notification;
+    return;
+  }
+
+  m_transfer = TransferSurface::Notification;
+  m_lastProgressBucket = -1;
+  m_lastProgressStage.clear();
+
+  NotificationMessage message;
+  message.m_title = tr("Update");
+  message.m_text = tr("Downloading VNote %1...").arg(m_offeredInfo.latestVersion);
+  message.m_severity = NotificationMessage::Severity::Info;
+  message.m_duration = NotificationMessage::Duration::Persist;
+  message.m_progressIndeterminate = true;
+
+  NotificationAction cancel;
+  cancel.m_label = tr("Cancel");
+  cancel.m_dismissOnTrigger = false;
+  cancel.m_callback = [this]() {
+    if (auto *svc = m_services.get<UpdateService>()) {
+      svc->cancel();
+    }
+  };
+  message.m_actions.append(cancel);
+
+  updateOrRepostNotification(message);
+}
+
+void UpdateController::updateOrRepostNotification(const NotificationMessage &p_msg) {
+  auto *notifications = m_services.get<NotificationService>();
+  if (!notifications) {
+    return;
+  }
+
+  if (m_progressNotificationId != 0 && notifications->isActive(m_progressNotificationId) &&
+      notifications->update(m_progressNotificationId, p_msg)) {
+    return;
+  }
+
+  // The tracked message was dismissed or cleared: a terminal state still has to
+  // reach the user, so post a fresh one and track that instead.
+  m_progressNotificationId = notifications->notify(p_msg);
 }
 
 void UpdateController::showDialog(const UpdateInfo &p_info) {
@@ -255,11 +397,51 @@ void UpdateController::showDialog(const UpdateInfo &p_info) {
   auto *dialog = new UpdateDialog(p_info, m_mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   m_dialog = dialog;
+  m_dialogInfo = p_info;
 
   connect(dialog, &UpdateDialog::downloadRequested, this, [this]() {
-    if (auto *service = m_services.get<UpdateService>()) {
-      service->startDownload();
+    auto *service = m_services.get<UpdateService>();
+    if (!service) {
+      return;
     }
+
+    // UpdateDialog calls setDownloading() right AFTER emitting this signal, so
+    // a refusal reported inline would immediately be overwritten. Report it
+    // through the event loop instead.
+    auto refuse = [this](const QString &p_why) {
+      QMetaObject::invokeMethod(
+          this,
+          [this, p_why]() {
+            if (m_dialog) {
+              m_dialog->setFailed(p_why);
+            }
+          },
+          Qt::QueuedConnection);
+    };
+
+    // Claim the surface only for a request the service actually accepted, so a
+    // refusal can neither strand m_transfer (a Busy refusal emits nothing) nor
+    // steal another surface's in-flight result.
+    if (m_transfer != TransferSurface::None) {
+      refuse(tr("Another update operation is already running."));
+      return;
+    }
+
+    // The expected version pins this dialog to the plan it was built from: a
+    // check that landed while the dialog sat open must not be downloaded from
+    // a button that still advertises the old version.
+    const auto started = service->startDownload(m_dialogInfo.latestVersion);
+    if (started == UpdateService::DownloadStart::Busy) {
+      refuse(tr("Another update operation is already running."));
+      return;
+    }
+    if (started == UpdateService::DownloadStart::Stale) {
+      refuse(tr("This update offer is out of date. Please check for updates again."));
+      return;
+    }
+
+    // Started AND NoPlan both own a terminal signal for this call.
+    m_transfer = TransferSurface::Dialog;
   });
   connect(dialog, &UpdateDialog::skipRequested, this,
           [this](const QString &p_version) { skipVersion(p_version); });
@@ -273,12 +455,93 @@ void UpdateController::showDialog(const UpdateInfo &p_info) {
 }
 
 void UpdateController::onProgress(const QString &p_stage, qint64 p_done, qint64 p_total) {
-  if (m_dialog) {
-    m_dialog->setProgress(p_stage, p_done, p_total);
+  switch (m_transfer) {
+  case TransferSurface::Dialog:
+    if (m_dialog) {
+      m_dialog->setProgress(p_stage, p_done, p_total);
+    }
+    return;
+
+  case TransferSurface::Notification: {
+    auto *notifications = m_services.get<NotificationService>();
+    if (!notifications || m_progressNotificationId == 0 ||
+        !notifications->isActive(m_progressNotificationId)) {
+      // A progress tick for a dismissed message is simply dropped; only
+      // terminal states are worth reposting.
+      return;
+    }
+
+    // -1 for the indeterminate case, else whole percent. Coalescing on this
+    // bucket bounds the popup rebuilds at ~100 per stage instead of one per
+    // downloadProgress signal.
+    const int permille = p_total > 0 ? static_cast<int>((p_done * 1000) / p_total) : -1;
+    const int bucket = permille < 0 ? -1 : permille / 10;
+    if (bucket == m_lastProgressBucket && p_stage == m_lastProgressStage) {
+      return;
+    }
+    m_lastProgressBucket = bucket;
+    m_lastProgressStage = p_stage;
+
+    NotificationMessage message;
+    message.m_title = tr("Update");
+    message.m_text = p_stage;
+    message.m_severity = NotificationMessage::Severity::Info;
+    message.m_duration = NotificationMessage::Duration::Persist;
+    if (permille >= 0) {
+      message.m_progressPermille = permille;
+    } else {
+      message.m_progressIndeterminate = true;
+    }
+
+    NotificationAction cancel;
+    cancel.m_label = tr("Cancel");
+    cancel.m_dismissOnTrigger = false;
+    cancel.m_callback = [this]() {
+      if (auto *svc = m_services.get<UpdateService>()) {
+        svc->cancel();
+      }
+    };
+    message.m_actions.append(cancel);
+
+    notifications->update(m_progressNotificationId, message);
+    return;
+  }
+
+  case TransferSurface::None:
+  default:
+    return;
   }
 }
 
 void UpdateController::onReadyToApply(const QString &p_version) {
+  const TransferSurface surface = m_transfer;
+  m_transfer = TransferSurface::None;
+
+  if (surface == TransferSurface::Notification) {
+    NotificationMessage message;
+    message.m_title = tr("Update Ready");
+    message.m_text =
+        tr("VNote %1 has been downloaded and will be installed when VNote closes.").arg(p_version);
+    message.m_severity = NotificationMessage::Severity::Success;
+    message.m_duration = NotificationMessage::Duration::Persist;
+
+    NotificationAction restart;
+    restart.m_label = tr("Restart to finish update");
+    MainWindow2 *window = m_mainWindow;
+    restart.m_callback = [window]() {
+      if (window) {
+        window->restartForUpdate();
+      }
+    };
+    message.m_actions.append(restart);
+
+    // The same message becomes the success state, so notifyPendingUpdate() is
+    // deliberately NOT called here: two identical notifications would be worse
+    // than one.
+    updateOrRepostNotification(message);
+    return;
+  }
+
   if (m_dialog) {
     m_dialog->setReadyToApply(p_version);
   }
@@ -286,6 +549,54 @@ void UpdateController::onReadyToApply(const QString &p_version) {
 }
 
 void UpdateController::onFailed(const QString &p_message) {
+  const TransferSurface surface = m_transfer;
+  m_transfer = TransferSurface::None;
+
+  if (surface == TransferSurface::Notification) {
+    NotificationMessage message;
+    message.m_title = tr("Update");
+    message.m_text = tr("The update failed: %1").arg(p_message);
+    message.m_severity = NotificationMessage::Severity::Error;
+    message.m_duration = NotificationMessage::Duration::Persist;
+
+    NotificationAction retry;
+    retry.m_label = tr("Retry");
+    retry.m_dismissOnTrigger = false;
+    retry.m_callback = [this]() { startNotificationDownload(); };
+    message.m_actions.append(retry);
+
+    message.m_actions.append(makeCheckReleaseAction(m_offeredInfo));
+
+    updateOrRepostNotification(message);
+    return;
+  }
+
+  if (surface == TransferSurface::Dialog) {
+    if (m_dialog) {
+      m_dialog->setFailed(p_message);
+      return;
+    }
+    // The dialog was closed mid-transfer. The outcome is a DOWNLOAD failure,
+    // not a check failure, so it must not be reported as "could not check for
+    // updates". Post a standalone notification instead of reusing the tracked
+    // one, which may still be carrying an unrelated startup offer -- and link
+    // it to the DIALOG's release, not to that offer's.
+    if (auto *notifications = m_services.get<NotificationService>()) {
+      NotificationMessage message;
+      message.m_title = tr("Update");
+      message.m_text = tr("The update failed: %1").arg(p_message);
+      message.m_severity = NotificationMessage::Severity::Error;
+      message.m_duration = NotificationMessage::Duration::Persist;
+      message.m_actions.append(makeCheckReleaseAction(m_dialogInfo));
+      notifications->notify(message);
+    } else {
+      qWarning() << "update download failed:" << p_message;
+    }
+
+    return;
+  }
+
+  // No transfer was in flight: this is a CHECK failure.
   if (m_dialog) {
     m_dialog->setFailed(p_message);
     return;
@@ -297,8 +608,8 @@ void UpdateController::onFailed(const QString &p_message) {
     return;
   }
 
-  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Could not check for updates."),
-                           p_message, QString(), m_mainWindow);
+  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Could not check for updates."), p_message,
+                           QString(), m_mainWindow);
 }
 
 // ===========================================================================
@@ -352,5 +663,9 @@ void UpdateController::skipVersion(const QString &p_version) {
 }
 
 void UpdateController::openReleasesPage() const {
-  QDesktopServices::openUrl(QUrl(c_releasesPageUrl));
+  if (auto *service = m_services.get<UpdateService>()) {
+    QDesktopServices::openUrl(service->releasesPageUrl());
+    return;
+  }
+  QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/vnotex/vnote/releases")));
 }

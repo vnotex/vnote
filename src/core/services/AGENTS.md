@@ -8,9 +8,10 @@ For the canonical service catalog, DI rules, and Buffer2/HookManager patterns, s
 
 `NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageDismissed` / `messagesCleared`. All presentation (severity→icon mapping, popup, badge) lives in the widget layer (`NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).
 
-- `NotificationMessage` is a copyable value type carrying `Severity`, `Duration`, and `QVector<NotificationAction>` (each action = label + `std::function<void()>`). It is registered via `Q_DECLARE_METATYPE` + `qRegisterMetaType` in the ctor so `messageAdded` survives a queued (cross-thread) connection if a future producer calls `notify()` off the GUI thread.
+- `NotificationMessage` is a copyable value type carrying `Severity`, `Duration`, a `QVector<NotificationAction>` (each action = label + `std::function<void()>` + `m_dismissOnTrigger`), and the progress hints `m_progressPermille` / `m_progressIndeterminate`. It is registered via `Q_DECLARE_METATYPE` + `qRegisterMetaType` in the ctor so `messageAdded` survives a queued (cross-thread) connection if a future producer calls `notify()` off the GUI thread.
 - Current usage is GUI-thread only; the service has no internal locking. If you add an off-thread producer, keep the metatype registration and rely on auto/queued connections rather than adding a mutex.
 - `dismiss()` marks a message dismissed (it stays in the list but is excluded from `activeCount()` and hidden by the popup); `clearAll()` removes all messages. `Duration` is a UI auto-hide hint only, not a retention policy.
+- `update(id, msg)` replaces a message's content IN PLACE and emits `messageUpdated`. It preserves `m_id`, `m_timestamp` and `m_dismissed` — it never renumbers, re-stamps, resurrects a dismissed message, or moves `activeCount()` — and returns `false` for an unknown id. `isActive(id)` is the companion predicate ("exists and not dismissed") producers check before updating. This is what lets the updater carry one notification from offer → progress → success/failure instead of spamming four.
 
 ## Threading rules for SyncService
 
@@ -159,6 +160,46 @@ dependency the other way would be a CMake cycle. Every config-driven decision -
 Corollary: do NOT "fix" a future need for config inside the service by registering
 `ConfigMgr2` with it. Add the policy to the controller and pass the decision down.
 
+The release source is the newest instance of that rule. `UpdateService::Source`
+(`GitHub` | `Gitee`) is a plain enum on the service with `setSource()` / `source()` and the
+`sourceFromString()` / `sourceToString()` converters; `UpdateController::applyConfiguredSource()`
+PUSHES `CoreConfig::getUpdateSource()` in from the constructor and again at the top of every
+`startCheck()`, so a Settings change takes effect without a restart. `setSource()` is a
+no-op (with a `qWarning`) while `m_busy` is set: switching origins mid-flight would let one
+plan mix manifests and archives from two servers. A source change that IS accepted discards
+the cached `Plan`, which was built against the previous origin.
+
+### Per-source endpoints
+
+| | GitHub | Gitee |
+|---|---|---|
+| `apiLatestUrl()` | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
+| `assetUrl()` base | `https://github.com/vnotex/vnote/releases/download` | `https://gitee.com/vnotex/vnote/releases/download` |
+| `releasesPageUrl()` | `https://github.com/vnotex/vnote/releases` | `https://gitee.com/vnotex/vnote/releases` |
+| `releasePageUrl(tag, htmlUrl)` | the API's `html_url` | synthesized `<releasesPageUrl>/tag/v<tag>` — Gitee's release JSON has no `html_url`. Verified against the live `https://gitee.com/vnotex/vnote/releases/tag/v4.3.0`; the `tag/` segment is NOT present in the asset download path, so do not "simplify" the two to share a base |
+| `Accept` | `application/vnd.github+json, …` | `application/json, …` (Gitee rejects the vendor type) |
+
+`m_apiLatestOverride` / `m_assetBaseOverride` (the test seams) still WIN over all of these,
+which is what keeps `tests/core/test_updateservice.cpp` pointed at its local server
+regardless of the configured source.
+
+### Check-only degradation on an absent manifest
+
+`fetchVerifiedManifestEx()` is tri-state: `Ok` / `Absent` / `Error`, with the historical
+`fetchVerifiedManifest()` kept as the bool wrapper for the chain walk (where absence and
+verification failure are equally fatal — both fall back to the full package).
+
+`Absent` is returned **only** when the MANIFEST fetch itself answers HTTP 404, which
+`fetchToMemory()` reports through its `p_notFound` out-param. `checkForUpdates()` turns that
+into `eligible = false` + a release-page `ineligibleReason`, and still emits
+`checkFinished` with `updateAvailable = true`; it does NOT call `reportFailure()`, because a
+mirror that carries the release object but not the update assets is a degradation, not a
+check failure.
+
+Once manifest bytes have been received, everything downstream stays FAIL CLOSED. A missing
+or unfetchable `.minisig` — 404 included — is `Error`, never `Absent`. That is the property
+`testMissingSignatureIsRefused()` pins; do not "unify" the two 404 paths.
+
 ### Threading
 
 Both public operations (`checkForUpdates`, `startDownload`) return immediately and do their
@@ -175,19 +216,48 @@ hundreds of megabytes (verification).
 - The destructor calls `cancel()` and then WAITS on the stored `QFuture`. The worker holds a
   raw `this`; letting it outlive the object is a use-after-free.
 
+`startDownload(expectedTargetVersion)` returns `DownloadStart`
+(`Started` / `Busy` / `NoPlan` / `Stale`) because a caller that tracks which UI surface owns
+the transfer cannot otherwise tell whether the request landed. Only `Started` and `NoPlan`
+own a later terminal signal (`NoPlan` emits `failed()`); `Busy` and `Stale` start nothing and
+emit nothing. `UpdateController` keys its `TransferSurface` off that return value; claiming a
+surface before the call would strand it forever on a `Busy` refusal, or hand an
+already-running transfer's result to the wrong surface.
+
+Two ordering rules inside it are load-bearing:
+
+- **The `m_busy` compare-exchange runs BEFORE `m_plan` is read.** `m_plan` is written by the
+  check worker, so reading it first would be an unsynchronized read of a value another
+  thread may be assigning, and would also let a request that arrives mid-check answer
+  `NoPlan` (which emits `failed()` and hands the caller ownership of a terminal signal) when
+  the truthful answer is `Busy`. Winning the exchange synchronizes-with the worker's
+  `m_busy.store(false)`, which is what makes the subsequent `m_plan` read well-defined.
+- **`expectedTargetVersion` pins the request to the plan the caller was OFFERED.** A
+  notification or a non-modal `UpdateDialog` can outlive the check it came from; without the
+  check, its Update button would download whatever plan the service holds now — possibly a
+  different version, or one built against a different source — while still advertising the
+  old one. A mismatch is `Stale`. Pass an empty string only where no expectation is
+  meaningful.
+
 ### Redirects and the host allowlist
 
 Redirects are followed MANUALLY (`QNetworkRequest::ManualRedirectPolicy` set on EVERY
-request, because Qt 5 and Qt 6 differ in their default) so each hop can be checked. A hop is
-accepted only when it is `https` AND the host is `api.github.com`, `github.com`,
-`codeload.github.com`, or any host under `.githubusercontent.com` (release assets redirect
-there; the exact subdomain has moved from `objects.` to `release-assets.`, which is why the
-suffix rather than a fixed host is pinned). At most 5 hops, and there is no HTTPS -> HTTP
-downgrade path.
+request, because Qt 5 and Qt 6 differ in their default) so each hop can be checked. At most
+5 hops, and there is no HTTPS -> HTTP downgrade path.
+
+`allowedHosts(Source)` is **source-scoped and disjoint**, so a client on one forge can never
+follow a redirect onto the other's hosts:
+
+- GitHub: exact `api.github.com`, `github.com`, `codeload.github.com`, plus any host under
+  `.githubusercontent.com` (release assets redirect there; the exact subdomain has moved
+  from `objects.` to `release-assets.`, which is why the suffix rather than a fixed host is
+  pinned).
+- Gitee: exact `gitee.com`, plus any host under `.gitee.com` (the download endpoint
+  redirects through `attach_files` to `foruda.gitee.com`).
 
 `testSetEndpointOverride` / `testSetExtraAllowedHost` exist for the local end-to-end harness
 described in the plan's Validation section; the plain-HTTP exemption they enable applies
-ONLY to the explicitly nominated host.
+ONLY to the explicitly nominated host, and it is independent of the source.
 
 ### Delta path preconditions
 
@@ -231,7 +301,7 @@ in-memory only and cannot.
 
 ### Test coverage and its seams
 
-`tests/core/test_updateservice.cpp` (35 cases) drives the REAL
+`tests/core/test_updateservice.cpp` (43 cases) drives the REAL
 `QNetworkAccessManager` against a local `QTcpServer`, and signs its manifest fixtures
 in-process with the vendored minicrypto primitives - Ed25519 SIGNING needs no randomness,
 so `libs/minicrypto/randombytes_stub.c` (which aborts by design) is never reached. If a run
@@ -243,7 +313,7 @@ asserting behavior the feature never promises. The target still BUILDS on Linux 
 CI, which is what catches compile breakage; only the assertions are skipped. Add new cases
 inside this suite rather than creating a second, unguarded one.
 
-Two seams exist purely for it, both unconditional per ADR-6:
+Three seams exist purely for it, all unconditional per ADR-6:
 
 - `ManifestSignature::testClearTrustedKeys()` forces a genuinely EMPTY trusted-key list, so
   the fail-closed branch of `checkEligibility()` is reachable.
@@ -251,6 +321,10 @@ Two seams exist purely for it, both unconditional per ADR-6:
   keys", which is what makes it safe to call from a test's `cleanup()`.
 - `testSetEndpointOverride()` / `testSetExtraAllowedHost()` redirect the service at the
   local server. The plain-HTTP exemption applies ONLY to the explicitly nominated host.
+- `testSetPackagedAppOverride(int)` forces the MSIX/Store detection used by
+  `checkEligibility()`: `-1` auto-detect (production), `0` force not packaged, `1` force
+  packaged. Without it the Store gate is unreachable from a test process, which is never
+  packaged.
 
 Two behaviors that look like bugs and are not, so please do not "fix" them without reading
 the tests that pin them down:
@@ -266,3 +340,20 @@ the tests that pin them down:
 
 The suite's acceptance property is that a signature bypass at ANY ONE of the three manifest
 fetch sites - target, intermediate hop, published base - is caught individually.
+
+Also pinned here, and easy to break together: `testMissingManifestDegradesToCheckOnly()`
+(a 404 MANIFEST is `eligible = false` + `updateAvailable = true` and NO `failed()`) and
+`testMissingSignatureIsRefused()` (a 404 `.minisig` after the manifest arrived is a hard
+failure). Any change to `fetchVerifiedManifestEx` must keep BOTH green; passing only one is
+exactly the regression the tri-state was introduced to prevent.
+
+### NotificationService fields consumed by the updater
+
+`UpdateController` drives ONE notification from offer → progress → terminal state through
+`NotificationService::update()`, so the value type carries the presentation hints the popup
+needs: `NotificationMessage::m_progressPermille` / `m_progressIndeterminate`, and
+`NotificationAction::m_dismissOnTrigger` (set `false` on Update / Cancel / Retry so the
+message survives its own button). `update()` preserves `m_id`, `m_timestamp` and
+`m_dismissed` and therefore never changes `activeCount()`; `isActive(id)` is the guard the
+controller uses before touching a tracked message. See `src/widgets/AGENTS.md` §
+Notification System for the rendering side.

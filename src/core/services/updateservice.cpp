@@ -34,11 +34,24 @@ namespace {
 const QString c_repoOwner = QStringLiteral("vnotex");
 const QString c_repoName = QStringLiteral("vnote");
 
-const QString c_apiLatestUrl =
+const QString c_githubApiLatestUrl =
     QStringLiteral("https://api.github.com/repos/vnotex/vnote/releases/latest");
 
-const QString c_releaseDownloadBase =
+const QString c_githubReleaseDownloadBase =
     QStringLiteral("https://github.com/vnotex/vnote/releases/download");
+
+const QString c_githubReleasesPageUrl = QStringLiteral("https://github.com/vnotex/vnote/releases");
+
+// Gitee's asset URLs have the same deterministic shape as GitHub's; the
+// download endpoint redirects twice (attach_files -> foruda.gitee.com), which
+// is well inside c_maxRedirects.
+const QString c_giteeApiLatestUrl =
+    QStringLiteral("https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest");
+
+const QString c_giteeReleaseDownloadBase =
+    QStringLiteral("https://gitee.com/vnotex/vnote/releases/download");
+
+const QString c_giteeReleasesPageUrl = QStringLiteral("https://gitee.com/vnotex/vnote/releases");
 
 // Overall request timeout. QNetworkAccessManager's own transfer timeout only
 // covers stalls, not a slow-but-alive server.
@@ -52,14 +65,50 @@ QString hashFileSha256(const QString &p_path) { return UpdateInstaller::hashFile
 
 } // namespace
 
-const QStringList &UpdateService::allowedHosts() {
+const QStringList &UpdateService::allowedHosts(Source p_source) {
   // GitHub redirects release assets to *.githubusercontent.com. The exact
   // subdomain has moved over time (objects. -> release-assets.), so the suffix
-  // is allowlisted rather than a fixed host, while api./github.com stay exact.
-  static const QStringList hosts{QStringLiteral("api.github.com"),
-                                 QStringLiteral("github.com"),
-                                 QStringLiteral("codeload.github.com")};
-  return hosts;
+  // is allowlisted rather than a fixed host (see isHostAllowed), while
+  // api./github.com stay exact.
+  static const QStringList githubHosts{QStringLiteral("api.github.com"),
+                                       QStringLiteral("github.com"),
+                                       QStringLiteral("codeload.github.com")};
+  // Gitee redirects release assets to foruda.gitee.com, covered by the
+  // ".gitee.com" suffix rule in isHostAllowed.
+  static const QStringList giteeHosts{QStringLiteral("gitee.com")};
+
+  return p_source == Source::Gitee ? giteeHosts : githubHosts;
+}
+
+UpdateService::Source UpdateService::sourceFromString(const QString &p_source) {
+  return p_source.trimmed().compare(QLatin1String("gitee"), Qt::CaseInsensitive) == 0
+             ? Source::Gitee
+             : Source::GitHub;
+}
+
+QString UpdateService::sourceToString(Source p_source) {
+  return p_source == Source::Gitee ? QStringLiteral("gitee") : QStringLiteral("github");
+}
+
+void UpdateService::setSource(Source p_source) {
+  if (m_source == p_source) {
+    return;
+  }
+  if (m_busy.load()) {
+    // Switching origins mid-flight would let one plan mix manifests and
+    // archives from two different servers.
+    qWarning() << "update: ignoring a source change to" << sourceToString(p_source)
+               << "while a check or download is in flight";
+    return;
+  }
+  m_source = p_source;
+  // The plan was built against the previous source; nothing about it is valid
+  // for the new one.
+  m_plan = Plan();
+}
+
+QUrl UpdateService::releasesPageUrl() const {
+  return QUrl(m_source == Source::Gitee ? c_giteeReleasesPageUrl : c_githubReleasesPageUrl);
 }
 
 UpdateService::UpdateService(const QString &p_installDir, const QString &p_currentVersion,
@@ -98,6 +147,18 @@ UpdateService::Eligibility UpdateService::checkEligibility(bool p_forceProbe) co
     return result;
   }
 
+  // Ordering matters: an MSIX install lives under
+  // C:\Program Files\WindowsApps, so the Store gate must run BEFORE the
+  // Program Files check or the user is told to "use the installer package",
+  // which does not exist for a Store install.
+  const bool packaged = m_packagedAppOverride >= 0 ? m_packagedAppOverride != 0
+                                                   : UpdateInstaller::isMicrosoftStoreInstall();
+  if (packaged) {
+    result.reason = tr("VNote was installed from the Microsoft Store. Updates are delivered "
+                       "through the Store.");
+    return result;
+  }
+
   if (UpdateInstaller::isUnderProgramFiles(m_installDir)) {
     // MSI installs live there and are managed by Windows Installer.
     result.reason = tr("VNote is installed under Program Files. Please update using the "
@@ -110,8 +171,7 @@ UpdateService::Eligibility UpdateService::checkEligibility(bool p_forceProbe) co
     return result;
   }
 
-  if (!UpdateInstaller::isSameVolume(m_installDir,
-                                     UpdateInstaller::stagingRoot(m_installDir))) {
+  if (!UpdateInstaller::isSameVolume(m_installDir, UpdateInstaller::stagingRoot(m_installDir))) {
     result.reason = tr("The update staging directory is not on the same volume as VNote.");
     return result;
   }
@@ -170,9 +230,7 @@ QString UpdateService::pendingVersion() const {
   return UpdateInstaller::readPending(m_installDir).targetVersion;
 }
 
-void UpdateService::discardPending() {
-  UpdateInstaller::removeStagingRoot(m_installDir);
-}
+void UpdateService::discardPending() { UpdateInstaller::removeStagingRoot(m_installDir); }
 
 bool UpdateService::revalidatePending() {
   QString error;
@@ -210,10 +268,10 @@ bool UpdateService::revalidatePending() {
   for (const QString &relative : plan.staged) {
     UpdateManifestFile expected;
     if (!manifest.lookup(relative, &expected)) {
-      return discard(QStringLiteral("staged file '%1' is not in the target manifest").arg(relative));
+      return discard(
+          QStringLiteral("staged file '%1' is not in the target manifest").arg(relative));
     }
-    const QString staged =
-        UpdateInstaller::stagedDir(m_installDir) + QLatin1Char('/') + relative;
+    const QString staged = UpdateInstaller::stagedDir(m_installDir) + QLatin1Char('/') + relative;
     if (!QFileInfo::exists(staged) || QFileInfo(staged).size() != expected.size ||
         hashFileSha256(staged).compare(expected.sha256, Qt::CaseInsensitive) != 0) {
       return discard(QStringLiteral("staged file '%1' no longer verifies").arg(relative));
@@ -243,9 +301,9 @@ void UpdateService::testSetEndpointOverride(const QUrl &p_apiLatestUrl,
   m_assetBaseOverride = p_assetBaseUrl;
 }
 
-void UpdateService::testSetExtraAllowedHost(const QString &p_host) {
-  m_extraAllowedHost = p_host;
-}
+void UpdateService::testSetExtraAllowedHost(const QString &p_host) { m_extraAllowedHost = p_host; }
+
+void UpdateService::testSetPackagedAppOverride(int p_state) { m_packagedAppOverride = p_state; }
 
 // ===========================================================================
 // Networking
@@ -264,12 +322,16 @@ bool UpdateService::isHostAllowed(const QUrl &p_url) const {
   }
 
   const QString host = p_url.host().toLower();
-  if (allowedHosts().contains(host)) {
+  if (allowedHosts(m_source).contains(host)) {
     return true;
   }
-  if (host.endsWith(QLatin1String(".githubusercontent.com"))) {
+  if (m_source == Source::GitHub && host.endsWith(QLatin1String(".githubusercontent.com"))) {
     // Release assets are redirected here; the exact subdomain has changed over
     // time (objects. -> release-assets.), so the suffix is what is pinned.
+    return true;
+  }
+  if (m_source == Source::Gitee && host.endsWith(QLatin1String(".gitee.com"))) {
+    // Gitee hands the actual bytes off to foruda.gitee.com.
     return true;
   }
   if (!m_extraAllowedHost.isEmpty() && host.compare(m_extraAllowedHost, Qt::CaseInsensitive) == 0) {
@@ -280,19 +342,24 @@ bool UpdateService::isHostAllowed(const QUrl &p_url) const {
 
 namespace {
 
-QNetworkRequest buildRequest(const QUrl &p_url, const QString &p_version) {
+QNetworkRequest buildRequest(const QUrl &p_url, const QString &p_version,
+                             UpdateService::Source p_source) {
   QNetworkRequest request(p_url);
   request.setHeader(QNetworkRequest::UserAgentHeader,
                     QStringLiteral("VNote/%1 (updater)").arg(p_version));
-  request.setRawHeader("Accept", "application/vnd.github+json, application/octet-stream, */*");
+  if (p_source == UpdateService::Source::Gitee) {
+    // Gitee's API rejects unknown vendor media types.
+    request.setRawHeader("Accept", "application/json, application/octet-stream, */*");
+  } else {
+    request.setRawHeader("Accept", "application/vnd.github+json, application/octet-stream, */*");
+  }
   // Redirects are followed MANUALLY so every hop can be checked against the
   // allowlist and against an HTTPS->HTTP downgrade. Qt 5 and Qt 6 differ in
   // their DEFAULT policy (Qt 6 follows redirects out of the box), so the policy
   // is set explicitly on EVERY request rather than relied upon.
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                        QNetworkRequest::ManualRedirectPolicy);
-  request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
-                       QNetworkRequest::AlwaysNetwork);
+  request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
   return request;
 }
 
@@ -306,8 +373,7 @@ QNetworkRequest buildRequest(const QUrl &p_url, const QString &p_version) {
 // (and therefore vxcore_context_destroy and any pending update) for the whole
 // timeout.
 void waitForReply(QNetworkReply *p_reply, int p_timeoutMs,
-                  const std::function<bool()> &p_isCancelled, bool *p_timedOut,
-                  bool *p_cancelled) {
+                  const std::function<bool()> &p_isCancelled, bool *p_timedOut, bool *p_cancelled) {
   QEventLoop loop;
 
   QTimer timeout;
@@ -338,8 +404,12 @@ void waitForReply(QNetworkReply *p_reply, int p_timeoutMs,
 } // namespace
 
 bool UpdateService::fetchToMemory(QNetworkAccessManager &p_nam, const QUrl &p_url,
-                                  QByteArray *p_out, QString *p_error, qint64 p_maxBytes) {
+                                  QByteArray *p_out, QString *p_error, qint64 p_maxBytes,
+                                  bool *p_notFound) {
   QUrl url = p_url;
+  if (p_notFound) {
+    *p_notFound = false;
+  }
 
   for (int hop = 0; hop <= c_maxRedirects; ++hop) {
     if (isCancelled()) {
@@ -351,11 +421,11 @@ bool UpdateService::fetchToMemory(QNetworkAccessManager &p_nam, const QUrl &p_ur
       return false;
     }
 
-    QNetworkReply *reply = p_nam.get(buildRequest(url, m_currentVersion));
+    QNetworkReply *reply = p_nam.get(buildRequest(url, m_currentVersion, m_source));
     bool timedOut = false;
     bool cancelled = false;
-    waitForReply(reply, c_requestTimeoutMs, [this]() { return isCancelled(); }, &timedOut,
-                 &cancelled);
+    waitForReply(
+        reply, c_requestTimeoutMs, [this]() { return isCancelled(); }, &timedOut, &cancelled);
 
     if (cancelled) {
       reply->deleteLater();
@@ -381,6 +451,11 @@ bool UpdateService::fetchToMemory(QNetworkAccessManager &p_nam, const QUrl &p_ur
     }
 
     if (reply->error() != QNetworkReply::NoError) {
+      const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+      if (p_notFound && status == 404) {
+        // "Not published here", as opposed to any other transport failure.
+        *p_notFound = true;
+      }
       *p_error = reply->errorString();
       reply->deleteLater();
       return false;
@@ -431,7 +506,7 @@ bool UpdateService::downloadToFile(QNetworkAccessManager &p_nam, const QUrl &p_u
       return false;
     }
 
-    QNetworkReply *reply = p_nam.get(buildRequest(url, m_currentVersion));
+    QNetworkReply *reply = p_nam.get(buildRequest(url, m_currentVersion, m_source));
 
     QFile file;
     bool overflow = false;
@@ -466,8 +541,8 @@ bool UpdateService::downloadToFile(QNetworkAccessManager &p_nam, const QUrl &p_u
 
     bool timedOut = false;
     bool cancelled = false;
-    waitForReply(reply, c_requestTimeoutMs * 10, [this]() { return isCancelled(); }, &timedOut,
-                 &cancelled);
+    waitForReply(
+        reply, c_requestTimeoutMs * 10, [this]() { return isCancelled(); }, &timedOut, &cancelled);
 
     if (file.isOpen()) {
       file.write(reply->readAll());
@@ -535,15 +610,41 @@ bool UpdateService::downloadToFile(QNetworkAccessManager &p_nam, const QUrl &p_u
 
 QUrl UpdateService::assetUrl(const QString &p_version, const QString &p_assetName) const {
   if (!m_assetBaseOverride.isEmpty()) {
-    return m_assetBaseOverride.resolved(
-        QUrl(QStringLiteral("v%1/%2").arg(p_version, p_assetName)));
+    return m_assetBaseOverride.resolved(QUrl(QStringLiteral("v%1/%2").arg(p_version, p_assetName)));
   }
-  return QUrl(QStringLiteral("%1/v%2/%3").arg(c_releaseDownloadBase, p_version, p_assetName));
+  const QString &base =
+      m_source == Source::Gitee ? c_giteeReleaseDownloadBase : c_githubReleaseDownloadBase;
+  return QUrl(QStringLiteral("%1/v%2/%3").arg(base, p_version, p_assetName));
+}
+
+QUrl UpdateService::apiLatestUrl() const {
+  if (!m_apiLatestOverride.isEmpty()) {
+    return m_apiLatestOverride;
+  }
+  return QUrl(m_source == Source::Gitee ? c_giteeApiLatestUrl : c_githubApiLatestUrl);
+}
+
+QString UpdateService::releasePageUrl(const QString &p_tag, const QString &p_htmlUrlFromApi) const {
+  if (m_source == Source::GitHub) {
+    return p_htmlUrlFromApi;
+  }
+
+  // Gitee's release JSON carries no html_url, so the page URL is synthesized.
+  // The pattern is <repo>/releases/tag/v<version>, VERIFIED against
+  // https://gitee.com/vnotex/vnote/releases/tag/v4.3.0 -- note the `tag/`
+  // segment, which the asset download path (/releases/download/v<ver>/...)
+  // does NOT have.
+  if (!p_tag.isEmpty()) {
+    const QUrl synthesized(QStringLiteral("%1/tag/v%2").arg(c_giteeReleasesPageUrl, p_tag));
+    if (synthesized.isValid()) {
+      return synthesized.toString();
+    }
+  }
+  return c_giteeReleasesPageUrl;
 }
 
 QUrl UpdateService::manifestAssetUrl(const QString &p_version) const {
-  return assetUrl(p_version,
-                  QStringLiteral("VNote-%1-%2.manifest.json").arg(p_version, variant()));
+  return assetUrl(p_version, QStringLiteral("VNote-%1-%2.manifest.json").arg(p_version, variant()));
 }
 
 QUrl UpdateService::manifestSignatureUrl(const QString &p_version) const {
@@ -554,48 +655,60 @@ QUrl UpdateService::manifestSignatureUrl(const QString &p_version) const {
 
 bool UpdateService::fetchVerifiedManifest(QNetworkAccessManager &p_nam, const QString &p_version,
                                           UpdateManifest *p_out, QString *p_error) {
+  return fetchVerifiedManifestEx(p_nam, p_version, p_out, p_error) == ManifestFetch::Ok;
+}
+
+UpdateService::ManifestFetch UpdateService::fetchVerifiedManifestEx(QNetworkAccessManager &p_nam,
+                                                                    const QString &p_version,
+                                                                    UpdateManifest *p_out,
+                                                                    QString *p_error) {
   QByteArray manifestBytes;
-  if (!fetchToMemory(p_nam, manifestAssetUrl(p_version), &manifestBytes, p_error)) {
-    return false;
+  bool manifestAbsent = false;
+  if (!fetchToMemory(p_nam, manifestAssetUrl(p_version), &manifestBytes, p_error,
+                     16LL * 1024 * 1024, &manifestAbsent)) {
+    // A 404 on the MANIFEST means this release simply publishes no in-app
+    // update package on the selected source. That is a degradation, not an
+    // attack, and the caller may offer a check-only experience.
+    return manifestAbsent ? ManifestFetch::Absent : ManifestFetch::Error;
   }
 
   QByteArray signatureBytes;
-  if (!fetchToMemory(p_nam, manifestSignatureUrl(p_version), &signatureBytes, p_error,
-                     64 * 1024)) {
+  if (!fetchToMemory(p_nam, manifestSignatureUrl(p_version), &signatureBytes, p_error, 64 * 1024)) {
+    // FAIL CLOSED. Manifest bytes are already in hand, so a missing or
+    // unfetchable .minisig (404 included) is a hard refusal, never Absent.
     *p_error = tr("The update manifest for %1 is not signed: %2").arg(p_version, *p_error);
-    return false;
+    return ManifestFetch::Error;
   }
 
   // Verify over the bytes AS RECEIVED. Re-serializing the JSON first would
   // change them and, worse, would mean the thing verified is not the thing
   // parsed.
   QString trustedComment;
-  const auto verdict =
-      ManifestSignature::verify(manifestBytes, signatureBytes, &trustedComment);
+  const auto verdict = ManifestSignature::verify(manifestBytes, signatureBytes, &trustedComment);
   if (verdict != ManifestSignature::Result::Valid) {
     *p_error = tr("The update manifest for %1 failed signature verification: %2")
                    .arg(p_version, ManifestSignature::resultToString(verdict));
     qCritical() << "update: REJECTED manifest for" << p_version << "-"
                 << ManifestSignature::resultToString(verdict);
-    return false;
+    return ManifestFetch::Error;
   }
 
   QString parseError;
   const UpdateManifest manifest = UpdateManifest::fromJsonBytes(manifestBytes, &parseError);
   if (!manifest.isValid()) {
     *p_error = tr("The update manifest for %1 is malformed: %2").arg(p_version, parseError);
-    return false;
+    return ManifestFetch::Error;
   }
   if (manifest.version() != p_version) {
     // A signed manifest for a DIFFERENT version must not be accepted here: that
     // would let an old signed release be replayed in place of a newer one.
-    *p_error = tr("The manifest published for %1 declares version %2.")
-                   .arg(p_version, manifest.version());
-    return false;
+    *p_error =
+        tr("The manifest published for %1 declares version %2.").arg(p_version, manifest.version());
+    return ManifestFetch::Error;
   }
 
   *p_out = manifest;
-  return true;
+  return ManifestFetch::Ok;
 }
 
 // ===========================================================================
@@ -626,8 +739,7 @@ void UpdateService::checkForUpdates() {
 
     QString error;
     QByteArray body;
-    const QUrl latestUrl =
-        m_apiLatestOverride.isEmpty() ? QUrl(c_apiLatestUrl) : m_apiLatestOverride;
+    const QUrl latestUrl = apiLatestUrl();
     if (!fetchToMemory(nam, latestUrl, &body, &error)) {
       m_busy.store(false);
       reportFailure(error);
@@ -647,7 +759,7 @@ void UpdateService::checkForUpdates() {
 
     info.latestVersion = tag;
     info.releaseNotes = release.value(QStringLiteral("body")).toString();
-    info.releaseUrl = release.value(QStringLiteral("html_url")).toString();
+    info.releaseUrl = releasePageUrl(tag, release.value(QStringLiteral("html_url")).toString());
 
     const QVersionNumber latest = QVersionNumber::fromString(tag);
     const QVersionNumber current = QVersionNumber::fromString(m_currentVersion);
@@ -671,7 +783,25 @@ void UpdateService::checkForUpdates() {
     }
 
     UpdateManifest target;
-    if (!fetchVerifiedManifest(nam, tag, &target, &error)) {
+    const ManifestFetch fetched = fetchVerifiedManifestEx(nam, tag, &target, &error);
+    if (fetched == ManifestFetch::Absent) {
+      // D10: the release exists on this source but publishes no manifest, so
+      // there is nothing to plan and nothing to verify. Degrade to check-only
+      // and let the caller send the user to the release page. This is NOT a
+      // failure: reporting one would look like "could not check for updates".
+      qInfo() << "update: no update manifest published for" << tag << "on"
+              << sourceToString(m_source) << "- degrading to check-only";
+      info.eligible = false;
+      info.ineligibleReason =
+          tr("This release does not publish in-app update packages on the selected source. "
+             "Please download it from the release page.");
+      m_lastInfo = info;
+      m_busy.store(false);
+      QMetaObject::invokeMethod(
+          this, [this, info]() { emit checkFinished(info); }, Qt::QueuedConnection);
+      return;
+    }
+    if (fetched != ManifestFetch::Ok) {
       m_busy.store(false);
       reportFailure(error);
       return;
@@ -745,8 +875,7 @@ UpdateService::Plan UpdateService::buildPlan(QNetworkAccessManager &p_nam,
   UpdateManifest cursor = p_target;
   for (int hop = 0; hop < UpdateManifest::c_maxChainHops; ++hop) {
     if (!cursor.hasDelta()) {
-      return fullPackagePlan(
-          QStringLiteral("release %1 publishes no delta").arg(cursor.version()));
+      return fullPackagePlan(QStringLiteral("release %1 publishes no delta").arg(cursor.version()));
     }
     const QString baseVersion = cursor.delta().baseVersion;
     if (baseVersion == m_currentVersion || available.contains(baseVersion)) {
@@ -784,8 +913,8 @@ UpdateService::Plan UpdateService::buildPlan(QNetworkAccessManager &p_nam,
 
   const auto chain = UpdateManifest::resolveChain(p_target, m_currentVersion, available);
   if (!chain.isOk()) {
-    return fullPackagePlan(QStringLiteral("delta chain rejected (status %1)")
-                               .arg(static_cast<int>(chain.status)));
+    return fullPackagePlan(
+        QStringLiteral("delta chain rejected (status %1)").arg(static_cast<int>(chain.status)));
   }
 
   // --- Local integrity precheck -------------------------------------------
@@ -803,9 +932,8 @@ UpdateService::Plan UpdateService::buildPlan(QNetworkAccessManager &p_nam,
     const QString path = m_installDir + QLatin1Char('/') + files.at(i).path;
     if (!QFileInfo::exists(path) || QFileInfo(path).size() != files.at(i).size ||
         hashFileSha256(path).compare(files.at(i).sha256, Qt::CaseInsensitive) != 0) {
-      return fullPackagePlan(
-          QStringLiteral("local file '%1' has drifted from the published base")
-              .arg(files.at(i).path));
+      return fullPackagePlan(QStringLiteral("local file '%1' has drifted from the published base")
+                                 .arg(files.at(i).path));
     }
   }
 
@@ -822,16 +950,38 @@ UpdateService::Plan UpdateService::buildPlan(QNetworkAccessManager &p_nam,
 // Download + stage
 // ===========================================================================
 
-void UpdateService::startDownload() {
-  if (!m_plan.valid) {
-    reportFailure(tr("No update has been planned yet."));
-    return;
-  }
-
+UpdateService::DownloadStart UpdateService::startDownload(const QString &p_expectedTargetVersion) {
+  // Reserve the worker FIRST. m_plan is written by the check worker, so reading
+  // it before winning this compare-exchange would be an unsynchronized read of
+  // a value another thread may be assigning -- and would also let a request
+  // that arrives mid-check report NoPlan (which emits failed() and hands the
+  // caller ownership of a terminal signal) when the truthful answer is Busy.
+  //
+  // Winning the exchange synchronizes-with the worker's m_busy.store(false),
+  // so everything the worker wrote to m_plan is visible below.
   bool expected = false;
   if (!m_busy.compare_exchange_strong(expected, true)) {
-    return;
+    qWarning() << "update: ignoring a download request while another update "
+                  "operation is in flight";
+    return DownloadStart::Busy;
   }
+
+  if (!m_plan.valid) {
+    m_busy.store(false);
+    reportFailure(tr("No update has been planned yet."));
+    return DownloadStart::NoPlan;
+  }
+
+  if (!p_expectedTargetVersion.isEmpty() && m_plan.target.version() != p_expectedTargetVersion) {
+    // A newer check replaced the plan under a UI element that still advertises
+    // the old one. Downloading the new plan from that button would install a
+    // version the user was never shown.
+    m_busy.store(false);
+    qWarning() << "update: refusing a download for" << p_expectedTargetVersion
+               << "- the current plan targets" << m_plan.target.version();
+    return DownloadStart::Stale;
+  }
+
   m_cancelled.store(false);
 
   m_worker = QtConcurrent::run([this]() {
@@ -849,6 +999,8 @@ void UpdateService::startDownload() {
     QMetaObject::invokeMethod(
         this, [this, version]() { emit readyToApply(version); }, Qt::QueuedConnection);
   });
+
+  return DownloadStart::Started;
 }
 
 bool UpdateService::hasEnoughFreeSpace(const Plan &p_plan, QString *p_error) const {
@@ -873,15 +1025,13 @@ bool UpdateService::hasEnoughFreeSpace(const Plan &p_plan, QString *p_error) con
     return true;
   }
   if (storage.bytesAvailable() < required) {
-    *p_error = tr("Not enough free disk space: %1 MB are required.")
-                   .arg(required / (1024 * 1024));
+    *p_error = tr("Not enough free disk space: %1 MB are required.").arg(required / (1024 * 1024));
     return false;
   }
   return true;
 }
 
-bool UpdateService::stagePlan(QNetworkAccessManager &p_nam, const Plan &p_plan,
-                              QString *p_error) {
+bool UpdateService::stagePlan(QNetworkAccessManager &p_nam, const Plan &p_plan, QString *p_error) {
   if (!hasEnoughFreeSpace(p_plan, p_error)) {
     return false;
   }
@@ -944,8 +1094,8 @@ bool UpdateService::stagePlan(QNetworkAccessManager &p_nam, const Plan &p_plan,
       reportProgress(tr("Extracting %1").arg(version), 0, 0);
       const auto extraction = ZipExtractor::extract(archive, stagedDir, options);
       if (!extraction.isOk()) {
-        *p_error = tr("The update package for %1 was rejected: %2")
-                       .arg(version, extraction.message);
+        *p_error =
+            tr("The update package for %1 was rejected: %2").arg(version, extraction.message);
         return false;
       }
     }
@@ -1148,9 +1298,7 @@ bool UpdateService::verifyStagedTree(const Plan &p_plan, const QStringList &p_ex
 // Misc
 // ===========================================================================
 
-void UpdateService::cancel() {
-  m_cancelled.store(true);
-}
+void UpdateService::cancel() { m_cancelled.store(true); }
 
 void UpdateService::reportProgress(const QString &p_stage, qint64 p_done, qint64 p_total) {
   QMetaObject::invokeMethod(
@@ -1162,6 +1310,3 @@ void UpdateService::reportFailure(const QString &p_message) {
   QMetaObject::invokeMethod(
       this, [this, p_message]() { emit failed(p_message); }, Qt::QueuedConnection);
 }
-
-
-

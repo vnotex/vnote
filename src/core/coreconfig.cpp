@@ -63,6 +63,8 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("checkForUpdatesOnStart"));
 
+  m_updateSource = normalizeUpdateSource(READSTR(QStringLiteral("updateSource")));
+
   m_skippedUpdateVersion = READSTR(QStringLiteral("skippedUpdateVersion"));
 
   m_lastUpdateCheckTime =
@@ -102,6 +104,7 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
   obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
+  obj[QStringLiteral("updateSource")] = m_updateSource;
   obj[QStringLiteral("skippedUpdateVersion")] = m_skippedUpdateVersion;
   // Decimal string: IConfig::readInt is 32-bit and QJsonValue::toInt() would
   // truncate an epoch-millisecond value.
@@ -195,6 +198,20 @@ bool CoreConfig::isCheckForUpdatesOnStartEnabled() const { return m_checkForUpda
 
 void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled) {
   updateConfig(m_checkForUpdatesOnStartEnabled, p_enabled, this);
+}
+
+QString CoreConfig::normalizeUpdateSource(const QString &p_source) {
+  const QString lowered = p_source.trimmed().toLower();
+  if (lowered == QStringLiteral("gitee")) {
+    return QStringLiteral("gitee");
+  }
+  return QStringLiteral("github");
+}
+
+const QString &CoreConfig::getUpdateSource() const { return m_updateSource; }
+
+void CoreConfig::setUpdateSource(const QString &p_source) {
+  updateConfig(m_updateSource, normalizeUpdateSource(p_source), this);
 }
 
 const QString &CoreConfig::getSkippedUpdateVersion() const { return m_skippedUpdateVersion; }

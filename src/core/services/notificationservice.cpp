@@ -20,6 +20,35 @@ quint64 NotificationService::notify(NotificationMessage p_msg) {
   return p_msg.m_id;
 }
 
+bool NotificationService::update(quint64 p_id, const NotificationMessage &p_msg) {
+  for (auto &msg : m_messages) {
+    if (msg.m_id != p_id) {
+      continue;
+    }
+
+    // Identity and lifecycle stay with the stored message: update() must never
+    // renumber, re-stamp, or resurrect a dismissed notification.
+    NotificationMessage updated = p_msg;
+    updated.m_id = msg.m_id;
+    updated.m_timestamp = msg.m_timestamp;
+    updated.m_dismissed = msg.m_dismissed;
+
+    msg = updated;
+    emit messageUpdated(msg);
+    return true;
+  }
+  return false;
+}
+
+bool NotificationService::isActive(quint64 p_id) const {
+  for (const auto &msg : m_messages) {
+    if (msg.m_id == p_id) {
+      return !msg.m_dismissed;
+    }
+  }
+  return false;
+}
+
 void NotificationService::dismiss(quint64 p_id) {
   for (auto &msg : m_messages) {
     if (msg.m_id == p_id) {

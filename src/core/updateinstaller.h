@@ -67,6 +67,15 @@ public:
   // and must never be self-updated in place.
   static bool isUnderProgramFiles(const QString &p_installDir);
 
+  // True when this process runs inside an MSIX/AppX package identity, i.e. a
+  // Microsoft Store (or sparse-package) install. Such installs are serviced by
+  // the Store and their install root is not ours to mutate.
+  //
+  // Resolved dynamically: GetCurrentPackageFullName only exists from Windows 8
+  // on, and the Qt5 "win64-windows7" variant must keep working. An absent
+  // export means "not packaged". Non-Windows returns false.
+  static bool isMicrosoftStoreInstall();
+
   // Both paths must resolve to the same volume for the atomic rename (and for
   // every ordinary rename) to work.
   static bool isSameVolume(const QString &p_pathA, const QString &p_pathB);

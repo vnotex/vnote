@@ -3,13 +3,17 @@ name: Gitee Mirror
 # Mirrors github.com/vnotex/vnote to gitee.com/vnotex/vnote:
 #   * Job A (sync-code)     - pushes master + release tags on every push to master.
 #   * Job B (mirror-release) - on a published GitHub release (or manual dispatch),
-#                              creates/updates the matching Gitee release and
-#                              prunes all but the two most recent ones.
+#                              creates/updates the matching Gitee release, uploads
+#                              the SMALL in-app-update assets, and prunes all but
+#                              the two most recent releases.
 #
-# Release BINARIES are not mirrored: Gitee's attachment endpoint runs at well
-# under 50 KB/s from a GitHub-hosted runner, so the maintainer uploads the
-# artifacts to the Gitee release by hand. This workflow calls no attachment
-# endpoint, so it can never strip attachments off a release it keeps.
+# The ~158 MB platform ZIPs are NOT mirrored: Gitee's attachment endpoint runs at
+# well under 50 KB/s from a GitHub-hosted runner, so the maintainer uploads those
+# by hand. The small update assets (*.manifest.json, *.manifest.json.minisig and
+# the delta ZIP) ARE mirrored automatically - without a manifest every Gitee user
+# is silently downgraded to check-only in-app updates. Uploads are additive:
+# Gitee has no replace semantics, so an already-attached name is skipped and no
+# existing attachment is ever removed.
 #
 # The `continuous-build` tag/release is deliberately NOT mirrored: it is the only
 # mutable tag, CI force-moves it after the push event, and Gitee has no matching
@@ -224,14 +228,14 @@ jobs:
           NAME="$(cat "$RUNNER_TEMP/name.txt")"
           BODY="$(cat "$RUNNER_TEMP/body.txt")"
 
-          # Binaries are NOT mirrored. Gitee's attach_files endpoint sustained
-          # well under 50 KB/s from a GitHub-hosted runner (run 30447854128:
-          # 55 minutes without finishing the first 164 MiB asset, against a
-          # ~400 MiB payload), so the maintainer attaches the artifacts to the
-          # Gitee release by hand. This job owns the release object and its
-          # notes only; it calls no attachment endpoint, so it can never
-          # remove an attachment from a release it keeps. (Pruning an OLDER
-          # release naturally takes that release's attachments with it.)
+          # The ~158 MB platform ZIPs are NOT mirrored. Gitee's attach_files
+          # endpoint sustained well under 50 KB/s from a GitHub-hosted runner
+          # (run 30447854128: 55 minutes without finishing the first 164 MiB
+          # asset, against a ~400 MiB payload), so the maintainer attaches
+          # those by hand. The small in-app-update assets ARE mirrored, by the
+          # step right after this one. Uploads are additive, so this job can
+          # never remove an attachment from a release it keeps. (Pruning an
+          # OLDER release naturally takes that release's attachments with it.)
           # NOTE: Gitee answers GET /releases/tags/{tag} with 200 + a literal
           # `null` body when the release is absent; it never 404s. That is why
           # existence is decided by gitee_find_release_id, not by the status
@@ -288,6 +292,104 @@ jobs:
           fi
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
           echo "gitee release id: $RELEASE_ID"
+
+      - name: Mirror the in-app update assets to Gitee
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$GITEE_TOKEN"
+          . .github/scripts/gitee-lib.sh
+
+          # Only the SMALL update assets. The platform ZIPs stay manual (see the
+          # header comment): a few MB at Gitee's measured throughput is fine, a
+          # few hundred is not.
+          #
+          # Why this matters: UpdateService needs <name>.manifest.json plus its
+          # detached .minisig to plan and verify anything. Without them a Gitee
+          # user silently degrades to check-only updates, so a failed upload is
+          # a HARD failure of this step rather than a warning.
+          ASSET_DIR="$RUNNER_TEMP/update-assets"
+          rm -rf "$ASSET_DIR"
+          mkdir -p "$ASSET_DIR"
+
+          # Decide "there is nothing to mirror" from a SUCCESSFUL metadata query,
+          # never from a failing download. `gh release download` exits non-zero
+          # for auth failures, rate limits, network errors and disk errors just
+          # as it does for "no assets matched", so treating any failure as a
+          # skip would leave Gitee without a manifest while the job stays green.
+          jq -r 'if (.assets | type) == "array" then .assets[].name
+                 else error("expected an assets array") end' \
+            "$RUNNER_TEMP/release.json" > "$RUNNER_TEMP/all-assets.txt"
+          # grep exit 1 is "no match", a legitimate answer here. Exit >= 2 is a
+          # real error (unreadable input, bad pattern), and MUST NOT be laundered
+          # into a green "nothing to mirror" skip.
+          grep_rc=0
+          grep -E '(\.manifest\.json|\.manifest\.json\.minisig|\.delta\.zip)$' \
+            "$RUNNER_TEMP/all-assets.txt" > "$RUNNER_TEMP/wanted-assets.txt" || grep_rc=$?
+          if [ "$grep_rc" -gt 1 ]; then
+            echo "filtering the GitHub asset list failed (grep exit $grep_rc)" >&2
+            exit 1
+          fi
+          if [ ! -s "$RUNNER_TEMP/wanted-assets.txt" ]; then
+            echo "the GitHub release for $TAG publishes no in-app update assets; skipping"
+            exit 0
+          fi
+          echo "in-app update assets on the GitHub release:"
+          cat "$RUNNER_TEMP/wanted-assets.txt"
+
+          # Assets DO exist, so from here every failure is a real failure.
+          gh release download "$TAG" --dir "$ASSET_DIR" --clobber \
+            --pattern '*.manifest.json' \
+            --pattern '*.manifest.json.minisig' \
+            --pattern '*.delta.zip'
+
+          # Sorted so the log is stable across runs.
+          : > "$RUNNER_TEMP/update-assets.txt"
+          find "$ASSET_DIR" -maxdepth 1 -type f -print | sort > "$RUNNER_TEMP/update-assets.txt"
+
+          # A partial download must not silently mirror a manifest without its
+          # signature (or the other way round).
+          sed 's|.*/||' "$RUNNER_TEMP/update-assets.txt" | sort > "$RUNNER_TEMP/got-assets.txt"
+          sort "$RUNNER_TEMP/wanted-assets.txt" > "$RUNNER_TEMP/wanted-assets-sorted.txt"
+          if ! diff -u "$RUNNER_TEMP/wanted-assets-sorted.txt" "$RUNNER_TEMP/got-assets.txt"; then
+            echo "downloaded update assets do not match the release listing" >&2
+            exit 1
+          fi
+
+          # Gitee has NO replace semantics for attachments, so an existing name
+          # must be skipped rather than re-posted (which would silently produce
+          # a duplicate). List what is already attached first.
+          api GET "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
+            --retry 3 --retry-delay 5
+          if ! api_is_2xx; then
+            echo "listing gitee release attachments failed (HTTP ${API_CODE:-000})" >&2
+            printf '%s\n' "$API_BODY" >&2
+            exit 1
+          fi
+          # A 2xx that is not an array is a protocol surprise, NOT "no
+          # attachments": accepting it would re-upload everything as duplicates.
+          if ! printf '%s' "$API_BODY" \
+              | jq -r 'if type == "array" then .[].name
+                       else error("expected an array of attachments") end' \
+              > "$RUNNER_TEMP/attached.txt"; then
+            echo "could not parse the gitee attachment listing" >&2
+            printf '%s\n' "$API_BODY" >&2
+            exit 1
+          fi
+
+          while read -r path; do
+            [ -n "$path" ] || continue
+            name="$(basename "$path")"
+            if grep -Fxq -- "$name" "$RUNNER_TEMP/attached.txt"; then
+              echo "already attached on gitee: $name (skipping)"
+              continue
+            fi
+            echo "uploading to gitee: $name ($(wc -c < "$path") bytes)"
+            api POST "/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${RELEASE_ID}/attach_files" \
+              -F "file=@${path}"
+            api_require_2xx "attach $name"
+          done < "$RUNNER_TEMP/update-assets.txt"
+
+          echo "update assets mirrored"
 
       - name: Prune older Gitee releases
         run: |
@@ -398,8 +500,8 @@ jobs:
             api_require_2xx "delete release $id"
           done
 
-          # Attachments on the two retained releases are never touched - this
-          # workflow calls no attachment endpoint at all. Deleting an older
-          # release does of course remove that release and whatever was
-          # attached to it.
+          # Attachments on the two retained releases are never touched by the
+          # prune: this step calls no attachment endpoint at all, and the
+          # mirroring step above is strictly additive. Deleting an older release
+          # does of course remove that release and whatever was attached to it.
           echo "prune done; git tags are untouched"
