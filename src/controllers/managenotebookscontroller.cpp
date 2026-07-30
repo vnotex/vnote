@@ -106,10 +106,16 @@ NotebookOperationResult ManageNotebooksController::closeNotebook(const QString &
   }
 
   auto *notebookService = m_services.get<NotebookCoreService>();
-  if (!notebookService->closeNotebook(p_notebookId)) {
+  QString hookReason;
+  if (!notebookService->closeNotebook(p_notebookId, &hookReason)) {
     result.success = false;
-    result.errorMessage = tr("Failed to close notebook. There may be unsaved changes in open "
-                             "files. Please save or discard changes and try again.");
+    // A NotebookBeforeClose handler (e.g. SyncService blocking on an in-flight
+    // sync) can supply an accurate, user-facing reason in-band. Prefer it over
+    // the generic fallback, which only fits a raw vxcore failure.
+    result.errorMessage =
+        hookReason.isEmpty() ? tr("Failed to close notebook. There may be unsaved changes in open "
+                                  "files. Please save or discard changes and try again.")
+                             : hookReason;
     return result;
   }
 

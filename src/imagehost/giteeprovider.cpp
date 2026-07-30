@@ -88,8 +88,8 @@ bool GiteeProvider::testConfig(const QJsonObject &p_config, QString &p_msg) {
   return true;
 }
 
-vte::NetworkAccess::RawHeaderPairs GiteeProvider::prepareCommonHeaders() {
-  vte::NetworkAccess::RawHeaderPairs rawHeader;
+NetworkAccess::RawHeaderPairs GiteeProvider::prepareCommonHeaders() {
+  NetworkAccess::RawHeaderPairs rawHeader;
   rawHeader.push_back(
       qMakePair(QByteArray("Content-Type"), QByteArray("application/json;charset=UTF-8")));
   return rawHeader;
@@ -104,11 +104,11 @@ QString GiteeProvider::addAccessToken(const QString &p_token, QString p_url) {
   return p_url;
 }
 
-vte::NetworkReply GiteeProvider::getRepoInfo(const QString &p_token, const QString &p_userName,
+NetworkReply GiteeProvider::getRepoInfo(const QString &p_token, const QString &p_userName,
                                              const QString &p_repoName) const {
   auto rawHeader = prepareCommonHeaders();
   auto urlStr = QStringLiteral("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
-  auto reply = vte::NetworkAccess::request(QUrl(addAccessToken(p_token, urlStr)), rawHeader);
+  auto reply = NetworkAccess::request(QUrl(addAccessToken(p_token, urlStr)), rawHeader);
   return reply;
 }
 
@@ -142,7 +142,7 @@ ImageUploadResult GiteeProvider::upload(const QByteArray &p_data, const QString 
 
   // Check if @p_path already exists.
   auto reply =
-      vte::NetworkAccess::request(QUrl(addAccessToken(m_personalAccessToken, urlStr)), rawHeader);
+      NetworkAccess::request(QUrl(addAccessToken(m_personalAccessToken, urlStr)), rawHeader);
   if (reply.m_error == QNetworkReply::NoError) {
     if (!isEmptyResponse(reply.m_data)) {
       result.errorMessage = tr("The resource already exists at the image host (%1).").arg(p_path);
@@ -160,7 +160,7 @@ ImageUploadResult GiteeProvider::upload(const QByteArray &p_data, const QString 
   requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_ADD: %1").arg(p_path);
   requestDataObj[QStringLiteral("content")] = QString::fromUtf8(p_data.toBase64());
   auto requestData = Utils::toJsonString(requestDataObj);
-  reply = vte::NetworkAccess::post(QUrl(urlStr), rawHeader, requestData);
+  reply = NetworkAccess::post(QUrl(urlStr), rawHeader, requestData);
   if (reply.m_error != QNetworkReply::NoError) {
     result.errorMessage = tr("Failed to create resource at the image host (%1) (%2) (%3).")
                               .arg(urlStr, reply.errorStr(), reply.m_data);
@@ -207,7 +207,7 @@ bool GiteeProvider::remove(const QString &p_url, QString &p_msg) {
 
   // Get the SHA of the resource.
   auto reply =
-      vte::NetworkAccess::request(QUrl(addAccessToken(m_personalAccessToken, urlStr)), rawHeader);
+      NetworkAccess::request(QUrl(addAccessToken(m_personalAccessToken, urlStr)), rawHeader);
   if (reply.m_error != QNetworkReply::NoError || isEmptyResponse(reply.m_data)) {
     p_msg = tr("Failed to fetch information about the resource (%1).").arg(resourcePath);
     return false;
@@ -228,7 +228,7 @@ bool GiteeProvider::remove(const QString &p_url, QString &p_msg) {
   requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_DEL: %1").arg(resourcePath);
   requestDataObj[QStringLiteral("sha")] = sha;
   auto requestData = Utils::toJsonString(requestDataObj);
-  reply = vte::NetworkAccess::deleteResource(QUrl(urlStr), rawHeader, requestData);
+  reply = NetworkAccess::deleteResource(QUrl(urlStr), rawHeader, requestData);
   if (reply.m_error != QNetworkReply::NoError) {
     p_msg = tr("Failed to delete resource (%1) (%2).")
                 .arg(resourcePath, QString::fromUtf8(reply.m_data));

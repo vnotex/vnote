@@ -5,7 +5,7 @@
 
 #include <QString>
 
-#include "itaskcontext.h"
+#include <core/services/itaskcontext.h>
 
 class QWidget;
 
@@ -15,9 +15,11 @@ namespace vnotex {
 // Supplies the live notebook/editor context so task variables (${notebook*},
 // ${buffer*}, ${selectedText}, ${input:*}) resolve against the active view.
 //
-// To avoid a core_services -> widgets layering dependency, the view state is
+// Lives in the widget layer because promptString() needs QInputDialog;
+// core_services is deliberately Qt-Widgets-free. The view state is still
 // provided via accessor callbacks (supplied by MainWindow2) rather than direct
-// widget pointers. UI-thread only.
+// widget pointers, so this stays decoupled from MainWindow2's own header.
+// UI-thread only.
 class MainWindowTaskContext : public ITaskContext {
 public:
   using StringProvider = std::function<QString()>;

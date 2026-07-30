@@ -27,6 +27,11 @@ private slots:
   void testActionPriority();
   void testActionErrorHandling();
 
+  // HookContext out-param (doAction(hook, args, HookContext *))
+  void testDoActionOutContextPopulated();
+  void testDoActionOutContextClearedWhenNoCallbacks();
+  void testDoActionOutContextClearedOnRecursionGuard();
+
   // Filter tests
   void testAddFilter();
   void testRemoveFilter();
@@ -332,6 +337,90 @@ void TestHookManager::testEmptyHook() {
   // applyFilters on non-existent hook should return original value
   QVariant result = m_hookManager->applyFilters("nonexistent.filter", 42);
   QCOMPARE(result.toInt(), 42);
+}
+
+// ---------------------------------------------------------------------------
+// HookContext out-param
+// ---------------------------------------------------------------------------
+// The out-param is the production channel that carries a handler's
+// cancellation reason back to the caller (see
+// NotebookCoreService::closeNotebook). The contract is that *p_outCtx is
+// overwritten on EVERY return path, so stale metadata from a previous call can
+// never leak. The three tests below pin the three return paths.
+
+// Helper: a context deliberately poisoned with stale state.
+static vnotex::HookContext makeStaleContext() {
+  vnotex::HookContext stale(QStringLiteral("stale.hook"));
+  stale.cancel();
+  stale.setMetadata(QStringLiteral("reason"), QStringLiteral("STALE"));
+  return stale;
+}
+
+void TestHookManager::testDoActionOutContextPopulated() {
+  int id = m_hookManager->addAction(
+      "outctx.populated", [](vnotex::HookContext &ctx, const QVariantMap &) {
+        ctx.cancel();
+        ctx.setMetadata(QStringLiteral("reason"), QStringLiteral("FRESH"));
+      });
+
+  vnotex::HookContext out = makeStaleContext();
+  const bool cancelled = m_hookManager->doAction("outctx.populated", QVariantMap(), &out);
+
+  QVERIFY(cancelled);
+  QCOMPARE(out.hookName(), QStringLiteral("outctx.populated"));
+  QVERIFY(out.isCancelled());
+  QCOMPARE(out.getMetadata(QStringLiteral("reason")).toString(), QStringLiteral("FRESH"));
+
+  m_hookManager->removeAction(id);
+}
+
+void TestHookManager::testDoActionOutContextClearedWhenNoCallbacks() {
+  vnotex::HookContext out = makeStaleContext();
+  const bool cancelled = m_hookManager->doAction("outctx.nocallbacks", QVariantMap(), &out);
+
+  QVERIFY(!cancelled);
+  // The no-callbacks early return must still overwrite the caller's context.
+  QCOMPARE(out.hookName(), QStringLiteral("outctx.nocallbacks"));
+  QVERIFY(!out.isCancelled());
+  QVERIFY(out.getMetadata(QStringLiteral("reason")).toString().isEmpty());
+  QVERIFY(out.metadata().isEmpty());
+}
+
+void TestHookManager::testDoActionOutContextClearedOnRecursionGuard() {
+  // Recurse until HookManager's depth guard trips, and make ONLY the deepest
+  // call use the out-param overload so we observe the recursion-guard early
+  // return (the intermediate calls must not clobber the captured context).
+  vnotex::HookContext deepest = makeStaleContext();
+  bool captured = false;
+  bool deepestCancelled = true;
+  int depth = 0;
+
+  int id = m_hookManager->addAction(
+      "outctx.recursive", [&](vnotex::HookContext &ctx, const QVariantMap &) {
+        ctx.setMetadata(QStringLiteral("reason"), QStringLiteral("DEEP"));
+        ++depth;
+        if (depth >= vnotex::HookManager::c_maxRecursionDepth) {
+          // m_recursionDepth is already at the cap, so this nested call bails
+          // out through the recursion guard.
+          deepestCancelled =
+              m_hookManager->doAction("outctx.recursive", QVariantMap(), &deepest);
+          captured = true;
+        } else {
+          m_hookManager->doAction("outctx.recursive");
+        }
+      });
+
+  m_hookManager->doAction("outctx.recursive");
+
+  QVERIFY2(captured, "recursion never reached the depth guard");
+  QVERIFY(!deepestCancelled);
+  // Recursion-guard bail-out must still overwrite the caller's context with a
+  // fresh, correctly-named, metadata-free one.
+  QCOMPARE(deepest.hookName(), QStringLiteral("outctx.recursive"));
+  QVERIFY(!deepest.isCancelled());
+  QVERIFY(deepest.metadata().isEmpty());
+
+  m_hookManager->removeAction(id);
 }
 
 } // namespace tests

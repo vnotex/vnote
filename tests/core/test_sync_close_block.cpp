@@ -6,11 +6,13 @@
 //   * sync running (no queued items)  -> close cancelled, pendingCount=0
 //   * sync queued (not running)       -> close cancelled, pendingCount>0
 //   * neither                         -> close allowed
+//
+// This test is GUILESS. The hook handler used to pop a QMessageBox from inside
+// core_services, which forced a QApplication plus a timer-driven modal
+// dismisser here. The reason now travels in-band through the HookContext
+// metadata (read by NotebookCoreService::closeNotebook), so no GUI is involved.
 
-#include <QApplication>
-#include <QMessageBox>
-#include <QSignalSpy>
-#include <QTimer>
+#include <QSemaphore>
 #include <QtTest>
 
 #include <core/hookcontext.h>
@@ -39,24 +41,10 @@ private slots:
   void closeBlockedWhenInProgress();
   void closeBlockedWhenQueuedNotRunning();
   void closeAllowedWhenIdle();
-
-private:
-  // Auto-dismiss any modal QMessageBox so synchronous QMessageBox::warning
-  // calls inside the close-hook handler don't deadlock the test.
-  void armDialogDismisser();
 };
 
 void TestSyncCloseBlock::initTestCase() { vxcore_set_test_mode(1); }
 
-void TestSyncCloseBlock::armDialogDismisser() {
-  QTimer::singleShot(50, this, []() {
-    for (QWidget *w : QApplication::topLevelWidgets()) {
-      if (auto *mb = qobject_cast<QMessageBox *>(w)) {
-        mb->close();
-      }
-    }
-  });
-}
 
 void TestSyncCloseBlock::closeBlockedWhenInProgress() {
   VxCoreContextHandle ctx = nullptr;
@@ -83,7 +71,6 @@ void TestSyncCloseBlock::closeBlockedWhenInProgress() {
     NotebookCloseEvent ev;
     ev.notebookId = nbId;
 
-    armDialogDismisser();
     HookContext lastCtx;
     hookMgr.addAction<NotebookCloseEvent>(
         HookNames::NotebookBeforeClose,
@@ -93,6 +80,14 @@ void TestSyncCloseBlock::closeBlockedWhenInProgress() {
     QVERIFY2(cancelled, "Close must be cancelled while sync is in-flight");
     QCOMPARE(lastCtx.metadata().value(QStringLiteral("pendingCount")).toInt(), 0);
     QVERIFY(!lastCtx.metadata().value(QStringLiteral("syncCancelReason")).toString().isEmpty());
+
+    // The same reason must also reach the caller through the doAction
+    // out-param, which is the channel production code actually reads.
+    HookContext outCtx;
+    const bool cancelled2 = hookMgr.doAction(HookNames::NotebookBeforeClose, ev, &outCtx);
+    QVERIFY(cancelled2);
+    QCOMPARE(outCtx.hookName(), QString(HookNames::NotebookBeforeClose));
+    QVERIFY(!outCtx.getMetadata(QStringLiteral("syncCancelReason")).toString().isEmpty());
 
     wq.testForceInFlight(nbId, false);
     guard.cleanup();
@@ -135,7 +130,6 @@ void TestSyncCloseBlock::closeBlockedWhenQueuedNotRunning() {
     NotebookCloseEvent ev;
     ev.notebookId = nbId;
 
-    armDialogDismisser();
     HookContext lastCtx;
     hookMgr.addAction<NotebookCloseEvent>(
         HookNames::NotebookBeforeClose,
@@ -183,5 +177,5 @@ void TestSyncCloseBlock::closeAllowedWhenIdle() {
 
 } // namespace tests
 
-QTEST_MAIN(tests::TestSyncCloseBlock)
+QTEST_GUILESS_MAIN(tests::TestSyncCloseBlock)
 #include "test_sync_close_block.moc"

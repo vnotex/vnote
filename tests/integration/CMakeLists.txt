@@ -27,12 +27,9 @@ set_tests_properties(test_sync_e2e PROPERTIES
 # into the test target — they come from core_services.
 target_compile_definitions(test_sync_e2e PRIVATE VNOTE_TESTING)
 
-# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
-add_custom_command(TARGET test_sync_e2e POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_sync_e2e>
-)
+# No VTextEdit.dll copy anchored here: test_sync_e2e no longer links VTextEdit.
+# The dir-wide copies live on test_reorder_integration and test_missing_nodes_qt,
+# which do.
 
 # W5.T1+W5.T2 test_sync_state_machine retired by T27 (sync-queue-convergence):
 # the matrix relied on the deleted SyncWorker class. State-machine coverage now
@@ -118,15 +115,9 @@ set_property(TEST test_reorder_edge_cases PROPERTY
 set_tests_properties(test_reorder_edge_cases PROPERTIES
   TIMEOUT 120
 )
-# Copy VTextEdit DLL next to the test executable so CTest resolves it at run
-# time. The post-build copy in test_sync_e2e already covers most of the
-# tests/integration output dir on Windows, but anchoring on this target too
-# is defense in depth in case the build order varies.
-add_custom_command(TARGET test_reorder_edge_cases POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_reorder_edge_cases>
-)
+# No VTextEdit.dll copy anchored here: test_reorder_edge_cases no longer links
+# VTextEdit. The dir-wide copies live on test_reorder_integration and
+# test_missing_nodes_qt, which do.
 
 # T7 (missing-files-on-disk): SHARED Qt integration test for the missing-nodes
 # feature. Extended by T8/T9/T11. Surfaces VXCORE_ERR_NODE_NOT_EXISTS through

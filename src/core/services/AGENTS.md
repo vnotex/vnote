@@ -4,6 +4,23 @@ Qt-side service layer wrapping the vxcore C library. Services here are the bridg
 
 For the canonical service catalog, DI rules, and Buffer2/HookManager patterns, see the parent `src/core/AGENTS.md`.
 
+## `core_services` is Qt-Widgets-free and VTextEdit-free (CONTRACT)
+
+`core_services` (`src/core/services/CMakeLists.txt`) links **neither** `Qt::Widgets` **nor** `VTextEdit`. This is deliberate and load-bearing, not an accident:
+
+- `core_services` is a STATIC lib consumed by ~80 pure-core test executables in `tests/core`, `tests/models`, and `tests/controllers`. `VTextEdit` is a SHARED lib that links `Qt::Widgets` **PUBLIC**, so linking it forced every one of those targets to ship `VTextEdit.dll` next to the test exe (and to hit the pre-`WinMain` loader-dialog trap documented in the root `AGENTS.md`).
+- It also dragged QtWidgets into a layer that has no business owning GUI code, which is what `NotificationService` (below) exists to avoid.
+
+`Qt::Gui` **is** allowed (`QGuiApplication`, `QFontDatabase`, `QKeySequence`, `QImageReader`). Network access goes through **`core_net`** (`src/net/networkutils.{h,cpp}` — `vnotex::NetworkUtils` / `NetworkReply` / `NetworkAccess`), a Qt-Core/Network-only static lib that replaced the former `<vtextedit/networkutils.h>` dependency. `core_net` is linked **PUBLIC** because `githubprovider.h` / `giteeprovider.h` expose `vnotex::NetworkReply` in their signatures.
+
+If a service here needs to tell the user something, use one of these three sanctioned alternatives instead of adding a `QMessageBox`:
+
+1. **Move the code to the widget layer** (`src/widgets/`). Reference: `MainWindowTaskContext` (`src/widgets/mainwindowtaskcontext.{h,cpp}`) needs `QInputDialog` for `promptString()`, so it lives in `src/widgets/` while the `ITaskContext` interface it implements stays in `src/core/services/`.
+2. **Use `NotificationService`** (see below) — the Qt-Widgets-free in-memory notification store; all presentation happens in the widget layer.
+3. **Propagate in-band via the `HookContext` out-param** overload of `HookManager::doAction(hook, args, HookContext *)`. Reference: `SyncService`'s `NotebookBeforeClose` handler stashes `syncCancelReason` metadata, `NotebookCoreService::closeNotebook(id, QString *p_errorMessage)` copies it out on hook cancellation, and `ManageNotebooksController::closeNotebook` surfaces it as `result.errorMessage` for the `ManageNotebooksDialog2` banner. The `doAction` out-param is written on **every** return path (including the recursion-guard and no-callbacks paths), so stale metadata cannot leak. Handlers that want first-non-empty-wins semantics must check `getMetadata(key)` before setting; the shared context otherwise gives last-writer-wins.
+
+The compile error is the enforcement: losing the `Qt::Widgets` link removes the QtWidgets include directories, so a regression fails to compile rather than silently re-introducing the dependency.
+
 ## NotificationService
 
 `NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageDismissed` / `messagesCleared`. All presentation (severity→icon mapping, popup, badge) lives in the widget layer (`NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).

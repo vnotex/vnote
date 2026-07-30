@@ -1,6 +1,6 @@
 #include "taskvariablemgr.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QFileInfo>
 #include <QProcess>
 #include <QRandomGenerator>
@@ -195,7 +195,7 @@ void TaskVariableMgr::initTaskVariables() {
     return PathUtils::parentDirPath(task->getFile());
   });
   addVariable("exeFile", [](Task *, const QString &) {
-    return PathUtils::cleanPath(qApp->applicationFilePath());
+    return PathUtils::cleanPath(QCoreApplication::applicationFilePath());
   });
   addVariable("pathSeparator", [](Task *, const QString &) { return QDir::separator(); });
   addVariable("notebookTaskFolder", [this](Task *, const QString &) {

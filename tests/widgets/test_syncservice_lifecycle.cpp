@@ -2,8 +2,9 @@
 // ----------------------------------------------------------------------------
 // Verifies:
 //   1. blockCloseWhileSyncing  — When SyncService reports a sync in progress
-//      for a notebook, the NotebookBeforeClose hook is cancelled and a
-//      QMessageBox::warning is shown to the user.
+//      for a notebook, the NotebookBeforeClose hook is cancelled, the pending
+//      count is exposed, and a user-visible "syncCancelReason" is stashed on
+//      the HookContext. Service-level only: no GUI is involved any more.
 //   2. cancelReasonMetadata    — A second hook handler subscribed at a higher
 //      priority value (runs LATER) observes the HookContext flagged with
 //      isCancelled() and the metadata key "syncCancelReason" populated.
@@ -11,8 +12,16 @@
 //      timeout, SyncService::shutdown() returns within ~31s after invoking
 //      QThread::terminate(), and a qWarning containing "shutdown timed out"
 //      is emitted.
-//   4. visualBlockedDialog     — End-to-end visual proof: real sync-in-progress
-//      flag, real hook fire, modal QMessageBox grabbed to PNG before dismissal.
+//   4. visualBlockedDialog     — End-to-end visual proof of the in-band
+//      channel: real notebook, real sync-in-progress flag, real
+//      ManageNotebooksDialog2 close flow, and the resulting information
+//      BANNER (not a modal) grabbed to PNG carrying the accurate sync reason.
+//
+// The SyncService NotebookBeforeClose handler used to pop a QMessageBox from
+// inside core_services. It no longer does: core_services is Qt-Widgets-free and
+// the reason now travels in-band via HookContext metadata ->
+// NotebookCoreService::closeNotebook out-param -> ManageNotebooksController
+// result.errorMessage -> the dialog banner.
 //
 // Per ADR-1: this test never includes sync/sync_manager.h.
 // Per the T6/T7/T11 deviation: the test links to core_services and does NOT
@@ -26,9 +35,11 @@
 #include <QEvent>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSemaphore>
 #include <QSignalSpy>
+#include <QTemporaryDir>
 #include <QTimer>
 #include <QtTest>
 
@@ -41,6 +52,9 @@
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
 #include <core/services/syncworkqueuemanager.h>
+
+#include <widgets/dialogs/managenotebooksdialog2.h>
+#include <widgets/propertydefs.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -67,48 +81,11 @@ static void captureQtMessage(QtMsgType, const QMessageLogContext &, const QStrin
   }
 }
 
-// Dismisses any QMessageBox the moment Qt shows it, capturing its visible text
-// into m_lastMessageBoxText so tests can assert content. Installed once per
-// test case in initTestCase() so every QMessageBox::warning() popped from the
-// hook handler is auto-accepted (otherwise the test would deadlock on the
-// modal nested event loop).
-class MessageBoxAutoCloser : public QObject {
-  Q_OBJECT
-public:
-  explicit MessageBoxAutoCloser(QObject *p_parent = nullptr) : QObject(p_parent) {}
-
-  bool eventFilter(QObject *p_obj, QEvent *p_event) override {
-    if (p_event->type() == QEvent::Show) {
-      if (auto *box = qobject_cast<QMessageBox *>(p_obj)) {
-        m_lastMessageBoxText = box->text();
-        m_lastMessageBoxTitle = box->windowTitle();
-        ++m_seenCount;
-        // Schedule accept on the next event-loop tick so it fires inside the
-        // nested loop QMessageBox::exec() is about to spin.
-        QTimer::singleShot(0, box, &QDialog::accept);
-      }
-    }
-    return false;
-  }
-
-  void reset() {
-    m_lastMessageBoxText.clear();
-    m_lastMessageBoxTitle.clear();
-    m_seenCount = 0;
-  }
-
-  QString m_lastMessageBoxText;
-  QString m_lastMessageBoxTitle;
-  int m_seenCount = 0;
-};
-
 class TestSyncServiceLifecycle : public QObject {
   Q_OBJECT
 
 private slots:
   void initTestCase();
-  void cleanupTestCase();
-  void cleanup();
 
   void blockCloseWhileSyncing();
   void cancelReasonMetadata();
@@ -121,33 +98,12 @@ private slots:
   void triggerSyncNow_queueFull_silent();
   void triggerSyncNow_rejected_silent();
   void triggerSyncNow_coalesced_silent_regressionGuard();
-
-private:
-  MessageBoxAutoCloser *m_closer = nullptr;
 };
 
 void TestSyncServiceLifecycle::initTestCase() {
   // CRITICAL: enable test mode BEFORE any vxcore_context_create. Mirrors the
   // pattern in tests/AGENTS.md.
   vxcore_set_test_mode(1);
-
-  // Install the auto-closer on the QApplication so any QMessageBox shown by
-  // the SyncService hook handler is dismissed automatically. Without this the
-  // tests would deadlock on the modal nested event loop.
-  m_closer = new MessageBoxAutoCloser(this);
-  qApp->installEventFilter(m_closer);
-}
-
-void TestSyncServiceLifecycle::cleanupTestCase() {
-  if (m_closer) {
-    qApp->removeEventFilter(m_closer);
-  }
-}
-
-void TestSyncServiceLifecycle::cleanup() {
-  if (m_closer) {
-    m_closer->reset();
-  }
 }
 
 void TestSyncServiceLifecycle::blockCloseWhileSyncing() {
@@ -172,24 +128,27 @@ void TestSyncServiceLifecycle::blockCloseWhileSyncing() {
   syncService.testSetInProgress(QStringLiteral("nbA"), true);
 
   // Fire the NotebookBeforeClose hook; SyncService's handler should cancel it
-  // and pop a QMessageBox::warning (intercepted + accepted by m_closer).
+  // and stash the reason in the context (no modal — see the file header).
   NotebookCloseEvent event;
   event.notebookId = QStringLiteral("nbA");
-  const bool cancelled = hookMgr.doAction(HookNames::NotebookBeforeClose, event);
+  HookContext outCtx;
+  const bool cancelled = hookMgr.doAction(HookNames::NotebookBeforeClose, event, &outCtx);
   QVERIFY2(cancelled, "doAction should report cancelled when sync is in progress");
-  QVERIFY2(m_closer->m_seenCount >= 1, "expected QMessageBox::warning to be shown");
+  QCOMPARE(outCtx.hookName(), QString(HookNames::NotebookBeforeClose));
+  QCOMPARE(outCtx.getMetadata(QStringLiteral("pendingCount")).toInt(), 0);
+  const QString reason = outCtx.getMetadata(QStringLiteral("syncCancelReason")).toString();
   QVERIFY2(
-      m_closer->m_lastMessageBoxText.contains(QStringLiteral("Sync"), Qt::CaseInsensitive) &&
-          m_closer->m_lastMessageBoxText.contains(QStringLiteral("in progress"),
-                                                  Qt::CaseInsensitive),
-      qPrintable(QStringLiteral("Unexpected box text: %1").arg(m_closer->m_lastMessageBoxText)));
+      reason.contains(QStringLiteral("Sync"), Qt::CaseInsensitive) &&
+          reason.contains(QStringLiteral("in progress"), Qt::CaseInsensitive),
+      qPrintable(QStringLiteral("Unexpected reason: %1").arg(reason)));
 
-  // Reset the in-progress flag and verify the hook is no longer cancelled.
-  m_closer->reset();
+  // Reset the in-progress flag and verify the hook is no longer cancelled, and
+  // that the out-param carries no stale reason from the previous call.
   syncService.testSetInProgress(QStringLiteral("nbA"), false);
-  const bool cancelled2 = hookMgr.doAction(HookNames::NotebookBeforeClose, event);
+  const bool cancelled2 = hookMgr.doAction(HookNames::NotebookBeforeClose, event, &outCtx);
   QVERIFY2(!cancelled2, "doAction should NOT cancel when sync is not in progress");
-  QCOMPARE(m_closer->m_seenCount, 0);
+  QVERIFY2(outCtx.getMetadata(QStringLiteral("syncCancelReason")).toString().isEmpty(),
+           "out-param must be overwritten on the non-cancelled path (no stale metadata)");
 
   guard.cleanup();
   vxcore_context_destroy(ctx);
@@ -317,6 +276,9 @@ void TestSyncServiceLifecycle::visualBlockedDialog() {
   HookManager hookMgr;
   services.registerService<HookManager>(&hookMgr);
   NotebookCoreService notebookService(ctx);
+  // Required so closeNotebook actually fires (and reads back) the
+  // NotebookBeforeClose hook, which is what this test exercises end to end.
+  notebookService.setHookManager(&hookMgr);
   services.registerService<NotebookCoreService>(&notebookService);
   SyncCredentialsStore credStore(services);
   services.registerService<SyncCredentialsStore>(&credStore);
@@ -324,54 +286,99 @@ void TestSyncServiceLifecycle::visualBlockedDialog() {
   SyncService syncService(services);
   services.registerService<SyncService>(&syncService);
 
-  syncService.testSetInProgress(QStringLiteral("nbVisual"), true);
+  // A real notebook is required so the dialog has something to select and the
+  // close path reaches NotebookCoreService::closeNotebook for real.
+  QTemporaryDir tmpDir;
+  QVERIFY(tmpDir.isValid());
+  const QString rootFolder = QDir(tmpDir.path()).filePath(QStringLiteral("nbVisual"));
+  QVERIFY(QDir().mkpath(rootFolder));
+  const QString configJson =
+      QStringLiteral("{\"name\":\"Blocked Notebook\",\"description\":\"\",\"version\":\"1\","
+                     "\"imageFolder\":\"_v_images\",\"attachmentFolder\":\"_v_attachments\","
+                     "\"recycleBinFolder\":\"_v_recycle_bin\",\"createdUtc\":1700000000000}");
+  const QString nbId =
+      notebookService.createNotebook(rootFolder, configJson, NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
 
-  // Temporarily uninstall the auto-closer so the modal QMessageBox stays open
-  // long enough for our visual-grab handler to capture a screenshot.
-  qApp->removeEventFilter(m_closer);
+  // Force the sync-in-progress flag so the NotebookBeforeClose hook cancels.
+  syncService.testSetInProgress(nbId, true);
 
-  QString capturedText;
-  bool grabbed = false;
+  ManageNotebooksDialog2 dialog(services, nbId);
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
 
-  // Locate the modal QMessageBox after a 150 ms delay (lets QMessageBox::exec
-  // spin its nested loop), grab a screenshot, then accept the dialog.
-  QTimer::singleShot(150, this, [&]() {
-    QWidget *modal = qApp->activeModalWidget();
-    if (auto *box = qobject_cast<QMessageBox *>(modal)) {
-      capturedText = box->text();
-      QPixmap pix = box->grab();
-      if (!pix.isNull()) {
-        // Save evidence next to the source-of-truth evidence dir at the repo
-        // root. Best-effort: create the directory if needed.
-        QString outDir = QStringLiteral(".sisyphus/evidence");
-        QDir().mkpath(outDir);
-        const QString outPath = outDir + QStringLiteral("/task-17-blocked.png");
-        grabbed = pix.save(outPath);
-        qDebug() << "Saved blocked-dialog screenshot to" << outPath << "ok=" << grabbed;
+  QPushButton *closeBtn = nullptr;
+  for (auto *btn : dialog.findChildren<QPushButton *>()) {
+    if (btn->text().contains(QStringLiteral("Close Notebook"))) {
+      closeBtn = btn;
+      break;
+    }
+  }
+  QVERIFY2(closeBtn, "Close Notebook button not found");
+  QVERIFY2(closeBtn->isEnabled(), "Close Notebook button should be enabled for the selection");
+
+  // The close flow first pops a legitimate Ok/Cancel confirmation. Accept it
+  // from a timer so the nested modal loop unwinds; the thing under test is the
+  // BANNER that follows, not this confirmation.
+  QTimer::singleShot(100, this, []() {
+    if (auto *box = qobject_cast<QMessageBox *>(qApp->activeModalWidget())) {
+      if (auto *ok = box->button(QMessageBox::Ok)) {
+        ok->click();
+      } else {
+        box->accept();
       }
-      box->accept();
-    } else if (modal) {
-      // If something else is modal (shouldn't be), close it.
-      modal->close();
     }
   });
 
-  NotebookCloseEvent event;
-  event.notebookId = QStringLiteral("nbVisual");
-  const bool cancelled = hookMgr.doAction(HookNames::NotebookBeforeClose, event);
+  closeBtn->click();
+  QTest::qWait(200);
 
-  // Re-install closer for later tests (cleanup() resets state too).
-  qApp->installEventFilter(m_closer);
+  // The notebook must still be open: the hook refused the close.
+  bool stillListed = false;
+  for (const auto &nb : notebookService.listNotebooks()) {
+    if (nb.toObject().value(QStringLiteral("id")).toString() == nbId) {
+      stillListed = true;
+      break;
+    }
+  }
+  QVERIFY2(stillListed, "notebook must NOT be closed while sync is in progress");
 
-  QVERIFY(cancelled);
-  QVERIFY2(capturedText.contains(QStringLiteral("Sync"), Qt::CaseInsensitive) &&
-               capturedText.contains(QStringLiteral("in progress"), Qt::CaseInsensitive),
-           qPrintable(QStringLiteral("Unexpected dialog text: %1").arg(capturedText)));
+  // Grab the information banner: Dialog::setInformationText creates a
+  // QPlainTextEdit tagged with the dynamic "state" property.
+  QPlainTextEdit *banner = nullptr;
+  for (auto *edit : dialog.findChildren<QPlainTextEdit *>()) {
+    if (edit->property(PropertyDefs::c_state).toString() == QStringLiteral("error")) {
+      banner = edit;
+      break;
+    }
+  }
+  QVERIFY2(banner, "expected an error-level information banner on the dialog");
+
+  const QString bannerText = banner->toPlainText();
+  QVERIFY2(bannerText.contains(QStringLiteral("Sync"), Qt::CaseInsensitive) &&
+               bannerText.contains(QStringLiteral("in progress"), Qt::CaseInsensitive),
+           qPrintable(QStringLiteral("Unexpected banner text: %1").arg(bannerText)));
+  // The old hardcoded, misleading string must be gone.
+  QVERIFY2(!bannerText.contains(QStringLiteral("unsaved changes"), Qt::CaseInsensitive),
+           qPrintable(QStringLiteral("banner still shows the misleading generic string: %1")
+                          .arg(bannerText)));
+
+  // Visual-proof artifact: capture the banner-bearing dialog.
+  bool grabbed = false;
+  const QPixmap pix = dialog.grab();
+  if (!pix.isNull()) {
+    const QString outDir = QStringLiteral(".sisyphus/evidence");
+    QDir().mkpath(outDir);
+    const QString outPath = outDir + QStringLiteral("/task-17-blocked.png");
+    grabbed = pix.save(outPath);
+    qDebug() << "Saved blocked-close banner screenshot to" << outPath << "ok=" << grabbed;
+  }
   // grabbed may legitimately be false on headless CI without a screen, so we
   // log but do NOT fail on that.
-  qDebug() << "visualBlockedDialog: capturedText=" << capturedText << "grabbed=" << grabbed;
+  qDebug() << "visualBlockedDialog: bannerText=" << bannerText << "grabbed=" << grabbed;
 
-  syncService.testSetInProgress(QStringLiteral("nbVisual"), false);
+  dialog.close();
+  syncService.testSetInProgress(nbId, false);
   guard.cleanup();
   vxcore_context_destroy(ctx);
 }

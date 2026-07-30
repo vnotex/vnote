@@ -1,6 +1,5 @@
 #include "task.h"
 
-#include <QAction>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>

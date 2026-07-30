@@ -8,6 +8,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <core/hookcontext.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
@@ -153,7 +154,13 @@ QString NotebookCoreService::cloneNotebookFromUrl(const QString &p_targetDir,
   return resolvedId;
 }
 
-bool NotebookCoreService::closeNotebook(const QString &p_notebookId) {
+bool NotebookCoreService::closeNotebook(const QString &p_notebookId, QString *p_errorMessage) {
+  // Always clear at entry so a caller-owned QString can never carry a stale
+  // reason from a previous call into this one.
+  if (p_errorMessage) {
+    p_errorMessage->clear();
+  }
+
   if (!checkContext()) {
     return false;
   }
@@ -162,7 +169,14 @@ bool NotebookCoreService::closeNotebook(const QString &p_notebookId) {
   if (m_hookMgr) {
     NotebookCloseEvent event;
     event.notebookId = p_notebookId;
-    if (m_hookMgr->doAction(HookNames::NotebookBeforeClose, event)) {
+    HookContext ctx;
+    if (m_hookMgr->doAction(HookNames::NotebookBeforeClose, event, &ctx)) {
+      // The handler that cancelled may have stashed a user-visible reason.
+      // This is the in-band channel that replaces the modal SyncService used to
+      // pop from inside core_services (which is deliberately Qt-Widgets-free).
+      if (p_errorMessage) {
+        *p_errorMessage = ctx.getMetadata(QStringLiteral("syncCancelReason")).toString();
+      }
       return false;
     }
   }

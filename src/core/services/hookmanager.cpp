@@ -47,22 +47,37 @@ bool HookManager::removeAction(int p_id) {
 bool HookManager::doAction(const QString &p_hook) { return doAction(p_hook, QVariantMap()); }
 
 bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args) {
+  return doAction(p_hook, p_args, nullptr);
+}
+
+bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args,
+                           HookContext *p_outCtx) {
+  // The context is always constructed here so that hookName() is correct; it is
+  // copied out on every return path so a caller-owned context can never retain
+  // stale metadata from a previous call.
+  HookContext ctx(p_hook);
+
   // Recursion guard.
   if (m_recursionDepth >= c_maxRecursionDepth) {
     qWarning() << "HookManager::doAction: max recursion depth reached for hook" << p_hook;
     emit actionError(p_hook, "Max recursion depth exceeded");
+    if (p_outCtx) {
+      *p_outCtx = ctx;
+    }
     return false;
   }
 
   auto it = m_actions.constFind(p_hook);
   if (it == m_actions.constEnd()) {
+    if (p_outCtx) {
+      *p_outCtx = ctx;
+    }
     return false; // No actions registered, not cancelled.
   }
 
   // Take a copy of the list in case callbacks modify registration.
   const QList<ActionEntry> callbacks = it.value();
 
-  HookContext ctx(p_hook);
   ++m_recursionDepth;
 
   for (const ActionEntry &entry : callbacks) {
@@ -83,6 +98,10 @@ bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args) {
   }
 
   --m_recursionDepth;
+
+  if (p_outCtx) {
+    *p_outCtx = ctx;
+  }
   return ctx.isCancelled();
 }
 
@@ -186,6 +205,11 @@ bool HookManager::doAction(const QString &p_hook, const ImageHostRemoveEvent &p_
 
 bool HookManager::doAction(const QString &p_hook, const SyncCancelledEvent &p_event) {
   return doAction(p_hook, p_event.toVariantMap());
+}
+
+bool HookManager::doAction(const QString &p_hook, const NotebookCloseEvent &p_event,
+                           HookContext *p_outCtx) {
+  return doAction(p_hook, p_event.toVariantMap(), p_outCtx);
 }
 
 // ===== Filters =====

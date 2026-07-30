@@ -10,6 +10,9 @@ add_qt_test(test_duplicate_open_guard
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
     Qt6::Concurrent
+    # newnotebookcontroller.cpp includes <QProgressDialog>. GUILESS (no
+    # QApplication) but it still needs the QtWidgets headers.
+    Qt6::Widgets
     core_services
     vxcore
   GUILESS
@@ -48,6 +51,8 @@ add_qt_test(test_openvnote3notebookcontroller
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
     Qt6::Concurrent
+    # newnotebookcontroller.cpp includes <QProgressDialog>.
+    Qt6::Widgets
     core_services
     vxcore
   GUILESS
@@ -58,6 +63,8 @@ add_qt_test(test_newnotebookcontroller
     test_newnotebookcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
   LINKS
+    # newnotebookcontroller.cpp includes <QProgressDialog>.
+    Qt6::Widgets
     core_services
     vxcore
   GUILESS
@@ -172,12 +179,13 @@ set_tests_properties(test_syncconflictcontroller PROPERTIES
 target_compile_definitions(test_syncconflictcontroller PRIVATE VNOTE_TESTING)
 
 # Copy VTextEdit DLL next to test executables so CTest can find it at runtime.
-# Pick any test target to anchor the POST_BUILD command; the DLL lands in the
-# shared output directory used by all controller tests.
-add_custom_command(TARGET test_notebooksyncinfocontroller POST_BUILD
+# Anchored on a target that actually links VTextEdit (test_searchcontroller,
+# via core_configs); the DLL lands in the shared output directory used by all
+# controller tests. test_notebooksyncinfocontroller no longer links it.
+add_custom_command(TARGET test_searchcontroller POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebooksyncinfocontroller>
+    $<TARGET_FILE_DIR:test_searchcontroller>
 )
 
 add_qt_test(test_syncservice_credentials_cleanup
@@ -308,6 +316,19 @@ add_qt_test(test_open_notebook_controller_readonly_param
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
     Qt6::Concurrent
+    core_services
+    vxcore
+  GUILESS
+)
+
+# ManageNotebooksController::closeNotebook - hook-cancellation reason routing.
+# Covers the in-band HookContext out-param channel that replaced the QMessageBox
+# SyncService used to pop from inside core_services.
+add_qt_test(test_managenotebookscontroller_closereason
+  SOURCES
+    test_managenotebookscontroller_closereason.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/managenotebookscontroller.cpp
+  LINKS
     core_services
     vxcore
   GUILESS

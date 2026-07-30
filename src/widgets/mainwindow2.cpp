@@ -75,8 +75,8 @@
 #include <widgets/consoleviewer.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
+#include <widgets/mainwindowtaskcontext.h>
 
-#include <core/services/mainwindowtaskcontext.h>
 #include <core/services/taskservice.h>
 
 using namespace vnotex;

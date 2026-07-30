@@ -56,6 +56,23 @@ public:
   // If cancelled, downstream processing should be skipped.
   bool doAction(const QString &p_hook, const QVariantMap &p_args);
 
+  // Same as above, but also hands the caller the HookContext the callbacks ran
+  // against, so metadata a handler set (e.g. a cancellation reason) can reach
+  // production code in-band instead of being discarded.
+  //
+  // The context is constructed INTERNALLY with the correct hook name (a
+  // caller-built HookContext would carry an empty hookName(), and there is no
+  // setter). *p_outCtx is overwritten on EVERY return path - including the
+  // recursion-guard bail-out and the no-callbacks-registered path - so stale
+  // metadata from a previous call can never leak through.
+  //
+  // Metadata precedence: all callbacks for a hook share ONE context, invoked in
+  // priority order, so a later handler CAN overwrite an earlier handler's key
+  // (last writer wins). Handlers that want first-non-empty-wins semantics must
+  // check getMetadata(key) before setting - see SyncService's
+  // NotebookBeforeClose handler for the reference implementation.
+  bool doAction(const QString &p_hook, const QVariantMap &p_args, HookContext *p_outCtx);
+
   // ===== Typed Actions (emission) =====
   // Overloads that accept typed event structs. Each calls toVariantMap() then
   // delegates to the raw QVariantMap doAction.
@@ -85,6 +102,11 @@ public:
   bool doAction(const QString &p_hook, const ImageHostUploadEvent &p_event);
   bool doAction(const QString &p_hook, const ImageHostRemoveEvent &p_event);
   bool doAction(const QString &p_hook, const SyncCancelledEvent &p_event);
+
+  // Typed forwarding overload with a HookContext out-param. Keeps
+  // NotebookCoreService::closeNotebook on the typed API instead of forcing a
+  // manual QVariantMap conversion just to observe the cancellation reason.
+  bool doAction(const QString &p_hook, const NotebookCloseEvent &p_event, HookContext *p_outCtx);
 
   // ===== Typed Actions (subscription) =====
   // Template adapter: wraps a typed callback into the raw QVariantMap callback.

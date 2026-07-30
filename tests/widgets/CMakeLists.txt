@@ -213,19 +213,49 @@ add_custom_command(TARGET test_settings_navigation POST_BUILD
 )
 
 # T17: SyncService lifecycle (NotebookBeforeClose hook + bounded shutdown).
-# NOT GUILESS — needs QApplication for the QMessageBox popped from the
-# NotebookBeforeClose hook handler. Per the T6/T7/T11 deviation: link via
-# core_services rather than dual-compiling syncservice/syncworker/synccredentialsstore
-# (would cause duplicate-symbol errors and break the VNOTE_KEYCHAIN_AVAILABLE
-# compile gate). VNOTE_TESTING is reserved on the test target per ADR-6.
+# NOT GUILESS — visualBlockedDialog drives a real ManageNotebooksDialog2 and
+# reads back its information banner, which is now the user-facing channel for
+# the sync close-block reason (the old QMessageBox popped from inside
+# core_services is gone). The dialog + its base widgets + the controller are
+# compiled in because there is no separate widgets static library.
+# Per the T6/T7/T11 deviation: link via core_services rather than dual-compiling
+# syncservice/syncworker/synccredentialsstore (would cause duplicate-symbol
+# errors and break the VNOTE_KEYCHAIN_AVAILABLE compile gate).
+# VNOTE_TESTING is reserved on the test target per ADR-6.
 add_qt_test(test_syncservice_lifecycle
   SOURCES
     test_syncservice_lifecycle.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/managenotebooksdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/listwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+    ${CMAKE_SOURCE_DIR}/src/controllers/managenotebookscontroller.cpp
   LINKS
     core_services
+    core_configs
     vxcore
+    # src/gui/utils/widgetutils.cpp includes <vtextedit/vtextedit.h>.
     VTextEdit
     Qt6::Widgets
+)
+target_include_directories(test_syncservice_lifecycle PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
 )
 target_compile_definitions(test_syncservice_lifecycle PRIVATE VNOTE_TESTING)
 
@@ -403,6 +433,7 @@ add_qt_test(test_notebookexplorer2_fs_suppression
   LINKS
     core_services
     vxcore
+  GUILESS
 )
 
 # T11: NotebookExplorer2 multi-select smoke (currently QSKIP — see test source
@@ -1008,6 +1039,9 @@ add_qt_test(test_markdownvieweradapter_anchor
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
   LINKS
     Qt6::Widgets
+    # graphhelper.h includes <vtextedit/lrucache.h>. This used to arrive
+    # transitively through core_services; that link was severed.
+    VTextEdit
     core_services
     vxcore
 )

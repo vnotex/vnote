@@ -15,7 +15,7 @@
 #include <QVBoxLayout>
 
 #include <vtextedit/markdownutils.h>
-#include <vtextedit/networkutils.h>
+#include <net/networkutils.h>
 
 #include <core/configmgr2.h>
 #include <core/sessionconfig.h>
@@ -139,8 +139,8 @@ void ImageInsertDialog::checkImagePathInput() {
     m_source = Source::ImageData;
 
     if (!m_downloader) {
-      m_downloader = new vte::NetworkAccess(this);
-      connect(m_downloader, &vte::NetworkAccess::requestFinished, this,
+      m_downloader = new NetworkAccess(this);
+      connect(m_downloader, &NetworkAccess::requestFinished, this,
               &ImageInsertDialog::handleImageDownloaded);
     }
 
@@ -213,8 +213,7 @@ void ImageInsertDialog::setImagePath(const QString &p_path) {
   m_imagePathEdit->setText(p_path);
 }
 
-void ImageInsertDialog::handleImageDownloaded(const vte::NetworkReply &p_data,
-                                              const QString &p_url) {
+void ImageInsertDialog::handleImageDownloaded(const NetworkReply &p_data, const QString &p_url) {
   setImage(QImage::fromData(p_data.m_data));
 
   // Save it to a temp file to avoid potential data loss via QImage.

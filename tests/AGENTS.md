@@ -109,8 +109,11 @@ cmake --build build --config Release --target test_error test_exception test_pat
 
 | Library | Purpose | Links |
 |---------|---------|-------|
-| `core_services` | Service layer (ConfigCoreService, NotebookCoreService, etc.) | Qt6::Core, Qt6::Gui, vxcore |
+| `core_services` | Service layer (ConfigCoreService, NotebookCoreService, etc.) | Qt6::Core, Qt6::Gui, Qt6::Network, Qt6::Concurrent, vxcore, core_net |
+| `core_net` | Qt-Core/Network-only HTTP helpers (`vnotex::NetworkAccess`) | Qt6::Core, Qt6::Network |
 | `core_configs` | Config classes (ConfigMgr2, MainConfig, SessionConfig, etc.) | core_services, VTextEdit |
+
+`core_services` links **neither `Qt::Widgets` nor `VTextEdit`** — see [`../src/core/services/AGENTS.md`](../src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract). Practical consequence for tests: a target that needs QtWidgets or vtextedit headers must say so in its own `LINKS`; nothing arrives transitively through `core_services` any more.
 
 ## Run Tests
 
@@ -131,7 +134,7 @@ ctest --test-dir build --output-on-failure  # Show output on failure
 
 ### VTextEdit.dll runtime copy
 
-Tests that link `core_services` (transitively or directly) load `VTextEdit.dll` at runtime. The build copies the DLL next to each subdirectory's test exes via a `POST_BUILD` step anchored on one test target per subdir (the canonical reference is `tests/utils/CMakeLists.txt:78-83`):
+Tests that link `VTextEdit` (directly, or transitively via `core_configs`) load `VTextEdit.dll` at runtime. **`core_services` alone no longer pulls it in**, so a pure-core test that links only `core_services` + `vxcore` runs with no `VTextEdit.dll` anywhere near it. The build copies the DLL next to each subdirectory's test exes via a `POST_BUILD` step anchored on one test target per subdir (the canonical reference is `tests/utils/CMakeLists.txt:78-83`):
 
 ```cmake
 # Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
@@ -142,7 +145,7 @@ add_custom_command(TARGET test_clipboard_image POST_BUILD
 )
 ```
 
-**When adding tests to a NEW subdirectory under `tests/`**, that subdir's `CMakeLists.txt` MUST include this `POST_BUILD` block anchored on any one test target. Without it, `ctest` reports the test as failed with exit code `0xc0000135` (Windows "DLL not found") and the test binary never reaches its `main()`. One copy per subdir is enough; `copy_if_different` makes incremental rebuilds free.
+**When adding tests to a NEW subdirectory under `tests/` whose targets link `VTextEdit`**, that subdir's `CMakeLists.txt` MUST include this `POST_BUILD` block anchored on any one such test target. Without it, `ctest` reports the test as failed with exit code `0xc0000135` (Windows "DLL not found") and the test binary never reaches its `main()`. One copy per subdir is enough; `copy_if_different` makes incremental rebuilds free.
 
 ## Adding New Tests
 
@@ -156,9 +159,18 @@ add_qt_test(test_myclass
     ${CMAKE_SOURCE_DIR}/src/module/myclass.cpp
   LINKS
     Qt6::Gui  # Optional: extra Qt modules
-  GUILESS     # Optional: use QCoreApplication instead of QApplication
+  GUILESS     # Optional: do NOT link Qt6::Widgets
 )
 ```
+
+### The `GUILESS` flag is load-bearing (linking only)
+
+`GUILESS` controls **one thing**: whether `add_qt_test` adds `Qt6::Gui` + `Qt6::Widgets` to the target. Non-GUILESS targets get them; GUILESS targets do not. This became load-bearing when `core_services` stopped linking `VTextEdit` (which used to leak `Qt::Widgets` in transitively) — see [`../src/core/services/AGENTS.md`](../src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract).
+
+It does **not** — and cannot — choose between `QTEST_MAIN` and `QTEST_GUILESS_MAIN`. That is a source-level macro decision made at the bottom of the test `.cpp`. The two are related but independent:
+
+- A test using `QTEST_GUILESS_MAIN` that merely **includes** a QtWidgets header (without ever constructing a `QApplication`) is correctly labelled `GUILESS` and should list `Qt6::Widgets` explicitly in `LINKS`. `test_clipboard_image`, `test_exportcontroller`, `test_findunitedentry`, `test_missing_nodes_qt`, `test_duplicate_open_guard`, `test_newnotebookcontroller`, and `test_openvnote3notebookcontroller` all do exactly this.
+- Never "fix" a missing-QtWidgets compile error by relaxing `core_services`. Add the module the failing target actually needs to that target's `LINKS`.
 
 ## Qt Test Macros
 

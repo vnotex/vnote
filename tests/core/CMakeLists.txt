@@ -655,6 +655,7 @@ add_qt_test(test_sync_close_block
   LINKS
     core_services
     vxcore
+  GUILESS
 )
 target_compile_definitions(test_sync_close_block PRIVATE VNOTE_TESTING)
 if(MSVC)

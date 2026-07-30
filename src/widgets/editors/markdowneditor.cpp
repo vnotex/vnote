@@ -21,7 +21,6 @@
 
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/markdownutils.h>
-#include <vtextedit/networkutils.h>
 #include <vtextedit/previewdata.h>
 #include <vtextedit/previewmgr.h>
 #include <vtextedit/textblockdata.h>
@@ -48,6 +47,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/imageutils.h>
 #include <imagehost/imagehosttypes.h>
+#include <net/networkutils.h>
 #include <utils/clipboardutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
@@ -1404,7 +1404,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
       if (imageUrl.startsWith(QStringLiteral("//"))) {
         imageUrl.prepend(QStringLiteral("https:"));
       }
-      QByteArray data = vte::NetworkAccess::request(QUrl(imageUrl)).m_data;
+      QByteArray data = NetworkAccess::request(QUrl(imageUrl)).m_data;
       if (!data.isEmpty()) {
         // Prefer the suffix from the real data.
         auto suffix = ImageUtils::guessImageSuffix(data);

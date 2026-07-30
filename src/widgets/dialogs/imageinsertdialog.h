@@ -13,13 +13,10 @@ class QTimer;
 class QTemporaryFile;
 class QScrollArea;
 
-namespace vte {
-class NetworkAccess;
-struct NetworkReply;
-} // namespace vte
-
 namespace vnotex {
 class ConfigMgr2;
+class NetworkAccess;
+struct NetworkReply;
 
 class ImageInsertDialog : public Dialog {
   Q_OBJECT
@@ -53,7 +50,7 @@ private slots:
 
   void browseFile();
 
-  void handleImageDownloaded(const vte::NetworkReply &p_data, const QString &p_url);
+  void handleImageDownloaded(const vnotex::NetworkReply &p_data, const QString &p_url);
 
 private:
   void setupUI(const QString &p_title, const QString &p_imageTitle, const QString &p_imageAlt,
@@ -83,7 +80,7 @@ private:
   QImage m_image;
 
   // Managed by QObject.
-  vte::NetworkAccess *m_downloader = nullptr;
+  vnotex::NetworkAccess *m_downloader = nullptr;
 
   // Managed by QObject.
   QTimer *m_imagePathCheckTimer = nullptr;

@@ -16,7 +16,11 @@ class IImageHostProvider;
 // Background worker for image host operations.
 // Designed to live on a dedicated QThread (moved via moveToThread).
 // Uses a re-entrancy guard (m_busy + m_queue) to prevent nested execution
-// when provider sync methods call processEvents() internally.
+// when provider sync methods spin a nested event loop internally. The blocking
+// HTTP helper in <net/networkutils.h> uses a local QEventLoop with the default
+// flags (it used to busy-spin on QCoreApplication::processEvents()); either way
+// a queued doUpload/doRemove can be dispatched while an operation is blocked,
+// so the guard remains required.
 class ImageHostWorker : public QObject
 {
   Q_OBJECT

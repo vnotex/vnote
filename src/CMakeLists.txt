@@ -85,6 +85,8 @@ target_compile_definitions(vnote PRIVATE
     QT_MESSAGELOGCONTEXT
 )
 
+# core_net must be declared before core, which links it.
+add_subdirectory(net)
 add_subdirectory(core)
 add_subdirectory(gui)
 add_subdirectory(export)

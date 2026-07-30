@@ -7,7 +7,7 @@
 #include "fileutils2.h"
 #include "pathutils.h"
 #include <QDebug>
-#include <vtextedit/networkutils.h>
+#include <net/networkutils.h>
 
 using namespace vnotex;
 
@@ -34,7 +34,7 @@ QString WebUtils::toDataUri(const QUrl &p_url, bool p_keepTitle) {
   QByteArray data;
   if (p_url.scheme() == "https" || p_url.scheme() == "http") {
     // Download it.
-    data = vte::NetworkAccess::request(p_url).m_data;
+    data = NetworkAccess::request(p_url).m_data;
   } else if (finfo.exists()) {
     Error err = FileUtils2::readFile(filePath, &data);
     if (err) {
@@ -88,7 +88,7 @@ QString WebUtils::copyResource(const QUrl &p_url, const QString &p_folder) {
   bool succ = true;
   if (p_url.scheme() == "https" || p_url.scheme() == "http") {
     // Download it.
-    auto data = vte::NetworkAccess::request(p_url).m_data;
+    auto data = NetworkAccess::request(p_url).m_data;
     if (!data.isEmpty()) {
       Error err = FileUtils2::writeFile(targetFile, data);
       if (err) {

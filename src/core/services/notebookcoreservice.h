@@ -79,7 +79,12 @@ public:
                                const QString &p_credentialsJson,
                                VxCoreSyncCancellation *p_cancellationToken = nullptr,
                                VxCoreError *p_outErr = nullptr);
-  bool closeNotebook(const QString &p_notebookId);
+  // p_errorMessage: optional out-param carrying a human-readable reason when the
+  //   close is CANCELLED by a NotebookBeforeClose hook handler (e.g. SyncService
+  //   blocking the close while a sync is in flight). It is cleared at entry and
+  //   filled only on hook cancellation - a raw vxcore failure leaves it empty so
+  //   the caller falls back to its own generic message.
+  bool closeNotebook(const QString &p_notebookId, QString *p_errorMessage = nullptr);
   QJsonArray listNotebooks() const;
   QJsonObject getNotebookConfig(const QString &p_notebookId) const;
   bool updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);

@@ -1,6 +1,5 @@
 #include "syncservice.h"
 
-#include <QApplication>
 #include <QDateTime>
 #include <QDebug>
 #include <QJsonArray>
@@ -8,7 +7,6 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLocale>
-#include <QMessageBox>
 #include <QMetaObject>
 #include <QMutexLocker>
 #include <QThread>
@@ -123,8 +121,11 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
   // T17: subscribe to NotebookBeforeClose. Refuse the close while a sync is
   // in progress for the same notebook. Per ADR-9 we use HookContext::cancel()
   // (no-arg) and stash a user-visible reason via setMetadata("syncCancelReason", ...).
-  // The handler also pops a QMessageBox directly because HookManager guarantees
-  // single-threaded (GUI-thread) handler execution.
+  // That metadata is the LIVE production channel: NotebookCoreService::closeNotebook
+  // copies it out of the HookContext into its p_errorMessage out-param, and
+  // ManageNotebooksController surfaces it as the dialog's information banner.
+  // Do NOT pop a QMessageBox from here - core_services is deliberately
+  // Qt-Widgets-free (see src/core/services/CMakeLists.txt).
   auto *hookMgr = m_services.get<HookManager>();
   if (hookMgr) {
     hookMgr->addAction<NotebookCloseEvent>(
@@ -155,9 +156,12 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
                          : tr("Sync work is queued for this notebook (%1 item(s)). Cancel the "
                               "queued sync from the toolbar before closing.")
                                .arg(pendingCount);
-          p_ctx.setMetadata(QStringLiteral("syncCancelReason"), reason);
-          QMessageBox::warning(qApp ? qApp->activeWindow() : nullptr, tr("Cannot close notebook"),
-                               reason);
+          // First non-empty reason wins: all handlers for a hook share one
+          // context, so an earlier (lower-priority-number) handler's reason is
+          // not clobbered here.
+          if (p_ctx.getMetadata(QStringLiteral("syncCancelReason")).toString().isEmpty()) {
+            p_ctx.setMetadata(QStringLiteral("syncCancelReason"), reason);
+          }
         },
         /*priority=*/10);
 

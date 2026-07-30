@@ -99,18 +99,18 @@ QPair<QByteArray, QByteArray> GitHubProvider::acceptHeader() {
   return qMakePair(QByteArray("Accept"), QByteArray("application/vnd.github.v3+json"));
 }
 
-vte::NetworkAccess::RawHeaderPairs GitHubProvider::prepareCommonHeaders(const QString &p_token) {
-  vte::NetworkAccess::RawHeaderPairs rawHeader;
+NetworkAccess::RawHeaderPairs GitHubProvider::prepareCommonHeaders(const QString &p_token) {
+  NetworkAccess::RawHeaderPairs rawHeader;
   rawHeader.push_back(authorizationHeader(p_token));
   rawHeader.push_back(acceptHeader());
   return rawHeader;
 }
 
-vte::NetworkReply GitHubProvider::getRepoInfo(const QString &p_token, const QString &p_userName,
+NetworkReply GitHubProvider::getRepoInfo(const QString &p_token, const QString &p_userName,
                                               const QString &p_repoName) const {
   auto rawHeader = prepareCommonHeaders(p_token);
   const auto urlStr = QStringLiteral("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
-  auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
+  auto reply = NetworkAccess::request(QUrl(urlStr), rawHeader);
   return reply;
 }
 
@@ -140,7 +140,7 @@ ImageUploadResult GitHubProvider::upload(const QByteArray &p_data, const QString
       QStringLiteral("%1/repos/%2/%3/contents/%4").arg(c_apiUrl, m_userName, m_repoName, p_path);
 
   // Check if @p_path already exists.
-  auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
+  auto reply = NetworkAccess::request(QUrl(urlStr), rawHeader);
   if (reply.m_error == QNetworkReply::NoError) {
     result.errorMessage = tr("The resource already exists at the image host (%1).").arg(p_path);
     return result;
@@ -155,7 +155,7 @@ ImageUploadResult GitHubProvider::upload(const QByteArray &p_data, const QString
   requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_ADD: %1").arg(p_path);
   requestDataObj[QStringLiteral("content")] = QString::fromUtf8(p_data.toBase64());
   auto requestData = Utils::toJsonString(requestDataObj);
-  reply = vte::NetworkAccess::put(QUrl(urlStr), rawHeader, requestData);
+  reply = NetworkAccess::put(QUrl(urlStr), rawHeader, requestData);
   if (reply.m_error != QNetworkReply::NoError) {
     result.errorMessage = tr("Failed to create resource at the image host (%1) (%2) (%3).")
                               .arg(urlStr, reply.errorStr(), reply.m_data);
@@ -200,7 +200,7 @@ bool GitHubProvider::remove(const QString &p_url, QString &p_msg) {
 
   // Get the SHA of the resource.
   QString sha = "";
-  auto reply = vte::NetworkAccess::request(QUrl(urlStr), rawHeader);
+  auto reply = NetworkAccess::request(QUrl(urlStr), rawHeader);
   if (reply.m_error == QNetworkReply::NoError) {
     auto replyObj = Utils::fromJsonString(reply.m_data);
     Q_ASSERT(!replyObj.isEmpty());
@@ -211,7 +211,7 @@ bool GitHubProvider::remove(const QString &p_url, QString &p_msg) {
     const auto fileInfo = QFileInfo(urlStr);
     const auto urlFilePath = QUrl(fileInfo.path());
     const auto fleName = fileInfo.fileName();
-    reply = vte::NetworkAccess::request(urlFilePath, rawHeader);
+    reply = NetworkAccess::request(urlFilePath, rawHeader);
 
     if (QNetworkReply::NoError == reply.m_error) {
       const auto jsonArray = QJsonDocument::fromJson(reply.m_data).array();
@@ -240,7 +240,7 @@ bool GitHubProvider::remove(const QString &p_url, QString &p_msg) {
   requestDataObj[QStringLiteral("message")] = QStringLiteral("VX_DEL: %1").arg(resourcePath);
   requestDataObj[QStringLiteral("sha")] = sha;
   auto requestData = Utils::toJsonString(requestDataObj);
-  reply = vte::NetworkAccess::deleteResource(QUrl(urlStr), rawHeader, requestData);
+  reply = NetworkAccess::deleteResource(QUrl(urlStr), rawHeader, requestData);
   if (reply.m_error != QNetworkReply::NoError) {
     p_msg = tr("Failed to delete resource (%1) (%2).")
                 .arg(resourcePath, QString::fromUtf8(reply.m_data));

@@ -9,12 +9,18 @@ endif()
 # Usage:
 #   add_qt_test(test_name
 #     SOURCES source1.cpp source2.cpp ...
-#     [GUILESS]  # Use QCoreApplication instead of QApplication
+#     [GUILESS]  # Test needs no QtWidgets: do NOT link Qt6::Widgets
 #   )
+#
+# NOTE: GUILESS is a LINK-LEVEL switch only. It cannot and does not choose
+# between QTEST_MAIN and QTEST_GUILESS_MAIN - that is a source-level macro
+# decision made in the test .cpp itself. A GUILESS target that legitimately
+# includes a QtWidgets header (without needing a QApplication) should list
+# Qt6::Widgets explicitly in LINKS.
 #
 # Examples:
 #   add_qt_test(test_error SOURCES test_error.cpp ${CMAKE_SOURCE_DIR}/src/core/error.cpp GUILESS)
-#   add_qt_test(test_widget SOURCES test_widget.cpp)  # Uses full QApplication
+#   add_qt_test(test_widget SOURCES test_widget.cpp)  # Links Qt6::Widgets
 #
 # =============================================================================
 
@@ -39,6 +45,14 @@ function(add_qt_test NAME)
     Qt6::Test
     ${ARG_LINKS}
   )
+
+  # Non-GUILESS targets need QtWidgets. This used to arrive transitively through
+  # core_services -> VTextEdit -> Qt::Widgets (PUBLIC); that link was deliberately
+  # severed, so the dependency is declared here instead. See the load-bearing
+  # comment in src/core/services/CMakeLists.txt.
+  if(NOT ARG_GUILESS)
+    target_link_libraries(${NAME} PRIVATE Qt6::Gui Qt6::Widgets)
+  endif()
 
   # Set C++ standard
   target_compile_features(${NAME} PRIVATE cxx_std_14)

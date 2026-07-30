@@ -89,12 +89,6 @@ target_include_directories(test_notebook_node_view_reorder PRIVATE
   ${CMAKE_SOURCE_DIR}/src/controllers
 )
 
-# Copy VTextEdit DLL next to the new test executable so CTest can find it at
-# runtime. The DLL lands in the shared Debug/ output dir used by all gui tests
-# in this subdirectory, but anchoring on this target guarantees the copy fires
-# even if other tests are skipped.
-add_custom_command(TARGET test_notebook_node_view_reorder POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebook_node_view_reorder>
-)
+# No VTextEdit.dll copy anchored here: test_notebook_node_view_reorder no longer
+# links VTextEdit. The dir-wide copies live on test_navigationmodeservice and
+# test_file_list_view_reorder, which do.

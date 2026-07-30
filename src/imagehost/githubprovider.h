@@ -3,7 +3,7 @@
 
 #include "iimagehostprovider.h"
 
-#include <vtextedit/networkutils.h>
+#include <net/networkutils.h>
 
 namespace vnotex {
 
@@ -35,14 +35,14 @@ public:
   bool ready() const Q_DECL_OVERRIDE;
 
 private:
-  vte::NetworkReply getRepoInfo(const QString &p_token, const QString &p_userName,
-                                const QString &p_repoName) const;
+  NetworkReply getRepoInfo(const QString &p_token, const QString &p_userName,
+                           const QString &p_repoName) const;
 
   static QPair<QByteArray, QByteArray> authorizationHeader(const QString &p_token);
 
   static QPair<QByteArray, QByteArray> acceptHeader();
 
-  static vte::NetworkAccess::RawHeaderPairs prepareCommonHeaders(const QString &p_token);
+  static NetworkAccess::RawHeaderPairs prepareCommonHeaders(const QString &p_token);
 
   static QString fetchResourcePath(const QString &p_prefix, const QString &p_url);
 

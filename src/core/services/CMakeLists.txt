@@ -29,7 +29,6 @@ set(SERVICES_SOURCES
   task.cpp
   taskservice.cpp
   taskvariablemgr.cpp
-  mainwindowtaskcontext.cpp
   vnote3migrationservice.cpp
   synccredentialsstore.cpp
   syncops.cpp
@@ -96,7 +95,6 @@ set(SERVICES_HEADERS
   taskservice.h
   taskvariablemgr.h
   itaskcontext.h
-  mainwindowtaskcontext.h
   vnote3migrationservice.h
   synccredentialsstore.h
   syncops.h
@@ -117,6 +115,23 @@ set(SERVICES_HEADERS
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
 
+# LOAD-BEARING: core_services deliberately links NEITHER Qt::Widgets NOR VTextEdit.
+#
+# core_services is a STATIC lib consumed by ~80 pure-core test executables. Linking
+# VTextEdit (a SHARED lib that links Qt::Widgets PUBLIC) forced every one of those
+# targets to ship VTextEdit.dll next to the test exe and dragged QtWidgets into a
+# layer that has no business owning GUI code.
+#
+# If you find yourself needing a QMessageBox / QInputDialog / QWidget here, do one
+# of the following INSTEAD of adding the link:
+#   1. Move the code to the widget layer (src/widgets/) - see MainWindowTaskContext.
+#   2. Use NotificationService (Qt-Widgets-free in-memory notification store).
+#   3. Propagate the information in-band via the HookContext out-param overload of
+#      HookManager::doAction, and let the caller render it.
+#
+# Qt::Gui IS allowed (QGuiApplication, QFontDatabase, QKeySequence, QImageReader).
+# Network access goes through core_net, not VTextEdit.
+
 # Task::decodeText uses QTextCodec, which lives in Qt6::Core5Compat.
 if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND TARGET Qt6::Core5Compat)
   target_link_libraries(core_services PUBLIC Qt6::Core5Compat)
@@ -129,7 +144,9 @@ target_link_libraries(core_services
     Qt${QT_DEFAULT_MAJOR_VERSION}::Network
     Qt${QT_DEFAULT_MAJOR_VERSION}::Concurrent
     vxcore
-    VTextEdit
+    # core_net must stay PUBLIC: githubprovider.h / giteeprovider.h expose
+    # vnotex::NetworkReply in their signatures, so consumers need the type.
+    core_net
   PRIVATE
     # T6 (notebook-explorer-drag-reorder): NotebookCoreService::buildOrderedJson
     # uses nlohmann::json to build the {folders, files} payload consumed by
@@ -147,7 +164,6 @@ target_include_directories(core_services
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/libs/vxcore/include
     ${CMAKE_SOURCE_DIR}/libs/vxcore/src
-    ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
 
 set_target_properties(core_services PROPERTIES

@@ -86,6 +86,7 @@ target_sources(vnote PRIVATE
     locationinputwithbrowsebutton.cpp locationinputwithbrowsebutton.h
     locationlist2.cpp locationlist2.h
     mainwindow2.cpp mainwindow2.h
+    mainwindowtaskcontext.cpp mainwindowtaskcontext.h
     markdownviewwindow2.cpp markdownviewwindow2.h
     messageboxhelper.cpp messageboxhelper.h
     mindmapviewwindow2.cpp mindmapviewwindow2.h

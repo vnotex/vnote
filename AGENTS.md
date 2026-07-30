@@ -168,7 +168,7 @@ ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-
 
 ### Running execs that depend on VTextEdit.dll (CRITICAL — avoid false-positive smoke tests)
 
-`build-debug/src/vnote.exe` and most `build-debug/tests/<category>/test_*.exe` execs link against `VTextEdit.dll` (built into `build-debug/libs/vtextedit/src/`) plus the Qt 6 runtime DLLs. Neither is automatically copied next to `vnote.exe` in this development build (only test-exec dirs get VTextEdit.dll copied via CMake target propagation). Launching `vnote.exe` without setting PATH first causes the Windows loader to pop a "VTextEdit.dll was not found" modal dialog BEFORE the process reaches `WinMain`.
+`build-debug/src/vnote.exe` and the widget/editor-level `build-debug/tests/<category>/test_*.exe` execs link against `VTextEdit.dll` (built into `build-debug/libs/vtextedit/src/`) plus the Qt 6 runtime DLLs. Pure-core tests that link only `core_services` + `vxcore` do NOT (see [src/core/services/AGENTS.md](src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract)). Neither DLL set is automatically copied next to `vnote.exe` in this development build (only test-exec dirs get VTextEdit.dll copied via CMake target propagation). Launching `vnote.exe` without setting PATH first causes the Windows loader to pop a "VTextEdit.dll was not found" modal dialog BEFORE the process reaches `WinMain`.
 
 **This is a verification trap**: when the loader dialog blocks the process, the OS reports the process as alive (it has a PID, is technically running), so naive checks like `Start-Process … -PassThru` + `Sleep` + `HasExited` return `$false` → you falsely conclude the binary started. The process is actually frozen in pre-WinMain limbo waiting for someone to click the dialog. `Stop-Process -Force` afterwards silently dismisses the dialog and the lie is preserved.
 
@@ -399,6 +399,9 @@ src/
 │       ├── newnotebookdialog2.h/.cpp
 │       ├── managenotebooksdialog2.h/.cpp
 │       └── importfolderdialog2.h/.cpp
+├── net/
+│   └── networkutils.h/.cpp # core_net: Qt Core/Network-only HTTP helpers
+│                           # (vnotex::NetworkUtils / NetworkReply / NetworkAccess)
 ├── utils/
 │   └── fileutils2.h/.cpp   # File utilities
 └── ...
