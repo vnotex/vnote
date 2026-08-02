@@ -12,6 +12,7 @@ class QStackedWidget;
 
 namespace vnotex {
 
+class InlineBanner;
 class SearchResultDelegate;
 class SearchResultModel;
 class SearchResultView;
@@ -44,7 +45,7 @@ private:
 
   QStackedWidget *m_stackedWidget = nullptr;
   QLabel *m_placeholderLabel = nullptr;
-  QLabel *m_truncatedBanner = nullptr;
+  InlineBanner *m_truncatedBanner = nullptr;
 };
 
 } // namespace vnotex

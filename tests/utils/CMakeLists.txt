@@ -95,6 +95,24 @@ target_compile_definitions(test_json_key_drift PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
+# Grep-gate regression test: VNote ships 10 themes (6 dark), so a hardcoded
+# color in a setStyleSheet() call is only correct in whichever theme its author
+# happened to run. See tests/utils/test_hardcoded_color_drift.cpp for the full
+# contract (what is detected, allow-list, escape hatch).
+add_qt_test(test_hardcoded_color_drift
+  SOURCES
+    test_hardcoded_color_drift.cpp
+  LINKS
+    # QColor::colorNames() supplies the full SVG color-name set, so the
+    # detector cannot fall behind a hand-written list. Static call; no
+    # QGuiApplication needed, hence still GUILESS.
+    Qt6::Gui
+  GUILESS
+)
+target_compile_definitions(test_hardcoded_color_drift PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 target_include_directories(test_clipboard_image PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )

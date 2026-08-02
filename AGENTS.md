@@ -784,6 +784,25 @@ Full design rationale, the recovery state table, and the manual E2E checklist li
 - Pointer alignment right: `int *ptr`, not `int* ptr`
 - Use provided `.clang-format` (auto-applied via pre-commit hook)
 
+### No Hardcoded Colors (enforced)
+
+**Never write a literal color into a `setStyleSheet()` call.** VNote ships 10
+themes, 6 of them dark; a hardcoded `#RRGGBB`, `rgb()/rgba()` literal, or CSS
+color name is correct only in whichever theme its author was running, and it
+cannot follow a runtime theme switch.
+
+`tests/utils/test_hardcoded_color_drift.cpp` is a grep gate over `src/` that
+fails the build on any string literal containing both a CSS color property and
+a literal color value. Colors used as *data* (a color picker's swatches) are
+not affected, only colors used to style chrome. It covers **stylesheet strings
+only** — a `QColor` painted in a `paintEvent` or delegate is out of scope.
+
+Use `InlineBanner`, the `SeverityText` / `MutedText` dynamic properties, a rule
+in each theme's `interface.qss`, or `ThemeService::paletteColor()`. Do **not**
+use `setEnabled(false)` to mute text. See
+[src/widgets/AGENTS.md § No Hardcoded Colors in C++](src/widgets/AGENTS.md#no-hardcoded-colors-in-c)
+for the decision table and the escape hatch.
+
 ### Naming Conventions
 
 | Element | Convention | Example |

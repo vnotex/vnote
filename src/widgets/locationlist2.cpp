@@ -6,8 +6,12 @@
 #include <QVBoxLayout>
 
 #include <models/searchresultmodel.h>
+#include <utils/widgetutils.h>
 #include <views/searchresultdelegate.h>
 #include <views/searchresultview.h>
+
+#include "inlinebanner.h"
+#include "propertydefs.h"
 
 using namespace vnotex;
 
@@ -32,10 +36,8 @@ void LocationList2::setupUI() {
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
-  m_truncatedBanner = new QLabel(tr("Results truncated"), this);
-  m_truncatedBanner->setStyleSheet(
-      QStringLiteral("QLabel { background-color: #FFF3CD; color: #856404; "
-                     "padding: 4px 8px; border-bottom: 1px solid #FFEEBA; }"));
+  m_truncatedBanner =
+      new InlineBanner(InlineBanner::Severity::Warning, tr("Results truncated"), this);
   m_truncatedBanner->hide();
   mainLayout->addWidget(m_truncatedBanner);
 
@@ -43,7 +45,10 @@ void LocationList2::setupUI() {
 
   m_placeholderLabel = new QLabel(tr("No search results"), this);
   m_placeholderLabel->setAlignment(Qt::AlignCenter);
-  m_placeholderLabel->setEnabled(false);
+  // Muted, but NOT setEnabled(false): an empty-state message is ordinary
+  // information, not an unavailable control, and the themes style QLabel
+  // unconditionally so the disabled palette role would never reach it.
+  WidgetUtils::setPropertyDynamically(m_placeholderLabel, PropertyDefs::c_mutedText, true);
   m_stackedWidget->addWidget(m_placeholderLabel);
 
   m_model = new SearchResultModel(this);

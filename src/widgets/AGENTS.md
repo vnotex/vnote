@@ -126,6 +126,131 @@ stays open.
 `Duration` controls only the auto-popup's auto-hide (`Short` ~3s, `Long` ~7s, `Persist` = no timer, owned by the popup's `QTimer`); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed or cleared.
 
 
+## Inline Notification Banners
+
+Use `InlineBanner` (`src/widgets/inlinebanner.{h,cpp}`) for any inline
+notification strip — an in-editor prompt above the content, a "results
+truncated" warning above a list, a dialog-level notice. Do NOT hand-roll a
+`QLabel` with an inline stylesheet; that is exactly the drift this class
+replaces (it previously existed twice, in `LocationList2` and the legacy-image
+bar, with copy-pasted `#FFF3CD` / `#856404` hex that looked wrong in all six
+dark themes).
+
+`InlineBanner` is a **pure view**: a wrapping message plus zero or more trailing
+action buttons. It takes no `ServiceLocator` — it has no service needs, matching
+the other leaf presentational widgets (`EncodingButton`, `StatusBar`). Consumers
+own all policy.
+
+```cpp
+auto *banner = new InlineBanner(InlineBanner::Severity::Warning, tr("..."), this);
+connect(banner->addActionButton(tr("Fix It")), &QPushButton::clicked, this, &X::onFix);
+addTopWidget(banner);   // ViewWindow2 host; or any QLayout elsewhere
+```
+
+`addActionButton()` returns the `QPushButton` it created (the
+`QDialogButtonBox::addButton` convention) so the caller connects it directly —
+there is no index bookkeeping and no signal the banner has to re-emit.
+
+For a feature-specific banner, subclass it and keep the copy plus the named
+intents in the subclass (see `LegacyImageMigrationBar`). Never put the strings
+in the hosting view window.
+
+### Theming (do not bypass)
+
+Severity is published as the `BannerSeverity` dynamic property
+(`PropertyDefs::c_bannerSeverity`, values `info` / `warning` / `error`), set via
+`WidgetUtils::setPropertyDynamically` so the style engine repolishes. Every
+bundled theme styles it:
+
+```qss
+vnotex--InlineBanner { background-color: @base#normal#bg; ... }
+vnotex--InlineBanner[BannerSeverity="warning"] { border-left: 3px solid @base#warning#fg; }
+```
+
+The block uses **only** `@base#` tokens, because those are the only ones every
+theme defines — `native` has no `widgets.qwidget` section, and only `danger`
+has a background role, so info/warning/error are carried by the left rule
+rather than a tinted fill.
+
+**When adding a theme, carry the `vnotex--InlineBanner` rules forward.** A
+missing palette key does not fail loudly: `Theme::translateStyleByPalette` logs
+a `qWarning` and leaves the literal `@base#...` in the stylesheet, after which
+Qt's CSS parser silently drops the declaration. Two data-driven gates in
+`tests/gui/test_themeservice.cpp` cover this for all 10 themes —
+`interfaceQssFullyResolved` (no unresolved token survives) and
+`interfaceQssStylesInlineBanner` (the selector and both severity rules exist).
+
+`InlineBanner` sets `Qt::WA_StyledBackground`; without it a bare `QFrame`
+subclass ignores `background-color` from the global stylesheet.
+
+Note that themes are copied into `<appData>/themes` and refreshed only when
+`ConfigMgr2::c_version` changes, so QSS edits reach an existing installation
+only at the next version bump (`scripts/update_version.py` handles that). For
+local work, run with `--watch-themes` and edit the deployed copy.
+
+## No Hardcoded Colors in C++
+
+**Never put a literal color in a `setStyleSheet()` call.** VNote ships 10
+themes, 6 of them dark, and the global stylesheet is applied on `QApplication`
+(`main.cpp:725`) and re-applied on every theme change. A hardcoded
+`background-color: #FFF3CD` is correct only in whichever theme its author
+happened to be running, and it cannot follow a theme switch.
+
+This is enforced: `tests/utils/test_hardcoded_color_drift.cpp` parses every
+`.cpp`/`.h` under `src/`, extracts the string literals (comment-aware, raw-string
+aware, and **coalescing adjacent literals** the way the compiler does), and fails
+when one contains **both** a CSS color property and a literal color value — a
+`#hex`, a numeric `rgb()/rgba()/hsl()/hsla()/hsv()/hsva()`, or any name in
+`QColor::colorNames()` except `transparent`.
+
+Use, in order of preference:
+
+| Need | Do this |
+|---|---|
+| A notification strip | `InlineBanner` (see above) — already themed |
+| Severity-colored **text** | Set the `SeverityText` property (`PropertyDefs::c_severityText`, values `info`/`warning`/`error`) via `WidgetUtils::setPropertyDynamically`; every `interface.qss` maps it to `@base#{info,warning,error}#fg`. An unset/empty value falls back to the normal color. |
+| Muted / secondary / hint text | Set the `MutedText` property (`PropertyDefs::c_mutedText`, value `true`). Add italics with `QFont::setItalic`, not QSS. |
+| Anything else static | Add the rule to each theme's `interface.qss`, selecting on the class name (`vnotex--YourWidget`) or a dynamic property. This is the only option that re-themes for free. |
+| A color computed at runtime | `ThemeService::paletteColor("widgets#foo#bg")` interpolated with `.arg()`, as in `NavigationMode::generateNavigationLabelStyle`. A style string whose color comes from a `%N` placeholder is not flagged. |
+
+**Do NOT use `setEnabled(false)` to mute text.** It advertises
+`QAccessible::State::unavailable` for what is ordinary informative text, and it
+does not even work here: every theme styles `QLabel { color: ... }`
+unconditionally with no `:disabled` variant, so the palette's disabled role
+never reaches the label. An attribute selector such as `*[MutedText="true"]`
+outranks the plain type rule, which is why the property works where the disabled
+state does not.
+
+`MutedText` resolves to each theme's dedicated `base.muted.fg`, **not** to
+`base.disabled.fg`. The disabled role is tuned for disabled *controls* and is
+far too faint for enabled text — on `solarized-light` it is `#DAD3C2` over
+`#FDF6E3`, about **1.38:1**. The `base.muted.fg` values are derived by blending
+the theme's normal foreground toward its background until the WCAG contrast
+floor is hit, and `TestThemeService::mutedTextIsReadable` asserts the resolved
+ratio per theme: at least `min(4.5, contrast(normal.fg, normal.bg))`, and never
+*more* contrast than normal text. (`native` is skipped — it takes the OS's own
+muted color from the system palette at runtime.) When adding a theme, add
+`base.muted.fg` and let that test tell you whether the value is legible.
+
+What is **not** an offender, and is not flagged:
+
+- A color literal used as **data** rather than chrome — the mark-node swatch
+  palette (`marknodedialog2.cpp`) and the notebook avatar colors
+  (`notebookselector2.cpp`) offer colors *to* the user.
+- A colorless style string, e.g. `"QLabel { font-style: italic; }"`. (Prefer
+  `QFont` anyway; and for the menu indicator use the `NoMenuIndicator` property
+  documented above, not an inline stylesheet.)
+
+Known scope limits, so nobody mistakes a green build for a proof: the gate
+covers **stylesheet strings only**. A `QColor` painted directly in a
+`paintEvent` or a `QStyledItemDelegate` is out of scope, and a color assembled
+at runtime from a non-literal constant is indistinguishable from the legitimate
+`paletteColor()` pattern without real type analysis. Those still need review.
+
+If you genuinely need a literal, append `// hardcoded-color-allow: <reason>` to
+any line the literal spans. Use it sparingly — every existing case was
+removable.
+
 ## MVC Rule for Widgets
 
 See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for widgets: **All layers receive `ServiceLocator&`** via constructor injection (enables DI and testing).

@@ -3,6 +3,7 @@
 #include <memory>
 
 #include <QDialogButtonBox>
+#include <QFont>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QJsonObject>
@@ -20,7 +21,9 @@
 #include <core/services/syncerrorpresenter.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
+#include <utils/widgetutils.h>
 
+#include "../inlinebanner.h"
 #include "../propertydefs.h"
 #include "../widgetsfactory.h"
 
@@ -158,21 +161,17 @@ void NotebookSyncInfoDialog2::setupUI() {
   // T29: Read-only banner shown at the top of the dialog when the notebook
   // is read-only. Constructed hidden; refreshReadOnlyBanner toggles visibility
   // post-setup once the notebook's RO state has been queried via
-  // NotebookCoreService::isNotebookReadOnly (T21). Italic warning style,
-  // styled inline rather than via QSS to preserve the visual distinction
-  // from regular labels regardless of the active theme.
-  m_readOnlyBannerLabel =
-      new QLabel(tr("This notebook is currently open in read-only mode. To enable editing, "
-                    "close this notebook and re-open it from the remote URL with a valid "
-                    "Personal Access Token. Adding a PAT here will be saved, but editing "
-                    "will only become available after closing and re-opening the notebook."),
-                 centralWidget);
-  m_readOnlyBannerLabel->setObjectName(QString::fromLatin1(kReadOnlyBannerLabelName));
-  m_readOnlyBannerLabel->setWordWrap(true);
-  m_readOnlyBannerLabel->setStyleSheet(
-      QStringLiteral("QLabel { color: #b58900; font-style: italic; padding: 8px; }"));
-  m_readOnlyBannerLabel->hide();
-  formLayout->addRow(m_readOnlyBannerLabel);
+  // NotebookCoreService::isNotebookReadOnly (T21).
+  m_readOnlyBanner = new InlineBanner(
+      InlineBanner::Severity::Warning,
+      tr("This notebook is currently open in read-only mode. To enable editing, "
+         "close this notebook and re-open it from the remote URL with a valid "
+         "Personal Access Token. Adding a PAT here will be saved, but editing "
+         "will only become available after closing and re-opening the notebook."),
+      centralWidget);
+  m_readOnlyBanner->setObjectName(QString::fromLatin1(kReadOnlyBannerLabelName));
+  m_readOnlyBanner->hide();
+  formLayout->addRow(m_readOnlyBanner);
 
   // 1. Notebook name (read-only).
   m_notebookNameLabel = new QLabel(centralWidget);
@@ -199,7 +198,17 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_remoteUrlHintLabel->setText(
       tr("The remote repository must already exist. Create an empty repo on your Git host first."));
   m_remoteUrlHintLabel->setWordWrap(true);
-  m_remoteUrlHintLabel->setStyleSheet(QStringLiteral("color: gray; font-style: italic;"));
+  // Muted hint text. NOT setEnabled(false): that would advertise
+  // QAccessible::State::unavailable for what is ordinary instructional text,
+  // and the themes style QLabel unconditionally with no :disabled variant, so
+  // it would not even change the color. Italics come from the font, so no
+  // color literal is needed anywhere.
+  WidgetUtils::setPropertyDynamically(m_remoteUrlHintLabel, PropertyDefs::c_mutedText, true);
+  {
+    QFont hintFont = m_remoteUrlHintLabel->font();
+    hintFont.setItalic(true);
+    m_remoteUrlHintLabel->setFont(hintFont);
+  }
   formLayout->addRow(QString(), m_remoteUrlHintLabel);
 
   // 3. PAT (editable, password-masked, NEVER prefilled).
@@ -607,8 +616,8 @@ void NotebookSyncInfoDialog2::refreshReadOnlyBanner() {
   // always hidden. The empty-id guard is defense-in-depth in case the
   // (services, notebookId, parent) ctor is ever invoked with an empty id.
   if (m_preCreateMode || m_notebookId.isEmpty()) {
-    if (m_readOnlyBannerLabel) {
-      m_readOnlyBannerLabel->hide();
+    if (m_readOnlyBanner) {
+      m_readOnlyBanner->hide();
     }
     m_isReadOnlyNotebook = false;
     return;
@@ -619,16 +628,16 @@ void NotebookSyncInfoDialog2::refreshReadOnlyBanner() {
     // Defensive: the dialog is only buildable with a wired ServiceLocator,
     // but a unit-test ServiceLocator could lack NotebookCoreService. Fail
     // closed (no banner) rather than asserting and crashing.
-    if (m_readOnlyBannerLabel) {
-      m_readOnlyBannerLabel->hide();
+    if (m_readOnlyBanner) {
+      m_readOnlyBanner->hide();
     }
     m_isReadOnlyNotebook = false;
     return;
   }
 
   m_isReadOnlyNotebook = notebookService->isNotebookReadOnly(m_notebookId);
-  if (m_readOnlyBannerLabel) {
-    m_readOnlyBannerLabel->setVisible(m_isReadOnlyNotebook);
+  if (m_readOnlyBanner) {
+    m_readOnlyBanner->setVisible(m_isReadOnlyNotebook);
   }
 }
 
@@ -639,22 +648,24 @@ void NotebookSyncInfoDialog2::setCurrentStateLabel(SyncStateLevel p_level, const
 
   m_currentStateLabel->setText(p_text);
 
-  // Inline color for state communication. Themes can override via QSS by
-  // matching on objectName == "currentStateLabel".
+  // Severity is published as a QSS property, never as a hardcoded color: every
+  // theme maps SeverityText to its own info/warning/error foreground, and the
+  // label re-themes itself when the user switches theme.
+  QString severity;
   switch (p_level) {
   case SyncStateLevel::Idle:
-    m_currentStateLabel->setStyleSheet(QString());
-    break;
+    break; // Default color.
   case SyncStateLevel::Syncing:
-    m_currentStateLabel->setStyleSheet(QStringLiteral("color: #1f6feb;")); // blue
+    severity = QStringLiteral("info");
     break;
   case SyncStateLevel::Conflict:
-    m_currentStateLabel->setStyleSheet(QStringLiteral("color: #d29922;")); // orange
+    severity = QStringLiteral("warning");
     break;
   case SyncStateLevel::Error:
-    m_currentStateLabel->setStyleSheet(QStringLiteral("color: #cf222e;")); // red
+    severity = QStringLiteral("error");
     break;
   }
+  WidgetUtils::setPropertyDynamically(m_currentStateLabel, PropertyDefs::c_severityText, severity);
 }
 
 QString NotebookSyncInfoDialog2::enteredRemoteUrl() const {

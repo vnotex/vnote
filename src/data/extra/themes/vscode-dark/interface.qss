@@ -1274,3 +1274,52 @@ QWidget[SettingsRow="true"] {
     background-color: transparent;
     border: none;
 }
+
+/* vnotex::InlineBanner - inline notification strip (see src/widgets/AGENTS.md).
+   Fill and text use the chrome roles so the strip reads as chrome above the
+   editor content; severity is carried by the BannerSeverity property on the
+   left rule. It uses only semantic base tokens, the only ones every bundled
+   theme defines (native has no widgets.qwidget section). */
+vnotex--InlineBanner {
+    background-color: @base#normal#bg;
+    color: @base#normal#fg;
+    border: none;
+    border-top: 1px solid @base#normal#border;
+    border-bottom: 1px solid @base#normal#border;
+    border-left: 3px solid @base#info#fg;
+}
+
+vnotex--InlineBanner[BannerSeverity="warning"] {
+    border-left: 3px solid @base#warning#fg;
+}
+
+vnotex--InlineBanner[BannerSeverity="error"] {
+    border-left: 3px solid @base#error#fg;
+}
+
+vnotex--InlineBanner QLabel {
+    background-color: transparent;
+    color: @base#normal#fg;
+}
+/* Semantic text color for any widget, via the SeverityText property (see
+   src/widgets/AGENTS.md). Use this instead of a hardcoded hex in a C++
+   setStyleSheet() call. An unset or empty value falls through to the widget's
+   normal color. */
+*[SeverityText="info"] {
+    color: @base#info#fg;
+}
+
+*[SeverityText="warning"] {
+    color: @base#warning#fg;
+}
+
+*[SeverityText="error"] {
+    color: @base#error#fg;
+}
+/* Muted / secondary text (hints, captions), via the MutedText property. An
+   attribute selector outranks the plain `QLabel` type rule, which is why this
+   works where setEnabled(false) would not: the themes style QLabel
+   unconditionally and define no :disabled variant. */
+*[MutedText="true"] {
+    color: @base#muted#fg;
+}

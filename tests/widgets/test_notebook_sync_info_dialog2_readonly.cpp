@@ -30,6 +30,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <temp_dir_fixture.h>
 #include <widgets/dialogs/notebooksyncinfodialog2.h>
+#include <widgets/inlinebanner.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -105,10 +106,10 @@ void TestNotebookSyncInfoDialog2ReadOnly::testBannerVisibleOnReadOnlyNotebook() 
   dialog.show();
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
-  auto *banner = dialog.findChild<QLabel *>(QStringLiteral("readOnlyBannerLabel"));
-  QVERIFY2(banner, "Read-only banner QLabel must exist with objectName 'readOnlyBannerLabel'");
+  auto *banner = dialog.findChild<InlineBanner *>(QStringLiteral("readOnlyBannerLabel"));
+  QVERIFY2(banner, "Read-only banner must exist with objectName 'readOnlyBannerLabel'");
   QVERIFY2(banner->isVisible(), "Banner must be visible when the notebook is read-only");
-  QVERIFY2(!banner->text().isEmpty(),
+  QVERIFY2(!banner->getText().isEmpty(),
            "Banner text must not be empty — should explain the close-and-reopen flow");
 
   dialog.hide();
@@ -143,10 +144,10 @@ void TestNotebookSyncInfoDialog2ReadOnly::testBannerHiddenOnWritableNotebook() {
   dialog.show();
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
-  auto *banner = dialog.findChild<QLabel *>(QStringLiteral("readOnlyBannerLabel"));
+  auto *banner = dialog.findChild<InlineBanner *>(QStringLiteral("readOnlyBannerLabel"));
   // The banner widget MUST exist (setupUI constructs it unconditionally) but
   // MUST NOT be visible for a writable notebook.
-  QVERIFY2(banner, "Read-only banner QLabel must exist even on writable notebooks");
+  QVERIFY2(banner, "Read-only banner must exist even on writable notebooks");
   QVERIFY2(!banner->isVisible(), "Banner must be hidden when the notebook is writable");
 
   dialog.hide();
@@ -170,7 +171,7 @@ void TestNotebookSyncInfoDialog2ReadOnly::testPreCreateModeNoBanner() {
   dialog.show();
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
-  auto *banner = dialog.findChild<QLabel *>(QStringLiteral("readOnlyBannerLabel"));
+  auto *banner = dialog.findChild<InlineBanner *>(QStringLiteral("readOnlyBannerLabel"));
   // setupUI still constructs the banner in pre-create mode (it's a generic
   // widget; the visibility decision is made elsewhere). The contract is:
   // not visible because there's no notebook to query.

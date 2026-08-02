@@ -28,6 +28,21 @@ public:
   // Values: info/warning/error.
   static const char *c_state;
 
+  // InlineBanner severity. Values: info/warning/error. Separate from c_state
+  // so the universal `*[State="..."]` border rule cannot fight the banner's
+  // own styling.
+  static const char *c_bannerSeverity;
+
+  // Semantic TEXT color for any widget. Values: info/warning/error; unset or
+  // empty means the default color. Use this instead of a hardcoded hex in a
+  // setStyleSheet() call.
+  static const char *c_severityText;
+
+  // Muted / secondary text (hints, captions). Value: true. Do NOT use
+  // setEnabled(false) for this — it lies to accessibility tooling, and the
+  // themes style QLabel unconditionally so it would not even mute the color.
+  static const char *c_mutedText;
+
   static const char *c_dockWidgetIndex;
 
   static const char *c_dockWidgetTitle;

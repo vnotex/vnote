@@ -82,6 +82,7 @@ target_sources(vnote PRIVATE
     fullscreentoggleaction.cpp fullscreentoggleaction.h
     lineedit.cpp lineedit.h
     lineeditwithsnippet.cpp lineeditwithsnippet.h
+    inlinebanner.cpp inlinebanner.h
     legacyimagemigrationbar.cpp legacyimagemigrationbar.h
     listwidget.cpp listwidget.h
     locationinputwithbrowsebutton.cpp locationinputwithbrowsebutton.h

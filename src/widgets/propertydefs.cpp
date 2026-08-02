@@ -16,6 +16,12 @@ const char *PropertyDefs::c_viewSplitFlash = "ViewSplitFlash";
 
 const char *PropertyDefs::c_state = "State";
 
+const char *PropertyDefs::c_bannerSeverity = "BannerSeverity";
+
+const char *PropertyDefs::c_severityText = "SeverityText";
+
+const char *PropertyDefs::c_mutedText = "MutedText";
+
 const char *PropertyDefs::c_viewWindowToolBar = "ViewWindowToolBar";
 
 const char *PropertyDefs::c_consoleTextEdit = "ConsoleTextEdit";

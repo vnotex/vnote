@@ -1907,7 +1907,7 @@ void MarkdownViewWindow2::applyLegacyImageMigration() {
     // All-or-nothing: nothing was copied and nothing was rewritten. Keep the
     // bar so the user can retry.
     MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                             err.isEmpty() ? tr("Failed to move the images.") : err, this);
+                             err.isEmpty() ? tr("Failed to migrate the images.") : err, this);
     return;
   }
 
@@ -1958,7 +1958,7 @@ void MarkdownViewWindow2::applyLegacyImageMigration() {
     m_legacyImageBar = nullptr;
   }
 
-  showMessage(tr("Moved %n image(s) to the assets folder.", "", distinctDestinations.size()));
+  showMessage(tr("Migrated %n image(s) to the assets folder.", "", distinctDestinations.size()));
 }
 
 bool MarkdownViewWindow2::isLastWindowForBuffer() const {

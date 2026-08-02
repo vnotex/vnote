@@ -1,19 +1,18 @@
 #ifndef LEGACYIMAGEMIGRATIONBAR_H
 #define LEGACYIMAGEMIGRATIONBAR_H
 
-#include <QWidget>
-
-class QLabel;
+#include "inlinebanner.h"
 
 namespace vnotex {
 
-// Inline, dismissible bar offering to move images out of a pre-v4 image folder
-// (vx_images / _v_images) into the note's v4 assets folder.
+// Offers to migrate images out of a pre-v4 image folder (vx_images /
+// _v_images) into the note's v4 assets folder.
 //
-// Hosted via ViewWindow2::addTopWidget(). Pure view: it renders a count and
-// emits three intents; all policy lives in MarkdownViewWindow2 +
+// Hosted via ViewWindow2::addTopWidget(). A thin, feature-specific View over
+// InlineBanner: it owns the copy and the three action buttons, and nothing
+// else. All policy lives in MarkdownViewWindow2 +
 // LegacyImageMigrationController.
-class LegacyImageMigrationBar : public QWidget {
+class LegacyImageMigrationBar : public InlineBanner {
   Q_OBJECT
 
 public:
@@ -28,11 +27,6 @@ signals:
   void dismissRequested();
 
   void neverRequested();
-
-private:
-  void setupUI();
-
-  QLabel *m_label = nullptr;
 };
 
 } // namespace vnotex

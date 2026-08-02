@@ -132,6 +132,9 @@
                 "border" : "@base#master#bg"
             }
         },
+        "muted" : {
+            "fg" : "#879CA4"
+        },
         "error" : {
             "fg" : "@palette#fg10"
         },

@@ -11,6 +11,60 @@ add_qt_test(test_linkinsertutils
   GUILESS
 )
 
+# InlineBanner: reusable pure-view notification strip (no services, no vxcore,
+# no VTextEdit). NOT GUILESS — QFrame/QPushButton need a QApplication. Compiles
+# propertydefs.cpp for the BannerSeverity constant and widgetutils.cpp for the
+# unpolish/polish helper; widgetutils.cpp includes <vtextedit/vtextedit.h>, so
+# VTextEdit is linked and the DLL copy below is required.
+add_qt_test(test_inlinebanner
+  SOURCES
+    test_inlinebanner.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  LINKS
+    Qt6::Widgets
+    VTextEdit
+)
+target_include_directories(test_inlinebanner PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_inlinebanner POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_inlinebanner>
+)
+
+# LegacyImageMigrationBar: the View wiring of the legacy-image prompt (three
+# buttons -> three intents). The migration policy lives in
+# tests/controllers/test_legacy_image_migration.cpp; this only pins what the
+# InlineBanner extraction rewrote. Same source recipe as test_inlinebanner.
+add_qt_test(test_legacyimagemigrationbar
+  SOURCES
+    test_legacyimagemigrationbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/legacyimagemigrationbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  LINKS
+    Qt6::Widgets
+    VTextEdit
+)
+target_include_directories(test_legacyimagemigrationbar PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+add_custom_command(TARGET test_legacyimagemigrationbar POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_legacyimagemigrationbar>
+)
+
 add_qt_test(test_snippet_apply
   SOURCES
     test_snippet_apply.cpp
@@ -278,6 +332,7 @@ add_qt_test(test_notebooksyncinfodialog2
   SOURCES
     test_notebooksyncinfodialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
@@ -313,6 +368,7 @@ add_qt_test(test_notebooksyncinfodialog2_url_change
   SOURCES
     test_notebooksyncinfodialog2_url_change.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
@@ -344,6 +400,7 @@ add_qt_test(test_notebooksyncinfodialog2_error
   SOURCES
     test_notebooksyncinfodialog2_error.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
@@ -379,6 +436,7 @@ add_qt_test(test_notebooksyncinfodialog2_disable
   SOURCES
     test_notebooksyncinfodialog2_disable.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
@@ -822,6 +880,7 @@ add_qt_test(test_notebook_sync_info_dialog2_readonly
   SOURCES
     test_notebook_sync_info_dialog2_readonly.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp

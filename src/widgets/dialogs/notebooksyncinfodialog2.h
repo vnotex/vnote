@@ -15,6 +15,7 @@ class QPushButton;
 
 namespace vnotex {
 
+class InlineBanner;
 class NotebookSyncInfoController;
 class ServiceLocator;
 
@@ -154,10 +155,9 @@ private:
   QLabel *m_notebookNameLabel = nullptr;
   // T29: Banner shown at the top of the dialog when the notebook is
   // read-only (no PAT). Explains close-and-reopen flow. Hidden for writable
-  // notebooks and in pre-create mode. Lazily wrapped in italic warning
-  // style; not themed via QSS to keep the message visually distinct from
-  // regular labels.
-  QLabel *m_readOnlyBannerLabel = nullptr;
+  // notebooks and in pre-create mode. Themed through InlineBanner, so it stays
+  // visually distinct from regular labels in every theme.
+  InlineBanner *m_readOnlyBanner = nullptr;
   QLineEdit *m_remoteUrlEdit = nullptr;
   QLabel *m_remoteUrlHintLabel = nullptr;
   QLineEdit *m_patEdit = nullptr;
