@@ -42,14 +42,15 @@ NotificationButton2::NotificationButton2(ServiceLocator &p_services, const QSize
   auto *service = m_services.get<NotificationService>();
   if (service) {
     m_activeCount = service->activeCount();
+    // Badge maintenance only. Raising a transient surface for an Interrupt is
+    // NotificationToast's job.
     connect(service, &NotificationService::messageAdded, this,
-            [this](const NotificationMessage &p_msg) {
-              updateBadge();
-              if (m_popup) {
-                m_popup->showTransient(p_msg);
-              }
-            });
+            [this](const NotificationMessage &) { updateBadge(); });
     connect(service, &NotificationService::messageDismissed, this,
+            [this](quint64) { updateBadge(); });
+    // A message can leave the store without being dismissed (renotify(), or
+    // retention eviction), which also moves the active count.
+    connect(service, &NotificationService::messageRemoved, this,
             [this](quint64) { updateBadge(); });
     connect(service, &NotificationService::messagesCleared, this, [this]() { updateBadge(); });
   }
@@ -57,6 +58,12 @@ NotificationButton2::NotificationButton2(ServiceLocator &p_services, const QSize
   auto *themeService = m_services.get<ThemeService>();
   if (themeService) {
     connect(themeService, &ThemeService::themeChanged, this, [this]() { refreshIcon(); });
+  }
+}
+
+void NotificationButton2::showPopup() {
+  if (m_popup) {
+    showMenu();
   }
 }
 

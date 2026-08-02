@@ -42,6 +42,9 @@ class ToolBarHelper2;
 class SyncConflictController;
 class FirstRunController;
 class UpdateController;
+class NotificationRouter;
+class NotificationToast;
+
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
 // Framework only - NO toolbar, dock widgets, menu bar, or status bar.
@@ -191,6 +194,11 @@ private:
   void drainPendingOpenBatches();
   void setupSystemTray();
 
+  // Create the notification toast (transient surface for Attention::Interrupt)
+  // and the NotificationRouter (producer side), and connect the widget-owned
+  // sources the router cannot reach on its own.
+  void setupNotifications();
+
   // Register the global (system-wide) wake-up hotkey (Global_WakeUp) to show the
   // main window. No-op if the configured shortcut is empty or registration fails.
   void setupGlobalHotkey();
@@ -266,6 +274,13 @@ private:
 
   // Owns all incremental-update policy (throttle, skip, prompts, notifications).
   UpdateController *m_updateController = nullptr;
+
+  // Transient surface for Attention::Interrupt notifications. A child widget,
+  // so it can never take window activation.
+  NotificationToast *m_notificationToast = nullptr;
+
+  // Turns subsystem failure signals into notifications.
+  NotificationRouter *m_notificationRouter = nullptr;
 
   // Per-notebook retry counter for sync conflict resolution. Incremented each
   // time conflictsDetected fires for a notebook. When the count exceeds 3, the

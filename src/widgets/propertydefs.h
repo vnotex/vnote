@@ -25,7 +25,7 @@ public:
 
   static const char *c_embeddedLineEdit;
 
-  // Values: info/warning/error.
+  // Values: info/warning/error/success.
   static const char *c_state;
 
   // InlineBanner severity. Values: info/warning/error. Separate from c_state

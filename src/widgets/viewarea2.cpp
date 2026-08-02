@@ -889,11 +889,13 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   auto *factory = m_services.get<ViewWindowFactory>();
   if (!factory || !factory->hasCreator(p_fileType)) {
     qWarning() << "ViewArea2: no creator for file type" << p_fileType;
+    emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
     return;
   }
   auto *win = factory->create(p_fileType, m_services, p_buffer, split, p_settings.m_mode);
   if (!win) {
     qWarning() << "ViewArea2: failed creating view window for type" << p_fileType;
+    emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
     return;
   }
   ID id = m_nextWindowId++;

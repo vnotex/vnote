@@ -14,6 +14,24 @@
 
 using namespace vnotex;
 
+namespace {
+
+const QString c_updateCategory = QStringLiteral("update");
+
+// One incident per transfer: offer -> download -> progress -> terminal state all
+// fold into a single notification. The dialog and notification surfaces can
+// share this key because TransferSurface already guarantees only one transfer
+// is live at a time.
+const QString c_transferDedupKey = QStringLiteral("update.transfer");
+
+// The post-restart apply outcome is a SEPARATE incident from a transfer, and
+// must never be assigned to m_progressNotificationId: runStartupTasks() consumes
+// the stored result BEFORE startCheck(), and startCheck() dismisses the tracked
+// notification -- so sharing the id would silently eat the apply result.
+const QString c_resultDedupKey = QStringLiteral("update.result");
+
+} // namespace
+
 UpdateController::UpdateController(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
                                    QObject *p_parent)
     : QObject(p_parent), m_services(p_services), m_mainWindow(p_mainWindow) {
@@ -28,6 +46,17 @@ UpdateController::UpdateController(ServiceLocator &p_services, MainWindow2 *p_ma
   connect(service, &UpdateService::progress, this, &UpdateController::onProgress);
   connect(service, &UpdateService::readyToApply, this, &UpdateController::onReadyToApply);
   connect(service, &UpdateService::failed, this, &UpdateController::onFailed);
+
+  // A tracked message can leave the store without being dismissed: the
+  // retention cap can evict it. Without this, m_progressNotificationId would
+  // keep naming a message that no longer exists.
+  if (auto *notifications = m_services.get<NotificationService>()) {
+    connect(notifications, &NotificationService::messageRemoved, this, [this](quint64 p_id) {
+      if (m_progressNotificationId != 0 && p_id == m_progressNotificationId) {
+        m_progressNotificationId = 0;
+      }
+    });
+  }
 }
 
 UpdateController::~UpdateController() = default;
@@ -141,7 +170,12 @@ void UpdateController::consumeStoredResult() {
     return;
   }
 
-  notifications->notify(message);
+  message.m_category = c_updateCategory;
+  message.m_dedupKey = c_resultDedupKey;
+  // The outcome of an update the user already committed to: worth interrupting.
+  message.m_attention = NotificationMessage::Attention::Interrupt;
+  // NOT tracked in m_progressNotificationId -- see c_resultDedupKey.
+  notifications->renotify(message);
 }
 
 void UpdateController::notifyPendingUpdate(const QString &p_version) {
@@ -168,7 +202,12 @@ void UpdateController::notifyPendingUpdate(const QString &p_version) {
   };
   message.m_actions.append(restart);
 
-  notifications->notify(message);
+  // Terminal ready-to-install state. Reached from BOTH the startup pending-update
+  // path AND a dialog-owned transfer that just completed, so a live transfer
+  // message may already hold the key -- postTransferNotification's renotify() is
+  // what keeps it from being folded in silently.
+  message.m_attention = NotificationMessage::Attention::Interrupt;
+  postTransferNotification(message);
 }
 
 // ===========================================================================
@@ -263,7 +302,9 @@ void UpdateController::onCheckFinished(const vnotex::UpdateInfo &p_info) {
 
       message.m_actions.append(makeCheckReleaseAction(p_info));
 
-      m_progressNotificationId = notifications->notify(message);
+      // A brand-new offer the user has not seen: this earns the interruption.
+      message.m_attention = NotificationMessage::Attention::Interrupt;
+      postTransferNotification(message);
     }
     return;
   }
@@ -337,7 +378,10 @@ void UpdateController::startNotificationDownload() {
     message.m_severity = NotificationMessage::Severity::Warning;
     message.m_duration = NotificationMessage::Duration::Persist;
     message.m_actions.append(makeCheckReleaseAction(m_offeredInfo));
-    updateOrRepostNotification(message);
+    // The user just clicked Update and deserves an explanation; a Passive
+    // message here would silently hide the toast they were looking at.
+    message.m_attention = NotificationMessage::Attention::Interrupt;
+    postTransferNotification(message);
     return;
   }
   if (started == UpdateService::DownloadStart::NoPlan) {
@@ -368,23 +412,40 @@ void UpdateController::startNotificationDownload() {
   };
   message.m_actions.append(cancel);
 
-  updateOrRepostNotification(message);
+  // Passive: the user just asked for this, so it is not news. It is also what
+  // retires the offer toast -- the toast hides when the message it is showing
+  // is updated to Passive.
+  message.m_attention = NotificationMessage::Attention::Passive;
+  postTransferNotification(message);
 }
 
-void UpdateController::updateOrRepostNotification(const NotificationMessage &p_msg) {
+void UpdateController::postTransferNotification(const NotificationMessage &p_msg) {
   auto *notifications = m_services.get<NotificationService>();
   if (!notifications) {
     return;
   }
 
-  if (m_progressNotificationId != 0 && notifications->isActive(m_progressNotificationId) &&
-      notifications->update(m_progressNotificationId, p_msg)) {
-    return;
-  }
+  NotificationMessage msg = p_msg;
+  msg.m_category = c_updateCategory;
+  msg.m_dedupKey = c_transferDedupKey;
 
-  // The tracked message was dismissed or cleared: a terminal state still has to
-  // reach the user, so post a fresh one and track that instead.
-  m_progressNotificationId = notifications->notify(p_msg);
+  // The call is derived from the attention so a site cannot get it wrong.
+  //
+  // Interrupt -> renotify(): the toast is raised ONLY by
+  // messageAdded(Interrupt), so folding an interrupting terminal state into the
+  // live (passive) progress message would emit messageUpdated and never be
+  // seen. renotify() removes the old generation and posts a new one, which also
+  // makes this correct for the DownloadStart::NoPlan path -- there the offer
+  // goes straight to a failure with no passive phase in between.
+  //
+  // Passive -> notify(): folds into the live message, so the transfer stays one
+  // row in the list. When the toast is currently showing that message, the
+  // resulting messageUpdated(Passive) is also what retires it.
+  if (msg.m_attention == NotificationMessage::Attention::Interrupt) {
+    m_progressNotificationId = notifications->renotify(msg);
+  } else {
+    m_progressNotificationId = notifications->notify(msg);
+  }
 }
 
 void UpdateController::showDialog(const UpdateInfo &p_info) {
@@ -487,6 +548,9 @@ void UpdateController::onProgress(const QString &p_stage, qint64 p_done, qint64 
     message.m_text = p_stage;
     message.m_severity = NotificationMessage::Severity::Info;
     message.m_duration = NotificationMessage::Duration::Persist;
+    // Explicit: a progress tick must never interrupt. (update() replaces the
+    // attention field, so relying on the default would be implicit.)
+    message.m_attention = NotificationMessage::Attention::Passive;
     if (permille >= 0) {
       message.m_progressPermille = permille;
     } else {
@@ -538,7 +602,8 @@ void UpdateController::onReadyToApply(const QString &p_version) {
     // The same message becomes the success state, so notifyPendingUpdate() is
     // deliberately NOT called here: two identical notifications would be worse
     // than one.
-    updateOrRepostNotification(message);
+    message.m_attention = NotificationMessage::Attention::Interrupt;
+    postTransferNotification(message);
     return;
   }
 
@@ -567,7 +632,12 @@ void UpdateController::onFailed(const QString &p_message) {
 
     message.m_actions.append(makeCheckReleaseAction(m_offeredInfo));
 
-    updateOrRepostNotification(message);
+    // Terminal failure of a transfer the user started. Interrupt via
+    // renotify(), which also covers the DownloadStart::NoPlan and
+    // Retry -> NoPlan paths, where the message goes from an interrupting offer
+    // straight to an interrupting failure with no passive phase between them.
+    message.m_attention = NotificationMessage::Attention::Interrupt;
+    postTransferNotification(message);
     return;
   }
 
@@ -588,6 +658,11 @@ void UpdateController::onFailed(const QString &p_message) {
       message.m_severity = NotificationMessage::Severity::Error;
       message.m_duration = NotificationMessage::Duration::Persist;
       message.m_actions.append(makeCheckReleaseAction(m_dialogInfo));
+      // Deliberately KEYLESS and untracked: this failure is standalone, must not
+      // fold into (or replace) the tracked transfer message, and being keyless
+      // means it always arrives as messageAdded and therefore always interrupts.
+      message.m_category = c_updateCategory;
+      message.m_attention = NotificationMessage::Attention::Interrupt;
       notifications->notify(message);
     } else {
       qWarning() << "update download failed:" << p_message;

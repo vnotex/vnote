@@ -30,6 +30,7 @@ target_sources(vnote PRIVATE
     imagehostcontroller.cpp imagehostcontroller.h
     legacyimagemigrationcontroller.cpp legacyimagemigrationcontroller.h
     dashboardcontroller.cpp dashboardcontroller.h
+    notificationrouter.cpp notificationrouter.h
     updatecontroller.cpp updatecontroller.h
 )
 

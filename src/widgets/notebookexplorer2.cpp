@@ -141,10 +141,8 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
               // Clear reconcile error on successful sync (sync supersedes reconcile)
               m_lastReconcileError.remove(p_notebookId);
               if (p_result == VXCORE_OK) {
-                // Reset failure-popup suppression so the NEXT failure (if any)
-                // surfaces again.
-                m_authFailureNotified.remove(p_notebookId);
-                m_networkFailureNotified.remove(p_notebookId);
+                // Failure-notification retirement now lives in
+                // NotificationRouter, which subscribes to this same signal.
                 // Drop any pending credential-retry arm — sync clearly works now.
                 m_credentialUpdateRetryArm.remove(p_notebookId);
                 // Manual Sync Now success confirmation: only fires when the user
@@ -191,27 +189,24 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
             });
     connect(syncSvc, &SyncService::syncFailed, this, &NotebookExplorer2::onSyncFailedSurface);
     connect(syncSvc, &SyncService::enableFinished, this,
-            [this](const QString &p_notebookId, VxCoreError p_result, const QString &) {
-              if (p_result == VXCORE_OK) {
-                // An explicit user-driven enable succeeded — give failure popups a
-                // fresh chance on the next sync attempt.
-                m_authFailureNotified.remove(p_notebookId);
-                m_networkFailureNotified.remove(p_notebookId);
-              }
+            [this](const QString &, VxCoreError) {
+              // Failure-notification retirement on OK lives in
+              // NotificationRouter, which subscribes to this same signal.
               updateSyncButtonState();
             });
     connect(syncSvc, &SyncService::credentialsSetFinished, this,
             [this](const QString &p_notebookId, VxCoreError p_result) {
               if (p_result == VXCORE_OK) {
-                // User supplied new credentials successfully. Reset suppression
-                // so any next failure surfaces. If we had previously shown an
-                // auth-failure dialog for this notebook (m_credentialUpdateRetryArm
-                // set), immediately re-trigger a sync so the user sees the
-                // verdict of their new PAT WITHOUT an extra Sync Now click; tag
-                // it for manual feedback so success surfaces via the status bar
-                // and failure surfaces via onSyncFailedSurface as usual.
-                m_authFailureNotified.remove(p_notebookId);
-                m_networkFailureNotified.remove(p_notebookId);
+                // User supplied new credentials successfully. If we had
+                // previously surfaced an auth failure for this notebook
+                // (m_credentialUpdateRetryArm set), immediately re-trigger a
+                // sync so the user sees the verdict of their new PAT WITHOUT an
+                // extra Sync Now click; tag it for manual feedback so success
+                // surfaces via the status bar and failure surfaces via
+                // onSyncFailedSurface as usual.
+                //
+                // Retiring the failure notification itself is
+                // NotificationRouter's job; it subscribes to this same signal.
                 if (m_credentialUpdateRetryArm.remove(p_notebookId)) {
                   if (auto *svc = m_services.get<SyncService>()) {
                     if (svc->isSyncInProgress(p_notebookId)) {
@@ -238,8 +233,8 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
             });
     connect(syncSvc, &SyncService::disableFinished, this,
             [this](const QString &p_notebookId, VxCoreError) {
-              m_authFailureNotified.remove(p_notebookId);
-              m_networkFailureNotified.remove(p_notebookId);
+              // Failure-notification retirement lives in NotificationRouter,
+              // which subscribes to this same signal.
               m_credentialUpdateRetryArm.remove(p_notebookId);
               m_deferredCredentialRetry.remove(p_notebookId);
               m_pendingManualSyncFeedback.remove(p_notebookId);
@@ -287,8 +282,13 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
   }
   connect(this, &NotebookExplorer2::currentNotebookChanged, this, [this](const QString &) {
     // Reset all per-notebook UI feedback state on notebook switch.
-    m_authFailureNotified.clear();
-    m_networkFailureNotified.clear();
+    //
+    // Sync FAILURE NOTIFICATIONS are deliberately NOT retired here. The old
+    // anti-spam sets were transient modal-suppression bookkeeping, so clearing
+    // them cost nothing; a notification is a user-visible record of a failure
+    // that is still unresolved. Merely looking at a different notebook is not
+    // an incident-resolution boundary, and retiring by notebook would also have
+    // to avoid touching OTHER notebooks' unresolved failures.
     m_credentialUpdateRetryArm.clear();
     m_deferredCredentialRetry.clear();
     m_pendingManualSyncFeedback.clear();
@@ -2027,64 +2027,51 @@ void NotebookExplorer2::onSyncFailedSurface(const QString &p_notebookId, VxCoreE
   }
 
   if (p_code == VXCORE_ERR_SYNC_AUTH_FAILED) {
-    // Suppress repeat popups within a "failure streak". Counter is cleared on
-    // the next successful sync, notebook switch, or sync disable.
-    if (m_authFailureNotified.contains(p_notebookId)) {
-      qCDebug(lcSync) << "NotebookExplorer2::onSyncFailedSurface: auth-failure popup suppressed"
-                      << "notebookId:" << p_notebookId;
-      return;
-    }
     // Arm credential-update auto-retry: if the user fixes the PAT via Sync
     // Info, credentialsSetFinished(OK) will trigger a sync automatically so
     // the user sees the verdict.
+    //
+    // NOTE: the former m_authFailureNotified anti-spam guard is gone. Repeat
+    // suppression now lives in NotificationService's dedup key
+    // ("sync.auth.<id>"), and the incident is retired by NotificationRouter at
+    // the same boundaries that used to clear this set.
     m_credentialUpdateRetryArm.insert(p_notebookId);
-    m_authFailureNotified.insert(p_notebookId);
 
-    QMessageBox box(QMessageBox::Warning, tr("Sync authentication failed"),
-                    tr("Sync failed for notebook \"%1\".\n\nGitHub rejected the stored Personal "
-                       "Access Token (HTTP 401). The token may have been revoked, expired, or had "
-                       "its SSO authorization withdrawn.\n\nUpdate the token to resume syncing.")
-                        .arg(notebookLabel),
-                    QMessageBox::Cancel, this);
-    box.setDetailedText(p_message);
-    QPushButton *openInfoBtn = box.addButton(tr("Open Sync Info..."), QMessageBox::AcceptRole);
-    box.setDefaultButton(openInfoBtn);
-    box.exec();
-    if (box.clickedButton() == openInfoBtn) {
-      auto *dlg = new NotebookSyncInfoDialog2(m_services, p_notebookId, this);
-      dlg->setAttribute(Qt::WA_DeleteOnClose);
-      dlg->open();
-    }
+    emit syncUserMessageRequested(
+        p_notebookId, p_code, tr("Sync authentication failed"),
+        tr("Sync failed for notebook \"%1\".\n\nGitHub rejected the stored Personal "
+           "Access Token (HTTP 401). The token may have been revoked, expired, or had "
+           "its SSO authorization withdrawn.\n\nUpdate the token to resume syncing.")
+            .arg(notebookLabel),
+        p_message);
     return;
   }
 
   if (p_code == VXCORE_ERR_SYNC_NETWORK) {
-    if (m_networkFailureNotified.contains(p_notebookId)) {
-      qCDebug(lcSync) << "NotebookExplorer2::onSyncFailedSurface: network-failure popup suppressed"
-                      << "notebookId:" << p_notebookId;
-      return;
-    }
-    m_networkFailureNotified.insert(p_notebookId);
-    MessageBoxHelper::notify(
-        MessageBoxHelper::Information, tr("Sync network error"),
+    emit syncUserMessageRequested(
+        p_notebookId, p_code, tr("Sync network error"),
         tr("Sync failed for notebook \"%1\" because of a network error. VNote will retry "
            "automatically on the next change.")
             .arg(notebookLabel),
-        p_message, this);
+        p_message);
     return;
   }
 
   // Other failure codes (queue full, invalid param, not enabled, unknown).
-  // These are usually internal-state problems the user can't act on; show a
-  // single warning and rely on the anti-spam guard reusing the auth slot's
-  // bucket so we never spam during a failure streak.
-  if (m_authFailureNotified.contains(p_notebookId)) {
+  // These are usually internal-state problems the user can't act on.
+  emit syncUserMessageRequested(p_notebookId, p_code, tr("Sync failed"),
+                                tr("Sync failed for notebook \"%1\".").arg(notebookLabel),
+                                p_message);
+}
+
+void NotebookExplorer2::openSyncInfo(const QString &p_notebookId) {
+  if (p_notebookId.isEmpty()) {
     return;
   }
-  m_authFailureNotified.insert(p_notebookId);
-  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Sync failed"),
-                           tr("Sync failed for notebook \"%1\".").arg(notebookLabel), p_message,
-                           this);
+  qCDebug(lcSync) << "NotebookExplorer2::openSyncInfo: notebookId:" << p_notebookId;
+  auto *dlg = new NotebookSyncInfoDialog2(m_services, p_notebookId, this);
+  dlg->setAttribute(Qt::WA_DeleteOnClose);
+  dlg->open();
 }
 
 void NotebookExplorer2::onSyncButtonClicked() {
@@ -2127,13 +2114,12 @@ void NotebookExplorer2::onSyncButtonClicked() {
       syncSvc->cancelSync(nbId);
       return;
     }
-    // Manual Sync Now overrides anti-spam suppression: the user explicitly
-    // clicked, so any next failure MUST surface even if a prior failure popup
-    // was already shown. Without this clear, m_authFailureNotified.contains(id)
-    // in onSyncFailedSurface would short-circuit and the user would see
-    // "nothing happens" again.
-    m_authFailureNotified.remove(nbId);
-    m_networkFailureNotified.remove(nbId);
+    // Manual Sync Now overrides dedup suppression: the user explicitly clicked,
+    // so any next failure MUST surface even if a prior failure notification is
+    // still active. Without retiring the incident, notify() would fold the new
+    // failure into the existing message and never interrupt, and the user would
+    // see "nothing happens" again.
+    emit syncIncidentRetryRequested(nbId);
     // Tag for success-feedback so the syncFinished(OK) handler can post a
     // brief status-bar confirmation. Manual click only — auto-sync never
     // populates this set.
@@ -2162,9 +2148,7 @@ void NotebookExplorer2::onSyncInfoActionTriggered() {
     return;
   }
   qCDebug(lcSync) << "NotebookExplorer2::onSyncInfoActionTriggered: triggered notebookId:" << nbId;
-  auto *dlg = new NotebookSyncInfoDialog2(m_services, nbId, this);
-  dlg->setAttribute(Qt::WA_DeleteOnClose);
-  dlg->open();
+  openSyncInfo(nbId);
 }
 
 void NotebookExplorer2::maybePromptSyncInfoForMissingPat(const QString &p_notebookId) {

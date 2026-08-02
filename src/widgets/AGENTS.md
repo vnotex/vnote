@@ -93,10 +93,34 @@ and persistence live in `DashboardController` (`../controllers/`).
 
 ## Notification System
 
-The in-app notification UI is the **View** layer over `NotificationService` (data/signals only, `src/core/services/notificationservice.{h,cpp}` — Qt-Widgets-free). Producers call `NotificationService::notify(NotificationMessage)`; deciding which subsystems emit is out of scope of the widgets.
+The in-app notification UI is the **View** layer over `NotificationService` (data/signals only, `src/core/services/notificationservice.{h,cpp}` — Qt-Widgets-free). Producers are wired in `NotificationRouter` (`src/controllers/notificationrouter.{h,cpp}`) and `UpdateController`; deciding which subsystems emit is out of scope of the widgets.
 
-- `NotificationButton2` (`QToolButton`) lives on the settings toolbar **immediately after the Theme button** (added by `ToolBarHelper2::setupNotificationButton`, called right after `setupThemeSwitcherButton` in `setupSettingsToolBar` — covers both unified and split toolbar paths). It paints a red badge with `NotificationService::activeCount()`, refreshes its bell icon on `ThemeService::themeChanged`, and auto-shows the popup on `messageAdded`.
-- `NotificationPopup2` (extends `ButtonPopup`) lists messages newest-first with severity icon + title + text + an optional progress bar + per-message action buttons + Dismiss, and reuses the shared **`TitleBar`** class (same as every dock panel) for its header holding the "Notifications" title and the Clear All action button. Do NOT hand-roll a titlebar — construct `TitleBar(themeService, title, /*hasInfoLabel*/false, TitleBar::Action::None, parent)` and `addActionButton(iconName, text)`; it self-manages theme QSS and icon refresh.
+Three surfaces, one rule each:
+
+- `NotificationToast` (`notificationtoast.{h,cpp}`) is the **transient** surface for `Attention::Interrupt`. It is a plain **child `QFrame` of `MainWindow2`**, anchored bottom-right of the central widget — NOT a `QMenu` and NOT a `Qt::Tool` top-level. A child widget cannot take window activation, so an arriving toast can never eat the user's keystrokes; being a child (rather than a `Qt::Tool` window) also avoids the Windows native-unmap-on-deactivate quirk, multi-monitor clamping and taskbar overlap.
+- `NotificationButton2` (`QToolButton`) lives on the settings toolbar immediately after the Theme button. It paints a red badge with `NotificationService::activeCount()` and refreshes its bell icon on `ThemeService::themeChanged`. It **does not auto-show the popup** — `showPopup()` is called on click, or by `MainWindow2` forwarding `NotificationToast::popupRequested`.
+- `NotificationPopup2` (extends `ButtonPopup`) is the click-to-open **notification centre**: messages newest-first with severity icon + title + text + optional collapsible "Details" + optional progress bar + per-message action buttons + Dismiss, in a height-capped `QScrollArea`, under the shared `TitleBar` holding "Notifications" and Clear All. Do NOT hand-roll a titlebar.
+
+### Attention → surface routing (owned by `NotificationToast`)
+
+The routing table lives INSIDE the toast rather than in `MainWindow2`, so it is unit-testable against the real widget instead of a duplicated copy. `MainWindow2` injects the two window-policy inputs:
+
+- `setCanShowInWindow(...)` — must be `isVisible() && !(windowState() & Qt::WindowMinimized)`. **`isVisible()` alone is not enough**: a minimized top-level window is still logically visible, so an in-window child would be "shown" where the user cannot see it.
+- `setFallbackSink(...)` — where an `Interrupt` goes when the above is false. `MainWindow2` routes it to `QSystemTrayIcon::showMessage()` (title + text only; a balloon carries no actions and cannot be retracted).
+
+| Signal | Condition | Toast action |
+|---|---|---|
+| `messageAdded` | `Interrupt` | show (or fall back to the sink) |
+| `messageAdded` | `Passive` | nothing |
+| `messageUpdated` | shown id, `Interrupt` | refresh content, **do not** restart the timer |
+| `messageUpdated` | shown id, `Passive` | **hide** (the producer downgraded it; leaving stale interrupting content up would show a stale action button) |
+| `messageUpdated` | any other id | nothing |
+| `messageDismissed` / `messageRemoved` | shown id | hide |
+| `messagesCleared` | always | hide |
+
+**A `messageAdded` carrying `Interrupt` is the ONLY thing that raises the toast.** A producer that must re-interrupt an ongoing incident calls `NotificationService::renotify()`, which removes the old generation and posts a new one. See `src/core/services/AGENTS.md` § NotificationService for why there is no escalation signal.
+
+`renotify()` always changes the id, so it necessarily runs `messageRemoved(old)` → hide, then `messageAdded(new)` → show. Under the current GUI-thread-only producer contract both deliveries are direct and synchronous, so the pair completes before a repaint and no blank frame is rendered. **Keep these plain `hide()`/`show()` calls** — adding a fade, animation or deferred teardown would turn that into a visible flicker. The accepted cost of this two-signal protocol is that a *visible* popup rebuilds twice and the badge recomputes twice per `renotify()`.
 
 ### Progress and in-place updates
 
@@ -105,25 +129,38 @@ set (range `0..0`, busy indicator, wins over the permille) or `m_progressPermill
 (range `0..1000`, clamped). Permille rather than percent, so a multi-hundred-megabyte
 download still moves the bar smoothly — same scale as `UpdateDialog`.
 
-`NotificationService::messageUpdated` rebuilds the rows **only when the popup is already
-visible**. It must never re-pop: an update is a content change to a message the user has
-already been shown, whereas `messageAdded` is a new event that has earned the interruption.
+The popup rebuilds on `messageAdded` / `messageUpdated` / `messageDismissed` /
+`messageRemoved` / `messagesCleared` / `themeChanged`, but **only when it is already
+visible**. `messageAdded` is in that list deliberately: nothing auto-pops any more, so
+without it an open popup would go stale.
 
 `NotificationAction::m_dismissOnTrigger` (default `true`) controls whether triggering the
 action dismisses the message. Producers that keep updating one message in place — the
-updater's Update / Cancel / Retry — set it `false`, and the popup then just `rebuild()`s and
-stays open.
+updater's Update / Cancel / Retry — set it `false`.
+
+`m_details` is rendered as a collapsible disclosure in the **popup list only** — never in
+the toast or the tray balloon, both of which must stay small. It is the home for the error
+blobs that used to be a `QMessageBox::setDetailedText` (or were lost to `qWarning`).
+
+### Per-severity accent
+
+Rows and the toast set `PropertyDefs::c_state` (`info` / `warning` / `error` / `success`),
+driven by the shared `*[State="..."]` rules every theme defines, and tint their severity
+icon with `@base#<state>#fg`. When adding a theme, carry all four states plus a
+`vnotex--NotificationToast` block forward; `tests/core/test_theme.cpp`
+(`testInterfaceQssFullyResolved`) is the gate.
 
 ### Lifetime-safety rules (MUST FOLLOW)
 
-`NotificationAction::m_callback` is arbitrary application code. The popup keeps NO copy of it across a rebuild:
+`NotificationAction::m_callback` is arbitrary application code. Neither the popup nor the toast keeps a copy of it across a rebuild:
 
-- Rows are rebuilt from `service.messages()` on every show and on `messageUpdated` / `messageDismissed` / `messagesCleared` / `themeChanged` (while visible), so a stale row's callback can never fire after `clearAll()`.
-- Action buttons capture only the message id + action index and re-resolve the callback from the **current** service state at click time (a cleared/dismissed message becomes an inert no-op).
+- Rows are rebuilt from `service.messages()` on every show and on the signals above, so a stale row's callback can never fire after `clearAll()`.
+- Action buttons capture only the message id + action index and re-resolve the callback from the **current** service state at click time (a cleared/dismissed/removed message becomes an inert no-op).
 - The callback AND its `m_dismissOnTrigger` flag are snapshotted in that **same** lookup, before the callback runs. Do NOT re-resolve the action index afterwards: an Update/Retry callback synchronously replaces the action vector (with Cancel / Restart), so a second lookup would read a different action's flag.
-- Because a callback may synchronously destroy the popup (e.g. restart the main window), every post-callback access to `this`/`m_services` is guarded with `QPointer<NotificationPopup2>`. The callback may also have already triggered a `rebuild()` via `messageUpdated`, so nothing after it may touch the row widgets that existed when the lambda started.
+- Because a callback may synchronously destroy the widget (e.g. restart the main window), every post-callback access to `this`/`m_services` is guarded with a `QPointer`. The callback may also have already triggered a rebuild via `messageUpdated`, so nothing after it may touch the row widgets that existed when the lambda started.
 
-`Duration` controls only the auto-popup's auto-hide (`Short` ~3s, `Long` ~7s, `Persist` = no timer, owned by the popup's `QTimer`); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed or cleared.
+`Duration` controls only auto-hide (`Short` 3 s, `Long` 7 s, `Persist` = capped at 15 s **on the toast only**, so a toast is never permanently stuck); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed, cleared, or evicted by the retention cap.
+
 
 
 ## Inline Notification Banners

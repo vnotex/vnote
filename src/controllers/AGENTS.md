@@ -48,6 +48,48 @@ When adding a multi-target action that requires user input via a dialog, the MVC
 | `NotebookSyncInfoController` | Sync enable/disable, PAT refresh, URL change, bootstrap recovery |
 | `NewNotebookController` (sync portion) | New-notebook bootstrap via `bootstrapSync` (deletes notebook on enable failure) |
 | `DashboardController` | Home dashboard (vx://home) layout model, occupancy math, seed/default, and WidgetConfig persistence; the `DashboardBoard` widget is its pure view |
+| `NotificationRouter` | Turns subsystem failure signals into `NotificationMessage`s; owns attention/dedup policy (see below) |
+
+## NotificationRouter
+
+Translates already-existing subsystem failure signals into notifications. It exists because
+most of those signals had **zero receivers** — `BufferService::bufferAutoSaveAborted` has
+been emitted-and-ignored for a long time. The failure was never that core services could
+not speak, but that nobody listened.
+
+Rules:
+
+- **It owns attention/dedup POLICY ONLY, never recovery logic.** `NotebookExplorer2` keeps
+  its sync failure filtering, state refresh and `m_credentialUpdateRetryArm` arming; it
+  merely stopped popping modals and emits `syncUserMessageRequested` instead.
+- **Its constructor takes only `ServiceLocator &`** and holds no widget pointers, so the
+  header stays widget-free and `test_notificationrouter` is genuinely `GUILESS` (it drives
+  the widget-owned sources through the public slots). `MainWindow2` owns the connections
+  from its private members into those slots, plus the one out of `openSyncInfoRequested`.
+- **It never constructs a dialog.** The sync-auth notification's action emits
+  `openSyncInfoRequested(notebookId)`, which `MainWindow2` forwards to
+  `NotebookExplorer2::openSyncInfo` — a notification may name a notebook that is not the
+  one currently on screen, which is why that method takes an explicit id.
+- `BufferService` privately inherits its QObject base and exposes only `asQObject()`, so its
+  three signals are connected with the string-based `SIGNAL`/`SLOT` form. That is why the
+  buffer handlers are **named slots** rather than lambdas.
+- It passes the existing `VxCoreError` through rather than inventing a "kind" enum;
+  `SyncService::syncFailed` already supplies exactly that code.
+
+**Incident retirement is not optional.** Because the toast is raised only by
+`messageAdded`, a repeat failure within a live incident is silent by design. Every boundary
+where an incident genuinely ends must call `dismissByDedupKey`, or that failure becomes
+permanently quiet. The current boundaries are sync success / enable / credentials-update /
+disable (from `SyncService`), manual Sync Now (via
+`NotebookExplorer2::syncIncidentRetryRequested`, emitted immediately before
+`triggerSyncNow`), buffer save success, and upload success.
+
+**Notebook switch is deliberately NOT a retirement boundary.** The anti-spam `QSet`s it
+replaced were transient modal-suppression bookkeeping, so clearing them cost nothing; a
+notification is a user-visible record of a failure that is still unresolved. Merely looking
+at a different notebook does not resolve it, and retiring by prefix would also delete other
+notebooks' unresolved failures.
+
 
 ## NotebookSyncInfoController: bootstrapApply vs applyChanges
 

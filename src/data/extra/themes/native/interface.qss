@@ -24,6 +24,10 @@ QWidget[HitSettingWidget="true"] {
     border: 1px solid @base#error#fg;
 }
 
+*[State="success"] {
+    border: 1px solid @base#success#fg;
+}
+
 /* ToolBox */
 vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
     border-bottom: 2px solid;
@@ -124,6 +128,11 @@ vnotex--ViewSplit2 QTabBar[ViewSplitFlash="true"]::tab:selected {
 
 vnotex--EntryPopup {
     border: 1px solid @widgets#unitedentry#popup#border;
+}
+
+vnotex--NotificationToast {
+    border: 1px solid @widgets#unitedentry#popup#border;
+    border-radius: 6px;
 }
 
 /* QWidgetAction item */

@@ -8,7 +8,6 @@
 class QToolButton;
 class QVBoxLayout;
 class QWidget;
-class QTimer;
 
 namespace vnotex {
 
@@ -18,6 +17,11 @@ class TitleBar;
 // Popup listing recent notification messages (newest first). Rebuilds its rows
 // from NotificationService::messages() on every show/signal so it never retains
 // dangling callback references after clearAll().
+//
+// This is the click-to-open notification centre only. It NEVER pops itself: it
+// is a QMenu, so showing it takes a mouse + keyboard grab, which is unacceptable
+// for a message the user did not ask to see. Transient delivery belongs to
+// NotificationToast.
 class NotificationPopup2 : public ButtonPopup {
   Q_OBJECT
 
@@ -27,15 +31,12 @@ public:
   // Rebuild the message rows from the current service state.
   void rebuild();
 
-  // Rebuild, then pop up at the button and arm the auto-hide timer according to
-  // @p_msg's Duration (Persist disables the timer). Used for the auto-popup on a
-  // newly arrived message.
-  void showTransient(const NotificationMessage &p_msg);
-
 private:
   void setupUI();
 
   QIcon severityIcon(NotificationMessage::Severity p_severity) const;
+
+  static const char *severityState(NotificationMessage::Severity p_severity);
 
   ServiceLocator &m_services;
 
@@ -46,8 +47,6 @@ private:
   QVBoxLayout *m_listLayout = nullptr;
 
   QWidget *m_emptyLabel = nullptr;
-
-  QTimer *m_autoHideTimer = nullptr;
 };
 
 } // namespace vnotex

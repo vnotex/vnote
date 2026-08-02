@@ -17,6 +17,7 @@ class QToolBar;
 namespace vnotex {
 
 class MainWindow2;
+class NotificationButton2;
 class ServiceLocator;
 class UnitedEntry;
 class UnitedEntryMgr;
@@ -46,6 +47,11 @@ public:
 
   // Access the UnitedEntryMgr instance (for signal wiring).
   UnitedEntryMgr *unitedEntryMgr() const;
+
+  // Access the notification button (for signal wiring). The notification popup
+  // is private to the button, so this is how NotificationToast::popupRequested
+  // reaches it. May be null before setupToolBars() has run.
+  NotificationButton2 *notificationButton() const;
 
   // Add spacer to toolbar.
   static void addSpacer(QToolBar *p_toolBar);
@@ -100,6 +106,8 @@ private:
   QPointer<UnitedEntry> m_unitedEntry;
 
   UnitedEntryMgr *m_unitedEntryMgr = nullptr;
+
+  NotificationButton2 *m_notificationButton = nullptr;
 
   QVector<TrackedIcon> m_trackedIcons;
 

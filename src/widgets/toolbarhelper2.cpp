@@ -430,9 +430,11 @@ void ToolBarHelper2::setupThemeSwitcherButton(QToolBar *p_toolBar) {
 }
 
 void ToolBarHelper2::setupNotificationButton(QToolBar *p_toolBar) {
-  auto *btn = new NotificationButton2(m_services, p_toolBar->iconSize(), p_toolBar);
-  p_toolBar->addWidget(btn);
+  m_notificationButton = new NotificationButton2(m_services, p_toolBar->iconSize(), p_toolBar);
+  p_toolBar->addWidget(m_notificationButton);
 }
+
+NotificationButton2 *ToolBarHelper2::notificationButton() const { return m_notificationButton; }
 
 void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();

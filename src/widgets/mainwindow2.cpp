@@ -34,6 +34,8 @@
 #endif
 
 #include "constants.h"
+#include "notificationbutton2.h"
+#include "notificationtoast.h"
 #include "systemtrayhelper.h"
 #include "titlebarcontainer.h"
 #include "titletoolbar2.h"
@@ -56,6 +58,7 @@
 #include <gui/utils/widgetutils.h>
 
 #include <controllers/firstruncontroller.h>
+#include <controllers/notificationrouter.h>
 #include <controllers/updatecontroller.h>
 #include <controllers/searchcontroller.h>
 #include <controllers/syncconflictcontroller.h>
@@ -261,6 +264,12 @@ void MainWindow2::setupUI() {
         }
       },
       Qt::QueuedConnection);
+
+  // Notification surfaces + producers. Constructed BEFORE the updater's
+  // MainWindowAfterStart subscription, so a launch-time notification from
+  // runStartupTasks() (e.g. a staged update ready to install, or the stored
+  // apply result) already has a toast to land on.
+  setupNotifications();
 
   // Incremental updater. Constructed BEFORE kickOffPostInit() so its
   // MainWindowAfterStart subscription is registered before the hook fires.
@@ -1269,6 +1278,58 @@ void MainWindow2::setupSystemTray() {
   m_trayIcon->show();
 
   setupGlobalHotkey();
+}
+
+void MainWindow2::setupNotifications() {
+  m_notificationToast = new NotificationToast(m_serviceLocator, this);
+  // Anchor to the editor area rather than the whole window, and watch it for
+  // geometry changes: showing or hiding a dock resizes the central widget
+  // WITHOUT resizing this window.
+  m_notificationToast->setAnchorWidget(centralWidget());
+
+  // isVisible() alone is NOT sufficient: a minimized top-level window is still
+  // logically visible, so an in-window toast would be delivered to a surface
+  // the user cannot see.
+  m_notificationToast->setCanShowInWindow(
+      [this]() { return isVisible() && !(windowState() & Qt::WindowMinimized); });
+
+  // Out-of-window fallback. A balloon carries no actions and cannot be
+  // retracted, so only the title and text survive the trip.
+  m_notificationToast->setFallbackSink([this](const NotificationMessage &p_msg) {
+    if (!m_trayIcon || !m_trayIcon->isVisible()) {
+      return;
+    }
+    m_trayIcon->showMessage(p_msg.m_title.isEmpty() ? ConfigMgr2::c_appName : p_msg.m_title,
+                            p_msg.m_text);
+  });
+
+  // The popup is private to NotificationButton2, so the toast asks rather than
+  // reaching in.
+  connect(m_notificationToast, &NotificationToast::popupRequested, this, [this]() {
+    if (m_toolBarHelper) {
+      if (auto *btn = m_toolBarHelper->notificationButton()) {
+        btn->showPopup();
+      }
+    }
+  });
+
+  // Producer side. The router holds no widget pointers, so MainWindow2 owns the
+  // connections from its private members into the router's public slots.
+  m_notificationRouter = new NotificationRouter(m_serviceLocator, this);
+
+  if (m_notebookExplorer) {
+    connect(m_notebookExplorer, &NotebookExplorer2::syncUserMessageRequested,
+            m_notificationRouter, &NotificationRouter::onSyncUserMessageRequested);
+    connect(m_notebookExplorer, &NotebookExplorer2::syncIncidentRetryRequested,
+            m_notificationRouter, &NotificationRouter::onSyncIncidentRetryRequested);
+    connect(m_notificationRouter, &NotificationRouter::openSyncInfoRequested, m_notebookExplorer,
+            &NotebookExplorer2::openSyncInfo);
+  }
+
+  if (m_viewArea) {
+    connect(m_viewArea, &ViewArea2::viewWindowCreationFailed, m_notificationRouter,
+            &NotificationRouter::onViewWindowCreationFailed);
+  }
 }
 
 void MainWindow2::setupGlobalHotkey() {

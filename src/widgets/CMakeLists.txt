@@ -99,6 +99,7 @@ target_sources(vnote PRIVATE
     notebookselector2.cpp notebookselector2.h
     notificationbutton2.cpp notificationbutton2.h
     notificationpopup2.cpp notificationpopup2.h
+    notificationtoast.cpp notificationtoast.h
     outlinepopup.cpp outlinepopup.h
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h

@@ -46,6 +46,7 @@
         "fg11" : "#ab5683",
         "fg12" : "#5768c4",
         "fg13" : "#b42b1f",
+        "fg_success" : "#98c379",
         "fg15_3" : "#4f5666",
         "fg15_4" : "#60697c",
         "fg15_5" : "#9ea5b4",
@@ -148,6 +149,9 @@
         "error" : {
             "fg" : "@palette#fg10"
         },
+        "success" : {
+            "fg" : "@palette#fg_success"
+        },
         "warning" : {
             "fg" : "@palette#fg11"
         },
@@ -212,6 +216,9 @@
             },
             "error" : {
                 "border" : "@base#error#fg"
+            },
+            "success" : {
+                "border" : "@base#success#fg"
             },
             "danger" : {
                 "fg" : "@base#danger#fg",

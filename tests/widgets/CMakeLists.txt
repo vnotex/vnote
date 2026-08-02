@@ -1118,3 +1118,70 @@ add_qt_test(test_markdownvieweradapter_anchor
     core_services
     vxcore
 )
+
+# NotificationToast - the transient surface for Attention::Interrupt messages.
+# NOT GUILESS: constructs a real QFrame with child buttons and drives mouse
+# events, so it needs a QApplication. The attention->surface routing lives
+# INSIDE the toast (with the window policy arriving through injected seams),
+# which is what lets this assert production behaviour rather than a copy of it.
+add_qt_test(test_notificationtoast
+  SOURCES
+    test_notificationtoast.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/notificationtoast.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notificationtoast PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+# NotificationPopup2 + NotificationButton2 - the persistent notification centre.
+# NOT GUILESS: builds real QMenu/QFrame/QPushButton widgets. Covers the
+# retention path in particular: a message can leave the store WITHOUT being
+# dismissed (renotify replacement, or cap eviction), and both the popup rows and
+# the badge must honour messageRemoved.
+add_qt_test(test_notificationpopup2
+  SOURCES
+    test_notificationpopup2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/notificationpopup2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/notificationbutton2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/titlebar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_notificationpopup2 PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)

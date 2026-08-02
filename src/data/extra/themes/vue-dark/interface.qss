@@ -34,6 +34,10 @@ QWidget[HitSettingWidget="true"] {
     border: 1px solid @widgets#qwidget#error#border;
 }
 
+*[State="success"] {
+    border: 1px solid @widgets#qwidget#success#border;
+}
+
 /* QAbstractScrollArea */
 QAbstractScrollArea {
     border: 1px solid @widgets#qabstractscrollarea#border;
@@ -1233,6 +1237,13 @@ vte--VTextEdit {
 
 vnotex--EntryPopup {
     border: 1px solid @widgets#unitedentry#popup#border;
+}
+
+vnotex--NotificationToast {
+    color: @widgets#qmenu#fg;
+    background-color: @widgets#qmenu#bg;
+    border: 1px solid @widgets#qmenu#border;
+    border-radius: 6px;
 }
 
 /* FileListView - file panel in two-column explorer */

@@ -29,6 +29,9 @@
         "error" : {
             "fg" : "#b71c1c"
         },
+        "success" : {
+            "fg" : "#2e7d32"
+        },
         "warning" : {
             "fg" : "#fc766a"
         },

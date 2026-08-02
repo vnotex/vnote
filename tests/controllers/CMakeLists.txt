@@ -364,3 +364,41 @@ add_custom_command(TARGET test_legacy_image_migration POST_BUILD
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_legacy_image_migration>
 )
+
+# NotificationRouter - attention/dedup policy for subsystem failure signals.
+# GUILESS: the router deliberately holds no widget pointers, so the
+# widget-owned sources are driven through its public slots with no QApplication
+# and no widget construction.
+add_qt_test(test_notificationrouter
+  SOURCES
+    test_notificationrouter.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notificationrouter.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
+# UpdateController - dedup-key wiring for the update notification lifecycle.
+# NOT GUILESS: UpdateController reaches into the widget layer (MessageBoxHelper,
+# UpdateDialog, MainWindow2). The two heavyweight widget dependencies are
+# satisfied by stubs_updatecontroller.cpp rather than by linking the real
+# mainwindow2.cpp, which would drag in most of the app for two symbols. This is
+# the same approach as tests/unitedentry/stubs_findunitedentry.cpp.
+# mainwindow2.h / updatedialog.h are listed so AUTOMOC emits their moc.
+add_qt_test(test_updatecontroller
+  SOURCES
+    test_updatecontroller.cpp
+    stubs_updatecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/updatecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow2.h
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/updatedialog.h
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    minicrypto
+    VTextEdit
+    Qt6::Widgets
+)

@@ -103,6 +103,12 @@ public slots:
   // Locate a node in the explorer (switch notebook if needed, expand, select, scroll).
   void locateNode(const NodeIdentifier &p_nodeId);
 
+  // Open the Sync Info dialog for an EXPLICIT notebook. Extracted from
+  // onSyncInfoActionTriggered (which only ever targets currentNotebookId) so a
+  // notification action can open Sync Info for the notebook that actually
+  // failed, which may not be the one currently on screen.
+  void openSyncInfo(const QString &p_notebookId);
+
 #ifdef VNOTE_TESTING
   // Test-only seam (per ADR-6) that simulates the post-newNotebook() auto-open
   // flow without driving the actual NewNotebookDialog2. Mirrors the same code
@@ -145,11 +151,15 @@ private slots:
   void onSyncButtonClicked();
   void onSyncInfoActionTriggered();
   // Surface sync failures to the user. Wired to SyncService::syncFailed.
-  // Routes by error code: auth/network → modal dialog with "Open Sync Info"
-  // shortcut; conflict is handled elsewhere (MainWindow2). Anti-spam guards
-  // (m_authFailureNotified / m_networkFailureNotified) ensure at most one
-  // popup per notebook per "failure streak" — cleared on the next successful
-  // sync or notebook switch.
+  // Filters out conflict (owned by MainWindow2) and overlap failures, refreshes
+  // the button, resolves the notebook label and arms the credential-update
+  // retry, then emits syncUserMessageRequested for presentation.
+  //
+  // Presentation is deliberately NOT done here: the message is routed through
+  // NotificationRouter so the attention and repeat-suppression policy for every
+  // subsystem lives in one place. Repeat suppression that used to be the
+  // m_authFailureNotified / m_networkFailureNotified sets is now the
+  // notification dedup key.
   void onSyncFailedSurface(const QString &p_notebookId, VxCoreError p_code,
                            const QString &p_message);
   // Recompute enabled state and tooltip for the title-bar Sync button and
@@ -174,6 +184,20 @@ signals:
   // read-only state is (re)computed. MainWindow2 wires this to the File-toolbar
   // mutation-action affordance; the explorer never references the toolbar.
   void readOnlyStateChanged(bool p_readOnly);
+
+  // A sync failure the user should see. Carries the raw VxCoreError so the
+  // router can map it to a severity/attention/dedup policy -- deliberately not a
+  // bespoke "kind" enum, since SyncService::syncFailed already supplies this
+  // exact code. @p_details is the long-form backend message (HTTP body etc.),
+  // which the notification renders as a collapsible disclosure.
+  void syncUserMessageRequested(const QString &p_notebookId, VxCoreError p_code,
+                                const QString &p_title, const QString &p_text,
+                                const QString &p_details);
+
+  // The user explicitly asked to retry sync for this notebook (manual Sync Now).
+  // Emitted immediately BEFORE triggerSyncNow so the router can retire the
+  // active failure incident and let the next failure interrupt again.
+  void syncIncidentRetryRequested(const QString &p_notebookId);
 
 private:
   void setupUI();
@@ -268,14 +292,6 @@ private:
   // later prompt.
   QSet<QString> m_pendingOpenSyncPrompt;
 
-  // Anti-spam set for auth/network sync-failure modal popups. Once we have
-  // shown the user an auth-failed dialog for a notebook, we suppress further
-  // popups for the same notebook until the next successful sync (clears the
-  // entry), the user switches notebooks, or sync is disabled. Without this
-  // the auto-sync path would pop a modal on every 3 s save tick.
-  QSet<QString> m_authFailureNotified;
-  QSet<QString> m_networkFailureNotified;
-
   // Manual-sync feedback set. Populated in onSyncButtonClicked when a user
   // explicitly invokes Sync Now (state S5/S7 non-cancel branch). Consumed in
   // the syncFinished handler on VXCORE_OK to emit a brief status-bar
@@ -285,7 +301,7 @@ private:
   QSet<QString> m_pendingManualSyncFeedback;
 
   // Credential-update auto-retry arm. Populated in onSyncFailedSurface when an
-  // auth-failure dialog is shown. Consumed in the credentialsSetFinished(OK)
+  // auth failure is surfaced. Consumed in the credentialsSetFinished(OK)
   // handler: if the arm is set for the notebook, immediately call
   // SyncService::triggerSyncNow so the user sees the verdict of their new
   // PAT without an extra click. Tagged for manual feedback so the result

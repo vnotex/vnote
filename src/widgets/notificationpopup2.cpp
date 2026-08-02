@@ -6,14 +6,16 @@
 #include <QPointer>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QTimer>
+#include <QScrollArea>
 #include <QToolButton>
 #include <QVBoxLayout>
 
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
+#include <gui/utils/widgetutils.h>
 
+#include "propertydefs.h"
 #include "titlebar.h"
 #include "widgetsfactory.h"
 
@@ -21,33 +23,45 @@ using namespace vnotex;
 
 namespace {
 const QString c_fgPalette = QStringLiteral("widgets#toolbar#icon#fg");
-}
+
+// Cap the list so a long backlog cannot grow the menu past the screen. Without
+// this the QMenu simply keeps growing; there is no implicit bound.
+constexpr double c_maxHeightRatio = 0.6;
+} // namespace
 
 NotificationPopup2::NotificationPopup2(ServiceLocator &p_services, QToolButton *p_btn,
                                        QWidget *p_parent)
     : ButtonPopup(p_btn, p_parent), m_services(p_services) {
   setupUI();
 
-  m_autoHideTimer = new QTimer(this);
-  m_autoHideTimer->setSingleShot(true);
-  connect(m_autoHideTimer, &QTimer::timeout, this, [this]() { hide(); });
+  connect(this, &QMenu::aboutToShow, this, [this]() { rebuild(); });
 
-  connect(this, &QMenu::aboutToShow, this, [this]() {
-    // Manual open: no auto-hide.
-    m_autoHideTimer->stop();
-    rebuild();
-  });
-
-  // Keep the visible popup consistent with the service: if messages are cleared
-  // or dismissed elsewhere, rebuild so no stale rows (or their callbacks) remain.
+  // Keep the visible popup consistent with the service: if messages are added,
+  // cleared, dismissed or removed elsewhere, rebuild so no stale rows (or their
+  // callbacks) remain.
   auto *service = m_services.get<NotificationService>();
   if (service) {
+    // messageAdded matters now that nothing auto-pops: an already-open popup
+    // would otherwise miss a message that arrived while it was on screen.
+    connect(service, &NotificationService::messageAdded, this,
+            [this](const NotificationMessage &) {
+              if (isVisible()) {
+                rebuild();
+              }
+            });
     connect(service, &NotificationService::messagesCleared, this, [this]() {
       if (isVisible()) {
         rebuild();
       }
     });
     connect(service, &NotificationService::messageDismissed, this, [this](quint64) {
+      if (isVisible()) {
+        rebuild();
+      }
+    });
+    // The message is gone from the store (renotify() replacement, or retention
+    // eviction) -- its row and its buttons must go with it.
+    connect(service, &NotificationService::messageRemoved, this, [this](quint64) {
       if (isVisible()) {
         rebuild();
       }
@@ -99,25 +113,53 @@ void NotificationPopup2::setupUI() {
 
   mainLayout->addWidget(m_titleBar);
 
-  auto *bodyLayout = new QVBoxLayout();
+  auto *bodyWidget = new QWidget(m_container);
+  auto *bodyLayout = new QVBoxLayout(bodyWidget);
   bodyLayout->setContentsMargins(4, 4, 4, 4);
   bodyLayout->setSpacing(4);
 
-  m_emptyLabel = new QLabel(tr("No notifications"), m_container);
+  m_emptyLabel = new QLabel(tr("No notifications"), bodyWidget);
   bodyLayout->addWidget(m_emptyLabel);
 
   m_listLayout = new QVBoxLayout();
   m_listLayout->setContentsMargins(0, 0, 0, 0);
   m_listLayout->setSpacing(4);
   bodyLayout->addLayout(m_listLayout);
+  bodyLayout->addStretch();
 
-  mainLayout->addLayout(bodyLayout);
+  auto *scroll = new QScrollArea(m_container);
+  scroll->setWidgetResizable(true);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll->setWidget(bodyWidget);
+  scroll->setMaximumHeight(
+      qMax(120, static_cast<int>(WidgetUtils::availableScreenSize(this).height() *
+                                 c_maxHeightRatio)));
+
+  mainLayout->addWidget(scroll);
 
   addWidget(m_container);
 }
 
+const char *NotificationPopup2::severityState(NotificationMessage::Severity p_severity) {
+  switch (p_severity) {
+  case NotificationMessage::Severity::Info:
+    return "info";
+  case NotificationMessage::Severity::Success:
+    return "success";
+  case NotificationMessage::Severity::Warning:
+    return "warning";
+  case NotificationMessage::Severity::Error:
+    return "error";
+  }
+  return "info";
+}
+
 QIcon NotificationPopup2::severityIcon(NotificationMessage::Severity p_severity) const {
   QString iconName;
+  // Explicit cases (no default label) so a new Severity value is visible to a
+  // reader and to static analysis rather than silently rendering as Info. The
+  // vnote target does not enable -Wswitch, so this is not compiler-enforced.
   switch (p_severity) {
   case NotificationMessage::Severity::Success:
     iconName = QStringLiteral("success.svg");
@@ -129,16 +171,26 @@ QIcon NotificationPopup2::severityIcon(NotificationMessage::Severity p_severity)
     iconName = QStringLiteral("error.svg");
     break;
   case NotificationMessage::Severity::Info:
-  default:
     iconName = QStringLiteral("info.svg");
     break;
+  }
+  if (iconName.isEmpty()) {
+    iconName = QStringLiteral("info.svg");
   }
 
   auto *themeService = m_services.get<ThemeService>();
   if (!themeService) {
     return QIcon();
   }
-  const auto fg = themeService->paletteColor(c_fgPalette);
+
+  // Per-severity tint via the shared semantic roles, falling back to the
+  // uniform toolbar icon color for a theme that lacks one.
+  const QString token =
+      QStringLiteral("base#%1#fg").arg(QLatin1String(severityState(p_severity)));
+  QString fg = themeService->paletteColor(token);
+  if (fg.isEmpty()) {
+    fg = themeService->paletteColor(c_fgPalette);
+  }
   return IconUtils::fetchIcon(themeService->getIconFile(iconName), fg);
 }
 
@@ -171,6 +223,9 @@ void NotificationPopup2::rebuild() {
 
     auto *row = new QFrame(m_container);
     row->setFrameShape(QFrame::StyledPanel);
+    // Per-severity accent, driven by the shared *[State=...] QSS rules.
+    WidgetUtils::setPropertyDynamically(row, PropertyDefs::c_state,
+                                        QLatin1String(severityState(msg.m_severity)));
     auto *rowLayout = new QVBoxLayout(row);
     rowLayout->setContentsMargins(6, 6, 6, 6);
     rowLayout->setSpacing(2);
@@ -198,6 +253,29 @@ void NotificationPopup2::rebuild() {
       auto *textLabel = new QLabel(msg.m_text, row);
       textLabel->setWordWrap(true);
       rowLayout->addWidget(textLabel);
+    }
+
+    // Long-form detail, collapsed by default. This is the home for the error
+    // blobs that used to be a QMessageBox detailedText (or were lost to
+    // qWarning). Deliberately plain text: producers must not have to escape.
+    if (!msg.m_details.isEmpty()) {
+      auto *detailsLabel = new QLabel(msg.m_details, row);
+      detailsLabel->setWordWrap(true);
+      detailsLabel->setTextFormat(Qt::PlainText);
+      detailsLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+      detailsLabel->hide();
+
+      auto *toggle = new QPushButton(tr("Details"), row);
+      toggle->setCheckable(true);
+      toggle->setFlat(true);
+      connect(toggle, &QPushButton::toggled, detailsLabel, &QLabel::setVisible);
+
+      auto *toggleLayout = new QHBoxLayout();
+      toggleLayout->setContentsMargins(0, 0, 0, 0);
+      toggleLayout->addWidget(toggle);
+      toggleLayout->addStretch();
+      rowLayout->addLayout(toggleLayout);
+      rowLayout->addWidget(detailsLabel);
     }
 
     if (msg.m_progressIndeterminate || msg.m_progressPermille >= 0) {
@@ -293,29 +371,4 @@ void NotificationPopup2::rebuild() {
   }
 
   m_emptyLabel->setVisible(shown == 0);
-}
-
-void NotificationPopup2::showTransient(const NotificationMessage &p_msg) {
-  rebuild();
-
-  if (m_button) {
-    // Pop up just below the button.
-    const QPoint pos = m_button->mapToGlobal(QPoint(0, m_button->height()));
-    popup(pos);
-  } else {
-    show();
-  }
-
-  m_autoHideTimer->stop();
-  switch (p_msg.m_duration) {
-  case NotificationMessage::Duration::Short:
-    m_autoHideTimer->start(3000);
-    break;
-  case NotificationMessage::Duration::Long:
-    m_autoHideTimer->start(7000);
-    break;
-  case NotificationMessage::Duration::Persist:
-    // No auto-hide.
-    break;
-  }
 }

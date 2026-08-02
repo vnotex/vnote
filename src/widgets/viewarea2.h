@@ -84,6 +84,12 @@ signals:
   // safely open buffers into the view area.
   void corePropagationReady();
 
+  // No ViewWindow could be created for this file: either no creator is
+  // registered for the type, or the creator returned null. Both were previously
+  // silent (qWarning only), so a double-click just did nothing. Routed to a
+  // notification by NotificationRouter.
+  void viewWindowCreationFailed(const QString &p_fileType, const QString &p_path);
+
 public:
 
   // ============ ViewAreaView Interface (overrides) ============

@@ -23,12 +23,42 @@ The compile error is the enforcement: losing the `Qt::Widgets` link removes the 
 
 ## NotificationService
 
-`NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageDismissed` / `messagesCleared`. All presentation (severity→icon mapping, popup, badge) lives in the widget layer (`NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).
+`NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QHash>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageUpdated` / `messageDismissed` / `messageRemoved` / `messagesCleared`. All presentation (severity→icon mapping, toast, popup, badge) lives in the widget layer (`NotificationToast` / `NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).
 
-- `NotificationMessage` is a copyable value type carrying `Severity`, `Duration`, a `QVector<NotificationAction>` (each action = label + `std::function<void()>` + `m_dismissOnTrigger`), and the progress hints `m_progressPermille` / `m_progressIndeterminate`. It is registered via `Q_DECLARE_METATYPE` + `qRegisterMetaType` in the ctor so `messageAdded` survives a queued (cross-thread) connection if a future producer calls `notify()` off the GUI thread.
+- `NotificationMessage` is a copyable value type carrying `Severity`, `Duration`, `Attention`, `m_category`, `m_dedupKey`, `m_details`, a `QVector<NotificationAction>` (each action = label + `std::function<void()>` + `m_dismissOnTrigger`), and the progress hints `m_progressPermille` / `m_progressIndeterminate`. It is registered via `Q_DECLARE_METATYPE` + `qRegisterMetaType` in the ctor so signals survive a queued (cross-thread) connection if a future producer calls `notify()` off the GUI thread.
 - Current usage is GUI-thread only; the service has no internal locking. If you add an off-thread producer, keep the metatype registration and rely on auto/queued connections rather than adding a mutex.
 - `dismiss()` marks a message dismissed (it stays in the list but is excluded from `activeCount()` and hidden by the popup); `clearAll()` removes all messages. `Duration` is a UI auto-hide hint only, not a retention policy.
-- `update(id, msg)` replaces a message's content IN PLACE and emits `messageUpdated`. It preserves `m_id`, `m_timestamp` and `m_dismissed` — it never renumbers, re-stamps, resurrects a dismissed message, or moves `activeCount()` — and returns `false` for an unknown id. `isActive(id)` is the companion predicate ("exists and not dismissed") producers check before updating. This is what lets the updater carry one notification from offer → progress → success/failure instead of spamming four.
+- `update(id, msg)` replaces a message's content IN PLACE and emits `messageUpdated`. It preserves `m_id`, `m_timestamp`, `m_dismissed`, **`m_category` and `m_dedupKey`** — it never renumbers, re-stamps, resurrects a dismissed message, moves `activeCount()`, or moves a key to a different message — and returns `false` for an unknown id. `isActive(id)` is the companion predicate ("exists and not dismissed") producers check before updating.
+
+### Attention: producers declare intent, the view owns placement
+
+`Attention` is `Passive` (default) or `Interrupt`. A producer states how badly it needs to be seen; it never names a widget. The widget layer maps that to a surface.
+
+**`Attention` defaults to `Passive` on purpose.** A producer that does not think about attention is quiet-but-badged, which is the safe failure direction. The cost is that a producer which *should* interrupt and forgets to say so is silent — so the per-site audit matters when adding one.
+
+### Incidents: `m_dedupKey`, `renotify()` and retirement
+
+A `dedupKey` names an **incident**, not a message. While a message with that key is active, `notify()` folds new content into it (emitting `messageUpdated`, returning the existing id) instead of appending. This is the anti-spam mechanism; it replaced the hand-rolled `QSet` guards `NotebookExplorer2` used to keep.
+
+Because the toast is raised **only** by `messageAdded` carrying `Interrupt`, two rules follow:
+
+1. **To re-interrupt, use `renotify()`.** It REMOVES the old generation (emitting `messageRemoved`) and posts a fresh one, so the new state arrives as `messageAdded`. Plain `notify()` on a live key can never interrupt. This is what makes a terminal state reliable even when it was not preceded by a passive phase — the updater's `DownloadStart::NoPlan` path goes straight from an interrupting offer to an interrupting failure.
+2. **Producers MUST retire an incident when it genuinely ends** (`dismissByDedupKey`). A missed retirement makes a recurring failure permanently quiet. The retirement boundaries for each subsystem live in `NotificationRouter` (`src/controllers/notificationrouter.cpp`).
+
+There is deliberately **no escalation signal**. An earlier design emitted one when a dedup replacement raised `Passive → Interrupt`; it had two structural holes (a terminal state reached without an intervening passive phase never escalated, and `update()` could escalate an already-**dismissed** message back onto the screen). Retire-and-repost removes both.
+
+### The index-erasure invariant (load-bearing)
+
+`m_dedupIndex` maps key → id of the **active** message holding it. A message can outlive its *ownership* of a key: `notify(K)` → user `dismiss()`es it → `notify(K)` leaves a dismissed old generation and an active new one, both carrying `K`, with only the new one owning the index entry.
+
+Therefore a key may be erased from the index **only while the index still points at that exact message** (`eraseDedupIndexIfOwned`, called from `dismiss()` and from eviction; `clearAll()` is the exception and wipes the whole index). An unconditional `remove(key)` while retiring the *old* generation would strip the *live* message's entry, so the next `notify(K)` would append a second active message and pop an unwanted toast.
+
+### Retention
+
+`c_maxMessages` (200) is a hard bound, enforced in `notify()` **before appending** with `>=` (a store holding exactly the cap is not "over cap", yet appending would put it one past). The incoming message is never an eviction candidate, so `messageAdded` always names a message that is actually stored.
+
+`evictOneExistingMessage()` prefers, in order: oldest **dismissed**; else oldest active that is cheap to lose (**no actions and not `Persist`**); else oldest active outright. The middle tier exists so a flood of unique keys cannot silently delete the only "Restart to finish update" / "Open Sync Info…" affordance. Every eviction emits `messageRemoved(id)` — **not** `messageDismissed` — and every renderer must drop the id.
+
 
 ## Threading rules for SyncService
 

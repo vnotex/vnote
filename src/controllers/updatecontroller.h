@@ -82,9 +82,12 @@ private:
   // Update and the Retry actions.
   void startNotificationDownload();
 
-  // Applies p_msg to the tracked notification, posting a NEW message when the
-  // tracked one is gone or dismissed (terminal states must always be visible).
-  void updateOrRepostNotification(const NotificationMessage &p_msg);
+  // Posts p_msg as the tracked transfer notification, tagging it with the
+  // "update.transfer" dedup key. The service call is derived from
+  // p_msg.m_attention: Interrupt uses renotify() (so a terminal state always
+  // reaches the toast, even when no passive phase preceded it), Passive uses
+  // notify() (so progress folds into one row).
+  void postTransferNotification(const NotificationMessage &p_msg);
 
   // Action that opens the release page of @p_info, falling back to the current
   // source's releases page. Takes the info explicitly: the dialog and the
@@ -114,6 +117,12 @@ private:
 
   // The notification carrying the offer, then the progress, then the terminal
   // state. 0 when there is none.
+  //
+  // Assigned ONLY from calls using the "update.transfer" key. The post-restart
+  // apply result ("update.result") and the standalone dialog-closed failure
+  // (keyless) must never land here: startCheck() dismisses this id, and
+  // runStartupTasks() consumes the stored result BEFORE startCheck(), so
+  // sharing it would silently eat the apply outcome.
   quint64 m_progressNotificationId = 0;
 
   // The version currently being offered / downloaded through the notification.
