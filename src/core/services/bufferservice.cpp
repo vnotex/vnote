@@ -569,6 +569,17 @@ bool BufferService::isDirty(const QString &p_bufferId) const {
   return m_dirtyBuffers.contains(p_bufferId);
 }
 
+bool BufferService::isSaveQueueBusy(const QString &p_bufferId) const {
+  if (p_bufferId.isEmpty() || !m_saveQueue) {
+    return false;
+  }
+
+  // Same notebookId resolution as checkSingleExternalChange().
+  const QString notebookId =
+      getBuffer(p_bufferId).value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+  return m_saveQueue->isBusy(notebookId, p_bufferId);
+}
+
 void BufferService::syncNow(const QString &p_bufferId) {
   if (!m_dirtyBuffers.contains(p_bufferId)) {
     return;

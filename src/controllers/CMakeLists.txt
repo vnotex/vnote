@@ -28,6 +28,7 @@ target_sources(vnote PRIVATE
     exportcontroller.cpp exportcontroller.h
     searchcontroller.cpp searchcontroller.h
     imagehostcontroller.cpp imagehostcontroller.h
+    legacyimagemigrationcontroller.cpp legacyimagemigrationcontroller.h
     dashboardcontroller.cpp dashboardcontroller.h
     updatecontroller.cpp updatecontroller.h
 )

@@ -5,7 +5,9 @@
 
 #include <QSet>
 #include <QSharedPointer>
+#include <QVector>
 
+#include <controllers/legacyimagemigrationcontroller.h>
 #include <core/markdowneditorconfig.h>
 
 #include "outlineprovider.h"
@@ -26,6 +28,7 @@ class MarkdownEditorController;
 class MarkdownViewWindowController;
 class ImageHostController;
 class EditorStatusBarBinder;
+class LegacyImageMigrationBar;
 
 // Concrete ViewWindow2 subclass for Markdown files.
 // Supports dual-mode (Edit/Read) with lazy-initialized editor and viewer,
@@ -180,6 +183,14 @@ private:
 
   void clearObsoleteImages();
 
+  // Legacy (vx_images / _v_images) image migration. Runs at most once per
+  // window; the originals are removed once, at close, by the finalize gate.
+  void scheduleLegacyImageCheck();
+
+  void runLegacyImageCheck();
+
+  void applyLegacyImageMigration();
+
   bool isLastWindowForBuffer() const;
 
   void handleOpenFileRequest(const QString &p_filePath);
@@ -233,6 +244,15 @@ private:
       m_initialImages; // Relative URLs (as in markdown) of images present when buffer was opened.
   QSet<QString>
       m_insertedImages; // Relative URLs (as in markdown) of images inserted during this session.
+
+  // Legacy image migration state. The check runs at most once per window; the
+  // rewrites are consumed by the close-time finalize.
+  bool m_legacyImageCheckDone = false;
+  // Managed by QObject/layout.
+  LegacyImageMigrationBar *m_legacyImageBar = nullptr;
+  // Lazily created, this-parented.
+  LegacyImageMigrationController *m_legacyImageController = nullptr;
+  QVector<LegacyImageRewrite> m_pendingLegacyMigration;
 };
 
 } // namespace vnotex

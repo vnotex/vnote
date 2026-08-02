@@ -211,6 +211,13 @@ public:
   // Preserves the legacy "has unsaved content" semantic.
   bool isDirty(const QString &p_bufferId) const;
 
+  // True while a save for this buffer is pending OR a worker is running.
+  // isDirty() is NOT a substitute: syncNow() clears the dirty flag the moment
+  // it enqueues, before the worker has written anything. Consumers that need a
+  // durability barrier (e.g. deleting a file the note used to reference) must
+  // check BOTH isDirty() and this.
+  bool isSaveQueueBusy(const QString &p_bufferId) const;
+
   // Immediately sync a dirty buffer's content from its active writer.
   // Used on focus-loss for instant consistency.
   void syncNow(const QString &p_bufferId);

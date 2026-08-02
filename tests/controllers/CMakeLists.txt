@@ -333,3 +333,34 @@ add_qt_test(test_managenotebookscontroller_closereason
     vxcore
   GUILESS
 )
+
+# Legacy (vx_images / _v_images) image-folder migration. Every case is pure:
+# stageAssets() takes injected callables, so no vxcore context, no notebook and
+# no Buffer2 are needed. pathutils.cpp / fileutils2.cpp / utils.cpp / error.cpp
+# come from core_services -- do NOT add them to SOURCES or MSVC reports
+# duplicate symbols.
+add_qt_test(test_legacy_image_migration
+  SOURCES
+    test_legacy_image_migration.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/legacyimagemigrationcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/imageresolutionutils.cpp
+  LINKS
+    Qt6::Gui
+    Qt6::Widgets
+    VTextEdit
+    core_services
+    vxcore
+  GUILESS
+)
+target_include_directories(test_legacy_image_migration PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+)
+# This target links VTextEdit directly, so it needs its own DLL copy: the copy
+# above hangs off test_searchcontroller, which is NOT necessarily built when
+# only this target is requested (that yields exit code 0xc0000135 with no
+# output).
+add_custom_command(TARGET test_legacy_image_migration POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_legacy_image_migration>
+)

@@ -132,6 +132,11 @@ public:
                                     const QString &p_realUrl, const QString &p_title);
   static QString removePlaceholder(const QString &p_content, int p_token);
 
+  // Sole authority for absolute-path -> markdown URL conversion. Applies the
+  // prependDotInRelativeLink config, so callers outside the editor MUST route
+  // through this rather than re-deriving relative-link formatting.
+  QString getRelativeLink(const QString &p_path);
+
 public slots:
   void handleHtmlToMarkdownData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
 
@@ -206,8 +211,6 @@ private:
   void insertImageFromMimeData(const QMimeData *p_source);
 
   void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
-
-  QString getRelativeLink(const QString &p_path);
 
   // Update headings outline.
   void updateHeadings(const QVector<vte::md::ElementRegion> &p_headerRegions);

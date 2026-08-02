@@ -12,6 +12,8 @@
 #include <QPrinter>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -55,6 +57,7 @@
 #include "editors/editorstatusbarbinder.h"
 #include "editors/statusbar.h"
 #include "encodingbutton.h"
+#include "legacyimagemigrationbar.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
 #include "textviewwindowhelper.h"
@@ -269,6 +272,26 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
 
   if (isLast) {
     clearObsoleteImages();
+
+    // Order matters. clearObsoleteImages() runs FIRST so that in the undo case
+    // it removes the abandoned staged copies; the finalize gate below then
+    // fails harmlessly (the old URLs are still on disk) and the originals
+    // survive. In the success case it finds nothing obsolete and the finalize
+    // removes the originals.
+    //
+    // Do NOT move this earlier (auto-save / timer driven): deleting before the
+    // editor's final state is settled reintroduces the undo-after-delete
+    // data-loss path.
+    if (!m_pendingLegacyMigration.isEmpty() && m_legacyImageController) {
+      auto *bufferSvc = getServices().get<BufferService>();
+      if (bufferSvc) {
+        const auto bufferId = getBuffer().id();
+        m_legacyImageController->finalize(getBuffer(), m_pendingLegacyMigration,
+                                          bufferSvc->isDirty(bufferId),
+                                          bufferSvc->isSaveQueueBusy(bufferId));
+      }
+      m_pendingLegacyMigration.clear();
+    }
   }
 
   return true;
@@ -740,6 +763,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       // Hide splitter handle to avoid visible border in readable-width mode.
       m_splitter->handle(1)->setVisible(false);
     }
+    if (m_legacyImageBar) {
+      m_legacyImageBar->hide();
+    }
     // Clear any in-flight message first: a mode change emits no
     // messageVisibilityChanged(true), so an already-visible message would
     // otherwise get stuck hidden with no way to reopen. Then collapse the bar;
@@ -754,6 +780,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   case ViewWindowMode::Edit:
     m_editor->show();
     m_editor->setFocus();
+    if (m_legacyImageBar) {
+      m_legacyImageBar->show();
+    }
     if (transition.restoreEditViewMode) {
       setEditViewMode(m_editViewMode);
     } else {
@@ -819,6 +848,13 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   }
 
   emit modeChanged();
+
+  // Legacy image-folder check: deferred off this call stack, at most once per
+  // window. Detection is itself a cmark parse, so it IS "after the markdown
+  // parse"; a highlighter signal would only add latency without removing it.
+  if (m_mode == ViewWindowMode::Edit) {
+    scheduleLegacyImageCheck();
+  }
 
   // Update find-and-replace replace-enabled state on mode switch.
   if (findAndReplaceWidgetVisible()) {
@@ -1731,6 +1767,198 @@ void MarkdownViewWindow2::clearObsoleteImages() {
 
   m_insertedImages.clear();
   m_initialImages = currentImages;
+}
+
+// ============ Legacy image folder migration ============
+
+void MarkdownViewWindow2::scheduleLegacyImageCheck() {
+  if (m_legacyImageCheckDone) {
+    return;
+  }
+
+  // The `this` receiver context makes this lifetime-safe.
+  QTimer::singleShot(0, this, &MarkdownViewWindow2::runLegacyImageCheck);
+}
+
+void MarkdownViewWindow2::runLegacyImageCheck() {
+  // Re-verify the mode FIRST. modeChanged() is synchronous and a slot can flip
+  // back to Read before this timer fires; consuming the once-only check in the
+  // wrong mode would disable the feature for the window's lifetime.
+  if (m_mode != ViewWindowMode::Edit || !m_editor) {
+    return;
+  }
+
+  if (m_legacyImageCheckDone) {
+    return;
+  }
+  m_legacyImageCheckDone = true;
+
+  auto &buffer = getBuffer();
+  if (!buffer.isValid() || buffer.isReadOnly()) {
+    return;
+  }
+
+  const QString notebookId = buffer.nodeId().notebookId;
+  if (notebookId.isEmpty()) {
+    // External (non-notebook) file: deleteAsset() has no notebook root to
+    // resolve against.
+    return;
+  }
+
+  const QString assetsFolder = buffer.getAssetsFolder();
+  if (assetsFolder.isEmpty()) {
+    return;
+  }
+
+  auto *notebookSvc = getServices().get<NotebookCoreService>();
+  if (!notebookSvc) {
+    return;
+  }
+  const QString notebookRoot = notebookSvc->buildAbsolutePath(notebookId, QString());
+  if (notebookRoot.isEmpty()
+      || !LegacyImageMigrationController::isPathContained(notebookRoot, assetsFolder)) {
+    // An assets folder configured outside the notebook root is unsupported:
+    // deleteAsset() is notebook-root relative. The check is CANONICAL, so an
+    // in-notebook junction pointing outside does not slip through. No bar is
+    // better than a bar that half-delivers.
+    return;
+  }
+
+  if (!m_legacyImageController) {
+    m_legacyImageController = new LegacyImageMigrationController(getServices(), this);
+  }
+  if (m_legacyImageController->isOptedOut(notebookId)) {
+    return;
+  }
+
+  const QString resolved = buffer.resolvedPath();
+  if (resolved.isEmpty()) {
+    return;
+  }
+
+  // Same basePath convention as snapshotInitialImages().
+  const auto refs = LegacyImageMigrationController::detect(
+      m_editor->getTextEdit()->document()->toPlainText(), QFileInfo(resolved).path(),
+      assetsFolder);
+  if (refs.isEmpty()) {
+    return;
+  }
+
+  m_legacyImageBar = new LegacyImageMigrationBar(this);
+  m_legacyImageBar->setImageCount(refs.size());
+  // addToolBar() has already run in setupUI(), which addTopWidget() requires.
+  addTopWidget(m_legacyImageBar);
+
+  connect(m_legacyImageBar, &LegacyImageMigrationBar::migrateRequested, this,
+          &MarkdownViewWindow2::applyLegacyImageMigration);
+  connect(m_legacyImageBar, &LegacyImageMigrationBar::dismissRequested, this, [this]() {
+    if (m_legacyImageBar) {
+      m_legacyImageBar->deleteLater();
+      m_legacyImageBar = nullptr;
+    }
+  });
+  connect(m_legacyImageBar, &LegacyImageMigrationBar::neverRequested, this, [this]() {
+    const QString nbId = getBuffer().nodeId().notebookId;
+    if (m_legacyImageController && !m_legacyImageController->setOptedOut(nbId)) {
+      showMessage(tr("Failed to save the preference."));
+    }
+    if (m_legacyImageBar) {
+      m_legacyImageBar->deleteLater();
+      m_legacyImageBar = nullptr;
+    }
+  });
+}
+
+void MarkdownViewWindow2::applyLegacyImageMigration() {
+  if (!m_editor || !m_legacyImageController) {
+    return;
+  }
+
+  auto &buffer = getBuffer();
+  if (!buffer.isValid()) {
+    return;
+  }
+
+  const QString resolved = buffer.resolvedPath();
+  const QString assetsFolder = buffer.getAssetsFolder();
+  if (resolved.isEmpty() || assetsFolder.isEmpty()) {
+    return;
+  }
+
+  auto *doc = m_editor->getTextEdit()->document();
+
+  // Re-run detection: the user may have typed since the bar appeared.
+  const auto refs = LegacyImageMigrationController::detect(doc->toPlainText(),
+                                                           QFileInfo(resolved).path(),
+                                                           assetsFolder);
+  if (refs.isEmpty()) {
+    if (m_legacyImageBar) {
+      m_legacyImageBar->deleteLater();
+      m_legacyImageBar = nullptr;
+    }
+    return;
+  }
+
+  QString err;
+  const auto rewrites = LegacyImageMigrationController::stageAssets(
+      refs, [this](const QString &p_src) { return getBuffer().insertAsset(p_src); }, assetsFolder,
+      [this](const QString &p_abs) { return m_editor->getRelativeLink(p_abs); }, &err);
+  if (rewrites.isEmpty()) {
+    // All-or-nothing: nothing was copied and nothing was rewritten. Keep the
+    // bar so the user can retry.
+    MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                             err.isEmpty() ? tr("Failed to move the images.") : err, this);
+    return;
+  }
+
+  // One undoable edit. The rewrites are already sorted DESCENDING by
+  // urlInLinkPos, which keeps every earlier offset valid — never sort ascending.
+  {
+    QTextCursor cur(doc);
+    cur.beginEditBlock();
+    for (const auto &rw : rewrites) {
+      cur.setPosition(rw.urlInLinkPos);
+      cur.setPosition(rw.urlInLinkPos + rw.oldUrlInLink.size(), QTextCursor::KeepAnchor);
+      cur.insertText(rw.newUrlInLink);
+    }
+    cur.endEditBlock();
+  }
+
+  // Push the rewritten text into the vxcore buffer so the in-memory state is
+  // coherent immediately. Not fatal on failure — the close-time gate reads the
+  // file on DISK and is the real authority.
+  auto *bufferSvc = getServices().get<BufferService>();
+  if (bufferSvc) {
+    if (!buffer.setContentRaw(bufferSvc->encodeContent(buffer.id(), doc->toPlainText()))) {
+      qWarning() << "MarkdownViewWindow2: failed to push migrated content into the buffer";
+    }
+  }
+
+  // Keep the image-tracking sets in step so clearObsoleteImages() can never
+  // race the finalize: afterwards it can only conclude that the STAGED COPIES
+  // are obsolete (the undo case), never the originals.
+  QSet<QString> distinctDestinations;
+  for (const auto &rw : rewrites) {
+    m_initialImages.remove(rw.oldUrlInLink);
+    m_initialImages.insert(rw.newUrlInLink);
+    m_insertedImages.insert(rw.newUrlInLink);
+    if (!rw.destAbsolutePath.isEmpty()) {
+      distinctDestinations.insert(rw.destAbsolutePath);
+    }
+  }
+
+  m_pendingLegacyMigration = rewrites;
+
+  // Best-effort, plain Ctrl+S semantics. The return value is NOT a correctness
+  // gate — see LegacyImageMigrationController::finalize().
+  save();
+
+  if (m_legacyImageBar) {
+    m_legacyImageBar->deleteLater();
+    m_legacyImageBar = nullptr;
+  }
+
+  showMessage(tr("Moved %n image(s) to the assets folder.", "", distinctDestinations.size()));
 }
 
 bool MarkdownViewWindow2::isLastWindowForBuffer() const {
