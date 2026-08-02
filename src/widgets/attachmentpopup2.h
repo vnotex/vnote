@@ -34,6 +34,11 @@ private:
 
   QStringList getSelectedFilenames() const;
 
+  // Owning window for modal dialogs raised from this popup.
+  // `this` is a QMenu (a top-level popup), so it is not a suitable parent —
+  // use the window hosting the tool button instead.
+  QWidget *dialogParent() const;
+
   ServiceLocator &m_services;
   Buffer2 *m_buffer = nullptr;
 

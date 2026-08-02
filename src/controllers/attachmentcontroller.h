@@ -22,13 +22,15 @@ public:
   // Set the current buffer whose attachments are managed.
   void setBuffer(Buffer2 *p_buffer);
 
-  // Open file dialog, copy selected files as attachments.
-  void addAttachments();
+  // Copy the given files into the buffer's attachments folder.
+  // The caller (view) owns the file dialog; this never shows UI.
+  void addAttachments(const QStringList &p_files);
 
   // Open attachments with the system default application.
   void openAttachments(const QStringList &p_filenames);
 
-  // Delete attachments after confirmation dialog.
+  // Delete the given attachments.
+  // The caller (view) owns the confirmation dialog; this never shows UI.
   void deleteAttachments(const QStringList &p_filenames);
 
   // Request inline rename on the given model index.

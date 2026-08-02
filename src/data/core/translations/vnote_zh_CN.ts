@@ -400,31 +400,6 @@
     </message>
 </context>
 <context>
-    <name>vnotex::AttachmentController</name>
-    <message>
-        <location filename="../../../controllers/attachmentcontroller.cpp" line="+23"/>
-        <source>Add Attachments</source>
-        <translation>添加附件</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>All Files (*)</source>
-        <translation>所有文件 (*)</translation>
-    </message>
-    <message>
-        <location line="+35"/>
-        <source>Delete Attachments</source>
-        <translation>删除附件</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+1"/>
-        <source>Delete %n attachment(s)?</source>
-        <translation>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-</context>
-<context>
     <name>vnotex::AttachmentDragDropAreaIndicator2</name>
     <message>
         <location filename="../../../widgets/attachmentdragdropareaindicator2.cpp" line="+25"/>
@@ -494,6 +469,28 @@
         <location line="+22"/>
         <source>Attachments not supported for this notebook type</source>
         <translation>该类型的笔记本不支持附件</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/attachmentpopup2.cpp" line="96"/>
+        <source>Add Attachments</source>
+        <translation>添加附件</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/attachmentpopup2.cpp" line="96"/>
+        <source>All Files (*)</source>
+        <translation>所有文件 (*)</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/attachmentpopup2.cpp" line="150"/>
+        <source>Delete Attachments</source>
+        <translation>删除附件</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../../../widgets/attachmentpopup2.cpp" line="151"/>
+        <source>Delete %n attachment(s)?</source>
+        <translation>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -4588,17 +4585,7 @@ Last sync init failed: error code %1</source>
         <translation>无法将外部节点导入到索引。</translation>
     </message>
     <message>
-        <location line="+152"/>
-        <source>The file &quot;%1&quot; has unsaved changes.</source>
-        <translation>文件 &quot;%1&quot; 有未保存的更改。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Save before renaming, discard changes, or cancel?</source>
-        <translation>在重命名前保存、放弃更改，还是取消？</translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+177"/>
         <source>Failed to rename %1.</source>
         <translation>无法重命名 %1。</translation>
     </message>

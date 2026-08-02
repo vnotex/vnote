@@ -10,7 +10,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMenu>
-#include <QMessageBox>
 #include <QSet>
 #include <QUrl>
 
@@ -29,7 +28,6 @@
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
 #include <views/notebooknodeview.h>
-#include <widgets/messageboxhelper.h>
 
 #include <vxcore/notebook_json_keys.h>
 
@@ -1076,34 +1074,9 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
   // NodeBeforeRename hook is now fired by NotebookCoreService::renameFile/renameFolder.
   // The service returns false if cancelled by a plugin.
 
-  // Check if the buffer is open and dirty. Prompt user before proceeding.
-  auto *bufferSvc = m_services.get<BufferService>();
-  if (bufferSvc) {
-    QJsonArray buffers = bufferSvc->listBuffers();
-    for (int i = 0; i < buffers.size(); ++i) {
-      QJsonObject bufObj = buffers[i].toObject();
-      QString nbId = bufObj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
-      QString filePath = bufObj.value(QStringLiteral("filePath")).toString();
-      if (nbId == p_nodeId.notebookId && filePath == p_nodeId.relativePath) {
-        QString bufferId = bufObj.value(QLatin1String(vxcore::kJsonKeyId)).toString();
-        Buffer2 buf = bufferSvc->getBufferHandle(bufferId);
-        if (buf.isValid() && buf.isModified()) {
-          int ret = MessageBoxHelper::questionSaveDiscardCancel(
-              MessageBoxHelper::Question,
-              tr("The file \"%1\" has unsaved changes.").arg(nodeInfo.name),
-              tr("Save before renaming, discard changes, or cancel?"), QString(), nullptr);
-          if (ret == QMessageBox::Cancel) {
-            return; // Abort rename.
-          }
-          if (ret == QMessageBox::Save) {
-            buf.save();
-          }
-          // Discard: proceed without saving — on-disk content gets renamed as-is.
-        }
-        break;
-      }
-    }
-  }
+  // NOTE: No unsaved-changes prompt here. Controllers must not show dialogs, and a dirty
+  // buffer survives a rename intact: vxcore updates the buffer path during the rename and
+  // ViewAreaController::onNodeAfterRename retargets the open windows.
 
   notifyBeforeNodeOperation(p_nodeId, QStringLiteral("rename"));
 

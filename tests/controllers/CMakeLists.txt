@@ -28,6 +28,26 @@ add_qt_test(test_snippetcontroller
   GUILESS
 )
 
+add_qt_test(test_attachmentcontroller
+  SOURCES
+    test_attachmentcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/attachmentcontroller.cpp
+    # clipboardutils.cpp is compiled into the vnote executable, not into
+    # core_services, so ClipboardUtils::setTextToClipboard would be unresolved
+    # without it. Its own deps (fileutils2/pathutils/utils) DO come from
+    # core_services — listing them again makes MSVC report duplicate symbols.
+    ${CMAKE_SOURCE_DIR}/src/utils/clipboardutils.cpp
+  LINKS
+    # GUILESS withholds Qt6::Gui + Qt6::Widgets, so both are listed explicitly:
+    # the controller uses QDesktopServices, and clipboardutils.cpp calls
+    # QApplication::clipboard(). No QApplication is constructed.
+    Qt6::Gui
+    Qt6::Widgets
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_searchcontroller
   SOURCES
     test_searchcontroller.cpp

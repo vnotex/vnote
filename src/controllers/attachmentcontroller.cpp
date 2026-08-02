@@ -1,8 +1,6 @@
 #include "attachmentcontroller.h"
 
 #include <QDesktopServices>
-#include <QFileDialog>
-#include <QMessageBox>
 #include <QUrl>
 
 #include <core/services/buffer2.h>
@@ -15,19 +13,13 @@ AttachmentController::AttachmentController(ServiceLocator &p_services, QObject *
 
 void AttachmentController::setBuffer(Buffer2 *p_buffer) { m_buffer = p_buffer; }
 
-void AttachmentController::addAttachments() {
-  if (!m_buffer || !m_buffer->isValid()) {
-    return;
-  }
-
-  QStringList files = QFileDialog::getOpenFileNames(nullptr, tr("Add Attachments"), QString(),
-                                                    tr("All Files (*)"));
-  if (files.isEmpty()) {
+void AttachmentController::addAttachments(const QStringList &p_files) {
+  if (!m_buffer || !m_buffer->isValid() || p_files.isEmpty()) {
     return;
   }
 
   bool anyAdded = false;
-  for (const auto &file : files) {
+  for (const auto &file : p_files) {
     QString result = m_buffer->insertAttachment(file);
     if (!result.isEmpty()) {
       anyAdded = true;
@@ -53,13 +45,6 @@ void AttachmentController::openAttachments(const QStringList &p_filenames) {
 
 void AttachmentController::deleteAttachments(const QStringList &p_filenames) {
   if (!m_buffer || !m_buffer->isValid() || p_filenames.isEmpty()) {
-    return;
-  }
-
-  int ret = QMessageBox::question(nullptr, tr("Delete Attachments"),
-                                  tr("Delete %n attachment(s)?", "", p_filenames.size()),
-                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-  if (ret != QMessageBox::Yes) {
     return;
   }
 

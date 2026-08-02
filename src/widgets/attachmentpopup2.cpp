@@ -1,11 +1,13 @@
 #include "attachmentpopup2.h"
 
 #include <QAction>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
+#include <QMessageBox>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -85,7 +87,17 @@ void AttachmentPopup2::setupUI() {
             themeService->getIconFile(QStringLiteral("add.svg"))),
         tr("Add"), m_addBtn);
     connect(act, &QAction::triggered, this, [this]() {
-      m_controller->addAttachments();
+      // The view owns the dialog (controllers must not show UI). Mirror the
+      // controller's guard so no dialog is shown whose result would be discarded.
+      if (!m_buffer || !m_buffer->isValid()) {
+        return;
+      }
+      const QStringList files = QFileDialog::getOpenFileNames(
+          dialogParent(), tr("Add Attachments"), QString(), tr("All Files (*)"));
+      if (files.isEmpty()) {
+        return;
+      }
+      m_controller->addAttachments(files);
     });
     m_addBtn->setDefaultAction(act);
     buttonsLayout->addWidget(m_addBtn);
@@ -129,7 +141,19 @@ void AttachmentPopup2::setupUI() {
             themeService->getIconFile(QStringLiteral("delete.svg"))),
         tr("Delete"), m_deleteBtn);
     connect(act, &QAction::triggered, this, [this]() {
-      m_controller->deleteAttachments(getSelectedFilenames());
+      // The view owns the confirmation dialog (controllers must not show UI).
+      const QStringList files = getSelectedFilenames();
+      if (!m_buffer || !m_buffer->isValid() || files.isEmpty()) {
+        return;
+      }
+      const int ret = QMessageBox::question(
+          dialogParent(), tr("Delete Attachments"),
+          tr("Delete %n attachment(s)?", "", files.size()),
+          QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+      if (ret != QMessageBox::Yes) {
+        return;
+      }
+      m_controller->deleteAttachments(files);
     });
     m_deleteBtn->setDefaultAction(act);
     buttonsLayout->addWidget(m_deleteBtn);
@@ -270,4 +294,8 @@ QStringList AttachmentPopup2::getSelectedFilenames() const {
     names.append(idx.data(Qt::DisplayRole).toString());
   }
   return names;
+}
+
+QWidget *AttachmentPopup2::dialogParent() const {
+  return m_button ? m_button->window() : nullptr;
 }

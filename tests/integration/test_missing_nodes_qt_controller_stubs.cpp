@@ -4,10 +4,9 @@
 // (compiled into test_missing_nodes_qt for the T11 controller subtests)
 // references but which the test does NOT exercise. The controller's real
 // dependency graph (services, pathutils, logging, configs) is satisfied by
-// core_services + core_configs; these three families live in TUs the test
+// core_services + core_configs; these two families live in TUs the test
 // deliberately does NOT compile:
 //   - NotebookNodeView (view layer)        -> selectedNodeIds/selectNode/expandToNode
-//   - MessageBoxHelper (widgets)           -> questionSaveDiscardCancel
 //   - ProcessUtils  (utils, not in a lib)  -> startDetached
 //
 // None of the controller code paths the T11 subtests invoke (openNodes
@@ -21,18 +20,12 @@
 
 #include <utils/processutils.h>
 #include <views/notebooknodeview.h>
-#include <widgets/messageboxhelper.h>
 
 namespace vnotex {
 
 void ProcessUtils::startDetached(const QString &) {}
 void ProcessUtils::startDetached(const QString &, const QStringList &) {}
 QStringList ProcessUtils::parseCombinedArgString(const QString &) { return {}; }
-
-int MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Type, const QString &,
-                                                const QString &, const QString &, QWidget *) {
-  return 0;
-}
 
 QList<NodeIdentifier> NotebookNodeView::selectedNodeIds() const { return {}; }
 void NotebookNodeView::selectNode(const NodeIdentifier &) {}
