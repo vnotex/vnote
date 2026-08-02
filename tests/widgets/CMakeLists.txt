@@ -1061,6 +1061,20 @@ add_qt_test(test_statusbar
     Qt6::Widgets
 )
 
+# issue #2722: TitleBarContainer must survive QMainWindow::menuBar() (KDE Breeze
+# calls it on every main window it polishes) without inheriting QMenuBar's
+# action-derived sizing, Alt-key navigation or accessibility role. Pure-view
+# container with no services, so only Qt6::Widgets is needed; no VTextEdit
+# runtime dep, so no DLL copy step is required. NOT GUILESS — real QMainWindow /
+# QMenuBar geometry needs a QApplication.
+add_qt_test(test_titlebarcontainer
+  SOURCES
+    test_titlebarcontainer.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/titlebarcontainer.cpp
+  LINKS
+    Qt6::Widgets
+)
+
 # EditorStatusBarBinder: wires a real vte::VTextEditor to a StatusBar. NOT
 # GUILESS (needs QApplication); links VTextEdit (loaded at runtime -> DLL copy).
 add_qt_test(test_editorstatusbarbinder

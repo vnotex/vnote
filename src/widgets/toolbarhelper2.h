@@ -3,6 +3,7 @@
 
 #include <QIcon>
 #include <QObject>
+#include <QPointer>
 #include <QString>
 #include <QVector>
 
@@ -58,8 +59,11 @@ public:
   void setMutationActionsEnabled(bool p_enabled);
 
 private:
+  // QPointer, not a raw pointer: the actions are owned by toolbar buttons/menus
+  // whose lifetime is not ours. Defense in depth against issue #2722, where the
+  // whole title bar (and every action under it) was deleted behind our back.
   struct TrackedIcon {
-    QAction *m_action;
+    QPointer<QAction> m_action;
     QString m_iconName;
     bool m_isDangerous;
   };
@@ -93,7 +97,7 @@ private:
 
   MainWindow2 *m_mainWindow;
 
-  UnitedEntry *m_unitedEntry = nullptr;
+  QPointer<UnitedEntry> m_unitedEntry;
 
   UnitedEntryMgr *m_unitedEntryMgr = nullptr;
 
@@ -101,11 +105,13 @@ private:
 
   // File-toolbar mutation actions, toggled by setMutationActionsEnabled(). The
   // Export action is deliberately NOT tracked here (it is read-only safe).
-  QAction *m_newNoteAct = nullptr;
-  QAction *m_newQuickNoteAct = nullptr;
-  QAction *m_newFolderAct = nullptr;
-  QAction *m_importFileAct = nullptr;
-  QAction *m_importFolderAct = nullptr;
+  // QPointer so the existing null checks stay meaningful if the owning widget
+  // tree is destroyed by something outside our control (issue #2722).
+  QPointer<QAction> m_newNoteAct;
+  QPointer<QAction> m_newQuickNoteAct;
+  QPointer<QAction> m_newFolderAct;
+  QPointer<QAction> m_importFileAct;
+  QPointer<QAction> m_importFolderAct;
 };
 
 } // namespace vnotex

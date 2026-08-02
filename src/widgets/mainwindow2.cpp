@@ -35,6 +35,7 @@
 
 #include "constants.h"
 #include "systemtrayhelper.h"
+#include "titlebarcontainer.h"
 #include "titletoolbar2.h"
 #include "toolbarhelper2.h"
 #include <core/configmgr2.h>
@@ -968,7 +969,10 @@ void MainWindow2::setupToolBar() {
 
     // Wrap toolbar in a container with top padding for frameless title bar.
     // QToolBar's internal layout ignores setContentsMargins, so we use a wrapper.
-    auto *titleBarWrapper = new QWidget(this);
+    // The wrapper MUST be a QMenuBar subclass: QMainWindow::menuBar() evicts and
+    // deletes anything in the menu-widget slot that is not one (issue #2722, KDE
+    // Breeze). See titlebarcontainer.h.
+    auto *titleBarWrapper = new TitleBarContainer(this);
     auto *wrapperLayout = new QVBoxLayout(titleBarWrapper);
     wrapperLayout->setContentsMargins(0, 2, 0, 0);
     wrapperLayout->setSpacing(0);

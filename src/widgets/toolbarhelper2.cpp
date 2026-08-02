@@ -589,6 +589,10 @@ void ToolBarHelper2::setDangerousActionIcon(QAction *p_action, const QString &p_
 
 void ToolBarHelper2::refreshIcons() {
   for (auto &tracked : m_trackedIcons) {
+    // The action may have been destroyed with its owning widget tree.
+    if (!tracked.m_action) {
+      continue;
+    }
     if (tracked.m_isDangerous) {
       tracked.m_action->setIcon(generateDangerousIcon(tracked.m_iconName));
     } else {
