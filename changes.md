@@ -1,4 +1,17 @@
 # Changes
+## Unreleased
+* **PDF viewer**
+    * Upgraded the bundled pdf.js from 3.1.81 to **3.11.174** (the last v3 release; v4+ requires Chrome 125+, which the Qt 5.15 / Windows 7 build cannot provide), and vendored the previously-missing `web/standard_fonts/` so PDFs relying on non-embedded Helvetica/Times/Courier render correctly
+    * The PDF's embedded outline (bookmarks) now populates the **Outline** dock and a new per-window Outline toolbar popup, with click-to-jump
+
+    Note: the bundled web resources (including the pdf.js glue that publishes the
+    outline) are copied into the app-data folder only when `ConfigMgr2::c_version`
+    changes, and they are always loaded from there rather than from the embedded
+    resources. Both items above therefore reach an existing installation only via
+    a version bump (`scripts/update_version.py`), which a normal release performs
+    anyway. Shipping without one leaves the new Outline button and dock visible
+    but permanently empty, with no error.
+
 ## v4.3.0
 A feature release that adds an in-app notification system, a Tasks dock, a reworked export experience, and a column-based editor status bar on top of VNote 4.2.0:
 

@@ -1185,3 +1185,44 @@ add_qt_test(test_notificationpopup2
 target_include_directories(test_notificationpopup2 PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
+# PDF outline transport: PdfViewerAdapter's JSON -> Heading conversion, the
+# makePerfectHeadings pass (which INSERTS filler headings and so shifts
+# positions), and the index-based jump request. GUILESS: PdfViewerAdapter and
+# its base pull in no widgets, but webviewadapter.cpp calls Utils::sleepWait,
+# which arrives with core_services.
+add_qt_test(test_pdfvieweradapter_outline
+  SOURCES
+    test_pdfvieweradapter_outline.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
+# JS half of the PDF outline contract, evaluated with QJSEngine against the REAL
+# src/data/extra/web/pdf.js/{pdfviewercore.js,pdfviewer.js}. This is the only
+# gate covering the two bugs the outline design exists to prevent (a lossy
+# {name, level} wire format, and an adapter-presence guard that discards the
+# outline when the PDF loads before the QWebChannel callback runs).
+#
+# Guarded on Qt6::Qml because QJSEngine lives there. tests/CMakeLists.txt
+# requests Qml as an OPTIONAL_COMPONENT; without qtdeclarative installed this
+# target is silently skipped, so CI asserts the test is REGISTERED (see the
+# ci-*.yml "Verify test registration" steps) rather than trusting a green run.
+if(TARGET Qt6::Qml)
+  add_qt_test(test_pdfviewercore_js
+    SOURCES
+      test_pdfviewercore_js.cpp
+    LINKS
+      # Guarding on the target does NOT link QJSEngine; this does.
+      Qt6::Qml
+    GUILESS
+  )
+  target_compile_definitions(test_pdfviewercore_js PRIVATE
+    VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  )
+endif()

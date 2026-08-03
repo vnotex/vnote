@@ -114,6 +114,8 @@
         <file>web/pdf.js/web/locale/uk/viewer.properties</file>
         <file>web/pdf.js/web/locale/zh-CN/viewer.properties</file>
         <file>web/pdf.js/web/locale/zh-TW/viewer.properties</file>
+        <file>web/pdf.js/web/images/altText_add.svg</file>
+        <file>web/pdf.js/web/images/altText_done.svg</file>
         <file>web/pdf.js/web/images/annotation-check.svg</file>
         <file>web/pdf.js/web/images/annotation-comment.svg</file>
         <file>web/pdf.js/web/images/annotation-help.svg</file>
@@ -122,10 +124,15 @@
         <file>web/pdf.js/web/images/annotation-newparagraph.svg</file>
         <file>web/pdf.js/web/images/annotation-noicon.svg</file>
         <file>web/pdf.js/web/images/annotation-note.svg</file>
+        <file>web/pdf.js/web/images/annotation-paperclip.svg</file>
         <file>web/pdf.js/web/images/annotation-paragraph.svg</file>
+        <file>web/pdf.js/web/images/annotation-pushpin.svg</file>
+        <file>web/pdf.js/web/images/cursor-editorFreeText.svg</file>
         <file>web/pdf.js/web/images/cursor-editorInk.svg</file>
         <file>web/pdf.js/web/images/findbarButton-next.svg</file>
         <file>web/pdf.js/web/images/findbarButton-previous.svg</file>
+        <file>web/pdf.js/web/images/gv-toolbarButton-download.svg</file>
+        <file>web/pdf.js/web/images/gv-toolbarButton-openinapp.svg</file>
         <file>web/pdf.js/web/images/loading-dark.svg</file>
         <file>web/pdf.js/web/images/loading-icon.gif</file>
         <file>web/pdf.js/web/images/loading.svg</file>
@@ -143,12 +150,12 @@
         <file>web/pdf.js/web/images/secondaryToolbarButton-spreadEven.svg</file>
         <file>web/pdf.js/web/images/secondaryToolbarButton-spreadNone.svg</file>
         <file>web/pdf.js/web/images/secondaryToolbarButton-spreadOdd.svg</file>
-        <file>web/pdf.js/web/images/shadow.png</file>
         <file>web/pdf.js/web/images/toolbarButton-bookmark.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-currentOutlineItem.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-download.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-editorFreeText.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-editorInk.svg</file>
+        <file>web/pdf.js/web/images/toolbarButton-editorStamp.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-menuArrow.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-openFile.svg</file>
         <file>web/pdf.js/web/images/toolbarButton-pageDown.svg</file>
@@ -335,6 +342,22 @@
         <file>web/pdf.js/web/cmaps/UniKS-UTF8-V.bcmap</file>
         <file>web/pdf.js/web/cmaps/V.bcmap</file>
         <file>web/pdf.js/web/cmaps/WP-Symbol.bcmap</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitDingbats.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitFixed.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitFixedBold.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitFixedBoldItalic.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitFixedItalic.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitSerif.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitSerifBold.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitSerifBoldItalic.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitSerifItalic.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/FoxitSymbol.pfb</file>
+        <file>web/pdf.js/web/standard_fonts/LiberationSans-Bold.ttf</file>
+        <file>web/pdf.js/web/standard_fonts/LiberationSans-BoldItalic.ttf</file>
+        <file>web/pdf.js/web/standard_fonts/LiberationSans-Italic.ttf</file>
+        <file>web/pdf.js/web/standard_fonts/LiberationSans-Regular.ttf</file>
+        <file>web/pdf.js/web/standard_fonts/LICENSE_FOXIT</file>
+        <file>web/pdf.js/web/standard_fonts/LICENSE_LIBERATION</file>
 
         <file>dicts/en_US.aff</file>
         <file>dicts/en_US.dic</file>

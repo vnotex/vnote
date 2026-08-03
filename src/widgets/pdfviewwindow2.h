@@ -1,6 +1,7 @@
 #ifndef PDFVIEWWINDOW2_H
 #define PDFVIEWWINDOW2_H
 
+#include "outlineprovider.h"
 #include "viewwindow2.h"
 
 namespace vnotex {
@@ -25,6 +26,8 @@ public:
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
+  QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
+
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
@@ -42,12 +45,16 @@ protected:
 
   void zoom(bool p_zoomIn) Q_DECL_OVERRIDE;
 
+  void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
+
 private:
   void setupUI();
 
   void setupToolBar();
 
   void setupViewer();
+
+  void setupOutlineProvider();
 
   PdfViewerAdapter *adapter() const;
 
@@ -56,6 +63,8 @@ private:
 
   // Managed by QObject.
   PdfViewer *m_viewer = nullptr;
+
+  QSharedPointer<OutlineProvider> m_outlineProvider;
 };
 
 } // namespace vnotex

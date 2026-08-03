@@ -74,7 +74,7 @@ jobs:
         with:
           version: 6.9.3
           target: desktop
-          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport qtdeclarative'
           tools: 'tools_opensslv3_src'
           cache: 'true'
 
@@ -139,6 +139,15 @@ jobs:
           # libVTextEdit.so lives next to the parent build's vnote binary;
           # add it to LD_LIBRARY_PATH so Qt-side test exes resolve it at load.
           export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
+          # test_pdfviewercore_js is guarded on TARGET Qt6::Qml. If qtdeclarative
+          # is missing from the Qt install, CMake silently skips the target and
+          # the ONLY gate covering the PDF outline JS contract disappears from an
+          # otherwise green run. Assert registration explicitly; `ctest -N | grep`
+          # alone would not be fatal, hence the `if`.
+          if ! ctest -N | grep -q test_pdfviewercore_js; then
+            echo "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing" >&2
+            exit 1
+          fi
           ctest --output-on-failure
         working-directory: ${{runner.workspace}}/build
 

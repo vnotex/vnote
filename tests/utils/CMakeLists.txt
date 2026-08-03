@@ -113,6 +113,19 @@ target_compile_definitions(test_hardcoded_color_drift PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
+# Coverage gate between the vendored pdf.js tree on disk and the pdf.js block of
+# src/data/extra/extra.qrc. A file with no qrc entry 404s silently at runtime
+# inside the WebEngine page; nothing else in the build notices. See
+# tests/utils/test_extra_qrc_coverage.cpp for the runtime-subset definition.
+add_qt_test(test_extra_qrc_coverage
+  SOURCES
+    test_extra_qrc_coverage.cpp
+  GUILESS
+)
+target_compile_definitions(test_extra_qrc_coverage PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 target_include_directories(test_clipboard_image PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )

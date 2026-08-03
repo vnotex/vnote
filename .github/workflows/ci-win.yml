@@ -33,7 +33,7 @@ jobs:
             vs_version: 2022
             vs_cmd: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
             qt: 6.9.3
-            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
+            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtdeclarative"
             qt_tools: tools_opensslv3_x64
             qt_major: 6
             suffix: ""
@@ -137,6 +137,21 @@ jobs:
           cmake --build . --target=pack
           7z x VNote*.zip -o*
           dir
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Verify test registration (Qt6 only)
+        # test_pdfviewercore_js is guarded on TARGET Qt6::Qml. If qtdeclarative
+        # is missing from the Qt install, CMake silently skips the target and the
+        # ONLY gate covering the PDF outline JS contract disappears from an
+        # otherwise green run. A bare `ctest -N | Select-String ...` exits 0 even
+        # with no match, so the check has to be made fatal explicitly.
+        if: ${{ matrix.config.qt_major == 6 }}
+        shell: pwsh
+        run: |
+          $registered = ctest -C Release -N | Select-String -SimpleMatch "test_pdfviewercore_js"
+          if (-not $registered) {
+            throw "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing"
+          }
         working-directory: ${{runner.workspace}}/build
 
       - name: Build and Run Tests (Qt6 only)

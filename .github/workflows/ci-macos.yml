@@ -96,7 +96,7 @@ jobs:
         with:
           version: ${{matrix.config.qt}}
           target: desktop
-          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport qtdeclarative'
           cache: 'true'
 
       - name: Create Build Dir

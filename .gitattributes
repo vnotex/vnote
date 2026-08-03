@@ -37,9 +37,15 @@ CMakeLists.txt text eol=lf
 *.gif binary
 *.ttf binary
 *.otf binary
+*.pfb binary
 *.woff binary
 *.woff2 binary
 *.eot binary
+# pdf.js pre-compiled CMaps. Most contain NUL bytes and git auto-detects them as
+# binary, but a handful (e.g. GB-H.bcmap) do not, so under the `* text=auto`
+# default a re-vendored CMap carrying a CRLF pair would be LF-normalized and ship
+# corrupt in the .rcc with no build, rcc or test signal.
+*.bcmap binary
 
 # Vendored third-party sources are stored EXACTLY as shipped upstream so the
 # SHA-256 values pinned in each libs/<dep>/PROVENANCE.md stay verifiable.

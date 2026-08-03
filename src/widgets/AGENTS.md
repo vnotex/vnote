@@ -50,7 +50,15 @@ The split-pane editor area, designed around vxcore workspaces:
 
 - `MarkdownViewWindow2` — Markdown editor with preview
 - `TextViewWindow2` — plain text editor
-- `PdfViewWindow2` — PDF viewer
+- `PdfViewWindow2` — PDF viewer. Like `MarkdownViewWindow2`, it overrides
+  `getOutlineProvider()` and feeds the Outline dock + toolbar popup. The JS↔C++
+  outline contract is **index-based**: JS owns the pdf.js `dest` objects and
+  publishes `{ name, level, index }` per entry, where `index` addresses a private
+  destination array on the web side and is `-1` when the entry is not jumpable.
+  It must be carried explicitly — `OutlineProvider::makePerfectHeadings` inserts
+  filler headings, so a heading's position is NOT its destination index. See
+  `src/data/extra/web/pdf.js/pdfviewercore.js` and
+  `tests/widgets/test_pdfviewercore_js.cpp`.
 - `MindMapViewWindow2` — mind map viewer
 - `WidgetViewWindow2` — generic widget-hosting window
 
