@@ -14,6 +14,11 @@
 #include <widgets/dialogs/updatedialog.h>
 #include <widgets/mainwindow2.h>
 
+#include <QCloseEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QEvent>
+
 namespace tests {
 int g_restartForUpdateCalls = 0;
 }
@@ -21,6 +26,21 @@ int g_restartForUpdateCalls = 0;
 using namespace vnotex;
 
 void MainWindow2::restartForUpdate() { ++tests::g_restartForUpdateCalls; }
+
+// GCC/Clang emit MainWindow2's vtable (via AUTOMOC on mainwindow2.h) in this TU
+// and require every out-of-line virtual it lists to be defined, or the link
+// fails with "undefined reference to vnotex::MainWindow2::~MainWindow2()" etc.
+// (MSVC tolerates the missing slots, which is why only the Unix CI caught this.)
+// The test never constructs a MainWindow2, so these bodies only have to exist.
+MainWindow2::~MainWindow2() {}
+
+void MainWindow2::closeEvent(QCloseEvent *p_event) { Q_UNUSED(p_event) }
+
+void MainWindow2::changeEvent(QEvent *p_event) { Q_UNUSED(p_event) }
+
+void MainWindow2::dragEnterEvent(QDragEnterEvent *p_event) { Q_UNUSED(p_event) }
+
+void MainWindow2::dropEvent(QDropEvent *p_event) { Q_UNUSED(p_event) }
 
 UpdateDialog::UpdateDialog(const UpdateInfo &p_info, QWidget *p_parent) : QDialog(p_parent) {
   Q_UNUSED(p_info)
