@@ -31,6 +31,13 @@
 #include <tlhelp32.h>
 #endif
 
+#ifdef Q_OS_MACOS
+#include <QCoreApplication>
+
+#include <mach-o/dyld.h>
+#include <vector>
+#endif
+
 using namespace vnotex;
 
 constexpr int UpdateInstaller::PendingPlan::c_schema;
@@ -818,10 +825,27 @@ QString UpdateInstaller::exePathFromModulePath() {
     buffer.resize(buffer.size() * 2);
   }
 #else
-  // Portable-enough fallback for the non-Windows builds, which do not offer
-  // self-update but must still compile and be testable.
+#ifdef Q_OS_MACOS
+  // macOS has no /proc; ask dyld for the running image path. This works before
+  // any QCoreApplication exists and after it is destroyed, matching the Windows
+  // contract. _NSGetExecutablePath may return a non-canonical path (symlinks,
+  // "../"), so canonicalize; fall back to the raw path if canonicalization
+  // fails (e.g. the file was moved).
+  uint32_t size = 0;
+  _NSGetExecutablePath(nullptr, &size);
+  std::vector<char> buffer(size > 0 ? size : 1);
+  if (_NSGetExecutablePath(buffer.data(), &size) != 0) {
+    return QString();
+  }
+  const QString raw = QFile::decodeName(buffer.data());
+  const QString canonical = QFileInfo(raw).canonicalFilePath();
+  return canonical.isEmpty() ? raw : canonical;
+#else
+  // Linux and other /proc-based systems. This runs without a QCoreApplication,
+  // matching the Windows contract.
   const QString self = QFileInfo(QStringLiteral("/proc/self/exe")).symLinkTarget();
   return self;
+#endif
 #endif
 }
 
