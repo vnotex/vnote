@@ -128,7 +128,16 @@ public:
   // to pull manifest.json out of band (step 9). Returns false when the entry is
   // absent or fails to decompress.
   static bool readEntry(const QString &p_archivePath, const QString &p_entryPath,
-                        QByteArray *p_out, const Options &p_options = Options());
+                        QByteArray *p_out, const Options &p_options);
+
+  // Convenience overload using default Options. Kept separate (rather than an
+  // in-class default argument) because a default argument of `= Options()`
+  // references Options's default member initializers before the enclosing class
+  // is complete, which GCC rejects (well-formed only after the class is closed).
+  static bool readEntry(const QString &p_archivePath, const QString &p_entryPath,
+                        QByteArray *p_out) {
+    return readEntry(p_archivePath, p_entryPath, p_out, Options());
+  }
 
   static QString statusToString(Status p_status);
 
