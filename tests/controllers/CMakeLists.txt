@@ -405,14 +405,21 @@ add_qt_test(test_notificationrouter
 # satisfied by stubs_updatecontroller.cpp rather than by linking the real
 # mainwindow2.cpp, which would drag in most of the app for two symbols. This is
 # the same approach as tests/unitedentry/stubs_findunitedentry.cpp.
-# mainwindow2.h / updatedialog.h are listed so AUTOMOC emits their moc.
+#
+# Only updatedialog.h is listed for AUTOMOC: the controller connects to
+# UpdateDialog's signals, so its moc is required. mainwindow2.h is deliberately
+# NOT listed -- the controller only calls the non-virtual MainWindow2::
+# restartForUpdate() and uses the pointer as a dialog parent, never connecting to
+# a MainWindow2 signal. Emitting MainWindow2's vtable (which AUTOMOC would do if
+# the header were listed) forces every out-of-line virtual and member-object
+# destructor to be linked, which GCC/Clang reject as undefined references and
+# which would defeat the stub. See stubs_updatecontroller.cpp.
 add_qt_test(test_updatecontroller
   SOURCES
     test_updatecontroller.cpp
     stubs_updatecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/updatecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindow2.h
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/updatedialog.h
   LINKS
     core_services
