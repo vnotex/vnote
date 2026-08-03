@@ -193,6 +193,13 @@ jobs:
       # does NOT contain manifest.json. That is intentional: MSI installs land
       # under Program Files and are deliberately ineligible for self-update.
       - name: Generate update manifest and delta
+        # Update artifacts are only meaningful for a real release. This repo
+        # cuts releases from a `[Release]` master push (the tag is created
+        # afterwards), so gate on that exact predicate -- identical to the
+        # `Release` step below. Non-release commits (PRs, continuous master
+        # builds) skip manifest/delta generation entirely; those channels never
+        # publish update assets, so producing them only risks failing the build.
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         shell: pwsh
         working-directory: ${{runner.workspace}}/build
         env:
@@ -269,6 +276,9 @@ jobs:
           }
 
       - name: Assert update manifest channel
+        # Only runs when the previous step generated the manifests, i.e. on a
+        # `[Release]` master push.
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         shell: pwsh
         working-directory: ${{runner.workspace}}/build
         run: |
