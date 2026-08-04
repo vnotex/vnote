@@ -96,7 +96,13 @@ jobs:
         with:
           version: ${{matrix.config.qt}}
           target: desktop
-          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport qtdeclarative'
+          # NOTE: do NOT add qtdeclarative here. It is not an aqt add-on module
+          # for Qt 6 -- it ships inside the base desktop package -- and naming
+          # it makes aqt fail this whole step with "The packages
+          # ['qtdeclarative'] were not found while parsing XML of package
+          # information!", before anything is even configured. Qt6::Qml is
+          # available regardless (qtwebengine depends on it).
+          modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           cache: 'true'
 
       - name: Create Build Dir
