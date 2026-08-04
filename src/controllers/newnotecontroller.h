@@ -10,13 +10,26 @@ namespace vnotex {
 
 class ServiceLocator;
 
+// Where a new note's body comes from.
+enum class NewNoteBodyMode {
+  // Expand templateContent through the snippet engine (cursor/selection marks,
+  // %note%/%no% overrides).
+  Template,
+  // Write literalContent verbatim: no snippet or template interpretation, so
+  // "%note%", "@@", "$$", tabs and surrounding whitespace all stay literal.
+  LiteralContent
+};
+
 // Input data structure for creating a new note.
 struct NewNoteInput {
   QString notebookId;
   QString parentFolderPath; // Relative path within notebook
   QString name;             // File name with extension
-  QString templateContent;  // Optional template content
+  QString templateContent;  // Optional template content (Template mode only)
   QString fileTypeName;     // File type name (e.g., "Markdown", "Text")
+
+  NewNoteBodyMode bodyMode = NewNoteBodyMode::Template;
+  QString literalContent; // Verbatim body (LiteralContent mode only)
 };
 
 // Result structure for note creation.

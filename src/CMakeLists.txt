@@ -71,6 +71,17 @@ endif()
 
 add_dependencies(vnote VX_EXTRA_RESOURCE)
 
+if(APPLE)
+    # application.cpp hosts the native NSServices provider ("Create Note in
+    # VNote"), so it must be compiled as Objective-C++. All AppKit code inside
+    # it is guarded by Q_OS_MACOS, so other platforms keep plain C++.
+    set_source_files_properties(application.cpp PROPERTIES LANGUAGE OBJCXX)
+
+    # Resolve AppKit explicitly instead of relying on Qt's private/transitive
+    # framework dependencies.
+    find_library(VX_APPKIT_LIBRARY AppKit REQUIRED)
+endif()
+
 set(VX_LIBS_FOLDER ../libs)
 target_include_directories(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -126,6 +137,10 @@ if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
     )
 endif()
 
+if(APPLE)
+    target_link_libraries(vnote PRIVATE ${VX_APPKIT_LIBRARY})
+endif()
+
 # Copy the qt.conf on Windows
 if(WIN32)
     add_custom_command(TARGET vnote POST_BUILD
@@ -154,10 +169,14 @@ elseif(APPLE)
     # TODO: declare install for macOS if necessary. For packing, we will manually copy files into
     # the src/vnote.app bundle.
 
-    # The generated Info.plist will be overridden.
+    # The checked-in Info.plist IS the bundle plist: it carries the NSServices
+    # declaration ("Create Note in VNote"), so an ordinary app-target build must
+    # already advertise the Service. Deploy no longer copies it separately, so
+    # build and package cannot diverge.
     set_target_properties(vnote
         PROPERTIES
         OUTPUT_NAME "${PROJECT_NAME}"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist"
         MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
         MACOSX_BUNDLE_INFO_STRING "${PROJECT_DESCRIPTION}"
         MACOSX_BUNDLE_GUI_IDENTIFIER "fun.vnote.vnote"

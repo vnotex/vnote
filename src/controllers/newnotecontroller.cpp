@@ -1,9 +1,9 @@
 #include "newnotecontroller.h"
 
-#include <QFileInfo>
-#include <QDir>
-#include <QJsonObject>
 #include <QDebug>
+#include <QDir>
+#include <QFileInfo>
+#include <QJsonObject>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
@@ -106,15 +106,31 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
     return result;
   }
 
-  // Write template content if provided.
-  if (!p_input.templateContent.isEmpty()) {
-    EvaluatedTemplate evaluated = evaluateTemplateContent(p_input.templateContent, p_input.name);
-
-    // Get the full path and write content.
+  // Resolve the absolute path of the freshly created file.
+  auto resolveFullPath = [&]() {
     QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
     QString rootPath = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
-    QString fullPath = PathUtils::concatenateFilePath(rootPath, filePath);
-    Error err = FileUtils2::writeFile(fullPath, evaluated.content.toUtf8());
+    return PathUtils::concatenateFilePath(rootPath, filePath);
+  };
+
+  if (p_input.bodyMode == NewNoteBodyMode::LiteralContent) {
+    // Captured text: written exactly as given, with no snippet/template
+    // expansion. Written unconditionally so a cleared field yields an empty
+    // note with an offset of zero.
+    Error err = FileUtils2::writeFile(resolveFullPath(), p_input.literalContent.toUtf8());
+    if (err) {
+      qWarning() << err.what();
+      result.success = false;
+      result.errorMessage = tr("Failed to write note content.");
+      return result;
+    }
+    // Qt caret offsets are UTF-16 positions, which is exactly QString::size().
+    result.cursorOffset = p_input.literalContent.size();
+  } else if (!p_input.templateContent.isEmpty()) {
+    // Write template content if provided.
+    EvaluatedTemplate evaluated = evaluateTemplateContent(p_input.templateContent, p_input.name);
+
+    Error err = FileUtils2::writeFile(resolveFullPath(), evaluated.content.toUtf8());
     if (err) {
       qWarning() << err.what();
       result.success = false;
@@ -165,8 +181,7 @@ NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) 
 
   QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
   QString rootFolder = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
-  QString parentAbsPath =
-      folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
+  QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
 
   QString newFileName = FileUtils2::generateFileNameWithSequence(
       parentAbsPath, finfo.completeBaseName(), finfo.suffix());
@@ -200,7 +215,7 @@ NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) 
 }
 
 EvaluatedTemplate NewNoteController::evaluateTemplateContent(const QString &p_content,
-                                                            const QString &p_name) {
+                                                             const QString &p_name) {
   // Provide magic-symbol overrides (%note%, %no%) derived from the note name,
   // mirroring the legacy SnippetMgr::generateOverrides(fileName). expandContent
   // additionally processes a top-level "@@" cursor mark and "$$" selection mark.

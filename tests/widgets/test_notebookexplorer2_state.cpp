@@ -1,15 +1,22 @@
 // Tests for NotebookExplorer2 saveState()/restoreState() serialization protocol.
 // We test the QDataStream wire format directly (without instantiating NotebookExplorer2)
 // because the widget has heavy GUI dependencies (ThemeService, ConfigMgr2, etc.).
+//
+// Also covers MainWindow2's PendingCaptureDispatcher: the non-UI FIFO /
+// readiness / reentrancy state machine behind the macOS "Create Note in VNote"
+// Service. It is a standalone class in mainwindow2.h precisely so this can be
+// asserted without constructing MainWindow2 (which needs the full service graph).
 
 #include <QtTest>
 
 #include <QByteArray>
 #include <QDataStream>
 #include <QHash>
+#include <QStringList>
 
 #include <core/nodeidentifier.h>
 #include <views/inodeexplorer.h>
+#include <widgets/mainwindow2.h>
 
 using namespace vnotex;
 
@@ -95,6 +102,12 @@ private slots:
   void testOldFormatCompatibility();
   void testEmptyData();
   void testNodeExplorerStateStreamRoundTrip();
+
+  // PendingCaptureDispatcher (macOS Service note capture).
+  void testCaptureQueuedUntilReady();
+  void testCaptureDrainsFifoOnReady();
+  void testCaptureNeverNestsHandler();
+  void testCapturePostReadyDrainsImmediately();
 };
 
 void TestNotebookExplorer2State::testRoundTrip_emptyCache() {
@@ -195,6 +208,97 @@ void TestNotebookExplorer2State::testNodeExplorerStateStreamRoundTrip() {
   QCOMPARE(restored.currentNodeId, id1);
   QCOMPARE(restored.displayRootId.notebookId, QStringLiteral("abc"));
   QCOMPARE(restored.displayRootId.relativePath, QStringLiteral("x"));
+}
+
+// =============================================================================
+// PendingCaptureDispatcher
+// =============================================================================
+
+// Requests arriving before post-init completes are queued, never handled: a
+// capture opens a buffer, which must land in the restored vxcore workspace.
+void TestNotebookExplorer2State::testCaptureQueuedUntilReady() {
+  PendingCaptureDispatcher dispatcher;
+  QStringList handled;
+  dispatcher.setHandler([&handled](const QString &p_text) { handled.append(p_text); });
+
+  QVERIFY(!dispatcher.isReady());
+
+  dispatcher.request(QStringLiteral("A"));
+  dispatcher.request(QStringLiteral("B"));
+
+  QCOMPARE(handled.size(), 0);
+  QCOMPARE(dispatcher.pendingCount(), 2);
+}
+
+// setReady() drains in arrival order and is idempotent.
+void TestNotebookExplorer2State::testCaptureDrainsFifoOnReady() {
+  PendingCaptureDispatcher dispatcher;
+  QStringList handled;
+  dispatcher.setHandler([&handled](const QString &p_text) { handled.append(p_text); });
+
+  dispatcher.request(QStringLiteral("A"));
+  dispatcher.request(QStringLiteral("B"));
+  dispatcher.request(QStringLiteral("C"));
+
+  dispatcher.setReady();
+
+  QVERIFY(dispatcher.isReady());
+  QCOMPARE(dispatcher.pendingCount(), 0);
+  QCOMPARE(handled, QStringList({QStringLiteral("A"), QStringLiteral("B"), QStringLiteral("C")}));
+
+  // A second setReady() must not re-handle anything.
+  dispatcher.setReady();
+  QCOMPARE(handled.size(), 3);
+}
+
+// A request arriving while the handler runs (i.e. from inside the modal
+// dialog's nested event loop) must NOT open a nested dialog: handler depth
+// stays at one, and B runs only after A returns.
+void TestNotebookExplorer2State::testCaptureNeverNestsHandler() {
+  PendingCaptureDispatcher dispatcher;
+  QStringList entered;
+  QStringList exited;
+  int depth = 0;
+  int maxDepth = 0;
+
+  dispatcher.setHandler([&](const QString &p_text) {
+    ++depth;
+    maxDepth = qMax(maxDepth, depth);
+    entered.append(p_text);
+
+    // Simulate the Service firing again while A's dialog is up.
+    if (p_text == QStringLiteral("A")) {
+      dispatcher.request(QStringLiteral("B"));
+      // B must not have been handled re-entrantly.
+      QCOMPARE(entered.size(), 1);
+    }
+
+    exited.append(p_text);
+    --depth;
+  });
+
+  dispatcher.setReady();
+  dispatcher.request(QStringLiteral("A"));
+
+  QCOMPARE(maxDepth, 1);
+  QCOMPARE(entered, QStringList({QStringLiteral("A"), QStringLiteral("B")}));
+  QCOMPARE(exited, QStringList({QStringLiteral("A"), QStringLiteral("B")}));
+  QCOMPARE(dispatcher.pendingCount(), 0);
+}
+
+// Once ready, a request is handled straight away rather than accumulating.
+void TestNotebookExplorer2State::testCapturePostReadyDrainsImmediately() {
+  PendingCaptureDispatcher dispatcher;
+  QStringList handled;
+  dispatcher.setHandler([&handled](const QString &p_text) { handled.append(p_text); });
+
+  dispatcher.setReady();
+  QCOMPARE(handled.size(), 0);
+
+  dispatcher.request(QStringLiteral("only"));
+
+  QCOMPARE(handled, QStringList({QStringLiteral("only")}));
+  QCOMPARE(dispatcher.pendingCount(), 0);
 }
 
 } // namespace tests

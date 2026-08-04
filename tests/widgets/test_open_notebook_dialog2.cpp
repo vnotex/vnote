@@ -12,29 +12,47 @@
 //      destination enables the Open button; an existing non-empty path
 //      disables it (refine-open-notebook-dialog: relaxed dest contract).
 //
+// This file also hosts the NewNoteDialog2 constructor-options coverage (macOS
+// Services note capture) because it already owns a fully wired ServiceLocator +
+// QApplication dialog harness, plus the platform-independent
+// Application::dispatchCaptureText seam the native provider delegates to.
+//
 // Per ADR-9 patterns used in adjacent dialog tests (test_notebooksyncinfodialog2):
 // the dialog is instantiated directly with a ServiceLocator wired to a real
 // vxcore context (test mode). No actual notebook is opened in these subtests.
 
 #include <QApplication>
 #include <QButtonGroup>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonObject>
 #include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSignalSpy>
 #include <QStackedWidget>
 #include <QtTest>
 
+#include <application.h>
+#include <core/configmgr2.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/snippetcoreservice.h>
+#include <core/services/templateservice.h>
 #include <temp_dir_fixture.h>
+#include <widgets/dialogs/newnotedialog2.h>
+#include <widgets/dialogs/notetemplateselector.h>
 #include <widgets/dialogs/opennotebookdialog2.h>
+#include <widgets/lineeditwithsnippet.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
 
@@ -64,6 +82,18 @@ private slots:
   //    existing-empty) -> Open enabled. Non-empty existing dest -> disabled.
   void testValidRemoteUrlEnablesOpenButton();
 
+  // --- NewNoteDialog2 constructor options (macOS Services note capture) ---
+  void testNewNoteDefaultOptionsKeepTemplate();
+  void testNewNoteLiteralOptionsShowEditableContent();
+  void testNewNoteLiteralAcceptPersistsVerbatim();
+  void testNewNoteLiteralClearedAcceptPersistsEmpty();
+  void testNewNoteLiteralDoesNotTouchLastTemplate();
+
+  // --- Application::dispatchCaptureText seam ---
+  void testDispatchRejectsMissingAndWhitespaceOnly();
+  void testDispatchAcceptsTextVerbatim();
+  void testDispatchWithoutCallbackIsRefused();
+
 private:
   // Build a ServiceLocator with a real NotebookCoreService bound to the shared
   // vxcore context. Each subtest is isolated because no actual notebooks are
@@ -71,7 +101,29 @@ private:
   // touch it, and local mode is not exercised through accept() here).
   void buildServices(ServiceLocator &services, NotebookCoreService *&svc);
 
+  // Parent folder (notebook root) the NewNoteDialog2 subtests create into.
+  NodeIdentifier newNoteParentId() const;
+
+  // Raw on-disk bytes of a created note, so persistence is asserted rather than
+  // the widget's own displayed text.
+  QByteArray readNoteBytes(const NodeIdentifier &p_id) const;
+
+  // Drive a constructed dialog to accept with the given note name.
+  void acceptNewNoteDialog(NewNoteDialog2 &p_dialog, const QString &p_name);
+
   VxCoreContextHandle m_ctx = nullptr;
+
+  // Fully wired service graph for the NewNoteDialog2 subtests. Owned here so a
+  // dialog can actually be accepted (which needs config + notebook services).
+  ServiceLocator m_newNoteServices;
+  ConfigCoreService *m_configCore = nullptr;
+  ConfigMgr2 *m_configMgr = nullptr;
+  NotebookCoreService *m_newNoteNotebookSvc = nullptr;
+  FileTypeCoreService *m_fileTypeSvc = nullptr;
+  SnippetCoreService *m_snippetSvc = nullptr;
+  TemplateService *m_templateSvc = nullptr;
+  TempDirFixture m_newNoteTempDir;
+  QString m_newNoteNotebookId;
 };
 
 void TestOpenNotebookDialog2::initTestCase() {
@@ -80,13 +132,85 @@ void TestOpenNotebookDialog2::initTestCase() {
   vxcore_set_test_mode(1);
   QCOMPARE(vxcore_context_create("{}", &m_ctx), VXCORE_OK);
   QVERIFY(m_ctx != nullptr);
+
+  // Service graph for the NewNoteDialog2 subtests.
+  QVERIFY(m_newNoteTempDir.isValid());
+
+  m_configCore = new ConfigCoreService(m_ctx);
+  m_configMgr = new ConfigMgr2(m_configCore);
+  // Required so getWidgetConfig() works inside the dialog; skipping it crashes
+  // that path (same rationale as test_node_explorer_reload_expansion).
+  m_configMgr->init();
+
+  m_newNoteNotebookSvc = new NotebookCoreService(m_ctx);
+  m_fileTypeSvc = new FileTypeCoreService(m_ctx, QStringLiteral("en_US"));
+  m_snippetSvc = new SnippetCoreService(m_ctx);
+  m_templateSvc = new TemplateService(m_configMgr);
+
+  m_newNoteServices.registerService<ConfigCoreService>(m_configCore);
+  m_newNoteServices.registerService<ConfigMgr2>(m_configMgr);
+  m_newNoteServices.registerService<NotebookCoreService>(m_newNoteNotebookSvc);
+  m_newNoteServices.registerService<FileTypeCoreService>(m_fileTypeSvc);
+  m_newNoteServices.registerService<SnippetCoreService>(m_snippetSvc);
+  m_newNoteServices.registerService<TemplateService>(m_templateSvc);
+
+  const QString root = m_newNoteTempDir.createDir("capture_nb");
+  m_newNoteNotebookId =
+      m_newNoteNotebookSvc->createNotebook(root, QStringLiteral("{}"), NotebookType::Bundled);
+  QVERIFY(!m_newNoteNotebookId.isEmpty());
 }
 
 void TestOpenNotebookDialog2::cleanupTestCase() {
+  delete m_templateSvc;
+  m_templateSvc = nullptr;
+  delete m_snippetSvc;
+  m_snippetSvc = nullptr;
+  delete m_fileTypeSvc;
+  m_fileTypeSvc = nullptr;
+  delete m_newNoteNotebookSvc;
+  m_newNoteNotebookSvc = nullptr;
+  delete m_configMgr;
+  m_configMgr = nullptr;
+  delete m_configCore;
+  m_configCore = nullptr;
+
   if (m_ctx) {
     vxcore_context_destroy(m_ctx);
     m_ctx = nullptr;
   }
+}
+
+NodeIdentifier TestOpenNotebookDialog2::newNoteParentId() const {
+  NodeIdentifier id;
+  id.notebookId = m_newNoteNotebookId;
+  id.relativePath = QString();
+  return id;
+}
+
+QByteArray TestOpenNotebookDialog2::readNoteBytes(const NodeIdentifier &p_id) const {
+  const QJsonObject cfg = m_newNoteNotebookSvc->getNotebookConfig(p_id.notebookId);
+  const QString root = cfg.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
+  QFile f(QDir(root).filePath(p_id.relativePath));
+  if (!f.open(QIODevice::ReadOnly)) {
+    return QByteArray();
+  }
+  const QByteArray content = f.readAll();
+  f.close();
+  return content;
+}
+
+void TestOpenNotebookDialog2::acceptNewNoteDialog(NewNoteDialog2 &p_dialog, const QString &p_name) {
+  auto *nameEdit = p_dialog.findChild<LineEditWithSnippet *>();
+  QVERIFY(nameEdit);
+  nameEdit->setText(p_name);
+
+  auto *box = p_dialog.getDialogButtonBox();
+  QVERIFY(box);
+  auto *okBtn = box->button(QDialogButtonBox::Ok);
+  QVERIFY(okBtn);
+  okBtn->click();
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(p_dialog.result(), static_cast<int>(QDialog::Accepted));
 }
 
 void TestOpenNotebookDialog2::buildServices(ServiceLocator &services, NotebookCoreService *&svc) {
@@ -316,6 +440,207 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
            "Open must be DISABLED when dest is an existing non-empty directory");
 
   delete svc;
+}
+
+// =============================================================================
+// NewNoteDialog2 constructor options.
+//
+// The macOS "Create Note in VNote" Service opens the ordinary New Note dialog
+// in a literal-content mode. The mode is fixed at construction (there are no
+// setters), so these subtests assert per-mode control existence and content
+// handling. Persistence itself is the controller's job and is covered by
+// tests/controllers/test_newnotecontroller.cpp.
+// =============================================================================
+
+// Default options must reproduce today's New Note dialog exactly: Template
+// selector present, no Content field.
+void TestOpenNotebookDialog2::testNewNoteDefaultOptionsKeepTemplate() {
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  QVERIFY2(dialog.findChild<NoteTemplateSelector *>() != nullptr,
+           "Default options must still show the template selector");
+  QVERIFY2(dialog.findChild<QPlainTextEdit *>(QStringLiteral("newNoteContentEdit")) == nullptr,
+           "Default options must NOT show a Content field");
+}
+
+// Capture options must expose an editable, named Content field seeded verbatim
+// (no trimming) and must NOT construct the template selector.
+void TestOpenNotebookDialog2::testNewNoteLiteralOptionsShowEditableContent() {
+  // Leading/trailing whitespace, a tab, and snippet markers that the template
+  // path would otherwise consume.
+  const QString captured = QStringLiteral("  lead\tkeep %note% @@ $$ trail  ");
+
+  NewNoteDialog2::Options options;
+  options.m_bodyMode = NewNoteDialog2::BodyMode::LiteralContent;
+  options.m_initialContent = captured;
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId(), options);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *contentEdit = dialog.findChild<QPlainTextEdit *>(QStringLiteral("newNoteContentEdit"));
+  QVERIFY2(contentEdit, "Content field must exist with object name 'newNoteContentEdit'");
+  QVERIFY2(contentEdit->isEnabled(), "Content field must be enabled");
+  QVERIFY2(!contentEdit->isReadOnly(), "Content field must be editable");
+  QCOMPARE(contentEdit->toPlainText(), captured);
+
+  QVERIFY2(dialog.findChild<NoteTemplateSelector *>() == nullptr,
+           "Capture options must NOT construct the template selector");
+}
+
+// End-to-end through the REAL dialog -> NewNoteInput -> NewNoteController ->
+// file path. Asserts the persisted bytes, not the widget's displayed text, so
+// an accidental trim / template-mode forwarding / snippet expansion would fail
+// here.
+//
+// Exactly one mutation is permitted: CRLF and lone CR collapse to LF. In
+// particular U+00A0 must survive, which QPlainTextEdit::toPlainText() would
+// silently rewrite to a plain space.
+void TestOpenNotebookDialog2::testNewNoteLiteralAcceptPersistsVerbatim() {
+  const QString captured =
+      QStringLiteral("  a\r\nb\rc\n\u00A0nbsp\t%note% @@ $$ \U0001F4DD tail  ");
+  const QString expected = QStringLiteral("  a\nb\nc\n\u00A0nbsp\t%note% @@ $$ \U0001F4DD tail  ");
+
+  NewNoteDialog2::Options options;
+  options.m_bodyMode = NewNoteDialog2::BodyMode::LiteralContent;
+  options.m_initialContent = captured;
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId(), options);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  acceptNewNoteDialog(dialog, QStringLiteral("capture_verbatim.md"));
+
+  const NodeIdentifier newId = dialog.getNewNodeId();
+  QVERIFY(newId.isValid());
+  QCOMPARE(readNoteBytes(newId), expected.toUtf8());
+
+  // Caret lands at the end of the captured content (UTF-16 units).
+  QCOMPARE(dialog.getNewCursorOffset(), expected.size());
+}
+
+// The user may clear the captured text entirely; the accepted note is then
+// empty with an offset of zero (NOT the template path's -1 "no content"
+// sentinel, and NOT the original content).
+void TestOpenNotebookDialog2::testNewNoteLiteralClearedAcceptPersistsEmpty() {
+  NewNoteDialog2::Options options;
+  options.m_bodyMode = NewNoteDialog2::BodyMode::LiteralContent;
+  options.m_initialContent = QStringLiteral("discard me");
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId(), options);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *contentEdit = dialog.findChild<QPlainTextEdit *>(QStringLiteral("newNoteContentEdit"));
+  QVERIFY(contentEdit);
+  contentEdit->clear();
+
+  acceptNewNoteDialog(dialog, QStringLiteral("capture_cleared.md"));
+
+  const NodeIdentifier newId = dialog.getNewNodeId();
+  QVERIFY(newId.isValid());
+  QCOMPARE(readNoteBytes(newId), QByteArray());
+  QCOMPARE(dialog.getNewCursorOffset(), 0);
+}
+
+// A capture dialog must neither READ nor OVERWRITE the shared static
+// last-template state that ordinary New Note dialogs restore and save.
+void TestOpenNotebookDialog2::testNewNoteLiteralDoesNotTouchLastTemplate() {
+  // Seed one template so the selector has something to remember.
+  QVERIFY(m_templateSvc->ensureTemplateFolder());
+  const QString templateName = QStringLiteral("capture_probe.md");
+  {
+    QFile f(QDir(m_templateSvc->getTemplateFolder()).filePath(templateName));
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write("template body");
+    f.close();
+  }
+
+  // (a) Ordinary dialog selects the template and is accepted -> remembered.
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QVERIFY2(selector->setCurrentTemplate(templateName), "Seeded template must be selectable");
+    acceptNewNoteDialog(dialog, QStringLiteral("last_tpl_a.md"));
+  }
+
+  // (b) A capture dialog runs in between and is accepted.
+  {
+    NewNoteDialog2::Options options;
+    options.m_bodyMode = NewNoteDialog2::BodyMode::LiteralContent;
+    options.m_initialContent = QStringLiteral("captured body");
+
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId(), options);
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    acceptNewNoteDialog(dialog, QStringLiteral("last_tpl_b.md"));
+  }
+
+  // (c) The next ordinary dialog must still restore the template from (a).
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QCOMPARE(selector->getCurrentTemplate(), templateName);
+  }
+}
+
+// =============================================================================
+// Application::dispatchCaptureText
+//
+// The native Objective-C provider does the AppKit pasteboard read and then
+// delegates every decision here, so this seam IS the Service contract.
+// =============================================================================
+
+void TestOpenNotebookDialog2::testDispatchRejectsMissingAndWhitespaceOnly() {
+  const QStringList rejected = {QString(),                   // no pasteboard string at all
+                                QString::fromLatin1(""),     // empty
+                                QStringLiteral("   "),       // spaces
+                                QStringLiteral("\t\n \r\n"), // whitespace mix
+                                QStringLiteral("\n")};
+
+  for (const QString &input : rejected) {
+    int calls = 0;
+    QString error = QStringLiteral("pre-existing");
+    const bool accepted =
+        Application::dispatchCaptureText(input, error, [&calls](const QString &) { ++calls; });
+
+    QVERIFY2(!accepted, "whitespace-only or missing input must be rejected");
+    QVERIFY2(!error.isEmpty(), "a rejection must report a non-empty error");
+    QCOMPARE(calls, 0);
+  }
+}
+
+void TestOpenNotebookDialog2::testDispatchAcceptsTextVerbatim() {
+  // Surrounding whitespace and Unicode must survive untouched: validation may
+  // inspect trimmed(), but it must never trim what it forwards.
+  const QString captured = QStringLiteral("  \u4E2D\u6587 \U0001F4DD tail\t");
+
+  int calls = 0;
+  QString seen;
+  QString error = QStringLiteral("pre-existing");
+
+  const bool accepted =
+      Application::dispatchCaptureText(captured, error, [&](const QString &p_text) {
+        ++calls;
+        seen = p_text;
+      });
+
+  QVERIFY(accepted);
+  QVERIFY2(error.isEmpty(), "an accepted request must clear the error");
+  QCOMPARE(calls, 1);
+  QCOMPARE(seen, captured);
+}
+
+// A true return must mean the request was actually dispatched, so an absent
+// callback is reported as a failure rather than a silent success.
+void TestOpenNotebookDialog2::testDispatchWithoutCallbackIsRefused() {
+  QString error;
+  const bool accepted =
+      Application::dispatchCaptureText(QStringLiteral("some text"), error, nullptr);
+
+  QVERIFY(!accepted);
+  QVERIFY(!error.isEmpty());
 }
 
 } // namespace tests

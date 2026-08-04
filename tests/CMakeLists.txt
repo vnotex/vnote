@@ -97,3 +97,52 @@ add_subdirectory(gui)
 add_subdirectory(export)
 add_subdirectory(unitedentry)
 add_subdirectory(integration)
+
+# =============================================================================
+# macOS Services metadata (Create Note in VNote)
+# =============================================================================
+# Asserted against the FINAL BUNDLE plist, not the source file: the bundle is
+# what macOS actually reads, and it is produced through MACOSX_BUNDLE_INFO_PLIST
+# (src/CMakeLists.txt). Exact raw values and types are pinned, because a
+# silently mistyped key (e.g. NSRestricted as a string) still lints clean while
+# breaking Service discovery.
+if(APPLE)
+  set(VX_BUNDLE_PLIST "$<TARGET_BUNDLE_DIR:vnote>/Contents/Info.plist")
+
+  # Helper: assert one plist key resolves to one exact raw value.
+  function(add_service_plist_test NAME KEYPATH EXPECTED)
+    add_test(NAME test_macos_service_plist_${NAME}
+      COMMAND plutil -extract "${KEYPATH}" raw -o - "${VX_BUNDLE_PLIST}")
+    set_tests_properties(test_macos_service_plist_${NAME} PROPERTIES
+      PASS_REGULAR_EXPRESSION "^${EXPECTED}\n?$"
+      TIMEOUT 60
+    )
+  endfunction()
+
+  add_service_plist_test(nsmessage "NSServices.0.NSMessage" "createNoteFromSelection")
+  add_service_plist_test(nsportname "NSServices.0.NSPortName" "VNote")
+  add_service_plist_test(nsmenuitem_default "NSServices.0.NSMenuItem.default"
+                         "Create Note in VNote")
+  add_service_plist_test(nssendtypes_0 "NSServices.0.NSSendTypes.0"
+                         "public.utf8-plain-text")
+  # Boolean, not the string "false": a mistyped value still lints clean.
+  add_service_plist_test(nsrestricted "NSServices.0.NSRestricted" "false")
+
+  # NSRequiredContext must be a dictionary (an empty one), and NSReturnTypes
+  # must be ABSENT because the Service returns nothing.
+  add_test(NAME test_macos_service_plist_nsrequiredcontext_is_dict
+    COMMAND /usr/libexec/PlistBuddy -c "Print :NSServices:0:NSRequiredContext"
+            "${VX_BUNDLE_PLIST}")
+  set_tests_properties(test_macos_service_plist_nsrequiredcontext_is_dict PROPERTIES
+    PASS_REGULAR_EXPRESSION "Dict"
+    TIMEOUT 60
+  )
+
+  add_test(NAME test_macos_service_plist_no_nsreturntypes
+    COMMAND /usr/libexec/PlistBuddy -c "Print :NSServices:0:NSReturnTypes"
+            "${VX_BUNDLE_PLIST}")
+  set_tests_properties(test_macos_service_plist_no_nsreturntypes PROPERTIES
+    WILL_FAIL TRUE
+    TIMEOUT 60
+  )
+endif()

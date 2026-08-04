@@ -7,6 +7,8 @@
 #include <QStringList>
 #include <QVector>
 
+#include <functional>
+
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
 
@@ -44,6 +46,76 @@ class FirstRunController;
 class UpdateController;
 class NotificationRouter;
 class NotificationToast;
+
+// Non-UI state machine behind MainWindow2's macOS Service note capture: a FIFO
+// of pending requests, a startup-readiness bit, and a reentrancy guard.
+//
+// It is deliberately independent of MainWindow2 (which merely owns one and
+// supplies the modal handler) so the queueing/serialization contract can be
+// unit-tested without constructing the full window. Defined inline because
+// there is no widgets static library: a test must not have to compile
+// mainwindow2.cpp (and its whole transitive widget graph) to exercise this.
+//
+// Semantics:
+//   - Requests received before setReady() are queued, never handled.
+//   - setReady() drains the queue in FIFO order and is idempotent.
+//   - A request that arrives while the handler is running (i.e. from inside a
+//     modal dialog's nested event loop) is appended and handled after the
+//     current one returns, so handler depth never exceeds one.
+class PendingCaptureDispatcher {
+public:
+  using Handler = std::function<void(const QString &)>;
+
+  void setHandler(Handler p_handler) { m_handler = std::move(p_handler); }
+
+  // Queue a capture request, draining immediately when already ready.
+  void request(const QString &p_text) {
+    m_pending.append(p_text);
+    if (m_ready) {
+      drain();
+    }
+  }
+
+  // Mark startup complete and drain whatever accumulated. Idempotent.
+  void setReady() {
+    if (m_ready) {
+      return;
+    }
+    m_ready = true;
+    drain();
+  }
+
+  bool isReady() const { return m_ready; }
+
+  int pendingCount() const { return m_pending.size(); }
+
+private:
+  void drain() {
+    if (m_draining) {
+      // A request arrived from inside the handler (the modal dialog's nested
+      // event loop). It is already queued; the outer loop will pick it up.
+      return;
+    }
+
+    m_draining = true;
+    while (!m_pending.isEmpty()) {
+      const QString text = m_pending.takeFirst();
+      if (m_handler) {
+        m_handler(text);
+      }
+    }
+    m_draining = false;
+  }
+
+  Handler m_handler;
+
+  QVector<QString> m_pending;
+
+  bool m_ready = false;
+
+  // True while drain() is running, so a nested request only appends.
+  bool m_draining = false;
+};
 
 // MainWindow2 is a minimal QMainWindow shell for the new clean architecture.
 // Receives ServiceLocator via constructor for dependency injection.
@@ -111,6 +183,11 @@ public:
   void restartForUpdate();
 
   void showMainWindow();
+
+  // Entry point for a macOS "Create Note in VNote" Service request. Queues the
+  // text until post-initialization completes, then serially opens one capture
+  // dialog per request.
+  void requestNoteCapture(const QString &p_text);
 
   void quitApp();
 
@@ -192,6 +269,11 @@ private:
   // after each batch, so every queued --detached-view invocation opens into its
   // own detached window without relying on timer-ordering.
   void drainPendingOpenBatches();
+
+  // Handle one dequeued capture request: foreground the window and run the
+  // explorer's capture flow (which is modal for the duration).
+  void handleNoteCapture(const QString &p_text);
+
   void setupSystemTray();
 
   // Create the notification toast (transient surface for Attention::Interrupt)
@@ -319,6 +401,10 @@ private:
   };
   QVector<PendingOpenBatch> m_pendingOpenBatches;
 
+  // macOS Service capture requests: queued until post-init completes, then
+  // handled one at a time.
+  PendingCaptureDispatcher m_captureDispatcher;
+
   // -1: do not request to quit;
   // 0 and above: exit code.
   int m_requestQuit = -1;
@@ -340,4 +426,3 @@ private:
 } // namespace vnotex
 
 #endif // MAINWINDOW2_H
-

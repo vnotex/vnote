@@ -41,11 +41,11 @@
 #include <core/services/configservice.h>
 #include <core/services/eventbridge.h>
 #include <core/services/filetypecoreservice.h>
+#include <core/services/historyservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/htmltemplateservice.h>
 #include <core/services/imagehostservice.h>
 #include <core/services/notebookcoreservice.h>
-#include <core/services/historyservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/notificationservice.h>
 #include <core/services/searchcoreservice.h>
@@ -68,8 +68,8 @@
 #include <core/updatelease.h>
 #include <core/vxcorelogbridge.h>
 #include <gui/services/navigationmodeservice.h>
-#include <gui/services/themeservice.h>
 #include <gui/services/stickerfactory.h>
+#include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
@@ -249,9 +249,8 @@ int main(int argc, char *argv[]) {
 
   {
     vnotex::UpdateLease::AcquireError leaseError = vnotex::UpdateLease::AcquireError::None;
-    vnotex::UpdateLease startupLease =
-        vnotex::UpdateLease::acquire(installDir, vnotex::UpdateLease::c_defaultTimeoutMs,
-                                     &leaseError);
+    vnotex::UpdateLease startupLease = vnotex::UpdateLease::acquire(
+        installDir, vnotex::UpdateLease::c_defaultTimeoutMs, &leaseError);
     if (!startupLease) {
       // FAIL CLOSED. Never fall through to initialization: another process may
       // be swapping binaries this one is about to use. No Qt exists yet, so the
@@ -359,8 +358,7 @@ int main(int argc, char *argv[]) {
   // Chromium logs, run with QTWEBENGINE_CHROMIUM_FLAGS=--enable-logging; to work
   // around a platform QtWebEngine crash, add flags like --single-process and
   // VNote will preserve them (issue #2705).
-  qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-          buildChromiumFlags(qgetenv("QTWEBENGINE_CHROMIUM_FLAGS")));
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", buildChromiumFlags(qgetenv("QTWEBENGINE_CHROMIUM_FLAGS")));
 
   // Enable QtWebEngine remote debugging (DevTools) when --remote-debugging-port
   // is passed. On Qt 6 the bare argv switch is NOT honored by QtWebEngine; the
@@ -788,16 +786,22 @@ int main(int argc, char *argv[]) {
     // "Open with VNote" while VNote is already running, plus raise/show).
     QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &mainWindow,
                      [&mainWindow](const QStringList &p_files) { mainWindow.openFiles(p_files); });
-    QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &mainWindow,
-                     [&mainWindow](const QStringList &p_files) {
-                       mainWindow.openFiles(p_files, true);
-                     });
+    QObject::connect(
+        &guard, &SingleInstanceGuard::openFilesDetachedRequested, &mainWindow,
+        [&mainWindow](const QStringList &p_files) { mainWindow.openFiles(p_files, true); });
     QObject::connect(&guard, &SingleInstanceGuard::showRequested, &mainWindow,
                      &MainWindow2::showMainWindow);
 
     QObject::disconnect(pendingOpenConnection);
     QObject::disconnect(pendingDetachedConnection);
     QObject::disconnect(pendingShowConnection);
+
+    // macOS "Create Note in VNote" system Service. The receiver must be
+    // connected BEFORE the native provider is registered, because Apple may
+    // dispatch a request immediately after registration.
+    QObject::connect(
+        &app, &Application::captureNoteRequested, &mainWindow,
+        [&mainWindow](const QString &p_text) { mainWindow.requestNoteCapture(p_text); });
 
     if (cmdOptions.m_detachedView) {
       mainWindow.showMinimized();
@@ -818,6 +822,11 @@ int main(int argc, char *argv[]) {
     themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
 
     mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen, cmdOptions.m_detachedView);
+
+    // Register the native Service provider only now: the startup flow is
+    // installed, so a request arriving immediately is queued by MainWindow2
+    // until post-init completes. No-op off macOS.
+    app.registerServiceProvider();
 
     // Run event loop
     ret = app.exec();
