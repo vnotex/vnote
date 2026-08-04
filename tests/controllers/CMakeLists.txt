@@ -388,15 +388,27 @@ add_custom_command(TARGET test_legacy_image_migration POST_BUILD
 # NotificationRouter - attention/dedup policy for subsystem failure signals.
 # GUILESS: the router deliberately holds no widget pointers, so the
 # widget-owned sources are driven through its public slots with no QApplication
-# and no widget construction.
+# and no widget construction. core_configs is linked for ConfigMgr2, whose
+# extra-data copy failures the router pulls at MainWindowAfterStart; it is
+# widget-free, so GUILESS still holds.
 add_qt_test(test_notificationrouter
   SOURCES
     test_notificationrouter.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notificationrouter.cpp
   LINKS
     core_services
+    core_configs
     vxcore
   GUILESS
+)
+
+# core_configs links VTextEdit PUBLIC, so this exe needs the DLL beside it.
+# tests/controllers already copies it via test_legacy_image_migration, but that
+# copy does not run when only this target is built.
+add_custom_command(TARGET test_notificationrouter POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_notificationrouter>
 )
 
 # UpdateController - dedup-key wiring for the update notification lifecycle.

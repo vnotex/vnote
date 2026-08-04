@@ -4,7 +4,9 @@
 #include <QByteArray>
 #include <QDir>
 #include <QJsonObject>
+#include <QSet>
 #include <QString>
+#include <QStringList>
 
 #include <core/error.h>
 
@@ -42,6 +44,65 @@ public:
   // Copy directory recursively. If p_move is true, move instead of copy.
   // Merges if target directory exists, overwriting files with same names.
   static Error copyDir(const QString &p_dirPath, const QString &p_destPath, bool p_move = false);
+
+  // Recursively copy p_dirPath into p_destPath, continuing past per-node
+  // failures instead of aborting on the first one (which copyDir does).
+  // Every failing SOURCE path is appended to p_failedPaths (may be null); a
+  // subdirectory whose creation failed is recorded as a single entry and its
+  // siblings are still copied.
+  // Destination-root-relative paths in p_skipExistingRelPaths (forward slashes,
+  // compared case-insensitively) are NOT copied when they already exist as
+  // regular files at the destination; such a skip is NOT a failure. An
+  // incompatible destination node is handled as a normal copy failure.
+  // Returns the FIRST error encountered, or Error::ok() when everything copied.
+  // Copy-only: there is deliberately no p_move counterpart.
+  //
+  // copyDir() is intentionally left untouched: Exporter (attachment copy) and
+  // FirstRunController (bundled notebook) both want fail-fast, and a silent
+  // semantic change there would let a half-copied tree report success.
+  static Error copyDirCollectingErrors(const QString &p_dirPath, const QString &p_destPath,
+                                       QStringList *p_failedPaths = nullptr,
+                                       const QSet<QString> *p_skipExistingRelPaths = nullptr);
+
+  // Name of the per-folder version stamp file written inside the destination
+  // directory by installVersionedDir(). Never present in the source tree, so
+  // the copy itself can never overwrite it.
+  static const char *const c_versionStampFileName;
+
+  // Install a bundled directory into p_destDir, remembering p_version in a
+  // stamp file so a COMPLETED install is skipped on the next call and a PARTIAL
+  // one is retried.
+  //
+  // Order of operations (load-bearing):
+  //   1. Validate p_srcDir exists and is a directory; otherwise return an error
+  //      WITHOUT touching the destination or the stamp. This is what stops a
+  //      missing resource from being recorded as a successful empty copy, and
+  //      it also means a previously completed install is left intact (see the
+  //      invariant below).
+  //   2. When !p_force and the stamp's trimmed contents equal p_version,
+  //      return Error::ok() without copying.
+  //   3. Otherwise DELETE any existing stamp first; a deletion failure is a
+  //      hard error returned before any copying, so a stale-but-plausible stamp
+  //      can never survive a crash (or a failed forced copy) mid-install.
+  //   4. copyDirCollectingErrors(...).
+  //   5. On any failure, return that error and write NO stamp.
+  //   6. On success, write the stamp durably (QSaveFile + checked write +
+  //      commit). A stamp-write failure is returned as an error so the folder
+  //      is retried on the next launch.
+  //
+  // INVARIANT: once step 3 has been reached, no stamp holding p_version can
+  // exist in p_destDir unless the whole install succeeded. The one failure that
+  // happens BEFORE step 3 -- an invalid source -- deliberately leaves an
+  // existing installation (and its stamp) untouched, because there is nothing
+  // to install and destroying a good install would be strictly worse.
+  //
+  // p_failedPaths collects the failing SOURCE paths of step 4, plus the
+  // destination stamp path when the failure is the stamp removal/write itself
+  // (that path is the useful diagnostic in those cases).
+  static Error installVersionedDir(const QString &p_srcDir, const QString &p_destDir,
+                                   const QString &p_version,
+                                   QStringList *p_failedPaths = nullptr, bool p_force = false,
+                                   const QSet<QString> *p_skipExistingRelPaths = nullptr);
 
   // Remove file.
   static Error removeFile(const QString &p_filePath);

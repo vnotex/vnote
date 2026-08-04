@@ -5,6 +5,8 @@
 #include <QObject>
 #include <QScopedPointer>
 #include <QString>
+#include <QStringList>
+#include <QVector>
 #include <QVersionNumber>
 
 #include "iconfigmgr.h"
@@ -38,6 +40,23 @@ public:
     Templates,
     Snippets,
     Web
+  };
+
+  // One bundled extra-data folder whose install did not fully succeed during
+  // the last ensureExtraData() run. Surfaced to the user by NotificationRouter
+  // at MainWindowAfterStart.
+  struct ExtraDataFailure {
+    // Bundle folder name, e.g. "web".
+    QString m_folderName;
+
+    // Message of the FIRST error hit while installing that folder.
+    QString m_errorMessage;
+
+    // Paths involved in the failure: normally the source paths that failed to
+    // copy, or the destination stamp path when the stamp itself could not be
+    // removed or written. Empty when the failure was not per-path (e.g. the
+    // bundle resource could not be registered at all).
+    QStringList m_failedPaths;
   };
 
   // Constructor receives ConfigCoreService via DI (non-owning pointer).
@@ -97,6 +116,20 @@ public:
   // whole session even after the new version is persisted.
   bool isVersionChanged() const;
 
+  // Folders whose bundled extra data could not be fully installed during the
+  // last ensureExtraData() call (i.e. during initAfterQtAppStarted()). Empty
+  // when everything installed cleanly. A folder that failed AFTER its stamp was
+  // invalidated is left unstamped on disk and is retried on the next launch; a
+  // folder that failed because the bundle itself was unavailable keeps whatever
+  // was already installed (there was nothing to install from).
+  const QVector<ExtraDataFailure> &extraDataCopyFailures() const;
+
+  // Override the root directory the bundled extra data is copied FROM. For
+  // testing only, so scenarios run against an on-disk fixture instead of
+  // mounting the production vnote_extra.rcc (which is not built in the
+  // unit-test targets). When set, the rcc is NOT registered.
+  void setExtraDataSourceRootOverrideForTesting(const QString &p_root);
+
   // Get application file path.
   static QString getApplicationFilePath();
 
@@ -125,10 +158,19 @@ private:
   void scheduleMainConfigWrite();
   void scheduleSessionConfigWrite();
 
-  // Perform version upgrade (copy themes, tasks, etc.).
+  // Perform version upgrade of the config itself (version-gated forced
+  // overrides + version stamping). The bundled extra-data dump is NOT part of
+  // this; it is owned by ensureExtraData(), which runs on every launch.
   void upgradeMainConfigOnVersionChange();
 
-  void copyNecessaryExtraData();
+  // Install every bundled extra-data folder (themes, tasks,
+  // syntax-highlighting, web, dicts) into the app data folder, one per-folder
+  // version stamp at a time. Called on EVERY launch: a folder that is already
+  // stamped with the current version is a cheap no-op, and a folder whose copy
+  // previously failed (leaving it unstamped) is retried here.
+  // @p_force: re-copy even when the stamp already matches.
+  // Records per-folder failures in m_extraDataFailures (cleared on entry).
+  void ensureExtraData(bool p_force);
 
   // Initialize app prefix search paths.
   void initAppPrefixPath();
@@ -142,6 +184,12 @@ private:
 
   // Whether version changed since last run
   bool m_versionChanged = false;
+
+  // Folders whose extra-data install failed during the last ensureExtraData().
+  QVector<ExtraDataFailure> m_extraDataFailures;
+
+  // Test-only override for the bundled extra-data source root.
+  QString m_extraDataSourceRootOverride;
 
   // Debounced write timers (500ms)
   QTimer *m_mainConfigWriteTimer = nullptr;

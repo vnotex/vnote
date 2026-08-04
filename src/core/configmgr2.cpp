@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QResource>
 #include <QScopeGuard>
+#include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
 
@@ -106,19 +107,26 @@ void ConfigMgr2::initAfterQtAppStarted() {
   // Handle version upgrade after Qt app is ready
   initAppPrefixPath();
 
+#if defined(VX_DEBUG_REFRESH)
+  qInfo() << "application version may not have changed, but forced to update for debugging";
+  ensureExtraData(true);
+  upgradeMainConfigOnVersionChange();
+#else
+  // Always make sure the bundled extra data is present and current. The
+  // per-folder version stamp turns this into a cheap no-op once a folder is
+  // fully installed, and it is what retries a folder whose copy was only
+  // partially completed on a previous launch. This subsumes the old
+  // copyNecessaryExtraData() folder-existence guard (deleting a folder deletes
+  // its stamp, which re-triggers the copy) and additionally covers all five
+  // folders instead of three.
+  ensureExtraData(false);
+
   if (m_versionChanged) {
     qInfo() << "Application version changed from" << m_mainConfig->getVersion() << "to"
             << c_version.toString();
     upgradeMainConfigOnVersionChange();
-  } else {
-#if defined(VX_DEBUG_REFRESH)
-    qInfo() << "application version not changed, but forced to update for debugging";
-    upgradeMainConfigOnVersionChange();
-#else
-    // Check and copy necessary files to make sure we could start
-    copyNecessaryExtraData();
-#endif
   }
+#endif
 
   qCDebug(lcConfig) << "ConfigMgr2 post-initialized successfully";
 }
@@ -298,47 +306,12 @@ void ConfigMgr2::doWriteSessionConfig() {
 }
 
 void ConfigMgr2::upgradeMainConfigOnVersionChange() {
-  // Load extra data.
-  const QString extraRcc("app:vnote_extra.rcc");
-  bool ret = QResource::registerResource(extraRcc);
-  if (!ret) {
-    qWarning() << "Failed to register resource file" << extraRcc;
-    // Don't throw - just log warning and continue
-  }
-  auto cleanup = qScopeGuard([extraRcc]() { QResource::unregisterResource(extraRcc); });
-
-  const QString extraDataRoot(QStringLiteral(":/vnotex/data/extra"));
-
-  auto copyExtraDir = [](const QString &p_src, const QString &p_dest) {
-    if (qApp) {
-      qApp->processEvents();
-    }
-    Error err = FileUtils2::copyDir(p_src, p_dest);
-    if (err) {
-      qWarning() << "Failed to copy extra data directory from" << p_src << "to" << p_dest << ":"
-                 << err.what();
-    }
-  };
-
-  // Copy themes.
-  copyExtraDir(extraDataRoot + QStringLiteral("/themes"),
-               getConfigDataFolder(ConfigDataType::Themes));
-
-  // Copy tasks.
-  copyExtraDir(extraDataRoot + QStringLiteral("/tasks"),
-               getConfigDataFolder(ConfigDataType::Tasks));
-
-  // Copy syntax-highlighting.
-  copyExtraDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
-               getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
-
-  // Copy web.
-  copyExtraDir(extraDataRoot + QStringLiteral("/web"),
-               getConfigDataFolder(ConfigDataType::Web));
-
-  // Copy dicts.
-  copyExtraDir(extraDataRoot + QStringLiteral("/dicts"),
-               getConfigDataFolder(ConfigDataType::Dicts));
+  // Config migration only. The bundled extra-data dump lives in
+  // ensureExtraData(), which runs on every launch and owns its own per-folder
+  // retry. Keeping the two apart is deliberate: coupling the version stamp to
+  // the copy would make doVersionSpecificOverride re-run every launch and pin
+  // the config version to the old value forever whenever a copy is
+  // permanently broken.
 
   // Apply version-gated forced overrides using the still-persisted previous
   // version, BEFORE stamping the new version below.
@@ -348,49 +321,101 @@ void ConfigMgr2::upgradeMainConfigOnVersionChange() {
   m_mainConfig->update();
 }
 
-void ConfigMgr2::copyNecessaryExtraData() {
-  // Check if we have the necessary themes, tasks, syntax-highlighting, web, dicts data to start.
-  // If not, copy them from the resource. This is needed for the case where user deleted some
-  // of the data files but didn't change the version (so we won't trigger upgrade logic).
-  if (QFileInfo::exists(getConfigDataFolder(ConfigDataType::Themes)) &&
-      QFileInfo::exists(getConfigDataFolder(ConfigDataType::SyntaxHighlighting)) &&
-      QFileInfo::exists(getConfigDataFolder(ConfigDataType::Web))) {
-    return;
+const QVector<ConfigMgr2::ExtraDataFailure> &ConfigMgr2::extraDataCopyFailures() const {
+  return m_extraDataFailures;
+}
+
+void ConfigMgr2::setExtraDataSourceRootOverrideForTesting(const QString &p_root) {
+  m_extraDataSourceRootOverride = p_root;
+}
+
+void ConfigMgr2::ensureExtraData(bool p_force) {
+  // Cleared on entry so a successful retry within the same process empties the
+  // list rather than accumulating stale entries.
+  m_extraDataFailures.clear();
+
+  struct FolderSpec {
+    // Folder name inside the bundle; also the destination leaf name.
+    QString m_name;
+    QString m_destPath;
+    // Destination-relative paths that must NOT be overwritten when present.
+    QSet<QString> m_preserve;
+  };
+
+  QVector<FolderSpec> folders;
+  folders.append(FolderSpec{QStringLiteral("themes"), getConfigDataFolder(ConfigDataType::Themes),
+                            QSet<QString>()});
+  folders.append(FolderSpec{QStringLiteral("tasks"), getConfigDataFolder(ConfigDataType::Tasks),
+                            QSet<QString>()});
+  folders.append(FolderSpec{QStringLiteral("syntax-highlighting"),
+                            getConfigDataFolder(ConfigDataType::SyntaxHighlighting),
+                            QSet<QString>()});
+  // web/css/user.css is USER-OWNED: the settings page seeds it only when it is
+  // absent (src/widgets/dialogs/settings/markdowneditorpage.cpp:314-326), so
+  // dumping the bundled 2-line stub over it would destroy the user's global
+  // CSS at every version bump.
+  folders.append(FolderSpec{QStringLiteral("web"), getConfigDataFolder(ConfigDataType::Web),
+                            QSet<QString>{QStringLiteral("css/user.css")}});
+  folders.append(FolderSpec{QStringLiteral("dicts"), getConfigDataFolder(ConfigDataType::Dicts),
+                            QSet<QString>()});
+
+  QString extraDataRoot = m_extraDataSourceRootOverride;
+
+  const QString extraRcc(QStringLiteral("app:vnote_extra.rcc"));
+  bool rccRegistered = false;
+  // Keep the resource's lifetime scoped: FirstRunController registers the same
+  // .rcc independently, so making it global here would be cross-cutting.
+  auto cleanup = qScopeGuard([&extraRcc, &rccRegistered]() {
+    if (rccRegistered) {
+      QResource::unregisterResource(extraRcc);
+    }
+  });
+
+  if (extraDataRoot.isEmpty()) {
+    if (!QResource::registerResource(extraRcc)) {
+      // Without the resource there is nothing to copy FROM. Record a failure
+      // for every folder and install nothing: falling through (as the old code
+      // did) would let a tolerant copy stamp five empty folders as complete.
+      // ONE aggregate warning here rather than the per-folder warning below --
+      // five identical lines carry no extra information, and the shared cause
+      // is the resource, not any individual folder.
+      const QString message = QStringLiteral("failed to register resource file %1").arg(extraRcc);
+      qWarning() << "ConfigMgr2:" << message;
+      for (const auto &folder : folders) {
+        m_extraDataFailures.append(ExtraDataFailure{folder.m_name, message, QStringList()});
+      }
+      return;
+    }
+    rccRegistered = true;
+    extraDataRoot = QStringLiteral(":/vnotex/data/extra");
   }
 
-  const QString extraRcc("app:vnote_extra.rcc");
-  bool ret = QResource::registerResource(extraRcc);
-  if (!ret) {
-    qWarning() << "Failed to register resource file" << extraRcc;
-    // Don't throw - just log warning and continue
-    return;
-  }
-  auto cleanup = qScopeGuard([extraRcc]() { QResource::unregisterResource(extraRcc); });
+  const QString version = c_version.toString();
+  constexpr int kMaxLoggedFailedPaths = 20;
 
-  const QString extraDataRoot(QStringLiteral(":/vnotex/data/extra"));
-
-  auto copyExtraDir = [](const QString &p_src, const QString &p_dest) {
+  for (const auto &folder : folders) {
+    // Keep the splash/UI responsive during a large web/ dump.
     if (qApp) {
       qApp->processEvents();
     }
-    Error err = FileUtils2::copyDir(p_src, p_dest);
-    if (err) {
-      qWarning() << "Failed to copy extra data directory from" << p_src << "to" << p_dest << ":"
-                 << err.what();
+
+    const QString srcPath = extraDataRoot + QLatin1Char('/') + folder.m_name;
+    const QSet<QString> *skip = folder.m_preserve.isEmpty() ? nullptr : &folder.m_preserve;
+
+    QStringList failedPaths;
+    Error err = FileUtils2::installVersionedDir(srcPath, folder.m_destPath, version, &failedPaths,
+                                                p_force, skip);
+    if (!err) {
+      continue;
     }
-  };
 
-  // Copy themes.
-  copyExtraDir(extraDataRoot + QStringLiteral("/themes"),
-               getConfigDataFolder(ConfigDataType::Themes));
+    m_extraDataFailures.append(ExtraDataFailure{folder.m_name, err.what(), failedPaths});
 
-  // Copy syntax-highlighting.
-  copyExtraDir(extraDataRoot + QStringLiteral("/syntax-highlighting"),
-               getConfigDataFolder(ConfigDataType::SyntaxHighlighting));
-
-  // Copy web.
-  copyExtraDir(extraDataRoot + QStringLiteral("/web"),
-               getConfigDataFolder(ConfigDataType::Web));
+    const QStringList loggedPaths = failedPaths.mid(0, kMaxLoggedFailedPaths);
+    qWarning() << "Failed to install extra data directory from" << srcPath << "to"
+               << folder.m_destPath << ":" << err.what() << "-" << failedPaths.size()
+               << "failed path(s), showing" << loggedPaths.size() << ":" << loggedPaths;
+  }
 }
 
 void ConfigMgr2::initAppPrefixPath() {

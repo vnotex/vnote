@@ -2,8 +2,12 @@
 
 #include <QDebug>
 
+#include <core/configmgr2.h>
+#include <core/hookcontext.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/hookmanager.h>
 #include <core/services/imagehostservice.h>
 #include <core/services/notificationservice.h>
 #include <core/services/syncservice.h>
@@ -18,6 +22,7 @@ const QString c_categoryBuffer = QStringLiteral("buffer");
 const QString c_categorySync = QStringLiteral("sync");
 const QString c_categoryImageHost = QStringLiteral("imagehost");
 const QString c_categoryViewArea = QStringLiteral("viewarea");
+const QString c_categoryConfig = QStringLiteral("config");
 
 QString bufferAutoSaveKey(const QString &p_bufferId) {
   return QStringLiteral("buffer.autosave.%1").arg(p_bufferId);
@@ -36,6 +41,15 @@ QString imageHostKey(int p_token) {
 NotificationRouter::NotificationRouter(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {
   connectServiceSources();
+}
+
+NotificationRouter::~NotificationRouter() {
+  if (m_afterStartHookId != -1) {
+    // Guard null in case the HookManager was already torn down during shutdown.
+    if (auto *hookMgr = m_services.get<HookManager>()) {
+      hookMgr->removeAction(m_afterStartHookId);
+    }
+  }
 }
 
 QString NotificationRouter::syncDedupKey(VxCoreError p_code, const QString &p_notebookId) {
@@ -136,6 +150,56 @@ void NotificationRouter::connectServiceSources() {
                 retireSyncIncidents(p_notebookId);
               }
             });
+  }
+
+  if (auto *hookMgr = m_services.get<HookManager>()) {
+    // ConfigMgr2 dumps the bundled extra data during main()'s startup, long
+    // before this router (or any notification surface) exists. MainWindow2
+    // constructs the router in setupNotifications() BEFORE dispatching
+    // MainWindowAfterStart, so subscribing here is guaranteed to be in place.
+    m_afterStartHookId = hookMgr->addAction(
+        HookNames::MainWindowAfterStart,
+        [this](HookContext &, const QVariantMap &) { reportExtraDataFailures(); },
+        // Late, matching the updater's startup tasks: never compete with
+        // session restore for the startup window.
+        200);
+  }
+}
+
+void NotificationRouter::reportExtraDataFailures() {
+  auto *notifications = m_services.get<NotificationService>();
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!notifications || !configMgr) {
+    return;
+  }
+
+  const auto &failures = configMgr->extraDataCopyFailures();
+  for (const auto &failure : failures) {
+    NotificationMessage msg;
+    msg.m_category = c_categoryConfig;
+    // Deliberately KEYLESS. NotificationService is in-memory only, so a dedup
+    // key cannot dedup across launches, and this pull happens exactly once per
+    // process -- there is nothing to dedup WITHIN a process. A key would also
+    // oblige a retirement boundary (src/controllers/AGENTS.md, "Incident
+    // retirement is not optional") and there is no in-session success event to
+    // retire it at: the retry happens at the NEXT start.
+    msg.m_severity = NotificationMessage::Severity::Warning;
+    msg.m_attention = NotificationMessage::Attention::Interrupt;
+    msg.m_duration = NotificationMessage::Duration::Long;
+    msg.m_title = tr("Bundled resources not updated");
+    msg.m_text = tr("VNote could not update its bundled \"%1\" data, so some of it may be "
+                    "outdated. VNote will try again the next time it starts.")
+                     .arg(failure.m_folderName);
+    // Rendered only in the popup's collapsible section, which is exactly what
+    // a possibly-long list of paths needs.
+    QStringList details;
+    if (!failure.m_errorMessage.isEmpty()) {
+      details.append(failure.m_errorMessage);
+    }
+    details.append(failure.m_failedPaths);
+    msg.m_details = details.join(QLatin1Char('\n'));
+    // No action button: there is nothing safe for the user to click.
+    notifications->notify(msg);
   }
 }
 

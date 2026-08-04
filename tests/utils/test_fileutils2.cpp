@@ -3,7 +3,10 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QRegularExpression>
+#include <QSet>
+#include <QStringList>
 
 #include <temp_dir_fixture.h>
 #include <utils/fileutils2.h>
@@ -35,6 +38,27 @@ private slots:
   void testCopyDir_moveBasic();
   void testCopyDir_moveMerge();
   void testCopyDir_samePath();
+
+  // copyDirCollectingErrors tests
+  void testCopyDirCollectingErrors_continuesPastFailingNode();
+  void testCopyDirCollectingErrors_reportsFirstErrorButEveryFailedPath();
+  void testCopyDirCollectingErrors_missingSourceIsAnError();
+  void testCopyDirCollectingErrors_nonDirectorySourceIsAnError();
+  void testCopyDirCollectingErrors_preservesExistingSkippedPath();
+  void testCopyDirCollectingErrors_skipMatchIsCaseInsensitive();
+  void testCopyDirCollectingErrors_copiesSkippedPathWhenAbsent();
+
+  // installVersionedDir tests
+  void testInstallVersionedDir_writesStampOnSuccess();
+  void testInstallVersionedDir_matchingStampIsANoOp();
+  void testInstallVersionedDir_differentVersionRecopies();
+  void testInstallVersionedDir_failureWritesNoStampAndHealsOnRetry();
+  void testInstallVersionedDir_missingSourceCreatesNothing();
+  void testInstallVersionedDir_missingSourceLeavesACompletedInstallIntact();
+  void testInstallVersionedDir_forceRecopiesDespiteMatchingStamp();
+  void testInstallVersionedDir_forceFailsBeforeCopyingWhenStampCannotBeRemoved();
+  void testInstallVersionedDir_preservesUserOwnedFile();
+  void testInstallVersionedDir_incompatiblePreservedNodeWritesNoStamp();
 
   // generateRandomFileName tests
   void testGenerateRandomFileNameHex();
@@ -356,6 +380,389 @@ void TestFileUtils2::testCopyDir_samePath() {
   QVERIFY(!err);
   QVERIFY(QDir(srcDir).exists());
   QCOMPARE(readFileContent(srcDir + "/file.txt"), QString("content"));
+}
+
+// =============================================================================
+// copyDirCollectingErrors tests
+// =============================================================================
+
+// Portable failure injection: pre-create a DIRECTORY where a FILE must land.
+// copyFile() reaches its QFile::remove(p_destPath) branch, and QFile::remove
+// uses file-removal semantics, so it fails on a directory on every platform.
+static QString blockDestPathWithADirectory(tests::TempDirFixture &p_tmp, const QString &p_relPath) {
+  const QString path = p_tmp.createDir(p_relPath);
+  return path;
+}
+
+void TestFileUtils2::testCopyDirCollectingErrors_continuesPastFailingNode() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/a.txt", "a");
+  tmp.createTextFile("src/b.txt", "b");
+  tmp.createTextFile("src/c.txt", "c");
+
+  QString destDir = tmp.createDir("dest");
+  blockDestPathWithADirectory(tmp, "dest/b.txt");
+
+  QStringList failed;
+  Error err = FileUtils2::copyDirCollectingErrors(srcDir, destDir, &failed);
+
+  // The walk reports a failure...
+  QVERIFY(err);
+  // ...names exactly the bad SOURCE path...
+  QCOMPARE(failed.size(), 1);
+  QVERIFY2(failed.at(0).endsWith(QStringLiteral("b.txt")), qPrintable(failed.at(0)));
+  // ...and still copied every sibling. copyDir() would have aborted at b.txt
+  // and left c.txt behind.
+  QCOMPARE(readFileContent(destDir + "/a.txt"), QString("a"));
+  QCOMPARE(readFileContent(destDir + "/c.txt"), QString("c"));
+}
+
+// Two independent failures: the walk must keep going through BOTH and report
+// every failed path, while the returned Error stays the FIRST one.
+void TestFileUtils2::testCopyDirCollectingErrors_reportsFirstErrorButEveryFailedPath() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/a.txt", "a");
+  tmp.createTextFile("src/b.txt", "b");
+  tmp.createTextFile("src/c.txt", "c");
+  tmp.createTextFile("src/d.txt", "d");
+
+  QString destDir = tmp.createDir("dest");
+  blockDestPathWithADirectory(tmp, "dest/b.txt");
+  blockDestPathWithADirectory(tmp, "dest/d.txt");
+
+  QStringList failed;
+  Error err = FileUtils2::copyDirCollectingErrors(srcDir, destDir, &failed);
+
+  QVERIFY(err);
+  // entryInfoList sorts by name, so b.txt is hit first.
+  QCOMPARE(err.code(), ErrorCode::FailToRemoveFile);
+  QCOMPARE(failed.size(), 2);
+  QVERIFY2(failed.at(0).endsWith(QStringLiteral("b.txt")), qPrintable(failed.at(0)));
+  QVERIFY2(failed.at(1).endsWith(QStringLiteral("d.txt")), qPrintable(failed.at(1)));
+  // The clean siblings still landed.
+  QCOMPARE(readFileContent(destDir + "/a.txt"), QString("a"));
+  QCOMPARE(readFileContent(destDir + "/c.txt"), QString("c"));
+}
+
+void TestFileUtils2::testCopyDirCollectingErrors_missingSourceIsAnError() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  const QString srcDir = tmp.filePath("does-not-exist");
+  const QString destDir = tmp.filePath("dest");
+
+  QStringList failed;
+  Error err = FileUtils2::copyDirCollectingErrors(srcDir, destDir, &failed);
+
+  QVERIFY(err);
+  QCOMPARE(failed.size(), 1);
+  // Nothing may be created: copyDir() would mkpath the destination, enumerate
+  // nothing and report success.
+  QVERIFY2(!QFileInfo::exists(destDir), "a missing source still created the destination");
+}
+
+void TestFileUtils2::testCopyDirCollectingErrors_nonDirectorySourceIsAnError() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  const QString srcFile = tmp.createTextFile("src.txt", "not a dir");
+  const QString destDir = tmp.filePath("dest");
+
+  Error err = FileUtils2::copyDirCollectingErrors(srcFile, destDir);
+
+  QVERIFY(err);
+  QVERIFY(!QFileInfo::exists(destDir));
+}
+
+void TestFileUtils2::testCopyDirCollectingErrors_preservesExistingSkippedPath() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createDir("src/css");
+  tmp.createTextFile("src/css/user.css", "bundled stub");
+  tmp.createTextFile("src/css/other.css", "bundled other");
+
+  QString destDir = tmp.createDir("dest");
+  tmp.createDir("dest/css");
+  tmp.createTextFile("dest/css/user.css", "MY CUSTOM CSS");
+
+  const QSet<QString> skip{QStringLiteral("css/user.css")};
+  QStringList failed;
+  Error err = FileUtils2::copyDirCollectingErrors(srcDir, destDir, &failed, &skip);
+
+  // A preserved file is NOT a failure.
+  QVERIFY(!err);
+  QVERIFY(failed.isEmpty());
+  QCOMPARE(readFileContent(destDir + "/css/user.css"), QString("MY CUSTOM CSS"));
+  // Everything else still copies.
+  QCOMPARE(readFileContent(destDir + "/css/other.css"), QString("bundled other"));
+}
+
+// The preserve list is matched case-insensitively (Windows), so a caller's
+// spelling must not decide whether a user's file survives.
+void TestFileUtils2::testCopyDirCollectingErrors_skipMatchIsCaseInsensitive() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createDir("src/CSS");
+  tmp.createTextFile("src/CSS/User.css", "bundled stub");
+
+  QString destDir = tmp.createDir("dest");
+  tmp.createDir("dest/CSS");
+  tmp.createTextFile("dest/CSS/User.css", "MY CUSTOM CSS");
+
+  // Neither the key's case nor the on-disk case matches exactly.
+  const QSet<QString> skip{QStringLiteral("Css/uSeR.CSS")};
+  Error err = FileUtils2::copyDirCollectingErrors(srcDir, destDir, nullptr, &skip);
+
+  QVERIFY(!err);
+  QCOMPARE(readFileContent(destDir + "/CSS/User.css"), QString("MY CUSTOM CSS"));
+}
+
+void TestFileUtils2::testCopyDirCollectingErrors_copiesSkippedPathWhenAbsent() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createDir("src/css");
+  tmp.createTextFile("src/css/user.css", "bundled stub");
+
+  QString destDir = tmp.filePath("dest");
+
+  const QSet<QString> skip{QStringLiteral("css/user.css")};
+  Error err = FileUtils2::copyDirCollectingErrors(srcDir, destDir, nullptr, &skip);
+
+  QVERIFY(!err);
+  // The skip is "do not OVERWRITE", not "never install".
+  QCOMPARE(readFileContent(destDir + "/css/user.css"), QString("bundled stub"));
+}
+
+// =============================================================================
+// installVersionedDir tests
+// =============================================================================
+static QString stampPathOf(const QString &p_destDir) {
+  return QDir(p_destDir).filePath(QLatin1String(FileUtils2::c_versionStampFileName));
+}
+
+void TestFileUtils2::testInstallVersionedDir_writesStampOnSuccess() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/file.txt", "v1 content");
+  QString destDir = tmp.filePath("dest");
+
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"));
+  QVERIFY(!err);
+  QCOMPARE(readFileContent(destDir + "/file.txt"), QString("v1 content"));
+  QCOMPARE(readFileContent(stampPathOf(destDir)).trimmed(), QString("1.0.0"));
+}
+
+void TestFileUtils2::testInstallVersionedDir_matchingStampIsANoOp() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/file.txt", "bundled");
+  QString destDir = tmp.filePath("dest");
+
+  QVERIFY(!FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0")));
+
+  // Mutate the installed copy; a no-op second call must not overwrite it.
+  QFile out(destDir + "/file.txt");
+  QVERIFY(out.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  out.write("locally edited");
+  out.close();
+
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"));
+  QVERIFY(!err);
+  QCOMPARE(readFileContent(destDir + "/file.txt"), QString("locally edited"));
+}
+
+void TestFileUtils2::testInstallVersionedDir_differentVersionRecopies() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/file.txt", "bundled");
+  QString destDir = tmp.filePath("dest");
+
+  QVERIFY(!FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0")));
+
+  QFile out(destDir + "/file.txt");
+  QVERIFY(out.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  out.write("stale");
+  out.close();
+
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("2.0.0"));
+  QVERIFY(!err);
+  QCOMPARE(readFileContent(destDir + "/file.txt"), QString("bundled"));
+  QCOMPARE(readFileContent(stampPathOf(destDir)).trimmed(), QString("2.0.0"));
+}
+
+void TestFileUtils2::testInstallVersionedDir_failureWritesNoStampAndHealsOnRetry() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/a.txt", "a");
+  tmp.createTextFile("src/b.txt", "b");
+
+  QString destDir = tmp.createDir("dest");
+  const QString blocker = blockDestPathWithADirectory(tmp, "dest/b.txt");
+
+  QStringList failed;
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), &failed);
+  QVERIFY(err);
+  QVERIFY(!failed.isEmpty());
+  // INVARIANT: a reported failure never leaves a stamp holding this version.
+  QVERIFY2(!QFileInfo::exists(stampPathOf(destDir)),
+           "a partial install was stamped as complete");
+
+  // Remove the blocker; the next call heals the folder and stamps it.
+  QVERIFY(QDir(blocker).removeRecursively());
+
+  failed.clear();
+  err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), &failed);
+  QVERIFY(!err);
+  QVERIFY(failed.isEmpty());
+  QCOMPARE(readFileContent(destDir + "/b.txt"), QString("b"));
+  QCOMPARE(readFileContent(stampPathOf(destDir)).trimmed(), QString("1.0.0"));
+}
+
+void TestFileUtils2::testInstallVersionedDir_missingSourceCreatesNothing() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  const QString srcDir = tmp.filePath("missing");
+  const QString destDir = tmp.filePath("dest");
+
+  QStringList failed;
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), &failed);
+
+  QVERIFY(err);
+  QCOMPARE(failed.size(), 1);
+  QVERIFY2(!QFileInfo::exists(destDir), "a missing source created the destination");
+  QVERIFY(!QFileInfo::exists(stampPathOf(destDir)));
+}
+
+// The one failure that happens BEFORE the stamp is invalidated. Destroying a
+// good install because the bundle went missing would be strictly worse than
+// leaving it alone, so the existing stamp deliberately survives.
+void TestFileUtils2::testInstallVersionedDir_missingSourceLeavesACompletedInstallIntact() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/file.txt", "bundled");
+  QString destDir = tmp.filePath("dest");
+
+  QVERIFY(!FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0")));
+
+  Error err =
+      FileUtils2::installVersionedDir(tmp.filePath("gone"), destDir, QStringLiteral("1.0.0"));
+  QVERIFY(err);
+  QCOMPARE(readFileContent(destDir + "/file.txt"), QString("bundled"));
+  QCOMPARE(readFileContent(stampPathOf(destDir)).trimmed(), QString("1.0.0"));
+}
+
+void TestFileUtils2::testInstallVersionedDir_forceRecopiesDespiteMatchingStamp() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/file.txt", "bundled");
+  QString destDir = tmp.filePath("dest");
+
+  QVERIFY(!FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0")));
+
+  QFile out(destDir + "/file.txt");
+  QVERIFY(out.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  out.write("stale");
+  out.close();
+
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), nullptr,
+                                              true /* force */);
+  QVERIFY(!err);
+  QCOMPARE(readFileContent(destDir + "/file.txt"), QString("bundled"));
+  QCOMPARE(readFileContent(stampPathOf(destDir)).trimmed(), QString("1.0.0"));
+}
+
+// A matching stamp that survives a subsequently-FAILED forced copy would make
+// the next normal launch skip a partial tree, so a stamp that cannot be removed
+// must abort BEFORE any copying.
+void TestFileUtils2::testInstallVersionedDir_forceFailsBeforeCopyingWhenStampCannotBeRemoved() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createTextFile("src/file.txt", "bundled");
+
+  QString destDir = tmp.createDir("dest");
+  // A directory at the stamp path cannot be removed by QFile::remove.
+  tmp.createDir(QStringLiteral("dest/") + QLatin1String(FileUtils2::c_versionStampFileName));
+
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), nullptr,
+                                              true /* force */);
+  QVERIFY(err);
+  QVERIFY2(!QFileInfo::exists(destDir + "/file.txt"), "the copy ran despite the stamp failure");
+}
+
+void TestFileUtils2::testInstallVersionedDir_preservesUserOwnedFile() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  QString srcDir = tmp.createDir("src");
+  tmp.createDir("src/css");
+  tmp.createTextFile("src/css/user.css", "/* bundled stub */");
+  QString destDir = tmp.filePath("dest");
+
+  const QSet<QString> skip{QStringLiteral("css/user.css")};
+
+  // First install seeds the file.
+  QVERIFY(!FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), nullptr,
+                                           false, &skip));
+  QCOMPARE(readFileContent(destDir + "/css/user.css"), QString("/* bundled stub */"));
+
+  QFile out(destDir + "/css/user.css");
+  QVERIFY(out.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  out.write("body { color: red; }");
+  out.close();
+
+  // A later version must NOT clobber the user's copy.
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("2.0.0"), nullptr,
+                                              false, &skip);
+  QVERIFY(!err);
+  QCOMPARE(readFileContent(destDir + "/css/user.css"), QString("body { color: red; }"));
+}
+
+void TestFileUtils2::testInstallVersionedDir_incompatiblePreservedNodeWritesNoStamp() {
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+
+  const QString srcDir = tmp.createDir("src");
+  tmp.createDir("src/css");
+  tmp.createTextFile("src/css/user.css", "bundled stub");
+
+  const QString destDir = tmp.createDir("dest");
+  tmp.createDir("dest/css/user.css");
+
+  const QSet<QString> skip{QStringLiteral("css/user.css")};
+  QStringList failed;
+  Error err = FileUtils2::installVersionedDir(srcDir, destDir, QStringLiteral("1.0.0"), &failed,
+                                              false, &skip);
+
+  QVERIFY(err);
+  QVERIFY(failed.contains(srcDir + QStringLiteral("/css/user.css")));
+  QVERIFY(!QFileInfo::exists(stampPathOf(destDir)));
 }
 
 // =============================================================================

@@ -228,10 +228,17 @@ Qt's CSS parser silently drops the declaration. Two data-driven gates in
 `InlineBanner` sets `Qt::WA_StyledBackground`; without it a bare `QFrame`
 subclass ignores `background-color` from the global stylesheet.
 
-Note that themes are copied into `<appData>/themes` and refreshed only when
-`ConfigMgr2::c_version` changes, so QSS edits reach an existing installation
-only at the next version bump (`scripts/update_version.py` handles that). For
-local work, run with `--watch-themes` and edit the deployed copy.
+Note that the primary instance copies themes into `<appData>/themes` after
+acquiring `SingleInstanceGuard`; rejected secondary launches never mutate the
+resource tree. Themes are refreshed only when the per-folder stamp
+`<appData>/themes/.vnote-extra-version` does not match
+`ConfigMgr2::c_version`, so QSS edits reach an existing installation only at the
+next version bump (`scripts/update_version.py` handles that). The stamp is
+written by `FileUtils2::installVersionedDir` **only after the folder copied
+completely**, which is what makes a partial copy retry on the next launch
+instead of being remembered as done; deleting the stamp (or the folder) forces a
+re-copy at the next start. For local work, run with `--watch-themes` and edit
+the deployed copy.
 
 ## No Hardcoded Colors in C++
 

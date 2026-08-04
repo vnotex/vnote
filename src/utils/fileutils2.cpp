@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QMimeDatabase>
 #include <QRandomGenerator>
+#include <QSaveFile>
 #include <QTemporaryFile>
 #include <QTextStream>
 #include <QThread>
@@ -19,6 +20,75 @@ namespace {
 // generateCloneStagingDir, consumed by sweepOrphanStagingDirs, and
 // disposed by renameStagingToFinal on success.
 static const QString kStagingMarkerName = QStringLiteral("staging-marker.json");
+
+// Recursive worker for FileUtils2::copyDirCollectingErrors.
+// @p_relPrefix: the destination-root-relative path of p_dirPath (empty at the
+// root), always lower-cased and with forward slashes, so the preserve-list
+// lookup is a plain case-insensitive QSet hit on Windows and elsewhere.
+Error copyDirTolerantly(const QString &p_dirPath, const QString &p_destPath,
+                        const QString &p_relPrefix, QStringList *p_failedPaths,
+                        const QSet<QString> *p_skipExistingRelPaths) {
+  QDir destDir(p_destPath);
+  if (!destDir.mkpath(p_destPath)) {
+    if (p_failedPaths) {
+      p_failedPaths->append(p_dirPath);
+    }
+    return Error::error(ErrorCode::FailToCreateDir,
+                        QStringLiteral("failed to create directory: %1").arg(p_destPath));
+  }
+
+  Error firstErr = Error::ok();
+
+  QDir srcDir(p_dirPath);
+  const auto nodes = srcDir.entryInfoList(QDir::Dirs | QDir::Files | QDir::Hidden |
+                                          QDir::NoSymLinks | QDir::NoDotAndDotDot);
+  for (const auto &node : nodes) {
+    const auto name = node.fileName();
+    const QString relPath =
+        p_relPrefix.isEmpty() ? name.toLower() : p_relPrefix + QLatin1Char('/') + name.toLower();
+
+    if (node.isDir()) {
+      Error err = copyDirTolerantly(srcDir.filePath(name), destDir.filePath(name), relPath,
+                                    p_failedPaths, p_skipExistingRelPaths);
+      // Keep walking the remaining siblings; only the FIRST error is reported.
+      if (err && firstErr.isOk()) {
+        firstErr = err;
+      }
+      continue;
+    }
+
+    const QString destPath = destDir.filePath(name);
+    if (p_skipExistingRelPaths && p_skipExistingRelPaths->contains(relPath) &&
+        QFileInfo(destPath).isFile()) {
+      // User-owned file that already exists: preserving it is not a failure.
+      continue;
+    }
+
+    Error err = FileUtils2::copyFile(srcDir.filePath(name), destPath);
+    if (err) {
+      if (p_failedPaths) {
+        p_failedPaths->append(srcDir.filePath(name));
+      }
+      if (firstErr.isOk()) {
+        firstErr = err;
+      }
+    }
+  }
+
+  return firstErr;
+}
+
+// Read a version stamp file, trimming trailing whitespace/newline so the write
+// and the read agree exactly. Returns false when the file cannot be read.
+bool readVersionStamp(const QString &p_stampPath, QString *p_version) {
+  QFile file(p_stampPath);
+  if (!file.open(QIODevice::ReadOnly)) {
+    return false;
+  }
+
+  *p_version = QString::fromUtf8(file.readAll()).trimmed();
+  return true;
+}
 } // namespace
 
 Error FileUtils2::readFile(const QString &p_filePath, QByteArray *p_data) {
@@ -204,6 +274,118 @@ Error FileUtils2::copyDir(const QString &p_dirPath, const QString &p_destPath, b
           ErrorCode::FailToRemoveDir,
           QStringLiteral("failed to remove source directory after move: %1").arg(p_dirPath));
     }
+  }
+
+  return Error::ok();
+}
+
+const char *const FileUtils2::c_versionStampFileName = ".vnote-extra-version";
+
+Error FileUtils2::copyDirCollectingErrors(const QString &p_dirPath, const QString &p_destPath,
+                                          QStringList *p_failedPaths,
+                                          const QSet<QString> *p_skipExistingRelPaths) {
+  // Reject an invalid source UP FRONT and create nothing. copyDir() would
+  // happily mkpath the destination, enumerate nothing and report success,
+  // which for a versioned install would stamp an empty folder as complete.
+  const QFileInfo srcInfo(p_dirPath);
+  if (!srcInfo.exists() || !srcInfo.isDir()) {
+    if (p_failedPaths) {
+      p_failedPaths->append(p_dirPath);
+    }
+    return Error::error(ErrorCode::InvalidPath,
+                        QStringLiteral("source is not an existing directory: %1").arg(p_dirPath));
+  }
+
+  if (PathUtils::areSamePaths(p_dirPath, p_destPath)) {
+    return Error::ok();
+  }
+
+  // Normalize the preserve list once so the recursion can do a plain hash
+  // lookup (paths are compared case-insensitively; Windows).
+  QSet<QString> loweredSkip;
+  if (p_skipExistingRelPaths) {
+    for (const auto &relPath : *p_skipExistingRelPaths) {
+      loweredSkip.insert(relPath.toLower());
+    }
+  }
+
+  return copyDirTolerantly(p_dirPath, p_destPath, QString(), p_failedPaths,
+                           loweredSkip.isEmpty() ? nullptr : &loweredSkip);
+}
+
+Error FileUtils2::installVersionedDir(const QString &p_srcDir, const QString &p_destDir,
+                                      const QString &p_version, QStringList *p_failedPaths,
+                                      bool p_force,
+                                      const QSet<QString> *p_skipExistingRelPaths) {
+  // 1. A missing/invalid source must never be recorded as a completed install.
+  const QFileInfo srcInfo(p_srcDir);
+  if (!srcInfo.exists() || !srcInfo.isDir()) {
+    if (p_failedPaths) {
+      p_failedPaths->append(p_srcDir);
+    }
+    return Error::error(ErrorCode::InvalidPath,
+                        QStringLiteral("source is not an existing directory: %1").arg(p_srcDir));
+  }
+
+  const QString stampPath = QDir(p_destDir).filePath(QLatin1String(c_versionStampFileName));
+
+  // 2. Already installed for this exact version.
+  if (!p_force) {
+    QString stamped;
+    if (readVersionStamp(stampPath, &stamped) && stamped == p_version) {
+      return Error::ok();
+    }
+  }
+
+  // 3. Drop the stamp BEFORE copying, so a crash (or a failed forced copy)
+  // mid-install cannot leave a stale-but-plausible stamp behind.
+  if (QFileInfo::exists(stampPath)) {
+    if (!QFile::remove(stampPath)) {
+      if (p_failedPaths) {
+        p_failedPaths->append(stampPath);
+      }
+      return Error::error(
+          ErrorCode::FailToRemoveFile,
+          QStringLiteral("failed to remove stale version stamp: %1").arg(stampPath));
+    }
+  }
+
+  // 4/5. Copy tolerantly; any failure leaves the folder unstamped, so the next
+  // call retries it.
+  Error err = copyDirCollectingErrors(p_srcDir, p_destDir, p_failedPaths, p_skipExistingRelPaths);
+  if (err) {
+    return err;
+  }
+
+  // 6. Durable stamp write. NOT FileUtils2::writeFile: it ignores the result of
+  // QFile::write, so a truncated or silently failed write would look like a
+  // success and read back as a corrupt version string.
+  const QByteArray data = p_version.toUtf8();
+  QSaveFile stampFile(stampPath);
+  if (!stampFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    if (p_failedPaths) {
+      p_failedPaths->append(stampPath);
+    }
+    return Error::error(ErrorCode::FailToWriteFile,
+                        QStringLiteral("failed to open version stamp for writing: %1")
+                            .arg(stampPath));
+  }
+
+  if (stampFile.write(data) != data.size()) {
+    stampFile.cancelWriting();
+    if (p_failedPaths) {
+      p_failedPaths->append(stampPath);
+    }
+    return Error::error(ErrorCode::FailToWriteFile,
+                        QStringLiteral("failed to write version stamp: %1").arg(stampPath));
+  }
+
+  if (!stampFile.commit()) {
+    if (p_failedPaths) {
+      p_failedPaths->append(stampPath);
+    }
+    return Error::error(ErrorCode::FailToWriteFile,
+                        QStringLiteral("failed to commit version stamp: %1").arg(stampPath));
   }
 
   return Error::ok();

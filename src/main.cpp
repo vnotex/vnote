@@ -597,29 +597,6 @@ int main(int argc, char *argv[]) {
         },
         Qt::DirectConnection);
 
-    configMgr.initAfterQtAppStarted();
-
-    // Create ThemeService after Qt app is started
-    ThemeService themeService({configMgr.getCoreConfig().getTheme(),
-                               configMgr.getCoreConfig().getLocaleToUse(),
-                               configService.getDataPath(DataLocation::App)});
-    serviceLocator.registerService<ThemeService>(&themeService);
-    app.setThemeService(&themeService);
-    themeService.setHookManager(&hookManager);
-    qInfo() << "ThemeService registered";
-
-    // Initialize syntax highlighting repository (must happen before any TextEditor is created).
-    // Legacy equivalent: VNoteX::initThemeMgr() -> ThemeMgr::addSyntaxHighlightingSearchPaths().
-    vte::VTextEditor::addSyntaxCustomSearchPaths(
-        QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::SyntaxHighlighting));
-
-    // Initialize spell check dictionary search paths.
-    // Legacy equivalent: MainWindow::setupSpellCheck().
-    vte::SpellChecker::addDictionaryCustomSearchPaths(
-        QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::Dicts));
-
-    QAccessible::installFactory(&FakeAccessible::accessibleFactory);
-
     {
       const QString iconPath = ":/vnotex/data/core/icons/vnote.ico";
       // Make sense only on Windows.
@@ -699,6 +676,56 @@ int main(int argc, char *argv[]) {
     // apply path re-acquires it after app.exec() returns.
     lease.release();
 
+    // The guard is already listening, while MainWindow2 does not exist yet.
+    // ensureExtraData() processes events to keep startup responsive, so retain
+    // any requests arriving in that window and replay them once the final
+    // handlers are connected below.
+    struct PendingOpenRequest {
+      QStringList m_files;
+      bool m_detached = false;
+    };
+    QVector<PendingOpenRequest> pendingOpenRequests;
+    bool pendingShow = false;
+    const auto pendingOpenConnection =
+        QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &app,
+                         [&pendingOpenRequests](const QStringList &p_files) {
+                           pendingOpenRequests.append(PendingOpenRequest{p_files, false});
+                         });
+    const auto pendingDetachedConnection =
+        QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &app,
+                         [&pendingOpenRequests](const QStringList &p_files) {
+                           pendingOpenRequests.append(PendingOpenRequest{p_files, true});
+                         });
+    const auto pendingShowConnection =
+        QObject::connect(&guard, &SingleInstanceGuard::showRequested, &app,
+                         [&pendingShow]() { pendingShow = true; });
+
+    // Only the primary may install bundled data. Besides avoiding duplicate
+    // work, this prevents a rejected secondary launch from overwriting themes
+    // or web resources while the running primary is using them.
+    configMgr.initAfterQtAppStarted();
+
+    // Create ThemeService after bundled themes have been installed.
+    ThemeService themeService({configMgr.getCoreConfig().getTheme(),
+                               configMgr.getCoreConfig().getLocaleToUse(),
+                               configService.getDataPath(DataLocation::App)});
+    serviceLocator.registerService<ThemeService>(&themeService);
+    app.setThemeService(&themeService);
+    themeService.setHookManager(&hookManager);
+    qInfo() << "ThemeService registered";
+
+    // Initialize syntax highlighting repository (must happen before any TextEditor is created).
+    // Legacy equivalent: VNoteX::initThemeMgr() -> ThemeMgr::addSyntaxHighlightingSearchPaths().
+    vte::VTextEditor::addSyntaxCustomSearchPaths(
+        QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::SyntaxHighlighting));
+
+    // Initialize spell check dictionary search paths.
+    // Legacy equivalent: MainWindow::setupSpellCheck().
+    vte::SpellChecker::addDictionaryCustomSearchPaths(
+        QStringList() << configMgr.getConfigDataFolder(ConfigMgr2::Dicts));
+
+    QAccessible::installFactory(&FakeAccessible::accessibleFactory);
+
     // Resolve the final logger state and flush the buffered startup logs
     // (dropping below-threshold ones, e.g. when --quiet is set). Reached only on
     // the normal run path; early-exit paths (version/help/second-instance) leave
@@ -768,12 +795,23 @@ int main(int argc, char *argv[]) {
     QObject::connect(&guard, &SingleInstanceGuard::showRequested, &mainWindow,
                      &MainWindow2::showMainWindow);
 
+    QObject::disconnect(pendingOpenConnection);
+    QObject::disconnect(pendingDetachedConnection);
+    QObject::disconnect(pendingShowConnection);
+
     if (cmdOptions.m_detachedView) {
       mainWindow.showMinimized();
     } else {
       mainWindow.show();
     }
     qInfo() << "MainWindow2 shown";
+
+    for (const auto &request : pendingOpenRequests) {
+      mainWindow.openFiles(request.m_files, request.m_detached);
+    }
+    if (pendingShow) {
+      mainWindow.showMainWindow();
+    }
 
     // Let MainWindow show first to decide the screen on which app is running.
     WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());

@@ -6,13 +6,23 @@
 
 #include <QtTest>
 
+#include <QDir>
+#include <QFileInfo>
 #include <QSignalSpy>
 
 #include <controllers/notificationrouter.h>
+#include <core/configmgr2.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
+#include <core/services/hookmanager.h>
 #include <core/services/imagehostservice.h>
 #include <core/services/notificationservice.h>
 #include <imagehost/imagehosttypes.h>
+
+#include <temp_dir_fixture.h>
+
+#include <vxcore/vxcore.h>
 
 using namespace vnotex;
 
@@ -22,6 +32,8 @@ class TestNotificationRouter : public QObject {
   Q_OBJECT
 
 private slots:
+  void initTestCase();
+  void cleanupTestCase();
   void init();
   void cleanup();
 
@@ -41,14 +53,27 @@ private slots:
   void test_bufferSlotSignaturesMatchBufferServiceSignals();
   void test_bufferSaveErrorIsPassive();
   void test_bufferSavedRetiresBufferIncidents();
+  void test_extraDataFailuresAreRaisedOncePerFolderAtAfterStart();
+  void test_noExtraDataFailureRaisesNothing();
 
 private:
   const NotificationMessage *activeWithKey(const QString &p_key) const;
   int addedCount() const { return m_added; }
 
+  // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
+  QString buildExtraDataFixture(TempDirFixture &p_tmp) const;
+
+  // Wipe the installed extra-data folders (and therefore their stamps).
+  void resetInstalledExtraData() const;
+
+  VxCoreContextHandle m_context = nullptr;
+  ConfigCoreService *m_configService = nullptr;
+
   ServiceLocator *m_services = nullptr;
   NotificationService *m_notifications = nullptr;
   ImageHostService *m_imageHost = nullptr;
+  HookManager *m_hookMgr = nullptr;
+  ConfigMgr2 *m_configMgr = nullptr;
   NotificationRouter *m_router = nullptr;
   int m_added = 0;
 };
@@ -62,6 +87,26 @@ const NotificationMessage *TestNotificationRouter::activeWithKey(const QString &
   return nullptr;
 }
 
+void TestNotificationRouter::initTestCase() {
+  // CRITICAL: before any vxcore context is created, so the extra-data cases
+  // install into an isolated temp app-data folder.
+  vxcore_set_test_mode(1);
+
+  QCOMPARE(vxcore_context_create(nullptr, &m_context), VXCORE_OK);
+  QVERIFY(m_context != nullptr);
+  m_configService = new ConfigCoreService(m_context);
+}
+
+void TestNotificationRouter::cleanupTestCase() {
+  delete m_configService;
+  m_configService = nullptr;
+
+  if (m_context) {
+    vxcore_context_destroy(m_context);
+    m_context = nullptr;
+  }
+}
+
 void TestNotificationRouter::init() {
   m_services = new ServiceLocator();
   m_notifications = new NotificationService();
@@ -71,14 +116,22 @@ void TestNotificationRouter::init() {
   // is registered for real: that makes the image-host cases exercise the actual
   // connection the router's constructor makes, not just its policy.
   //
-  // BufferService and SyncService are NOT registered -- both need a vxcore
-  // context, and SyncService additionally needs the OS keychain (which
-  // tests/AGENTS.md requires a KeychainGuard for). The router tolerates their
-  // absence; their policy is driven through the public slots instead. See the
-  // sync-retirement test for why that is sufficient for the pointer-to-member
-  // connections, and the slot-signature test for the string-based ones.
+  // BufferService and SyncService are NOT registered -- both need extra setup,
+  // and SyncService additionally needs the OS keychain (which tests/AGENTS.md
+  // requires a KeychainGuard for). The router tolerates their absence; their
+  // policy is driven through the public slots instead. See the sync-retirement
+  // test for why that is sufficient for the pointer-to-member connections, and
+  // the slot-signature test for the string-based ones.
   m_imageHost = new ImageHostService(nullptr);
   m_services->registerService<ImageHostService>(m_imageHost);
+
+  // The extra-data notification is a PULL at MainWindowAfterStart, so both the
+  // hook bus and ConfigMgr2 must exist BEFORE the router subscribes.
+  m_hookMgr = new HookManager();
+  m_services->registerService<HookManager>(m_hookMgr);
+
+  m_configMgr = new ConfigMgr2(m_configService);
+  m_services->registerService<ConfigMgr2>(m_configMgr);
 
   m_router = new NotificationRouter(*m_services);
 
@@ -88,8 +141,13 @@ void TestNotificationRouter::init() {
 }
 
 void TestNotificationRouter::cleanup() {
+  // Router first: its destructor unsubscribes from the HookManager.
   delete m_router;
   m_router = nullptr;
+  delete m_configMgr;
+  m_configMgr = nullptr;
+  delete m_hookMgr;
+  m_hookMgr = nullptr;
   delete m_imageHost;
   m_imageHost = nullptr;
   delete m_notifications;
@@ -364,6 +422,107 @@ void TestNotificationRouter::test_bufferSavedRetiresBufferIncidents() {
   const int before = addedCount();
   m_router->onBufferAutoSaveAborted(QStringLiteral("buf1"));
   QCOMPARE(addedCount(), before + 1);
+}
+
+// =============================================================================
+// Extra-data install failures (pulled from ConfigMgr2 at MainWindowAfterStart)
+// =============================================================================
+
+QString TestNotificationRouter::buildExtraDataFixture(TempDirFixture &p_tmp) const {
+  const QString root = p_tmp.createDir("extra");
+  for (const char *folder :
+       {"themes", "tasks", "syntax-highlighting", "web", "dicts"}) {
+    const QString name = QString::fromLatin1(folder);
+    p_tmp.createDir(QStringLiteral("extra/") + name);
+    p_tmp.createTextFile(QStringLiteral("extra/%1/marker.txt").arg(name),
+                         QStringLiteral("bundled %1").arg(name));
+  }
+  return root;
+}
+
+void TestNotificationRouter::resetInstalledExtraData() const {
+  for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
+                    ConfigMgr2::ConfigDataType::SyntaxHighlighting,
+                    ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
+    QDir(m_configMgr->getConfigDataFolder(type)).removeRecursively();
+  }
+}
+
+// ConfigMgr2 dumps the bundled data in main(), long before this router exists,
+// so the failures are PULLED once at MainWindowAfterStart rather than pushed.
+void TestNotificationRouter::test_extraDataFailuresAreRaisedOncePerFolderAtAfterStart() {
+  resetInstalledExtraData();
+
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const QString fixture = buildExtraDataFixture(tmp);
+
+  // Failure injection: a DIRECTORY where <folder>/marker.txt must land.
+  QStringList blockers;
+  for (auto type : {ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
+    const QString blocker =
+        m_configMgr->getConfigDataFolder(type) + QStringLiteral("/marker.txt");
+    QVERIFY(QDir().mkpath(blocker));
+    blockers.append(blocker);
+  }
+
+  m_configMgr->setExtraDataSourceRootOverrideForTesting(fixture);
+  m_configMgr->init();
+  m_configMgr->initAfterQtAppStarted();
+  QCOMPARE(m_configMgr->extraDataCopyFailures().size(), 2);
+
+  // Nothing is raised until the hook fires.
+  QCOMPARE(addedCount(), 0);
+
+  QVariantMap args;
+  m_hookMgr->doAction(HookNames::MainWindowAfterStart, args);
+
+  QCOMPARE(addedCount(), 2);
+  QCOMPARE(m_notifications->activeCount(), 2);
+
+  QStringList named;
+  for (const auto &msg : m_notifications->messages()) {
+    QCOMPARE(msg.m_category, QStringLiteral("config"));
+    QVERIFY2(msg.m_dedupKey.isEmpty(), "the extra-data message must stay keyless");
+    QCOMPARE(msg.m_severity, NotificationMessage::Severity::Warning);
+    QCOMPARE(msg.m_attention, NotificationMessage::Attention::Interrupt);
+    QCOMPARE(msg.m_duration, NotificationMessage::Duration::Long);
+    // Nothing safe for the user to click.
+    QVERIFY(msg.m_actions.isEmpty());
+    // The failed paths belong in the collapsible detail section, for EVERY
+    // failed folder -- not just the first one.
+    QVERIFY2(msg.m_details.contains(QStringLiteral("marker.txt")), qPrintable(msg.m_details));
+    if (msg.m_text.contains(QStringLiteral("web"))) {
+      named.append(QStringLiteral("web"));
+    } else if (msg.m_text.contains(QStringLiteral("dicts"))) {
+      named.append(QStringLiteral("dicts"));
+    }
+  }
+  named.sort();
+  QCOMPARE(named, QStringList({QStringLiteral("dicts"), QStringLiteral("web")}));
+
+  for (const auto &blocker : blockers) {
+    QVERIFY(QDir(blocker).removeRecursively());
+  }
+}
+
+void TestNotificationRouter::test_noExtraDataFailureRaisesNothing() {
+  resetInstalledExtraData();
+
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const QString fixture = buildExtraDataFixture(tmp);
+
+  m_configMgr->setExtraDataSourceRootOverrideForTesting(fixture);
+  m_configMgr->init();
+  m_configMgr->initAfterQtAppStarted();
+  QVERIFY(m_configMgr->extraDataCopyFailures().isEmpty());
+
+  QVariantMap args;
+  m_hookMgr->doAction(HookNames::MainWindowAfterStart, args);
+
+  QCOMPARE(addedCount(), 0);
+  QCOMPARE(m_notifications->activeCount(), 0);
 }
 
 } // namespace tests

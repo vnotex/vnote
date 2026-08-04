@@ -34,6 +34,8 @@ class NotificationRouter : public QObject {
 public:
   explicit NotificationRouter(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
+  ~NotificationRouter() override;
+
 signals:
   // A notification action asked to open Sync Info for a specific notebook.
   // MainWindow2 forwards this to NotebookExplorer2::openSyncInfo. The router
@@ -67,6 +69,13 @@ public slots:
 private:
   void connectServiceSources();
 
+  // Raise one notification per extra-data folder that ConfigMgr2 failed to
+  // install. This is a PULL, not a push: ConfigMgr2::initAfterQtAppStarted()
+  // runs in main() long before this router exists (and ConfigMgr2 holds no
+  // ServiceLocator, so it cannot reach NotificationService anyway), so the
+  // failures are read once at MainWindowAfterStart instead.
+  void reportExtraDataFailures();
+
   // Retire every sync incident for a notebook. Called at the boundaries where
   // the incident genuinely ends: sync succeeded, enable succeeded, credentials
   // updated, sync disabled, and manual retry.
@@ -78,6 +87,9 @@ private:
   static QString syncDedupKey(VxCoreError p_code, const QString &p_notebookId);
 
   ServiceLocator &m_services;
+
+  // MainWindowAfterStart subscription used by reportExtraDataFailures().
+  int m_afterStartHookId = -1;
 };
 
 } // namespace vnotex
