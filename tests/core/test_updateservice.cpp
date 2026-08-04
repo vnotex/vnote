@@ -482,9 +482,23 @@ private:
   QJsonObject manifestCore(const QString &p_version, const FileSet &p_files,
                            const QString &p_channel) const;
 
+  // Canonical form. Defaults are provided by the inline forwarding overloads
+  // below rather than as in-class default arguments: a default argument of
+  // `= PublishOptions()` is not a complete-class context, so it references
+  // PublishOptions's default member initializers before TestUpdateService is
+  // complete, which GCC and Clang reject. Inline member-function bodies ARE
+  // complete-class contexts, so constructing PublishOptions() there is valid.
   void publish(const QString &p_version, const FileSet &p_files,
-               const QString &p_deltaBase = QString(),
-               const PublishOptions &p_options = PublishOptions());
+               const QString &p_deltaBase, const PublishOptions &p_options);
+
+  void publish(const QString &p_version, const FileSet &p_files) {
+    publish(p_version, p_files, QString(), PublishOptions());
+  }
+
+  void publish(const QString &p_version, const FileSet &p_files,
+               const QString &p_deltaBase) {
+    publish(p_version, p_files, p_deltaBase, PublishOptions());
+  }
 
   void setLatestRelease(const QString &p_version);
 

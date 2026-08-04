@@ -20,6 +20,14 @@ int g_restartForUpdateCalls = 0;
 
 using namespace vnotex;
 
+// UpdateController only uses MainWindow2 as an opaque pointer: it calls the
+// non-virtual restartForUpdate() and passes the pointer as a dialog parent. It
+// never connects to a MainWindow2 signal, so MainWindow2's moc/vtable is NOT
+// needed here -- and mainwindow2.h is deliberately NOT listed in this target's
+// AUTOMOC sources (see CMakeLists.txt) so its vtable is not emitted. Emitting it
+// would force every out-of-line virtual AND every member-object destructor
+// (DockWidgetHelper, NavigationMode, ...) to be linked, dragging in the whole
+// widget tree this stub exists to avoid. Only restartForUpdate() must exist.
 void MainWindow2::restartForUpdate() { ++tests::g_restartForUpdateCalls; }
 
 UpdateDialog::UpdateDialog(const UpdateInfo &p_info, QWidget *p_parent) : QDialog(p_parent) {
