@@ -24,13 +24,16 @@ python scripts/update_version.py X.Y.Z
 
 `scripts/update_version.py` is the single source of truth. It updates:
 - `CMakeLists.txt` — `project(... VERSION X.Y.Z ...)`
-- `.github/workflows/ci-win.yml`, `ci-linux.yml`, `ci-macos.yml` — `VNOTE_VER: X.Y.Z`
+- `.github/workflows/ci-win.yml`, `ci-linux.yml`, `ci-macos.yml`, `ci-linux-tsan.yml`
+  — `VNOTE_VER: X.Y.Z`
 - `src/data/core/Info.plist` — short (`X.Y`) and full (`X.Y.Z`, `X.Y.Z.1`) strings
 - `src/core/configmgr2.cpp` — `ConfigMgr2::c_version{X, Y, Z}`
 - `src/data/core/fun.vnote.app.VNote.metainfo.xml` — prepends a dated `<release>` entry
 
-Note: `ci-linux-tsan.yml` is NOT touched by the script (its `VNOTE_VER` is a
-build sanity value, not a release version) — leave it alone.
+Note: `ci-linux-tsan.yml` IS in the script's file list (`scripts/update_version.py:21`)
+and the `[Release] VNote 4.3.0` commit `a282ef07` bumped it too, so keep the script's
+change. Its `VNOTE_VER` is only a build sanity value and does not publish anything —
+it just tracks the release version.
 
 Verify: `git diff --stat` should show exactly the files listed above.
 
@@ -41,11 +44,21 @@ The two maintained catalogs are `src/data/core/translations/vnote_zh_CN.ts`
 
 ### 2a. Extract new/changed strings with lupdate
 
-`lupdate` ships with Qt. On this machine: `C:\Qt\6.9.3\msvc2022_64\bin\lupdate.exe`
-(fall back to `Get-Command lupdate`).
+`lupdate` ships with Qt, and the installed Qt version changes over time — do NOT
+hardcode a path (`C:\Qt\6.9.3\...` was already gone by 4.3.1). Resolve it first:
 
 ```pwsh
-& "C:\Qt\6.9.3\msvc2022_64\bin\lupdate.exe" -no-obsolete -locations relative src `
+$lupdate = (Get-Command lupdate -ErrorAction SilentlyContinue).Source
+if (-not $lupdate) {
+  $lupdate = (Get-ChildItem C:\Qt -Recurse -Filter lupdate.exe -ErrorAction SilentlyContinue |
+    Where-Object FullName -like '*msvc*' | Sort-Object FullName -Descending |
+    Select-Object -First 1).FullName
+}
+$lupdate   # e.g. C:\Qt\6.10.3\msvc2022_64\bin\lupdate.exe
+```
+
+```pwsh
+& $lupdate -no-obsolete -locations relative src `
   -ts src/data/core/translations/vnote_zh_CN.ts src/data/core/translations/vnote_ja.ts
 ```
 
@@ -71,6 +84,53 @@ rewrite each unfinished `<message>` block, escaping `&`/`<`/`>` in the output an
 preserving `%1`/`%2` placeholders, `&`-accelerators (e.g. `&View` -> `查看(&V)` /
 `表示(&V)`), and literal newlines. Re-run the count above; both must reach `0`.
 
+Two traps when scripting the rewrite:
+
+- **Anchor the `<source>` capture.** A pattern like `<source>(.*?)</source>` with
+  `(?s)` lets the group swallow whole `</message>` blocks to reach a *later*
+  unfinished `<translation>`, silently deleting every message in between (a whole
+  `<context>` disappeared this way during 4.3.1). Forbid the closing tag inside
+  the group and stop the gap before the next message:
+  `<source>((?:(?!</source>).)*)</source>((?:(?!</message>|<source>).)*?)<translation type="unfinished">`
+- **Numerus entries** are `<translation type="unfinished"><numerusform></numerusform></translation>`.
+  Fill the `<numerusform>` rather than replacing the element body, so the plural
+  structure and indentation survive.
+
+Then VERIFY against the pre-edit file — an over-matching regex leaves the counts
+looking fine while having eaten unrelated entries:
+
+```pwsh
+foreach ($l in 'zh_CN','ja') {
+  git show "HEAD:src/data/core/translations/vnote_$l.ts" > "$env:TEMP\old_$l.ts"
+  $o = [xml](Get-Content -Raw "$env:TEMP\old_$l.ts")
+  $n = [xml](Get-Content -Raw "src/data/core/translations/vnote_$l.ts")
+  # NOTE: PowerShell's XML adapter returns a bare string for <translation> once
+  # the type attribute is gone, so .InnerText is $null — normalize first.
+  function Tr($m) { $t = $m.translation; if ($null -eq $t) { '' } elseif ($t -is [string]) { $t } else { $t.InnerText } }
+  $old = @{}; foreach ($c in $o.TS.context) { foreach ($m in $c.message) { $old["$($c.name)|$($m.source)"] = (Tr $m) } }
+  $changed = 0; $bad = 0
+  foreach ($c in $n.TS.context) { foreach ($m in $c.message) {
+    $k = "$($c.name)|$($m.source)"; $tr = (Tr $m)
+    if ($old.ContainsKey($k)) { if ($old[$k] -ne $tr) { $changed++; "CHANGED $k" }; continue }
+    $ps = @([regex]::Matches($m.source, '%\d|%n') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+    $pt = @([regex]::Matches($tr,        '%\d|%n') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+    if (($ps -join ',') -ne ($pt -join ',')) { $bad++; "PLACEHOLDER $k" }
+  } }
+  "$l changed_existing=$changed placeholder_mismatch=$bad"
+}
+```
+
+`changed_existing` MUST be 0 (only lupdate's own obsolete removals may drop keys —
+cross-check them against `git log` / the source tree) and `placeholder_mismatch`
+MUST be 0. Finally, compile both catalogs; each must report `0 unfinished`:
+
+```pwsh
+foreach ($l in 'zh_CN','ja') {
+  & ($lupdate -replace 'lupdate\.exe$','lrelease.exe') "src/data/core/translations/vnote_$l.ts" -qm "$env:TEMP\$l.qm"
+}
+Remove-Item "$env:TEMP\zh_CN.qm","$env:TEMP\ja.qm"
+```
+
 The `.qm` binaries are generated at build time by the `lrelease` CMake target
 (see `src/CMakeLists.txt`), so you do NOT commit `.qm` files.
 
@@ -82,6 +142,8 @@ Prepend a new `## vX.Y.Z` section at the TOP of `changes.md` (right under the
 - Summarize `git log <prev-tag>..HEAD --oneline` grouped by theme (Editor, Export,
   Tasks, Fixes, Security, Translations, …), matching the style of existing entries.
 - Lead with a one-line summary sentence "… on top of VNote <prev>:".
+- If an `## Unreleased` section exists, FOLD it into the new `## vX.Y.Z` section
+  (it is not a separate release) rather than leaving both.
 - Always end with a **Translations** bullet noting zh_CN + ja were updated.
 
 ## 4. Review
