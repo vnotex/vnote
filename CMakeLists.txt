@@ -13,6 +13,13 @@ set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type, defaults to Release")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# The macOS NSServices provider lives inside src/application.cpp, which is
+# compiled as Objective-C++ on Apple only (see src/CMakeLists.txt). Enabling the
+# language here keeps every other platform on a plain C/CXX project.
+if(APPLE)
+    enable_language(OBJCXX)
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)

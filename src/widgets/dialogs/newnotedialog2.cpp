@@ -2,29 +2,58 @@
 
 #include <QComboBox>
 #include <QFormLayout>
+#include <QPlainTextEdit>
+#include <QTextDocument>
 #include <QVBoxLayout>
 
 #include <controllers/newnotecontroller.h>
-#include <core/services/filetypecoreservice.h>
-#include <core/services/snippetcoreservice.h>
 #include <core/configmgr2.h>
-#include <core/widgetconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/snippetcoreservice.h>
+#include <core/widgetconfig.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 
-#include "../widgetsfactory.h"
 #include "../lineeditwithsnippet.h"
+#include "../widgetsfactory.h"
 #include "notetemplateselector.h"
 
 using namespace vnotex;
+
+namespace {
+// Tests look widgets up by object name, never by label text.
+const char *kContentEditName = "newNoteContentEdit";
+
+// Extract literal capture text WITHOUT QPlainTextEdit::toPlainText().
+//
+// toPlainText() is documented to rewrite U+00A0 (no-break space) into a plain
+// space and U+2028/U+2029 into LF, which would silently mutate captured text the
+// user never touched. toRawText() returns the document buffer untouched, so the
+// ONLY normalization applied here is the intended one: the document's own block
+// separators (which is where Qt's CRLF / lone-CR collapsing on insertion ends
+// up) become LF. Every other code point survives verbatim.
+QString literalTextOf(const QPlainTextEdit *p_edit) {
+  if (!p_edit || !p_edit->document()) {
+    return QString();
+  }
+
+  QString text = p_edit->document()->toRawText();
+  text.replace(QChar::ParagraphSeparator, QLatin1Char('\n'));
+  return text;
+}
+} // namespace
 
 QString NewNoteDialog2::s_lastTemplate;
 
 NewNoteDialog2::NewNoteDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
                                QWidget *p_parent)
-    : ScrollDialog(p_parent), m_services(p_services), m_parentId(p_parentId) {
+    : NewNoteDialog2(p_services, p_parentId, Options(), p_parent) {}
+
+NewNoteDialog2::NewNoteDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
+                               const Options &p_options, QWidget *p_parent)
+    : ScrollDialog(p_parent), m_services(p_services), m_parentId(p_parentId), m_options(p_options) {
   // Create controller.
   m_controller = new NewNoteController(m_services, this);
 
@@ -50,24 +79,32 @@ void NewNoteDialog2::setupUI() {
       m_fileTypeCombo->addItem(ft.m_displayName, ft.m_typeName);
     }
   }
-  connect(m_fileTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int) {
-            if (!m_fileTypeComboMuted) {
-              updateNameForFileType();
-            }
-          });
+  connect(m_fileTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
+    if (!m_fileTypeComboMuted) {
+      updateNameForFileType();
+    }
+  });
   layout->addRow(tr("Type:"), m_fileTypeCombo);
 
   // Name input.
   auto *snippetService = m_services.get<SnippetCoreService>();
   m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
-  connect(m_nameEdit, &QLineEdit::textEdited, this,
-          [this]() { updateFileTypeForName(); });
+  connect(m_nameEdit, &QLineEdit::textEdited, this, [this]() { updateFileTypeForName(); });
   layout->addRow(tr("Name:"), m_nameEdit);
 
-  // Template selector.
-  m_templateSelector = new NoteTemplateSelector(m_services, mainWidget);
-  layout->addRow(tr("Template:"), m_templateSelector);
+  // Body source: exactly one of the two controls exists.
+  if (m_options.m_bodyMode == BodyMode::LiteralContent) {
+    m_contentEdit = new QPlainTextEdit(mainWidget);
+    m_contentEdit->setObjectName(QLatin1String(kContentEditName));
+    // Verbatim: no trimming here or on accept. Qt collapses CRLF and lone CR
+    // into document block separators on insertion, which literalTextOf() then
+    // renders as LF -- that is the persistence policy for captured text.
+    m_contentEdit->setPlainText(m_options.m_initialContent);
+    layout->addRow(tr("Content:"), m_contentEdit);
+  } else {
+    m_templateSelector = new NoteTemplateSelector(m_services, mainWidget);
+    layout->addRow(tr("Template:"), m_templateSelector);
+  }
 
   setCentralWidget(mainWidget);
 
@@ -90,8 +127,9 @@ void NewNoteDialog2::initDefaultValues() {
   // Generate default name based on file type.
   updateNameForFileType();
 
-  // Restore last template.
-  if (!s_lastTemplate.isEmpty()) {
+  // Restore last template. Capture dialogs have no template selector and must
+  // neither read nor overwrite the shared last-template state.
+  if (m_templateSelector && !s_lastTemplate.isEmpty()) {
     if (!m_templateSelector->setCurrentTemplate(s_lastTemplate)) {
       s_lastTemplate.clear();
     }
@@ -100,7 +138,8 @@ void NewNoteDialog2::initDefaultValues() {
 
 void NewNoteDialog2::updateNameForFileType() {
   auto *fileTypeService = m_services.get<FileTypeCoreService>();
-  const auto fileType = fileTypeService->getFileTypeByName(m_fileTypeCombo->currentData().toString());
+  const auto fileType =
+      fileTypeService->getFileTypeByName(m_fileTypeCombo->currentData().toString());
 
   // Get current name and extract base name (without extension).
   QString currentName = m_nameEdit->text().trimmed();
@@ -143,9 +182,8 @@ void NewNoteDialog2::updateFileTypeForName() {
 }
 
 bool NewNoteDialog2::validateInputs() {
-  NoteValidationResult result =
-      m_controller->validateName(m_parentId.notebookId, m_parentId.relativePath,
-                                 m_nameEdit->evaluatedText().trimmed());
+  NoteValidationResult result = m_controller->validateName(
+      m_parentId.notebookId, m_parentId.relativePath, m_nameEdit->evaluatedText().trimmed());
 
   if (!result.valid) {
     setInformationText(result.message, ScrollDialog::InformationLevel::Error);
@@ -168,8 +206,10 @@ QString NewNoteDialog2::getPreferredSuffix() const {
 }
 
 void NewNoteDialog2::acceptedButtonClicked() {
-  // Save last template.
-  s_lastTemplate = m_templateSelector->getCurrentTemplate();
+  // Save last template (template mode only).
+  if (m_templateSelector) {
+    s_lastTemplate = m_templateSelector->getCurrentTemplate();
+  }
 
   // Save default file type (as type name string).
   QString fileTypeName = m_fileTypeCombo->currentData().toString();
@@ -184,8 +224,16 @@ void NewNoteDialog2::acceptedButtonClicked() {
   input.notebookId = m_parentId.notebookId;
   input.parentFolderPath = m_parentId.relativePath;
   input.name = m_nameEdit->evaluatedText().trimmed();
-  input.templateContent = m_templateSelector->getTemplateContent();
   input.fileTypeName = fileTypeName;
+
+  // The two body sources are never combined.
+  if (m_options.m_bodyMode == BodyMode::LiteralContent) {
+    input.bodyMode = NewNoteBodyMode::LiteralContent;
+    input.literalContent = literalTextOf(m_contentEdit);
+  } else {
+    input.templateContent =
+        m_templateSelector ? m_templateSelector->getTemplateContent() : QString();
+  }
 
   // Delegate to controller.
   NewNoteResult result = m_controller->createNote(input);

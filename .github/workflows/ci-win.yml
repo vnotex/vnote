@@ -28,12 +28,19 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # NOTE: do NOT add qtdeclarative to qt_modules. It is not an aqt
+          # add-on module for Qt 6 -- it ships inside the base desktop package
+          # -- and naming it makes aqt fail the whole install step with
+          # "The packages ['qtdeclarative'] were not found while parsing XML of
+          # package information!", before anything is even configured. Qt6::Qml
+          # is available regardless (qtwebengine depends on it); the
+          # "Verify test registration" step below is the gate that proves it.
           - name: "Build on Win64 Qt 6"
             arch: win64_msvc2022_64
             vs_version: 2022
             vs_cmd: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
             qt: 6.9.3
-            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtdeclarative"
+            qt_modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
             qt_tools: tools_opensslv3_x64
             qt_major: 6
             suffix: ""

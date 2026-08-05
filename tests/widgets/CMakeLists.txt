@@ -92,6 +92,12 @@ add_qt_test(test_notebooknodeview_state
     Qt6::Widgets
 )
 
+# NotebookExplorer2 session-state wire format PLUS MainWindow2's
+# PendingCaptureDispatcher (the FIFO / readiness / reentrancy state machine
+# behind the macOS "Create Note in VNote" Service). Neither needs the widgets
+# themselves: the state format is asserted against the raw QDataStream bytes and
+# the dispatcher is defined inline in mainwindow2.h, so mainwindow2.cpp (and its
+# whole transitive widget graph) is deliberately NOT compiled here.
 add_qt_test(test_notebookexplorer2_state
   SOURCES
     test_notebookexplorer2_state.cpp
@@ -522,10 +528,18 @@ add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
 # Mirrors the source list of test_notebooksyncinfodialog2 with the addition of
 # locationinputwithbrowsebutton.cpp (the local-mode root folder picker) and
 # opennotebookcontroller.cpp (the controller the dialog instantiates).
+#
+# Also hosts the NewNoteDialog2 constructor-options coverage (macOS Services
+# note capture), which reuses this harness's fully wired ServiceLocator: hence
+# newnotedialog2.cpp + notetemplateselector.cpp + newnotecontroller.cpp, and
+# core_configs for ConfigMgr2/WidgetConfig. fileutils2.cpp is no longer compiled
+# inline because core_configs already provides it.
 add_qt_test(test_open_notebook_dialog2
   SOURCES
     test_open_notebook_dialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/newnotedialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notetemplateselector.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
@@ -537,12 +551,13 @@ add_qt_test(test_open_notebook_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
     Qt6::Concurrent
     core_services
+    core_configs
     vxcore
     VTextEdit
     Qt6::Widgets

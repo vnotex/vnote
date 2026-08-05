@@ -54,8 +54,8 @@
 #include <views/twocolumnsnodeexplorer.h>
 #include <vxcore/notebook_json_keys.h>
 // TODO: Migrate dialogs to use ServiceLocator DI pattern
-#include <core/services/templateservice.h>
 #include <core/services/snippetcoreservice.h>
+#include <core/services/templateservice.h>
 #include <widgets/dialogs/importfolderdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
 #include <widgets/dialogs/marknodedialog2.h>
@@ -188,12 +188,11 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
               }
             });
     connect(syncSvc, &SyncService::syncFailed, this, &NotebookExplorer2::onSyncFailedSurface);
-    connect(syncSvc, &SyncService::enableFinished, this,
-            [this](const QString &, VxCoreError) {
-              // Failure-notification retirement on OK lives in
-              // NotificationRouter, which subscribes to this same signal.
-              updateSyncButtonState();
-            });
+    connect(syncSvc, &SyncService::enableFinished, this, [this](const QString &, VxCoreError) {
+      // Failure-notification retirement on OK lives in
+      // NotificationRouter, which subscribes to this same signal.
+      updateSyncButtonState();
+    });
     connect(syncSvc, &SyncService::credentialsSetFinished, this,
             [this](const QString &p_notebookId, VxCoreError p_result) {
               if (p_result == VXCORE_OK) {
@@ -1533,6 +1532,34 @@ void NotebookExplorer2::setNodeViewOrder(ViewOrder p_order) {
 // --- GUI request handlers from controller signals ---
 
 void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
+  doNewNote(p_parentId, NewNoteDialog2::Options());
+}
+
+void NotebookExplorer2::captureNote(const QString &p_text) {
+  NodeIdentifier parentId = currentExploredFolderId();
+  if (!parentId.isValid()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Information,
+                             tr("Please first create a notebook to hold your data."), window());
+    return;
+  }
+
+  // Unlike the toolbar actions, an externally initiated request must never be
+  // silently dropped: tell the user why nothing happened.
+  if (isCurrentNotebookReadOnly()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                             tr("The current notebook is read-only, so the note was not created."),
+                             window());
+    return;
+  }
+
+  NewNoteDialog2::Options options;
+  options.m_bodyMode = NewNoteDialog2::BodyMode::LiteralContent;
+  options.m_initialContent = p_text;
+  doNewNote(parentId, options);
+}
+
+void NotebookExplorer2::doNewNote(const NodeIdentifier &p_parentId,
+                                  const NewNoteDialog2::Options &p_options) {
   // Suppress the fs-watcher's delayed reload for this parent: we perform the
   // model refresh synchronously below and need the selection to survive past
   // the watcher's 500 ms debounce window.
@@ -1542,7 +1569,7 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
     expectFsChange(parentAbsPath);
   }
 
-  NewNoteDialog2 dialog(m_services, p_parentId, window());
+  NewNoteDialog2 dialog(m_services, p_parentId, p_options, window());
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
     if (newNodeId.isValid()) {
@@ -1555,6 +1582,7 @@ void NotebookExplorer2::onNewNoteRequested(const NodeIdentifier &p_parentId) {
         settings.m_mode = ViewWindowMode::Edit;
         settings.m_forceMode = true;
         settings.m_newFile = true;
+        // In capture mode this is the end of the captured content.
         settings.m_cursorOffset = dialog.getNewCursorOffset();
         bufferSvc->openBuffer(newNodeId, settings);
       }

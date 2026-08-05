@@ -3,15 +3,15 @@
 #include <QFile>
 #include <QJsonObject>
 
-#include <vxcore/vxcore.h>
 #include <vxcore/notebook_json_keys.h>
+#include <vxcore/vxcore.h>
 
 #include <controllers/newnotecontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/snippetcoreservice.h>
-#include <utils/pathutils.h>
 #include <temp_dir_fixture.h>
+#include <utils/pathutils.h>
 
 using namespace vnotex;
 
@@ -27,12 +27,15 @@ private slots:
   void testCreateNoteWithCursorMark();
   void testCreateNoteWithoutCursorMark();
   void testCreateNoteOverrides();
+  void testCreateNoteLiteralContentIsVerbatim();
+  void testCreateNoteLiteralContentCleared();
   void testCreateQuickNoteExpandsBody();
   void testCreateQuickNoteSequencedOverrides();
   void testCreateQuickNoteMissingNotebook();
 
 private:
   QString readNote(const NodeIdentifier &p_id) const;
+  QByteArray readNoteBytes(const NodeIdentifier &p_id) const;
 
   VxCoreContextHandle m_context = nullptr;
   NotebookCoreService *m_notebookService = nullptr;
@@ -57,8 +60,8 @@ void TestNewNoteController::initTestCase() {
 
   // Create an empty-dir bundled notebook to host the notes.
   QString root = m_tempDir.createDir("nb_root");
-  m_notebookId = m_notebookService->createNotebook(root, QStringLiteral("{}"),
-                                                   NotebookType::Bundled);
+  m_notebookId =
+      m_notebookService->createNotebook(root, QStringLiteral("{}"), NotebookType::Bundled);
   QVERIFY(!m_notebookId.isEmpty());
 }
 
@@ -74,14 +77,18 @@ void TestNewNoteController::cleanupTestCase() {
 }
 
 QString TestNewNoteController::readNote(const NodeIdentifier &p_id) const {
+  return QString::fromUtf8(readNoteBytes(p_id));
+}
+
+QByteArray TestNewNoteController::readNoteBytes(const NodeIdentifier &p_id) const {
   QJsonObject cfg = m_notebookService->getNotebookConfig(p_id.notebookId);
   QString root = cfg.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
   QString fullPath = PathUtils::concatenateFilePath(root, p_id.relativePath);
   QFile f(fullPath);
   if (!f.open(QIODevice::ReadOnly)) {
-    return QString();
+    return QByteArray();
   }
-  QString content = QString::fromUtf8(f.readAll());
+  QByteArray content = f.readAll();
   f.close();
   return content;
 }
@@ -124,6 +131,53 @@ void TestNewNoteController::testCreateNoteOverrides() {
   NewNoteResult result = controller.createNote(input);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
   QCOMPARE(readNote(result.nodeId), QStringLiteral("file mynote.md base mynote"));
+}
+
+// Literal capture (macOS Services): the controller must persist the dialog text
+// byte-for-byte. Nothing in it may be interpreted as a snippet, a magic symbol,
+// a cursor mark or a selection mark, and no whitespace may be trimmed.
+void TestNewNoteController::testCreateNoteLiteralContentIsVerbatim() {
+  NewNoteController controller(m_services);
+
+  // Already LF-normalized (QPlainTextEdit owns CRLF -> LF), with leading and
+  // trailing spaces, a tab, a supplementary-plane character, and every marker
+  // the template path would otherwise consume.
+  const QString captured = QStringLiteral("  lead\tspaced\n%note% %no% @@ $$\n\U0001F4DD end  ");
+
+  NewNoteInput input;
+  input.notebookId = m_notebookId;
+  input.name = QStringLiteral("literal.md");
+  input.bodyMode = NewNoteBodyMode::LiteralContent;
+  input.literalContent = captured;
+  // A stale templateContent must be ignored in literal mode.
+  input.templateContent = QStringLiteral("SHOULD NOT BE WRITTEN");
+
+  NewNoteResult result = controller.createNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // Raw bytes must match the controller input exactly.
+  QCOMPARE(readNoteBytes(result.nodeId), captured.toUtf8());
+
+  // Caret lands at the end of the captured text. Qt offsets are UTF-16 units,
+  // so the supplementary character counts as two.
+  QCOMPARE(result.cursorOffset, captured.size());
+}
+
+// A user who clears the Content field gets an empty note and a zero offset --
+// not the "no content" (-1) sentinel of the template path.
+void TestNewNoteController::testCreateNoteLiteralContentCleared() {
+  NewNoteController controller(m_services);
+
+  NewNoteInput input;
+  input.notebookId = m_notebookId;
+  input.name = QStringLiteral("literal_cleared.md");
+  input.bodyMode = NewNoteBodyMode::LiteralContent;
+  input.literalContent = QString();
+
+  NewNoteResult result = controller.createNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(readNoteBytes(result.nodeId), QByteArray());
+  QCOMPARE(result.cursorOffset, 0);
 }
 
 void TestNewNoteController::testCreateQuickNoteExpandsBody() {

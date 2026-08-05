@@ -13,6 +13,7 @@
 #include <nodeinfo.h>
 #include <views/inodeexplorer.h>
 #include <vxcore/vxcore_types.h>
+#include <widgets/dialogs/newnotedialog2.h>
 
 class QAction;
 class QFileSystemWatcher;
@@ -95,6 +96,12 @@ public slots:
   void newFolder();
   void newNote();
   void newQuickNote();
+
+  // Create a note pre-filled with externally captured text (macOS "Create Note
+  // in VNote" Service). Resolves the destination at handling time and surfaces
+  // a visible error for a missing or read-only destination, because an
+  // external request must never fail silently. Blocks on the modal dialog.
+  void captureNote(const QString &p_text);
 
   // Import operations - use current explored folder as parent
   void importFile();
@@ -218,6 +225,12 @@ private:
   // Import file/folder helpers (called from toolbar actions)
   void onImportFilesRequested(const NodeIdentifier &p_targetFolderId);
   void onImportFolderRequested(const NodeIdentifier &p_targetFolderId);
+
+  // Shared body of the New Note flow: fs-change suppression, modal dialog with
+  // the given options, parent reload, selection, and buffer open in edit mode.
+  // Ordinary New Note passes default options; Service capture passes
+  // literal-content options.
+  void doNewNote(const NodeIdentifier &p_parentId, const NewNoteDialog2::Options &p_options);
   void setCurrentNotebookInternal(const QString &p_notebookId);
   // Functional read-only guard for toolbar-driven mutation slots. Resolves the
   // current notebook id the same way the read-only badge does and queries

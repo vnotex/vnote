@@ -45,8 +45,8 @@
 #include <core/exportcontext.h>
 #include <core/fileopensettings.h>
 #include <core/hooknames.h>
-#include <core/nodeidentifier.h>
 #include <core/logging.h>
+#include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
@@ -59,15 +59,17 @@
 
 #include <controllers/firstruncontroller.h>
 #include <controllers/notificationrouter.h>
-#include <controllers/updatecontroller.h>
 #include <controllers/searchcontroller.h>
 #include <controllers/syncconflictcontroller.h>
+#include <controllers/updatecontroller.h>
 #include <controllers/viewareacontroller.h>
 #include <qwebengineview.h>
 #include <unitedentry/unitedentrymgr.h>
 #include <views/inodeexplorer.h>
+#include <widgets/consoleviewer.h>
 #include <widgets/dialogs/exportdialog2.h>
 #include <widgets/locationlist2.h>
+#include <widgets/mainwindowtaskcontext.h>
 #include <widgets/messageboxhelper.h>
 #include <widgets/notebookexplorer2.h>
 #include <widgets/notebookselector2.h>
@@ -76,10 +78,8 @@
 #include <widgets/snippetpanel2.h>
 #include <widgets/tagexplorer2.h>
 #include <widgets/taskpanel2.h>
-#include <widgets/consoleviewer.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
-#include <widgets/mainwindowtaskcontext.h>
 
 #include <core/services/taskservice.h>
 
@@ -95,6 +95,8 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
   setupUI();
 
   setAcceptDrops(true);
+
+  m_captureDispatcher.setHandler([this](const QString &p_text) { handleNoteCapture(p_text); });
 
   // Restore window geometry/state early so the window appears at the right
   // size and position.  View-area layout is deferred to kickOffPostInit()
@@ -451,6 +453,22 @@ void MainWindow2::drainPendingOpenBatches() {
   }
 }
 
+void MainWindow2::requestNoteCapture(const QString &p_text) { m_captureDispatcher.request(p_text); }
+
+void MainWindow2::handleNoteCapture(const QString &p_text) {
+  // The request comes from another process, so bring VNote forward first.
+  showMainWindow();
+
+  if (!m_notebookExplorer) {
+    qWarning() << "MainWindow2::handleNoteCapture: notebook explorer unavailable";
+    return;
+  }
+
+  // Blocks on a modal dialog; PendingCaptureDispatcher guarantees the next
+  // request is handled only after this returns.
+  m_notebookExplorer->captureNote(p_text);
+}
+
 void MainWindow2::restoreWindowGeometry() {
   const auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
   const auto sg = sessionConfig.getMainWindowStateGeometry();
@@ -689,6 +707,9 @@ void MainWindow2::setupViewArea() {
     // Drain queued opens in arrival order; detached batches each get a fresh
     // detached window.
     drainPendingOpenBatches();
+    // Only then release queued Service capture requests: a capture opens a
+    // buffer, which must land in the restored vxcore workspace.
+    m_captureDispatcher.setReady();
   });
 }
 
@@ -843,8 +864,7 @@ void MainWindow2::setupDocks() {
             disconnect(m_currentWindowNameConn);
             if (win) {
               m_currentWindowNameConn =
-                  connect(win, &ViewWindow2::nameChanged, this,
-                          [this]() { updateWindowTitle(); });
+                  connect(win, &ViewWindow2::nameChanged, this, [this]() { updateWindowTitle(); });
             }
             updateWindowTitle();
           });
@@ -904,18 +924,17 @@ void MainWindow2::setupDocks() {
 
     // Stream task output to the Console viewer, auto-showing the Console dock
     // whenever output arrives (i.e. when a task runs).
-    connect(taskService, &TaskService::taskOutputRequested, this,
-            [this](const QString &p_text) {
-              // Auto-show the Console dock only when it is hidden, so streaming
-              // output does not repeatedly steal focus.
-              auto *consoleDock = m_dockWidgetHelper.getDock(DockWidgetHelper::ConsoleDock);
-              if (consoleDock && !consoleDock->isVisible()) {
-                m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
-              }
-              if (m_consoleViewer) {
-                m_consoleViewer->appendOutput(p_text);
-              }
-            });
+    connect(taskService, &TaskService::taskOutputRequested, this, [this](const QString &p_text) {
+      // Auto-show the Console dock only when it is hidden, so streaming
+      // output does not repeatedly steal focus.
+      auto *consoleDock = m_dockWidgetHelper.getDock(DockWidgetHelper::ConsoleDock);
+      if (consoleDock && !consoleDock->isVisible()) {
+        m_dockWidgetHelper.activateDock(DockWidgetHelper::ConsoleDock);
+      }
+      if (m_consoleViewer) {
+        m_consoleViewer->appendOutput(p_text);
+      }
+    });
 
     // Reload notebook-scoped tasks when the current notebook changes.
     connect(m_notebookExplorer, &NotebookExplorer2::currentNotebookChanged, taskService,
@@ -1318,8 +1337,8 @@ void MainWindow2::setupNotifications() {
   m_notificationRouter = new NotificationRouter(m_serviceLocator, this);
 
   if (m_notebookExplorer) {
-    connect(m_notebookExplorer, &NotebookExplorer2::syncUserMessageRequested,
-            m_notificationRouter, &NotificationRouter::onSyncUserMessageRequested);
+    connect(m_notebookExplorer, &NotebookExplorer2::syncUserMessageRequested, m_notificationRouter,
+            &NotificationRouter::onSyncUserMessageRequested);
     connect(m_notebookExplorer, &NotebookExplorer2::syncIncidentRetryRequested,
             m_notificationRouter, &NotificationRouter::onSyncIncidentRetryRequested);
     connect(m_notificationRouter, &NotificationRouter::openSyncInfoRequested, m_notebookExplorer,
@@ -1357,8 +1376,8 @@ void MainWindow2::setupCloseFocusedShortcut() {
   }
   const auto &coreConfig = configMgr->getCoreConfig();
 
-  auto *shortcut = WidgetUtils::createShortcut(
-      coreConfig.getShortcut(CoreConfig::Shortcut::CloseFocus), this);
+  auto *shortcut =
+      WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::CloseFocus), this);
   if (!shortcut) {
     return;
   }
@@ -1438,4 +1457,3 @@ void MainWindow2::onThemeChanged() {
     m_progressDialog->setValue(3);
   }
 }
-

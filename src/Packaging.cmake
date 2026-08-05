@@ -168,11 +168,12 @@ if(WIN32)
 
     windeployqt(vnote)
 elseif(APPLE)
-    # Manually copy resources.
+    # Manually copy resources. The bundle Info.plist is NOT copied here: it is
+    # wired into the target through MACOSX_BUNDLE_INFO_PLIST (see
+    # src/CMakeLists.txt), so the built bundle and the packaged bundle always
+    # carry the same plist (including the NSServices declaration).
     set(VX_BUNDLE_CONTENTS_DIR $<TARGET_FILE_DIR:vnote>/..)
     add_custom_target(deploy
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_LIST_DIR}/data/core/Info.plist" ${VX_BUNDLE_CONTENTS_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${VX_EXTRA_RESOURCE_FILES_RCC} ${VX_BUNDLE_CONTENTS_DIR}/Resources
         COMMAND ${CMAKE_COMMAND} -E make_directory ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations

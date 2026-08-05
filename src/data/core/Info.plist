@@ -44,6 +44,28 @@
     <string>A pleasant note-taking platform</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSServices</key>
+    <array>
+        <dict>
+            <key>NSMessage</key>
+            <string>createNoteFromSelection</string>
+            <key>NSPortName</key>
+            <string>VNote</string>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>Create Note in VNote</string>
+            </dict>
+            <key>NSSendTypes</key>
+            <array>
+                <string>public.utf8-plain-text</string>
+            </array>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSRestricted</key>
+            <false/>
+        </dict>
+    </array>
     <key>NSSupportsAutomaticGraphicsSwitching</key>
     <true/>
     <key>NSRequiresAquaSystemAppearance</key>
