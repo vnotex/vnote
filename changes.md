@@ -1,16 +1,46 @@
 # Changes
-## Unreleased
+## v4.4.0
+A feature release that adds a built-in updater, a reworked PDF viewer, detachable view windows, and a Gitee release mirror on top of VNote 4.3.0:
+
+* **In-app updates** (new, Windows x64): VNote can now update itself
+    * Downloads only what changed — a release publishes a signed file manifest plus an optional delta package, and the client resolves a delta chain before falling back to the full package
+    * Every manifest is verified against a compiled-in Ed25519 key; an unsigned or unverifiable release is refused (fail-closed), and hosts are allow-listed per release source
+    * Files are staged inside the install directory and swapped in under a durable write-ahead journal **at exit**, with automatic rollback and crash recovery on the next launch
+    * A machine-wide lease serializes updates across sessions; Microsoft Store and Program Files installs are detected and directed to their own update channel
+    * Surfaces as an **Update** dialog (Update / Skip This Version / Later / Restart Now) and a startup notification with inline progress
+    * **Update source** setting (Settings › General) to fetch updates from either GitHub or Gitee
 * **PDF viewer**
     * Upgraded the bundled pdf.js from 3.1.81 to **3.11.174** (the last v3 release; v4+ requires Chrome 125+, which the Qt 5.15 / Windows 7 build cannot provide), and vendored the previously-missing `web/standard_fonts/` so PDFs relying on non-embedded Helvetica/Times/Courier render correctly
     * The PDF's embedded outline (bookmarks) now populates the **Outline** dock and a new per-window Outline toolbar popup, with click-to-jump
-
-    Note: the bundled web resources (including the pdf.js glue that publishes the
-    outline) are copied into the app-data folder only when `ConfigMgr2::c_version`
-    changes, and they are always loaded from there rather than from the embedded
-    resources. Both items above therefore reach an existing installation only via
-    a version bump (`scripts/update_version.py`), which a normal release performs
-    anyway. Shipping without one leaves the new Outline button and dock visible
-    but permanently empty, with no error.
+    * Fix the external file path not resolving for drag-and-dropped PDFs
+* **Views & windows**
+    * **Detach** a view window into a separate top-level window from the tab context menu
+    * New `--detached-view` CLI option to open files directly in a detached split
+    * `Ctrl+G, X` closes the focused dock or, when the editor has focus, the current tab
+    * The Console dock activation shortcut is now configurable
+* **Notifications**: attention routing, incident de-duplication, and a toast surface, so repeated failures (image upload, auto-save, sync) collapse into one actionable entry with a **Details** view
+* **Editor & Markdown**
+    * Offer to migrate a note's legacy `vx_images` pictures into its assets folder, with an inline banner and a **Don't Ask Again** choice
+    * Edit-mode **Copy Link** action for headings
+* **United Entry**: new `task` entry to find and run tasks, a popup sized from the UI font and clamped to the screen, and a readable selected task row
+* **Settings**: a Quick Note scheme can now use a note template
+* **macOS**: capture selected text from any app as a note through a system Service
+* **Tags**: `Esc` clears the selection in the Tags explorer
+* **Fixes**
+    * Recover from a partially-installed bundled resource set instead of leaving stale data behind
+    * Keep the frameless title bar out of Qt's menu-bar slot eviction
+    * Fix the export dialog not remembering the last-used theme (#2389)
+    * Fix enable-sync failing on macOS when opening a remote notebook (#2718)
+    * Stop duplicating legacy attachments during VNote3 migration
+    * UTF-8-safe `.vswp` backup path (#2721)
+    * Bundle the MSVC CRT for toolsets newer than CMake's redistributable list
+    * Use Git Bash explicitly in `init.cmd` instead of relying on WSL bash
+    * Remove the version-specific config override logic
+* **Internals**
+    * `core_services` no longer links VTextEdit or Qt Widgets
+    * Inline chrome is themed through the stylesheet instead of hardcoded colors, with a test gate that fails the build on literal colors in `setStyleSheet()`
+* **Infrastructure**: code and releases are mirrored to Gitee, keeping the two most recent releases
+* **Translations**: updated Simplified Chinese and Japanese translations
 
 ## v4.3.0
 A feature release that adds an in-app notification system, a Tasks dock, a reworked export experience, and a column-based editor status bar on top of VNote 4.2.0:

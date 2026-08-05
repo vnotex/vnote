@@ -400,6 +400,19 @@
     </message>
 </context>
 <context>
+    <name>vnotex::Application</name>
+    <message>
+        <location filename="../../../application.h" line="+51"/>
+        <source>Select some text to create a note in VNote.</source>
+        <translation>选择一些文本以在 VNote 中创建笔记。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>VNote is not ready to capture a note yet.</source>
+        <translation>VNote 尚未准备好根据所选文本创建笔记。</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::AttachmentDragDropAreaIndicator2</name>
     <message>
         <location filename="../../../widgets/attachmentdragdropareaindicator2.cpp" line="+25"/>
@@ -429,12 +442,12 @@
 <context>
     <name>vnotex::AttachmentPopup2</name>
     <message>
-        <location filename="../../../widgets/attachmentpopup2.cpp" line="+86"/>
+        <location filename="../../../widgets/attachmentpopup2.cpp" line="+88"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+24"/>
         <source>Open Folder</source>
         <translation>打开文件夹</translation>
     </message>
@@ -449,7 +462,7 @@
         <translation>删除</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+26"/>
         <source>Rename</source>
         <translation>重命名</translation>
     </message>
@@ -471,22 +484,22 @@
         <translation>该类型的笔记本不支持附件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/attachmentpopup2.cpp" line="96"/>
+        <location line="-139"/>
         <source>Add Attachments</source>
         <translation>添加附件</translation>
     </message>
     <message>
-        <location filename="../../../widgets/attachmentpopup2.cpp" line="96"/>
+        <location line="+0"/>
         <source>All Files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/attachmentpopup2.cpp" line="150"/>
+        <location line="+54"/>
         <source>Delete Attachments</source>
         <translation>删除附件</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../../widgets/attachmentpopup2.cpp" line="151"/>
+        <location line="+1"/>
         <source>Delete %n attachment(s)?</source>
         <translation>
             <numerusform></numerusform>
@@ -700,6 +713,15 @@
         <location line="+0"/>
         <source>Unlocked</source>
         <translation>已解锁</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::DetachedWindow</name>
+    <message>
+        <location filename="../../../widgets/detachedwindow.cpp" line="+15"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+1185"/>
+        <source>VNote</source>
+        <translation>VNote</translation>
     </message>
 </context>
 <context>
@@ -1808,13 +1830,23 @@
         <translation>VNote启动时检查更新</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+10"/>
+        <source>Where VNote checks for and downloads updates.</source>
+        <translation>VNote 检查和下载更新的来源。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Update source</source>
+        <translation>更新源</translation>
+    </message>
+    <message>
+        <location line="+65"/>
         <source>Failed to save recover session setting.</source>
         <translation>无法保存会话恢复设置。</translation>
     </message>
     <message>
-        <location line="-130"/>
-        <location line="+139"/>
+        <location line="-151"/>
+        <location line="+162"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
@@ -1967,7 +1999,7 @@
 <context>
     <name>vnotex::GreetingSticker</name>
     <message>
-        <location filename="../../../widgets/dashboard/greetingsticker.cpp" line="+31"/>
+        <location filename="../../../widgets/dashboard/greetingsticker.cpp" line="+26"/>
         <source>Greetings</source>
         <translation>问候</translation>
     </message>
@@ -1985,6 +2017,11 @@
         <location line="+2"/>
         <source>Good evening!</source>
         <translation>晚上好！</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Read, write, and think</source>
+        <translation>阅读、写作与思考</translation>
     </message>
 </context>
 <context>
@@ -2295,6 +2332,59 @@
     </message>
 </context>
 <context>
+    <name>vnotex::LegacyImageMigrationBar</name>
+    <message>
+        <location filename="../../../widgets/legacyimagemigrationbar.cpp" line="+9"/>
+        <source>Migrate to Assets Folder</source>
+        <translation>迁移到资源文件夹</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Not Now</source>
+        <translation>暂不</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Don&apos;t Ask Again</source>
+        <translation>不再询问</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+7"/>
+        <source>This note uses %n image(s) from a deprecated image folder. Migrating them to the assets folder relocates the files on disk; other notes still linking to them will break.</source>
+        <translation>
+            <numerusform>此笔记使用了已废弃图片文件夹中的 %n 张图片。迁移到资源文件夹会移动磁盘上的文件；其他笔记中仍指向这些图片的链接将失效。</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::LegacyImageMigrationController</name>
+    <message>
+        <location filename="../../../controllers/legacyimagemigrationcontroller.cpp" line="+282"/>
+        <source>Internal error: image migration is not wired up.</source>
+        <translation>内部错误：图片迁移功能未接入。</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>Failed to copy &quot;%1&quot; into the assets folder.</source>
+        <translation>无法将 &quot;%1&quot; 复制到资源文件夹。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Failed to resolve the assets folder for &quot;%1&quot;.</source>
+        <translation>无法解析 &quot;%1&quot; 的资源文件夹。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The copy of &quot;%1&quot; could not be located in the assets folder.</source>
+        <translation>在资源文件夹中找不到 &quot;%1&quot; 的副本。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Failed to compute a link for &quot;%1&quot;.</source>
+        <translation>无法为 &quot;%1&quot; 生成链接。</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::LineEditWithSnippet</name>
     <message>
         <location filename="../../../widgets/lineeditwithsnippet.cpp" line="+19"/>
@@ -2326,12 +2416,12 @@
 <context>
     <name>vnotex::LocationList2</name>
     <message>
-        <location filename="../../../widgets/locationlist2.cpp" line="+35"/>
+        <location filename="../../../widgets/locationlist2.cpp" line="+40"/>
         <source>Results truncated</source>
         <translation>结果已截断</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+6"/>
         <source>No search results</source>
         <translation>无搜索结果</translation>
     </message>
@@ -2339,7 +2429,7 @@
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="+144"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="+153"/>
         <source>VNote</source>
         <translation>VNote</translation>
     </message>
@@ -2349,7 +2439,7 @@
         <translation>正在加载主题...</translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+55"/>
         <source>Sync conflict</source>
         <translation>同步冲突</translation>
     </message>
@@ -2359,7 +2449,7 @@
         <translation>经 3 次尝试后仍无法解决同步冲突。请手动解决或联系支持。</translation>
     </message>
     <message>
-        <location line="+234"/>
+        <location line="+295"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>关闭时，是否将%1最小化到系统托盘而非退出？</translation>
     </message>
@@ -2369,18 +2459,18 @@
         <translation>稍后可以在设置里面更改。</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+77"/>
         <source>%1 is still running here.</source>
         <translation>%1仍然在此运行。</translation>
     </message>
     <message>
-        <location line="+383"/>
-        <location line="+46"/>
+        <location line="+384"/>
+        <location line="+49"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location line="+278"/>
+        <location line="+397"/>
         <source>Applying stylesheet...</source>
         <translation>正在应用样式表...</translation>
     </message>
@@ -2396,12 +2486,12 @@
     </message>
     <message>
         <location line="+8"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+508"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+509"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-486"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-487"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
@@ -2453,12 +2543,12 @@
     </message>
     <message>
         <location line="+18"/>
-        <location line="+263"/>
+        <location line="+265"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location line="-203"/>
+        <location line="-205"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
     </message>
@@ -2478,7 +2568,7 @@
         <translation>主题</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+65"/>
         <source>Expand Content Area</source>
         <translation>扩展内容区</translation>
     </message>
@@ -2529,7 +2619,7 @@
         <translation>一个令人愉悦的笔记平台，专注于原生体验，开发并开源于2016。</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
@@ -2568,7 +2658,7 @@
         <translation>无法更新笔记本配置。</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+25"/>
         <source>Failed to close notebook. There may be unsaved changes in open files. Please save or discard changes and try again.</source>
         <translation>无法关闭笔记本。打开的文件中可能有未保存的更改。请保存或放弃更改后重试。</translation>
     </message>
@@ -2698,13 +2788,13 @@
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+242"/>
-        <location line="+657"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+244"/>
+        <location line="+660"/>
         <source>Insert Link</source>
         <translation>插入链接</translation>
     </message>
     <message>
-        <location line="-646"/>
+        <location line="-649"/>
         <source>Insert Image</source>
         <translation>插入图片</translation>
     </message>
@@ -2781,12 +2871,12 @@
     <message>
         <location line="-75"/>
         <location line="+74"/>
-        <location line="+158"/>
+        <location line="+161"/>
         <source>Insert As Image</source>
         <translation>插入为图片</translation>
     </message>
     <message>
-        <location line="-231"/>
+        <location line="-234"/>
         <location line="+91"/>
         <source>Insert As Text</source>
         <translation>插入为文本</translation>
@@ -2808,17 +2898,17 @@
     </message>
     <message>
         <location line="+5"/>
-        <location line="+148"/>
+        <location line="+151"/>
         <source>Attach And Insert Link</source>
         <translation>添加为附件并插入链接</translation>
     </message>
     <message>
-        <location line="-142"/>
+        <location line="-145"/>
         <source>Insert File Content</source>
         <translation>插入文件内容</translation>
     </message>
     <message numerus="yes">
-        <location line="+135"/>
+        <location line="+138"/>
         <source>Insert From Clipboard (%n items)</source>
         <translation>
             <numerusform>从剪切板插入(%n项)</numerusform>
@@ -2835,7 +2925,7 @@
         <translation>从URL插入图片</translation>
     </message>
     <message>
-        <location line="+160"/>
+        <location line="+173"/>
         <source>&amp;Read</source>
         <translation>阅读(&amp;R)</translation>
     </message>
@@ -2845,7 +2935,7 @@
         <translation>多功能粘贴</translation>
     </message>
     <message>
-        <location line="+413"/>
+        <location line="+418"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
@@ -2860,8 +2950,8 @@
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <location line="-1073"/>
-        <location line="+624"/>
+        <location line="-1094"/>
+        <location line="+640"/>
         <source>Paste as Plain Text</source>
         <translation>粘贴为纯文本</translation>
     </message>
@@ -2876,7 +2966,7 @@
         <translation>插入片段</translation>
     </message>
     <message>
-        <location line="+397"/>
+        <location line="+402"/>
         <source>View Image</source>
         <translation>查看图片</translation>
     </message>
@@ -2892,16 +2982,17 @@
     </message>
     <message>
         <location line="+7"/>
+        <location line="+33"/>
         <source>Copy Link</source>
         <translation>复制链接</translation>
     </message>
     <message>
-        <location line="-420"/>
+        <location line="-458"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
     </message>
     <message>
-        <location line="-948"/>
+        <location line="-964"/>
         <source>Image insertion from local file is not supported without a buffer.</source>
         <translation>无缓冲区时不支持从本地文件插入图片。</translation>
     </message>
@@ -2921,7 +3012,7 @@
         <translation>无法从数据插入图片。</translation>
     </message>
     <message>
-        <location line="+878"/>
+        <location line="+894"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
@@ -3274,7 +3365,7 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+595"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+633"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确定要打开链接（%1）吗？</translation>
     </message>
@@ -3284,7 +3375,7 @@
         <translation>恶意链接可能会危害您的设备。</translation>
     </message>
     <message>
-        <location line="+692"/>
+        <location line="+705"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
@@ -3306,7 +3397,24 @@
         <translation>无法打印为PDF</translation>
     </message>
     <message>
-        <location line="+193"/>
+        <location line="+197"/>
+        <source>Failed to save the preference.</source>
+        <translation>保存设置失败。</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Failed to migrate the images.</source>
+        <translation>迁移图片失败。</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+51"/>
+        <source>Migrated %n image(s) to the assets folder.</source>
+        <translation>
+            <numerusform>已将 %n 张图片迁移到资源文件夹。</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location line="+90"/>
         <source>Local</source>
         <translation>本地</translation>
     </message>
@@ -3499,18 +3607,18 @@
     </message>
     <message>
         <location line="+14"/>
-        <location line="+74"/>
+        <location line="+90"/>
         <source>No notebook specified.</source>
         <translation>未指定笔记本。</translation>
     </message>
     <message>
-        <location line="-51"/>
-        <location line="+59"/>
+        <location line="-67"/>
+        <location line="+75"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location line="-49"/>
+        <location line="-65"/>
         <source>Failed to create note (%1).</source>
         <translation>无法创建笔记 (%1)。</translation>
     </message>
@@ -3520,18 +3628,19 @@
         <translation>无法获取已创建笔记的路径。</translation>
     </message>
     <message>
-        <location line="+16"/>
-        <location line="+68"/>
+        <location line="+19"/>
+        <location line="+13"/>
+        <location line="+67"/>
         <source>Failed to write note content.</source>
         <translation>无法写入笔记内容。</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-27"/>
         <source>Failed to create the quick note folder (%1).</source>
         <translation>无法创建快速笔记文件夹（%1）。</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+15"/>
         <source>Failed to create quick note (%1).</source>
         <translation>无法创建快速笔记（%1）。</translation>
     </message>
@@ -3539,27 +3648,32 @@
 <context>
     <name>vnotex::NewNoteDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog2.cpp" line="+59"/>
+        <location filename="../../../widgets/dialogs/newnotedialog2.cpp" line="+87"/>
         <source>Type:</source>
         <translation>类型:</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
         <source>Name:</source>
         <translation>名字:</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+10"/>
+        <source>Content:</source>
+        <translation>内容:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Template:</source>
         <translation>模板:</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>New Note</source>
         <translation>新建笔记</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+38"/>
         <source>note</source>
         <translation>笔记</translation>
     </message>
@@ -3961,7 +4075,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+876"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+890"/>
         <source>Invalid arguments</source>
         <translation>参数无效</translation>
     </message>
@@ -4014,7 +4128,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookExplorer2</name>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="+369"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="+368"/>
         <source>Select one of all the notebooks as current notebook.&lt;br/&gt;Move mouse on one item to check its details.</source>
         <translation>从全部笔记本中选择一个作为当前笔记本。&lt;br/&gt;移动鼠标到某个项目上查看详情。</translation>
     </message>
@@ -4217,11 +4331,12 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <location line="+17"/>
         <location line="+137"/>
         <location line="+16"/>
+        <location line="+142"/>
         <source>Please first create a notebook to hold your data.</source>
         <translation>请先创建一个笔记本来保存数据。</translation>
     </message>
     <message>
-        <location line="-129"/>
+        <location line="-271"/>
         <source>Please set up quick note schemes in the Settings dialog first.</source>
         <translation>请先在设置对话框中设置快速笔记方案。</translation>
     </message>
@@ -4241,7 +4356,12 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>快速笔记应该在一个笔记本内进行创建。</translation>
     </message>
     <message>
-        <location line="+261"/>
+        <location line="+215"/>
+        <source>The current notebook is read-only, so the note was not created.</source>
+        <translation>当前笔记本为只读，未创建该笔记。</translation>
+    </message>
+    <message>
+        <location line="+75"/>
         <source>Delete Permanently</source>
         <translation>永久删除</translation>
     </message>
@@ -4314,7 +4434,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>无法更新笔记本配置。</translation>
     </message>
     <message>
-        <location line="+262"/>
+        <location line="+260"/>
         <source>Sync authentication failed</source>
         <translation>同步认证失败</translation>
     </message>
@@ -4332,12 +4452,7 @@ GitHub 拒绝了已保存的个人访问令牌 (HTTP 401)。该令牌可能已�
 请更新令牌以恢复同步。</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>Open Sync Info...</source>
-        <translation>打开同步信息...</translation>
-    </message>
-    <message>
-        <location line="+19"/>
+        <location line="+10"/>
         <source>Sync network error</source>
         <translation>同步网络错误</translation>
     </message>
@@ -4347,7 +4462,7 @@ GitHub 拒绝了已保存的个人访问令牌 (HTTP 401)。该令牌可能已�
         <translation>由于网络错误，笔记本 &quot;%1&quot; 同步失败。VNote 将在下次更改时自动重试。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+9"/>
         <source>Sync failed</source>
         <translation>同步失败</translation>
     </message>
@@ -4357,7 +4472,7 @@ GitHub 拒绝了已保存的个人访问令牌 (HTTP 401)。该令牌可能已�
         <translation>笔记本 &quot;%1&quot; 同步失败。</translation>
     </message>
     <message>
-        <location line="+125"/>
+        <location line="+132"/>
         <location line="+13"/>
         <location line="+47"/>
         <source>Sync Now</source>
@@ -4396,7 +4511,7 @@ Last sync init failed: error code %1</source>
 <context>
     <name>vnotex::NotebookNodeController</name>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="+239"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="+237"/>
         <location line="+110"/>
         <source>&amp;Open</source>
         <translation>打开(&amp;O)</translation>
@@ -4540,7 +4655,7 @@ Last sync init failed: error code %1</source>
         <location line="+6"/>
         <location line="+119"/>
         <location line="+6"/>
-        <location line="+177"/>
+        <location line="+152"/>
         <location line="+61"/>
         <location line="+40"/>
         <location line="+29"/>
@@ -4549,7 +4664,7 @@ Last sync init failed: error code %1</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location line="-573"/>
+        <location line="-548"/>
         <source>Node not found: %1</source>
         <translation>未找到节点：%1</translation>
     </message>
@@ -4575,17 +4690,17 @@ Last sync init failed: error code %1</source>
     </message>
     <message>
         <location line="+119"/>
-        <location line="+431"/>
+        <location line="+406"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService 不可用。</translation>
     </message>
     <message>
-        <location line="-425"/>
+        <location line="-400"/>
         <source>Failed to import external node to index.</source>
         <translation>无法将外部节点导入到索引。</translation>
     </message>
     <message>
-        <location line="+177"/>
+        <location line="+152"/>
         <source>Failed to rename %1.</source>
         <translation>无法重命名 %1。</translation>
     </message>
@@ -4776,20 +4891,20 @@ Description: %4</source>
 <context>
     <name>vnotex::NotebookSyncInfoDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="+88"/>
-        <location line="+130"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="+91"/>
+        <location line="+136"/>
         <location line="+360"/>
         <source>Never</source>
         <translation>从不</translation>
     </message>
     <message>
-        <location line="-475"/>
-        <location line="+467"/>
+        <location line="-481"/>
+        <location line="+473"/>
         <source>Idle</source>
         <translation>空闲</translation>
     </message>
     <message>
-        <location line="-430"/>
+        <location line="-436"/>
         <source>Configure Sync</source>
         <translation>配置同步</translation>
     </message>
@@ -4799,12 +4914,12 @@ Description: %4</source>
         <translation>用于向远端进行身份验证的个人访问令牌（可选）。</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+17"/>
         <source>This notebook is currently open in read-only mode. To enable editing, close this notebook and re-open it from the remote URL with a valid Personal Access Token. Adding a PAT here will be saved, but editing will only become available after closing and re-opening the notebook.</source>
         <translation>此笔记本当前以只读模式打开。若要启用编辑，请关闭此笔记本并使用有效的个人访问令牌从远程 URL 重新打开。此处添加的 PAT 将被保存，但只有在关闭并重新打开笔记本后才能进行编辑。</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+14"/>
         <source>Notebook:</source>
         <translation>笔记本:</translation>
     </message>
@@ -4829,7 +4944,7 @@ Description: %4</source>
         <translation>远程仓库必须已存在。请先在 Git 主机上创建一个空仓库。</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+19"/>
         <source>Leave blank to keep existing</source>
         <translation>留空以保留现有值</translation>
     </message>
@@ -4930,7 +5045,7 @@ the keychain.)</source>
         <translation>冲突（%1 个文件）</translation>
     </message>
     <message>
-        <location line="+74"/>
+        <location line="+76"/>
         <location line="+29"/>
         <source>Sync</source>
         <translation>同步</translation>
@@ -4972,7 +5087,7 @@ Continue?</source>
 <context>
     <name>vnotex::NotificationPopup2</name>
     <message>
-        <location filename="../../../widgets/notificationpopup2.cpp" line="+77"/>
+        <location filename="../../../widgets/notificationpopup2.cpp" line="+101"/>
         <source>Notifications</source>
         <translation>通知</translation>
     </message>
@@ -4982,14 +5097,95 @@ Continue?</source>
         <translation>全部清除</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <source>No notifications</source>
         <translation>无通知</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+147"/>
+        <source>Details</source>
+        <translation>详情</translation>
+    </message>
+    <message>
+        <location line="+90"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NotificationRouter</name>
+    <message>
+        <location filename="../../../controllers/notificationrouter.cpp" line="+112"/>
+        <source>Image upload failed</source>
+        <translation>图片上传失败</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Failed to upload the image to the image host.</source>
+        <translation>无法将图片上传到图床。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Failed to upload &quot;%1&quot; to the image host.</source>
+        <translation>无法将 &quot;%1&quot; 上传到图床。</translation>
+    </message>
+    <message>
+        <location line="+74"/>
+        <source>Bundled resources not updated</source>
+        <translation>内置资源未更新</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VNote could not update its bundled &quot;%1&quot; data, so some of it may be outdated. VNote will try again the next time it starts.</source>
+        <translation>VNote 无法更新内置的 &quot;%1&quot; 数据，其中部分内容可能已过时。VNote 将在下次启动时重试。</translation>
+    </message>
+    <message>
+        <location line="+67"/>
+        <source>Open Sync Info...</source>
+        <translation>打开同步信息...</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Cannot open file</source>
+        <translation>无法打开文件</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>No viewer is available for file type &quot;%1&quot;.</source>
+        <translation>没有可用于文件类型 &quot;%1&quot; 的查看器。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>No viewer is available for &quot;%1&quot; (type &quot;%2&quot;).</source>
+        <translation>没有可用于 &quot;%1&quot;（类型 &quot;%2&quot;）的查看器。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Auto-save stopped</source>
+        <translation>自动保存已停止</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VNote stopped trying to auto-save this note after repeated failures. Your changes are only in memory -- save manually to a different location to avoid losing them.</source>
+        <translation>多次失败后，VNote 已停止自动保存此笔记。您的更改仅存在于内存中——请手动另存到其他位置以免丢失。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Auto-save failed</source>
+        <translation>自动保存失败</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Could not auto-save this note. VNote will retry.</source>
+        <translation>无法自动保存此笔记。VNote 将会重试。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NotificationToast</name>
+    <message>
+        <location filename="../../../widgets/notificationtoast.cpp" line="+99"/>
+        <source>Close</source>
+        <translation>关闭</translation>
     </message>
 </context>
 <context>
@@ -5316,7 +5512,7 @@ Continue?</source>
 <context>
     <name>vnotex::OpenVNote3NotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="+33"/>
+        <location filename="../../../widgets/dialogs/openvnote3notebookdialog2.cpp" line="+34"/>
         <source>Select Source Folder</source>
         <translation>选择源文件夹</translation>
     </message>
@@ -5377,6 +5573,23 @@ The legacy notebook would be kept for data backup.</source>
         <source>Converting notebook...</source>
         <translation>正在转换笔记本...</translation>
     </message>
+    <message>
+        <location line="+20"/>
+        <source>Conversion Completed</source>
+        <translation>转换完成</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+1"/>
+        <source>The notebook was converted with %n note(s) about degraded items.</source>
+        <translation>
+            <numerusform>笔记本已转换，并附带 %n 条关于降级项的说明。</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Some items were degraded or skipped. Review the details before removing the original VNote3 notebook.</source>
+        <translation>部分项目被降级或跳过。在删除原 VNote3 笔记本之前请查看详情。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::OutlinePopup</name>
@@ -5425,13 +5638,13 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::QuickAccessPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="+46"/>
-        <location line="+189"/>
+        <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="+44"/>
+        <location line="+196"/>
         <source>Quick Access</source>
         <translation>快速访问</translation>
     </message>
     <message>
-        <location line="-151"/>
+        <location line="-158"/>
         <source>Quick Note</source>
         <translation>快速笔记</translation>
     </message>
@@ -5492,7 +5705,12 @@ The legacy notebook would be kept for data backup.</source>
         <translation>文件名</translation>
     </message>
     <message>
-        <location line="+182"/>
+        <location line="+10"/>
+        <source>Template</source>
+        <translation>模板</translation>
+    </message>
+    <message>
+        <location line="+179"/>
         <source>Quick Note Scheme</source>
         <translation>快速笔记方案</translation>
     </message>
@@ -6038,7 +6256,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncService</name>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="+153"/>
+        <location filename="../../../core/services/syncservice.cpp" line="+154"/>
         <source>Sync is in progress for this notebook. Please wait for sync to complete before closing.</source>
         <translation>该笔记本正在同步。请等待同步完成后再关闭。</translation>
     </message>
@@ -6048,12 +6266,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>该笔记本有同步任务排队中（%1 项）。请先在工具栏中取消排队的同步任务再关闭。</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Cannot close notebook</source>
-        <translation>无法关闭笔记本</translation>
-    </message>
-    <message>
-        <location line="+123"/>
+        <location line="+130"/>
         <source>PAT is required to enable sync.</source>
         <translation>启用同步需要 PAT。</translation>
     </message>
@@ -6201,7 +6414,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagExplorer2</name>
     <message>
-        <location filename="../../../widgets/tagexplorer2.cpp" line="+119"/>
+        <location filename="../../../widgets/tagexplorer2.cpp" line="+120"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
@@ -6237,18 +6450,18 @@ Notebook: %3</source>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+79"/>
+        <location line="+81"/>
         <location line="+28"/>
         <source>New Tag</source>
         <translation>新建标签</translation>
     </message>
     <message>
-        <location line="-100"/>
+        <location line="-102"/>
         <source>Clear Selection</source>
         <translation>清除选择</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+12"/>
         <source>Two Columns</source>
         <translation>双列</translation>
     </message>
@@ -6308,7 +6521,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
-        <location filename="../../../core/services/task.cpp" line="+404"/>
+        <location filename="../../../core/services/task.cpp" line="+403"/>
         <source>[Task (%1) started]
 </source>
         <translation>[任务(%1)已启动]
@@ -6429,6 +6642,25 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+5"/>
         <source>Notebook Tasks</source>
         <translation>笔记本任务</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TasksUnitedEntry</name>
+    <message>
+        <location filename="../../../unitedentry/tasksunitedentry.cpp" line="+76"/>
+        <source>Run a task</source>
+        <translation>运行任务</translation>
+    </message>
+    <message>
+        <location line="+65"/>
+        <location line="+15"/>
+        <source>No tasks</source>
+        <translation>没有任务</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>No matching tasks</source>
+        <translation>没有匹配的任务</translation>
     </message>
 </context>
 <context>
@@ -6693,7 +6925,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UnitedEntry</name>
     <message>
-        <location filename="../../../unitedentry/unitedentry.cpp" line="+73"/>
+        <location filename="../../../unitedentry/unitedentry.cpp" line="+75"/>
         <location line="+94"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
@@ -6748,6 +6980,524 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
 </context>
 <context>
+    <name>vnotex::UpdateController</name>
+    <message>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+129"/>
+        <location line="+167"/>
+        <location line="+80"/>
+        <location line="+23"/>
+        <location line="+148"/>
+        <location line="+75"/>
+        <location line="+34"/>
+        <source>Update</source>
+        <translation>更新</translation>
+    </message>
+    <message>
+        <location line="-520"/>
+        <source>VNote has been updated.</source>
+        <translation>VNote 已更新。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VNote has been updated to %1.</source>
+        <translation>VNote 已更新到 %1。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The update could not be installed this time and will be retried: %1</source>
+        <translation>本次未能安装更新，稍后将重试：%1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The update failed and the previous version was restored: %1</source>
+        <translation>更新失败，已恢复到之前的版本：%1</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The update did not complete and VNote could not restore itself automatically. See RECOVERY.txt in the &apos;.vnote-old&apos; folder next to VNote. (%1)</source>
+        <translation>更新未完成，且 VNote 无法自动恢复。请查看 VNote 旁边 &apos;.vnote-old&apos; 文件夹中的 RECOVERY.txt。(%1)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>VNote was updated but could not restart itself automatically.</source>
+        <translation>VNote 已更新，但无法自动重启。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+398"/>
+        <source>Update Ready</source>
+        <translation>更新就绪</translation>
+    </message>
+    <message>
+        <location line="-396"/>
+        <location line="+398"/>
+        <source>VNote %1 has been downloaded and will be installed when VNote closes.</source>
+        <translation>VNote %1 已下载，将在 VNote 关闭时安装。</translation>
+    </message>
+    <message>
+        <location line="-392"/>
+        <location line="+397"/>
+        <source>Restart to finish update</source>
+        <translation>重启以完成更新</translation>
+    </message>
+    <message>
+        <location line="-365"/>
+        <location line="+485"/>
+        <source>VNote %1 is ready to install.</source>
+        <translation>VNote %1 已准备好安装。</translation>
+    </message>
+    <message>
+        <location line="-484"/>
+        <source>Restart VNote now to finish the update?</source>
+        <translation>现在重启 VNote 以完成更新吗？</translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>Update Available</source>
+        <translation>有可用更新</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VNote %1 is available.</source>
+        <translation>VNote %1 已发布。</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Check Release</source>
+        <translation>查看发布</translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <location line="+123"/>
+        <source>This update offer is out of date. Please check for updates again.</source>
+        <translation>此更新提示已过期。请重新检查更新。</translation>
+    </message>
+    <message>
+        <location line="-100"/>
+        <source>Downloading VNote %1...</source>
+        <translation>正在下载 VNote %1...</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+155"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <location line="-74"/>
+        <location line="+9"/>
+        <source>Another update operation is already running.</source>
+        <translation>已有另一个更新操作正在进行。</translation>
+    </message>
+    <message>
+        <location line="+127"/>
+        <location line="+34"/>
+        <source>The update failed: %1</source>
+        <translation>更新失败：%1</translation>
+    </message>
+    <message>
+        <location line="-29"/>
+        <source>Retry</source>
+        <translation>重试</translation>
+    </message>
+    <message>
+        <location line="+58"/>
+        <source>Could not check for updates.</source>
+        <translation>无法检查更新。</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Install it now while VNote closes?</source>
+        <translation>是否在 VNote 关闭时立即安装？</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::UpdateDialog</name>
+    <message>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+26"/>
+        <source>%1 MB</source>
+        <translation>%1 MB</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>%1 KB</source>
+        <translation>%1 KB</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Check for Updates</source>
+        <translation>检查更新</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Update</source>
+        <translation>更新</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skip This Version</source>
+        <translation>跳过此版本</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+99"/>
+        <source>Later</source>
+        <translation>稍后</translation>
+    </message>
+    <message>
+        <location line="-98"/>
+        <source>Restart Now</source>
+        <translation>立即重启</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>VNote is up to date.</source>
+        <translation>VNote 已是最新版本。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>You are running version %1.</source>
+        <translation>您当前运行的版本是 %1。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>VNote %1 is available.</source>
+        <translation>VNote %1 已发布。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>%1
+
+You are running version %2.</source>
+        <translation>%1
+
+您当前运行的版本是 %2。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Open Download Page</source>
+        <translation>打开下载页面</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>You are running version %1. The download is %2 (%3).</source>
+        <translation>您当前运行的版本是 %1。下载大小为 %2（%3）。</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+3"/>
+        <source>incremental update, %n step(s)</source>
+        <translation>
+            <numerusform>增量更新，共 %n 步</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>full package</source>
+        <translation>完整包</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Preparing the update...</source>
+        <translation>正在准备更新...</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>VNote %1 has been downloaded and will be installed the next time VNote closes.</source>
+        <translation>VNote %1 已下载，将在下次关闭 VNote 时安装。</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The update failed: %1</source>
+        <translation>更新失败：%1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::UpdateService</name>
+    <message>
+        <location filename="../../../core/services/updateservice.cpp" line="+137"/>
+        <source>In-app updates are only available on Windows.</source>
+        <translation>应用内更新仅在 Windows 上可用。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>In-app updates require a 64-bit build.</source>
+        <translation>应用内更新需要 64 位版本。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The installation directory could not be determined.</source>
+        <translation>无法确定安装目录。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>VNote was installed from the Microsoft Store. Updates are delivered through the Store.</source>
+        <translation>VNote 通过 Microsoft Store 安装，更新将由应用商店提供。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>VNote is installed under Program Files. Please update using the installer package.</source>
+        <translation>VNote 安装在 Program Files 下。请使用安装包进行更新。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The installation directory is not writable.</source>
+        <translation>安装目录不可写。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The update staging directory is not on the same volume as VNote.</source>
+        <translation>更新暂存目录与 VNote 不在同一磁盘卷上。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>This build has no update signing key configured, so updates cannot be verified. Please download updates from the releases page.</source>
+        <translation>此版本未配置更新签名密钥，无法校验更新。请从发布页面下载更新。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>This system does not support replacing a running program file safely.</source>
+        <translation>此系统不支持安全地替换正在运行的程序文件。</translation>
+    </message>
+    <message>
+        <location line="+222"/>
+        <location line="+16"/>
+        <location line="+69"/>
+        <location line="+56"/>
+        <location line="+369"/>
+        <location line="+136"/>
+        <location line="+208"/>
+        <source>Cancelled.</source>
+        <translation>已取消。</translation>
+    </message>
+    <message>
+        <location line="-850"/>
+        <source>Refusing to contact an unexpected host: %1</source>
+        <translation>拒绝连接非预期的主机：%1</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The request to %1 timed out.</source>
+        <translation>对 %1 的请求超时。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+31"/>
+        <location line="+95"/>
+        <location line="+35"/>
+        <source>Too many redirects.</source>
+        <translation>重定向次数过多。</translation>
+    </message>
+    <message>
+        <location line="-138"/>
+        <source>The response from %1 is unexpectedly large.</source>
+        <translation>来自 %1 的响应过大。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>The download size declared by the manifest is not plausible.</source>
+        <translation>清单声明的下载大小不合理。</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Refusing to download from an unexpected host: %1</source>
+        <translation>拒绝从非预期的主机下载：%1</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+578"/>
+        <source>Downloading</source>
+        <translation>正在下载</translation>
+    </message>
+    <message>
+        <location line="-542"/>
+        <source>The download from %1 timed out.</source>
+        <translation>从 %1 的下载超时。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>The download is larger than the manifest declared.</source>
+        <translation>下载内容大于清单声明的大小。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The downloaded file has an unexpected size.</source>
+        <translation>下载的文件大小不符合预期。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The downloaded file failed its integrity check.</source>
+        <translation>下载的文件未通过完整性校验。</translation>
+    </message>
+    <message>
+        <location line="+78"/>
+        <source>The update manifest for %1 is not signed: %2</source>
+        <translation>%1 的更新清单未签名：%2</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The update manifest for %1 failed signature verification: %2</source>
+        <translation>%1 的更新清单签名校验失败：%2</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The update manifest for %1 is malformed: %2</source>
+        <translation>%1 的更新清单格式错误：%2</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The manifest published for %1 declares version %2.</source>
+        <translation>为 %1 发布的清单声明的版本为 %2。</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>The latest release could not be identified.</source>
+        <translation>无法识别最新的发布版本。</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>This release does not publish in-app update packages on the selected source. Please download it from the release page.</source>
+        <translation>此发布版本未在所选更新源上提供应用内更新包。请从发布页面下载。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The update manifest is not valid for this build.</source>
+        <translation>该更新清单不适用于此版本。</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>The release does not publish a full package for this build.</source>
+        <translation>该发布版本未为此构建提供完整包。</translation>
+    </message>
+    <message>
+        <location line="+82"/>
+        <source>Verifying the installed files</source>
+        <translation>正在校验已安装的文件</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>No update has been planned yet.</source>
+        <translation>尚未规划任何更新。</translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>Not enough free disk space: %1 MB are required.</source>
+        <translation>磁盘可用空间不足：需要 %1 MB。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Could not create the update staging directory.</source>
+        <translation>无法创建更新暂存目录。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>The update chain is incomplete.</source>
+        <translation>更新链不完整。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Downloading %1</source>
+        <translation>正在下载 %1</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Extracting %1</source>
+        <translation>正在解压 %1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>The update package for %1 was rejected: %2</source>
+        <translation>%1 的更新包已被拒绝：%2</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Extracting</source>
+        <translation>正在解压</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The update package was rejected: %1</source>
+        <translation>更新包已被拒绝：%1</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>The update package does not contain a manifest.</source>
+        <translation>更新包中不包含清单。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>The package manifest is not valid: %1</source>
+        <translation>更新包清单无效：%1</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The package manifest does not match the published manifest.</source>
+        <translation>更新包清单与已发布的清单不一致。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The package manifest lists a different set of files than the published manifest.</source>
+        <translation>更新包清单列出的文件与已发布清单不同。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The package manifest disagrees with the published manifest about &apos;%1&apos;.</source>
+        <translation>更新包清单在 &apos;%1&apos; 上与已发布清单不一致。</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>Could not record the pending update.</source>
+        <translation>无法记录待安装的更新。</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>The update package contains an unexpected file: %1</source>
+        <translation>更新包中包含非预期的文件：%1</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Verifying the download</source>
+        <translation>正在校验下载内容</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Internal error: &apos;%1&apos; is not in the target manifest.</source>
+        <translation>内部错误：&apos;%1&apos; 不在目标清单中。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>The update package is missing &apos;%1&apos;.</source>
+        <translation>更新包缺少 &apos;%1&apos;。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The staged file &apos;%1&apos; failed its integrity check.</source>
+        <translation>暂存文件 &apos;%1&apos; 未通过完整性校验。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::VNote3MigrationService</name>
+    <message>
+        <location filename="../../../core/services/vnote3migrationservice.cpp" line="+374"/>
+        <source>File &apos;%1&apos;: notebook has no attachment folder configured, skipping attachments</source>
+        <translation>文件 &apos;%1&apos;：笔记本未配置附件文件夹，已跳过附件</translation>
+    </message>
+    <message>
+        <location line="+62"/>
+        <source>File &apos;%1&apos;: attachment subfolders are not listed in the attachment panel; use &apos;Open Folder&apos; to reach them</source>
+        <translation>文件 &apos;%1&apos;：附件子文件夹不会显示在附件面板中；请使用 &apos;打开文件夹&apos; 访问它们</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>File &apos;%1&apos;: attachment copy incomplete, keeping the legacy attachment folder</source>
+        <translation>文件 &apos;%1&apos;：附件复制不完整，保留旧的附件文件夹</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::ViPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="+32"/>
@@ -6769,7 +7519,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+738"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="-422"/>
         <source>New Workspace</source>
         <translation>新建工作空间</translation>
     </message>
@@ -6788,7 +7538,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+164"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+176"/>
         <source>Open Windows</source>
         <translation>已打开窗口</translation>
     </message>
@@ -6868,7 +7618,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>移除分屏与工作区</translation>
     </message>
     <message>
-        <location line="+263"/>
+        <location line="+265"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
@@ -6893,7 +7643,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>关闭右侧标签页</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>Copy Path</source>
         <translation>复制路径</translation>
     </message>
@@ -6908,7 +7658,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>定位节点</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+12"/>
         <source>Move One Split Left</source>
         <translation>向左移动一个拆分</translation>
     </message>
@@ -6928,7 +7678,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>向下移动一个拆分</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+4"/>
+        <source>Detach</source>
+        <translation>分离</translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>Reload</source>
         <translation>重新加载</translation>
     </message>
