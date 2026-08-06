@@ -1,14 +1,15 @@
 # Changes
-## v4.4.1
+## v4.4.2
 A feature release that adds a built-in updater, a reworked PDF viewer, detachable view windows, and a Gitee release mirror on top of VNote 4.3.0:
 
-* **In-app updates** (new, Windows x64): VNote can now update itself
+* **In-app updates** (new, Windows x64, Qt 6 build): VNote can now update itself
     * Downloads only what changed — a release publishes a signed file manifest plus an optional delta package, and the client resolves a delta chain before falling back to the full package
     * Every manifest is verified against a compiled-in Ed25519 key; an unsigned or unverifiable release is refused (fail-closed), and hosts are allow-listed per release source
     * Files are staged inside the install directory and swapped in under a durable write-ahead journal **at exit**, with automatic rollback and crash recovery on the next launch
     * A machine-wide lease serializes updates across sessions; Microsoft Store and Program Files installs are detected and directed to their own update channel
     * Surfaces as an **Update** dialog (Update / Skip This Version / Later / Restart Now) and a startup notification with inline progress
     * **Update source** setting (Settings › General) to fetch updates from either GitHub or Gitee
+    * The Windows 7 (Qt 5.15) build publishes no update packages; there the check simply points at the release page
 * **PDF viewer**
     * Upgraded the bundled pdf.js from 3.1.81 to **3.11.174** (the last v3 release; v4+ requires Chrome 125+, which the Qt 5.15 / Windows 7 build cannot provide), and vendored the previously-missing `web/standard_fonts/` so PDFs relying on non-embedded Helvetica/Times/Courier render correctly
     * The PDF's embedded outline (bookmarks) now populates the **Outline** dock and a new per-window Outline toolbar popup, with click-to-jump

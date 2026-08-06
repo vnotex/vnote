@@ -16,7 +16,7 @@ on:
         default: false
 
 env:
-    VNOTE_VER: 4.4.1
+    VNOTE_VER: 4.4.2
 
 jobs:
   build:
@@ -220,6 +220,12 @@ jobs:
       # The MSI was produced earlier by `cmake --build . --target=pack`, so it
       # does NOT contain manifest.json. That is intentional: MSI installs land
       # under Program Files and are deliberately ineligible for self-update.
+      #
+      # Qt6 / `win64` ONLY. The Qt5 `win64-windows7` variant deliberately ships
+      # no update assets: a release that publishes no manifest degrades the
+      # client to check-only (eligible=false, updateAvailable=true, pointing at
+      # the release page), which is a supported path -- see the "Ineligibility,
+      # and the check-only degradation" section of the root AGENTS.md.
       - name: Generate update manifest and delta
         # Update artifacts are only meaningful for a real release. This repo
         # cuts releases from a `[Release]` master push (the tag is created
@@ -227,7 +233,7 @@ jobs:
         # `Release` step below. Non-release commits (PRs, continuous master
         # builds) skip manifest/delta generation entirely; those channels never
         # publish update assets, so producing them only risks failing the build.
-        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        if: matrix.config.qt_major == 6 && github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         shell: pwsh
         working-directory: ${{runner.workspace}}/build
         env:
@@ -251,7 +257,15 @@ jobs:
           $channel = if ($isRelease) { 'stable' } else { 'continuous' }
           Write-Host "Update channel: $channel"
 
-          $signArgs = @()
+          # MUST be a HASHTABLE, never an array. PowerShell array splatting
+          # binds elements POSITIONALLY: `@('-MinisignSecretKey', $keyPath)`
+          # sent the literal string "-MinisignSecretKey" to -OutputDir and the
+          # key path to -BaseManifestPath, leaving -MinisignSecretKey empty. The
+          # 4.4.1 build wrote its ZIP into a directory called
+          # "-MinisignSecretKey", tried to parse the minisign private key as
+          # JSON, and would have published an UNSIGNED manifest that every
+          # client refuses.
+          $signArgs = @{}
           if ($env:MINISIGN_SECRET_KEY) {
             # minisign is not preinstalled on the runner image.
             $msVer = '0.11'
@@ -266,7 +280,7 @@ jobs:
             # picked up by a packaging glob, and remove it in the finally block.
             $keyPath = Join-Path $env:RUNNER_TEMP 'minisign.key'
             Set-Content -LiteralPath $keyPath -Value $env:MINISIGN_SECRET_KEY -NoNewline
-            $signArgs = @('-MinisignSecretKey', $keyPath)
+            $signArgs['MinisignSecretKey'] = $keyPath
           }
           elseif ($isRelease) {
             # HARD FAIL. Publishing an unsigned manifest is worse than failing
@@ -305,8 +319,8 @@ jobs:
 
       - name: Assert update manifest channel
         # Only runs when the previous step generated the manifests, i.e. on a
-        # `[Release]` master push.
-        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        # `[Release]` master push of the Qt6 / `win64` variant.
+        if: matrix.config.qt_major == 6 && github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         shell: pwsh
         working-directory: ${{runner.workspace}}/build
         run: |
@@ -335,6 +349,30 @@ jobs:
             }
           }
           Write-Host "Manifest channel/variant/version verified ($expected)"
+
+          # A release manifest that is not signed is INERT: every client refuses
+          # a manifest it cannot verify, so the release would look healthy and
+          # silently break updates for everyone. The 4.4.1 splatting bug proved
+          # this can happen without any error, so assert the signature exists
+          # rather than trusting that -MinisignSecretKey was bound.
+          if ($isRelease) {
+            $sig = "VNote-${{env.VNOTE_VER}}-$variant.manifest.json.minisig"
+            if (-not (Test-Path -LiteralPath $sig)) {
+              Write-Error "Missing $sig -- refusing to publish an unsigned release manifest"
+              exit 1
+            }
+            Write-Host "Release manifest signature present ($sig)"
+          }
+
+          # The generator writes beside the extracted directory. A stray
+          # directory here means an argument was mis-bound (see the hashtable
+          # note above) and the real assets are not where Release expects them.
+          $strays = @(Get-ChildItem -Directory -Force |
+                      Where-Object { $_.Name -like '-*' })
+          if ($strays) {
+            Write-Error "Unexpected directory from a mis-bound argument: $($strays.Name -join ', ')"
+            exit 1
+          }
 
       - name: Verify Qt5 zip composition
         if: ${{ startsWith(matrix.config.qt, '5.15') }}
@@ -444,23 +482,36 @@ jobs:
           # Upload the stable-named asset.
           gh release upload continuous-build "$STABLE" --clobber
 
+      - name: Compose release artifact list
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        shell: pwsh
+        run: |
+          # The Qt5 `win64-windows7` variant publishes the ZIP only: it runs no
+          # manifest/delta generation, so naming those files here would leave
+          # ncipollo warning about artifacts that are never produced.
+          $base = "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}"
+          $list = if ('${{ matrix.config.qt_major }}' -eq '6') {
+            @("$base.zip", "$base.manifest.json", "$base.manifest.json.minisig", "$base.delta.zip")
+          } else {
+            @("$base.zip")
+          }
+          "RELEASE_ARTIFACTS=$($list -join ',')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Release artifacts: $($list -join ', ')"
+
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # ncipollo/release-action@v1.11.0 accepts a COMMA-SEPARATED list and
-          # expands globs. Both matrix jobs target the same draft
-          # (allowUpdates:true): Qt6 -> ...win64.*, Qt5.15 -> ...win64-windows7.*
+          # Both matrix jobs target the same draft (allowUpdates:true):
+          # Qt6 -> ...win64.*, Qt5.15 -> ...win64-windows7.zip
           #
-          # The delta is optional (the first release shipping this feature has
-          # no predecessor manifest), which is why it is a glob rather than a
-          # literal path -- a missing glob match is not an error.
-          artifacts: >-
-            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.zip,
-            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.manifest.json,
-            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.manifest.json.minisig,
-            ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}.delta.zip
+          # Composed by the step above rather than written literally, because
+          # the two variants publish different asset sets. The delta stays
+          # optional (the first release shipping this feature has no predecessor
+          # manifest); ncipollo only warns when an artifact is missing, since
+          # artifactErrorsFailBuild defaults to false.
+          artifacts: ${{ env.RELEASE_ARTIFACTS }}
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true

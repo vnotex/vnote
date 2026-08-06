@@ -525,8 +525,14 @@ VNote can update itself by downloading only what changed. A release publishes a
 client diffs manifests, downloads the delta chain, stages files inside the install
 directory, swaps them in under a durable journal **at exit**, and restarts.
 
-**Scope: Windows x64 only** (`win64` Qt6 and `win64-windows7` Qt5 variants). Everywhere else
-the menu item opens the releases page.
+**Scope: the Windows x64 `win64` (Qt6) variant only.** Everywhere else the menu item opens
+the releases page. The Qt5 `win64-windows7` variant is *code*-eligible — it reports the
+`win64-windows7` variant string and `ReplaceExecutable`'s `MoveFileExW` fallback exists
+precisely to keep it working — but CI publishes **no** manifest, signature or delta for it
+(`ci-win.yml` gates the update-artifact steps on `matrix.config.qt_major == 6`). With no
+published manifest the client degrades to check-only, exactly as described under
+"Ineligibility, and the check-only degradation" below. Publishing `win64-windows7` update
+assets is therefore a CI change, not a client change.
 
 ### Ownership map
 
