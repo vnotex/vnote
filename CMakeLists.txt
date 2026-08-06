@@ -44,6 +44,16 @@ set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt version to use (5 or 6), default
 # the .app bundle layouts require.
 if(WIN32)
   set(CMAKE_INSTALL_BINDIR ".")
+
+  # Same reasoning, and it MUST also be set before add_subdirectory(libs):
+  # cmark (vendored by both vtextedit and vxcore) calls
+  # include(InstallRequiredSystemLibraries) itself without pinning a
+  # destination, and that module defaults to "bin" on Windows. Because cmark is
+  # processed before src/, it shipped a SECOND, byte-identical copy of the eight
+  # MSVC CRT DLLs under bin/ in 4.4.2. Pre-setting the variable makes the
+  # module's `if(NOT CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION)` fall through, so
+  # every include of it -- ours and cmark's -- targets the same flat root.
+  set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 
 set(QHOTKEY_INSTALL OFF CACHE BOOL "Disable installing QHotKey" FORCE)

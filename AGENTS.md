@@ -566,6 +566,16 @@ injected and every config-dependent decision lives in `UpdateController`.
 
 ### Manifest contract
 
+The Windows package is **flat and runtime-only**: the ZIP's single top-level
+directory IS the install root, with `vnote.exe` and every DLL directly beneath it
+(`CMAKE_INSTALL_BINDIR` is pinned to `.` in the top-level `CMakeLists.txt`, before
+`add_subdirectory(libs)`, so the submodules' install rules follow). The updater strips
+exactly one level from a full package, so any extra level would make every manifest path
+wrong. Because cmark and QtKeychain declare unconditional `install()` rules that no option
+disables, `package/prune-package.cmake` runs as a `CPACK_PRE_BUILD_SCRIPTS` hook and strips
+`bin/`, `include/`, `lib/`, `mkspecs/` and `cmark.exe` from the staging tree; a CI step
+gates every Windows build on their absence.
+
 Two artifacts per release variant, both produced by `scripts/gen-update-package.ps1`:
 
 - **In-package** `manifest.json` at the install root, inside the ZIP.

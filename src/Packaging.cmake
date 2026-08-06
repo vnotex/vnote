@@ -68,11 +68,10 @@ function(windeployqt target)
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
 
-    # InstallRequiredSystemLibraries defaults this to "bin" on Windows,
-    # INDEPENDENTLY of where everything else is installed. Leaving it unset
-    # would drop the CRT/UCRT DLLs into a "bin/" subdirectory of an otherwise
-    # flat package, i.e. NOT beside vnote.exe, and the app would fail to start.
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    # NOTE: CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION is pinned in the top-level
+    # CMakeLists.txt, before add_subdirectory(libs). It has to be set there
+    # rather than here because cmark includes this same module earlier, and the
+    # module defaults the destination to "bin" whenever it is unset.
 
     # InstallRequiredSystemLibraries is CMake-version-bound: for a toolset newer
     # than the running CMake (e.g. VS 18 / MSVC v145 under CMake 3.30) it mis-maps
@@ -162,6 +161,13 @@ if(WIN32)
 
     list(APPEND CPACK_GENERATOR ZIP)
     message(STATUS "Package generation - Windows - Zip")
+
+    # cmark and QtKeychain install headers, import libs, CMake package configs
+    # and a qmake .pri unconditionally, and neither can be switched off from
+    # here. Strip them from the staging tree after CPack installs and before it
+    # packages, so the shipped ZIP/MSI carry runtime files only. Packaging-time
+    # only: a plain `cmake --install` is untouched.
+    set(CPACK_PRE_BUILD_SCRIPTS "${PROJECT_SOURCE_DIR}/package/prune-package.cmake")
 
     if(WIN32 AND (QT_DEFAULT_MAJOR_VERSION GREATER 5))
         find_program(WIX_EXECUTABLE wix HINTS "${QT_BIN_DIR}" DOC "Path to the WiX utility")

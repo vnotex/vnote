@@ -213,6 +213,45 @@ jobs:
           mv VNote-${VNOTE_VER}-win64 VNote-${VNOTE_VER}-win64-windows7 || true
           mv VNote-${VNOTE_VER}-win64.zip VNote-${VNOTE_VER}-win64-windows7.zip || true
 
+      # Runs for BOTH variants and on EVERY build, not just releases: this is
+      # the gate proving package/prune-package.cmake actually ran. If the CPack
+      # hook is ever renamed or silently skipped, the SDK artifacts come back
+      # and the only symptom is a slightly larger ZIP -- exactly the kind of
+      # regression that reaches users unnoticed.
+      - name: Verify package ships no SDK artifacts
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          $extracted = "VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}"
+          if (-not (Test-Path -LiteralPath $extracted)) {
+            Write-Error "Extracted dir '$extracted' not found"; exit 1
+          }
+          # Everything VNote loads lives at the package root, so any of these
+          # directories is by definition not a runtime dependency.
+          $forbidden = @('bin', 'include', 'lib', 'mkspecs')
+          $found = @($forbidden | Where-Object { Test-Path -LiteralPath (Join-Path $extracted $_) })
+          if ($found) {
+            foreach ($f in $found) {
+              Get-ChildItem -Recurse -File (Join-Path $extracted $f) |
+                Select-Object -First 20 |
+                ForEach-Object { Write-Host "   $($_.FullName)" }
+            }
+            Write-Error "Package ships SDK/dev artifacts ($($found -join ', ')); prune-package.cmake did not run"
+            exit 1
+          }
+
+          # cmark's CLI is installed by the vendored cmark and, with the flat
+          # layout, lands in the package root. VNote links cmark as a library
+          # and never runs it. vnote.exe and QtWebEngineProcess.exe are the only
+          # executables the package should carry.
+          $strayExe = @(Get-ChildItem -File -Filter '*.exe' $extracted |
+                        Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe') })
+          if ($strayExe) {
+            Write-Error "Package ships unexpected executable(s): $($strayExe.Name -join ', ')"
+            exit 1
+          }
+          Write-Host "No SDK artifacts under $extracted"
+
       # Incremental update artifacts. MUST run after the Qt5 rename (so the
       # variant name is final) and before the composition check below (which
       # inspects the extracted directory, now including manifest.json).
