@@ -7540,7 +7540,12 @@ You are running version %2.</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+176"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+181"/>
+        <source>Stay on Top</source>
+        <translation>常に手前に表示</translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>Open Windows</source>
         <translation>開いているウィンドウ</translation>
     </message>

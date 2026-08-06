@@ -64,6 +64,10 @@ void ViewSplit2::refreshIcons() {
   if (m_menuButton) {
     m_menuButton->defaultAction()->setIcon(m_active ? m_menuActiveIcon : m_menuIcon);
   }
+  if (m_stayOnTopButton) {
+    // Keep the same action so its checked state survives a theme switch.
+    m_stayOnTopButton->defaultAction()->setIcon(m_stayOnTopIcon);
+  }
   for (int i = 0; i < count(); ++i) {
     auto *win = getViewWindow(i);
     if (win) {
@@ -145,6 +149,12 @@ void ViewSplit2::initIcons() {
   m_menuIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), fg);
   m_menuActiveIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), activeFg);
 
+  // Detached splits only (see setupCornerWidget()). Uses the same action-button
+  // foreground as the sibling corner buttons; the checked feedback comes from the
+  // theme's checkable tool button rules.
+  m_stayOnTopIcon =
+      IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("stay_on_top.svg")), fg);
+
   // Read-only buffers display this lock badge on their tab (see effectiveTabIcon()).
   // Reuse the tab-area icon foreground (fg) so it matches sibling tab icons and
   // re-themes on theme change.
@@ -155,17 +165,48 @@ void ViewSplit2::initIcons() {
 void ViewSplit2::setupCornerWidget() {
   initIcons();
 
-  // Detached splits hide the "Open Windows" and "Menu" corner buttons: a detached
-  // window holds a single tab and offers no split/workspace operations.
-  if (m_detached) {
-    return;
-  }
-
   // Container.
   auto widget = new QWidget(this);
   widget->setProperty(PropertyDefs::c_viewSplitCornerWidget, true);
   auto layout = new QHBoxLayout(widget);
   layout->setContentsMargins(0, 0, 0, 0);
+
+  // A detached window holds a single tab and offers no split/workspace operations,
+  // so it drops the "Open Windows"/"Menu" buttons and shows a "Stay on Top" pin
+  // for its own top-level window instead.
+  if (m_detached) {
+    m_stayOnTopButton = new QToolButton(this);
+    m_stayOnTopButton->setProperty(PropertyDefs::c_actionToolButton, true);
+
+    auto act = new QAction(m_stayOnTopIcon, tr("Stay on Top"), m_stayOnTopButton);
+    act->setCheckable(true);
+
+    auto *configMgr = m_services.get<ConfigMgr2>();
+    if (configMgr) {
+      // This also rewrites the action text to "<label>\t<key>", which is what the
+      // button's tooltip picks up; the button label itself stays clean because
+      // addActionShortcut() preserves it in iconText.
+      WidgetUtils::addActionShortcut(
+          act, configMgr->getCoreConfig().getShortcut(CoreConfig::Shortcut::StayOnTop),
+          Qt::WindowShortcut);
+    }
+
+    // triggered() fires on activation only; toggled() would also fire for a
+    // programmatic setChecked(), which must not reapply the window flags.
+    connect(act, &QAction::triggered, this,
+            [this](bool p_checked) { emit stayOnTopToggled(p_checked); });
+
+    // setDefaultAction() both registers the action on the button (so the
+    // window-scoped shortcut resolves) and mirrors its checked/icon state.
+    m_stayOnTopButton->setDefaultAction(act);
+
+    layout->addWidget(m_stayOnTopButton);
+
+    widget->installEventFilter(this);
+
+    setCornerWidget(widget, Qt::TopRightCorner);
+    return;
+  }
 
   // Window list button.
   {
@@ -697,8 +738,8 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
       emit moveViewWindowOneSplitRequested(this, win, Direction::Down);
     });
 
-    auto *detachAct = menu.addAction(tr("Detach"),
-                                     [this, win]() { emit detachViewWindowRequested(this, win); });
+    auto *detachAct =
+        menu.addAction(tr("Detach"), [this, win]() { emit detachViewWindowRequested(this, win); });
 
     if (coreConfig) {
       WidgetUtils::addActionShortcutText(

@@ -24,6 +24,7 @@ DetachedWindow::DetachedWindow(ServiceLocator &p_services, const QString &p_work
   splitter->setChildrenCollapsible(false);
 
   m_viewSplit = new ViewSplit2(m_services, m_workspaceId, nullptr, /*p_detached=*/true);
+  connect(m_viewSplit, &ViewSplit2::stayOnTopToggled, this, &DetachedWindow::setStayOnTop);
   splitter->addWidget(m_viewSplit);
 
   layout->addWidget(splitter);
@@ -36,6 +37,21 @@ ViewSplit2 *DetachedWindow::getViewSplit() const { return m_viewSplit; }
 const QString &DetachedWindow::getWorkspaceId() const { return m_workspaceId; }
 
 void DetachedWindow::setReattaching(bool p_reattaching) { m_reattaching = p_reattaching; }
+
+void DetachedWindow::setStayOnTop(bool p_enabled) {
+  // This window uses the system title bar (no qwindowkit), so mutating the window
+  // flags is safe. It may hide/recreate the native window, hence the re-show.
+  const bool visible = isVisible();
+  const Qt::WindowFlags flags = windowFlags();
+  if (p_enabled) {
+    setWindowFlags(flags | Qt::WindowStaysOnTopHint);
+  } else {
+    setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
+  }
+  if (visible) {
+    show();
+  }
+}
 
 void DetachedWindow::closeEvent(QCloseEvent *p_event) {
   if (!m_reattaching) {

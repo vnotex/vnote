@@ -44,6 +44,10 @@ protected:
   void closeEvent(QCloseEvent *p_event) override;
 
 private:
+  // Apply the hosted split's "Stay on Top" pin to this top-level window.
+  // Affects this window only.
+  void setStayOnTop(bool p_enabled);
+
   ServiceLocator &m_services;
 
   QString m_workspaceId;
