@@ -248,4 +248,13 @@ jobs:
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
+          # This step passes no `body`/`name`, and release-action REPLACES both
+          # on update by default. Every platform job targets the same draft, so
+          # without these the last job to run blanks whatever release notes were
+          # already set -- which is exactly how v4.4.2 ended up with an empty
+          # body and, in turn, a Gitee mirror that fell back to the bare tag
+          # name. Notes are written by hand from changes.md; see the
+          # `release-version` skill.
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
           draft: true

@@ -300,4 +300,9 @@ jobs:
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true
+          # See the note in ci-linux.yml: release-action replaces the body and
+          # name on update unless told otherwise, so a later platform job would
+          # wipe the release notes set from changes.md.
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
           draft: true

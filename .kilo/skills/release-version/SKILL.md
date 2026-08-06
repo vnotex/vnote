@@ -207,9 +207,10 @@ gh release upload vX.Y.Z "_artifacts\<path>\VNote-X.Y.Z-...zip" --clobber
 ### Set the release description from `changes.md`
 
 The draft's body MUST be the `## vX.Y.Z` section of `changes.md` (the same
-changelog written in step 3) — nothing more, nothing less. CI seeds a generic
-body, so overwrite it. Extract exactly that one section (from its `## vX.Y.Z`
-heading up to, but not including, the next `## ` heading) and set it as the notes:
+changelog written in step 3) — nothing more, nothing less. CI creates the
+release with an empty body, so set it. Extract exactly that one section (from its
+`## vX.Y.Z` heading up to, but not including, the next `## ` heading) and set it
+as the notes:
 
 ```pwsh
 # Extract the ## vX.Y.Z section into a temp notes file...
@@ -224,6 +225,16 @@ gh release edit vX.Y.Z --notes-file notes.md
 
 Drop the leading `## vX.Y.Z` line if you prefer the version to appear only as the
 release title; keep the bullet body either way. Verify with `gh release view vX.Y.Z`.
+
+`ncipollo/release-action` REPLACES the body and the name on every update unless
+told not to, and all four platform jobs target the same draft with
+`allowUpdates: true`. Before 4.4.2 that silently blanked the notes: whichever job
+finished last wiped them, `gh release view` then showed an empty body, and the
+Gitee mirror — which copies the GitHub body — fell back to the bare tag name. The
+three `ci-*.yml` Release steps now pass `omitBodyDuringUpdate: true` and
+`omitNameDuringUpdate: true`, so notes set at any point after the release exists
+survive. If you ever see the body empty again, check those inputs are still there
+before re-typing the notes.
 
 ### Publish
 
