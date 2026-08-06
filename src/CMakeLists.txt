@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(CMAKE_INSTALL_BINDIR "." CACHE STRING "Binary dir for install")
+# NOTE: on Windows CMAKE_INSTALL_BINDIR is pinned to "." by the ROOT
+# CMakeLists.txt, before add_subdirectory(libs). It cannot be set here: the
+# submodules' include(GNUInstallDirs) has already cached "bin" by the time this
+# file is processed, so a set() at this point is silently ignored.
 
 find_package(Qt${QT_DEFAULT_MAJOR_VERSION} REQUIRED COMPONENTS Concurrent Core Gui Network PrintSupport Sql Svg Widgets WebChannel WebEngineWidgets LinguistTools)
 find_package(Qt${QT_DEFAULT_MAJOR_VERSION} OPTIONAL_COMPONENTS Core5Compat)

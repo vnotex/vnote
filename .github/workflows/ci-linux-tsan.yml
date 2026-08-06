@@ -35,7 +35,7 @@ on:
   workflow_dispatch:
 
 env:
-  VNOTE_VER: 4.4.0
+  VNOTE_VER: 4.4.1
   CMAKE_VER: 3.24.3
 
 jobs:

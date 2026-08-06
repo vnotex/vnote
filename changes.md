@@ -1,5 +1,5 @@
 # Changes
-## v4.4.0
+## v4.4.1
 A feature release that adds a built-in updater, a reworked PDF viewer, detachable view windows, and a Gitee release mirror on top of VNote 4.3.0:
 
 * **In-app updates** (new, Windows x64): VNote can now update itself
@@ -40,6 +40,7 @@ A feature release that adds a built-in updater, a reworked PDF viewer, detachabl
     * `core_services` no longer links VTextEdit or Qt Widgets
     * Inline chrome is themed through the stylesheet instead of hardcoded colors, with a test gate that fails the build on literal colors in `setStyleSheet()`
 * **Infrastructure**: code and releases are mirrored to Gitee, keeping the two most recent releases
+* **Packaging (Windows)**: the release ZIP is now flat — `VNote-<ver>-win64/vnote.exe` instead of `VNote-<ver>-win64/bin/vnote.exe`. The `bin/` level was unintended (`src/CMakeLists.txt` asked for a flat install, but a submodule's `include(GNUInstallDirs)` seeded the CMake cache first) and it is incompatible with the incremental updater, which strips exactly one level from a full package
 * **Translations**: updated Simplified Chinese and Japanese translations
 
 ## v4.3.0

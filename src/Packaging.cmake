@@ -68,6 +68,12 @@ function(windeployqt target)
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
 
+    # InstallRequiredSystemLibraries defaults this to "bin" on Windows,
+    # INDEPENDENTLY of where everything else is installed. Leaving it unset
+    # would drop the CRT/UCRT DLLs into a "bin/" subdirectory of an otherwise
+    # flat package, i.e. NOT beside vnote.exe, and the app would fail to start.
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
     # InstallRequiredSystemLibraries is CMake-version-bound: for a toolset newer
     # than the running CMake (e.g. VS 18 / MSVC v145 under CMake 3.30) it mis-maps
     # MSVC_TOOLSET_VERSION to 143, looks for a non-existent "Microsoft.VC143.CRT"

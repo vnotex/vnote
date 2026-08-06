@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.20)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "12.1" CACHE STRING "Minimum OS X deployment version")
 
 project(VNote
-    VERSION 4.4.0
+    VERSION 4.4.1
     DESCRIPTION "A pleasant note-taking platform"
     HOMEPAGE_URL "https://app.vnote.fun"
     LANGUAGES C CXX)
@@ -27,6 +27,24 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt version to use (5 or 6), defaults to 6")
+
+# Windows packages install FLAT: the release ZIP's single top-level directory IS
+# the install root, with vnote.exe and every DLL directly beneath it. The in-app
+# updater strips exactly one level from a full package, so an extra "bin/" level
+# makes every manifest path wrong (see the root AGENTS.md, "Incremental Update").
+#
+# This MUST be set before add_subdirectory(libs): vxcore, qwindowkit and QHotkey
+# each include(GNUInstallDirs), which caches CMAKE_INSTALL_BINDIR as "bin". A
+# plain (non-cache) variable here is already "DEFINED", so GNUInstallDirs leaves
+# it alone and every install(DESTINATION ${CMAKE_INSTALL_BINDIR}) below -- ours
+# AND the submodules' (e.g. VTextEdit.dll) -- resolves flat. Setting it later,
+# or as a non-FORCE cache entry, is silently ignored.
+#
+# Linux/macOS keep the GNUInstallDirs default ("bin"), which the AppImage and
+# the .app bundle layouts require.
+if(WIN32)
+  set(CMAKE_INSTALL_BINDIR ".")
+endif()
 
 set(QHOTKEY_INSTALL OFF CACHE BOOL "Disable installing QHotKey" FORCE)
 add_subdirectory(libs)
