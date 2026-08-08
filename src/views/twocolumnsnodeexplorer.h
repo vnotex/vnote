@@ -107,6 +107,10 @@ public:
 signals:
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
+  // Forwarded from NotebookNodeController: the user asked to share a bundled
+  // folder. NotebookExplorer2 owns the destination and progress dialogs.
+  void shareFolderRequested(const NodeIdentifier &p_nodeId);
+
   // T12 (notebook-explorer-drag-reorder): forwarded from
   // NotebookNodeController::sortRequested. Wired for BOTH the folder pane
   // controller AND the file pane controller via connectControllerSignals,

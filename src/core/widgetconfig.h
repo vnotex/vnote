@@ -97,6 +97,11 @@ public:
   const QString &getSearchFilePattern() const;
   void setSearchFilePattern(const QString &p_pattern);
 
+  // Last accepted parent directory for the "Share Folder" bundle destination.
+  // Empty until the user accepts a destination for the first time.
+  const QString &getFolderShareLastDestination() const;
+  void setFolderShareLastDestination(const QString &p_path);
+
   // Home dashboard layout blob (opaque schema owned by DashboardBoard).
   QJsonObject getDashboardLayout() const;
   void setDashboardLayout(const QJsonObject &p_layout);
@@ -160,6 +165,9 @@ private:
 
   // Search panel: file pattern filter (empty = no filter).
   QString m_searchFilePattern;
+
+  // Last accepted parent directory chosen for a folder-share bundle.
+  QString m_folderShareLastDestination;
 
   // Home dashboard layout blob (see DashboardBoard for schema).
   QJsonObject m_dashboardLayout;

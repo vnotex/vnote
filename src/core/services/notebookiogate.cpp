@@ -25,6 +25,22 @@ void NotebookIoGate::acquire(const QString &p_notebookId) {
   mutex->lock();
 }
 
+bool NotebookIoGate::tryAcquire(const QString &p_notebookId, int p_timeoutMs) {
+  QSharedPointer<QMutex> mutex;
+  {
+    QMutexLocker locker(&m_registryMutex);
+    auto it = m_mutexes.find(p_notebookId);
+    if (it == m_mutexes.end()) {
+      mutex = QSharedPointer<QMutex>::create();
+      m_mutexes[p_notebookId] = mutex;
+    } else {
+      mutex = it.value();
+    }
+  }
+  // Try outside the registry lock so a timeout never blocks other notebooks.
+  return mutex->tryLock(p_timeoutMs);
+}
+
 void NotebookIoGate::release(const QString &p_notebookId) {
   QSharedPointer<QMutex> mutex;
   {
@@ -66,4 +82,16 @@ NotebookIoGate::ScopedLock &NotebookIoGate::ScopedLock::operator=(ScopedLock &&p
     p_other.m_gate = nullptr;
   }
   return *this;
+}
+
+NotebookIoGate::ScopedTryLock::ScopedTryLock(NotebookIoGate &p_gate, const QString &p_notebookId,
+                                             int p_timeoutMs)
+    : m_gate(&p_gate), m_notebookId(p_notebookId) {
+  m_locked = m_gate->tryAcquire(m_notebookId, p_timeoutMs);
+}
+
+NotebookIoGate::ScopedTryLock::~ScopedTryLock() {
+  if (m_gate && m_locked) {
+    m_gate->release(m_notebookId);
+  }
 }

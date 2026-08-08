@@ -20,6 +20,25 @@ namespace vnotex {
 // Qt wrapper for notebook types matching VxCoreNotebookType.
 enum class NotebookType { Bundled = VXCORE_NOTEBOOK_BUNDLED, Raw = VXCORE_NOTEBOOK_RAW };
 
+// Storage roots needed to transplant a bundled folder's content plus its
+// parallel metadata subtree (the folder-share bundle). Value type: all C-owned
+// strings are converted and freed inside getFolderSharePaths(), so the rest of
+// VNote never sees them.
+struct FolderSharePaths {
+  // VXCORE_OK when the query succeeded; otherwise the raw vxcore error code.
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  // Human-readable detail pulled from the vxcore context on failure.
+  QString m_errorMessage;
+
+  QString m_notebookRoot;
+  // Absolute physical directory of the selected folder.
+  QString m_contentRoot;
+  // Absolute directory CONTAINING the selected folder's vx.json (NOT the file).
+  QString m_metadataRoot;
+
+  bool isValid() const { return m_error == VXCORE_OK; }
+};
+
 class HookManager;
 class NotebookIoGate;
 
@@ -253,6 +272,14 @@ public:
   virtual void reorderFolderChildren(const QString &p_notebookId, const QString &p_folderRelPath,
                                      const QStringList &p_orderedFolders,
                                      const QStringList &p_orderedFiles);
+
+  // Resolve the storage roots for a folder-share bundle. Wraps
+  // vxcore_folder_get_share_paths, which proves FULL root-to-selected index
+  // reachability and rejects raw notebooks, the notebook root, escaping paths,
+  // symlinked components, orphan metadata, name mismatches, and missing
+  // physical content.
+  FolderSharePaths getFolderSharePaths(const QString &p_notebookId,
+                                       const QString &p_folderPath) const;
 
   // List external (unindexed) nodes in a folder.
   // External nodes exist on filesystem but are not tracked in metadata.

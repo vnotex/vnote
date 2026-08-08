@@ -19,22 +19,26 @@ namespace vnotex {
  * cannot fight for `.git/index.lock` or exclusive file handles on Windows.
  *
  * Thread affinity:
- *   - Both BufferSaveQueue workers and SyncOps workers acquire this gate.
- *   - It is NEVER held by the UI thread.
+ *   - ScopedLock (unbounded) is WORKER-ONLY: BufferSaveQueue workers and
+ *     SyncOps workers acquire it that way. It must NEVER be taken on the UI
+ *     thread, where an in-flight sync stage would freeze the window.
+ *   - ScopedTryLock (bounded) MAY be used on the UI thread for one short,
+ *     bounded write. BufferService::saveForSnapshot uses it so a
+ *     share-triggered save is still serialized against sync staging without
+ *     risking an unbounded GUI block; on timeout it gives up and reports
+ *     "busy" instead of proceeding unserialized.
  *
  * Why per-notebook (not global):
  *   Unrelated notebooks must sync/save in parallel. Per-notebook keying
  *   permits maximum concurrency while protecting the only resource that
  *   actually contends — a single working tree.
  *
- * Why no timeout in v1:
- *   Simpler model; the worker QThreadPool absorbs back-pressure. We can
- *   add a try-acquire later if a deadlock-recovery story becomes necessary.
- *
  * Lock implementation:
  *   QMutex (not QReadWriteLock): every holder is a writer (both save and
  *   stage MUTATE the working tree). Reader/writer distinction adds no value
- *   and increases lock complexity.
+ *   and increases lock complexity. It is NOT recursive, so a hook or callback
+ *   invoked while the gate is held must not try to re-acquire it — fire hooks
+ *   outside the locked region.
  */
 class NotebookIoGate : private Noncopyable {
 public:
@@ -65,12 +69,48 @@ public:
     QString m_notebookId;
   };
 
+  /**
+   * RAII holder that acquires the per-notebook lock with a TIMEOUT.
+   *
+   * Exists so a GUI-thread operation can serialize a single short write
+   * against save / sync workers WITHOUT the unbounded block that plain
+   * ScopedLock would impose (a sync stage can hold the gate for a while, and
+   * freezing the UI on it is not acceptable).
+   *
+   * ALWAYS check isLocked(): on timeout the lock was NOT taken and the caller
+   * must back off rather than proceed unserialized.
+   *
+   * Keep the held window short. This is not a licence to run long GUI-thread
+   * I/O under the gate; it is for one bounded operation such as a single
+   * buffer save.
+   */
+  class ScopedTryLock {
+  public:
+    ScopedTryLock(NotebookIoGate &p_gate, const QString &p_notebookId, int p_timeoutMs);
+    ~ScopedTryLock();
+
+    ScopedTryLock(const ScopedTryLock &) = delete;
+    ScopedTryLock &operator=(const ScopedTryLock &) = delete;
+
+    bool isLocked() const { return m_locked; }
+
+  private:
+    NotebookIoGate *m_gate;
+    QString m_notebookId;
+    bool m_locked = false;
+  };
+
 private:
   friend class ScopedLock;
+  friend class ScopedTryLock;
 
   // Acquires (and lazily creates) the per-notebook mutex, then locks it.
   // Blocks until lock acquired.
   void acquire(const QString &p_notebookId);
+
+  // Acquires (and lazily creates) the per-notebook mutex, waiting at most
+  // @p_timeoutMs. Returns false when the lock was NOT taken.
+  bool tryAcquire(const QString &p_notebookId, int p_timeoutMs);
 
   // Unlocks the per-notebook mutex.
   void release(const QString &p_notebookId);

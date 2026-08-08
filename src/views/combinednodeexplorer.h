@@ -74,6 +74,10 @@ public:
 signals:
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
+  // Forwarded from NotebookNodeController: the user asked to share a bundled
+  // folder. NotebookExplorer2 owns the destination and progress dialogs.
+  void shareFolderRequested(const NodeIdentifier &p_nodeId);
+
   // T11 (notebook-explorer-drag-reorder): forwarded from
   // NotebookNodeController::sortRequested. NotebookExplorer2 connects to this
   // and owns SortDialog2 (controllers MUST NOT show QDialog).

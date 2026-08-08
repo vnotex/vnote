@@ -86,6 +86,8 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
   m_searchRegex = READBOOL(QStringLiteral("searchRegex"));
   m_searchFilePattern = readString(p_jobj, QStringLiteral("searchFilePattern"));
 
+  m_folderShareLastDestination = readString(p_jobj, QStringLiteral("folderShareLastDestination"));
+
   m_dashboardLayout = p_jobj[QStringLiteral("dashboardLayout")].toObject();
 }
 
@@ -122,6 +124,7 @@ QJsonObject WidgetConfig::toJson() const {
   obj[QStringLiteral("searchCaseSensitive")] = m_searchCaseSensitive;
   obj[QStringLiteral("searchRegex")] = m_searchRegex;
   obj[QStringLiteral("searchFilePattern")] = m_searchFilePattern;
+  obj[QStringLiteral("folderShareLastDestination")] = m_folderShareLastDestination;
   if (!m_dashboardLayout.isEmpty()) {
     obj[QStringLiteral("dashboardLayout")] = m_dashboardLayout;
   }
@@ -332,6 +335,14 @@ const QString &WidgetConfig::getSearchFilePattern() const { return m_searchFileP
 
 void WidgetConfig::setSearchFilePattern(const QString &p_pattern) {
   updateConfig(m_searchFilePattern, p_pattern, this);
+}
+
+const QString &WidgetConfig::getFolderShareLastDestination() const {
+  return m_folderShareLastDestination;
+}
+
+void WidgetConfig::setFolderShareLastDestination(const QString &p_path) {
+  updateConfig(m_folderShareLastDestination, p_path, this);
 }
 
 QJsonObject WidgetConfig::getDashboardLayout() const { return m_dashboardLayout; }

@@ -4,6 +4,7 @@ target_sources(vnote PRIVATE
     workspacewrapper.cpp workspacewrapper.h
     notebooknodecontroller.cpp notebooknodecontroller.h
     notebooknodecontroller_reorder.cpp
+    notebooknodecontroller_shareseam.cpp
     newnotebookcontroller.cpp newnotebookcontroller.h
     newnotecontroller.cpp newnotecontroller.h
     newfoldercontroller.cpp newfoldercontroller.h
@@ -26,6 +27,7 @@ target_sources(vnote PRIVATE
     outlinecontroller.cpp outlinecontroller.h
     attachmentcontroller.cpp attachmentcontroller.h
     exportcontroller.cpp exportcontroller.h
+    foldersharecontroller.cpp foldersharecontroller.h
     searchcontroller.cpp searchcontroller.h
     imagehostcontroller.cpp imagehostcontroller.h
     legacyimagemigrationcontroller.cpp legacyimagemigrationcontroller.h

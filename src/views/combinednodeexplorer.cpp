@@ -91,6 +91,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::propertiesRequested);
   connect(m_controller, &NotebookNodeController::exportNodeRequested, this,
           &CombinedNodeExplorer::exportNodeRequested);
+  connect(m_controller, &NotebookNodeController::shareFolderRequested, this,
+          &CombinedNodeExplorer::shareFolderRequested);
   connect(m_controller, &NotebookNodeController::markRequested, this,
           &CombinedNodeExplorer::markRequested);
   connect(m_controller, &NotebookNodeController::ignoreRequested, this,

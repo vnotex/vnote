@@ -48,6 +48,25 @@ add_qt_test(test_attachmentcontroller
   GUILESS
 )
 
+# FolderShareController (share-bundled-folder). Drives the whole SYNCHRONOUS
+# share flow against a real bundled notebook: package layout and flattening,
+# byte-for-byte metadata, unindexed/hidden/empty content, collision naming,
+# every documented refusal (raw / root / reserved name / destination inside the
+# notebook / orphan metadata / malformed records / missing content / symlinked
+# roots and ancestors), source mutation and cancellation, plus the save barrier
+# under all three auto-save policies. GUILESS: no dialogs live in the
+# controller, they belong to NotebookExplorer2.
+add_qt_test(test_foldersharecontroller
+  SOURCES
+    test_foldersharecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/foldersharecontroller.cpp
+  LINKS
+    core_services
+    vxcore
+    # The gate-contention case holds NotebookIoGate from a QtConcurrent worker.
+    Qt6::Concurrent
+  GUILESS
+)
 add_qt_test(test_searchcontroller
   SOURCES
     test_searchcontroller.cpp
@@ -230,6 +249,10 @@ set_tests_properties(test_syncservice_credentials_cleanup PROPERTIES
 add_qt_test(test_notebooknodecontroller_multiselect
   SOURCES
     test_notebooknodecontroller_multiselect.cpp
+    # The "Share Folder" eligibility predicate is a pure static, extracted into
+    # its own TU precisely so this GUILESS target can link the REAL production
+    # function instead of mirroring it.
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
   LINKS
     Qt6::Core
   GUILESS

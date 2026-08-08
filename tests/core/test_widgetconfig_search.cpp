@@ -16,6 +16,11 @@ private slots:
   void testInvalidScopeNegative();
   void testInvalidModeHigh();
   void testMissingKeys();
+
+  // folderShareLastDestination (Share Folder).
+  void testFolderShareDestinationRoundTrip();
+  void testFolderShareDestinationDefault();
+  void testFolderShareDestinationMissingOrWrongType();
 };
 
 void TestWidgetConfigSearch::testRoundTrip() {
@@ -96,6 +101,47 @@ void TestWidgetConfigSearch::testMissingKeys() {
   QCOMPARE(wc.getSearchCaseSensitive(), false);
   QCOMPARE(wc.getSearchRegex(), false);
   QCOMPARE(wc.getSearchFilePattern(), QString());
+  // The folder-share destination is equally unaffected by unrelated keys.
+  QCOMPARE(wc.getFolderShareLastDestination(), QString());
+}
+
+void TestWidgetConfigSearch::testFolderShareDestinationRoundTrip() {
+  WidgetConfig wc1(nullptr, nullptr);
+  // Unicode + spaces: the remembered destination is an arbitrary user path.
+  const QString path =
+      QStringLiteral("C:/Users/me/My Bundles/") + QString::fromUtf8("\xE9\xA1\xB9\xE7\x9B\xAE");
+  wc1.setFolderShareLastDestination(path);
+  QCOMPARE(wc1.getFolderShareLastDestination(), path);
+
+  WidgetConfig wc2(nullptr, nullptr);
+  wc2.fromJson(wc1.toJson());
+  QCOMPARE(wc2.getFolderShareLastDestination(), path);
+}
+
+void TestWidgetConfigSearch::testFolderShareDestinationDefault() {
+  WidgetConfig wc(nullptr, nullptr);
+  wc.fromJson(QJsonObject()); // empty JSON
+
+  // Empty until the user accepts a destination for the first time; the view
+  // then falls back to the documents/home path.
+  QCOMPARE(wc.getFolderShareLastDestination(), QString());
+  QVERIFY(wc.toJson().contains(QStringLiteral("folderShareLastDestination")));
+}
+
+void TestWidgetConfigSearch::testFolderShareDestinationMissingOrWrongType() {
+  QJsonObject json;
+  json[QStringLiteral("searchScope")] = 2;
+
+  WidgetConfig wc(nullptr, nullptr);
+  wc.fromJson(json);
+  QCOMPARE(wc.getFolderShareLastDestination(), QString());
+
+  // A wrong-typed value must not crash and must not be adopted.
+  QJsonObject bad;
+  bad[QStringLiteral("folderShareLastDestination")] = 42;
+  WidgetConfig wcBad(nullptr, nullptr);
+  wcBad.fromJson(bad);
+  QCOMPARE(wcBad.getFolderShareLastDestination(), QString());
 }
 
 } // namespace tests

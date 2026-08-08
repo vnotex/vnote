@@ -1707,6 +1707,111 @@
     </message>
 </context>
 <context>
+    <name>vnotex::FolderShareController</name>
+    <message>
+        <location filename="../../../controllers/foldersharecontroller.cpp" line="+85"/>
+        <source>Checking the folder…</source>
+        <translation>正在检查文件夹…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Copying files…</source>
+        <translation>正在复制文件…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Verifying the copy…</source>
+        <translation>正在校验副本…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Finishing…</source>
+        <translation>正在完成…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Working…</source>
+        <translation>正在处理…</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Another folder is already being shared.</source>
+        <translation>已有另一个文件夹正在分享。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>No folder is selected.</source>
+        <translation>未选择文件夹。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>No destination folder was chosen.</source>
+        <translation>未选择目标文件夹。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+10"/>
+        <location line="+6"/>
+        <source>This folder cannot be shared.</source>
+        <translation>无法分享此文件夹。</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>This folder cannot be shared: %1</source>
+        <translation>无法分享此文件夹：%1</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The destination folder does not exist.</source>
+        <translation>目标文件夹不存在。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The destination folder is not writable.</source>
+        <translation>目标文件夹不可写。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Choose a destination outside the notebook folder.</source>
+        <translation>请选择笔记本文件夹之外的位置。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>A folder named &quot;%1&quot; cannot be shared: that name is reserved inside the bundle.</source>
+        <translation>无法分享名为 “%1” 的文件夹：该名称在分享包内已被保留。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Saving open notes…</source>
+        <translation>正在保存已打开的笔记…</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>A note in this folder was opened while it was being prepared. Try sharing again.</source>
+        <translation>准备期间有笔记被打开，请重新分享。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>A note in this folder was closed while it was being prepared. Try sharing again.</source>
+        <translation>准备期间有笔记被关闭，请重新分享。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>A note in this folder changed while it was being prepared. Try sharing again.</source>
+        <translation>准备期间有笔记发生变更，请重新分享。</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <source>Could not save an open note before sharing the folder.</source>
+        <translation>分享前无法保存已打开的笔记。</translation>
+    </message>
+    <message>
+        <location line="-15"/>
+        <source>An open note is still being saved. Try again in a moment.</source>
+        <translation>已打开的笔记仍在保存中，请稍后重试。</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::FolderFilesFilterWidget</name>
     <message>
         <location filename="../../../widgets/dialogs/folderfilesfilterwidget.cpp" line="+40"/>
@@ -4507,6 +4612,45 @@ Last sync init failed: error code %1</source>
 
 上次同步初始化失败：错误码 %1</translation>
     </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Choose a Folder for the Shared Bundle</source>
+        <translation>选择存放分享包的文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Preparing…</source>
+        <translation>正在准备…</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Share Folder</source>
+        <translation>分享文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Folder shared.</source>
+        <translation>文件夹已分享。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>The bundle was created at %1.
+
+Open the bundle location?</source>
+        <translation>已在 %1 创建分享包。
+
+是否打开分享包所在位置？</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Failed to share the folder.</source>
+        <translation>分享文件夹失败。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::NotebookNodeController</name>
@@ -4787,6 +4931,16 @@ Last sync init failed: error code %1</source>
         <location line="+22"/>
         <source>Reorder Failed</source>
         <translation>重新排序失败</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp"/>
+        <source>&amp;Share Folder...</source>
+        <translation>分享文件夹(&amp;S)...</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp"/>
+        <source>Create a movable copy of this folder including its VNote metadata</source>
+        <translation>创建此文件夹的可移动副本（包含 VNote 元数据）</translation>
     </message>
 </context>
 <context>

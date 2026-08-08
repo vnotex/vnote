@@ -28,6 +28,7 @@ namespace vnotex {
 
 class NotebookSelector2;
 class NotebookSyncInfoDialog2;
+class FolderShareController;
 class SyncService;
 class TitleBar;
 class INodeExplorer;
@@ -153,6 +154,14 @@ private slots:
   // files; strict separation) and routes the result through
   // INodeExplorer::requestReorderNodes.
   void onSortRequested(const NodeIdentifier &p_parentId);
+
+  // Handles the shareFolderRequested signal forwarded from
+  // CombinedNodeExplorer / TwoColumnsNodeExplorer. Owns BOTH dialogs the flow
+  // needs (controllers MUST NOT show QDialog per src/controllers/AGENTS.md):
+  // the destination QFileDialog, whose accepted directory is remembered in
+  // WidgetConfig, and the modal QProgressDialog that keeps the UI responsive
+  // and carries Cancel while the synchronous copy runs.
+  void onShareFolderRequested(const NodeIdentifier &p_nodeId);
 
   // Sync UI handlers (T15).
   void onSyncButtonClicked();
@@ -291,6 +300,13 @@ private:
   // In-memory reconcile error tracking (W4.T3). Maps notebookId -> error code.
   // Cleared on sync success or notebook switch. Used to surface errors via tooltip.
   QHash<QString, int> m_lastReconcileError;
+
+  // Re-entrancy guard for the synchronous folder-share flow. The progress
+  // dialog pumps the event loop, so this slot really is reachable again while
+  // a share is still on the stack. The controller and the dialog themselves
+  // are STACK-local in onShareFolderRequested (see the comment there), so this
+  // widget owns no share state that a nested destruction could tear down.
+  bool m_folderShareActive = false;
 
   // Auto-prompt-on-open set (sync-info-on-open). Populated in importNotebook's
   // notebookOpened lambda with the just-interactively-opened notebook id, then

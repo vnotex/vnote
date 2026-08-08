@@ -4,6 +4,7 @@
 
 #include <controllers/notebooknodecontroller.h>
 #include <core/nodeidentifier.h>
+#include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 
 namespace tests {
@@ -76,6 +77,19 @@ private slots:
   void isSingleEffectiveSelection_singleSelection_returnsTrue();
   void isSingleEffectiveSelection_multiSelectionClickedInside_returnsFalse();
   void isSingleEffectiveSelection_clickedOutsideSelection_returnsTrue();
+
+  // Share Folder eligibility. Unlike the helpers above, these call the REAL
+  // production predicate — a pure static compiled from
+  // notebooknodecontroller_shareseam.cpp.
+  void shareEligible_bundledNonRootFolder_returnsTrue();
+  void shareEligible_readOnlyNotebookStillEligible();
+  void shareEligible_file_returnsFalse();
+  void shareEligible_notebookRoot_returnsFalse();
+  void shareEligible_rawNotebook_returnsFalse();
+  void shareEligible_externalNode_returnsFalse();
+  void shareEligible_missingNode_returnsFalse();
+  void shareEligible_invalidNodeInfo_returnsFalse();
+  void shareEligible_multiSelection_returnsFalse();
 
   // T5: action lambdas use resolveSelection + dedupeDescendants
   void delete_multiSelection_resolvesAllIds();
@@ -628,6 +642,88 @@ void TestNotebookNodeControllerMultiSelect::
   // Multi-selection [a,b,c], clicked d (outside) → selection is [d], size == 1
   bool result = isSingleEffectiveSelectionForTest({a, b, c}, d);
   QVERIFY(result == true);
+}
+
+// ---------------------------------------------------------------------------
+// Share Folder eligibility (real production predicate)
+// ---------------------------------------------------------------------------
+
+// Build a NodeInfo for a real, indexed, present node.
+static vnotex::NodeInfo makeNodeInfo(const QString &p_relativePath, bool p_isFolder) {
+  vnotex::NodeInfo info;
+  info.id.notebookId = QStringLiteral("nb-1");
+  info.id.relativePath = p_relativePath;
+  info.isFolder = p_isFolder;
+  info.name = p_relativePath;
+  return info;
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_bundledNonRootFolder_returnsTrue() {
+  const auto nested = makeNodeInfo(QStringLiteral("Projects/Alpha"), /*isFolder=*/true);
+  QVERIFY(vnotex::NotebookNodeController::isFolderShareEligible(nested, /*bundled=*/true,
+                                                                /*single=*/true));
+  // A top-level folder is equally eligible.
+  const auto top = makeNodeInfo(QStringLiteral("Alpha"), /*isFolder=*/true);
+  QVERIFY(vnotex::NotebookNodeController::isFolderShareEligible(top, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_readOnlyNotebookStillEligible() {
+  // Read-only state is NOT an input to the predicate: sharing is a read
+  // operation, so a read-only bundled notebook still shows the action. This
+  // test documents that the signature deliberately has no read-only parameter.
+  const auto info = makeNodeInfo(QStringLiteral("Alpha"), /*isFolder=*/true);
+  QVERIFY(vnotex::NotebookNodeController::isFolderShareEligible(info, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_file_returnsFalse() {
+  const auto info = makeNodeInfo(QStringLiteral("Alpha/note.md"), /*isFolder=*/false);
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(info, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_notebookRoot_returnsFalse() {
+  const auto empty = makeNodeInfo(QString(), /*isFolder=*/true);
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(empty, true, true));
+
+  const auto dot = makeNodeInfo(QStringLiteral("."), /*isFolder=*/true);
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(dot, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_rawNotebook_returnsFalse() {
+  const auto info = makeNodeInfo(QStringLiteral("Alpha"), /*isFolder=*/true);
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(info, /*bundled=*/false, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_externalNode_returnsFalse() {
+  auto info = makeNodeInfo(QStringLiteral("Alpha"), /*isFolder=*/true);
+  info.isExternal = true;
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(info, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_missingNode_returnsFalse() {
+  auto info = makeNodeInfo(QStringLiteral("Alpha"), /*isFolder=*/true);
+  info.isMissing = true;
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(info, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_invalidNodeInfo_returnsFalse() {
+  // A stale context-menu state can hand the controller a node the model no
+  // longer knows about.
+  vnotex::NodeInfo invalid;
+  QVERIFY(!invalid.isValid());
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(invalid, true, true));
+}
+
+void TestNotebookNodeControllerMultiSelect::shareEligible_multiSelection_returnsFalse() {
+  const auto info = makeNodeInfo(QStringLiteral("Alpha"), /*isFolder=*/true);
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(info, true, /*single=*/false));
+
+  // Cross-check against the selection helper the production call site uses.
+  vnotex::NodeIdentifier a, b;
+  a.notebookId = b.notebookId = QStringLiteral("nb-1");
+  a.relativePath = QStringLiteral("Alpha");
+  b.relativePath = QStringLiteral("Beta");
+  QVERIFY(!vnotex::NotebookNodeController::isFolderShareEligible(
+      info, true, isSingleEffectiveSelectionForTest({a, b}, a)));
 }
 
 } // namespace tests

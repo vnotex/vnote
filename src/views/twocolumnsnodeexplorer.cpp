@@ -168,6 +168,11 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::propertiesRequested);
   connect(p_controller, &NotebookNodeController::exportNodeRequested, this,
           &TwoColumnsNodeExplorer::exportNodeRequested);
+  // Folder-share intent. Connected for BOTH controllers via this helper (called
+  // once per pane), so a folder right-clicked in either pane reaches
+  // NotebookExplorer2, which owns the dialogs.
+  connect(p_controller, &NotebookNodeController::shareFolderRequested, this,
+          &TwoColumnsNodeExplorer::shareFolderRequested);
   connect(p_controller, &NotebookNodeController::markRequested, this,
           &TwoColumnsNodeExplorer::markRequested);
   connect(p_controller, &NotebookNodeController::ignoreRequested, this,

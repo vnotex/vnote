@@ -104,6 +104,24 @@ bool NotebookNodeController::isNotebookReadOnly(const QString &p_notebookId) con
   return notebookService->isNotebookReadOnly(p_notebookId);
 }
 
+bool NotebookNodeController::isNotebookBundled(const QString &p_notebookId) const {
+  if (p_notebookId.isEmpty()) {
+    return false;
+  }
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    return false;
+  }
+  const QJsonObject config = notebookService->getNotebookConfig(p_notebookId);
+  return config.value(QLatin1String(vxcore::kJsonKeyType))
+             .toString()
+             .compare(QStringLiteral("bundled"), Qt::CaseInsensitive) == 0;
+}
+
+// NotebookNodeController::isFolderShareEligible lives in
+// notebooknodecontroller_shareseam.cpp so controller tests can link the pure
+// predicate without dragging in this TU and its ~18 transitive service deps.
+
 bool NotebookNodeController::isSelectionReadOnly(const QList<NodeIdentifier> &p_nodeIds) const {
   for (const auto &id : p_nodeIds) {
     if (isNotebookReadOnly(id.notebookId)) {
@@ -432,6 +450,18 @@ void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIde
     auto *exportAction = p_menu->addAction(tr("&Export"));
     connect(exportAction, &QAction::triggered, this, [this, p_nodeId]() { exportNode(p_nodeId); });
     exportAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+
+    // Share Folder: lossless folder bundle (content + parallel vx.json subtree).
+    // Distinct from Export, which is a formatted-content conversion flow.
+    // Read-only is deliberately NOT a gate — sharing is a read operation.
+    if (isFolderShareEligible(getNodeInfo(p_nodeId), isNotebookBundled(p_nodeId.notebookId),
+                              isSingleEffectiveSelection(p_nodeId))) {
+      auto *shareAction = p_menu->addAction(tr("&Share Folder..."));
+      shareAction->setToolTip(
+          tr("Create a movable copy of this folder including its VNote metadata"));
+      connect(shareAction, &QAction::triggered, this,
+              [this, p_nodeId]() { emit shareFolderRequested(p_nodeId); });
+    }
   }
 }
 

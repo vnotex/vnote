@@ -1026,6 +1026,50 @@ QString NotebookCoreService::reorderErrorToString(int p_rc) {
   }
 }
 
+FolderSharePaths NotebookCoreService::getFolderSharePaths(const QString &p_notebookId,
+                                                          const QString &p_folderPath) const {
+  FolderSharePaths result;
+
+  if (!checkContext()) {
+    result.m_error = VXCORE_ERR_NOT_INITIALIZED;
+    result.m_errorMessage = tr("vxcore context is not initialized");
+    return result;
+  }
+
+  char *notebookRoot = nullptr;
+  char *contentRoot = nullptr;
+  char *metadataRoot = nullptr;
+
+  result.m_error = vxcore_folder_get_share_paths(m_context, p_notebookId.toUtf8().constData(),
+                                                 p_folderPath.toUtf8().constData(), &notebookRoot,
+                                                 &contentRoot, &metadataRoot);
+
+  if (result.m_error == VXCORE_OK) {
+    result.m_notebookRoot = cstrToQString(notebookRoot);
+    result.m_contentRoot = cstrToQString(contentRoot);
+    result.m_metadataRoot = cstrToQString(metadataRoot);
+    return result;
+  }
+
+  // Defensive: vxcore initializes all three outputs to null before validating,
+  // so nothing should be allocated on a failure path.
+  vxcore_string_free(notebookRoot);
+  vxcore_string_free(contentRoot);
+  vxcore_string_free(metadataRoot);
+
+  // Prefer the context's detailed message; fall back to the generic code text.
+  const char *detail = nullptr;
+  if (vxcore_context_get_last_error(m_context, &detail) == VXCORE_OK && detail && *detail) {
+    result.m_errorMessage = QString::fromUtf8(detail);
+  } else {
+    result.m_errorMessage = QString::fromUtf8(vxcore_error_message(result.m_error));
+  }
+
+  qWarning() << "getFolderSharePaths failed:" << result.m_errorMessage
+             << "notebookId:" << p_notebookId << "folderPath:" << p_folderPath;
+  return result;
+}
+
 QJsonObject NotebookCoreService::listFolderExternal(const QString &p_notebookId,
                                                     const QString &p_folderPath) const {
   if (!checkContext()) {

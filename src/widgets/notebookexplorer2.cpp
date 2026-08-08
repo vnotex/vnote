@@ -13,14 +13,17 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPointer>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
 #include <QToolButton>
+#include <QUrl>
 #include <QVBoxLayout>
 
+#include <controllers/foldersharecontroller.h>
 #include <controllers/newnotebookcontroller.h>
 #include <controllers/newnotecontroller.h>
 #include <controllers/notebooknodecontroller.h>
@@ -795,6 +798,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onNodeActivated);
   connect(explorer, &CombinedNodeExplorer::exportNodeRequested, this,
           &NotebookExplorer2::exportNodeRequested);
+  connect(explorer, &CombinedNodeExplorer::shareFolderRequested, this,
+          &NotebookExplorer2::onShareFolderRequested);
   connect(explorer, &CombinedNodeExplorer::markRequested, this,
           &NotebookExplorer2::onMarkRequested);
   connect(explorer, &CombinedNodeExplorer::ignoreRequested, this,
@@ -856,6 +861,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onNodeActivated);
   connect(explorer, &TwoColumnsNodeExplorer::exportNodeRequested, this,
           &NotebookExplorer2::exportNodeRequested);
+  connect(explorer, &TwoColumnsNodeExplorer::shareFolderRequested, this,
+          &NotebookExplorer2::onShareFolderRequested);
   connect(explorer, &TwoColumnsNodeExplorer::markRequested, this,
           &NotebookExplorer2::onMarkRequested);
   connect(explorer, &TwoColumnsNodeExplorer::ignoreRequested, this,
@@ -1864,6 +1871,110 @@ void NotebookExplorer2::onSortRequested(const NodeIdentifier &p_parentId) {
 // notebookexplorer2_sortseam.cpp so widget tests can link the helper without
 // dragging in the full NotebookExplorer2 TU and its ~20 transitive widget /
 // service deps.
+
+void NotebookExplorer2::onShareFolderRequested(const NodeIdentifier &p_nodeId) {
+  if (!p_nodeId.isValid()) {
+    return;
+  }
+  if (m_folderShareActive) {
+    return; // A share is already on the stack (the progress dialog pumps events).
+  }
+
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  QString seed;
+  if (configMgr) {
+    seed = configMgr->getWidgetConfig().getFolderShareLastDestination();
+  }
+  if (seed.isEmpty() || !QFileInfo(seed).isDir()) {
+    seed = ConfigMgr2::getDocumentOrHomePath();
+  }
+
+  const QString destination = QFileDialog::getExistingDirectory(
+      this, tr("Choose a Folder for the Shared Bundle"), seed,
+      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+  if (destination.isEmpty()) {
+    return; // User cancelled.
+  }
+
+  if (configMgr) {
+    configMgr->getWidgetConfig().setFolderShareLastDestination(destination);
+  }
+
+  // LIFETIME: both objects below are stack-local and deliberately UNPARENTED.
+  //
+  // The share is synchronous but pumps the event loop, so a timer or queued
+  // signal can destroy this widget while the call is still on our stack. If the
+  // controller were a child QObject it would be deleted mid-execution, and a
+  // parented dialog would be double-destroyed (once by the parent, once by this
+  // scope). Owning both on the stack makes that impossible; the QPointer on
+  // `this` then covers the remaining "do not touch the widget afterwards" case.
+  FolderShareController controller(m_services);
+  QProgressDialog progress(tr("Preparing…"), tr("Cancel"), 0, 100, nullptr);
+  progress.setWindowTitle(tr("Share Folder"));
+  // Application-modal without a parent: modality is what stops the user from
+  // mutating the notebook mid-snapshot, and it does not require a parent.
+  progress.setWindowModality(Qt::ApplicationModal);
+  progress.setAutoClose(false);
+  progress.setAutoReset(false);
+  // Show immediately: even a small folder does a full hash-verify pass, and a
+  // silent freeze is worse than a dialog that flashes.
+  progress.setMinimumDuration(0);
+  progress.setValue(0);
+
+  QPointer<NotebookExplorer2> selfGuard(this);
+  FolderShareController::Callbacks callbacks;
+  callbacks.m_labelChanged = [&progress](const QString &p_label) {
+    progress.setLabelText(p_label);
+  };
+  callbacks.m_progress = [&progress](qint64 p_done, qint64 p_total) {
+    if (p_total <= 0) {
+      return;
+    }
+    progress.setValue(static_cast<int>((p_done * 100) / p_total));
+  };
+  // Losing the window underneath us counts as a cancellation, so the packager
+  // unwinds and publishes nothing rather than finishing into a dead UI.
+  callbacks.m_isCancelled = [&progress, selfGuard]() {
+    return !selfGuard || progress.wasCanceled();
+  };
+
+  m_folderShareActive = true;
+  const auto result = controller.shareFolder(p_nodeId, destination, callbacks);
+  progress.reset();
+  progress.close();
+
+  if (!selfGuard) {
+    return; // Destroyed by a nested event; nothing left to report to.
+  }
+  m_folderShareActive = false;
+
+  switch (result.m_status) {
+  case FolderSharePackager::Status::Succeeded:
+    // Offer the reveal directly from the completion prompt — the bundle is
+    // usually somewhere the user now wants to go.
+    if (MessageBoxHelper::questionYesNo(
+            MessageBoxHelper::Information, tr("Folder shared."),
+            tr("The bundle was created at %1.\n\nOpen the bundle location?")
+                .arg(QDir::toNativeSeparators(result.m_bundlePath)),
+            QString(), this) == QMessageBox::Yes) {
+      WidgetUtils::openUrlByDesktop(
+          QUrl::fromLocalFile(QFileInfo(result.m_bundlePath).absolutePath()));
+    }
+    break;
+
+  case FolderSharePackager::Status::Cancelled:
+    // Nothing was published, so there is nothing to report: an extra modal
+    // right after the user pressed Cancel is just noise.
+    qDebug() << "NotebookExplorer2: folder share cancelled by the user";
+    break;
+
+  case FolderSharePackager::Status::Failed:
+    MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to share the folder."),
+                             result.m_errorMessage, QString(), this);
+    break;
+  }
+}
+
 void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,
                                         const FileOpenSettings &p_settings) {
   auto *bufferSvc = m_services.get<BufferService>();

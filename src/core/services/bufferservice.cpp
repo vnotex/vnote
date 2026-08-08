@@ -602,6 +602,116 @@ void BufferService::syncNow(const QString &p_bufferId) {
   }
 }
 
+bool BufferService::pullActiveWriterContent(const QString &p_bufferId) {
+  if (p_bufferId.isEmpty() || m_virtualBufferIds.contains(p_bufferId)) {
+    return true;
+  }
+
+  auto it = m_activeWriters.find(p_bufferId);
+  if (it == m_activeWriters.end() || !it->callback) {
+    // No editor attached: the vxcore buffer already holds the latest text.
+    return true;
+  }
+
+  const QString content = it->callback();
+  if (!BufferCoreService::setContentRaw(p_bufferId, encodeContent(p_bufferId, content))) {
+    qWarning() << "BufferService::pullActiveWriterContent: setContentRaw failed for" << p_bufferId;
+    return false;
+  }
+
+  emit bufferContentSynced(p_bufferId);
+  emit bufferModifiedChanged(p_bufferId);
+  return true;
+}
+
+bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeoutMs,
+                                    QString *p_outError) {
+  auto fail = [p_outError](const QString &p_message) {
+    if (p_outError) {
+      *p_outError = p_message;
+    }
+    return false;
+  };
+
+  if (p_bufferId.isEmpty()) {
+    return fail(tr("The note is no longer open."));
+  }
+  if (m_virtualBufferIds.contains(p_bufferId)) {
+    return true; // Nothing on disk to make durable.
+  }
+
+  const QJsonObject bufJson = BufferCoreService::getBuffer(p_bufferId);
+  if (bufJson.isEmpty()) {
+    // Closed underneath us (a nested event during the caller's drain). Treat
+    // as a failure: the disk may still hold stale bytes and we can no longer
+    // do anything about it.
+    return fail(tr("A note was closed while the folder was being prepared."));
+  }
+  const QString notebookId = bufJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+
+  // Defense in depth: the caller drains first, but re-check here because
+  // racing a worker on the mutex-less vxcore Buffer is a use-after-free class
+  // of bug, not a mere ordering wart.
+  if (m_saveQueue && m_saveQueue->isBusy(notebookId, p_bufferId)) {
+    return fail(tr("An open note is still being saved. Try again in a moment."));
+  }
+
+  if (!pullActiveWriterContent(p_bufferId)) {
+    return fail(tr("Could not read the latest content of an open note."));
+  }
+
+  if (!BufferCoreService::isModified(p_bufferId)) {
+    return true; // Already durable.
+  }
+
+  if (isBufferReadOnly(p_bufferId)) {
+    emit saveRejectedReadOnly(p_bufferId);
+    return fail(tr("An open note has unsaved changes but its notebook is read-only."));
+  }
+
+  BufferEvent event;
+  event.bufferId = p_bufferId;
+  // Fired OUTSIDE the gate on purpose: NotebookIoGate is a plain (non-recursive)
+  // mutex, so a hook that touched this notebook while we held it would
+  // self-deadlock. The consequence is that the hook is callback-capable and may
+  // enqueue work, which the re-check below catches.
+  if (m_hookMgr && m_hookMgr->doAction(HookNames::FileBeforeSave, event)) {
+    return fail(tr("Saving an open note was cancelled."));
+  }
+
+  // Capture the revision that this write will make durable BEFORE writing.
+  // Re-sampling it afterwards would let an edit made by an after-save hook be
+  // recorded as saved, clearing the dirty flag for content that is only in
+  // memory — exactly the stale-content publish this barrier exists to prevent.
+  const quint64 savedRevision = currentRevision(p_bufferId);
+
+  {
+    // Bounded: never freeze the GUI on a long sync stage.
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, notebookId, p_gateTimeoutMs);
+    if (!lock.isLocked()) {
+      return fail(tr("The notebook is busy syncing. Try again in a moment."));
+    }
+    // LAST re-check, under the gate: everything above (the writer callback, the
+    // modified/content-synced signals, the before-save hook) can synchronously
+    // re-enter and enqueue an async save. Such a worker would block on this
+    // gate and then overwrite our write with ITS older snapshot the moment we
+    // release. Refuse instead of publishing what it would leave behind.
+    if (m_saveQueue && m_saveQueue->isBusy(notebookId, p_bufferId)) {
+      return fail(tr("An open note is still being saved. Try again in a moment."));
+    }
+    if (!BufferCoreService::saveBuffer(p_bufferId)) {
+      return fail(tr("Could not write an open note to disk."));
+    }
+  }
+
+  if (m_hookMgr) {
+    m_hookMgr->doAction(HookNames::FileAfterSave, event);
+  }
+  markRevisionSaved(p_bufferId, savedRevision);
+  emit bufferModifiedChanged(p_bufferId);
+  return true;
+}
+
 void BufferService::registerActiveWriter(const QString &p_bufferId, quintptr p_writerKey,
                                          ContentFetchCallback p_callback) {
   if (p_bufferId.isEmpty() || !p_callback) {

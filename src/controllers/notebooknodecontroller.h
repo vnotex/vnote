@@ -191,6 +191,13 @@ signals:
   void infoMessage(const QString &p_title, const QString &p_message);
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
 
+  // Emitted when the user invokes "Share Folder" on a real, indexed, non-root
+  // folder of a BUNDLED notebook. The View (NotebookExplorer2) owns the
+  // destination QFileDialog and the modal progress dialog; controllers MUST NOT
+  // show QDialog (per src/controllers/AGENTS.md). Single-node by design:
+  // exactly one bundle is produced per invocation.
+  void shareFolderRequested(const NodeIdentifier &p_nodeId);
+
   // T8 (notebook-explorer-drag-reorder): emitted when the user invokes the
   // "Sort..." action (context menu or keyboard). The View (NotebookExplorer2)
   // owns SortDialog2 and, on user confirmation, calls reorderNodes() with the
@@ -223,6 +230,25 @@ public:
   // to grey out mutating affordances; do NOT rename these signatures.
   bool isNotebookReadOnly(const QString &p_notebookId) const;
   bool isSelectionReadOnly(const QList<NodeIdentifier> &p_nodeIds) const;
+
+  // True when the notebook's config type is "bundled". Live query; returns
+  // false on any error (fails closed, so the share action stays hidden for a
+  // notebook we cannot classify).
+  bool isNotebookBundled(const QString &p_notebookId) const;
+
+  // Pure eligibility predicate for the "Share Folder" context-menu action.
+  // Static and dependency-free so it can be unit-tested without constructing
+  // the controller (which needs 18+ services); defined in
+  // notebooknodecontroller_shareseam.cpp.
+  //
+  // Eligible iff: the live node info is valid, is a FOLDER, is not the notebook
+  // root, is indexed (not external), is not missing on disk, its notebook is
+  // BUNDLED, and exactly one node is effectively selected.
+  //
+  // Deliberately NOT gated on read-only state: sharing is a read operation and
+  // is allowed from a read-only bundled notebook.
+  static bool isFolderShareEligible(const NodeInfo &p_nodeInfo, bool p_notebookIsBundled,
+                                    bool p_singleEffectiveSelection);
 
 private:
   // Resolve selection following Qt right-click convention:

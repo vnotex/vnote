@@ -222,6 +222,42 @@ public:
   // Used on focus-loss for instant consistency.
   void syncNow(const QString &p_bufferId);
 
+  // Pull the active writer's latest text into the vxcore buffer RIGHT NOW,
+  // in memory only: no disk write, and the configured auto-save policy is not
+  // consulted. Returns false only when the in-memory update itself failed.
+  //
+  // syncNow() is NOT a substitute: it routes through the auto-save policy, so
+  // under AutoSave it hands the snapshot to the async queue instead of applying
+  // it inline, and under None it never persists at all. A caller that needs the
+  // editor's text to be visible to a subsequent Buffer2::save() must use this.
+  //
+  // No-op (returns true) for a virtual buffer or one without an active writer —
+  // in the latter case the vxcore buffer already holds the authoritative text.
+  bool pullActiveWriterContent(const QString &p_bufferId);
+
+  // Atomically make a buffer durable for a SNAPSHOT (folder share).
+  //
+  // Performs, with NO event processing in between, so nothing can slip into the
+  // gap: re-check the save queue is idle -> pull the active writer's text ->
+  // acquire NotebookIoGate (bounded) -> fire vnote.file.before_save -> write ->
+  // fire vnote.file.after_save.
+  //
+  // Why the gate: the ordinary manual-save path does NOT take it, but a sync
+  // worker stages/commits the same working tree under it. A share-triggered
+  // save that landed inside someone else's `git add` would violate the
+  // save/sync serialization invariant. A bounded TRY-acquire is used because
+  // this runs on the GUI thread and must never block on a long sync stage.
+  //
+  // The CALLER must have already drained the async save queue for this buffer
+  // (this method re-checks and refuses rather than racing the worker on the
+  // mutex-less vxcore Buffer).
+  //
+  // Returns false with *p_outError set on: a still-busy queue, a vanished
+  // buffer, a read-only buffer, a hook cancellation, a gate timeout, or a
+  // failed write. Returns true when the buffer is durable (including the case
+  // where it was not modified at all).
+  bool saveForSnapshot(const QString &p_bufferId, int p_gateTimeoutMs, QString *p_outError);
+
   // Register a content fetch callback for a buffer's active writer.
   // @p_callback: Called to get the latest content from the editor.
   // @p_writerKey: Opaque identifier for the writer (e.g., pointer cast to quintptr).

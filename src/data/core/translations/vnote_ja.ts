@@ -1707,6 +1707,111 @@
     </message>
 </context>
 <context>
+    <name>vnotex::FolderShareController</name>
+    <message>
+        <location filename="../../../controllers/foldersharecontroller.cpp" line="+85"/>
+        <source>Checking the folder…</source>
+        <translation>フォルダーを確認中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Copying files…</source>
+        <translation>ファイルをコピー中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Verifying the copy…</source>
+        <translation>コピーを検証中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Finishing…</source>
+        <translation>完了処理中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Working…</source>
+        <translation>処理中…</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Another folder is already being shared.</source>
+        <translation>別のフォルダーを共有中です。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>No folder is selected.</source>
+        <translation>フォルダーが選択されていません。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>No destination folder was chosen.</source>
+        <translation>保存先フォルダーが選択されていません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+10"/>
+        <location line="+6"/>
+        <source>This folder cannot be shared.</source>
+        <translation>このフォルダーは共有できません。</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>This folder cannot be shared: %1</source>
+        <translation>このフォルダーは共有できません: %1</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The destination folder does not exist.</source>
+        <translation>保存先フォルダーが存在しません。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The destination folder is not writable.</source>
+        <translation>保存先フォルダーに書き込めません。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Choose a destination outside the notebook folder.</source>
+        <translation>ノートブックフォルダーの外に保存先を選択してください。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>A folder named &quot;%1&quot; cannot be shared: that name is reserved inside the bundle.</source>
+        <translation>「%1」という名前のフォルダーは共有できません: その名前はバンドル内で予約されています。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Saving open notes…</source>
+        <translation>開いているノートを保存中…</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>A note in this folder was opened while it was being prepared. Try sharing again.</source>
+        <translation>準備中にノートが開かれました。もう一度共有してください。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>A note in this folder was closed while it was being prepared. Try sharing again.</source>
+        <translation>準備中にノートが閉じられました。もう一度共有してください。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>A note in this folder changed while it was being prepared. Try sharing again.</source>
+        <translation>準備中にノートが変更されました。もう一度共有してください。</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <source>Could not save an open note before sharing the folder.</source>
+        <translation>共有前に開いているノートを保存できませんでした。</translation>
+    </message>
+    <message>
+        <location line="-15"/>
+        <source>An open note is still being saved. Try again in a moment.</source>
+        <translation>開いているノートを保存中です。しばらくしてから再実行してください。</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::FolderFilesFilterWidget</name>
     <message>
         <location filename="../../../widgets/dialogs/folderfilesfilterwidget.cpp" line="+40"/>
@@ -4507,6 +4612,45 @@ Last sync init failed: error code %1</source>
 
 前回の同期初期化に失敗しました: エラーコード %1</translation>
     </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Choose a Folder for the Shared Bundle</source>
+        <translation>共有バンドルの保存先フォルダーを選択</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Preparing…</source>
+        <translation>準備中…</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Share Folder</source>
+        <translation>フォルダーを共有</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Folder shared.</source>
+        <translation>フォルダーを共有しました。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>The bundle was created at %1.
+
+Open the bundle location?</source>
+        <translation>%1 にバンドルを作成しました。
+
+バンドルの場所を開きますか？</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <source>Failed to share the folder.</source>
+        <translation>フォルダーの共有に失敗しました。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::NotebookNodeController</name>
@@ -4787,6 +4931,16 @@ Last sync init failed: error code %1</source>
         <location line="+22"/>
         <source>Reorder Failed</source>
         <translation>並べ替えに失敗しました</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp"/>
+        <source>&amp;Share Folder...</source>
+        <translation>フォルダーを共有(&amp;S)...</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp"/>
+        <source>Create a movable copy of this folder including its VNote metadata</source>
+        <translation>VNote のメタデータを含む、このフォルダーの移動可能なコピーを作成します</translation>
     </message>
 </context>
 <context>
