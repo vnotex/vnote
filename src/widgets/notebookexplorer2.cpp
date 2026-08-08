@@ -1890,7 +1890,7 @@ void NotebookExplorer2::onShareFolderRequested(const NodeIdentifier &p_nodeId) {
   }
 
   const QString destination = QFileDialog::getExistingDirectory(
-      this, tr("Choose a Folder for the Shared Bundle"), seed,
+      this, tr("Select Folder for the Bundle"), seed,
       QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
   if (destination.isEmpty()) {
     return; // User cancelled.

@@ -456,9 +456,8 @@ void NotebookNodeController::addImportExportActions(QMenu *p_menu, const NodeIde
     // Read-only is deliberately NOT a gate — sharing is a read operation.
     if (isFolderShareEligible(getNodeInfo(p_nodeId), isNotebookBundled(p_nodeId.notebookId),
                               isSingleEffectiveSelection(p_nodeId))) {
-      auto *shareAction = p_menu->addAction(tr("&Share Folder..."));
-      shareAction->setToolTip(
-          tr("Create a movable copy of this folder including its VNote metadata"));
+      auto *shareAction = p_menu->addAction(tr("Share Folder"));
+      shareAction->setToolTip(tr("Create a portable copy of this folder including metadata"));
       connect(shareAction, &QAction::triggered, this,
               [this, p_nodeId]() { emit shareFolderRequested(p_nodeId); });
     }
