@@ -955,50 +955,6 @@ add_qt_test(test_notebook_core_service_reorder
     vxcore
 )
 
-# Incremental updater: UpdateManifest is the pure value type (parse, diff,
-# chain resolution, path normalization). No widgets, network, or filesystem.
-add_qt_test(test_updatemanifest
-  SOURCES
-    test_updatemanifest.cpp
-  LINKS
-    core_services
-  GUILESS
-)
-# Incremental updater: ZipExtractor is the hardened miniz-backed reader. All
-# validation must happen before any byte is written.
-add_qt_test(test_zipextractor
-  SOURCES
-    test_zipextractor.cpp
-  LINKS
-    core_services
-  GUILESS
-)
-
-# Incremental updater: UpdateLease. Defines its own main() so the very same
-# executable can also run as the CHILD helper process for the multi-process
-# contention cases (that is the whole point of a file-handle lease).
-add_qt_test(test_updatelease
-  SOURCES
-    test_updatelease.cpp
-  LINKS
-    core_services
-  GUILESS
-)
-# The multi-process cases spawn children that hold the lease for up to a second
-# each; the default 60s ctest timeout is comfortable but keep it explicit.
-set_tests_properties(test_updatelease PROPERTIES TIMEOUT 120)
-# Incremental updater: UpdateInstaller (journaled swap, rollback, crash
-# recovery, ReplaceExecutable state machine). Defines its own main() so the same
-# executable doubles as the child process that is hard-killed mid-apply.
-add_qt_test(test_updateinstaller
-  SOURCES
-    test_updateinstaller.cpp
-  LINKS
-    core_services
-  GUILESS
-)
-# The subprocess recovery matrix spawns one child per state boundary.
-set_tests_properties(test_updateinstaller PROPERTIES TIMEOUT 180)
 # SingleInstanceGuard tri-state tryRun(). The important case is BusyUnreachable:
 # the branch that used to fail OPEN and produce a second primary. Uses the
 # guard's testing constructor so it never touches the real "vnote" IPC names.
@@ -1010,32 +966,18 @@ add_qt_test(test_singleinstanceguard
     core_services
   GUILESS
 )
-# Incremental updater: minisign verification of the update manifest. Every
-# vector is produced by the REFERENCE minisign implementation (0.11), never by
-# the code under test.
-add_qt_test(test_manifestsignature
-  SOURCES
-    test_manifestsignature.cpp
-  LINKS
-    core_services
-  GUILESS
-)
 
-# Incremental updater: UpdateService, the CHECK -> PLAN -> DOWNLOAD -> STAGE
-# half. Drives the REAL QNetworkAccessManager path against a local HTTP server
-# (redirects, host allowlist, byte caps, cancellation) and signs its manifest
-# fixtures in-process with the vendored minicrypto primitives -- Ed25519
-# SIGNING needs no randomness, so the aborting randombytes stub is never
-# reached. minicrypto is linked explicitly for its headers: core_services links
-# it PRIVATE, which propagates the library but not the include directory.
+# UpdateService: the release check. Drives the REAL QNetworkAccessManager path
+# against a local HTTP server (redirects, host allowlist, response cap,
+# cancellation). The service downloads nothing, and the suite asserts that no
+# file is written anywhere.
 add_qt_test(test_updateservice
   SOURCES
     test_updateservice.cpp
   LINKS
     core_services
-    minicrypto
   GUILESS
 )
-# ~30 end-to-end flows, each running the executable-rename capability probe and
-# hashing the staged tree; the default 60s ctest timeout is too tight.
+# ~20 network flows over a local socket, two of them deliberately stalled; the
+# default 60s ctest timeout is too tight.
 set_tests_properties(test_updateservice PROPERTIES TIMEOUT 300)

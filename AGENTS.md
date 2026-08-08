@@ -517,273 +517,101 @@ This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-fil
 
 ---
 
-## Incremental Update (Windows x64)
+## Update Check
 
-VNote can update itself by downloading only what changed. A release publishes a
-**manifest** (`<path, size, sha256>` for every file in the bundle) plus an optional
-**delta ZIP** containing only the files that changed since the previous stable release. The
-client diffs manifests, downloads the delta chain, stages files inside the install
-directory, swaps them in under a durable journal **at exit**, and restarts.
+VNote checks a forge for a newer release and, when one exists, tells the user and offers
+the **release page**. That is the whole feature.
 
-**Scope: the Windows x64 `win64` (Qt6) variant only.** Everywhere else the menu item opens
-the releases page. The Qt5 `win64-windows7` variant is *code*-eligible — it reports the
-`win64-windows7` variant string and `ReplaceExecutable`'s `MoveFileExW` fallback exists
-precisely to keep it working — but CI publishes **no** manifest, signature or delta for it
-(`ci-win.yml` gates the update-artifact steps on `matrix.config.qt_major == 6`). With no
-published manifest the client degrades to check-only, exactly as described under
-"Ineligibility, and the check-only degradation" below. Publishing `win64-windows7` update
-assets is therefore a CI change, not a client change.
+> **VNote never modifies its own install directory, and never downloads anything.** There is
+> no lease file, no staging tree, no journal, no swap, no restart-to-apply, no downloader,
+> and nothing is ever extracted or executed. The only thing the check writes is the
+> `lastUpdateCheckTime` / `skippedUpdateVersion` config values. This invariant is what makes
+> a read-only install location (`/usr/bin`, Program Files, a read-only DMG) launchable
+> (issue #2728) — do not reintroduce install-tree mutation, or a downloader, without
+> replacing this section.
+
+The built-in incremental updater that used to live here (manifest verification, delta
+chains, `UpdateInstaller`, `UpdateLease`, `ZipExtractor`, the vendored `miniz` /
+`minicrypto`) has been removed. **Release CI still publishes manifests, minisign signatures
+and delta ZIPs unchanged**; they are now the interface for a future *external* updater, not
+something this client consumes. See `docs/update-signing.md`.
 
 ### Ownership map
 
 | Layer | Unit | Responsibility |
 |---|---|---|
-| Pure value type | [`UpdateManifest`](src/core/updatemanifest.h) | parse/serialize, diff, `expectedChanged`, chain resolution + caps, base-identity validation, path normalization |
-| Pure | [`ZipExtractor`](src/core/zipextractor.h) | miniz-backed archive validation (before any byte is written) + containment-checked extraction |
-| Pure, pre-Qt | [`UpdateLease`](src/core/updatelease.h) | machine-wide, cross-session mutual exclusion |
-| Pure, post-teardown | [`UpdateInstaller`](src/core/updateinstaller.h) | journal, swap, `ReplaceExecutable`, rollback, crash recovery, probes, WebEngine reaping |
-| Service | [`UpdateService`](src/core/services/updateservice.h) | eligibility, network, planning, download, staging, `pending.json` |
-| Controller | [`UpdateController`](src/controllers/updatecontroller.h) | ALL policy: throttle, skipped version, prompts, notifications |
-| View | [`UpdateDialog`](src/widgets/dialogs/updatedialog.h) | version, notes, progress, Update / Skip / Later / Restart Now |
-| View | [`NotificationPopup2`](src/widgets/notificationpopup2.h) | the startup surface: Update / Check Release, then an in-place progress bar, then Restart / Retry |
-
-`UpdateController` routes transfer signals on an explicit `TransferSurface`
-(`None` / `Dialog` / `Notification`) claimed **only for a `startDownload()` call the service
-accepted** (`UpdateService::DownloadStart` = `Started` / `Busy` / `NoPlan` / `Stale`),
-**not** on the `m_dialog` pointer — a startup notification can coexist with an open
-non-modal `UpdateDialog`, and `m_dialog` / `m_manualCheck` describe the last *check*, not
-the current *transfer*. `Busy` and `Stale` start nothing and emit nothing, so claiming a
-surface before the call would strand it forever. Every download request also passes the
-version it was OFFERED, so a button that outlived its check is refused as `Stale` rather
-than silently downloading a different plan; `startCheck()` additionally dismisses the
-tracked offer notification, since a new check invalidates the plan its actions would start.
-`onFailed` with `TransferSurface::None` is a CHECK failure and keeps the old rules (silent
-`qWarning` on the startup path, message box on the manual path).
+| Service | [`UpdateService`](src/core/services/updateservice.h) | release API, per-source endpoints/headers, manual redirect walking, source-scoped host allowlist, response cap, cancellation, worker lifetime |
+| Controller | [`UpdateController`](src/controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness |
+| View | [`UpdateDialog`](src/widgets/dialogs/updatedialog.h) | version, notes, Open Release Page / Skip This Version / Later |
+| View | [`NotificationPopup2`](src/widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with a Check Release action |
 
 `UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
 `core_services`, so the reverse dependency would be circular. The installed version is
-injected and every config-dependent decision lives in `UpdateController`.
+injected and every config-dependent decision lives in `UpdateController`, which pushes the
+configured source down via `setSource()`.
 
-### Manifest contract
+`UpdateInfo` carries exactly `updateAvailable`, `currentVersion`, `latestVersion`,
+`releaseNotes` and `releaseUrl`. The release's `assets[]` array is **ignored entirely** —
+no asset is selected and no asset URL is ever requested
+(`testAssetsAreIgnoredEntirely` pins this).
 
-The Windows package is **flat and runtime-only**: the ZIP's single top-level
-directory IS the install root, with `vnote.exe` and every DLL directly beneath it
-(`CMAKE_INSTALL_BINDIR` is pinned to `.` in the top-level `CMakeLists.txt`, before
-`add_subdirectory(libs)`, so the submodules' install rules follow). The updater strips
-exactly one level from a full package, so any extra level would make every manifest path
-wrong. Because cmark and QtKeychain declare unconditional `install()` rules that no option
-disables, `package/prune-package.cmake` runs as a `CPACK_PRE_BUILD_SCRIPTS` hook and strips
-`bin/`, `include/`, `lib/`, `mkspecs/` and `cmark.exe` from the staging tree; a CI step
-gates every Windows build on their absence.
-
-Two artifacts per release variant, both produced by `scripts/gen-update-package.ps1`:
-
-- **In-package** `manifest.json` at the install root, inside the ZIP.
-- **Release asset** `VNote-<ver>-<variant>.manifest.json` — the same object plus
-  `fullPackage` and, when built, `delta { baseVersion, asset, size, sha256 }`.
-
-Rules:
-
-- `files[]` paths are forward-slash, install-root-relative, and **exclude `manifest.json`
-  itself**.
-- Path comparison is case-insensitive (Windows); stored casing is preserved.
-- `channel` is `"stable"` or `"continuous"`. **Only `channel == "stable"` is eligible as a
-  delta base.** CI derives it from the real release predicate
-  (`refs/heads/master` + a `[Release]` head commit), never from "was this a tag build" —
-  this repo cuts releases from a master push and creates the tag afterwards.
-- Deletions are **derived**, never stored.
-- Asset URLs are deterministic **and per-source** (`<base>/v<ver>/VNote-<ver>-<variant>.manifest.json`):
-  - GitHub — `https://github.com/vnotex/vnote/releases/download`
-  - Gitee — `https://gitee.com/vnotex/vnote/releases/download`
+`checkForUpdates()` returns whether the request was ACCEPTED (a call made during another
+check is dropped and returns `false`). `UpdateController` sets its manual-vs-startup mode
+**only for an accepted request**, and keeps its own `m_checkInFlight` until the terminal slot
+runs. Both are load-bearing: without them a manual click during the silent startup check
+re-labels that background check's outcome, turning a failure that must stay silent into a
+modal warning box.
 
 ### Release source (GitHub or Gitee)
 
-`CoreConfig::updateSource` (`"github"` | `"gitee"`, default `github`, Settings › General)
-selects which forge the updater talks to. `UpdateController` **pushes** it into
-`UpdateService::setSource()`; the service never reads config (see the ownership note
-above). A change while a check or download is in flight is ignored and logged, so one plan
-can never mix manifests and archives from two origins.
+`CoreConfig::updateSource` (`"github"` | `"gitee"`, Settings › General) selects the forge.
+**The default is Gitee**: `normalizeUpdateSource()` returns `"github"` only for an explicit
+case-insensitive `"github"`, and `"gitee"` for empty, absent or unrecognized values.
+`UpdateService::sourceFromString()` applies the same rule — keep the two in step.
+`CoreConfig::toJson()` always persists the key, so an **existing installation keeps whatever
+it already had** (in practice GitHub); only fresh installs and hand-cleared configs get the
+new default. No migration is performed.
 
 | | GitHub | Gitee |
 |---|---|---|
 | latest-release API | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
-| `Accept` header | `application/vnd.github+json, …` | `application/json, …` |
-| release page | the API's `html_url` | synthesized `https://gitee.com/vnotex/vnote/releases/tag/v<tag>` (Gitee's JSON has no `html_url`; the pattern is verified against the live v4.3.0 page, and note the `tag/` segment the asset download path does **not** have) |
-| host allowlist | exact `api.github.com`, `github.com`, `codeload.github.com` + suffix `.githubusercontent.com` | exact `gitee.com` + suffix `.gitee.com` (covers `foruda.gitee.com`) |
+| `Accept` header | `application/vnd.github+json, */*` | `application/json, */*` |
+| release page | the API's `html_url`, validated against the allowlist first (it is handed to `QDesktopServices`); an absent, malformed or off-forge value falls back to a synthesized `<releases>/tag/v<tag>` | synthesized `https://gitee.com/vnotex/vnote/releases/tag/v<tag>` (Gitee's JSON has no `html_url`; the pattern is verified against the live v4.3.0 page, and note the `tag/` segment the asset download path does **not** have) |
+| host allowlist | exact `api.github.com`, `github.com`, `codeload.github.com` + suffix `.githubusercontent.com` | exact `gitee.com` + suffix `.gitee.com` |
 
 The allowlists are **disjoint and source-scoped**: a client on one source must never follow
-a redirect to the other's hosts. Everything else about the transport is unchanged —
-manually followed redirects, at most `c_maxRedirects` hops, no HTTPS→HTTP downgrade, and
-signature verification over the bytes as received with the compiled-in Ed25519 key. That
-last property is what makes downloading from a mirror safe; do not weaken it for Gitee.
+a redirect to the other's hosts. Redirects are followed MANUALLY
+(`QNetworkRequest::ManualRedirectPolicy` set on EVERY request, because Qt 5 and Qt 6 differ
+in their default), at most `c_maxRedirects` hops, with no HTTPS→HTTP downgrade.
 
-`gitee-mirror.yml` mirrors the small update assets (`*.manifest.json`,
-`*.manifest.json.minisig`, `*.delta.zip`) automatically; the ~158 MB platform ZIPs stay a
-manual upload. Gitee also keeps only the two most recent releases, so a delta base older
-than that is simply unavailable there and the client falls back to the full package.
+### Threading
 
-### Ineligibility, and the check-only degradation
+`checkForUpdates()` returns immediately and does its work on a `QtConcurrent` worker,
+because it blocks on a nested event loop.
 
-`checkEligibility()` gates in this order: Windows → 64-bit → install dir valid →
-**Microsoft Store** → Program Files → writable → same volume → trusted keys → rename probe.
-
-The Store gate (`UpdateInstaller::isMicrosoftStoreInstall()`, a dynamic
-`GetCurrentPackageFullName` probe so the Windows 7 variant still loads) must stay **before**
-the Program Files check: MSIX installs live under `C:\Program Files\WindowsApps`, and the
-Program Files reason tells the user to "use the installer package", which does not exist
-for a Store install.
-
-Separately, when the selected source publishes the release but **the manifest itself 404s**,
-the check degrades to check-only rather than failing: `eligible = false`,
-`updateAvailable = true`, and an `ineligibleReason` pointing at the release page. This
-absence is inferred **only** from the manifest fetch. Once manifest bytes have been
-received, any signature problem — including a 404 on the `.minisig` — remains a **hard
-failure**. `testMissingSignatureIsRefused()` pins that fail-closed property.
-
-### Staging layout
-
-```
-<installDir>/.vnote-update.lease         exclusive sentinel (SIBLING of the directory below)
-<installDir>/.vnote-update/download/     downloaded archives
-<installDir>/.vnote-update/staged/       extracted new files, mirroring the install layout
-<installDir>/.vnote-update/pending.json  the plan
-<installDir>/.vnote-update/journal.json  durable write-ahead journal
-<installDir>/.vnote-update/result.json   apply outcome, consumed at the next launch
-<installDir>/.vnote-old/<timestamp>/     backups + RECOVERY.txt
-```
-
-There is deliberately **no lock file inside `.vnote-update/`**: the lease sentinel is a
-sibling, so committing can delete that whole directory without a lock-vs-directory ordering
-race. On commit the staging root is removed and `result.json` is re-written afterwards, so
-it is the only survivor for the next launch to consume.
-
-### Lease protocol (what it does and does not guarantee)
-
-- **Every launch** acquires the lease as the **first executable statement of `main()`**,
-  before `Logger::installEarly()`, and holds it across `recoverInterrupted()` **and**
-  `guard.tryRun()`. On timeout it shows a Win32 `MessageBoxW` and exits — never falls
-  through to initialization.
-- **Guaranteed:** no process reaches VNote's own initialization (vxcore context, services,
-  config, windows) while another is applying an update.
-- **NOT guaranteed (accepted residual risk 5):** the Windows loader resolves and maps this
-  executable's static imports **before `main()` runs**, so a launch that races an in-progress
-  apply may already have mapped a mixed old/new DLL set, or fail in the loader outright. No
-  in-process lease can close that window — only the external-helper/bootstrap follow-up can.
-  Do not write comments or docs claiming the lease prevents module mapping.
-- **Release timing depends on the guard outcome:**
-  - `Primary` → released immediately after `tryRun()`.
-  - `Secondary` / `BusyUnreachable` → **held until teardown is complete**, released as the
-    last statement of `main()`. A rejected starter has already mapped those modules;
-    releasing earlier would let an applier swap files still mapped into it.
-- `SingleInstanceGuard::tryRun()` is **fail-closed**: its historical "lock held, IPC
-  unreachable → proceed anyway" branch now returns `BusyUnreachable` and the caller exits.
-- **The applying primary** re-acquires the lease after `app.exec()` returns, **while its
-  guard is still held**, and keeps it until the replacement process has been spawned.
-
-No ABBA deadlock: a starter holding the lease never blocks on the guard
-(`QLockFile::tryLock(0)` is non-blocking and the IPC connect is bounded to 200 ms), so the
-applier's wait on the lease always terminates.
-
-### Journal invariants
-
-- Every operation — add, replace, **delete**, path-type-conflict removal,
-  `ReplaceExecutable` — has a durable journal entry **before** the corresponding move.
-- Ordinary operations move through four durable checkpoints
-  (`Intent → dirs recorded+created → backup → BackedUp → move → Done`), so a kill at any
-  point leaves the journal describing exactly what happened.
-- **Every checkpoint write is checked.** A `saveJournal` failure after a mutation stops the
-  transaction and marks it `MANUAL_RECOVERY`; it must never continue into the next
-  irreversible rename with a stale journal. The only unchecked writes are the best-effort
-  final ones inside terminal `MANUAL_RECOVERY` paths.
-- **Rollback is replay-safe.** `rollback()` can only journal `Reverted` *after* the
-  filesystem work returns, so a crash in between replays `performReverse()` against a
-  half-reversed tree. For `Replace`/`Delete`/`ConflictRemove` the deciding fact is
-  **the backup's existence, not the journal state** (`backup exists ⇔ restore not yet done`);
-  re-running the `Done` path unconditionally would move the freshly restored original into
-  staging and find no backup left to put back, deleting a production file.
-- **Directories created by an operation are recorded in that operation's entry**, so
-  rollback removes them bottom-up when empty.
-- **Deletions are blocking**: a failed deletion rolls the transaction back, because a stale
-  DLL that survived would also vanish from the new manifest and could never be cleaned up.
-- Manifest-commit failure is a transaction failure and rolls everything back.
-- **`RECOVERY.txt` is mandatory**: if it cannot be written the apply aborts *before* the
-  first mutation, because it is the only mitigation for residual risks 1 and 4. It lists the
-  paths this transaction **adds**, since overlaying the backup cannot remove those.
-- After a successful rollback the terminal journal is copied beside the backups and the live
-  `journal.json` is **removed**, so the staged tree stays retryable instead of making
-  `applyPending()` re-enter recovery forever.
-- `recoverInterrupted()` runs at the very top of `main()` and is idempotent and re-entrant —
-  a crash *during* recovery must be safe.
-
-### `ReplaceExecutable`: two renames, not one
-
-**A running executable is mapped as an IMAGE section, and Windows refuses to unlink the name
-of such a file.** Measured on Windows 11 24H2 / NTFS against a real PE:
-
-| target state | `FileRenameInfoEx` POSIX\|REPLACE | `FileRenameInfoEx` REPLACE only | `MoveFileExW` (aside) |
-|---|---|---|---|
-| no open handle | OK | OK | OK |
-| open handle, no section | OK | `ERROR_ACCESS_DENIED` | OK |
-| data section mapped | OK | `ERROR_ACCESS_DENIED` | OK |
-| **IMAGE section mapped** | **`ERROR_ACCESS_DENIED`** | `ERROR_ACCESS_DENIED` | **OK** |
-
-So the swap is two renames:
-
-1. canonical `vnote.exe` → `<backupDir>/vnote.exe` (allowed on a mapped image);
-2. `staged/vnote.exe` → canonical (the destination no longer exists).
-
-POSIX semantics is still preferred for both (strictly more permissive when any handle is
-open), with a `MoveFileExW` fallback taken **only** when `SetFileInformationByHandle`
-reports the info class itself is unimplemented — never on an `ERROR_ACCESS_DENIED`. That
-fallback is what keeps the Windows 7 / 8.1 `win64-windows7` variant eligible.
-
-The capability probe exercises exactly this sequence against a SEC_IMAGE-mapped copy of a
-real PE, at planning time **and** again in apply preflight.
-
-### Accepted residual risks
-
-1. **Mixed binary set after an interrupted apply.** The journal plus the two-rename sequence
-   normally let recovery run on the next launch. But if the Windows loader cannot start a
-   partially-swapped DLL set (e.g. a new `Qt6Core.dll` beside an old `Qt6Gui.dll`), the
-   process dies before `main()` and recovery never runs. Mitigation: `RECOVERY.txt` written
-   into `.vnote-old/<timestamp>/` at transaction start; the backup is retained until the
-   next successful launch. Eliminating this requires the external-helper follow-up.
-2. **Handle contention**, in three honest tiers: detected during preflight or the WebEngine
-   wait → **abort before any mutation**; detected mid-transaction → **rollback**; contention
-   also blocks the rollback → the install is left mixed with journal and backups intact and
-   degenerates into risk 1. Rare, but real: the design does **not** claim "never a broken
-   install".
-3. **Hosts without a usable rename sequence.** Probed by actual API result (never by OS
-   version) at planning time and re-probed in apply preflight; such installs are marked
-   ineligible and offered the download page.
-4. **The canonical executable does not exist between the two renames.** One syscall wide,
-   journaled as `ReplaceExecutable` state `BackedUp`, with the complete old image already in
-   `.vnote-old/<ts>/`. A machine death inside that window leaves no `vnote.exe`, so recovery
-   cannot run and the user must restore from the backup using `RECOVERY.txt`. This is
-   strictly weaker than a single atomic operation would be, and it is unavoidable on
-   Windows (see the table above).
-5. **A concurrent launch can map modules before its lease check.** The Windows loader
-   resolves static imports before `main()`, so the lease cannot stop a process started
-   during an apply from mapping a mixed DLL set. See "Lease protocol" above. Only the
-   external-helper/bootstrap follow-up removes this.
+- **`QNetworkAccessManager` is created on the WORKER'S STACK**, never as a member. QNAM is
+  not thread-safe and belongs to the thread that created it, so every network helper takes it
+  by reference. There is deliberately no QNAM member.
+- Both signals (`checkFinished`, `failed`) are emitted through
+  `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` so receivers see them on the GUI
+  thread.
+- **`m_busy` is released as the LAST statement of the worker**, after the terminal signal has
+  been queued. Releasing it earlier would let the next check start while this one is still
+  running. A second `checkForUpdates()` while one is in flight is DROPPED, not queued.- The destructor calls `cancel()` and then waits for **every** outstanding worker
+  (`waitForWorkers()`), not just the most recent one: workers hold a raw `this`, and a single
+  stored `QFuture` could be replaced while the previous worker was still unwinding.
+- Cancellation is POLLED every 250 ms inside a blocking request so service teardown is never
+  blocked for the full request timeout.
+- The API response cap **aborts** the reply mid-stream rather than buffering the whole body
+  and rejecting afterwards; `testOversizedApiResponseAbortsTheReply` proves this by declaring
+  an 8 GB `Content-Length` and never closing the socket.
 
 ### Forbidden patterns
 
-- **Never** touch the install tree outside `UpdateInstaller`.
-- **Never** apply before `vxcore_context_destroy()`; the apply runs only in the post-scope
-  block of `main()`, after every service, `ConfigMgr2`, `Application` and the guard are gone.
-- **Never** use `qApp`, a service, a widget, `QtConcurrent`, the network, or
-  `QCoreApplication::applicationFilePath()` after that scope exit. Use
-  `UpdateInstaller::exePathFromModulePath()` and re-read the plan from `pending.json`.
-- **Never** rely on `SingleInstanceGuard` alone for update serialization (its pre-tri-state
-  behavior was fail-open).
-- **Never** route `vnote.exe` through the generic swap or the generic reverse rollback; it
-  has its own state machine for the reasons in the table above.
-- **Never** release the update lease before the replacement process has been spawned, and
-  remember `exit(0)` does not unwind C++ objects — release it explicitly.
-
-Full design rationale, the recovery state table, and the manual E2E checklist live in
-`.kilo/plans/1785337074532-incremental-update-plan.md`.
+- **Never** download, extract, execute or install a release artifact.
+- **Never** write outside the configuration directory as part of an update check.
+- **Never** read `assets[]`; the release page is the only affordance.
+- **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.
 
 ---
 

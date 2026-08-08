@@ -2,9 +2,9 @@
 //
 // The behavior under test is the FAIL-CLOSED change: the branch where the lock
 // is held but the holder cannot be reached over IPC used to log a warning and
-// return true, producing a SECOND primary. Under the incremental updater that
-// second primary can reach normal initialization -- mapping Qt, VTextEdit and
-// vxcore -- while an applier is swapping those very files underneath it.
+// return true, producing a SECOND primary. Two primaries write the same config,
+// session snapshot and notebook state, and both run ConfigMgr2's
+// bundled-resource install over the same folders.
 //
 // Every case uses a UNIQUE server name and lock path via the testing
 // constructor, so running this suite can never disturb (or be disturbed by) a

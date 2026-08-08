@@ -29,9 +29,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt version to use (5 or 6), defaults to 6")
 
 # Windows packages install FLAT: the release ZIP's single top-level directory IS
-# the install root, with vnote.exe and every DLL directly beneath it. The in-app
-# updater strips exactly one level from a full package, so an extra "bin/" level
-# makes every manifest path wrong (see the root AGENTS.md, "Incremental Update").
+# the install root, with vnote.exe and every DLL directly beneath it. An extra
+# "bin/" level would break that layout -- the packaging scripts, the published
+# manifests and every "unzip over the old folder" upgrade all assume the runtime
+# lives directly under the package root.
 #
 # This MUST be set before add_subdirectory(libs): vxcore, qwindowkit and QHotkey
 # each include(GNUInstallDirs), which caches CMAKE_INSTALL_BINDIR as "bin". A

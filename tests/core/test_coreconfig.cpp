@@ -1,5 +1,5 @@
-#include <QtTest>
 #include <QJsonObject>
+#include <QtTest>
 
 #include <core/coreconfig.h>
 #include <core/iconfigmgr.h>
@@ -33,7 +33,8 @@ private slots:
   void testLastUpdateCheckTimeSurvives32BitRange();
   void testLastUpdateCheckTimeBackwardCompatibleParsing();
   void testUpdateCheckDue();
-  void testUpdateSourceDefaultsToGithub();
+  void testUpdateSourceDefaultsToGitee();
+  void testUpdateSourceIsAlwaysPersistedSoExistingConfigsKeepTheirs();
   void testUpdateSourceNormalizesUnknownAndCaseVariants();
   void testUpdateSourceRoundTrips();
 
@@ -294,34 +295,56 @@ void TestCoreConfig::testUpdateCheckDue() {
 }
 
 // The default lives in C++ (there is no bundled vnotex.json entry for any of
-// the update keys), so an absent OR empty value must still land on github.
-void TestCoreConfig::testUpdateSourceDefaultsToGithub() {
+// the update keys), so an absent OR empty value must still land on gitee.
+void TestCoreConfig::testUpdateSourceDefaultsToGitee() {
   {
     CoreConfig cfg(&m_mockMgr, nullptr);
-    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("gitee"));
     cfg.fromJson(QJsonObject());
-    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("gitee"));
   }
   {
     QJsonObject json;
     json[QStringLiteral("updateSource")] = QString();
     CoreConfig cfg(&m_mockMgr, nullptr);
     cfg.fromJson(json);
-    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+    QCOMPARE(cfg.getUpdateSource(), QStringLiteral("gitee"));
   }
 }
 
+// toJson() ALWAYS writes updateSource, so an existing installation keeps
+// whatever it already had. This is the property that makes the Gitee default a
+// fresh-install-only change: no migration runs, and a user who deliberately
+// picked GitHub is never moved.
+void TestCoreConfig::testUpdateSourceIsAlwaysPersistedSoExistingConfigsKeepTheirs() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  QJsonObject legacy;
+  legacy[QStringLiteral("updateSource")] = QStringLiteral("github");
+  cfg.fromJson(legacy);
+  QCOMPARE(cfg.getUpdateSource(), QStringLiteral("github"));
+
+  const auto out = cfg.toJson();
+  QVERIFY2(out.contains(QStringLiteral("updateSource")),
+           "updateSource was dropped, so an existing choice would silently reset");
+  QCOMPARE(out.value(QStringLiteral("updateSource")).toString(), QStringLiteral("github"));
+
+  CoreConfig reloaded(&m_mockMgr, nullptr);
+  reloaded.fromJson(out);
+  QCOMPARE(reloaded.getUpdateSource(), QStringLiteral("github"));
+}
+
 // A hand-edited or future-written value must never reach UpdateService as-is:
-// anything outside {github, gitee} degrades to github rather than to "no
-// source at all".
+// anything that is not an explicit "github" degrades to gitee rather than to
+// "no source at all".
 void TestCoreConfig::testUpdateSourceNormalizesUnknownAndCaseVariants() {
   const QVector<QPair<QString, QString>> cases{
       {QStringLiteral("gitee"), QStringLiteral("gitee")},
       {QStringLiteral("GiTee"), QStringLiteral("gitee")},
       {QStringLiteral("  GITEE  "), QStringLiteral("gitee")},
       {QStringLiteral("GitHub"), QStringLiteral("github")},
-      {QStringLiteral("gitlab"), QStringLiteral("github")},
-      {QStringLiteral("sourceforge"), QStringLiteral("github")},
+      {QStringLiteral("  GITHUB  "), QStringLiteral("github")},
+      {QStringLiteral("gitlab"), QStringLiteral("gitee")},
+      {QStringLiteral("sourceforge"), QStringLiteral("gitee")},
   };
 
   for (const auto &c : cases) {
@@ -340,14 +363,14 @@ void TestCoreConfig::testUpdateSourceNormalizesUnknownAndCaseVariants() {
 
 void TestCoreConfig::testUpdateSourceRoundTrips() {
   CoreConfig cfg(&m_mockMgr, nullptr);
-  cfg.setUpdateSource(QStringLiteral("gitee"));
+  cfg.setUpdateSource(QStringLiteral("github"));
 
   const auto out = cfg.toJson();
-  QCOMPARE(out.value(QStringLiteral("updateSource")).toString(), QStringLiteral("gitee"));
+  QCOMPARE(out.value(QStringLiteral("updateSource")).toString(), QStringLiteral("github"));
 
   CoreConfig reloaded(&m_mockMgr, nullptr);
   reloaded.fromJson(out);
-  QCOMPARE(reloaded.getUpdateSource(), QStringLiteral("gitee"));
+  QCOMPARE(reloaded.getUpdateSource(), QStringLiteral("github"));
 }
 
 } // namespace tests

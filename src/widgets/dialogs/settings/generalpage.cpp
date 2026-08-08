@@ -104,10 +104,13 @@ void GeneralPage::setupUI() {
 
   {
     m_updateSourceComboBox = WidgetsFactory::createComboBox(this);
-    m_updateSourceComboBox->setToolTip(tr("Where VNote checks for and downloads updates."));
+    m_updateSourceComboBox->setToolTip(tr("Where VNote checks for new releases."));
 
-    m_updateSourceComboBox->addItem(QStringLiteral("GitHub"), QStringLiteral("github"));
+    // Gitee first: it is the default source (see
+    // CoreConfig::normalizeUpdateSource), so index 0 is also the no-match
+    // fallback used by loadInternal().
     m_updateSourceComboBox->addItem(QStringLiteral("Gitee"), QStringLiteral("gitee"));
+    m_updateSourceComboBox->addItem(QStringLiteral("GitHub"), QStringLiteral("github"));
 
     const QString label(tr("Update source"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));

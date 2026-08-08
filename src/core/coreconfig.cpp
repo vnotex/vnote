@@ -26,7 +26,6 @@ QStringList CoreConfig::s_availableLocales;
 // (e.g. bound to a qint64 reference). Redundant, but harmless, from C++17 on.
 constexpr qint64 CoreConfig::c_updateCheckIntervalMs;
 
-
 CoreConfig::CoreConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("core");
   initDefaults();
@@ -201,11 +200,17 @@ void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled) {
 }
 
 QString CoreConfig::normalizeUpdateSource(const QString &p_source) {
+  // Gitee is the default: only an EXPLICIT "github" selects GitHub, so empty,
+  // absent and unrecognized values all resolve to Gitee.
+  //
+  // NOTE: toJson() ALWAYS writes updateSource, so an existing installation
+  // keeps whatever it already had (in practice "github"). Only fresh installs
+  // and hand-cleared configs get the new default; no migration is performed.
   const QString lowered = p_source.trimmed().toLower();
-  if (lowered == QStringLiteral("gitee")) {
-    return QStringLiteral("gitee");
+  if (lowered == QStringLiteral("github")) {
+    return QStringLiteral("github");
   }
-  return QStringLiteral("github");
+  return QStringLiteral("gitee");
 }
 
 const QString &CoreConfig::getUpdateSource() const { return m_updateSource; }

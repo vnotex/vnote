@@ -112,12 +112,15 @@ public:
   bool isCheckForUpdatesOnStartEnabled() const;
   void setCheckForUpdatesOnStartEnabled(bool p_enabled);
 
-  // Where VNote checks for and downloads updates: "github" or "gitee".
-  // Anything else (including an absent key) normalizes to "github".
+  // Which forge VNote checks for a newer release: "github" or "gitee".
+  // Anything that is not an explicit "github" (including an absent key)
+  // normalizes to "gitee".
   const QString &getUpdateSource() const;
   void setUpdateSource(const QString &p_source);
 
-  // Lower-cases p_source and maps anything outside {github, gitee} to "github".
+  // Trims and lower-cases p_source. ONLY an explicit "github" selects GitHub;
+  // every other value -- empty, absent, or unrecognized -- normalizes to
+  // "gitee". Keep in step with UpdateService::sourceFromString().
   static QString normalizeUpdateSource(const QString &p_source);
 
   // Version string the user chose to skip (e.g. "4.3.2"). Empty when nothing is skipped.
@@ -178,7 +181,7 @@ private:
   void initDefaults();
 
   // Theme name.
-  QString m_theme {"pure"};
+  QString m_theme{"pure"};
 
   // User-specified locale, such as zh_CN, en_US.
   // Empty if not specified.
@@ -199,9 +202,11 @@ private:
 
   bool m_checkForUpdatesOnStartEnabled = true;
 
-  // Release source used by the updater. Defaults live in C++; there is no
-  // bundled vnotex.json entry for any of the update keys.
-  QString m_updateSource{QStringLiteral("github")};
+  // Release source used by the update checker. Defaults live in C++; there is
+  // no bundled vnotex.json entry for any of the update keys. Gitee is the
+  // default because it is reachable for the majority of VNote's users; see
+  // normalizeUpdateSource() for why existing configs are not migrated.
+  QString m_updateSource{QStringLiteral("gitee")};
 
   // Version the user explicitly skipped in the update dialog.
   QString m_skippedUpdateVersion;

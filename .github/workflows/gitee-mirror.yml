@@ -9,9 +9,15 @@ name: Gitee Mirror
 #
 # The ~158 MB platform ZIPs are NOT mirrored: Gitee's attachment endpoint runs at
 # well under 50 KB/s from a GitHub-hosted runner, so the maintainer uploads those
-# by hand. The small update assets (*.manifest.json, *.manifest.json.minisig and
-# the delta ZIP) ARE mirrored automatically - without a manifest every Gitee user
-# is silently downgraded to check-only in-app updates. Uploads are additive:
+# by hand. Note that those hand-uploaded platform packages are what a user
+# following VNote's "Update Available" prompt to the Gitee release page expects
+# to find there.
+#
+# The small update assets (*.manifest.json, *.manifest.json.minisig and the delta
+# ZIP) ARE mirrored automatically. The client itself no longer consumes them -
+# they are published as the artifact interface for a future EXTERNAL updater (see
+# docs/update-signing.md) - but mirroring keeps both forges carrying the same
+# release contents. Uploads are additive:
 # Gitee has no replace semantics, so an already-attached name is skipped and no
 # existing attachment is ever removed.
 #

@@ -269,14 +269,12 @@ void MainWindow2::setupUI() {
 
   // Notification surfaces + producers. Constructed BEFORE the updater's
   // MainWindowAfterStart subscription, so a launch-time notification from
-  // runStartupTasks() (e.g. a staged update ready to install, or the stored
-  // apply result) already has a toast to land on.
+  // runStartupTasks() already has a toast to land on.
   setupNotifications();
 
-  // Incremental updater. Constructed BEFORE kickOffPostInit() so its
+  // Release checker. Constructed BEFORE kickOffPostInit() so its
   // MainWindowAfterStart subscription is registered before the hook fires.
-  // It owns all update policy; MainWindow2 only forwards the menu action and
-  // the quit prompt.
+  // It owns all update policy; MainWindow2 only forwards the menu action.
   m_updateController = new UpdateController(m_serviceLocator, this, this);
   if (auto *hookMgr = m_serviceLocator.get<HookManager>()) {
     hookMgr->addAction(
@@ -557,17 +555,6 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
   }
 
   if (isExit || !m_trayIcon->isVisible()) {
-    // A staged update is applied on the way out, not while VNote is running.
-    // Ask BEFORE the before-close hook so a user who declines still gets the
-    // normal shutdown, and one who accepts gets kExitToApplyUpdate carried
-    // through to main(). Skipped when the exit code is already set (the user
-    // came here via "Restart to finish update" or an explicit restart).
-    if (exitCode < 0 && m_updateController && m_updateController->hasPendingUpdate()) {
-      if (m_updateController->promptToApplyPendingOnQuit()) {
-        exitCode = kExitToApplyUpdate;
-      }
-    }
-
     // Fire before-close hook. Subscribers (ViewArea2, ConfigService) handle:
     // - Tab order sync and buffer close with save prompts (ViewArea2, priority 10)
     // - Session snapshot to disk (ConfigService, priority 100)
@@ -579,11 +566,8 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
         //
         // m_requestQuit was consumed into `exitCode` and reset at the top of
         // this function, BEFORE the hook could cancel. Restoring it here keeps
-        // a requested restart / update-apply alive across a cancelled close;
-        // otherwise the next close would silently exit with 0 and the staged
-        // update would never be applied. Nothing else needs undoing: no lease
-        // has been acquired at this point (main() takes it only after
-        // app.exec() returns).
+        // a requested restart alive across a cancelled close; otherwise the
+        // next close would silently exit with 0.
         m_requestQuit = exitCode;
         hookMgr->doAction(HookNames::MainWindowShutdownCancelled);
         p_event->ignore();
@@ -1197,17 +1181,6 @@ void MainWindow2::checkForUpdates() {
   if (m_updateController) {
     m_updateController->checkForUpdatesManually();
   }
-}
-
-void MainWindow2::restartForUpdate() {
-  // Mirrors restart(), but with the exit code main() interprets as "apply the
-  // staged update before spawning the replacement".
-  //
-  // Deliberately NO lease handling here: the update lease is a main() local
-  // (every service, including UpdateService, is destroyed before the apply
-  // runs), so ownership stays entirely in main().
-  m_requestQuit = kExitToApplyUpdate;
-  close();
 }
 
 void MainWindow2::changeEvent(QEvent *p_event) {

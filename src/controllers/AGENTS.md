@@ -27,7 +27,7 @@ When adding a multi-target action that requires user input via a dialog, the MVC
 
 **Known dead path**: `NotebookNodeController::handleRenameResult`, `INodeExplorer::handleRenameResult` (`src/views/inodeexplorer.h:83`) and both explorer overrides have **no production caller**. Production rename is inline: `NotebookExplorer2::onRenameRequested` (`notebookexplorer2.cpp:1585-1589`) starts an edit and Qt commits it through `NotebookNodeModel::setData`, which calls `NotebookCoreService::renameFile/renameFolder` directly (`notebooknodemodel.cpp:426-469`). Do not assume renames flow through the controller.
 
-Still violating the "no `QDialog`" rule, but **deliberately and with a recorded rationale** (do not "fix" these in passing): `UpdateController` (`tests/controllers/CMakeLists.txt` notes it is not GUILESS), `SyncConflictController` (rationale in `syncconflictcontroller.h:17-47`), `NewNotebookController`'s `QProgressDialog`, `ViewAreaController`'s `SettingsWidget`/`DashboardContent` construction, and the `QMenu`-building controllers (`NotebookNodeController`, `MarkdownViewWindowController`).
+Still violating the "no `QDialog`" rule, but **deliberately and with a recorded rationale** (do not "fix" these in passing): `UpdateController` (it opens `UpdateDialog` for a manual "Check for Updates"; `tests/controllers/CMakeLists.txt` notes it is not GUILESS and stubs the dialog rather than linking it), `SyncConflictController` (rationale in `syncconflictcontroller.h:17-47`), `NewNotebookController`'s `QProgressDialog`, `ViewAreaController`'s `SettingsWidget`/`DashboardContent` construction, and the `QMenu`-building controllers (`NotebookNodeController`, `MarkdownViewWindowController`).
 
 ## Controller Inventory
 

@@ -134,8 +134,8 @@ The routing table lives INSIDE the toast rather than in `MainWindow2`, so it is 
 
 A message renders a `QProgressBar` when `NotificationMessage::m_progressIndeterminate` is
 set (range `0..0`, busy indicator, wins over the permille) or `m_progressPermille >= 0`
-(range `0..1000`, clamped). Permille rather than percent, so a multi-hundred-megabyte
-download still moves the bar smoothly — same scale as `UpdateDialog`.
+(range `0..1000`, clamped). Permille rather than percent, so a long-running producer with a
+byte count still moves the bar smoothly.
 
 The popup rebuilds on `messageAdded` / `messageUpdated` / `messageDismissed` /
 `messageRemoved` / `messagesCleared` / `themeChanged`, but **only when it is already
@@ -143,8 +143,8 @@ visible**. `messageAdded` is in that list deliberately: nothing auto-pops any mo
 without it an open popup would go stale.
 
 `NotificationAction::m_dismissOnTrigger` (default `true`) controls whether triggering the
-action dismisses the message. Producers that keep updating one message in place — the
-updater's Update / Cancel / Retry — set it `false`.
+action dismisses the message. Producers that keep updating one message in place set it
+`false`.
 
 `m_details` is rendered as a collapsible disclosure in the **popup list only** — never in
 the toast or the tray balloon, both of which must stay small. It is the home for the error
@@ -164,8 +164,8 @@ icon with `@base#<state>#fg`. When adding a theme, carry all four states plus a
 
 - Rows are rebuilt from `service.messages()` on every show and on the signals above, so a stale row's callback can never fire after `clearAll()`.
 - Action buttons capture only the message id + action index and re-resolve the callback from the **current** service state at click time (a cleared/dismissed/removed message becomes an inert no-op).
-- The callback AND its `m_dismissOnTrigger` flag are snapshotted in that **same** lookup, before the callback runs. Do NOT re-resolve the action index afterwards: an Update/Retry callback synchronously replaces the action vector (with Cancel / Restart), so a second lookup would read a different action's flag.
-- Because a callback may synchronously destroy the widget (e.g. restart the main window), every post-callback access to `this`/`m_services` is guarded with a `QPointer`. The callback may also have already triggered a rebuild via `messageUpdated`, so nothing after it may touch the row widgets that existed when the lambda started.
+- The callback AND its `m_dismissOnTrigger` flag are snapshotted in that **same** lookup, before the callback runs. Do NOT re-resolve the action index afterwards: a callback may synchronously replace the action vector, so a second lookup would read a different action's flag.
+- Because a callback may synchronously destroy the widget, every post-callback access to `this`/`m_services` is guarded with a `QPointer`. The callback may also have already triggered a rebuild via `messageUpdated`, so nothing after it may touch the row widgets that existed when the lambda started.
 
 `Duration` controls only auto-hide (`Short` 3 s, `Long` 7 s, `Persist` = capped at 15 s **on the toast only**, so a toast is never permanently stuck); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed, cleared, or evicted by the retention cap.
 

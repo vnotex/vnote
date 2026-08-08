@@ -8,58 +8,51 @@
 #include <core/services/notificationservice.h>
 #include <core/services/updateservice.h>
 
+class QWidget;
+
 namespace vnotex {
 
 class ServiceLocator;
 class UpdateDialog;
-class MainWindow2;
 
 // Mediates between UpdateService (mechanism) and the update UI (view).
 //
 // All UPDATE POLICY lives here, not in the service:
 //   * the "check for updates on start" flag and its 24 h throttle;
 //   * the skipped-version filter;
+//   * the configured release source, pushed down into the service;
 //   * whether a failure is reported loudly (manual check) or silently
-//     (startup check);
-//   * turning a persisted apply outcome into a notification after the restart;
-//   * the "restart to finish the update?" prompt on a normal quit.
+//     (startup check).
 //
-// It is a QObject, NOT a QWidget, so it stays testable without a GUI.
+// The only thing offered when an update exists is the release page: VNote does
+// not download anything. It is a QObject, NOT a QWidget, so it stays testable
+// without a GUI; the only widget it needs is a parent for the dialog and
+// message boxes it opens.
 class UpdateController : public QObject {
   Q_OBJECT
 
 public:
-  UpdateController(ServiceLocator &p_services, MainWindow2 *p_mainWindow,
+  UpdateController(ServiceLocator &p_services, QWidget *p_parentWidget,
                    QObject *p_parent = nullptr);
   ~UpdateController() override;
 
-  // Runs once after MainWindowAfterStart:
-  //   1. turns a persisted result.json into a notification;
-  //   2. revalidates any pending update and offers "Restart to finish";
-  //   3. starts a throttled background check when enabled.
+  // Runs once after MainWindowAfterStart: applies the configured source and
+  // starts a throttled background check when enabled.
   void runStartupTasks();
 
-  // True when a validated staged update is waiting to be applied at quit.
-  bool hasPendingUpdate() const;
-
-  // Called from MainWindow2's close path. Returns true when the user accepted
-  // applying the pending update (the caller then quits with
-  // kExitToApplyUpdate); false to quit normally.
-  bool promptToApplyPendingOnQuit();
-
 public slots:
-  // Menu entry. Always reports its outcome, never throttled, and falls back to
-  // opening the releases page when this install is not eligible.
+  // Menu entry. Always reports its outcome and is never throttled.
   void checkForUpdatesManually();
 
 private slots:
   void onCheckFinished(const vnotex::UpdateInfo &p_info);
-  void onProgress(const QString &p_stage, qint64 p_done, qint64 p_total);
-  void onReadyToApply(const QString &p_version);
   void onFailed(const QString &p_message);
 
 private:
-  void startCheck(bool p_manual);
+  // Starts a check owned by this controller. Returns whether one was actually
+  // started; a request made while another check is still in flight is refused
+  // WITHOUT touching m_manualCheck.
+  bool startCheck(bool p_manual);
 
   void openReleasesPage() const;
 
@@ -68,82 +61,43 @@ private:
   // effect without a restart.
   void applyConfiguredSource();
 
-  void notifyPendingUpdate(const QString &p_version);
-
-  void consumeStoredResult();
-
   bool isVersionSkipped(const QString &p_version) const;
   void skipVersion(const QString &p_version);
 
   void showDialog(const UpdateInfo &p_info);
 
-  // Starts a download that reports into the notification (never the dialog) and
-  // switches the tracked message to its in-progress state. Used by both the
-  // Update and the Retry actions.
-  void startNotificationDownload();
-
-  // Posts p_msg as the tracked transfer notification, tagging it with the
-  // "update.transfer" dedup key. The service call is derived from
-  // p_msg.m_attention: Interrupt uses renotify() (so a terminal state always
-  // reaches the toast, even when no passive phase preceded it), Passive uses
-  // notify() (so progress folds into one row).
-  void postTransferNotification(const NotificationMessage &p_msg);
-
   // Action that opens the release page of @p_info, falling back to the current
-  // source's releases page. Takes the info explicitly: the dialog and the
-  // notification can be describing different checks.
+  // source's releases page.
   NotificationAction makeCheckReleaseAction(const UpdateInfo &p_info) const;
 
-  // Drops the tracked offer/retry notification. A new check invalidates the
-  // plan those actions would start, so their buttons must not outlive it.
+  // Drops the tracked offer notification. A new check supersedes whatever the
+  // previous one advertised, so its button must not outlive it.
   void invalidateTrackedNotification();
 
-  // Which surface the CURRENT transfer reports into. Routing must not key off
-  // m_dialog / m_manualCheck: those describe the last CHECK, and a startup
-  // notification can coexist with an open non-modal UpdateDialog.
-  enum class TransferSurface { None, Dialog, Notification };
-
   ServiceLocator &m_services;
-  MainWindow2 *m_mainWindow = nullptr;
+
+  // Dialog / message-box parent only. The controller has no other reason to
+  // know about the widget layer.
+  QWidget *m_parentWidget = nullptr;
 
   QPointer<UpdateDialog> m_dialog;
 
-  // Distinguishes the menu-driven check from the silent startup one.
+  // Which request the CURRENTLY IN-FLIGHT check came from. Set only for a
+  // request UpdateService actually accepted, and read only by the terminal
+  // slots. Assuming a request landed would let a DROPPED manual check re-label
+  // the running startup check's outcome -- turning a silent background failure
+  // into a modal warning box.
   bool m_manualCheck = false;
 
-  // Set at the exact action that calls startDownload(), reset on every terminal
-  // outcome.
-  TransferSurface m_transfer = TransferSurface::None;
+  // True from an accepted checkForUpdates() until its terminal slot runs. The
+  // service releases its own busy flag before the queued terminal signal is
+  // DELIVERED, so this flag -- not the service's -- is what keeps one check's
+  // result from being interpreted with the next check's mode.
+  bool m_checkInFlight = false;
 
-  // The notification carrying the offer, then the progress, then the terminal
-  // state. 0 when there is none.
-  //
-  // Assigned ONLY from calls using the "update.transfer" key. The post-restart
-  // apply result ("update.result") and the standalone dialog-closed failure
-  // (keyless) must never land here: startCheck() dismisses this id, and
-  // runStartupTasks() consumes the stored result BEFORE startCheck(), so
-  // sharing it would silently eat the apply outcome.
-  quint64 m_progressNotificationId = 0;
-
-  // The version currently being offered / downloaded through the notification.
-  UpdateInfo m_offeredInfo;
-
-  // The version the currently open (or last opened) UpdateDialog describes.
-  // Kept separate from m_offeredInfo: a startup notification and a manual
-  // dialog can be about different checks.
-  UpdateInfo m_dialogInfo;
-
-  // Coalescing state for the notification progress bar. Every update() rebuilds
-  // the popup, and QNetworkReply::downloadProgress fires far too often to do
-  // that per tick, so a tick is forwarded only when the whole-percent bucket or
-  // the stage text actually changes. -1 means "nothing sent yet".
-  int m_lastProgressBucket = -1;
-  QString m_lastProgressStage;
-
-  // Set once the user has answered the quit prompt, so a cancelled close does
-  // not ask again on the next attempt within the same session.
-  bool m_quitPromptAnswered = false;
-  bool m_quitPromptAccepted = false;
+  // The notification carrying the current offer, 0 when there is none. Assigned
+  // ONLY from calls using the "update.available" key.
+  quint64 m_offerNotificationId = 0;
 };
 
 } // namespace vnotex

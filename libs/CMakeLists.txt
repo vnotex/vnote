@@ -1,14 +1,6 @@
 add_subdirectory(QHotkey)
 add_subdirectory(vtextedit)
 
-# miniz - vendored ZIP reader/writer used by the built-in incremental updater.
-# See libs/miniz/PROVENANCE.md for the pinned upstream tag and hashes.
-add_subdirectory(miniz)
-
-# minicrypto - vendored, VERIFY-ONLY Ed25519 + BLAKE2b used to check the
-# signature over an update manifest. See libs/minicrypto/PROVENANCE.md.
-add_subdirectory(minicrypto)
-
 # vxcore - VNote core library (notebook management, tags, search)
 # Disable building tests and CLI when used as a submodule
 set(VXCORE_BUILD_TESTS OFF CACHE BOOL "Disable vxcore tests" FORCE)

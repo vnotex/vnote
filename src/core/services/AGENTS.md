@@ -42,7 +42,7 @@ A `dedupKey` names an **incident**, not a message. While a message with that key
 
 Because the toast is raised **only** by `messageAdded` carrying `Interrupt`, two rules follow:
 
-1. **To re-interrupt, use `renotify()`.** It REMOVES the old generation (emitting `messageRemoved`) and posts a fresh one, so the new state arrives as `messageAdded`. Plain `notify()` on a live key can never interrupt. This is what makes a terminal state reliable even when it was not preceded by a passive phase — the updater's `DownloadStart::NoPlan` path goes straight from an interrupting offer to an interrupting failure.
+1. **To re-interrupt, use `renotify()`.** It REMOVES the old generation (emitting `messageRemoved`) and posts a fresh one, so the new state arrives as `messageAdded`. Plain `notify()` on a live key can never interrupt. This is what makes a state change reliable even when it was not preceded by a passive phase — e.g. `UpdateController` replacing a superseded "Update Available" offer with the newer release's.
 2. **Producers MUST retire an incident when it genuinely ends** (`dismissByDedupKey`). A missed retirement makes a recurring failure permanently quiet. The retirement boundaries for each subsystem live in `NotificationRouter` (`src/controllers/notificationrouter.cpp`).
 
 There is deliberately **no escalation signal**. An earlier design emitted one when a dedup replacement raised `Passive → Interrupt`; it had two structural holes (a terminal state reached without an intervening passive phase never escalated, and `update()` could escalate an already-**dismissed** message back onto the screen). Retire-and-repost removes both.
@@ -188,219 +188,155 @@ The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault 
 
 ## UpdateService
 
-Mechanism half of the incremental updater: eligibility, network, planning, download and
-staging. The apply half lives in [`UpdateInstaller`](../updateinstaller.h) and runs AFTER
-this service has been destroyed. The full contract (manifest format, staging layout, lease
-protocol, journal invariants, the two-rename executable swap and the accepted residual
-risks) is in the root [Incremental Update](../../../AGENTS.md#incremental-update-windows-x64)
-section; only the service-specific rules are repeated here.
+Mechanism half of the update check: the release API, the source-scoped host allowlist,
+manual redirect walking, the response cap and cancellation. The full contract (source
+selection, the "VNote never modifies its own install directory and never downloads
+anything" invariant, the forbidden patterns) lives in the root
+[Update Check](../../../AGENTS.md#update-check) section; only the service-specific rules are
+repeated here.
+
+### It is a CHECK, and only a check
+
+`UpdateService` fetches ONE JSON document and reports what it says. It has no install
+directory, no download directory, no staging directory, no lease, no notion of "applying"
+anything, and it writes nothing to disk. `UpdateInfo` carries exactly `updateAvailable`,
+`currentVersion`, `latestVersion`, `releaseNotes` and `releaseUrl`.
+
+The release's `assets[]` array is **ignored entirely**: no asset name is matched, no
+`browser_download_url` is read, and no asset is ever requested. Do not add an install-dir
+or download-dir parameter back, and do not reintroduce asset selection — the absence of both
+is what fixes issue #2728 and what keeps this service free of a whole class of
+file-ownership races. `testAssetsAreIgnoredEntirely` and `testTheCheckWritesNothingToDisk`
+are the gates.
 
 ### No ConfigMgr2 dependency
 
-`UpdateService` takes `(installDir, currentVersion)` as plain values and never touches
-`ConfigMgr2`. This is NOT a style preference: `core_configs` links `core_services`, so a
-dependency the other way would be a CMake cycle. Every config-driven decision -
-`checkForUpdatesOnStart`, the 24 h throttle (`lastUpdateCheckTime`), and
-`skippedUpdateVersion` - therefore lives in `UpdateController`, which is compiled into the
-`vnote` target and may use `ConfigMgr2` freely.
+`UpdateService` takes `currentVersion` as a plain value and never touches `ConfigMgr2`. This
+is NOT a style preference: `core_configs` links `core_services`, so a dependency the other
+way would be a CMake cycle. Every config-driven decision - `checkForUpdatesOnStart`, the 24 h
+throttle (`lastUpdateCheckTime`), `skippedUpdateVersion` and the release source - therefore
+lives in `UpdateController`, which is compiled into the `vnote` target and may use
+`ConfigMgr2` freely.
 
 Corollary: do NOT "fix" a future need for config inside the service by registering
 `ConfigMgr2` with it. Add the policy to the controller and pass the decision down.
 
-The release source is the newest instance of that rule. `UpdateService::Source`
-(`GitHub` | `Gitee`) is a plain enum on the service with `setSource()` / `source()` and the
-`sourceFromString()` / `sourceToString()` converters; `UpdateController::applyConfiguredSource()`
-PUSHES `CoreConfig::getUpdateSource()` in from the constructor and again at the top of every
-`startCheck()`, so a Settings change takes effect without a restart. `setSource()` is a
-no-op (with a `qWarning`) while `m_busy` is set: switching origins mid-flight would let one
-plan mix manifests and archives from two servers. A source change that IS accepted discards
-the cached `Plan`, which was built against the previous origin.
+`UpdateService::Source` (`GitHub` | `Gitee`) is a plain enum on the service with
+`setSource()` / `source()` and the `sourceFromString()` / `sourceToString()` converters;
+`UpdateController::applyConfiguredSource()` PUSHES `CoreConfig::getUpdateSource()` in from the
+constructor and again at the top of every `startCheck()`, so a Settings change takes effect
+without a restart. `setSource()` is a no-op (with a `qWarning`) while `m_busy` is set:
+switching origins mid-flight would let one check send its request to one forge and parse the
+answer as the other's. Pinned by `testSourceChangeIsIgnoredWhileACheckIsRunning`.
+
+**`sourceFromString()` defaults to Gitee.** Only an explicit case-insensitive `"github"`
+selects GitHub; empty, absent and unrecognized values are Gitee. This mirrors
+`CoreConfig::normalizeUpdateSource()` exactly - keep the two in step.
 
 ### Per-source endpoints
 
 | | GitHub | Gitee |
 |---|---|---|
 | `apiLatestUrl()` | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
-| `assetUrl()` base | `https://github.com/vnotex/vnote/releases/download` | `https://gitee.com/vnotex/vnote/releases/download` |
 | `releasesPageUrl()` | `https://github.com/vnotex/vnote/releases` | `https://gitee.com/vnotex/vnote/releases` |
-| `releasePageUrl(tag, htmlUrl)` | the API's `html_url` | synthesized `<releasesPageUrl>/tag/v<tag>` — Gitee's release JSON has no `html_url`. Verified against the live `https://gitee.com/vnotex/vnote/releases/tag/v4.3.0`; the `tag/` segment is NOT present in the asset download path, so do not "simplify" the two to share a base |
-| `Accept` | `application/vnd.github+json, …` | `application/json, …` (Gitee rejects the vendor type) |
+| `releasePageUrl(tag, htmlUrl)` | the API's `html_url`, but ONLY when it is a valid URL on an allowlisted host — it is handed straight to `QDesktopServices` and `UpdateDialog` has no empty-URL branch, so an absent/off-forge/plain-http value would render a dead (or hostile) button. Otherwise a `<releasesPageUrl>/tag/v<tag>` URL is synthesized | always synthesized `<releasesPageUrl>/tag/v<tag>` — Gitee's release JSON has no `html_url`. Verified against the live `https://gitee.com/vnotex/vnote/releases/tag/v4.3.0`; the `tag/` segment is NOT present in the asset download path, so do not "simplify" the two to share a base |
+| `Accept` | `application/vnd.github+json, */*` | `application/json, */*` (Gitee rejects the vendor type) |
 
-`m_apiLatestOverride` / `m_assetBaseOverride` (the test seams) still WIN over all of these,
-which is what keeps `tests/core/test_updateservice.cpp` pointed at its local server
-regardless of the configured source.
+`m_apiLatestOverride` (the test seam) covers the API entry point, which is the only URL the
+service ever requests.
 
-### Check-only degradation on an absent manifest
+### Outcomes, and who owns a result
 
-`fetchVerifiedManifestEx()` is tri-state: `Ok` / `Absent` / `Error`, with the historical
-`fetchVerifiedManifest()` kept as the bool wrapper for the chain walk (where absence and
-verification failure are equally fatal — both fall back to the full package).
+A release whose `tag_name` is missing or empty is a `failed()` — the check genuinely could
+not be performed. Everything else is a `checkFinished()`, including "you are up to date":
+`updateAvailable` is simply `latest > current` under `QVersionNumber`, and `latestVersion` /
+`releaseUrl` are populated either way so a manual check can say "up to date" and still link
+the page.
 
-`Absent` is returned **only** when the MANIFEST fetch itself answers HTTP 404, which
-`fetchToMemory()` reports through its `p_notFound` out-param. `checkForUpdates()` turns that
-into `eligible = false` + a release-page `ineligibleReason`, and still emits
-`checkFinished` with `updateAvailable = true`; it does NOT call `reportFailure()`, because a
-mirror that carries the release object but not the update assets is a degradation, not a
-check failure.
+**`checkForUpdates()` returns `bool`: whether the request was ACCEPTED.** A call made while
+another check is in flight is dropped and returns `false`, emitting nothing. This return
+value is load-bearing, not a convenience: `UpdateController` sets its manual-vs-startup mode
+from it. When it did not, a user clicking "Check for Updates" during the silent startup
+check re-labelled that *background* check's outcome — surfacing a modal dialog for a check
+they never started, and a modal warning box for a failure that is supposed to be silent.
 
-Once manifest bytes have been received, everything downstream stays FAIL CLOSED. A missing
-or unfetchable `.minisig` — 404 included — is `Error`, never `Absent`. That is the property
-`testMissingSignatureIsRefused()` pins; do not "unify" the two 404 paths.
+The controller keeps its own `m_checkInFlight` flag rather than trusting the service's
+`m_busy`, because the worker releases `m_busy` before its queued terminal signal is
+DELIVERED: a new check can be accepted while the previous result is still in the event
+queue. The controller-side flag is cleared in the terminal slots, which is the only point
+where the result and its mode are known to belong together.
 
 ### Threading
 
-Both public operations (`checkForUpdates`, `startDownload`) return immediately and do their
-work on a `QtConcurrent` worker, because they block on nested event loops (network) and hash
-hundreds of megabytes (verification).
+`checkForUpdates()` returns immediately and does its work on a `QtConcurrent` worker,
+because `fetchToMemory()` blocks on a nested event loop.
 
 - **`QNetworkAccessManager` is created on the WORKER'S STACK**, never as a member. QNAM is
   not thread-safe and belongs to the thread that created it, so every network helper takes
   it by reference. There is deliberately no QNAM member; adding one would reintroduce the
   cross-thread bug.
-- All signals (`checkFinished`, `progress`, `readyToApply`, `failed`) are emitted through
+- Both signals (`checkFinished`, `failed`) are emitted through
   `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` so receivers see them on the GUI
   thread.
-- The destructor calls `cancel()` and then WAITS on the stored `QFuture`. The worker holds a
-  raw `this`; letting it outlive the object is a use-after-free.
+- **`m_busy` is released as the LAST statement of the worker**, after the terminal signal has
+  been queued. Releasing it before the worker finishes lets check N+1 win the
+  compare-exchange while check N is still running; a second `checkForUpdates()` in flight
+  returns `false` and is DROPPED, not queued
+  (`testASecondCheckIsIgnoredWhileOneIsRunning`).
+- The destructor waits for **every** outstanding worker via `waitForWorkers()`, not just the
+  most recently started one. A single stored `QFuture` is not enough: it can be replaced by
+  the next check while the previous worker is still unwinding, and every worker holds a raw
+  `this`. `m_workers` is guarded by `m_workerMutex`, snapshotted under the lock and waited on
+  OUTSIDE it.
 
-`startDownload(expectedTargetVersion)` returns `DownloadStart`
-(`Started` / `Busy` / `NoPlan` / `Stale`) because a caller that tracks which UI surface owns
-the transfer cannot otherwise tell whether the request landed. Only `Started` and `NoPlan`
-own a later terminal signal (`NoPlan` emits `failed()`); `Busy` and `Stale` start nothing and
-emit nothing. `UpdateController` keys its `TransferSurface` off that return value; claiming a
-surface before the call would strand it forever on a `Busy` refusal, or hand an
-already-running transfer's result to the wrong surface.
-
-Two ordering rules inside it are load-bearing:
-
-- **The `m_busy` compare-exchange runs BEFORE `m_plan` is read.** `m_plan` is written by the
-  check worker, so reading it first would be an unsynchronized read of a value another
-  thread may be assigning, and would also let a request that arrives mid-check answer
-  `NoPlan` (which emits `failed()` and hands the caller ownership of a terminal signal) when
-  the truthful answer is `Busy`. Winning the exchange synchronizes-with the worker's
-  `m_busy.store(false)`, which is what makes the subsequent `m_plan` read well-defined.
-- **`expectedTargetVersion` pins the request to the plan the caller was OFFERED.** A
-  notification or a non-modal `UpdateDialog` can outlive the check it came from; without the
-  check, its Update button would download whatever plan the service holds now — possibly a
-  different version, or one built against a different source — while still advertising the
-  old one. A mismatch is `Stale`. Pass an empty string only where no expectation is
-  meaningful.
-
-### Redirects and the host allowlist
+### Redirects, the response cap and the host allowlist
 
 Redirects are followed MANUALLY (`QNetworkRequest::ManualRedirectPolicy` set on EVERY
 request, because Qt 5 and Qt 6 differ in their default) so each hop can be checked. At most
-5 hops, and there is no HTTPS -> HTTP downgrade path.
+`c_maxRedirects` hops, and there is no HTTPS -> HTTP downgrade path.
 
 `allowedHosts(Source)` is **source-scoped and disjoint**, so a client on one forge can never
 follow a redirect onto the other's hosts:
 
 - GitHub: exact `api.github.com`, `github.com`, `codeload.github.com`, plus any host under
-  `.githubusercontent.com` (release assets redirect there; the exact subdomain has moved
-  from `objects.` to `release-assets.`, which is why the suffix rather than a fixed host is
-  pinned).
-- Gitee: exact `gitee.com`, plus any host under `.gitee.com` (the download endpoint
-  redirects through `attach_files` to `foruda.gitee.com`).
+  `.githubusercontent.com`.
+- Gitee: exact `gitee.com`, plus any host under `.gitee.com`.
 
-`testSetEndpointOverride` / `testSetExtraAllowedHost` exist for the local end-to-end harness
-described in the plan's Validation section; the plain-HTTP exemption they enable applies
-ONLY to the explicitly nominated host, and it is independent of the source.
+`fetchToMemory()` enforces `c_maxApiResponseBytes` by accumulating on `readyRead` and
+`abort()`ing the reply the moment the cap is crossed — NOT by buffering the whole body and
+rejecting afterwards, which a server declaring a huge `Content-Length` could turn into an
+unbounded allocation or a full-timeout stall.
 
-### Delta path preconditions
+Cancellation is POLLED every 250 ms inside the blocking request, because
+`QNetworkReply::abort()` must run on the reply's own thread; without the poll, closing VNote
+during a stalled check would block service teardown (and therefore `vxcore_context_destroy`)
+for the whole 60 s timeout.
 
-`buildPlan` falls back to the full package - never to a partial update - unless ALL of these
-hold. Each fallback is logged with its reason:
+`testSetEndpointOverride` / `testSetExtraAllowedHost` exist for the local server harness in
+`tests/core/test_updateservice.cpp`; the plain-HTTP exemption they enable applies ONLY to the
+explicitly nominated host, and it is independent of the source.
 
-1. `<installDir>/manifest.json` exists, parses, is `channel == "stable"`, and describes the
-   installed version;
-2. the chain of `delta.baseVersion` pointers reaches the installed version within
-   `UpdateManifest::c_maxChainHops`, with every hop publishing a delta;
-3. the PUBLISHED manifest for the installed version is fetched and
-   `UpdateManifest::validateBaseIdentity` matches it against the local one exactly (version,
-   variant, platform, commit, and the full `files[]` map);
-4. every file in that verified base still hashes correctly on disk (drift check);
-5. total delta bytes are within `UpdateManifest::c_maxChainSizeRatio` of the target's
-   expanded size.
+### Test coverage
 
-### Staging equality rules
+`tests/core/test_updateservice.cpp` drives the REAL `QNetworkAccessManager` against a local
+`QTcpServer`. Two properties look incidental and are not, so please do not "simplify" them
+away:
 
-- Per hop, the archive's file entry set must EQUAL `UpdateManifest::hopArchiveSet(hopBase,
-  hopTarget)` exactly, enforced through `ZipExtractor::Options::expectedEntries`.
-- Hops are extracted OLDEST FIRST so newer blobs win.
-- Afterwards, staged paths outside `UpdateManifest::expectedChanged(base, target)` are
-  PRUNED - this is what handles a file changed by a hop and reverted by a later one, and a
-  file that only ever existed in an intermediate release. Pruning is enabled ONLY on the
-  delta path; on the full-package path an unexpected entry is an error, because the archive
-  is supposed to equal the target exactly.
-- Then `stagedPaths == expectedChanged` is required, and every staged file is verified by
-  size AND SHA-256.
-- `manifest.json` is handled out of band: extracted with everything else, compared against
-  the published manifest, then REMOVED from `staged/` so the swap never moves it (the
-  installer commits it separately at the end of the transaction).
-
-### Pending-update lifecycle
-
-`revalidatePending()` runs at startup and silently discards a plan whose schema is wrong,
-whose target version is not strictly newer than the installed one, whose variant does not
-match, or whose staged files no longer verify. `consumeStoredResult()` reads and clears
-`result.json`, which is how an apply outcome crosses the restart - `NotificationService` is
-in-memory only and cannot.
-
-### Test coverage and its seams
-
-`tests/core/test_updateservice.cpp` (43 cases) drives the REAL
-`QNetworkAccessManager` against a local `QTcpServer`, and signs its manifest fixtures
-in-process with the vendored minicrypto primitives - Ed25519 SIGNING needs no randomness,
-so `libs/minicrypto/randombytes_stub.c` (which aborts by design) is never reached. If a run
-ever aborts inside `randombytes`, something started calling key GENERATION.
-
-The suite `QSKIP`s itself from `initTestCase()` off Windows. `checkEligibility()` returns
-"only available on Windows" before anything else there, so almost every case would be
-asserting behavior the feature never promises. The target still BUILDS on Linux and macOS
-CI, which is what catches compile breakage; only the assertions are skipped. Add new cases
-inside this suite rather than creating a second, unguarded one.
-
-Three seams exist purely for it, all unconditional per ADR-6:
-
-- `ManifestSignature::testClearTrustedKeys()` forces a genuinely EMPTY trusted-key list, so
-  the fail-closed branch of `checkEligibility()` is reachable.
-  `testSetTrustedKeys({})` cannot do this: an empty vector means "restore the production
-  keys", which is what makes it safe to call from a test's `cleanup()`.
-- `testSetEndpointOverride()` / `testSetExtraAllowedHost()` redirect the service at the
-  local server. The plain-HTTP exemption applies ONLY to the explicitly nominated host.
-- `testSetPackagedAppOverride(int)` forces the MSIX/Store detection used by
-  `checkEligibility()`: `-1` auto-detect (production), `0` force not packaged, `1` force
-  packaged. Without it the Store gate is unreachable from a test process, which is never
-  packaged.
-
-Two behaviors that look like bugs and are not, so please do not "fix" them without reading
-the tests that pin them down:
-
-- an INELIGIBLE install still fetches the release metadata. `UpdateController` needs
-  `latestVersion` / `releaseUrl` to send the user to the download page. What must never
-  happen is a manifest or archive fetch, and `testNoTrustedKeysMakesTheInstallIneligible`
-  asserts exactly that (no `/download/` request, nothing staged).
-- a forged or unverifiable INTERMEDIATE hop (or published base) falls back to the full
-  package rather than failing the check. That is strictly safer: the target manifest is
-  itself signature-verified, and the full archive is then checked against the signed size,
-  SHA-256 and complete file map.
-
-The suite's acceptance property is that a signature bypass at ANY ONE of the three manifest
-fetch sites - target, intermediate hop, published base - is caught individually.
-
-Also pinned here, and easy to break together: `testMissingManifestDegradesToCheckOnly()`
-(a 404 MANIFEST is `eligible = false` + `updateAvailable = true` and NO `failed()`) and
-`testMissingSignatureIsRefused()` (a 404 `.minisig` after the manifest arrived is a hard
-failure). Any change to `fetchVerifiedManifestEx` must keep BOTH green; passing only one is
-exactly the regression the tri-state was introduced to prevent.
+- `testOversizedApiResponseAbortsTheReply` serves a response declaring an 8 GB
+  `Content-Length` and never closes the socket. It passes only if the cap ABORTS mid-stream;
+  a buffer-then-reject implementation would hang until the 60 s request timeout.
+- `testTheCheckWritesNothingToDisk` redirects the process working directory into a scratch
+  tree, snapshots both it and the user's real Downloads folder around a check whose release
+  object DOES carry `assets[]`, and asserts both trees are unchanged and that no asset /
+  manifest / signature path was ever requested. That is the feature's central invariant
+  expressed as a test; the CWD redirect is what catches a regression writing to a relative
+  path.
 
 ### NotificationService fields consumed by the updater
 
-`UpdateController` drives ONE notification from offer → progress → terminal state through
-`NotificationService::update()`, so the value type carries the presentation hints the popup
-needs: `NotificationMessage::m_progressPermille` / `m_progressIndeterminate`, and
-`NotificationAction::m_dismissOnTrigger` (set `false` on Update / Cancel / Retry so the
-message survives its own button). `update()` preserves `m_id`, `m_timestamp` and
-`m_dismissed` and therefore never changes `activeCount()`; `isActive(id)` is the guard the
-controller uses before touching a tracked message. See `src/widgets/AGENTS.md` §
-Notification System for the rendering side.
+`UpdateController` posts ONE notification per offer, keyed `update.available`, via
+`NotificationService::renotify()` — the toast is raised only by `messageAdded` carrying
+`Interrupt`, so a later check must replace the message rather than fold into it. The offer is
+`Duration::Persist` with a single `Check Release` action; there is no progress bar and no
+in-place update, because there is nothing to report progress on. See `src/widgets/AGENTS.md`
+§ Notification System for the rendering side.

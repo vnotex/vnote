@@ -434,21 +434,17 @@ add_custom_command(TARGET test_notificationrouter POST_BUILD
     $<TARGET_FILE_DIR:test_notificationrouter>
 )
 
-# UpdateController - dedup-key wiring for the update notification lifecycle.
+# UpdateController - notification wiring for the update-available offer.
 # NOT GUILESS: UpdateController reaches into the widget layer (MessageBoxHelper,
-# UpdateDialog, MainWindow2). The two heavyweight widget dependencies are
-# satisfied by stubs_updatecontroller.cpp rather than by linking the real
-# mainwindow2.cpp, which would drag in most of the app for two symbols. This is
-# the same approach as tests/unitedentry/stubs_findunitedentry.cpp.
+# UpdateDialog). UpdateDialog is satisfied by stubs_updatecontroller.cpp rather
+# than by linking the real widget, which would drag in the theme/QSS stack for a
+# dialog no test ever opens. This is the same approach as
+# tests/unitedentry/stubs_findunitedentry.cpp.
 #
-# Only updatedialog.h is listed for AUTOMOC: the controller connects to
-# UpdateDialog's signals, so its moc is required. mainwindow2.h is deliberately
-# NOT listed -- the controller only calls the non-virtual MainWindow2::
-# restartForUpdate() and uses the pointer as a dialog parent, never connecting to
-# a MainWindow2 signal. Emitting MainWindow2's vtable (which AUTOMOC would do if
-# the header were listed) forces every out-of-line virtual and member-object
-# destructor to be linked, which GCC/Clang reject as undefined references and
-# which would defeat the stub. See stubs_updatecontroller.cpp.
+# updatedialog.h is listed for AUTOMOC because the controller connects to
+# UpdateDialog's skipRequested signal. The controller does not know about
+# MainWindow2 at all (it takes a plain QWidget* dialog parent), so no main-window
+# stub is needed.
 add_qt_test(test_updatecontroller
   SOURCES
     test_updatecontroller.cpp
@@ -460,7 +456,6 @@ add_qt_test(test_updatecontroller
     core_services
     core_configs
     vxcore
-    minicrypto
     VTextEdit
     Qt6::Widgets
 )

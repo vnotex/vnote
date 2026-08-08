@@ -29,8 +29,7 @@ QString SingleInstanceGuard::serverName() const {
   return m_serverNameOverride.isEmpty() ? c_serverName : m_serverNameOverride;
 }
 
-SingleInstanceGuard::SingleInstanceGuard(const QString &p_serverName,
-                                         const QString &p_lockFilePath)
+SingleInstanceGuard::SingleInstanceGuard(const QString &p_serverName, const QString &p_lockFilePath)
     : m_serverNameOverride(p_serverName), m_lockFilePathOverride(p_lockFilePath) {}
 
 SingleInstanceGuard::~SingleInstanceGuard() { exit(); }
@@ -57,10 +56,10 @@ SingleInstanceGuard::TryRunResult SingleInstanceGuard::tryRun() {
     m_lockFile->removeStaleLockFile();
     if (!m_lockFile->tryLock(0)) {
       // FAIL CLOSED. This branch historically warned and proceeded anyway,
-      // producing a second primary. With the incremental updater that second
-      // primary could reach normal initialization -- mapping Qt, VTextEdit and
-      // vxcore modules -- while an applier is swapping those very files. The
-      // caller must exit instead.
+      // producing a second primary. Two primaries write the same config,
+      // session snapshot and notebook state, and both run ConfigMgr2's
+      // bundled-resource install over the same folders. The caller must exit
+      // instead.
       qWarning() << "lock is held but the holder is unreachable over IPC; refusing to run";
       return TryRunResult::BusyUnreachable;
     }

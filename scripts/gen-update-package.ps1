@@ -26,9 +26,10 @@
          The RELEASE ASSET manifest: the same object as (1) plus `fullPackage`
          and, when built, `delta`.
 
-    The client contract these artifacts must satisfy is documented in
-    .kilo/plans/1785337074532-incremental-update-plan.md and in the
-    "Incremental Update" section of AGENTS.md.
+    NOTE: the VNote client itself no longer consumes these artifacts - it only
+    checks for a newer release and points the user at the release page. They are
+    published as the interface for a future EXTERNAL updater. See the "Update
+    Check" section of AGENTS.md and docs/update-signing.md.
 
 .PARAMETER ExtractedDir
     The extracted package directory, e.g. build/VNote-4.3.2-win64. Its files
@@ -67,16 +68,21 @@
 
 .PARAMETER MinisignSecretKey
     Path to the minisign secret key used to sign the release-asset manifest.
-    Produces `VNote-<ver>-<variant>.manifest.json.minisig`, which the client
-    REQUIRES: `UpdateService` refuses any manifest it cannot verify.
+    Produces `VNote-<ver>-<variant>.manifest.json.minisig`.
+
+    NOTE: the VNote client no longer consumes manifests or signatures at all -
+    it only checks for a newer release and points the user at the release page.
+    These artifacts are published as the interface for a future EXTERNAL
+    updater, which is what would require the signature. See
+    docs/update-signing.md.
 
     Defaults to $env:MINISIGN_SECRET_KEY_FILE. The key MUST have an empty
     password: minisign reads a passphrase from the console, not stdin, so a
     protected key would hang an unattended job rather than fail.
 
     Omitting it emits an unsigned manifest and a loud warning; that is only
-    useful for local experimentation, since released artifacts without a
-    signature are inert for every client.
+    useful for local experimentation, since an unsigned manifest is unusable by
+    any verifying consumer.
 
 .EXAMPLE
     ./scripts/gen-update-package.ps1 -ExtractedDir build/VNote-4.3.2-win64 `
@@ -112,14 +118,12 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 # ZIP helpers
 # ---------------------------------------------------------------------------
 # Deliberately .NET rather than an external 7z: the archives here have exact
-# layout requirements that the client enforces (the full package must have
+# layout requirements a consuming updater relies on (the full package must have
 # EXACTLY one top-level directory; a delta must have NONE), and building them
 # entry by entry is the only way to guarantee that regardless of what is
-# installed on the build agent. It also means the local end-to-end procedure in
-# the plan needs no extra tooling.
+# installed on the build agent.
 #
-# Entry names are always forward-slash, matching the manifest and what
-# ZipExtractor expects.
+# Entry names are always forward-slash, matching the manifest.
 
 function New-ZipArchiveFromEntries {
     param(
@@ -195,8 +199,9 @@ function Get-RelativeForwardPath {
     return $rel -replace '\\', '/'
 }
 
-# Mirrors UpdateManifest::normalizePath. A package that cannot be described by a
-# safe manifest must fail the BUILD, not the user's update.
+# Path normalization for the manifest schema: forward slashes, no absolute
+# paths, no traversal, no drive letters. A package that cannot be described by a
+# safe manifest must fail the BUILD, not a later consumer.
 function Assert-SafeManifestPath {
     param([string]$Path)
 

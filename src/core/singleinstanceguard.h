@@ -18,10 +18,10 @@ public:
   //
   // This used to be a bool with a FAIL-OPEN third case: when the lock was held
   // but IPC was unreachable, the guard logged a warning and returned true, i.e.
-  // it became a SECOND primary. Under the incremental updater that is unsafe --
-  // a second primary can reach normal initialization while an applier is
-  // swapping binaries underneath it -- so the case is now surfaced explicitly
-  // and the caller must fail closed. See the plan's "Interlock protocol".
+  // it became a SECOND primary. That is unsafe -- two primaries write the same
+  // config, session snapshot and notebook state, and both run ConfigMgr2's
+  // bundled-resource install over the same folders -- so the case is now
+  // surfaced explicitly and the caller must fail closed.
   enum class TryRunResult {
     // This process is the single running instance and owns the IPC server.
     Primary,

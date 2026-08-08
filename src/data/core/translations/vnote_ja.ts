@@ -553,68 +553,54 @@
 <context>
     <name>vnotex::CustomCommandProvider</name>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="+23"/>
         <source>Custom Command</source>
         <translation>カスタムコマンド</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Command is not configured</source>
         <translation>コマンドが設定されていません</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Failed to create temporary file</source>
         <translation>一時ファイルの作成に失敗しました</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <location line="+104"/>
         <source>Invalid command: %1</source>
         <translation>無効なコマンド: %1</translation>
     </message>
     <message>
-        <location line="-92"/>
         <source>Command not found: %1</source>
         <translation>コマンドが見つかりません: %1</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Command timed out after 30 seconds</source>
         <translation>コマンドが 30 秒後にタイムアウトしました</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Command failed (exit code %1): %2</source>
         <translation>コマンドが失敗しました (終了コード %1): %2</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>No URL returned by command</source>
         <translation>コマンドから URL が返されませんでした</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>Delete is not supported by custom command provider</source>
         <translation>カスタムコマンドプロバイダーでは削除はサポートされていません</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.</source>
         <translation>Typora 互換のアップロードコマンド。画像ファイルのパスが最後の引数として追加されます。標準出力の最後の非空行がアップロード済み画像の URL として使用されます。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Command is empty</source>
         <translation>コマンドが空です</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Program not found in PATH: %1</source>
         <translation>PATH にプログラムが見つかりません: %1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Configuration is valid. Program found: %1</source>
         <translation>設定は有効です。プログラムが見つかりました: %1</translation>
     </message>
@@ -1707,6 +1693,39 @@
     </message>
 </context>
 <context>
+    <name>vnotex::FolderFilesFilterWidget</name>
+    <message>
+        <location filename="../../../widgets/dialogs/folderfilesfilterwidget.cpp" line="+40"/>
+        <source>Folder:</source>
+        <translation>フォルダ:</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Browse</source>
+        <translation>ブラウズ</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Select Notebook Root Folder</source>
+        <translation>ノートブックルートフォルダ</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Select files:</source>
+        <translation>ファイルを選択:</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Select All</source>
+        <translation>すべて置換</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Clear</source>
+        <translation>クリア</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::FolderShareController</name>
     <message>
         <location filename="../../../controllers/foldersharecontroller.cpp" line="+85"/>
@@ -1812,39 +1831,6 @@
     </message>
 </context>
 <context>
-    <name>vnotex::FolderFilesFilterWidget</name>
-    <message>
-        <location filename="../../../widgets/dialogs/folderfilesfilterwidget.cpp" line="+40"/>
-        <source>Folder:</source>
-        <translation>フォルダ:</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Browse</source>
-        <translation>ブラウズ</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Select Notebook Root Folder</source>
-        <translation>ノートブックルートフォルダ</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Select files:</source>
-        <translation>ファイルを選択:</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Select All</source>
-        <translation>すべて置換</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Clear</source>
-        <translation>クリア</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::FullScreenToggleAction</name>
     <message>
         <location filename="../../../widgets/fullscreentoggleaction.cpp" line="+10"/>
@@ -1936,11 +1922,11 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Where VNote checks for and downloads updates.</source>
-        <translation>VNote が更新を確認・ダウンロードする取得元です。</translation>
+        <source>Where VNote checks for new releases.</source>
+        <translation>VNote が新しいリリースを確認する取得元です。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+8"/>
         <source>Update source</source>
         <translation>更新の取得元</translation>
     </message>
@@ -1950,8 +1936,8 @@
         <translation>セッション復元設定の保存に失敗しました。</translation>
     </message>
     <message>
-        <location line="-151"/>
-        <location line="+162"/>
+        <location line="-154"/>
+        <location line="+165"/>
         <source>General</source>
         <translation>一般</translation>
     </message>
@@ -1959,69 +1945,54 @@
 <context>
     <name>vnotex::GitHubProvider</name>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="+20"/>
         <source>GitHub Repository</source>
         <translation>GitHub リポジトリ</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.</source>
         <translation>&apos;repo&apos; スコープを持つ GitHub 個人アクセストークン。GitHub → Settings → Developer settings → Personal access tokens で生成してください。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Your GitHub username.</source>
         <translation>あなたの GitHub ユーザー名。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Name of the GitHub repository to store images. Must already exist.</source>
         <translation>画像を保存する GitHub リポジトリの名前。既に存在している必要があります。</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
         <translation>PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Private repository is not supported.</source>
         <translation>プライベートリポジトリはサポートされていません。</translation>
     </message>
     <message>
-        <location line="+43"/>
         <source>Failed to create image with empty path.</source>
         <translation>空のパスで画像を作成できません。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+57"/>
         <source>Invalid GitHub image host configuration.</source>
         <translation>無効な GitHub 画像ホスト設定です。</translation>
     </message>
     <message>
-        <location line="-46"/>
         <source>The resource already exists at the image host (%1).</source>
         <translation>画像ホスト (%1) にリソースが既に存在します。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+11"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+62"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>Failed to delete resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の削除に失敗しました。</translation>
     </message>
@@ -2029,74 +2000,58 @@
 <context>
     <name>vnotex::GiteeProvider</name>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="+19"/>
         <source>Gitee Repository</source>
         <translation>Gitee リポジトリ</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.</source>
         <translation>&apos;projects&apos; スコープを持つ Gitee 個人アクセストークン。Gitee → Settings → Security Settings → Personal Access Tokens で生成してください。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Your Gitee username.</source>
         <translation>あなたの Gitee ユーザー名。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Name of the Gitee repository to store images. Must already exist.</source>
         <translation>画像を保存する Gitee リポジトリの名前。既に存在している必要があります。</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
         <translation>PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Private repository is not supported.</source>
         <translation>プライベートリポジトリはサポートされていません。</translation>
     </message>
     <message>
-        <location line="+46"/>
         <source>Failed to create image with empty path.</source>
         <translation>空のパスで画像を作成できません。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+63"/>
         <source>Invalid Gitee image host configuration.</source>
         <translation>無効な Gitee 画像ホスト設定です。</translation>
     </message>
     <message>
-        <location line="-50"/>
         <source>The resource already exists at the image host (%1).</source>
         <translation>画像ホスト (%1) にリソースが既に存在します。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <location line="+12"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+35"/>
         <source>Failed to fetch information about the resource (%1).</source>
         <translation>リソース (%1) の情報の取得に失敗しました。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Failed to delete resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の削除に失敗しました。</translation>
     </message>
@@ -2322,27 +2277,22 @@
 <context>
     <name>vnotex::ImageHostService</name>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="+213"/>
         <source>No provider</source>
         <translation>プロバイダーなし</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Upload cancelled by hook</source>
         <translation>フックによりアップロードがキャンセルされました</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>GitHub Repository</source>
         <translation>GitHub リポジトリ</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Gitee Repository</source>
         <translation>Gitee リポジトリ</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Custom Command</source>
         <translation>カスタムコマンド</translation>
     </message>
@@ -2554,7 +2504,7 @@
         <translation>3 回試行しても同期競合を解決できませんでした。手動で解決するか、サポートにお問い合わせください。</translation>
     </message>
     <message>
-        <location line="+295"/>
+        <location line="+293"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>終了する代わりに、%1をシステムトレイに最小化しますか?</translation>
     </message>
@@ -2564,7 +2514,7 @@
         <translation>設定の選択肢は、後で変更することができます。</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+63"/>
         <source>%1 is still running here.</source>
         <translation>%1はまだ実行中です。</translation>
     </message>
@@ -2575,7 +2525,7 @@
         <translation>グローバル</translation>
     </message>
     <message>
-        <location line="+397"/>
+        <location line="+386"/>
         <source>Applying stylesheet...</source>
         <translation>スタイルシートを適用中...</translation>
     </message>
@@ -4180,52 +4130,42 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+890"/>
         <source>Invalid arguments</source>
         <translation>引数が無効です</translation>
     </message>
     <message>
-        <location line="+38"/>
         <source>Cancelled by hook</source>
         <translation>フックによりキャンセルされました</translation>
     </message>
     <message>
-        <location line="+83"/>
         <source>OK</source>
         <translation>成功</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Invalid argument</source>
         <translation>引数が無効です</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Folder not found</source>
         <translation>フォルダーが見つかりません</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Invalid state</source>
         <translation>状態が無効です</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Submitted order is not a valid permutation of the folder&apos;s children</source>
         <translation>送信された順序はフォルダーの子項目の有効な並べ替えではありません</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Reorder is not supported for this notebook type</source>
         <translation>このノートブックの種類では並べ替えはサポートされていません</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Unknown error while reordering</source>
         <translation>並べ替え中に不明なエラーが発生しました</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>vxcore error %1 while reordering</source>
         <translation>並べ替え中に vxcore エラー %1 が発生しました</translation>
     </message>
@@ -4233,7 +4173,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookExplorer2</name>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="+368"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="+371"/>
         <source>Select one of all the notebooks as current notebook.&lt;br/&gt;Move mouse on one item to check its details.</source>
         <translation>すべてのノートブックの1つを現在のノートブックとして選択します。&lt;br/&gt;1つの項目にマウスを移動して、その詳細を確認します。</translation>
     </message>
@@ -4422,7 +4362,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>&quot;%1&quot; のデータベースの再構築に失敗しました。</translation>
     </message>
     <message>
-        <location line="+200"/>
+        <location line="+204"/>
         <source>&lt;img src=&quot;:/vnotex/data/core/icons/read_only.svg&quot; width=&quot;14&quot; height=&quot;14&quot;&gt; Read-only</source>
         <translation>&lt;img src=&quot;:/vnotex/data/core/icons/read_only.svg&quot; width=&quot;14&quot; height=&quot;14&quot;&gt; 読み取り専用</translation>
     </message>
@@ -4539,7 +4479,12 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>ノートブックの設定の更新に失敗しました。</translation>
     </message>
     <message>
-        <location line="+260"/>
+        <location line="+77"/>
+        <source>Select Folder for the Bundle</source>
+        <translation>バンドルするフォルダーを選択</translation>
+    </message>
+    <message>
+        <location line="+287"/>
         <source>Sync authentication failed</source>
         <translation>同期認証に失敗しました</translation>
     </message>
@@ -4613,32 +4558,31 @@ Last sync init failed: error code %1</source>
 前回の同期初期化に失敗しました: エラーコード %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
         <source>Choose a Folder for the Shared Bundle</source>
-        <translation>共有バンドルの保存先フォルダーを選択</translation>
+        <translation type="vanished">共有バンドルの保存先フォルダーを選択</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <location line="-496"/>
         <source>Preparing…</source>
         <translation>準備中…</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <location line="+0"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <location line="+1"/>
         <source>Share Folder</source>
         <translation>フォルダーを共有</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <location line="+43"/>
         <source>Folder shared.</source>
         <translation>フォルダーを共有しました。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <location line="+1"/>
         <source>The bundle was created at %1.
 
 Open the bundle location?</source>
@@ -4647,7 +4591,7 @@ Open the bundle location?</source>
 バンドルの場所を開きますか？</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp"/>
+        <location line="+15"/>
         <source>Failed to share the folder.</source>
         <translation>フォルダーの共有に失敗しました。</translation>
     </message>
@@ -4655,7 +4599,7 @@ Open the bundle location?</source>
 <context>
     <name>vnotex::NotebookNodeController</name>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="+237"/>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="+255"/>
         <location line="+110"/>
         <source>&amp;Open</source>
         <translation>開く(&amp;O)</translation>
@@ -4678,12 +4622,12 @@ Open the bundle location?</source>
     <message>
         <location line="+8"/>
         <location line="+47"/>
-        <location line="+137"/>
+        <location line="+148"/>
         <source>Open &amp;Location</source>
         <translation>場所を開く(&amp;L)</translation>
     </message>
     <message>
-        <location line="-119"/>
+        <location line="-130"/>
         <source>New &amp;Note</source>
         <translation>新規ノート(&amp;N)</translation>
     </message>
@@ -4741,23 +4685,33 @@ Open the bundle location?</source>
     </message>
     <message>
         <location line="-125"/>
-        <location line="+137"/>
+        <location line="+148"/>
         <source>Copy &amp;Path</source>
         <translation>パスをコピー(&amp;P)</translation>
     </message>
     <message>
-        <location line="-160"/>
+        <location line="-171"/>
         <source>Remove the missing item(s) from the notebook index</source>
         <translation>欠落した項目をノートブックのインデックスから削除</translation>
     </message>
     <message>
         <location line="+32"/>
-        <location line="+137"/>
+        <location line="+148"/>
         <source>P&amp;roperties</source>
         <translation>プロパティ(&amp;R)</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="-23"/>
+        <source>Share Folder</source>
+        <translation>フォルダーを共有</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Create a portable copy of this folder including metadata</source>
+        <translation>メタデータを含むこのフォルダーの可搬コピーを作成します</translation>
+    </message>
+    <message>
+        <location line="+33"/>
         <source>&amp;Tags</source>
         <translation>タグ(&amp;T)</translation>
     </message>
@@ -4933,14 +4887,12 @@ Open the bundle location?</source>
         <translation>並べ替えに失敗しました</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp"/>
         <source>&amp;Share Folder...</source>
-        <translation>フォルダーを共有(&amp;S)...</translation>
+        <translation type="vanished">フォルダーを共有(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp"/>
         <source>Create a movable copy of this folder including its VNote metadata</source>
-        <translation>VNote のメタデータを含む、このフォルダーの移動可能なコピーを作成します</translation>
+        <translation type="vanished">VNote のメタデータを含む、このフォルダーの移動可能なコピーを作成します</translation>
     </message>
 </context>
 <context>
@@ -6412,32 +6364,26 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncService</name>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="+154"/>
         <source>Sync is in progress for this notebook. Please wait for sync to complete before closing.</source>
         <translation>このノートブックの同期が進行中です。閉じる前に同期の完了をお待ちください。</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Sync work is queued for this notebook (%1 item(s)). Cancel the queued sync from the toolbar before closing.</source>
         <translation>このノートブックの同期作業がキューに入っています (%1 項目)。閉じる前にツールバーからキュー内の同期をキャンセルしてください。</translation>
     </message>
     <message>
-        <location line="+130"/>
         <source>PAT is required to enable sync.</source>
         <translation>同期を有効にするには PAT が必要です。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Remote URL is required to enable sync.</source>
         <translation>同期を有効にするにはリモート URL が必要です。</translation>
     </message>
     <message>
-        <location line="+501"/>
         <source>Failed to persist sync configuration to notebook after enable.</source>
         <translation>有効化後、同期設定をノートブックに保存できませんでした。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Notebook service not available.</source>
         <translation>ノートブックサービスが利用できません。</translation>
     </message>
@@ -6677,21 +6623,18 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
-        <location filename="../../../core/services/task.cpp" line="+403"/>
         <source>[Task (%1) started]
 </source>
         <translation>[タスク (%1) が開始されました]
 </translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>[Task (%1) error occurred (%2)]
 </source>
         <translation>[タスク (%1) でエラーが発生しました (%2)]
 </translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>
 [Task (%1) finished (%2)]
 </source>
@@ -7138,517 +7081,103 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="+129"/>
-        <location line="+167"/>
-        <location line="+80"/>
-        <location line="+23"/>
-        <location line="+148"/>
-        <location line="+75"/>
-        <location line="+34"/>
-        <source>Update</source>
-        <translation>更新</translation>
-    </message>
-    <message>
-        <location line="-520"/>
-        <source>VNote has been updated.</source>
-        <translation>VNote を更新しました。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>VNote has been updated to %1.</source>
-        <translation>VNote を %1 に更新しました。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>The update could not be installed this time and will be retried: %1</source>
-        <translation>今回は更新を適用できませんでした。後で再試行します: %1</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>The update failed and the previous version was restored: %1</source>
-        <translation>更新に失敗したため、以前のバージョンに戻しました: %1</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>The update did not complete and VNote could not restore itself automatically. See RECOVERY.txt in the &apos;.vnote-old&apos; folder next to VNote. (%1)</source>
-        <translation>更新が完了せず、VNote は自動的に復元できませんでした。VNote と同じ場所にある &apos;.vnote-old&apos; フォルダー内の RECOVERY.txt を参照してください。(%1)</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>VNote was updated but could not restart itself automatically.</source>
-        <translation>VNote は更新されましたが、自動的に再起動できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <location line="+398"/>
-        <source>Update Ready</source>
-        <translation>更新の準備ができました</translation>
-    </message>
-    <message>
-        <location line="-396"/>
-        <location line="+398"/>
-        <source>VNote %1 has been downloaded and will be installed when VNote closes.</source>
-        <translation>VNote %1 をダウンロードしました。VNote の終了時にインストールされます。</translation>
-    </message>
-    <message>
-        <location line="-392"/>
-        <location line="+397"/>
-        <source>Restart to finish update</source>
-        <translation>再起動して更新を完了</translation>
-    </message>
-    <message>
-        <location line="-365"/>
-        <location line="+485"/>
-        <source>VNote %1 is ready to install.</source>
-        <translation>VNote %1 をインストールする準備ができました。</translation>
-    </message>
-    <message>
-        <location line="-484"/>
-        <source>Restart VNote now to finish the update?</source>
-        <translation>今すぐ VNote を再起動して更新を完了しますか?</translation>
-    </message>
-    <message>
-        <location line="+57"/>
         <source>Update Available</source>
         <translation>更新があります</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>VNote %1 is available.</source>
-        <translation>VNote %1 が利用可能です。</translation>
+        <source>VNote %1 is available. Open the release page to download it.</source>
+        <translation>VNote %1 が公開されています。リリースページを開いてダウンロードしてください。</translation>
     </message>
     <message>
-        <location line="+47"/>
         <source>Check Release</source>
         <translation>リリースを確認</translation>
     </message>
     <message>
-        <location line="+43"/>
-        <location line="+123"/>
-        <source>This update offer is out of date. Please check for updates again.</source>
-        <translation>この更新の案内は古くなっています。もう一度更新を確認してください。</translation>
-    </message>
-    <message>
-        <location line="-100"/>
-        <source>Downloading VNote %1...</source>
-        <translation>VNote %1 をダウンロードしています...</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <location line="+155"/>
-        <source>Cancel</source>
-        <translation>キャンセル</translation>
-    </message>
-    <message>
-        <location line="-74"/>
-        <location line="+9"/>
-        <source>Another update operation is already running.</source>
-        <translation>別の更新処理がすでに実行中です。</translation>
-    </message>
-    <message>
-        <location line="+127"/>
-        <location line="+34"/>
-        <source>The update failed: %1</source>
-        <translation>更新に失敗しました: %1</translation>
-    </message>
-    <message>
-        <location line="-29"/>
-        <source>Retry</source>
-        <translation>再試行</translation>
-    </message>
-    <message>
-        <location line="+58"/>
         <source>Could not check for updates.</source>
         <translation>更新を確認できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+28"/>
-        <source>Install it now while VNote closes?</source>
-        <translation>VNote の終了時に今すぐインストールしますか?</translation>
     </message>
 </context>
 <context>
     <name>vnotex::UpdateDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+26"/>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>Check for Updates</source>
         <translation>更新を確認</translation>
     </message>
     <message>
-        <location line="+32"/>
-        <source>Update</source>
-        <translation>更新</translation>
+        <source>Open Release Page</source>
+        <translation>リリースページを開く</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Skip This Version</source>
         <translation>このバージョンをスキップ</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location line="+99"/>
         <source>Later</source>
         <translation>後で</translation>
     </message>
     <message>
-        <location line="-98"/>
-        <source>Restart Now</source>
-        <translation>今すぐ再起動</translation>
-    </message>
-    <message>
-        <location line="+15"/>
         <source>VNote is up to date.</source>
         <translation>VNote は最新です。</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>You are running version %1.</source>
         <translation>現在のバージョンは %1 です。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>VNote %1 is available.</source>
-        <translation>VNote %1 が利用可能です。</translation>
+        <translation>VNote %1 が公開されています。</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>%1
-
-You are running version %2.</source>
-        <translation>%1
-
-現在のバージョンは %2 です。</translation>
+        <source>You are running version %1. Open the release page to download the new version and install it yourself.</source>
+        <translation>現在のバージョンは %1 です。リリースページを開いて新しいバージョンをダウンロードし、ご自身でインストールしてください。</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Open Download Page</source>
-        <translation>ダウンロードページを開く</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>You are running version %1. The download is %2 (%3).</source>
-        <translation>現在のバージョンは %1 です。ダウンロードは %2 (%3) です。</translation>
-    </message>
-    <message numerus="yes">
-        <location line="+3"/>
-        <source>incremental update, %n step(s)</source>
-        <translation>
-            <numerusform>増分更新、%n ステップ</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>full package</source>
-        <translation>フルパッケージ</translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>Preparing the update...</source>
-        <translation>更新を準備しています...</translation>
-    </message>
-    <message>
-        <location line="+23"/>
-        <source>VNote %1 has been downloaded and will be installed the next time VNote closes.</source>
-        <translation>VNote %1 をダウンロードしました。次に VNote を終了したときにインストールされます。</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>The update failed: %1</source>
-        <translation>更新に失敗しました: %1</translation>
+        <source>Could not check for updates: %1</source>
+        <translation>更新を確認できませんでした: %1</translation>
     </message>
 </context>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+137"/>
-        <source>In-app updates are only available on Windows.</source>
-        <translation>アプリ内更新は Windows でのみ利用できます。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>In-app updates require a 64-bit build.</source>
-        <translation>アプリ内更新には 64 ビット版が必要です。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>The installation directory could not be determined.</source>
-        <translation>インストールディレクトリを特定できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>VNote was installed from the Microsoft Store. Updates are delivered through the Store.</source>
-        <translation>VNote は Microsoft Store からインストールされています。更新は Store から配信されます。</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>VNote is installed under Program Files. Please update using the installer package.</source>
-        <translation>VNote は Program Files 配下にインストールされています。インストーラーパッケージで更新してください。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>The installation directory is not writable.</source>
-        <translation>インストールディレクトリに書き込みできません。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>The update staging directory is not on the same volume as VNote.</source>
-        <translation>更新のステージングディレクトリが VNote と同じボリュームにありません。</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>This build has no update signing key configured, so updates cannot be verified. Please download updates from the releases page.</source>
-        <translation>このビルドには更新の署名鍵が設定されておらず、更新を検証できません。リリースページから更新をダウンロードしてください。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>This system does not support replacing a running program file safely.</source>
-        <translation>このシステムでは実行中のプログラムファイルを安全に置き換えられません。</translation>
-    </message>
-    <message>
-        <location line="+222"/>
-        <location line="+16"/>
-        <location line="+69"/>
-        <location line="+56"/>
-        <location line="+369"/>
-        <location line="+136"/>
-        <location line="+208"/>
-        <source>Cancelled.</source>
-        <translation>キャンセルされました。</translation>
-    </message>
-    <message>
-        <location line="-850"/>
         <source>Refusing to contact an unexpected host: %1</source>
         <translation>予期しないホストへの接続を拒否しました: %1</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>The request to %1 timed out.</source>
-        <translation>%1 への要求がタイムアウトしました。</translation>
+        <source>Cancelled.</source>
+        <translation>キャンセルされました。</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+31"/>
-        <location line="+95"/>
-        <location line="+35"/>
+        <source>The request to %1 timed out.</source>
+        <translation>%1 へのリクエストがタイムアウトしました。</translation>
+    </message>
+    <message>
         <source>Too many redirects.</source>
         <translation>リダイレクトが多すぎます。</translation>
     </message>
     <message>
-        <location line="-138"/>
         <source>The response from %1 is unexpectedly large.</source>
-        <translation>%1 からの応答が想定外に大きすぎます。</translation>
+        <translation>%1 からの応答が大きすぎます。</translation>
     </message>
     <message>
-        <location line="+16"/>
-        <source>The download size declared by the manifest is not plausible.</source>
-        <translation>マニフェストが宣言したダウンロードサイズが妥当ではありません。</translation>
-    </message>
-    <message>
-        <location line="+20"/>
-        <source>Refusing to download from an unexpected host: %1</source>
-        <translation>予期しないホストからのダウンロードを拒否しました: %1</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <location line="+578"/>
-        <source>Downloading</source>
-        <translation>ダウンロード中</translation>
-    </message>
-    <message>
-        <location line="-542"/>
-        <source>The download from %1 timed out.</source>
-        <translation>%1 からのダウンロードがタイムアウトしました。</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>The download is larger than the manifest declared.</source>
-        <translation>ダウンロードがマニフェストの宣言より大きくなっています。</translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>The downloaded file has an unexpected size.</source>
-        <translation>ダウンロードしたファイルのサイズが想定と異なります。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>The downloaded file failed its integrity check.</source>
-        <translation>ダウンロードしたファイルの整合性チェックに失敗しました。</translation>
-    </message>
-    <message>
-        <location line="+78"/>
-        <source>The update manifest for %1 is not signed: %2</source>
-        <translation>%1 の更新マニフェストは署名されていません: %2</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>The update manifest for %1 failed signature verification: %2</source>
-        <translation>%1 の更新マニフェストの署名検証に失敗しました: %2</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>The update manifest for %1 is malformed: %2</source>
-        <translation>%1 の更新マニフェストの形式が不正です: %2</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>The manifest published for %1 declares version %2.</source>
-        <translation>%1 用に公開されたマニフェストはバージョン %2 を宣言しています。</translation>
-    </message>
-    <message>
-        <location line="+50"/>
         <source>The latest release could not be identified.</source>
-        <translation>最新のリリースを特定できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+40"/>
-        <source>This release does not publish in-app update packages on the selected source. Please download it from the release page.</source>
-        <translation>このリリースは選択した取得元にアプリ内更新パッケージを公開していません。リリースページからダウンロードしてください。</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>The update manifest is not valid for this build.</source>
-        <translation>この更新マニフェストはこのビルドには適用できません。</translation>
-    </message>
-    <message>
-        <location line="+37"/>
-        <source>The release does not publish a full package for this build.</source>
-        <translation>このリリースはこのビルド向けのフルパッケージを公開していません。</translation>
-    </message>
-    <message>
-        <location line="+82"/>
-        <source>Verifying the installed files</source>
-        <translation>インストール済みファイルを検証しています</translation>
-    </message>
-    <message>
-        <location line="+41"/>
-        <source>No update has been planned yet.</source>
-        <translation>更新はまだ計画されていません。</translation>
-    </message>
-    <message>
-        <location line="+57"/>
-        <source>Not enough free disk space: %1 MB are required.</source>
-        <translation>ディスクの空き容量が不足しています: %1 MB 必要です。</translation>
-    </message>
-    <message>
-        <location line="+21"/>
-        <source>Could not create the update staging directory.</source>
-        <translation>更新のステージングディレクトリを作成できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+23"/>
-        <source>The update chain is incomplete.</source>
-        <translation>更新チェーンが不完全です。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Downloading %1</source>
-        <translation>%1 をダウンロードしています</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Extracting %1</source>
-        <translation>%1 を展開しています</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>The update package for %1 was rejected: %2</source>
-        <translation>%1 の更新パッケージは拒否されました: %2</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Extracting</source>
-        <translation>展開中</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>The update package was rejected: %1</source>
-        <translation>更新パッケージは拒否されました: %1</translation>
-    </message>
-    <message>
-        <location line="+25"/>
-        <source>The update package does not contain a manifest.</source>
-        <translation>更新パッケージにマニフェストが含まれていません。</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>The package manifest is not valid: %1</source>
-        <translation>パッケージのマニフェストが無効です: %1</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>The package manifest does not match the published manifest.</source>
-        <translation>パッケージのマニフェストが公開されたマニフェストと一致しません。</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>The package manifest lists a different set of files than the published manifest.</source>
-        <translation>パッケージのマニフェストは公開されたマニフェストと異なるファイル一覧を含んでいます。</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>The package manifest disagrees with the published manifest about &apos;%1&apos;.</source>
-        <translation>パッケージのマニフェストは &apos;%1&apos; について公開されたマニフェストと矛盾しています。</translation>
-    </message>
-    <message>
-        <location line="+33"/>
-        <source>Could not record the pending update.</source>
-        <translation>保留中の更新を記録できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+34"/>
-        <source>The update package contains an unexpected file: %1</source>
-        <translation>更新パッケージに予期しないファイルが含まれています: %1</translation>
-    </message>
-    <message>
-        <location line="+16"/>
-        <source>Verifying the download</source>
-        <translation>ダウンロードを検証しています</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Internal error: &apos;%1&apos; is not in the target manifest.</source>
-        <translation>内部エラー: &apos;%1&apos; は対象のマニフェストにありません。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>The update package is missing &apos;%1&apos;.</source>
-        <translation>更新パッケージに &apos;%1&apos; がありません。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>The staged file &apos;%1&apos; failed its integrity check.</source>
-        <translation>ステージングされたファイル &apos;%1&apos; の整合性チェックに失敗しました。</translation>
+        <translation>最新リリースを特定できませんでした。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::VNote3MigrationService</name>
     <message>
-        <location filename="../../../core/services/vnote3migrationservice.cpp" line="+374"/>
         <source>File &apos;%1&apos;: notebook has no attachment folder configured, skipping attachments</source>
         <translation>ファイル &apos;%1&apos;: ノートブックに添付ファイルフォルダーが設定されていないため、添付ファイルをスキップします</translation>
     </message>
     <message>
-        <location line="+62"/>
         <source>File &apos;%1&apos;: attachment subfolders are not listed in the attachment panel; use &apos;Open Folder&apos; to reach them</source>
         <translation>ファイル &apos;%1&apos;: 添付ファイルのサブフォルダーは添付パネルに表示されません。&apos;フォルダーを開く&apos; から参照してください</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>File &apos;%1&apos;: attachment copy incomplete, keeping the legacy attachment folder</source>
         <translation>ファイル &apos;%1&apos;: 添付ファイルのコピーが不完全なため、従来の添付ファイルフォルダーを維持します</translation>
     </message>
@@ -7839,12 +7368,12 @@ You are running version %2.</source>
         <translation>1 つ下のスプリットへ移動</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Detach</source>
         <translation>切り離す</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+19"/>
         <source>Reload</source>
         <translation>再読み込み</translation>
     </message>

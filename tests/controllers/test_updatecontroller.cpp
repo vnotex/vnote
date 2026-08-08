@@ -1,31 +1,69 @@
-// UpdateController: dedup-key wiring for the update notification lifecycle.
+// UpdateController: notification wiring for the update-available offer.
 //
-// SCOPE. The transfer terminal states are private slots driven by UpdateService
-// signals, and reaching them needs the signed-manifest + local HTTP server
-// harness that tests/core/test_updateservice.cpp already builds. What IS
-// reachable -- and what the dedup design turns on -- is that the post-restart
-// apply result is a SEPARATE incident from a transfer, and is never the message
-// the controller tracks and later dismisses. That is what this covers.
+// SCOPE. The controller's outcomes are private slots driven by UpdateService
+// signals. This suite injects those signals directly rather than standing up a
+// network fixture (tests/core/test_updateservice.cpp owns the mechanism), and
+// covers what the controller alone decides:
 //
-// The other half of the contract (an interrupting terminal state always
-// arriving as messageAdded, including on the DownloadStart::NoPlan path that
-// has no passive phase) is a property of NotificationService::renotify() and is
-// pinned in tests/core/test_notificationservice.cpp.
+//   * an available update becomes ONE interrupting, persistent notification
+//     whose only affordance is the release page -- VNote downloads nothing;
+//   * an up-to-date result is silent on a startup check;
+//   * a later check supersedes the previous offer instead of stacking a second
+//     one;
+//   * the tracked-id bookkeeping when the retention cap evicts the message.
+//
+// The "Check Release" action calls QDesktopServices::openUrl(), which would open
+// a real browser, so an `https` scheme URL handler is installed for the whole
+// suite. That also lets the URL itself be asserted.
 
 #include <QtTest>
 
-#include <QDir>
-#include <QTemporaryDir>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include <controllers/updatecontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notificationservice.h>
 #include <core/services/updateservice.h>
-#include <core/updateinstaller.h>
 
 using namespace vnotex;
 
 namespace tests {
+
+namespace {
+
+const QString c_offerKey = QStringLiteral("update.available");
+
+UpdateInfo makeInfo(bool p_updateAvailable, const QString &p_latest = QStringLiteral("4.4.3")) {
+  UpdateInfo info;
+  info.updateAvailable = p_updateAvailable;
+  info.currentVersion = QStringLiteral("4.4.2");
+  info.latestVersion = p_latest;
+  info.releaseNotes = QStringLiteral("notes");
+  info.releaseUrl = QStringLiteral("https://gitee.com/vnotex/vnote/releases/tag/v%1").arg(p_latest);
+  return info;
+}
+
+QStringList actionLabels(const NotificationMessage &p_msg) {
+  QStringList labels;
+  for (const auto &action : p_msg.m_actions) {
+    labels.append(action.m_label);
+  }
+  return labels;
+}
+
+} // namespace
+
+// Intercepts QDesktopServices::openUrl() so the suite never opens a browser.
+class UrlSink : public QObject {
+  Q_OBJECT
+
+public:
+  QList<QUrl> m_opened;
+
+public slots:
+  void onUrl(const QUrl &p_url) { m_opened.append(p_url); }
+};
 
 class TestUpdateController : public QObject {
   Q_OBJECT
@@ -34,44 +72,49 @@ private slots:
   void init();
   void cleanup();
 
-  void test_storedApplyResultIsAnInterruptingSeparateIncident();
-  void test_transferNotificationDoesNotReplaceTheApplyResult();
-  void test_storedResultSurvivesTransferIncidentRetirement();
+  void test_availableUpdateBecomesAnInterruptingReleasePageOffer();
+  void test_upToDateResultIsSilentOnAStartupCheck();
+  void test_aLaterCheckSupersedesThePreviousOffer();
+  void test_aDroppedManualRequestCannotRelabelARunningCheck();
   void test_evictingTheTrackedMessageClearsTheTrackedId();
 
 private:
-  const NotificationMessage *activeWithKey(const QString &p_key) const;
+  // A COPY: the store is rebuilt on every notify(), so holding a pointer across
+  // a call would dangle.
+  bool activeWithKey(const QString &p_key, NotificationMessage *p_out) const;
 
-  QTemporaryDir *m_installDir = nullptr;
   ServiceLocator *m_services = nullptr;
   NotificationService *m_notifications = nullptr;
   UpdateService *m_updateService = nullptr;
   UpdateController *m_controller = nullptr;
+  UrlSink *m_urlSink = nullptr;
 };
 
-const NotificationMessage *TestUpdateController::activeWithKey(const QString &p_key) const {
+bool TestUpdateController::activeWithKey(const QString &p_key, NotificationMessage *p_out) const {
   for (const auto &msg : m_notifications->messages()) {
     if (!msg.m_dismissed && msg.m_dedupKey == p_key) {
-      return &msg;
+      *p_out = msg;
+      return true;
     }
   }
-  return nullptr;
+  return false;
 }
 
 void TestUpdateController::init() {
-  m_installDir = new QTemporaryDir();
-  QVERIFY(m_installDir->isValid());
+  m_urlSink = new UrlSink();
+  QDesktopServices::setUrlHandler(QStringLiteral("https"), m_urlSink, "onUrl");
 
   m_services = new ServiceLocator();
   m_notifications = new NotificationService();
   m_services->registerService<NotificationService>(m_notifications);
 
-  m_updateService = new UpdateService(m_installDir->path(), QStringLiteral("4.3.0"));
+  m_updateService = new UpdateService(QStringLiteral("4.4.2"));
   m_services->registerService<UpdateService>(m_updateService);
 
-  // No ConfigMgr2 and a null MainWindow2: runStartupTasks() then stops after
-  // consuming the stored result, which is exactly the window under test and
-  // keeps the network check (and its modal failure box) out of the way.
+  // No ConfigMgr2 and a null parent widget: runStartupTasks() then stops before
+  // the throttle, which keeps the network check (and its modal failure box) out
+  // of the way. The check-result path is driven directly through the service's
+  // signals instead.
   m_controller = new UpdateController(*m_services, nullptr);
 }
 
@@ -84,106 +127,142 @@ void TestUpdateController::cleanup() {
   m_notifications = nullptr;
   delete m_services;
   m_services = nullptr;
-  delete m_installDir;
-  m_installDir = nullptr;
+
+  QDesktopServices::unsetUrlHandler(QStringLiteral("https"));
+  delete m_urlSink;
+  m_urlSink = nullptr;
 }
 
-void TestUpdateController::test_storedApplyResultIsAnInterruptingSeparateIncident() {
-  QVERIFY(UpdateInstaller::writeResult(m_installDir->path(),
-                                       UpdateInstaller::ResultOutcome::Applied, QString(),
-                                       QString(), QStringLiteral("4.3.1")));
+// The offer must be Interrupt (a toast is raised ONLY by messageAdded carrying
+// Interrupt) and Persist (the user must be able to find it whenever they are
+// ready), and its ONLY action is the release page: VNote downloads nothing.
+void TestUpdateController::test_availableUpdateBecomesAnInterruptingReleasePageOffer() {
+  emit m_updateService->checkFinished(makeInfo(true));
 
-  m_controller->runStartupTasks();
+  NotificationMessage offer;
+  QVERIFY2(activeWithKey(c_offerKey, &offer), "no offer notification was posted");
+  QCOMPARE(offer.m_category, QStringLiteral("update"));
+  QCOMPARE(offer.m_attention, NotificationMessage::Attention::Interrupt);
+  QCOMPARE(offer.m_duration, NotificationMessage::Duration::Persist);
+  QCOMPARE(actionLabels(offer), QStringList{QStringLiteral("Check Release")});
+  QVERIFY2(offer.m_text.contains(QStringLiteral("4.4.3")), qPrintable(offer.m_text));
 
-  const auto *result = activeWithKey(QStringLiteral("update.result"));
-  QVERIFY2(result, "the stored apply result did not produce a notification");
-  QCOMPARE(result->m_category, QStringLiteral("update"));
-  // The outcome of an update the user already committed to.
-  QCOMPARE(result->m_attention, NotificationMessage::Attention::Interrupt);
-
-  // It must NOT be filed under the transfer incident.
-  QVERIFY2(!activeWithKey(QStringLiteral("update.transfer")),
-           "the apply result was filed under the transfer key");
+  offer.m_actions.at(0).m_callback();
+  QCOMPARE(m_urlSink->m_opened.size(), 1);
+  QCOMPARE(m_urlSink->m_opened.at(0).toString(),
+           QStringLiteral("https://gitee.com/vnotex/vnote/releases/tag/v4.4.3"));
 }
 
-// The two keys are independent incidents. A transfer notification arriving
-// afterwards must not fold into, replace, or evict the apply result -- the user
-// still needs to see how the last update went.
-void TestUpdateController::test_transferNotificationDoesNotReplaceTheApplyResult() {
-  QVERIFY(UpdateInstaller::writeResult(m_installDir->path(),
-                                       UpdateInstaller::ResultOutcome::Applied, QString(),
-                                       QString(), QStringLiteral("4.3.1")));
-  m_controller->runStartupTasks();
+void TestUpdateController::test_upToDateResultIsSilentOnAStartupCheck() {
+  emit m_updateService->checkFinished(makeInfo(false));
 
-  const auto *result = activeWithKey(QStringLiteral("update.result"));
-  QVERIFY(result);
-  const quint64 resultId = result->m_id;
-
-  // Stand in for the controller's own transfer post (offer / progress /
-  // terminal), which is what m_progressNotificationId tracks.
-  NotificationMessage transfer;
-  transfer.m_category = QStringLiteral("update");
-  transfer.m_dedupKey = QStringLiteral("update.transfer");
-  transfer.m_attention = NotificationMessage::Attention::Interrupt;
-  const quint64 transferId = m_notifications->renotify(transfer);
-
-  QVERIFY(transferId != resultId);
-  QVERIFY2(m_notifications->isActive(resultId),
-           "posting a transfer notification retired the apply result");
-  QCOMPARE(m_notifications->activeCount(), 2);
+  NotificationMessage ignored;
+  QVERIFY2(!activeWithKey(c_offerKey, &ignored), "an up-to-date check posted a notification");
+  QCOMPARE(m_notifications->activeCount(), 0);
+  QCOMPARE(m_urlSink->m_opened.size(), 0);
 }
 
-// The regression this guards: if the apply result were tracked as the transfer
-// message, retiring the transfer incident (which startCheck() does, and which
-// the user does via a manual retry) would silently dismiss the outcome of the
-// update that just ran. runStartupTasks() consumes the stored result BEFORE
-// startCheck(), so a shared id would lose it every single launch.
-void TestUpdateController::test_storedResultSurvivesTransferIncidentRetirement() {
-  QVERIFY(UpdateInstaller::writeResult(m_installDir->path(),
-                                       UpdateInstaller::ResultOutcome::ManualRecovery,
-                                       QStringLiteral("boom"), QString(),
-                                       QStringLiteral("4.3.1")));
-  m_controller->runStartupTasks();
+// A new check supersedes whatever the previous one advertised: its button would
+// otherwise point at a release that is no longer the latest. The offer is one
+// incident, not a growing pile.
+void TestUpdateController::test_aLaterCheckSupersedesThePreviousOffer() {
+  emit m_updateService->checkFinished(makeInfo(true, QStringLiteral("4.4.3")));
 
-  const auto *result = activeWithKey(QStringLiteral("update.result"));
-  QVERIFY(result);
-  const quint64 resultId = result->m_id;
-  QCOMPARE(result->m_severity, NotificationMessage::Severity::Error);
+  NotificationMessage first;
+  QVERIFY(activeWithKey(c_offerKey, &first));
+  const quint64 firstId = first.m_id;
 
-  m_notifications->dismissByDedupKey(QStringLiteral("update.transfer"));
+  emit m_updateService->checkFinished(makeInfo(true, QStringLiteral("4.4.4")));
 
-  QVERIFY2(m_notifications->isActive(resultId),
-           "retiring the transfer incident dismissed the apply result");
+  NotificationMessage second;
+  QVERIFY(activeWithKey(c_offerKey, &second));
+  QVERIFY2(second.m_id != firstId, "the second offer reused the first message");
+  QVERIFY2(second.m_text.contains(QStringLiteral("4.4.4")), qPrintable(second.m_text));
+  // renotify() retires the previous generation rather than leaving two rows.
+  QVERIFY2(!m_notifications->isActive(firstId), "the superseded offer is still active");
+  QCOMPARE(m_notifications->activeCount(), 1);
+}
+
+// The regression this guards: `startCheck()` used to set the manual/startup
+// mode BEFORE knowing whether the service accepted the request. A user clicking
+// "Check for Updates" while the silent startup check was still running would
+// therefore have that startup check's result rendered on the MANUAL surface --
+// a modal dialog for a check they never saw start, and, worse, a modal warning
+// box for a background failure that is supposed to be silent.
+//
+// The service is pointed at an unroutable endpoint so its check stays in flight
+// (and eventually fails) without any fixture server.
+void TestUpdateController::test_aDroppedManualRequestCannotRelabelARunningCheck() {
+  m_updateService->testSetEndpointOverride(
+      QUrl(QStringLiteral("https://api.github.com/repos/vnotex/vnote/releases/latest")));
+
+  // Start a silent (startup-style) check by driving the service directly, then
+  // tell the controller a manual request arrived. The service must refuse it.
+  QVERIFY2(m_updateService->checkForUpdates(), "the first check was not accepted");
+  QVERIFY2(!m_updateService->checkForUpdates(),
+           "the service accepted a second concurrent check, so this test proves nothing");
+
+  m_controller->checkForUpdatesManually();
+
+  // The controller must not have adopted the manual mode from a request that
+  // never ran: a startup-style failure stays silent (no message box, nothing
+  // posted) rather than being reported as a manual check's failure.
+  emit m_updateService->failed(QStringLiteral("boom"));
+
+  NotificationMessage ignored;
+  QVERIFY2(!activeWithKey(c_offerKey, &ignored), "a failure posted an offer notification");
+  QCOMPARE(m_notifications->activeCount(), 0);
+  QCOMPARE(m_urlSink->m_opened.size(), 0);
+
+  // And an offer arriving for that same startup check stays on the silent
+  // surface too -- i.e. it becomes a notification, not a modal dialog.
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY2(activeWithKey(c_offerKey, &offer),
+           "the startup result did not land on the notification surface");
 }
 
 // A tracked message can leave the store without being dismissed (the retention
 // cap evicts it). The controller subscribes to messageRemoved so
-// m_progressNotificationId cannot keep naming a message that no longer exists.
-// Observed indirectly: after the tracked message is evicted, a later transfer
-// post must still land as a NEW active message rather than trying to update a
-// dead id.
+// m_offerNotificationId cannot keep naming a message that no longer exists.
 void TestUpdateController::test_evictingTheTrackedMessageClearsTheTrackedId() {
-  QVERIFY(UpdateInstaller::writeResult(m_installDir->path(),
-                                       UpdateInstaller::ResultOutcome::Applied, QString(),
-                                       QString(), QStringLiteral("4.3.1")));
-  m_controller->runStartupTasks();
+  emit m_updateService->checkFinished(makeInfo(true));
 
-  const auto *result = activeWithKey(QStringLiteral("update.result"));
-  QVERIFY(result);
-  const quint64 resultId = result->m_id;
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  const quint64 offerId = offer.m_id;
 
-  // Push the store past the cap so the (oldest, actionless) result is evicted.
+  // Push the store past the cap. The offer carries an action AND is Persist, so
+  // the "cheap to lose" eviction tier would always prefer a plain filler over
+  // it; the fillers therefore have to be equally expensive, which leaves the
+  // evictor with its last resort -- the OLDEST active message, i.e. the offer.
+  auto expensiveFiller = [](const QString &p_text) {
+    NotificationMessage filler;
+    filler.m_text = p_text;
+    filler.m_duration = NotificationMessage::Duration::Persist;
+    NotificationAction action;
+    action.m_label = QStringLiteral("noop");
+    action.m_callback = []() {};
+    filler.m_actions.append(action);
+    return filler;
+  };
+
   int i = 0;
   while (m_notifications->messages().size() < NotificationService::c_maxMessages) {
-    NotificationMessage filler;
-    filler.m_text = QStringLiteral("filler %1").arg(i++);
-    m_notifications->notify(filler);
+    m_notifications->notify(expensiveFiller(QStringLiteral("filler %1").arg(i++)));
   }
-  m_notifications->notify(NotificationMessage());
+  m_notifications->notify(expensiveFiller(QStringLiteral("overflow")));
 
-  QVERIFY2(!m_notifications->isActive(resultId), "precondition: the result was not evicted");
+  QVERIFY2(!m_notifications->isActive(offerId), "precondition: the offer was not evicted");
   QVERIFY2(m_notifications->messages().size() <= NotificationService::c_maxMessages,
            "the store grew past the cap");
+
+  // With the tracked id cleared, a fresh offer lands as a NEW active message
+  // instead of trying to dismiss a dead one.
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage second;
+  QVERIFY(activeWithKey(c_offerKey, &second));
+  QVERIFY(second.m_id != offerId);
 }
 
 } // namespace tests

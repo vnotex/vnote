@@ -172,15 +172,9 @@ public:
 
   void restart();
 
-  // Menu entry point. Delegates to UpdateController, which decides between the
-  // in-app update flow and simply opening the releases page.
+  // Menu entry point. Delegates to UpdateController, which checks for a newer
+  // release and offers the release page; VNote downloads nothing itself.
   void checkForUpdates();
-
-  // Quits with kExitToApplyUpdate so main() applies the staged incremental
-  // update (after every service and Application are destroyed) and then spawns
-  // the replacement. Sets only m_requestQuit; the update lease is owned by
-  // main() and is never touched from here.
-  void restartForUpdate();
 
   void showMainWindow();
 

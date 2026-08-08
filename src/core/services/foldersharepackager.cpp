@@ -67,7 +67,7 @@ constexpr unsigned long kRenameRetryDelayMs = 40;
 
 // Authoritative reparse-point test. QFileInfo::isSymLink() has historically
 // varied in how it reports NTFS junctions across Qt versions, so query the
-// attribute directly on Windows. Mirrors ZipExtractor's helper.
+// attribute directly on Windows.
 bool isReparsePoint(const QString &p_path) {
 #ifdef Q_OS_WIN
   const DWORD attrs = ::GetFileAttributesW(

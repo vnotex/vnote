@@ -252,19 +252,22 @@ jobs:
           }
           Write-Host "No SDK artifacts under $extracted"
 
-      # Incremental update artifacts. MUST run after the Qt5 rename (so the
+      # Update manifest / delta artifacts. MUST run after the Qt5 rename (so the
       # variant name is final) and before the composition check below (which
       # inspects the extracted directory, now including manifest.json).
       #
+      # NOTE: the VNote client no longer consumes these at all -- it only checks
+      # for a newer release and points the user at the release page (see the
+      # "Update Check" section of the root AGENTS.md). They are published as the
+      # artifact interface for a future EXTERNAL updater; see
+      # docs/update-signing.md.
+      #
       # The MSI was produced earlier by `cmake --build . --target=pack`, so it
-      # does NOT contain manifest.json. That is intentional: MSI installs land
-      # under Program Files and are deliberately ineligible for self-update.
+      # does NOT contain manifest.json. That is intentional and unchanged.
       #
       # Qt6 / `win64` ONLY. The Qt5 `win64-windows7` variant deliberately ships
-      # no update assets: a release that publishes no manifest degrades the
-      # client to check-only (eligible=false, updateAvailable=true, pointing at
-      # the release page), which is a supported path -- see the "Ineligibility,
-      # and the check-only degradation" section of the root AGENTS.md.
+      # no update assets; nothing depends on them, so generating them for that
+      # variant would only add build surface.
       - name: Generate update manifest and delta
         # Update artifacts are only meaningful for a real release. This repo
         # cuts releases from a `[Release]` master push (the tag is created
