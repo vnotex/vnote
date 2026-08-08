@@ -206,11 +206,9 @@ gh release upload vX.Y.Z "_artifacts\<path>\VNote-X.Y.Z-...zip" --clobber
 
 ### Set the release description from `changes.md`
 
-The draft's body MUST be the `## vX.Y.Z` section of `changes.md` (the same
-changelog written in step 3) — nothing more, nothing less. CI creates the
-release with an empty body, so set it. Extract exactly that one section (from its
-`## vX.Y.Z` heading up to, but not including, the next `## ` heading) and set it
-as the notes:
+The draft's body is driven from `## vX.Y.Z` section of `changes.md` (the same
+changelog written in step 3) focusing on user experience changes. CI creates the
+release with an empty body, so set it.
 
 ```pwsh
 # Extract the ## vX.Y.Z section into a temp notes file...
@@ -219,7 +217,7 @@ $md  = Get-Content changes.md -Raw
 $sec = [regex]::Match($md, "(?ms)^## v$([regex]::Escape($ver))\b.*?(?=^## |\z)").Value.TrimEnd()
 Set-Content -Path notes.md -Value $sec -NoNewline -Encoding utf8
 
-# ...and apply it as the draft's description.
+# ...and apply it as the draft's description after rewriting it to focus on user experience changes.
 gh release edit vX.Y.Z --notes-file notes.md
 ```
 
