@@ -1295,7 +1295,19 @@ bool NotebookCoreService::moveFile(const QString &p_notebookId, const QString &p
       vxcore_node_move(m_context, p_notebookId.toUtf8().constData(),
                        p_srcFilePath.toUtf8().constData(), p_destFolderPath.toUtf8().constData());
   if (err != VXCORE_OK) {
-    qWarning() << "moveFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+    // Append the vxcore detail ONLY for VXCORE_ERR_UNKNOWN: that is the
+    // exception path, the one code guaranteed to have just set a fresh
+    // last_error. vxcore never clears last_error per call, and the other
+    // failure codes here may not set it, so appending unconditionally would
+    // print a stale message from an unrelated earlier call.
+    QString detailMsg;
+    if (err == VXCORE_ERR_UNKNOWN) {
+      const char *detail = nullptr;
+      if (vxcore_context_get_last_error(m_context, &detail) == VXCORE_OK && detail) {
+        detailMsg = QStringLiteral(" detail: ") + QString::fromUtf8(detail);
+      }
+    }
+    qWarning() << "moveFile failed:" << QString::fromUtf8(vxcore_error_message(err)) << detailMsg;
     return false;
   }
 
