@@ -152,9 +152,6 @@ void MainWindow2::setupUI() {
   // Window title
   setWindowTitle(tr("VNote"));
 
-  // Minimum size: 800x600
-  setMinimumSize(800, 600);
-
   // Setup ViewArea2 as central widget.
   setupViewArea();
 
