@@ -273,13 +273,22 @@ QByteArray TestFolderShareController::readAll(const QString &p_path) {
 
 QStringList TestFolderShareController::leftoverEntries(const QString &p_destination,
                                                        const QString &p_bundlePath) {
+  // The controller canonicalizes the destination, so the published bundle path
+  // it reports can be spelled differently from the fixture's own destination()
+  // (macOS resolves the temp dir's /var to /private/var). Compare RESOLVED
+  // paths, or the bundle would never be excluded and would read as a leftover.
+  const auto resolved = [](const QString &p_path) {
+    const QString canonical = QFileInfo(p_path).canonicalFilePath();
+    return canonical.isEmpty() ? QDir::cleanPath(p_path) : canonical;
+  };
+
   QStringList result;
+  const QString bundle = p_bundlePath.isEmpty() ? QString() : resolved(p_bundlePath);
   const QFileInfoList entries =
       QDir(p_destination)
           .entryInfoList(QDir::AllEntries | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot);
   for (const QFileInfo &info : entries) {
-    if (!p_bundlePath.isEmpty() &&
-        QDir::cleanPath(info.absoluteFilePath()) == QDir::cleanPath(p_bundlePath)) {
+    if (!bundle.isEmpty() && resolved(info.absoluteFilePath()) == bundle) {
       continue;
     }
     result.append(info.fileName());
@@ -768,6 +777,11 @@ void TestFolderShareController::testAcceptsDestinationReachedThroughSymlink() {
   QVERIFY2(result.succeeded(), qPrintable(result.m_errorMessage));
   // The bundle materializes in the RESOLVED directory.
   QVERIFY(QFileInfo(realDest + QStringLiteral("/Alpha-bundle")).isDir());
+  // The reported path is the resolved spelling, so identifying the bundle from
+  // the LINKED spelling the caller passed in requires resolving both sides.
+  // This is the same two-spelling shape macOS produces for every share, where
+  // the temp dir's /var resolves to /private/var.
+  QCOMPARE(leftoverEntries(linkedDest, result.m_bundlePath), QStringList());
 }
 
 // ---------------------------------------------------------------------------
