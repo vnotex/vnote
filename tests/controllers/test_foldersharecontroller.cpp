@@ -101,6 +101,7 @@ private slots:
   void testRejectsSymlinkInsideSource();
   void testRejectsSymlinkedContentRoot();
   void testRejectsSymlinkedAncestor();
+  void testAcceptsNotebookReachedThroughSymlinkedPrefix();
   void testAcceptsDestinationReachedThroughSymlink();
   void testSourceMutationDuringCopyFails();
   void testInjectedFailuresLeaveNoBundleOrTemp();
@@ -719,6 +720,37 @@ void TestFolderShareController::testRejectsSymlinkedAncestor() {
   const auto result = share(QStringLiteral("Projects/Alpha"));
   QCOMPARE(result.m_status, FolderSharePackager::Status::Failed);
   QCOMPARE(leftoverEntries(destination(), QString()), QStringList());
+}
+
+// The macOS/CI shape of the same problem, one level ABOVE the notebook: the
+// notebook itself is clean, but it is reached through a symlinked PREFIX
+// (macOS resolves TMPDIR's /var to /private/var). Canonicalizing only the
+// notebook root, while the content/metadata roots stayed unresolved, made
+// QDir::relativeFilePath emit a "../.." escape that walked the ancestor check
+// straight out of the notebook and onto that system symlink, so every share
+// failed. All three request paths must come from the same namespace.
+void TestFolderShareController::testAcceptsNotebookReachedThroughSymlinkedPrefix() {
+  const QString realPrefix = m_tempDir->filePath(QStringLiteral("real_prefix"));
+  QVERIFY(QDir().mkpath(realPrefix));
+  const QString linkedPrefix = m_tempDir->filePath(QStringLiteral("linked_prefix"));
+  if (!makeSymlink(realPrefix, linkedPrefix, true)) {
+    QSKIP("This platform/user cannot create symbolic links");
+  }
+
+  // Re-create the notebook UNDER the symlinked prefix. Its own root and every
+  // component below it are real directories; only the prefix is a link.
+  m_notebooks->closeNotebook(m_notebookId);
+  m_notebookPath = linkedPrefix + QStringLiteral("/nb");
+  m_notebookId = m_notebooks->createNotebook(
+      m_notebookPath, QStringLiteral(R"({"name": "Linked NB"})"), NotebookType::Bundled);
+  QVERIFY(!m_notebookId.isEmpty());
+
+  makeFolder(QStringLiteral("Alpha"));
+  makeFile(QStringLiteral("Alpha"), QStringLiteral("a.md"), "a");
+
+  const auto result = share(QStringLiteral("Alpha"));
+  QCOMPARE(result.m_status, FolderSharePackager::Status::Succeeded);
+  QVERIFY(!result.m_bundlePath.isEmpty());
 }
 
 void TestFolderShareController::testAcceptsDestinationReachedThroughSymlink() {

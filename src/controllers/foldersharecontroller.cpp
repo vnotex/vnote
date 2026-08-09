@@ -148,8 +148,8 @@ FolderSharePackager::Result FolderShareController::shareFolder(const NodeIdentif
   // A destination REACHED through a symlink/junction is fine; a destination
   // that RESOLVES inside the source notebook is not — sharing into the notebook
   // would feed the copy its own output.
-  const QString notebookRoot = canonicalOrClean(paths.m_notebookRoot);
-  if (isInsideOrEqual(notebookRoot, destination)) {
+  const QString canonicalNotebookRoot = canonicalOrClean(paths.m_notebookRoot);
+  if (isInsideOrEqual(canonicalNotebookRoot, destination)) {
     return makeFailure(tr("Choose a destination outside the notebook folder."));
   }
 
@@ -180,7 +180,18 @@ FolderSharePackager::Result FolderShareController::shareFolder(const NodeIdentif
   }
 
   FolderSharePackager::Request request;
-  request.m_notebookRoot = notebookRoot;
+  // NOT the canonical form: the packager derives the content/metadata paths
+  // RELATIVE to this root and then walks that chain looking for a symlinked
+  // component. Canonicalizing only the root would (a) make the ROOT'S OWN link
+  // check vacuous, since a canonical path no longer names the link, and (b) on
+  // a platform where the notebook lives under a symlinked prefix (macOS:
+  // /var -> /private/var) mix a resolved root with unresolved children, so
+  // QDir::relativeFilePath yields a "../../.." escape that walks the check
+  // straight out of the notebook and onto a system symlink. All three source
+  // paths must come from the SAME (unresolved) namespace. The destination
+  // stays canonical: it is not part of that chain, and the containment test
+  // above must compare real locations rather than spellings.
+  request.m_notebookRoot = QDir::cleanPath(paths.m_notebookRoot);
   request.m_contentRoot = QDir::cleanPath(paths.m_contentRoot);
   request.m_metadataRoot = QDir::cleanPath(paths.m_metadataRoot);
   request.m_destinationParent = destination;
