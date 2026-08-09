@@ -262,9 +262,9 @@ QMainWindow {
 
 QMainWindow::separator {
     /* For vertical */
-    width: 1px;
+    width: 2px;
     /* For horizontal */
-    height: 1px;
+    height: 2px;
     background-color: @widgets#qmainwindow#separator#bg;
 }
 

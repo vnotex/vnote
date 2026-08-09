@@ -272,7 +272,7 @@
             "fg" : "@base#normal#fg",
             "bg" : "@base#normal#bg",
             "separator" : {
-                "bg" : "transparent"
+                "bg" : "@widgets#separator#bg"
             }
         },
         "dragdropareaindicator" : {
