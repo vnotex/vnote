@@ -114,6 +114,10 @@ private slots:
   // streaming path, matching the blob baseline (absent key != uncapped).
   void testStreamingFinishedMatchesBlobBaselineDefaultCap();
 
+  // Test that the UNQUALIFIED metatype names Qt 5 resolves queued-connection arguments by are
+  // registered by the SearchService constructor.
+  void testQueuedMetatypeNamesAreRegistered();
+
 private:
   VxCoreContextHandle m_context = nullptr;
   TempDirFixture m_tempDir;
@@ -675,6 +679,22 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineDefaultCap() {
            "streaming finished result ignored the implicit default maxResults=100 cap");
   QCOMPARE(streamedResult.m_matchCount, blobResult.m_matchCount);
   QCOMPARE(canonicalizeContentResult(streamedResult), canonicalizeContentResult(blobResult));
+}
+
+// Qt 5 resolves queued-connection argument types by the NAME moc recorded for the signal
+// parameter. SearchWorker::finished / ::batch / ::failed are declared inside namespace vnotex
+// and spell their parameters UNQUALIFIED, so moc records "SearchResult" / "Error" while
+// Q_DECLARE_METATYPE registers "vnotex::SearchResult" / "vnotex::Error". Without the
+// unqualified aliases Qt 5 drops every cross-thread emission with
+// "QObject::connect: Cannot queue arguments of type 'SearchResult'".
+void TestSearchService::testQueuedMetatypeNamesAreRegistered() {
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+
+  QVERIFY2(QMetaType::fromName(QByteArrayLiteral("SearchResult")).isValid(),
+           "SearchService must register the unqualified \"SearchResult\" metatype alias");
+  QVERIFY2(QMetaType::fromName(QByteArrayLiteral("Error")).isValid(),
+           "SearchService must register the unqualified \"Error\" metatype alias");
 }
 
 } // namespace tests

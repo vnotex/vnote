@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QSslSocket>
 #include <QUrl>
 
 #include <core/configmgr2.h>
@@ -256,12 +257,28 @@ void UpdateController::onFailed(const QString &p_message) {
     return;
   }
 
+  QString message = p_message;
+  if (!QSslSocket::supportsSsl()) {
+    // Without this the user sees a raw Qt errorString() ("TLS initialization
+    // failed") with no way to act on it. The DLL names are Qt 5 / Windows
+    // specific; every other configuration gets the generic wording.
+#if defined(Q_OS_WIN) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    message += QLatin1Char('\n');
+    message += tr("TLS is unavailable: OpenSSL could not be loaded. "
+                  "libssl-1_1-x64.dll and libcrypto-1_1-x64.dll are expected "
+                  "next to vnote.exe.");
+#else
+    message += QLatin1Char('\n');
+    message += tr("TLS is unavailable: no working secure-socket backend was found.");
+#endif
+  }
+
   if (m_dialog) {
-    m_dialog->setFailed(p_message);
+    m_dialog->setFailed(message);
     return;
   }
 
-  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Could not check for updates."), p_message,
+  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Could not check for updates."), message,
                            QString(), m_parentWidget);
 }
 

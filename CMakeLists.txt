@@ -113,6 +113,13 @@ endif()
 
 add_subdirectory(src)
 
+# tlsprobe: Windows-only CI gate proving the packaged build can initialize TLS.
+# Deliberately in the default ALL target (so the Qt5 job's plain `cmake --build .`
+# produces it) and independent of VNOTE_BUILD_TESTS, which that job sets to OFF.
+if(WIN32)
+    add_subdirectory(tools/tlsprobe)
+endif()
+
 # TODO: find a better way to organize tests
 option(VNOTE_BUILD_TESTS "Build VNote unit tests" ON)
 

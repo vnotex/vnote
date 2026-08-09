@@ -27,6 +27,10 @@ private slots:
   void testConfigRoundTrip();
   void testRemoveProvider();
 
+  // Test that the UNQUALIFIED metatype names Qt 5 resolves queued-connection arguments by are
+  // registered by the ImageHostService constructor.
+  void testQueuedMetatypeNamesAreRegistered();
+
 private:
   HookManager *m_hookMgr = nullptr;
   ImageHostService *m_service = nullptr;
@@ -180,6 +184,21 @@ void TestImageHostService::testRemoveProvider() {
   service.removeProvider(gh);
 
   QVERIFY(service.findProvider(QStringLiteral("toRemove")) == nullptr);
+}
+
+// Qt 5 resolves queued-connection argument types by the NAME moc recorded for the signal
+// parameter (or the name Q_ARG stringified). ImageHostWorker's completion signals and the
+// Q_ARG(ImageHostWorkItem, ...) dispatch in ImageHostService both spell the type UNQUALIFIED,
+// while Q_DECLARE_METATYPE registers "vnotex::ImageHostWorkItem" /
+// "vnotex::ImageHostAsyncResult". See the comment in searchservice.cpp for the full rationale.
+void TestImageHostService::testQueuedMetatypeNamesAreRegistered() {
+  ImageHostService service(m_hookMgr);
+
+  QVERIFY2(QMetaType::fromName(QByteArrayLiteral("ImageHostWorkItem")).isValid(),
+           "ImageHostService must register the unqualified \"ImageHostWorkItem\" metatype alias");
+  QVERIFY2(
+      QMetaType::fromName(QByteArrayLiteral("ImageHostAsyncResult")).isValid(),
+      "ImageHostService must register the unqualified \"ImageHostAsyncResult\" metatype alias");
 }
 
 } // namespace tests

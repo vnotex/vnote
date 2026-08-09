@@ -112,12 +112,228 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
-      - name: Clone OpenSSL on 5.15
-        shell: bash
-        if: ${{ startsWith(matrix.config.qt, '5.15') }}
+      # ---------------------------------------------------------------------
+      # OpenSSL for the Qt 5.15 / Windows 7 variant.
+      #
+      # Qt 5.15 on Windows has NO Schannel TLS backend, so without a loadable
+      # OpenSSL every HTTPS feature (update check, image hosting) dies with
+      # "QSslSocket::connectToHostEncrypted: TLS initialization failed".
+      # Qt 6 is unaffected (it falls back to Schannel) and git sync is unaffected
+      # on both (libgit2 uses WinHTTP), so the blast radius is exactly those two
+      # call sites.
+      #
+      # This replaced a clone of vnotex/openssl-utils pinned at 1.1.1j/Win_x64.
+      # Those prebuilt DLLs import MSVCR100.dll -- the VC++ 2010 runtime, which is
+      # neither in the package nor on a clean Windows 7/10/11 box -- so
+      # LoadLibrary failed and the shipped 4.4.2 win7 build had no TLS at all.
+      # 1.1.1j also predates CVE-2022-0778. Building 1.1.1w (the final 1.1.1
+      # release) here links the modern UCRT/vcruntime140 that the package already
+      # bundles, and keeps provenance inside this repo.
+      #
+      # These steps MUST stay after "Setup MSVC v142 dev environment" (which puts
+      # cl/link/lib/nmake on PATH) and after "Strip MinGW from PATH" (which
+      # persists the sanitized PATH through GITHUB_ENV). Do not move them earlier.
+      # ---------------------------------------------------------------------
+      - name: Cache OpenSSL 1.1.1w (Qt5 only)
+        id: cache-openssl
+        if: ${{ matrix.config.qt_major == 5 }}
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.workspace }}/openssl-1.1.1w-win64
+          # Bump the trailing -vN whenever the recipe below changes.
+          key: ${{runner.os}}-openssl-1.1.1w-vc142-x64-v1
+
+      - name: Build OpenSSL 1.1.1w from source (Qt5 only)
+        if: ${{ matrix.config.qt_major == 5 && steps.cache-openssl.outputs.cache-hit != 'true' }}
+        shell: pwsh
+        working-directory: ${{ runner.workspace }}
+        env:
+          OPENSSL_PREFIX: ${{ runner.workspace }}/openssl-1.1.1w-win64
         run: |
-          git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git --depth=1
-        working-directory: ${{ runner.workspace }}/build
+          $ErrorActionPreference = 'Stop'
+
+          # Perl is required by OpenSSL's Configure. Make it available for THIS
+          # STEP ONLY -- writing it to $GITHUB_ENV would undo the deliberate
+          # MinGW/Strawberry strip that keeps CMake from picking gcc over cl.
+          # Only Strawberry's perl\bin is prepended; its gcc lives in c\bin.
+          $env:PATH = "C:\Strawberry\perl\bin;$env:PATH"
+          $perlOk = $false
+          if (Get-Command perl -ErrorAction SilentlyContinue) {
+            & perl -v | Out-Null
+            $perlOk = ($LASTEXITCODE -eq 0)
+          }
+          if (-not $perlOk) {
+            throw ('perl is not available. OpenSSL cannot be configured without it. ' +
+                   'Fallback: add a shogo82148/actions-setup-perl@v1 step gated on ' +
+                   'matrix.config.qt_major == 5 before this one (it installs a perl with ' +
+                   'no gcc alongside it).')
+          }
+
+          $url = 'https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz'
+          $expectedSha = 'cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8'
+          $tarball = Join-Path (Get-Location) 'openssl-1.1.1w.tar.gz'
+
+          curl.exe -sSL --fail -o $tarball $url
+          if ($LASTEXITCODE -ne 0) { throw "Failed to download $url" }
+
+          $actualSha = (Get-FileHash -LiteralPath $tarball -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha -ne $expectedSha) {
+            throw "openssl-1.1.1w.tar.gz SHA-256 mismatch: got $actualSha, expected $expectedSha"
+          }
+          Write-Host "SHA-256 verified: $actualSha"
+
+          tar -xzf $tarball
+          if ($LASTEXITCODE -ne 0) { throw "Failed to extract $tarball" }
+
+          $src = Join-Path (Get-Location) 'openssl-1.1.1w'
+          if (-not (Test-Path -LiteralPath $src)) { throw "Extracted source dir not found: $src" }
+
+          # runner.workspace is a backslash path but the env value mixes in forward
+          # slashes; OpenSSL bakes --openssldir into the binaries, so normalize.
+          $out = $env:OPENSSL_PREFIX.Replace('/', '\')
+          Push-Location $src
+          try {
+            # no-asm drops the NASM dependency (MSVC's assembler still covers
+            # OpenSSL's small Windows shim). Crypto throughput is irrelevant for
+            # an update check and an occasional image upload. VC-WIN64A builds
+            # shared by default and produces bin\libssl-1_1-x64.dll /
+            # bin\libcrypto-1_1-x64.dll -- exactly the names the pinned Qt 5.15.2
+            # dlopens. Both "asm" and "tests" are in 1.1.1w's @disablables.
+            & perl Configure VC-WIN64A no-asm no-tests "--prefix=$out" "--openssldir=$out\ssl"
+            if ($LASTEXITCODE -ne 0) { throw "OpenSSL Configure failed" }
+            & nmake
+            if ($LASTEXITCODE -ne 0) { throw "OpenSSL nmake failed" }
+            & nmake install_sw
+            if ($LASTEXITCODE -ne 0) { throw "OpenSSL nmake install_sw failed" }
+          }
+          finally {
+            Pop-Location
+          }
+
+          # OpenSSL 1.1.1's dual OpenSSL/SSLeay license requires reproducing the
+          # copyright notice with binary redistribution. Keep the notice INSIDE
+          # the cached prefix so a cache hit still has it for the install rule in
+          # src/Packaging.cmake.
+          Copy-Item -LiteralPath (Join-Path $src 'LICENSE') -Destination (Join-Path $out 'LICENSE.OpenSSL') -Force
+          Write-Host "OpenSSL 1.1.1w installed to $out"
+
+      - name: Validate OpenSSL import tables (Qt5 only)
+        # Runs on cache HIT and MISS alike, so a cache holding an INCOMPLETE or
+        # wrongly-linked prefix fails here instead of shipping. This is the gate
+        # that would have caught the MSVCR100.dll regression in 4.4.2.
+        #
+        # SCOPE: this checks COMPOSITION -- import-table names plus file presence.
+        # It is NOT an integrity check and does not detect a substituted DLL that
+        # keeps the same import table. Content is pinned only by the SHA-256 of
+        # the source tarball, which is verified in the build step above and is
+        # therefore skipped on a cache hit.
+        id: openssl-deps
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: pwsh
+        env:
+          OPENSSL_PREFIX: ${{ runner.workspace }}/openssl-1.1.1w-win64
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = $env:OPENSSL_PREFIX
+
+          $required = @(
+            (Join-Path $out 'bin\libssl-1_1-x64.dll'),
+            (Join-Path $out 'bin\libcrypto-1_1-x64.dll'),
+            (Join-Path $out 'LICENSE.OpenSSL')
+          )
+          foreach ($f in $required) {
+            if (-not (Test-Path -LiteralPath $f)) { throw "Missing required OpenSSL artifact: $f" }
+          }
+
+          # dumpbin INDENTS its dependency lines, so the output must be parsed
+          # into trimmed basenames before matching. A regex applied to the raw
+          # output would not have matched the shipped "    MSVCR100.dll".
+          function Get-DllDependencies([string] $p_path) {
+            # Function-scoped: reverts on return. Native stderr merged with 2>&1
+            # becomes an ErrorRecord, which 'Stop' would turn into a throw before
+            # the exit-code check below ever runs.
+            $ErrorActionPreference = 'Continue'
+            $raw = & dumpbin /dependents $p_path 2>&1
+            $code = $LASTEXITCODE
+            if ($code -ne 0) { throw "dumpbin failed for ${p_path}: $raw" }
+            $deps = @()
+            $inSection = $false
+            foreach ($line in $raw) {
+              $text = [string]$line
+              if ($text -match 'Image has the following (delay load )?dependencies:') {
+                $inSection = $true
+                continue
+              }
+              if (-not $inSection) { continue }
+              if ($text -match '^\s*Summary') { $inSection = $false; continue }
+              $trimmed = $text.Trim()
+              if ($trimmed -match '^[^\s]+\.dll$') { $deps += $trimmed }
+            }
+            return $deps
+          }
+
+          # OpenSSL is C: it needs neither the legacy C runtime nor the C++ one.
+          $forbidden = @('(?i)^msvcr\d+\.dll$', '(?i)^msvcp\d+\.dll$')
+          # System DLLs present on every supported Windows; not shipped by us.
+          $systemAllow = @(
+            '(?i)^kernel32\.dll$', '(?i)^advapi32\.dll$', '(?i)^user32\.dll$',
+            '(?i)^ws2_32\.dll$', '(?i)^crypt32\.dll$', '(?i)^bcrypt\.dll$'
+          )
+          # Modern runtime family: allowed, but MUST be present in the package
+          # (asserted by the post-extraction step further down).
+          $runtimeAllow = @(
+            '(?i)^vcruntime140.*\.dll$', '(?i)^ucrtbase\.dll$', '(?i)^api-ms-win-.*\.dll$'
+          )
+          # libssl links against libcrypto -- that is the whole point of the pair.
+          # Accept only those two exact names, and do NOT feed them into
+          # $nonSystem: the pair's presence in the package is already asserted by
+          # name in the post-extraction step, so re-deriving it here would be
+          # circular. Keep these EXACT; never widen to lib*.dll.
+          $opensslPair = @('(?i)^libssl-1_1-x64\.dll$', '(?i)^libcrypto-1_1-x64\.dll$')
+
+          $nonSystem = New-Object System.Collections.Generic.HashSet[string]
+          foreach ($dll in @('libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll')) {
+            $path = Join-Path $out "bin\$dll"
+            $deps = Get-DllDependencies $path
+            Write-Host "$dll -> $($deps -join ', ')"
+            if (-not $deps) { throw "dumpbin reported no dependencies for $dll; refusing to trust the parse" }
+
+            foreach ($dep in $deps) {
+              foreach ($re in $forbidden) {
+                if ($dep -match $re) {
+                  throw ("$dll imports $dep. OpenSSL is C and needs neither the legacy C runtime " +
+                         "nor the C++ runtime; this is exactly the regression that shipped in 4.4.2.")
+                }
+              }
+              $isSystem = ($systemAllow | Where-Object { $dep -match $_ }).Count -gt 0
+              $isRuntime = ($runtimeAllow | Where-Object { $dep -match $_ }).Count -gt 0
+              $isPair = ($opensslPair | Where-Object { $dep -match $_ }).Count -gt 0
+              if (-not ($isSystem -or $isRuntime -or $isPair)) {
+                throw ("$dll imports unexpected dependency '$dep'. Review it explicitly rather " +
+                       "than widening the allowlist by reflex.")
+              }
+              if (-not ($isSystem -or $isPair)) { [void]$nonSystem.Add($dep) }
+            }
+          }
+
+          $list = @($nonSystem) | Sort-Object
+          Write-Host "Non-system OpenSSL dependencies that must ship in the package: $($list -join ', ')"
+          # `validated` is a separate marker from `nonsystem` on purpose. An empty
+          # nonsystem list is LEGITIMATE (it would mean OpenSSL statically linked
+          # the CRT), so the downstream step must not read "empty" as "this gate
+          # never ran". It asserts `validated` instead, which is only ever written
+          # here after every dependency has been classified.
+          #
+          # The name filter is deliberately stricter than the parser's: these
+          # values are tool-derived and are consumed by another step, so keep them
+          # to a conservative character class.
+          foreach ($n in $list) {
+            if ($n -notmatch '^[A-Za-z0-9._-]+\.dll$') {
+              throw "Refusing to publish dependency name with unexpected characters: '$n'"
+            }
+          }
+          "nonsystem=$($list -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "validated=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
@@ -135,7 +351,12 @@ jobs:
         env:
           QT_MAJOR: ${{ matrix.config.qt_major }}
           VS_CMD: ${{ matrix.config.vs_cmd }}
-          RUNNER_WORKSPACE: ${{ runner.workspace }}
+          # Qt 5 has no Schannel TLS backend and MUST ship OpenSSL; Qt 6 uses
+          # Schannel and deliberately ships none, so it passes empty values here
+          # rather than a path that only ever exists for Qt 5.
+          # src/Packaging.cmake turns a missing pair into a FATAL_ERROR on Qt 5.
+          VX_OPENSSL_EXTRA_LIB_DIR: ${{ matrix.config.qt_major == 5 && format('{0}/openssl-1.1.1w-win64/bin', runner.workspace) || '' }}
+          VX_OPENSSL_LICENSE_FILE: ${{ matrix.config.qt_major == 5 && format('{0}/openssl-1.1.1w-win64/LICENSE.OpenSSL', runner.workspace) || '' }}
           # tests/CMakeLists.txt hard-requires Qt6 (find_package(Qt6 REQUIRED)),
           # so the Qt5 matrix entry MUST build packaging-only. Qt6 entry builds
           # tests so the Build-and-Run-Tests step below can ctest them.
@@ -144,7 +365,7 @@ jobs:
           cmake --version
           if "%QT_MAJOR%"=="6" call "%VS_CMD%"
           where cl || echo "cl.exe not on PATH"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=%VNOTE_TESTS% -DOPENSSL_EXTRA_LIB_DIR=%RUNNER_WORKSPACE%\build\openssl-utils.git\1.1.1j\Win_x64 %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=%VNOTE_TESTS% -DOPENSSL_EXTRA_LIB_DIR=%VX_OPENSSL_EXTRA_LIB_DIR% -DOPENSSL_LICENSE_FILE=%VX_OPENSSL_LICENSE_FILE% %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
           type cmake-configure.log
           cmake --build .
           cmake --build . --target=pack
@@ -251,6 +472,104 @@ jobs:
             exit 1
           }
           Write-Host "No SDK artifacts under $extracted"
+
+      # The import-table gate above proves the OpenSSL DLLs need only the modern
+      # runtime family. This one proves that family is actually IN the package,
+      # which cannot be checked earlier: the package does not exist until
+      # `cmake --build . --target=pack` + `7z x` have run.
+      - name: Verify OpenSSL runtime dependencies ship in the package (Qt5 only)
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        env:
+          # Read through env, NOT `${{ }}` interpolation. These values are derived
+          # from dumpbin output rather than authored in this workflow, and
+          # `${{ }}` is substituted textually before pwsh parses the script, so a
+          # quote in the value would break out of the string literal.
+          VX_OPENSSL_NONSYSTEM: ${{ steps.openssl-deps.outputs.nonsystem }}
+          VX_OPENSSL_VALIDATED: ${{ steps.openssl-deps.outputs.validated }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $extracted = "VNote-${{env.VNOTE_VER}}-win64-windows7"
+          if (-not (Test-Path -LiteralPath $extracted)) {
+            throw "Extracted dir '$extracted' not found"
+          }
+
+          foreach ($dll in @('libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll', 'LICENSE.OpenSSL')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $extracted $dll))) {
+              throw "Package is missing $dll -- Qt 5 has no Schannel fallback, so TLS would be dead"
+            }
+          }
+
+          # Assert the gate actually RAN. Reading emptiness of `nonsystem` for
+          # this would misfire on a legitimately empty list (statically-linked
+          # CRT), so the import-table step publishes an explicit marker.
+          if ($env:VX_OPENSSL_VALIDATED -ne 'true') {
+            throw "The OpenSSL import-table step did not report success; refusing to pass vacuously"
+          }
+          $missing = @()
+          $checked = @()
+          foreach ($dep in ("$env:VX_OPENSSL_NONSYSTEM" -split ',')) {
+            $name = $dep.Trim()
+            if (-not $name) { continue }
+            $checked += $name
+            if (-not (Test-Path -LiteralPath (Join-Path $extracted $name))) { $missing += $name }
+          }
+          if ($missing) {
+            throw ("OpenSSL depends on $($missing -join ', ') but the package does not ship " +
+                   "them; the DLLs would fail to load on a clean Windows 7 box")
+          }
+          if ($checked) {
+            Write-Host "All non-system OpenSSL dependencies present in $extracted ($($checked -join ', '))"
+          } else {
+            Write-Host "OpenSSL has no non-system dependencies to verify"
+          }
+
+      # The final TLS gate: the only check that proves the SHIPPED DLLs actually
+      # initialize TLS in the SHIPPED Qt build. The import-table and
+      # package-presence checks above cover "are the transitive dependencies
+      # there"; this one covers "does Qt actually come up with SSL". All three
+      # are needed; none replaces the others.
+      - name: Probe TLS in the packaged Qt5 build
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pkg = "VNote-${{env.VNOTE_VER}}-win64-windows7"
+          if (-not (Test-Path -LiteralPath $pkg)) { throw "Extracted dir '$pkg' not found" }
+
+          $probe = Join-Path (Get-Location) 'tools\tlsprobe\tlsprobe.exe'
+          if (-not (Test-Path -LiteralPath $probe)) { throw "tlsprobe.exe not built at $probe" }
+
+          # Copying the probe INTO the package directory is deliberate: Windows
+          # searches the executable's own directory first, so this reproduces
+          # vnote.exe's real load context, which is what actually failed. Running
+          # it from the build tree with the package merely on PATH would let the
+          # Qt install directory shadow the packaged DLLs.
+          #
+          # The ZIP was already produced by CPack before extraction, so this does
+          # not alter the published artifact; the Remove-Item is hygiene. Qt 5
+          # runs no gen-update-package.ps1, so there is no manifest interaction.
+          $copied = Join-Path $pkg 'tlsprobe.exe'
+          Copy-Item -LiteralPath $probe -Destination $copied -Force
+          Push-Location $pkg
+          try {
+            .\tlsprobe.exe
+            $rc = $LASTEXITCODE
+          }
+          finally {
+            Pop-Location
+            Remove-Item -LiteralPath $copied -Force -ErrorAction SilentlyContinue
+          }
+          # The stray-executable gate already ran, and Archive Artifacts uploads
+          # this directory afterwards, so a silently-failed delete would publish
+          # the probe. Assert the removal rather than hoping.
+          if (Test-Path -LiteralPath $copied) {
+            throw "Failed to remove $copied from the package directory"
+          }
+          if ($rc -ne 0) { throw "Packaged Qt5 build cannot initialize TLS (tlsprobe exit $rc)" }
+          Write-Host "Packaged Qt5 build initializes TLS"
 
       # Update manifest / delta artifacts. MUST run after the Qt5 rename (so the
       # variant name is final) and before the composition check below (which

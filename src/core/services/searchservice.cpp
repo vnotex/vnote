@@ -287,6 +287,15 @@ SearchService::SearchService(SearchCoreService *p_coreService, QObject *p_parent
   qRegisterMetaType<Error>();
   qRegisterMetaType<std::atomic<int> *>("std::atomic<int>*");
 
+  // Qt 5 resolves queued-connection argument types by the NAME moc recorded for
+  // the signal parameter, which is the UNQUALIFIED "SearchResult" (the type is
+  // declared inside namespace vnotex, so Q_DECLARE_METATYPE registers
+  // "vnotex::SearchResult"). Without these aliases Qt 5 drops every queued
+  // result with "QObject::connect: Cannot queue arguments of type 'SearchResult'".
+  // Qt 6 resolves the metatype at compile time and does not need them.
+  qRegisterMetaType<SearchResult>("SearchResult");
+  qRegisterMetaType<Error>("Error");
+
   // Parent the worker to this service. If no search runs this session the
   // worker QThread never starts, so the finished->deleteLater below never
   // fires; QObject child deletion then reclaims the worker. On the first

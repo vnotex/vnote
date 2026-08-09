@@ -676,6 +676,22 @@ int main(int argc, char *argv[]) {
       qWarning() << "versions of the built and linked OpenSSL mismatch, network may not work";
     }
 
+    // Without this, a failed TLS backend is invisible until the user clicks
+    // "Check for Updates" or uploads an image and gets a raw Qt error string.
+    // main.cpp is shared by Windows Qt 5, Windows Qt 6, Linux and macOS, so the
+    // DLL-specific remediation is guarded: only Qt 5 on Windows loads OpenSSL
+    // DLLs from beside vnote.exe (Qt 6 falls back to Schannel).
+    if (!QSslSocket::supportsSsl()) {
+#if defined(Q_OS_WIN) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+      qCritical() << "TLS is unavailable: OpenSSL could not be loaded. HTTPS features "
+                     "(update check, image hosting) will not work. Expected "
+                     "libssl-1_1-x64.dll / libcrypto-1_1-x64.dll next to vnote.exe.";
+#else
+      qCritical() << "TLS is unavailable: no working QSslSocket backend. HTTPS features "
+                     "(update check, image hosting) will not work.";
+#endif
+    }
+
     loadTranslators(app, configMgr);
 
     if (app.styleSheet().isEmpty()) {

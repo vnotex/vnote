@@ -11,6 +11,9 @@ A maintenance release that drops the built-in updater, adds folder sharing and a
     * Fixes VNote failing to start from a read-only or non-writable installation directory (`/usr/bin`, `Program Files` for a standard user, a read-only DMG), where the old updater's startup lease could not be created (issue #2728). Per-machine MSI installs were affected on Windows too.
     * The **Update source** setting (Settings › General) still selects GitHub or Gitee. **New installations now default to Gitee**; an existing installation keeps whatever it already had, and no setting is migrated.
     * If you used the in-app updater before, you can safely delete the leftover `.vnote-old` and `.vnote-update` folders next to `vnote.exe`. VNote no longer creates or reads them.
+* **Windows 7 build (`win64-windows7`) fixes**
+    * **Search now works.** Content, file and tag searches silently returned nothing on this build: every search result was discarded before it could reach the UI. The same defect also stopped image-host uploads from ever starting.
+    * **Network/HTTPS now works.** Checking for updates and uploading to an image host failed with "TLS initialization failed" because the bundled OpenSSL could not be loaded. VNote now ships an OpenSSL that actually loads (1.1.1w, built from source), together with its licence notice, and logs a clear message if TLS is ever unavailable.
 * **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
 
 ## v4.4.2

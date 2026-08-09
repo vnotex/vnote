@@ -783,6 +783,88 @@ QSharedPointer<Task> task;
 m_themeMgr = new ThemeMgr(this);  // 'this' takes ownership
 ```
 
+### Queued-Connection Metatype Names (Qt 5 resolves them by NAME)
+
+A type used as a **queued-connection signal parameter** or in **`Q_ARG`** must be registered
+under the exact name moc recorded / `Q_ARG` stringified. For a type declared inside
+`namespace vnotex` and spelled **unqualified** in the signal, that is the UNQUALIFIED name —
+while `Q_DECLARE_METATYPE(vnotex::X)` registers `"vnotex::X"`.
+
+Qt 5's `queued_activate()` calls `queuedConnectionTypes()` on moc's parameter-name strings and
+does `QMetaType::type("X")`. If only the qualified alias exists the lookup returns 0, Qt prints
+`QObject::connect: Cannot queue arguments of type 'X'`, and **drops the call**. Qt 6 obtains the
+`QMetaType` via `QMetaMethod::parameterMetaType()` from moc's generated metatype data and never
+does the name lookup, so this defect is invisible on Qt 6 and fatal on the Qt 5 /
+`win64-windows7` variant.
+
+Fix shape: register the unqualified **alias** alongside the existing registration
+(`qRegisterMetaType<X>("X");`). Registering the same type under a second name is an alias, not
+a duplicate. Precedents: `qRegisterMetaType<BufferState>("BufferState")`
+(`src/widgets/viewwindow2.cpp:87`) and `qRegisterMetaType<NotificationMessage>("NotificationMessage")`
+(`src/core/services/notificationservice.cpp:8`).
+
+Known name-resolved queued sites:
+
+| Site | Required alias |
+|---|---|
+| `SearchWorker::finished`, `SearchWorker::batch` (`src/core/services/searchservice.cpp`) | `"SearchResult"` |
+| `SearchWorker::failed` (`src/core/services/searchservice.cpp`) | `"Error"` |
+| `Q_ARG(ImageHostWorkItem, ...)` (`src/core/services/imagehostservice.cpp`) | `"ImageHostWorkItem"` |
+| `ImageHostWorker::uploadCompleted`, `::removeCompleted` (`src/core/services/imagehostworker.h`) | `"ImageHostAsyncResult"` |
+
+Coverage: `testQueuedMetatypeNamesAreRegistered` in `tests/core/test_searchservice.cpp` and
+`tests/core/test_imagehostservice.cpp`.
+
+**This is NOT a blanket requirement for every `Q_DECLARE_METATYPE(vnotex::X)`.** The required
+runtime name is whatever moc recorded or `Q_ARG` stringified: `UpdateService::checkFinished`
+spells its parameter `vnotex::UpdateInfo` explicitly (`src/core/services/updateservice.h`), and
+`NodeIdentifier` signals are GUI-thread-local and never queue. Do not sweep them in.
+
+---
+
+## Windows 7 variant (Qt 5.15) and OpenSSL
+
+The `win64-windows7` package is built against Qt 5.15.2, which has **no Schannel TLS backend**
+on Windows — unlike Qt 6, which falls back to Schannel and therefore ships no OpenSSL at all.
+Git sync is unaffected on both variants because libgit2 uses WinHTTP. So on Qt 5 a missing or
+unloadable OpenSSL breaks exactly two things: the update check
+(`src/core/services/updateservice.cpp`) and image hosting (`src/imagehost/`).
+
+- CI **builds OpenSSL 1.1.1w from source** in the Qt5 job (`.github/workflows/ci-win.yml`),
+  cached under `${{runner.workspace}}/openssl-1.1.1w-win64` with a version-pinned key. This
+  replaced prebuilt 1.1.1j DLLs that imported `MSVCR100.dll` (the VC++ 2010 runtime, absent
+  from the package and from a clean Windows box), which is why 4.4.2's win7 build had no TLS.
+  Qt's own `tools_openssl_x64` is **delisted** from `download.qt.io`, and the pinned Qt 5.15.2
+  dlopens the literal names `libssl-1_1-x64` / `libcrypto-1_1-x64`, so OpenSSL 3 is not a
+  drop-in substitute for it.
+- **OpenSSL 1.1.1 is EOL; 1.1.1w (Sep 2023) is the final release.** The variant will accrue
+  unpatched CVEs. That is inherent to shipping Qt 5.15.2 and is only fixable by retiring the
+  Qt 5 variant.
+- Three gates, none of which replaces the others:
+  1. `dumpbin /dependents` on both DLLs, parsed into trimmed basenames, rejecting any
+     `MSVCR*`/`MSVCP*` and anything outside an explicit system + modern-runtime allowlist.
+     This checks COMPOSITION, not content: it cannot detect a substituted DLL with the same
+     import table. Content is pinned only by the tarball SHA-256, which is verified in the
+     build step and therefore skipped on a cache hit.
+  2. A post-extraction check that every non-system dependency actually ships at the package root.
+  3. `tools/tlsprobe` — run **from inside the packaged directory** so it reproduces
+     `vnote.exe`'s real DLL load context — asserting `QSslSocket::supportsSsl()`. It has no
+     `install()` rule and must never enter the package.
+- `src/Packaging.cmake` turns the previously `OPTIONAL` (and therefore silently no-op) OpenSSL
+  install into a `FATAL_ERROR` when the exact pair is missing on Qt 5 / Windows / x64. This
+  runs at **configure** time, so a contributor building Qt 5 locally without OpenSSL opts out
+  with `-DVNOTE_REQUIRE_BUNDLED_OPENSSL=OFF` (default **ON**, so CI is safe by default and a
+  workflow edit cannot silently drop the gate).
+- The same guard asserts that `InstallRequiredSystemLibraries` actually resolved the UCRT
+  redist. Windows 7 has no in-box UCRT, and the module's failure warnings are deliberately
+  suppressed, so without this the omission would only surface at the last CI gate.
+- **`LICENSE.OpenSSL` must remain in the package.** OpenSSL 1.1.1's dual OpenSSL/SSLeay license
+  requires reproducing the notice with binary redistribution; 4.4.2 shipped the DLLs with no
+  notice at all. It is installed non-`OPTIONAL` from `-DOPENSSL_LICENSE_FILE=`, keyed off
+  **whether any OpenSSL DLL is being installed** rather than off the `-x64` names — the install
+  globs are gated by neither Qt major nor word size, so keying it to the names would let a
+  32-bit Qt 5 build (or a Qt 6 build pointed at an OpenSSL dir) ship binaries with no notice.
+
 ---
 
 ## Widget Construction Pattern

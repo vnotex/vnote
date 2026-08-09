@@ -55,6 +55,16 @@ function(windeployqt target)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
 
+    # Qt's own tools_openssl_x64 package (OpenSSL 1.1.1, installing to
+    # Tools/OpenSSL/Win_x64/bin -- exactly what this globs for) has been DELISTED
+    # from download.qt.io; the desktop repo now offers only tools_opensslv3_x64 /
+    # tools_opensslv3_src. This glob therefore resolves to nothing on BOTH matrix
+    # rows today. Do NOT repoint it at Tools/OpenSSLv3: the pinned Qt 5.15.2
+    # open-source Windows build dlopens the literal names libssl-1_1-x64 /
+    # libcrypto-1_1-x64 and cannot load OpenSSL 3, and Qt 6 does not need OpenSSL
+    # at all (it falls back to its Schannel TLS backend by design). The Qt 5
+    # DLLs come from OPENSSL_EXTRA_LIB_DIR instead -- see .github/workflows/ci-win.yml,
+    # which builds OpenSSL 1.1.1w from source for that variant.
     set(OPENSSL_ROOT_DIR "${QT_TOOLS_DIR}/OpenSSL/Win_x64" CACHE STRING "OpenSSL dir")
     file(GLOB OPENSSL_LIBS_FILES "${OPENSSL_ROOT_DIR}/bin/lib*.dll")
     cmake_path(NORMAL_PATH OPENSSL_LIBS_FILES OUTPUT_VARIABLE OPENSSL_LIBS_FILES)
@@ -65,6 +75,80 @@ function(windeployqt target)
     cmake_path(NORMAL_PATH OPENSSL_EXTRA_LIB_FILES OUTPUT_VARIABLE OPENSSL_EXTRA_LIB_FILES)
     message(STATUS "OpenSSLExtraLibFiles:${OPENSSL_EXTRA_LIB_FILES}")
     install(FILES ${OPENSSL_EXTRA_LIB_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+
+    # Both install() calls above are OPTIONAL, so an empty or broken glob is a
+    # SILENT no-op: the build stays green and the package ships with no working
+    # TLS. That is exactly how 4.4.2's Windows 7 variant shipped.
+    #
+    # Collect what those two globs will actually install, so the checks below key
+    # off the real install list rather than re-deriving it.
+    set(_vx_found_ssl "")
+    foreach(_f IN LISTS OPENSSL_LIBS_FILES OPENSSL_EXTRA_LIB_FILES)
+        get_filename_component(_n "${_f}" NAME)
+        list(APPEND _vx_found_ssl "${_n}")
+    endforeach()
+
+    # The licence obligation follows the BINARIES, not the architecture. The two
+    # globs above are gated by neither Qt major nor word size, so keying this off
+    # the -x64 names would let a 32-bit Qt 5 build (libssl-1_1.dll) or a Qt 6
+    # build pointed at an OpenSSL dir ship the DLLs with no notice -- reopening
+    # the very 4.4.2 gap this exists to close. OpenSSL 1.1.1's dual
+    # OpenSSL/SSLeay licence requires reproducing the notice with binary
+    # redistribution, so a missing notice is FATAL rather than OPTIONAL.
+    if(WIN32 AND _vx_found_ssl)
+        if(NOT OPENSSL_LICENSE_FILE)
+            message(FATAL_ERROR
+                "This package ships OpenSSL (${_vx_found_ssl}), whose licence requires the "
+                "notice to be redistributed with the binaries. Point -DOPENSSL_LICENSE_FILE= "
+                "at the OpenSSL source tree's LICENSE file.")
+        endif()
+        if(NOT EXISTS "${OPENSSL_LICENSE_FILE}")
+            message(FATAL_ERROR
+                "OPENSSL_LICENSE_FILE=${OPENSSL_LICENSE_FILE} does not exist.")
+        endif()
+        # LICENSE.OpenSSL lands at the package root, which package/prune-package.cmake
+        # (bin/, include/, lib/, mkspecs/, cmark.exe) and the "no stray executable"
+        # gate (*.exe only) both leave alone.
+        install(FILES "${OPENSSL_LICENSE_FILE}" DESTINATION "${CMAKE_INSTALL_BINDIR}"
+                RENAME "LICENSE.OpenSSL")
+    endif()
+
+    # Qt 5 on Windows has no Schannel fallback, so the packaged build MUST carry
+    # the EXACT pair by name rather than merely "some lib*.dll".
+    #
+    # Default ON so CI is safe by default and a future workflow edit cannot
+    # silently drop the gate; a contributor building Qt 5 locally without OpenSSL
+    # opts out explicitly with -DVNOTE_REQUIRE_BUNDLED_OPENSSL=OFF. This runs at
+    # CONFIGURE time (Packaging.cmake is included unconditionally), so without the
+    # opt-out it would also block plain local builds that never package.
+    #
+    # The -x64 suffix is architecture-specific, hence the CMAKE_SIZEOF_VOID_P
+    # guard: a 32-bit Qt 5 build produces libssl-1_1.dll / libcrypto-1_1.dll and
+    # must not be killed by an error demanding names it can never produce. CI
+    # only builds x64, so no 32-bit branch is provided -- but this check does not
+    # claim jurisdiction over it either.
+    #
+    # IN_LIST needs CMP0057 NEW, already supplied by cmake_minimum_required(3.20).
+    option(VNOTE_REQUIRE_BUNDLED_OPENSSL
+           "Fail configuration when a Qt 5 Windows x64 build would ship without OpenSSL" ON)
+    if(WIN32 AND (QT_DEFAULT_MAJOR_VERSION EQUAL 5) AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
+        if(VNOTE_REQUIRE_BUNDLED_OPENSSL)
+            foreach(_need IN ITEMS libssl-1_1-x64.dll libcrypto-1_1-x64.dll)
+                if(NOT _need IN_LIST _vx_found_ssl)
+                    message(FATAL_ERROR
+                        "Qt 5 on Windows has no Schannel TLS backend and MUST ship ${_need}. "
+                        "OPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR} "
+                        "OPENSSL_EXTRA_LIB_DIR=${OPENSSL_EXTRA_LIB_DIR} yielded: ${_vx_found_ssl}. "
+                        "Pass -DVNOTE_REQUIRE_BUNDLED_OPENSSL=OFF for a local build that does "
+                        "not need working HTTPS.")
+                endif()
+            endforeach()
+        else()
+            message(WARNING
+                "VNOTE_REQUIRE_BUNDLED_OPENSSL=OFF: this Qt 5 Windows build may ship without "
+                "OpenSSL, in which case HTTPS (update check, image hosting) will not work.")
+        endif()
+    endif()
 
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
 
@@ -82,6 +166,33 @@ function(windeployqt target)
     # UCRT / MFC pieces and, on a toolset it DOES understand, the VC CRT.
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE)
     include(InstallRequiredSystemLibraries)
+
+    # Because the warnings above are suppressed, a failure to resolve the UCRT
+    # redist is SILENT here. On the Qt 5 / Windows 7 variant that is not cosmetic:
+    # OpenSSL imports ucrtbase + the api-ms-win-crt-* apisets, which are OS
+    # components on Windows 10+ but must be BUNDLED for Windows 7. Without this
+    # assertion the omission would only surface in CI's post-extraction
+    # dependency check -- at the last gate of a ~1 h release build, as a list of
+    # missing apiset names that points nowhere near the real cause.
+    if(WIN32 AND (QT_DEFAULT_MAJOR_VERSION EQUAL 5) AND (CMAKE_SIZEOF_VOID_P EQUAL 8)
+       AND VNOTE_REQUIRE_BUNDLED_OPENSSL)
+        set(_vx_have_ucrt FALSE)
+        foreach(_f IN LISTS CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+            get_filename_component(_n "${_f}" NAME)
+            if(_n MATCHES "^(ucrtbase\\.dll|api-ms-win-crt-.*\\.dll)$")
+                set(_vx_have_ucrt TRUE)
+                break()
+            endif()
+        endforeach()
+        if(NOT _vx_have_ucrt)
+            message(FATAL_ERROR
+                "InstallRequiredSystemLibraries resolved no UCRT redistributable "
+                "(CMAKE_INSTALL_UCRT_LIBRARIES is TRUE, but CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS "
+                "contains no ucrtbase.dll / api-ms-win-crt-*.dll). The Windows 7 package must "
+                "bundle it: OpenSSL and vnote.exe both import those apisets, and Windows 7 has "
+                "no in-box UCRT. Install the Windows SDK's UCRT redist on the build machine.")
+        endif()
+    endif()
 
     # Fallback ONLY when the module failed to resolve the VC C runtime (unknown
     # toolset): locate the real "Microsoft.VC*.CRT" redist folder from the

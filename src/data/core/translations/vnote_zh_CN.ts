@@ -7466,6 +7466,16 @@ This removes the file and any sub-tasks it contains: %2</source>
         <source>Could not check for updates.</source>
         <translation>无法检查更新。</translation>
     </message>
+    <message>
+        <location filename="../../../controllers/updatecontroller.cpp" line="267"/>
+        <source>TLS is unavailable: OpenSSL could not be loaded. libssl-1_1-x64.dll and libcrypto-1_1-x64.dll are expected next to vnote.exe.</source>
+        <translation>TLS 不可用：无法加载 OpenSSL。libssl-1_1-x64.dll 和 libcrypto-1_1-x64.dll 应与 vnote.exe 位于同一目录。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/updatecontroller.cpp" line="272"/>
+        <source>TLS is unavailable: no working secure-socket backend was found.</source>
+        <translation>TLS 不可用：未找到可用的安全套接字后端。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::UpdateDialog</name>
