@@ -244,6 +244,268 @@
         <source>Image Host</source>
         <translation>画像ホスト</translation>
     </message>
+    <message>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+156"/>
+        <location line="+23"/>
+        <location line="+53"/>
+        <location line="+10"/>
+        <location line="+228"/>
+        <location line="+33"/>
+        <source>Refusing to share: %1 is a symbolic link, junction or reparse point.</source>
+        <translation>共有を中止しました：%1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
+    </message>
+    <message>
+        <location line="-340"/>
+        <source>Source directory is missing: %1</source>
+        <translation>ソースディレクトリが見つかりません：%1</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Refusing to share: %1 is not a regular file.</source>
+        <translation>共有を中止しました：%1 は通常のファイルではありません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Refusing to share: %1 is not readable.</source>
+        <translation>共有を中止しました：%1 を読み取れません。</translation>
+    </message>
+    <message>
+        <location line="+69"/>
+        <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide on the destination filesystem, which does not distinguish letter case.</source>
+        <translation>%3 内の「%1」と「%2」は、大文字と小文字を区別しないコピー先ファイルシステムで衝突します。</translation>
+    </message>
+    <message>
+        <location line="+46"/>
+        <source>A file record in vx.json is not an object.</source>
+        <translation>vx.json 内のファイルレコードがオブジェクトではありません。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>A file record is missing a valid &quot;id&quot;.</source>
+        <translation>ファイルレコードに有効な「id」がありません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>A file record is missing a valid &quot;name&quot;.</source>
+        <translation>ファイルレコードに有効な「name」がありません。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>File record &quot;%1&quot; has non-numeric timestamps.</source>
+        <translation>ファイルレコード「%1」のタイムスタンプが数値ではありません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>File record &quot;%1&quot; has a non-object &quot;metadata&quot;.</source>
+        <translation>ファイルレコード「%1」の「metadata」がオブジェクトではありません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>File record &quot;%1&quot; has a non-array &quot;tags&quot;.</source>
+        <translation>ファイルレコード「%1」の「tags」が配列ではありません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>File record &quot;%1&quot; has a non-string tag entry.</source>
+        <translation>ファイルレコード「%1」に文字列ではないタグ項目があります。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>File record &quot;%1&quot; has a non-array &quot;attachments&quot;.</source>
+        <translation>ファイルレコード「%1」の「attachments」が配列ではありません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>File record &quot;%1&quot; has a non-string attachment entry.</source>
+        <translation>ファイルレコード「%1」に文字列ではない添付ファイル項目があります。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Missing folder metadata: %1</source>
+        <translation>フォルダーのメタデータがありません：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot read folder metadata: %1</source>
+        <translation>フォルダーのメタデータを読み取れません：%1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Malformed folder metadata: %1</source>
+        <translation>フォルダーのメタデータの形式が不正です：%1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Folder metadata is missing a valid &quot;id&quot;: %1</source>
+        <translation>フォルダーのメタデータに有効な「id」がありません：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Folder metadata is missing a valid &quot;name&quot;: %1</source>
+        <translation>フォルダーのメタデータに有効な「name」がありません：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Folder metadata name does not match its directory: %1</source>
+        <translation>フォルダーのメタデータの名前がディレクトリと一致しません：%1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+35"/>
+        <source>Duplicate id &quot;%1&quot; in %2</source>
+        <translation>%2 内で id「%1」が重複しています</translation>
+    </message>
+    <message>
+        <location line="-28"/>
+        <source>Folder metadata has non-numeric timestamps: %1</source>
+        <translation>フォルダーのメタデータのタイムスタンプが数値ではありません：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Folder metadata has a non-object &quot;metadata&quot;: %1</source>
+        <translation>フォルダーのメタデータの「metadata」がオブジェクトではありません：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Folder metadata has a non-array &quot;files&quot;: %1</source>
+        <translation>フォルダーのメタデータの「files」が配列ではありません：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Folder metadata has a non-array &quot;folders&quot;: %1</source>
+        <translation>フォルダーのメタデータの「folders」が配列ではありません：%1</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <location line="+33"/>
+        <source>Unsafe child name &quot;%1&quot; in %2</source>
+        <translation>%2 内に安全でない子項目名「%1」があります</translation>
+    </message>
+    <message>
+        <location line="-27"/>
+        <location line="+33"/>
+        <source>Duplicate or colliding child name &quot;%1&quot; in %2</source>
+        <translation>%2 内に重複または衝突する子項目名「%1」があります</translation>
+    </message>
+    <message>
+        <location line="-19"/>
+        <source>Indexed file &quot;%1&quot; is missing from disk under %2</source>
+        <translation>インデックスされたファイル「%1」が %2 のディスク上にありません</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>A folder entry in %1 is not a string.</source>
+        <translation>%1 内のフォルダー項目が文字列ではありません。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Indexed folder &quot;%1&quot; is missing from disk under %2</source>
+        <translation>インデックスされたフォルダー「%1」が %2 のディスク上にありません</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Orphan folder metadata found at %1</source>
+        <translation>%1 に孤立したフォルダーのメタデータが見つかりました</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <location line="+49"/>
+        <source>Cannot read %1</source>
+        <translation>%1 を読み取れません</translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>Cannot write %1</source>
+        <translation>%1 を書き込めません</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+42"/>
+        <source>Read failed for %1</source>
+        <translation>%1 の読み取りに失敗しました</translation>
+    </message>
+    <message>
+        <location line="-35"/>
+        <source>Write failed for %1</source>
+        <translation>%1 の書き込みに失敗しました</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Flush failed for %1</source>
+        <translation>%1 のフラッシュに失敗しました</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <location line="+14"/>
+        <source>Cannot create %1</source>
+        <translation>%1 を作成できません</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>The source folder changed while it was being copied.</source>
+        <translation>コピー中にソースフォルダーが変更されました。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location line="+19"/>
+        <source>The source folder changed while it was being copied (%1).</source>
+        <translation>コピー中にソースフォルダーが変更されました（%1）。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>The copied folder is incomplete.</source>
+        <translation>コピーされたフォルダーが不完全です。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The copied folder is incomplete or corrupted (%1).</source>
+        <translation>コピーされたフォルダーが不完全または破損しています（%1）。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>The copied folder is corrupted (%1).</source>
+        <translation>コピーされたフォルダーが破損しています（%1）。</translation>
+    </message>
+    <message>
+        <location line="+106"/>
+        <source>Cannot create a temporary folder in the destination.</source>
+        <translation>コピー先に一時フォルダーを作成できません。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>A temporary copy could not be removed and is still at %1. Delete it manually.</source>
+        <translation>一時コピーを削除できず、%1 に残っています。手動で削除してください。</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Injected copy failure.</source>
+        <translation>注入されたコピー失敗です。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Injected verification failure.</source>
+        <translation>注入された検証失敗です。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Injected publish failure.</source>
+        <translation>注入された公開失敗です。</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>The folder changed while it was being prepared.</source>
+        <translation>準備中にフォルダーが変更されました。</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Could not move the prepared bundle into %1.</source>
+        <translation>準備したバンドルを %1 に移動できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Could not create the bundle folder in the destination.</source>
+        <translation>コピー先にバンドルフォルダーを作成できませんでした。</translation>
+    </message>
 </context>
 <context>
     <name>QWebEnginePage</name>
@@ -535,6 +797,50 @@
     </message>
 </context>
 <context>
+    <name>vnotex::BufferService</name>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="+637"/>
+        <source>The note is no longer open.</source>
+        <translation>このノートはすでに閉じられています。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>A note was closed while the folder was being prepared.</source>
+        <translation>フォルダーの準備中にノートが閉じられました。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+44"/>
+        <source>An open note is still being saved. Try again in a moment.</source>
+        <translation>開いているノートを保存中です。しばらくしてから再実行してください。</translation>
+    </message>
+    <message>
+        <location line="-40"/>
+        <source>Could not read the latest content of an open note.</source>
+        <translation>開いているノートの最新の内容を読み取れませんでした。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>An open note has unsaved changes but its notebook is read-only.</source>
+        <translation>開いているノートに未保存の変更がありますが、そのノートブックは読み取り専用です。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Saving an open note was cancelled.</source>
+        <translation>開いているノートの保存がキャンセルされました。</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The notebook is busy syncing. Try again in a moment.</source>
+        <translation>ノートブックを同期中です。しばらくしてから再実行してください。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Could not write an open note to disk.</source>
+        <translation>開いているノートをディスクに書き込めませんでした。</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::CalendarSticker</name>
     <message>
         <location filename="../../../widgets/dashboard/calendarsticker.cpp" line="+31"/>
@@ -553,54 +859,68 @@
 <context>
     <name>vnotex::CustomCommandProvider</name>
     <message>
+        <location filename="../../../imagehost/customcommandprovider.cpp" line="+23"/>
         <source>Custom Command</source>
         <translation>カスタムコマンド</translation>
     </message>
     <message>
+        <location line="+10"/>
         <source>Command is not configured</source>
         <translation>コマンドが設定されていません</translation>
     </message>
     <message>
+        <location line="+8"/>
         <source>Failed to create temporary file</source>
         <translation>一時ファイルの作成に失敗しました</translation>
     </message>
     <message>
+        <location line="+11"/>
+        <location line="+104"/>
         <source>Invalid command: %1</source>
         <translation>無効なコマンド: %1</translation>
     </message>
     <message>
+        <location line="-92"/>
         <source>Command not found: %1</source>
         <translation>コマンドが見つかりません: %1</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>Command timed out after 30 seconds</source>
         <translation>コマンドが 30 秒後にタイムアウトしました</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>Command failed (exit code %1): %2</source>
         <translation>コマンドが失敗しました (終了コード %1): %2</translation>
     </message>
     <message>
+        <location line="+20"/>
         <source>No URL returned by command</source>
         <translation>コマンドから URL が返されませんでした</translation>
     </message>
     <message>
+        <location line="+18"/>
         <source>Delete is not supported by custom command provider</source>
         <translation>カスタムコマンドプロバイダーでは削除はサポートされていません</translation>
     </message>
     <message>
+        <location line="+22"/>
         <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.</source>
         <translation>Typora 互換のアップロードコマンド。画像ファイルのパスが最後の引数として追加されます。標準出力の最後の非空行がアップロード済み画像の URL として使用されます。</translation>
     </message>
     <message>
+        <location line="+13"/>
         <source>Command is empty</source>
         <translation>コマンドが空です</translation>
     </message>
     <message>
+        <location line="+14"/>
         <source>Program not found in PATH: %1</source>
         <translation>PATH にプログラムが見つかりません: %1</translation>
     </message>
     <message>
+        <location line="+4"/>
         <source>Configuration is valid. Program found: %1</source>
         <translation>設定は有効です。プログラムが見つかりました: %1</translation>
     </message>
@@ -1945,54 +2265,69 @@
 <context>
     <name>vnotex::GitHubProvider</name>
     <message>
+        <location filename="../../../imagehost/githubprovider.cpp" line="+20"/>
         <source>GitHub Repository</source>
         <translation>GitHub リポジトリ</translation>
     </message>
     <message>
+        <location line="+21"/>
         <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.</source>
         <translation>&apos;repo&apos; スコープを持つ GitHub 個人アクセストークン。GitHub → Settings → Developer settings → Personal access tokens で生成してください。</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Your GitHub username.</source>
         <translation>あなたの GitHub ユーザー名。</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Name of the GitHub repository to store images. Must already exist.</source>
         <translation>画像を保存する GitHub リポジトリの名前。既に存在している必要があります。</translation>
     </message>
     <message>
+        <location line="+22"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
         <translation>PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
     </message>
     <message>
+        <location line="+17"/>
         <source>Private repository is not supported.</source>
         <translation>プライベートリポジトリはサポートされていません。</translation>
     </message>
     <message>
+        <location line="+43"/>
         <source>Failed to create image with empty path.</source>
         <translation>空のパスで画像を作成できません。</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <location line="+57"/>
         <source>Invalid GitHub image host configuration.</source>
         <translation>無効な GitHub 画像ホスト設定です。</translation>
     </message>
     <message>
+        <location line="-46"/>
         <source>The resource already exists at the image host (%1).</source>
         <translation>画像ホスト (%1) にリソースが既に存在します。</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
     </message>
     <message>
+        <location line="+12"/>
+        <location line="+11"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
     </message>
     <message>
+        <location line="+62"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
     </message>
     <message>
+        <location line="+12"/>
         <source>Failed to delete resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の削除に失敗しました。</translation>
     </message>
@@ -2000,58 +2335,74 @@
 <context>
     <name>vnotex::GiteeProvider</name>
     <message>
+        <location filename="../../../imagehost/giteeprovider.cpp" line="+19"/>
         <source>Gitee Repository</source>
         <translation>Gitee リポジトリ</translation>
     </message>
     <message>
+        <location line="+21"/>
         <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.</source>
         <translation>&apos;projects&apos; スコープを持つ Gitee 個人アクセストークン。Gitee → Settings → Security Settings → Personal Access Tokens で生成してください。</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Your Gitee username.</source>
         <translation>あなたの Gitee ユーザー名。</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Name of the Gitee repository to store images. Must already exist.</source>
         <translation>画像を保存する Gitee リポジトリの名前。既に存在している必要があります。</translation>
     </message>
     <message>
+        <location line="+21"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
         <translation>PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
     </message>
     <message>
+        <location line="+17"/>
         <source>Private repository is not supported.</source>
         <translation>プライベートリポジトリはサポートされていません。</translation>
     </message>
     <message>
+        <location line="+46"/>
         <source>Failed to create image with empty path.</source>
         <translation>空のパスで画像を作成できません。</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <location line="+63"/>
         <source>Invalid Gitee image host configuration.</source>
         <translation>無効な Gitee 画像ホスト設定です。</translation>
     </message>
     <message>
+        <location line="-50"/>
         <source>The resource already exists at the image host (%1).</source>
         <translation>画像ホスト (%1) にリソースが既に存在します。</translation>
     </message>
     <message>
+        <location line="+4"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
     </message>
     <message>
+        <location line="+13"/>
+        <location line="+12"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
         <translation>画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
     </message>
     <message>
+        <location line="+35"/>
         <source>Failed to fetch information about the resource (%1).</source>
         <translation>リソース (%1) の情報の取得に失敗しました。</translation>
     </message>
     <message>
+        <location line="+8"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
     </message>
     <message>
+        <location line="+13"/>
         <source>Failed to delete resource (%1) (%2).</source>
         <translation>リソース (%1) (%2) の削除に失敗しました。</translation>
     </message>
@@ -2277,22 +2628,27 @@
 <context>
     <name>vnotex::ImageHostService</name>
     <message>
+        <location filename="../../../core/services/imagehostservice.cpp" line="+213"/>
         <source>No provider</source>
         <translation>プロバイダーなし</translation>
     </message>
     <message>
+        <location line="+11"/>
         <source>Upload cancelled by hook</source>
         <translation>フックによりアップロードがキャンセルされました</translation>
     </message>
     <message>
+        <location line="+27"/>
         <source>GitHub Repository</source>
         <translation>GitHub リポジトリ</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Gitee Repository</source>
         <translation>Gitee リポジトリ</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Custom Command</source>
         <translation>カスタムコマンド</translation>
     </message>
@@ -4130,44 +4486,59 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+890"/>
         <source>Invalid arguments</source>
         <translation>引数が無効です</translation>
     </message>
     <message>
+        <location line="+38"/>
         <source>Cancelled by hook</source>
         <translation>フックによりキャンセルされました</translation>
     </message>
     <message>
+        <location line="+83"/>
         <source>OK</source>
         <translation>成功</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Invalid argument</source>
         <translation>引数が無効です</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Folder not found</source>
         <translation>フォルダーが見つかりません</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Invalid state</source>
         <translation>状態が無効です</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Submitted order is not a valid permutation of the folder&apos;s children</source>
         <translation>送信された順序はフォルダーの子項目の有効な並べ替えではありません</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Reorder is not supported for this notebook type</source>
         <translation>このノートブックの種類では並べ替えはサポートされていません</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Unknown error while reordering</source>
         <translation>並べ替え中に不明なエラーが発生しました</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>vxcore error %1 while reordering</source>
         <translation>並べ替え中に vxcore エラー %1 が発生しました</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>vxcore context is not initialized</source>
+        <translation>vxcore コンテキストが初期化されていません</translation>
     </message>
 </context>
 <context>
@@ -4558,10 +4929,6 @@ Last sync init failed: error code %1</source>
 前回の同期初期化に失敗しました: エラーコード %1</translation>
     </message>
     <message>
-        <source>Choose a Folder for the Shared Bundle</source>
-        <translation type="vanished">共有バンドルの保存先フォルダーを選択</translation>
-    </message>
-    <message>
         <location line="-496"/>
         <source>Preparing…</source>
         <translation>準備中…</translation>
@@ -4885,14 +5252,6 @@ Open the bundle location?</source>
         <location line="+22"/>
         <source>Reorder Failed</source>
         <translation>並べ替えに失敗しました</translation>
-    </message>
-    <message>
-        <source>&amp;Share Folder...</source>
-        <translation type="vanished">フォルダーを共有(&amp;S)...</translation>
-    </message>
-    <message>
-        <source>Create a movable copy of this folder including its VNote metadata</source>
-        <translation type="vanished">VNote のメタデータを含む、このフォルダーの移動可能なコピーを作成します</translation>
     </message>
 </context>
 <context>
@@ -6364,26 +6723,32 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncService</name>
     <message>
+        <location filename="../../../core/services/syncservice.cpp" line="+154"/>
         <source>Sync is in progress for this notebook. Please wait for sync to complete before closing.</source>
         <translation>このノートブックの同期が進行中です。閉じる前に同期の完了をお待ちください。</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Sync work is queued for this notebook (%1 item(s)). Cancel the queued sync from the toolbar before closing.</source>
         <translation>このノートブックの同期作業がキューに入っています (%1 項目)。閉じる前にツールバーからキュー内の同期をキャンセルしてください。</translation>
     </message>
     <message>
+        <location line="+130"/>
         <source>PAT is required to enable sync.</source>
         <translation>同期を有効にするには PAT が必要です。</translation>
     </message>
     <message>
+        <location line="+13"/>
         <source>Remote URL is required to enable sync.</source>
         <translation>同期を有効にするにはリモート URL が必要です。</translation>
     </message>
     <message>
+        <location line="+501"/>
         <source>Failed to persist sync configuration to notebook after enable.</source>
         <translation>有効化後、同期設定をノートブックに保存できませんでした。</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Notebook service not available.</source>
         <translation>ノートブックサービスが利用できません。</translation>
     </message>
@@ -6623,18 +6988,21 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
+        <location filename="../../../core/services/task.cpp" line="+403"/>
         <source>[Task (%1) started]
 </source>
         <translation>[タスク (%1) が開始されました]
 </translation>
     </message>
     <message>
+        <location line="+11"/>
         <source>[Task (%1) error occurred (%2)]
 </source>
         <translation>[タスク (%1) でエラーが発生しました (%2)]
 </translation>
     </message>
     <message>
+        <location line="+9"/>
         <source>
 [Task (%1) finished (%2)]
 </source>
@@ -7081,18 +7449,22 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+178"/>
         <source>Update Available</source>
         <translation>更新があります</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>VNote %1 is available. Open the release page to download it.</source>
         <translation>VNote %1 が公開されています。リリースページを開いてダウンロードしてください。</translation>
     </message>
     <message>
+        <location line="+32"/>
         <source>Check Release</source>
         <translation>リリースを確認</translation>
     </message>
     <message>
+        <location line="+53"/>
         <source>Could not check for updates.</source>
         <translation>更新を確認できませんでした。</translation>
     </message>
@@ -7100,42 +7472,52 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateDialog</name>
     <message>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+19"/>
         <source>Check for Updates</source>
         <translation>更新を確認</translation>
     </message>
     <message>
+        <location line="+28"/>
         <source>Open Release Page</source>
         <translation>リリースページを開く</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>Skip This Version</source>
         <translation>このバージョンをスキップ</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>Later</source>
         <translation>後で</translation>
     </message>
     <message>
+        <location line="+10"/>
         <source>VNote is up to date.</source>
         <translation>VNote は最新です。</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>You are running version %1.</source>
         <translation>現在のバージョンは %1 です。</translation>
     </message>
     <message>
+        <location line="+4"/>
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>VNote %1 is available.</source>
         <translation>VNote %1 が公開されています。</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>You are running version %1. Open the release page to download the new version and install it yourself.</source>
         <translation>現在のバージョンは %1 です。リリースページを開いて新しいバージョンをダウンロードし、ご自身でインストールしてください。</translation>
     </message>
     <message>
+        <location line="+22"/>
         <source>Could not check for updates: %1</source>
         <translation>更新を確認できませんでした: %1</translation>
     </message>
@@ -7143,26 +7525,35 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
+        <location filename="../../../core/services/updateservice.cpp" line="+207"/>
         <source>Refusing to contact an unexpected host: %1</source>
         <translation>予期しないホストへの接続を拒否しました: %1</translation>
     </message>
     <message>
+        <location line="-4"/>
+        <location line="+35"/>
         <source>Cancelled.</source>
         <translation>キャンセルされました。</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>The request to %1 timed out.</source>
         <translation>%1 へのリクエストがタイムアウトしました。</translation>
     </message>
     <message>
+        <location line="+9"/>
+        <location line="+25"/>
         <source>Too many redirects.</source>
         <translation>リダイレクトが多すぎます。</translation>
     </message>
     <message>
+        <location line="-44"/>
+        <location line="+36"/>
         <source>The response from %1 is unexpectedly large.</source>
         <translation>%1 からの応答が大きすぎます。</translation>
     </message>
     <message>
+        <location line="+105"/>
         <source>The latest release could not be identified.</source>
         <translation>最新リリースを特定できませんでした。</translation>
     </message>
@@ -7170,14 +7561,17 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::VNote3MigrationService</name>
     <message>
+        <location filename="../../../core/services/vnote3migrationservice.cpp" line="+374"/>
         <source>File &apos;%1&apos;: notebook has no attachment folder configured, skipping attachments</source>
         <translation>ファイル &apos;%1&apos;: ノートブックに添付ファイルフォルダーが設定されていないため、添付ファイルをスキップします</translation>
     </message>
     <message>
+        <location line="+62"/>
         <source>File &apos;%1&apos;: attachment subfolders are not listed in the attachment panel; use &apos;Open Folder&apos; to reach them</source>
         <translation>ファイル &apos;%1&apos;: 添付ファイルのサブフォルダーは添付パネルに表示されません。&apos;フォルダーを開く&apos; から参照してください</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>File &apos;%1&apos;: attachment copy incomplete, keeping the legacy attachment folder</source>
         <translation>ファイル &apos;%1&apos;: 添付ファイルのコピーが不完全なため、従来の添付ファイルフォルダーを維持します</translation>
     </message>

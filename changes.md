@@ -1,9 +1,17 @@
 # Changes
-## Unreleased
+## v4.4.3
+A maintenance release that drops the built-in updater, adds folder sharing and a window pin on top of VNote 4.4.2:
+
+* **Share Folder** (Notebook explorer context menu): export a folder as a self-contained, movable bundle you can hand to someone else or drop into another notebook
+    * Notes you currently have open are saved first, so the bundle always carries their latest content
+    * The copy is verified before it is published, and a failed export leaves nothing half-written behind
+    * Refuses to follow symbolic links, junctions and reparse points, and warns up front when two names would collide on a case-insensitive destination filesystem
+* **Stay on Top**: detached view windows now have a pin so a window can be kept above the others
 * **The built-in updater has been removed.** VNote no longer downloads or installs anything, and never modifies its own installation directory. It simply checks for a newer release and, when one exists, tells you and offers to open the **release page**, where you download and install the new version yourself.
     * Fixes VNote failing to start from a read-only or non-writable installation directory (`/usr/bin`, `Program Files` for a standard user, a read-only DMG), where the old updater's startup lease could not be created (issue #2728). Per-machine MSI installs were affected on Windows too.
     * The **Update source** setting (Settings › General) still selects GitHub or Gitee. **New installations now default to Gitee**; an existing installation keeps whatever it already had, and no setting is migrated.
     * If you used the in-app updater before, you can safely delete the leftover `.vnote-old` and `.vnote-update` folders next to `vnote.exe`. VNote no longer creates or reads them.
+* **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
 
 ## v4.4.2
 A feature release that adds a built-in updater, a reworked PDF viewer, detachable view windows, and a Gitee release mirror on top of VNote 4.3.0:
