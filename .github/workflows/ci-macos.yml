@@ -30,12 +30,12 @@ jobs:
       matrix:
         config:
           - name: "Build on Arm64"
-            # Qt 6.9.3 includes the QTBUG-137687 fix (FindWrapOpenGL.cmake no
+            # Qt >= 6.9.3 includes the QTBUG-137687 fix (FindWrapOpenGL.cmake no
             # longer unconditionally links the macOS AGL.framework that Xcode 26
             # removed), so macos-latest is safe again.
             os: macos-latest
             arch: universal
-            qt: 6.9.3
+            qt: 6.10.3
 
     runs-on: ${{matrix.config.os}}
 
@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{runner.workspace}}/Qt
-          key: ${{ runner.os }}-QtCache-6.9
+          key: ${{ runner.os }}-QtCache-6.10
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
