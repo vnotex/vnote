@@ -101,6 +101,20 @@ jobs:
         run: |
           git clone https://github.com/fcitx/fcitx-qt5
           cd fcitx-qt5
+          # Pin: upstream is unmaintained (last commit 2023-04), so an unpinned
+          # clone buys no fixes and only adds nondeterminism.
+          git checkout c328b03f32a4276d9aeb3213d1f3f959ef6848f2
+          # qt6/platforminputcontext/CMakeLists.txt pulls private Qt Gui headers
+          # in via include_directories(${Qt6Gui_PRIVATE_INCLUDE_DIRS}). Qt 6.10
+          # no longer sets that variable (private headers are exposed only
+          # through the Qt6::GuiPrivate target), so qpa/qplatforminputcontext
+          # plugin_p.h is not found, QPlatformInputContextFactoryInterface_iid
+          # stays undefined and moc fails with: Parse error at "IID".
+          # Link the target explicitly to restore the include path.
+          cat >> qt6/platforminputcontext/CMakeLists.txt <<'PATCH_EOF'
+          find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
+          target_link_libraries(fcitxplatforminputcontextplugin-qt6 Qt6::GuiPrivate)
+          PATCH_EOF
           mkdir build && cd build
           cmake -DENABLE_QT5=OFF -DENABLE_QT6=ON ..
           make -j2
