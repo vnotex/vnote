@@ -1070,6 +1070,119 @@ FolderSharePaths NotebookCoreService::getFolderSharePaths(const QString &p_noteb
   return result;
 }
 
+FolderImportPaths NotebookCoreService::getFolderImportPaths(const QString &p_notebookId,
+                                                            const QString &p_destFolderPath) const {
+  FolderImportPaths result;
+
+  if (!checkContext()) {
+    result.m_error = VXCORE_ERR_NOT_INITIALIZED;
+    result.m_errorMessage = tr("vxcore context is not initialized");
+    return result;
+  }
+
+  char *notebookRoot = nullptr;
+  char *contentRoot = nullptr;
+  char *metadataRoot = nullptr;
+
+  result.m_error = vxcore_folder_get_import_paths(m_context, p_notebookId.toUtf8().constData(),
+                                                  p_destFolderPath.toUtf8().constData(),
+                                                  &notebookRoot, &contentRoot, &metadataRoot);
+
+  if (result.m_error == VXCORE_OK) {
+    result.m_notebookRoot = cstrToQString(notebookRoot);
+    result.m_contentRoot = cstrToQString(contentRoot);
+    result.m_metadataRoot = cstrToQString(metadataRoot);
+    return result;
+  }
+
+  // Defensive: vxcore initializes all three outputs to null before validating,
+  // so nothing should be allocated on a failure path.
+  vxcore_string_free(notebookRoot);
+  vxcore_string_free(contentRoot);
+  vxcore_string_free(metadataRoot);
+
+  const char *detail = nullptr;
+  if (vxcore_context_get_last_error(m_context, &detail) == VXCORE_OK && detail && *detail) {
+    result.m_errorMessage = QString::fromUtf8(detail);
+  } else {
+    result.m_errorMessage = QString::fromUtf8(vxcore_error_message(result.m_error));
+  }
+
+  qWarning() << "getFolderImportPaths failed:" << result.m_errorMessage
+             << "notebookId:" << p_notebookId << "destFolderPath:" << p_destFolderPath;
+  return result;
+}
+
+QStringList NotebookCoreService::collectNodeIds(const QString &p_notebookId,
+                                                VxCoreError *p_outError) const {
+  QStringList ids;
+
+  if (!checkContext()) {
+    if (p_outError) {
+      *p_outError = VXCORE_ERR_NOT_INITIALIZED;
+    }
+    return ids;
+  }
+
+  char *json = nullptr;
+  const VxCoreError rc =
+      vxcore_notebook_collect_node_ids(m_context, p_notebookId.toUtf8().constData(), &json);
+  if (p_outError) {
+    *p_outError = rc;
+  }
+  if (rc != VXCORE_OK) {
+    vxcore_string_free(json);
+    qWarning() << "collectNodeIds failed for notebook" << p_notebookId << "error" << rc;
+    return ids;
+  }
+
+  const QString raw = cstrToQString(json);
+  const QJsonDocument doc = QJsonDocument::fromJson(raw.toUtf8());
+  if (!doc.isArray()) {
+    // The oracle must be trustworthy or not used at all, so an unparseable
+    // answer is an ERROR, never an empty (= "no collisions") result.
+    if (p_outError) {
+      *p_outError = VXCORE_ERR_JSON_PARSE;
+    }
+    return ids;
+  }
+  for (const QJsonValue &value : doc.array()) {
+    if (value.isString()) {
+      ids.append(value.toString());
+    }
+  }
+  return ids;
+}
+
+QString NotebookCoreService::attachImportedFolder(const QString &p_notebookId,
+                                                  const QString &p_destFolderPath,
+                                                  const QString &p_name,
+                                                  const QString &p_stagingDir,
+                                                  VxCoreError *p_outError) {
+  if (!checkContext()) {
+    if (p_outError) {
+      *p_outError = VXCORE_ERR_NOT_INITIALIZED;
+    }
+    return QString();
+  }
+
+  char *folderId = nullptr;
+  const VxCoreError rc = vxcore_folder_attach_imported(
+      m_context, p_notebookId.toUtf8().constData(), p_destFolderPath.toUtf8().constData(),
+      p_name.toUtf8().constData(), p_stagingDir.toUtf8().constData(), &folderId);
+  if (p_outError) {
+    *p_outError = rc;
+  }
+  if (rc != VXCORE_OK) {
+    vxcore_string_free(folderId);
+    qWarning() << "attachImportedFolder failed:" << rc << "notebookId:" << p_notebookId
+               << "dest:" << p_destFolderPath << "name:" << p_name;
+    return QString();
+  }
+
+  return cstrToQString(folderId);
+}
+
 QJsonObject NotebookCoreService::listFolderExternal(const QString &p_notebookId,
                                                     const QString &p_folderPath) const {
   if (!checkContext()) {

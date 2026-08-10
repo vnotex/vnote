@@ -201,6 +201,26 @@ add_qt_test(test_buffer
   GUILESS
 )
 
+# FolderBundleImporter (import-shared-folder-bundle). Drives the whole
+# SYNCHRONOUS bundle import against REAL notebooks: a folder is packaged with
+# FolderSharePackager, then imported into a second notebook through the same
+# commit callback + authoritative id oracle the controller wires in production.
+# Verbatim preservation (ids, timestamps, tags, attachments) is asserted through
+# the PUBLIC API after the destination notebook is closed and reopened, so the
+# metadata store rebuild from vx.json is part of what is tested. The failure
+# half covers id collision, name uniquification, cancellation, injected failures
+# at copy/verify/publish/attach, malformed bundles and symlinked entries — all
+# of which must leave the notebook byte-identical. GUILESS: the importer has no
+# Qt Widgets dependency (core_services links neither Widgets nor VTextEdit).
+add_qt_test(test_folderbundleimporter
+  SOURCES
+    test_folderbundleimporter.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
 add_qt_test(test_buffer_revision
   SOURCES
     test_buffer_revision.cpp

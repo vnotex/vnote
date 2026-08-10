@@ -39,6 +39,26 @@ struct FolderSharePaths {
   bool isValid() const { return m_error == VXCORE_OK; }
 };
 
+// Storage roots needed to ATTACH an imported folder bundle. The mirror image of
+// FolderSharePaths, with one deliberate difference: the notebook ROOT is a valid
+// destination, so an empty / "." destination path is not an error. Value type:
+// all C-owned strings are converted and freed inside getFolderImportPaths().
+struct FolderImportPaths {
+  // VXCORE_OK when the query succeeded; otherwise the raw vxcore error code.
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  // Human-readable detail pulled from the vxcore context on failure.
+  QString m_errorMessage;
+
+  QString m_notebookRoot;
+  // Absolute physical directory that will CONTAIN the imported folder.
+  QString m_contentRoot;
+  // Absolute metadata directory that will CONTAIN the imported folder's
+  // metadata directory (NOT a vx.json file).
+  QString m_metadataRoot;
+
+  bool isValid() const { return m_error == VXCORE_OK; }
+};
+
 class HookManager;
 class NotebookIoGate;
 
@@ -280,6 +300,35 @@ public:
   // physical content.
   FolderSharePaths getFolderSharePaths(const QString &p_notebookId,
                                        const QString &p_folderPath) const;
+
+  // Resolve the storage roots for attaching an imported folder bundle. Wraps
+  // vxcore_folder_get_import_paths, which proves the same FULL index
+  // reachability as the share variant but ACCEPTS the notebook root, and which
+  // rejects raw notebooks (VXCORE_ERR_UNSUPPORTED) and read-only notebooks
+  // (VXCORE_ERR_READ_ONLY).
+  FolderImportPaths getFolderImportPaths(const QString &p_notebookId,
+                                         const QString &p_destFolderPath) const;
+
+  // The AUTHORITATIVE set of node ids in a bundled notebook: every folder id
+  // (root included) and every file id, in ONE namespace, read from the on-disk
+  // vx.json tree. Wraps vxcore_notebook_collect_node_ids.
+  //
+  // Deliberately NOT a bool-returning convenience: bundle import must fail
+  // CLOSED on any non-success code, so the caller needs the code itself. On
+  // failure the list is empty and *p_outError carries the reason.
+  QStringList collectNodeIds(const QString &p_notebookId, VxCoreError *p_outError) const;
+
+  // Attach a STAGED imported folder bundle to a destination folder. Wraps
+  // vxcore_folder_attach_imported, which performs the whole journaled commit
+  // (publish, insert-only store transaction, atomic parent vx.json replace,
+  // one folder.created) and rolls itself back on any failure before the commit
+  // point.
+  //
+  // Returns the attached folder's id, or an empty string on failure with the
+  // raw vxcore code written to *p_outError.
+  QString attachImportedFolder(const QString &p_notebookId, const QString &p_destFolderPath,
+                               const QString &p_name, const QString &p_stagingDir,
+                               VxCoreError *p_outError);
 
   // List external (unindexed) nodes in a folder.
   // External nodes exist on filesystem but are not tracked in metadata.

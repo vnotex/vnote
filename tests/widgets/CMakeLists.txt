@@ -522,6 +522,51 @@ add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
     $<TARGET_FILE_DIR:test_notebookexplorer2_multiselect>
 )
 
+# ImportFolderDialog2 two-mode UI test (import-shared-folder-bundle).
+# NOT GUILESS — needs QApplication for QDialog widget construction,
+# QStackedWidget layout and QRadioButton click semantics. Compiles the dialog
+# source plus its base classes inline for the same reason as
+# test_open_notebook_dialog2: there is no widgets static library, those sources
+# live only inside the vnote executable target. selectionitemwidget.cpp is on
+# the list because FolderFilesFilterWidget constructs one.
+add_qt_test(test_import_folder_dialog2
+  SOURCES
+    test_import_folder_dialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/importfolderdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/folderfilesfilterwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/selectionitemwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    # widgetsfactory.cpp references both of these, so they must be compiled in
+    # too (same reason test_open_notebook_dialog2 lists them).
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/importfoldercontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+target_include_directories(test_import_folder_dialog2 PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_compile_definitions(test_import_folder_dialog2 PRIVATE VNOTE_TESTING)
+
+add_custom_command(TARGET test_import_folder_dialog2 POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_import_folder_dialog2>
+)
+
 # T24 (open-notebook-remote-readonly): OpenNotebookDialog2 two-mode UI test.
 # NOT GUILESS — needs QApplication for QDialog widget construction, QStackedWidget
 # layout, and the QRadioButton click semantics. Compiles the dialog source plus

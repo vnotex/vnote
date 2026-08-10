@@ -19,7 +19,9 @@ set(SERVICES_SOURCES
   tagservice.cpp
   filetypecoreservice.cpp
   filetype.cpp
+  foldermetadatavalidator.cpp
   foldersharepackager.cpp
+  folderbundleimporter.cpp
   templateservice.cpp
   htmltemplateservice.cpp
   hookmanager.cpp
@@ -77,7 +79,9 @@ set(SERVICES_HEADERS
   tagservice.h
   filetypecoreservice.h
   filetype.h
+  foldermetadatavalidator.h
   foldersharepackager.h
+  folderbundleimporter.h
   templateservice.h
   htmltemplateservice.h
   hookmanager.h

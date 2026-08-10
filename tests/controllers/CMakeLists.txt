@@ -67,8 +67,26 @@ add_qt_test(test_foldersharecontroller
     Qt6::Concurrent
   GUILESS
 )
-add_qt_test(test_searchcontroller
+# ImportFolderController's bundle mode (import-shared-folder-bundle). Covers the
+# validateBundle() refusal matrix that drives the dialog's banner and OK button
+# (non-bundle directory, bundle inside the destination notebook, raw notebook,
+# read-only notebook, unknown destination), plus one end-to-end importBundle()
+# proving the controller's own wiring: path resolution, the commit callback
+# under NotebookIoGate, the authoritative id oracle, and NodeIdentifier
+# resolution through the store. GUILESS: the QProgressDialog lives in
+# ImportFolderDialog2, not in the controller.
+add_qt_test(test_importfoldercontroller
   SOURCES
+    test_importfoldercontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/importfoldercontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
+add_qt_test(test_searchcontroller  SOURCES
     test_searchcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/searchcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/models/searchresultmodel.cpp
