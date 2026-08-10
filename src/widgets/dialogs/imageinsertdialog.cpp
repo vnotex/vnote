@@ -57,7 +57,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   // Image Path.
   m_imagePathEdit = WidgetsFactory::createLineEdit(p_imagePath, mainWidget);
   m_imagePathEdit->setReadOnly(!m_browserEnabled);
-  gridLayout->addWidget(new QLabel(tr("From:"), mainWidget), 0, 0, 1, 1);
+  gridLayout->addWidget(new QLabel(tr("From"), mainWidget), 0, 0, 1, 1);
   gridLayout->addWidget(m_imagePathEdit, 0, 1, 1, 3);
   connect(m_imagePathEdit, &QLineEdit::textChanged, this,
           [this]() { m_imagePathCheckTimer->start(); });
@@ -72,7 +72,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   auto titleValidator = new QRegularExpressionValidator(
       QRegularExpression(QStringLiteral("[^\\[\\]]*")), m_imageTitleEdit);
   m_imageTitleEdit->setValidator(titleValidator);
-  gridLayout->addWidget(new QLabel(tr("Title:"), mainWidget), 1, 0, 1, 1);
+  gridLayout->addWidget(new QLabel(tr("Title"), mainWidget), 1, 0, 1, 1);
   gridLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 3);
   connect(m_imageTitleEdit, &QLineEdit::textChanged, this, &ImageInsertDialog::checkInput);
 
@@ -81,7 +81,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   auto altValidator = new QRegularExpressionValidator(
       QRegularExpression(QStringLiteral("[^\"'()]*")), m_imageAltEdit);
   m_imageAltEdit->setValidator(altValidator);
-  gridLayout->addWidget(new QLabel(tr("Alt text:"), mainWidget), 2, 0, 1, 1);
+  gridLayout->addWidget(new QLabel(tr("Alt text"), mainWidget), 2, 0, 1, 1);
   gridLayout->addWidget(m_imageAltEdit, 2, 1, 1, 3);
 
   // Preview area.

@@ -69,7 +69,7 @@ void FindAndReplaceWidget2::setupUI() {
 
   // Find.
   {
-    auto label = new QLabel(tr("Find:"), this);
+    auto label = new QLabel(tr("Find"), this);
 
     m_findLineEdit = WidgetsFactory::createLineEdit(this);
     m_findLineEdit->setPlaceholderText(tr("Search"));
@@ -101,7 +101,7 @@ void FindAndReplaceWidget2::setupUI() {
 
   // Replace.
   {
-    auto label = new QLabel(tr("Replace with:"), this);
+    auto label = new QLabel(tr("Replace with"), this);
 
     m_replaceLineEdit = WidgetsFactory::createLineEdit(this);
     m_replaceLineEdit->setPlaceholderText(tr("\\1, \\2 for back reference in regular expression"));

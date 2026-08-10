@@ -27,7 +27,7 @@ void TableInsertDialog::setupUI(const QString &p_title) {
   m_rowCountSpinBox->setMaximum(1000);
   m_rowCountSpinBox->setMinimum(0);
 
-  mainLayout->addWidget(new QLabel(tr("Row:")), 0, 0, 1, 1);
+  mainLayout->addWidget(new QLabel(tr("Row")), 0, 0, 1, 1);
   mainLayout->addWidget(m_rowCountSpinBox, 0, 1, 1, 1);
 
   m_colCountSpinBox = WidgetsFactory::createSpinBox(mainWidget);
@@ -35,7 +35,7 @@ void TableInsertDialog::setupUI(const QString &p_title) {
   m_colCountSpinBox->setMaximum(1000);
   m_colCountSpinBox->setMinimum(1);
 
-  mainLayout->addWidget(new QLabel(tr("Column:")), 0, 2, 1, 1);
+  mainLayout->addWidget(new QLabel(tr("Column")), 0, 2, 1, 1);
   mainLayout->addWidget(m_colCountSpinBox, 0, 3, 1, 1);
 
   {
@@ -51,7 +51,7 @@ void TableInsertDialog::setupUI(const QString &p_title) {
     alignLayout->addWidget(rightBtn);
     alignLayout->addStretch();
 
-    mainLayout->addWidget(new QLabel(tr("Alignment:")), 1, 0, 1, 1);
+    mainLayout->addWidget(new QLabel(tr("Alignment")), 1, 0, 1, 1);
     mainLayout->addLayout(alignLayout, 1, 1, 1, 3);
 
     auto buttonGroup = new QButtonGroup(mainWidget);

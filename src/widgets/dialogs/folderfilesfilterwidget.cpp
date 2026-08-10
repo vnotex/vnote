@@ -37,7 +37,7 @@ void FolderFilesFilterWidget::setupUI() {
   {
     auto pathLayout = new QHBoxLayout();
     pathLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->addRow(tr("Folder:"), pathLayout);
+    mainLayout->addRow(tr("Folder"), pathLayout);
 
     m_folderPathEdit = WidgetsFactory::createLineEdit(this);
     pathLayout->addWidget(m_folderPathEdit);
@@ -62,7 +62,7 @@ void FolderFilesFilterWidget::setupUI() {
 
   {
     auto layout = new QHBoxLayout();
-    mainLayout->addRow(tr("Select files:"), layout);
+    mainLayout->addRow(tr("Select files"), layout);
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_suffixList = new QListWidget(this);

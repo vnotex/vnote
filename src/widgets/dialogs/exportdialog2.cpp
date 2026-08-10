@@ -317,16 +317,16 @@ void ExportDialog2::setupUI() {
   m_formatCombo->addItem(tr("PDF"), static_cast<int>(ExportFormat::PDF));
   m_formatCombo->addItem(tr("Custom"), static_cast<int>(ExportFormat::Custom));
 
-  commonLayout->addWidget(new QLabel(tr("Source:"), optionsGroupBox), 0, 0);
+  commonLayout->addWidget(new QLabel(tr("Source"), optionsGroupBox), 0, 0);
   commonLayout->addWidget(m_sourceCombo, 0, 1);
-  commonLayout->addWidget(new QLabel(tr("Format:"), optionsGroupBox), 0, 2);
+  commonLayout->addWidget(new QLabel(tr("Format"), optionsGroupBox), 0, 2);
   commonLayout->addWidget(m_formatCombo, 0, 3);
 
   // Row 1: Output directory.
   m_outputDirInput = new LocationInputWithBrowseButton(optionsGroupBox, getDefaultOutputDir());
   m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                   tr("Select Export Output Directory"));
-  commonLayout->addWidget(new QLabel(tr("Output directory:"), optionsGroupBox), 1, 0);
+  commonLayout->addWidget(new QLabel(tr("Output directory"), optionsGroupBox), 1, 0);
   commonLayout->addWidget(m_outputDirInput, 1, 1, 1, 3);
 
   // Row 2: Rendering style + Syntax style.
@@ -343,9 +343,9 @@ void ExportDialog2::setupUI() {
     m_syntaxStyleCombo->addItem(style.first, style.second);
   }
 
-  commonLayout->addWidget(new QLabel(tr("Rendering style:"), optionsGroupBox), 2, 0);
+  commonLayout->addWidget(new QLabel(tr("Rendering style"), optionsGroupBox), 2, 0);
   commonLayout->addWidget(m_renderingStyleCombo, 2, 1);
-  commonLayout->addWidget(new QLabel(tr("Syntax style:"), optionsGroupBox), 2, 2);
+  commonLayout->addWidget(new QLabel(tr("Syntax style"), optionsGroupBox), 2, 2);
   commonLayout->addWidget(m_syntaxStyleCombo, 2, 3);
 
   // Row 3: Checkboxes.
@@ -429,7 +429,7 @@ void ExportDialog2::setupUI() {
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_pageLayoutBtn = new QPushButton(tr("Settings"), page);
-    layout->addRow(tr("Page layout:"), m_pageLayoutBtn);
+    layout->addRow(tr("Page layout"), m_pageLayoutBtn);
     connect(m_pageLayoutBtn, &QPushButton::clicked, this, [this]() {
       QPrinter printer;
       if (m_pageLayout) {
@@ -460,36 +460,36 @@ void ExportDialog2::setupUI() {
     layout->addRow(m_useWkhtmltopdfCheck);
 
     m_wkhtmltopdfExePathEdit = WidgetsFactory::createLineEdit(page);
-    layout->addRow(tr("Wkhtmltopdf path:"), m_wkhtmltopdfExePathEdit);
+    layout->addRow(tr("Wkhtmltopdf path"), m_wkhtmltopdfExePathEdit);
 
     m_wkhtmltopdfArgsEdit = WidgetsFactory::createLineEdit(page);
-    layout->addRow(tr("Wkhtmltopdf arguments:"), m_wkhtmltopdfArgsEdit);
+    layout->addRow(tr("Wkhtmltopdf arguments"), m_wkhtmltopdfArgsEdit);
 
     m_pdfHeaderLeftEdit = WidgetsFactory::createLineEdit(page);
     m_pdfHeaderLeftEdit->setObjectName(QLatin1String(kPdfHeaderLeftName));
-    layout->addRow(tr("Header left:"), m_pdfHeaderLeftEdit);
+    layout->addRow(tr("Header left"), m_pdfHeaderLeftEdit);
 
     m_pdfHeaderCenterEdit = WidgetsFactory::createLineEdit(page);
     m_pdfHeaderCenterEdit->setObjectName(QLatin1String(kPdfHeaderCenterName));
-    layout->addRow(tr("Header center:"), m_pdfHeaderCenterEdit);
+    layout->addRow(tr("Header center"), m_pdfHeaderCenterEdit);
 
     m_pdfHeaderRightEdit = WidgetsFactory::createLineEdit(page);
     m_pdfHeaderRightEdit->setObjectName(QLatin1String(kPdfHeaderRightName));
-    layout->addRow(tr("Header right:"), m_pdfHeaderRightEdit);
+    layout->addRow(tr("Header right"), m_pdfHeaderRightEdit);
 
     m_pdfFooterLeftEdit = WidgetsFactory::createLineEdit(page);
     m_pdfFooterLeftEdit->setObjectName(QLatin1String(kPdfFooterLeftName));
-    layout->addRow(tr("Footer left:"), m_pdfFooterLeftEdit);
+    layout->addRow(tr("Footer left"), m_pdfFooterLeftEdit);
 
     m_pdfFooterCenterEdit = WidgetsFactory::createLineEdit(page);
     m_pdfFooterCenterEdit->setObjectName(QLatin1String(kPdfFooterCenterName));
-    layout->addRow(tr("Footer center:"), m_pdfFooterCenterEdit);
+    layout->addRow(tr("Footer center"), m_pdfFooterCenterEdit);
 
     m_pdfFooterRightEdit = WidgetsFactory::createLineEdit(page);
     m_pdfFooterRightEdit->setObjectName(QLatin1String(kPdfFooterRightName));
     m_pdfFooterRightEdit->setToolTip(
         tr("Supports placeholders such as [page], [title] and [date]."));
-    layout->addRow(tr("Footer right:"), m_pdfFooterRightEdit);
+    layout->addRow(tr("Footer right"), m_pdfFooterRightEdit);
 
     m_pdfAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);
     m_pdfAllInOneCheck->setToolTip(tr("Export all source files into one file"));
@@ -534,13 +534,13 @@ void ExportDialog2::setupUI() {
 
     schemeLayout->addWidget(schemeMenuBtn);
 
-    layout->addRow(tr("Scheme:"), schemeLayout);
+    layout->addRow(tr("Scheme"), schemeLayout);
 
     m_targetSuffixEdit = WidgetsFactory::createLineEdit(page);
-    layout->addRow(tr("Target suffix:"), m_targetSuffixEdit);
+    layout->addRow(tr("Target suffix"), m_targetSuffixEdit);
 
     m_resourceSeparatorEdit = WidgetsFactory::createLineEdit(page);
-    layout->addRow(tr("Resource path separator:"), m_resourceSeparatorEdit);
+    layout->addRow(tr("Resource path separator"), m_resourceSeparatorEdit);
 
     m_useHtmlInputCheck = WidgetsFactory::createCheckBox(tr("Use HTML input"), page);
     layout->addRow(m_useHtmlInputCheck);
@@ -554,7 +554,7 @@ void ExportDialog2::setupUI() {
 
     m_customCommandEdit = WidgetsFactory::createPlainTextEdit(page);
     m_customCommandEdit->setMaximumHeight(m_customCommandEdit->minimumSizeHint().height());
-    layout->addRow(tr("Command:"), m_customCommandEdit);
+    layout->addRow(tr("Command"), m_customCommandEdit);
 
     connect(m_customSchemeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &ExportDialog2::onCustomSchemeChanged);

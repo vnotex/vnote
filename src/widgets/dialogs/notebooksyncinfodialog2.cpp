@@ -178,14 +178,14 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_notebookNameLabel->setObjectName(QString::fromLatin1(kNotebookNameLabelName));
   m_notebookNameLabel->setText(m_notebookId);
   m_notebookNameLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  formLayout->addRow(tr("Notebook:"), m_notebookNameLabel);
+  formLayout->addRow(tr("Notebook"), m_notebookNameLabel);
 
   // 2. Remote URL (editable).
   m_remoteUrlEdit = WidgetsFactory::createLineEdit(centralWidget);
   m_remoteUrlEdit->setObjectName(QString::fromLatin1(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(tr("https://github.com/example/notes.git"));
   m_remoteUrlEdit->setToolTip(tr("Remote git repository URL used for syncing this notebook."));
-  formLayout->addRow(tr("Remote URL:"), m_remoteUrlEdit);
+  formLayout->addRow(tr("Remote URL"), m_remoteUrlEdit);
   connect(m_remoteUrlEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
 
   // 2b. Remote URL prerequisite hint (visible in both legacy and pre-create
@@ -218,7 +218,7 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_patEdit->setPlaceholderText(tr("Leave blank to keep existing"));
   m_patEdit->setToolTip(tr("Personal Access Token used to authenticate against the remote.\n"
                            "Leave blank to keep the existing token."));
-  formLayout->addRow(tr("Personal Access Token:"), m_patEdit);
+  formLayout->addRow(tr("Personal Access Token"), m_patEdit);
   connect(m_patEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
 
   // 4. Last Sync (read-only).
@@ -226,13 +226,13 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_lastSyncLabel->setObjectName(QString::fromLatin1(kLastSyncLabelName));
   m_lastSyncLabel->setText(tr("Never"));
   m_lastSyncLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  formLayout->addRow(tr("Last sync:"), m_lastSyncLabel);
+  formLayout->addRow(tr("Last sync"), m_lastSyncLabel);
 
   // 5. Current State (read-only, color-coded).
   m_currentStateLabel = new QLabel(centralWidget);
   m_currentStateLabel->setObjectName(QString::fromLatin1(kCurrentStateLabelName));
   m_currentStateLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  formLayout->addRow(tr("Current state:"), m_currentStateLabel);
+  formLayout->addRow(tr("Current state"), m_currentStateLabel);
 
   // Action button row above the standard dialog button box.
   auto *actionRow = new QWidget(centralWidget);

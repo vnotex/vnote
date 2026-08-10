@@ -58,7 +58,7 @@ void ManageNotebooksDialog2::setupUI() {
   // Name input.
   m_nameEdit = WidgetsFactory::createLineEdit(infoWidget);
   m_nameEdit->setPlaceholderText(tr("Notebook name"));
-  formLayout->addRow(tr("Name:"), m_nameEdit);
+  formLayout->addRow(tr("Name"), m_nameEdit);
   connect(m_nameEdit, &QLineEdit::textChanged, this,
           [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
 
@@ -66,7 +66,7 @@ void ManageNotebooksDialog2::setupUI() {
   m_descriptionEdit = new QPlainTextEdit(infoWidget);
   m_descriptionEdit->setPlaceholderText(tr("Description"));
   m_descriptionEdit->setMaximumHeight(100);
-  formLayout->addRow(tr("Description:"), m_descriptionEdit);
+  formLayout->addRow(tr("Description"), m_descriptionEdit);
   connect(m_descriptionEdit, &QPlainTextEdit::textChanged, this,
           [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
 
@@ -86,11 +86,11 @@ void ManageNotebooksDialog2::setupUI() {
           &ManageNotebooksDialog2::openRootFolderInExplorer);
 
   rootFolderWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  formLayout->addRow(tr("Root folder:"), rootFolderWidget);
+  formLayout->addRow(tr("Root folder"), rootFolderWidget);
 
   // Notebook type (read-only label).
   m_typeLabel = new QLabel(infoWidget);
-  formLayout->addRow(tr("Type:"), m_typeLabel);
+  formLayout->addRow(tr("Type"), m_typeLabel);
 
   // Stretch to push buttons to bottom.
   infoLayout->addStretch();

@@ -34,7 +34,7 @@ void NewFolderDialog2::setupUI() {
   // Name input.
   auto *snippetService = m_services.get<SnippetCoreService>();
   m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
-  layout->addRow(tr("Name:"), m_nameEdit);
+  layout->addRow(tr("Name"), m_nameEdit);
 
   setCentralWidget(mainWidget);
 

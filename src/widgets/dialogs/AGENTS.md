@@ -4,13 +4,14 @@ Dialog widgets (`*Dialog2`) for VNote. Each dialog is paired with a controller i
 
 ## Label Capitalization Convention
 
-VNote dialogs use a mixed capitalization scheme. The rules below are the project standard going forward; older dialogs that diverge are tracked under [Known Inconsistencies](#known-inconsistencies-cleanup-backlog) and will be normalized in a follow-up pass.
+VNote dialogs use a mixed capitalization scheme. The rules below are the project standard; the sweep applying them is complete (see [Capitalization Cleanup](#capitalization-cleanup-completed)).
 
 | Element | Style | Examples |
 |---|---|---|
-| **Form labels** (multi-word, ending in `:`) | **sentence case** | `"Local root folder:"`, `"Remote URL:"`, `"Output directory:"`, `"Cursor mark:"` |
-| **Form labels** that are a proper noun or established technical term | **Title Case** preserved | `"Personal Access Token:"` |
-| **Initialisms** (URL, PAT, JSON, HTTP) | preserve their canonical casing inside any label | `"Remote URL:"`, `"JSON path:"` |
+| **Form / field labels** (`addRow`, a `QLabel` naming an adjacent control) | **sentence case, NO trailing colon** | `"Local root folder"`, `"Remote URL"`, `"Output directory"`, `"Cursor mark"` |
+| **Form labels** that are a proper noun or established technical term | **Title Case** preserved, still no colon | `"Personal Access Token"` |
+| **`QInputDialog` prompts** (the `label` argument) | sentence form, **keep the trailing colon** | `"Workspace name:"`, `"Enter new parent tag (empty for root):"` |
+| **Initialisms** (URL, PAT, JSON, HTTP) | preserve their canonical casing inside any label | `"Remote URL"`, `"JSON path"` |
 | **Placeholders** (the gray helper text inside `QLineEdit`) | **sentence case**, no trailing period | `"Folder to clone into (must not exist or be empty)"`, `"Optional (empty to open as read-only)"` |
 | **Buttons** (`QPushButton`, `QDialogButtonBox` buttons) | **Title Case** | `"Open"`, `"Browse"`, `"Disable Sync"`, `"Close Notebook"` |
 | **Window / dialog titles** (`setWindowTitle`, `QFileDialog` title) | **Title Case** | `"Open Notebook"`, `"Select Local Root Folder"`, `"Manage Notebooks"` |
@@ -22,13 +23,15 @@ VNote dialogs use a mixed capitalization scheme. The rules below are the project
 ### Why these rules
 
 - **Sentence-case form labels** match the OS-native conventions on macOS and modern GNOME/KDE, and they read faster in dense forms. They also visually disambiguate from buttons.
+- **No trailing colon on field labels** matches the Settings pages, which are the largest labeled-field surface in the app and build every row through `SettingsPageHelper::createSettingRow` with colon-free labels (`"Auto save policy"`, `"Line ending"`, `"Content layout"`). A colon is redundant when the label already sits in a form-layout column next to its control.
+- **`QInputDialog` prompts keep their colon** because they are a prompt sentence introducing an entry field, not a column label, and Qt's own dialogs are written that way.
 - **Title-Case buttons + titles** match Windows and Qt's built-in widgets (`QDialogButtonBox` ships with `"Open"`, `"Cancel"`, `"Save"`, etc., already in Title Case).
 - **Tooltip periods** make tooltip strings reusable as `qInfo()` log lines and as accessible-name / accessible-description sources.
 - **Initialism preservation** prevents the OWASP-style "Personal access token" stripping that confuses GitHub/GitLab users searching for "PAT".
 
 ### When in doubt
 
-1. Look at `src/widgets/dialogs/opennotebookdialog2.cpp` and `src/widgets/dialogs/exportdialog2.cpp` — those are the reference dialogs for sentence-case labels.
+1. Look at `src/widgets/dialogs/opennotebookdialog2.cpp` and `src/widgets/dialogs/exportdialog2.cpp` — those are the reference dialogs for sentence-case, colon-free labels.
 2. If your new dialog is dominated by proper nouns or domain-specific multi-word terms (sync state, credentials), match the convention of the closest sibling dialog rather than mechanically forcing sentence case.
 3. Never change a label string without also grep'ing the codebase for the old string and the translation `.ts` files — labels are user-visible and may be referenced in tests via `findChild<>(...)` (use **object names**, not label text, for test lookups).
 
@@ -74,6 +77,13 @@ titles, settings page titles, and `SettingsPageHelper::addSection` card titles r
 Title Case. Proper nouns / product names (PlantUml, MathJax, Graphviz, VNote, Vi, Git),
 initialisms (URL, PAT, JSON, JAR, HTML, PDF), keyboard key names (Tab, Ctrl), and the
 established terms `Personal Access Token` and `Remote URL` keep their canonical casing.
+
+The colon sweep is likewise complete: no form/field label under `src/widgets/` ends
+in `:`. The only remaining trailing colons are `QInputDialog` prompts (which keep
+theirs by rule), message-body headings in `markdowneditor.cpp`, sentence-form intro
+labels that introduce a list (`syncconflictdialog2.cpp:64`), and the non-visual
+settings-search term in `quickaccesspage.cpp:72` (that string is passed to
+`addSearchItem` only and is never rendered).
 
 Translation `.ts` files in `src/data/core/translations/` were intentionally left
 untouched; a future `lupdate` pass will refresh the source entries.

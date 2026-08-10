@@ -50,7 +50,7 @@ void SearchPanel2::setupUI() {
   mainLayout->setContentsMargins(8, 8, 8, 8);
   mainLayout->setSpacing(6);
 
-  auto *keywordLabel = new QLabel(tr("Keyword:"), this);
+  auto *keywordLabel = new QLabel(tr("Keyword"), this);
   mainLayout->addWidget(keywordLabel);
 
   m_keywordCombo = WidgetsFactory::createEditableComboBox(this);
@@ -63,7 +63,7 @@ void SearchPanel2::setupUI() {
   m_keywordCombo->setMinimumContentsLength(10);
   mainLayout->addWidget(m_keywordCombo);
 
-  auto *modeLabel = new QLabel(tr("Mode:"), this);
+  auto *modeLabel = new QLabel(tr("Mode"), this);
   mainLayout->addWidget(modeLabel);
 
   m_modeCombo = new QComboBox(this);
@@ -72,7 +72,7 @@ void SearchPanel2::setupUI() {
   m_modeCombo->addItem(tr("Tag"));
   mainLayout->addWidget(m_modeCombo);
 
-  auto *scopeLabel = new QLabel(tr("Scope:"), this);
+  auto *scopeLabel = new QLabel(tr("Scope"), this);
   mainLayout->addWidget(scopeLabel);
 
   m_scopeCombo = new QComboBox(this);
@@ -82,7 +82,7 @@ void SearchPanel2::setupUI() {
   m_scopeCombo->addItem(tr("All Notebooks"));
   mainLayout->addWidget(m_scopeCombo);
 
-  auto *optionsLabel = new QLabel(tr("Options:"), this);
+  auto *optionsLabel = new QLabel(tr("Options"), this);
   mainLayout->addWidget(optionsLabel);
 
   auto *optionsLayout = new QHBoxLayout();
@@ -98,7 +98,7 @@ void SearchPanel2::setupUI() {
   optionsLayout->addStretch();
   mainLayout->addLayout(optionsLayout);
 
-  auto *patternLabel = new QLabel(tr("File Pattern:"), this);
+  auto *patternLabel = new QLabel(tr("File pattern"), this);
   mainLayout->addWidget(patternLabel);
 
   m_filePatternEdit = new QLineEdit(this);

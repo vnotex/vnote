@@ -84,13 +84,13 @@ void NewNoteDialog2::setupUI() {
       updateNameForFileType();
     }
   });
-  layout->addRow(tr("Type:"), m_fileTypeCombo);
+  layout->addRow(tr("Type"), m_fileTypeCombo);
 
   // Name input.
   auto *snippetService = m_services.get<SnippetCoreService>();
   m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
   connect(m_nameEdit, &QLineEdit::textEdited, this, [this]() { updateFileTypeForName(); });
-  layout->addRow(tr("Name:"), m_nameEdit);
+  layout->addRow(tr("Name"), m_nameEdit);
 
   // Body source: exactly one of the two controls exists.
   if (m_options.m_bodyMode == BodyMode::LiteralContent) {
@@ -100,10 +100,10 @@ void NewNoteDialog2::setupUI() {
     // into document block separators on insertion, which literalTextOf() then
     // renders as LF -- that is the persistence policy for captured text.
     m_contentEdit->setPlainText(m_options.m_initialContent);
-    layout->addRow(tr("Content:"), m_contentEdit);
+    layout->addRow(tr("Content"), m_contentEdit);
   } else {
     m_templateSelector = new NoteTemplateSelector(m_services, mainWidget);
-    layout->addRow(tr("Template:"), m_templateSelector);
+    layout->addRow(tr("Template"), m_templateSelector);
   }
 
   setCentralWidget(mainWidget);

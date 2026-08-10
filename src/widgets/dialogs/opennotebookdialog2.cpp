@@ -178,7 +178,7 @@ void OpenNotebookDialog2::setupLocalPage(QWidget *p_page) {
   m_localRootInput->setPlaceholderText(tr("Select the root folder of an existing VNote notebook"));
   m_localRootInput->setToolTip(
       tr("Root folder of an existing VNote notebook (must contain a valid notebook config)."));
-  layout->addRow(tr("Root folder path:"), m_localRootInput);
+  layout->addRow(tr("Root folder path"), m_localRootInput);
 
   connect(m_localRootInput, &LocationInputWithBrowseButton::textChanged, this,
           &OpenNotebookDialog2::onLocalRootChanged);
@@ -193,7 +193,7 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remoteUrlEdit->setPlaceholderText(
       tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
   m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported."));
-  layout->addRow(tr("Remote URL:"), m_remoteUrlEdit);
+  layout->addRow(tr("Remote URL"), m_remoteUrlEdit);
 
   // PAT field (password echo). "(optional)" hint lives in the placeholder so
   // the label stays compact; see plan refine-open-notebook-dialog.
@@ -204,7 +204,7 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remotePatEdit->setToolTip(
       tr("If empty, the notebook opens normally (fully editable) with sync configured but "
          "inactive. Add a token later to start syncing."));
-  layout->addRow(tr("Personal Access Token:"), m_remotePatEdit);
+  layout->addRow(tr("Personal Access Token"), m_remotePatEdit);
 
   // Local root folder: project-standard LocationInputWithBrowseButton. Must
   // either not exist (will be created during clone) or be an existing empty
@@ -218,7 +218,7 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remoteDestInput->setToolTip(
       tr("Local folder that will receive the cloned notebook. It must either not exist yet "
          "(it will be created) or be an existing empty directory."));
-  layout->addRow(tr("Local root folder:"), m_remoteDestInput);
+  layout->addRow(tr("Local root folder"), m_remoteDestInput);
 
   // Wire field-change validation. Per plan refine-open-notebook-dialog the
   // dialog deliberately suppresses banner updates on URL/PAT changes; only

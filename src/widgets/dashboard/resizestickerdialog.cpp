@@ -25,13 +25,13 @@ void ResizeStickerDialog::setupUI(int p_rowSpan, int p_colSpan, int p_maxRowSpan
   m_rowSpanBox->setObjectName(QStringLiteral("RowSpanBox"));
   m_rowSpanBox->setRange(1, qMax(1, p_maxRowSpan));
   m_rowSpanBox->setValue(p_rowSpan);
-  form->addRow(tr("Row span:"), m_rowSpanBox);
+  form->addRow(tr("Row span"), m_rowSpanBox);
 
   m_colSpanBox = new QSpinBox(this);
   m_colSpanBox->setObjectName(QStringLiteral("ColSpanBox"));
   m_colSpanBox->setRange(1, qMax(1, p_maxColSpan));
   m_colSpanBox->setValue(p_colSpan);
-  form->addRow(tr("Column span:"), m_colSpanBox);
+  form->addRow(tr("Column span"), m_colSpanBox);
 
   layout->addLayout(form);
 

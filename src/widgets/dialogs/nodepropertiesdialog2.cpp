@@ -29,7 +29,7 @@ void NodePropertiesDialog2::setupUI(const NodeIdentifier &p_nodeId, const NodeIn
 
   // Name.
   auto *nameLabel = new QLabel(p_nodeInfo.name, mainWidget);
-  mainLayout->addRow(tr("Name:"), nameLabel);
+  mainLayout->addRow(tr("Name"), nameLabel);
 
   // Path.
   auto *notebookSvc = m_services.get<NotebookCoreService>();
@@ -40,32 +40,32 @@ void NodePropertiesDialog2::setupUI(const NodeIdentifier &p_nodeId, const NodeIn
   auto *pathLineEdit = WidgetsFactory::createLineEdit(mainWidget);
   pathLineEdit->setReadOnly(true);
   pathLineEdit->setText(absolutePath);
-  mainLayout->addRow(tr("Path:"), pathLineEdit);
+  mainLayout->addRow(tr("Path"), pathLineEdit);
 
   // Type.
   auto *typeLabel = new QLabel(p_nodeInfo.isFolder ? tr("Folder") : tr("Note"), mainWidget);
-  mainLayout->addRow(tr("Type:"), typeLabel);
+  mainLayout->addRow(tr("Type"), typeLabel);
 
   // Created.
   auto *createdLabel =
       new QLabel(p_nodeInfo.createdTimeUtc.toLocalTime().toString(), mainWidget);
-  mainLayout->addRow(tr("Created:"), createdLabel);
+  mainLayout->addRow(tr("Created"), createdLabel);
 
   // Modified.
   auto *modifiedLabel =
       new QLabel(p_nodeInfo.modifiedTimeUtc.toLocalTime().toString(), mainWidget);
-  mainLayout->addRow(tr("Modified:"), modifiedLabel);
+  mainLayout->addRow(tr("Modified"), modifiedLabel);
 
   // Children (folders only).
   if (p_nodeInfo.isFolder) {
     auto *childrenLabel = new QLabel(QString::number(p_nodeInfo.childCount), mainWidget);
-    mainLayout->addRow(tr("Children:"), childrenLabel);
+    mainLayout->addRow(tr("Children"), childrenLabel);
   }
 
   // Tags (files with tags only).
   if (!p_nodeInfo.tags.isEmpty()) {
     auto *tagsLabel = new QLabel(p_nodeInfo.tags.join(QStringLiteral(", ")), mainWidget);
-    mainLayout->addRow(tr("Tags:"), tagsLabel);
+    mainLayout->addRow(tr("Tags"), tagsLabel);
   }
 
   // UUID.
@@ -77,7 +77,7 @@ void NodePropertiesDialog2::setupUI(const NodeIdentifier &p_nodeId, const NodeIn
   auto *uuidLineEdit = WidgetsFactory::createLineEdit(mainWidget);
   uuidLineEdit->setReadOnly(true);
   uuidLineEdit->setText(uuid.isEmpty() ? tr("N/A") : uuid);
-  mainLayout->addRow(tr("UUID:"), uuidLineEdit);
+  mainLayout->addRow(tr("UUID"), uuidLineEdit);
 
   setCentralWidget(mainWidget);
 

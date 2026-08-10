@@ -48,13 +48,13 @@ void NewNotebookDialog2::setupUI() {
   // Name input.
   auto *snippetService = m_services.get<SnippetCoreService>();
   m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
-  layout->addRow(tr("Name:"), m_nameEdit);
+  layout->addRow(tr("Name"), m_nameEdit);
 
   // Description input.
   m_descriptionEdit = new QPlainTextEdit(mainWidget);
   m_descriptionEdit->setPlaceholderText(tr("Optional description for the notebook"));
   m_descriptionEdit->setMaximumHeight(100);
-  layout->addRow(tr("Description:"), m_descriptionEdit);
+  layout->addRow(tr("Description"), m_descriptionEdit);
 
   // Root folder input with browse button.
   // Get default path from session config.
@@ -69,7 +69,7 @@ void NewNotebookDialog2::setupUI() {
   m_rootFolderInput->setPlaceholderText(tr("Select a folder as notebook root"));
   connect(m_rootFolderInput, &LocationInputWithBrowseButton::textChanged, this,
           &NewNotebookDialog2::handleRootFolderPathChanged);
-  layout->addRow(tr("Root folder:"), m_rootFolderInput);
+  layout->addRow(tr("Root folder"), m_rootFolderInput);
 
   // Notebook type combo.
   m_typeCombo = WidgetsFactory::createComboBox(mainWidget);
@@ -77,7 +77,7 @@ void NewNotebookDialog2::setupUI() {
   m_typeCombo->addItem(tr("Raw notebook"), static_cast<int>(NotebookType::Raw));
   m_typeCombo->setToolTip(tr("Bundled: notebook with metadata stored in config files.\n"
                              "Raw: plain folder structure with minimal VNote metadata."));
-  layout->addRow(tr("Type:"), m_typeCombo);
+  layout->addRow(tr("Type"), m_typeCombo);
 
   // Update root folder tooltip based on selected notebook type.
   auto updateRootFolderTooltip = [this]() {
@@ -104,7 +104,7 @@ void NewNotebookDialog2::setupUI() {
   // For Git sync, the actual remote URL + PAT are collected BEFORE notebook
   // creation via the Configure... button (pre-create flow per
   // notebook-sync-config-pre-create plan).
-  m_syncMethodLabel = new QLabel(tr("Sync method:"), mainWidget);
+  m_syncMethodLabel = new QLabel(tr("Sync method"), mainWidget);
   m_syncMethodLabel->setObjectName(QStringLiteral("syncMethodLabel"));
   m_syncMethodCombo = WidgetsFactory::createComboBox(mainWidget);
   m_syncMethodCombo->setObjectName(QStringLiteral("syncMethodCombo"));
@@ -166,7 +166,7 @@ void NewNotebookDialog2::setupUI() {
       tr("Name or path for the assets folder.\n"
          "Can be a folder name (vx_assets), relative path, or absolute path.\n"
          "Relative paths resolve against each note file's parent directory."));
-  advancedLayout->addRow(tr("Assets folder:"), m_assetsFolderEdit);
+  advancedLayout->addRow(tr("Assets folder"), m_assetsFolderEdit);
 
   m_advancedSection->setVisible(false);
   layout->addRow(m_advancedSection);

@@ -27,11 +27,11 @@ void LinkInsertDialog::setupUI(const QString &p_title, const QString &p_linkText
   auto mainLayout = WidgetsFactory::createFormLayout(mainWidget);
 
   m_linkTextEdit = WidgetsFactory::createLineEdit(p_linkText, mainWidget);
-  mainLayout->addRow(tr("&Text:"), m_linkTextEdit);
+  mainLayout->addRow(tr("&Text"), m_linkTextEdit);
   connect(m_linkTextEdit, &QLineEdit::textChanged, this, [this]() { checkInput(false); });
 
   m_linkUrlEdit = WidgetsFactory::createLineEdit(p_linkUrl, mainWidget);
-  mainLayout->addRow(tr("&Url:"), m_linkUrlEdit);
+  mainLayout->addRow(tr("&Url"), m_linkUrlEdit);
   connect(m_linkUrlEdit, &QLineEdit::textChanged, this, [this]() { checkInput(true); });
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

@@ -72,22 +72,22 @@ void SnippetInfoWidget2::setupUI() {
       QRegularExpression(PathUtils::c_fileNameRegularExpression), m_nameLineEdit);
   m_nameLineEdit->setValidator(validator);
   connect(m_nameLineEdit, &QLineEdit::textEdited, this, &SnippetInfoWidget2::inputEdited);
-  mainLayout->addRow(tr("Name:"), m_nameLineEdit);
+  mainLayout->addRow(tr("Name"), m_nameLineEdit);
 
   setFocusProxy(m_nameLineEdit);
 
   // Description.
   m_descriptionLineEdit = WidgetsFactory::createLineEdit(this);
   connect(m_descriptionLineEdit, &QLineEdit::textEdited, this, &SnippetInfoWidget2::inputEdited);
-  mainLayout->addRow(tr("Description:"), m_descriptionLineEdit);
+  mainLayout->addRow(tr("Description"), m_descriptionLineEdit);
 
   // Type.
   setupTypeComboBox();
-  mainLayout->addRow(tr("Type:"), m_typeComboBox);
+  mainLayout->addRow(tr("Type"), m_typeComboBox);
 
   // Shortcut.
   setupShortcutComboBox();
-  mainLayout->addRow(tr("Shortcut:"), m_shortcutComboBox);
+  mainLayout->addRow(tr("Shortcut"), m_shortcutComboBox);
 
   // Cursor mark.
   m_cursorMarkLineEdit = WidgetsFactory::createLineEdit(this);
@@ -95,7 +95,7 @@ void SnippetInfoWidget2::setupUI() {
   m_cursorMarkLineEdit->setToolTip(
       tr("A mark in the snippet content indicating the cursor position after the application"));
   connect(m_cursorMarkLineEdit, &QLineEdit::textEdited, this, &SnippetInfoWidget2::inputEdited);
-  mainLayout->addRow(tr("Cursor mark:"), m_cursorMarkLineEdit);
+  mainLayout->addRow(tr("Cursor mark"), m_cursorMarkLineEdit);
 
   // Selection mark.
   m_selectionMarkLineEdit = WidgetsFactory::createLineEdit(this);
@@ -103,7 +103,7 @@ void SnippetInfoWidget2::setupUI() {
   m_selectionMarkLineEdit->setToolTip(tr("A mark in the snippet content that will be replaced with "
                                          "the selected text before the application"));
   connect(m_selectionMarkLineEdit, &QLineEdit::textEdited, this, &SnippetInfoWidget2::inputEdited);
-  mainLayout->addRow(tr("Selection mark:"), m_selectionMarkLineEdit);
+  mainLayout->addRow(tr("Selection mark"), m_selectionMarkLineEdit);
 
   // Indent as first line.
   m_indentAsFirstLineCheckBox = WidgetsFactory::createCheckBox(tr("Indent as first line"), this);
@@ -117,7 +117,7 @@ void SnippetInfoWidget2::setupUI() {
   m_contentTextEdit->setPlaceholderText(
       tr("Nested snippet is supported, like `%time%` to embed the snippet `time`"));
   connect(m_contentTextEdit, &QPlainTextEdit::textChanged, this, &SnippetInfoWidget2::inputEdited);
-  mainLayout->addRow(tr("Content:"), m_contentTextEdit);
+  mainLayout->addRow(tr("Content"), m_contentTextEdit);
 }
 
 void SnippetInfoWidget2::setupTypeComboBox() {

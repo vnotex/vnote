@@ -33,21 +33,21 @@ void OpenVNote3NotebookDialog2::setupUI() {
   m_sourceInput = new LocationInputWithBrowseButton(mainWidget);
   m_sourceInput->setBrowseType(LocationInputWithBrowseButton::Folder, tr("Select Source Folder"));
   m_sourceInput->setPlaceholderText(tr("Select the VNote3 notebook root folder"));
-  layout->addRow(tr("Source folder:"), m_sourceInput);
+  layout->addRow(tr("Source folder"), m_sourceInput);
 
   m_destinationInput = new LocationInputWithBrowseButton(mainWidget);
   m_destinationInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                     tr("Select Destination Folder"));
   m_destinationInput->setPlaceholderText(tr("Select the destination root folder"));
-  layout->addRow(tr("Destination folder:"), m_destinationInput);
+  layout->addRow(tr("Destination folder"), m_destinationInput);
 
-  m_nameTitleLabel = new QLabel(tr("Notebook name:"), mainWidget);
+  m_nameTitleLabel = new QLabel(tr("Notebook name"), mainWidget);
   m_nameLabel = new QLabel(mainWidget);
   m_nameTitleLabel->hide();
   m_nameLabel->hide();
   layout->addRow(m_nameTitleLabel, m_nameLabel);
 
-  m_descriptionTitleLabel = new QLabel(tr("Description:"), mainWidget);
+  m_descriptionTitleLabel = new QLabel(tr("Description"), mainWidget);
   m_descriptionLabel = new QLabel(mainWidget);
   m_descriptionLabel->setWordWrap(true);
   m_descriptionTitleLabel->hide();

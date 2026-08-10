@@ -30,10 +30,10 @@ void ViewTagsDialog2::setupUI() {
   auto *layout = new QFormLayout(mainWidget);
 
   m_nodeNameLabel = new QLabel(mainWidget);
-  layout->addRow(tr("Name:"), m_nodeNameLabel);
+  layout->addRow(tr("Name"), m_nodeNameLabel);
 
   m_tagViewer = new TagViewer2(m_services, mainWidget);
-  layout->addRow(tr("Tags:"), m_tagViewer);
+  layout->addRow(tr("Tags"), m_tagViewer);
 
   setCentralWidget(mainWidget);
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
