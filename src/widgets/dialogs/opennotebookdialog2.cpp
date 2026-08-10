@@ -35,6 +35,7 @@ const char *const kRemoteDestInputName = "remoteDestInput";
 const char *const kProgressBarName = "openNotebookProgressBar";
 const char *const kOpenButtonName = "openButton";
 const char *const kCancelButtonName = "cancelButton";
+const char *const kOpenV3ButtonName = "openV3NotebookButton";
 
 // Single source of truth for the URL-scheme guard. T22's
 // OpenNotebookController::validateCloneInput() MUST mirror this regex so the
@@ -140,6 +141,23 @@ void OpenNotebookDialog2::setupUI() {
       // sufficient — no extra connect needed here.
       m_cancelButton = cancelBtn;
     }
+
+    // Secondary action, leftmost in the row: ResetRole is the only role that
+    // sorts ahead of BOTH Open and Cancel on every QDialogButtonBox platform
+    // layout (ActionRole lands between them on Windows).
+    //
+    // NOTE: Dialog::setDialogButtonBox also routes ResetRole clicks to the
+    // virtual resetButtonClicked(), which is a no-op in the base Dialog and is
+    // NOT overridden here. If this dialog ever overrides resetButtonClicked(),
+    // drop the explicit connect below or the handler will fire twice.
+    m_openV3Button = box->addButton(tr("Open V3 Notebook"), QDialogButtonBox::ResetRole);
+    m_openV3Button->setObjectName(QLatin1String(kOpenV3ButtonName));
+    // Load-bearing: the Open button above is explicitly setDefault(true), and a
+    // freshly added auto-default push button would contend for the Enter key.
+    m_openV3Button->setAutoDefault(false);
+    m_openV3Button->setToolTip(tr("Close this dialog and import a legacy VNote3 notebook."));
+    connect(m_openV3Button, &QPushButton::clicked, this,
+            &OpenNotebookDialog2::onOpenV3NotebookClicked);
   }
   setButtonEnabled(QDialogButtonBox::Open, false);
 
@@ -371,6 +389,17 @@ void OpenNotebookDialog2::rejectedButtonClicked() {
   ScrollDialog::rejectedButtonClicked();
 }
 
+void OpenNotebookDialog2::onOpenV3NotebookClicked() {
+  // Defensive: the button is disabled while a clone is running, but never
+  // abandon an in-flight clone by closing the dialog under it.
+  if (m_cloneInProgress) {
+    return;
+  }
+  // done() (not reject()) so the caller can distinguish "user cancelled" from
+  // "user wants the V3 flow". No notebookOpened is emitted on this path.
+  done(OpenV3NotebookRequested);
+}
+
 void OpenNotebookDialog2::handleLocalOpen() {
   OpenNotebookInput input;
   input.rootFolderPath = m_localRootInput->text().trimmed();
@@ -406,6 +435,8 @@ void OpenNotebookDialog2::handleRemoteOpen() {
     m_localModeRadio->setEnabled(false);
   if (m_remoteModeRadio)
     m_remoteModeRadio->setEnabled(false);
+  if (m_openV3Button)
+    m_openV3Button->setEnabled(false);
   setRemoteInputsEnabled(false);
 
   // Show indeterminate progress bar; the controller's coarse progress
@@ -468,6 +499,8 @@ void OpenNotebookDialog2::onCloneFinished(const CloneAndOpenResult &p_result) {
     m_localModeRadio->setEnabled(true);
   if (m_remoteModeRadio)
     m_remoteModeRadio->setEnabled(true);
+  if (m_openV3Button)
+    m_openV3Button->setEnabled(true);
   setRemoteInputsEnabled(true);
   // Restore Open button state via the standard validation path so it
   // re-enables only when the current inputs are valid.

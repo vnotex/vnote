@@ -35,6 +35,7 @@
 #include <QRadioButton>
 #include <QSignalSpy>
 #include <QStackedWidget>
+#include <QTimer>
 #include <QtTest>
 
 #include <application.h>
@@ -81,6 +82,11 @@ private slots:
   // 4. Remote mode: valid HTTPS URL + valid destination (non-existing OR
   //    existing-empty) -> Open enabled. Non-empty existing dest -> disabled.
   void testValidRemoteUrlEnablesOpenButton();
+
+  // 5. The "Open V3 Notebook" secondary button exists, sits in ResetRole (so it
+  //    sorts ahead of Open/Cancel on every platform layout), and closes the
+  //    dialog with the OpenV3NotebookRequested result code.
+  void testOpenV3NotebookButtonRequestsHandoff();
 
   // --- NewNoteDialog2 constructor options (macOS Services note capture) ---
   void testNewNoteDefaultOptionsKeepTemplate();
@@ -438,6 +444,43 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
   QVERIFY2(!openBtn->isEnabled(),
            "Open must be DISABLED when dest is an existing non-empty directory");
+
+  delete svc;
+}
+
+// =============================================================================
+// Subtest 5: "Open V3 Notebook" hands off to the caller.
+//
+// The dialog must NOT construct OpenVNote3NotebookDialog2 itself; it closes
+// with the custom OpenV3NotebookRequested result code and lets
+// NotebookExplorer2::importNotebook() open the legacy flow afterwards. The
+// exec() return value is the actual integration contract, so it is asserted
+// directly rather than result() on a never-shown dialog.
+// =============================================================================
+void TestOpenNotebookDialog2::testOpenV3NotebookButtonRequestsHandoff() {
+  ServiceLocator services;
+  NotebookCoreService *svc = nullptr;
+  buildServices(services, svc);
+
+  OpenNotebookDialog2 dialog(services);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *btn = dialog.findChild<QPushButton *>(QStringLiteral("openV3NotebookButton"));
+  QVERIFY2(btn, "The Open Notebook dialog must expose an 'openV3NotebookButton'");
+
+  auto *box = dialog.getDialogButtonBox();
+  QVERIFY(box);
+  QCOMPARE(box->buttonRole(btn), QDialogButtonBox::ResetRole);
+
+  QVERIFY(btn->isEnabled());
+  QVERIFY2(!btn->autoDefault(), "The V3 button must not contend with Open for the Enter key");
+
+  QSignalSpy spy(&dialog, &OpenNotebookDialog2::notebookOpened);
+
+  QTimer::singleShot(0, btn, &QPushButton::click);
+  QCOMPARE(dialog.exec(), static_cast<int>(OpenNotebookDialog2::OpenV3NotebookRequested));
+  QVERIFY(!dialog.isVisible());
+  QCOMPARE(spy.count(), 0); // the handoff path must NOT emit notebookOpened
 
   delete svc;
 }

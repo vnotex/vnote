@@ -55,7 +55,7 @@ Use this pattern when the dialog has both keystroke-driven validation (noisy) an
 | `NewNoteDialog2` | `NewNoteController` | Create a new note |
 | `NewFolderDialog2` | `NewFolderController` | Create a new folder |
 | `NewNotebookDialog2` | `NewNotebookController` | Create a new notebook |
-| `OpenNotebookDialog2` | `OpenNotebookController` | Open an existing notebook (local OR remote clone) |
+| `OpenNotebookDialog2` | `OpenNotebookController` | Open an existing notebook (local OR remote clone); hands off to the V3 import flow via the `OpenV3NotebookRequested` result code |
 | `ManageNotebooksDialog2` | `ManageNotebooksController` | Notebook management |
 | `ImportFolderDialog2` | `ImportFolderController` | Import an external folder as a notebook |
 | `OpenVNote3NotebookDialog2` | (legacy migration) | Import a VNote3 notebook |

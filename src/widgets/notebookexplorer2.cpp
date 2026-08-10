@@ -430,12 +430,6 @@ void NotebookExplorer2::setupTitleBar() {
     connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::importNotebook);
   }
 
-  // Open VNote3 Notebook button
-  {
-    auto btn = m_titleBar->addActionButton("open_legacy_notebook.svg", tr("Open VNote3 Notebook"));
-    connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::openVNote3Notebook);
-  }
-
   // Sync button (T15) — always visible.
   // Enabled state and tooltip are driven by updateSyncButtonState().
   m_syncButton = m_titleBar->addActionButton(QStringLiteral("sync_now.svg"), tr("Sync"));
@@ -1183,28 +1177,43 @@ void NotebookExplorer2::importNotebook() {
   // refresh NotebookSelector2 and switch the explorer to the freshly
   // opened notebook, matching the behavior the old QFileDialog path used
   // to provide.
-  OpenNotebookDialog2 dialog(m_services, window());
-  connect(&dialog, &OpenNotebookDialog2::notebookOpened, this,
-          [this](const QString &p_notebookId, bool p_suppressSyncPrompt) {
-            // Record the interactively-opened notebook so the reconcileFinished handler
-            // can auto-prompt for a missing PAT (state S2) right after open. Scoped to
-            // this id only, so the startup reconcile sweep never pops a dialog.
-            //
-            // EXCEPTION (silent S2 clone): a no-PAT remote clone lands as a writable S2
-            // notebook that must open SILENTLY. The dialog signals that via
-            // p_suppressSyncPrompt == true; in that case we do NOT arm the prompt, so
-            // the AUTH_FAILED that reconcile emits for the tokenless notebook will not
-            // pop the Sync Info dialog. Selector refresh / setCurrentNotebook is
-            // unchanged for both cases.
-            if (!p_suppressSyncPrompt && !p_notebookId.isEmpty()) {
-              m_pendingOpenSyncPrompt.insert(p_notebookId);
-            }
-            if (m_notebookSelector) {
-              m_notebookSelector->loadNotebooks();
-              setCurrentNotebook(p_notebookId);
-            }
-          });
-  dialog.exec();
+  //
+  // The dialog can also terminate with the custom OpenV3NotebookRequested
+  // result code, meaning the user clicked "Open V3 Notebook" and wants the
+  // legacy VNote3 import flow instead.
+  int ret = QDialog::Rejected;
+  {
+    OpenNotebookDialog2 dialog(m_services, window());
+    connect(&dialog, &OpenNotebookDialog2::notebookOpened, this,
+            [this](const QString &p_notebookId, bool p_suppressSyncPrompt) {
+              // Record the interactively-opened notebook so the reconcileFinished handler
+              // can auto-prompt for a missing PAT (state S2) right after open. Scoped to
+              // this id only, so the startup reconcile sweep never pops a dialog.
+              //
+              // EXCEPTION (silent S2 clone): a no-PAT remote clone lands as a writable S2
+              // notebook that must open SILENTLY. The dialog signals that via
+              // p_suppressSyncPrompt == true; in that case we do NOT arm the prompt, so
+              // the AUTH_FAILED that reconcile emits for the tokenless notebook will not
+              // pop the Sync Info dialog. Selector refresh / setCurrentNotebook is
+              // unchanged for both cases.
+              if (!p_suppressSyncPrompt && !p_notebookId.isEmpty()) {
+                m_pendingOpenSyncPrompt.insert(p_notebookId);
+              }
+              if (m_notebookSelector) {
+                m_notebookSelector->loadNotebooks();
+                setCurrentNotebook(p_notebookId);
+              }
+            });
+    ret = dialog.exec();
+  }
+
+  // The user asked to switch to the legacy VNote3 import flow. The Open
+  // Notebook dialog is fully destroyed at this point (the scope above is
+  // deliberate, not style), so opening the second modal here is not
+  // re-entrant.
+  if (ret == OpenNotebookDialog2::OpenV3NotebookRequested) {
+    openVNote3Notebook();
+  }
 }
 
 void NotebookExplorer2::openVNote3Notebook() {

@@ -65,7 +65,7 @@ void OpenVNote3NotebookDialog2::setupUI() {
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   setButtonEnabled(QDialogButtonBox::Ok, false);
 
-  setWindowTitle(tr("Open VNote3 Notebook"));
+  setWindowTitle(tr("Open V3 Notebook"));
 
   // Track manual edits to destination.
   connect(m_destinationInput, &LocationInputWithBrowseButton::textChanged, this, [this]() {

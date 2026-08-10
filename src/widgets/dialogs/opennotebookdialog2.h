@@ -38,6 +38,12 @@ struct CloneAndOpenResult;
 // signals (cloneFinished + cloneProgressUpdated) and emits notebookOpened +
 // accept() on a successful clone result.
 //
+// Besides accept() / reject(), the dialog can also terminate with the custom
+// result code OpenV3NotebookRequested: the user clicked "Open V3 Notebook",
+// asking to leave this dialog and enter the legacy VNote3 import flow. The
+// CALLER opens OpenVNote3NotebookDialog2 after exec() returns; this dialog
+// never constructs it and never emits notebookOpened on that path.
+//
 // Banner-suppression contract (see plan refine-open-notebook-dialog):
 // changes to the URL or PAT fields NEVER set the ScrollDialog info-text
 // banner; they only flip the Open button enabled state. Only changes to
@@ -49,6 +55,12 @@ class OpenNotebookDialog2 : public ScrollDialog {
 
 public:
   enum Mode { LocalMode = 0, RemoteMode = 1 };
+
+  // Custom exec() result: the user chose to leave this dialog and open the
+  // legacy VNote3 import flow instead. The caller is responsible for opening
+  // OpenVNote3NotebookDialog2 AFTER exec() returns; this dialog deliberately
+  // does not construct it (keeps the dialog free of the migration deps).
+  enum { OpenV3NotebookRequested = QDialog::Accepted + 1 };
 
   explicit OpenNotebookDialog2(ServiceLocator &p_services, QWidget *p_parent = nullptr);
   ~OpenNotebookDialog2() override;
@@ -84,6 +96,11 @@ private slots:
   // from its worker tail, so we receive on the GUI thread either way).
   void onCloneProgressUpdated(int p_current, int p_total, const QString &p_phase);
   void onCloneFinished(const CloneAndOpenResult &p_result);
+
+  // "Open V3 Notebook" secondary button: closes the dialog with the custom
+  // OpenV3NotebookRequested result code so the caller can open the legacy
+  // VNote3 import dialog. Never emits notebookOpened.
+  void onOpenV3NotebookClicked();
 
 private:
   void setupUI();
@@ -154,6 +171,10 @@ private:
   // cancellation. Captured in setupUI from
   // getDialogButtonBox()->button(QDialogButtonBox::Cancel).
   QPushButton *m_cancelButton = nullptr;
+
+  // "Open V3 Notebook" secondary button (ResetRole). Cached so it can be
+  // disabled while a remote clone is in flight.
+  QPushButton *m_openV3Button = nullptr;
 
   // openurl-followups Item 2: true while OpenNotebookController::cloneAndOpen
   // is in flight (between handleRemoteOpen dispatch and onCloneFinished).
