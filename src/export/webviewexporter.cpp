@@ -13,8 +13,8 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/htmltemplateutils.h>
-#include <core/markdownwebglobaloptions.h>
 #include <core/markdowneditorconfig.h>
+#include <core/markdownwebglobaloptions.h>
 #include <gui/services/themeservice.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
@@ -228,9 +228,9 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
   // otherwise omit them, leaving the copy button non-functional/unstyled in exports). Injected
   // ahead of the placeholder so fillResourcesByContent() still appends any config resources.
   {
-    const auto copyScript = readTemplateFile(
-        resolveConfigFile(p_configMgr, QStringLiteral("web/js/exportcodecopy.js")),
-        "failed to read code-block copy script");
+    const auto copyScript =
+        readTemplateFile(resolveConfigFile(p_configMgr, QStringLiteral("web/js/exportcodecopy.js")),
+                         "failed to read code-block copy script");
     if (!copyScript.isEmpty()) {
       htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
                            copyScript + QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
@@ -552,9 +552,8 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   // force it off. The intermediate HTML feeding PDF/custom has target format HTML but sets
   // m_removeCodeToolBarEnabled = true explicitly, so it is honored here and still drops the
   // toolbar; genuine HTML export leaves the option at its false default.
-  paras.m_removeCodeToolBarEnabled = p_option.m_targetFormat == ExportFormat::HTML
-                                         ? p_option.m_removeCodeToolBarEnabled
-                                         : true;
+  paras.m_removeCodeToolBarEnabled =
+      p_option.m_targetFormat == ExportFormat::HTML ? p_option.m_removeCodeToolBarEnabled : true;
 
   m_htmlTemplate = generateMarkdownViewerTemplate(*configMgr, config, paras);
 
@@ -601,7 +600,8 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
       m_wkhtmltopdfArgs << "--header-left" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerLeft);
     }
     if (!p_pdfOption.m_headerCenter.isEmpty()) {
-      m_wkhtmltopdfArgs << "--header-center" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerCenter);
+      m_wkhtmltopdfArgs << "--header-center"
+                        << HtmlUtils::unicodeEncode(p_pdfOption.m_headerCenter);
     }
     if (!p_pdfOption.m_headerRight.isEmpty()) {
       m_wkhtmltopdfArgs << "--header-right" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerRight);
@@ -614,7 +614,8 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
       m_wkhtmltopdfArgs << "--footer-left" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerLeft);
     }
     if (!p_pdfOption.m_footerCenter.isEmpty()) {
-      m_wkhtmltopdfArgs << "--footer-center" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerCenter);
+      m_wkhtmltopdfArgs << "--footer-center"
+                        << HtmlUtils::unicodeEncode(p_pdfOption.m_footerCenter);
     }
     if (!p_pdfOption.m_footerRight.isEmpty()) {
       m_wkhtmltopdfArgs << "--footer-right" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerRight);
@@ -907,16 +908,28 @@ bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption
   args << QDir::toNativeSeparators(tmpFile);
 
   bool ret = startProcess(QDir::toNativeSeparators(p_pdfOption.m_wkhtmltopdfExePath), args);
-  if (ret && QFileInfo::exists(tmpFile)) {
-    emit logRequested(tr("Copy output file (%1) to (%2).").arg(tmpFile, p_outputFile));
-    Error err = FileUtils2::copyFile(tmpFile, p_outputFile);
-    if (err) {
-      qWarning() << "failed to copy exported PDF file" << tmpFile << err.what();
-      return false;
-    }
+  if (!ret) {
+    emit logRequested(tr("Failed to run wkhtmltopdf (%1). If the path points to a launcher or "
+                         "shim (e.g. a scoop shim), try the real executable instead.")
+                          .arg(p_pdfOption.m_wkhtmltopdfExePath));
+    return false;
   }
 
-  return ret;
+  // wkhtmltopdf may exit normally without producing anything (e.g. it rejects an option). Do not
+  // report success in that case.
+  if (!QFileInfo::exists(tmpFile)) {
+    emit logRequested(tr("wkhtmltopdf did not produce an output file (%1).").arg(p_outputFile));
+    return false;
+  }
+
+  emit logRequested(tr("Copy output file (%1) to (%2).").arg(tmpFile, p_outputFile));
+  Error err = FileUtils2::copyFile(tmpFile, p_outputFile);
+  if (err) {
+    qWarning() << "failed to copy exported PDF file" << tmpFile << err.what();
+    return false;
+  }
+
+  return true;
 }
 
 bool WebViewExporter::startProcess(const QString &p_program, const QStringList &p_args) {

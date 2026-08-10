@@ -1,5 +1,6 @@
 #include "processutils.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QProcess>
 #include <QScopedPointer>
@@ -133,6 +134,15 @@ ProcessUtils::handleProcess(QProcess *p_process,
                             const std::function<void(const QString &)> &p_logger,
                             const bool &p_askedToStop) {
   if (!p_process->waitForStarted()) {
+    // Report why the program could not be launched. Without this, a failure to start (wrong
+    // path, launcher/shim that does not work without a console, missing dependency) is
+    // indistinguishable from a program that ran and produced no output.
+    const auto msg = QCoreApplication::translate("ProcessUtils", "failed to start process (%1): %2")
+                         .arg(p_process->program(), p_process->errorString());
+    qWarning() << msg;
+    if (p_logger) {
+      p_logger(msg);
+    }
     return State::FailedToStart;
   }
 
@@ -154,6 +164,39 @@ ProcessUtils::handleProcess(QProcess *p_process,
 
     if (p_askedToStop) {
       break;
+    }
+  }
+
+  // Drain whatever arrived after the last poll, so the tail of the program's output (usually
+  // the error message explaining a non-zero exit) is not lost.
+  {
+    QString msg;
+    auto outBa = p_process->readAllStandardOutput();
+    auto errBa = p_process->readAllStandardError();
+    if (!outBa.isEmpty()) {
+      msg += QString::fromLocal8Bit(outBa);
+    }
+    if (!errBa.isEmpty()) {
+      msg += QString::fromLocal8Bit(errBa);
+    }
+    if (!msg.isEmpty() && p_logger) {
+      p_logger(msg);
+    }
+  }
+
+  if (p_process->state() == QProcess::NotRunning) {
+    // exitCode() is only meaningful for a normal exit.
+    const bool normalExit = p_process->exitStatus() == QProcess::NormalExit;
+    const auto msg =
+        normalExit
+            ? QCoreApplication::translate("ProcessUtils", "process (%1) finished with exit code %2")
+                  .arg(p_process->program())
+                  .arg(p_process->exitCode())
+            : QCoreApplication::translate("ProcessUtils", "process (%1) crashed")
+                  .arg(p_process->program());
+    qDebug() << msg;
+    if ((!normalExit || p_process->exitCode() != 0) && p_logger) {
+      p_logger(msg);
     }
   }
 
