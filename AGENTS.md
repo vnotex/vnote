@@ -68,6 +68,19 @@ cd libs/vxcore && git branch -r --contains $(git rev-parse HEAD) && cd ../..
 
 If CI is already failing with "not our ref", the fix is to push the missing submodule commit (do **not** roll back the parent pointer if newer parent commits depend on the new submodule API).
 
+### cmark is vendored twice — bump both pins together
+
+The same cmark fork (`https://github.com/vnotex/cmark.git`) is pinned by two different submodules:
+
+| Parent submodule | Nested cmark path |
+|---|---|
+| `libs/vtextedit` | `libs/cmark` |
+| `libs/vxcore` | `third_party/cmark` |
+
+Only **one** of them is ever compiled into VNote: `libs/CMakeLists.txt` adds `vtextedit` first, vtextedit defines the `cmark` target unconditionally, and vxcore's `if(NOT TARGET cmark)` guard then skips its own copy — so vxcore links vtextedit's cmark. If the pins diverge, vxcore is silently built against a cmark it was never tested with, while its standalone build (`libs/vxcore/build_test`, `ci-linux-tsan.yml`) uses its own copy. There is no build error or warning.
+
+**Bump both submodules to the same cmark commit in a single change**, and push each submodule remote before the parent per the discipline above. [`tests/utils/test_cmark_pin_drift.cpp`](tests/utils/test_cmark_pin_drift.cpp) fails the build when the two recorded pins differ.
+
 ## Build Commands
 
 ### Release Build

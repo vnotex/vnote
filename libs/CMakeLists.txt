@@ -1,4 +1,29 @@
 add_subdirectory(QHotkey)
+
+# ORDER IS LOAD-BEARING: vtextedit must be added before vxcore.
+#
+# The cmark fork is vendored TWICE -- as libs/vtextedit/libs/cmark and as
+# libs/vxcore/third_party/cmark. The two are NOT symmetric:
+# libs/vtextedit/libs/CMakeLists.txt calls add_subdirectory(cmark)
+# UNCONDITIONALLY (no if(NOT TARGET cmark) guard), while
+# libs/vxcore/third_party/CMakeLists.txt guards its own copy with
+# `if(NOT TARGET cmark)`. With vtextedit first, vtextedit's copy is the one
+# compiled, vxcore's guard sees the target already exists and skips its copy,
+# and vxcore links vtextedit's cmark.
+#
+# Consequence: both pins MUST stay identical, or vxcore is silently built
+# against a cmark it was never tested with (its standalone build,
+# libs/vxcore/build_test and ci-linux-tsan.yml, uses its own copy). That is
+# enforced by tests/utils/test_cmark_pin_drift.cpp.
+#
+# Swapping these two add_subdirectory() calls does NOT simply flip which copy
+# wins: vxcore would define `cmark` first, then vtextedit's unguarded
+# add_subdirectory(cmark) would try to define the same target again and CMake
+# would fail at CONFIGURE time. Making that order work would require adding a
+# guard inside the vtextedit submodule, and would additionally move vxcore's
+# set(CMAKE_MSVC_RUNTIME_LIBRARY ... FORCE) (libs/vxcore/third_party/CMakeLists.txt)
+# ahead of vtextedit's configure, applying it to syntax-highlighting, katevi,
+# sonnet, hunspell and VTextEdit. Do not reorder.
 add_subdirectory(vtextedit)
 
 # vxcore - VNote core library (notebook management, tags, search)

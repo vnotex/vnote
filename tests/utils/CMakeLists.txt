@@ -126,6 +126,22 @@ target_compile_definitions(test_extra_qrc_coverage PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
+# Drift gate between the two vendored cmark submodules. Only vtextedit's copy
+# is ever compiled: it is added first in libs/CMakeLists.txt AND is the
+# unguarded one, so vxcore's if(NOT TARGET cmark) guard skips its own copy and
+# vxcore links vtextedit's cmark. Divergent pins would therefore compile vxcore
+# against a cmark it was never tested with. See libs/CMakeLists.txt and
+# tests/utils/test_cmark_pin_drift.cpp for the full contract (the two vendoring
+# sites are NOT symmetric -- do not read this as "first one configured wins").
+add_qt_test(test_cmark_pin_drift
+  SOURCES
+    test_cmark_pin_drift.cpp
+  GUILESS
+)
+target_compile_definitions(test_cmark_pin_drift PRIVATE
+  VNOTE_REPO_ROOT="${CMAKE_SOURCE_DIR}"
+)
+
 target_include_directories(test_clipboard_image PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
