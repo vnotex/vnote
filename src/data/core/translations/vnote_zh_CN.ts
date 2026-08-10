@@ -4586,7 +4586,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     <message>
         <location line="+2"/>
         <source>Open Folder as &amp;Raw Notebook</source>
-        <translation>作为原始笔记本打开文件夹(&amp;R)</translation>
+        <translation>打开文件夹为原始笔记本(&amp;R)</translation>
     </message>
     <message>
         <location line="+7"/>
