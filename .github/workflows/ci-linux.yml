@@ -121,13 +121,19 @@ jobs:
           sudo make install
         working-directory: ${{runner.workspace}}/build
 
-      - name: Compile qt6ct
-        run: |
-          git clone https://github.com/trialuser02/qt6ct qt6ct.git
-          cd qt6ct.git
-          qmake
-          make -j$(nproc) && sudo make install
-        working-directory: ${{runner.workspace}}/build
+      # A "Compile qt6ct" step used to live here. It was removed because:
+      #   * the upstream it cloned (trialuser02/qt6ct) is archived and includes
+      #     <private/qgenericunixthemes_p.h>, which qtbase commit
+      #     53fb13456fffe8bfd192f9197c6d1703854b49a2 split in Qt 6.10 into
+      #     qgenericunixtheme_p.h / qkdetheme_p.h / qgnometheme_p.h, so it no
+      #     longer compiles against the pinned Qt;
+      #   * its output was never bundled anyway: linuxdeploy-plugin-qt deploys
+      #     only libqxdgdesktopportal.so out of platformthemes/ unless
+      #     DEPLOY_PLATFORM_THEMES is set, and we never set it (see
+      #     src/CPackLinuxDeployQt.cmake.in, which adds libqgtk3.so only).
+      # Do not reintroduce it without also arranging deployment. Contrast with
+      # "Compile fcitxqt5" above, which must stay: platforminputcontexts IS
+      # deployed by deployStandardQtPlugins.
 
       - name: Configure Project
         run: |

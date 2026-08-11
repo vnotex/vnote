@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include <QAction>
+#include <QKeySequence>
 #include <QMenu>
 
 #include <controllers/markdownviewwindowcontroller.h>
@@ -543,7 +544,13 @@ void TestMarkdownViewWindowController::testContextMenu_exportReadModeNoSelection
   QVERIFY(editIdx >= 0);
   QVERIFY(exportIdx >= 0);
   QCOMPARE(exportIdx, editIdx + 1);
-  QVERIFY(strippedText(acts[exportIdx]).contains("Ctrl+G, T"));
+  // The menu text renders the shortcut with QKeySequence::NativeText, which
+  // differs per platform (macOS uses glyphs), so compare against the native
+  // rendering rather than a literal.
+  const QString expectedShortcut =
+      QKeySequence(info.exportShortcutText).toString(QKeySequence::NativeText);
+  QVERIFY(!expectedShortcut.isEmpty());
+  QVERIFY(strippedText(acts[exportIdx]).contains(expectedShortcut));
 
   acts[exportIdx]->trigger();
   QVERIFY(exportCalled);
