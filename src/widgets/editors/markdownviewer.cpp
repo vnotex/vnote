@@ -22,11 +22,12 @@
 #include "markdownvieweradapter.h"
 #include "previewhelper.h"
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
-#include <utils/clipboardutils.h>
 #include <gui/utils/imageutils.h>
+#include <utils/clipboardutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
 #include <widgets/messageboxhelper.h>
@@ -98,6 +99,8 @@ MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
     info.crossCopyDisplayNames.append(m_adapter->getCrossCopyTargetDisplayName(t));
   }
   info.editShortcutText = getEditorConfig().getShortcut(EditorConfig::Shortcut::EditRead);
+  info.exportShortcutText =
+      m_services.get<ConfigMgr2>()->getCoreConfig().getShortcut(CoreConfig::Shortcut::Export);
   info.copyAction = pageAction(QWebEnginePage::Copy);
   info.defaultCopyImageAction = pageAction(QWebEnginePage::CopyImageToClipboard);
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
@@ -174,7 +177,8 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
           clipboard->setProperty(c_propertyCrossCopy, true);
           triggerPageAction(QWebEnginePage::Copy);
         },
-        [this, imageUrl]() { openImageExternally(imageUrl); });
+        [this, imageUrl]() { openImageExternally(imageUrl); },
+        [this]() { emit exportRequested(); });
   } else {
     // Fallback: inline logic for when no controller is set (e.g., WebViewExporter).
     // This preserves the exact original behavior.

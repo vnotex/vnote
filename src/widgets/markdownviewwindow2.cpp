@@ -47,17 +47,17 @@
 #include <vxcore/notebook_json_keys.h>
 
 #include "../utils/scrollpreservationpolicy.h"
+#include "editors/editorstatusbarbinder.h"
+#include "editors/graphvizhelper.h"
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
-#include "editors/graphvizhelper.h"
-#include "messageboxhelper.h"
 #include "editors/markdownvieweradapter.h"
 #include "editors/plantumlhelper.h"
 #include "editors/previewhelper.h"
-#include "editors/editorstatusbarbinder.h"
 #include "editors/statusbar.h"
 #include "encodingbutton.h"
 #include "legacyimagemigrationbar.h"
+#include "messageboxhelper.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
 #include "textviewwindowhelper.h"
@@ -233,8 +233,7 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
 
   // In-place preview toggle (visible only in Edit mode).
   {
-    auto *inplacePreviewAction =
-        addAction(p_toolBar, ViewWindowToolBarHelper2::InplacePreview);
+    auto *inplacePreviewAction = addAction(p_toolBar, ViewWindowToolBarHelper2::InplacePreview);
     // setChecked before connect so this does not fire the toggled handler.
     inplacePreviewAction->setChecked(m_inplacePreviewEnabled);
     connect(inplacePreviewAction, &QAction::toggled, this, [this](bool p_checked) {
@@ -458,6 +457,9 @@ void MarkdownViewWindow2::setupViewer() {
   // Edit request from viewer (double-click or context menu).
   connect(m_viewer, &MarkdownViewer::editRequested, this,
           [this]() { setMode(ViewWindowMode::Edit); });
+
+  // Export request from viewer context menu; forward the inherited signal.
+  connect(m_viewer, &MarkdownViewer::exportRequested, this, &MarkdownViewWindow2::exportRequested);
 
   // Viewer find text result.
   connect(adapterObj, &MarkdownViewerAdapter::findTextReady, this,
@@ -1234,8 +1236,8 @@ void MarkdownViewWindow2::updatePreviewHelperFromConfig(const MarkdownEditorConf
   static QString s_graphvizExe;
   static QString s_plantUmlCommand;
   static bool s_graphHelpersInitialized = false;
-  if (!s_graphHelpersInitialized || plantUmlJar != s_plantUmlJar ||
-      graphvizExe != s_graphvizExe || plantUmlCommand != s_plantUmlCommand) {
+  if (!s_graphHelpersInitialized || plantUmlJar != s_plantUmlJar || graphvizExe != s_graphvizExe ||
+      plantUmlCommand != s_plantUmlCommand) {
     s_graphHelpersInitialized = true;
     s_plantUmlJar = plantUmlJar;
     s_graphvizExe = graphvizExe;
@@ -1815,8 +1817,8 @@ void MarkdownViewWindow2::runLegacyImageCheck() {
     return;
   }
   const QString notebookRoot = notebookSvc->buildAbsolutePath(notebookId, QString());
-  if (notebookRoot.isEmpty()
-      || !LegacyImageMigrationController::isPathContained(notebookRoot, assetsFolder)) {
+  if (notebookRoot.isEmpty() ||
+      !LegacyImageMigrationController::isPathContained(notebookRoot, assetsFolder)) {
     // An assets folder configured outside the notebook root is unsupported:
     // deleteAsset() is notebook-root relative. The check is CANONICAL, so an
     // in-notebook junction pointing outside does not slip through. No bar is
@@ -1838,8 +1840,7 @@ void MarkdownViewWindow2::runLegacyImageCheck() {
 
   // Same basePath convention as snapshotInitialImages().
   const auto refs = LegacyImageMigrationController::detect(
-      m_editor->getTextEdit()->document()->toPlainText(), QFileInfo(resolved).path(),
-      assetsFolder);
+      m_editor->getTextEdit()->document()->toPlainText(), QFileInfo(resolved).path(), assetsFolder);
   if (refs.isEmpty()) {
     return;
   }
@@ -1888,9 +1889,8 @@ void MarkdownViewWindow2::applyLegacyImageMigration() {
   auto *doc = m_editor->getTextEdit()->document();
 
   // Re-run detection: the user may have typed since the bar appeared.
-  const auto refs = LegacyImageMigrationController::detect(doc->toPlainText(),
-                                                           QFileInfo(resolved).path(),
-                                                           assetsFolder);
+  const auto refs = LegacyImageMigrationController::detect(
+      doc->toPlainText(), QFileInfo(resolved).path(), assetsFolder);
   if (refs.isEmpty()) {
     if (m_legacyImageBar) {
       m_legacyImageBar->deleteLater();

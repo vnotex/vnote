@@ -90,8 +90,11 @@ signals:
   // notification by NotificationRouter.
   void viewWindowCreationFailed(const QString &p_fileType, const QString &p_path);
 
-public:
+  // Relayed from a view window's context menu. The source pointer is
+  // load-bearing: a detached window is not the current main-area window.
+  void exportRequested(ViewWindow2 *p_source);
 
+public:
   // ============ ViewAreaView Interface (overrides) ============
   void addFirstViewSplit(const QString &p_workspaceId) override;
   void split(const QString &p_workspaceId, Direction p_direction,

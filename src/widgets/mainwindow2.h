@@ -35,6 +35,7 @@ class SnippetPanel2;
 class SearchPanel2;
 class LocationList2;
 class ViewArea2;
+class ViewWindow2;
 class ExportDialog2;
 class TaskPanel2;
 class ConsoleViewer;
@@ -251,7 +252,9 @@ private:
   // No-op when the custom (frameless) title bar is in use.
   void updateWindowTitle();
 
-  void exportNotes();
+  // @p_source: the view window requesting the export. When null, the current
+  // view window of the main area is used. A detached window must pass itself.
+  void exportNotes(ViewWindow2 *p_source = nullptr);
 
   // Actually open the resolved paths as external buffers. Assumes the view
   // area is ready to receive buffers.

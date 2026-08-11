@@ -63,6 +63,9 @@ private slots:
   void testContextMenu_viewImageReadMode();
   void testContextMenu_viewImageNotInReadMode();
   void testContextMenu_viewImageInvalidUrl();
+  void testContextMenu_exportReadModeNoSelection();
+  void testContextMenu_exportAbsentWithSelection();
+  void testContextMenu_exportAbsentWithoutHandler();
 
 private:
   static const int c_readMode = static_cast<int>(ViewWindowMode::Read);
@@ -286,8 +289,8 @@ void TestMarkdownViewWindowController::testContextMenu_readModeNoSelection() {
   info.inReadMode = true;
   info.editShortcutText = "Ctrl+T";
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   QCOMPARE(result, &menu);
   auto actions = result->actions();
@@ -305,8 +308,8 @@ void TestMarkdownViewWindowController::testContextMenu_readModeWithSelection() {
   info.hasSelection = true;
   info.inReadMode = true;
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   for (auto *act : result->actions()) {
     QVERIFY(!act->text().contains("Edit"));
@@ -323,8 +326,8 @@ void TestMarkdownViewWindowController::testContextMenu_editMode() {
   info.hasSelection = false;
   info.inReadMode = false;
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   for (auto *act : result->actions()) {
     QVERIFY(!act->text().contains("Edit"));
@@ -343,8 +346,8 @@ void TestMarkdownViewWindowController::testContextMenu_crossCopyTargets() {
   info.crossCopyTargets = {"html", "text"};
   info.crossCopyDisplayNames = {"HTML", "Plain Text"};
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   bool foundCrossCopy = false;
   for (auto *act : result->actions()) {
@@ -369,8 +372,8 @@ void TestMarkdownViewWindowController::testContextMenu_noCrossCopyTargets() {
   info.hasSelection = true;
   info.copyAction = copyAct;
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   for (auto *act : result->actions()) {
     if (act->menu()) {
@@ -391,7 +394,7 @@ void TestMarkdownViewWindowController::testContextMenu_copyImagePresent() {
   bool copyImageCalled = false;
   auto *result = controller.createContextMenu(
       info, &menu, [&copyImageCalled]() { copyImageCalled = true; }, []() {},
-      [](const QString &) {}, []() {});
+      [](const QString &) {}, []() {}, []() {});
 
   QVERIFY(!defaultCopyImageAct->isVisible());
 
@@ -415,8 +418,8 @@ void TestMarkdownViewWindowController::testContextMenu_noCopyImage() {
 
   MarkdownViewerContextInfo info;
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   int copyImageCount = 0;
   for (auto *act : result->actions()) {
@@ -440,8 +443,8 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageReadMode() {
 
   bool viewCalled = false;
   auto *result = controller.createContextMenu(
-      info, &menu, []() {}, []() {}, [](const QString &) {},
-      [&viewCalled]() { viewCalled = true; });
+      info, &menu, []() {}, []() {}, [](const QString &) {}, [&viewCalled]() { viewCalled = true; },
+      []() {});
 
   QAction *viewAct = nullptr;
   int viewIdx = -1;
@@ -476,8 +479,8 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageNotInReadMode() 
   info.inReadMode = false;
   info.imageUrl = QUrl("file:///tmp/pic.png");
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   for (auto *act : result->actions()) {
     QVERIFY(!act->text().contains("View"));
@@ -494,15 +497,99 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageInvalidUrl() {
   info.inReadMode = true;
   // imageUrl left default-constructed (invalid).
 
-  auto *result =
-      controller.createContextMenu(info, &menu, []() {}, []() {}, [](const QString &) {}, []() {});
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
 
   for (auto *act : result->actions()) {
     QVERIFY(!act->text().contains("View"));
   }
 }
 
-} // namespace tests
+// Menu texts carry a '&' mnemonic and an appended shortcut hint, so compare
+// against the mnemonic-stripped text with contains().
+static QString strippedText(const QAction *p_act) {
+  return QString(p_act->text()).remove(QLatin1Char('&'));
+}
 
+void TestMarkdownViewWindowController::testContextMenu_exportReadModeNoSelection() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = false;
+  info.inReadMode = true;
+  info.editShortcutText = "Ctrl+T";
+  info.exportShortcutText = "Ctrl+G, T";
+
+  bool exportCalled = false;
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {},
+      [&exportCalled]() { exportCalled = true; });
+
+  const auto acts = result->actions();
+  int editIdx = -1;
+  int exportIdx = -1;
+  for (int i = 0; i < acts.size(); ++i) {
+    const QString text = strippedText(acts[i]);
+    if (editIdx < 0 && text.contains("Edit")) {
+      editIdx = i;
+    }
+    if (exportIdx < 0 && text.contains("Export")) {
+      exportIdx = i;
+    }
+  }
+  QVERIFY(editIdx >= 0);
+  QVERIFY(exportIdx >= 0);
+  QCOMPARE(exportIdx, editIdx + 1);
+  QVERIFY(strippedText(acts[exportIdx]).contains("Ctrl+G, T"));
+
+  acts[exportIdx]->trigger();
+  QVERIFY(exportCalled);
+}
+
+void TestMarkdownViewWindowController::testContextMenu_exportAbsentWithSelection() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = true;
+  info.inReadMode = true;
+  info.exportShortcutText = "Ctrl+G, T";
+
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
+
+  for (auto *act : result->actions()) {
+    const QString text = strippedText(act);
+    QVERIFY(!text.contains("Export"));
+    QVERIFY(!text.contains("Edit"));
+  }
+}
+
+void TestMarkdownViewWindowController::testContextMenu_exportAbsentWithoutHandler() {
+  ServiceLocator services;
+  MarkdownViewWindowController controller(services);
+  QMenu menu;
+  menu.addAction("Dummy");
+
+  MarkdownViewerContextInfo info;
+  info.hasSelection = false;
+  info.inReadMode = true;
+
+  auto *result = controller.createContextMenu(
+      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, nullptr);
+
+  for (auto *act : result->actions()) {
+    QVERIFY(!strippedText(act).contains("Export"));
+  }
+  // Edit is still offered.
+  QVERIFY(strippedText(result->actions()[0]).contains("Edit"));
+}
+
+} // namespace tests
 QTEST_MAIN(tests::TestMarkdownViewWindowController)
 #include "test_markdownviewwindowcontroller.moc"

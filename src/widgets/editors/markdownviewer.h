@@ -43,6 +43,8 @@ signals:
 
   void editRequested();
 
+  void exportRequested();
+
 protected:
   void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 

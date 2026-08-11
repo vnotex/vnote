@@ -627,10 +627,11 @@ void MainWindow2::setupNotebookExplorer() {
           &NotebookExplorer2::importFile);
   connect(this, &MainWindow2::importFolderRequested, m_notebookExplorer,
           &NotebookExplorer2::importFolder);
-  connect(this, &MainWindow2::exportRequested, this, &MainWindow2::exportNotes);
+  // Default argument is not usable with the PMF connect syntax; wrap it.
+  connect(this, &MainWindow2::exportRequested, this, [this]() { exportNotes(nullptr); });
 }
 
-void MainWindow2::exportNotes() {
+void MainWindow2::exportNotes(ViewWindow2 *p_source) {
   // Single-instance enforcement.
   if (m_exportDialog) {
     m_exportDialog->activateWindow();
@@ -642,7 +643,7 @@ void MainWindow2::exportNotes() {
   ExportContext context;
 
   // Get current ViewWindow2 (may be null if no file is open).
-  auto *viewWin = m_viewArea->getCurrentViewWindow();
+  auto *viewWin = p_source ? p_source : m_viewArea->getCurrentViewWindow();
   if (viewWin) {
     context.bufferContent = viewWin->getLatestContent();
     context.bufferName = viewWin->getName();
@@ -692,6 +693,11 @@ void MainWindow2::setupViewArea() {
     // buffer, which must land in the restored vxcore workspace.
     m_captureDispatcher.setReady();
   });
+
+  // Export requested from a view window's context menu. The source pointer is
+  // carried so a detached window exports its own buffer.
+  connect(m_viewArea, &ViewArea2::exportRequested, this,
+          [this](ViewWindow2 *p_src) { exportNotes(p_src); });
 }
 
 void MainWindow2::setupOutlineViewer() {

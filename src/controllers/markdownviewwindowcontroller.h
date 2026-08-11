@@ -28,6 +28,9 @@ struct MarkdownViewerContextInfo {
   // Pre-resolved shortcut text for Edit action.
   QString editShortcutText;
 
+  // Pre-resolved shortcut text for Export action (hint only, no shortcut registered).
+  QString exportShortcutText;
+
   // Pointers to standard QWebEnginePage actions found in the standard menu.
   // The viewer resolves these via pageAction() and passes them here so the
   // controller can identify and manipulate them without calling pageAction() itself.
@@ -51,6 +54,7 @@ public:
                            const std::function<void()> &p_editHandler,
                            const std::function<void(const QString &)> &p_crossCopyHandler,
                            const std::function<void()> &p_viewImageHandler,
+                           const std::function<void()> &p_exportHandler,
                            QWidget *p_parent = nullptr);
 
   // Result of computing what needs to happen for a mode transition.

@@ -17,9 +17,9 @@
 #include <core/services/buffer2.h>
 #include <core/services/buffercoreservice.h>
 
+#include "editors/statusbar.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
-#include "editors/statusbar.h"
 
 class QHBoxLayout;
 class QVBoxLayout;
@@ -253,6 +253,10 @@ signals:
   // Emitted when the user chooses to discard a file-missing buffer.
   // ViewArea2 connects this to close the window.
   void closeRequested();
+
+  // Emitted when the user asks to export from a view window's context menu;
+  // ViewArea2 relays it (carrying this window as the source).
+  void exportRequested();
 
 protected slots:
   virtual void handleFindTextChanged(const QString &p_text, FindOptions p_options);

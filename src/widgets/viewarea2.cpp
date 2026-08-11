@@ -26,10 +26,10 @@
 #include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 
+#include "detachedwindow.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
 #include "widgetviewwindow2.h"
-#include "detachedwindow.h"
 
 using namespace vnotex;
 
@@ -904,6 +904,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   split->addViewWindow(win);
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
+  connect(win, &ViewWindow2::exportRequested, this, [this, win]() { emit exportRequested(win); });
   // For a detached (--detached-view) open, pass the target workspace so the
   // controller registers the buffer there without touching main-window state.
   m_controller->onViewWindowOpened(id, p_buffer, p_settings,
@@ -938,6 +939,7 @@ void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &
   split->addViewWindow(win);
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
+  connect(win, &ViewWindow2::exportRequested, this, [this, win]() { emit exportRequested(win); });
 
   // Use default FileOpenSettings for notification.
   FileOpenSettings settings;
@@ -1152,8 +1154,8 @@ void ViewArea2::onDetachViewWindowRequested(ViewSplit2 *p_split, ViewWindow2 *p_
     return;
   }
   const QString srcWsId = p_split->getWorkspaceId();
-  const bool detached = m_controller->detachViewWindow(srcWsId, p_win->getViewWindowId(),
-                                                       p_win->getBuffer().id());
+  const bool detached =
+      m_controller->detachViewWindow(srcWsId, p_win->getViewWindowId(), p_win->getBuffer().id());
   if (!detached) {
     return;
   }

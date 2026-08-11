@@ -19,7 +19,8 @@ QMenu *MarkdownViewWindowController::createContextMenu(
     const MarkdownViewerContextInfo &p_info, QMenu *p_standardMenu,
     const std::function<void()> &p_copyImageHandler, const std::function<void()> &p_editHandler,
     const std::function<void(const QString &)> &p_crossCopyHandler,
-    const std::function<void()> &p_viewImageHandler, QWidget *p_parent) {
+    const std::function<void()> &p_viewImageHandler, const std::function<void()> &p_exportHandler,
+    QWidget *p_parent) {
   Q_UNUSED(p_parent)
 
   const QList<QAction *> actions = p_standardMenu->actions();
@@ -30,6 +31,13 @@ QMenu *MarkdownViewWindowController::createContextMenu(
     WidgetUtils::addActionShortcutText(editAct, p_info.editShortcutText);
     connect(editAct, &QAction::triggered, p_standardMenu, p_editHandler);
     p_standardMenu->insertAction(firstAct, editAct);
+    if (p_exportHandler) {
+      // Mnemonic 'x': '&Export' would collide with the adjacent '&Edit'.
+      auto exportAct = new QAction(QObject::tr("E&xport"), p_standardMenu);
+      WidgetUtils::addActionShortcutText(exportAct, p_info.exportShortcutText);
+      connect(exportAct, &QAction::triggered, p_standardMenu, p_exportHandler);
+      p_standardMenu->insertAction(firstAct, exportAct);
+    }
     if (firstAct) {
       p_standardMenu->insertSeparator(firstAct);
     }
