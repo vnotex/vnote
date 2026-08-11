@@ -48,6 +48,8 @@ private:
 
   QCheckBox *m_inplacePreviewSourceMathCheckBox = nullptr;
 
+  QCheckBox *m_inplacePreviewSourceTableCheckBox = nullptr;
+
   QCheckBox *m_fetchImagesToLocalCheckBox = nullptr;
 
   QCheckBox *m_htmlTagCheckBox = nullptr;

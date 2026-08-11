@@ -3591,6 +3591,16 @@
         <translation>数学公式</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <source>Table</source>
+        <translation>表格</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Render a table as an editable sheet which writes back to the Markdown source.</source>
+        <translation>将表格渲染为可编辑的表格控件，编辑结果会写回 Markdown 源文本。</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Fetch images to local in Parse And Paste</source>
         <translation>在解析并粘贴时，获取图片到本地</translation>

@@ -69,6 +69,8 @@ void MarkdownEditorPage::loadInternal() {
         srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock);
     m_inplacePreviewSourceMathCheckBox->setChecked(
         srcs & MarkdownEditorConfig::InplacePreviewSource::Math);
+    m_inplacePreviewSourceTableCheckBox->setChecked(
+        srcs & MarkdownEditorConfig::InplacePreviewSource::Table);
   }
 
   m_fetchImagesToLocalCheckBox->setChecked(markdownConfig.getFetchImagesInParseAndPaste());
@@ -134,6 +136,9 @@ bool MarkdownEditorPage::saveInternal() {
     }
     if (m_inplacePreviewSourceMathCheckBox->isChecked()) {
       srcs |= MarkdownEditorConfig::InplacePreviewSource::Math;
+    }
+    if (m_inplacePreviewSourceTableCheckBox->isChecked()) {
+      srcs |= MarkdownEditorConfig::InplacePreviewSource::Table;
     }
 
     markdownConfig.setInplacePreviewSources(srcs);
@@ -320,7 +325,7 @@ void MarkdownEditorPage::setupReadGroup() {
           QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner);
         } else {
           QFile f(path);
-          f.open(QIODevice::WriteOnly);  // create empty file
+          f.open(QIODevice::WriteOnly); // create empty file
           f.close();
         }
       }
@@ -397,6 +402,13 @@ void MarkdownEditorPage::setupEditGroup() {
     m_inplacePreviewSourceMathCheckBox = WidgetsFactory::createCheckBox(tr("Math"), this);
     srcRowLayout->addWidget(m_inplacePreviewSourceMathCheckBox);
     connect(m_inplacePreviewSourceMathCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+
+    m_inplacePreviewSourceTableCheckBox = WidgetsFactory::createCheckBox(tr("Table"), this);
+    m_inplacePreviewSourceTableCheckBox->setToolTip(
+        tr("Render a table as an editable sheet which writes back to the Markdown source."));
+    srcRowLayout->addWidget(m_inplacePreviewSourceTableCheckBox);
+    connect(m_inplacePreviewSourceTableCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
 
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));

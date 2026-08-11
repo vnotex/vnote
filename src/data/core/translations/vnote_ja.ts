@@ -3596,6 +3596,16 @@
         <translation>数式</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <source>Table</source>
+        <translation>テーブル</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Render a table as an editable sheet which writes back to the Markdown source.</source>
+        <translation>テーブルを編集可能なシートとして表示し、編集内容を Markdown のソースに書き戻します。</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Fetch images to local in Parse And Paste</source>
         <translation>[解析と貼り付け]でイメージをローカルに取得</translation>

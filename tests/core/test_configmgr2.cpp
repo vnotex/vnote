@@ -8,8 +8,10 @@
 #include <QJsonObject>
 
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/error.h>
 #include <core/mainconfig.h>
+#include <core/markdowneditorconfig.h>
 #include <core/services/configcoreservice.h>
 #include <utils/fileutils2.h>
 
@@ -43,6 +45,13 @@ private slots:
   void testExtraData_missingBundleFailsEveryFolderAndInstallsNothing();
   void testExtraData_userCssSurvivesInstallAndFailedRecovery();
   void testExtraData_configVersionIsStampedEvenWhenACopyFailed();
+
+  // In-place preview sources: persistence + the 4.4.4 table migration.
+  void testInplacePreviewSources_jsonRoundTripCarriesTable();
+  void testInplacePreviewSources_persistedStringWinsOverTheCppDefault();
+  void testTableMigration_addsTableAndKeepsOtherChoices();
+  void testTableMigration_leavesABlanketOptOutAlone();
+  void testTableMigration_doesNotRunOnTheSameOrANewerVersion();
 
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
@@ -81,9 +90,7 @@ void TestConfigMgr2::cleanupTestCase() {
   }
 }
 
-void TestConfigMgr2::testConstruction() {
-  QVERIFY(m_configMgr != nullptr);
-}
+void TestConfigMgr2::testConstruction() { QVERIFY(m_configMgr != nullptr); }
 
 void TestConfigMgr2::testInitialization() {
   m_configMgr->init();
@@ -195,8 +202,8 @@ QString TestConfigMgr2::buildExtraDataFixture(TempDirFixture &p_tmp) const {
 
 void TestConfigMgr2::resetInstalledExtraData() const {
   for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting,
-                    ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
+                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
+                    ConfigMgr2::ConfigDataType::Dicts}) {
     QDir(m_configMgr->getConfigDataFolder(type)).removeRecursively();
   }
 }
@@ -221,8 +228,8 @@ void TestConfigMgr2::testExtraData_cleanRunInstallsEveryFolderAndStamps() {
   QVERIFY2(mgr.extraDataCopyFailures().isEmpty(), "a clean install reported failures");
 
   for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting,
-                    ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
+                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
+                    ConfigMgr2::ConfigDataType::Dicts}) {
     const QString folder = mgr.getConfigDataFolder(type);
     QVERIFY2(QFileInfo::exists(folder + QStringLiteral("/marker.txt")),
              qPrintable(QStringLiteral("not installed: %1").arg(folder)));
@@ -321,11 +328,12 @@ void TestConfigMgr2::testExtraData_missingBundleFailsEveryFolderAndInstallsNothi
   }
 
   for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting,
-                    ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
-    QVERIFY2(!QFileInfo::exists(stampPath(type)),
-             qPrintable(QStringLiteral("stamped without a bundle: %1")
-                            .arg(mgr.getConfigDataFolder(type))));
+                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
+                    ConfigMgr2::ConfigDataType::Dicts}) {
+    QVERIFY2(
+        !QFileInfo::exists(stampPath(type)),
+        qPrintable(
+            QStringLiteral("stamped without a bundle: %1").arg(mgr.getConfigDataFolder(type))));
   }
 }
 
@@ -418,6 +426,77 @@ void TestConfigMgr2::testExtraData_configVersionIsStampedEvenWhenACopyFailed() {
   QCOMPARE(mgr.getConfig().getVersion(), ConfigMgr2::getApplicationVersion());
 
   QVERIFY(QDir(blocker).removeRecursively());
+}
+
+// ============ In-place preview sources ============
+
+using Sources = MarkdownEditorConfig::InplacePreviewSources;
+using Source = MarkdownEditorConfig::InplacePreviewSource;
+
+void TestConfigMgr2::testInplacePreviewSources_jsonRoundTripCarriesTable() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+
+  mdConfig.setInplacePreviewSources(Sources(Source::ImageLink | Source::Table));
+
+  const auto json = mdConfig.toJson();
+  const auto persisted = json.value(QStringLiteral("inplacePreviewSources")).toString();
+  QVERIFY2(persisted.contains(QStringLiteral("table")), qPrintable(persisted));
+  QVERIFY(!persisted.contains(QStringLiteral("math")));
+
+  MainConfig reloaded(m_configMgr);
+  auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
+  reloadedMd.fromJson(json);
+  QCOMPARE(reloadedMd.getInplacePreviewSources(), Sources(Source::ImageLink | Source::Table));
+}
+
+void TestConfigMgr2::testInplacePreviewSources_persistedStringWinsOverTheCppDefault() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+
+  // What every pre-4.4.4 installation has on disk.
+  QJsonObject json = mdConfig.toJson();
+  json[QStringLiteral("inplacePreviewSources")] = QStringLiteral("imagelink;codeblock;math");
+  mdConfig.fromJson(json);
+
+  QCOMPARE(mdConfig.getInplacePreviewSources(),
+           Sources(Source::ImageLink | Source::CodeBlock | Source::Math));
+}
+
+void TestConfigMgr2::testTableMigration_addsTableAndKeepsOtherChoices() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+
+  // A user who kept image links but turned code blocks and math off.
+  mdConfig.setInplacePreviewSources(Sources(Source::ImageLink));
+
+  config.doVersionSpecificOverride(QStringLiteral("4.4.3"));
+
+  QCOMPARE(mdConfig.getInplacePreviewSources(), Sources(Source::ImageLink | Source::Table));
+}
+
+void TestConfigMgr2::testTableMigration_leavesABlanketOptOutAlone() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+
+  mdConfig.setInplacePreviewSources(Sources(Source::NoInplacePreview));
+
+  config.doVersionSpecificOverride(QStringLiteral("4.4.3"));
+
+  QCOMPARE(mdConfig.getInplacePreviewSources(), Sources(Source::NoInplacePreview));
+}
+
+void TestConfigMgr2::testTableMigration_doesNotRunOnTheSameOrANewerVersion() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+
+  // A later upgrade must not re-enable what the user turned off on 4.4.4+.
+  mdConfig.setInplacePreviewSources(Sources(Source::ImageLink));
+  config.doVersionSpecificOverride(QStringLiteral("4.4.4"));
+  QCOMPARE(mdConfig.getInplacePreviewSources(), Sources(Source::ImageLink));
+
+  config.doVersionSpecificOverride(QStringLiteral("4.5.0"));
+  QCOMPARE(mdConfig.getInplacePreviewSources(), Sources(Source::ImageLink));
 }
 
 } // namespace tests

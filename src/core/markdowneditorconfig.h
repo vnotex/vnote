@@ -14,7 +14,19 @@ class IConfigMgr;
 
 class MarkdownEditorConfig : public IConfig {
 public:
-  enum InplacePreviewSource { NoInplacePreview = 0, ImageLink = 0x1, CodeBlock = 0x2, Math = 0x4 };
+  // Mirrors vte::MarkdownEditorConfig::InplacePreviewSource. Kept as a separate enum on
+  // purpose: this one is the persisted user setting (see inplacePreviewSourceToString()),
+  // so its values are part of VNote's config file contract and must not change if the
+  // library ever renumbers its flags.
+  enum InplacePreviewSource {
+    NoInplacePreview = 0,
+    ImageLink = 0x1,
+    CodeBlock = 0x2,
+    Math = 0x4,
+
+    // Renders a table as an editable sheet which writes back to the Markdown source.
+    Table = 0x8
+  };
   Q_DECLARE_FLAGS(InplacePreviewSources, InplacePreviewSource);
 
   enum EditViewMode { EditOnly, EditPreview };
@@ -210,7 +222,9 @@ private:
   // Override the config in TextEditorConfig.
   bool m_spellCheckEnabled = false;
 
-  InplacePreviewSources m_inplacePreviewSources = InplacePreviewSources(InplacePreviewSource::ImageLink | InplacePreviewSource::CodeBlock | InplacePreviewSource::Math);
+  InplacePreviewSources m_inplacePreviewSources =
+      InplacePreviewSources(InplacePreviewSource::ImageLink | InplacePreviewSource::CodeBlock |
+                            InplacePreviewSource::Math | InplacePreviewSource::Table);
 
   // View mode in edit mode.
   EditViewMode m_editViewMode = EditViewMode::EditOnly;

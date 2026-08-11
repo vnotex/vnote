@@ -116,6 +116,9 @@ QJsonObject MarkdownEditorConfig::toJson() const {
     if (m_inplacePreviewSources & InplacePreviewSource::Math) {
       srcs << inplacePreviewSourceToString(InplacePreviewSource::Math);
     }
+    if (m_inplacePreviewSources & InplacePreviewSource::Table) {
+      srcs << inplacePreviewSourceToString(InplacePreviewSource::Table);
+    }
     obj[QStringLiteral("inplacePreviewSources")] = srcs.join(QLatin1Char(';'));
   }
 
@@ -295,6 +298,9 @@ QString MarkdownEditorConfig::inplacePreviewSourceToString(InplacePreviewSource 
   case InplacePreviewSource::Math:
     return QStringLiteral("math");
 
+  case InplacePreviewSource::Table:
+    return QStringLiteral("table");
+
   default:
     return "";
   }
@@ -309,6 +315,8 @@ MarkdownEditorConfig::stringToInplacePreviewSource(const QString &p_str) const {
     return InplacePreviewSource::CodeBlock;
   } else if (src == QStringLiteral("math")) {
     return InplacePreviewSource::Math;
+  } else if (src == QStringLiteral("table")) {
+    return InplacePreviewSource::Table;
   } else {
     return InplacePreviewSource::NoInplacePreview;
   }

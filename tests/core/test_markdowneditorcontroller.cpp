@@ -54,6 +54,8 @@ private slots:
 
   void testBuildMarkdownEditorConfigFromContent_validJson();
   void testBuildMarkdownEditorConfigFromContent_emptyContent();
+  void testBuildMarkdownEditorConfigFromContent_tableSourceOnByDefault();
+  void testBuildMarkdownEditorConfigFromContent_tableSourceOff();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -81,7 +83,7 @@ private:
 
 void TestMarkdownEditorController::testPreviewHelper_allDefaults() {
   // MarkdownEditorConfig default: webPlantUml=true, webGraphviz=true,
-  // inplacePreviewSources = ImageLink|CodeBlock|Math.
+  // inplacePreviewSources = ImageLink|CodeBlock|Math|Table.
   MarkdownEditorConfig mdConfig(nullptr, nullptr, QSharedPointer<TextEditorConfig>());
 
   auto config = MarkdownEditorController::getPreviewHelperConfig(mdConfig);
@@ -203,8 +205,7 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_vali
   auto &mdConfig = ec.getMarkdownEditorConfig();
 
   auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
-      ec, mdConfig, QString::fromUtf8(kValidMarkdownThemeJson),
-      QStringLiteral("default"), 1.0, 0);
+      ec, mdConfig, QString::fromUtf8(kValidMarkdownThemeJson), QStringLiteral("default"), 1.0, 0);
 
   QVERIFY(!config.isNull());
   QVERIFY2(!config->m_textEditorConfig->m_theme.isNull(),
@@ -221,6 +222,32 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_empt
   QVERIFY(!config.isNull());
   QVERIFY2(config->m_textEditorConfig->m_theme.isNull(),
            "empty content should yield null theme but valid config");
+}
+
+void TestMarkdownEditorController::
+    testBuildMarkdownEditorConfigFromContent_tableSourceOnByDefault() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+
+  auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+
+  QVERIFY(!config.isNull());
+  QVERIFY2(config->m_inplacePreviewSources & vte::MarkdownEditorConfig::Table,
+           "the interactive table sheet must be on by default");
+}
+
+void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_tableSourceOff() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+  mdConfig.setInplacePreviewSources(MarkdownEditorConfig::InplacePreviewSource::ImageLink);
+
+  auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+
+  QVERIFY(!config.isNull());
+  QVERIFY2(!(config->m_inplacePreviewSources & vte::MarkdownEditorConfig::Table),
+           "the table source must follow the user setting");
 }
 
 // ============ Group 4: prepareBufferState ============
@@ -244,8 +271,7 @@ void TestMarkdownEditorController::initTestCase() {
   QVERIFY(!m_notebookId.isEmpty());
 
   // Create test markdown file.
-  QString mdId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
+  QString mdId = m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("test.md"));
   QVERIFY(!mdId.isEmpty());
 }
 
@@ -285,8 +311,8 @@ void TestMarkdownEditorController::testPrepareBufferState_invalidBuffer() {
 }
 
 void TestMarkdownEditorController::testPrepareBufferState_validBuffer() {
-  Buffer2 buf = m_bufferService->openBuffer(
-      NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   auto state = MarkdownEditorController::prepareBufferState(buf);
@@ -300,8 +326,8 @@ void TestMarkdownEditorController::testPrepareBufferState_validBuffer() {
 }
 
 void TestMarkdownEditorController::testPrepareBufferState_modifiedBuffer() {
-  Buffer2 buf = m_bufferService->openBuffer(
-      NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QVERIFY(buf.setContentRaw(QByteArray("# Modified Markdown\n\nHello world.")));

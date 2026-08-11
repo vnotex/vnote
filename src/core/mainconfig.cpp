@@ -2,10 +2,12 @@
 
 #include <QDebug>
 #include <QJsonObject>
+#include <QVersionNumber>
 
 #include "coreconfig.h"
 #include "editorconfig.h"
 #include "iconfigmgr.h"
+#include "markdowneditorconfig.h"
 #include "texteditorconfig.h"
 #include "widgetconfig.h"
 
@@ -43,14 +45,17 @@ QJsonObject MainConfig::saveMetaData() const {
   return metaObj;
 }
 
-CoreConfig &MainConfig::getCoreConfig() { return *static_cast<CoreConfig *>(
-    m_childConfigs[ChildConfigIndex::CoreConfigIndex].data()); }
+CoreConfig &MainConfig::getCoreConfig() {
+  return *static_cast<CoreConfig *>(m_childConfigs[ChildConfigIndex::CoreConfigIndex].data());
+}
 
-EditorConfig &MainConfig::getEditorConfig() { return *static_cast<EditorConfig *>(
-    m_childConfigs[ChildConfigIndex::EditorConfigIndex].data()); }
+EditorConfig &MainConfig::getEditorConfig() {
+  return *static_cast<EditorConfig *>(m_childConfigs[ChildConfigIndex::EditorConfigIndex].data());
+}
 
-WidgetConfig &MainConfig::getWidgetConfig() { return *static_cast<WidgetConfig *>(
-    m_childConfigs[ChildConfigIndex::WidgetConfigIndex].data()); }
+WidgetConfig &MainConfig::getWidgetConfig() {
+  return *static_cast<WidgetConfig *>(m_childConfigs[ChildConfigIndex::WidgetConfigIndex].data());
+}
 
 void MainConfig::update() { getMgr()->updateMainConfig(toJson()); }
 
@@ -69,7 +74,35 @@ void MainConfig::doVersionSpecificOverride(const QString &p_previousVersion) {
   // user override no longer masks a new default. Each override MUST be gated on
   // the version it was introduced in, so it runs only once for the relevant
   // upgrade and never destroys config on downgrade or later upgrades.
-  Q_UNUSED(p_previousVersion);
+
+  // 4.4.4: the interactive table in-place preview became a default source. An
+  // existing installation has "inplacePreviewSources" already persisted without
+  // it (fromJson rebuilds the flags purely from that string), so the new C++
+  // default would only ever reach a fresh start. Add the flag once, without
+  // touching the other sources the user may have turned off.
+  //
+  // A user who turned OFF every source is left alone: that empty set is a
+  // blanket opt-out from in-place preview, and this preview can rewrite the
+  // Markdown source, so it must not become their only enabled source.
+  //
+  // Known limitation: a 4.4.4+ -> 4.4.3 downgrade stamps the version back down
+  // (older builds have no notion of a newer config), so a later re-upgrade runs
+  // this override a second time and re-enables Table for a user who had turned
+  // it off. Undoing that would need a migration marker outside the config JSON,
+  // which is not worth it for a single checkbox.
+  // Gated on the previous version only, not on ConfigMgr2::c_version: the flag
+  // exists from this build onward, so a config written by any older build should
+  // pick it up at the first version change, whichever release that turns out to
+  // be.
+  static const QVersionNumber c_tableSourceVersion(4, 4, 4);
+  if (QVersionNumber::fromString(p_previousVersion) < c_tableSourceVersion) {
+    auto &mdConfig = getEditorConfig().getMarkdownEditorConfig();
+    const auto srcs = mdConfig.getInplacePreviewSources();
+    if (srcs != MarkdownEditorConfig::InplacePreviewSources(
+                    MarkdownEditorConfig::InplacePreviewSource::NoInplacePreview)) {
+      mdConfig.setInplacePreviewSources(srcs | MarkdownEditorConfig::InplacePreviewSource::Table);
+    }
+  }
 }
 
 QString MainConfig::peekVersion(const QJsonObject &p_jboj) {

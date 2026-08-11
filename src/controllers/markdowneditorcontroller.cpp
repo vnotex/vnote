@@ -164,6 +164,9 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdow
     if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
       editorSrcs |= vte::MarkdownEditorConfig::Math;
     }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Table) {
+      editorSrcs |= vte::MarkdownEditorConfig::Table;
+    }
     editorConfig->m_inplacePreviewSources = editorSrcs;
   }
 
@@ -297,6 +300,9 @@ MarkdownEditorController::buildMarkdownEditorConfigFromContent(
     }
     if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
       editorSrcs |= vte::MarkdownEditorConfig::Math;
+    }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Table) {
+      editorSrcs |= vte::MarkdownEditorConfig::Table;
     }
     editorConfig->m_inplacePreviewSources = editorSrcs;
   }
