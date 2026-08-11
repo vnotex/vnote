@@ -682,6 +682,16 @@ QPlainTextEdit, QTextEdit {
     selection-background-color: @widgets#qlineedit#selection#bg;
 }
 
+/* TablePreviewSheet - the in-editor Markdown table preview.
+ * The sheet is a QTextEdit rendered inside the editor's own band: it asks for
+ * NoFrame and a transparent Base in code, and the QAbstractScrollArea border
+ * and the QTextEdit background above would both override that. Its cell grid
+ * is drawn by the table format, not by this frame. */
+vte--TablePreviewSheet {
+    border: none;
+    background-color: transparent;
+}
+
 /* QTabWidget */
 QTabWidget {
     border: none;
