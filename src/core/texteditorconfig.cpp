@@ -108,8 +108,11 @@ TextEditorConfig::InputMode TextEditorConfig::stringToInputMode(const QString &p
     return InputMode::ViMode;
   } else if (inputMode == QStringLiteral("vscode")) {
     return InputMode::VscodeMode;
-  } else {
+  } else if (inputMode == QStringLiteral("normal")) {
     return InputMode::NormalMode;
+  } else {
+    // Unset or unrecognized value falls back to the default input mode.
+    return InputMode::VscodeMode;
   }
 }
 

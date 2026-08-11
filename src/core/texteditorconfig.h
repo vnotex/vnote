@@ -75,7 +75,7 @@ private:
 
   bool m_textFoldingEnabled = true;
 
-  InputMode m_inputMode = InputMode::NormalMode;
+  InputMode m_inputMode = InputMode::VscodeMode;
 
   CenterCursor m_centerCursor = CenterCursor::NeverCenter;
 
