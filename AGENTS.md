@@ -343,7 +343,15 @@ for the SSOT contract and the `test_json_key_drift` regression gate.
 
 ## Module Documentation Index
 
-Detailed knowledge for each module lives in its own AGENTS.md:
+Detailed knowledge for each module lives in its own AGENTS.md.
+
+**Where to write new documentation:** default to the child `AGENTS.md` that owns the code (create
+one for the directory if it does not exist yet). The root doc is injected into *every* agent turn,
+so anything added here costs context on turns that will never need it. Add to root only when the
+knowledge is genuinely repo-wide — i.e. it constrains callers who will never load the owning
+module's doc (as the MVC rules and the update-install invariant do), or it is a build/setup/style
+rule that applies everywhere. Even then, keep root to a short normative summary plus a link, and
+put the full detail in the module doc.
 
 | Module | File | Read this when |
 |--------|------|----------------|
