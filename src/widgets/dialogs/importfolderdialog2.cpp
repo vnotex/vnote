@@ -166,6 +166,8 @@ void ImportFolderDialog2::setupBundlePage(QWidget *p_page) {
   m_bundlePreviewLabel->setObjectName(QLatin1String(kBundlePreviewName));
   m_bundlePreviewLabel->setWordWrap(true);
   layout->addWidget(m_bundlePreviewLabel);
+
+  layout->addStretch(1);
 }
 
 void ImportFolderDialog2::applyBundleModeAvailability() {
