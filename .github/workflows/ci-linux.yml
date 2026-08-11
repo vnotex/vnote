@@ -145,7 +145,15 @@ jobs:
       - name: Build Project
         run: |
           # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
-          rm ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/sqldrivers/libqsqlmimer.so
+          rm -f ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/sqldrivers/libqsqlmimer.so
+          # Remove libqtiff.so: Qt's prebuilt binaries are linked against
+          # libtiff.so.5 (Ubuntu 22.04), but the ubuntu-latest runner is 24.04
+          # and ships only libtiff.so.6. linuxdeploy-plugin-qt deploys every
+          # plugin in imageformats/, cannot resolve that dependency, and aborts
+          # with "Could not find dependency: libtiff.so.5" -- which CPack does
+          # not propagate, so the build "succeeds" and the next step fails on a
+          # missing AppImage instead. VNote does not use TIFF.
+          rm -f ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/imageformats/libqtiff.so
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 
