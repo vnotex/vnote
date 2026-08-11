@@ -62,6 +62,8 @@ Therefore a key may be erased from the index **only while the index still points
 
 ## Threading rules for SyncService
 
+State-model counterpart (S0-S7, reconcile, disable cleanup): [Sync State Model](#sync-state-model) below.
+
 `SyncService` is the Qt-side facade for `vxcore::SyncManager`. It must respect the contract documented in `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract. The Qt-specific obligations are:
 
 1. **Never invoke vxcore sync APIs (`vxcore_sync_*`) from the GUI thread synchronously for long-running ops** (`enableSyncForNotebook`, `triggerSync`, `updateCredentials`). Off-load to a worker via the current executor. Short metadata calls (`isSyncRegistered`, `hasCredentials`) may run on the GUI thread.
@@ -143,7 +145,7 @@ Coverage: `tests/core/test_sync_service_freshness.cpp` (4 cases: stale→trigger
 
 The auto-save path NEVER calls `vxcore_buffer_save` on the UI thread. `BufferService` (`bufferservice.h`/`.cpp`) snapshots `(content, revision)` on the GUI thread and hands the work to `BufferSaveQueue` (`buffersavequeue.h`/`.cpp`), a per-notebook FIFO that wraps `BufferCoreService::saveBuffer` on a worker so auto-save IO never blocks the editor.
 
-Save workers and `SyncOps::triggerSync` share `NotebookIoGate` ([`notebookiogate.h`](notebookiogate.h)/[`.cpp`](notebookiogate.cpp)), a per-notebook async mutex, but they hold it for different windows. Save workers wrap their full `BufferCoreService::saveBuffer` call in `NotebookIoGate::ScopedLock(notebookId)`. `SyncOps::triggerSync` ([`syncops.cpp`](syncops.cpp)) splits the sync into two phases against [`ISyncNotebookService`](isyncnotebookservice.h): it acquires the gate, calls [`NotebookCoreService::syncStageOnly`](notebookcoreservice.h) (which wraps `vxcore_sync_stage_only` — StageAll + CommitIndex), releases the gate, then calls [`NotebookCoreService::syncNetworkPhase`](notebookcoreservice.h) (which wraps `vxcore_sync_network_phase` — FetchOrigin + RebaseOntoOrigin + PushOrigin) WITHOUT the gate held. This guarantees a sync never reads a half-flushed file, a save never lands inside someone else's `git add`/commit, and a save queued on the same notebook gets to run the instant the local commit lands instead of waiting on a network round-trip. The injection seam through `ISyncNotebookService` also makes the released-early property unit-testable without a real remote — see `tests/core/test_syncops_gate_release.cpp`. The full rationale lives in the root [Save Path Threading Contract](../../../AGENTS.md#save-path-threading-contract).
+Save workers and `SyncOps::triggerSync` share `NotebookIoGate` ([`notebookiogate.h`](notebookiogate.h)/[`.cpp`](notebookiogate.cpp)), a per-notebook async mutex, but they hold it for different windows. Save workers wrap their full `BufferCoreService::saveBuffer` call in `NotebookIoGate::ScopedLock(notebookId)`. `SyncOps::triggerSync` ([`syncops.cpp`](syncops.cpp)) splits the sync into two phases against [`ISyncNotebookService`](isyncnotebookservice.h): it acquires the gate, calls [`NotebookCoreService::syncStageOnly`](notebookcoreservice.h) (which wraps `vxcore_sync_stage_only` — StageAll + CommitIndex), releases the gate, then calls [`NotebookCoreService::syncNetworkPhase`](notebookcoreservice.h) (which wraps `vxcore_sync_network_phase` — FetchOrigin + RebaseOntoOrigin + PushOrigin) WITHOUT the gate held. This guarantees a sync never reads a half-flushed file, a save never lands inside someone else's `git add`/commit, and a save queued on the same notebook gets to run the instant the local commit lands instead of waiting on a network round-trip. The injection seam through `ISyncNotebookService` also makes the released-early property unit-testable without a real remote — see `tests/core/test_syncops_gate_release.cpp`. The full rationale lives in [Save Path Threading Contract](#save-path-threading-contract) below.
 
 Performance instrumentation: the Qt logging category `vnote.perf.save` covers UI-thread enqueue + worker save latency, and vxcore emits `VXCORE_LOG_DEBUG` lines tagged `[perf.mark_dirty]` / `[perf.maybe_enqueue]` for the synchronous tail that still runs on the caller thread. Both are off by default; enable them when chasing UI-thread regressions.
 
@@ -176,7 +178,7 @@ The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault 
 
 ## SearchService drain pool
 
-`SearchService` owns the pool of drain threads that empty vxcore's `"vxcore.search"` work queue (see the root [Search Threading Contract](../../../AGENTS.md#search-threading-contract)). vxcore owns no search threads; this pool is VNote's side of that contract.
+`SearchService` owns the pool of drain threads that empty vxcore's `"vxcore.search"` work queue (see [Search Threading Contract](#search-threading-contract) below). vxcore owns no search threads; this pool is VNote's side of that contract.
 
 **Size.** `min(std::thread::hardware_concurrency(), 8)`, substituting `2` only when `hardware_concurrency()` returns `0` (count unknown). This is a fallback for the unknown case, not a floor: a genuine single-core host gets `1` drain thread. Each thread loops `vxcore_work_queue_process_next(ctx, "vxcore.search", 100)`.
 
@@ -191,8 +193,7 @@ The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault 
 Mechanism half of the update check: the release API, the source-scoped host allowlist,
 manual redirect walking, the response cap and cancellation. The full contract (source
 selection, the "VNote never modifies its own install directory and never downloads
-anything" invariant, the forbidden patterns) lives in the root
-[Update Check](../../../AGENTS.md#update-check) section; only the service-specific rules are
+anything" invariant, the forbidden patterns) lives in the [Update Check](#update-check) section below; only the service-specific rules are
 repeated here.
 
 ### It is a CHECK, and only a check
@@ -340,3 +341,223 @@ away:
 `Duration::Persist` with a single `Check Release` action; there is no progress bar and no
 in-place update, because there is nothing to report progress on. See `src/widgets/AGENTS.md`
 § Notification System for the rendering side.
+
+---
+
+## Sync State Model
+
+> Moved here from the root `AGENTS.md`. It overlaps the
+> [Threading rules for SyncService](#threading-rules-for-syncservice) section above and
+> `libs/vxcore/src/sync/AGENTS.md`; deduping the three is a pending follow-up.
+
+Threading rules: see `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract.
+Qt-side dispatch (single queue via `SyncWorkQueueManager` + `SyncOps`, coalescing, cancellation, auto-sync routing through `EventBridge::syncShouldRun`): see [Threading rules for SyncService](#threading-rules-for-syncservice) above. The per-notebook `autoSyncEnabled` flag (boolean, default true) is a pure on/off gate inside vxcore's `MaybeEnqueueSync`: when false, vxcore suppresses `sync.should_run` entirely. It carries no cadence. Auto-sync cadence is owned Qt-side by `SyncService`, which applies a trailing-throttle debounce keyed off the global `autoSyncDebounceSeconds` app-config value (stored in vxcore's `vxcore.json` but consumed only by VNote).
+
+Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and service that touches sync must reason in terms of these states. The state is the tuple of: on-disk JSON sync fields, PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map.
+
+### Canonical State Predicates
+
+| State | syncEnabled (JSON) | syncBackend (JSON) | syncRemoteUrl (JSON) | PAT in keychain | states_ entry |
+|---|---|---|---|---|---|
+| S0 | false / absent | absent | absent | absent | absent |
+| S1 | true | "git" | empty | maybe | absent |
+| S2 | true | "git" | set | **absent** | absent |
+| S3 | true | empty | maybe | maybe | absent |
+| S4 | true | "git" | set | present | **absent** |
+| S5 | true | "git" | set | present | present |
+| S6 | false | absent | absent | **present** | absent |
+| S7 | true | "git" | set | present | present + active sync |
+
+S5 is the only "ready" state. S1-S4 and S6 are partial/inconsistent; S0 is cleanly disabled; S7 is in-flight.
+
+F3.5 in-flight sub-states (fetching/resolving/pushing) are NOT modeled as separate SyncState values, they remain runtime properties exposed by SyncService progress signals while the notebook is in S7.
+
+### Recovery Paths: bootstrapApply vs applyChanges
+
+| Path | Use when | Behavior |
+|---|---|---|
+| `NotebookSyncInfoController::bootstrapApply(url, pat)` | Notebook is in S1/S2/S3/S4 (any partial state). Atomic enable for an existing notebook. | Calls `SyncService::enableSyncForNotebook` directly; on success persists `syncRemoteUrl` and triggers initial sync; on failure keeps notebook in current state (NO delete, unlike `NewNotebookController::bootstrapSync`). |
+| `NotebookSyncInfoController::applyChanges(url, pat)` | Notebook is in S5 (registered). PAT refresh or URL change. | PAT-only update routes through `SyncService::updateCredentials`. URL change triggers `confirmUrlChangeRequested` signal and, on confirm, runs atomic disable+wipe `vx_notebook/vx_sync/`+re-enable. |
+
+The dialog (`NotebookSyncInfoDialog2`) auto-routes to `bootstrapApply` when `m_bootstrapMode == true` OR when `SyncService::isSyncRegistered(id) == false`. This is defense in depth: even when a caller bypasses the bootstrap entry point, partial-state notebooks still get the atomic path.
+
+### Reconcile Semantics
+
+`SyncService::reconcileSyncForNotebook` is called by `MainWindowAfterStart` and on notebook open to lift S4 notebooks (disk-complete, runtime-absent) into S5.
+
+Key invariants (`src/core/services/syncservice.cpp:858-970`):
+- `m_reconcileAttempted.insert(id)` happens **after** all precondition checks pass (line 893), not before. The disk-enabled check (line 869), idempotence guard (line 875), and complete-config check (line 884) all run first; any of them returning early leaves the attempted set untouched. Precondition failures therefore do NOT block future retries. Concrete consequence: a notebook in S1/S3 (enabled but no backend/url, or no backend) hits the `incomplete config` branch at line 885, emits `reconcileFinished(VXCORE_ERR_INVALID_PARAM)`, and is NOT marked attempted. When the user later supplies the missing URL via `bootstrapApply` and the notebook reaches S4, the very next reconcile trigger (notebook open or app start) will pass the precondition check and proceed.
+- `m_reconcileAttempted.remove(id)` fires on transient PAT fetch failure (line 945) so the next reconcile call retries. The same key is re-cleared by `updateCredentials` (line 969) before manually re-driving reconcile, so a user re-entering a fresh PAT never hits the "already attempted" guard.
+- No remove on success (notebook is registered; no retry needed).
+- Idempotence check at line 875 prevents duplicate in-flight reconciles when `MainWindowAfterStart` and `NotebookAfterOpen` race.
+
+**Post-reconcile freshness gate (auto-sync on open / app start).** After reconcile's `SyncOps::enableSync` work item returns `VXCORE_OK`, `SyncService::maybeTriggerPostReconcile(notebookId)` (`src/core/services/syncservice.cpp`) optionally enqueues a follow-up `triggerSyncNow` so the notebook is auto-synced when the user reopens VNote (or opens a notebook for the first time in the session) after remote changes. Closes the multi-device staleness window where reconcile alone only registered the notebook and the first `FetchOrigin` waited for the next save / manual Sync Now. The gate skips when: shutdown is in progress; the notebook is no longer enabled or registered; a sync is already in flight for the notebook; or the per-device last successful sync timestamp is newer than `kPostReconcileFreshnessMs` (2 minutes — covers rapid open/close cycles without thrashing). Both L1 (`onMainWindowAfterStart`, per-notebook sweep) and L2 (`onNotebookAfterOpen`, single notebook) inherit this behavior since both call `reconcileSyncForNotebook`. Full rationale and test seams live in [Post-reconcile freshness gate (`maybeTriggerPostReconcile`)](#post-reconcile-freshness-gate-maybetriggerpostreconcile) above.
+
+### bootstrapAndPersist Rollback × Reconcile
+
+`SyncService::bootstrapAndPersist` (`src/core/services/syncservice.cpp:409-508`) is the atomic enable+persist path used by `NewNotebookController` (W13.4, F1.6). On persist failure AFTER vxcore enable already succeeded, it issues a rollback by calling `disableSyncForNotebook`, which per "Disable Cleanup" below clears the three flat sync JSON keys then deletes the keychain entry.
+
+Interaction with reconcile:
+- **Rollback succeeds** (the common case): the notebook returns to clean S0. The disk-enabled check at `reconcileSyncForNotebook` line 869 fails immediately, the function early-returns, `m_reconcileAttempted` is never touched, and reconcile is correctly a no-op. The notebook needs a fresh user-initiated bootstrap, not silent re-registration. This is the intended recovery story.
+- **Rollback fails** (rare; both persist AND disable failed, logged at `qCritical` line 497): the notebook is left in a partial state. If JSON still has all three keys set (vxcore enable succeeded, JSON write succeeded for some keys, then disable failed leaving keys intact), the notebook is effectively in S4. On the next reconcile trigger, all precondition checks pass, `m_reconcileAttempted` gets set, and reconcile will attempt to register the notebook. This is the expected recovery path for that edge case; the loud `qCritical` log gives operators a chance to investigate.
+
+The key property: rollback NEVER causes reconcile to silently resurrect a notebook the user wanted disabled. Either rollback succeeded (so disk is clean and reconcile bails) or rollback failed (so disk truthfully says "enabled" and reconcile correctly tries to complete the job).
+
+### Disable Cleanup
+
+`SyncService::disableSyncForNotebook` on `VXCORE_OK` clears all three flat sync keys (`syncEnabled`, `syncBackend`, `syncRemoteUrl`) from notebook JSON BEFORE deleting the keychain entry (`src/core/services/syncservice.cpp:246-290`). On failure, JSON is preserved for retry. This closes the "resurrection trap" where a disabled notebook would reappear as S6 (orphan PAT) or S1 (orphan disk fields) on next app start.
+
+For the full table of all five credential cleanup sites (bootstrap rollback, `bootstrapAndPersist` rollback, notebook removal, sync disable, S6 startup sweep) and the "when fires / when does NOT fire" matrix, see [Credential Cleanup Invariants](#credential-cleanup-invariants) above.
+
+### Startup S6 Sweep
+
+`SyncService::onMainWindowAfterStart` (`src/core/services/syncservice.cpp:828-854`) sweeps S6 orphans before reconciling. For each notebook it iterates, if `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (the S6 predicate: disk says disabled but a PAT is still in the keychain), it calls `m_credentialsStore->deleteCredentials(id)` to drop the orphan PAT. This handles the scenario where a previous session's disable succeeded inside vxcore but the app crashed (or was killed) before the keychain delete completed, leaving an orphan PAT that the new "disable clears JSON then keychain" ordering would otherwise not catch on its own.
+
+The sweep runs BEFORE `reconcileSyncForNotebook(nbId)` on each notebook, so by the time reconcile examines the notebook the keychain state is consistent with disk truth.
+
+### Re-enable UI Affordance
+
+S0 notebooks expose a re-enable surface via the same Sync button and Sync Info menu used for S5 (`src/widgets/notebookexplorer2.cpp:1512-1635`). For S0:
+- Button label: "Enable Sync" (distinct from "Sync Now" for S5)
+- On click: opens `NotebookSyncInfoDialog2` with `setBootstrapMode(true)` and all fields empty
+- Sync Info menu item enabled regardless of `syncEnabled` (dialog opens in bootstrap mode with disable button hidden)
+
+Without this affordance, users who disable sync cannot re-enable without recreating the notebook.
+
+### Sync Architecture Layers
+
+VNote consumes vxcore as an embedded library following the contract documented in `libs/vxcore/AGENTS.md` § Library Integration Contract. Vxcore emits facts (events, dirty marks); VNote owns sync scheduling policy via `SyncService` + `SyncWorkQueueManager` (see [Threading rules for SyncService](#threading-rules-for-syncservice) above). Vxcore must NOT contain Qt-side concerns (no `QTimer`, no `QObject`, no scheduling policy); VNote must NOT bypass the contract by reaching into vxcore internals (no direct backend calls, no touching libgit2, no `states_` mutation). The 4-layer ownership table lives in the vxcore doc to avoid duplication.
+
+**Qt-side scheduling shape (post May 2026 audit, debounce added June 2026).** `SyncService::onSyncShouldRun` no longer enqueues immediately on the auto-sync path. It keeps the shutdown / readiness / auth-circuit-breaker guards, then routes through a per-notebook trailing-throttle debounce: when the global cadence `autoSyncDebounceSeconds` is `0` it enqueues immediately, otherwise it arms a per-notebook single-shot `QTimer` (`armOrIgnoreDebounce`) whose delay is `lastSyncMs + autoSyncDebounceSeconds*1000 - now`. An already-active timer is kept (the burst is absorbed), and `onDebounceTimeout` re-reads the cadence and re-checks freshness at fire time, re-arming if the last sync is still inside the window before finally calling the shared `enqueueAutoSync` body (`coalesceKey="trigger"`). The cadence is read on demand from `ConfigCoreService::getAutoSyncDebounceSeconds()` (clamped `[0, 86400]`), so config edits take effect without restart. Manual "Sync Now" (`triggerSyncNow`) and the post-reconcile freshness trigger BYPASS the debounce entirely. The coalesce key still dedupes whatever lands in the queue. The debounce lives one layer ABOVE `SyncWorkQueueManager`, so queue semantics are unchanged. vxcore's per-notebook `autoSyncEnabled` is a boolean on/off gate only (it suppresses `sync.should_run` when false) and carries no schedule.
+
+---
+
+## Save Path Threading Contract
+
+> Moved here from the root `AGENTS.md`. Related:
+> [Save / sync I/O serialization](#save--sync-io-serialization) above.
+
+The `Buffer2` / [`BufferService`](bufferservice.h) auto-save path used to call `vxcore_buffer_save` inline on the UI thread, so any slow filesystem operation (large file flush, virus scanner, network drive, antivirus quarantine) froze the editor. That synchronous call now runs on a worker via [`BufferSaveQueue`](buffersavequeue.h). The UI thread's job is reduced to: snapshot the current content plus a monotonically increasing revision, call `BufferSaveQueue::enqueue(...)`, and return. No disk I/O on the UI thread.
+
+Save work and any git-stage / git-commit work on the SAME notebook are serialized by [`NotebookIoGate`](notebookiogate.h), a per-notebook async mutex. `BufferSaveQueue` workers acquire `NotebookIoGate::ScopedLock(notebookId)` for the full duration of their disk write. [`SyncOps::triggerSync`](syncops.cpp) now runs sync as two phases: it holds the gate ONLY around [`vxcore_sync_stage_only`](../../../libs/vxcore/include/vxcore/vxcore.h) (StageAll + CommitIndex, working-tree-touching), then releases it BEFORE calling [`vxcore_sync_network_phase`](../../../libs/vxcore/include/vxcore/vxcore.h) (FetchOrigin + RebaseOntoOrigin + PushOrigin). The result: a sync never reads a half-written file, a save never lands inside someone else's `git add`/commit, AND a queued save on the same notebook resumes the moment the local commit lands, regardless of how long the network round-trip takes.
+
+vxcore's `mark_dirty` → `MaybeEnqueueSync` → `Emit("sync.should_run")` chain remains synchronous on the caller thread BY DESIGN. In steady state it is microseconds, and pushing it onto another thread would buy nothing while costing event-ordering guarantees. **This contract does NOT change vxcore.** The threading discipline is consumer-side only: keep `vxcore_buffer_save` off the UI thread, and the `mark_dirty` tail it triggers stays off the UI thread for free.
+
+> **Forbidden Patterns (post-T7):**
+> - Calling `vxcore_buffer_save` directly from the UI thread. Use [`BufferSaveQueue::enqueue`](buffersavequeue.h) instead.
+> - Touching a notebook's working tree (save, stage, commit, checkout) without holding `NotebookIoGate::ScopedLock(notebookId)`.
+
+---
+
+## Search Threading Contract
+
+> Moved here from the root `AGENTS.md`. VNote's side of this contract is the
+> [SearchService drain pool](#searchservice-drain-pool) above.
+
+Content search in vxcore owns NO thread pool. As of the streaming-search work, `vxcore_search_content` / `vxcore_search_content_ex` / `vxcore_search_content_streaming` enqueue ONE work item per FILE-CHUNK (default `kDefaultSearchChunkSize = 64` files, tunable via the streaming `batch_size` parameter) onto a dedicated `"vxcore.search"` `WorkQueue` that is pre-created at `vxcore_context_create`. The CALLER's threads drain that queue, and the initiating thread help-drains its own enqueued items (caller-helps-drain: it loops `ProcessNext(5ms)` until the batch is done). VNote's [`SearchService`](searchservice.h) owns the drain pool that loops `vxcore_work_queue_process_next(ctx, "vxcore.search", 100)`. A search that fits in a single chunk (`fileCount <= batch_size`, i.e. ≤ 64 files by default) runs inline sequentially on the calling thread; larger searches fan out one queued item per chunk. Chunking subsumes the former `kParallelSearchThreshold` (was 50 files): the chunk boundary is now both the parallelism unit AND the incremental-delivery unit. This coarsens parallelism granularity for medium searches versus the old per-file fan-out — an accepted tradeoff to unify the blocking and streaming code paths; lower `batch_size` for finer-grained parallelism.
+
+The initiating thread's self-drain is the correctness floor: a consumer that provides NO external drain threads still gets correct, single-threaded results, and extra drainers only add parallelism. Cancellation, `max_results`, and result ordering are preserved across both paths; an exception thrown mid-scan is caught and surfaces as `VXCORE_ERR_UNKNOWN`.
+
+This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-file search work as facts, VNote owns the drain policy. No vxcore-owned threads remain, the former `BS::thread_pool` search pool having been removed.
+
+---
+
+## Update Check
+
+> Moved here from the root `AGENTS.md`. The mechanism-only notes in
+> [UpdateService](#updateservice) above are the service-scoped subset of this section.
+
+VNote checks a forge for a newer release and, when one exists, tells the user and offers
+the **release page**. That is the whole feature.
+
+> **VNote never modifies its own install directory, and never downloads anything.** There is
+> no lease file, no staging tree, no journal, no swap, no restart-to-apply, no downloader,
+> and nothing is ever extracted or executed. The only thing the check writes is the
+> `lastUpdateCheckTime` / `skippedUpdateVersion` config values. This invariant is what makes
+> a read-only install location (`/usr/bin`, Program Files, a read-only DMG) launchable
+> (issue #2728) — do not reintroduce install-tree mutation, or a downloader, without
+> replacing this section.
+
+The built-in incremental updater that used to live here (manifest verification, delta
+chains, `UpdateInstaller`, `UpdateLease`, `ZipExtractor`, the vendored `miniz` /
+`minicrypto`) has been removed. **Release CI still publishes manifests, minisign signatures
+and delta ZIPs unchanged**; they are now the interface for a future *external* updater, not
+something this client consumes. See `docs/update-signing.md`.
+
+### Ownership map
+
+| Layer | Unit | Responsibility |
+|---|---|---|
+| Service | [`UpdateService`](updateservice.h) | release API, per-source endpoints/headers, manual redirect walking, source-scoped host allowlist, response cap, cancellation, worker lifetime |
+| Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness |
+| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, notes, Open Release Page / Skip This Version / Later |
+| View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with a Check Release action |
+
+`UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
+`core_services`, so the reverse dependency would be circular. The installed version is
+injected and every config-dependent decision lives in `UpdateController`, which pushes the
+configured source down via `setSource()`.
+
+`UpdateInfo` carries exactly `updateAvailable`, `currentVersion`, `latestVersion`,
+`releaseNotes` and `releaseUrl`. The release's `assets[]` array is **ignored entirely** —
+no asset is selected and no asset URL is ever requested
+(`testAssetsAreIgnoredEntirely` pins this).
+
+`checkForUpdates()` returns whether the request was ACCEPTED (a call made during another
+check is dropped and returns `false`). `UpdateController` sets its manual-vs-startup mode
+**only for an accepted request**, and keeps its own `m_checkInFlight` until the terminal slot
+runs. Both are load-bearing: without them a manual click during the silent startup check
+re-labels that background check's outcome, turning a failure that must stay silent into a
+modal warning box.
+
+### Release source (GitHub or Gitee)
+
+`CoreConfig::updateSource` (`"github"` | `"gitee"`, Settings › General) selects the forge.
+**The default is Gitee**: `normalizeUpdateSource()` returns `"github"` only for an explicit
+case-insensitive `"github"`, and `"gitee"` for empty, absent or unrecognized values.
+`UpdateService::sourceFromString()` applies the same rule — keep the two in step.
+`CoreConfig::toJson()` always persists the key, so an **existing installation keeps whatever
+it already had** (in practice GitHub); only fresh installs and hand-cleared configs get the
+new default. No migration is performed.
+
+| | GitHub | Gitee |
+|---|---|---|
+| latest-release API | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
+| `Accept` header | `application/vnd.github+json, */*` | `application/json, */*` |
+| release page | the API's `html_url`, validated against the allowlist first (it is handed to `QDesktopServices`); an absent, malformed or off-forge value falls back to a synthesized `<releases>/tag/v<tag>` | synthesized `https://gitee.com/vnotex/vnote/releases/tag/v<tag>` (Gitee's JSON has no `html_url`; the pattern is verified against the live v4.3.0 page, and note the `tag/` segment the asset download path does **not** have) |
+| host allowlist | exact `api.github.com`, `github.com`, `codeload.github.com` + suffix `.githubusercontent.com` | exact `gitee.com` + suffix `.gitee.com` |
+
+The allowlists are **disjoint and source-scoped**: a client on one source must never follow
+a redirect to the other's hosts. Redirects are followed MANUALLY
+(`QNetworkRequest::ManualRedirectPolicy` set on EVERY request, because Qt 5 and Qt 6 differ
+in their default), at most `c_maxRedirects` hops, with no HTTPS→HTTP downgrade.
+
+### Update check threading
+
+`checkForUpdates()` returns immediately and does its work on a `QtConcurrent` worker,
+because it blocks on a nested event loop.
+
+- **`QNetworkAccessManager` is created on the WORKER'S STACK**, never as a member. QNAM is
+  not thread-safe and belongs to the thread that created it, so every network helper takes it
+  by reference. There is deliberately no QNAM member.
+- Both signals (`checkFinished`, `failed`) are emitted through
+  `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` so receivers see them on the GUI
+  thread.
+- **`m_busy` is released as the LAST statement of the worker**, after the terminal signal has
+  been queued. Releasing it earlier would let the next check start while this one is still
+  running. A second `checkForUpdates()` while one is in flight is DROPPED, not queued.
+- The destructor calls `cancel()` and then waits for **every** outstanding worker
+  (`waitForWorkers()`), not just the most recent one: workers hold a raw `this`, and a single
+  stored `QFuture` could be replaced while the previous worker was still unwinding.
+- Cancellation is POLLED every 250 ms inside a blocking request so service teardown is never
+  blocked for the full request timeout.
+- The API response cap **aborts** the reply mid-stream rather than buffering the whole body
+  and rejecting afterwards; `testOversizedApiResponseAbortsTheReply` proves this by declaring
+  an 8 GB `Content-Length` and never closing the socket.
+
+### Forbidden patterns
+
+- **Never** download, extract, execute or install a release artifact.
+- **Never** write outside the configuration directory as part of an update check.
+- **Never** read `assets[]`; the release page is the only affordance.
+- **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.

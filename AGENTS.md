@@ -1,5 +1,9 @@
 # VNote Agent Development Guide
 
+Root routing document: prerequisites, build, repo-wide rules, and an index of the module docs.
+Module-specific detail lives in the child `AGENTS.md` that owns the code — see
+[Module Documentation Index](#module-documentation-index).
+
 ## Prerequisites
 
 - **Git** (with Git Bash on Windows)
@@ -21,65 +25,6 @@ The init script:
 1. Initializes and updates git submodules recursively
 2. Installs pre-commit hook for automatic clang-format on staged C++ files
 3. Sets up vtextedit submodule pre-commit hook
-
-## Submodule Push Discipline (CRITICAL — read before every push)
-
-VNote pins git submodules (`libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`) to specific commits. When you change code inside a submodule, the parent repo records a new submodule pointer (a gitlink to a commit SHA). **CI clones submodules from their own remotes** — if the pinned commit only exists in your local submodule checkout, every CI job fails at the "Init Submodules" step with:
-
-```
-fatal: remote error: upload-pack: not our ref <sha>
-fatal: Fetched in submodule path 'libs/vxcore', but it did not contain <sha>. Direct fetching of that commit failed.
-```
-
-This breaks **all** CI checks (Linux, Windows, macOS, TSan) before any build runs.
-
-### Rule: ALWAYS push the submodule FIRST, then the parent repo.
-
-When a commit bumps a submodule pointer, the order is non-negotiable:
-
-1. **Push the submodule remote first.** From inside the submodule (e.g. `cd libs/vxcore`), push its branch so the pinned commit exists upstream:
-   ```bash
-   cd libs/vxcore
-   git push origin HEAD:main      # or the appropriate branch
-   cd ../..
-   ```
-2. **Then push the parent vnote repo.** Only after the submodule commit is on its remote may you push the gitlink that references it.
-
-To push both at once and let git verify submodules are reachable, use:
-```bash
-git push --recurse-submodules=on-demand
-```
-Or enforce it as a guard before any push (recommended once per clone):
-```bash
-git config push.recurseSubmodules check   # aborts the parent push if a submodule commit is unpushed
-```
-
-### Before pushing, verify no submodule commit is stranded
-
-```bash
-# For each submodule, confirm local HEAD is not ahead of its remote:
-git submodule foreach 'git status -sb'
-# A line like "## main...origin/main [ahead 1]" means an UNPUSHED submodule commit — push it before pushing vnote.
-
-# Confirm the pinned SHA exists on the submodule remote:
-cd libs/vxcore && git branch -r --contains $(git rev-parse HEAD) && cd ../..
-# Empty output = the commit is NOT on any remote branch yet. DO NOT push vnote until it is.
-```
-
-If CI is already failing with "not our ref", the fix is to push the missing submodule commit (do **not** roll back the parent pointer if newer parent commits depend on the new submodule API).
-
-### cmark is vendored twice — bump both pins together
-
-The same cmark fork (`https://github.com/vnotex/cmark.git`) is pinned by two different submodules:
-
-| Parent submodule | Nested cmark path |
-|---|---|
-| `libs/vtextedit` | `libs/cmark` |
-| `libs/vxcore` | `third_party/cmark` |
-
-Only **one** of them is ever compiled into VNote: `libs/CMakeLists.txt` adds `vtextedit` first, vtextedit defines the `cmark` target unconditionally, and vxcore's `if(NOT TARGET cmark)` guard then skips its own copy — so vxcore links vtextedit's cmark. If the pins diverge, vxcore is silently built against a cmark it was never tested with, while its standalone build (`libs/vxcore/build_test`, `ci-linux-tsan.yml`) uses its own copy. There is no build error or warning.
-
-**Bump both submodules to the same cmark commit in a single change**, and push each submodule remote before the parent per the discipline above. [`tests/utils/test_cmark_pin_drift.cpp`](tests/utils/test_cmark_pin_drift.cpp) fails the build when the two recorded pins differ.
 
 ## Build Commands
 
@@ -109,169 +54,78 @@ cmake --build . --config Release
 ```bash
 rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 ```
+Never repair a stale build dir in place.
 
 ### Packaging-Only Build (Skip Tests)
-For CI builds that only produce artifacts and don't need to compile the test infrastructure (e.g., to avoid hard-coded Qt6 test code when building against Qt5), pass the `VNOTE_BUILD_TESTS` option:
+For CI artifact-only builds that must not compile the test infrastructure (e.g. Qt6-only test code when building against Qt5):
 ```bash
 cmake .. -DVNOTE_BUILD_TESTS=OFF
 cmake --build .
 ```
 
+Testing (two suites, two build dirs): [tests/AGENTS.md](tests/AGENTS.md).
+
 ---
 
-## Testing
+## Submodule Push Discipline (CRITICAL — read before every push)
 
-VNote has tests in **two separate locations** with different registration helpers and build configurations. Pick the right one or your test will silently never run.
+VNote pins git submodules (`libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`)
+to specific commits. **CI clones submodules from their own remotes**, so a commit that exists
+only locally fails every CI job at "Init Submodules" (`upload-pack: not our ref <sha>`) before
+any build runs.
 
-### Parent VNote tests (`tests/`)
+### Rule: ALWAYS push the submodule FIRST, then the parent repo.
 
-Built automatically with the parent project into `build-debug/tests/<category>/`. Registered via the `add_qt_test()` helper.
+```bash
+cd libs/vxcore
+git push origin HEAD:main      # or the appropriate branch
+cd ../..
+git push                       # only now may the gitlink be pushed
+```
+To push both at once with verification, use `git push --recurse-submodules=on-demand`, or enforce
+it once per clone:
 
-**Add a new test:**
-1. Create `tests/<category>/test_yourthing.cpp` (categories: `controllers/`, `core/`, `gui/`, `integration/`, `models/`, `utils/`, `widgets/`).
-2. Register in the same directory's `CMakeLists.txt`:
-   ```cmake
-   add_qt_test(test_yourthing
-     SOURCES
-       test_yourthing.cpp
-       ${CMAKE_SOURCE_DIR}/src/path/to/code_under_test.cpp
-     LINKS
-       core_services
-       vxcore
-     GUILESS  # omit if test needs QApplication / widgets
-   )
-   ```
-3. Reconfigure from repo root if `tests/CMakeLists.txt` itself changed: `cmake -B build-debug`.
-
-**Build + run:**
-```powershell
-cmake --build build-debug --config Debug --target test_yourthing
-ctest --test-dir build-debug -C Debug -R "^test_yourthing$" --output-on-failure
+```bash
+git config push.recurseSubmodules check   # aborts the parent push if a submodule commit is unpushed
 ```
 
-### vxcore submodule tests (`libs/vxcore/tests/`)
+### Before pushing, verify no submodule commit is stranded
 
-**Separate build dir required** — the parent `build-debug/` does NOT compile vxcore tests. Use a dedicated build dir configured with `-DVXCORE_BUILD_TESTS=ON`. Each test is a standalone executable (file basename = test target name) registered via `add_vxcore_test()`.
+```bash
+# For each submodule, confirm local HEAD is not ahead of its remote:
+git submodule foreach 'git status -sb'
+# A line like "## main...origin/main [ahead 1]" means an UNPUSHED submodule commit — push it before pushing vnote.
 
-**Add a new test:**
-1. Create `libs/vxcore/tests/test_yourthing.cpp` with its own `main()`. Subtests are functions that return `int` (0 = pass); call them via `RUN_TEST(...)` from `test_utils.h`. Always start `main()` with `vxcore_set_test_mode(1)` so the test uses `%TEMP%\vxcore_test*` instead of real AppData.
-2. Register in `libs/vxcore/tests/CMakeLists.txt`:
-   ```cmake
-   add_vxcore_test(test_yourthing)
-   ```
-   The helper auto-links `vxcore` and adds `${CMAKE_SOURCE_DIR}/src` + `third_party` include dirs.
-3. Test executables CANNOT call vxcore-internal symbols that lack `VXCORE_API` — they live outside the DLL. If you need an internal helper (e.g., `GetCurrentTimestampMillis()`), re-derive it locally in the test file rather than exporting it.
-
-**Configure (once per machine, or after CMake version upgrade):**
-```powershell
-cmake -S libs/vxcore -B libs/vxcore/build_test -G "Visual Studio 17 2022" -A x64 -DVXCORE_BUILD_TESTS=ON
+# Confirm the pinned SHA exists on the submodule remote:
+cd libs/vxcore && git branch -r --contains $(git rev-parse HEAD) && cd ../..
+# Empty output = the commit is NOT on any remote branch yet. DO NOT push vnote until it is.
 ```
 
-**Build + run:**
-```powershell
-cmake --build libs/vxcore/build_test --config Debug --target test_yourthing
-ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-on-failure
-```
+If CI is already failing with "not our ref", the fix is to push the missing submodule commit (do
+**not** roll back the parent pointer if newer parent commits depend on the new submodule API).
 
-### Universal rules
+### cmark is vendored twice — bump both pins together
 
-- **Anchor the ctest regex** with `^...$` to avoid false matches (e.g., `-R "^test_sync$"` won't sweep in `test_session_persistence`).
-- After a CMake version upgrade, stale build dirs fail to reconfigure with errors like `CMakeSystem.cmake.in does not exist`. Delete the offending build dir and re-run the configure command from scratch — do NOT try to repair in place.
-- After modifying a touched module, run the FULL test target for that module (not just your new subtest) to catch regressions; vxcore tests print each subtest name to stdout so you can verify the new one ran.
+The same cmark fork (`https://github.com/vnotex/cmark.git`) is pinned by two different submodules:
 
-### Running execs that depend on VTextEdit.dll (CRITICAL — avoid false-positive smoke tests)
+| Parent submodule | Nested cmark path |
+|---|---|
+| `libs/vtextedit` | `libs/cmark` |
+| `libs/vxcore` | `third_party/cmark` |
 
-`build-debug/src/vnote.exe` and the widget/editor-level `build-debug/tests/<category>/test_*.exe` execs link against `VTextEdit.dll` (built into `build-debug/libs/vtextedit/src/`) plus the Qt 6 runtime DLLs. Pure-core tests that link only `core_services` + `vxcore` do NOT (see [src/core/services/AGENTS.md](src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract)). Neither DLL set is automatically copied next to `vnote.exe` in this development build (only test-exec dirs get VTextEdit.dll copied via CMake target propagation). Launching `vnote.exe` without setting PATH first causes the Windows loader to pop a "VTextEdit.dll was not found" modal dialog BEFORE the process reaches `WinMain`.
-
-**This is a verification trap**: when the loader dialog blocks the process, the OS reports the process as alive (it has a PID, is technically running), so naive checks like `Start-Process … -PassThru` + `Sleep` + `HasExited` return `$false` → you falsely conclude the binary started. The process is actually frozen in pre-WinMain limbo waiting for someone to click the dialog. `Stop-Process -Force` afterwards silently dismisses the dialog and the lie is preserved.
-
-**Correct smoke-test pattern (PowerShell):**
-
-```powershell
-# 1. Prepend Qt bin + VTextEdit dir to PATH so the loader resolves all DLLs.
-$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" +
-            "$PWD/build-debug/libs/vtextedit/src;" +
-            $env:PATH
-
-# 2. Launch vnote.exe.
-$proc = Start-Process -FilePath "build-debug/src/vnote.exe" -PassThru -WindowStyle Hidden
-Start-Sleep -Seconds 5
-
-# 3. Verify the process actually loaded VTextEdit.dll — NOT just HasExited.
-#    If the loader dialog blocked the process, $proc.Modules will throw or be empty.
-$loaded = $false
-try {
-  $proc.Refresh()
-  $loaded = ($proc.Modules | Where-Object { $_.ModuleName -ieq "VTextEdit.dll" }).Count -gt 0
-} catch {}
-if ($proc.HasExited) {
-  Write-Output "FAIL: vnote.exe exited with code $($proc.ExitCode) within 5s"
-} elseif (-not $loaded) {
-  Write-Output "FAIL: vnote.exe alive but VTextEdit.dll not loaded — likely a loader dialog"
-} else {
-  Write-Output "PASS: vnote.exe alive with VTextEdit.dll loaded after 5s"
-}
-Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-```
-
-The same PATH prepend is required before running parent `test_*.exe` directly (per `tests/AGENTS.md`). `ctest --test-dir build-debug` inherits the caller's PATH, so set it once at the start of the session.
-
-vxcore submodule tests (`libs/vxcore/build_test/bin/Debug/test_*.exe`) do NOT depend on Qt or VTextEdit and need no PATH setup.
+Only **one** is ever compiled in: `libs/CMakeLists.txt` adds `vtextedit` first, which defines the
+`cmark` target unconditionally, so vxcore's `if(NOT TARGET cmark)` guard skips its own copy.
+Diverged pins silently build vxcore against an untested cmark, with no error or warning.
+**Bump both submodules to the same cmark commit in a single change.** [`tests/utils/test_cmark_pin_drift.cpp`](tests/utils/test_cmark_pin_drift.cpp) fails the
+build when the two recorded pins differ.
 
 ---
 
 ## Architecture Overview
 
-VNote uses a **clean architecture** with **Model-View-Controller (MVC)** pattern and dependency injection for testability and future plugin support.
-
-### Core Principles
-
-1. **MVC Separation** — Models hold data, Views display it, Controllers handle logic
-2. **Dependency Injection** — No singletons; dependencies passed via ServiceLocator
-3. **Service Layer** — Business logic encapsulated in services, accessed via ServiceLocator
-4. **Hook System** — WordPress-style extensibility for plugins
-
-### MVC Architecture (CRITICAL)
-
-VNote strictly follows the MVC pattern. **All new code MUST adhere to this structure.**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Controllers                             │
-│  (src/controllers/ - Handle user actions, business logic)   │
-│                                                             │
-│  NotebookNodeController, NewNoteController, etc.            │
-└─────────────────────────────────────────────────────────────┘
-        │                                       │
-        │ Manipulates                          │ Emits signals to
-        ▼                                       ▼
-┌───────────────────────┐       ┌──────────────────────────────┐
-│        Models         │       │           Views              │
-│  (src/models/)        │◄──────│  (src/views/)                │
-│                       │       │                              │
-│  NotebookNodeModel    │ Data  │  NotebookNodeView            │
-│  (QAbstractItemModel) │ flows │  (QTreeView subclass)        │
-└───────────────────────┘       └──────────────────────────────┘
-        │                                       │
-        │ Fetches data from                    │ Receives from
-        ▼                                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     ServiceLocator                          │
-│  (DI container - NOT a singleton, passed by reference)      │
-│                                                             │
-│  ┌─────────────────┐  ┌─────────────────────┐  ┌───────────────────┐  │
-│  │ConfigCoreService│  │ NotebookCoreService │  │SearchCoreService  │  │
-│  └─────────────────┘  └─────────────────────┘  └───────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                         vxcore                              │
-│  (C library: notebook/config/search backend in libs/vxcore) │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### MVC Responsibilities
+VNote uses a **clean architecture** with **Model-View-Controller (MVC)** pattern and dependency
+injection. Models hold data, Views display it, Controllers handle logic, Services own domain
+operations, and every layer receives a `ServiceLocator&` — there are no singletons.
 
 | Layer | Location | Responsibility | Example |
 |-------|----------|----------------|---------|
@@ -279,29 +133,6 @@ VNote strictly follows the MVC pattern. **All new code MUST adhere to this struc
 | **View** | `src/views/` | Display data, capture user input, emit signals | `NotebookNodeView` renders tree, emits `nodeActivated` signal |
 | **Controller** | `src/controllers/` | Handle actions, orchestrate Model/View, business logic | `NotebookNodeController` handles new/delete/rename operations |
 | **Service** | `src/core/services/` | Domain operations, data access via vxcore | `NotebookCoreService` wraps vxcore C API for notebook CRUD |
-
-### MVC Example: Notebook Node Operations
-
-```cpp
-// Controller handles user action
-void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
-  // 1. Emit signal to View to show dialog
-  emit newNoteRequested(p_parentId);
-}
-
-// View shows dialog, then calls back to Controller
-void NotebookExplorer2::onNewNoteResult(const NodeIdentifier &p_parentId,
-                                        const NodeIdentifier &p_newNodeId) {
-  m_controller->handleNewNoteResult(p_parentId, p_newNodeId);
-}
-
-// Controller updates Model
-void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentId,
-                                                  const NodeIdentifier &p_newNodeId) {
-  // Model reloads from NotebookCoreService
-  m_model->reloadNode(p_parentId);
-}
-```
 
 ### MVC Rules (MUST FOLLOW)
 
@@ -313,318 +144,8 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &p_parentI
 | **All layers receive `ServiceLocator&`** | Enables dependency injection and testing |
 | **Use signals/slots between layers** | Loose coupling between M, V, C |
 
-### Key Design Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| ServiceLocator is NOT a singleton | Enables testing with mock services; explicit dependencies |
-| Services wrap vxcore C API | Qt-friendly interface; encapsulates C interop |
-| Controllers are QObject, not QWidget | Testable business logic without GUI dependencies |
-| Widgets receive `ServiceLocator&` | Constructor injection; no global state |
-| Some files carry a `2` suffix (`MainWindow2`, `Buffer2`, …) | Historical artifact of the now-complete migration off the legacy singleton architecture. The pre-migration counterparts have been removed; the suffix is retained on those existing classes only to avoid a churny rename. The migration is finished, so **new code uses the plain, unsuffixed name unless it genuinely conflicts with an existing type** (e.g. a brand-new `EncodingButton` gets no suffix). Never introduce a `3` suffix. |
-| `Buffer2` is a lightweight copyable handle (like `QModelIndex`) | Returned by `BufferService::openBuffer()`, delegates to `BufferCoreService`; NOT a `QObject`, not heap-allocated |
-| `BufferService` privately inherits `BufferCoreService` | Hook-aware wrapper that fires `vnote.file.*` hooks around core operations |
-| `NodeIdentifier` is a standalone value type | Identifies a node by `notebookId` + `relativePath`; used by `Buffer2`, controllers, and views |
-| `ConfigMgr2` is the ONLY way to access typed config | Owns `MainConfig`/`SessionConfig` with properly merged defaults. NEVER construct a throwaway `MainConfig` from raw JSON — use `m_services.get<ConfigMgr2>()` instead. See `src/core/AGENTS.md` for details. |
-| `ConfigMgr2::getFileFromConfigFolder()` for path resolution | Resolves relative config paths (e.g., `"web/markdown-viewer-template.html"`) against the app data directory. Do NOT use `ConfigCoreService::getDataPath()` + manual `QDir::filePath()`. |
-| `PathExists()`/`IsDirectory()`/`IsRegularFile()` wrappers | NEVER pass raw `std::string` to `std::filesystem` — use these wrappers or `PathFromUtf8()` for non-ASCII path safety on Windows |
-
-### Key Design Decisions (ViewArea2 Framework)
-
-| Decision | Rationale |
-|----------|-----------|
-| `ViewAreaController` is the orchestrator | Handles open/close/split/move logic, fires hooks, uses WorkspaceCoreService |
-| `ViewArea2` is a pure view | Owns QSplitter tree + ViewSplit2 instances, no business logic |
-| `ViewSplit2` maps 1:1 to vxcore workspace | Each tab widget pane corresponds to one `WorkspaceCoreService` workspace |
-| `ViewWindow2` receives `Buffer2` in constructor | Not attach/detach pattern; one window = one buffer for its lifetime |
-| `ViewWindowFactory` maps file types to creators | Registry pattern; plugins register creators for new file types |
-| Splitter orientation follows Vim convention | Left/Right split → `Qt::Horizontal`, Up/Down split → `Qt::Vertical` |
-| Session layout stored as JSON in `SessionConfig` | Recursive splitter tree + workspace IDs for full layout persistence |
-| Concrete ViewWindows live alongside the framework | `MarkdownViewWindow2`, `TextViewWindow2`, `PdfViewWindow2`, `MindMapViewWindow2`, and `WidgetViewWindow2` are registered with `ViewWindowFactory` per file type |
-
-### Directory Structure
-
-```
-src/
-├── main.cpp                # Entry point with DI wiring
-├── core/
-│   ├── servicelocator.h    # DI container
-│   ├── nodeidentifier.h    # Lightweight node ID (notebookId + relativePath)
-│   ├── services/           # Service layer (wraps vxcore)
-│   │   ├── configcoreservice.h/.cpp
-│   │   ├── notebookcoreservice.h/.cpp
-│   │   ├── searchcoreservice.h/.cpp
-│   │   ├── filetypecoreservice.h/.cpp
-│   │   ├── buffercoreservice.h/.cpp
-│   │   ├── bufferservice.h/.cpp    # Hook-aware wrapper, returns Buffer2
-│   │   ├── buffer2.h/.cpp          # Lightweight buffer handle (like QModelIndex)
-│   │   ├── templateservice.h/.cpp
-│   │   ├── historyservice.h/.cpp   # Aggregate per-notebook history across notebooks
-│   │   ├── workspacecoreservice.h/.cpp  # Workspace operations (split pane ↔ vxcore workspace)
-│   │   └── hookmanager.h/.cpp
-│   ├── hookcontext.h       # Hook callback context
-│   ├── hooknames.h         # Hook name constants
-│   ├── configmgr2.h/.cpp   # High-level config manager using DI
-│   └── iconfigmgr.h        # Interface for config managers
-├── gui/                    # GUI-aware services and utilities
-│   ├── services/
-│   │   ├── themeservice.h/.cpp         # GUI-aware theme management service
-│   │   └── viewwindowfactory.h/.cpp    # Registry mapping file types to ViewWindow2 creators
-│   └── utils/
-│       ├── widgetutils.h/.cpp          # Widget utility helpers
-│       ├── themeutils.h/.cpp           # Theme utility helpers
-│       ├── imageutils.h/.cpp           # Image utility helpers
-│       └── guiutils.h/.cpp             # General GUI utilities
-├── models/                 # Qt Model/View models
-│   ├── notebooknodemodel.h/.cpp       # QAbstractItemModel for node hierarchy
-│   └── notebooknodeproxymodel.h/.cpp  # Proxy model for sorting/filtering
-├── views/                  # Qt views and delegates
-│   ├── notebooknodeview.h/.cpp        # QTreeView for nodes
-│   ├── notebooknodedelegate.h/.cpp    # Item delegate for node rendering
-│   ├── combinednodeexplorer.h/.cpp    # Composite MVC wiring widget
-│   └── filenodedelegate.h/.cpp        # Item delegate for file list
-├── controllers/            # Controllers (business logic mediators)
-│   ├── notebooknodecontroller.h/.cpp  # Node operations controller
-│   ├── newnotecontroller.h/.cpp       # New note dialog controller
-│   ├── newfoldercontroller.h/.cpp     # New folder dialog controller
-│   ├── newnotebookcontroller.h/.cpp   # New notebook dialog controller
-│   ├── opennotebookcontroller.h/.cpp  # Open notebook flow controller
-│   ├── managenotebookscontroller.h/.cpp
-│   ├── importfoldercontroller.h/.cpp
-│   ├── recyclebincontroller.h/.cpp
-│   └── viewareacontroller.h/.cpp      # View area orchestrator (open/close/split/move)
-├── widgets/                # UI widgets (views receiving ServiceLocator&)
-│   ├── mainwindow2.h/.cpp  # Main window shell
-│   ├── notebookexplorer2.h/.cpp
-│   ├── notebookselector2.h/.cpp
-│   ├── toolbarhelper2.h/.cpp
-│   ├── viewwindow2.h/.cpp  # Abstract base for file viewer windows
-│   ├── markdownviewwindow2.h/.cpp  # Markdown editor/preview window
-│   ├── textviewwindow2.h/.cpp      # Plain text editor window
-│   ├── pdfviewwindow2.h/.cpp       # PDF viewer window
-│   ├── mindmapviewwindow2.h/.cpp   # Mind map viewer window
-│   ├── widgetviewwindow2.h/.cpp    # Generic widget-hosting window
-│   ├── viewsplit2.h/.cpp   # QTabWidget-based split pane (one vxcore workspace)
-│   ├── viewarea2.h/.cpp    # Splitter tree view (manages ViewSplit2 layout)
-│   └── dialogs/            # Dialog widgets
-│       ├── newnotedialog2.h/.cpp
-│       ├── newfolderdialog2.h/.cpp
-│       ├── newnotebookdialog2.h/.cpp
-│       ├── managenotebooksdialog2.h/.cpp
-│       └── importfolderdialog2.h/.cpp
-├── net/
-│   └── networkutils.h/.cpp # core_net: Qt Core/Network-only HTTP helpers
-│                           # (vnotex::NetworkUtils / NetworkReply / NetworkAccess)
-├── utils/
-│   └── fileutils2.h/.cpp   # File utilities
-└── ...
-```
-
----
-
-## Sync State Model
-
-Threading rules: see `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract.
-Qt-side dispatch (single queue via `SyncWorkQueueManager` + `SyncOps`, coalescing, cancellation, auto-sync routing through `EventBridge::syncShouldRun`): see `src/core/services/AGENTS.md` § SyncService. The per-notebook `autoSyncEnabled` flag (boolean, default true) is a pure on/off gate inside vxcore's `MaybeEnqueueSync`: when false, vxcore suppresses `sync.should_run` entirely. It carries no cadence. Auto-sync cadence is owned Qt-side by `SyncService`, which applies a trailing-throttle debounce keyed off the global `autoSyncDebounceSeconds` app-config value (stored in vxcore's `vxcore.json` but consumed only by VNote).
-
-Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and service that touches sync must reason in terms of these states. The state is the tuple of: on-disk JSON sync fields, PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map.
-
-### Canonical State Predicates
-
-| State | syncEnabled (JSON) | syncBackend (JSON) | syncRemoteUrl (JSON) | PAT in keychain | states_ entry |
-|---|---|---|---|---|---|
-| S0 | false / absent | absent | absent | absent | absent |
-| S1 | true | "git" | empty | maybe | absent |
-| S2 | true | "git" | set | **absent** | absent |
-| S3 | true | empty | maybe | maybe | absent |
-| S4 | true | "git" | set | present | **absent** |
-| S5 | true | "git" | set | present | present |
-| S6 | false | absent | absent | **present** | absent |
-| S7 | true | "git" | set | present | present + active sync |
-
-S5 is the only "ready" state. S1-S4 and S6 are partial/inconsistent; S0 is cleanly disabled; S7 is in-flight.
-
-F3.5 in-flight sub-states (fetching/resolving/pushing) are NOT modeled as separate SyncState values, they remain runtime properties exposed by SyncService progress signals while the notebook is in S7.
-
-### Recovery Paths: bootstrapApply vs applyChanges
-
-| Path | Use when | Behavior |
-|---|---|---|
-| `NotebookSyncInfoController::bootstrapApply(url, pat)` | Notebook is in S1/S2/S3/S4 (any partial state). Atomic enable for an existing notebook. | Calls `SyncService::enableSyncForNotebook` directly; on success persists `syncRemoteUrl` and triggers initial sync; on failure keeps notebook in current state (NO delete, unlike `NewNotebookController::bootstrapSync`). |
-| `NotebookSyncInfoController::applyChanges(url, pat)` | Notebook is in S5 (registered). PAT refresh or URL change. | PAT-only update routes through `SyncService::updateCredentials`. URL change triggers `confirmUrlChangeRequested` signal and, on confirm, runs atomic disable+wipe `vx_notebook/vx_sync/`+re-enable. |
-
-The dialog (`NotebookSyncInfoDialog2`) auto-routes to `bootstrapApply` when `m_bootstrapMode == true` OR when `SyncService::isSyncRegistered(id) == false`. This is defense in depth: even when a caller bypasses the bootstrap entry point, partial-state notebooks still get the atomic path.
-
-### Reconcile Semantics
-
-`SyncService::reconcileSyncForNotebook` is called by `MainWindowAfterStart` and on notebook open to lift S4 notebooks (disk-complete, runtime-absent) into S5.
-
-Key invariants (`src/core/services/syncservice.cpp:858-970`):
-- `m_reconcileAttempted.insert(id)` happens **after** all precondition checks pass (line 893), not before. The disk-enabled check (line 869), idempotence guard (line 875), and complete-config check (line 884) all run first; any of them returning early leaves the attempted set untouched. Precondition failures therefore do NOT block future retries. Concrete consequence: a notebook in S1/S3 (enabled but no backend/url, or no backend) hits the `incomplete config` branch at line 885, emits `reconcileFinished(VXCORE_ERR_INVALID_PARAM)`, and is NOT marked attempted. When the user later supplies the missing URL via `bootstrapApply` and the notebook reaches S4, the very next reconcile trigger (notebook open or app start) will pass the precondition check and proceed.
-- `m_reconcileAttempted.remove(id)` fires on transient PAT fetch failure (line 945) so the next reconcile call retries. The same key is re-cleared by `updateCredentials` (line 969) before manually re-driving reconcile, so a user re-entering a fresh PAT never hits the "already attempted" guard.
-- No remove on success (notebook is registered; no retry needed).
-- Idempotence check at line 875 prevents duplicate in-flight reconciles when `MainWindowAfterStart` and `NotebookAfterOpen` race.
-
-**Post-reconcile freshness gate (auto-sync on open / app start).** After reconcile's `SyncOps::enableSync` work item returns `VXCORE_OK`, `SyncService::maybeTriggerPostReconcile(notebookId)` (`src/core/services/syncservice.cpp`) optionally enqueues a follow-up `triggerSyncNow` so the notebook is auto-synced when the user reopens VNote (or opens a notebook for the first time in the session) after remote changes. Closes the multi-device staleness window where reconcile alone only registered the notebook and the first `FetchOrigin` waited for the next save / manual Sync Now. The gate skips when: shutdown is in progress; the notebook is no longer enabled or registered; a sync is already in flight for the notebook; or the per-device last successful sync timestamp is newer than `kPostReconcileFreshnessMs` (2 minutes — covers rapid open/close cycles without thrashing). Both L1 (`onMainWindowAfterStart`, per-notebook sweep) and L2 (`onNotebookAfterOpen`, single notebook) inherit this behavior since both call `reconcileSyncForNotebook`. Full rationale and test seams live in `src/core/services/AGENTS.md` § "Post-reconcile freshness gate (`maybeTriggerPostReconcile`)".
-
-### bootstrapAndPersist Rollback × Reconcile
-
-`SyncService::bootstrapAndPersist` (`syncservice.cpp:409-508`) is the atomic enable+persist path used by `NewNotebookController` (W13.4, F1.6). On persist failure AFTER vxcore enable already succeeded, it issues a rollback by calling `disableSyncForNotebook`, which per "Disable Cleanup" below clears the three flat sync JSON keys then deletes the keychain entry.
-
-Interaction with reconcile:
-- **Rollback succeeds** (the common case): the notebook returns to clean S0. The disk-enabled check at `reconcileSyncForNotebook` line 869 fails immediately, the function early-returns, `m_reconcileAttempted` is never touched, and reconcile is correctly a no-op. The notebook needs a fresh user-initiated bootstrap, not silent re-registration. This is the intended recovery story.
-- **Rollback fails** (rare; both persist AND disable failed, logged at `qCritical` line 497): the notebook is left in a partial state. If JSON still has all three keys set (vxcore enable succeeded, JSON write succeeded for some keys, then disable failed leaving keys intact), the notebook is effectively in S4. On the next reconcile trigger, all precondition checks pass, `m_reconcileAttempted` gets set, and reconcile will attempt to register the notebook. This is the expected recovery path for that edge case; the loud `qCritical` log gives operators a chance to investigate.
-
-The key property: rollback NEVER causes reconcile to silently resurrect a notebook the user wanted disabled. Either rollback succeeded (so disk is clean and reconcile bails) or rollback failed (so disk truthfully says "enabled" and reconcile correctly tries to complete the job).
-
-### Disable Cleanup
-
-`SyncService::disableSyncForNotebook` on `VXCORE_OK` clears all three flat sync keys (`syncEnabled`, `syncBackend`, `syncRemoteUrl`) from notebook JSON BEFORE deleting the keychain entry (`src/core/services/syncservice.cpp:246-290`). On failure, JSON is preserved for retry. This closes the "resurrection trap" where a disabled notebook would reappear as S6 (orphan PAT) or S1 (orphan disk fields) on next app start.
-
-For the full table of all five credential cleanup sites (bootstrap rollback, `bootstrapAndPersist` rollback, notebook removal, sync disable, S6 startup sweep) and the "when fires / when does NOT fire" matrix, see [src/core/services/AGENTS.md § Credential Cleanup Invariants](src/core/services/AGENTS.md#credential-cleanup-invariants).
-
-### Startup S6 Sweep
-
-`SyncService::onMainWindowAfterStart` (`syncservice.cpp:828-854`) sweeps S6 orphans before reconciling. For each notebook it iterates, if `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (the S6 predicate: disk says disabled but a PAT is still in the keychain), it calls `m_credentialsStore->deleteCredentials(id)` to drop the orphan PAT. This handles the scenario where a previous session's disable succeeded inside vxcore but the app crashed (or was killed) before the keychain delete completed, leaving an orphan PAT that the new "disable clears JSON then keychain" ordering would otherwise not catch on its own.
-
-The sweep runs BEFORE `reconcileSyncForNotebook(nbId)` on each notebook, so by the time reconcile examines the notebook the keychain state is consistent with disk truth.
-
-### Re-enable UI Affordance
-
-S0 notebooks expose a re-enable surface via the same Sync button and Sync Info menu used for S5 (`src/widgets/notebookexplorer2.cpp:1512-1635`). For S0:
-- Button label: "Enable Sync" (distinct from "Sync Now" for S5)
-- On click: opens `NotebookSyncInfoDialog2` with `setBootstrapMode(true)` and all fields empty
-- Sync Info menu item enabled regardless of `syncEnabled` (dialog opens in bootstrap mode with disable button hidden)
-
-Without this affordance, users who disable sync cannot re-enable without recreating the notebook.
-
-### Sync Architecture Layers
-
-VNote consumes vxcore as an embedded library following the contract documented in `libs/vxcore/AGENTS.md` § Library Integration Contract. Vxcore emits facts (events, dirty marks); VNote owns sync scheduling policy via `SyncService` + `SyncWorkQueueManager` (see `src/core/services/AGENTS.md` § SyncService). Vxcore must NOT contain Qt-side concerns (no `QTimer`, no `QObject`, no scheduling policy); VNote must NOT bypass the contract by reaching into vxcore internals (no direct backend calls, no touching libgit2, no `states_` mutation). The 4-layer ownership table lives in the vxcore doc to avoid duplication.
-
-**Qt-side scheduling shape (post May 2026 audit, debounce added June 2026).** `SyncService::onSyncShouldRun` no longer enqueues immediately on the auto-sync path. It keeps the shutdown / readiness / auth-circuit-breaker guards, then routes through a per-notebook trailing-throttle debounce: when the global cadence `autoSyncDebounceSeconds` is `0` it enqueues immediately, otherwise it arms a per-notebook single-shot `QTimer` (`armOrIgnoreDebounce`) whose delay is `lastSyncMs + autoSyncDebounceSeconds*1000 - now`. An already-active timer is kept (the burst is absorbed), and `onDebounceTimeout` re-reads the cadence and re-checks freshness at fire time, re-arming if the last sync is still inside the window before finally calling the shared `enqueueAutoSync` body (`coalesceKey="trigger"`). The cadence is read on demand from `ConfigCoreService::getAutoSyncDebounceSeconds()` (clamped `[0, 86400]`), so config edits take effect without restart. Manual "Sync Now" (`triggerSyncNow`) and the post-reconcile freshness trigger BYPASS the debounce entirely. The coalesce key still dedupes whatever lands in the queue. The debounce lives one layer ABOVE `SyncWorkQueueManager`, so queue semantics are unchanged. vxcore's per-notebook `autoSyncEnabled` is a boolean on/off gate only (it suppresses `sync.should_run` when false) and carries no schedule.
-
----
-
-## Save Path Threading Contract
-
-The `Buffer2` / [`BufferService`](src/core/services/bufferservice.h) auto-save path used to call `vxcore_buffer_save` inline on the UI thread, so any slow filesystem operation (large file flush, virus scanner, network drive, antivirus quarantine) froze the editor. That synchronous call now runs on a worker via [`BufferSaveQueue`](src/core/services/buffersavequeue.h). The UI thread's job is reduced to: snapshot the current content plus a monotonically increasing revision, call `BufferSaveQueue::enqueue(...)`, and return. No disk I/O on the UI thread.
-
-Save work and any git-stage / git-commit work on the SAME notebook are serialized by [`NotebookIoGate`](src/core/services/notebookiogate.h), a per-notebook async mutex. `BufferSaveQueue` workers acquire `NotebookIoGate::ScopedLock(notebookId)` for the full duration of their disk write. [`SyncOps::triggerSync`](src/core/services/syncops.cpp) now runs sync as two phases: it holds the gate ONLY around [`vxcore_sync_stage_only`](libs/vxcore/include/vxcore/vxcore.h) (StageAll + CommitIndex, working-tree-touching), then releases it BEFORE calling [`vxcore_sync_network_phase`](libs/vxcore/include/vxcore/vxcore.h) (FetchOrigin + RebaseOntoOrigin + PushOrigin). The result: a sync never reads a half-written file, a save never lands inside someone else's `git add`/commit, AND a queued save on the same notebook resumes the moment the local commit lands, regardless of how long the network round-trip takes.
-
-vxcore's `mark_dirty` → `MaybeEnqueueSync` → `Emit("sync.should_run")` chain remains synchronous on the caller thread BY DESIGN. In steady state it is microseconds, and pushing it onto another thread would buy nothing while costing event-ordering guarantees. **This contract does NOT change vxcore.** The threading discipline is consumer-side only: keep `vxcore_buffer_save` off the UI thread, and the `mark_dirty` tail it triggers stays off the UI thread for free.
-
-> **Forbidden Patterns (post-T7):**
-> - Calling `vxcore_buffer_save` directly from the UI thread. Use [`BufferSaveQueue::enqueue`](src/core/services/buffersavequeue.h) instead.
-> - Touching a notebook's working tree (save, stage, commit, checkout) without holding `NotebookIoGate::ScopedLock(notebookId)`.
-
----
-
-## Search Threading Contract
-
-Content search in vxcore owns NO thread pool. As of the streaming-search work, `vxcore_search_content` / `vxcore_search_content_ex` / `vxcore_search_content_streaming` enqueue ONE work item per FILE-CHUNK (default `kDefaultSearchChunkSize = 64` files, tunable via the streaming `batch_size` parameter) onto a dedicated `"vxcore.search"` `WorkQueue` that is pre-created at `vxcore_context_create`. The CALLER's threads drain that queue, and the initiating thread help-drains its own enqueued items (caller-helps-drain: it loops `ProcessNext(5ms)` until the batch is done). VNote's [`SearchService`](src/core/services/searchservice.h) owns the drain pool that loops `vxcore_work_queue_process_next(ctx, "vxcore.search", 100)`. A search that fits in a single chunk (`fileCount <= batch_size`, i.e. ≤ 64 files by default) runs inline sequentially on the calling thread; larger searches fan out one queued item per chunk. Chunking subsumes the former `kParallelSearchThreshold` (was 50 files): the chunk boundary is now both the parallelism unit AND the incremental-delivery unit. This coarsens parallelism granularity for medium searches versus the old per-file fan-out — an accepted tradeoff to unify the blocking and streaming code paths; lower `batch_size` for finer-grained parallelism.
-
-The initiating thread's self-drain is the correctness floor: a consumer that provides NO external drain threads still gets correct, single-threaded results, and extra drainers only add parallelism. Cancellation, `max_results`, and result ordering are preserved across both paths; an exception thrown mid-scan is caught and surfaces as `VXCORE_ERR_UNKNOWN`.
-
-This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-file search work as facts, VNote owns the drain policy. No vxcore-owned threads remain, the former `BS::thread_pool` search pool having been removed.
-
----
-
-## Update Check
-
-VNote checks a forge for a newer release and, when one exists, tells the user and offers
-the **release page**. That is the whole feature.
-
-> **VNote never modifies its own install directory, and never downloads anything.** There is
-> no lease file, no staging tree, no journal, no swap, no restart-to-apply, no downloader,
-> and nothing is ever extracted or executed. The only thing the check writes is the
-> `lastUpdateCheckTime` / `skippedUpdateVersion` config values. This invariant is what makes
-> a read-only install location (`/usr/bin`, Program Files, a read-only DMG) launchable
-> (issue #2728) — do not reintroduce install-tree mutation, or a downloader, without
-> replacing this section.
-
-The built-in incremental updater that used to live here (manifest verification, delta
-chains, `UpdateInstaller`, `UpdateLease`, `ZipExtractor`, the vendored `miniz` /
-`minicrypto`) has been removed. **Release CI still publishes manifests, minisign signatures
-and delta ZIPs unchanged**; they are now the interface for a future *external* updater, not
-something this client consumes. See `docs/update-signing.md`.
-
-### Ownership map
-
-| Layer | Unit | Responsibility |
-|---|---|---|
-| Service | [`UpdateService`](src/core/services/updateservice.h) | release API, per-source endpoints/headers, manual redirect walking, source-scoped host allowlist, response cap, cancellation, worker lifetime |
-| Controller | [`UpdateController`](src/controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness |
-| View | [`UpdateDialog`](src/widgets/dialogs/updatedialog.h) | version, notes, Open Release Page / Skip This Version / Later |
-| View | [`NotificationPopup2`](src/widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with a Check Release action |
-
-`UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
-`core_services`, so the reverse dependency would be circular. The installed version is
-injected and every config-dependent decision lives in `UpdateController`, which pushes the
-configured source down via `setSource()`.
-
-`UpdateInfo` carries exactly `updateAvailable`, `currentVersion`, `latestVersion`,
-`releaseNotes` and `releaseUrl`. The release's `assets[]` array is **ignored entirely** —
-no asset is selected and no asset URL is ever requested
-(`testAssetsAreIgnoredEntirely` pins this).
-
-`checkForUpdates()` returns whether the request was ACCEPTED (a call made during another
-check is dropped and returns `false`). `UpdateController` sets its manual-vs-startup mode
-**only for an accepted request**, and keeps its own `m_checkInFlight` until the terminal slot
-runs. Both are load-bearing: without them a manual click during the silent startup check
-re-labels that background check's outcome, turning a failure that must stay silent into a
-modal warning box.
-
-### Release source (GitHub or Gitee)
-
-`CoreConfig::updateSource` (`"github"` | `"gitee"`, Settings › General) selects the forge.
-**The default is Gitee**: `normalizeUpdateSource()` returns `"github"` only for an explicit
-case-insensitive `"github"`, and `"gitee"` for empty, absent or unrecognized values.
-`UpdateService::sourceFromString()` applies the same rule — keep the two in step.
-`CoreConfig::toJson()` always persists the key, so an **existing installation keeps whatever
-it already had** (in practice GitHub); only fresh installs and hand-cleared configs get the
-new default. No migration is performed.
-
-| | GitHub | Gitee |
-|---|---|---|
-| latest-release API | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
-| `Accept` header | `application/vnd.github+json, */*` | `application/json, */*` |
-| release page | the API's `html_url`, validated against the allowlist first (it is handed to `QDesktopServices`); an absent, malformed or off-forge value falls back to a synthesized `<releases>/tag/v<tag>` | synthesized `https://gitee.com/vnotex/vnote/releases/tag/v<tag>` (Gitee's JSON has no `html_url`; the pattern is verified against the live v4.3.0 page, and note the `tag/` segment the asset download path does **not** have) |
-| host allowlist | exact `api.github.com`, `github.com`, `codeload.github.com` + suffix `.githubusercontent.com` | exact `gitee.com` + suffix `.gitee.com` |
-
-The allowlists are **disjoint and source-scoped**: a client on one source must never follow
-a redirect to the other's hosts. Redirects are followed MANUALLY
-(`QNetworkRequest::ManualRedirectPolicy` set on EVERY request, because Qt 5 and Qt 6 differ
-in their default), at most `c_maxRedirects` hops, with no HTTPS→HTTP downgrade.
-
-### Threading
-
-`checkForUpdates()` returns immediately and does its work on a `QtConcurrent` worker,
-because it blocks on a nested event loop.
-
-- **`QNetworkAccessManager` is created on the WORKER'S STACK**, never as a member. QNAM is
-  not thread-safe and belongs to the thread that created it, so every network helper takes it
-  by reference. There is deliberately no QNAM member.
-- Both signals (`checkFinished`, `failed`) are emitted through
-  `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` so receivers see them on the GUI
-  thread.
-- **`m_busy` is released as the LAST statement of the worker**, after the terminal signal has
-  been queued. Releasing it earlier would let the next check start while this one is still
-  running. A second `checkForUpdates()` while one is in flight is DROPPED, not queued.- The destructor calls `cancel()` and then waits for **every** outstanding worker
-  (`waitForWorkers()`), not just the most recent one: workers hold a raw `this`, and a single
-  stored `QFuture` could be replaced while the previous worker was still unwinding.
-- Cancellation is POLLED every 250 ms inside a blocking request so service teardown is never
-  blocked for the full request timeout.
-- The API response cap **aborts** the reply mid-stream rather than buffering the whole body
-  and rejecting afterwards; `testOversizedApiResponseAbortsTheReply` proves this by declaring
-  an 8 GB `Content-Length` and never closing the socket.
-
-### Forbidden patterns
-
-- **Never** download, extract, execute or install a release artifact.
-- **Never** write outside the configuration directory as part of an update check.
-- **Never** read `assets[]`; the release page is the only affordance.
-- **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.
+Full diagram, directory tree, design-decision rationale (including the ViewArea2 framework), and
+source-wide Qt patterns: see [src/AGENTS.md](src/AGENTS.md).
 
 ---
 
@@ -649,10 +170,9 @@ color name is correct only in whichever theme its author was running, and it
 cannot follow a runtime theme switch.
 
 `tests/utils/test_hardcoded_color_drift.cpp` is a grep gate over `src/` that
-fails the build on any string literal containing both a CSS color property and
-a literal color value. Colors used as *data* (a color picker's swatches) are
-not affected, only colors used to style chrome. It covers **stylesheet strings
-only** — a `QColor` painted in a `paintEvent` or delegate is out of scope.
+fails the build on any **stylesheet string** literal containing both a CSS color
+property and a literal color value (colors used as *data*, and `QColor` painted
+in a `paintEvent`, are out of scope).
 
 Use `InlineBanner`, the `SeverityText` / `MutedText` dynamic properties, a rule
 in each theme's `interface.qss`, or `ThemeService::paletteColor()`. Do **not**
@@ -706,75 +226,6 @@ VNote uses a single `vnotex` namespace. Services that wrap the vxcore C library 
 - `using namespace vnotex;` in `.cpp` files only, never in headers
 - Forward declarations preferred in headers
 
----
-
-## Common Patterns
-
-### Noncopyable Pattern
-```cpp
-// src/core/noncopyable.h
-class Noncopyable {
-protected:
-  Noncopyable() = default;
-  virtual ~Noncopyable() = default;
-  Noncopyable(const Noncopyable &) = delete;
-  Noncopyable &operator=(const Noncopyable &) = delete;
-};
-
-// Usage: private inheritance
-class MyClass : public QObject, private Noncopyable {
-  // ...
-};
-```
-
-### Deprecation Macro
-
-Use `VNOTEX_DEPRECATED(msg)` from `src/core/global.h` to mark legacy classes, structs, and functions. It expands to `[[deprecated(msg)]]` on C++14+ (MSVC and GCC/Clang), or is a no-op on older compilers.
-
-```cpp
-#include <core/global.h>
-
-// Deprecate a class — place between 'class' keyword and class name
-class VNOTEX_DEPRECATED("Use MainWindow2 with ServiceLocator pattern instead") MainWindow
-    : public QMainWindow {
-  // ...
-};
-
-// Deprecate a struct
-struct VNOTEX_DEPRECATED("Use FileOpenSettings instead") FileOpenParameters {
-  // ...
-};
-
-// Deprecate a function
-VNOTEX_DEPRECATED("Use newMethod() instead")
-void oldMethod();
-```
-
-**Rules:**
-- Always include a migration message explaining what to use instead
-- For type deprecation, place the macro **between** the `class`/`struct` keyword and the type name
-- Requires `#include <core/global.h>`
-
-### Exception Handling
-```cpp
-// src/core/exception.h
-class Exception : virtual public std::runtime_error {
-public:
-  enum class Type {
-    InvalidPath, FailToCreateDir, FailToWriteFile,
-    FailToReadFile, FailToRenameFile, /* ... */
-  };
-
-  [[noreturn]] static void throwOne(Type p_type, const QString &p_what) {
-    qCritical() << typeToString(p_type) << p_what;
-    throw Exception(p_type, p_what);
-  }
-};
-
-// Usage
-Exception::throwOne(Exception::Type::FailToReadFile, "Cannot read config");
-```
-
 ### Signal/Slot Connections
 ```cpp
 // Preferred: new Qt5 syntax
@@ -786,129 +237,76 @@ connect(this, &VNoteX::openNodeRequested, m_bufferMgr,
         QOverload<Node *, const QSharedPointer<FileOpenParameters> &>::of(&BufferMgr::open));
 ```
 
-### Memory Management
-```cpp
-// Use Qt smart pointers
-QScopedPointer<MainConfig> m_config;
-QSharedPointer<Task> task;
-
-// QObject parent-child for automatic cleanup
-m_themeMgr = new ThemeMgr(this);  // 'this' takes ownership
-```
-
-### Queued-Connection Metatype Names (Qt 5 resolves them by NAME)
-
-A type used as a **queued-connection signal parameter** or in **`Q_ARG`** must be registered
-under the exact name moc recorded / `Q_ARG` stringified. For a type declared inside
-`namespace vnotex` and spelled **unqualified** in the signal, that is the UNQUALIFIED name —
-while `Q_DECLARE_METATYPE(vnotex::X)` registers `"vnotex::X"`.
-
-Qt 5's `queued_activate()` calls `queuedConnectionTypes()` on moc's parameter-name strings and
-does `QMetaType::type("X")`. If only the qualified alias exists the lookup returns 0, Qt prints
-`QObject::connect: Cannot queue arguments of type 'X'`, and **drops the call**. Qt 6 obtains the
-`QMetaType` via `QMetaMethod::parameterMetaType()` from moc's generated metatype data and never
-does the name lookup, so this defect is invisible on Qt 6 and fatal on the Qt 5 /
-`win64-windows7` variant.
-
-Fix shape: register the unqualified **alias** alongside the existing registration
-(`qRegisterMetaType<X>("X");`). Registering the same type under a second name is an alias, not
-a duplicate. Precedents: `qRegisterMetaType<BufferState>("BufferState")`
-(`src/widgets/viewwindow2.cpp:87`) and `qRegisterMetaType<NotificationMessage>("NotificationMessage")`
-(`src/core/services/notificationservice.cpp:8`).
-
-Known name-resolved queued sites:
-
-| Site | Required alias |
-|---|---|
-| `SearchWorker::finished`, `SearchWorker::batch` (`src/core/services/searchservice.cpp`) | `"SearchResult"` |
-| `SearchWorker::failed` (`src/core/services/searchservice.cpp`) | `"Error"` |
-| `Q_ARG(ImageHostWorkItem, ...)` (`src/core/services/imagehostservice.cpp`) | `"ImageHostWorkItem"` |
-| `ImageHostWorker::uploadCompleted`, `::removeCompleted` (`src/core/services/imagehostworker.h`) | `"ImageHostAsyncResult"` |
-
-Coverage: `testQueuedMetatypeNamesAreRegistered` in `tests/core/test_searchservice.cpp` and
-`tests/core/test_imagehostservice.cpp`.
-
-**This is NOT a blanket requirement for every `Q_DECLARE_METATYPE(vnotex::X)`.** The required
-runtime name is whatever moc recorded or `Q_ARG` stringified: `UpdateService::checkFinished`
-spells its parameter `vnotex::UpdateInfo` explicitly (`src/core/services/updateservice.h`), and
-`NodeIdentifier` signals are GUI-thread-local and never queue. Do not sweep them in.
+Memory management, queued-connection metatype naming (a Qt 5 correctness rule), and the rest of
+the source-wide patterns: [src/AGENTS.md § Source-Wide Qt Patterns](src/AGENTS.md#source-wide-qt-patterns).
+Noncopyable, `VNOTEX_DEPRECATED` and exception handling: [src/core/AGENTS.md](src/core/AGENTS.md#core-c-facilities).
 
 ---
 
-## Windows 7 variant (Qt 5.15) and OpenSSL
+## Sync State Model
 
-The `win64-windows7` package is built against Qt 5.15.2, which has **no Schannel TLS backend**
-on Windows — unlike Qt 6, which falls back to Schannel and therefore ships no OpenSSL at all.
-Git sync is unaffected on both variants because libgit2 uses WinHTTP. So on Qt 5 a missing or
-unloadable OpenSSL breaks exactly two things: the update check
-(`src/core/services/updateservice.cpp`) and image hosting (`src/imagehost/`).
+Notebook sync has 8 reachable states (S0-S7), defined by the tuple of on-disk JSON sync fields,
+PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map. **S5 is the
+only "ready" state**; S1-S4 and S6 are partial/inconsistent, S0 is cleanly disabled, S7 is
+in-flight. Every controller, widget, and service that touches sync must reason in these terms.
 
-- CI **builds OpenSSL 1.1.1w from source** in the Qt5 job (`.github/workflows/ci-win.yml`),
-  cached under `${{runner.workspace}}/openssl-1.1.1w-win64` with a version-pinned key. This
-  replaced prebuilt 1.1.1j DLLs that imported `MSVCR100.dll` (the VC++ 2010 runtime, absent
-  from the package and from a clean Windows box), which is why 4.4.2's win7 build had no TLS.
-  Qt's own `tools_openssl_x64` is **delisted** from `download.qt.io`, and the pinned Qt 5.15.2
-  dlopens the literal names `libssl-1_1-x64` / `libcrypto-1_1-x64`, so OpenSSL 3 is not a
-  drop-in substitute for it.
-- **OpenSSL 1.1.1 is EOL; 1.1.1w (Sep 2023) is the final release.** The variant will accrue
-  unpatched CVEs. That is inherent to shipping Qt 5.15.2 and is only fixable by retiring the
-  Qt 5 variant.
-- Three gates, none of which replaces the others:
-  1. `dumpbin /dependents` on both DLLs, parsed into trimmed basenames, rejecting any
-     `MSVCR*`/`MSVCP*` and anything outside an explicit system + modern-runtime allowlist.
-     This checks COMPOSITION, not content: it cannot detect a substituted DLL with the same
-     import table. Content is pinned only by the tarball SHA-256, which is verified in the
-     build step and therefore skipped on a cache hit.
-  2. A post-extraction check that every non-system dependency actually ships at the package root.
-  3. `tools/tlsprobe` — run **from inside the packaged directory** so it reproduces
-     `vnote.exe`'s real DLL load context — asserting `QSslSocket::supportsSsl()`. It has no
-     `install()` rule and must never enter the package.
-- `src/Packaging.cmake` turns the previously `OPTIONAL` (and therefore silently no-op) OpenSSL
-  install into a `FATAL_ERROR` when the exact pair is missing on Qt 5 / Windows / x64. This
-  runs at **configure** time, so a contributor building Qt 5 locally without OpenSSL opts out
-  with `-DVNOTE_REQUIRE_BUNDLED_OPENSSL=OFF` (default **ON**, so CI is safe by default and a
-  workflow edit cannot silently drop the gate).
-- The same guard asserts that `InstallRequiredSystemLibraries` actually resolved the UCRT
-  redist. Windows 7 has no in-box UCRT, and the module's failure warnings are deliberately
-  suppressed, so without this the omission would only surface at the last CI gate.
-- **`LICENSE.OpenSSL` must remain in the package.** OpenSSL 1.1.1's dual OpenSSL/SSLeay license
-  requires reproducing the notice with binary redistribution; 4.4.2 shipped the DLLs with no
-  notice at all. It is installed non-`OPTIONAL` from `-DOPENSSL_LICENSE_FILE=`, keyed off
-  **whether any OpenSSL DLL is being installed** rather than off the `-x64` names — the install
-  globs are gated by neither Qt major nor word size, so keying it to the names would let a
-  32-bit Qt 5 build (or a Qt 6 build pointed at an OpenSSL dir) ship binaries with no notice.
+Full predicate table, recovery paths, reconcile semantics, disable cleanup, the S6 startup sweep,
+and the Qt-side scheduling shape:
+[src/core/services/AGENTS.md § Sync State Model](src/core/services/AGENTS.md#sync-state-model).
+vxcore-side threading contract:
+[libs/vxcore/src/sync/AGENTS.md](libs/vxcore/src/sync/AGENTS.md).
+---
+
+## Save Path Threading Contract
+
+Buffer saves run on a worker via `BufferSaveQueue`; save and git-stage/commit work on the SAME
+notebook are serialized by the per-notebook `NotebookIoGate` async mutex.
+
+> **Forbidden Patterns (post-T7):**
+> - Calling `vxcore_buffer_save` directly from the UI thread. Use [`BufferSaveQueue::enqueue`](src/core/services/buffersavequeue.h) instead.
+> - Touching a notebook's working tree (save, stage, commit, checkout) without holding `NotebookIoGate::ScopedLock(notebookId)`.
+
+Full rationale and the two-phase sync gate:
+[src/core/services/AGENTS.md § Save Path Threading Contract](src/core/services/AGENTS.md#save-path-threading-contract).
 
 ---
 
-## Widget Construction Pattern
+## Search Threading Contract
 
-The migration off the legacy singleton architecture (`VNoteX::getInst()`, `ConfigMgr::getInst()`, the legacy `MainWindow`/`Buffer`) is complete; those types have been removed. All widgets, controllers, models, and views take their dependencies via constructor injection with `ServiceLocator&`. Follow this pattern for new code:
+Content search in vxcore owns NO thread pool: it enqueues one work item per file-chunk onto the
+`"vxcore.search"` work queue, and the CALLER owns the drain policy (VNote's `SearchService` runs
+the drain pool; the initiating thread help-drains, which is the single-threaded correctness
+floor).
 
-```cpp
-// Receives dependencies via constructor
-class MyWidget : public QWidget {
-  Q_OBJECT
-public:
-  explicit MyWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+Full contract: [src/core/services/AGENTS.md § Search Threading Contract](src/core/services/AGENTS.md#search-threading-contract).
 
-private:
-  ServiceLocator &m_services;
+---
 
-  void doSomething() {
-    auto &config = m_services.get<ConfigCoreService>();
-    auto &notebooks = m_services.get<NotebookCoreService>();
-  }
-};
-```
+## Update Check
 
-### Checklist for a new widget
+VNote checks a forge for a newer release and, when one exists, tells the user and offers the
+**release page**. That is the whole feature.
 
-- [ ] Add `ServiceLocator &p_services` as the first constructor parameter
-- [ ] Store reference: `ServiceLocator &m_services`
-- [ ] Resolve dependencies via `m_services.get<XxxCoreService>()` — never global state
-- [ ] Have the parent widget pass its `ServiceLocator&` down
-- [ ] Register the file in the relevant `CMakeLists.txt`
-- [ ] Write a unit test with mock services
+> **VNote never modifies its own install directory, and never downloads anything.** There is
+> no lease file, no staging tree, no journal, no swap, no restart-to-apply, no downloader,
+> and nothing is ever extracted or executed. The only thing the check writes is the
+> `lastUpdateCheckTime` / `skippedUpdateVersion` config values. This invariant is what makes
+> a read-only install location (`/usr/bin`, Program Files, a read-only DMG) launchable
+> (issue #2728) — do not reintroduce install-tree mutation, or a downloader, without
+> replacing this section.
+
+Repo-wide forbidden patterns (they constrain `.github/`, packaging, controllers and widgets
+alike, none of which load the service doc):
+
+- **Never** download, extract, execute or install a release artifact.
+- **Never** write outside the configuration directory as part of an update check.
+- **Never** read `assets[]`; the release page is the only affordance.
+- **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.
+
+Release CI still publishes manifests, minisign signatures and delta ZIPs (see
+`docs/update-signing.md`); they are the interface for a future *external* updater, not this
+client. Endpoints, the GitHub/Gitee source table, redirect and allowlist rules, and threading:
+[src/core/services/AGENTS.md § Update Check](src/core/services/AGENTS.md#update-check).
 
 ---
 
@@ -947,16 +345,19 @@ for the SSOT contract and the `test_json_key_drift` regression gate.
 
 Detailed knowledge for each module lives in its own AGENTS.md:
 
-| Module | File | Description |
-|--------|------|-------------|
-| Core & Services | [src/core/AGENTS.md](src/core/AGENTS.md) | ServiceLocator, DI, Buffer2, hooks, adding services |
-| Controllers | [src/controllers/AGENTS.md](src/controllers/AGENTS.md) | Controller patterns, MVC rules for controllers |
+| Module | File | Read this when |
+|--------|------|----------------|
+| Source overview | [src/AGENTS.md](src/AGENTS.md) | You need the architecture diagram, directory tree, design-decision rationale, or a source-wide Qt pattern (memory, queued metatypes) |
+| Core & Services | [src/core/AGENTS.md](src/core/AGENTS.md) | ServiceLocator, DI, Buffer2, hooks, config, themes, adding a service |
+| Services (deep) | [src/core/services/AGENTS.md](src/core/services/AGENTS.md) | Sync state model, save/search threading, update check, notifications |
+| Controllers | [src/controllers/AGENTS.md](src/controllers/AGENTS.md) | Adding or changing a controller; MVC rules for controllers |
 | Models | [src/models/AGENTS.md](src/models/AGENTS.md) | Qt Model/View data representations |
 | Views | [src/views/AGENTS.md](src/views/AGENTS.md) | View conventions, delegate patterns |
-| Widgets | [src/widgets/AGENTS.md](src/widgets/AGENTS.md) | Widget conventions, ViewArea2 framework |
+| Widgets | [src/widgets/AGENTS.md](src/widgets/AGENTS.md) | Widget conventions, ViewArea2 framework, styling, construction pattern |
 | GUI Services | [src/gui/AGENTS.md](src/gui/AGENTS.md) | Theme, ViewWindowFactory, GUI utilities |
 | Utilities | [src/utils/AGENTS.md](src/utils/AGENTS.md) | PathUtils, HtmlUtils, FileUtils2 reference |
-| Testing | [tests/AGENTS.md](tests/AGENTS.md) | Test infrastructure, test mode, coverage |
+| Testing | [tests/AGENTS.md](tests/AGENTS.md) | Writing/running tests in either suite, test mode, fixtures, coverage |
+| CI & Packaging | [.github/AGENTS.md](.github/AGENTS.md) | Workflows, `src/Packaging.cmake`, Windows 7 / Qt 5.15 variant, bundled OpenSSL |
 | vxcore (submodule) | [libs/vxcore/AGENTS.md](libs/vxcore/AGENTS.md) | C library: notebook/config/search backend |
 | vxcore Sync | [libs/vxcore/src/sync/AGENTS.md](libs/vxcore/src/sync/AGENTS.md) | Pluggable sync backend interface (ISyncBackend, SyncManager) |
 | vtextedit (submodule) | [libs/vtextedit/AGENTS.md](libs/vtextedit/AGENTS.md) | Qt editor widget library |

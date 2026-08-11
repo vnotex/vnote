@@ -1,6 +1,60 @@
 # Agent Guidelines for tests
 
-Test infrastructure for VNote using the QtTest framework. All tests live under `tests/` and are built via CMake's `add_qt_test()` helper. Tests exercise services, models, controllers, and utilities against the vxcore C backend in isolated test mode.
+Test infrastructure for VNote using the QtTest framework. Parent VNote Qt tests live under
+`tests/` and are built via CMake's `add_qt_test()` helper; vxcore has a **separate** suite under
+`libs/vxcore/tests/` with its own build dir and `add_vxcore_test()` helper. Tests exercise
+services, models, controllers, and utilities against the vxcore C backend in isolated test mode.
+
+## Two test locations — pick the right one
+
+VNote has tests in **two separate locations** with different registration helpers and build
+configurations. Pick the right one or your test will silently never run.
+
+### Parent VNote tests (`tests/`)
+
+Built automatically with the parent project into `build-debug/tests/<category>/`. Registered via
+the `add_qt_test()` helper (details in [Adding New Tests](#adding-new-tests) below). Categories:
+`controllers/`, `core/`, `gui/`, `integration/`, `models/`, `utils/`, `widgets/`.
+
+Reconfigure from repo root if `tests/CMakeLists.txt` itself changed: `cmake -B build-debug`.
+
+**Build + run:**
+```powershell
+cmake --build build-debug --config Debug --target test_yourthing
+ctest --test-dir build-debug -C Debug -R "^test_yourthing$" --output-on-failure
+```
+
+### vxcore submodule tests (`libs/vxcore/tests/`)
+
+**Separate build dir required** — the parent `build-debug/` does NOT compile vxcore tests. Use a
+dedicated build dir configured with `-DVXCORE_BUILD_TESTS=ON`. Each test is a standalone
+executable (file basename = test target name) registered via `add_vxcore_test()`.
+
+**Add a new test:**
+1. Create `libs/vxcore/tests/test_yourthing.cpp` with its own `main()`. Subtests are functions that return `int` (0 = pass); call them via `RUN_TEST(...)` from `test_utils.h`. Always start `main()` with `vxcore_set_test_mode(1)` so the test uses `%TEMP%\vxcore_test*` instead of real AppData.
+2. Register in `libs/vxcore/tests/CMakeLists.txt`:
+   ```cmake
+   add_vxcore_test(test_yourthing)
+   ```
+   The helper auto-links `vxcore` and adds `${CMAKE_SOURCE_DIR}/src` + `third_party` include dirs.
+3. Test executables CANNOT call vxcore-internal symbols that lack `VXCORE_API` — they live outside the DLL. If you need an internal helper (e.g., `GetCurrentTimestampMillis()`), re-derive it locally in the test file rather than exporting it.
+
+**Configure (once per machine, or after CMake version upgrade):**
+```powershell
+cmake -S libs/vxcore -B libs/vxcore/build_test -G "Visual Studio 17 2022" -A x64 -DVXCORE_BUILD_TESTS=ON
+```
+
+**Build + run:**
+```powershell
+cmake --build libs/vxcore/build_test --config Debug --target test_yourthing
+ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-on-failure
+```
+
+### Universal rules
+
+- **Anchor the ctest regex** with `^...$` to avoid false matches (e.g., `-R "^test_sync$"` won't sweep in `test_session_persistence`).
+- After a CMake version upgrade, stale build dirs fail to reconfigure with errors like `CMakeSystem.cmake.in does not exist`. Delete the offending build dir and re-run the configure command from scratch — do NOT try to repair in place.
+- After modifying a touched module, run the FULL test target for that module (not just your new subtest) to catch regressions; vxcore tests print each subtest name to stdout so you can verify the new one ran.
 
 ## Test Structure
 
@@ -147,8 +201,46 @@ add_custom_command(TARGET test_clipboard_image POST_BUILD
 
 **When adding tests to a NEW subdirectory under `tests/` whose targets link `VTextEdit`**, that subdir's `CMakeLists.txt` MUST include this `POST_BUILD` block anchored on any one such test target. Without it, `ctest` reports the test as failed with exit code `0xc0000135` (Windows "DLL not found") and the test binary never reaches its `main()`. One copy per subdir is enough; `copy_if_different` makes incremental rebuilds free.
 
-## Adding New Tests
+### Running execs that depend on VTextEdit.dll (CRITICAL — avoid false-positive smoke tests)
 
+`build-debug/src/vnote.exe` and the widget/editor-level `build-debug/tests/<category>/test_*.exe` execs link against `VTextEdit.dll` (built into `build-debug/libs/vtextedit/src/`) plus the Qt 6 runtime DLLs. Pure-core tests that link only `core_services` + `vxcore` do NOT (see [`../src/core/services/AGENTS.md`](../src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract)). Neither DLL set is automatically copied next to `vnote.exe` in this development build (only test-exec dirs get VTextEdit.dll copied via CMake target propagation). Launching `vnote.exe` without setting PATH first causes the Windows loader to pop a "VTextEdit.dll was not found" modal dialog BEFORE the process reaches `WinMain`.
+
+**This is a verification trap**: when the loader dialog blocks the process, the OS reports the process as alive (it has a PID, is technically running), so naive checks like `Start-Process … -PassThru` + `Sleep` + `HasExited` return `$false` → you falsely conclude the binary started. The process is actually frozen in pre-WinMain limbo waiting for someone to click the dialog. `Stop-Process -Force` afterwards silently dismisses the dialog and the lie is preserved.
+
+**Correct smoke-test pattern (PowerShell):**
+
+```powershell
+# 1. Prepend Qt bin + VTextEdit dir to PATH so the loader resolves all DLLs.
+$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" +
+            "$PWD/build-debug/libs/vtextedit/src;" +
+            $env:PATH
+
+# 2. Launch vnote.exe.
+$proc = Start-Process -FilePath "build-debug/src/vnote.exe" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 5
+
+# 3. Verify the process actually loaded VTextEdit.dll — NOT just HasExited.
+#    If the loader dialog blocked the process, $proc.Modules will throw or be empty.
+$loaded = $false
+try {
+  $proc.Refresh()
+  $loaded = ($proc.Modules | Where-Object { $_.ModuleName -ieq "VTextEdit.dll" }).Count -gt 0
+} catch {}
+if ($proc.HasExited) {
+  Write-Output "FAIL: vnote.exe exited with code $($proc.ExitCode) within 5s"
+} elseif (-not $loaded) {
+  Write-Output "FAIL: vnote.exe alive but VTextEdit.dll not loaded — likely a loader dialog"
+} else {
+  Write-Output "PASS: vnote.exe alive with VTextEdit.dll loaded after 5s"
+}
+Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+```
+
+The same PATH prepend is required before running parent `test_*.exe` directly. `ctest --test-dir build-debug` inherits the caller's PATH, so set it once at the start of the session.
+
+vxcore submodule tests (`libs/vxcore/build_test/bin/Debug/test_*.exe`) do NOT depend on Qt or VTextEdit and need no PATH setup.
+
+## Adding New Tests
 Use the `add_qt_test()` helper function in CMakeLists.txt:
 
 ```cmake

@@ -6,7 +6,7 @@ Controllers are QObject-based business logic mediators that sit between models, 
 
 See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for controllers: **Controllers MUST NOT inherit from QWidget** (testable without GUI).
 
-See [MVC Example](../../AGENTS.md#mvc-example-notebook-node-operations) for the Controller → View → Model flow.
+See [MVC Example](../AGENTS.md#mvc-example-notebook-node-operations) for the Controller → View → Model flow.
 
 ## Multi-Target Actions with Dialogs (Batch Pattern)
 
@@ -28,6 +28,12 @@ When adding a multi-target action that requires user input via a dialog, the MVC
 **Known dead path**: `NotebookNodeController::handleRenameResult`, `INodeExplorer::handleRenameResult` (`src/views/inodeexplorer.h:83`) and both explorer overrides have **no production caller**. Production rename is inline: `NotebookExplorer2::onRenameRequested` (`notebookexplorer2.cpp:1585-1589`) starts an edit and Qt commits it through `NotebookNodeModel::setData`, which calls `NotebookCoreService::renameFile/renameFolder` directly (`notebooknodemodel.cpp:426-469`). Do not assume renames flow through the controller.
 
 Still violating the "no `QDialog`" rule, but **deliberately and with a recorded rationale** (do not "fix" these in passing): `UpdateController` (it opens `UpdateDialog` for a manual "Check for Updates"; `tests/controllers/CMakeLists.txt` notes it is not GUILESS and stubs the dialog rather than linking it), `SyncConflictController` (rationale in `syncconflictcontroller.h:17-47`), `NewNotebookController`'s `QProgressDialog`, `ViewAreaController`'s `SettingsWidget`/`DashboardContent` construction, and the `QMenu`-building controllers (`NotebookNodeController`, `MarkdownViewWindowController`).
+
+`UpdateController` owns **ALL** update policy: the configured release source, the 24 h throttle,
+the skipped version, the manual-vs-startup surface, and failure loudness. `UpdateService` is
+mechanism only and must never gain a `ConfigMgr2` dependency. Full contract, including the
+"VNote never modifies its own install directory and never downloads anything" invariant:
+[`../core/services/AGENTS.md` § Update Check](../core/services/AGENTS.md#update-check).
 
 ## Controller Inventory
 
@@ -100,7 +106,7 @@ notebooks' unresolved failures.
 
 ## NotebookSyncInfoController: bootstrapApply vs applyChanges
 
-`NotebookSyncInfoController` exposes two recovery paths. Picking the wrong one is the root cause of B7 (chicken-and-egg) and B8 (resurrection trap) historically. See the root [Sync State Model](../../AGENTS.md#sync-state-model) for the S0-S7 predicates.
+`NotebookSyncInfoController` exposes two recovery paths. Picking the wrong one is the root cause of B7 (chicken-and-egg) and B8 (resurrection trap) historically. See [Sync State Model](../core/services/AGENTS.md#sync-state-model) for the S0-S7 predicates.
 
 | Method | Source | Use when | Failure behavior |
 |---|---|---|---|

@@ -371,7 +371,7 @@ For per-theme conversion matrices used by the pilot (which palette key maps to w
 
 ## SyncService
 
-`SyncService` wraps the vxcore sync C API for the Qt layer. It owns the worker thread, signal contract, and partial-state recovery logic. See the root [Sync State Model](../../AGENTS.md#sync-state-model) for the S0-S7 predicates.
+`SyncService` wraps the vxcore sync C API for the Qt layer. It owns the worker thread, signal contract, and partial-state recovery logic. See [Sync State Model](services/AGENTS.md#sync-state-model) for the S0-S7 predicates.
 
 ### `isSyncRegistered(notebookId)` (runtime state check)
 
@@ -727,10 +727,78 @@ target_sources(core2 PRIVATE
 )
 ```
 
+## Core C++ Facilities
+
+### Noncopyable Pattern
+```cpp
+// src/core/noncopyable.h
+class Noncopyable {
+protected:
+  Noncopyable() = default;
+  virtual ~Noncopyable() = default;
+  Noncopyable(const Noncopyable &) = delete;
+  Noncopyable &operator=(const Noncopyable &) = delete;
+};
+
+// Usage: private inheritance
+class MyClass : public QObject, private Noncopyable {
+  // ...
+};
+```
+
+### Deprecation Macro
+
+Use `VNOTEX_DEPRECATED(msg)` from `src/core/global.h` to mark legacy classes, structs, and functions. It expands to `[[deprecated(msg)]]` on C++14+ (MSVC and GCC/Clang), or is a no-op on older compilers.
+
+```cpp
+#include <core/global.h>
+
+// Deprecate a class — place between 'class' keyword and class name
+class VNOTEX_DEPRECATED("Use MainWindow2 with ServiceLocator pattern instead") MainWindow
+    : public QMainWindow {
+  // ...
+};
+
+// Deprecate a struct
+struct VNOTEX_DEPRECATED("Use FileOpenSettings instead") FileOpenParameters {
+  // ...
+};
+
+// Deprecate a function
+VNOTEX_DEPRECATED("Use newMethod() instead")
+void oldMethod();
+```
+
+**Rules:**
+- Always include a migration message explaining what to use instead
+- For type deprecation, place the macro **between** the `class`/`struct` keyword and the type name
+- Requires `#include <core/global.h>`
+
+### Exception Handling
+```cpp
+// src/core/exception.h
+class Exception : virtual public std::runtime_error {
+public:
+  enum class Type {
+    InvalidPath, FailToCreateDir, FailToWriteFile,
+    FailToReadFile, FailToRenameFile, /* ... */
+  };
+
+  [[noreturn]] static void throwOne(Type p_type, const QString &p_what) {
+    qCritical() << typeToString(p_type) << p_what;
+    throw Exception(p_type, p_what);
+  }
+};
+
+// Usage
+Exception::throwOne(Exception::Type::FailToReadFile, "Cannot read config");
+```
+
 ## Related Modules
 
 - [`../controllers/AGENTS.md`](../controllers/AGENTS.md), Controllers that use services
 - [`../widgets/AGENTS.md`](../widgets/AGENTS.md), Widgets that receive ServiceLocator
 - [`../gui/AGENTS.md`](../gui/AGENTS.md), GUI-aware services (ThemeService, ViewWindowFactory)
 - [`../../tests/AGENTS.md`](../../tests/AGENTS.md), Testing services and hooks
-- [`../../AGENTS.md`](../../AGENTS.md), Architecture overview, MVC rules, code style
+- [`../AGENTS.md`](../AGENTS.md), Architecture, directory tree, source-wide Qt patterns
+- [`../../AGENTS.md`](../../AGENTS.md), Build, repo-wide rules, code style

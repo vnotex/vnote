@@ -4,7 +4,7 @@ Widgets are UI components that receive `ServiceLocator&` via constructor injecti
 
 ## `2` Suffix Convention
 
-Many existing files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the retained name for those existing classes (renaming them would be needless churn). **New code does NOT get a suffix unless the name genuinely conflicts with an existing type.** Since the migration is finished, a brand-new widget with no `1`/legacy counterpart should use the plain name (e.g. `EncodingButton`, not `EncodingButton2`). Never introduce a `3` suffix. See [root AGENTS.md](../../AGENTS.md#widget-construction-pattern) for the constructor-injection pattern all widgets follow.
+Many existing files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the retained name for those existing classes (renaming them would be needless churn). **New code does NOT get a suffix unless the name genuinely conflicts with an existing type.** Since the migration is finished, a brand-new widget with no `1`/legacy counterpart should use the plain name (e.g. `EncodingButton`, not `EncodingButton2`). Never introduce a `3` suffix. See [Widget Construction Pattern](#widget-construction-pattern) below for the constructor-injection pattern all widgets follow.
 
 ## Hiding the QToolButton Menu Indicator
 
@@ -311,13 +311,13 @@ Widgets are the **View** layer. They display data and emit signals but **MUST NO
 
 ## ViewArea2 Framework
 
-For ViewArea2 framework design decisions (splitter orientation, session layout persistence, etc.), see [Key Design Decisions (ViewArea2)](../../AGENTS.md#key-design-decisions-viewarea2-framework) in root.
+For ViewArea2 framework design decisions (splitter orientation, session layout persistence, etc.), see [Key Design Decisions (ViewArea2 Framework)](../AGENTS.md#key-design-decisions-viewarea2-framework).
 
 The orchestrator for all open/close/split/move operations is `ViewAreaController` in `../controllers/`.
 
 ## NotebookExplorer2: Sync Button State
 
-`NotebookExplorer2::updateSyncButtonState` (`src/widgets/notebookexplorer2.cpp:1512-1665`) paints the per-notebook sync button and Sync Info menu. It classifies the current notebook into one of the 8 sync states (see root [Sync State Model](../../AGENTS.md#sync-state-model)) and sets the `partialSyncConfig` QWidget property, which downstream QSS reacts to.
+`NotebookExplorer2::updateSyncButtonState` (`src/widgets/notebookexplorer2.cpp:1512-1665`) paints the per-notebook sync button and Sync Info menu. It classifies the current notebook into one of the 8 sync states (see [Sync State Model](../core/services/AGENTS.md#sync-state-model)) and sets the `partialSyncConfig` QWidget property, which downstream QSS reacts to.
 
 ### Classifier
 
@@ -356,6 +356,36 @@ Without this affordance, users who disable sync can never re-enable without recr
 - Sync Info menu action enabled regardless of `syncEnabled` (was previously `setEnabled(syncEnabled)`).
 
 The dialog's bootstrap-mode dispatch (`notebooksyncinfodialog2.cpp` accept/apply handlers) routes the user's inputs through `NotebookSyncInfoController::bootstrapApply` rather than `applyChanges`, performing the atomic enable that takes a clean S0 to S5 in one shot.
+
+## Widget Construction Pattern
+
+The migration off the legacy singleton architecture (`VNoteX::getInst()`, `ConfigMgr::getInst()`, the legacy `MainWindow`/`Buffer`) is complete; those types have been removed. All widgets, controllers, models, and views take their dependencies via constructor injection with `ServiceLocator&`. Follow this pattern for new code:
+
+```cpp
+// Receives dependencies via constructor
+class MyWidget : public QWidget {
+  Q_OBJECT
+public:
+  explicit MyWidget(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+
+private:
+  ServiceLocator &m_services;
+
+  void doSomething() {
+    auto &config = m_services.get<ConfigCoreService>();
+    auto &notebooks = m_services.get<NotebookCoreService>();
+  }
+};
+```
+
+### Checklist for a new widget
+
+- [ ] Add `ServiceLocator &p_services` as the first constructor parameter
+- [ ] Store reference: `ServiceLocator &m_services`
+- [ ] Resolve dependencies via `m_services.get<XxxCoreService>()` — never global state
+- [ ] Have the parent widget pass its `ServiceLocator&` down
+- [ ] Register the file in the relevant `CMakeLists.txt`
+- [ ] Write a unit test with mock services
 
 ## Related Modules
 
