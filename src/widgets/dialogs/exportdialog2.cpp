@@ -32,10 +32,10 @@
 #include <controllers/exportcontroller.h>
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
-#include <core/sessionconfig.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
 #include <core/services/workspacecoreservice.h>
+#include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 
@@ -141,7 +141,7 @@ QString sourceText(ExportSource p_source, const ExportContext &p_context) {
 bool sourceAvailable(ExportSource p_source, const ExportContext &p_context) {
   switch (p_source) {
   case ExportSource::CurrentBuffer:
-    return !p_context.bufferContent.isEmpty();
+    return p_context.hasFileBuffer();
 
   case ExportSource::CurrentNote:
     return p_context.currentNodeId.isValid() && !p_context.currentNodeId.relativePath.isEmpty();
@@ -305,8 +305,7 @@ void ExportDialog2::setupUI() {
             stdItem->setEnabled(false);
           }
         }
-        m_sourceCombo->setItemData(idx, tr("Workspace has no exportable buffers"),
-                                   Qt::ToolTipRole);
+        m_sourceCombo->setItemData(idx, tr("Workspace has no exportable buffers"), Qt::ToolTipRole);
       }
     }
   }
@@ -518,9 +517,9 @@ void ExportDialog2::setupUI() {
     schemeMenuBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     auto *themeService = m_services.get<ThemeService>();
-    auto *newSchemeAction = new QAction(
-        IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg"))), tr("New"),
-        schemeMenuBtn);
+    auto *newSchemeAction =
+        new QAction(IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg"))),
+                    tr("New"), schemeMenuBtn);
     connect(newSchemeAction, &QAction::triggered, this, &ExportDialog2::addCustomScheme);
     schemeMenuBtn->setDefaultAction(newSchemeAction);
 

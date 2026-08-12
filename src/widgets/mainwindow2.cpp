@@ -645,23 +645,30 @@ void MainWindow2::exportNotes(ViewWindow2 *p_source) {
   // Get current ViewWindow2 (may be null if no file is open).
   auto *viewWin = p_source ? p_source : m_viewArea->getCurrentViewWindow();
   if (viewWin) {
-    context.bufferContent = viewWin->getLatestContent();
-    context.bufferName = viewWin->getName();
     const auto &buffer = viewWin->getBuffer();
-    context.currentNodeId = buffer.nodeId();
+    const QString path = buffer.resolvedPath();
+    // A virtual view (vx://home) is a valid buffer with no file; it is not an export source.
+    if (!path.isEmpty() && !buffer.nodeId().isVirtual()) {
+      context.bufferContent = viewWin->getLatestContent();
+      context.bufferName = viewWin->getName();
+      context.currentNodeId = buffer.nodeId();
+      context.bufferPath = path;
+    }
   }
 
   // Get notebook/folder context from NotebookExplorer2.
   context.notebookId = m_notebookExplorer->currentNotebookId();
   context.currentFolderId = m_notebookExplorer->currentExploredFolderId();
 
-  // If no explicit current node from ViewWindow2, use explorer's selected node.
-  if (!context.currentNodeId.isValid()) {
+  // A file-backed buffer is authoritative. Only when there is none (no editor, or a virtual
+  // view such as the dashboard) may the explorer's selection stand in.
+  if (!context.hasFileBuffer() && !context.currentNodeId.isValid()) {
     context.currentNodeId = m_notebookExplorer->currentExploredNodeId();
   }
 
   // Default source for toolbar is CurrentBuffer (if available).
-  context.presetSource = viewWin ? ExportSource::CurrentBuffer : ExportSource::CurrentNote;
+  context.presetSource =
+      context.hasFileBuffer() ? ExportSource::CurrentBuffer : ExportSource::CurrentNote;
 
   // Create non-modal ExportDialog2.
   m_exportDialog = new ExportDialog2(m_serviceLocator, context, this);
@@ -807,8 +814,12 @@ void MainWindow2::setupDocks() {
             if (viewWin) {
               const auto &buffer = viewWin->getBuffer();
               if (buffer.nodeId() == p_nodeId) {
-                context.bufferContent = viewWin->getLatestContent();
-                context.bufferName = viewWin->getName();
+                const QString path = buffer.resolvedPath();
+                if (!path.isEmpty() && !buffer.nodeId().isVirtual()) {
+                  context.bufferContent = viewWin->getLatestContent();
+                  context.bufferName = viewWin->getName();
+                  context.bufferPath = path;
+                }
               }
             }
 

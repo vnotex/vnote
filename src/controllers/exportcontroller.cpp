@@ -1,17 +1,18 @@
 #include "exportcontroller.h"
 
+#include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QWidget>
-#include <QDebug>
 #include <exception>
 
 #include <core/exception.h>
 #include <core/servicelocator.h>
-#include <core/services/bufferservice.h>
 #include <core/services/buffer2.h>
+#include <core/services/bufferservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
@@ -55,16 +56,23 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
     try {
       switch (p_option.m_source) {
       case ExportSource::CurrentBuffer: {
-        if (!p_context.currentNodeId.isValid()) {
-          emit logRequested(tr("No current buffer available for export."));
-          break;
+        QString filePath;
+        QString attachmentsFolder;
+        if (p_context.currentNodeId.isValid()) {
+          const auto relativePath = normalizedRelativePath(p_context.currentNodeId.relativePath);
+          filePath =
+              notebookService->buildAbsolutePath(p_context.currentNodeId.notebookId, relativePath);
+          if (p_option.m_exportAttachments) {
+            attachmentsFolder = notebookService->getAttachmentsFolder(
+                p_context.currentNodeId.notebookId, relativePath);
+          }
+        } else {
+          // External file: no notebook, therefore no attachments folder.
+          filePath = p_context.bufferPath;
         }
 
-        const auto relativePath = normalizedRelativePath(p_context.currentNodeId.relativePath);
-        const auto filePath =
-            notebookService->buildAbsolutePath(p_context.currentNodeId.notebookId, relativePath);
         if (filePath.isEmpty()) {
-          emit logRequested(tr("Failed to resolve current buffer path."));
+          emit logRequested(tr("No current buffer available for export."));
           break;
         }
 
@@ -73,13 +81,9 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
           fileName = QFileInfo(filePath).fileName();
         }
 
-        const auto outputFile = exporter->doExportFile(
-            p_option, p_context.bufferContent, filePath, fileName,
-            QFileInfo(filePath).absolutePath(),
-            p_option.m_exportAttachments ? notebookService->getAttachmentsFolder(
-                                               p_context.currentNodeId.notebookId, relativePath)
-                                         : QString(),
-            isMarkdownFile(filePath));
+        const auto outputFile = exporter->doExportFile(p_option, p_context.bufferContent, filePath,
+                                                       fileName, QFileInfo(filePath).absolutePath(),
+                                                       attachmentsFolder, isMarkdownFile(filePath));
         if (!outputFile.isEmpty()) {
           outputFiles.append(outputFile);
         }
@@ -261,10 +265,15 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
 }
 
 bool ExportController::isExportableNode(const NodeIdentifier &p_nodeId) {
-  if (p_nodeId.notebookId.isEmpty() || p_nodeId.relativePath.isEmpty() ||
-      p_nodeId.relativePath == QStringLiteral(".") ||
-      p_nodeId.relativePath.startsWith(QStringLiteral("vx://"))) {
+  if (p_nodeId.relativePath.isEmpty() || p_nodeId.relativePath == QStringLiteral(".") ||
+      p_nodeId.isVirtual()) {
     return false;
+  }
+  // An empty notebookId means an external file, whose relativePath is an ABSOLUTE path
+  // (MainWindow2::doOpenFiles). Requiring that keeps a malformed or extension-created
+  // NodeIdentifier{"", "draft.md"} from being resolved against the process working directory.
+  if (p_nodeId.notebookId.isEmpty()) {
+    return QDir::isAbsolutePath(p_nodeId.relativePath);
   }
   return true;
 }
@@ -300,7 +309,17 @@ void ExportController::collectWorkspaceFiles(const QString &p_workspaceId, bool 
     }
     const auto relativePath = normalizedRelativePath(nodeId.relativePath);
 
-    const auto filePath = notebookService->buildAbsolutePath(nodeId.notebookId, relativePath);
+    QString filePath;
+    QString attachmentFolderPath;
+    if (!nodeId.notebookId.isEmpty()) {
+      filePath = notebookService->buildAbsolutePath(nodeId.notebookId, relativePath);
+      if (p_exportAttachments) {
+        attachmentFolderPath =
+            notebookService->getAttachmentsFolder(nodeId.notebookId, relativePath);
+      }
+    } else {
+      filePath = buffer.resolvedPath();
+    }
     if (filePath.isEmpty()) {
       emit logRequested(tr("Failed to resolve file path for (%1).").arg(relativePath));
       continue;
@@ -310,9 +329,7 @@ void ExportController::collectWorkspaceFiles(const QString &p_workspaceId, bool 
     info.filePath = filePath;
     info.fileName = QFileInfo(filePath).fileName();
     info.resourcePath = QFileInfo(filePath).absolutePath();
-    info.attachmentFolderPath =
-        p_exportAttachments ? notebookService->getAttachmentsFolder(nodeId.notebookId, relativePath)
-                            : QString();
+    info.attachmentFolderPath = attachmentFolderPath;
     info.isMarkdown = isMarkdownFile(filePath);
     p_files.append(info);
   }

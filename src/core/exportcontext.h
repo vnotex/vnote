@@ -18,6 +18,13 @@ struct ExportContext {
   QString bufferName;             // Name of the open buffer (display/output naming)
   ExportSource presetSource = ExportSource::CurrentBuffer; // Pre-selected source
 
+  QString bufferPath; // Absolute path of the open FILE-backed buffer. Empty when no editor is
+                      // open or the active view is virtual. The only handle on an external file,
+                      // whose currentNodeId is invalid by design.
+
+  // Whether there is an open buffer that export can actually resolve to a file.
+  bool hasFileBuffer() const { return !bufferPath.isEmpty(); }
+
   bool isValid() const { return currentNodeId.isValid(); }
 };
 

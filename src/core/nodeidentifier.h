@@ -19,6 +19,9 @@ struct NodeIdentifier {
 
   bool isValid() const { return !notebookId.isEmpty(); }
 
+  // A virtual document (the dashboard at vx://home, ...) has no file behind it.
+  bool isVirtual() const { return relativePath.startsWith(QLatin1String("vx://")); }
+
   QString parentPath() const {
     int lastSlash = relativePath.lastIndexOf(QLatin1Char('/'));
     return lastSlash > 0 ? relativePath.left(lastSlash) : QString();
