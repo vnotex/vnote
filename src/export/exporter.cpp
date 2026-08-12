@@ -1,7 +1,7 @@
 #include "exporter.h"
 
-#include <QDir>
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QWidget>
@@ -106,8 +106,7 @@ QString Exporter::doExport(const ExportOption &p_option, const QString &p_output
   if (content.isEmpty() && !p_file.filePath.isEmpty()) {
     Error err = FileUtils2::readTextFile(p_file.filePath, &content);
     if (err) {
-      emit logRequested(
-          tr("Failed to read file (%1): %2").arg(p_file.filePath, err.what()));
+      emit logRequested(tr("Failed to read file (%1): %2").arg(p_file.filePath, err.what()));
       return QString();
     }
   }
@@ -239,6 +238,9 @@ QString Exporter::doExportPdfAllInOne(const ExportOption &p_option,
   }
 
   auto tmpOption(getExportOptionForIntermediateHtml(p_option, tmpDir.path()));
+  // These intermediate files are fed to wkhtmltopdf, so the diagrams must be rasterized here,
+  // while a live DOM still exists to re-render them in.
+  tmpOption.m_rasterizeDiagramsEnabled = true;
 
   QStringList htmlFiles;
   emit progressUpdated(0, p_files.size());
@@ -511,6 +513,9 @@ ExportOption Exporter::getExportOptionForIntermediateHtml(const ExportOption &p_
   tmpOption.m_exportAttachments = false;
   tmpOption.m_targetFormat = ExportFormat::HTML;
   tmpOption.m_transformSvgToPngEnabled = true;
+  // The intermediate HTML is consumed by Pandoc or wkhtmltopdf, neither of which renders MathJax
+  // SVG faithfully.
+  tmpOption.m_rasterizeMathEnabled = true;
   tmpOption.m_removeCodeToolBarEnabled = true;
 
   tmpOption.m_htmlOption.m_embedStyles = true;

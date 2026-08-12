@@ -106,6 +106,40 @@ class MarkdownViewerCore extends VXCore {
         return this.workers.get(p_name);
     }
 
+    // Flatten whatever the export target cannot render, then tell the C++ side the page is ready.
+    //
+    // p_options: { rasterizeMath: bool, rasterizeDiagrams: bool }.
+    //
+    // Every worker MAY implement `prepareForExport(p_options)` and return a Promise (or nothing
+    // when it has no work to do). This is the ONLY export entry point the C++ side knows about:
+    // it must not name individual workers, so a new renderer can join simply by implementing the
+    // hook. onPdfRenderReady() is signalled exactly once, after every hook has settled - a
+    // rejected hook is logged and treated as done, so one broken renderer cannot hang the export.
+    prepareForExport(p_options) {
+        let options = p_options || {};
+        let tasks = [];
+        this.workers.forEach(function (p_worker) {
+            if (!p_worker || typeof p_worker.prepareForExport !== 'function') {
+                return;
+            }
+
+            try {
+                let task = p_worker.prepareForExport(options);
+                if (task) {
+                    tasks.push(Promise.resolve(task).catch(function (p_err) {
+                        console.error('prepareForExport failed', p_worker.name, p_err);
+                    }));
+                }
+            } catch (p_err) {
+                console.error('prepareForExport threw', p_worker.name, p_err);
+            }
+        });
+
+        Promise.all(tasks).then(function () {
+            window.vxMarkdownAdapter.onPdfRenderReady();
+        });
+    }
+
     kickOffMarkdown() {
         if (this.kickedOff) {
             return;

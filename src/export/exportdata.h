@@ -150,7 +150,19 @@ struct ExportOption {
   // Following fields are used in runtime only.
   ExportCustomOption *m_customOption = nullptr;
 
+  // Renders Graphviz/PlantUML to PNG instead of SVG in the page (a WEB option, forwarded to
+  // vxOptions.transformSvgToPngEnabled). It says nothing about rasterizing the live DOM - see
+  // m_rasterizeMathEnabled / m_rasterizeDiagramsEnabled for that.
   bool m_transformSvgToPngEnabled = false;
+
+  // Flatten MathJax equations to PNG before the DOM is serialized, so Pandoc (docx/custom) and
+  // wkhtmltopdf never see raw MathJax SVG.
+  bool m_rasterizeMathEnabled = false;
+
+  // Flatten Mermaid diagrams to PNG before the DOM is serialized. Only the wkhtmltopdf routes set
+  // it: wkhtmltopdf re-shapes SVG text with a substituted font and clips the labels (see
+  // wkhtmltopdfhtmlpatch.h). Custom/docx and direct HTML export keep the diagrams vector.
+  bool m_rasterizeDiagramsEnabled = false;
 
   // Defaults to false so direct HTML export keeps the code-block toolbar (copy button).
   // The intermediate HTML feeding PDF/custom explicitly sets this true

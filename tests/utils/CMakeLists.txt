@@ -48,6 +48,29 @@ add_qt_test(test_stringutils
   GUILESS
 )
 
+# The behavioral half of this test executes the injected JavaScript in a QJSEngine, so it needs
+# Qt6::Qml, which tests/CMakeLists.txt finds as an OPTIONAL component.
+if(TARGET Qt6::Qml)
+  add_qt_test(test_wkhtmltopdfhtmlpatch
+    SOURCES
+      test_wkhtmltopdfhtmlpatch.cpp
+      ${CMAKE_SOURCE_DIR}/src/export/wkhtmltopdfhtmlpatch.cpp
+    LINKS
+      Qt6::Gui
+      Qt6::Qml
+    GUILESS
+  )
+endif()
+
+add_qt_test(test_exportfontresolver
+  SOURCES
+    test_exportfontresolver.cpp
+    ${CMAKE_SOURCE_DIR}/src/export/exportfontresolver.cpp
+  LINKS
+    Qt6::Gui
+  GUILESS
+)
+
 add_qt_test(test_clipboard_image
   SOURCES
     test_clipboard_image.cpp

@@ -190,7 +190,22 @@ class MathJaxRenderer extends VxWorker {
     // inline SVGs (Mermaid, Graphviz, Flowchart, WaveDrom, ...) must stay
     // vector, and some of them (e.g. Mermaid's <foreignObject>) taint the
     // canvas, which would make toDataURL() throw.
-    convertAllSvgToPng() {
+    // vxcore.prepareForExport() hook: flatten the equations when the export target asks for it.
+    // Returns a Promise, or null when there is nothing to do.
+    prepareForExport(p_options) {
+        if (!p_options || !p_options.rasterizeMath) {
+            return null;
+        }
+
+        let self = this;
+        return new Promise(function (p_resolve) {
+            self.convertAllSvgToPng(p_resolve);
+        });
+    }
+
+    // Rasterize MathJax's SVG output to PNG before PDF export, then call p_done exactly once.
+    convertAllSvgToPng(p_done) {
+        let done = typeof p_done === 'function' ? p_done : function () {};
         let container = this.vxcore.contentContainer;
         // Only the root <svg> of each equation (the direct child of
         // mjx-container). A nested inner <svg> (e.g. MathJax's data-table for
@@ -199,7 +214,7 @@ class MathJaxRenderer extends VxWorker {
         // fill the root's pinned viewport below.
         let svgs = container ? container.querySelectorAll('mjx-container > svg') : [];
         if (svgs.length == 0) {
-            window.vxMarkdownAdapter.onPdfRenderReady();
+            done();
             return;
         }
 
@@ -208,7 +223,7 @@ class MathJaxRenderer extends VxWorker {
         // strand the counter and hang the export.
         let finalizeOne = function () {
             if (--pending == 0) {
-                window.vxMarkdownAdapter.onPdfRenderReady();
+                done();
             }
         };
 

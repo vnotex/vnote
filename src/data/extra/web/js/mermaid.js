@@ -53,6 +53,9 @@ class Mermaid extends GraphRenderer {
 
         let graphDiv = document.createElement('div');
         graphDiv.classList.add(this.graphDivClass);
+        // Keep the graph source: the PDF export re-renders the diagram with SVG (instead of HTML)
+        // labels before rasterizing it. See rasterizeAllForExport().
+        graphDiv.setAttribute('data-mermaid-src', p_node.textContent);
         try {
             graphDiv.innerHTML = graphSvg;
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
@@ -68,6 +71,134 @@ class Mermaid extends GraphRenderer {
 
         this.finishRenderingOne();
         return true;
+    }
+
+    // vxcore.prepareForExport() hook. Returns a Promise, or null when there is nothing to do.
+    prepareForExport(p_options) {
+        if (!p_options || !p_options.rasterizeDiagrams) {
+            return null;
+        }
+
+        return this.rasterizeAllForExport();
+    }
+
+    // Replace every rendered diagram with a PNG raster of itself.
+    //
+    // Only used by the wkhtmltopdf export route. wkhtmltopdf's QtWebKit re-shapes the SVG text
+    // with a substituted font (it has no per-glyph fallback, and cannot load .ttc fonts at all),
+    // while the geometry around it - box sizes, tspan positions - was computed here with the real
+    // font. Labels then overflow their boxes and get clipped. Rasterizing here makes the diagram
+    // font-substitution-proof: wkhtmltopdf only ever sees pixels.
+    //
+    // An SVG loaded as an <img> does not render <foreignObject>, and Mermaid's default HTML labels
+    // are exactly that, so each diagram is first re-rendered from its source with htmlLabels off.
+    // A diagram without a stored source is left untouched (vector), which is strictly no worse
+    // than before.
+    async rasterizeAllForExport() {
+        let divs = document.querySelectorAll('div.' + this.graphDivClass + '[data-mermaid-src]');
+        if (divs.length == 0) {
+            return;
+        }
+
+        let scale = Math.max(2, window.devicePixelRatio || 1);
+        for (let i = 0; i < divs.length; ++i) {
+            try {
+                await this.rasterizeOneForExport(divs[i], i, scale);
+            } catch (p_err) {
+                console.error('failed to rasterize Mermaid graph', p_err);
+            }
+        }
+    }
+
+    async rasterizeOneForExport(p_div, p_idx, p_scale) {
+        const src = p_div.getAttribute('data-mermaid-src');
+        if (!src) {
+            return;
+        }
+
+        // Force SVG labels for this render only, via an init directive, so the live viewer
+        // configuration is left alone.
+        const directive = '%%{init: {"flowchart": {"htmlLabels": false}, '
+                          + '"class": {"htmlLabels": false}, "htmlLabels": false} }%%\n';
+        const { svg } = await mermaid.render('vx-mermaid-graph-export-' + p_idx, directive + src);
+        if (!svg) {
+            return;
+        }
+
+        let holder = document.createElement('div');
+        holder.innerHTML = svg;
+        let svgNode = holder.children[0];
+        if (!svgNode) {
+            return;
+        }
+
+        // The on-page size of the diagram being replaced, so the raster occupies the same box.
+        let oldSvg = p_div.querySelector('svg');
+        let box = oldSvg ? oldSvg.getBoundingClientRect() : p_div.getBoundingClientRect();
+        let vb = (svgNode.getAttribute('viewBox') || '').split(/[\s,]+/);
+        let vbW = vb.length >= 4 ? parseFloat(vb[2]) : 0;
+        let vbH = vb.length >= 4 ? parseFloat(vb[3]) : 0;
+        let width = Math.max(1, Math.ceil(box.width > 0 ? box.width : vbW));
+        let height = Math.max(1, Math.ceil(box.height > 0 ? box.height
+                                                          : (vbW > 0 ? vbH * width / vbW : vbH)));
+        if (vbW > 0 && vbH > 0) {
+            // Keep the aspect ratio of the freshly rendered diagram: SVG labels are not laid out
+            // exactly like the HTML ones, so its natural height may differ from the old one's.
+            height = Math.max(1, Math.round(width * vbH / vbW));
+        }
+
+        // An SVG loaded as an image has no containing block, so `width="100%"` collapses.
+        svgNode.setAttribute('width', width + 'px');
+        svgNode.setAttribute('height', height + 'px');
+        svgNode.style.maxWidth = 'none';
+        const svgStr = new XMLSerializer().serializeToString(svgNode);
+
+        const dataUrl = await new Promise((resolve) => {
+            let url = URL.createObjectURL(new Blob([svgStr],
+                                                   { type: 'image/svg+xml;charset=utf-8' }));
+            let img = new Image();
+            img.onload = function () {
+                let png = null;
+                try {
+                    let canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(width * p_scale));
+                    canvas.height = Math.max(1, Math.round(height * p_scale));
+                    let ctx = canvas.getContext('2d');
+                    // The diagram is drawn on transparent background otherwise, which turns into
+                    // black in some PDF viewers.
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    png = canvas.toDataURL('image/png');
+                } catch (p_err) {
+                    console.error('failed to rasterize Mermaid SVG', p_err);
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+                resolve(png);
+            };
+            img.onerror = function () {
+                URL.revokeObjectURL(url);
+                resolve(null);
+            };
+            img.src = url;
+        });
+
+        if (!dataUrl) {
+            return;
+        }
+
+        let pngImg = document.createElement('img');
+        pngImg.src = dataUrl;
+        pngImg.style.width = width + 'px';
+        pngImg.style.height = height + 'px';
+        pngImg.style.maxWidth = 'none';
+        pngImg.setAttribute('data-mermaid-png', 'true');
+        // Consumed by the size-fix script injected for wkhtmltopdf, which cannot measure the DOM.
+        pngImg.setAttribute('data-mermaid-width', width);
+        pngImg.setAttribute('data-mermaid-height', height);
+        p_div.innerHTML = '';
+        p_div.appendChild(pngImg);
     }
 
     // Render a graph from @p_text.

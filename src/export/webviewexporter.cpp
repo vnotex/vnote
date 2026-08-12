@@ -1,12 +1,15 @@
 #include "webviewexporter.h"
 
+#include "exportfontresolver.h"
 #include "exportstyleresolver.h"
+#include "wkhtmltopdfhtmlpatch.h"
 
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QProcess>
 #include <QRegularExpression>
+#include <QSaveFile>
 #include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
@@ -314,12 +317,15 @@ bool vnotex::WebViewExporter::doExport(const ExportOption &p_option, const QStri
   Utils::sleepWait(200);
 
   switch (p_option.m_targetFormat) {
-  case ExportFormat::HTML:
+  case ExportFormat::HTML: {
     // TODO: MIME HTML format is not supported yet.
     Q_ASSERT(!p_option.m_htmlOption.m_useMimeHtmlFormat);
-    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl,
-                       p_option.m_transformSvgToPngEnabled);
+    RasterFlags rasterFlags;
+    rasterFlags.setFlag(RasterizeMath, p_option.m_rasterizeMathEnabled);
+    rasterFlags.setFlag(RasterizeDiagrams, p_option.m_rasterizeDiagramsEnabled);
+    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl, rasterFlags);
     break;
+  }
 
   case ExportFormat::PDF:
     if (p_option.m_pdfOption.m_useWkhtmltopdf) {
@@ -348,7 +354,7 @@ bool WebViewExporter::isWebViewFailed() const { return m_webViewStates & WebView
 
 bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
                                    const QString &p_outputFile, const QUrl &p_baseUrl,
-                                   bool p_rasterizeMathSvg) {
+                                   RasterFlags p_rasterFlags) {
   ExportState state = ExportState::Busy;
 
   connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
@@ -373,12 +379,10 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
             state = ExportState::Finished;
           });
 
-  // For custom/docx (intermediate HTML) export, flatten MathJax's inline SVG to PNG first so
-  // downstream tools (e.g. Pandoc without rsvg-convert) can embed the equations. saveContent()
-  // serializes the live DOM, so the rasterized <img> nodes are captured. Direct HTML export
-  // keeps math as vector (p_rasterizeMathSvg == false).
-  if (p_rasterizeMathSvg) {
-    if (!waitForMathSvgRasterization()) {
+  // saveContent() serializes the LIVE DOM, so anything the page flattens here is captured. Direct
+  // HTML export passes no flags and keeps math and diagrams vector.
+  if (p_rasterFlags) {
+    if (!prepareLivePageForExport(p_rasterFlags)) {
       disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
       return false;
     }
@@ -637,6 +641,13 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
     m_wkhtmltopdfArgs.append(ProcessUtils::parseCombinedArgString(p_pdfOption.m_wkhtmltopdfArgs));
   }
 
+  // The Mermaid sizing workaround (see wkhtmltopdfhtmlpatch.h) is an in-page script, so disabling
+  // JavaScript would silently drop every diagram from the PDF. Appended AFTER the user arguments
+  // because wkhtmltopdf applies these switches in order and the last one wins: that neutralizes
+  // `--disable-javascript` and its short form, including inside a bundle such as `-qn`, without
+  // parsing (and possibly corrupting) the user's argument list.
+  m_wkhtmltopdfArgs << "--enable-javascript";
+
   // Must be put after the global object options.
   if (p_pdfOption.m_addTableOfContents) {
     m_wkhtmltopdfArgs << "toc";
@@ -757,16 +768,23 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl, const QString &p_f
   return altered;
 }
 
-bool WebViewExporter::waitForMathSvgRasterization() {
+bool WebViewExporter::prepareLivePageForExport(RasterFlags p_flags) {
   bool pdfRenderReady = false;
   QMetaObject::Connection conn =
       connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady, this,
               [&pdfRenderReady]() { pdfRenderReady = true; });
 
-  m_viewer->page()->runJavaScript(
-      "if (typeof vxcore !== 'undefined' && vxcore.getWorker('mathjax')) {"
-      "  vxcore.getWorker('mathjax').convertAllSvgToPng();"
-      "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }");
+  // One entry point, no worker names: the page side decides which renderers have export work and
+  // signals onPdfRenderReady() exactly once when they have all settled (markdownviewercore.js).
+  const QString js =
+      QStringLiteral("if (typeof vxcore !== 'undefined' && vxcore.prepareForExport) {"
+                     "  vxcore.prepareForExport({ rasterizeMath: %1, rasterizeDiagrams: %2 });"
+                     "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }")
+          .arg(p_flags.testFlag(RasterizeMath) ? QStringLiteral("true") : QStringLiteral("false"),
+               p_flags.testFlag(RasterizeDiagrams) ? QStringLiteral("true")
+                                                   : QStringLiteral("false"));
+
+  m_viewer->page()->runJavaScript(js);
 
   // Bounded wait: if the render-ready signal never arrives (JS bridge not
   // ready, an uncaught error in the page, ...), fall through instead of
@@ -781,8 +799,18 @@ bool WebViewExporter::waitForMathSvgRasterization() {
       return false;
     }
     if (renderTimer.hasExpired(c_pdfRenderReadyTimeoutMs)) {
+      disconnect(conn);
+      if (p_flags.testFlag(RasterizeDiagrams)) {
+        // Diagram rasterization rewrites the LIVE DOM (each diagram is replaced by its raster).
+        // Serializing the page while that is still running would produce a random mix of diagrams
+        // and rasters, so fail loudly instead. Math alone is left as a best-effort fallback: it
+        // only degrades the equations back to vector SVG.
+        qWarning() << "timed out waiting for diagram rasterization; aborting the export";
+        emit logRequested(tr("Timed out while rasterizing the diagrams of this note."));
+        return false;
+      }
       qWarning() << "timed out waiting for math SVG rasterization; proceeding";
-      break;
+      return true;
     }
   }
   disconnect(conn);
@@ -792,7 +820,8 @@ bool WebViewExporter::waitForMathSvgRasterization() {
 bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile) {
   ExportState state = ExportState::Busy;
 
-  if (!waitForMathSvgRasterization()) {
+  // Qt WebEngine renders Mermaid correctly; only the math needs flattening (issue #2681).
+  if (!prepareLivePageForExport(RasterizeMath)) {
     return false;
   }
 
@@ -836,6 +865,12 @@ bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption,
   }
 
   ExportState state = ExportState::Busy;
+
+  // Rasterize the diagrams (and the math) before serializing the DOM: wkhtmltopdf re-shapes SVG
+  // text with a substituted font, which clips diagram labels.
+  if (!prepareLivePageForExport(RasterizeMath | RasterizeDiagrams)) {
+    return false;
+  }
 
   connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
           [&, this](const QString &p_headContent, const QString &p_styleContent,
@@ -884,13 +919,94 @@ bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption,
   return state == ExportState::Finished;
 }
 
+// Inject the Mermaid workarounds (see wkhtmltopdfhtmlpatch.h) into p_htmlFile in place.
+// Byte-level: the file is never decoded, so its encoding survives untouched. Every caller passes a
+// file living in a QTemporaryDir, so the user's own output is never mutated. Returns false when the
+// file cannot be patched; the caller must then abort instead of feeding wkhtmltopdf an input that
+// can hang it forever.
+static bool patchHtmlForWkhtmltopdf(const QString &p_htmlFile, int p_maxWidthPx, int p_maxHeightPx,
+                                    const QByteArray &p_textFamily,
+                                    const QByteArray &p_monoFamily) {
+  QFile file(p_htmlFile);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning() << "failed to read intermediate HTML file for patching" << p_htmlFile
+               << file.errorString();
+    return false;
+  }
+  auto content = file.readAll();
+  if (file.error() != QFileDevice::NoError) {
+    qWarning() << "failed to read intermediate HTML file for patching" << p_htmlFile
+               << file.errorString();
+    return false;
+  }
+  file.close();
+
+  if (!insertWkhtmltopdfHtmlPatches(content, p_maxWidthPx, p_maxHeightPx, p_textFamily,
+                                    p_monoFamily)) {
+    qWarning() << "no </head> found in intermediate HTML file" << p_htmlFile;
+    return false;
+  }
+
+  QSaveFile out(p_htmlFile);
+  if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    qWarning() << "failed to open intermediate HTML file for writing" << p_htmlFile
+               << out.errorString();
+    return false;
+  }
+
+  if (out.write(content) != content.size() || !out.commit()) {
+    qWarning() << "failed to write patched intermediate HTML file" << p_htmlFile
+               << out.errorString();
+    return false;
+  }
+
+  return true;
+}
+
 bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption,
                                               const QStringList &p_htmlFiles,
                                               const QString &p_outputFile) {
   QStringList args(m_wkhtmltopdfArgs);
 
+  // Fit Mermaid diagrams to the text column and to one printable page (see wkhtmltopdfhtmlpatch.h).
+  // Both limits are derived from the page layout VNote itself passes to wkhtmltopdf, so they are
+  // only trustworthy when nothing else can change the page geometry or the print scaling. The
+  // user's extra arguments are appended after VNote's and win, and far more of them than just the
+  // margin/page-size options affect the result (`--zoom`, `--default-header`,
+  // `--header-html`/`--footer-html` reservation, `--disable-smart-shrinking`, `--user-style-sheet`,
+  // ...). Rather than chase that list, ANY custom argument turns both clamps off: that is exactly
+  // the pre-existing behavior, and it is reported.
+  int maxWidthPx = 0;
+  int maxHeightPx = 0;
+  if (p_pdfOption.m_layout) {
+    maxWidthPx = wkhtmltopdfContentWidthPx(*p_pdfOption.m_layout);
+    maxHeightPx = wkhtmltopdfPageContentHeightPx(*p_pdfOption.m_layout);
+  }
+  if ((maxWidthPx > 0 || maxHeightPx > 0) && !p_pdfOption.m_wkhtmltopdfArgs.isEmpty()) {
+    emit logRequested(tr("Custom wkhtmltopdf arguments may change the page geometry; not fitting "
+                         "Mermaid diagrams to the page. A large diagram may overflow it."));
+    maxWidthPx = 0;
+    maxHeightPx = 0;
+  }
+
+  // Force an installed, CJK-capable family at the head of the stack (see wkhtmltopdfhtmlpatch.h
+  // workaround 5). Unlike the size clamps this stays on even with custom arguments: no wkhtmltopdf
+  // option can make a Latin-only font grow CJK glyphs.
+  const SystemFontProbe fontProbe;
+  const auto fonts = resolveWkhtmltopdfFonts(fontProbe);
+  if (fonts.m_text.isEmpty()) {
+    emit logRequested(tr("No CJK-capable font that wkhtmltopdf can load was found; non-Latin text "
+                         "may be rendered as blank boxes. Install e.g. Noto Sans SC."));
+  }
+
   // Prepare the args.
   for (auto const &file : p_htmlFiles) {
+    if (!patchHtmlForWkhtmltopdf(file, maxWidthPx, maxHeightPx, fonts.m_text, fonts.m_mono)) {
+      emit logRequested(
+          tr("Failed to prepare the intermediate HTML file (%1) for wkhtmltopdf.").arg(file));
+      return false;
+    }
+
     // Note: system's locale settings (Language for non-Unicode programs) is important to
     // wkhtmltopdf. Input file could be encoded via
     // QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to handle non-ASCII path. But

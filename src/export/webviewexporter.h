@@ -18,6 +18,19 @@ public:
   enum WebViewState { Started = 0, LoadFinished = 0x1, WorkFinished = 0x2, Failed = 0x4 };
   Q_DECLARE_FLAGS(WebViewStates, WebViewState);
 
+  // What the live page must flatten before its DOM is serialized (or printed), because the export
+  // target cannot render it faithfully. One decision per route, so a route can never enable half
+  // of what it needs.
+  enum RasterFlag {
+    // MathJax SVG -> PNG: Qt WebEngine's printToPdf picks the wrong font for <use>-referenced
+    // glyphs (issue #2681), and Pandoc without rsvg-convert cannot embed the SVG at all.
+    RasterizeMath = 0x1,
+    // Mermaid SVG -> PNG: wkhtmltopdf re-shapes SVG text with a substituted font and clips the
+    // labels (see wkhtmltopdfhtmlpatch.h).
+    RasterizeDiagrams = 0x2
+  };
+  Q_DECLARE_FLAGS(RasterFlags, RasterFlag);
+
   // We need QWidget as parent.
   explicit WebViewExporter(ServiceLocator &p_services, QWidget *p_parent);
 
@@ -50,12 +63,13 @@ private:
   bool isWebViewFailed() const;
 
   bool doExportHtml(const ExportHtmlOption &p_htmlOption, const QString &p_outputFile,
-                    const QUrl &p_baseUrl, bool p_rasterizeMathSvg = false);
+                    const QUrl &p_baseUrl, RasterFlags p_rasterFlags = RasterFlags());
 
-  // Trigger MathJax SVG->PNG rasterization in the live page and block (bounded) until the
-  // page reports it is done. Shared by the PDF and custom/docx (intermediate HTML) paths so
-  // Pandoc/printToPdf never sees raw MathJax SVG. Returns false if the export was asked to stop.
-  bool waitForMathSvgRasterization();
+  // Ask the live page to flatten everything named by p_flags and block (bounded) until it reports
+  // it is done. Returns false when the export was asked to stop, or when diagram rasterization -
+  // which rewrites the live DOM - did not finish in time (serializing then would capture a random
+  // mix of vector and raster diagrams).
+  bool prepareLivePageForExport(RasterFlags p_flags);
 
   bool writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl, const QString &p_headContent,
                      QString p_styleContent, const QString &p_content,
@@ -103,5 +117,6 @@ private:
 } // namespace vnotex
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::WebViewExporter::WebViewStates)
+Q_DECLARE_OPERATORS_FOR_FLAGS(vnotex::WebViewExporter::RasterFlags)
 
 #endif // WEBVIEWEXPORTER_H
