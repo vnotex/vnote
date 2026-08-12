@@ -367,9 +367,13 @@ jobs:
           where cl || echo "cl.exe not on PATH"
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=%VNOTE_TESTS% -DOPENSSL_EXTRA_LIB_DIR=%VX_OPENSSL_EXTRA_LIB_DIR% -DOPENSSL_LICENSE_FILE=%VX_OPENSSL_LICENSE_FILE% %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
           type cmake-configure.log
-          cmake --build .
-          cmake --build . --target=pack
-          7z x VNote*.zip
+          REM cmd reports only the LAST command's exit code, so every step here
+          REM needs its own `|| exit /b 1`. Without them a failed build (and the
+          REM failed pack and failed extraction that follow it) was reported as
+          REM a green step, and the run only died later in a packaging gate.
+          cmake --build . || exit /b 1
+          cmake --build . --target=pack || exit /b 1
+          7z x VNote*.zip || exit /b 1
           dir
         working-directory: ${{runner.workspace}}/build
 
