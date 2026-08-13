@@ -323,7 +323,8 @@ bool vnotex::WebViewExporter::doExport(const ExportOption &p_option, const QStri
     RasterFlags rasterFlags;
     rasterFlags.setFlag(RasterizeMath, p_option.m_rasterizeMathEnabled);
     rasterFlags.setFlag(RasterizeDiagrams, p_option.m_rasterizeDiagramsEnabled);
-    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl, rasterFlags);
+    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl, rasterFlags,
+                       p_option.m_pdfOption.m_layout.data());
     break;
   }
 
@@ -354,7 +355,7 @@ bool WebViewExporter::isWebViewFailed() const { return m_webViewStates & WebView
 
 bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
                                    const QString &p_outputFile, const QUrl &p_baseUrl,
-                                   RasterFlags p_rasterFlags) {
+                                   RasterFlags p_rasterFlags, const QPageLayout *p_layout) {
   ExportState state = ExportState::Busy;
 
   connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
@@ -382,7 +383,7 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
   // saveContent() serializes the LIVE DOM, so anything the page flattens here is captured. Direct
   // HTML export passes no flags and keeps math and diagrams vector.
   if (p_rasterFlags) {
-    if (!prepareLivePageForExport(p_rasterFlags)) {
+    if (!prepareLivePageForExport(p_rasterFlags, p_layout)) {
       disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
       return false;
     }
@@ -768,21 +769,36 @@ bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl, const QString &p_f
   return altered;
 }
 
-bool WebViewExporter::prepareLivePageForExport(RasterFlags p_flags) {
+bool WebViewExporter::prepareLivePageForExport(RasterFlags p_flags, const QPageLayout *p_layout) {
   bool pdfRenderReady = false;
   QMetaObject::Connection conn =
       connect(m_viewer->adapter(), &MarkdownViewerAdapter::pdfRenderReady, this,
               [&pdfRenderReady]() { pdfRenderReady = true; });
 
+  // Rasterize diagrams at the PRINTED box, not the on-screen one: the page lays a diagram out at
+  // its natural width and the CSS clamp then shrinks it, so rastering on screen resamples twice
+  // and visibly softens the result. The printed box is derived from the very layout wkhtmltopdf
+  // is handed. 0 disables a clamp, and the page then falls back to its natural size.
+  int maxWidthPx = 0;
+  int maxHeightPx = 0;
+  if (p_layout) {
+    maxWidthPx = wkhtmltopdfContentWidthPx(*p_layout);
+    maxHeightPx = wkhtmltopdfPageContentHeightPx(*p_layout);
+  }
+  const int rasterScale = qMax(2, qRound(c_diagramRasterDpi / 96.0));
+
   // One entry point, no worker names: the page side decides which renderers have export work and
   // signals onPdfRenderReady() exactly once when they have all settled (markdownviewercore.js).
   const QString js =
       QStringLiteral("if (typeof vxcore !== 'undefined' && vxcore.prepareForExport) {"
-                     "  vxcore.prepareForExport({ rasterizeMath: %1, rasterizeDiagrams: %2 });"
+                     "  vxcore.prepareForExport({ rasterizeMath: %1, rasterizeDiagrams: %2,"
+                     "    maxWidthPx: %3, maxHeightPx: %4, rasterScale: %5 });"
                      "} else { window.vxMarkdownAdapter.onPdfRenderReady(); }")
           .arg(p_flags.testFlag(RasterizeMath) ? QStringLiteral("true") : QStringLiteral("false"),
                p_flags.testFlag(RasterizeDiagrams) ? QStringLiteral("true")
-                                                   : QStringLiteral("false"));
+                                                   : QStringLiteral("false"),
+               QString::number(maxWidthPx), QString::number(maxHeightPx),
+               QString::number(rasterScale));
 
   m_viewer->page()->runJavaScript(js);
 
@@ -868,7 +884,7 @@ bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption,
 
   // Rasterize the diagrams (and the math) before serializing the DOM: wkhtmltopdf re-shapes SVG
   // text with a substituted font, which clips diagram labels.
-  if (!prepareLivePageForExport(RasterizeMath | RasterizeDiagrams)) {
+  if (!prepareLivePageForExport(RasterizeMath | RasterizeDiagrams, p_pdfOption.m_layout.data())) {
     return false;
   }
 

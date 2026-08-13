@@ -79,7 +79,7 @@ class Mermaid extends GraphRenderer {
             return null;
         }
 
-        return this.rasterizeAllForExport();
+        return this.rasterizeAllForExport(p_options);
     }
 
     // Replace every rendered diagram with a PNG raster of itself.
@@ -87,30 +87,38 @@ class Mermaid extends GraphRenderer {
     // Only used by the wkhtmltopdf export route. wkhtmltopdf's QtWebKit re-shapes the SVG text
     // with a substituted font (it has no per-glyph fallback, and cannot load .ttc fonts at all),
     // while the geometry around it - box sizes, tspan positions - was computed here with the real
-    // font. Labels then overflow their boxes and get clipped. Rasterizing here makes the diagram
-    // font-substitution-proof: wkhtmltopdf only ever sees pixels.
+    // font. Labels then overflow their boxes and get clipped. It also drops some long/complex
+    // paths outright. Rasterizing here makes the diagram immune to both: wkhtmltopdf only ever
+    // sees pixels.
     //
     // An SVG loaded as an <img> does not render <foreignObject>, and Mermaid's default HTML labels
     // are exactly that, so each diagram is first re-rendered from its source with htmlLabels off.
     // A diagram without a stored source is left untouched (vector), which is strictly no worse
     // than before.
-    async rasterizeAllForExport() {
+    //
+    // p_options.maxWidthPx / .maxHeightPx are the PRINTED box (0 = unconstrained) and
+    // p_options.rasterScale the device pixels per CSS pixel to render at. Rasterizing straight
+    // into the printed box matters: sizing the raster from the on-screen box instead leaves the
+    // CSS clamp to resample it a second time, which is what makes diagrams look soft.
+    async rasterizeAllForExport(p_options) {
         let divs = document.querySelectorAll('div.' + this.graphDivClass + '[data-mermaid-src]');
         if (divs.length == 0) {
             return;
         }
 
-        let scale = Math.max(2, window.devicePixelRatio || 1);
+        let options = p_options || {};
+        let scale = options.rasterScale > 0 ? options.rasterScale
+                                            : Math.max(2, window.devicePixelRatio || 1);
         for (let i = 0; i < divs.length; ++i) {
             try {
-                await this.rasterizeOneForExport(divs[i], i, scale);
+                await this.rasterizeOneForExport(divs[i], i, scale, options);
             } catch (p_err) {
                 console.error('failed to rasterize Mermaid graph', p_err);
             }
         }
     }
 
-    async rasterizeOneForExport(p_div, p_idx, p_scale) {
+    async rasterizeOneForExport(p_div, p_idx, p_scale, p_options) {
         const src = p_div.getAttribute('data-mermaid-src');
         if (!src) {
             return;
@@ -132,7 +140,7 @@ class Mermaid extends GraphRenderer {
             return;
         }
 
-        // The on-page size of the diagram being replaced, so the raster occupies the same box.
+        // The on-page size of the diagram being replaced, as the starting point.
         let oldSvg = p_div.querySelector('svg');
         let box = oldSvg ? oldSvg.getBoundingClientRect() : p_div.getBoundingClientRect();
         let vb = (svgNode.getAttribute('viewBox') || '').split(/[\s,]+/);
@@ -147,9 +155,35 @@ class Mermaid extends GraphRenderer {
             height = Math.max(1, Math.round(width * vbH / vbW));
         }
 
+        // Shrink to the printed box BEFORE rasterizing, so the raster is produced at exactly the
+        // size it will be printed at (same clamp as the injected size-fix script, which then has
+        // nothing left to do).
+        let options = p_options || {};
+        if (options.maxWidthPx > 0 && width > options.maxWidthPx) {
+            height = Math.max(1, Math.round(height * options.maxWidthPx / width));
+            width = options.maxWidthPx;
+        }
+        if (options.maxHeightPx > 0 && height > options.maxHeightPx) {
+            width = Math.max(1, Math.round(width * options.maxHeightPx / height));
+            height = options.maxHeightPx;
+        }
+
+        // Keep the canvas within what the browser will actually allocate. Chromium refuses very
+        // large canvases silently (toDataURL then throws or returns a blank image), so cap the
+        // longest side and the total area, preserving the aspect ratio.
+        const c_maxSide = 8192;
+        const c_maxArea = 40000000;
+        let scale = p_scale > 0 ? p_scale : 2;
+        scale = Math.min(scale, c_maxSide / Math.max(width, height));
+        scale = Math.min(scale, Math.sqrt(c_maxArea / (width * height)));
+        scale = Math.max(1, scale);
+
+        const devWidth = Math.max(1, Math.round(width * scale));
+        const devHeight = Math.max(1, Math.round(height * scale));
+
         // An SVG loaded as an image has no containing block, so `width="100%"` collapses.
-        svgNode.setAttribute('width', width + 'px');
-        svgNode.setAttribute('height', height + 'px');
+        svgNode.setAttribute('width', devWidth + 'px');
+        svgNode.setAttribute('height', devHeight + 'px');
         svgNode.style.maxWidth = 'none';
         const svgStr = new XMLSerializer().serializeToString(svgNode);
 
@@ -161,8 +195,8 @@ class Mermaid extends GraphRenderer {
                 let png = null;
                 try {
                     let canvas = document.createElement('canvas');
-                    canvas.width = Math.max(1, Math.round(width * p_scale));
-                    canvas.height = Math.max(1, Math.round(height * p_scale));
+                    canvas.width = devWidth;
+                    canvas.height = devHeight;
                     let ctx = canvas.getContext('2d');
                     // The diagram is drawn on transparent background otherwise, which turns into
                     // black in some PDF viewers.

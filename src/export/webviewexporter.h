@@ -56,6 +56,12 @@ signals:
 private:
   enum class ExportState { Busy = 0, Finished, Failed };
 
+  // Resolution a rasterized diagram is produced at, over the box it is PRINTED in. 384 dpi (4x
+  // the 96 CSS px/inch wkhtmltopdf lays out at) is where the returns flatten out: measured against
+  // the same diagram, 2x is visibly soft, 4x is clean at print and at a 6x on-screen zoom, and 6x
+  // costs another 75% in file size for a difference that only shows under magnification.
+  static constexpr int c_diagramRasterDpi = 384;
+
   ServiceLocator &m_services;
 
   bool isWebViewReady() const;
@@ -63,13 +69,20 @@ private:
   bool isWebViewFailed() const;
 
   bool doExportHtml(const ExportHtmlOption &p_htmlOption, const QString &p_outputFile,
-                    const QUrl &p_baseUrl, RasterFlags p_rasterFlags = RasterFlags());
+                    const QUrl &p_baseUrl, RasterFlags p_rasterFlags = RasterFlags(),
+                    const QPageLayout *p_layout = nullptr);
 
   // Ask the live page to flatten everything named by p_flags and block (bounded) until it reports
   // it is done. Returns false when the export was asked to stop, or when diagram rasterization -
   // which rewrites the live DOM - did not finish in time (serializing then would capture a random
   // mix of vector and raster diagrams).
-  bool prepareLivePageForExport(RasterFlags p_flags);
+  //
+  // p_layout is the target page layout, used to rasterize diagrams at the size they will actually
+  // be PRINTED at rather than at the size they happen to occupy on screen. Without it the page
+  // rasterizes at its natural size, which is then resampled a second time by the CSS clamp - the
+  // two resamplings are what made the diagrams look soft. Pass nullptr when no diagram is being
+  // rasterized, or when the printed geometry is unknown.
+  bool prepareLivePageForExport(RasterFlags p_flags, const QPageLayout *p_layout = nullptr);
 
   bool writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl, const QString &p_headContent,
                      QString p_styleContent, const QString &p_content,
