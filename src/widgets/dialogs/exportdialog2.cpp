@@ -494,8 +494,26 @@ void ExportDialog2::setupUI() {
     m_pdfAllInOneCheck->setToolTip(tr("Export all source files into one file"));
     layout->addRow(m_pdfAllInOneCheck);
 
+    // Keep the form labels in sync with the fields they name, otherwise a disabled field is
+    // still introduced by a fully enabled label.
+    m_wkhtmltopdfLabels.clear();
+    for (auto *field :
+         {static_cast<QWidget *>(m_wkhtmltopdfExePathEdit),
+          static_cast<QWidget *>(m_wkhtmltopdfArgsEdit),
+          static_cast<QWidget *>(m_pdfHeaderLeftEdit),
+          static_cast<QWidget *>(m_pdfHeaderCenterEdit),
+          static_cast<QWidget *>(m_pdfHeaderRightEdit), static_cast<QWidget *>(m_pdfFooterLeftEdit),
+          static_cast<QWidget *>(m_pdfFooterCenterEdit),
+          static_cast<QWidget *>(m_pdfFooterRightEdit)}) {
+      if (auto *label = layout->labelForField(field)) {
+        m_wkhtmltopdfLabels.append(label);
+      }
+    }
+
     connect(m_useWkhtmltopdfCheck, &QCheckBox::stateChanged, this,
             [this](int) { updatePdfWidgetsByWkhtmltopdf(); });
+
+    updatePdfWidgetsByWkhtmltopdf();
 
     m_stackedLayout->addWidget(page);
   }
@@ -1000,6 +1018,9 @@ void ExportDialog2::updatePdfWidgetsByWkhtmltopdf() {
   m_pdfFooterCenterEdit->setEnabled(enabled);
   m_pdfFooterRightEdit->setEnabled(enabled);
   m_pdfAllInOneCheck->setEnabled(enabled);
+  for (auto *label : m_wkhtmltopdfLabels) {
+    label->setEnabled(enabled);
+  }
 }
 
 void ExportDialog2::updateUiOnExportState(bool p_exporting) {

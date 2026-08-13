@@ -4,6 +4,7 @@
 #include "scrolldialog.h"
 
 #include <QSharedPointer>
+#include <QVector>
 
 #include <core/exportcontext.h>
 #include <export/exportdata.h>
@@ -107,6 +108,8 @@ private:
   QLineEdit *m_pdfFooterCenterEdit = nullptr;
   QLineEdit *m_pdfFooterRightEdit = nullptr;
   QCheckBox *m_pdfAllInOneCheck = nullptr;
+  // Form labels of the wkhtmltopdf-only fields, enabled/disabled along with them.
+  QVector<QWidget *> m_wkhtmltopdfLabels;
   QSharedPointer<QPageLayout> m_pageLayout;
 
   // Custom page.
