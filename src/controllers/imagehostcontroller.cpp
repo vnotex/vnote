@@ -1,5 +1,7 @@
 #include "imagehostcontroller.h"
 
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/imagehostservice.h>
 #include <imagehost/iimagehostprovider.h>
@@ -7,21 +9,20 @@
 using namespace vnotex;
 
 ImageHostController::ImageHostController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services)
-{
+    : QObject(p_parent), m_services(p_services) {
   auto *svc = m_services.get<ImageHostService>();
   if (svc) {
     connect(svc, &ImageHostService::providerChanged, this, &ImageHostController::providerChanged);
     connect(svc, &ImageHostService::uploadFinished, this, &ImageHostController::uploadFinished);
     connect(svc, &ImageHostService::removeFinished, this, &ImageHostController::removeFinished);
-    connect(svc, &ImageHostService::testConfigFinished, this, &ImageHostController::testConfigFinished);
+    connect(svc, &ImageHostService::testConfigFinished, this,
+            &ImageHostController::testConfigFinished);
   }
 }
 
 ImageHostController::~ImageHostController() = default;
 
-ImageUploadResult ImageHostController::upload(const QByteArray &p_data, const QString &p_path)
-{
+ImageUploadResult ImageHostController::upload(const QByteArray &p_data, const QString &p_path) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return ImageUploadResult{false, {}, tr("Image host service not available"), {}};
@@ -33,8 +34,8 @@ ImageUploadResult ImageHostController::upload(const QByteArray &p_data, const QS
   return svc->upload(provider, p_data, p_path);
 }
 
-IImageHostProvider *ImageHostController::addProvider(const QString &p_typeId, const QString &p_name)
-{
+IImageHostProvider *ImageHostController::addProvider(const QString &p_typeId,
+                                                     const QString &p_name) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return nullptr;
@@ -47,8 +48,7 @@ IImageHostProvider *ImageHostController::addProvider(const QString &p_typeId, co
   return provider;
 }
 
-void ImageHostController::removeProvider(const QString &p_name)
-{
+void ImageHostController::removeProvider(const QString &p_name) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return;
@@ -60,8 +60,7 @@ void ImageHostController::removeProvider(const QString &p_name)
   }
 }
 
-void ImageHostController::renameProvider(const QString &p_oldName, const QString &p_newName)
-{
+void ImageHostController::renameProvider(const QString &p_oldName, const QString &p_newName) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return;
@@ -73,8 +72,7 @@ void ImageHostController::renameProvider(const QString &p_oldName, const QString
   }
 }
 
-void ImageHostController::setDefaultProvider(const QString &p_name)
-{
+void ImageHostController::setDefaultProvider(const QString &p_name) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return;
@@ -82,8 +80,7 @@ void ImageHostController::setDefaultProvider(const QString &p_name)
   svc->setDefaultProvider(p_name);
 }
 
-IImageHostProvider *ImageHostController::getDefaultProvider() const
-{
+IImageHostProvider *ImageHostController::getDefaultProvider() const {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return nullptr;
@@ -91,8 +88,24 @@ IImageHostProvider *ImageHostController::getDefaultProvider() const
   return svc->getDefaultProvider();
 }
 
-void ImageHostController::removeFromImageHost(const QString &p_url)
-{
+void ImageHostController::persistToConfig() {
+  auto *svc = m_services.get<ImageHostService>();
+  if (!svc) {
+    return;
+  }
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+
+  auto &editorConfig = configMgr->getEditorConfig();
+  editorConfig.setImageHosts(svc->saveToConfig());
+
+  auto *defaultProvider = svc->getDefaultProvider();
+  editorConfig.setDefaultImageHost(defaultProvider ? defaultProvider->getName() : QString());
+}
+
+void ImageHostController::removeFromImageHost(const QString &p_url) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return;
@@ -104,8 +117,7 @@ void ImageHostController::removeFromImageHost(const QString &p_url)
   }
 }
 
-IImageHostProvider *ImageHostController::findProviderByUrl(const QString &p_url) const
-{
+IImageHostProvider *ImageHostController::findProviderByUrl(const QString &p_url) const {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return nullptr;
@@ -113,8 +125,7 @@ IImageHostProvider *ImageHostController::findProviderByUrl(const QString &p_url)
   return svc->findProviderByUrl(p_url);
 }
 
-QVector<IImageHostProvider *> ImageHostController::getProviders() const
-{
+QVector<IImageHostProvider *> ImageHostController::getProviders() const {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return {};
@@ -122,8 +133,7 @@ QVector<IImageHostProvider *> ImageHostController::getProviders() const
   return svc->getProviders();
 }
 
-QStringList ImageHostController::availableTypeIds() const
-{
+QStringList ImageHostController::availableTypeIds() const {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return {};
@@ -131,8 +141,7 @@ QStringList ImageHostController::availableTypeIds() const
   return svc->availableTypeIds();
 }
 
-QString ImageHostController::typeDisplayName(const QString &p_typeId) const
-{
+QString ImageHostController::typeDisplayName(const QString &p_typeId) const {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return {};
@@ -140,8 +149,7 @@ QString ImageHostController::typeDisplayName(const QString &p_typeId) const
   return svc->typeDisplayName(p_typeId);
 }
 
-int ImageHostController::uploadAsync(const QByteArray &p_data, const QString &p_path)
-{
+int ImageHostController::uploadAsync(const QByteArray &p_data, const QString &p_path) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return -1;
@@ -153,8 +161,7 @@ int ImageHostController::uploadAsync(const QByteArray &p_data, const QString &p_
   return svc->uploadAsync(provider, p_data, p_path);
 }
 
-int ImageHostController::removeAsync(const QString &p_url)
-{
+int ImageHostController::removeAsync(const QString &p_url) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return -1;
@@ -166,8 +173,7 @@ int ImageHostController::removeAsync(const QString &p_url)
   return svc->removeAsync(provider, p_url);
 }
 
-int ImageHostController::testConfigAsync(const QString &p_typeId, const QJsonObject &p_config)
-{
+int ImageHostController::testConfigAsync(const QString &p_typeId, const QJsonObject &p_config) {
   auto *svc = m_services.get<ImageHostService>();
   if (!svc) {
     return -1;

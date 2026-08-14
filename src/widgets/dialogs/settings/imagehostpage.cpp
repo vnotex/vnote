@@ -29,8 +29,8 @@ ImageHostPage::ImageHostPage(ServiceLocator &p_services, QWidget *p_parent)
     : SettingsPage(p_services, p_parent) {
   m_controller = m_services.get<ImageHostController>();
   if (m_controller) {
-    connect(m_controller, &ImageHostController::testConfigFinished,
-            this, &ImageHostPage::onTestConfigFinished);
+    connect(m_controller, &ImageHostController::testConfigFinished, this,
+            &ImageHostPage::onTestConfigFinished);
   }
   setupUI();
 }
@@ -136,6 +136,10 @@ bool ImageHostPage::saveInternal() {
     // Save default provider.
     QString defaultName = m_defaultImageHostComboBox->currentData().toString();
     m_controller->setDefaultProvider(defaultName);
+
+    // Persist providers and the default host into the config. Must run after the
+    // setConfig() loop and setDefaultProvider() above: the snapshot reads both.
+    m_controller->persistToConfig();
   }
 
   return true;
@@ -173,15 +177,13 @@ QGroupBox *ImageHostPage::setupGroupBoxForProvider(IImageHostProvider *p_provide
 
   // Test button.
   auto *testBtn = new QPushButton(tr("Test"), box);
-  connect(testBtn, &QPushButton::clicked, this, [this, p_provider, testBtn]() {
-    testImageHost(p_provider, testBtn);
-  });
+  connect(testBtn, &QPushButton::clicked, this,
+          [this, p_provider, testBtn]() { testImageHost(p_provider, testBtn); });
 
   // Remove button.
   auto *removeBtn = new QPushButton(tr("Remove"), box);
-  connect(removeBtn, &QPushButton::clicked, this, [this, p_provider]() {
-    removeImageHost(p_provider->getName());
-  });
+  connect(removeBtn, &QPushButton::clicked, this,
+          [this, p_provider]() { removeImageHost(p_provider->getName()); });
 
   auto *btnLayout = new QHBoxLayout();
   btnLayout->addWidget(testBtn);
@@ -211,8 +213,7 @@ void ImageHostPage::removeImageHost(const QString &p_hostName) {
   }
 
   int ret = MessageBoxHelper::questionOkCancel(
-      MessageBoxHelper::Warning,
-      tr("Are you sure to remove image host (%1)?").arg(p_hostName),
+      MessageBoxHelper::Warning, tr("Are you sure to remove image host (%1)?").arg(p_hostName),
       QString(), QString(), this);
   if (ret != QMessageBox::Ok) {
     return;
@@ -254,9 +255,9 @@ void ImageHostPage::onTestConfigFinished(int p_token, bool p_success, const QStr
     m_pendingTestButton = nullptr;
   }
 
-  MessageBoxHelper::notify(
-      p_success ? MessageBoxHelper::Information : MessageBoxHelper::Warning,
-      p_success ? tr("Test succeeded.") : tr("Test failed: %1").arg(p_msg), this);
+  MessageBoxHelper::notify(p_success ? MessageBoxHelper::Information : MessageBoxHelper::Warning,
+                           p_success ? tr("Test succeeded.") : tr("Test failed: %1").arg(p_msg),
+                           this);
 }
 
 QJsonObject ImageHostPage::fieldsToConfig(const QVector<QLineEdit *> &p_fields,

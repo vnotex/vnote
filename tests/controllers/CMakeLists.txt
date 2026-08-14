@@ -452,6 +452,28 @@ add_custom_command(TARGET test_notificationrouter POST_BUILD
     $<TARGET_FILE_DIR:test_notificationrouter>
 )
 
+# ImageHostController persistence - the settings-save snapshot of the live
+# ImageHostService state into EditorConfig. GUILESS: the controller is a plain
+# QObject with no widget dependency; core_configs is linked for ConfigMgr2 /
+# EditorConfig, which are widget-free.
+add_qt_test(test_imagehostcontroller_persist
+  SOURCES
+    test_imagehostcontroller_persist.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/imagehostcontroller.cpp
+  LINKS
+    core_services
+    core_configs
+    vxcore
+  GUILESS
+)
+
+# core_configs links VTextEdit PUBLIC, so this exe needs the DLL beside it.
+add_custom_command(TARGET test_imagehostcontroller_persist POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_imagehostcontroller_persist>
+)
+
 # UpdateController - notification wiring for the update-available offer.
 # NOT GUILESS: UpdateController reaches into the widget layer (MessageBoxHelper,
 # UpdateDialog). UpdateDialog is satisfied by stubs_updatecontroller.cpp rather

@@ -45,6 +45,12 @@ public:
   void setDefaultProvider(const QString &p_name);
   IImageHostProvider *getDefaultProvider() const;
 
+  // === Persistence ===
+
+  // Snapshot the service's providers + default host into EditorConfig.
+  // No-op when ImageHostService or ConfigMgr2 is unavailable.
+  void persistToConfig();
+
   // === Remote Image Removal ===
 
   // Find the provider that owns the URL and remove the image if supported.
