@@ -395,7 +395,11 @@ void ExportDialog2::setupUI() {
     m_embedImagesCheck = WidgetsFactory::createCheckBox(tr("Embed images"), page);
     layout->addRow(m_embedImagesCheck);
 
-    m_completePageCheck = WidgetsFactory::createCheckBox(tr("Complete page"), page);
+    m_completePageCheck =
+        WidgetsFactory::createCheckBox(tr("Complete page (pack all resources)"), page);
+    m_completePageCheck->setToolTip(
+        tr("Copy referenced resources next to the exported file (or embed them when "
+           "Embed images is checked), so the page renders standalone"));
     layout->addRow(m_completePageCheck);
     connect(m_completePageCheck, &QCheckBox::stateChanged, this,
             [this](int p_state) { m_embedImagesCheck->setEnabled(p_state == Qt::Checked); });

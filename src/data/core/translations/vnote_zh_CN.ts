@@ -1415,8 +1415,13 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Complete page</source>
-        <translation>完整页面</translation>
+        <source>Complete page (pack all resources)</source>
+        <translation>完整页面（打包所有资源）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy referenced resources next to the exported file (or embed them when Embed images is checked), so the page renders standalone</source>
+        <translation>将引用的资源复制到导出文件旁边（若勾选“嵌入图片”则改为内嵌），使页面可独立渲染</translation>
     </message>
     <message>
         <location line="+5"/>

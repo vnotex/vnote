@@ -1415,8 +1415,13 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Complete page</source>
-        <translation>完全なページ</translation>
+        <source>Complete page (pack all resources)</source>
+        <translation>完全なページ（すべてのリソースを同梱）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy referenced resources next to the exported file (or embed them when Embed images is checked), so the page renders standalone</source>
+        <translation>参照されているリソースをエクスポート先ファイルの隣にコピーします（「画像を埋め込む」が有効な場合は埋め込みます）。ページ単体で表示できるようになります。</translation>
     </message>
     <message>
         <location line="+5"/>
