@@ -538,6 +538,13 @@ add_qt_test(test_imagehostservice
   GUILESS
 )
 
+add_qt_test(test_imagehostpath
+  SOURCES
+    test_imagehostpath.cpp
+    ${CMAKE_SOURCE_DIR}/src/imagehost/imagehostpath.cpp
+  GUILESS
+)
+
 add_qt_test(test_customcommandprovider
   SOURCES
     test_customcommandprovider.cpp

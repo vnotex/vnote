@@ -183,6 +183,12 @@ private:
 
   void clearObsoleteImages();
 
+  // Whether @p_url points at an image host rather than a notebook asset.
+  static bool isRemoteImageUrl(const QString &p_url);
+
+  // Settings -> Image Host -> "Clear obsolete images".
+  bool isClearObsoleteImageAtImageHostEnabled() const;
+
   // Legacy (vx_images / _v_images) image migration. Runs at most once per
   // window; the originals are removed once, at close, by the finalize gate.
   void scheduleLegacyImageCheck();
@@ -239,11 +245,13 @@ private:
   // Reset on theme change so styles are re-initialized from the new theme.
   bool m_codeBlockStylesInitialized = false;
 
-  // Image tracking for obsolete-image cleanup.
-  QSet<QString>
-      m_initialImages; // Relative URLs (as in markdown) of images present when buffer was opened.
-  QSet<QString>
-      m_insertedImages; // Relative URLs (as in markdown) of images inserted during this session.
+  // Image tracking for obsolete-image cleanup. Both sets hold the EXACT
+  // markdown destination string, which may be a note-relative local path or a
+  // remote image-host URL (http/https). Cleanup compares these spellings, so
+  // remote entries are additionally matched by ImageHostPath::remoteUrlIdentity()
+  // before anything is deleted at the host.
+  QSet<QString> m_initialImages;  // Present when the buffer was opened.
+  QSet<QString> m_insertedImages; // Inserted during this session.
 
   // Legacy image migration state. The check runs at most once per window; the
   // rewrites are consumed by the close-time finalize.

@@ -52,6 +52,7 @@ set(SERVICES_SOURCES
   ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/webutils.cpp
   ${CMAKE_SOURCE_DIR}/src/imagehost/iimagehostprovider.cpp
+  ${CMAKE_SOURCE_DIR}/src/imagehost/imagehostpath.cpp
   ${CMAKE_SOURCE_DIR}/src/imagehost/customcommandprovider.cpp
   ${CMAKE_SOURCE_DIR}/src/imagehost/githubprovider.cpp
   ${CMAKE_SOURCE_DIR}/src/imagehost/giteeprovider.cpp

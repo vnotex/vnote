@@ -41,6 +41,7 @@
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
 #include <imagehost/iimagehostprovider.h>
+#include <imagehost/imagehostpath.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
@@ -1699,7 +1700,10 @@ void MarkdownViewWindow2::snapshotInitialImages() {
   }
 
   auto resourcePath = QFileInfo(resolved).path();
-  int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal;
+  // Remote images must be tracked too: a remote URL still referenced by the
+  // content must never be classified obsolete by clearObsoleteImages().
+  int linkFlags =
+      vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
   auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
   for (const auto &img : images) {
@@ -1707,6 +1711,18 @@ void MarkdownViewWindow2::snapshotInitialImages() {
       m_initialImages.insert(img.m_urlInLink);
     }
   }
+}
+
+bool MarkdownViewWindow2::isRemoteImageUrl(const QString &p_url) {
+  return ImageHostPath::isRemoteUrl(p_url);
+}
+
+bool MarkdownViewWindow2::isClearObsoleteImageAtImageHostEnabled() const {
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!configMgr) {
+    return false;
+  }
+  return configMgr->getEditorConfig().isClearObsoleteImageAtImageHostEnabled();
 }
 
 void MarkdownViewWindow2::clearObsoleteImages() {
@@ -1717,7 +1733,13 @@ void MarkdownViewWindow2::clearObsoleteImages() {
 
   const auto content = buffer.decode(buffer.getContentRaw());
   const auto resourcePath = QFileInfo(buffer.resolvedPath()).path();
-  const int linkFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal;
+  // Remote links MUST be collected here. m_insertedImages holds the remote URLs
+  // of images uploaded to an image host during this session; if the scan only
+  // returned local links, every one of those URLs would be missing from
+  // currentImages and therefore treated as obsolete -> deleted at the host on
+  // close, even though the note still references it.
+  const int linkFlags =
+      vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
   const auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
 
@@ -1740,7 +1762,17 @@ void MarkdownViewWindow2::clearObsoleteImages() {
 
   for (const auto &obsoleteUrl : obsoleteImages) {
     if (obsoleteUrl.isEmpty() || obsoleteUrl.startsWith(QStringLiteral("..")) ||
-        QDir::isAbsolutePath(obsoleteUrl)) {
+        QDir::isAbsolutePath(obsoleteUrl) || isRemoteImageUrl(obsoleteUrl)) {
+      // A remote URL is not an asset of this notebook. QDir::isAbsolutePath()
+      // does not catch it on Windows, so it must be excluded explicitly;
+      // otherwise deleteAsset() is handed a bogus "<notebookDir>/https:/..."
+      // path and fails.
+      continue;
+    }
+
+    if (content.contains(obsoleteUrl)) {
+      // The Markdown scan misses valid forms (angle-bracket destinations,
+      // reference-style links), so a raw-text hit means "still referenced".
       continue;
     }
 
@@ -1757,13 +1789,15 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     }
   }
 
-  // Remote image cleanup via image host controller.
+  // Remote image cleanup via image host controller. This is destructive and
+  // IRREVERSIBLE, so both the "Clear obsolete images" setting and the
+  // conservative liveness rules are applied by the unit-tested
+  // ImageHostPath::remoteUrlsToDelete().
   if (m_imageHostController) {
-    for (const auto &imgUrl : obsoleteImages) {
-      if (imgUrl.startsWith(QStringLiteral("http://")) ||
-          imgUrl.startsWith(QStringLiteral("https://"))) {
-        m_imageHostController->removeAsync(imgUrl);
-      }
+    const auto toDelete = ImageHostPath::remoteUrlsToDelete(
+        isClearObsoleteImageAtImageHostEnabled(), obsoleteImages, currentImages, content);
+    for (const auto &imgUrl : toDelete) {
+      m_imageHostController->removeAsync(imgUrl);
     }
   }
 

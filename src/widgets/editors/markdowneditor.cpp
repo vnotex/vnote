@@ -46,6 +46,7 @@
 #include <core/texteditorconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/imageutils.h>
+#include <imagehost/imagehostpath.h>
 #include <imagehost/imagehosttypes.h>
 #include <net/networkutils.h>
 #include <utils/clipboardutils.h>
@@ -102,8 +103,7 @@ void MarkdownEditor::init() {
   connect(m_textEdit, &vte::VTextEdit::contextMenuEventRequested, this,
           &MarkdownEditor::handleContextMenuEvent);
 
-  connect(m_textEdit, &vte::VTextEdit::mouseReleased, this,
-          &MarkdownEditor::handleMouseReleased);
+  connect(m_textEdit, &vte::VTextEdit::mouseReleased, this, &MarkdownEditor::handleMouseReleased);
 
   connect(getHighlighter(), &vte::MarkdownHighlighter::headersUpdated, this,
           &MarkdownEditor::updateHeadings);
@@ -1020,8 +1020,8 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source) {
     return;
   }
 
-  ImageInsertDialog dialog(tr("Insert Image From Clipboard"), "", "", "", m_services.get<ConfigMgr2>(),
-                           false, this);
+  ImageInsertDialog dialog(tr("Insert Image From Clipboard"), "", "", "",
+                           m_services.get<ConfigMgr2>(), false, this);
   dialog.setImage(image);
   if (dialog.exec() == QDialog::Accepted) {
     enterInsertModeIfApplicable();
@@ -1485,15 +1485,9 @@ int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString
   if (!m_imageHostController) {
     return -1;
   }
-  // Generate remote path.
-  // Use the content path to build a relative path: dirName/destFileName
-  QString remotePath;
-  if (!m_contentPath.isEmpty()) {
-    QFileInfo contentInfo(m_contentPath);
-    remotePath = contentInfo.dir().dirName() + "/" + p_destFileName;
-  } else {
-    remotePath = p_destFileName;
-  }
+  // Generate remote path: <name of the note's own folder>/<destFileName>.
+  // m_contentPath is the note's parent DIRECTORY (see setContentPath()).
+  const QString remotePath = ImageHostPath::remotePath(m_contentPath, p_destFileName);
   int token = m_imageHostController->uploadAsync(p_imageData, remotePath);
   if (token < 0) {
     return -1;
@@ -1852,8 +1846,7 @@ QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_bl
 }
 
 void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
-  if (p_event->button() != Qt::LeftButton ||
-      !(p_event->modifiers() & Qt::ControlModifier)) {
+  if (p_event->button() != Qt::LeftButton || !(p_event->modifiers() & Qt::ControlModifier)) {
     return;
   }
 
