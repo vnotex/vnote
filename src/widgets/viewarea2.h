@@ -202,6 +202,10 @@ private:
   // reports the main area as empty and opens the Home dashboard there.
   bool isMainAreaEmpty() const;
 
+  // If the main splitter tree hosts exactly one view window and that window is
+  // the vx://home dashboard, return its window ID; otherwise return 0.
+  ID loneHomeWindowId() const;
+
   void updateScreenVisibility();
 
   ServiceLocator &m_services;

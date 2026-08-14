@@ -876,6 +876,9 @@ void ViewArea2::distributeViewSplits() { distributeViewSplitWidgets(); }
 void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                            const QString &p_workspaceId, const FileOpenSettings &p_settings) {
   auto *split = splitForWorkspace(p_workspaceId);
+  // Only a main-area open may retire the Home tab; a detached open leaves the
+  // main area (and thus Home) alone.
+  const ID homeId = split ? loneHomeWindowId() : 0;
   if (!split) {
     // Detached splits live outside m_splits (tracked in m_detachedWindows);
     // fall back to them so a CLI --detached-view open can target a detached
@@ -919,6 +922,14 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
 
   // Apply file open settings (scroll to line, search highlight).
   win->applyFileOpenSettings(p_settings);
+
+  // The Home dashboard is a placeholder for an empty view area: once a real
+  // file is open it has served its purpose, so close it. Done AFTER the new
+  // window exists, so the main area is never empty and maybeOpenHome() does
+  // not immediately re-open it.
+  if (homeId != 0) {
+    m_controller->closeViewWindow(homeId, true);
+  }
 
   updateScreenVisibility();
 }
@@ -1794,6 +1805,30 @@ bool ViewArea2::isMainAreaEmpty() const {
     }
   }
   return true;
+}
+
+ID ViewArea2::loneHomeWindowId() const {
+  ViewWindow2 *only = nullptr;
+  int total = 0;
+  for (auto it = m_splits.constBegin(); it != m_splits.constEnd(); ++it) {
+    auto *split = it.value();
+    if (!split) {
+      continue;
+    }
+    const auto wins = split->getAllViewWindows();
+    total += wins.size();
+    if (total > 1) {
+      return 0;
+    }
+    if (!wins.isEmpty()) {
+      only = wins.first();
+    }
+  }
+  if (total == 1 && only &&
+      only->getBuffer().nodeId().relativePath == QStringLiteral("vx://home")) {
+    return only->getViewWindowId();
+  }
+  return 0;
 }
 
 void ViewArea2::maybeOpenHome() {
