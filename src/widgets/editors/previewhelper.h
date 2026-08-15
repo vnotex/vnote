@@ -9,6 +9,7 @@
 #include <vtextedit/markdownhighlighterdata.h>
 #include <vtextedit/previewmgr.h>
 
+#include "graphpreviewdata.h"
 #include "markdownvieweradapter.h"
 #include <core/global.h>
 
@@ -46,6 +47,16 @@ public:
 
   void setInplacePreviewMathBlocksEnabled(bool p_enabled);
 
+  // Pure helper: the zoom ratio of the editor, clamped to [0.25, 4.0].
+  // Returns 1.0 when @p_baseFontPointSize is not positive.
+  static qreal editorZoomRatio(int p_fontPointSize, int p_baseFontPointSize);
+
+  // Current editor zoom ratio. 1.0 when there is no editor.
+  qreal editorZoomFactor() const;
+
+  // Notify that the editor zoom changed, to re-render the in-place previews.
+  void editorZoomChanged();
+
 public slots:
   void codeBlocksUpdated(vte::TimeStamp p_timeStamp,
                          const QVector<vte::md::FencedCodeBlock> &p_codeBlocks);
@@ -59,12 +70,15 @@ public slots:
 signals:
   // Request to preview graph.
   // There must be a corresponding call to handleGraphPreviewData().
+  // @p_scale: the editor zoom ratio (without any DPI factor).
   void graphPreviewRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_lang,
-                             const QString &p_text);
+                             const QString &p_text, qreal p_scale);
 
   // Request to preview math.
   // There must be a corresponding call to handleMathPreviewData().
-  void mathPreviewRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text);
+  // @p_scale: the editor zoom ratio (without any DPI factor).
+  void mathPreviewRequested(quint64 p_id, TimeStamp p_timeStamp, const QString &p_text,
+                            qreal p_scale);
 
   // Request to do in-place preview for @p_previewItems.
   void
@@ -126,30 +140,6 @@ private:
     QSharedPointer<vte::PreviewItem> m_inplacePreview;
   };
 
-  // Data of the preview result.
-  struct GraphPreviewData {
-    GraphPreviewData() = default;
-
-    GraphPreviewData(TimeStamp p_timeStamp, const QString &p_format, const QByteArray &p_data,
-                     QRgb p_background = 0x0, qreal p_scaleFactor = 1);
-
-    bool isNull() const;
-
-    TimeStamp m_timeStamp = 0;
-
-    QPixmap m_image;
-
-    // Name of the image for identification in resource manager.
-    QString m_name;
-
-    // Background color to override.
-    // 0x0 indicates it is not specified.
-    QRgb m_background = 0x0;
-
-    // An increasing index to used as the image name.
-    static int s_imageIndex;
-  };
-
   // Return <InplacePreview, FocusPreview>.
   QPair<bool, bool> isLangNeedPreview(const QString &p_lang) const;
 
@@ -169,7 +159,8 @@ private:
   void handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
                        const QString &p_data, bool p_forcedBackground);
 
-  qreal getEditorScaleFactor() const;
+  // @p_zoomRatio: the generation's zoom ratio.
+  qreal getEditorScaleFactor(qreal p_zoomRatio) const;
 
   bool needForcedBackground(const QString &p_lang) const;
 
@@ -191,6 +182,11 @@ private:
   TimeStamp m_codeBlockTimeStamp = 0;
 
   TimeStamp m_mathBlockTimeStamp = 0;
+
+  // Zoom ratio snapshotted once per generation.
+  qreal m_codeBlockRequestZoomRatio = 1;
+
+  qreal m_mathBlockRequestZoomRatio = 1;
 
   // Sorted by startBlock in ascending order.
   QVector<CodeBlockPreviewData> m_codeBlocksData;

@@ -122,6 +122,12 @@ void MarkdownEditor::init() {
 
 MarkdownEditor::~MarkdownEditor() {}
 
+void MarkdownEditor::refreshPreviewHighlight() {
+  if (auto highlighter = getHighlighter()) {
+    highlighter->updateHighlight();
+  }
+}
+
 void MarkdownEditor::setPreviewHelper(PreviewHelper *p_helper) {
   auto highlighter = getHighlighter();
   connect(highlighter, &vte::MarkdownHighlighter::codeBlocksUpdated, p_helper,

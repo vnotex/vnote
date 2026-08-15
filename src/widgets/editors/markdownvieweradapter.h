@@ -193,11 +193,14 @@ signals:
   void editLineNumberUpdated(int p_lineNumber);
 
   // Request to preview graph.
+  // @p_scale: the editor zoom ratio (without any DPI factor).
   void graphPreviewRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_lang,
-                             const QString &p_text);
+                             const QString &p_text, qreal p_scale);
 
   // Request to preview math.
-  void mathPreviewRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_text);
+  // @p_scale: the editor zoom ratio (without any DPI factor).
+  void mathPreviewRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_text,
+                            qreal p_scale);
 
   void anchorScrollRequested(const QString &p_anchor);
 
@@ -270,7 +273,7 @@ private:
   // Targets supported by cross copy. Set by web.
   QStringList m_crossCopyTargets;
 
-  ServiceLocator *m_services = nullptr;  // Non-owning; set by ServiceLocator-aware constructor
+  ServiceLocator *m_services = nullptr; // Non-owning; set by ServiceLocator-aware constructor
 };
 } // namespace vnotex
 

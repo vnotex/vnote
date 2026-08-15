@@ -121,17 +121,18 @@ MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
 void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper) {
   connect(p_previewHelper, &PreviewHelper::graphPreviewRequested, this,
           [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_lang,
-                                  const QString &p_text) {
+                                  const QString &p_text, qreal p_scale) {
             if (m_adapter->isReady()) {
-              m_adapter->graphPreviewRequested(p_id, p_timeStamp, p_lang, p_text);
+              m_adapter->graphPreviewRequested(p_id, p_timeStamp, p_lang, p_text, p_scale);
             } else {
               p_previewHelper->handleGraphPreviewData(MarkdownViewerAdapter::PreviewData());
             }
           });
   connect(p_previewHelper, &PreviewHelper::mathPreviewRequested, this,
-          [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_text) {
+          [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_text,
+                                  qreal p_scale) {
             if (m_adapter->isReady()) {
-              m_adapter->mathPreviewRequested(p_id, p_timeStamp, p_text);
+              m_adapter->mathPreviewRequested(p_id, p_timeStamp, p_text, p_scale);
             } else {
               p_previewHelper->handleMathPreviewData(MarkdownViewerAdapter::PreviewData());
             }

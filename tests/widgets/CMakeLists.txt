@@ -1338,3 +1338,19 @@ if(TARGET Qt6::Qml)
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
   )
 endif()
+
+# In-place preview zoom: the pure scale arithmetic (zoom ratio vs. C++ raster factor).
+# Also covers GraphPreviewData, which owns the rasterization of an in-place
+# preview. NOT GUILESS - QPixmap/QSvgRenderer need a QGuiApplication.
+add_qt_test(test_previewscaleutils
+  SOURCES
+    test_previewscaleutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/previewscaleutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphpreviewdata.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Svg
+)

@@ -24,7 +24,7 @@ endif()
 #
 # =============================================================================
 
-find_package(Qt6 REQUIRED COMPONENTS Core Test Gui Widgets Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Core Test Gui Widgets Concurrent Svg)
 find_package(Qt6 OPTIONAL_COMPONENTS Core5Compat)
 # QJSEngine, used by test_pdfviewercore_js to evaluate the shipped pdf.js glue
 # scripts. Optional so a Qt install without qtdeclarative still configures; CI

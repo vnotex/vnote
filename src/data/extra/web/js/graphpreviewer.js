@@ -27,7 +27,8 @@ class GraphPreviewer {
     }
 
     // Interface 1.
-    previewGraph(p_id, p_timeStamp, p_lang, p_text) {
+    // @p_scale: the editor zoom ratio, without any DPI factor.
+    previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
         if (p_text.length == 0) {
             this.setGraphPreviewData(p_id, p_timeStamp);
             return;
@@ -40,14 +41,14 @@ class GraphPreviewer {
                 p_text,
                 this.flowchartJsIdx++,
                 (graphDiv) => {
-                    this.processGraph(p_id, p_timeStamp, graphDiv);
+                    this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'wavedrom') {
             this.vxcore.getWorker('wavedrom').renderText(this.container,
                 p_text,
                 this.waveDromIdx++,
                 (graphDiv) => {
-                    this.processGraph(p_id, p_timeStamp, graphDiv);
+                    this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'mermaid') {
             this.vxcore.getWorker('mermaid').renderText(this.container,
@@ -55,7 +56,7 @@ class GraphPreviewer {
                 this.mermaidIdx++,
                 (graphDiv) => {
                     this.fixSvgRelativeWidth(graphDiv.firstElementChild);
-                    this.processGraph(p_id, p_timeStamp, graphDiv);
+                    this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'puml' || p_lang === 'plantuml') {
             let func = function(p_previewer, p_id, p_timeStamp) {
@@ -91,7 +92,7 @@ class GraphPreviewer {
             this.vxcore.getWorker('graphviz').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
         } else if (p_lang === 'mathjax') {
-            this.renderMath(p_id, p_timeStamp, p_text, null);
+            this.renderMath(p_id, p_timeStamp, p_text, null, p_scale);
             return;
         } else {
             this.setGraphPreviewData(p_id, p_timeStamp);
@@ -99,7 +100,8 @@ class GraphPreviewer {
     }
 
     // Interface 2.
-    previewMath(p_id, p_timeStamp, p_text) {
+    // @p_scale: the editor zoom ratio, without any DPI factor.
+    previewMath(p_id, p_timeStamp, p_text, p_scale = 1) {
         if (p_text.length == 0) {
             this.setMathPreviewData(p_id, p_timeStamp);
             return;
@@ -108,7 +110,7 @@ class GraphPreviewer {
         this.initOnFirstPreview();
 
         // Do we need to go through TexMath plugin? I don't think so.
-        this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this));
+        this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this), p_scale);
     }
 
     initOnFirstPreview() {
@@ -121,23 +123,24 @@ class GraphPreviewer {
         }
     }
 
-    renderMath(p_id, p_timeStamp, p_text, p_dataSetter) {
-        let func = function(p_previewer, p_id, p_timeStamp) {
+    renderMath(p_id, p_timeStamp, p_text, p_dataSetter, p_scale = 1) {
+        let func = function(p_previewer, p_id, p_timeStamp, p_scale) {
             let previewer = p_previewer;
             let id = p_id;
             let timeStamp = p_timeStamp;
+            let scale = p_scale;
             return function(p_svgNode) {
                 previewer.fixSvgCurrentColor(p_svgNode);
                 previewer.fixSvgRelativeWidth(p_svgNode);
-                previewer.processSvgAsPng(id, timeStamp, p_svgNode, p_dataSetter);
+                previewer.processSvgAsPng(id, timeStamp, p_svgNode, p_dataSetter, scale);
             };
         };
         this.vxcore.getWorker('mathjax').renderText(this.container,
                                                     p_text,
-                                                    func(this, p_id, p_timeStamp));
+                                                    func(this, p_id, p_timeStamp, p_scale));
     }
 
-    processGraph(p_id, p_timeStamp, p_graphDiv) {
+    processGraph(p_id, p_timeStamp, p_graphDiv, p_scale = 1) {
         if (!p_graphDiv) {
             console.error('failed to preview graph', p_id, p_timeStamp);
             this.setGraphPreviewData(p_id, p_timeStamp);
@@ -146,10 +149,10 @@ class GraphPreviewer {
 
         this.container.removeChild(p_graphDiv);
 
-        this.processSvgAsPng(p_id, p_timeStamp, p_graphDiv.firstElementChild);
+        this.processSvgAsPng(p_id, p_timeStamp, p_graphDiv.firstElementChild, null, p_scale);
     }
 
-    processSvgAsPng(p_id, p_timeStamp, p_svgNode, p_dataSetter = null) {
+    processSvgAsPng(p_id, p_timeStamp, p_svgNode, p_dataSetter = null, p_scale = 1) {
         if (!p_dataSetter) {
             p_dataSetter = this.setGraphPreviewData.bind(this);
         }
@@ -159,7 +162,7 @@ class GraphPreviewer {
             return;
         }
 
-        this.scaleSvg(p_svgNode);
+        this.scaleSvg(p_svgNode, p_scale);
 
         // Serialize as well-formed XML rather than using outerHTML. In an HTML
         // document, outerHTML emits void/empty elements without a self-closing
@@ -235,8 +238,8 @@ class GraphPreviewer {
         }
     }
 
-    scaleSvg(p_svgNode) {
-        let scaleFactor = window.devicePixelRatio;
+    scaleSvg(p_svgNode, p_scale = 1) {
+        let scaleFactor = window.devicePixelRatio * (p_scale || 1);
         if (scaleFactor == 1 || !p_svgNode) {
             return;
         }

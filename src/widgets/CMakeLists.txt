@@ -69,7 +69,9 @@ target_sources(vnote PRIVATE
     editors/pdfviewer.cpp editors/pdfviewer.h
     editors/pdfvieweradapter.cpp editors/pdfvieweradapter.h
     editors/plantumlhelper.cpp editors/plantumlhelper.h
+    editors/graphpreviewdata.cpp editors/graphpreviewdata.h
     editors/previewhelper.cpp editors/previewhelper.h
+    editors/previewscaleutils.cpp editors/previewscaleutils.h
     editors/statusbar.cpp editors/statusbar.h
     editors/editorstatusbarbinder.cpp editors/editorstatusbarbinder.h
     editors/statuswidget.cpp editors/statuswidget.h

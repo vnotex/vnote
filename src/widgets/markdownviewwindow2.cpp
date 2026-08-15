@@ -366,6 +366,9 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Apply config.
   updateEditorFromConfig();
 
+  // Honour a persisted zoom delta for the in-place previews.
+  m_previewHelper->editorZoomChanged();
+
   // Connect viewer <-> editor web channel signals.
   connect(adapter(), &MarkdownViewerAdapter::ready, m_editor->getHighlighter(),
           &vte::MarkdownHighlighter::updateHighlight);
@@ -1015,6 +1018,7 @@ void MarkdownViewWindow2::zoom(bool p_zoomIn) {
   }
   if (m_editor) {
     m_editor->zoom(m_editor->zoomDelta() + (p_zoomIn ? 1 : -1));
+    m_previewHelper->editorZoomChanged();
     int delta = m_editorController->persistZoomDelta(m_editor->zoomDelta());
     showZoomDelta(delta);
   }
@@ -1030,6 +1034,7 @@ void MarkdownViewWindow2::resetZoom() {
   }
   if (m_editor) {
     m_editor->zoom(0);
+    m_previewHelper->editorZoomChanged();
     int delta = m_editorController->persistZoomDelta(m_editor->zoomDelta());
     showZoomDelta(delta);
   }

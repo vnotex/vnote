@@ -73,6 +73,9 @@ public:
 
   void setPreviewHelper(PreviewHelper *p_helper);
 
+  // Re-publish the code/math block data to the preview helper.
+  void refreshPreviewHighlight();
+
   // Set Buffer2 handle for asset/attachment operations (new architecture).
   void setBuffer2(Buffer2 *p_buffer);
 
@@ -128,8 +131,8 @@ public:
 
   // Static helpers for placeholder generation and replacement (testable).
   static QString generatePlaceholder(int p_token, const QString &p_fileName);
-  static QString replacePlaceholder(const QString &p_content, int p_token,
-                                    const QString &p_realUrl, const QString &p_title);
+  static QString replacePlaceholder(const QString &p_content, int p_token, const QString &p_realUrl,
+                                    const QString &p_title);
   static QString removePlaceholder(const QString &p_content, int p_token);
 
   // Sole authority for absolute-path -> markdown URL conversion. Applies the

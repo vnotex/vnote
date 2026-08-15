@@ -8,11 +8,10 @@
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/textutils.h>
 
-#include <gui/utils/imageutils.h>
-
 #include "graphvizhelper.h"
 #include "markdowneditor.h"
 #include "plantumlhelper.h"
+#include "previewscaleutils.h"
 
 using namespace vnotex;
 
@@ -67,34 +66,6 @@ void PreviewHelper::MathBlockPreviewData::updateInplacePreview(QTextDocument *p_
   }
 }
 
-int PreviewHelper::GraphPreviewData::s_imageIndex = 0;
-
-PreviewHelper::GraphPreviewData::GraphPreviewData(TimeStamp p_timeStamp, const QString &p_format,
-                                                  const QByteArray &p_data, QRgb p_background,
-                                                  qreal p_scaleFactor)
-    : m_timeStamp(p_timeStamp), m_background(p_background) {
-  if (p_data.isEmpty()) {
-    return;
-  }
-
-  m_name = QString::number(++s_imageIndex);
-
-  bool needScale = p_scaleFactor > 1.01;
-  if (needScale) {
-    if (p_format == QStringLiteral("svg")) {
-      m_image = ImageUtils::svgToPixmap(p_data, p_background, p_scaleFactor);
-    } else {
-      QPixmap tmpImg;
-      tmpImg.loadFromData(p_data, p_format.toLocal8Bit().data());
-      m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor, Qt::SmoothTransformation);
-    }
-  } else {
-    m_image.loadFromData(p_data, p_format.toLocal8Bit().data());
-  }
-}
-
-bool PreviewHelper::GraphPreviewData::isNull() const { return m_timeStamp == 0; }
-
 PreviewHelper::PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent)
     : QObject(p_parent),
       m_inplacePreviewSources(SourceFlag::FlowChart | SourceFlag::Mermaid | SourceFlag::WaveDrom |
@@ -127,6 +98,7 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
 
 void PreviewHelper::handleCodeBlocksUpdate() {
   ++m_codeBlockTimeStamp;
+  m_codeBlockRequestZoomRatio = editorZoomFactor();
   m_codeBlocksData.clear();
 
   QVector<int> needPreviewBlocks;
@@ -143,13 +115,26 @@ void PreviewHelper::handleCodeBlocksUpdate() {
     const int blockPreviewIdx = m_codeBlocksData.size() - 1;
 
     bool cacheHit = false;
-    auto &cachedData = m_codeBlockCache.get(cb.m_text);
+    // Take a copy of the shared pointer: mutating through it updates the cached
+    // entry in place, since LruCache stores the same shared pointer.
+    auto cachedData = m_codeBlockCache.get(cb.m_text);
     if (cachedData) {
-      cacheHit = true;
-      cachedData->m_timeStamp = m_codeBlockTimeStamp;
-      m_codeBlocksData[blockPreviewIdx].updateInplacePreview(
-          m_document, cachedData->m_image, cachedData->m_name, cachedData->m_background,
-          m_tabStopWidth);
+      const auto action = PreviewScaleUtils::cacheAction(
+          cachedData->m_needScale, cachedData->m_appliedZoomRatio, m_codeBlockRequestZoomRatio);
+      if (action == PreviewScaleUtils::CacheAction::Rerasterize) {
+        // Re-render locally from the retained payload. No webview, no process
+        // spawn, no network.
+        cachedData->rasterize(getEditorScaleFactor(m_codeBlockRequestZoomRatio));
+        cachedData->m_appliedZoomRatio = m_codeBlockRequestZoomRatio;
+      }
+
+      if (action != PreviewScaleUtils::CacheAction::Miss) {
+        cacheHit = true;
+        cachedData->m_timeStamp = m_codeBlockTimeStamp;
+        m_codeBlocksData[blockPreviewIdx].updateInplacePreview(
+            m_document, cachedData->m_image, cachedData->m_name, cachedData->m_background,
+            m_tabStopWidth);
+      }
     }
 
     if (m_inplacePreviewCodeBlocksEnabled && needPreview.first && !cacheHit) {
@@ -224,7 +209,8 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
       (checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang) && m_webGraphvizEnabled) ||
       checkPreviewSourceLang(SourceFlag::Math, blockData.m_lang)) {
     emit graphPreviewRequested(p_blockPreviewIdx, m_codeBlockTimeStamp, blockData.m_lang,
-                               vte::TextUtils::removeCodeBlockFence(blockData.m_text));
+                               vte::TextUtils::removeCodeBlockFence(blockData.m_text),
+                               m_codeBlockRequestZoomRatio);
     return;
   }
 
@@ -265,9 +251,10 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
   auto &blockData = m_codeBlocksData[p_data.m_id];
   const bool forcedBackground = needForcedBackground(blockData.m_lang);
   auto previewData = QSharedPointer<GraphPreviewData>::create(
-      p_data.m_timeStamp, p_data.m_format, p_data.m_data,
+      p_data.m_timeStamp, p_data.m_format, p_data.m_data, p_data.m_needScale,
       forcedBackground ? m_editor->getPreviewBackground() : 0,
-      p_data.m_needScale ? getEditorScaleFactor() : 1);
+      p_data.m_needScale ? getEditorScaleFactor(m_codeBlockRequestZoomRatio) : 1,
+      m_codeBlockRequestZoomRatio);
   m_codeBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
@@ -293,6 +280,13 @@ void PreviewHelper::updateEditorInplacePreviewCodeBlock() {
     }
   }
 
+  // Hint the capacity before the early return below: entries now retain their
+  // source payload, so a cache grown for a preview-heavy document must still be
+  // able to shrink after the document stops having previews at all. The early
+  // return would otherwise starve LruCache's shrink hysteresis of the repeated
+  // low hints it needs.
+  m_codeBlockCache.setCapacityHint(m_codeBlocksData.size());
+
   if (previewItems.isEmpty() && m_previousInplacePreviewCodeBlockSize == 0) {
     return;
   }
@@ -304,8 +298,6 @@ void PreviewHelper::updateEditorInplacePreviewCodeBlock() {
   if (!obsoleteBlocks.isEmpty()) {
     emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.values());
   }
-
-  m_codeBlockCache.setCapacityHint(m_codeBlocksData.size());
 }
 
 void PreviewHelper::setMarkdownEditor(MarkdownEditor *p_editor) {
@@ -328,6 +320,7 @@ void PreviewHelper::mathBlocksUpdated(const QVector<vte::md::MathBlock> &p_mathB
 
 void PreviewHelper::handleMathBlocksUpdate() {
   ++m_mathBlockTimeStamp;
+  m_mathBlockRequestZoomRatio = editorZoomFactor();
   m_mathBlocksData.clear();
   m_mathBlocksData.reserve(m_pendingMathBlocks.size());
 
@@ -338,12 +331,23 @@ void PreviewHelper::handleMathBlocksUpdate() {
     const int blockPreviewIdx = m_mathBlocksData.size() - 1;
 
     bool cacheHit = false;
-    auto &cachedData = m_mathBlockCache.get(mb.m_text);
+    // Take a copy of the shared pointer: mutating through it updates the cached
+    // entry in place, since LruCache stores the same shared pointer.
+    auto cachedData = m_mathBlockCache.get(mb.m_text);
     if (cachedData) {
-      cacheHit = true;
-      cachedData->m_timeStamp = m_mathBlockTimeStamp;
-      m_mathBlocksData[blockPreviewIdx].updateInplacePreview(m_document, cachedData->m_image,
-                                                             cachedData->m_name, m_tabStopWidth);
+      const auto action = PreviewScaleUtils::cacheAction(
+          cachedData->m_needScale, cachedData->m_appliedZoomRatio, m_mathBlockRequestZoomRatio);
+      if (action == PreviewScaleUtils::CacheAction::Rerasterize) {
+        cachedData->rasterize(getEditorScaleFactor(m_mathBlockRequestZoomRatio));
+        cachedData->m_appliedZoomRatio = m_mathBlockRequestZoomRatio;
+      }
+
+      if (action != PreviewScaleUtils::CacheAction::Miss) {
+        cacheHit = true;
+        cachedData->m_timeStamp = m_mathBlockTimeStamp;
+        m_mathBlocksData[blockPreviewIdx].updateInplacePreview(m_document, cachedData->m_image,
+                                                               cachedData->m_name, m_tabStopWidth);
+      }
     }
 
     if (!cacheHit) {
@@ -363,7 +367,8 @@ void PreviewHelper::handleMathBlocksUpdate() {
 void PreviewHelper::inplacePreviewMathBlock(int p_blockPreviewIdx) {
   const auto &blockData = m_mathBlocksData[p_blockPreviewIdx];
   Q_ASSERT(!blockData.m_text.isEmpty());
-  emit mathPreviewRequested(p_blockPreviewIdx, m_mathBlockTimeStamp, blockData.m_text);
+  emit mathPreviewRequested(p_blockPreviewIdx, m_mathBlockTimeStamp, blockData.m_text,
+                            m_mathBlockRequestZoomRatio);
 }
 
 void PreviewHelper::updateEditorInplacePreviewMathBlock() {
@@ -382,6 +387,10 @@ void PreviewHelper::updateEditorInplacePreviewMathBlock() {
     }
   }
 
+  // See the note in updateEditorInplacePreviewCodeBlock(): hint before the
+  // early return so the cache can shrink again once previews go away.
+  m_mathBlockCache.setCapacityHint(m_mathBlocksData.size());
+
   if (previewItems.isEmpty() && m_previousInplacePreviewMathBlockSize == 0) {
     return;
   }
@@ -393,8 +402,6 @@ void PreviewHelper::updateEditorInplacePreviewMathBlock() {
   if (!obsoleteBlocks.isEmpty()) {
     emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.values());
   }
-
-  m_mathBlockCache.setCapacityHint(m_mathBlocksData.size());
 }
 
 void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewData &p_data) {
@@ -407,9 +414,10 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
   }
 
   auto &blockData = m_mathBlocksData[p_data.m_id];
-  auto previewData =
-      QSharedPointer<GraphPreviewData>::create(p_data.m_timeStamp, p_data.m_format, p_data.m_data,
-                                               0, p_data.m_needScale ? getEditorScaleFactor() : 1);
+  auto previewData = QSharedPointer<GraphPreviewData>::create(
+      p_data.m_timeStamp, p_data.m_format, p_data.m_data, p_data.m_needScale, 0,
+      p_data.m_needScale ? getEditorScaleFactor(m_mathBlockRequestZoomRatio) : 1,
+      m_mathBlockRequestZoomRatio);
   m_mathBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
@@ -419,12 +427,38 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
   updateEditorInplacePreviewMathBlock();
 }
 
-qreal PreviewHelper::getEditorScaleFactor() const {
-  if (m_editor) {
-    return m_editor->getConfig().m_scaleFactor;
+qreal PreviewHelper::getEditorScaleFactor(qreal p_zoomRatio) const {
+  const qreal dpiFactor = m_editor ? m_editor->getConfig().m_scaleFactor : 1;
+  return PreviewScaleUtils::rasterFactor(dpiFactor, p_zoomRatio);
+}
+
+qreal PreviewHelper::editorZoomRatio(int p_fontPointSize, int p_baseFontPointSize) {
+  return PreviewScaleUtils::zoomRatio(p_fontPointSize, p_baseFontPointSize);
+}
+
+qreal PreviewHelper::editorZoomFactor() const {
+  if (!m_editor) {
+    return 1;
   }
 
-  return 1;
+  return editorZoomRatio(m_editor->editorFontPointSize(), m_editor->baseEditorFontPointSize());
+}
+
+void PreviewHelper::editorZoomChanged() {
+  const qreal ratio = editorZoomFactor();
+  if (!PreviewScaleUtils::isZoomRatioStale(m_codeBlockRequestZoomRatio, ratio) &&
+      !PreviewScaleUtils::isZoomRatioStale(m_mathBlockRequestZoomRatio, ratio)) {
+    return;
+  }
+
+  // Invalidate every in-flight response immediately, so a pre-zoom raster can
+  // never be cached against the new ratio.
+  ++m_codeBlockTimeStamp;
+  ++m_mathBlockTimeStamp;
+
+  if (m_editor) {
+    m_editor->refreshPreviewHighlight();
+  }
 }
 
 void PreviewHelper::setWebPlantUmlEnabled(bool p_enabled) { m_webPlantUmlEnabled = p_enabled; }
@@ -447,8 +481,9 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
 
   auto &blockData = m_codeBlocksData[p_id];
   auto previewData = QSharedPointer<GraphPreviewData>::create(
-      p_timeStamp, p_format, p_data.toUtf8(),
-      p_forcedBackground ? m_editor->getPreviewBackground() : 0, getEditorScaleFactor());
+      p_timeStamp, p_format, p_data.toUtf8(), true,
+      p_forcedBackground ? m_editor->getPreviewBackground() : 0,
+      getEditorScaleFactor(m_codeBlockRequestZoomRatio), m_codeBlockRequestZoomRatio);
   m_codeBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 

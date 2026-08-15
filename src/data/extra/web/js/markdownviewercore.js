@@ -217,15 +217,15 @@ class MarkdownViewerCore extends VXCore {
         window.vxMarkdownAdapter.setTopLineNumber(p_lineNumber);
     }
 
-    previewGraph(p_id, p_timeStamp, p_lang, p_text) {
+    previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
         if (this.graphPreviewer) {
-            this.graphPreviewer.previewGraph(p_id, p_timeStamp, p_lang, p_text);
+            this.graphPreviewer.previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale);
         }
     }
 
-    previewMath(p_id, p_timeStamp, p_text) {
+    previewMath(p_id, p_timeStamp, p_text, p_scale = 1) {
         if (this.graphPreviewer) {
-            this.graphPreviewer.previewMath(p_id, p_timeStamp, p_text);
+            this.graphPreviewer.previewMath(p_id, p_timeStamp, p_text, p_scale);
         }
     }
 

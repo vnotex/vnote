@@ -19,12 +19,12 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.scrollToAnchor(p_anchor);
         });
 
-        adapter.graphPreviewRequested.connect(function(p_id, p_timeStamp, p_lang, p_text) {
-            window.vxcore.previewGraph(p_id, p_timeStamp, p_lang, p_text);
+        adapter.graphPreviewRequested.connect(function(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
+            window.vxcore.previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale);
         });
 
-        adapter.mathPreviewRequested.connect(function(p_id, p_timeStamp, p_text) {
-            window.vxcore.previewMath(p_id, p_timeStamp, p_text);
+        adapter.mathPreviewRequested.connect(function(p_id, p_timeStamp, p_text, p_scale = 1) {
+            window.vxcore.previewMath(p_id, p_timeStamp, p_text, p_scale);
         });
 
         adapter.scrollRequested.connect(function(p_up) {
