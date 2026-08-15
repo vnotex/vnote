@@ -366,6 +366,10 @@ void NotebookNodeController::addOpenActions(QMenu *p_menu, const NodeIdentifier 
     connect(openAction, &QAction::triggered, this,
             [this, p_nodeId]() { openNodes(resolveSelection(p_nodeId)); });
 
+    auto *openDetachedAction = p_menu->addAction(tr("Open as Detac&hed"));
+    connect(openDetachedAction, &QAction::triggered, this,
+            [this, p_nodeId]() { openNodes(resolveSelection(p_nodeId), true); });
+
     addOpenWithSubmenu(p_menu, p_nodeId);
   }
 }
@@ -1410,7 +1414,7 @@ void NotebookNodeController::handleImportFolder(const NodeIdentifier &p_targetFo
 
 // Multi-node Open: opens each non-folder node in order. Folders are silently skipped
 // (the first non-folder note opened becomes the focused tab via downstream BufferMgr behavior).
-void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
+void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids, bool p_detached) {
   int skipped = 0;
   auto *configMgr = m_services.get<ConfigMgr2>();
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -1465,6 +1469,7 @@ void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids) {
     if (configMgr) {
       settings.m_mode = configMgr->getCoreConfig().getDefaultOpenMode();
     }
+    settings.m_detachedView = p_detached;
     emit nodeActivated(id, settings);
   }
 

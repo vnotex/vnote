@@ -301,8 +301,8 @@ private:
   // buffer is safely registered in the destination (or there was nothing to
   // propagate); returns false (leaving the source registration intact) when the
   // destination addBuffer failed, so callers must not tear down the source.
-  bool transferBufferRegistration(const QString &p_srcWorkspaceId,
-                                  const QString &p_dstWorkspaceId, const QString &p_bufferId);
+  bool transferBufferRegistration(const QString &p_srcWorkspaceId, const QString &p_dstWorkspaceId,
+                                  const QString &p_bufferId);
 
   // Emit currentViewWindowChanged if the active window has changed.
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
@@ -310,10 +310,12 @@ private:
   // Handle FileAfterOpen hook: open a ViewWindow2 for the newly opened buffer.
   void onFileAfterOpen(const FileOpenEvent &p_event);
 
-  // Lazily create (once per synchronous CLI batch) the shared detached workspace
-  // used to host --detached-view file opens, host it in a DetachedWindow, and
-  // return its id. The cached id is cleared via a QTimer::singleShot(0) after the
-  // batch finishes so a subsequent invocation gets a fresh detached window.
+  // Lazily create (once per synchronous open batch) the shared detached workspace
+  // used to host detached file opens (the --detached-view CLI flag and the
+  // notebook explorer's "Open as Detached" menu entry), host it in a
+  // DetachedWindow, and return its id. The cached id is cleared via a
+  // QTimer::singleShot(0) after the batch finishes so a subsequent invocation
+  // gets a fresh detached window.
   QString ensureCliDetachedWorkspace();
 
   // Handle NodeAfterRename hook: update buffer paths and tab titles.
@@ -379,8 +381,9 @@ private:
   // onViewWindowClosed for detached workspaces, which are torn down by ViewArea2.
   QSet<QString> m_detachedWorkspaceIds;
 
-  // Shared detached workspace id for the current synchronous CLI --detached-view
-  // batch. Empty between batches; set by ensureCliDetachedWorkspace() and reset
+  // Shared detached workspace id for the current synchronous detached-open batch
+  // (--detached-view CLI flag or the explorer's "Open as Detached"). Empty
+  // between batches; set by ensureCliDetachedWorkspace() and reset
   // to empty via a queued singleShot once the batch completes (or synchronously
   // by resetCliDetachedBatch() between queued batches at startup).
   QString m_cliDetachedWorkspaceId;

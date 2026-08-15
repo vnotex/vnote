@@ -76,6 +76,7 @@ private slots:
   void testControllerPreflightEmitsAndSuppressesActivation();
   void testControllerModelSignalReemits();
   void testControllerSuppression();
+  void testControllerOpenNodesDetachedFlag();
   void testControllerRevalidateSkipsReappeared();
   void testControllerFolderUnindexCascades();
 
@@ -602,6 +603,47 @@ void TestMissingNodesQt::testControllerSuppression() {
     QVERIFY2(id.relativePath != relA, "suppressed id must not be re-emitted");
   }
   QCOMPARE(removalEmits, 0);
+}
+
+// "Open as Detached" widens openNodes() with a p_detached flag that must reach
+// every emitted FileOpenSettings; the default (one-argument) form must not.
+void TestMissingNodesQt::testControllerOpenNodesDetachedFlag() {
+  const QString folder = QStringLiteral("det");
+  QVERIFY(!m_notebookService->createFolder(m_notebookId, QString(), folder).isEmpty());
+  QVERIFY(!m_notebookService->createFile(m_notebookId, folder, QStringLiteral("a.md")).isEmpty());
+  QVERIFY(!m_notebookService->createFile(m_notebookId, folder, QStringLiteral("b.md")).isEmpty());
+  const QString relA = folder + QStringLiteral("/a.md");
+  const QString relB = folder + QStringLiteral("/b.md");
+
+  ServiceLocator services;
+  services.registerService<NotebookCoreService>(m_notebookService);
+  NotebookNodeModel model(services);
+  model.setNotebookId(m_notebookId);
+  NotebookNodeController controller(services);
+  controller.setModel(&model);
+  model.fetchMore(QModelIndex());
+
+  QList<bool> detachedFlags;
+  QObject::connect(&controller, &NotebookNodeController::nodeActivated, &controller,
+                   [&](const NodeIdentifier &, const FileOpenSettings &settings) {
+                     detachedFlags.append(settings.m_detachedView);
+                   });
+
+  const QList<NodeIdentifier> ids{NodeIdentifier{m_notebookId, relA},
+                                  NodeIdentifier{m_notebookId, relB}};
+
+  controller.openNodes(ids, true);
+  QCOMPARE(detachedFlags.size(), 2);
+  for (bool flag : detachedFlags) {
+    QVERIFY2(flag, "detached open must set FileOpenSettings::m_detachedView");
+  }
+
+  detachedFlags.clear();
+  controller.openNodes(ids);
+  QCOMPARE(detachedFlags.size(), 2);
+  for (bool flag : detachedFlags) {
+    QVERIFY2(!flag, "default open must NOT set FileOpenSettings::m_detachedView");
+  }
 }
 
 void TestMissingNodesQt::testControllerRevalidateSkipsReappeared() {

@@ -111,7 +111,10 @@ public:
   void manageNodeTags(const NodeIdentifier &p_nodeId);
 
   // Multi-node operations (list overloads)
-  void openNodes(const QList<NodeIdentifier> &p_ids);
+  // p_detached: open the node(s) in a detached top-level window instead of the
+  // main window's current split. All nodes opened from ONE synchronous call
+  // land as tabs in the SAME detached window.
+  void openNodes(const QList<NodeIdentifier> &p_ids, bool p_detached = false);
   void openNodesWithCommand(const QList<NodeIdentifier> &p_ids, const QString &p_commandTemplate);
   void duplicateNodes(const QList<NodeIdentifier> &p_ids);
   void copyNodePaths(const QList<NodeIdentifier> &p_ids);

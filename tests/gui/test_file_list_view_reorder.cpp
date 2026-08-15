@@ -143,7 +143,7 @@ void NotebookNodeController::reloadNode(const NodeIdentifier &) {}
 void NotebookNodeController::reloadAll() {}
 void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &) {}
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &) {}
-void NotebookNodeController::openNodes(const QList<NodeIdentifier> &) {}
+void NotebookNodeController::openNodes(const QList<NodeIdentifier> &, bool) {}
 void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &, const QString &) {}
 void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::copyNodePaths(const QList<NodeIdentifier> &) {}

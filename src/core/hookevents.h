@@ -71,9 +71,11 @@ struct FileOpenEvent {
   bool readOnly = false;
   int lineNumber = -1;
   int cursorOffset = -1; // QTextDocument caret position from a template "@@" mark, or -1.
-  QString anchor; // Heading anchor for scroll-to-heading navigation.
+  QString anchor;        // Heading anchor for scroll-to-heading navigation.
   bool alwaysNewWindow = false;
-  bool detachedView = false; // Open in a detached view split (--detached-view).
+  // Open in a detached view split (--detached-view CLI flag, or the notebook
+  // explorer's "Open as Detached" menu entry).
+  bool detachedView = false;
   QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
   int searchOptions = 0;           // FindOptions serialized as int
   int searchCurrentMatchLine = -1; // line for current-match bias

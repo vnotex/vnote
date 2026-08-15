@@ -144,10 +144,11 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     return;
   }
 
-  // Resolve the destination workspace. For a detached (--detached-view) open,
-  // route into the shared per-batch detached workspace instead of the main
-  // current workspace, so all files from one CLI invocation group as tabs in a
-  // single DetachedWindow and the main window's current workspace is untouched.
+  // Resolve the destination workspace. For a detached open (--detached-view CLI
+  // flag or the explorer's "Open as Detached"), route into the shared per-batch
+  // detached workspace instead of the main current workspace, so all files from
+  // one invocation group as tabs in a single DetachedWindow and the main
+  // window's current workspace is untouched.
   QString targetWs;
   if (detached) {
     targetWs = ensureCliDetachedWorkspace();
@@ -211,7 +212,7 @@ QString ViewAreaController::ensureCliDetachedWorkspace() {
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
 
-  // Model the CLI detached window as a view-split creation so plugins observe it
+  // Model the detached window as a view-split creation so plugins observe it
   // through the same hooks as a manual detach (parity with detachViewWindow).
   ViewSplitCreateEvent createEvent;
   createEvent.direction = static_cast<int>(Direction::Right);
@@ -243,8 +244,8 @@ QString ViewAreaController::ensureCliDetachedWorkspace() {
   }
 
   m_cliDetachedWorkspaceId = newWsId;
-  // Reset after the current synchronous CLI batch completes so the next
-  // invocation opens into a fresh detached window. Between queued startup
+  // Reset after the current synchronous detached-open batch completes so the
+  // next invocation opens into a fresh detached window. Between queued startup
   // batches MainWindow2 also calls resetCliDetachedBatch() synchronously; this
   // singleShot then becomes a harmless no-op (id already cleared).
   QTimer::singleShot(0, this, [this]() { m_cliDetachedWorkspaceId.clear(); });
@@ -359,7 +360,8 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
     return;
   }
 
-  // For a detached (--detached-view) open, register the buffer into the detached
+  // For a detached open (--detached-view CLI flag or the explorer's "Open as
+  // Detached"), register the buffer into the detached
   // workspace and leave the main window's current window/split untouched. This
   // is threaded in explicitly (no controller-global state mutation), so it is
   // safe even if a hook below reentrantly opens another buffer.
@@ -1802,7 +1804,6 @@ void ViewAreaController::requestQuickNote() {
 
   emit quickNoteRequested();
 }
-
 
 void ViewAreaController::openVxUrl(const QUrl &p_url) {
   if (p_url.scheme() != QStringLiteral("vx")) {

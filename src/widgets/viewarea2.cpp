@@ -881,7 +881,8 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   const ID homeId = split ? loneHomeWindowId() : 0;
   if (!split) {
     // Detached splits live outside m_splits (tracked in m_detachedWindows);
-    // fall back to them so a CLI --detached-view open can target a detached
+    // fall back to them so a detached open (--detached-view CLI flag or the
+    // explorer's "Open as Detached") can target a detached
     // workspace that has no entry in the main splitter tree.
     split = detachedSplitForWorkspace(p_workspaceId);
   }
@@ -908,7 +909,8 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
   connect(win, &ViewWindow2::exportRequested, this, [this, win]() { emit exportRequested(win); });
-  // For a detached (--detached-view) open, pass the target workspace so the
+  // For a detached open (--detached-view CLI flag or the explorer's "Open as
+  // Detached"), pass the target workspace so the
   // controller registers the buffer there without touching main-window state.
   m_controller->onViewWindowOpened(id, p_buffer, p_settings,
                                    p_settings.m_detachedView ? p_workspaceId : QString());

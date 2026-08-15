@@ -84,7 +84,8 @@ struct FileOpenSettings {
   bool m_alwaysNewWindow = false;
 
   // Whether to open the file in a detached view split (top-level DetachedWindow
-  // hosting a dedicated vxcore workspace). Used by the --detached-view CLI flow.
+  // hosting a dedicated vxcore workspace). Set per synchronous open batch by both
+  // the --detached-view CLI flow and the notebook explorer's "Open as Detached".
   bool m_detachedView = false;
 
   // Search highlight context for in-page highlighting after open.
