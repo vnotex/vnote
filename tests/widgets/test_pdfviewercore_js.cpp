@@ -167,6 +167,13 @@ window.__app.pdfLinkService = {
 };
 window.PDFViewerApplication = window.__app;
 
+// Stand-in for viewer.js's AppOptions (exported as window.PDFViewerApplicationOptions).
+// pdfviewer.js sets the sidebar options through it at file scope.
+window.__options = {};
+window.PDFViewerApplicationOptions = {
+    set: function(k, v) { window.__options[k] = v; }
+};
+
 // Must satisfy EVERYTHING the existing channel callback does, not just the new
 // outline calls: it connects urlUpdated unconditionally and first, so omitting
 // that would make the callback throw before setOutlineAdapter() is reached.
@@ -199,6 +206,7 @@ private slots:
   void rebuildResetsDestinations();
   void gluePublishesWhenChannelArrivesFirst();
   void gluePublishesWhenOutlineArrivesFirst();
+  void glueHidesSidebarOnLoad();
 
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
@@ -299,8 +307,7 @@ void TestPdfViewerCoreJs::gotoOutlineItemRoundTrips() {
   eval(engine, QStringLiteral("window.vxcore.gotoOutlineItem(3);"));
   eval(engine, QStringLiteral("window.vxcore.gotoOutlineItem(4);"));
   QCOMPARE(json(engine, QStringLiteral("window.__gotoCalls")),
-           QStringLiteral(
-               "[\"\\\"ch1\\\"\",\"\\\"s12\\\"\",\"\\\"deep\\\"\",\"\\\"ch2\\\"\"]"));
+           QStringLiteral("[\"\\\"ch1\\\"\",\"\\\"s12\\\"\",\"\\\"deep\\\"\",\"\\\"ch2\\\"\"]"));
 
   // The explicit-array destination survives verbatim.
   eval(engine, QStringLiteral("window.__gotoCalls = [];"));
@@ -479,8 +486,8 @@ void TestPdfViewerCoreJs::gluePublishesWhenChannelArrivesFirst() {
   loadCore(engine);
   loadGlue(engine);
 
-  eval(engine, QStringLiteral(
-                   "window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
+  eval(engine,
+       QStringLiteral("window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
   eval(engine, QStringLiteral("window.__initDeferred.resolve();"));
   eval(engine, QStringLiteral("window.__app.eventBus.fire('documentloaded');"));
 
@@ -490,8 +497,7 @@ void TestPdfViewerCoreJs::gluePublishesWhenChannelArrivesFirst() {
 
   // The scroll signal is wired through to gotoOutlineItem.
   eval(engine, QStringLiteral("window.__scrollHandler(0);"));
-  QCOMPARE(json(engine, QStringLiteral("window.__gotoCalls")),
-           QStringLiteral("[\"\\\"ch1\\\"\"]"));
+  QCOMPARE(json(engine, QStringLiteral("window.__gotoCalls")), QStringLiteral("[\"\\\"ch1\\\"\"]"));
 }
 
 // Gates an adapter-presence guard around attachOutlineBridge(): the
@@ -507,12 +513,25 @@ void TestPdfViewerCoreJs::gluePublishesWhenOutlineArrivesFirst() {
   eval(engine, QStringLiteral("window.__app.eventBus.fire('documentloaded');"));
   QCOMPARE(eval(engine, QStringLiteral("window.__published.length")).toInt(), 0);
 
-  eval(engine, QStringLiteral(
-                   "window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
+  eval(engine,
+       QStringLiteral("window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
 
   QCOMPARE(eval(engine, QStringLiteral("window.__published.length")).toInt(), 1);
   QCOMPARE(json(engine, QStringLiteral("window.__published[0].map(function(e){return e.index;})")),
            QStringLiteral("[0,1,-1,2,3,4]"));
+}
+
+// Gates removal of the sidebar defaults. sidebarViewOnLoad must be SidebarView.NONE (0), and
+// disablePreferences must be true — otherwise viewer.js's _initializeOptions() overwrites it
+// with the -1 (UNKNOWN) preference default, which lets the stored state or the document's
+// /PageMode re-open the navigation pane.
+void TestPdfViewerCoreJs::glueHidesSidebarOnLoad() {
+  QJSEngine engine;
+  loadCore(engine);
+  loadGlue(engine);
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__options.sidebarViewOnLoad")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__options.disablePreferences")).toBool(), true);
 }
 
 } // namespace tests

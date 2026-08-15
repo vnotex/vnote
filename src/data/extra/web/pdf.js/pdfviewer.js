@@ -28,6 +28,17 @@ new QWebChannel(qt.webChannelTransport,
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = window.vxcore.workerSrc;
 
+// Keep the sidebar (thumbnails/outline) closed on open. VNote shows the PDF outline in its
+// own side dock, so the built-in navigation pane is redundant by default.
+// MUST run before viewer.js's webViewerLoad() (DOMContentLoaded), which this file does, since
+// it is a synchronous script in <head>.
+// - sidebarViewOnLoad = SidebarView.NONE (0). The default -1 (UNKNOWN) makes pdf.js fall back
+//   to the stored state or to the document's own /PageMode, which can auto-open the sidebar.
+// - disablePreferences is required: otherwise AppOptions.setAll(preferences) in
+//   _initializeOptions() overwrites the value above with the -1 default.
+window.PDFViewerApplicationOptions.set('disablePreferences', true);
+window.PDFViewerApplicationOptions.set('sidebarViewOnLoad', 0);
+
 // initializedPromise resolves after PDFViewerApplication.eventBus exists, which
 // it does NOT at the top level of this file. Register from there — NOT from the
 // QWebChannel callback above, which would invert the race and can miss
