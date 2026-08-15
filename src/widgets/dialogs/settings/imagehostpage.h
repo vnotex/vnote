@@ -5,6 +5,8 @@
 
 #include <QJsonObject>
 #include <QMap>
+#include <QPointer>
+#include <QPushButton>
 #include <QVector>
 
 class QGroupBox;
@@ -54,7 +56,6 @@ private slots:
   void onTestConfigFinished(int p_token, bool p_success, const QString &p_msg);
 
 private:
-
   QVBoxLayout *m_mainLayout = nullptr;
 
   ImageHostController *m_controller = nullptr;
@@ -70,7 +71,10 @@ private:
 
   int m_pendingTestToken = -1;
 
-  QPushButton *m_pendingTestButton = nullptr;
+  // Guarded: loadInternal() deletes the provider group boxes (and with them the
+  // Test button) while a test may still be in flight, and the reply arrives
+  // later on onTestConfigFinished().
+  QPointer<QPushButton> m_pendingTestButton;
 
   QString m_testButtonOriginalText;
 };

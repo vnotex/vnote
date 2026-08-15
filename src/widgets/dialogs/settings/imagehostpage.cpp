@@ -78,6 +78,13 @@ void ImageHostPage::loadInternal() {
   auto *configMgr = m_services.get<ConfigMgr2>();
   const auto &editorConfig = configMgr->getEditorConfig();
 
+  // A pending test belongs to a provider group box that is about to be
+  // destroyed below. Drop the reference and the token so the late reply cannot
+  // touch a dead button or re-enable a widget that no longer exists.
+  m_pendingTestToken = -1;
+  m_pendingTestButton = nullptr;
+  m_testButtonOriginalText.clear();
+
   // Remove existing provider group boxes from layout.
   for (auto it = m_hostToFields.begin(); it != m_hostToFields.end(); ++it) {
     if (!it.value().isEmpty()) {

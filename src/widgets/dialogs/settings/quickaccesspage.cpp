@@ -181,9 +181,10 @@ void QuickAccessPage::loadInternal() {
         m_quickAccessUuidMap.insert(item.m_path, item.m_uuid);
       }
     }
-    if (!quickAccess.isEmpty()) {
-      m_quickAccessTextEdit->setPlainText(formatQuickAccessItems(quickAccess));
-    }
+    // Unconditional: an empty list must CLEAR the box. Skipping the call left
+    // the previous text in place, so Reset could not undo an edit and the next
+    // Save persisted it.
+    m_quickAccessTextEdit->setPlainText(formatQuickAccessItems(quickAccess));
   }
 
   loadQuickNoteSchemes();
@@ -210,18 +211,19 @@ bool QuickAccessPage::saveInternal() {
   auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
 
   {
-    auto text = m_quickAccessTextEdit->toPlainText();
-    if (!text.isEmpty()) {
-      auto items = parseQuickAccessText(text);
-      // Restore UUIDs from the hidden map.
-      for (auto &item : items) {
-        auto it = m_quickAccessUuidMap.constFind(item.m_path);
-        if (it != m_quickAccessUuidMap.constEnd()) {
-          item.m_uuid = it.value();
-        }
+    // Unconditional: emptying the box means "remove every quick-access item".
+    // Guarding on a non-empty text made that edit unpersistable, so the old
+    // list came back on restart. parseQuickAccessText() returns an empty
+    // vector for empty text, and setQuickAccessItems() filters empty paths.
+    auto items = parseQuickAccessText(m_quickAccessTextEdit->toPlainText());
+    // Restore UUIDs from the hidden map.
+    for (auto &item : items) {
+      auto it = m_quickAccessUuidMap.constFind(item.m_path);
+      if (it != m_quickAccessUuidMap.constEnd()) {
+        item.m_uuid = it.value();
       }
-      sessionConfig.setQuickAccessItems(items);
     }
+    sessionConfig.setQuickAccessItems(items);
   }
 
   saveQuickNoteSchemes();

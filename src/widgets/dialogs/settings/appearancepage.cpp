@@ -112,9 +112,10 @@ void AppearancePage::loadInternal() {
   {
     const auto &docks = widgetConfig.getMainWindowKeepDocksExpandingContentArea();
     for (const auto &cb : m_keepDocksExpandingContentArea) {
-      if (docks.contains(cb.second)) {
-        cb.first->setChecked(true);
-      }
+      // Always pass an explicit value: reset() re-runs load() on these same
+      // widgets, so a one-way setChecked(true) left a stale check behind and
+      // the next save persisted it.
+      cb.first->setChecked(docks.contains(cb.second));
     }
   }
 }

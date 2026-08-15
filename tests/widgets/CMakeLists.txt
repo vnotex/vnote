@@ -253,6 +253,54 @@ add_custom_command(TARGET test_settings_slug POST_BUILD
     $<TARGET_FILE_DIR:test_settings_slug>
 )
 
+# Persistence regressions on two REAL settings pages (test_settings_slug above
+# stubs their method bodies, so it cannot cover load/save behavior). The pages
+# are constructed for real, hence QTEST_MAIN and no GUILESS. NewQuickAccessItemDialog
+# and its Dialog/ScrollDialog bases are compiled in because QuickAccessPage
+# references the dialog from its "New" handler; stubbing it would need the same
+# bases anyway (moc + virtuals), so the real sources are cheaper.
+add_qt_test(test_settings_persistence
+  SOURCES
+    test_settings_persistence.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/quickaccesspage.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/fileassociationpage.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspage.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspagehelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/newquickaccessitemdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notetemplateselector.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+  LINKS
+    core_configs
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Widgets
+)
+
+target_include_directories(test_settings_persistence PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+# vxcore test mode redirects every process to the SAME config directory, and
+# this test writes the session config, so it must not run beside another test
+# that does the same.
+set_tests_properties(test_settings_persistence PROPERTIES RUN_SERIAL TRUE)
+
+add_custom_command(TARGET test_settings_persistence POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_settings_persistence>
+)
+
 add_qt_test(test_settings_navigation
   SOURCES
     test_settings_navigation.cpp

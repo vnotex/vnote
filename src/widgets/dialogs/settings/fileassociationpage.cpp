@@ -192,7 +192,10 @@ void FileAssociationPage::loadBuiltInTypesGroup() {
 }
 
 void FileAssociationPage::loadExternalProgramsGroup() {
-  // Clear previous dynamic rows.
+  // Clear previous dynamic rows. The Add Program button is one of them, so the
+  // member must be cleared BEFORE the row loop below: addExternalProgramRow()
+  // dereferences it, and it is only re-created further down.
+  m_addProgramButton = nullptr;
   while (m_externalCardLayout->count() > m_externalRowStartIndex) {
     auto *item = m_externalCardLayout->takeAt(m_externalCardLayout->count() - 1);
     if (item->widget()) {
