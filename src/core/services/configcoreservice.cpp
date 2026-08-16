@@ -227,6 +227,32 @@ bool ConfigCoreService::setAutoSyncDebounceSeconds(int p_seconds) {
   return err == VXCORE_OK;
 }
 
+bool ConfigCoreService::setAppLocale(const QString &p_locale) {
+  if (!checkContext()) {
+    qWarning() << "ConfigCoreService::setAppLocale: context is null";
+    return false;
+  }
+  VxCoreError err = vxcore_context_set_locale(m_context, p_locale.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "ConfigCoreService::setAppLocale: vxcore_context_set_locale failed:"
+               << vxcore_error_message(err);
+    return false;
+  }
+  return true;
+}
+
+QString ConfigCoreService::appLocale() const {
+  if (!checkContext()) {
+    return QString();
+  }
+  char *locale = nullptr;
+  VxCoreError err = vxcore_context_get_locale(m_context, &locale);
+  if (err != VXCORE_OK) {
+    return QString();
+  }
+  return cstrToQString(locale);
+}
+
 bool ConfigCoreService::prepareShutdown() {
   if (!checkContext()) {
     qWarning() << "ConfigCoreService::prepareShutdown: context is null";

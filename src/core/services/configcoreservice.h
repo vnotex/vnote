@@ -73,6 +73,17 @@ public:
   // Returns true on success, false on failure.
   bool setAutoSyncDebounceSeconds(int p_seconds);
 
+  // Set the app-wide locale used by vxcore for locale-aware, UTF-8 output
+  // (currently the built-in %MMM%/%MMMM%/%ddd%/%dddd% snippets). Accepts
+  // Qt/POSIX-style names such as "en_US", "zh_CN", "ja"; unknown or empty
+  // resolves to English.
+  // RUNTIME-ONLY: unlike the rest of this class, this setting is NOT part of the
+  // persisted config JSON. It must be pushed again on every app start.
+  bool setAppLocale(const QString &p_locale);
+
+  // Canonical locale name currently in effect ("en" | "zh_CN" | "ja").
+  QString appLocale() const;
+
   // Snapshot current session state to disk. Sets shutdown flag to prevent
   // destructor double-save. Idempotent.
   bool prepareShutdown();

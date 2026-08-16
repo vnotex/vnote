@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <core/services/configcoreservice.h>
 #include <core/services/snippetcoreservice.h>
 
 #include <vxcore/vxcore.h>
@@ -34,6 +35,7 @@ private slots:
   void testExpandContentEmojiBeforeCursor();
   void testExpandContentCrlfBeforeCursor();
   void testExpandContentOverrides();
+  void testLocaleAwareMonthNames();
 
 private:
   static QJsonObject makeValidSnippet(const QString &p_content = QStringLiteral("hello @@world"));
@@ -154,8 +156,8 @@ void TestSnippetService::testUpdateSnippetSuccess() {
   QVERIFY(m_service->createSnippet(QStringLiteral("test_snip_update"), makeValidSnippet()));
 
   const QString updatedContent = QStringLiteral("updated content");
-  bool updated = m_service->updateSnippet(
-      QStringLiteral("test_snip_update"), makeValidSnippet(updatedContent));
+  bool updated = m_service->updateSnippet(QStringLiteral("test_snip_update"),
+                                          makeValidSnippet(updatedContent));
   QVERIFY(updated);
 
   QJsonObject snippet = m_service->getSnippet(QStringLiteral("test_snip_update"));
@@ -197,16 +199,16 @@ void TestSnippetService::testDeleteBuiltInSnippetFails() {
 }
 
 void TestSnippetService::testApplySnippetDate() {
-  QJsonObject result = m_service->applySnippet(
-      QStringLiteral("date"), QString(), QString(), QJsonObject());
+  QJsonObject result =
+      m_service->applySnippet(QStringLiteral("date"), QString(), QString(), QJsonObject());
   QVERIFY(result.contains(QLatin1String("text")));
   QVERIFY(result.contains(QLatin1String("cursorOffset")));
   QVERIFY(!result.value(QLatin1String("text")).toString().isEmpty());
 }
 
 void TestSnippetService::testApplySnippetNonexistent() {
-  QJsonObject result = m_service->applySnippet(
-      QStringLiteral("nonexistent"), QString(), QString(), QJsonObject());
+  QJsonObject result =
+      m_service->applySnippet(QStringLiteral("nonexistent"), QString(), QString(), QJsonObject());
   QCOMPARE(result.value(QLatin1String("text")).toString(), QString());
   QCOMPARE(result.value(QLatin1String("cursorOffset")).toInt(), -1);
 }
@@ -246,7 +248,50 @@ void TestSnippetService::testExpandContentOverrides() {
   QCOMPARE(r.value(QLatin1String("cursorOffset")).toInt(), 12);
 }
 
-} // namespace tests
+// End-to-end gate for the ANSI/UTF-8 half of issue #2099: %MMM% must follow the
+// locale pushed into the vxcore context and cross the C ABI as real UTF-8.
+// The month is derived from the current date (never hard-coded), and the date is
+// sampled before AND after the expansion so a month-boundary tick cannot flake.
+void TestSnippetService::testLocaleAwareMonthNames() {
+  static const char *const kEnShortMonths[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  // U+6708 as explicit UTF-8 bytes.
+  const QString yue = QString::fromUtf8("\xE6\x9C\x88");
 
+  vnotex::ConfigCoreService configService(m_context);
+
+  auto expandMMM = [this]() {
+    return m_service->expandContent(QStringLiteral("%MMM%"))
+        .value(QLatin1String("text"))
+        .toString();
+  };
+
+  // Default context: English table, regardless of the host OS locale.
+  QCOMPARE(configService.appLocale(), QStringLiteral("en"));
+  {
+    const int before = QDate::currentDate().month();
+    const QString got = expandMMM();
+    const int after = QDate::currentDate().month();
+    QVERIFY2(got == QString::fromLatin1(kEnShortMonths[before - 1]) ||
+                 got == QString::fromLatin1(kEnShortMonths[after - 1]),
+             qPrintable(QStringLiteral("unexpected English %MMM%: ") + got));
+  }
+
+  // zh_CN: "<n>月" in valid UTF-8.
+  QVERIFY(configService.setAppLocale(QStringLiteral("zh_CN")));
+  QCOMPARE(configService.appLocale(), QStringLiteral("zh_CN"));
+  {
+    const int before = QDate::currentDate().month();
+    const QString got = expandMMM();
+    const int after = QDate::currentDate().month();
+    QVERIFY2(got == QString::number(before) + yue || got == QString::number(after) + yue,
+             qPrintable(QStringLiteral("unexpected zh_CN %MMM%: ") + got));
+  }
+
+  // Restore the default so later runs of this fixture are unaffected.
+  QVERIFY(configService.setAppLocale(QStringLiteral("en")));
+}
+
+} // namespace tests
 QTEST_GUILESS_MAIN(tests::TestSnippetService)
 #include "test_snippetservice.moc"

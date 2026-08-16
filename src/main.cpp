@@ -694,6 +694,18 @@ int main(int argc, char *argv[]) {
 
     loadTranslators(app, configMgr);
 
+    // Push the effective locale into vxcore so its locale-aware, UTF-8 output
+    // (the built-in %MMM%/%MMMM%/%ddd%/%dddd% snippets) follows VNote's language
+    // setting rather than the OS/C-runtime locale. Runtime-only: nothing is
+    // persisted, so this must be pushed on every start, AFTER loadTranslators
+    // (which applies QLocale::setDefault). Changing the language in Settings
+    // requires a restart, so a single push is sufficient.
+    {
+      const auto appLocale = configMgr.getCoreConfig().getLocaleToUse();
+      configService.coreService()->setAppLocale(appLocale);
+      qInfo() << "vxcore locale:" << configService.coreService()->appLocale();
+    }
+
     if (app.styleSheet().isEmpty()) {
       auto style = themeService.fetchQtStyleSheet();
       if (!style.isEmpty()) {
