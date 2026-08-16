@@ -1,9 +1,9 @@
 #include <QtTest>
 
+#include <QColor>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QColor>
 #include <QScopedPointer>
 #include <QSet>
 #include <QStandardPaths>
@@ -165,7 +165,8 @@ void TestThemeService::getWebStyles_returnsOnlyWebCss() {
   QVERIFY2(!styles.isEmpty(), "expected at least one web style");
   for (const auto &s : styles) {
     QCOMPARE(QFileInfo(s.second).fileName(), QStringLiteral("web.css"));
-    QVERIFY2(!s.second.endsWith(QStringLiteral("highlight.css")), "web list must exclude highlight");
+    QVERIFY2(!s.second.endsWith(QStringLiteral("highlight.css")),
+             "web list must exclude highlight");
   }
 }
 
@@ -291,8 +292,8 @@ void TestThemeService::addBundledThemeRows() {
                              }),
               names.end());
 
-  QVERIFY2(names.size() >= 10,
-           qPrintable(QStringLiteral("expected at least the 10 bundled themes, found %1: %2")
+  QVERIFY2(names.size() >= 12,
+           qPrintable(QStringLiteral("expected at least the 12 bundled themes, found %1: %2")
                           .arg(names.size())
                           .arg(names.join(QStringLiteral(", ")))));
 
@@ -367,8 +368,7 @@ qreal TestThemeService::contrastRatio(const QColor &p_a, const QColor &p_b) {
       // identical results for the palette's six-digit colors.
       return v <= 0.03928 ? v / 12.92 : std::pow((v + 0.055) / 1.055, 2.4);
     };
-    return 0.2126 * channel(c.redF()) + 0.7152 * channel(c.greenF())
-           + 0.0722 * channel(c.blueF());
+    return 0.2126 * channel(c.redF()) + 0.7152 * channel(c.greenF()) + 0.0722 * channel(c.blueF());
   };
   qreal la = luminance(p_a);
   qreal lb = luminance(p_b);
@@ -391,11 +391,12 @@ void TestThemeService::interfaceQssFullyResolved() {
   QVERIFY2(!qss.isEmpty(),
            qPrintable(QStringLiteral("theme '%1' produced no interface.qss").arg(themeName)));
 
-  for (const auto &prefix : {QStringLiteral("@palette#"), QStringLiteral("@base#"),
-                             QStringLiteral("@widgets#")}) {
+  for (const auto &prefix :
+       {QStringLiteral("@palette#"), QStringLiteral("@base#"), QStringLiteral("@widgets#")}) {
     const int idx = qss.indexOf(prefix);
-    QVERIFY2(idx < 0, qPrintable(QStringLiteral("%1 interface.qss has an unresolved token: ...%2...")
-                                     .arg(themeName, qss.mid(qMax(0, idx - 60), 160))));
+    QVERIFY2(idx < 0,
+             qPrintable(QStringLiteral("%1 interface.qss has an unresolved token: ...%2...")
+                            .arg(themeName, qss.mid(qMax(0, idx - 60), 160))));
   }
 }
 
@@ -413,8 +414,8 @@ void TestThemeService::interfaceQssStylesInlineBanner() {
 
   const QString base = qssRuleBody(qss, QStringLiteral("vnotex--InlineBanner"));
   QVERIFY2(!base.isEmpty(),
-           qPrintable(QStringLiteral("%1 interface.qss has no vnotex--InlineBanner rule")
-                          .arg(themeName)));
+           qPrintable(
+               QStringLiteral("%1 interface.qss has no vnotex--InlineBanner rule").arg(themeName)));
   for (const auto &decl : {QStringLiteral("background-color:"), QStringLiteral("color:"),
                            QStringLiteral("border-top:"), QStringLiteral("border-bottom:"),
                            QStringLiteral("border-left:")}) {
@@ -429,9 +430,10 @@ void TestThemeService::interfaceQssStylesInlineBanner() {
   for (const auto &severity : {QStringLiteral("warning"), QStringLiteral("error")}) {
     const QString body = qssRuleBody(
         qss, QStringLiteral("vnotex--InlineBanner[BannerSeverity=\"%1\"]").arg(severity));
-    QVERIFY2(!body.isEmpty(),
-             qPrintable(QStringLiteral("%1 interface.qss has no InlineBanner rule for severity '%2'")
-                            .arg(themeName, severity)));
+    QVERIFY2(
+        !body.isEmpty(),
+        qPrintable(QStringLiteral("%1 interface.qss has no InlineBanner rule for severity '%2'")
+                       .arg(themeName, severity)));
     QVERIFY2(body.contains(QStringLiteral("border-left:")),
              qPrintable(QStringLiteral("%1 InlineBanner '%2' rule does not set border-left; "
                                        "body was:%3")

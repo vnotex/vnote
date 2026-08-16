@@ -20,9 +20,20 @@
 // would let a stale entry survive a `git rm` until the next full rebuild.
 //
 // === Scope ===
-// Only src/data/extra/web/pdf.js/ is gated. The rest of extra.qrc (themes,
-// docs, syntax highlighting, the default notebook) is hand-curated and has no
-// "regenerate the whole block" workflow, so the same risk does not apply.
+// Two blocks are gated:
+//
+//   * src/data/extra/web/pdf.js/ — see above.
+//   * src/data/extra/themes/latex-light/ and .../latex-dark/ — a bundled theme
+//     is ~33 hand-added <file> lines (palette.json, interface.qss, web.css,
+//     highlight.css, text-editor.theme, README.md and 27 SVGs). A missed SVG
+//     does not fail anything: interface.qss url()s resolve to a missing qrc
+//     path and the affected control simply renders without its indicator.
+//     The expected set is derived from the directory listing, never a count,
+//     so adding an asset to the folder is what makes the gate demand an entry.
+//
+// The rest of extra.qrc (the older themes, docs, syntax highlighting, the
+// default notebook) is hand-curated and long-stable, so the same risk does not
+// apply.
 //
 // === The runtime subset ===
 // The vendored tree deliberately contains files that are NOT shipped inside the
@@ -61,6 +72,8 @@ private slots:
   void everyPdfJsFileIsInQrc();
   void everyPdfJsQrcEntryExistsOnDisk();
   void localePropertiesMatchesVendoredLocales();
+  void latexThemeFilesMatchQrc_data();
+  void latexThemeFilesMatchQrc();
 
 private:
   static QString dataRoot();
@@ -68,6 +81,7 @@ private:
   static bool isRuntimeFile(const QString &p_relPath);
   static QSet<QString> readPdfJsQrcEntries(QString *p_error);
   static QSet<QString> listPdfJsRuntimeFiles(QString *p_error);
+  static QSet<QString> readQrcEntriesUnder(const QString &p_prefix, QString *p_error);
 };
 
 // Path prefix (relative to src/data/extra/) of the vendored pdf.js tree. This
@@ -196,12 +210,13 @@ void TestExtraQrcCoverage::everyPdfJsFileIsInQrc() {
     }
   }
 
-  QVERIFY2(missing.isEmpty(),
-           qPrintable(QStringLiteral("%1 vendored pdf.js file(s) have no <file> entry in "
-                                     "src/data/extra/extra.qrc. They would 404 at runtime inside "
-                                     "the WebEngine page with no build-time error. Add the entries, "
-                                     "or exclude them in isRuntimeFile() with a reason.")
-                          .arg(missing.size())));
+  QVERIFY2(
+      missing.isEmpty(),
+      qPrintable(QStringLiteral("%1 vendored pdf.js file(s) have no <file> entry in "
+                                "src/data/extra/extra.qrc. They would 404 at runtime inside "
+                                "the WebEngine page with no build-time error. Add the entries, "
+                                "or exclude them in isRuntimeFile() with a reason.")
+                     .arg(missing.size())));
 }
 
 // The loud failure mode is rcc's job, but a stale entry only errors once the
@@ -230,10 +245,11 @@ void TestExtraQrcCoverage::everyPdfJsQrcEntryExistsOnDisk() {
     }
   }
 
-  QVERIFY2(dangling.isEmpty(),
-           qPrintable(QStringLiteral("%1 pdf.js <file> entr(ies) in src/data/extra/extra.qrc do not "
-                                     "resolve to a runtime file on disk.")
-                          .arg(dangling.size())));
+  QVERIFY2(
+      dangling.isEmpty(),
+      qPrintable(QStringLiteral("%1 pdf.js <file> entr(ies) in src/data/extra/extra.qrc do not "
+                                "resolve to a runtime file on disk.")
+                     .arg(dangling.size())));
 }
 
 // The third copy of the locale list. Shipping a locale folder that
@@ -307,6 +323,79 @@ void TestExtraQrcCoverage::localePropertiesMatchesVendoredLocales() {
            qPrintable(QStringLiteral("locale.properties declares locale(s) with no vendored "
                                      "folder: %1")
                           .arg(notVendored.join(QStringLiteral(", ")))));
+}
+
+// Generic <file> scan restricted to a path prefix, e.g. "themes/latex-light/".
+QSet<QString> TestExtraQrcCoverage::readQrcEntriesUnder(const QString &p_prefix, QString *p_error) {
+  QSet<QString> entries;
+
+  QFile f(qrcPath());
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    *p_error = QStringLiteral("cannot open %1").arg(qrcPath());
+    return entries;
+  }
+
+  static const QRegularExpression re(QStringLiteral("<file[^>]*>([^<]+)</file>"));
+
+  QTextStream ts(&f);
+  while (!ts.atEnd()) {
+    const auto m = re.match(ts.readLine());
+    if (!m.hasMatch()) {
+      continue;
+    }
+    const QString rel = m.captured(1).trimmed();
+    if (rel.startsWith(p_prefix)) {
+      entries.insert(rel);
+    }
+  }
+
+  return entries;
+}
+
+// Two-way disk<->qrc comparison for the two LaTeX themes. Unlike the pdf.js
+// slots there is no "runtime subset": every file in a theme folder ships, so
+// the expected set is simply the directory listing. Deriving it that way (and
+// not from a count) is what makes a newly added asset fail the gate.
+void TestExtraQrcCoverage::latexThemeFilesMatchQrc_data() {
+  QTest::addColumn<QString>("themeName");
+  QTest::newRow("latex-light") << QStringLiteral("latex-light");
+  QTest::newRow("latex-dark") << QStringLiteral("latex-dark");
+}
+
+void TestExtraQrcCoverage::latexThemeFilesMatchQrc() {
+  QFETCH(QString, themeName);
+
+  const QString prefix = QStringLiteral("themes/") + themeName + QLatin1Char('/');
+  const QDir extraDir(dataRoot());
+  const QString themeDir = extraDir.filePath(prefix);
+  QVERIFY2(QDir(themeDir).exists(),
+           qPrintable(QStringLiteral("theme folder not found: %1").arg(themeDir)));
+
+  QSet<QString> onDisk;
+  QDirIterator it(themeDir, QDir::Files, QDirIterator::Subdirectories);
+  while (it.hasNext()) {
+    onDisk.insert(extraDir.relativeFilePath(it.next()));
+  }
+  QVERIFY2(!onDisk.isEmpty(), "theme folder is empty; the gate would be vacuous");
+
+  QString error;
+  const QSet<QString> inQrc = readQrcEntriesUnder(prefix, &error);
+  QVERIFY2(error.isEmpty(), qPrintable(error));
+
+  QStringList missing = (onDisk - inQrc).values();
+  QStringList dangling = (inQrc - onDisk).values();
+  missing.sort();
+  dangling.sort();
+
+  QVERIFY2(missing.isEmpty(),
+           qPrintable(QStringLiteral("%1 file(s) in %2 have no <file> entry in extra.qrc and "
+                                     "would 404 at runtime: %3")
+                          .arg(missing.size())
+                          .arg(prefix, missing.join(QStringLiteral(", ")))));
+  QVERIFY2(dangling.isEmpty(),
+           qPrintable(QStringLiteral("%1 extra.qrc entr(ies) under %2 do not exist on disk: %3")
+                          .arg(dangling.size())
+                          .arg(prefix, dangling.join(QStringLiteral(", ")))));
 }
 
 } // namespace tests

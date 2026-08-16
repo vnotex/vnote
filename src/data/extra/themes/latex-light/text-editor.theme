@@ -1,0 +1,201 @@
+{
+    "metadata" : {
+        "revision" : 0,
+        "name" : "LaTeX Light",
+        "type" : "vtextedit"
+    },
+    "editor-styles" : {
+        "Text" : {
+            "//comment" : "Support a list of fonts separated by ,",
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace",
+            "font-size" : 12,
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@base#content#bg",
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
+        },
+        "CursorLine" : {
+            "background-color" : "#eceae3"
+        },
+        "TrailingSpace" : {
+            "background-color" : "#ddd8cc"
+        },
+        "Tab" : {
+            "background-color" : "@palette#bg3_41"
+        },
+        "SelectedText" : {
+            "//comment" : "Selected text highlight",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search"
+        },
+        "IndicatorsBorder" : {
+            "text-color" : "@palette#fg3_9",
+            "background-color" : "@palette#bg_blockquote"
+        },
+        "CurrentLineNumber" : {
+            "text-color" : "@base#normal#fg"
+        },
+        "Folding" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "FoldedFolding" : {
+            "text-color" : "@palette#bg2_4"
+        },
+        "FoldingHighlight" : {
+            "text-color" : "#a9c4f5"
+        },
+        "FoldedFoldingRangeLine" : {
+            "background-color" : "#dfeee4"
+        },
+        "IncrementalSearch" : {
+            "//comment" : "Incremental search highlight",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search_incremental"
+        },
+        "Search" : {
+            "//comment" : "Search highlight",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search"
+        },
+        "SearchUnderCursor" : {
+            "//comment" : "Search highlight under cursor",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search_current"
+        }
+    },
+    "//comment" : "Override the Text style in editor-styles",
+    "markdown-editor-styles" : {
+        "Text" : {
+            "//comment" : "Support a list of fonts separated by ,",
+            "font-family" : "Latin Modern Roman, CMU Serif, Times New Roman, Times, Noto Serif CJK SC, Source Han Serif SC, Songti SC, STSong, 宋体, SimSun, Georgia, Serif",
+            "font-size" : 13,
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@base#content#bg",
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
+        }
+    },
+    "markdown-syntax-styles" : {
+        "H1" : {
+            "text-color" : "@base#normal#fg",
+            "bold" : true,
+            "font-size" : 18
+        },
+        "H2" : {
+            "text-color" : "@base#normal#fg",
+            "bold" : true,
+            "font-size" : 16
+        },
+        "H3" : {
+            "text-color" : "@base#normal#fg",
+            "bold" : true,
+            "font-size" : 15
+        },
+        "H4" : {
+            "text-color" : "@base#normal#fg",
+            "bold" : true,
+            "font-size" : 14
+        },
+        "H5" : {
+            "text-color" : "@base#normal#fg",
+            "bold" : true,
+            "italic" : true,
+            "font-size" : 14
+        },
+        "H6" : {
+            "text-color" : "@palette#fg3_6",
+            "bold" : true,
+            "italic" : true,
+            "font-size" : 13
+        },
+        "HRULE" : {
+            "text-color" : "@palette#fg3_7",
+            "background-color" : "@palette#bg3_4"
+        },
+        "LIST_BULLET" : {
+            "text-color" : "@palette#fg_inline_code",
+            "bold" : true
+        },
+        "LIST_ENUMERATOR" : {
+            "text-color" : "@palette#bg2_4"
+        },
+        "LINK" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "AUTO_LINK_URL" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "AUTO_LINK_EMAIL" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "IMAGE" : {
+            "text-color" : "@palette#fg3_6"
+        },
+        "REFERENCE" : {
+            "text-color" : "@palette#fg11"
+        },
+        "CODE" : {
+            "text-color" : "@palette#fg_inline_code",
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
+        },
+        "EMPH" : {
+            "italic" : true
+        },
+        "STRONG" : {
+            "bold" : true
+        },
+        "HTML_ENTITY" : {
+            "text-color" : "#6b4a8a"
+        },
+        "HTML" : {
+            "text-color" : "#6b4a8a"
+        },
+        "HTMLBLOCK" : {
+            "text-color" : "#6b4a8a"
+        },
+        "COMMENT" : {
+            "text-color" : "@palette#fg3_8"
+        },
+        "VERBATIM" : {
+            "text-color" : "#3d5a8a",
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
+        },
+        "//comment" : "Please modify the syntax highlight theme as well if you change this",
+        "FENCEDCODEBLOCK" : {
+            "text-color" : "#3d5a8a",
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
+        },
+        "BLOCKQUOTE" : {
+            "text-color" : "@palette#fg_blockquote"
+        },
+        "NOTE" : {
+            "text-color" : "@palette#fg12"
+        },
+        "STRIKE" : {
+            "text-color" : "@palette#fg10",
+            "strike-through" : true
+        },
+        "FRONTMATTER" : {
+            "text-color" : "@palette#fg3_7"
+        },
+        "INLINEEQUATION" : {
+            "text-color" : "@palette#fg_success",
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
+        },
+        "DISPLAYFORMULA" : {
+            "text-color" : "@palette#fg_success",
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
+        },
+        "MARK" : {
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_mark"
+        },
+        "TABLE" : {
+            "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
+        },
+        "TABLEBORDER" : {
+            "text-color" : "@palette#fg_inline_code",
+            "background-color" : "@palette#bg3_43"
+        }
+   }
+}

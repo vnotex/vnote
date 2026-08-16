@@ -260,7 +260,7 @@ These files load and apply as-is, with no `@`-token substitution:
 
 ### Backward Compatibility
 
-Existing themes use hardcoded hex throughout. The new resolver is a no-op on files that contain no `@` tokens. Running `translateStyleByPalette` on `body { color: #222222; }` returns the input unchanged. All 10 shipped themes (pure, native, vue-light, vue-dark, vscode-dark, solarized-light, solarized-dark, moonlight, everforest-dark, vx-idea) continue to render exactly as before.
+Existing themes use hardcoded hex throughout. The new resolver is a no-op on files that contain no `@` tokens. Running `translateStyleByPalette` on `body { color: #222222; }` returns the input unchanged. The ten pre-existing shipped themes (pure, native, vue-light, vue-dark, vscode-dark, solarized-light, solarized-dark, moonlight, everforest-dark, vx-idea) continue to render exactly as before; the two newer ones (latex-light, latex-dark) are token-resolved by design.
 
 ### Authoring Example
 
@@ -299,7 +299,7 @@ body {
 
 ## Theme Token Conversion Convention
 
-Theme authors should use palette tokens to share colors between `web.css` and `text-editor.theme`. This convention has been demonstrated on 3 themes (pure, everforest-dark, moonlight) as a pilot. The remaining 7 themes ship hardcoded hex and will convert in future tasks.
+Theme authors should use palette tokens to share colors between `web.css` and `text-editor.theme`. This convention is followed by 5 themes (pure, everforest-dark, moonlight, latex-light, latex-dark). The remaining 7 themes ship hardcoded hex and will convert in future tasks.
 
 ### Naming Convention
 

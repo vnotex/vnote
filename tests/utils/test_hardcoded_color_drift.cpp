@@ -17,7 +17,7 @@
 // except "transparent".
 //
 // === Why this test exists ===
-// VNote ships 10 themes, 6 of them dark. A widget that hardcodes e.g.
+// VNote ships 12 themes, 6 of them dark. A widget that hardcodes e.g.
 // "background-color: #FFF3CD; color: #856404;" looks correct only in the theme
 // its author happened to be running, and cannot follow a runtime theme switch.
 // That drifted into two independently copy-pasted banners and a whole
@@ -120,8 +120,8 @@ bool TestHardcodedColorDrift::isAllowed(const QString &p_relPath) {
 }
 
 bool TestHardcodedColorDrift::hasEscapeHatch(const QString &p_line) {
-  return p_line.contains(QStringLiteral("// hardcoded-color-allow"))
-         || p_line.contains(QStringLiteral("// NOLINT"));
+  return p_line.contains(QStringLiteral("// hardcoded-color-allow")) ||
+         p_line.contains(QStringLiteral("// NOLINT"));
 }
 
 QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p_source) {
@@ -150,8 +150,8 @@ QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p
         }
       } else if (c == QLatin1Char('/') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('*')) {
         advance(2);
-        while (i + 1 < n
-               && !(p_source.at(i) == QLatin1Char('*') && p_source.at(i + 1) == QLatin1Char('/'))) {
+        while (i + 1 < n &&
+               !(p_source.at(i) == QLatin1Char('*') && p_source.at(i + 1) == QLatin1Char('/'))) {
           advance(1);
         }
         advance(2);
@@ -167,8 +167,7 @@ QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p
   // is not a literal start.
   const auto readOneLiteral = [&](QString *p_body) {
     // Raw string: optional encoding prefix already consumed by the caller.
-    if (p_source.at(i) == QLatin1Char('R') && i + 1 < n
-        && p_source.at(i + 1) == QLatin1Char('"')) {
+    if (p_source.at(i) == QLatin1Char('R') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('"')) {
       advance(2);
       QString delim;
       while (i < n && p_source.at(i) != QLatin1Char('(')) {
@@ -215,10 +214,11 @@ QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p
   // quote or an R. Returns true if i now sits on a literal start.
   const auto atLiteralStart = [&]() {
     int j = i;
-    if (j < n && (p_source.at(j) == QLatin1Char('L') || p_source.at(j) == QLatin1Char('u')
-                  || p_source.at(j) == QLatin1Char('U'))) {
+    if (j < n && (p_source.at(j) == QLatin1Char('L') || p_source.at(j) == QLatin1Char('u') ||
+                  p_source.at(j) == QLatin1Char('U'))) {
       // Must not be part of a longer identifier.
-      if (j > 0 && (p_source.at(j - 1).isLetterOrNumber() || p_source.at(j - 1) == QLatin1Char('_'))) {
+      if (j > 0 &&
+          (p_source.at(j - 1).isLetterOrNumber() || p_source.at(j - 1) == QLatin1Char('_'))) {
         return false;
       }
       ++j;
@@ -226,9 +226,9 @@ QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p
         ++j;
       }
     }
-    if (j < n && (p_source.at(j) == QLatin1Char('"')
-                  || (p_source.at(j) == QLatin1Char('R') && j + 1 < n
-                      && p_source.at(j + 1) == QLatin1Char('"')))) {
+    if (j < n &&
+        (p_source.at(j) == QLatin1Char('"') || (p_source.at(j) == QLatin1Char('R') && j + 1 < n &&
+                                                p_source.at(j + 1) == QLatin1Char('"')))) {
       advance(j - i);
       return true;
     }
@@ -238,8 +238,8 @@ QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p
   while (i < n) {
     const QChar c = p_source.at(i);
 
-    if (c == QLatin1Char('/') && i + 1 < n
-        && (p_source.at(i + 1) == QLatin1Char('/') || p_source.at(i + 1) == QLatin1Char('*'))) {
+    if (c == QLatin1Char('/') && i + 1 < n &&
+        (p_source.at(i + 1) == QLatin1Char('/') || p_source.at(i + 1) == QLatin1Char('*'))) {
       skipTrivia();
       continue;
     }
@@ -405,7 +405,8 @@ void TestHardcodedColorDrift::detectorFlagsARealOffender() {
 
 void TestHardcodedColorDrift::detectorIgnoresLegitimatePatterns() {
   // Colors as DATA, with no CSS property in sight.
-  QVERIFY(!sourceHasHardcodedStyleColor(QStringLiteral(R"(    QStringLiteral("#e53935"), // Red)")));
+  QVERIFY(
+      !sourceHasHardcodedStyleColor(QStringLiteral(R"(    QStringLiteral("#e53935"), // Red)")));
   QVERIFY(!sourceHasHardcodedStyleColor(QStringLiteral(R"(  p_fg = "#ffffff";)")));
   // Color supplied at runtime through a placeholder.
   QVERIFY(!sourceHasHardcodedStyleColor(
@@ -419,7 +420,8 @@ void TestHardcodedColorDrift::detectorIgnoresLegitimatePatterns() {
       R"(setStyleSheet(QStringLiteral("QToolButton::menu-indicator { image: none; }"));)")));
   QVERIFY(!sourceHasHardcodedStyleColor(QStringLiteral(R"(  "border: 1px solid @base#info#fg;")")));
   // Prose that merely names a property or a color.
-  QVERIFY(!sourceHasHardcodedStyleColor(QStringLiteral("// the background-color came from #FFF3CD")));
+  QVERIFY(
+      !sourceHasHardcodedStyleColor(QStringLiteral("// the background-color came from #FFF3CD")));
   QVERIFY(!sourceHasHardcodedStyleColor(
       QStringLiteral(R"(  tr("Pick a border: red, green or blue are fine"))")));
 }
@@ -470,19 +472,20 @@ void TestHardcodedColorDrift::scanSrcForHardcodedStyleColors() {
         }
       }
       if (!suppressed) {
-        violations.append(QStringLiteral("%1:%2: %3").arg(relPath).arg(lit.firstLine).arg(lit.text));
+        violations.append(
+            QStringLiteral("%1:%2: %3").arg(relPath).arg(lit.firstLine).arg(lit.text));
       }
     }
   }
 
   // A silently-empty scan would make this test permanently green. Assert the
   // scan actually READ files, and that specific known files were among them.
-  QVERIFY2(unreadable.isEmpty(),
-           qPrintable(QStringLiteral("unreadable source file(s): %1")
-                          .arg(unreadable.join(QStringLiteral(", ")))));
-  QVERIFY2(scanned.size() > 100,
-           qPrintable(QStringLiteral("only %1 file(s) read - the scan root looks wrong")
-                          .arg(scanned.size())));
+  QVERIFY2(unreadable.isEmpty(), qPrintable(QStringLiteral("unreadable source file(s): %1")
+                                                .arg(unreadable.join(QStringLiteral(", ")))));
+  QVERIFY2(
+      scanned.size() > 100,
+      qPrintable(
+          QStringLiteral("only %1 file(s) read - the scan root looks wrong").arg(scanned.size())));
   for (const auto &anchor : {QStringLiteral("main.cpp"), QStringLiteral("widgets/inlinebanner.cpp"),
                              QStringLiteral("widgets/dialogs/notebooksyncinfodialog2.cpp")}) {
     QVERIFY2(scanned.contains(anchor),
@@ -500,7 +503,7 @@ void TestHardcodedColorDrift::scanSrcForHardcodedStyleColors() {
   QVERIFY2(violations.isEmpty(),
            qPrintable(
                QStringLiteral(
-                   "Found %1 hardcoded style color(s) in src/. VNote ships 10 themes, 6 of them "
+                   "Found %1 hardcoded style color(s) in src/. VNote ships 12 themes, 6 of them "
                    "dark, so a literal color is only correct in whichever theme its author was "
                    "running. Use vnotex::InlineBanner, the SeverityText or MutedText property, or "
                    "ThemeService::paletteColor(). See src/widgets/AGENTS.md 'No Hardcoded Colors "

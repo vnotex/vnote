@@ -31,9 +31,13 @@ private slots:
   void testThemeFullyResolved_pure();
   void testThemeFullyResolved_everforestDark();
   void testThemeFullyResolved_moonlight();
+  void testThemeFullyResolved_latexLight();
+  void testThemeFullyResolved_latexDark();
   void testEditorWebConceptParity_pure();
   void testEditorWebConceptParity_everforestDark();
   void testEditorWebConceptParity_moonlight();
+  void testEditorWebConceptParity_latexLight();
+  void testEditorWebConceptParity_latexDark();
   void testInterfaceQssFullyResolved_data();
   void testInterfaceQssFullyResolved();
 };
@@ -42,9 +46,7 @@ void TestTheme::initTestCase() {}
 
 void TestTheme::cleanupTestCase() {}
 
-void TestTheme::testStub() {
-  QVERIFY(true);
-}
+void TestTheme::testStub() { QVERIFY(true); }
 
 // T1 acceptance: regex must match @-tokens preceded by " (JSON-quoted values).
 void TestTheme::testTranslateStyleByPalette_jsonQuotedValue() {
@@ -124,7 +126,8 @@ QString findThemePath(const QString &p_themeName) {
 // Helper: returns the value of `p_property` in the FIRST CSS block whose selector
 // matches `p_selector` exactly (whitespace-tolerant). Trims whitespace. Returns
 // an empty string when no match is found. Case-sensitive property name.
-QString extractCssColor(const QString &p_css, const QString &p_selector, const QString &p_property) {
+QString extractCssColor(const QString &p_css, const QString &p_selector,
+                        const QString &p_property) {
   // Match the selector text exactly, anchored either at start-of-content or after `}`.
   // Capture the block body up to the next `}`.
   QRegularExpression re(QStringLiteral("(?:^|\\})\\s*%1\\s*\\{([^}]*)\\}")
@@ -136,8 +139,8 @@ QString extractCssColor(const QString &p_css, const QString &p_selector, const Q
   const QString block = match.captured(1);
   // Use a negative lookbehind so `color` does not accidentally match the
   // `color` segment inside `background-color`.
-  QRegularExpression propRe(QStringLiteral("(?<![-\\w])%1\\s*:\\s*([^;}]+)")
-                                .arg(QRegularExpression::escape(p_property)));
+  QRegularExpression propRe(
+      QStringLiteral("(?<![-\\w])%1\\s*:\\s*([^;}]+)").arg(QRegularExpression::escape(p_property)));
   auto pmatch = propRe.match(block);
   if (!pmatch.hasMatch()) {
     return QString();
@@ -205,8 +208,10 @@ void TestTheme::testFetchTextEditorStyle_resolvesTokensInJson() {
   // Override text-editor.theme: a minimal valid JSON with a tokenized color.
   // Note: this stub does NOT need to be a complete vtextedit theme; we only
   // exercise the token resolution pass, not the JSON-into-vtextedit load.
-  QVERIFY(writeUtf8(QDir(themeDir).filePath("text-editor.theme"),
-                    QStringLiteral("{ \"editor-styles\": { \"Text\": { \"text-color\": \"@palette#fg3_5\" } } }")));
+  QVERIFY(writeUtf8(
+      QDir(themeDir).filePath("text-editor.theme"),
+      QStringLiteral(
+          "{ \"editor-styles\": { \"Text\": { \"text-color\": \"@palette#fg3_5\" } } }")));
 
   QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(themeDir));
   QVERIFY(theme);
@@ -277,21 +282,22 @@ void assertThemeFullyResolved(const QString &p_themeName) {
   QString css = theme->fetchWebStyleSheet();
   QString json = theme->fetchTextEditorStyle();
 
-  QVERIFY2(!css.contains(QStringLiteral("@palette#")),
-           qPrintable(QStringLiteral("%1 web.css has unresolved @palette# tokens:\n")
-                          .arg(p_themeName) +
-                      css.left(500)));
-  QVERIFY2(!css.contains(QStringLiteral("@base#")),
-           qPrintable(QStringLiteral("%1 web.css has unresolved @base# tokens:\n")
-                          .arg(p_themeName) +
-                      css.left(500)));
+  QVERIFY2(
+      !css.contains(QStringLiteral("@palette#")),
+      qPrintable(QStringLiteral("%1 web.css has unresolved @palette# tokens:\n").arg(p_themeName) +
+                 css.left(500)));
+  QVERIFY2(
+      !css.contains(QStringLiteral("@base#")),
+      qPrintable(QStringLiteral("%1 web.css has unresolved @base# tokens:\n").arg(p_themeName) +
+                 css.left(500)));
   QVERIFY2(!json.contains(QStringLiteral("@palette#")),
            qPrintable(QStringLiteral("%1 text-editor.theme has unresolved @palette# tokens:\n")
                           .arg(p_themeName) +
                       json.left(500)));
-  QVERIFY2(!json.contains(QStringLiteral("@base#")),
-           qPrintable(
-               QStringLiteral("%1 text-editor.theme has unresolved @base# tokens").arg(p_themeName)));
+  QVERIFY2(
+      !json.contains(QStringLiteral("@base#")),
+      qPrintable(
+          QStringLiteral("%1 text-editor.theme has unresolved @base# tokens").arg(p_themeName)));
 
   QJsonParseError err;
   QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8(), &err);
@@ -329,8 +335,8 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
   QJsonObject editorStyles = root[QStringLiteral("editor-styles")].toObject();
 
   // Heading: h1..h6 combined rule on the web side, H1 syntax style on the editor side.
-  QString webHeading = extractCssColor(
-      css, QStringLiteral("h1, h2, h3, h4, h5, h6"), QStringLiteral("color"));
+  QString webHeading =
+      extractCssColor(css, QStringLiteral("h1, h2, h3, h4, h5, h6"), QStringLiteral("color"));
   QString editorHeading =
       syntax[QStringLiteral("H1")].toObject()[QStringLiteral("text-color")].toString();
   QCOMPARE(editorHeading, webHeading);
@@ -359,8 +365,7 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
   QCOMPARE(editorBlockquote, p_exp.blockquote);
 
   // Search match bg
-  QString webSearchBg = extractCssColor(css,
-                                        QStringLiteral("#vx-content span.vx-search-match"),
+  QString webSearchBg = extractCssColor(css, QStringLiteral("#vx-content span.vx-search-match"),
                                         QStringLiteral("background-color"));
   QString editorSearchBg = editorStyles[QStringLiteral("Search")]
                                .toObject()[QStringLiteral("background-color")]
@@ -369,9 +374,9 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
   QCOMPARE(editorSearchBg, p_exp.searchBg);
 
   // Current search match bg
-  QString webCurrentBg = extractCssColor(css,
-                                         QStringLiteral("#vx-content span.vx-current-search-match"),
-                                         QStringLiteral("background-color"));
+  QString webCurrentBg =
+      extractCssColor(css, QStringLiteral("#vx-content span.vx-current-search-match"),
+                      QStringLiteral("background-color"));
   QString editorCurrentBg = editorStyles[QStringLiteral("SearchUnderCursor")]
                                 .toObject()[QStringLiteral("background-color")]
                                 .toString();
@@ -380,9 +385,7 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
 }
 } // anonymous namespace
 
-void TestTheme::testThemeFullyResolved_pure() {
-  assertThemeFullyResolved(QStringLiteral("pure"));
-}
+void TestTheme::testThemeFullyResolved_pure() { assertThemeFullyResolved(QStringLiteral("pure")); }
 
 void TestTheme::testThemeFullyResolved_everforestDark() {
   assertThemeFullyResolved(QStringLiteral("everforest-dark"));
@@ -390,6 +393,14 @@ void TestTheme::testThemeFullyResolved_everforestDark() {
 
 void TestTheme::testThemeFullyResolved_moonlight() {
   assertThemeFullyResolved(QStringLiteral("moonlight"));
+}
+
+void TestTheme::testThemeFullyResolved_latexLight() {
+  assertThemeFullyResolved(QStringLiteral("latex-light"));
+}
+
+void TestTheme::testThemeFullyResolved_latexDark() {
+  assertThemeFullyResolved(QStringLiteral("latex-dark"));
 }
 
 void TestTheme::testEditorWebConceptParity_pure() {
@@ -425,6 +436,28 @@ void TestTheme::testEditorWebConceptParity_moonlight() {
   assertEditorWebConceptParity(QStringLiteral("moonlight"), exp);
 }
 
+void TestTheme::testEditorWebConceptParity_latexLight() {
+  ParityExpected exp;
+  exp.heading = QStringLiteral("#1a1a1a");
+  exp.link = QStringLiteral("#2e67d3");
+  exp.inlineCode = QStringLiteral("#a03e3e");
+  exp.blockquote = QStringLiteral("#55524c");
+  exp.searchBg = QStringLiteral("#f0d264");
+  exp.currentSearchBg = QStringLiteral("#9fd8a0");
+  assertEditorWebConceptParity(QStringLiteral("latex-light"), exp);
+}
+
+void TestTheme::testEditorWebConceptParity_latexDark() {
+  ParityExpected exp;
+  exp.heading = QStringLiteral("#dcdcdc");
+  exp.link = QStringLiteral("#8bb1f9");
+  exp.inlineCode = QStringLiteral("#d78a8a");
+  exp.blockquote = QStringLiteral("#a8a39b");
+  exp.searchBg = QStringLiteral("#3d5a66");
+  exp.currentSearchBg = QStringLiteral("#4f6b3d");
+  assertEditorWebConceptParity(QStringLiteral("latex-dark"), exp);
+}
+
 // -------- Cross-theme regression: interface.qss token resolution --------
 //
 // Every bundled theme must define every palette token its interface.qss
@@ -432,7 +465,7 @@ void TestTheme::testEditorWebConceptParity_moonlight() {
 // *[State="success"]) that names a token a theme does not define leaves an
 // unresolved "@..." in the stylesheet, and Qt SILENTLY DROPS the malformed
 // declaration rather than failing. Without this test, a missing role shows up
-// only as one unstyled widget on one theme out of ten.
+// only as one unstyled widget on one theme out of twelve.
 //
 // It deliberately resolves tokens against palette.json directly instead of
 // calling Theme::fetchQtStyleSheet(): that path also resolves font families via
@@ -462,10 +495,11 @@ QJsonValue resolveTokenPath(const QJsonObject &p_root, const QString &p_path) {
 void TestTheme::testInterfaceQssFullyResolved_data() {
   QTest::addColumn<QString>("themeName");
   for (const QString &name :
-       {QStringLiteral("everforest-dark"), QStringLiteral("moonlight"),
-        QStringLiteral("native"), QStringLiteral("pure"), QStringLiteral("solarized-dark"),
-        QStringLiteral("solarized-light"), QStringLiteral("vscode-dark"),
-        QStringLiteral("vue-dark"), QStringLiteral("vue-light"), QStringLiteral("vx-idea")}) {
+       {QStringLiteral("everforest-dark"), QStringLiteral("latex-dark"),
+        QStringLiteral("latex-light"), QStringLiteral("moonlight"), QStringLiteral("native"),
+        QStringLiteral("pure"), QStringLiteral("solarized-dark"), QStringLiteral("solarized-light"),
+        QStringLiteral("vscode-dark"), QStringLiteral("vue-dark"), QStringLiteral("vue-light"),
+        QStringLiteral("vx-idea")}) {
     QTest::newRow(qPrintable(name)) << name;
   }
 }
@@ -487,23 +521,24 @@ void TestTheme::testInterfaceQssFullyResolved() {
            qPrintable(QStringLiteral("%1 has no palette.json").arg(themeName)));
   QJsonParseError perr;
   const QJsonDocument pdoc = QJsonDocument::fromJson(paletteFile.readAll(), &perr);
-  QVERIFY2(perr.error == QJsonParseError::NoError,
-           qPrintable(QStringLiteral("%1 palette.json is invalid: %2")
-                          .arg(themeName, perr.errorString())));
+  QVERIFY2(
+      perr.error == QJsonParseError::NoError,
+      qPrintable(
+          QStringLiteral("%1 palette.json is invalid: %2").arg(themeName, perr.errorString())));
   const QJsonObject palette = pdoc.object();
 
   // The severity roles the notification surfaces depend on. `success` is the
   // newest and the one most likely to be forgotten when adding a theme.
-  for (const QString &state :
-       {QStringLiteral("info"), QStringLiteral("warning"), QStringLiteral("error"),
-        QStringLiteral("success")}) {
-    QVERIFY2(qss.contains(QStringLiteral("*[State=\"%1\"]").arg(state)),
-             qPrintable(QStringLiteral("%1 interface.qss lacks a *[State=\"%2\"] rule")
-                            .arg(themeName, state)));
+  for (const QString &state : {QStringLiteral("info"), QStringLiteral("warning"),
+                               QStringLiteral("error"), QStringLiteral("success")}) {
+    QVERIFY2(
+        qss.contains(QStringLiteral("*[State=\"%1\"]").arg(state)),
+        qPrintable(
+            QStringLiteral("%1 interface.qss lacks a *[State=\"%2\"] rule").arg(themeName, state)));
   }
   QVERIFY2(qss.contains(QStringLiteral("vnotex--NotificationToast")),
-           qPrintable(QStringLiteral("%1 interface.qss lacks a NotificationToast block")
-                          .arg(themeName)));
+           qPrintable(
+               QStringLiteral("%1 interface.qss lacks a NotificationToast block").arg(themeName)));
 
   // `native` declares "backfill-system-palette": true, so part of its palette
   // section is filled in at runtime from the OS QPalette (roles like
@@ -514,20 +549,18 @@ void TestTheme::testInterfaceQssFullyResolved() {
   // The exception is scoped as narrowly as possible: the tokens this change
   // introduced are still checked explicitly below, so a misspelled native
   // success/toast token is caught rather than waved through.
-  const bool backfillsSystemPalette =
-      palette.value(QStringLiteral("metadata"))
-          .toObject()
-          .value(QStringLiteral("backfill-system-palette"))
-          .toBool(false);
+  const bool backfillsSystemPalette = palette.value(QStringLiteral("metadata"))
+                                          .toObject()
+                                          .value(QStringLiteral("backfill-system-palette"))
+                                          .toBool(false);
   if (backfillsSystemPalette) {
-    for (const QString &path :
-         {QStringLiteral("base#success#fg"), QStringLiteral("base#info#fg"),
-          QStringLiteral("base#warning#fg"), QStringLiteral("base#error#fg"),
-          QStringLiteral("widgets#unitedentry#popup#border")}) {
+    for (const QString &path : {QStringLiteral("base#success#fg"), QStringLiteral("base#info#fg"),
+                                QStringLiteral("base#warning#fg"), QStringLiteral("base#error#fg"),
+                                QStringLiteral("widgets#unitedentry#popup#border")}) {
       const QJsonValue v = resolveTokenPath(palette, path);
-      QVERIFY2(v.isString() && !v.toString().isEmpty(),
-               qPrintable(QStringLiteral("%1 palette.json does not define @%2")
-                              .arg(themeName, path)));
+      QVERIFY2(
+          v.isString() && !v.toString().isEmpty(),
+          qPrintable(QStringLiteral("%1 palette.json does not define @%2").arg(themeName, path)));
     }
     return;
   }
@@ -557,8 +590,8 @@ void TestTheme::testInterfaceQssFullyResolved() {
         break;
       }
       current = str.mid(1);
-      QVERIFY2(hop < 15, qPrintable(QStringLiteral("%1: token @%2 does not terminate")
-                                        .arg(themeName, path)));
+      QVERIFY2(hop < 15,
+               qPrintable(QStringLiteral("%1: token @%2 does not terminate").arg(themeName, path)));
     }
     QVERIFY2(value.isString() && !value.toString().startsWith(QLatin1Char('@')),
              qPrintable(QStringLiteral("%1 interface.qss token @%2 did not resolve to a literal")

@@ -165,7 +165,7 @@ source-wide Qt patterns: see [src/AGENTS.md](src/AGENTS.md).
 
 ### No Hardcoded Colors (enforced)
 
-**Never write a literal color into a `setStyleSheet()` call.** VNote ships 10
+**Never write a literal color into a `setStyleSheet()` call.** VNote ships 12
 themes, 6 of them dark; a hardcoded `#RRGGBB`, `rgb()/rgba()` literal, or CSS
 color name is correct only in whichever theme its author was running, and it
 cannot follow a runtime theme switch.

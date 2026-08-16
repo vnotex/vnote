@@ -1,4 +1,7 @@
 # Changes
+## Unreleased
+* **Two new themes: LaTeX Light and LaTeX Dark.** A paper-and-ink look for the Markdown viewer, editor and export — serif body text with a capped line measure, weight-led headings, booktabs-style tables (no vertical rules, no zebra stripes) and a boxed blockquote. No fonts are bundled: the stylesheets fall back to Times/Georgia and Consolas, and installing Latin Modern (plus Noto Serif CJK for Chinese) gives the intended look. Inspired by [typora-latex-theme](https://github.com/Keldos-Li/typora-latex-theme); independently authored, with nothing copied from it.
+
 ## v4.4.3
 A maintenance release that drops the built-in updater, adds folder sharing and a window pin on top of VNote 4.4.2:
 

@@ -221,7 +221,7 @@ rather than a tinted fill.
 missing palette key does not fail loudly: `Theme::translateStyleByPalette` logs
 a `qWarning` and leaves the literal `@base#...` in the stylesheet, after which
 Qt's CSS parser silently drops the declaration. Two data-driven gates in
-`tests/gui/test_themeservice.cpp` cover this for all 10 themes —
+`tests/gui/test_themeservice.cpp` cover this for all 12 themes —
 `interfaceQssFullyResolved` (no unresolved token survives) and
 `interfaceQssStylesInlineBanner` (the selector and both severity rules exist).
 
@@ -242,7 +242,7 @@ the deployed copy.
 
 ## No Hardcoded Colors in C++
 
-**Never put a literal color in a `setStyleSheet()` call.** VNote ships 10
+**Never put a literal color in a `setStyleSheet()` call.** VNote ships 12
 themes, 6 of them dark, and the global stylesheet is applied on `QApplication`
 (`main.cpp:725`) and re-applied on every theme change. A hardcoded
 `background-color: #FFF3CD` is correct only in whichever theme its author

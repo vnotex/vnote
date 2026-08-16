@@ -430,6 +430,72 @@
         <file>themes/everforest-dark/up.svg</file>
         <file>themes/everforest-dark/up_disabled.svg</file>
         <file>themes/everforest-dark/web.css</file>
+        <file>themes/latex-dark/arrow_dropdown_disabled.svg</file>
+        <file>themes/latex-dark/arrow_dropdown.svg</file>
+        <file>themes/latex-dark/branch_closed.svg</file>
+        <file>themes/latex-dark/branch_open.svg</file>
+        <file>themes/latex-dark/checkbox_checked_disabled.svg</file>
+        <file>themes/latex-dark/checkbox_checked.svg</file>
+        <file>themes/latex-dark/checkbox_unchecked_disabled.svg</file>
+        <file>themes/latex-dark/checkbox_unchecked.svg</file>
+        <file>themes/latex-dark/close_grey.svg</file>
+        <file>themes/latex-dark/close.svg</file>
+        <file>themes/latex-dark/down_disabled.svg</file>
+        <file>themes/latex-dark/down.svg</file>
+        <file>themes/latex-dark/expand_toolbar.svg</file>
+        <file>themes/latex-dark/float.svg</file>
+        <file>themes/latex-dark/highlight.css</file>
+        <file>themes/latex-dark/interface.qss</file>
+        <file>themes/latex-dark/left_disabled.svg</file>
+        <file>themes/latex-dark/left.svg</file>
+        <file>themes/latex-dark/menu_checkbox.svg</file>
+        <file>themes/latex-dark/menu_radiobutton.svg</file>
+        <file>themes/latex-dark/palette.json</file>
+        <file>themes/latex-dark/radiobutton_checked_disabled.svg</file>
+        <file>themes/latex-dark/radiobutton_checked.svg</file>
+        <file>themes/latex-dark/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/latex-dark/radiobutton_unchecked.svg</file>
+        <file>themes/latex-dark/README.md</file>
+        <file>themes/latex-dark/right_disabled.svg</file>
+        <file>themes/latex-dark/right.svg</file>
+        <file>themes/latex-dark/sizegrip.svg</file>
+        <file>themes/latex-dark/text-editor.theme</file>
+        <file>themes/latex-dark/up_disabled.svg</file>
+        <file>themes/latex-dark/up.svg</file>
+        <file>themes/latex-dark/web.css</file>
+        <file>themes/latex-light/arrow_dropdown_disabled.svg</file>
+        <file>themes/latex-light/arrow_dropdown.svg</file>
+        <file>themes/latex-light/branch_closed.svg</file>
+        <file>themes/latex-light/branch_open.svg</file>
+        <file>themes/latex-light/checkbox_checked_disabled.svg</file>
+        <file>themes/latex-light/checkbox_checked.svg</file>
+        <file>themes/latex-light/checkbox_unchecked_disabled.svg</file>
+        <file>themes/latex-light/checkbox_unchecked.svg</file>
+        <file>themes/latex-light/close_grey.svg</file>
+        <file>themes/latex-light/close.svg</file>
+        <file>themes/latex-light/down_disabled.svg</file>
+        <file>themes/latex-light/down.svg</file>
+        <file>themes/latex-light/expand_toolbar.svg</file>
+        <file>themes/latex-light/float.svg</file>
+        <file>themes/latex-light/highlight.css</file>
+        <file>themes/latex-light/interface.qss</file>
+        <file>themes/latex-light/left_disabled.svg</file>
+        <file>themes/latex-light/left.svg</file>
+        <file>themes/latex-light/menu_checkbox.svg</file>
+        <file>themes/latex-light/menu_radiobutton.svg</file>
+        <file>themes/latex-light/palette.json</file>
+        <file>themes/latex-light/radiobutton_checked_disabled.svg</file>
+        <file>themes/latex-light/radiobutton_checked.svg</file>
+        <file>themes/latex-light/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/latex-light/radiobutton_unchecked.svg</file>
+        <file>themes/latex-light/README.md</file>
+        <file>themes/latex-light/right_disabled.svg</file>
+        <file>themes/latex-light/right.svg</file>
+        <file>themes/latex-light/sizegrip.svg</file>
+        <file>themes/latex-light/text-editor.theme</file>
+        <file>themes/latex-light/up_disabled.svg</file>
+        <file>themes/latex-light/up.svg</file>
+        <file>themes/latex-light/web.css</file>
         <file>themes/pure/arrow_dropdown.svg</file>
         <file>themes/pure/arrow_dropdown_disabled.svg</file>
         <file>themes/pure/branch_closed.svg</file>
