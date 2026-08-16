@@ -16,7 +16,6 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/widgetutils.h>
 
-#include "../utils/scrollpreservationpolicy.h"
 #include "editors/editorstatusbarbinder.h"
 #include "editors/texteditor.h"
 #include "encodingbutton.h"
@@ -199,31 +198,18 @@ int TextViewWindow2::getScrollPosition() const {
   return -1;
 }
 
-ViewWindow2::ViewScrollState TextViewWindow2::captureScrollState() const {
+ViewWindow2::ViewPositionState TextViewWindow2::capturePositionState() const {
   if (!m_editor) {
     return {};
   }
-  auto *vbar = m_editor->getTextEdit()->verticalScrollBar();
-  if (!vbar) {
-    return {};
-  }
-  ViewScrollState s;
-  s.m_scrollValue = vbar->value();
-  s.m_scrollMax = vbar->maximum();
-  return s;
+  return captureEditorPositionState(m_editor->getTextEdit());
 }
 
-void TextViewWindow2::restoreScrollState(const ViewScrollState &p_state) {
-  if (!m_editor || p_state.m_scrollValue < 0) {
+void TextViewWindow2::restorePositionState(const ViewPositionState &p_state) {
+  if (!m_editor) {
     return;
   }
-  auto *vbar = m_editor->getTextEdit()->verticalScrollBar();
-  if (!vbar) {
-    return;
-  }
-  const int target = ScrollPreservationPolicy::computeRestoredScrollValue(
-      p_state.m_scrollValue, p_state.m_scrollMax, vbar->maximum());
-  vbar->setValue(target);
+  applyEditorPositionState(m_editor->getTextEdit(), p_state);
 }
 
 void TextViewWindow2::handleEditorConfigChange() {

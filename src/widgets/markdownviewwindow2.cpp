@@ -2042,14 +2042,14 @@ int MarkdownViewWindow2::getScrollPosition() const {
   return -1;
 }
 
-ViewWindow2::ViewScrollState MarkdownViewWindow2::captureScrollState() const {
-  ViewScrollState s;
+ViewWindow2::ViewPositionState MarkdownViewWindow2::capturePositionState() const {
   if (m_mode == ViewWindowMode::Edit && m_editor) {
-    if (auto *vbar = m_editor->getTextEdit()->verticalScrollBar()) {
-      s.m_scrollValue = vbar->value();
-      s.m_scrollMax = vbar->maximum();
-    }
-  } else if (m_mode == ViewWindowMode::Read && m_viewer) {
+    return captureEditorPositionState(m_editor->getTextEdit());
+  }
+
+  ViewPositionState s;
+  if (m_mode == ViewWindowMode::Read && m_viewer) {
+    // Read mode has no caret; only the top line is preserved.
     if (auto *a = adapter()) {
       s.m_topLineNumber = a->getTopLineNumber();
     }
@@ -2057,13 +2057,9 @@ ViewWindow2::ViewScrollState MarkdownViewWindow2::captureScrollState() const {
   return s;
 }
 
-void MarkdownViewWindow2::restoreScrollState(const ViewScrollState &p_state) {
-  if (m_mode == ViewWindowMode::Edit && m_editor && p_state.m_scrollValue >= 0) {
-    if (auto *vbar = m_editor->getTextEdit()->verticalScrollBar()) {
-      const int target = ScrollPreservationPolicy::computeRestoredScrollValue(
-          p_state.m_scrollValue, p_state.m_scrollMax, vbar->maximum());
-      vbar->setValue(target);
-    }
+void MarkdownViewWindow2::restorePositionState(const ViewPositionState &p_state) {
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    applyEditorPositionState(m_editor->getTextEdit(), p_state);
   } else if (m_mode == ViewWindowMode::Read && m_viewer && p_state.m_topLineNumber >= 0) {
     if (auto *a = adapter()) {
       const int line =

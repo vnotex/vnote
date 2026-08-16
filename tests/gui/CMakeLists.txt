@@ -22,6 +22,22 @@ add_custom_command(TARGET test_navigationmodeservice POST_BUILD
     $<TARGET_FILE_DIR:test_navigationmodeservice>
 )
 
+# Real-editor coverage of the reload caret-preservation helpers. Needs a real
+# QApplication + an exposed widget so soft wrapping and the scrollbar range are
+# genuine, hence tests/gui (NOT GUILESS).
+add_qt_test(test_textcursorpreserver
+  SOURCES
+    test_textcursorpreserver.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/textcursorpreserver.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cursorpreservationpolicy.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/scrollpreservationpolicy.cpp
+  LINKS
+    Qt6::Widgets
+)
+target_include_directories(test_textcursorpreserver PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+)
+
 add_qt_test(test_themeservice
   SOURCES
     test_themeservice.cpp

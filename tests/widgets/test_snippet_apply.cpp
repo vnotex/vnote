@@ -60,9 +60,9 @@ int ViewWindow2::getCursorPosition() const { return -1; }
 
 int ViewWindow2::getScrollPosition() const { return -1; }
 
-ViewWindow2::ViewScrollState ViewWindow2::captureScrollState() const { return {}; }
+ViewWindow2::ViewPositionState ViewWindow2::capturePositionState() const { return {}; }
 
-void ViewWindow2::restoreScrollState(const ViewScrollState &) {}
+void ViewWindow2::restorePositionState(const ViewPositionState &) {}
 
 bool ViewWindow2::aboutToClose(bool) { return true; }
 

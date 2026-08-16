@@ -10,6 +10,8 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/imageutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/themeutils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/themeutils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/textcursorpreserver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/textcursorpreserver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/widgetutils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/widgetutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/printutils.cpp

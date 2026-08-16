@@ -33,6 +33,13 @@ add_qt_test(test_scrollpreservationpolicy
   GUILESS
 )
 
+add_qt_test(test_cursorpreservationpolicy
+  SOURCES
+    test_cursorpreservationpolicy.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cursorpreservationpolicy.cpp
+  GUILESS
+)
+
 add_qt_test(test_headingslug
   SOURCES
     test_headingslug.cpp

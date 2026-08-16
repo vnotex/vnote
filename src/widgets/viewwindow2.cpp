@@ -13,7 +13,9 @@
 #include <QPolygonF>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QScrollBar>
 #include <QShortcut>
+#include <QTextEdit>
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -31,7 +33,10 @@
 #include <gui/services/themeservice.h>
 
 #include <gui/utils/iconutils.h>
+#include <gui/utils/textcursorpreserver.h>
 #include <gui/utils/widgetutils.h>
+
+#include "../utils/scrollpreservationpolicy.h"
 
 #include "attachmentdragdropareaindicator2.h"
 #include "attachmentpopup2.h"
@@ -190,9 +195,55 @@ int ViewWindow2::getCursorPosition() const { return -1; }
 
 int ViewWindow2::getScrollPosition() const { return -1; }
 
-ViewWindow2::ViewScrollState ViewWindow2::captureScrollState() const { return {}; }
+ViewWindow2::ViewPositionState ViewWindow2::capturePositionState() const { return {}; }
 
-void ViewWindow2::restoreScrollState(const ViewScrollState &p_state) { Q_UNUSED(p_state) }
+void ViewWindow2::restorePositionState(const ViewPositionState &p_state) { Q_UNUSED(p_state) }
+
+void ViewWindow2::syncEditorFromBufferPreservingPosition() {
+  syncEditorFromBufferPreservingPosition(capturePositionState());
+}
+
+void ViewWindow2::syncEditorFromBufferPreservingPosition(const ViewPositionState &p_state) {
+  syncEditorFromBuffer();
+  if (p_state.isValid()) {
+    restorePositionState(p_state);
+  }
+}
+
+ViewWindow2::ViewPositionState ViewWindow2::captureEditorPositionState(const QTextEdit *p_edit) {
+  ViewPositionState s;
+  if (!p_edit) {
+    return s;
+  }
+
+  const auto cursor = captureTextCursorPosition(p_edit);
+  s.m_cursorLine = cursor.m_line;
+  s.m_cursorPositionInBlock = cursor.m_positionInBlock;
+
+  if (auto *vbar = p_edit->verticalScrollBar()) {
+    s.m_scrollValue = vbar->value();
+    s.m_scrollMax = vbar->maximum();
+  }
+  return s;
+}
+
+void ViewWindow2::applyEditorPositionState(QTextEdit *p_edit, const ViewPositionState &p_state) {
+  if (!p_edit) {
+    return;
+  }
+
+  // Caret first — see the declaration comment for why the order matters.
+  restoreTextCursorPosition(p_edit, {p_state.m_cursorLine, p_state.m_cursorPositionInBlock});
+
+  if (p_state.m_scrollValue < 0) {
+    return;
+  }
+  if (auto *vbar = p_edit->verticalScrollBar()) {
+    const int target = ScrollPreservationPolicy::computeRestoredScrollValue(
+        p_state.m_scrollValue, p_state.m_scrollMax, vbar->maximum());
+    vbar->setValue(target);
+  }
+}
 
 bool ViewWindow2::isModified() const {
   // Use local dirty flag OR vxcore modified flag.
@@ -728,7 +779,7 @@ void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
   if (!m_buffer.resolvedPath().isEmpty()) {
     m_buffer.reload();
   }
-  syncEditorFromBuffer();
+  syncEditorFromBufferPreservingPosition();
   m_lastKnownRevision = m_buffer.getRevision();
 
   if (m_encodingButton) {
@@ -751,7 +802,7 @@ void ViewWindow2::onFocusGained() {
   // Check for external changes (from other ViewWindows or disk reload).
   int currentRev = m_buffer.getRevision();
   if (currentRev != m_lastKnownRevision) {
-    syncEditorFromBuffer();
+    syncEditorFromBufferPreservingPosition();
     m_lastKnownRevision = currentRev;
     m_editorDirty = false;
   }
@@ -844,7 +895,7 @@ bool ViewWindow2::reload() {
     }
   }
 
-  const ViewScrollState scroll = captureScrollState();
+  const ViewPositionState position = capturePositionState();
 
   // Clear local dirty state BEFORE reload so that when BufferService emits
   // bufferModifiedChanged (inside m_buffer.reload()), isModified() returns false.
@@ -865,11 +916,8 @@ bool ViewWindow2::reload() {
     return false;
   }
 
-  syncEditorFromBuffer();
+  syncEditorFromBufferPreservingPosition(position);
   m_lastKnownRevision = m_buffer.getRevision();
-  if (scroll.isValid()) {
-    restoreScrollState(scroll);
-  }
   m_externalChangeDismissed = false;
   return true;
 }
@@ -953,13 +1001,10 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
 
   // AutoReload: silently reload without dialog (only for FileChanged, not FileMissing).
   if (m_autoReload && p_state == BufferState::FileChanged) {
-    const ViewScrollState saved = captureScrollState();
+    const ViewPositionState saved = capturePositionState();
     m_buffer.reload();
-    syncEditorFromBuffer();
+    syncEditorFromBufferPreservingPosition(saved);
     m_lastKnownRevision = m_buffer.getRevision();
-    if (saved.isValid()) {
-      restoreScrollState(saved);
-    }
     return;
   }
 
@@ -976,13 +1021,10 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
     msgBox.exec();
 
     if (msgBox.clickedButton() == reloadBtn) {
-      const ViewScrollState saved = captureScrollState();
+      const ViewPositionState saved = capturePositionState();
       m_buffer.reload();
-      syncEditorFromBuffer();
+      syncEditorFromBufferPreservingPosition(saved);
       m_lastKnownRevision = m_buffer.getRevision();
-      if (saved.isValid()) {
-        restoreScrollState(saved);
-      }
       m_externalChangeDismissed = false;
     } else if (msgBox.clickedButton() == saveBtn) {
       save();

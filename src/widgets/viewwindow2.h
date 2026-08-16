@@ -26,6 +26,7 @@ class QVBoxLayout;
 class QAction;
 class QToolBar;
 class QResizeEvent;
+class QTextEdit;
 class QWheelEvent;
 
 namespace vnotex {
@@ -126,25 +127,31 @@ public:
   // Subclasses override to provide actual position from their editor widget.
   virtual int getScrollPosition() const;
 
-  // Captured scroll state used to restore position across a reload.
-  // Edit-mode subclasses populate m_scrollValue / m_scrollMax (pixel-based).
-  // Markdown Read-mode populates m_topLineNumber (line-based, best-effort).
+  // Captured caret + scroll state used to restore position across a reload.
+  // Edit-mode subclasses populate m_scrollValue / m_scrollMax (pixel-based)
+  // plus the caret channel (m_cursorLine / m_cursorPositionInBlock).
+  // Markdown Read-mode populates m_topLineNumber (line-based, best-effort) and
+  // has no caret at all.
   // A state is "valid" iff at least one channel was captured.
-  struct ViewScrollState {
+  struct ViewPositionState {
     int m_scrollValue = -1;
     int m_scrollMax = -1;
     int m_topLineNumber = -1;
+    int m_cursorLine = -1;            // Block number, -1 = not captured.
+    int m_cursorPositionInBlock = -1; // UTF-16 offset in the block, NOT a visual column.
 
-    bool isValid() const { return m_scrollValue >= 0 || m_topLineNumber >= 0; }
+    bool hasScroll() const { return m_scrollValue >= 0 || m_topLineNumber >= 0; }
+    bool hasCursor() const { return m_cursorLine >= 0; }
+    bool isValid() const { return hasScroll() || hasCursor(); }
   };
 
-  // Capture the current scroll position. Default returns an invalid state
-  // (no-op); subclasses override to capture pixel value or top line number.
-  virtual ViewScrollState captureScrollState() const;
+  // Capture the current caret + scroll position. Default returns an invalid
+  // state (no-op); subclasses override to capture their editor's position.
+  virtual ViewPositionState capturePositionState() const;
 
-  // Restore a previously captured scroll position after a reload. Default is
-  // a no-op; subclasses override to apply the policy.
-  virtual void restoreScrollState(const ViewScrollState &p_state);
+  // Restore a previously captured caret + scroll position after a reload.
+  // Default is a no-op; subclasses override to apply the policy.
+  virtual void restorePositionState(const ViewPositionState &p_state);
 
   // Set view mode (Read/Edit). Subclasses implement mode switching and UI updates.
   // Pure virtual: must be implemented by subclasses.
@@ -436,6 +443,26 @@ protected:
   // Subclasses must implement to update editor display from buffer content.
   // Pure virtual: must be implemented by subclasses.
   virtual void syncEditorFromBuffer() = 0;
+
+  // Re-pull content from the buffer into the editor, preserving the caret and
+  // the scroll position best-effort. Does NOT reload the buffer from disk.
+  void syncEditorFromBufferPreservingPosition();
+
+  // Same, but with a position state captured earlier by the caller (used where
+  // the capture must happen before the buffer is reloaded from disk).
+  void syncEditorFromBufferPreservingPosition(const ViewPositionState &p_state);
+
+  // Capture caret + vertical scroll from a plain-text editor widget. Shared by
+  // every Edit-mode ViewWindow2 so the two channels can never drift apart.
+  static ViewPositionState captureEditorPositionState(const QTextEdit *p_edit);
+
+  // Apply a previously captured state to a plain-text editor widget.
+  //
+  // Order is load-bearing: the caret is restored FIRST because setTextCursor()
+  // scrolls the caret into view, and the scroll channel applied afterwards must
+  // stay authoritative. When only the caret was captured, that implicit
+  // ensure-visible is the intended fallback.
+  static void applyEditorPositionState(QTextEdit *p_edit, const ViewPositionState &p_state);
 
   // Set the editor's modification indicator (visual marker in UI).
   // @p_modified: true to mark as modified, false to clear modification flag.

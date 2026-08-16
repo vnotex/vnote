@@ -23,7 +23,8 @@
 // the linker needs to resolve (vtable entries + ctor/dtor + helpers used by
 // our test path). TestViewWindow2 then inherits from ViewWindow2 and provides
 // a `bool reload()` override that mirrors the production reload() logic
-// byte-for-byte from src/widgets/viewwindow2.cpp:634-703 (commit 94c53d36).
+// byte-for-byte from ViewWindow2::reload() in src/widgets/viewwindow2.cpp
+// (locate it by symbol; line ranges rot).
 //
 // This is equivalent to testing the production reload() against the same
 // inputs and outputs:
@@ -97,8 +98,18 @@ QString ViewWindow2::getTitle() const { return getName(); }
 ViewWindowMode ViewWindow2::getMode() const { return m_mode; }
 int ViewWindow2::getCursorPosition() const { return -1; }
 int ViewWindow2::getScrollPosition() const { return -1; }
-ViewWindow2::ViewScrollState ViewWindow2::captureScrollState() const { return {}; }
-void ViewWindow2::restoreScrollState(const ViewScrollState &) {}
+ViewWindow2::ViewPositionState ViewWindow2::capturePositionState() const { return {}; }
+void ViewWindow2::restorePositionState(const ViewPositionState &) {}
+// Mirrors src/widgets/viewwindow2.cpp (syncEditorFromBufferPreservingPosition).
+void ViewWindow2::syncEditorFromBufferPreservingPosition() {
+  syncEditorFromBufferPreservingPosition(capturePositionState());
+}
+void ViewWindow2::syncEditorFromBufferPreservingPosition(const ViewPositionState &p_state) {
+  syncEditorFromBuffer();
+  if (p_state.isValid()) {
+    restorePositionState(p_state);
+  }
+}
 bool ViewWindow2::isModified() const { return m_editorDirty || m_buffer.isModified(); }
 
 ViewWindowLayoutMode ViewWindow2::getLayoutMode() const { return ViewWindowLayoutMode::FullWidth; }
@@ -123,7 +134,7 @@ bool ViewWindow2::reload() { return false; }
 
 bool ViewWindow2::save() {
   // Minimal but realistic save stub used by reload()'s Save branch.
-  // Mirrors the production save() in viewwindow2.cpp:535-565 but skips the
+  // Mirrors the production ViewWindow2::save() in viewwindow2.cpp but skips the
   // emit statusChanged() / showMessage() calls (no status widget here).
   if (!m_buffer.isValid()) {
     return false;
@@ -240,15 +251,18 @@ public:
   void zoom(bool) override {}
 
   // ============ Virtual overrides (for counter tracking) ============
-  ViewScrollState captureScrollState() const override {
+  ViewPositionState capturePositionState() const override {
     ++captureScrollCallCount;
-    ViewScrollState s;
-    s.m_scrollValue = 0; // Make the state "valid" so restoreScrollState() runs.
+    ViewPositionState s;
+    s.m_scrollValue = 0; // Make the state "valid" so restorePositionState() runs.
+    s.m_cursorLine = fakeCursorLine;
+    s.m_cursorPositionInBlock = fakeCursorOffset;
     return s;
   }
-  void restoreScrollState(const ViewScrollState &p_state) override {
-    Q_UNUSED(p_state);
+  void restorePositionState(const ViewPositionState &p_state) override {
     ++restoreScrollCallCount;
+    restoredCursorLine = p_state.m_cursorLine;
+    restoredCursorOffset = p_state.m_cursorPositionInBlock;
   }
 
   // ============ Test seams ============
@@ -263,11 +277,12 @@ public:
   // production headers.
   bool m_externalChangeDismissed_test = false;
 
-  // ============ reload() — mirrors src/widgets/viewwindow2.cpp:634-703 ============
+  // ============ reload() — mirrors ViewWindow2::reload() ============
   //
   // INVARIANT: this body is a structural mirror of the production
-  // ViewWindow2::reload() introduced in commit 94c53d36. The only
-  // intentional differences are that we access m_buffer / m_services via
+  // ViewWindow2::reload() in src/widgets/viewwindow2.cpp (find it by symbol,
+  // not by line number — the line range rots). The only intentional
+  // differences are that we access m_buffer / m_services via
   // their public accessors (getBuffer() / getServices()) because both are
   // private in ViewWindow2 and we cannot add a `friend` declaration without
   // touching production headers (forbidden by this task's scope). All
@@ -312,7 +327,7 @@ public:
       }
     }
 
-    const ViewScrollState scroll = captureScrollState();
+    const ViewPositionState position = capturePositionState();
 
     bool clearedDirty = false;
     if (needsDiscard) {
@@ -329,11 +344,8 @@ public:
       return false;
     }
 
-    syncEditorFromBuffer();
+    syncEditorFromBufferPreservingPosition(position);
     m_lastKnownRevision = getBuffer().getRevision();
-    if (scroll.isValid()) {
-      restoreScrollState(scroll);
-    }
     m_externalChangeDismissed_test = false;
     return true;
   }
@@ -347,6 +359,11 @@ public:
   mutable int syncEditorCallCount = 0;
   mutable int captureScrollCallCount = 0;
   mutable int restoreScrollCallCount = 0;
+  // Cursor channel: what capture reports, and what restore was handed back.
+  int fakeCursorLine = -1;
+  int fakeCursorOffset = -1;
+  mutable int restoredCursorLine = -1;
+  mutable int restoredCursorOffset = -1;
   bool m_modifiedFlag = false;
   QString m_latestContent;
 };
@@ -366,6 +383,8 @@ private slots:
   void testDirtySaveSavesThenReloads();
   void testModePreservedAcrossReload();
   void testExternalChangeDismissedClearedOnReload();
+  void testCursorStateHandedBackOnReload();
+  void testCursorRestoreSkippedWhenReloadFails();
 
 private:
   vnotex::Buffer2 openBuffer(const QString &p_relativePath);
@@ -686,6 +705,67 @@ void TestViewSplit2ReloadMenu::testExternalChangeDismissedClearedOnReload() {
   // Successful reload clears the dismiss-suppression flag so future
   // external changes will re-prompt instead of being silently swallowed.
   QVERIFY(!view.externalChangeDismissed());
+}
+
+// =============================================================================
+// Subtest 8: the captured caret is handed back to restorePositionState()
+// =============================================================================
+void TestViewSplit2ReloadMenu::testCursorStateHandedBackOnReload() {
+  const QString relPath = QStringLiteral("cursor_roundtrip.md");
+  const QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
+  QVERIFY(!fileId.isEmpty());
+
+  vnotex::Buffer2 buf = openBuffer(relPath);
+  QVERIFY(buf.isValid());
+  QVERIFY(buf.setContentRaw(QByteArray("line0\nline1\nline2\n")));
+  QVERIFY(buf.save());
+
+  writeFile(buf.resolvedPath(), QByteArray("line0\nline1-updated\nline2\n"));
+
+  TestViewWindow2 view(m_services, buf);
+  view.setInitialMode(vnotex::ViewWindowMode::Edit);
+  view.fakeCursorLine = 1;
+  view.fakeCursorOffset = 3;
+
+  QVERIFY(view.reload());
+
+  QCOMPARE(view.captureScrollCallCount, 1);
+  QCOMPARE(view.restoreScrollCallCount, 1);
+  QCOMPARE(view.restoredCursorLine, 1);
+  QCOMPARE(view.restoredCursorOffset, 3);
+}
+
+// =============================================================================
+// Subtest 9: a failed reload restores nothing (editor content is untouched)
+// =============================================================================
+void TestViewSplit2ReloadMenu::testCursorRestoreSkippedWhenReloadFails() {
+  const QString relPath = QStringLiteral("cursor_reload_fail.md");
+  const QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
+  QVERIFY(!fileId.isEmpty());
+
+  vnotex::Buffer2 buf = openBuffer(relPath);
+  QVERIFY(buf.isValid());
+  QVERIFY(buf.setContentRaw(QByteArray("data\n")));
+  QVERIFY(buf.save());
+
+  const QString diskPath = buf.resolvedPath();
+  QVERIFY(!diskPath.isEmpty());
+
+  TestViewWindow2 view(m_services, buf);
+  view.setInitialMode(vnotex::ViewWindowMode::Edit);
+  view.fakeCursorLine = 0;
+  view.fakeCursorOffset = 2;
+
+  // Invalidate the backing file; the resolved path stays non-empty so reload()
+  // gets past its guard and fails inside Buffer2::reload().
+  QVERIFY(QFile::remove(diskPath));
+
+  QVERIFY(!view.reload());
+
+  QCOMPARE(view.syncEditorCallCount, 0);
+  QCOMPARE(view.restoreScrollCallCount, 0);
+  QCOMPARE(view.restoredCursorLine, -1);
+  QCOMPARE(view.restoredCursorOffset, -1);
 }
 
 } // namespace tests
