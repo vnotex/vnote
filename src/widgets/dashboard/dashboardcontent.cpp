@@ -36,8 +36,7 @@ QIcon DashboardContent::icon() const {
   }
   const QString fg =
       themeService->paletteColor(QStringLiteral("widgets#viewsplit#action_button#fg"));
-  return IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("home_dashboard.svg")),
-                              fg);
+  return IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("home_dashboard.svg")), fg);
 }
 
 QString DashboardContent::virtualAddress() const { return QStringLiteral("vx://home"); }
@@ -174,4 +173,9 @@ void DashboardContent::handleThemeChanged() {
   refreshAddStickerIcon();
   updateLockAction();
   refreshResetIcon();
+  if (m_board) {
+    // Edit-mode overlays hold injected colors; without this they keep painting
+    // the previous theme's accent while the board stays unlocked.
+    m_board->refreshEditModeColors();
+  }
 }

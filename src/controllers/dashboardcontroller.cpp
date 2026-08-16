@@ -14,17 +14,17 @@ constexpr int kDefaultColumns = 12;
 constexpr int kDefaultRowSpan = 3;
 constexpr int kDefaultColSpan = 4;
 // Defensive bounds so a corrupt/hand-edited vnotex.json cannot hang the app.
+// (kMaxRows / kMaxRowSpan are public on DashboardController: the drag path and
+// its tests assert against them.)
 constexpr int kMaxColumns = 64;
-constexpr int kMaxRows = 4096;
+constexpr int kMaxRows = DashboardController::kMaxRows;
 constexpr int kMaxStickers = 512;
 } // namespace
 
 DashboardController::DashboardController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
-StickerFactory *DashboardController::factory() const {
-  return m_services.get<StickerFactory>();
-}
+StickerFactory *DashboardController::factory() const { return m_services.get<StickerFactory>(); }
 
 QStringList DashboardController::availableStickerTypes() const {
   auto *fac = factory();
@@ -80,12 +80,11 @@ void DashboardController::load() {
   const int count = qMin(stickers.size(), kMaxStickers);
   for (int i = 0; i < count; ++i) {
     const QJsonObject obj = stickers.at(i).toObject();
-    placeRecord(obj.value(QStringLiteral("type")).toString(),
-                obj.value(QStringLiteral("row")).toInt(0),
-                obj.value(QStringLiteral("col")).toInt(0),
-                obj.value(QStringLiteral("rowSpan")).toInt(1),
-                obj.value(QStringLiteral("colSpan")).toInt(1),
-                obj.value(QStringLiteral("settings")).toObject());
+    placeRecord(
+        obj.value(QStringLiteral("type")).toString(), obj.value(QStringLiteral("row")).toInt(0),
+        obj.value(QStringLiteral("col")).toInt(0), obj.value(QStringLiteral("rowSpan")).toInt(1),
+        obj.value(QStringLiteral("colSpan")).toInt(1),
+        obj.value(QStringLiteral("settings")).toObject());
   }
 
   m_loading = false;
@@ -111,13 +110,11 @@ void DashboardController::seedDefaultLayout() {
   // Seed a short Greeting banner across the top of the left column.
   if (fac && fac->hasCreator(QStringLiteral("greeting"))) {
     constexpr int kGreetingRowSpan = 1;
-    placeRecord(QStringLiteral("greeting"), 0, 0, kGreetingRowSpan, kDefaultColSpan,
-                QJsonObject());
+    placeRecord(QStringLiteral("greeting"), 0, 0, kGreetingRowSpan, kDefaultColSpan, QJsonObject());
   }
   // Seed a Calendar sticker directly below the Greeting banner.
   if (fac && fac->hasCreator(QStringLiteral("calendar"))) {
-    placeRecord(QStringLiteral("calendar"), 1, 0, kDefaultRowSpan, kDefaultColSpan,
-                QJsonObject());
+    placeRecord(QStringLiteral("calendar"), 1, 0, kDefaultRowSpan, kDefaultColSpan, QJsonObject());
   }
   // The right column (starting at kDefaultColSpan) stacks the Activity sticker
   // at the top with the History sticker directly below it. Both share the same
@@ -240,32 +237,56 @@ void DashboardController::moveSticker(const QString &p_id, int p_dRow, int p_dCo
   setStickerGeometry(p_id, rec->row + p_dRow, rec->col + p_dCol, rec->rowSpan, rec->colSpan);
 }
 
-void DashboardController::setStickerGeometry(const QString &p_id, int p_row, int p_col,
-                                             int p_rowSpan, int p_colSpan) {
-  StickerRecord *rec = recordById(p_id);
-  if (!rec) {
-    return;
+bool DashboardController::previewStickerGeometry(const QString &p_id, const StickerGeometry &p_geo,
+                                                 StickerGeometry *p_normalized,
+                                                 bool *p_unchanged) const {
+  if (p_unchanged) {
+    *p_unchanged = false;
   }
 
-  const int rowSpan = qBound(1, p_rowSpan, kMaxRowSpan);
-  const int colSpan = qBound(1, p_colSpan, m_columns);
-  const int row = qBound(0, p_row, kMaxRows);
-  const int col = qBound(0, p_col, m_columns - colSpan);
+  const StickerRecord *rec = recordById(p_id);
+  if (!rec) {
+    return false;
+  }
 
-  if (row == rec->row && col == rec->col && rowSpan == rec->rowSpan &&
-      colSpan == rec->colSpan) {
-    return;
+  // The ONLY place board bounds are applied. Keep the clamp order: colSpan is
+  // clamped first because col's upper bound depends on it.
+  StickerGeometry geo;
+  geo.rowSpan = qBound(1, p_geo.rowSpan, kMaxRowSpan);
+  geo.colSpan = qBound(1, p_geo.colSpan, m_columns);
+  geo.row = qBound(0, p_geo.row, kMaxRows);
+  geo.col = qBound(0, p_geo.col, m_columns - geo.colSpan);
+  if (p_normalized) {
+    *p_normalized = geo;
+  }
+
+  const StickerGeometry current{rec->row, rec->col, rec->rowSpan, rec->colSpan};
+  if (geo == current) {
+    if (p_unchanged) {
+      *p_unchanged = true;
+    }
+    return true;
   }
 
   // Reject-and-noop on collision (this iteration's policy).
-  if (!regionFree(row, col, rowSpan, colSpan, rec)) {
+  return regionFree(geo.row, geo.col, geo.rowSpan, geo.colSpan, rec);
+}
+
+void DashboardController::setStickerGeometry(const QString &p_id, int p_row, int p_col,
+                                             int p_rowSpan, int p_colSpan) {
+  const StickerGeometry requested{p_row, p_col, p_rowSpan, p_colSpan};
+  StickerGeometry geo;
+  bool unchanged = false;
+  if (!previewStickerGeometry(p_id, requested, &geo, &unchanged) || unchanged) {
     return;
   }
 
-  rec->row = row;
-  rec->col = col;
-  rec->rowSpan = rowSpan;
-  rec->colSpan = colSpan;
+  // previewStickerGeometry already proved the record exists.
+  StickerRecord *rec = recordById(p_id);
+  rec->row = geo.row;
+  rec->col = geo.col;
+  rec->rowSpan = geo.rowSpan;
+  rec->colSpan = geo.colSpan;
 
   const StickerRecord snapshot = *rec;
   emit stickerMoved(snapshot);

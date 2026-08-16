@@ -10,8 +10,10 @@ target_sources(vnote PRIVATE
     dashboard/dashboardcontent.cpp dashboard/dashboardcontent.h
     dashboard/greetingsticker.cpp dashboard/greetingsticker.h
     dashboard/historysticker.cpp dashboard/historysticker.h
-    dashboard/resizestickerdialog.cpp dashboard/resizestickerdialog.h
     dashboard/sticker.cpp dashboard/sticker.h
+    dashboard/stickerdraggeometry.cpp dashboard/stickerdraggeometry.h
+    dashboard/stickerdragoverlay.cpp dashboard/stickerdragoverlay.h
+    dashboard/stickerdropindicator.cpp dashboard/stickerdropindicator.h
     dialogs/dialog.cpp dialogs/dialog.h
     dialogs/exportdialog2.cpp dialogs/exportdialog2.h
     dialogs/folderfilesfilterwidget.cpp dialogs/folderfilesfilterwidget.h

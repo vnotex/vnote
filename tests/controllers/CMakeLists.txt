@@ -499,3 +499,28 @@ add_qt_test(test_updatecontroller
     VTextEdit
     Qt6::Widgets
 )
+
+# DashboardController::previewStickerGeometry parity with setStickerGeometry.
+# GUILESS: the controller is a plain QObject, StickerFactory is stubbed (the
+# real one references every built-in sticker widget) and no ConfigMgr2 is
+# registered, so persistence is an in-memory no-op.
+add_qt_test(test_dashboardcontroller_preview
+  SOURCES
+    test_dashboardcontroller_preview.cpp
+    stubs_dashboardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/dashboardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.h
+  LINKS
+    core_services
+    core_configs
+    vxcore
+  GUILESS
+)
+
+# core_configs links VTextEdit PUBLIC, so this exe needs the DLL beside it.
+add_custom_command(TARGET test_dashboardcontroller_preview POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_dashboardcontroller_preview>
+)
+

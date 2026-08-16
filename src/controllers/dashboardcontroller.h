@@ -13,6 +13,26 @@ namespace vnotex {
 class ServiceLocator;
 class StickerFactory;
 
+// Plain grid geometry (position + spans) for one sticker. Widget-free on
+// purpose: the pure drag math in src/widgets/dashboard/stickerdraggeometry.h
+// shares this exact type so the drag path and the controller speak the same
+// language without any duplicated struct.
+struct StickerGeometry {
+  int row = 0;
+  int col = 0;
+  int rowSpan = 1;
+  int colSpan = 1;
+};
+
+inline bool operator==(const StickerGeometry &p_a, const StickerGeometry &p_b) {
+  return p_a.row == p_b.row && p_a.col == p_b.col && p_a.rowSpan == p_b.rowSpan &&
+         p_a.colSpan == p_b.colSpan;
+}
+
+inline bool operator!=(const StickerGeometry &p_a, const StickerGeometry &p_b) {
+  return !(p_a == p_b);
+}
+
 // Business logic + persistence for the home dashboard (vx://home).
 //
 // Owns the layout model (plain geometry records, no widgets), the occupancy
@@ -34,6 +54,10 @@ class DashboardController : public QObject {
 public:
   // Upper bound on a sticker's row span (see setStickerGeometry clamp).
   static constexpr int kMaxRowSpan = 256;
+
+  // Defensive upper bound on a sticker's row, so a corrupt/hand-edited
+  // vnotex.json (or a wild drag) cannot push the grid into absurd territory.
+  static constexpr int kMaxRows = 4096;
 
   // Plain geometry record for one placed sticker. No Qt widget types.
   struct StickerRecord {
@@ -64,10 +88,22 @@ public:
   // Intents forwarded by the view. Each mutates the model and persists.
   bool addStickerOfType(const QString &p_typeId);
   void moveSticker(const QString &p_id, int p_dRow, int p_dCol);
-  void setStickerGeometry(const QString &p_id, int p_row, int p_col, int p_rowSpan,
-                          int p_colSpan);
+  void setStickerGeometry(const QString &p_id, int p_row, int p_col, int p_rowSpan, int p_colSpan);
   void removeSticker(const QString &p_id);
   void updateStickerSettings(const QString &p_id, const QJsonObject &p_settings);
+
+  // Normalize p_geo exactly as setStickerGeometry would (the same qBound
+  // clamps) and report whether the result is committable: the sticker exists
+  // and the normalized region is free ignoring the sticker itself.
+  //
+  // This is the single source of truth for geometry normalization; the drag
+  // path uses it to render a ghost that is guaranteed to match what a commit
+  // would produce. A result identical to the sticker's current geometry is
+  // reported as valid, with *p_unchanged set (setStickerGeometry no-ops on it).
+  // Both out-parameters are optional.
+  bool previewStickerGeometry(const QString &p_id, const StickerGeometry &p_geo,
+                              StickerGeometry *p_normalized = nullptr,
+                              bool *p_unchanged = nullptr) const;
 
   // Sync a freshly-created sticker widget's effective settings into its record
   // WITHOUT persisting. Called by the view right after it builds the widget so
@@ -100,8 +136,8 @@ private:
 
   // Append a validated record (bounds-clamped, occupancy-checked). Returns the
   // new record's id, or an empty string if rejected. Emits nothing.
-  QString placeRecord(const QString &p_typeId, int p_row, int p_col, int p_rowSpan,
-                      int p_colSpan, const QJsonObject &p_settings);
+  QString placeRecord(const QString &p_typeId, int p_row, int p_col, int p_rowSpan, int p_colSpan,
+                      const QJsonObject &p_settings);
 
   StickerRecord *recordById(const QString &p_id);
   const StickerRecord *recordById(const QString &p_id) const;

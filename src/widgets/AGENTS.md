@@ -91,6 +91,64 @@ and persistence live in `DashboardController` (`../controllers/`).
 - `Sticker` — abstract sticker content widget; `CalendarSticker` is the concrete built-in
 - `StickerFactory` (in `../gui/services/`) — registry mapping sticker type-ids to creators
 
+#### Edit mode (unlocked): drag-move / drag-resize
+
+Locked is the default and is unchanged: no overlay widget exists at all. **Unlocked
+means edit mode**, and that has four normative consequences:
+
+- Each realized sticker gets a `StickerDragOverlay` child of its chrome frame,
+  covering everything **below the header band** (`ViewItem::m_header`, handed
+  back by `buildFrame`). It **swallows every mouse event over the sticker
+  content** — clicking a calendar date or a history row while unlocked does
+  nothing — while the header stays live. The header holds **only Remove**: the
+  Move menu (Move Up/Down/Left/Right + `Resize...`) and `ResizeStickerDialog`
+  were deleted, because direct manipulation plus the overlay's keyboard route
+  replaces both. `moveSticker()` on the controller is still the commit path for
+  a keyboard move.
+  The overlay is created on unlock and `hide()` + `deleteLater()`d on lock, in
+  that order (a queued deletion would otherwise leave a swallowing overlay alive
+  across a fast lock/unlock).
+- **The controller is the single source of truth for normalization.**
+  `DashboardController::previewStickerGeometry` applies the same `qBound` clamps
+  `setStickerGeometry` applies (the setter now calls it), so the ghost
+  (`StickerDropIndicator`) always shows exactly what a commit would produce.
+  Out-of-bounds drops are **clamped**; drops onto an occupied region are
+  **rejected** (ghost renders invalid, release is a no-op — the existing
+  reject-and-noop collision policy). `stickerDragTarget()` in
+  `stickerdraggeometry.{h,cpp}` is pure math and deliberately does **not** clamp
+  to board bounds; do not add board knowledge there.
+- Geometry is committed **once, on release** — exactly one `setStickerGeometry`
+  (and therefore one persist) per gesture. `DashboardBoard::cancelDragSession()`
+  is the single synchronous, idempotent teardown; it must be called from lock,
+  sticker removal, layout reload / `clearAllViews`, `dragCancelled` (Esc or a
+  right-click mid-drag) and the destructor.
+- **The overlay is also the keyboard route, and must stay one.** It is
+  focusable, so Tab reaches every unlocked sticker; arrow keys emit
+  `moveRequested` and Shift+arrows `resizeRequested`, which the board commits
+  through `moveSticker` / `setStickerGeometry` — the same clamp and collision
+  policy as a drag, no ghost. A focused overlay paints a solid border instead of
+  a dashed one, and carries an accessible name (the sticker title) plus a
+  description of the keys. Direct manipulation removed the header Move menu and
+  the resize dialog, which were the only keyboard-operable affordances; do not
+  remove this replacement without providing another one. Keyboard input is inert
+  while a mouse session owns the geometry.
+
+`StickerDragOverlay` and `StickerDropIndicator` are leaf presentational widgets:
+**no `ServiceLocator`** (precedent `InlineBanner`). The board resolves the accent
+(`base#info#fg`) and invalid (`base#error#fg`) colors from `ThemeService` with a
+`QPalette` fallback and injects them; both widgets paint with `QPainter` and
+never touch a stylesheet, so nothing here can trip (or need to dodge) the
+hardcoded-color gate. The centre move affordance is the themed `move.svg` icon,
+tinted with the accent and injected the same way (`setMoveIcon`) — the overlay
+cannot resolve a theme icon itself. `DashboardBoard::refreshEditModeColors()`
+re-injects both on a theme change; without it live overlays keep the old accent.
+
+While a drag targets rows below the occupied extent, the board reserves them via
+`m_dragRowReservation` and re-runs `applyRowSizing()`, otherwise the container
+has no height there and the ghost is clipped. The reservation only extends
+`maxRow`; per-row height stays `kRowUnitHeight` so frames keep matching their
+cells exactly.
+
 ### Other
 
 - `LocationList2` — results list (search hits, backlinks, etc.)

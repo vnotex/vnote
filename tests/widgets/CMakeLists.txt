@@ -1359,3 +1359,26 @@ add_qt_test(test_previewscaleutils
   LINKS
     Qt6::Svg
 )
+
+# Pure sticker drag math (hit zones + raw candidate geometry). GUILESS: only
+# QSize/QPoint value types are involved. Compiles ONLY stickerdraggeometry.cpp
+# -- the built-in sticker sources are deliberately not pulled in (stickerfactory
+# references every one of them, which is what makes the sticker tests heavy).
+
+add_qt_test(test_stickerdraggeometry
+  SOURCES
+    test_stickerdraggeometry.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/stickerdraggeometry.cpp
+  GUILESS
+)
+
+# StickerDragOverlay: the per-sticker edit-mode overlay. NOT GUILESS -- it is a
+# real QWidget driven with synthetic mouse/key events, so it needs QApplication.
+# Only the overlay + the pure math are compiled; the overlay takes no
+# ServiceLocator and knows nothing about the board.
+add_qt_test(test_stickerdragoverlay
+  SOURCES
+    test_stickerdragoverlay.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/stickerdragoverlay.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/stickerdraggeometry.cpp
+)
