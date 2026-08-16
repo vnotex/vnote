@@ -108,6 +108,12 @@ private slots:
 
   void testNewNoteLiteralDoesNotTouchLastTemplate();
 
+  // --- Auto-generated default name avoids existing notes ---
+  void testNewNoteDefaultNameAvoidsExistingNotes();
+  void testNewNoteDefaultNameUnchangedWithoutConflict();
+  void testNewNoteDefaultNameRecomputedOnFileTypeChange();
+  void testNewNoteUserTypedNameIsNeverUniquified();
+
   // --- Application::dispatchCaptureText seam ---
   void testDispatchRejectsMissingAndWhitespaceOnly();
   void testDispatchAcceptsTextVerbatim();
@@ -915,6 +921,130 @@ void TestOpenNotebookDialog2::testNewNoteLiteralDoesNotTouchLastTemplate() {
     QVERIFY(selector);
     QCOMPARE(selector->getCurrentTemplate(), templateName);
   }
+}
+
+// =============================================================================
+// The auto-generated default name must not conflict with an existing node.
+//
+// Each case creates its own folder so the shared notebook root (which earlier
+// subtests populate) cannot influence the probe.
+// =============================================================================
+
+void TestOpenNotebookDialog2::testNewNoteDefaultNameAvoidsExistingNotes() {
+  m_configMgr->getWidgetConfig().setNewNoteDefaultFileTypeName(QStringLiteral("Markdown"));
+
+  // createFolderPath keys off the RELATIVE path, which is also what the dialog's
+  // NodeIdentifier carries; createFolder would hand back an opaque folder id.
+  const QString folder = QStringLiteral("avail_conflict");
+  QVERIFY(!m_newNoteNotebookSvc->createFolderPath(m_newNoteNotebookId, folder).isEmpty());
+  QVERIFY(!m_newNoteNotebookSvc->createFile(m_newNoteNotebookId, folder, QStringLiteral("note.md"))
+               .isEmpty());
+
+  NodeIdentifier parentId;
+  parentId.notebookId = m_newNoteNotebookId;
+  parentId.relativePath = folder;
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, parentId);
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *nameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("newNoteNameEdit"));
+    QVERIFY(nameEdit);
+    QCOMPARE(nameEdit->text(), QStringLiteral("note_1.md"));
+    // The whole base name stays selected, so the first keystroke replaces it.
+    QCOMPARE(nameEdit->selectedText(), QStringLiteral("note_1"));
+  }
+
+  QVERIFY(
+      !m_newNoteNotebookSvc->createFile(m_newNoteNotebookId, folder, QStringLiteral("note_1.md"))
+           .isEmpty());
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, parentId);
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *nameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("newNoteNameEdit"));
+    QVERIFY(nameEdit);
+    QCOMPARE(nameEdit->text(), QStringLiteral("note_2.md"));
+  }
+}
+
+void TestOpenNotebookDialog2::testNewNoteDefaultNameUnchangedWithoutConflict() {
+  m_configMgr->getWidgetConfig().setNewNoteDefaultFileTypeName(QStringLiteral("Markdown"));
+
+  const QString folder = QStringLiteral("avail_free");
+  QVERIFY(!m_newNoteNotebookSvc->createFolderPath(m_newNoteNotebookId, folder).isEmpty());
+
+  NodeIdentifier parentId;
+  parentId.notebookId = m_newNoteNotebookId;
+  parentId.relativePath = folder;
+
+  NewNoteDialog2 dialog(m_newNoteServices, parentId);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  auto *nameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("newNoteNameEdit"));
+  QVERIFY(nameEdit);
+  QCOMPARE(nameEdit->text(), QStringLiteral("note.md"));
+}
+
+void TestOpenNotebookDialog2::testNewNoteDefaultNameRecomputedOnFileTypeChange() {
+  m_configMgr->getWidgetConfig().setNewNoteDefaultFileTypeName(QStringLiteral("Markdown"));
+
+  const QString folder = QStringLiteral("avail_type");
+  QVERIFY(!m_newNoteNotebookSvc->createFolderPath(m_newNoteNotebookId, folder).isEmpty());
+  QVERIFY(!m_newNoteNotebookSvc->createFile(m_newNoteNotebookId, folder, QStringLiteral("note.txt"))
+               .isEmpty());
+
+  NodeIdentifier parentId;
+  parentId.notebookId = m_newNoteNotebookId;
+  parentId.relativePath = folder;
+
+  NewNoteDialog2 dialog(m_newNoteServices, parentId);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  auto *nameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("newNoteNameEdit"));
+  auto *typeCombo = fileTypeComboOf(dialog);
+  QVERIFY(nameEdit);
+  QVERIFY(typeCombo);
+  // .md is free in this folder.
+  QCOMPARE(nameEdit->text(), QStringLiteral("note.md"));
+
+  const int textIdx = typeCombo->findData(QStringLiteral("Text"));
+  QVERIFY(textIdx >= 0);
+  typeCombo->setCurrentIndex(textIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  // note.txt is taken, so the untouched default is recomputed against .txt.
+  QCOMPARE(nameEdit->text(), QStringLiteral("note_1.txt"));
+}
+
+void TestOpenNotebookDialog2::testNewNoteUserTypedNameIsNeverUniquified() {
+  m_configMgr->getWidgetConfig().setNewNoteDefaultFileTypeName(QStringLiteral("Markdown"));
+
+  const QString folder = QStringLiteral("avail_typed");
+  QVERIFY(!m_newNoteNotebookSvc->createFolderPath(m_newNoteNotebookId, folder).isEmpty());
+  QVERIFY(!m_newNoteNotebookSvc->createFile(m_newNoteNotebookId, folder, QStringLiteral("foo.txt"))
+               .isEmpty());
+
+  NodeIdentifier parentId;
+  parentId.notebookId = m_newNoteNotebookId;
+  parentId.relativePath = folder;
+
+  NewNoteDialog2 dialog(m_newNoteServices, parentId);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  auto *nameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("newNoteNameEdit"));
+  auto *typeCombo = fileTypeComboOf(dialog);
+  QVERIFY(nameEdit);
+  QVERIFY(typeCombo);
+
+  // textEdited is what marks the name as user-owned; setText() alone does not.
+  nameEdit->setText(QStringLiteral("foo"));
+  emit nameEdit->textEdited(nameEdit->text());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  const int textIdx = typeCombo->findData(QStringLiteral("Text"));
+  QVERIFY(textIdx >= 0);
+  typeCombo->setCurrentIndex(textIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  // foo.txt already exists, but the user's base name must survive verbatim.
+  QCOMPARE(nameEdit->text(), QStringLiteral("foo.txt"));
 }
 
 // =============================================================================

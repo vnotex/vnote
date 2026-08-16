@@ -108,6 +108,10 @@ private:
   // Guard flag to prevent feedback loops between name↔type sync.
   bool m_fileTypeComboMuted = false;
 
+  // Once the user types in the Name field, the dialog must never rewrite their
+  // text: only the auto-generated default gets uniquified with a _N suffix.
+  bool m_nameEditedByUser = false;
+
   // Set while the dialog itself drives the template selector, so a programmatic
   // selection is not mistaken for a user choice.
   bool m_templateSelectorMuted = false;

@@ -26,6 +26,7 @@ namespace {
 // Tests look widgets up by object name, never by label text.
 const char *kContentEditName = "newNoteContentEdit";
 const char *kFileTypeComboName = "newNoteFileTypeCombo";
+const char *kNameEditName = "newNoteNameEdit";
 
 // Extract literal capture text WITHOUT QPlainTextEdit::toPlainText().
 //
@@ -95,7 +96,11 @@ void NewNoteDialog2::setupUI() {
   // Name input.
   auto *snippetService = m_services.get<SnippetCoreService>();
   m_nameEdit = WidgetsFactory::createLineEditWithSnippet(snippetService, mainWidget);
-  connect(m_nameEdit, &QLineEdit::textEdited, this, [this]() { updateFileTypeForName(); });
+  m_nameEdit->setObjectName(QLatin1String(kNameEditName));
+  connect(m_nameEdit, &QLineEdit::textEdited, this, [this]() {
+    m_nameEditedByUser = true;
+    updateFileTypeForName();
+  });
   layout->addRow(tr("Name"), m_nameEdit);
 
   // Body source: exactly one of the two controls exists.
@@ -180,7 +185,7 @@ void NewNoteDialog2::updateNameForFileType() {
   // Get current name and extract base name (without extension).
   QString currentName = m_nameEdit->text().trimmed();
   QString baseName;
-  if (!currentName.isEmpty()) {
+  if (m_nameEditedByUser && !currentName.isEmpty()) {
     int dotPos = currentName.lastIndexOf('.');
     baseName = (dotPos > 0) ? currentName.left(dotPos) : currentName;
   } else {
@@ -192,6 +197,22 @@ void NewNoteDialog2::updateNameForFileType() {
   if (!fileType.preferredSuffix().isEmpty()) {
     newName += "." + fileType.preferredSuffix();
   }
+
+  // Only the auto-generated default is uniquified; text the user typed is never
+  // rewritten (the OK-time validation reports the conflict instead).
+  if (!m_nameEditedByUser) {
+    auto *notebookService = m_services.get<NotebookCoreService>();
+    if (notebookService && !m_parentId.notebookId.isEmpty()) {
+      // Returns an empty string on failure -- fall back to the desired name,
+      // never to an empty field.
+      const QString available = notebookService->getAvailableName(m_parentId.notebookId,
+                                                                  m_parentId.relativePath, newName);
+      if (!available.isEmpty()) {
+        newName = available;
+      }
+    }
+  }
+
   m_nameEdit->setText(newName);
   WidgetUtils::selectBaseName(m_nameEdit);
 }
