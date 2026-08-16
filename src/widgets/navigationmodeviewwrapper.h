@@ -29,8 +29,7 @@ private:
 };
 
 template <typename T>
-NavigationModeViewWrapper<T>::NavigationModeViewWrapper(T *p_widget,
-                                                        ThemeService *p_themeService)
+NavigationModeViewWrapper<T>::NavigationModeViewWrapper(T *p_widget, ThemeService *p_themeService)
     : NavigationMode(NavigationMode::Type::DoubleKeys, p_widget, p_themeService),
       m_widget(p_widget) {}
 
@@ -103,7 +102,10 @@ void NavigationModeViewWrapper<T>::placeNavigationLabel(int p_idx, void *p_item,
 
   const auto idx = static_cast<QModelIndex *>(p_item);
   const auto rt = m_widget->visualRect(*idx);
-  const int x = rt.x() + m_widget->width() - extraWidth;
+  // Anchor to the widget's right edge. visualRect().x() carries the horizontal
+  // scroll offset and the per-depth indentation, which would drift the label
+  // off-widget once the view is scrolled horizontally.
+  const int x = m_widget->width() - extraWidth;
   const int y = rt.y();
   p_label->move(x, y);
 }

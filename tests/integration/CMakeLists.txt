@@ -93,6 +93,7 @@ add_qt_test(test_reorder_edge_cases
     test_reorder_edge_cases.cpp
     test_reorder_edge_cases_stubs.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp

@@ -81,6 +81,7 @@ add_qt_test(test_notebooknodeview_state
     test_notebooknodeview_state.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.h
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
@@ -135,6 +136,7 @@ add_qt_test(test_node_explorer_reload_expansion
     ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/filelistview.cpp
@@ -181,6 +183,7 @@ add_qt_test(test_explorer_selection_after_save
     ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/filelistview.cpp
@@ -890,6 +893,7 @@ add_qt_test(test_notebook_explorer2_sort
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/sortdialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/views/combinednodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
@@ -943,6 +947,7 @@ add_qt_test(test_two_columns_node_explorer_sort
     ${CMAKE_SOURCE_DIR}/src/views/inodeexplorer.h
     ${CMAKE_SOURCE_DIR}/src/views/twocolumnsnodeexplorer.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/views/filelistview.cpp

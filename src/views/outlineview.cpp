@@ -3,13 +3,12 @@
 #include <QItemSelectionModel>
 #include <QSortFilterProxyModel>
 
+#include <gui/utils/widgetutils.h>
 #include <models/outlinemodel.h>
 
 using namespace vnotex;
 
-OutlineView::OutlineView(QWidget *p_parent) : QTreeView(p_parent) {
-  setupView();
-}
+OutlineView::OutlineView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
 
 void OutlineView::setupView() {
   // Single column, no header.
@@ -22,7 +21,7 @@ void OutlineView::setupView() {
   setAnimated(true);
 
   // Show horizontal scrollbar when content overflows.
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  WidgetUtils::showHorizontalScrollbar(this);
 
   // Connect clicked signal for mouse activation.
   // The currentChanged signal (for keyboard navigation) is connected in setModel()
@@ -35,8 +34,8 @@ void OutlineView::setModel(QAbstractItemModel *p_model) {
 
   // Reconnect selection model signal after model change.
   if (selectionModel()) {
-    connect(selectionModel(), &QItemSelectionModel::currentChanged,
-            this, &OutlineView::handleCurrentChanged);
+    connect(selectionModel(), &QItemSelectionModel::currentChanged, this,
+            &OutlineView::handleCurrentChanged);
   }
 }
 
@@ -65,8 +64,7 @@ void OutlineView::activateHeading(const QModelIndex &p_index) {
 
 void OutlineView::highlightHeading(int p_headingIndex) {
   auto *proxy = qobject_cast<QSortFilterProxyModel *>(model());
-  auto *outlineModel =
-      qobject_cast<OutlineModel *>(proxy ? proxy->sourceModel() : model());
+  auto *outlineModel = qobject_cast<OutlineModel *>(proxy ? proxy->sourceModel() : model());
   if (!outlineModel) {
     return;
   }

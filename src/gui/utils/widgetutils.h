@@ -23,6 +23,7 @@ class QPushButton;
 class QSplitter;
 class QScreen;
 class QFormLayout;
+class QTreeView;
 
 namespace vte {
 class VTextEdit;
@@ -99,6 +100,10 @@ public:
   // No-op when @p_textEdit is null or @p_offset < 0. Callers own any mode/read-only
   // guarding before invoking this.
   static void applyCursorOffset(vte::VTextEdit *p_textEdit, int p_offset);
+
+  // Let @p_view show a horizontal scrollbar when the content of column 0 is
+  // wider than the viewport. Column 0 is never narrower than the viewport.
+  static void showHorizontalScrollbar(QTreeView *p_view);
 
 private:
   static void resizeToHideScrollBar(QScrollArea *p_scroll, bool p_vertical, bool p_horizontal);

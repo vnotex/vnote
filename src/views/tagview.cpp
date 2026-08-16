@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <QSortFilterProxyModel>
 
+#include <gui/utils/widgetutils.h>
 #include <models/tagmodel.h>
 
 using namespace vnotex;
@@ -21,11 +22,13 @@ void TagView::setupView() {
   setUniformRowHeights(true);
   setAnimated(true);
 
+  // Show horizontal scrollbar when content overflows.
+  WidgetUtils::showHorizontalScrollbar(this);
+
   setEditTriggers(QAbstractItemView::NoEditTriggers);
 
   connect(this, &QTreeView::doubleClicked, this, &TagView::onItemActivated);
-  connect(this, &QTreeView::customContextMenuRequested, this,
-          &TagView::onContextMenuRequested);
+  connect(this, &QTreeView::customContextMenuRequested, this, &TagView::onContextMenuRequested);
 }
 
 QString TagView::tagNameFromIndex(const QModelIndex &p_index) const {
@@ -110,6 +113,7 @@ void TagView::selectAndScrollToTag(const QString &p_tagName) {
     ancestor = ancestor.parent();
   }
 
-  selectionModel()->setCurrentIndex(viewIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+  selectionModel()->setCurrentIndex(viewIdx, QItemSelectionModel::ClearAndSelect |
+                                                 QItemSelectionModel::Rows);
   scrollTo(viewIdx, QAbstractItemView::EnsureVisible);
 }

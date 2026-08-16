@@ -5,10 +5,10 @@
 #include <QPainter>
 #include <QTimer>
 
+#include "nodeiconhelper.h"
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <models/notebooknodemodel.h>
-#include "nodeiconhelper.h"
 
 using namespace vnotex;
 
@@ -108,17 +108,16 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
       }
       // Fallback to general selected color if specific one not found
       if (!textColor.isValid()) {
-        textColor = QColor(themeService->paletteColor(
-            QStringLiteral("widgets#qtreeview#item#selected#fg")));
+        textColor = QColor(
+            themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#selected#fg")));
       }
     } else if (p_option.state & QStyle::State_MouseOver) {
-      textColor = QColor(themeService->paletteColor(
-          QStringLiteral("widgets#qtreeview#item#hover#fg")));
+      textColor =
+          QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#hover#fg")));
     }
     // Fallback to normal text color
     if (!textColor.isValid()) {
-      textColor = QColor(
-          themeService->paletteColor(QStringLiteral("widgets#qtreeview#fg")));
+      textColor = QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#fg")));
     }
     // Final fallback to palette
     if (!textColor.isValid()) {
@@ -163,12 +162,33 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
 
 QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
                                      const QModelIndex &p_index) const {
-  Q_UNUSED(p_index);
-
   QFontMetrics fm(p_option.font);
-  int height = qMax(fm.height(), m_iconSize) + m_vPadding * 2;
+  const int height = qMax(fm.height(), m_iconSize) + m_vPadding * 2;
 
-  return QSize(200, height); // Width will be determined by view
+  NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
+  if (!nodeInfo.isValid()) {
+    return QStyledItemDelegate::sizeHint(p_option, p_index);
+  }
+
+  // Mirror the geometry of paintNode(): leading padding, icon (files only),
+  // text, optional child count badge and trailing padding.
+  int width = m_hPadding;
+  if (!nodeInfo.isFolder) {
+    width += m_iconSize + m_hPadding;
+  }
+
+  width += fm.horizontalAdvance(nodeInfo.name);
+
+  if (m_showChildCount && nodeInfo.isFolder && nodeInfo.childCount > 0) {
+    // The badge is painted inside the text rect, overlaying its tail, so its
+    // width has to be reserved here.
+    width += fm.horizontalAdvance(QString("(%1)").arg(nodeInfo.childCount)) + m_hPadding;
+  }
+
+  width += m_hPadding;
+
+  // No tree indentation here: QTreeView::sizeHintForColumn() adds it.
+  return QSize(width, height);
 }
 
 void NotebookNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_index) const {
@@ -193,9 +213,7 @@ void NotebookNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p
   QString text = lineEdit->text();
   int lastDot = text.lastIndexOf(QLatin1Char('.'));
   if (lastDot > 0) {
-    QTimer::singleShot(0, lineEdit, [lineEdit, lastDot]() {
-      lineEdit->setSelection(0, lastDot);
-    });
+    QTimer::singleShot(0, lineEdit, [lineEdit, lastDot]() { lineEdit->setSelection(0, lastDot); });
   }
 }
 
@@ -220,7 +238,7 @@ QColor NotebookNodeDelegate::getNodeBackgroundColor(const NodeInfo &p_nodeInfo,
 }
 
 QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
-                                               const QStyleOptionViewItem &p_option) const {
+                                              const QStyleOptionViewItem &p_option) const {
   Q_UNUSED(p_option);
 
   // External nodes (unindexed) and missing nodes (indexed but content gone from
@@ -250,5 +268,3 @@ QColor NotebookNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
 
   return QColor();
 }
-
-

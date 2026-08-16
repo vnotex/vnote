@@ -14,6 +14,7 @@
 #include <QUrl>
 
 #include <controllers/notebooknodecontroller.h>
+#include <gui/utils/widgetutils.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
 #include <qmenu.h>
@@ -160,6 +161,9 @@ void NotebookNodeView::setupView() {
   setIndentation(16);
   setUniformRowHeights(true);
   setAnimated(true);
+
+  // Show horizontal scrollbar when content overflows.
+  WidgetUtils::showHorizontalScrollbar(this);
 
   // Enable lazy loading
   setAutoExpandDelay(500);

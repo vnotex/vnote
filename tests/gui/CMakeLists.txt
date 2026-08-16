@@ -89,6 +89,7 @@ add_qt_test(test_notebook_node_view_reorder
     test_notebook_node_view_reorder.cpp
     test_notebook_node_view_reorder_stubs.cpp
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodeview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
@@ -108,3 +109,30 @@ target_include_directories(test_notebook_node_view_reorder PRIVATE
 # No VTextEdit.dll copy anchored here: test_notebook_node_view_reorder no longer
 # links VTextEdit. The dir-wide copies live on test_navigationmodeservice and
 # test_file_list_view_reorder, which do.
+
+# Horizontal scrolling helper for the QTreeView family. Needs a real
+# QApplication (QTEST_MAIN) so viewport geometry and indexAt() are meaningful.
+add_qt_test(test_treehorizontalscroll
+  SOURCES
+    test_treehorizontalscroll.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
+  LINKS
+    Qt6::Widgets
+)
+
+# NotebookNodeDelegate::sizeHint() width derivation. Pulls in the theme slice
+# because the delegate resolves colors through ThemeService.
+add_qt_test(test_notebooknodedelegate_sizehint
+  SOURCES
+    test_notebooknodedelegate_sizehint.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+  LINKS
+    Qt6::Gui
+    Qt6::Widgets
+    core_services
+)
