@@ -70,6 +70,15 @@ public:
   const QString &getNewNoteDefaultFileTypeName() const;
   void setNewNoteDefaultFileTypeName(const QString &p_typeName);
 
+  // Default note template per file type name, e.g. {"Markdown": "title.md"}.
+  // A file type with no entry -- or an entry whose value is empty -- has no
+  // default template, which the New Note dialog renders as "None".
+  QString getNewNoteDefaultTemplate(const QString &p_fileTypeName) const;
+  void setNewNoteDefaultTemplate(const QString &p_fileTypeName, const QString &p_template);
+
+  const QJsonObject &getNewNoteDefaultTemplates() const;
+  void setNewNoteDefaultTemplates(const QJsonObject &p_templates);
+
   bool getUnitedEntryExpandAllEnabled() const;
   void setUnitedEntryExpandAllEnabled(bool p_enabled);
 
@@ -139,6 +148,10 @@ private:
   bool m_tagExplorerTwoColumnsEnabled = false;
 
   QString m_newNoteDefaultFileTypeName = QStringLiteral("Markdown");
+
+  // File type name -> template file name. Seeded with the bundled mapping on
+  // first run; empty entries are respected as "no default".
+  QJsonObject m_newNoteDefaultTemplates;
 
   bool m_unitedEntryExpandAllEnabled = false;
 

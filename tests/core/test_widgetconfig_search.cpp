@@ -21,6 +21,12 @@ private slots:
   void testFolderShareDestinationRoundTrip();
   void testFolderShareDestinationDefault();
   void testFolderShareDestinationMissingOrWrongType();
+
+  // newNoteDefaultTemplates (per-file-type default note template).
+  void testNewNoteDefaultTemplatesSeedsMarkdownOnFirstRun();
+  void testNewNoteDefaultTemplatesRoundTripAndPerTypeAccess();
+  void testNewNoteDefaultTemplatesEmptyObjectIsRespected();
+  void testNewNoteDefaultTemplatesWrongTypeYieldsNoDefaults();
 };
 
 void TestWidgetConfigSearch::testRoundTrip() {
@@ -142,6 +148,65 @@ void TestWidgetConfigSearch::testFolderShareDestinationMissingOrWrongType() {
   WidgetConfig wcBad(nullptr, nullptr);
   wcBad.fromJson(bad);
   QCOMPARE(wcBad.getFolderShareLastDestination(), QString());
+}
+
+// An absent key means "never configured", so the bundled mapping is seeded.
+// Markdown ships title.md; nothing else has a bundled template.
+void TestWidgetConfigSearch::testNewNoteDefaultTemplatesSeedsMarkdownOnFirstRun() {
+  WidgetConfig wc(nullptr, nullptr);
+  wc.fromJson(QJsonObject());
+
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QStringLiteral("title.md"));
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Text")), QString());
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QString()), QString());
+  QVERIFY(wc.toJson().contains(QStringLiteral("newNoteDefaultTemplates")));
+}
+
+void TestWidgetConfigSearch::testNewNoteDefaultTemplatesRoundTripAndPerTypeAccess() {
+  WidgetConfig wc1(nullptr, nullptr);
+  wc1.setNewNoteDefaultTemplate(QStringLiteral("Text"), QStringLiteral("plain.txt"));
+  wc1.setNewNoteDefaultTemplate(QStringLiteral("Markdown"), QStringLiteral("mine.md"));
+  // An empty type name is not a key and must be ignored rather than stored.
+  wc1.setNewNoteDefaultTemplate(QString(), QStringLiteral("orphan.md"));
+
+  QCOMPARE(wc1.getNewNoteDefaultTemplates().size(), 2);
+
+  WidgetConfig wc2(nullptr, nullptr);
+  wc2.fromJson(wc1.toJson());
+  QCOMPARE(wc2.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QStringLiteral("mine.md"));
+  QCOMPARE(wc2.getNewNoteDefaultTemplate(QStringLiteral("Text")), QStringLiteral("plain.txt"));
+  QCOMPARE(wc2.getNewNoteDefaultTemplate(QStringLiteral("PDF")), QString());
+}
+
+// A user who wants no default at all writes an explicit mapping; a present key
+// is their choice and must NOT be re-seeded with the bundled entry.
+void TestWidgetConfigSearch::testNewNoteDefaultTemplatesEmptyObjectIsRespected() {
+  QJsonObject json;
+  json[QStringLiteral("newNoteDefaultTemplates")] = QJsonObject();
+
+  WidgetConfig wc(nullptr, nullptr);
+  wc.fromJson(json);
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
+
+  // The same holds for an explicitly cleared per-type entry.
+  QJsonObject cleared;
+  QJsonObject mapping;
+  mapping[QStringLiteral("Markdown")] = QString();
+  cleared[QStringLiteral("newNoteDefaultTemplates")] = mapping;
+
+  WidgetConfig wcCleared(nullptr, nullptr);
+  wcCleared.fromJson(cleared);
+  QCOMPARE(wcCleared.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
+}
+
+void TestWidgetConfigSearch::testNewNoteDefaultTemplatesWrongTypeYieldsNoDefaults() {
+  QJsonObject json;
+  json[QStringLiteral("newNoteDefaultTemplates")] = 42;
+
+  WidgetConfig wc(nullptr, nullptr);
+  wc.fromJson(json);
+  QVERIFY(wc.getNewNoteDefaultTemplates().isEmpty());
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
 }
 
 } // namespace tests

@@ -51,6 +51,32 @@ Pattern:
 
 Use this pattern when the dialog has both keystroke-driven validation (noisy) and discrete-action validation (e.g., folder selection). Do NOT use it when every validation message is equally actionable — the regular `setInformationText` flow is simpler.
 
+## New Note Template Resolution
+
+`NewNoteDialog2` picks the initial template from two sources, in this order:
+
+1. **Session cache** — `NewNoteDialog2::s_lastTemplateByFileType`, a process-lifetime
+   `QHash<fileTypeName, templateName>` written only after a note is successfully created (a
+   rejected name or a failed creation is not a "last used template"). A present key wins even
+   when its value is empty, so an explicit "None" survives the rest of the run.
+2. **Configured default** — `WidgetConfig::getNewNoteDefaultTemplate(fileTypeName)`, backed by
+   the `newNoteDefaultTemplates` object in `vnotex.json` (a `{fileTypeName: templateName}` map).
+   VNote seeds `{"Markdown": "title.md"}` when the key is absent; a present object — including
+   an empty one — is the user's choice and is never re-seeded.
+
+If neither yields a template that still exists on disk (`NoteTemplateSelector::setCurrentTemplate`
+returns `false`), the selector falls back to "None" and a stale session entry is dropped so the
+configured default gets another chance.
+
+The resolution re-runs on **every** file-type change, including the implicit one driven by typing
+a suffix in the Name field — the default is per file type, so it has to follow the type. It stops
+following once the user picks a template by hand (`m_templateChosenByUser`); programmatic
+selections are excluded from that via `m_templateSelectorMuted`.
+
+Capture dialogs (`BodyMode::LiteralContent`) have no selector and therefore neither read nor write
+the session cache. The quick-note path is unrelated: its template name is persisted per scheme in
+`SessionConfig::QuickNoteScheme::m_template`.
+
 ## Dialog Inventory
 
 | Dialog | Controller | Purpose |

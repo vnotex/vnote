@@ -25,6 +25,7 @@ using namespace vnotex;
 namespace {
 // Tests look widgets up by object name, never by label text.
 const char *kContentEditName = "newNoteContentEdit";
+const char *kFileTypeComboName = "newNoteFileTypeCombo";
 
 // Extract literal capture text WITHOUT QPlainTextEdit::toPlainText().
 //
@@ -45,7 +46,7 @@ QString literalTextOf(const QPlainTextEdit *p_edit) {
 }
 } // namespace
 
-QString NewNoteDialog2::s_lastTemplate;
+QHash<QString, QString> NewNoteDialog2::s_lastTemplateByFileType;
 
 NewNoteDialog2::NewNoteDialog2(ServiceLocator &p_services, const NodeIdentifier &p_parentId,
                                QWidget *p_parent)
@@ -72,6 +73,7 @@ void NewNoteDialog2::setupUI() {
 
   // File type combo.
   m_fileTypeCombo = WidgetsFactory::createComboBox(mainWidget);
+  m_fileTypeCombo->setObjectName(QLatin1String(kFileTypeComboName));
   auto *fileTypeService = m_services.get<FileTypeCoreService>();
   const auto fileTypes = fileTypeService->getAllFileTypes();
   for (const auto &ft : fileTypes) {
@@ -83,6 +85,10 @@ void NewNoteDialog2::setupUI() {
     if (!m_fileTypeComboMuted) {
       updateNameForFileType();
     }
+    // The template default is per file type, so it follows the type even when
+    // the type change came from the name field (where m_fileTypeComboMuted is
+    // set to break the name<->type loop).
+    applyTemplateForFileType();
   });
   layout->addRow(tr("Type"), m_fileTypeCombo);
 
@@ -103,6 +109,11 @@ void NewNoteDialog2::setupUI() {
     layout->addRow(tr("Content"), m_contentEdit);
   } else {
     m_templateSelector = new NoteTemplateSelector(m_services, mainWidget);
+    connect(m_templateSelector, &NoteTemplateSelector::templateChanged, this, [this]() {
+      if (!m_templateSelectorMuted) {
+        m_templateChosenByUser = true;
+      }
+    });
     layout->addRow(tr("Template"), m_templateSelector);
   }
 
@@ -127,13 +138,38 @@ void NewNoteDialog2::initDefaultValues() {
   // Generate default name based on file type.
   updateNameForFileType();
 
-  // Restore last template. Capture dialogs have no template selector and must
-  // neither read nor overwrite the shared last-template state.
-  if (m_templateSelector && !s_lastTemplate.isEmpty()) {
-    if (!m_templateSelector->setCurrentTemplate(s_lastTemplate)) {
-      s_lastTemplate.clear();
-    }
+  // Pick the template for that file type. Capture dialogs have no template
+  // selector and must neither read nor write the shared session cache.
+  applyTemplateForFileType();
+}
+
+void NewNoteDialog2::applyTemplateForFileType() {
+  if (!m_templateSelector || m_templateChosenByUser) {
+    return;
   }
+
+  const QString fileTypeName = m_fileTypeCombo->currentData().toString();
+
+  QString templateName;
+  const bool cached = s_lastTemplateByFileType.contains(fileTypeName);
+  if (cached) {
+    templateName = s_lastTemplateByFileType.value(fileTypeName);
+  } else {
+    templateName =
+        m_services.get<ConfigMgr2>()->getWidgetConfig().getNewNoteDefaultTemplate(fileTypeName);
+  }
+
+  m_templateSelectorMuted = true;
+  if (!m_templateSelector->setCurrentTemplate(templateName)) {
+    // The template was deleted from disk since it was chosen/configured. Drop
+    // the stale session entry so the configured default gets another chance,
+    // and fall back to "None" for this dialog.
+    if (cached) {
+      s_lastTemplateByFileType.remove(fileTypeName);
+    }
+    m_templateSelector->setCurrentTemplate(QString());
+  }
+  m_templateSelectorMuted = false;
 }
 
 void NewNoteDialog2::updateNameForFileType() {
@@ -206,11 +242,6 @@ QString NewNoteDialog2::getPreferredSuffix() const {
 }
 
 void NewNoteDialog2::acceptedButtonClicked() {
-  // Save last template (template mode only).
-  if (m_templateSelector) {
-    s_lastTemplate = m_templateSelector->getCurrentTemplate();
-  }
-
   // Save default file type (as type name string).
   QString fileTypeName = m_fileTypeCombo->currentData().toString();
   m_services.get<ConfigMgr2>()->getWidgetConfig().setNewNoteDefaultFileTypeName(fileTypeName);
@@ -238,7 +269,14 @@ void NewNoteDialog2::acceptedButtonClicked() {
   // Delegate to controller.
   NewNoteResult result = m_controller->createNote(input);
 
+  // Remember the template for this file type, for this run only (template mode
+  // only). An empty value records an explicit "None" and is honored as such.
+  // Written only once the note actually exists: a rejected name or a failed
+  // creation is not a "last used template".
   if (result.success) {
+    if (m_templateSelector) {
+      s_lastTemplateByFileType.insert(fileTypeName, m_templateSelector->getCurrentTemplate());
+    }
     m_newNodeId = result.nodeId;
     m_newCursorOffset = result.cursorOffset;
     accept();

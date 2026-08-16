@@ -3,6 +3,8 @@
 
 #include "scrolldialog.h"
 
+#include <QHash>
+
 #include <core/nodeinfo.h>
 
 class QComboBox;
@@ -79,6 +81,11 @@ private:
   // Validate inputs and show error message if invalid.
   bool validateInputs();
 
+  // Select the template for the currently chosen file type: the session cache
+  // (last template accepted for that type in this run) when present, otherwise
+  // the configured default for the type, otherwise "None".
+  void applyTemplateForFileType();
+
   // Get selected file type name and preferred suffix.
   QString getFileTypeName() const;
   QString getPreferredSuffix() const;
@@ -101,12 +108,22 @@ private:
   // Guard flag to prevent feedback loops between name↔type sync.
   bool m_fileTypeComboMuted = false;
 
+  // Set while the dialog itself drives the template selector, so a programmatic
+  // selection is not mistaken for a user choice.
+  bool m_templateSelectorMuted = false;
+
+  // Once the user picks a template by hand, a later file-type change must not
+  // overwrite that choice with the type's default.
+  bool m_templateChosenByUser = false;
+
   // Result.
   NodeIdentifier m_newNodeId;
   int m_newCursorOffset = -1;
 
-  // Remember last template selection.
-  static QString s_lastTemplate;
+  // Session cache: the last template accepted per file type name, for this
+  // process only. A present key (even with an empty value, i.e. "None") wins
+  // over the configured default; an absent key falls back to it.
+  static QHash<QString, QString> s_lastTemplateByFileType;
 };
 
 } // namespace vnotex

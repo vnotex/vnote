@@ -6,6 +6,18 @@ using namespace vnotex;
 #define READBOOL(key) readBool(p_jobj, (key))
 #define READSTRLIST(key) readStringList(p_jobj, (key))
 
+namespace {
+const QString c_newNoteDefaultTemplatesKey = QStringLiteral("newNoteDefaultTemplates");
+
+// Mapping shipped with VNote. Only file types that actually have a bundled
+// template appear here; every other type has no default.
+QJsonObject bundledNewNoteDefaultTemplates() {
+  QJsonObject obj;
+  obj[QStringLiteral("Markdown")] = QStringLiteral("title.md");
+  return obj;
+}
+} // namespace
+
 WidgetConfig::WidgetConfig(IConfigMgr *p_mgr, IConfig *p_topConfig) : IConfig(p_mgr, p_topConfig) {
   m_sectionName = QStringLiteral("widget");
   initDefaults();
@@ -59,6 +71,15 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
   m_newNoteDefaultFileTypeName = readString(p_jobj, QStringLiteral("newNoteDefaultFileTypeName"));
   if (m_newNoteDefaultFileTypeName.isEmpty()) {
     m_newNoteDefaultFileTypeName = QStringLiteral("Markdown");
+  }
+
+  // Absent key = first run or a config written before this key existed, so seed
+  // the bundled mapping. A present (even empty) object is the user's own choice
+  // and is taken verbatim -- that is how a default can be turned off.
+  if (p_jobj.contains(c_newNoteDefaultTemplatesKey)) {
+    m_newNoteDefaultTemplates = p_jobj[c_newNoteDefaultTemplatesKey].toObject();
+  } else {
+    m_newNoteDefaultTemplates = bundledNewNoteDefaultTemplates();
   }
 
   m_unitedEntryExpandAllEnabled = READBOOL(QStringLiteral("unitedEntryExpandAll"));
@@ -116,6 +137,7 @@ QJsonObject WidgetConfig::toJson() const {
   writeStringList(obj, QStringLiteral("mainWindowKeepDocksExpandingContentArea"),
                   m_mainWindowKeepDocksExpandingContentArea);
   obj[QStringLiteral("newNoteDefaultFileTypeName")] = m_newNoteDefaultFileTypeName;
+  obj[c_newNoteDefaultTemplatesKey] = m_newNoteDefaultTemplates;
   obj[QStringLiteral("unitedEntryExpandAll")] = m_unitedEntryExpandAllEnabled;
   obj[QStringLiteral("viewWindowLayoutMode")] = static_cast<int>(m_viewWindowLayoutMode);
   obj[QStringLiteral("readableWidthMaxPx")] = m_readableWidthMaxPx;
@@ -239,6 +261,31 @@ void WidgetConfig::setNewNoteDefaultFileTypeName(const QString &p_typeName) {
   updateConfig(m_newNoteDefaultFileTypeName, p_typeName, this);
 }
 
+QString WidgetConfig::getNewNoteDefaultTemplate(const QString &p_fileTypeName) const {
+  if (p_fileTypeName.isEmpty()) {
+    return QString();
+  }
+  return m_newNoteDefaultTemplates.value(p_fileTypeName).toString();
+}
+
+void WidgetConfig::setNewNoteDefaultTemplate(const QString &p_fileTypeName,
+                                             const QString &p_template) {
+  if (p_fileTypeName.isEmpty()) {
+    return;
+  }
+  QJsonObject templates = m_newNoteDefaultTemplates;
+  templates[p_fileTypeName] = p_template;
+  setNewNoteDefaultTemplates(templates);
+}
+
+const QJsonObject &WidgetConfig::getNewNoteDefaultTemplates() const {
+  return m_newNoteDefaultTemplates;
+}
+
+void WidgetConfig::setNewNoteDefaultTemplates(const QJsonObject &p_templates) {
+  updateConfig(m_newNoteDefaultTemplates, p_templates, this);
+}
+
 // Legacy methods for backward compatibility with old NewNoteDialog.
 // Maps between integer type index and type name string.
 int WidgetConfig::getNewNoteDefaultFileType() const {
@@ -311,6 +358,7 @@ void WidgetConfig::setReadableWidthMaxPx(int p_px) {
 void WidgetConfig::initDefaults() {
   m_mainWindowKeepDocksExpandingContentArea =
       QStringList{QStringLiteral("OutlineDock.vnotex"), QStringLiteral("WindowsDock.vnotex")};
+  m_newNoteDefaultTemplates = bundledNewNoteDefaultTemplates();
 }
 
 int WidgetConfig::getSearchScope() const { return m_searchScope; }

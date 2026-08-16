@@ -46,6 +46,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/snippetcoreservice.h>
 #include <core/services/templateservice.h>
+#include <core/widgetconfig.h>
 #include <temp_dir_fixture.h>
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/dialogs/notetemplateselector.h>
@@ -93,6 +94,18 @@ private slots:
   void testNewNoteLiteralOptionsShowEditableContent();
   void testNewNoteLiteralAcceptPersistsVerbatim();
   void testNewNoteLiteralClearedAcceptPersistsEmpty();
+
+  // --- Per-file-type default template (WidgetConfig::newNoteDefaultTemplates) ---
+  // Declared BEFORE the last-template subtest below because they rely on the
+  // process-wide session cache still being empty for the types they use.
+  void testNewNoteUsesConfiguredDefaultTemplateForFileType();
+  void testNewNoteDefaultTemplateFollowsFileTypeChange();
+  void testNewNoteMissingDefaultTemplateFallsBackToNone();
+  void testNewNoteManualTemplateSurvivesFileTypeChange();
+  void testNewNoteDefaultFollowsFileTypeDrivenByTheNameField();
+  void testNewNoteSessionCacheOverridesConfiguredDefault();
+  void testNewNoteRejectedAcceptDoesNotUpdateSessionCache();
+
   void testNewNoteLiteralDoesNotTouchLastTemplate();
 
   // --- Application::dispatchCaptureText seam ---
@@ -116,6 +129,12 @@ private:
 
   // Drive a constructed dialog to accept with the given note name.
   void acceptNewNoteDialog(NewNoteDialog2 &p_dialog, const QString &p_name);
+
+  // Create a template file in the config templates folder; returns its name.
+  QString seedTemplate(const QString &p_name, const QByteArray &p_body) const;
+
+  // The dialog's FILE TYPE combo (the template selector owns one too).
+  QComboBox *fileTypeComboOf(const NewNoteDialog2 &p_dialog) const;
 
   VxCoreContextHandle m_ctx = nullptr;
 
@@ -222,6 +241,26 @@ void TestOpenNotebookDialog2::acceptNewNoteDialog(NewNoteDialog2 &p_dialog, cons
 void TestOpenNotebookDialog2::buildServices(ServiceLocator &services, NotebookCoreService *&svc) {
   svc = new NotebookCoreService(m_ctx);
   services.registerService<NotebookCoreService>(svc);
+}
+
+QString TestOpenNotebookDialog2::seedTemplate(const QString &p_name,
+                                              const QByteArray &p_body) const {
+  if (!m_templateSvc->ensureTemplateFolder()) {
+    return QString();
+  }
+  QFile f(QDir(m_templateSvc->getTemplateFolder()).filePath(p_name));
+  if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    return QString();
+  }
+  f.write(p_body);
+  f.close();
+  return p_name;
+}
+
+QComboBox *TestOpenNotebookDialog2::fileTypeComboOf(const NewNoteDialog2 &p_dialog) const {
+  // By object name, per the dialogs test-discovery rule: the template selector
+  // owns a QComboBox too, and child order is an implementation detail.
+  return p_dialog.findChild<QComboBox *>(QStringLiteral("newNoteFileTypeCombo"));
 }
 
 // =============================================================================
@@ -582,6 +621,256 @@ void TestOpenNotebookDialog2::testNewNoteLiteralClearedAcceptPersistsEmpty() {
   QVERIFY(newId.isValid());
   QCOMPARE(readNoteBytes(newId), QByteArray());
   QCOMPARE(dialog.getNewCursorOffset(), 0);
+}
+
+// =============================================================================
+// Per-file-type default template.
+//
+// WidgetConfig::newNoteDefaultTemplates maps a file type name to a template
+// file name (VNote ships {"Markdown": "title.md"}). The dialog uses it whenever
+// the process-wide session cache has nothing for the current type. These
+// subtests run BEFORE testNewNoteLiteralDoesNotTouchLastTemplate precisely
+// because that cache is static and never reset within a run.
+// =============================================================================
+
+void TestOpenNotebookDialog2::testNewNoteUsesConfiguredDefaultTemplateForFileType() {
+  const QString mdTemplate = seedTemplate(QStringLiteral("default_probe.md"), "md default");
+  QVERIFY(!mdTemplate.isEmpty());
+  m_configMgr->getWidgetConfig().setNewNoteDefaultTemplate(QStringLiteral("Markdown"), mdTemplate);
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *selector = dialog.findChild<NoteTemplateSelector *>();
+  QVERIFY(selector);
+  QCOMPARE(selector->getCurrentTemplate(), mdTemplate);
+  // The body must be loaded too, not just the combo text.
+  QCOMPARE(selector->getTemplateContent(), QStringLiteral("md default"));
+}
+
+// Switching the file type re-resolves the default: a type with its own mapping
+// gets that template, and a type with none falls back to "None".
+void TestOpenNotebookDialog2::testNewNoteDefaultTemplateFollowsFileTypeChange() {
+  const QString mdTemplate = seedTemplate(QStringLiteral("default_probe.md"), "md default");
+  const QString txtTemplate = seedTemplate(QStringLiteral("default_probe.txt"), "txt default");
+  QVERIFY(!mdTemplate.isEmpty());
+  QVERIFY(!txtTemplate.isEmpty());
+
+  auto &widgetConfig = m_configMgr->getWidgetConfig();
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Markdown"), mdTemplate);
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Text"), txtTemplate);
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *selector = dialog.findChild<NoteTemplateSelector *>();
+  QVERIFY(selector);
+  QCOMPARE(selector->getCurrentTemplate(), mdTemplate);
+
+  auto *typeCombo = fileTypeComboOf(dialog);
+  QVERIFY(typeCombo);
+
+  const int textIdx = typeCombo->findData(QStringLiteral("Text"));
+  QVERIFY(textIdx >= 0);
+  typeCombo->setCurrentIndex(textIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(selector->getCurrentTemplate(), txtTemplate);
+
+  // A type with no mapping at all resolves to "None".
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Text"), QString());
+  const int mdIdx = typeCombo->findData(QStringLiteral("Markdown"));
+  QVERIFY(mdIdx >= 0);
+  typeCombo->setCurrentIndex(mdIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(selector->getCurrentTemplate(), mdTemplate);
+
+  typeCombo->setCurrentIndex(textIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(selector->getCurrentTemplate(), QString());
+}
+
+// A default naming a template the user has since deleted must degrade to
+// "None" rather than leaving the combo on a stale entry.
+void TestOpenNotebookDialog2::testNewNoteMissingDefaultTemplateFallsBackToNone() {
+  m_configMgr->getWidgetConfig().setNewNoteDefaultTemplate(QStringLiteral("Markdown"),
+                                                           QStringLiteral("gone_forever.md"));
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *selector = dialog.findChild<NoteTemplateSelector *>();
+  QVERIFY(selector);
+  QCOMPARE(selector->getCurrentTemplate(), QString());
+}
+
+// Once the user picks a template by hand, a later file-type change must NOT
+// overwrite it with that type's default. Applying a default programmatically
+// must not itself count as a manual pick.
+void TestOpenNotebookDialog2::testNewNoteManualTemplateSurvivesFileTypeChange() {
+  const QString mdTemplate = seedTemplate(QStringLiteral("default_probe.md"), "md default");
+  const QString txtTemplate = seedTemplate(QStringLiteral("default_probe.txt"), "txt default");
+  const QString manual = seedTemplate(QStringLiteral("manual_probe.md"), "manual body");
+  QVERIFY(!mdTemplate.isEmpty());
+  QVERIFY(!txtTemplate.isEmpty());
+  QVERIFY(!manual.isEmpty());
+
+  auto &widgetConfig = m_configMgr->getWidgetConfig();
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Markdown"), mdTemplate);
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Text"), txtTemplate);
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *selector = dialog.findChild<NoteTemplateSelector *>();
+  QVERIFY(selector);
+  // Programmatically applied default: still not a manual choice.
+  QCOMPARE(selector->getCurrentTemplate(), mdTemplate);
+
+  auto *typeCombo = fileTypeComboOf(dialog);
+  QVERIFY(typeCombo);
+  const int textIdx = typeCombo->findData(QStringLiteral("Text"));
+  const int mdIdx = typeCombo->findData(QStringLiteral("Markdown"));
+  QVERIFY(textIdx >= 0);
+  QVERIFY(mdIdx >= 0);
+
+  // Still tracking the type at this point.
+  typeCombo->setCurrentIndex(textIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(selector->getCurrentTemplate(), txtTemplate);
+
+  // Now the user chooses one explicitly: it must stick across type changes.
+  QVERIFY(selector->setCurrentTemplate(manual));
+  typeCombo->setCurrentIndex(mdIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(selector->getCurrentTemplate(), manual);
+
+  typeCombo->setCurrentIndex(textIdx);
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  QCOMPARE(selector->getCurrentTemplate(), manual);
+}
+
+// The file type also changes implicitly when the user types a suffix in the
+// Name field. That path mutes the name<->type sync, but the template default
+// must still follow the new type.
+void TestOpenNotebookDialog2::testNewNoteDefaultFollowsFileTypeDrivenByTheNameField() {
+  const QString mdTemplate = seedTemplate(QStringLiteral("default_probe.md"), "md default");
+  const QString txtTemplate = seedTemplate(QStringLiteral("default_probe.txt"), "txt default");
+  QVERIFY(!mdTemplate.isEmpty());
+  QVERIFY(!txtTemplate.isEmpty());
+
+  auto &widgetConfig = m_configMgr->getWidgetConfig();
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Markdown"), mdTemplate);
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Text"), txtTemplate);
+
+  NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  auto *selector = dialog.findChild<NoteTemplateSelector *>();
+  auto *nameEdit = dialog.findChild<LineEditWithSnippet *>();
+  auto *typeCombo = fileTypeComboOf(dialog);
+  QVERIFY(selector);
+  QVERIFY(nameEdit);
+  QVERIFY(typeCombo);
+  QCOMPARE(selector->getCurrentTemplate(), mdTemplate);
+
+  // textEdited is what the dialog listens to; setText() alone would not fire it.
+  nameEdit->setText(QStringLiteral("typed.txt"));
+  emit nameEdit->textEdited(nameEdit->text());
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+  QCOMPARE(typeCombo->currentData().toString(), QStringLiteral("Text"));
+  QCOMPARE(selector->getCurrentTemplate(), txtTemplate);
+  // The name the user typed must survive the type sync (no suffix rewrite).
+  QCOMPARE(nameEdit->text(), QStringLiteral("typed.txt"));
+}
+
+// Once a template has been used for a file type in this run, that choice wins
+// over the configured default -- including an explicit "None".
+void TestOpenNotebookDialog2::testNewNoteSessionCacheOverridesConfiguredDefault() {
+  const QString mdTemplate = seedTemplate(QStringLiteral("default_probe.md"), "md default");
+  const QString sessionTemplate = seedTemplate(QStringLiteral("session_probe.md"), "session body");
+  QVERIFY(!mdTemplate.isEmpty());
+  QVERIFY(!sessionTemplate.isEmpty());
+  m_configMgr->getWidgetConfig().setNewNoteDefaultTemplate(QStringLiteral("Markdown"), mdTemplate);
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QVERIFY(selector->setCurrentTemplate(sessionTemplate));
+    acceptNewNoteDialog(dialog, QStringLiteral("session_cache_a.md"));
+  }
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QCOMPARE(selector->getCurrentTemplate(), sessionTemplate);
+
+    // An explicit "None" is a real choice and must survive too.
+    QVERIFY(selector->setCurrentTemplate(QString()));
+    acceptNewNoteDialog(dialog, QStringLiteral("session_cache_b.md"));
+  }
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QCOMPARE(selector->getCurrentTemplate(), QString());
+  }
+}
+
+// The cache records the last template that actually produced a note. An
+// attempt rejected by validation must leave it alone, otherwise abandoning a
+// dialog would silently redefine the next one's starting point.
+void TestOpenNotebookDialog2::testNewNoteRejectedAcceptDoesNotUpdateSessionCache() {
+  const QString mdTemplate = seedTemplate(QStringLiteral("default_probe.md"), "md default");
+  const QString rejected = seedTemplate(QStringLiteral("rejected_probe.md"), "rejected body");
+  QVERIFY(!mdTemplate.isEmpty());
+  QVERIFY(!rejected.isEmpty());
+
+  auto &widgetConfig = m_configMgr->getWidgetConfig();
+  widgetConfig.setNewNoteDefaultTemplate(QStringLiteral("Markdown"), mdTemplate);
+  // Start from a clean slate for this file type: the previous subtest cached an
+  // explicit "None", and this one is about the WRITE, not the read.
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QVERIFY(selector->setCurrentTemplate(mdTemplate));
+    acceptNewNoteDialog(dialog, QStringLiteral("cache_baseline.md"));
+  }
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    auto *nameEdit = dialog.findChild<LineEditWithSnippet *>();
+    QVERIFY(selector);
+    QVERIFY(nameEdit);
+    QVERIFY(selector->setCurrentTemplate(rejected));
+
+    // An empty name is rejected by the controller's validation.
+    nameEdit->setText(QString());
+    auto *box = dialog.getDialogButtonBox();
+    QVERIFY(box);
+    box->button(QDialogButtonBox::Ok)->click();
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    QVERIFY2(dialog.result() != static_cast<int>(QDialog::Accepted),
+             "an empty name must not be accepted");
+  }
+
+  {
+    NewNoteDialog2 dialog(m_newNoteServices, newNoteParentId());
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+    auto *selector = dialog.findChild<NoteTemplateSelector *>();
+    QVERIFY(selector);
+    QCOMPARE(selector->getCurrentTemplate(), mdTemplate);
+  }
 }
 
 // A capture dialog must neither READ nor OVERWRITE the shared static
