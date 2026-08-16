@@ -117,7 +117,7 @@ void ConfigMgr2::initAfterQtAppStarted() {
   // fully installed, and it is what retries a folder whose copy was only
   // partially completed on a previous launch. This subsumes the old
   // copyNecessaryExtraData() folder-existence guard (deleting a folder deletes
-  // its stamp, which re-triggers the copy) and additionally covers all five
+  // its stamp, which re-triggers the copy) and additionally covers all bundled
   // folders instead of three.
   ensureExtraData(false);
 
@@ -358,6 +358,11 @@ void ConfigMgr2::ensureExtraData(bool p_force) {
                             QSet<QString>{QStringLiteral("css/user.css")}});
   folders.append(FolderSpec{QStringLiteral("dicts"), getConfigDataFolder(ConfigDataType::Dicts),
                             QSet<QString>()});
+  // Bundled note templates. No preserve list: the shipped title.md is refreshed
+  // on every version bump; user-created templates in this folder are untouched
+  // because only bundled paths are written.
+  folders.append(FolderSpec{QStringLiteral("templates"),
+                            getConfigDataFolder(ConfigDataType::Templates), QSet<QString>()});
 
   QString extraDataRoot = m_extraDataSourceRootOverride;
 
@@ -375,9 +380,9 @@ void ConfigMgr2::ensureExtraData(bool p_force) {
     if (!QResource::registerResource(extraRcc)) {
       // Without the resource there is nothing to copy FROM. Record a failure
       // for every folder and install nothing: falling through (as the old code
-      // did) would let a tolerant copy stamp five empty folders as complete.
+      // did) would let a tolerant copy stamp empty folders as complete.
       // ONE aggregate warning here rather than the per-folder warning below --
-      // five identical lines carry no extra information, and the shared cause
+      // repeating identical lines carries no extra information, and the shared cause
       // is the resource, not any individual folder.
       const QString message = QStringLiteral("failed to register resource file %1").arg(extraRcc);
       qWarning() << "ConfigMgr2:" << message;

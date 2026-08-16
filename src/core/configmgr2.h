@@ -164,8 +164,8 @@ private:
   void upgradeMainConfigOnVersionChange();
 
   // Install every bundled extra-data folder (themes, tasks,
-  // syntax-highlighting, web, dicts) into the app data folder, one per-folder
-  // version stamp at a time. Called on EVERY launch: a folder that is already
+  // syntax-highlighting, web, dicts, templates) into the app data folder, one
+  // per-folder version stamp at a time. Called on EVERY launch: a folder that is already
   // stamped with the current version is a cheap no-op, and a folder whose copy
   // previously failed (leaving it unstamped) is retried here.
   // @p_force: re-copy even when the stamp already matches.

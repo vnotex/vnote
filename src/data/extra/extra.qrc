@@ -534,6 +534,7 @@
         <file>tasks/git/pull.svg</file>
         <file>tasks/git/push.svg</file>
         <file>tasks/git/status.svg</file>
+        <file>templates/title.md</file>
         <file>syntax-highlighting/themes/markdown-default.theme</file>
         <file>syntax-highlighting/themes/markdown-breeze-dark.theme</file>
         <file>syntax-highlighting/themes/default.theme</file>

@@ -1,7 +1,7 @@
 #include "templateservice.h"
 
-#include <QDir>
 #include <QDebug>
+#include <QDir>
 
 #include <core/configmgr2.h>
 #include <utils/fileutils2.h>
@@ -29,7 +29,12 @@ bool TemplateService::ensureTemplateFolder() const {
 QStringList TemplateService::getTemplates() const {
   QDir dir(getTemplateFolder());
   dir.setFilter(QDir::Files | QDir::NoSymLinks);
-  return dir.entryList();
+  QStringList names = dir.entryList();
+  // The extra-data version stamp lives in this folder since templates/ became a
+  // bundled folder. It is not hidden on Windows (no dot-file convention there),
+  // so it must be filtered out explicitly or it shows up as a template.
+  names.removeAll(QLatin1String(FileUtils2::c_versionStampFileName));
+  return names;
 }
 
 QString TemplateService::getTemplateFilePath(const QString &p_name) const {

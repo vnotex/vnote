@@ -176,8 +176,8 @@ void TestNotificationRouter::test_syncAuthFailureIsInterruptingAndKeyed() {
 // change), so it must not steal attention.
 void TestNotificationRouter::test_syncNetworkFailureIsPassive() {
   m_router->onSyncUserMessageRequested(QStringLiteral("nb1"), VXCORE_ERR_SYNC_NETWORK,
-                                       QStringLiteral("Sync network error"),
-                                       QStringLiteral("body"), QString());
+                                       QStringLiteral("Sync network error"), QStringLiteral("body"),
+                                       QString());
 
   const auto *msg = activeWithKey(QStringLiteral("sync.network.nb1"));
   QVERIFY(msg);
@@ -248,9 +248,8 @@ void TestNotificationRouter::test_notebookSwitchDoesNotRetireAnotherNotebook() {
 void TestNotificationRouter::test_syncAuthActionEmitsOpenSyncInfoForTheFailingNotebook() {
   QSignalSpy spy(m_router, &NotificationRouter::openSyncInfoRequested);
 
-  m_router->onSyncUserMessageRequested(QStringLiteral("nb-failing"),
-                                       VXCORE_ERR_SYNC_AUTH_FAILED, QStringLiteral("t"),
-                                       QStringLiteral("body"), QString());
+  m_router->onSyncUserMessageRequested(QStringLiteral("nb-failing"), VXCORE_ERR_SYNC_AUTH_FAILED,
+                                       QStringLiteral("t"), QStringLiteral("body"), QString());
 
   const auto *msg = activeWithKey(QStringLiteral("sync.auth.nb-failing"));
   QVERIFY(msg);
@@ -431,7 +430,7 @@ void TestNotificationRouter::test_bufferSavedRetiresBufferIncidents() {
 QString TestNotificationRouter::buildExtraDataFixture(TempDirFixture &p_tmp) const {
   const QString root = p_tmp.createDir("extra");
   for (const char *folder :
-       {"themes", "tasks", "syntax-highlighting", "web", "dicts"}) {
+       {"themes", "tasks", "syntax-highlighting", "web", "dicts", "templates"}) {
     const QString name = QString::fromLatin1(folder);
     p_tmp.createDir(QStringLiteral("extra/") + name);
     p_tmp.createTextFile(QStringLiteral("extra/%1/marker.txt").arg(name),
@@ -442,8 +441,8 @@ QString TestNotificationRouter::buildExtraDataFixture(TempDirFixture &p_tmp) con
 
 void TestNotificationRouter::resetInstalledExtraData() const {
   for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting,
-                    ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
+                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
+                    ConfigMgr2::ConfigDataType::Dicts, ConfigMgr2::ConfigDataType::Templates}) {
     QDir(m_configMgr->getConfigDataFolder(type)).removeRecursively();
   }
 }
@@ -460,8 +459,7 @@ void TestNotificationRouter::test_extraDataFailuresAreRaisedOncePerFolderAtAfter
   // Failure injection: a DIRECTORY where <folder>/marker.txt must land.
   QStringList blockers;
   for (auto type : {ConfigMgr2::ConfigDataType::Web, ConfigMgr2::ConfigDataType::Dicts}) {
-    const QString blocker =
-        m_configMgr->getConfigDataFolder(type) + QStringLiteral("/marker.txt");
+    const QString blocker = m_configMgr->getConfigDataFolder(type) + QStringLiteral("/marker.txt");
     QVERIFY(QDir().mkpath(blocker));
     blockers.append(blocker);
   }

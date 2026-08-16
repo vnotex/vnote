@@ -578,6 +578,16 @@ add_qt_test(test_htmltemplateservice
   GUILESS
 )
 
+# Note templates: the listing must not offer the extra-data version stamp.
+add_qt_test(test_templateservice
+  SOURCES
+    test_templateservice.cpp
+  LINKS
+    core_services
+    core_configs
+  GUILESS
+)
+
 # T4: SyncCredentialsStore (QtKeychain wrapper, no plaintext fallback per ADR-9).
 add_qt_test(test_synccredentialsstore
   SOURCES

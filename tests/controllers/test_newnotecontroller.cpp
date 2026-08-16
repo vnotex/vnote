@@ -32,6 +32,7 @@ private slots:
   void testCreateQuickNoteExpandsBody();
   void testCreateQuickNoteSequencedOverrides();
   void testCreateQuickNoteMissingNotebook();
+  void testBundledTitleTemplateYieldsHeadingAndCaretBelowIt();
 
 private:
   QString readNote(const NodeIdentifier &p_id) const;
@@ -232,6 +233,34 @@ void TestNewNoteController::testCreateQuickNoteMissingNotebook() {
   NewNoteResult result = controller.createQuickNote(input);
   QVERIFY(!result.success);
   QVERIFY(!result.errorMessage.isEmpty());
+}
+
+// The template VNote ships in templates/title.md is read from the source tree,
+// so a change to its bytes has to come here. It must produce a level-1 heading
+// equal to the note base name, and park the caret on the blank line below it.
+void TestNewNoteController::testBundledTitleTemplateYieldsHeadingAndCaretBelowIt() {
+  const QString bundled = QFINDTESTDATA("../../src/data/extra/templates/title.md");
+  QVERIFY2(!bundled.isEmpty(), "bundled title.md not found");
+
+  QFile file(bundled);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  const QByteArray raw = file.readAll();
+  file.close();
+  QCOMPARE(raw, QByteArray("# %no%\n\n@@"));
+
+  NewNoteController controller(m_services);
+  NewNoteInput input;
+  input.notebookId = m_notebookId;
+  input.name = QStringLiteral("Foo.md");
+  input.templateContent = QString::fromUtf8(raw);
+
+  NewNoteResult result = controller.createNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  // The mark is stripped; the file keeps its trailing blank line.
+  QCOMPARE(readNoteBytes(result.nodeId), QByteArray("# Foo\n\n"));
+  // "# Foo\n\n" == 7 document positions, i.e. the start of the third line.
+  QCOMPARE(result.cursorOffset, 7);
 }
 
 } // namespace tests

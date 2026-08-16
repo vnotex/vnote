@@ -180,9 +180,21 @@ void TestConfigMgr2::testDebouncing() {
 // Extra-data install / recovery
 // =============================================================================
 
-// The five folders ensureExtraData() installs, in bundle order.
-static const char *const kExtraFolders[] = {"themes", "tasks", "syntax-highlighting", "web",
-                                            "dicts"};
+// The folders ensureExtraData() installs, in bundle order.
+static const char *const kExtraFolders[] = {"themes", "tasks", "syntax-highlighting",
+                                            "web",    "dicts", "templates"};
+
+// The ConfigDataType of each entry in kExtraFolders, same order.
+static const ConfigMgr2::ConfigDataType kExtraTypes[] = {
+    ConfigMgr2::ConfigDataType::Themes,
+    ConfigMgr2::ConfigDataType::Tasks,
+    ConfigMgr2::ConfigDataType::SyntaxHighlighting,
+    ConfigMgr2::ConfigDataType::Web,
+    ConfigMgr2::ConfigDataType::Dicts,
+    ConfigMgr2::ConfigDataType::Templates};
+
+// Content of the bundled note template shipped in templates/.
+static const char *const kBundledTemplateContent = "# %no%\n\n@@";
 
 QString TestConfigMgr2::buildExtraDataFixture(TempDirFixture &p_tmp) const {
   const QString root = p_tmp.createDir("extra");
@@ -193,6 +205,10 @@ QString TestConfigMgr2::buildExtraDataFixture(TempDirFixture &p_tmp) const {
                          QStringLiteral("bundled %1").arg(name));
   }
 
+  // The bundled note template, asserted byte-for-byte after install.
+  p_tmp.createTextFile(QStringLiteral("extra/templates/title.md"),
+                       QString::fromLatin1(kBundledTemplateContent));
+
   // The one user-owned file the install must never clobber.
   p_tmp.createDir(QStringLiteral("extra/web/css"));
   p_tmp.createTextFile(QStringLiteral("extra/web/css/user.css"),
@@ -201,9 +217,7 @@ QString TestConfigMgr2::buildExtraDataFixture(TempDirFixture &p_tmp) const {
 }
 
 void TestConfigMgr2::resetInstalledExtraData() const {
-  for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
-                    ConfigMgr2::ConfigDataType::Dicts}) {
+  for (auto type : kExtraTypes) {
     QDir(m_configMgr->getConfigDataFolder(type)).removeRecursively();
   }
 }
@@ -227,9 +241,7 @@ void TestConfigMgr2::testExtraData_cleanRunInstallsEveryFolderAndStamps() {
 
   QVERIFY2(mgr.extraDataCopyFailures().isEmpty(), "a clean install reported failures");
 
-  for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
-                    ConfigMgr2::ConfigDataType::Dicts}) {
+  for (auto type : kExtraTypes) {
     const QString folder = mgr.getConfigDataFolder(type);
     QVERIFY2(QFileInfo::exists(folder + QStringLiteral("/marker.txt")),
              qPrintable(QStringLiteral("not installed: %1").arg(folder)));
@@ -238,6 +250,12 @@ void TestConfigMgr2::testExtraData_cleanRunInstallsEveryFolderAndStamps() {
              qPrintable(QStringLiteral("no stamp in %1").arg(folder)));
     QCOMPARE(QString::fromUtf8(stamp.readAll()).trimmed(), ConfigMgr2::getApplicationVersion());
   }
+
+  // The bundled note template lands byte-for-byte.
+  QFile title(QDir(mgr.getConfigDataFolder(ConfigMgr2::ConfigDataType::Templates))
+                  .filePath(QStringLiteral("title.md")));
+  QVERIFY2(title.open(QIODevice::ReadOnly), "templates/title.md was not installed");
+  QCOMPARE(title.readAll(), QByteArray(kBundledTemplateContent));
 }
 
 void TestConfigMgr2::testExtraData_failureIsReportedThenHealsOnRetry() {
@@ -309,9 +327,9 @@ void TestConfigMgr2::testExtraData_successfulRetryOnTheSameInstanceClearsTheFail
   QVERIFY2(mgr.extraDataCopyFailures().isEmpty(), "the healed failure was not cleared");
 }
 
-// A missing/unregisterable bundle must fail ALL five folders and install
+// A missing/unregisterable bundle must fail ALL folders and install
 // nothing. Falling through (as the old code did) would let a tolerant copy
-// stamp five empty folders as complete -- strictly worse than the old bug.
+// stamp empty folders as complete -- strictly worse than the old bug.
 void TestConfigMgr2::testExtraData_missingBundleFailsEveryFolderAndInstallsNothing() {
   resetInstalledExtraData();
 
@@ -321,15 +339,14 @@ void TestConfigMgr2::testExtraData_missingBundleFailsEveryFolderAndInstallsNothi
   mgr.init();
   mgr.initAfterQtAppStarted();
 
-  QCOMPARE(mgr.extraDataCopyFailures().size(), 5);
+  QCOMPARE(mgr.extraDataCopyFailures().size(),
+           static_cast<int>(sizeof(kExtraFolders) / sizeof(kExtraFolders[0])));
   for (const auto &failure : mgr.extraDataCopyFailures()) {
     QVERIFY(!failure.m_folderName.isEmpty());
     QVERIFY(failure.m_errorMessage.contains(QStringLiteral("vnote_extra.rcc")));
   }
 
-  for (auto type : {ConfigMgr2::ConfigDataType::Themes, ConfigMgr2::ConfigDataType::Tasks,
-                    ConfigMgr2::ConfigDataType::SyntaxHighlighting, ConfigMgr2::ConfigDataType::Web,
-                    ConfigMgr2::ConfigDataType::Dicts}) {
+  for (auto type : kExtraTypes) {
     QVERIFY2(
         !QFileInfo::exists(stampPath(type)),
         qPrintable(
