@@ -70,9 +70,6 @@ public:
   bool getConfirmBeforeClearObsoleteImages() const;
   void setConfirmBeforeClearObsoleteImages(bool p_confirm);
 
-  bool getInsertFileNameAsTitle() const;
-  void setInsertFileNameAsTitle(bool p_enabled);
-
   bool getConstrainImageWidthEnabled() const;
   void setConstrainImageWidthEnabled(bool p_enabled);
 
@@ -176,9 +173,6 @@ private:
 
   // Whether ask for user confirmation before clearing obsolete images.
   bool m_confirmBeforeClearObsoleteImages = true;
-
-  // Whether insert the name of the new file as title.
-  bool m_insertFileNameAsTitle = true;
 
   // Whether enable image width constraint.
   bool m_constrainImageWidthEnabled = true;

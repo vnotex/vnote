@@ -40,7 +40,6 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_prependDotInRelativeLink = READBOOL(QStringLiteral("prependDotInRelativeLink"));
   m_confirmBeforeClearObsoleteImages = READBOOL(QStringLiteral("confirmBeforeClearObsoleteImages"));
-  m_insertFileNameAsTitle = READBOOL(QStringLiteral("insertFileNameAsTitle"));
 
   m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrainImageWidth"));
   m_imageAlignCenterEnabled = READBOOL(QStringLiteral("imageAlignCenter"));
@@ -87,7 +86,6 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("mathJaxScript")] = m_mathJaxScript;
   obj[QStringLiteral("prependDotInRelativeLink")] = m_prependDotInRelativeLink;
   obj[QStringLiteral("confirmBeforeClearObsoleteImages")] = m_confirmBeforeClearObsoleteImages;
-  obj[QStringLiteral("insertFileNameAsTitle")] = m_insertFileNameAsTitle;
 
   obj[QStringLiteral("constrainImageWidth")] = m_constrainImageWidthEnabled;
   obj[QStringLiteral("imageAlignCenter")] = m_imageAlignCenterEnabled;
@@ -201,12 +199,6 @@ bool MarkdownEditorConfig::getConfirmBeforeClearObsoleteImages() const {
 
 void MarkdownEditorConfig::setConfirmBeforeClearObsoleteImages(bool p_confirm) {
   updateConfig(m_confirmBeforeClearObsoleteImages, p_confirm, this);
-}
-
-bool MarkdownEditorConfig::getInsertFileNameAsTitle() const { return m_insertFileNameAsTitle; }
-
-void MarkdownEditorConfig::setInsertFileNameAsTitle(bool p_enabled) {
-  updateConfig(m_insertFileNameAsTitle, p_enabled, this);
 }
 
 bool MarkdownEditorConfig::getConstrainImageWidthEnabled() const {

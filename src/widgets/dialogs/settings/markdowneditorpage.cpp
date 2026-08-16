@@ -50,8 +50,6 @@ void MarkdownEditorPage::loadInternal() {
   const auto &markdownConfig =
       m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
 
-  m_insertFileNameAsTitleCheckBox->setChecked(markdownConfig.getInsertFileNameAsTitle());
-
   m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
 
   m_imageAlignCenterCheckBox->setChecked(markdownConfig.getImageAlignCenterEnabled());
@@ -113,8 +111,6 @@ void MarkdownEditorPage::loadInternal() {
 
 bool MarkdownEditorPage::saveInternal() {
   auto &markdownConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
-
-  markdownConfig.setInsertFileNameAsTitle(m_insertFileNameAsTitleCheckBox->isChecked());
 
   markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
 
@@ -352,23 +348,10 @@ void MarkdownEditorPage::setupEditGroup() {
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Edit"), QString(), this);
 
   {
-    const QString label(tr("Insert file name as title"));
-    m_insertFileNameAsTitleCheckBox = WidgetsFactory::createCheckBox(label, this);
-    m_insertFileNameAsTitleCheckBox->setToolTip(tr("Insert file name as title when creating note"));
-    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
-        m_insertFileNameAsTitleCheckBox, m_insertFileNameAsTitleCheckBox->toolTip(), this));
-    addSearchItem(label, m_insertFileNameAsTitleCheckBox->toolTip(),
-                  m_insertFileNameAsTitleCheckBox);
-    connect(m_insertFileNameAsTitleCheckBox, &QCheckBox::stateChanged, this,
-            &MarkdownEditorPage::pageIsChanged);
-  }
-
-  {
     const QString label(tr("Constrain in-place preview width"));
     m_constrainInplacePreviewWidthCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_constrainInplacePreviewWidthCheckBox->setToolTip(
         tr("Constrain in-place preview width to the window"));
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
         m_constrainInplacePreviewWidthCheckBox, m_constrainInplacePreviewWidthCheckBox->toolTip(),
         this));

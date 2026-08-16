@@ -34,8 +34,6 @@ private:
 
   void setupEditGroup();
 
-  QCheckBox *m_insertFileNameAsTitleCheckBox = nullptr;
-
   QCheckBox *m_constrainImageWidthCheckBox = nullptr;
 
   QCheckBox *m_imageAlignCenterCheckBox = nullptr;
