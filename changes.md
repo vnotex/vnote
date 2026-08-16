@@ -1,6 +1,48 @@
 # Changes
-## Unreleased
+## v4.5.0
+A feature release that adds shared-folder import, two paper themes, movable dashboard stickers and a batch of export fixes on top of VNote 4.4.3:
+
+* **Import a shared folder** (Notebook explorer › Import Folder): the other half of 4.4.3's **Share Folder**
+    * A bundle produced by Share Folder is imported with its notes' ids, dates, tags and attachments intact, so a folder can travel between notebooks without losing its history; importing an ordinary folder from disk still generates fresh ids and timestamps
+    * The bundle is validated before anything is copied, the copy is verified before it is published, and a cancelled or failed import leaves the notebook exactly as it was
+    * Refuses symbolic links, junctions and reparse points, detects duplicate node ids and names that would collide on a case-insensitive filesystem, and declines to re-import a folder that is already in the notebook rather than overwriting it
 * **Two new themes: LaTeX Light and LaTeX Dark.** A paper-and-ink look for the Markdown viewer, editor and export — serif body text with a capped line measure, weight-led headings, booktabs-style tables (no vertical rules, no zebra stripes) and a boxed blockquote. No fonts are bundled: the stylesheets fall back to Times/Georgia and Consolas, and installing Latin Modern (plus Noto Serif CJK for Chinese) gives the intended look. Inspired by [typora-latex-theme](https://github.com/Keldos-Li/typora-latex-theme); independently authored, with nothing copied from it.
+* **Editor**
+    * The cursor position is now restored when a buffer is reloaded from disk
+    * In-place previews (images, diagrams, formulas) zoom together with the editor
+    * The source of a previewed fenced-code, display-math or table block is folded automatically when its preview appears; unfolding it by hand is respected
+    * The interactive table in-place preview is enabled by default: tables can be edited in place as a real rich-text sheet, with syntax-highlighted cells, row/column/alignment operations from its Table menu, and Enter in the last cell appending a row; its preview sheet no longer draws a stray frame and background
+    * Block quotes continue automatically on Enter, including nested and lazily-continued ones
+    * The default input mode for the text editor is now **VSCode**, where `Ctrl+Shift+[` and `Ctrl+Shift+]` fold and unfold at the cursor
+    * The drag-and-drop cursor is shown at the drop target instead of at the pointer (#2249)
+    * Snippet date placeholders `%MMM%`, `%MMMM%`, `%ddd%` and `%dddd%` follow VNote's language instead of the system locale
+* **Notes & templates**
+    * **New Note** proposes an available default name, and remembers a default template per file type
+    * A built-in `title.md` template ships out of the box
+    * **Open as Detached** was added to the notebook explorer context menu
+    * **Open V3 Notebook** moved into the Open Notebook dialog
+* **Export**
+    * Mermaid diagrams are rasterized at the printed size and 384 dpi, so they are no longer blurry in PDFs
+    * CJK text and Mermaid labels render correctly in wkhtmltopdf PDFs, with a clear warning when no CJK-capable font can be loaded
+    * A file opened from outside any notebook can be exported
+    * wkhtmltopdf process failures are reported instead of failing silently, wkhtmltopdf-only PDF options are disabled when it is not used, and the **Complete page** option has an explanatory tooltip
+    * **Export** was added to the Markdown read-mode context menu
+* **Dashboard**: stickers can be moved and resized by direct manipulation — drag the centre to move or an edge to resize, with arrow keys (and Shift with arrow keys) as the keyboard equivalent
+* **Interface**
+    * The notebook tree scrolls horizontally when labels overflow
+    * The dock separator is more visible across themes
+    * The Home tab closes automatically when a file is opened
+    * The main window's fixed 800x600 minimum size was removed, and the PDF navigation pane is hidden by default
+    * Dialog form labels dropped their trailing colons
+* **Fixes**
+    * Image hosts are persisted when the settings are saved, and remote images that are still referenced elsewhere are no longer deleted
+    * A cleared quick access list is persisted, Reset no longer leaves a stale selection on the Appearance page, reloading File Associations no longer keeps a stale Add Program button pointer, and reloading image-host settings while a test is pending no longer risks a crash
+    * Note move failures report the underlying vxcore error detail (#2729)
+* **Windows 7 build (`win64-windows7`) fixes**
+    * **Search now works.** Content, file and tag searches silently returned nothing on this build: every search result was discarded before it could reach the UI. The same defect also stopped image-host uploads from ever starting.
+    * **Network/HTTPS now works.** Checking for updates and uploading to an image host failed with "TLS initialization failed" because the bundled OpenSSL could not be loaded. VNote now ships an OpenSSL that actually loads (1.1.1w, built from source), together with its licence notice, and logs a clear message if TLS is ever unavailable.
+* **Build**: Qt was bumped to 6.10.3 on all platforms, tests are no longer built by default (`VNOTE_BUILD_TESTS`), and a regression gate catches drift between the two vendored cmark pins
+* **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
 
 ## v4.4.3
 A maintenance release that drops the built-in updater, adds folder sharing and a window pin on top of VNote 4.4.2:
@@ -14,9 +56,6 @@ A maintenance release that drops the built-in updater, adds folder sharing and a
     * Fixes VNote failing to start from a read-only or non-writable installation directory (`/usr/bin`, `Program Files` for a standard user, a read-only DMG), where the old updater's startup lease could not be created (issue #2728). Per-machine MSI installs were affected on Windows too.
     * The **Update source** setting (Settings › General) still selects GitHub or Gitee. **New installations now default to Gitee**; an existing installation keeps whatever it already had, and no setting is migrated.
     * If you used the in-app updater before, you can safely delete the leftover `.vnote-old` and `.vnote-update` folders next to `vnote.exe`. VNote no longer creates or reads them.
-* **Windows 7 build (`win64-windows7`) fixes**
-    * **Search now works.** Content, file and tag searches silently returned nothing on this build: every search result was discarded before it could reach the UI. The same defect also stopped image-host uploads from ever starting.
-    * **Network/HTTPS now works.** Checking for updates and uploading to an image host failed with "TLS initialization failed" because the bundled OpenSSL could not be loaded. VNote now ships an OpenSSL that actually loads (1.1.1w, built from source), together with its licence notice, and logs a clear message if TLS is ever unavailable.
 * **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
 
 ## v4.4.2

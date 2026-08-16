@@ -15,6 +15,24 @@
     </message>
 </context>
 <context>
+    <name>ProcessUtils</name>
+    <message>
+        <location filename="../../../utils/processutils.cpp" line="+140"/>
+        <source>failed to start process (%1): %2</source>
+        <translation>プロセス (%1) を起動できませんでした: %2</translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>process (%1) finished with exit code %2</source>
+        <translation>プロセス (%1) が終了コード %2 で終了しました</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>process (%1) crashed</source>
+        <translation>プロセス (%1) がクラッシュしました</translation>
+    </message>
+</context>
+<context>
     <name>QMessageBox</name>
     <message>
         <location filename="../../../widgets/messageboxhelper.cpp" line="+11"/>
@@ -40,12 +58,17 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../../controllers/markdownviewwindowcontroller.cpp" line="+29"/>
+        <location filename="../../../controllers/markdownviewwindowcontroller.cpp" line="+30"/>
         <source>&amp;Edit</source>
         <translation>編集(&amp;E)</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+6"/>
+        <source>E&amp;xport</source>
+        <translation>エクスポート(&amp;X)</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>&amp;View</source>
         <translation>表示(&amp;V)</translation>
     </message>
@@ -245,17 +268,17 @@
         <translation>画像ホスト</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+156"/>
+        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+245"/>
+        <location line="+33"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+143"/>
         <location line="+23"/>
         <location line="+53"/>
         <location line="+10"/>
-        <location line="+228"/>
-        <location line="+33"/>
         <source>Refusing to share: %1 is a symbolic link, junction or reparse point.</source>
         <translation>共有を中止しました：%1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
     </message>
     <message>
-        <location line="-340"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="-79"/>
         <source>Source directory is missing: %1</source>
         <translation>ソースディレクトリが見つかりません：%1</translation>
     </message>
@@ -275,7 +298,7 @@
         <translation>%3 内の「%1」と「%2」は、大文字と小文字を区別しないコピー先ファイルシステムで衝突します。</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="-184"/>
         <source>A file record in vx.json is not an object.</source>
         <translation>vx.json 内のファイルレコードがオブジェクトではありません。</translation>
     </message>
@@ -320,7 +343,7 @@
         <translation>ファイルレコード「%1」に文字列ではない添付ファイル項目があります。</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+21"/>
         <source>Missing folder metadata: %1</source>
         <translation>フォルダーのメタデータがありません：%1</translation>
     </message>
@@ -330,12 +353,13 @@
         <translation>フォルダーのメタデータを読み取れません：%1</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location filename="../../../core/services/folderbundleimporter.cpp" line="+218"/>
+        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+9"/>
         <source>Malformed folder metadata: %1</source>
         <translation>フォルダーのメタデータの形式が不正です：%1</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+6"/>
         <source>Folder metadata is missing a valid &quot;id&quot;: %1</source>
         <translation>フォルダーのメタデータに有効な「id」がありません：%1</translation>
     </message>
@@ -403,45 +427,165 @@
         <translation>インデックスされたフォルダー「%1」が %2 のディスク上にありません</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+26"/>
         <source>Orphan folder metadata found at %1</source>
         <translation>%1 に孤立したフォルダーのメタデータが見つかりました</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location filename="../../../core/services/folderbundleimporter.cpp" line="-9"/>
+        <location line="+146"/>
+        <location line="+49"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+51"/>
         <location line="+49"/>
         <source>Cannot read %1</source>
         <translation>%1 を読み取れません</translation>
     </message>
     <message>
-        <location line="-44"/>
+        <location line="-176"/>
+        <location line="+132"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="-44"/>
         <source>Cannot write %1</source>
         <translation>%1 を書き込めません</translation>
     </message>
     <message>
         <location line="+14"/>
         <location line="+42"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+14"/>
+        <location line="+42"/>
         <source>Read failed for %1</source>
         <translation>%1 の読み取りに失敗しました</translation>
     </message>
     <message>
-        <location line="-35"/>
+        <location line="-183"/>
+        <location line="+148"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="-35"/>
         <source>Write failed for %1</source>
         <translation>%1 の書き込みに失敗しました</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-286"/>
+        <location line="+24"/>
+        <location line="+136"/>
+        <source>Refusing to import: %1 is a symbolic link, junction or reparse point.</source>
+        <translation>インポートを中止しました: %1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
+    </message>
+    <message>
+        <location line="-153"/>
+        <source>Bundle directory is missing: %1</source>
+        <translation>バンドルのディレクトリが見つかりません: %1</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Refusing to import: %1 is not a regular file.</source>
+        <translation>インポートを中止しました: %1 は通常のファイルではありません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Refusing to import: %1 is not readable.</source>
+        <translation>インポートを中止しました: %1 を読み取れません。</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide in this notebook, whose filesystem does not distinguish letter case.</source>
+        <translation>%3 内の「%1」と「%2」は、このノートブックのファイルシステムが大文字と小文字を区別しないため衝突します。</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <source>The selected path is not a folder.</source>
+        <translation>選択されたパスはフォルダではありません。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>This folder is not a VNote share bundle: it has no &quot;%1&quot; directory.</source>
+        <translation>このフォルダは VNote の共有バンドルではありません: 「%1」ディレクトリがありません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>This folder is not a VNote share bundle: it contains no folder to import.</source>
+        <translation>このフォルダは VNote の共有バンドルではありません: インポートできるフォルダが含まれていません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>This folder is not a VNote share bundle: it contains more than one folder.</source>
+        <translation>このフォルダは VNote の共有バンドルではありません: フォルダが複数含まれています。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The bundle&apos;s folder name is not usable: %1</source>
+        <translation>バンドルのフォルダ名は使用できません: %1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>This folder is not a VNote share bundle: the metadata for &quot;%1&quot; is missing.</source>
+        <translation>このフォルダは VNote の共有バンドルではありません: 「%1」のメタデータがありません。</translation>
+    </message>
+    <message>
+        <location line="+87"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+10"/>
         <source>Flush failed for %1</source>
         <translation>%1 のフラッシュに失敗しました</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+45"/>
+        <location line="+13"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+47"/>
         <location line="+14"/>
         <source>Cannot create %1</source>
         <translation>%1 を作成できません</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+177"/>
+        <source>%1 — %2 notes, %3 subfolders</source>
+        <translation>%1 — ノート %2 件、サブフォルダ %3 件</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Internal error: no commit handler was supplied.</source>
+        <translation>内部エラー: コミットハンドラが指定されていません。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Internal error: no id oracle was supplied.</source>
+        <translation>内部エラー: ID オラクルが指定されていません。</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>The bundle contains duplicate node ids and cannot be imported.</source>
+        <translation>バンドルに重複したノード ID が含まれているため、インポートできません。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <location line="+157"/>
+        <source>This folder is already in this notebook. Importing it again would overwrite the existing notes, so nothing was changed.</source>
+        <translation>このフォルダはすでにこのノートブックにあります。再度インポートすると既存のノートが上書きされるため、何も変更していません。</translation>
+    </message>
+    <message>
+        <location line="-145"/>
+        <source>Could not find a free name for &quot;%1&quot; in the destination.</source>
+        <translation>保存先で「%1」に使用できる名前が見つかりませんでした。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Cannot create a staging folder inside the notebook.</source>
+        <translation>ノートブック内に一時フォルダを作成できません。</translation>
+    </message>
+    <message>
+        <location line="+142"/>
+        <source>&quot;%1&quot; was created in the destination while the import was being prepared.</source>
+        <translation>インポートの準備中に、保存先に「%1」が作成されました。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Injected attach failure.</source>
+        <translation>注入されたアタッチ失敗。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The folder could not be added to the notebook.</source>
+        <translation>フォルダをノートブックに追加できませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+34"/>
         <source>The source folder changed while it was being copied.</source>
         <translation>コピー中にソースフォルダーが変更されました。</translation>
     </message>
@@ -452,47 +596,54 @@
         <translation>コピー中にソースフォルダーが変更されました（%1）。</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location filename="../../../core/services/folderbundleimporter.cpp" line="-428"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+24"/>
         <source>The copied folder is incomplete.</source>
         <translation>コピーされたフォルダーが不完全です。</translation>
     </message>
     <message>
         <location line="+14"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+14"/>
         <source>The copied folder is incomplete or corrupted (%1).</source>
         <translation>コピーされたフォルダーが不完全または破損しています（%1）。</translation>
     </message>
     <message>
         <location line="+18"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+18"/>
         <source>The copied folder is corrupted (%1).</source>
         <translation>コピーされたフォルダーが破損しています（%1）。</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+106"/>
         <source>Cannot create a temporary folder in the destination.</source>
         <translation>コピー先に一時フォルダーを作成できません。</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location filename="../../../core/services/folderbundleimporter.cpp" line="+255"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+23"/>
         <source>A temporary copy could not be removed and is still at %1. Delete it manually.</source>
         <translation>一時コピーを削除できず、%1 に残っています。手動で削除してください。</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+48"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+49"/>
         <source>Injected copy failure.</source>
         <translation>注入されたコピー失敗です。</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+10"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+25"/>
         <source>Injected verification failure.</source>
         <translation>注入された検証失敗です。</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+34"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+19"/>
         <source>Injected publish failure.</source>
         <translation>注入された公開失敗です。</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+29"/>
         <source>The folder changed while it was being prepared.</source>
         <translation>準備中にフォルダーが変更されました。</translation>
     </message>
@@ -510,7 +661,7 @@
 <context>
     <name>QWebEnginePage</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+386"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+391"/>
         <source>&amp;Back</source>
         <translation>戻る(&amp;B)</translation>
     </message>
@@ -656,7 +807,7 @@
     </message>
     <message>
         <location line="-59"/>
-        <location line="+115"/>
+        <location line="+116"/>
         <source>Appearance</source>
         <translation>外観</translation>
     </message>
@@ -928,37 +1079,7 @@
 <context>
     <name>vnotex::DashboardBoard</name>
     <message>
-        <location filename="../../../widgets/dashboard/dashboardboard.cpp" line="+258"/>
-        <source>Move</source>
-        <translation>移動</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Move Up</source>
-        <translation>上へ移動</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move Down</source>
-        <translation>下へ移動</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move Left</source>
-        <translation>左へ移動</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move Right</source>
-        <translation>右へ移動</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Resize...</source>
-        <translation>サイズ変更...</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location filename="../../../widgets/dashboard/dashboardboard.cpp" line="+279"/>
         <source>X</source>
         <translation>X</translation>
     </message>
@@ -976,7 +1097,7 @@
         <translation>ホーム</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+25"/>
         <source>Add Sticker</source>
         <translation>ステッカーを追加</translation>
     </message>
@@ -1025,7 +1146,7 @@
     <name>vnotex::DetachedWindow</name>
     <message>
         <location filename="../../../widgets/detachedwindow.cpp" line="+15"/>
-        <location filename="../../../widgets/viewarea2.cpp" line="+1185"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+1200"/>
         <source>VNote</source>
         <translation>VNote</translation>
     </message>
@@ -1234,33 +1355,28 @@
 <context>
     <name>vnotex::ExportController</name>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="+34"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="+35"/>
         <source>Export is already in progress.</source>
         <translation>エクスポートはすでに進行中です。</translation>
     </message>
     <message>
         <location line="+11"/>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>NotebookCoreService not available.</source>
         <translation>NotebookCoreService が利用できません。</translation>
     </message>
     <message>
-        <location line="-162"/>
+        <location line="-165"/>
         <source>Failed to create exporter.</source>
         <translation>エクスポーターの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+23"/>
         <source>No current buffer available for export.</source>
         <translation>エクスポート可能な現在のバッファーがありません。</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <source>Failed to resolve current buffer path.</source>
-        <translation>現在のバッファーのパスを解決できませんでした。</translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+20"/>
         <source>No current note available for export.</source>
         <translation>エクスポート可能な現在のノートがありません。</translation>
     </message>
@@ -1301,12 +1417,12 @@
     </message>
     <message>
         <location line="+55"/>
-        <location line="+74"/>
+        <location line="+89"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>(%1) のファイルパスを解決できませんでした。</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-37"/>
         <source>Required services not available for workspace export.</source>
         <translation>ワークスペースのエクスポートに必要なサービスが利用できません。</translation>
     </message>
@@ -1339,7 +1455,7 @@
         <translation>オプション</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+64"/>
         <source>Markdown</source>
         <translation>Markdown</translation>
     </message>
@@ -1359,37 +1475,12 @@
         <translation>カスタム</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Source:</source>
-        <translation>ソース:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Format:</source>
-        <translation>フォーマット:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+10"/>
         <source>Select Export Output Directory</source>
         <translation>エクスポート出力ディレクトリの選択</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Output directory:</source>
-        <translation>出力ディレクトリ:</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Rendering style:</source>
-        <translation>レンダリングスタイル:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Syntax style:</source>
-        <translation>シンタックススタイル:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="+25"/>
         <source>Use transparent background</source>
         <translation>透明な背景を使用する</translation>
     </message>
@@ -1414,17 +1505,17 @@
         <translation>画像の埋め込み</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Complete page (pack all resources)</source>
         <translation>完全なページ（すべてのリソースを同梱）</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Copy referenced resources next to the exported file (or embed them when Embed images is checked), so the page renders standalone</source>
         <translation>参照されているリソースをエクスポート先ファイルの隣にコピーします（「画像を埋め込む」が有効な場合は埋め込みます）。ページ単体で表示できるようになります。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>Add outline panel</source>
         <translation>アウトライン・パネルの追加</translation>
     </message>
@@ -1444,12 +1535,7 @@
         <translation>設定</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Page layout:</source>
-        <translation>ページレイアウト:</translation>
-    </message>
-    <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>Add table of contents</source>
         <translation>目次を追加</translation>
     </message>
@@ -1459,17 +1545,7 @@
         <translation>wkhtmltopdf を使用 (アウトライン対応)</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Wkhtmltopdf path:</source>
-        <translation>wkhtmltopdf パス:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Wkhtmltopdf arguments:</source>
-        <translation>wkhtmltopdf の引数:</translation>
-    </message>
-    <message>
-        <location line="-351"/>
+        <location line="-347"/>
         <source>Current buffer (%1)</source>
         <translation>現在のバッファー (%1)</translation>
     </message>
@@ -1524,13 +1600,38 @@
         <translation>ワークスペースにエクスポート可能なバッファがありません</translation>
     </message>
     <message>
-        <location line="+60"/>
-        <location line="+197"/>
+        <location line="+11"/>
+        <source>Source</source>
+        <translation>ソース</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Format</source>
+        <translation>形式</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Output directory</source>
+        <translation>出力ディレクトリ</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Rendering style</source>
+        <translation>レンダリングスタイル</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Syntax style</source>
+        <translation>シンタックススタイル</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <location line="+219"/>
         <source>Markdown options</source>
         <translation>Markdown オプション</translation>
     </message>
     <message>
-        <location line="-197"/>
+        <location line="-219"/>
         <source>HTML options</source>
         <translation>HTML オプション</translation>
     </message>
@@ -1545,59 +1646,94 @@
         <translation>カスタムオプション</translation>
     </message>
     <message>
-        <location line="+101"/>
-        <source>Header left:</source>
-        <translation>ヘッダー左:</translation>
+        <location line="+67"/>
+        <source>Page layout</source>
+        <translation>ページレイアウト</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Wkhtmltopdf path</source>
+        <translation>Wkhtmltopdf のパス</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Wkhtmltopdf arguments</source>
+        <translation>Wkhtmltopdf の引数</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>Header center:</source>
-        <translation>ヘッダー中央:</translation>
+        <source>Header left</source>
+        <translation>ヘッダー左</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>Header right:</source>
-        <translation>ヘッダー右:</translation>
+        <source>Header center</source>
+        <translation>ヘッダー中央</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>Footer left:</source>
-        <translation>フッター左:</translation>
+        <source>Header right</source>
+        <translation>ヘッダー右</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>Footer center:</source>
-        <translation>フッター中央:</translation>
+        <source>Footer left</source>
+        <translation>フッター左</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
+        <source>Footer center</source>
+        <translation>フッター中央</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Footer right</source>
+        <translation>フッター右</translation>
+    </message>
+    <message>
+        <location line="+63"/>
+        <source>Scheme</source>
+        <translation>スキーム</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Target suffix</source>
+        <translation>出力の拡張子</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Resource path separator</source>
+        <translation>リソースパスの区切り文字</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Command</source>
+        <translation>コマンド</translation>
+    </message>
+    <message>
+        <location line="-84"/>
         <source>Supports placeholders such as [page], [title] and [date].</source>
         <translation>[page]、[title]、[date] などのプレースホルダーをサポートします。</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Footer right:</source>
-        <translation>フッター右:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+54"/>
+        <location line="+3"/>
+        <location line="+72"/>
         <source>All-in-one</source>
         <translation>オールインワン</translation>
     </message>
     <message>
-        <location line="-53"/>
-        <location line="+54"/>
+        <location line="-71"/>
+        <location line="+72"/>
         <source>Export all source files into one file</source>
         <translation>すべてのソースファイルを 1 つのファイルにエクスポート</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-26"/>
         <source>New</source>
         <translation>新規</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
         <source>Duplicate</source>
         <translation>複製</translation>
     </message>
@@ -1607,22 +1743,7 @@
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>Scheme:</source>
-        <translation>スキーム:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Target suffix:</source>
-        <translation>対象の拡張子:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Resource path separator:</source>
-        <translation>リソースパス区切り文字:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+14"/>
         <source>Use HTML input</source>
         <translation>HTML 入力を使用</translation>
     </message>
@@ -1632,12 +1753,7 @@
         <translation>対象ページをスクロール可能にする</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Command:</source>
-        <translation>コマンド:</translation>
-    </message>
-    <message>
-        <location line="+31"/>
+        <location line="+36"/>
         <location line="+20"/>
         <source>Export</source>
         <translation>エクスポート</translation>
@@ -1715,14 +1831,14 @@
     </message>
     <message>
         <location line="+19"/>
-        <location line="+89"/>
+        <location line="+88"/>
         <location line="+62"/>
-        <location line="+55"/>
+        <location line="+58"/>
         <source>Failed to create output folder under (%1).</source>
         <translation>(%1) の下に出力フォルダーを作成できませんでした。</translation>
     </message>
     <message>
-        <location line="-176"/>
+        <location line="-179"/>
         <source>Failed to read file (%1): %2</source>
         <translation>ファイル (%1) の読み込みに失敗しました: %2</translation>
     </message>
@@ -1747,7 +1863,7 @@
         <translation>添付フォルダのコピーに失敗しました (%1): %2</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+53"/>
         <location line="+76"/>
         <source>all_in_one_export</source>
         <translation>all_in_one_export</translation>
@@ -1759,7 +1875,7 @@
         <translation>(%1) にエクスポートしました。</translation>
     </message>
     <message>
-        <location line="-210"/>
+        <location line="-213"/>
         <source>Unknown target format %1.</source>
         <translation>不明なターゲットフォーマット %1 。</translation>
     </message>
@@ -1774,13 +1890,13 @@
         <translation>ファイル(%1)のエクスポートに失敗しました</translation>
     </message>
     <message>
-        <location line="+386"/>
+        <location line="+392"/>
         <source>Custom command: %1</source>
         <translation>カスタムコマンド: %1</translation>
     </message>
     <message>
-        <location line="-297"/>
-        <location line="+59"/>
+        <location line="-303"/>
+        <location line="+62"/>
         <location line="+165"/>
         <source>Failed to create temporary directory to hold HTML files.</source>
         <translation>HTML ファイルを格納する一時ディレクトリの作成に失敗しました。</translation>
@@ -1815,18 +1931,18 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+77"/>
+        <location line="+80"/>
         <location line="+42"/>
         <source>Suffixes separated by ;</source>
         <translation>; で区切られた拡張子</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="-121"/>
         <source>List of suffixes for this file type</source>
         <translation>このファイルタイプの拡張子のリスト</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+38"/>
         <source>Add Program</source>
         <translation>プログラムを追加</translation>
     </message>
@@ -1889,12 +2005,7 @@
         <translation>閉じる</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Find:</source>
-        <translation>検索:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+14"/>
         <source>Search</source>
         <translation>検索</translation>
     </message>
@@ -1909,9 +2020,14 @@
         <translation>前を検索(&amp;P)</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <source>Replace with:</source>
-        <translation>次で置換:</translation>
+        <location line="-19"/>
+        <source>Find</source>
+        <translation>検索</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Replace with</source>
+        <translation>置換後</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2021,8 +2137,8 @@
     <name>vnotex::FolderFilesFilterWidget</name>
     <message>
         <location filename="../../../widgets/dialogs/folderfilesfilterwidget.cpp" line="+40"/>
-        <source>Folder:</source>
-        <translation>フォルダ:</translation>
+        <source>Folder</source>
+        <translation>フォルダ</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2036,8 +2152,8 @@
     </message>
     <message>
         <location line="+11"/>
-        <source>Select files:</source>
-        <translation>ファイルを選択:</translation>
+        <source>Select files</source>
+        <translation>ファイルを選択</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -2130,7 +2246,7 @@
         <translation>開いているノートを保存中…</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+94"/>
         <source>A note in this folder was opened while it was being prepared. Try sharing again.</source>
         <translation>準備中にノートが開かれました。もう一度共有してください。</translation>
     </message>
@@ -2547,7 +2663,7 @@
 <context>
     <name>vnotex::ImageHostController</name>
     <message>
-        <location filename="../../../controllers/imagehostcontroller.cpp" line="+27"/>
+        <location filename="../../../controllers/imagehostcontroller.cpp" line="+28"/>
         <source>Image host service not available</source>
         <translation>画像ホストサービスが利用できません</translation>
     </message>
@@ -2585,17 +2701,17 @@
         <translation>画像ホスト上の未使用画像をクリア (現在のファイルのみに基づく)</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+44"/>
         <source>Local</source>
         <translation>ローカル</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+87"/>
         <source>Remove</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+32"/>
         <source>Are you sure to remove image host (%1)?</source>
         <translation>画像ホスト (%1) を削除してもよろしいですか?</translation>
     </message>
@@ -2610,7 +2726,7 @@
         <translation>テスト中...</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+16"/>
         <source>Test succeeded.</source>
         <translation>テストに成功しました。</translation>
     </message>
@@ -2620,12 +2736,12 @@
         <translation>テストに失敗しました: %1</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>Image Host</source>
         <translation>画像ホスト</translation>
     </message>
     <message>
-        <location line="-114"/>
+        <location line="-111"/>
         <source>Test</source>
         <translation>テスト</translation>
     </message>
@@ -2633,7 +2749,7 @@
 <context>
     <name>vnotex::ImageHostService</name>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="+213"/>
+        <location filename="../../../core/services/imagehostservice.cpp" line="+219"/>
         <source>No provider</source>
         <translation>プロバイダーなし</translation>
     </message>
@@ -2661,24 +2777,24 @@
 <context>
     <name>vnotex::ImageInsertDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+60"/>
-        <source>From:</source>
-        <translation>次から:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+65"/>
         <source>&amp;Browse</source>
         <translation>ブラウズ(&amp;B)</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Title:</source>
-        <translation>タイトル：</translation>
+        <location line="-5"/>
+        <source>From</source>
+        <translation>元</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Title</source>
+        <translation>タイトル</translation>
     </message>
     <message>
         <location line="+9"/>
-        <source>Alt text:</source>
-        <translation>Altテキスト:</translation>
+        <source>Alt text</source>
+        <translation>代替テキスト</translation>
     </message>
     <message>
         <location line="+79"/>
@@ -2694,7 +2810,7 @@
 <context>
     <name>vnotex::ImportFolderController</name>
     <message>
-        <location filename="../../../controllers/importfoldercontroller.cpp" line="+26"/>
+        <location filename="../../../controllers/importfoldercontroller.cpp" line="+39"/>
         <source>Please specify a folder to import.</source>
         <translation>インポートするフォルダーを指定してください。</translation>
     </message>
@@ -2705,11 +2821,12 @@
     </message>
     <message>
         <location line="+7"/>
+        <location line="+120"/>
         <source>Please specify a valid folder path.</source>
         <translation>有効なフォルダーパスを指定してください。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-112"/>
         <source>Please specify a folder, not a file.</source>
         <translation>ファイルではなくフォルダーを指定してください。</translation>
     </message>
@@ -2720,31 +2837,188 @@
     </message>
     <message>
         <location line="+14"/>
+        <location line="+75"/>
         <source>No notebook specified.</source>
         <translation>ノートブックが指定されていません。</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="-51"/>
+        <location line="+68"/>
+        <location line="+77"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService が利用できません。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="-131"/>
         <source>Failed to import folder.</source>
         <translation>フォルダーのインポートに失敗しました。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Checking the shared folder…</source>
+        <translation>共有フォルダを確認中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Copying files…</source>
+        <translation>ファイルをコピー中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Verifying the copy…</source>
+        <translation>コピーを検証中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Adding the folder to the notebook…</source>
+        <translation>フォルダをノートブックに追加中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Importing…</source>
+        <translation>インポート中…</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Please specify a shared folder to import.</source>
+        <translation>インポートする共有フォルダを指定してください。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Only bundled notebooks can import a shared folder.</source>
+        <translation>共有フォルダをインポートできるのはバンドル型ノートブックのみです。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This notebook is read-only.</source>
+        <translation>このノートブックは読み取り専用です。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+65"/>
+        <source>The destination folder could not be resolved.</source>
+        <translation>保存先フォルダを解決できませんでした。</translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <source>Cannot import a shared folder that is inside this notebook.</source>
+        <translation>このノートブック内にある共有フォルダはインポートできません。</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Another folder is already being imported.</source>
+        <translation>別のフォルダをインポート中です。</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <source>Could not check the notebook for conflicting notes, so nothing was imported.</source>
+        <translation>競合するノートがないかノートブックを確認できなかったため、何もインポートしていません。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>The notebook is busy saving or syncing. Try again in a moment.</source>
+        <translation>ノートブックは保存または同期の処理中です。しばらくしてからもう一度お試しください。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+14"/>
+        <source>This folder is already in this notebook, so nothing was imported.</source>
+        <translation>このフォルダはすでにこのノートブックにあるため、何もインポートしていません。</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <location line="+14"/>
+        <source>The folder could not be added to the notebook.</source>
+        <translation>フォルダをノートブックに追加できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The import was cancelled and nothing was changed.</source>
+        <translation>インポートは取り消され、何も変更していません。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The shared folder could not be imported.</source>
+        <translation>共有フォルダをインポートできませんでした。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::ImportFolderDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="+44"/>
+        <location filename="../../../widgets/dialogs/importfolderdialog2.cpp" line="+70"/>
         <source>Import folder into (%1).</source>
         <translation>フォルダを (%1) へインポートする。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+7"/>
+        <source>External folder</source>
+        <translation>外部フォルダ</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Copy an ordinary folder from disk into this notebook. New ids and timestamps are generated for the imported notes.</source>
+        <translation>ディスク上の通常のフォルダをこのノートブックにコピーします。インポートされたノートには新しい ID とタイムスタンプが生成されます。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Shared folder from VNote</source>
+        <translation>VNote から共有されたフォルダ</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Import a folder shared from VNote, keeping its notes&apos; ids, dates, tags and attachments.</source>
+        <translation>VNote から共有されたフォルダを、ノートの ID・日付・タグ・添付ファイルを保持したままインポートします。</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <location line="+219"/>
         <source>Import Folder</source>
         <translation>フォルダをインポート</translation>
+    </message>
+    <message>
+        <location line="-196"/>
+        <source>Select a folder shared from VNote (its name usually ends with &quot;-bundle&quot;).</source>
+        <translation>VNote から共有されたフォルダを選択してください (名前は通常「-bundle」で終わります)。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Select Shared Folder</source>
+        <translation>共有フォルダを選択</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Folder produced by Share Folder</source>
+        <translation>「フォルダを共有」で作成されたフォルダ</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Only bundled notebooks can import a shared folder.</source>
+        <translation>共有フォルダをインポートできるのはバンドル型ノートブックのみです。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This notebook is read-only.</source>
+        <translation>このノートブックは読み取り専用です。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This destination cannot accept a shared folder.</source>
+        <translation>この保存先は共有フォルダを受け入れられません。</translation>
+    </message>
+    <message>
+        <location line="+86"/>
+        <source>%1 — %2 notes, %3 subfolders</source>
+        <translation>%1 — ノート %2 件、サブフォルダ %3 件</translation>
+    </message>
+    <message>
+        <location line="+64"/>
+        <source>Preparing…</source>
+        <translation>準備中…</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
@@ -2812,13 +3086,13 @@
     <name>vnotex::LinkInsertDialog</name>
     <message>
         <location filename="../../../widgets/dialogs/linkinsertdialog.cpp" line="+30"/>
-        <source>&amp;Text:</source>
-        <translation>テキスト(&amp;T):</translation>
+        <source>&amp;Text</source>
+        <translation>テキスト(&amp;T)</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&amp;Url:</source>
-        <translation>&amp;Url:</translation>
+        <source>&amp;Url</source>
+        <translation>URL(&amp;U)</translation>
     </message>
 </context>
 <context>
@@ -2850,7 +3124,7 @@
         <translation>VNote</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+18"/>
         <source>Loading theme...</source>
         <translation>テーマを読み込み中...</translation>
     </message>
@@ -2880,7 +3154,7 @@
         <translation>%1はまだ実行中です。</translation>
     </message>
     <message>
-        <location line="+384"/>
+        <location line="+401"/>
         <location line="+49"/>
         <source>Global</source>
         <translation>グローバル</translation>
@@ -3087,19 +3361,10 @@
         <translation>ノートブック名</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+7"/>
+        <location line="+2"/>
         <source>Description</source>
         <translation>説明</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Description:</source>
-        <translation>説明:</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -3112,14 +3377,19 @@
         <translation>ファイルエクスプローラーでルートフォルダーを開く</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>Root folder:</source>
-        <translation>ルートフォルダー：</translation>
+        <location line="-22"/>
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Root folder</source>
+        <translation>ルートフォルダ</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>Type:</source>
-        <translation>種類:</translation>
+        <source>Type</source>
+        <translation>種類</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -3204,7 +3474,7 @@
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+244"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+250"/>
         <location line="+660"/>
         <source>Insert Link</source>
         <translation>リンクを挿入</translation>
@@ -3351,7 +3621,7 @@
         <translation>リッチ貼り付け</translation>
     </message>
     <message>
-        <location line="+418"/>
+        <location line="+412"/>
         <source>Image</source>
         <translation>画像</translation>
     </message>
@@ -3366,7 +3636,7 @@
         <translation>画像のアドレスをコピー</translation>
     </message>
     <message>
-        <location line="-1094"/>
+        <location line="-1088"/>
         <location line="+640"/>
         <source>Paste as Plain Text</source>
         <translation>プレーンテキストとして貼り付け</translation>
@@ -3382,7 +3652,7 @@
         <translation>スニペットを挿入</translation>
     </message>
     <message>
-        <location line="+402"/>
+        <location line="+396"/>
         <source>View Image</source>
         <translation>画像を表示</translation>
     </message>
@@ -3403,7 +3673,7 @@
         <translation>リンクをコピー</translation>
     </message>
     <message>
-        <location line="-458"/>
+        <location line="-452"/>
         <source>Fetching images to local...</source>
         <translation>ローカルにイメージを取得しています...</translation>
     </message>
@@ -3446,7 +3716,7 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+178"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+179"/>
         <source>Markdown Editor</source>
         <translation>Markdownエディタ</translation>
     </message>
@@ -3562,16 +3832,6 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Insert file name as title</source>
-        <translation>ファイル名をタイトルとして挿入</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Insert file name as title when creating note</source>
-        <translation>ノート作成時にファイル名をタイトルとして挿入</translation>
-    </message>
-    <message>
-        <location line="+10"/>
         <source>Constrain in-place preview width</source>
         <translation>インプレイスプレビューの幅を制約する</translation>
     </message>
@@ -3581,7 +3841,7 @@
         <translation>インプレイスプレビューをウインドウ幅に制約する</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+16"/>
         <source>In-place preview sources</source>
         <translation>インラインプレビューの対象</translation>
     </message>
@@ -3791,7 +4051,7 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+633"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+639"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>リンク (%1) を開いてもよろしいですか？</translation>
     </message>
@@ -3801,7 +4061,7 @@
         <translation>悪意のあるリンクはデバイスに損害を与える可能性があります。</translation>
     </message>
     <message>
-        <location line="+705"/>
+        <location line="+707"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>置換は読み取りモードではサポートされていません</translation>
@@ -3823,12 +4083,12 @@
         <translation>PDF への印刷に失敗しました</translation>
     </message>
     <message>
-        <location line="+197"/>
+        <location line="+229"/>
         <source>Failed to save the preference.</source>
         <translation>設定の保存に失敗しました。</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+46"/>
         <source>Failed to migrate the images.</source>
         <translation>画像の移行に失敗しました。</translation>
     </message>
@@ -3840,7 +4100,7 @@
         </translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+86"/>
         <source>Local</source>
         <translation>ローカル</translation>
     </message>
@@ -3967,8 +4227,8 @@
     <name>vnotex::NewFolderDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/newfolderdialog2.cpp" line="+37"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
+        <source>Name</source>
+        <translation>名前</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -4074,24 +4334,24 @@
 <context>
     <name>vnotex::NewNoteDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotedialog2.cpp" line="+87"/>
-        <source>Type:</source>
-        <translation>種類:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
+        <location filename="../../../widgets/dialogs/newnotedialog2.cpp" line="+94"/>
+        <source>Type</source>
+        <translation>種類</translation>
     </message>
     <message>
         <location line="+10"/>
-        <source>Content:</source>
-        <translation>コンテンツ:</translation>
+        <source>Name</source>
+        <translation>名前</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Template:</source>
-        <translation>テンプレート:</translation>
+        <location line="+10"/>
+        <source>Content</source>
+        <translation>コンテンツ</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Template</source>
+        <translation>テンプレート</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4099,7 +4359,7 @@
         <translation>新規ノート</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+63"/>
         <source>note</source>
         <translation>ノート</translation>
     </message>
@@ -4150,22 +4410,12 @@
 <context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+51"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+55"/>
         <source>Optional description for the notebook</source>
         <translation>ノートブックの説明 (任意)</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Description:</source>
-        <translation>説明:</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+13"/>
         <source>Select Notebook Root Folder</source>
         <translation>ノートブックルートフォルダ</translation>
     </message>
@@ -4175,12 +4425,7 @@
         <translation>ノートブックのルートとなるフォルダーを選択</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Root folder:</source>
-        <translation>ルートフォルダー：</translation>
-    </message>
-    <message>
-        <location line="+4"/>
+        <location line="+7"/>
         <source>Bundled notebook</source>
         <translation>バンドルノートブック</translation>
     </message>
@@ -4197,24 +4442,29 @@ Raw: plain folder structure with minimal VNote metadata.</source>
 生：最小限の VNote メタデータのみのプレーンなフォルダー構造。</translation>
     </message>
     <message>
-        <location line="+29"/>
-        <source>Sync method:</source>
-        <translation>同期方法：</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+35"/>
         <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure... button before notebook creation.</source>
         <translation>Git 同期はバンドルノートブックのみサポートされます。同期設定はノートブック作成前に「設定...」ボタンで直ちに構成されます。</translation>
     </message>
     <message>
-        <location line="+56"/>
-        <source>Assets folder:</source>
-        <translation>アセットフォルダー：</translation>
+        <location line="-62"/>
+        <source>Name</source>
+        <translation>名前</translation>
     </message>
     <message>
-        <location line="-89"/>
-        <source>Type:</source>
-        <translation>種類:</translation>
+        <location line="+6"/>
+        <source>Description</source>
+        <translation>説明</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Root folder</source>
+        <translation>ルートフォルダ</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Type</source>
+        <translation>種類</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4233,7 +4483,12 @@ A new notebook requires an empty folder or a non-existent path (will be created)
 新しいノートブックには、空のフォルダーまたは存在しないパス (作成されます) が必要です。</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+15"/>
+        <source>Sync method</source>
+        <translation>同期方法</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>None</source>
         <translation>なし</translation>
     </message>
@@ -4267,7 +4522,12 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 相対パスは各ノートファイルの親ディレクトリを基準に解決されます。</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Assets folder</source>
+        <translation>アセットフォルダ</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>New Notebook</source>
         <translation>新規ノートブック</translation>
     </message>
@@ -4357,13 +4617,13 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+9"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
+        <source>Name</source>
+        <translation>名前</translation>
     </message>
     <message>
         <location line="+11"/>
-        <source>Path:</source>
-        <translation>パス:</translation>
+        <source>Path</source>
+        <translation>パス</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4377,38 +4637,38 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Type:</source>
-        <translation>種類:</translation>
+        <source>Type</source>
+        <translation>種類</translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>Created:</source>
-        <translation>作成日:</translation>
+        <source>Created</source>
+        <translation>作成</translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>Modified:</source>
-        <translation>更新日:</translation>
+        <source>Modified</source>
+        <translation>更新</translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>Children:</source>
-        <translation>子要素:</translation>
+        <source>Children</source>
+        <translation>子項目</translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>Tags:</source>
-        <translation>タグ:</translation>
+        <source>Tags</source>
+        <translation>タグ</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+12"/>
+        <source>UUID</source>
+        <translation>UUID</translation>
+    </message>
+    <message>
+        <location line="-1"/>
         <source>N/A</source>
         <translation>N/A</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
     </message>
 </context>
 <context>
@@ -4552,6 +4812,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+10"/>
+        <location line="+44"/>
         <source>vxcore context is not initialized</source>
         <translation>vxcore コンテキストが初期化されていません</translation>
     </message>
@@ -4582,11 +4843,6 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
         <location line="+6"/>
         <source>Open Notebook</source>
         <translation>ノートブックを開く</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Open VNote3 Notebook</source>
-        <translation>VNote3 ノートブックを開く</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -4758,7 +5014,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>Raw ノートブックとして開くフォルダーを選択</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+114"/>
         <location line="+17"/>
         <location line="+137"/>
         <location line="+16"/>
@@ -5004,12 +5260,12 @@ Open the bundle location?</source>
     <message>
         <location line="+8"/>
         <location line="+47"/>
-        <location line="+148"/>
+        <location line="+152"/>
         <source>Open &amp;Location</source>
         <translation>場所を開く(&amp;L)</translation>
     </message>
     <message>
-        <location line="-130"/>
+        <location line="-134"/>
         <source>New &amp;Note</source>
         <translation>新規ノート(&amp;N)</translation>
     </message>
@@ -5019,19 +5275,19 @@ Open the bundle location?</source>
         <translation>新規フォルダ(&amp;F)</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+32"/>
         <source>&amp;Rename</source>
         <translation>名前変更(&amp;R)</translation>
     </message>
     <message>
-        <location line="-64"/>
-        <location line="+74"/>
+        <location line="-68"/>
+        <location line="+78"/>
         <source>&amp;Delete</source>
         <translation>削除(&amp;D)</translation>
     </message>
     <message>
-        <location line="-89"/>
-        <location line="+94"/>
+        <location line="-93"/>
+        <location line="+98"/>
         <source>Remove from Notebook</source>
         <translation>ノートブックから削除</translation>
     </message>
@@ -5066,24 +5322,29 @@ Open the bundle location?</source>
         <translation>エクスポート(&amp;E)</translation>
     </message>
     <message>
-        <location line="-125"/>
-        <location line="+148"/>
+        <location line="-129"/>
+        <location line="+152"/>
         <source>Copy &amp;Path</source>
         <translation>パスをコピー(&amp;P)</translation>
     </message>
     <message>
-        <location line="-171"/>
+        <location line="-175"/>
         <source>Remove the missing item(s) from the notebook index</source>
         <translation>欠落した項目をノートブックのインデックスから削除</translation>
     </message>
     <message>
         <location line="+32"/>
-        <location line="+148"/>
+        <location line="+152"/>
         <source>P&amp;roperties</source>
         <translation>プロパティ(&amp;R)</translation>
     </message>
     <message>
-        <location line="-23"/>
+        <location line="-117"/>
+        <source>Open as Detac&amp;hed</source>
+        <translation>独立ウィンドウで開く(&amp;H)</translation>
+    </message>
+    <message>
+        <location line="+94"/>
         <source>Share Folder</source>
         <translation>フォルダーを共有</translation>
     </message>
@@ -5224,7 +5485,7 @@ Open the bundle location?</source>
         <translation>新しいアーキテクチャでは、フォルダーのインポートはまだ実装されていません。</translation>
     </message>
     <message>
-        <location line="+230"/>
+        <location line="+231"/>
         <location line="+2"/>
         <location line="+2"/>
         <source>Quick Access</source>
@@ -5399,12 +5660,7 @@ Description: %4</source>
         <translation>このノートブックは現在読み取り専用モードで開かれています。編集を有効にするには、このノートブックを閉じ、有効な個人アクセストークンでリモート URL から再度開いてください。ここで追加した PAT は保存されますが、編集はノートブックを閉じて再度開いた後にのみ可能になります。</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <source>Notebook:</source>
-        <translation>ノートブック:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="+19"/>
         <source>https://github.com/example/notes.git</source>
         <translation>https://github.com/example/notes.git</translation>
     </message>
@@ -5414,12 +5670,7 @@ Description: %4</source>
         <translation>このノートブックの同期に使用するリモート Git リポジトリの URL。</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Remote URL:</source>
-        <translation>リモート URL:</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+12"/>
         <source>The remote repository must already exist. Create an empty repo on your Git host first.</source>
         <translation>リモートリポジトリは既に存在している必要があります。先に Git ホスト上に空のリポジトリを作成してください。</translation>
     </message>
@@ -5436,19 +5687,29 @@ Leave blank to keep the existing token.</source>
 既存のトークンを保持するには空白のままにしてください。</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Personal Access Token:</source>
-        <translation>個人アクセストークン:</translation>
+        <location line="-38"/>
+        <source>Notebook</source>
+        <translation>ノートブック</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Remote URL</source>
+        <translation>リモート URL</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>Personal Access Token</source>
+        <translation>個人アクセストークン</translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Last sync:</source>
-        <translation>前回の同期：</translation>
+        <source>Last sync</source>
+        <translation>最終同期</translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>Current state:</source>
-        <translation>現在の状態：</translation>
+        <source>Current state</source>
+        <translation>現在の状態</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5802,7 +6063,7 @@ Continue?</source>
 <context>
     <name>vnotex::OpenNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="+81"/>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="+82"/>
         <source>Local folder</source>
         <translation>ローカルフォルダー</translation>
     </message>
@@ -5813,11 +6074,12 @@ Continue?</source>
     </message>
     <message>
         <location line="+3"/>
+        <location line="+109"/>
         <source>Remote URL</source>
         <translation>リモート URL</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-106"/>
         <source>Clone a VNote notebook from a remote git URL or a file:// path.</source>
         <translation>リモート git URL または file:// パスから VNote ノートブックをクローンします。</translation>
     </message>
@@ -5827,7 +6089,17 @@ Continue?</source>
         <translation>開く</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+22"/>
+        <source>Open V3 Notebook</source>
+        <translation>V3 ノートブックを開く</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Close this dialog and import a legacy VNote3 notebook.</source>
+        <translation>このダイアログを閉じて、従来の VNote3 ノートブックをインポートします。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Open Notebook</source>
         <translation>ノートブックを開く</translation>
     </message>
@@ -5848,11 +6120,21 @@ Continue?</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Root folder path:</source>
-        <translation>ルートフォルダーのパス：</translation>
+        <source>Root folder path</source>
+        <translation>ルートフォルダのパス</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+26"/>
+        <source>Personal Access Token</source>
+        <translation>個人アクセストークン</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Local root folder</source>
+        <translation>ローカルのルートフォルダ</translation>
+    </message>
+    <message>
+        <location line="-27"/>
         <source>https://github.com/user/repo.git  or  file:///path/to/repo.git</source>
         <translation>https://github.com/user/repo.git  または  file:///path/to/repo.git</translation>
     </message>
@@ -5862,12 +6144,7 @@ Continue?</source>
         <translation>リモート git URL。HTTPS と file:// スキームのみサポートされます。</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Remote URL:</source>
-        <translation>リモート URL：</translation>
-    </message>
-    <message>
-        <location line="+7"/>
+        <location line="+8"/>
         <source>Optional — leave empty to open without syncing yet</source>
         <translation>任意 — 空欄のままにすると同期せずに開きます</translation>
     </message>
@@ -5877,12 +6154,7 @@ Continue?</source>
         <translation>空欄の場合、ノートブックは通常どおり（完全に編集可能な状態で）開き、同期は構成されますが非アクティブです。後でトークンを追加すると同期を開始できます。</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Personal Access Token:</source>
-        <translation>個人アクセストークン：</translation>
-    </message>
-    <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>Select Local Root Folder</source>
         <translation>ローカルルートフォルダーを選択</translation>
     </message>
@@ -5897,12 +6169,7 @@ Continue?</source>
         <translation>クローンしたノートブックを受け取るローカルフォルダー。まだ存在しない（作成されます）か、既存の空のディレクトリである必要があります。</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Local root folder:</source>
-        <translation>ローカルルートフォルダー：</translation>
-    </message>
-    <message>
-        <location line="+89"/>
+        <location line="+91"/>
         <source>Remote URL must use HTTPS or file:// scheme (got: %1).</source>
         <translation>リモート URL は HTTPS または file:// スキームを使用する必要があります（指定値：%1）。</translation>
     </message>
@@ -5937,12 +6204,12 @@ Continue?</source>
         <translation>クローンをキャンセル中...</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+65"/>
         <source>Cloning...</source>
         <translation>クローン中...</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+60"/>
         <source>Clone cancelled.</source>
         <translation>クローンをキャンセルしました。</translation>
     </message>
@@ -6004,7 +6271,12 @@ Continue?</source>
         <translation>VNote3 ノートブックのルートフォルダーを選択</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+1"/>
+        <source>Source folder</source>
+        <translation>元フォルダ</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Select Destination Folder</source>
         <translation>宛先フォルダーを選択</translation>
     </message>
@@ -6014,39 +6286,34 @@ Continue?</source>
         <translation>宛先のルートフォルダーを選択</translation>
     </message>
     <message>
-        <location line="-5"/>
-        <source>Source folder:</source>
-        <translation>ソースフォルダー：</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Destination folder:</source>
-        <translation>宛先フォルダー：</translation>
+        <location line="+1"/>
+        <source>Destination folder</source>
+        <translation>保存先フォルダ</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Notebook name:</source>
-        <translation>ノートブック名：</translation>
+        <source>Notebook name</source>
+        <translation>ノートブック名</translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>Description:</source>
-        <translation>説明:</translation>
+        <source>Description</source>
+        <translation>説明</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+18"/>
+        <source>Open V3 Notebook</source>
+        <translation>V3 ノートブックを開く</translation>
+    </message>
+    <message>
+        <location line="-10"/>
         <source>I understand this will copy the notebook to the destination folder.
 The legacy notebook would be kept for data backup.</source>
         <translation>これがノートブックを宛先フォルダーにコピーすることを理解しています。
 レガシーのノートブックはデータバックアップのために残されます。</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Open VNote3 Notebook</source>
-        <translation>VNote3 ノートブックを開く</translation>
-    </message>
-    <message>
-        <location line="+70"/>
+        <location line="+80"/>
         <source>Enter a destination folder.</source>
         <translation>宛先フォルダーを入力してください。</translation>
     </message>
@@ -6121,12 +6388,12 @@ The legacy notebook would be kept for data backup.</source>
     <name>vnotex::QuickAccessPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="+44"/>
-        <location line="+196"/>
+        <location line="+198"/>
         <source>Quick Access</source>
         <translation>クイックアクセス</translation>
     </message>
     <message>
-        <location line="-158"/>
+        <location line="-160"/>
         <source>Quick Note</source>
         <translation>クイックノート</translation>
     </message>
@@ -6192,7 +6459,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>テンプレート</translation>
     </message>
     <message>
-        <location line="+179"/>
+        <location line="+181"/>
         <source>Quick Note Scheme</source>
         <translation>クイックノートのスキーム</translation>
     </message>
@@ -6242,24 +6509,6 @@ The legacy notebook would be kept for data backup.</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ResizeStickerDialog</name>
-    <message>
-        <location filename="../../../widgets/dashboard/resizestickerdialog.cpp" line="+18"/>
-        <source>Resize Sticker</source>
-        <translation>ステッカーのサイズ変更</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Row span:</source>
-        <translation>行スパン：</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Column span:</source>
-        <translation>列スパン：</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::SearchController</name>
     <message>
         <location filename="../../../controllers/searchcontroller.cpp" line="+88"/>
@@ -6305,22 +6554,12 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SearchPanel2</name>
     <message>
-        <location filename="../../../widgets/searchpanel2.cpp" line="+53"/>
-        <source>Keyword:</source>
-        <translation>キーワード:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location filename="../../../widgets/searchpanel2.cpp" line="+58"/>
         <source>Search...</source>
         <translation>検索...</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <source>Mode:</source>
-        <translation>モード:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
+        <location line="+12"/>
         <source>File Name</source>
         <translation>ファイル名</translation>
     </message>
@@ -6335,12 +6574,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>タグ</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Scope:</source>
-        <translation>範囲:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
+        <location line="+7"/>
         <source>Buffers</source>
         <translation>バッファ</translation>
     </message>
@@ -6360,12 +6594,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>全てのノートブック</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Options:</source>
-        <translation>オプション:</translation>
-    </message>
-    <message>
-        <location line="+7"/>
+        <location line="+10"/>
         <source>Case Sensitive</source>
         <translation>大文字と小文字を区別</translation>
     </message>
@@ -6375,9 +6604,29 @@ The legacy notebook would be kept for data backup.</source>
         <translation>正規表現</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>File Pattern:</source>
-        <translation>ファイルパターン:</translation>
+        <location line="-42"/>
+        <source>Keyword</source>
+        <translation>キーワード</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Mode</source>
+        <translation>モード</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Scope</source>
+        <translation>範囲</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Options</source>
+        <translation>オプション</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>File pattern</source>
+        <translation>ファイルパターン</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -6503,47 +6752,17 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SnippetInfoWidget2</name>
     <message>
-        <location filename="../../../widgets/dialogs/snippetinfowidget2.cpp" line="+75"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Description:</source>
-        <translation>説明:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Type:</source>
-        <translation>種類:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Shortcut:</source>
-        <translation>ショートカット:</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location filename="../../../widgets/dialogs/snippetinfowidget2.cpp" line="+96"/>
         <source>A mark in the snippet content indicating the cursor position after the application</source>
         <translation>適用後のカーソル位置を示す、スニペット内容の中のマーク</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Cursor mark:</source>
-        <translation>カーソルマーク:</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="+7"/>
         <source>A mark in the snippet content that will be replaced with the selected text before the application</source>
         <translation>適用前に選択テキストで置き換えられる、スニペット内容の中のマーク</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Selection mark:</source>
-        <translation>選択マーク:</translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+6"/>
         <source>Indent as first line</source>
         <translation>最初の行と同じインデント</translation>
     </message>
@@ -6553,9 +6772,39 @@ The legacy notebook would be kept for data backup.</source>
         <translation>ネストされたスニペットがサポートされます。例えば `%time%` でスニペット `time` を埋め込めます</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>Content:</source>
-        <translation>コンテンツ:</translation>
+        <location line="-43"/>
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Description</source>
+        <translation>説明</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Type</source>
+        <translation>種類</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Shortcut</source>
+        <translation>ショートカット</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Cursor mark</source>
+        <translation>カーソルマーク</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Selection mark</source>
+        <translation>選択マーク</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Content</source>
+        <translation>コンテンツ</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -6679,6 +6928,24 @@ The legacy notebook would be kept for data backup.</source>
     </message>
 </context>
 <context>
+    <name>vnotex::StickerDragOverlay</name>
+    <message>
+        <location filename="../../../widgets/dashboard/stickerdragoverlay.cpp" line="+44"/>
+        <source>Sticker edit mode. Drag the centre to move or an edge to resize; arrow keys move, Shift with arrow keys resizes.</source>
+        <translation>ステッカー編集モード。中央をドラッグで移動、端をドラッグでサイズ変更。矢印キーで移動、Shift + 矢印キーでサイズ変更します。</translation>
+    </message>
+    <message>
+        <location line="+235"/>
+        <source>Drag to move (or use the arrow keys)</source>
+        <translation>ドラッグで移動 (矢印キーも使用可)</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Drag to resize (or use Shift with the arrow keys)</source>
+        <translation>ドラッグでサイズ変更 (Shift + 矢印キーも使用可)</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::SyncConflictDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="+64"/>
@@ -6776,19 +7043,19 @@ The legacy notebook would be kept for data backup.</source>
         <translation>テーブル本体の行数</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Row:</source>
-        <translation>行:</translation>
-    </message>
-    <message>
-        <location line="+4"/>
+        <location line="+8"/>
         <source>Column count of the table</source>
         <translation>テーブルの列数</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Column:</source>
-        <translation>列:</translation>
+        <location line="-4"/>
+        <source>Row</source>
+        <translation>行</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Column</source>
+        <translation>列</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -6812,8 +7079,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+9"/>
-        <source>Alignment:</source>
-        <translation>整列:</translation>
+        <source>Alignment</source>
+        <translation>配置</translation>
     </message>
 </context>
 <context>
@@ -7464,7 +7731,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="+178"/>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+179"/>
         <source>Update Available</source>
         <translation>更新があります</translation>
     </message>
@@ -7479,17 +7746,17 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>リリースを確認</translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+69"/>
         <source>Could not check for updates.</source>
         <translation>更新を確認できませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="267"/>
+        <location line="-14"/>
         <source>TLS is unavailable: OpenSSL could not be loaded. libssl-1_1-x64.dll and libcrypto-1_1-x64.dll are expected next to vnote.exe.</source>
         <translation>TLS を利用できません: OpenSSL を読み込めませんでした。libssl-1_1-x64.dll と libcrypto-1_1-x64.dll は vnote.exe と同じフォルダーに配置されている必要があります。</translation>
     </message>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="272"/>
+        <location line="+5"/>
         <source>TLS is unavailable: no working secure-socket backend was found.</source>
         <translation>TLS を利用できません: 利用可能なセキュアソケットのバックエンドが見つかりませんでした。</translation>
     </message>
@@ -7623,7 +7890,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="-422"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="-437"/>
         <source>New Workspace</source>
         <translation>新しいワークスペース</translation>
     </message>
@@ -7816,15 +8083,11 @@ This removes the file and any sub-tasks it contains: %2</source>
     <name>vnotex::ViewTagsDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/viewtagsdialog2.cpp" line="+33"/>
-        <source>Name:</source>
-        <translation>名前:</translation>
+        <source>Name</source>
+        <translation>名前</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Tags:</source>
-        <translation>タグ:</translation>
-    </message>
-    <message>
         <location line="+4"/>
         <source>Tags</source>
         <translation>タグ</translation>
@@ -7854,7 +8117,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>スニペットを選択</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="+210"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="+261"/>
         <source>Do you want to save changes to &quot;%1&quot;?</source>
         <translation>&quot;%1&quot; への変更を保存しますか?</translation>
     </message>
@@ -7922,7 +8185,7 @@ Continue?</source>
         <translation>ノート (%1) を再読み込みして未保存の変更を破棄しますか？</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+97"/>
         <source>This notebook is read-only (%1). Changes cannot be saved.</source>
         <translation>このノートブックは読み取り専用です (%1)。変更は保存できません。</translation>
     </message>
@@ -7932,7 +8195,7 @@ Continue?</source>
         <translation>編集を有効にするには、このノートブックを閉じ、有効な個人アクセストークンでリモート URL から再度開いてください。</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+41"/>
         <source>File Changed</source>
         <translation>ファイルが変更されました</translation>
     </message>
@@ -7952,7 +8215,7 @@ Continue?</source>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+27"/>
+        <location line="+24"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -8009,8 +8272,8 @@ Continue?</source>
         <translation>ノート(%1)への変更を破棄しますか?</translation>
     </message>
     <message>
-        <location line="-623"/>
-        <location line="+624"/>
+        <location line="-614"/>
+        <location line="+615"/>
         <source>Note path (%1).</source>
         <translation>ノートのパス(%1)</translation>
     </message>
@@ -8025,12 +8288,42 @@ Continue?</source>
 <context>
     <name>vnotex::WebViewExporter</name>
     <message>
-        <location filename="../../../export/webviewexporter.cpp" line="+643"/>
+        <location filename="../../../export/webviewexporter.cpp" line="+656"/>
         <source>Table of Contents</source>
         <translation>目次</translation>
     </message>
     <message>
-        <location line="+268"/>
+        <location line="+169"/>
+        <source>Timed out while rasterizing the diagrams of this note.</source>
+        <translation>このノートの図の描画がタイムアウトしました。</translation>
+    </message>
+    <message>
+        <location line="+177"/>
+        <source>Custom wkhtmltopdf arguments may change the page geometry; not fitting Mermaid diagrams to the page. A large diagram may overflow it.</source>
+        <translation>カスタムの wkhtmltopdf 引数はページの寸法を変える可能性があるため、Mermaid の図をページに合わせません。大きな図でははみ出すことがあります。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>No CJK-capable font that wkhtmltopdf can load was found; non-Latin text may be rendered as blank boxes. Install e.g. Noto Sans SC.</source>
+        <translation>wkhtmltopdf が読み込める CJK 対応フォントが見つかりません。非ラテン文字が空白の四角で表示される場合があります。例えば Noto Sans SC をインストールしてください。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Failed to prepare the intermediate HTML file (%1) for wkhtmltopdf.</source>
+        <translation>wkhtmltopdf 用の中間 HTML ファイル (%1) を準備できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Failed to run wkhtmltopdf (%1). If the path points to a launcher or shim (e.g. a scoop shim), try the real executable instead.</source>
+        <translation>wkhtmltopdf (%1) を実行できませんでした。パスがランチャーやシム (scoop の shim など) を指している場合は、実際の実行ファイルを指定してください。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>wkhtmltopdf did not produce an output file (%1).</source>
+        <translation>wkhtmltopdf が出力ファイル (%1) を生成しませんでした。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Copy output file (%1) to (%2).</source>
         <translation>出力ファイル (%1) を (%2) にコピー。</translation>
     </message>
