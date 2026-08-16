@@ -113,7 +113,7 @@ jobs:
         run: |
           qmake -v
           cmake --version
-          cmake -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"  ${GITHUB_WORKSPACE}
+          cmake -DVNOTE_BUILD_TESTS=ON -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"  ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
@@ -157,7 +157,7 @@ jobs:
         # Build the test executables (tests/CMakeLists.txt narrows them to the
         # host arch on macOS, so this links arm64-only against the universal
         # libs) then run them headlessly via the Qt offscreen platform plugin.
-        # VNOTE_BUILD_TESTS defaults to ON, so no extra -D is needed.
+        # VNOTE_BUILD_TESTS defaults to OFF and is turned ON at configure time above.
         #
         # Sync/keychain tests are EXCLUDED on macOS. The real qtkeychain path
         # (keychain_apple.mm + Security.framework) cannot run in CI: even with a

@@ -12,11 +12,13 @@ configurations. Pick the right one or your test will silently never run.
 
 ### Parent VNote tests (`tests/`)
 
-Built automatically with the parent project into `build-debug/tests/<category>/`. Registered via
+Built with the parent project into `build-debug/tests/<category>/` **when `-DVNOTE_BUILD_TESTS=ON`
+is set** (it defaults to OFF; CI turns it ON). Registered via
 the `add_qt_test()` helper (details in [Adding New Tests](#adding-new-tests) below). Categories:
 `controllers/`, `core/`, `gui/`, `integration/`, `models/`, `utils/`, `widgets/`.
 
-Reconfigure from repo root if `tests/CMakeLists.txt` itself changed: `cmake -B build-debug`.
+Configure the test-enabled build dir from repo root (also re-run this if `tests/CMakeLists.txt`
+itself changed): `cmake -B build-debug -DVNOTE_BUILD_TESTS=ON`.
 
 **Build + run:**
 ```powershell

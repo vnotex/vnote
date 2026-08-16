@@ -121,7 +121,9 @@ if(WIN32)
 endif()
 
 # TODO: find a better way to organize tests
-option(VNOTE_BUILD_TESTS "Build VNote unit tests" ON)
+# OFF by default: a plain `cmake ..` builds only the app. CI turns it ON explicitly
+# (see .github/workflows/ci-linux.yml, ci-macos.yml, ci-win.yml).
+option(VNOTE_BUILD_TESTS "Build VNote unit tests" OFF)
 
 enable_testing()
 if(VNOTE_BUILD_TESTS)

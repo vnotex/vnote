@@ -139,7 +139,7 @@ jobs:
         run: |
           qmake -v
           cmake --version
-          cmake ${GITHUB_WORKSPACE}
+          cmake -DVNOTE_BUILD_TESTS=ON ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
@@ -160,8 +160,8 @@ jobs:
       - name: Build and Run Tests
         # Build remaining targets (Qt-side tests + vxcore tests; --target pack
         # above only built the AppImage target) then run them headlessly via
-        # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to ON
-        # in the root CMakeLists.txt, so no extra -D is needed.
+        # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to OFF
+        # in the root CMakeLists.txt and is turned ON at configure time above.
         run: |
           set -e
           cmake --build .

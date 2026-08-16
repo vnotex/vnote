@@ -56,10 +56,11 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 ```
 Never repair a stale build dir in place.
 
-### Packaging-Only Build (Skip Tests)
-For CI artifact-only builds that must not compile the test infrastructure (e.g. Qt6-only test code when building against Qt5):
+### Building the Tests
+Tests are **not** built by default (`VNOTE_BUILD_TESTS=OFF`), so a plain `cmake ..` produces the
+app only. CI enables them explicitly. To build them locally:
 ```bash
-cmake .. -DVNOTE_BUILD_TESTS=OFF
+cmake .. -DVNOTE_BUILD_TESTS=ON
 cmake --build .
 ```
 
