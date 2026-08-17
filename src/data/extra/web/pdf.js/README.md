@@ -19,5 +19,9 @@ across an upgrade:
 Not vendored from the ZIP: `*.map` source maps, `web/debugger.{js,css}`,
 `web/compressed.tracemonkey-pldi-09.pdf`, and the top-level `LICENSE`.
 
-Why v3 and not v4+: Qt 5.15's QtWebEngine is Chromium 83, and pdf.js's legacy
-build requires Chrome 125+ from v4 on. v3.11.174 is the last v3 release.
+Why v3 and not v4+: pdf.js's legacy build requires Chrome 125+ from v4 on, which
+no Qt version VNote ships can meet. v3.11.174 is the last v3 release.
+
+Note that v3's legacy build targets ~Chrome 92 and therefore does NOT run on
+Qt 5.15's QtWebEngine (Chromium 83) either: the PDF viewer is known broken on the
+win64-windows7 package. See AGENTS.md in this folder before touching anything here.

@@ -365,6 +365,7 @@ put the full detail in the module doc.
 | Widgets | [src/widgets/AGENTS.md](src/widgets/AGENTS.md) | Widget conventions, ViewArea2 framework, styling, construction pattern |
 | GUI Services | [src/gui/AGENTS.md](src/gui/AGENTS.md) | Theme, ViewWindowFactory, GUI utilities |
 | Utilities | [src/utils/AGENTS.md](src/utils/AGENTS.md) | PathUtils, HtmlUtils, FileUtils2 reference |
+| pdf.js assets | [src/data/extra/web/pdf.js/AGENTS.md](src/data/extra/web/pdf.js/AGENTS.md) | Touching the vendored PDF viewer, or triaging "the PDF viewer is broken on the Qt 5.15 / Windows 7 build" |
 | Testing | [tests/AGENTS.md](tests/AGENTS.md) | Writing/running tests in either suite, test mode, fixtures, coverage |
 | CI & Packaging | [.github/AGENTS.md](.github/AGENTS.md) | Workflows, `src/Packaging.cmake`, Windows 7 / Qt 5.15 variant, bundled OpenSSL |
 | vxcore (submodule) | [libs/vxcore/AGENTS.md](libs/vxcore/AGENTS.md) | C library: notebook/config/search backend |
