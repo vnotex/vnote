@@ -66,14 +66,11 @@
 #include <QVector>
 #include <QtTest>
 
+#include "source_literal_scanner.h"
+
 namespace tests {
 
-// One coalesced C++ string literal and the source lines it spans.
-struct SourceLiteral {
-  QString text;
-  int firstLine = 0;
-  int lastLine = 0;
-};
+using literalscan::SourceLiteral;
 
 class TestHardcodedColorDrift : public QObject {
   Q_OBJECT
@@ -87,10 +84,7 @@ private slots:
 private:
   static const QStringList &allowedFiles();
   static bool isAllowed(const QString &p_relPath);
-  static bool hasEscapeHatch(const QString &p_line);
-
-  // Comment-aware literal extraction with C++ adjacent-literal concatenation.
-  static QVector<SourceLiteral> extractLiterals(const QString &p_source);
+  static const QStringList &escapeHatchMarkers();
 
   // The property+value test applied to a single (coalesced) literal.
   static bool isHardcodedStyleColor(const QString &p_literal);
@@ -119,173 +113,10 @@ bool TestHardcodedColorDrift::isAllowed(const QString &p_relPath) {
   return false;
 }
 
-bool TestHardcodedColorDrift::hasEscapeHatch(const QString &p_line) {
-  return p_line.contains(QStringLiteral("// hardcoded-color-allow")) ||
-         p_line.contains(QStringLiteral("// NOLINT"));
-}
-
-QVector<SourceLiteral> TestHardcodedColorDrift::extractLiterals(const QString &p_source) {
-  QVector<SourceLiteral> out;
-  const int n = p_source.size();
-  int i = 0;
-  int line = 1;
-
-  const auto advance = [&](int p_count) {
-    for (int k = 0; k < p_count && i < n; ++k, ++i) {
-      if (p_source.at(i) == QLatin1Char('\n')) {
-        ++line;
-      }
-    }
-  };
-
-  // Skips whitespace and comments; returns false at end of input.
-  const auto skipTrivia = [&]() {
-    while (i < n) {
-      const QChar c = p_source.at(i);
-      if (c.isSpace()) {
-        advance(1);
-      } else if (c == QLatin1Char('/') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('/')) {
-        while (i < n && p_source.at(i) != QLatin1Char('\n')) {
-          advance(1);
-        }
-      } else if (c == QLatin1Char('/') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('*')) {
-        advance(2);
-        while (i + 1 < n &&
-               !(p_source.at(i) == QLatin1Char('*') && p_source.at(i + 1) == QLatin1Char('/'))) {
-          advance(1);
-        }
-        advance(2);
-      } else {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  // Reads ONE literal starting at i (which must be at the opening quote, or at
-  // the R of a raw string). Appends its body to p_body. Returns false if this
-  // is not a literal start.
-  const auto readOneLiteral = [&](QString *p_body) {
-    // Raw string: optional encoding prefix already consumed by the caller.
-    if (p_source.at(i) == QLatin1Char('R') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('"')) {
-      advance(2);
-      QString delim;
-      while (i < n && p_source.at(i) != QLatin1Char('(')) {
-        delim.append(p_source.at(i));
-        advance(1);
-      }
-      advance(1); // '('
-      const QString terminator = QLatin1Char(')') + delim + QLatin1Char('"');
-      const int end = p_source.indexOf(terminator, i);
-      if (end < 0) {
-        i = n;
-        return true;
-      }
-      p_body->append(p_source.mid(i, end - i));
-      advance(end - i + terminator.size());
-      return true;
-    }
-
-    if (p_source.at(i) != QLatin1Char('"')) {
-      return false;
-    }
-    advance(1);
-    while (i < n) {
-      const QChar c = p_source.at(i);
-      if (c == QLatin1Char('\\')) {
-        // Keep the escaped char verbatim; we only care about color syntax.
-        if (i + 1 < n) {
-          p_body->append(p_source.at(i + 1));
-        }
-        advance(2);
-        continue;
-      }
-      if (c == QLatin1Char('"')) {
-        advance(1);
-        return true;
-      }
-      p_body->append(c);
-      advance(1);
-    }
-    return true;
-  };
-
-  // Consumes an optional encoding prefix (L, u8, u, U) immediately before a
-  // quote or an R. Returns true if i now sits on a literal start.
-  const auto atLiteralStart = [&]() {
-    int j = i;
-    if (j < n && (p_source.at(j) == QLatin1Char('L') || p_source.at(j) == QLatin1Char('u') ||
-                  p_source.at(j) == QLatin1Char('U'))) {
-      // Must not be part of a longer identifier.
-      if (j > 0 &&
-          (p_source.at(j - 1).isLetterOrNumber() || p_source.at(j - 1) == QLatin1Char('_'))) {
-        return false;
-      }
-      ++j;
-      if (j < n && p_source.at(j) == QLatin1Char('8')) {
-        ++j;
-      }
-    }
-    if (j < n &&
-        (p_source.at(j) == QLatin1Char('"') || (p_source.at(j) == QLatin1Char('R') && j + 1 < n &&
-                                                p_source.at(j + 1) == QLatin1Char('"')))) {
-      advance(j - i);
-      return true;
-    }
-    return false;
-  };
-
-  while (i < n) {
-    const QChar c = p_source.at(i);
-
-    if (c == QLatin1Char('/') && i + 1 < n &&
-        (p_source.at(i + 1) == QLatin1Char('/') || p_source.at(i + 1) == QLatin1Char('*'))) {
-      skipTrivia();
-      continue;
-    }
-
-    if (c == QLatin1Char('\'')) { // Character literal: skip so '"' does not confuse us.
-      advance(1);
-      while (i < n && p_source.at(i) != QLatin1Char('\'')) {
-        advance(p_source.at(i) == QLatin1Char('\\') ? 2 : 1);
-      }
-      advance(1);
-      continue;
-    }
-
-    if (!atLiteralStart()) {
-      advance(1);
-      continue;
-    }
-
-    SourceLiteral lit;
-    lit.firstLine = line;
-    QString body;
-    readOneLiteral(&body);
-    lit.lastLine = line;
-
-    // C++ concatenates adjacent literals separated only by whitespace and
-    // comments. Splitting a style string across lines must NOT defeat the gate.
-    while (true) {
-      const int savedI = i;
-      const int savedLine = line;
-      if (!skipTrivia()) {
-        break;
-      }
-      if (!atLiteralStart()) {
-        i = savedI;
-        line = savedLine;
-        break;
-      }
-      readOneLiteral(&body);
-      lit.lastLine = line;
-    }
-
-    lit.text = body;
-    out.append(lit);
-  }
-
-  return out;
+const QStringList &TestHardcodedColorDrift::escapeHatchMarkers() {
+  static const QStringList markers = {QStringLiteral("// hardcoded-color-allow"),
+                                      QStringLiteral("// NOLINT")};
+  return markers;
 }
 
 bool TestHardcodedColorDrift::isHardcodedStyleColor(const QString &p_literal) {
@@ -327,7 +158,7 @@ bool TestHardcodedColorDrift::isHardcodedStyleColor(const QString &p_literal) {
 }
 
 bool TestHardcodedColorDrift::sourceHasHardcodedStyleColor(const QString &p_source) {
-  for (const auto &lit : extractLiterals(p_source)) {
+  for (const auto &lit : literalscan::extractLiterals(p_source)) {
     if (isHardcodedStyleColor(lit.text)) {
       return true;
     }
@@ -337,32 +168,32 @@ bool TestHardcodedColorDrift::sourceHasHardcodedStyleColor(const QString &p_sour
 
 void TestHardcodedColorDrift::extractorHandlesCommentsRawStringsAndConcatenation() {
   // Adjacent literals concatenate, including across lines.
-  auto lits = extractLiterals(QStringLiteral("f(\"color: \"\n   \"#fff;\");"));
+  auto lits = literalscan::extractLiterals(QStringLiteral("f(\"color: \"\n   \"#fff;\");"));
   QCOMPARE(lits.size(), 1);
   QCOMPARE(lits.at(0).text, QStringLiteral("color: #fff;"));
   QCOMPARE(lits.at(0).firstLine, 1);
   QCOMPARE(lits.at(0).lastLine, 2);
 
   // A comment between them does not break concatenation.
-  lits = extractLiterals(QStringLiteral("f(\"a\" /* c */ \"b\");"));
+  lits = literalscan::extractLiterals(QStringLiteral("f(\"a\" /* c */ \"b\");"));
   QCOMPARE(lits.size(), 1);
   QCOMPARE(lits.at(0).text, QStringLiteral("ab"));
 
   // An operator between them DOES break it.
-  lits = extractLiterals(QStringLiteral("s << \"a\" << \"b\";"));
+  lits = literalscan::extractLiterals(QStringLiteral("s << \"a\" << \"b\";"));
   QCOMPARE(lits.size(), 2);
 
   // Literals inside comments are not literals.
-  QCOMPARE(extractLiterals(QStringLiteral("// \"color: red;\"\n")).size(), 0);
-  QCOMPARE(extractLiterals(QStringLiteral("/* \"color: red;\" */\n")).size(), 0);
+  QCOMPARE(literalscan::extractLiterals(QStringLiteral("// \"color: red;\"\n")).size(), 0);
+  QCOMPARE(literalscan::extractLiterals(QStringLiteral("/* \"color: red;\" */\n")).size(), 0);
 
   // Raw strings are read whole, quotes and all.
-  lits = extractLiterals(QStringLiteral("auto s = R\"(color: \"#fff\";)\";"));
+  lits = literalscan::extractLiterals(QStringLiteral("auto s = R\"(color: \"#fff\";)\";"));
   QCOMPARE(lits.size(), 1);
   QVERIFY(lits.at(0).text.contains(QStringLiteral("#fff")));
 
   // A quote inside a char literal must not open a string.
-  lits = extractLiterals(QStringLiteral("if (c == '\"') { f(\"ok\"); }"));
+  lits = literalscan::extractLiterals(QStringLiteral("if (c == '\"') { f(\"ok\"); }"));
   QCOMPARE(lits.size(), 1);
   QCOMPARE(lits.at(0).text, QStringLiteral("ok"));
 }
@@ -459,19 +290,12 @@ void TestHardcodedColorDrift::scanSrcForHardcodedStyleColors() {
     scanned.insert(relPath);
 
     const QStringList lines = source.split(QLatin1Char('\n'));
-    for (const auto &lit : extractLiterals(source)) {
+    for (const auto &lit : literalscan::extractLiterals(source)) {
       if (!isHardcodedStyleColor(lit.text)) {
         continue;
       }
       // The escape hatch may sit on any line the literal spans.
-      bool suppressed = false;
-      for (int ln = lit.firstLine; ln <= lit.lastLine && ln <= lines.size(); ++ln) {
-        if (hasEscapeHatch(lines.at(ln - 1))) {
-          suppressed = true;
-          break;
-        }
-      }
-      if (!suppressed) {
+      if (!literalscan::hasEscapeHatch(lines, lit, escapeHatchMarkers())) {
         violations.append(
             QStringLiteral("%1:%2: %3").arg(relPath).arg(lit.firstLine).arg(lit.text));
       }

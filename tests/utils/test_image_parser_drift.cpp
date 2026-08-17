@@ -63,14 +63,11 @@
 #include <QVector>
 #include <QtTest>
 
+#include "source_literal_scanner.h"
+
 namespace tests {
 
-// One coalesced C++ string literal and the source lines it spans.
-struct ImageSourceLiteral {
-  QString text;
-  int firstLine = 0;
-  int lastLine = 0;
-};
+using literalscan::SourceLiteral;
 
 class TestImageParserDrift : public QObject {
   Q_OBJECT
@@ -83,9 +80,8 @@ private slots:
 private:
   static const QStringList &allowedFiles();
   static const QStringList &scannedRoots();
+  static const QStringList &escapeHatchMarkers();
   static bool isAllowed(const QString &p_relPath);
-  static bool hasEscapeHatch(const QString &p_line);
-  static QVector<ImageSourceLiteral> extractLiterals(const QString &p_source);
   static bool isImageLinkRegex(const QString &p_literal);
   static bool sourceHasImageLinkRegex(const QString &p_source);
 };
@@ -119,177 +115,10 @@ bool TestImageParserDrift::isAllowed(const QString &p_relPath) {
   return false;
 }
 
-bool TestImageParserDrift::hasEscapeHatch(const QString &p_line) {
-  return p_line.contains(QStringLiteral("// image-parser-allow")) ||
-         p_line.contains(QStringLiteral("// NOLINT"));
-}
-
-QVector<ImageSourceLiteral> TestImageParserDrift::extractLiterals(const QString &p_source) {
-  QVector<ImageSourceLiteral> out;
-  const int n = p_source.size();
-  int i = 0;
-  int line = 1;
-
-  const auto advance = [&](int p_count) {
-    for (int k = 0; k < p_count && i < n; ++k, ++i) {
-      if (p_source.at(i) == QLatin1Char('\n')) {
-        ++line;
-      }
-    }
-  };
-
-  // Skips whitespace and comments; returns false at end of input.
-  const auto skipTrivia = [&]() {
-    while (i < n) {
-      const QChar c = p_source.at(i);
-      if (c.isSpace()) {
-        advance(1);
-      } else if (c == QLatin1Char('/') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('/')) {
-        while (i < n && p_source.at(i) != QLatin1Char('\n')) {
-          advance(1);
-        }
-      } else if (c == QLatin1Char('/') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('*')) {
-        advance(2);
-        while (i + 1 < n &&
-               !(p_source.at(i) == QLatin1Char('*') && p_source.at(i + 1) == QLatin1Char('/'))) {
-          advance(1);
-        }
-        advance(2);
-      } else {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  // Reads ONE literal starting at i and appends its body to p_body.
-  // Returns false when i is not at a literal start.
-  const auto readOneLiteral = [&](QString *p_body) {
-    if (p_source.at(i) == QLatin1Char('R') && i + 1 < n && p_source.at(i + 1) == QLatin1Char('"')) {
-      advance(2);
-      QString delim;
-      while (i < n && p_source.at(i) != QLatin1Char('(')) {
-        delim.append(p_source.at(i));
-        advance(1);
-      }
-      advance(1); // '('
-      const QString terminator = QLatin1Char(')') + delim + QLatin1Char('"');
-      const int end = p_source.indexOf(terminator, i);
-      if (end < 0) {
-        i = n;
-        return true;
-      }
-      p_body->append(p_source.mid(i, end - i));
-      advance(end - i + terminator.size());
-      return true;
-    }
-
-    if (p_source.at(i) != QLatin1Char('"')) {
-      return false;
-    }
-    advance(1);
-    while (i < n) {
-      const QChar c = p_source.at(i);
-      if (c == QLatin1Char('\\')) {
-        // Append the DECODED character, as the compiler does: C++ `"\\!"` is
-        // the one-character-plus-backslash string `\!`, which is what the
-        // regular expression engine will see. Keeping both characters would
-        // leave the body in its doubled source spelling and the signature below
-        // would never match.
-        if (i + 1 < n) {
-          p_body->append(p_source.at(i + 1));
-        }
-        advance(2);
-        continue;
-      }
-      if (c == QLatin1Char('"')) {
-        advance(1);
-        return true;
-      }
-      p_body->append(c);
-      advance(1);
-    }
-    return true;
-  };
-
-  // True when i sits on a literal start, skipping an encoding prefix.
-  const auto atLiteralStart = [&]() {
-    int j = i;
-    if (j < n && (p_source.at(j) == QLatin1Char('L') || p_source.at(j) == QLatin1Char('u') ||
-                  p_source.at(j) == QLatin1Char('U'))) {
-      // Must not be the tail of a longer identifier.
-      if (j > 0) {
-        const QChar prev = p_source.at(j - 1);
-        if (prev.isLetterOrNumber() || prev == QLatin1Char('_')) {
-          return false;
-        }
-      }
-      ++j;
-      if (j < n && p_source.at(j) == QLatin1Char('8')) {
-        ++j;
-      }
-    }
-    if (j >= n) {
-      return false;
-    }
-    if (p_source.at(j) == QLatin1Char('"')) {
-      i = j;
-      return true;
-    }
-    if (p_source.at(j) == QLatin1Char('R') && j + 1 < n && p_source.at(j + 1) == QLatin1Char('"')) {
-      i = j;
-      return true;
-    }
-    return false;
-  };
-
-  while (i < n) {
-    if (!skipTrivia()) {
-      break;
-    }
-
-    // Character literal: skip it, so a '"' does not open a phantom string
-    // literal and swallow the real one that follows. `QLatin1Char('"')` occurs
-    // in both scanned trees, and without this a regex added later in such a
-    // file would slip past the gate.
-    if (p_source.at(i) == QLatin1Char('\'')) {
-      advance(1);
-      while (i < n && p_source.at(i) != QLatin1Char('\'')) {
-        advance(p_source.at(i) == QLatin1Char('\\') ? 2 : 1);
-      }
-      advance(1);
-      continue;
-    }
-
-    if (!atLiteralStart()) {
-      advance(1);
-      continue;
-    }
-
-    ImageSourceLiteral lit;
-    lit.firstLine = line;
-    QString body;
-    readOneLiteral(&body);
-    lit.lastLine = line;
-
-    // Coalesce adjacent literals, as the compiler does.
-    for (;;) {
-      const int save = i;
-      const int saveLine = line;
-      if (!skipTrivia() || !atLiteralStart()) {
-        i = save;
-        line = saveLine;
-        break;
-      }
-      readOneLiteral(&body);
-      lit.lastLine = line;
-    }
-
-    lit.text = body;
-    out.append(lit);
-  }
-
-  return out;
+const QStringList &TestImageParserDrift::escapeHatchMarkers() {
+  static const QStringList markers = {QStringLiteral("// image-parser-allow"),
+                                      QStringLiteral("// NOLINT")};
+  return markers;
 }
 
 bool TestImageParserDrift::isImageLinkRegex(const QString &p_literal) {
@@ -305,7 +134,7 @@ bool TestImageParserDrift::isImageLinkRegex(const QString &p_literal) {
 }
 
 bool TestImageParserDrift::sourceHasImageLinkRegex(const QString &p_source) {
-  for (const auto &lit : extractLiterals(p_source)) {
+  for (const auto &lit : literalscan::extractLiterals(p_source)) {
     if (isImageLinkRegex(lit.text)) {
       return true;
     }
@@ -337,19 +166,12 @@ void TestImageParserDrift::scanForRegexImageParsers() {
       ++filesInRoot;
 
       const QStringList lines = source.split(QLatin1Char('\n'));
-      for (const auto &lit : extractLiterals(source)) {
+      for (const auto &lit : literalscan::extractLiterals(source)) {
         if (!isImageLinkRegex(lit.text)) {
           continue;
         }
 
-        bool excused = false;
-        for (int ln = lit.firstLine; ln <= lit.lastLine && ln <= lines.size(); ++ln) {
-          if (hasEscapeHatch(lines.at(ln - 1))) {
-            excused = true;
-            break;
-          }
-        }
-        if (excused) {
+        if (literalscan::hasEscapeHatch(lines, lit, escapeHatchMarkers())) {
           continue;
         }
 

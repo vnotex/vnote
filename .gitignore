@@ -35,5 +35,9 @@ tmp
 /test_*
 resulte.txt
 
+# clangd scratch files, written next to the source they mirror. vtextedit
+# already ignores these; without the rule here a `git add -A` commits them.
+*.tmp[0-9]
+
 
 .codegraph/
