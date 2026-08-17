@@ -35,9 +35,9 @@
 //     MarkdownHighlighter::getImageLinks() returns region + resolved
 //     destination + declared `=WxH` size. Look one up positionally with
 //     vnotex::ImageLinkLookup::imageLinkAt().
-//   * Against arbitrary content -> the cmark-backed snapshot API in
-//     vte::MarkdownUtils (fetchImagesFromMarkdownText() /
-//     fetchImageInfoViaCmark()), which walks the AST rather than the text.
+//   * Against arbitrary content -> vte::MarkdownUtils::fetchImageLinks(),
+//     which walks cmark's AST and reports exact spans for both the whole
+//     construct and the RAW destination, plus the resolved path and type.
 //
 // Either way the destination arrives already unescaped and entity-decoded, and
 // nothing has to re-derive the grammar of balanced parentheses, angle-bracket
@@ -194,9 +194,9 @@ void TestImageParserDrift::scanForRegexImageParsers() {
                        "Do not re-derive the image grammar. In the editor use "
                        "MarkdownHighlighter::getImageLinks() (with "
                        "vnotex::ImageLinkLookup::imageLinkAt() for a positional query); "
-                       "over arbitrary content use the cmark-backed snapshot API in "
-                       "vte::MarkdownUtils. Both come from cmark and already handle escaped "
-                       "and angle-bracketed destinations, balanced parens, all three title "
+                       "over arbitrary content use vte::MarkdownUtils::fetchImageLinks(). "
+                       "Both come from cmark and already handle escaped and angle-bracketed "
+                       "destinations, balanced parens, all three title "
                        "delimiters and the `=WxH` size extension.\n\n"
                        "See tests/utils/test_image_parser_drift.cpp for the history.")
             .arg(offenders.join(QStringLiteral("\n  ")));

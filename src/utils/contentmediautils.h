@@ -15,7 +15,13 @@ public:
   static void copyMediaFiles(const QString &p_filePath, INotebookBackend *p_backend,
                              const QString &p_destFilePath);
 
-private:
+  // Copy every local image referenced by @p_content next to @p_destFilePath,
+  // rewriting the note when a name collision forces a rename.
+  //
+  // Public so the export behaviour can be tested directly: reaching it through
+  // copyMediaFiles() would drag in FileTypeHelper's singleton and the whole
+  // file-type registry to prove something about image links. Same seam
+  // rationale as LinkInsertUtils and ImageLinkLookup.
   static void copyMarkdownMediaFiles(const QString &p_content, const QString &p_basePath,
                                      INotebookBackend *p_backend, const QString &p_destFilePath);
 };

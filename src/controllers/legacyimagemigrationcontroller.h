@@ -17,10 +17,14 @@ class Buffer2;
 // (vx_images / _v_images). Two occurrences of the same file share a
 // canonicalSrcKey and must be staged only once.
 struct LegacyImageRef {
-  QString urlInLink;                // Exact URL spelling as it appears in the source text.
-  QString srcAbsolutePath;          // Resolved absolute path of the legacy image.
-  QString canonicalSrcKey;          // Dedup key (canonical path, lower-cased on Windows).
-  int urlInLinkPos = -1;            // QChar offset of urlInLink within the source text.
+  QString urlInLink;       // Exact URL spelling as it appears in the source text.
+  QString srcAbsolutePath; // Resolved absolute path of the legacy image.
+  QString canonicalSrcKey; // Dedup key (canonical path, lower-cased on Windows).
+  // Half-open span of the RAW destination in the source text. detect() only
+  // accepts links whose raw spelling IS urlInLink, but the end is carried
+  // explicitly so that no rewrite measures itself with urlInLink.size().
+  int urlStart = -1;
+  int urlEnd = -1;
   QString legacyFolderAbsolutePath; // The matched vx_images/_v_images directory itself.
 };
 
@@ -29,7 +33,10 @@ struct LegacyImageRef {
 struct LegacyImageRewrite {
   QString oldUrlInLink;
   QString newUrlInLink;
-  int urlInLinkPos = -1;
+  // Half-open span of the destination being replaced. The replacement length is
+  // always (urlEnd - urlStart), never oldUrlInLink.size().
+  int urlStart = -1;
+  int urlEnd = -1;
   QString srcAbsolutePath; // For containment-checked deletion at finalize time.
   QString destAbsolutePath;
   QString legacyFolderAbsolutePath;
@@ -62,8 +69,7 @@ public:
     Failed  // Gate satisfied but every deletion failed.
   };
 
-  explicit LegacyImageMigrationController(ServiceLocator &p_services,
-                                          QObject *p_parent = nullptr);
+  explicit LegacyImageMigrationController(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
   // ============ Pure helpers ============
 
@@ -77,8 +83,8 @@ public:
   static bool containsPercentEscape(const QString &p_url);
 
   // Parse @p_markdownText and return every legacy-image occurrence that this
-  // feature can safely MOVE. Results keep resolveRelativeImages()'s descending
-  // urlInLinkPos order, which the QTextCursor rewrite loop depends on.
+  // feature can safely MOVE. Results keep fetchImageLinks()'s descending
+  // urlStart order, which the QTextCursor rewrite loop depends on.
   //
   // Deliberately excluded (the bar simply does not appear):
   //   - parent-relative URLs ("../vx_images/x.png"): deleteAsset() is

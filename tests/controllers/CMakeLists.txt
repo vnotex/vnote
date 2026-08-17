@@ -404,7 +404,6 @@ add_qt_test(test_legacy_image_migration
   SOURCES
     test_legacy_image_migration.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/legacyimagemigrationcontroller.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/imageresolutionutils.cpp
   LINKS
     Qt6::Gui
     Qt6::Widgets

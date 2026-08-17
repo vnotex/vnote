@@ -106,11 +106,11 @@ void TestLegacyImageMigration::testContainsPercentEscape() {
       LegacyImageMigrationController::containsPercentEscape(QStringLiteral("vx_images/a%2Fb.png")));
   QVERIFY(LegacyImageMigrationController::containsPercentEscape(QStringLiteral("%e4%b8%ad.png")));
 
-  QVERIFY(!LegacyImageMigrationController::containsPercentEscape(
-      QStringLiteral("vx_images/pic.png")));
+  QVERIFY(
+      !LegacyImageMigrationController::containsPercentEscape(QStringLiteral("vx_images/pic.png")));
   // A bare % that is not an escape.
-  QVERIFY(!LegacyImageMigrationController::containsPercentEscape(
-      QStringLiteral("vx_images/100%.png")));
+  QVERIFY(
+      !LegacyImageMigrationController::containsPercentEscape(QStringLiteral("vx_images/100%.png")));
 }
 
 // ============ detect() ============
@@ -124,7 +124,8 @@ void TestLegacyImageMigration::testDetectsVxImages() {
       noteWith(QStringLiteral("vx_images/pic.png")), base, QString());
   QCOMPARE(refs.size(), 1);
   QCOMPARE(refs.at(0).urlInLink, QStringLiteral("vx_images/pic.png"));
-  QVERIFY(refs.at(0).urlInLinkPos >= 0);
+  QVERIFY(refs.at(0).urlStart >= 0);
+  QVERIFY(refs.at(0).urlEnd > refs.at(0).urlStart);
   QCOMPARE(QFileInfo(refs.at(0).srcAbsolutePath).fileName(), QStringLiteral("pic.png"));
   QVERIFY(refs.at(0).legacyFolderAbsolutePath.endsWith(QStringLiteral("vx_images")));
   QVERIFY(!refs.at(0).canonicalSrcKey.isEmpty());
@@ -205,11 +206,10 @@ void TestLegacyImageMigration::testRejectsNonLegacyFolders() {
   writeStub(base + QStringLiteral("/vx_assets/0123/pic.png"));
   writeStub(base + QStringLiteral("/bare.png"));
 
-  QCOMPARE(
-      LegacyImageMigrationController::detect(noteWith(QStringLiteral("images/pic.png")), base,
-                                             QString())
-          .size(),
-      0);
+  QCOMPARE(LegacyImageMigrationController::detect(noteWith(QStringLiteral("images/pic.png")), base,
+                                                  QString())
+               .size(),
+           0);
   QCOMPARE(LegacyImageMigrationController::detect(
                noteWith(QStringLiteral("vx_assets/0123/pic.png")), base, QString())
                .size(),
@@ -265,8 +265,8 @@ void TestLegacyImageMigration::testMultipleHitsAreDescending() {
   const auto refs = LegacyImageMigrationController::detect(text, base, QString());
   QCOMPARE(refs.size(), 3);
   for (int i = 1; i < refs.size(); ++i) {
-    QVERIFY2(refs.at(i - 1).urlInLinkPos > refs.at(i).urlInLinkPos,
-             "detect() must preserve the strictly descending urlInLinkPos order");
+    QVERIFY2(refs.at(i - 1).urlStart > refs.at(i).urlStart,
+             "detect() must preserve the strictly descending urlStart order");
   }
   QCOMPARE(refs.at(0).urlInLink, QStringLiteral("vx_images/c.png"));
   QCOMPARE(refs.at(2).urlInLink, QStringLiteral("vx_images/a.png"));
@@ -314,7 +314,7 @@ void TestLegacyImageMigration::testRecordedPositionMatchesSourceSubstring() {
     // This is the invariant detect() enforces before any offset reaches a
     // QTextCursor; a parser fallback reporting a percent-decoded position would
     // fail it and the entry would have been dropped.
-    QCOMPARE(text.mid(ref.urlInLinkPos, ref.urlInLink.size()), ref.urlInLink);
+    QCOMPARE(text.mid(ref.urlStart, ref.urlEnd - ref.urlStart), ref.urlInLink);
   }
 }
 
@@ -352,7 +352,7 @@ void TestLegacyImageMigration::testStageDeduplicatesBySource() {
   QCOMPARE(rewrites.at(0).destAbsolutePath, rewrites.at(1).destAbsolutePath);
   QVERIFY(rewrites.at(0).oldUrlInLink != rewrites.at(1).oldUrlInLink);
   // Order must still be descending.
-  QVERIFY(rewrites.at(0).urlInLinkPos > rewrites.at(1).urlInLinkPos);
+  QVERIFY(rewrites.at(0).urlStart > rewrites.at(1).urlStart);
 }
 
 void TestLegacyImageMigration::testStageRollsBackOnFailure() {
@@ -444,18 +444,16 @@ void TestLegacyImageMigration::testStageRejectsDegenerateDestination() {
   // the assets DIRECTORY, not a file.
   QString err;
   auto dotInserter = [](const QString &) -> QString { return QStringLiteral("."); };
-  QVERIFY(
-      LegacyImageMigrationController::stageAssets(refs, dotInserter, assets, linkifier, &err)
-          .isEmpty());
+  QVERIFY(LegacyImageMigrationController::stageAssets(refs, dotInserter, assets, linkifier, &err)
+              .isEmpty());
   QVERIFY(!err.isEmpty());
 
   // A destination that resolves to a directory rather than a file.
   err.clear();
   QDir().mkpath(assets + QStringLiteral("/adir"));
   auto dirInserter = [](const QString &) -> QString { return QStringLiteral("adir"); };
-  QVERIFY(
-      LegacyImageMigrationController::stageAssets(refs, dirInserter, assets, linkifier, &err)
-          .isEmpty());
+  QVERIFY(LegacyImageMigrationController::stageAssets(refs, dirInserter, assets, linkifier, &err)
+              .isEmpty());
   QVERIFY(!err.isEmpty());
   // The rollback must NOT have removed the pre-existing directory.
   QVERIFY(QFileInfo(assets + QStringLiteral("/adir")).isDir());
@@ -556,8 +554,7 @@ void TestLegacyImageMigration::testDiskStateRejectsSurvivingOldUrl() {
   a.newUrlInLink = QStringLiteral("vx_assets/uuid/a.png");
 
   // Both present: the undo case, or a stale save that has not landed yet.
-  const QString text =
-      QStringLiteral("![a](vx_assets/uuid/a.png)\n\n![old](vx_images/a.png)\n");
+  const QString text = QStringLiteral("![a](vx_assets/uuid/a.png)\n\n![old](vx_images/a.png)\n");
   QVERIFY(!LegacyImageMigrationController::diskStateSatisfies(text, {a}));
 }
 
@@ -569,8 +566,7 @@ void TestLegacyImageMigration::testDiskStateSatisfied() {
   b.oldUrlInLink = QStringLiteral("vx_images/b.png");
   b.newUrlInLink = QStringLiteral("vx_assets/uuid/b.png");
 
-  const QString text =
-      QStringLiteral("![a](vx_assets/uuid/a.png)\n\n![b](vx_assets/uuid/b.png)\n");
+  const QString text = QStringLiteral("![a](vx_assets/uuid/a.png)\n\n![b](vx_assets/uuid/b.png)\n");
   QVERIFY(LegacyImageMigrationController::diskStateSatisfies(text, {a, b}));
   QVERIFY(LegacyImageMigrationController::diskStateSatisfies(text, {}));
 }
@@ -608,10 +604,10 @@ void TestLegacyImageMigration::testReferencedSourceKeysCollapseAliases() {
   // finalize() consults referencedSourceKeys() before deleting an original.
   // Each of these is a live reference to the SAME file.
   const QStringList aliases = {
-      QStringLiteral("vx_images/./a.png"),                                       // dot segment
-      QStringLiteral("./vx_images/../vx_images/a.png"),                          // parent segment
-      QDir::fromNativeSeparators(src),                                           // absolute path
-      QUrl::fromLocalFile(src).toString(),                                       // file: URL
+      QStringLiteral("vx_images/./a.png"),              // dot segment
+      QStringLiteral("./vx_images/../vx_images/a.png"), // parent segment
+      QDir::fromNativeSeparators(src),                  // absolute path
+      QUrl::fromLocalFile(src).toString(),              // file: URL
   };
   for (const auto &alias : aliases) {
     const QString text =
@@ -657,8 +653,8 @@ void TestLegacyImageMigration::testDescendingRewriteLoopProducesExpectedText() {
   for (const auto &ref : refs) {
     const QString newUrl =
         QStringLiteral("vx_assets/uuid/") + QFileInfo(ref.srcAbsolutePath).fileName();
-    cur.setPosition(ref.urlInLinkPos);
-    cur.setPosition(ref.urlInLinkPos + ref.urlInLink.size(), QTextCursor::KeepAnchor);
+    cur.setPosition(ref.urlStart);
+    cur.setPosition(ref.urlEnd, QTextCursor::KeepAnchor);
     cur.insertText(newUrl);
   }
   cur.endEditBlock();

@@ -82,7 +82,6 @@ add_qt_test(test_clipboard_image
   SOURCES
     test_clipboard_image.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/clipboardutils.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/imageresolutionutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
@@ -99,6 +98,31 @@ add_qt_test(test_urlutils
   SOURCES
     test_urlutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/urlutils.cpp
+  GUILESS
+)
+
+# copyMarkdownMediaFiles() is what fills an exported bundle. Two behaviours are
+# easy to lose silently: a reference-style image must still be copied (it has no
+# destination span, and the old text-search implementation dropped it), and a
+# rename must rewrite the destination by its RAW span rather than the cleaned
+# url's length. See tests/utils/test_contentmediautils.cpp.
+add_qt_test(test_contentmediautils
+  SOURCES
+    test_contentmediautils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/contentmediautils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/utils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/global.cpp
+    # Only reached by copyMediaFiles(), which the tests do not call; needed to
+    # link the translation unit.
+    ${CMAKE_SOURCE_DIR}/src/core/buffer/filetypehelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/services/filetype.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/coreconfig.cpp
+  LINKS
+    Qt6::Gui
+    VTextEdit
   GUILESS
 )
 

@@ -8,7 +8,6 @@ target_sources(vnote PRIVATE
     fileutils2.cpp fileutils2.h
     headingslugger.cpp headingslugger.h
     htmlutils.cpp htmlutils.h
-    imageresolutionutils.cpp imageresolutionutils.h
     notebookpathhelpers.cpp notebookpathhelpers.h
     pathutils.cpp pathutils.h
     qtcompat.h

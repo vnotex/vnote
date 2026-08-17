@@ -16,7 +16,6 @@
 #include <core/services/buffer2.h>
 #include <core/services/notebookcoreservice.h>
 #include <utils/fileutils2.h>
-#include <utils/imageresolutionutils.h>
 #include <vtextedit/markdownutils.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -48,8 +47,8 @@ QString finalPathWin(const QString &p_path) {
   }
 
   QString result;
-  DWORD needed = ::GetFinalPathNameByHandleW(handle, nullptr, 0, FILE_NAME_NORMALIZED
-                                                                     | VOLUME_NAME_DOS);
+  DWORD needed =
+      ::GetFinalPathNameByHandleW(handle, nullptr, 0, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
   if (needed > 0) {
     QVarLengthArray<wchar_t, MAX_PATH> buf(static_cast<int>(needed) + 1);
     const DWORD written = ::GetFinalPathNameByHandleW(handle, buf.data(), needed,
@@ -150,8 +149,8 @@ LegacyImageMigrationController::LegacyImageMigrationController(ServiceLocator &p
 // ============ Pure helpers ============
 
 bool LegacyImageMigrationController::isLegacyFolderName(const QString &p_name) {
-  return p_name.compare(c_legacyImageFolderVx, Qt::CaseInsensitive) == 0
-         || p_name.compare(c_legacyImageFolderV, Qt::CaseInsensitive) == 0;
+  return p_name.compare(c_legacyImageFolderVx, Qt::CaseInsensitive) == 0 ||
+         p_name.compare(c_legacyImageFolderV, Qt::CaseInsensitive) == 0;
 }
 
 bool LegacyImageMigrationController::containsPercentEscape(const QString &p_url) {
@@ -167,40 +166,44 @@ LegacyImageMigrationController::detect(const QString &p_markdownText, const QStr
     return results;
   }
 
-  // Already sorted DESCENDING by urlInLinkPos; filtering preserves that.
-  const auto images = ImageResolutionUtils::resolveRelativeImages(p_markdownText, p_basePath);
+  // Already sorted DESCENDING by destination start; filtering preserves that.
+  // Reference-style images sort last with no span and are rejected below --
+  // leaving them unmigrated, which is the safe direction.
+  const auto images =
+      vte::MarkdownUtils::fetchImageLinks(p_markdownText, p_basePath,
+                                          vte::MarkdownLink::TypeFlag::LocalRelativeInternal |
+                                              vte::MarkdownLink::TypeFlag::LocalRelativeExternal);
 
   for (const auto &img : images) {
-    if (!img.exists || img.urlInLinkPos < 0 || img.urlInLink.isEmpty()
-        || img.srcAbsolutePath.isEmpty()) {
+    if (!img.m_exists || !img.hasUrlSpan() || img.m_urlInLink.isEmpty() || img.m_path.isEmpty()) {
       continue;
     }
 
-    // The cmark -> source mapper has a percent-decoded fallback that can report
-    // a position whose source spelling differs from the URL it hands back.
-    // Editing that range would corrupt adjacent markdown, so require an exact
-    // substring match before trusting the offset.
-    if (p_markdownText.mid(img.urlInLinkPos, img.urlInLink.size()) != img.urlInLink) {
+    // Migrate only links whose source spelling is the destination literally.
+    // The span is exact, but an escaped or angle-bracketed destination
+    // (`vx_images/a\_b.png`, `<vx_images/a b.png>`) would have to be re-spelled
+    // rather than substituted, and this feature has no business doing that.
+    if (p_markdownText.mid(img.m_urlStart, img.m_urlEnd - img.m_urlStart) != img.m_urlInLink) {
       continue;
     }
 
-    if (containsPercentEscape(img.urlInLink)) {
+    if (containsPercentEscape(img.m_urlInLink)) {
       continue;
     }
 
     // A query/fragment would make the link text and the resolved file disagree.
-    if (img.urlInLink.contains(QLatin1Char('?')) || img.urlInLink.contains(QLatin1Char('#'))) {
+    if (img.m_urlInLink.contains(QLatin1Char('?')) || img.m_urlInLink.contains(QLatin1Char('#'))) {
       continue;
     }
 
-    const QString cleanedUrl = QDir::cleanPath(img.urlInLink);
+    const QString cleanedUrl = QDir::cleanPath(img.m_urlInLink);
     if (cleanedUrl.isEmpty() || cleanedUrl.startsWith(QStringLiteral(".."))) {
       continue;
     }
 
     // Must be a LocalRelativeInternal-equivalent link: deleteAsset() joins a
     // notebook-root-relative path, and clearObsoleteImages() skips anything else.
-    if (!isPathContained(p_basePath, img.srcAbsolutePath)) {
+    if (!isPathContained(p_basePath, img.m_path)) {
       continue;
     }
 
@@ -220,15 +223,15 @@ LegacyImageMigrationController::detect(const QString &p_markdownText, const QStr
 
     // A notebook whose assetsFolder is itself named vx_images would otherwise
     // be flagged forever.
-    if (!p_assetsFolderToExclude.isEmpty()
-        && isPathContained(p_assetsFolderToExclude, img.srcAbsolutePath)) {
+    if (!p_assetsFolderToExclude.isEmpty() &&
+        isPathContained(p_assetsFolderToExclude, img.m_path)) {
       continue;
     }
 
     // The rmdir target is the matched folder, not the immediate parent:
     // "vx_images/icons/a.png" -> ".../vx_images".
     QString legacyFolder;
-    QString walk = QFileInfo(img.srcAbsolutePath).absolutePath();
+    QString walk = QFileInfo(img.m_path).absolutePath();
     while (!walk.isEmpty()) {
       const QString name = QFileInfo(walk).fileName();
       if (isLegacyFolderName(name)) {
@@ -246,16 +249,17 @@ LegacyImageMigrationController::detect(const QString &p_markdownText, const QStr
     }
 
     LegacyImageRef ref;
-    ref.urlInLink = img.urlInLink;
-    ref.srcAbsolutePath = img.srcAbsolutePath;
-    ref.urlInLinkPos = img.urlInLinkPos;
+    ref.urlInLink = img.m_urlInLink;
+    ref.srcAbsolutePath = img.m_path;
+    ref.urlStart = img.m_urlStart;
+    ref.urlEnd = img.m_urlEnd;
     ref.legacyFolderAbsolutePath = legacyFolder;
 
     // An empty canonical path must never become a shared dedup key for
     // unrelated files: fall back to the cleaned absolute path.
-    QString canonical = QFileInfo(img.srcAbsolutePath).canonicalFilePath();
+    QString canonical = QFileInfo(img.m_path).canonicalFilePath();
     if (canonical.isEmpty()) {
-      canonical = img.srcAbsolutePath;
+      canonical = img.m_path;
     }
     ref.canonicalSrcKey = normalizeForCompare(canonical);
 
@@ -317,7 +321,8 @@ QVector<LegacyImageRewrite> LegacyImageMigrationController::stageAssets(
       LegacyImageRewrite rw;
       rw.oldUrlInLink = ref.urlInLink;
       rw.newUrlInLink = it.value();
-      rw.urlInLinkPos = ref.urlInLinkPos;
+      rw.urlStart = ref.urlStart;
+      rw.urlEnd = ref.urlEnd;
       rw.srcAbsolutePath = ref.srcAbsolutePath;
       rw.destAbsolutePath = keyToDest.value(ref.canonicalSrcKey);
       rw.legacyFolderAbsolutePath = ref.legacyFolderAbsolutePath;
@@ -351,8 +356,8 @@ QVector<LegacyImageRewrite> LegacyImageMigrationController::stageAssets(
     // Windows volumes) and yield ".", which would otherwise promote to the
     // assets DIRECTORY rather than a file.
     const QString destFileName = QFileInfo(dest).fileName();
-    if (destFileName.isEmpty() || destFileName == QStringLiteral(".")
-        || destFileName == QStringLiteral("..") || !QFileInfo(dest).isFile()) {
+    if (destFileName.isEmpty() || destFileName == QStringLiteral(".") ||
+        destFileName == QStringLiteral("..") || !QFileInfo(dest).isFile()) {
       failure = tr("The copy of \"%1\" could not be located in the assets folder.")
                     .arg(ref.srcAbsolutePath);
       break;
@@ -370,7 +375,8 @@ QVector<LegacyImageRewrite> LegacyImageMigrationController::stageAssets(
     LegacyImageRewrite rw;
     rw.oldUrlInLink = ref.urlInLink;
     rw.newUrlInLink = newUrl;
-    rw.urlInLinkPos = ref.urlInLinkPos;
+    rw.urlStart = ref.urlStart;
+    rw.urlEnd = ref.urlEnd;
     rw.srcAbsolutePath = ref.srcAbsolutePath;
     rw.destAbsolutePath = dest;
     rw.legacyFolderAbsolutePath = ref.legacyFolderAbsolutePath;
@@ -420,7 +426,7 @@ bool LegacyImageMigrationController::finalizeGateSatisfied(
 }
 
 QSet<QString> LegacyImageMigrationController::referencedSourceKeys(const QString &p_decodedText,
-                                                                  const QString &p_basePath) {
+                                                                   const QString &p_basePath) {
   QSet<QString> keys;
   if (p_decodedText.isEmpty() || p_basePath.isEmpty()) {
     return keys;
@@ -439,18 +445,20 @@ QSet<QString> LegacyImageMigrationController::referencedSourceKeys(const QString
   // EVERY local shape, not just the relative ones this feature migrates: an
   // absolute path or a file: URL added after the migration is just as much a
   // live reference to the original, and deleting it would break the note.
-  const int localFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal
-                         | vte::MarkdownLink::TypeFlag::LocalRelativeExternal
-                         | vte::MarkdownLink::TypeFlag::LocalAbsolute;
-  for (const auto &link : vte::MarkdownUtils::fetchImagesFromMarkdownText(
+  //
+  // One call suffices now. This used to be unioned with a second, relative-only
+  // resolver, because the old implementation located destinations by searching
+  // the text and dropped whatever it could not find, and because it classified
+  // a relative link to a missing file as Remote -- so a live reference could
+  // fall out of the local set entirely and the original would be deleted.
+  // Positions now come from the parser and classification is syntactic, so
+  // nothing is dropped.
+  const int localFlags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal |
+                         vte::MarkdownLink::TypeFlag::LocalRelativeExternal |
+                         vte::MarkdownLink::TypeFlag::LocalAbsolute;
+  for (const auto &link : vte::MarkdownUtils::fetchImageLinks(
            p_decodedText, p_basePath, static_cast<vte::MarkdownLink::TypeFlags>(localFlags))) {
     add(link.m_path);
-  }
-
-  // Union with the relative resolver as well: it keeps entries whose source
-  // position could not be mapped, which fetchImagesFromMarkdownText drops.
-  for (const auto &img : ImageResolutionUtils::resolveRelativeImages(p_decodedText, p_basePath)) {
-    add(img.srcAbsolutePath);
   }
 
   return keys;
@@ -480,8 +488,7 @@ bool LegacyImageMigrationController::isOptedOut(const QString &p_notebookId) con
     return false;
   }
 
-  const QJsonObject metadata =
-      cfg.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
+  const QJsonObject metadata = cfg.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
   return metadata.value(c_optOutKey).toBool(false);
 }
 
@@ -546,8 +553,7 @@ LegacyImageMigrationController::finalize(Buffer2 &p_buffer,
   // added after the migration that resolves to the same original through a
   // different spelling (e.g. "vx_images/./a.png"). Resolve the final on-disk
   // text and refuse to delete anything it still points at.
-  const QSet<QString> stillReferenced =
-      referencedSourceKeys(diskText, QFileInfo(notePath).path());
+  const QSet<QString> stillReferenced = referencedSourceKeys(diskText, QFileInfo(notePath).path());
 
   auto *notebookSvc = m_services.get<NotebookCoreService>();
   if (!notebookSvc) {

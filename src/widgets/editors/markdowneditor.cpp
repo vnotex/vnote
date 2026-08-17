@@ -52,7 +52,6 @@
 #include <utils/clipboardutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
-#include <utils/imageresolutionutils.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
 #include <utils/webutils.h>
@@ -572,7 +571,10 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
   }
 
   // 4. Resolve relative images.
-  auto images = ImageResolutionUtils::resolveRelativeImages(text, sourceBasePath);
+  const auto images =
+      vte::MarkdownUtils::fetchImageLinks(text, sourceBasePath,
+                                          vte::MarkdownLink::TypeFlag::LocalRelativeInternal |
+                                              vte::MarkdownLink::TypeFlag::LocalRelativeExternal);
   if (images.isEmpty()) {
     return false;
   }
@@ -580,7 +582,7 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
   // 5. Check if at least one image exists.
   bool anyExists = false;
   for (const auto &img : images) {
-    if (img.exists) {
+    if (img.m_exists) {
       anyExists = true;
       break;
     }
@@ -615,36 +617,50 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
   // Deduplication: track already-copied source paths -> new URL.
   QHash<QString, QString> copiedPaths;
 
-  // Process images in descending position order (safe in-place rewriting).
+  // Process images in descending destination order, so rewriting one never
+  // disturbs a span still to be visited. An image with no destination span
+  // (reference-style) sorts last and is skipped rather than mis-rewritten --
+  // the documented safe direction: it stays pointing at the original location.
   for (const auto &img : images) {
-    if (!img.exists) {
-      m_lastPastedImagesSkipped.append(QStringLiteral("%1 (file not found)").arg(img.urlInLink));
+    if (!img.hasUrlSpan()) {
+      m_lastPastedImagesSkipped.append(
+          QStringLiteral("%1 (reference-style link)").arg(img.m_urlInLink));
       continue;
     }
 
+    if (!img.m_exists) {
+      m_lastPastedImagesSkipped.append(QStringLiteral("%1 (file not found)").arg(img.m_urlInLink));
+      continue;
+    }
+
+    // Always measure the replacement with the RAW span. The cleaned
+    // destination may be shorter (`a\_b.png` occupies 8 characters, cleans to
+    // 7), and using its length would eat the character after it.
+    const int rawLength = img.m_urlEnd - img.m_urlStart;
+
     // Check dedup — same source image already copied.
-    auto it = copiedPaths.find(img.srcAbsolutePath);
+    auto it = copiedPaths.find(img.m_path);
     if (it != copiedPaths.end()) {
-      text.replace(img.urlInLinkPos, img.urlInLink.size(), it.value());
+      text.replace(img.m_urlStart, rawLength, it.value());
       continue;
     }
 
     // Copy image via Buffer2::insertAsset.
     QString urlInLink;
-    bool ret = insertImageToBufferFromLocalFile(img.title, img.alt, img.srcAbsolutePath, false,
-                                                &urlInLink);
+    bool ret =
+        insertImageToBufferFromLocalFile(img.m_title, img.m_alt, img.m_path, false, &urlInLink);
 
     if (!ret || urlInLink.isEmpty()) {
-      m_lastPastedImagesSkipped.append(QStringLiteral("%1 (copy failed)").arg(img.urlInLink));
+      m_lastPastedImagesSkipped.append(QStringLiteral("%1 (copy failed)").arg(img.m_urlInLink));
       continue;
     }
 
-    copiedPaths.insert(img.srcAbsolutePath, urlInLink);
+    copiedPaths.insert(img.m_path, urlInLink);
 
     // Rewrite URL in text.
-    text.replace(img.urlInLinkPos, img.urlInLink.size(), urlInLink);
+    text.replace(img.m_urlStart, rawLength, urlInLink);
 
-    m_lastPastedImagesCopied.append(img.urlInLink);
+    m_lastPastedImagesCopied.append(img.m_urlInLink);
   }
 
   // Insert the rewritten text.
@@ -1339,9 +1355,52 @@ static QString purifyImageTitle(QString p_title) {
 }
 
 void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
-  auto infos = vte::MarkdownUtils::fetchImageInfoViaCmark(p_text);
+  const auto allTypes = vte::MarkdownLink::TypeFlag::LocalRelativeInternal |
+                        vte::MarkdownLink::TypeFlag::LocalRelativeExternal |
+                        vte::MarkdownLink::TypeFlag::LocalAbsolute |
+                        vte::MarkdownLink::TypeFlag::QtResource |
+                        vte::MarkdownLink::TypeFlag::Remote;
+  auto infos = vte::MarkdownUtils::fetchImageLinks(p_text, getBasePath(), allTypes);
   if (infos.isEmpty()) {
     return;
+  }
+
+  // This rewrites whole REGIONS, not destinations, so it needs region order --
+  // not the destination order fetchImageLinks() sorts by. Descending, so a
+  // replacement never disturbs a region still to be visited. Reference-style
+  // images have no destination span but a perfectly good region, and are
+  // rewritten into inline links like any other.
+  std::sort(infos.begin(), infos.end(),
+            [](const vte::MarkdownLink &p_a, const vte::MarkdownLink &p_b) {
+              return p_a.m_regionStart > p_b.m_regionStart;
+            });
+
+  // CommonMark allows an image inside another image's description
+  // (`![foo ![bar](/a)](/b)`), and cmark reports both, with the inner region
+  // CONTAINED in the outer one. Rewriting the inner first would leave the
+  // outer's stored end offset stale and corrupt the text around it -- and the
+  // inner image is not rendered anyway: it is alt-text syntax, which the outer
+  // replacement flattens into its title. Keep only outermost images.
+  {
+    QVector<vte::MarkdownLink> outermost;
+    outermost.reserve(infos.size());
+    for (const auto &info : infos) {
+      bool nested = false;
+      for (const auto &other : infos) {
+        if (&other == &info) {
+          continue;
+        }
+        if (other.m_regionStart <= info.m_regionStart && info.m_regionEnd <= other.m_regionEnd &&
+            (other.m_regionStart != info.m_regionStart || other.m_regionEnd != info.m_regionEnd)) {
+          nested = true;
+          break;
+        }
+      }
+      if (!nested) {
+        outermost.append(info);
+      }
+    }
+    infos = outermost;
   }
 
   QProgressDialog proDlg(tr("Fetching images to local..."), tr("Abort"), 0, infos.size(), this);
@@ -1350,20 +1409,20 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
 
   QRegularExpression zhihuRegExp("^https?://www\\.zhihu\\.com/equation\\?tex=(.+)$");
 
-  for (int i = infos.size() - 1; i >= 0; --i) {
-    proDlg.setValue(infos.size() - 1 - i);
+  for (int i = 0; i < infos.size(); ++i) {
+    proDlg.setValue(i);
     if (proDlg.wasCanceled()) {
       break;
     }
 
     const auto &info = infos[i];
-    if (info.m_urlPos < 0 || info.m_regionStart < 0 || info.m_regionEnd < 0 ||
-        info.m_url.isEmpty()) {
+    if (info.m_regionStart < 0 || info.m_regionEnd > p_text.size() ||
+        info.m_regionEnd <= info.m_regionStart) {
       continue;
     }
 
     const QString imageTitle = purifyImageTitle(info.m_alt.trimmed());
-    QString imageUrl = info.m_url;
+    QString imageUrl = info.m_urlInLink;
 
     qDebug() << "fetching image link"
              << p_text.mid(info.m_regionStart, info.m_regionEnd - info.m_regionStart);

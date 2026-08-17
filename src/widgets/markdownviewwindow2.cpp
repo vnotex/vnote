@@ -1709,7 +1709,10 @@ void MarkdownViewWindow2::snapshotInitialImages() {
   // content must never be classified obsolete by clearObsoleteImages().
   int linkFlags =
       vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
-  auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
+  // Collection, not rewriting: reference-style images have no destination span
+  // and are still returned, so a reference-style image is no longer mistaken
+  // for one this note stopped using.
+  auto images = vte::MarkdownUtils::fetchImageLinks(
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
   for (const auto &img : images) {
     if (!img.m_urlInLink.isEmpty()) {
@@ -1745,7 +1748,7 @@ void MarkdownViewWindow2::clearObsoleteImages() {
   // close, even though the note still references it.
   const int linkFlags =
       vte::MarkdownLink::TypeFlag::LocalRelativeInternal | vte::MarkdownLink::TypeFlag::Remote;
-  const auto images = vte::MarkdownUtils::fetchImagesFromMarkdownText(
+  const auto images = vte::MarkdownUtils::fetchImageLinks(
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
 
   QSet<QString> currentImages;
@@ -1950,14 +1953,17 @@ void MarkdownViewWindow2::applyLegacyImageMigration() {
     return;
   }
 
-  // One undoable edit. The rewrites are already sorted DESCENDING by
-  // urlInLinkPos, which keeps every earlier offset valid — never sort ascending.
+  // One undoable edit. The rewrites are already sorted DESCENDING by urlStart,
+  // which keeps every earlier offset valid — never sort ascending.
   {
     QTextCursor cur(doc);
     cur.beginEditBlock();
     for (const auto &rw : rewrites) {
-      cur.setPosition(rw.urlInLinkPos);
-      cur.setPosition(rw.urlInLinkPos + rw.oldUrlInLink.size(), QTextCursor::KeepAnchor);
+      // The span, never oldUrlInLink.size(): the source spelling of a
+      // destination can be longer than its resolved value, and measuring the
+      // replacement with the resolved length would eat the following character.
+      cur.setPosition(rw.urlStart);
+      cur.setPosition(rw.urlEnd, QTextCursor::KeepAnchor);
       cur.insertText(rw.newUrlInLink);
     }
     cur.endEditBlock();
