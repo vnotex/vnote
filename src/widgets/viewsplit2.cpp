@@ -648,46 +648,6 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
   QMenu menu(this);
 
-  // ---- Close Actions ----
-  // A detached window hosts a single tab and exposes only file/reload actions.
-  if (!m_detached) {
-    auto *closeTabAct =
-        menu.addAction(tr("Close Tab"), [this, p_tabIndex]() { closeTab(p_tabIndex); });
-
-    auto *closeAllAct = menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
-      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::All);
-    });
-
-    auto *closeOtherAct = menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
-      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::Others);
-    });
-
-    auto *closeLeftAct = menu.addAction(tr("Close Tabs To The Left"), [this, p_tabIndex]() {
-      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheLeft);
-    });
-    closeLeftAct->setEnabled(p_tabIndex > 0);
-
-    auto *closeRightAct = menu.addAction(tr("Close Tabs To The Right"), [this, p_tabIndex]() {
-      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheRight);
-    });
-    closeRightAct->setEnabled(p_tabIndex < count() - 1);
-
-    if (coreConfig) {
-      WidgetUtils::addActionShortcutText(closeTabAct,
-                                         coreConfig->getShortcut(CoreConfig::Shortcut::CloseFocus));
-      WidgetUtils::addActionShortcutText(
-          closeAllAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseAllTabs));
-      WidgetUtils::addActionShortcutText(
-          closeOtherAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
-      WidgetUtils::addActionShortcutText(
-          closeLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft));
-      WidgetUtils::addActionShortcutText(
-          closeRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
-    }
-
-    menu.addSeparator();
-  }
-
   // ---- File Actions ----
   // Resolve the absolute path (notebook file or external file).
   const auto &nodeId = win->getNodeId();
@@ -769,6 +729,46 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   autoReloadAct->setToolTip(tr("Automatically reload file from disk when modified externally"));
   connect(autoReloadAct, &QAction::toggled, this,
           [win](bool p_checked) { win->setAutoReload(p_checked); });
+
+  // ---- Close Actions ----
+  // A detached window hosts a single tab and exposes only file/reload actions.
+  if (!m_detached) {
+    menu.addSeparator();
+
+    auto *closeTabAct =
+        menu.addAction(tr("Close Tab"), [this, p_tabIndex]() { closeTab(p_tabIndex); });
+
+    auto *closeAllAct = menu.addAction(tr("Close All Tabs"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::All);
+    });
+
+    auto *closeOtherAct = menu.addAction(tr("Close Other Tabs"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::Others);
+    });
+
+    auto *closeLeftAct = menu.addAction(tr("Close Tabs To The Left"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheLeft);
+    });
+    closeLeftAct->setEnabled(p_tabIndex > 0);
+
+    auto *closeRightAct = menu.addAction(tr("Close Tabs To The Right"), [this, p_tabIndex]() {
+      emit closeTabsRequested(this, p_tabIndex, CloseTabMode::ToTheRight);
+    });
+    closeRightAct->setEnabled(p_tabIndex < count() - 1);
+
+    if (coreConfig) {
+      WidgetUtils::addActionShortcutText(closeTabAct,
+                                         coreConfig->getShortcut(CoreConfig::Shortcut::CloseFocus));
+      WidgetUtils::addActionShortcutText(
+          closeAllAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseAllTabs));
+      WidgetUtils::addActionShortcutText(
+          closeOtherAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseOtherTabs));
+      WidgetUtils::addActionShortcutText(
+          closeLeftAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheLeft));
+      WidgetUtils::addActionShortcutText(
+          closeRightAct, coreConfig->getShortcut(CoreConfig::Shortcut::CloseTabsToTheRight));
+    }
+  }
 
   menu.exec(p_globalPos);
 }
