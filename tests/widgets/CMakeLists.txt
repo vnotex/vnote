@@ -11,6 +11,30 @@ add_qt_test(test_linkinsertutils
   GUILESS
 )
 
+# ImageLinkLookup: "is there an image under the cursor?" for the editor's Image
+# context submenu. Extracted from MarkdownEditor so it can be tested without the
+# editor, the highlighter or a document: it takes plain ints rather than a
+# QTextBlock, following the LinkInsertUtils precedent. GUILESS — no widgets,
+# only vte::md::ImageLinkInfo, which is a header-only struct.
+add_qt_test(test_imagelinklookup
+  SOURCES
+    test_imagelinklookup.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/imagelinklookup.cpp
+  LINKS
+    Qt6::Core
+    VTextEdit
+  GUILESS
+)
+target_include_directories(test_imagelinklookup PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+)
+
+add_custom_command(TARGET test_imagelinklookup POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_imagelinklookup>
+)
+
 # InlineBanner: reusable pure-view notification strip (no services, no vxcore,
 # no VTextEdit). NOT GUILESS — QFrame/QPushButton need a QApplication. Compiles
 # propertydefs.cpp for the BannerSeverity constant and widgetutils.cpp for the

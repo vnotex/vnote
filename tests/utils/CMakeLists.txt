@@ -143,6 +143,21 @@ target_compile_definitions(test_hardcoded_color_drift PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
+# Grep-gate regression test: no regular-expression Markdown image parser may
+# come back. vtextedit 2d07683 + vnote 5f811d45 deleted the `=WxH` group from
+# such an expression and thereby stopped it matching sized images at all,
+# costing three and a half months of broken in-place previews. The defect was
+# the EXISTENCE of a second parser, not any one line of it, so only a gate on
+# its existence catches the next one. See tests/utils/test_image_parser_drift.cpp.
+add_qt_test(test_image_parser_drift
+  SOURCES
+    test_image_parser_drift.cpp
+  GUILESS
+)
+target_compile_definitions(test_image_parser_drift PRIVATE
+  VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 # Coverage gate between the vendored pdf.js tree on disk and the pdf.js block of
 # src/data/extra/extra.qrc. A file with no qrc entry 404s silently at runtime
 # inside the WebEngine page; nothing else in the build notices. See

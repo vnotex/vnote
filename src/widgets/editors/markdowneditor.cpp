@@ -59,6 +59,7 @@
 #include <utils/widgetutils.h>
 
 #include "../outlineprovider.h"
+#include "imagelinklookup.h"
 #include "linkinsertutils.h"
 #include "markdowntablehelper.h"
 #include "previewhelper.h"
@@ -1615,33 +1616,27 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
                                       const QTextBlock &p_block) {
   const auto text = p_block.text();
 
-  if (!vte::MarkdownUtils::hasImageLink(text)) {
+  // Positional query against the live document, so the spans computed by the
+  // parse that produced the on-screen highlighting are reused directly. There
+  // is no second parser here: the destination arrives already resolved.
+  const auto &links = getHighlighter()->getImageLinks();
+  int index = -1;
+  const auto hit =
+      ImageLinkLookup::imageLinkAt(links, p_cursorPos, p_block.position(), text.size(), &index);
+  if (hit == ImageLinkLookup::ImageLinkHit::None) {
     return false;
   }
 
-  QString imgPath;
-
-  const auto &regions = getHighlighter()->getImageRegions();
-  for (const auto &reg : regions) {
-    if (!reg.contains(p_cursorPos) &&
-        (!reg.contains(p_cursorPos - 1) || p_cursorPos != p_block.position() + text.size())) {
-      continue;
-    }
-
-    if (reg.m_endPos > p_block.position() + text.size()) {
-      return true;
-    }
-
-    const auto linkText =
-        text.mid(reg.m_startPos - p_block.position(), reg.m_endPos - reg.m_startPos);
-    const auto shortUrl = vte::MarkdownUtils::fetchImageLinkUrl(linkText);
-    if (shortUrl.isEmpty()) {
-      return true;
-    }
-
-    imgPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), shortUrl);
-    break;
+  // An image whose construct runs past this block, or one with no destination
+  // at all (a reference-style image, or `![a]()`), is recognised as an image but
+  // offers no actions -- every action below needs a resolvable path.
+  if (hit == ImageLinkLookup::ImageLinkHit::SpansBeyondBlock ||
+      links[index].m_destination.isEmpty()) {
+    return true;
   }
+
+  const QString imgPath =
+      vte::MarkdownUtils::linkUrlToPath(getBasePath(), links[index].m_destination);
 
   // Create "Image" submenu and position it before the standard actions.
   auto imageSubMenu = new QMenu(tr("Image"), p_menu);
