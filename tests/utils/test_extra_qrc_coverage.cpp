@@ -108,7 +108,12 @@ bool TestExtraQrcCoverage::isRuntimeFile(const QString &p_relPath) {
   // web/pdf.js/README.md ⇒ VNote's own provenance note for the vendored tree
   // (upstream URL, version, which files are VNote-owned). Documentation only;
   // no code path reads it. Pre-existing exclusion, predates this test.
-  if (p_relPath == QLatin1String("web/pdf.js/README.md")) {
+  //
+  // web/pdf.js/AGENTS.md ⇒ the module doc for the vendored tree, same deal.
+  // Any *.md sitting directly in the pdf.js tree root is VNote-authored
+  // documentation for maintainers; upstream ships none, and nothing in the
+  // WebEngine page fetches it, so it must not bloat the .rcc.
+  if (p_relPath.endsWith(QLatin1String(".md"))) {
     return false;
   }
 
