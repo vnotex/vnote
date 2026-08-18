@@ -564,13 +564,16 @@ add_qt_test(test_imagehostuploadhook
 add_qt_test(test_imagehostasync
   SOURCES
     test_imagehostasync.cpp
+    # The PRODUCTION placeholder helpers. MarkdownEditor is not compiled by any
+    # test target, so its statics were extracted here to be gated directly --
+    # a mirrored copy stays green while production drifts.
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/imageuploadplaceholder.cpp
   LINKS
     core_services
-    # The placeholder mirror spells its replacement with the production
-    # generator, vte::MarkdownUtils::generateImageLink().
     VTextEdit
   GUILESS
 )
+target_include_directories(test_imagehostasync PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 add_qt_test(test_htmltemplateservice
   SOURCES

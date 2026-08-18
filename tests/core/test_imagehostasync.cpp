@@ -5,6 +5,8 @@
 
 #include <vtextedit/markdownutils.h>
 
+#include <widgets/editors/imageuploadplaceholder.h>
+
 #include <core/services/imagehostworker.h>
 #include <imagehost/iimagehostprovider.h>
 #include <imagehost/imagehosttypes.h>
@@ -237,53 +239,23 @@ void TestImageHostAsync::testExceptionHandling() {
 // These test the same string patterns used by MarkdownEditor's static helpers
 // without pulling in vtextedit dependencies.
 
+// The PRODUCTION helpers, not a transcribed copy. MarkdownEditor's statics are
+// thin forwarders onto these, so a change to the real replacement algorithm --
+// or to the size it spells -- fails here.
+using vnotex::ImageUploadPlaceholder;
+
 static QString generatePlaceholder(int p_token, const QString &p_fileName) {
-  return QStringLiteral("![Uploading %1...](vnote-upload-%2)").arg(p_fileName).arg(p_token);
+  return ImageUploadPlaceholder::generate(p_token, p_fileName);
 }
 
-// Mirrors MarkdownEditor::replacePlaceholder(). The final REPLACEMENT is spelled
-// by the production generator (a size makes it an HTML `<img>`), but the
-// PLACEHOLDER is always Markdown, which is what keeps the crude
-// lastIndexOf("![") / indexOf(')') scan below valid either way.
 static QString replacePlaceholder(const QString &p_content, int p_token, const QString &p_realUrl,
                                   const QString &p_title, int p_width = 0, int p_height = 0) {
-  const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
-  int idx = p_content.indexOf(marker);
-  if (idx < 0)
-    return p_content;
-  int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0)
-    return p_content;
-  int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0)
-    return p_content;
-  QString result = p_content;
-  result.replace(
-      linkStart, linkEnd - linkStart + 1,
-      vte::MarkdownUtils::generateImageLink(p_title, p_realUrl, QString(), p_width, p_height));
-  return result;
+  return ImageUploadPlaceholder::replace(p_content, p_token, p_realUrl, p_title, p_width, p_height);
 }
 
 static QString removePlaceholder(const QString &p_content, int p_token) {
-  const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
-  int idx = p_content.indexOf(marker);
-  if (idx < 0)
-    return p_content;
-  int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0)
-    return p_content;
-  int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0)
-    return p_content;
-  QString result = p_content;
-  int removeEnd = linkEnd + 1;
-  if (removeEnd < result.size() && result[removeEnd] == '\n') {
-    removeEnd++;
-  }
-  result.remove(linkStart, removeEnd - linkStart);
-  return result;
+  return ImageUploadPlaceholder::remove(p_content, p_token);
 }
-
 void TestImageHostAsync::testGeneratePlaceholder() {
   QString ph = generatePlaceholder(42, QStringLiteral("image.png"));
   QCOMPARE(ph, QStringLiteral("![Uploading image.png...](vnote-upload-42)"));

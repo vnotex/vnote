@@ -34,8 +34,9 @@ struct SpanEdit {
 //   canonical `width` then `height` order. Both are coalesced into ONE edit, so
 //   an insertion can never share a start position with a removal.
 // - A removal also swallows the whitespace that separated the attribute from
-//   the one before it, so nothing is left with a double space -- but never
-//   past @p_regionStart, and never past the insertion point.
+//   the one before it, so nothing is left with a double space -- but never past
+//   @p_regionStart, and, for an attribute at or after the insertion point,
+//   never past that point either.
 //
 // @p_content is the whole document; @p_regionStart is where the tag begins in
 // it. Every span in @p_tag is already absolute.

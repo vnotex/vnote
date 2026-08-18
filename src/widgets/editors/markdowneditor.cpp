@@ -34,6 +34,7 @@
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/tableinsertdialog.h>
 #include <widgets/editors/imagesizeedits.h>
+#include <widgets/editors/imageuploadplaceholder.h>
 #include <widgets/messageboxhelper.h>
 
 #include <widgets/dialogs/selectdialog.h>
@@ -1642,53 +1643,21 @@ int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString
   return token;
 }
 
+// Thin forwarders. The logic lives in ImageUploadPlaceholder so it can be
+// gated directly -- MarkdownEditor is not compiled by any test target.
 QString MarkdownEditor::generatePlaceholder(int p_token, const QString &p_fileName) {
-  return QStringLiteral("![Uploading %1...](vnote-upload-%2)").arg(p_fileName).arg(p_token);
+  return ImageUploadPlaceholder::generate(p_token, p_fileName);
 }
 
-// The PLACEHOLDER is always Markdown (generatePlaceholder()), which is what
-// keeps the crude lastIndexOf("![") / indexOf(')') scan below valid even when the
-// replacement it writes is an HTML tag.
 QString MarkdownEditor::replacePlaceholder(const QString &p_content, int p_token,
                                            const QString &p_realUrl, const QString &p_title,
                                            int p_width, int p_height) {
-  const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
-  int idx = p_content.indexOf(marker);
-  if (idx < 0)
-    return p_content;
-  int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0)
-    return p_content;
-  int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0)
-    return p_content;
-  QString result = p_content;
-  result.replace(
-      linkStart, linkEnd - linkStart + 1,
-      vte::MarkdownUtils::generateImageLink(p_title, p_realUrl, QString(), p_width, p_height));
-  return result;
+  return ImageUploadPlaceholder::replace(p_content, p_token, p_realUrl, p_title, p_width, p_height);
 }
 
 QString MarkdownEditor::removePlaceholder(const QString &p_content, int p_token) {
-  const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
-  int idx = p_content.indexOf(marker);
-  if (idx < 0)
-    return p_content;
-  int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0)
-    return p_content;
-  int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0)
-    return p_content;
-  QString result = p_content;
-  int removeEnd = linkEnd + 1;
-  if (removeEnd < result.size() && result[removeEnd] == '\n') {
-    removeEnd++;
-  }
-  result.remove(linkStart, removeEnd - linkStart);
-  return result;
+  return ImageUploadPlaceholder::remove(p_content, p_token);
 }
-
 void MarkdownEditor::onUploadFinished(int p_token, const ImageHostAsyncResult &p_result) {
   auto it = m_pendingUploads.find(p_token);
   if (it == m_pendingUploads.end()) {

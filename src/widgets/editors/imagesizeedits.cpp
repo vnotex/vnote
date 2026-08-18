@@ -73,9 +73,12 @@ QVector<SpanEdit> vnotex::planHtmlImageSizeEdits(const QString &p_content, int p
         edits.append({attr.m_attrStart, attr.m_attrEnd,
                       QStringLiteral("%1=\"%2\"").arg(name).arg(values[i])});
       } else {
-        // A removal never walks back past the insertion point, so it can never
-        // overlap the coalesced insertion above.
-        const int floor = qMax(p_regionStart, insertAt);
+        // A removal at or after the insertion point must never walk back past
+        // it, or it would overlap the coalesced insertion. An attribute BEFORE
+        // `src` cannot reach it, so it is floored at the tag start instead and
+        // still swallows its separator.
+        const int floor =
+            attr.m_attrStart >= insertAt ? qMax(p_regionStart, insertAt) : p_regionStart;
         edits.append({widenRemovalStart(p_content, floor, attr.m_attrStart), attr.m_attrEnd, {}});
       }
       first = false;

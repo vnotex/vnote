@@ -35,6 +35,7 @@ private slots:
   void removesEveryOccurrenceOfAClearedDimension();
   void keepsTheFirstAndDropsLaterDuplicatesWhenSetting();
   void insertionAndAdjacentRemovalDoNotCorruptTheTag();
+  void aDimensionBeforeSrcSwallowsItsSeparator();
   void aTagAtANonZeroOffsetIsNotEatenByLeadingWhitespace();
   void preservesAttributesVNoteDidNotAuthor();
 };
@@ -115,6 +116,21 @@ void TestImageSizeEdits::insertionAndAdjacentRemovalDoNotCorruptTheTag() {
   // And with both: insert height, remove width, in one plan.
   QCOMPARE(resize(QStringLiteral("<img src=\"a.png\" width=\"1\" width=\"2\">"), 0, 0, 300),
            QStringLiteral("<img src=\"a.png\" height=\"300\">"));
+}
+
+// A dimension BEFORE `src` cannot reach the insertion point, so it is floored
+// at the tag start and still swallows its separator -- no double space is left
+// behind, and the insertion after `src` is unaffected.
+void TestImageSizeEdits::aDimensionBeforeSrcSwallowsItsSeparator() {
+  QCOMPARE(resize(QStringLiteral("<img width=\"1\" src=\"a.png\">"), 0, 0, 0),
+           QStringLiteral("<img src=\"a.png\">"));
+  QCOMPARE(resize(QStringLiteral("<img width=\"1\" src=\"a.png\">"), 0, 0, 300),
+           QStringLiteral("<img src=\"a.png\" height=\"300\">"));
+  QCOMPARE(resize(QStringLiteral("<img width=\"1\" height=\"2\" src=\"a.png\">"), 0, 0, 0),
+           QStringLiteral("<img src=\"a.png\">"));
+  // The tag start itself is never eaten.
+  QCOMPARE(resize(QStringLiteral("<img   width=\"1\"   src=\"a.png\">"), 0, 0, 0),
+           QStringLiteral("<img   src=\"a.png\">"));
 }
 
 // The absolute-vs-relative indexing hazard: with the tag at a nonzero offset

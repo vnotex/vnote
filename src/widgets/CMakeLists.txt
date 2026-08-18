@@ -63,6 +63,7 @@ target_sources(vnote PRIVATE
     editors/graphvizhelper.cpp editors/graphvizhelper.h
     editors/imagelinklookup.cpp editors/imagelinklookup.h
     editors/imagesizeedits.cpp editors/imagesizeedits.h
+    editors/imageuploadplaceholder.cpp editors/imageuploadplaceholder.h
     editors/linkinsertutils.cpp editors/linkinsertutils.h
     editors/markdowneditor.cpp editors/markdowneditor.h
     editors/markdowntable.cpp editors/markdowntable.h
