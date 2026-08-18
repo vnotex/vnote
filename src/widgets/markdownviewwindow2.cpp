@@ -1752,9 +1752,27 @@ void MarkdownViewWindow2::clearObsoleteImages() {
       content, resourcePath, static_cast<vte::MarkdownLink::TypeFlags>(linkFlags));
 
   QSet<QString> currentImages;
+  // An HTML `src` whose value still contains an `&` after decoding holds a
+  // character reference this tree does not resolve the way the RENDERER does.
+  // cmark's decoder (which scanHtmlImgTags() uses) requires the terminating
+  // semicolon and applies CommonMark's numeric rules; an HTML attribute parser
+  // additionally accepts semicolon-less legacy names (`&copy.png`) and remaps
+  // C1 numeric references. The destination the browser actually loads may
+  // therefore differ from the one recorded here.
+  //
+  // That is harmless for preview and export -- an image simply does not
+  // resolve -- but NOT for deletion. So an unresolved `&` anywhere in the note
+  // disarms obsolete-image deletion entirely for this pass, exactly as the
+  // raw-content net below disarms it per url. Nothing is lost by keeping an
+  // asset; an asset deleted out from under a rendered image is unrecoverable.
+  bool ambiguousReference = false;
   for (const auto &img : images) {
     if (!img.m_urlInLink.isEmpty()) {
       currentImages.insert(img.m_urlInLink);
+    }
+    if (img.m_syntax == vte::MarkdownLink::Syntax::Html &&
+        img.m_urlInLink.contains(QLatin1Char('&'))) {
+      ambiguousReference = true;
     }
   }
 
@@ -1766,6 +1784,12 @@ void MarkdownViewWindow2::clearObsoleteImages() {
     } else {
       ++it;
     }
+  }
+
+  if (ambiguousReference) {
+    qWarning() << "MarkdownViewWindow2: skipped obsolete-image cleanup; a src holds an "
+                  "unresolved character reference";
+    obsoleteImages.clear();
   }
 
   for (const auto &obsoleteUrl : obsoleteImages) {
