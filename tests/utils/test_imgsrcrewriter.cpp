@@ -28,6 +28,7 @@ private slots:
   void everyAttributeSurvivesARewrite();
   void dataUrisAreLeftAlone();
   void anUnresolvableSrcIsLeftAlone();
+  void aReplacementThatWouldBreakOutOfTheTagIsRefused();
   void multipleImagesAreAllRewritten();
 };
 
@@ -82,6 +83,42 @@ void TestImgSrcRewriter::anUnresolvableSrcIsLeftAlone() {
   // rather than emptied.
   QVERIFY(!vnotex::rewriteRenderedImgSrc(html, QLatin1Char('"'), constant(QString())));
   QCOMPARE(html, original);
+}
+
+// A copied resource's name derives from the source URL's base name, so an asset
+// named `a"><script>...</script>.png` reaches this function as a replacement
+// that would terminate the attribute and inject markup into the exported
+// document. The tag must be left alone instead.
+void TestImgSrcRewriter::aReplacementThatWouldBreakOutOfTheTagIsRefused() {
+  const QString original = QStringLiteral("<img src=\"a.png\" width=\"10\">");
+
+  const QVector<QString> hostile{
+      QStringLiteral("./r/a\"><script>x</script>.png"),
+      QStringLiteral("./r/a>b.png"),
+      QStringLiteral("./r/a<b.png"),
+  };
+  for (const QString &replacement : hostile) {
+    QString html = original;
+    QVERIFY2(!vnotex::rewriteRenderedImgSrc(html, QLatin1Char('"'), constant(replacement)),
+             qPrintable(replacement));
+    QCOMPARE(html, original);
+  }
+
+  // The single-quoted (data-URI) variant refuses on its own quote character.
+  {
+    QString html = original;
+    QVERIFY(!vnotex::rewriteRenderedImgSrc(html, QLatin1Char('\''),
+                                           constant(QStringLiteral("a' onerror='x"))));
+    QCOMPARE(html, original);
+  }
+
+  // A quote of the OTHER flavour is harmless and must still be rewritten.
+  {
+    QString html = original;
+    QVERIFY(vnotex::rewriteRenderedImgSrc(html, QLatin1Char('"'),
+                                          constant(QStringLiteral("./r/a'b.png"))));
+    QCOMPARE(html, QStringLiteral("<img src=\"./r/a'b.png\" width=\"10\">"));
+  }
 }
 
 void TestImgSrcRewriter::multipleImagesAreAllRewritten() {

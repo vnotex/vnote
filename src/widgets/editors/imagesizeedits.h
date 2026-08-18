@@ -41,16 +41,11 @@ struct SpanEdit {
 // @p_content is the whole document; @p_regionStart is where the tag begins in
 // it. Every span in @p_tag is already absolute.
 //
-// The result is sorted for application: descending by start, and for an equal
-// start the REMOVAL comes first, so applying them in order keeps every span not
-// yet applied valid.
+// The result is ALREADY in application order, so a caller applies it as
+// returned: descending by start, and for an equal start the REMOVAL first, so
+// every span not yet applied stays valid.
 QVector<SpanEdit> planHtmlImageSizeEdits(const QString &p_content, int p_regionStart,
                                          const vte::HtmlImgTag &p_tag, int p_width, int p_height);
-
-// Sort @p_edits into application order: descending by start, removal before
-// insertion at an equal start. Exposed so a caller mixing in a whole-region
-// replacement orders it the same way.
-void sortSpanEditsForApplication(QVector<SpanEdit> &p_edits);
 
 } // namespace vnotex
 

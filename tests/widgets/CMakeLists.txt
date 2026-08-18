@@ -1394,6 +1394,9 @@ if(TARGET Qt6::Qml)
     LINKS
       # Guarding on the target does NOT link QJSEngine; this does.
       Qt6::Qml
+      # Expectations are built by the PRODUCTION generator rather than spelled
+      # as literals, so a C++-side change to the canonical tag fails this gate.
+      VTextEdit
     GUILESS
   )
   target_compile_definitions(test_turndown_js PRIVATE

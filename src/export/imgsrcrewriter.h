@@ -19,6 +19,11 @@ namespace vnotex {
 // @p_resolve is called with the current src and returns the replacement, or an
 // empty string to leave that tag alone. `data:` URIs are never offered.
 //
+// A replacement containing @p_quote, `<` or `>` is REFUSED (the tag is left
+// alone and a warning logged): it would otherwise terminate the attribute and
+// inject markup into the exported document. Copied-resource names derive from
+// source URLs, so this is reachable from a note asset's filename.
+//
 // The attributes on EITHER SIDE of `src` are carried across verbatim, which is
 // what makes an image's `width` / `height` survive an export.
 //

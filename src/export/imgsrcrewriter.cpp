@@ -1,5 +1,6 @@
 #include "imgsrcrewriter.h"
 
+#include <QDebug>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 
@@ -33,6 +34,25 @@ bool vnotex::rewriteRenderedImgSrc(QString &p_html, QChar p_quote,
 
     const QString replacement = p_resolve(match.captured(2));
     if (replacement.isEmpty()) {
+      pos = idx + match.capturedLength();
+      continue;
+    }
+
+    // The replacement is interpolated into markup, so it must not be able to
+    // terminate the attribute or the tag. It is not free of user influence:
+    // WebUtils::copyResource() derives the copied file's name from the source
+    // URL's base name, so an asset literally named `a"><script>…</script>.png`
+    // would otherwise inject markup into the exported document -- which is then
+    // opened in a browser, or handed to wkhtmltopdf.
+    //
+    // Refusing is right rather than escaping: every legitimate replacement here
+    // is a data URI or a `./resources/<name>` path, neither of which contains a
+    // quote or `>`. Escaping would instead produce a valid attribute pointing
+    // at a file that does not exist.
+    if (replacement.contains(p_quote) || replacement.contains(QLatin1Char('>')) ||
+        replacement.contains(QLatin1Char('<'))) {
+      qWarning() << "refused to rewrite an <img> src that would break out of the tag"
+                 << replacement.left(80);
       pos = idx + match.capturedLength();
       continue;
     }

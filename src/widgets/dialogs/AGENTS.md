@@ -120,10 +120,15 @@ step), applied in **descending span order** so earlier spans stay valid.
 | Current | New size | Result |
 |---|---|---|
 | Markdown | non-empty | replace the region with `generateImageTag(alt, dest, title, w, h)` |
-| Markdown | empty | no-op |
+| Markdown carrying a `=WxH` size | empty | replace the region with `![alt](dest "title")` — drop the size, **stay Markdown** |
+| Markdown with no size | empty | no-op |
 | HTML | non-empty | edit `width`/`height` **in place**; insert a missing one right after `src`; **remove every occurrence** of a dimension whose new value is 0, and when setting one, update the first occurrence and remove all later duplicates |
 | HTML, `!hasUnknownAttrs() && !hasDuplicateAttrs()` **and** the round trip verifies | empty | replace the region with `![alt](dest "title")` |
 | HTML, otherwise | empty | remove all `width`/`height` in place; keep the tag |
+
+A Markdown image is not necessarily unsized: the `=WxH` extension is parsed by this
+editor's cmark fork and honored by `PreviewMgr`, so `ImageSizeDialog` opens prefilled for one
+and its "Leave both empty to remove the size" hint has to actually work.
 
 **Never regenerate an HTML tag VNote did not author** — `class`, `style`, `data-*`, `loading` and
 anything else the user wrote must survive. That is why the sized case edits attributes rather than

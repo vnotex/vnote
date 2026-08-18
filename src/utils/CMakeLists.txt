@@ -1,5 +1,6 @@
 target_sources(vnote PRIVATE
     contentmediautils.cpp contentmediautils.h
+    imagedestinationrewriter.cpp imagedestinationrewriter.h
     cursorpreservationpolicy.cpp cursorpreservationpolicy.h
     asyncworker.cpp asyncworker.h
     callbackpool.cpp callbackpool.h

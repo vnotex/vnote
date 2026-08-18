@@ -28,6 +28,8 @@
 #include <QString>
 #include <QtTest>
 
+#include <vtextedit/markdownutils.h>
+
 namespace tests {
 
 class TestTurndownJs : public QObject {
@@ -119,11 +121,14 @@ void TestTurndownJs::imageRuleIsInstalled() {
 }
 
 void TestTurndownJs::unsizedImageStaysMarkdown() {
-  QCOMPARE(convert(QStringLiteral("a.png")), QStringLiteral("![](a.png)"));
+  QCOMPARE(convert(QStringLiteral("a.png")),
+           vte::MarkdownUtils::generateImageLink(QString(), QStringLiteral("a.png"), QString()));
   QCOMPARE(convert(QStringLiteral("a.png"), QStringLiteral("alt")),
-           QStringLiteral("![alt](a.png)"));
+           vte::MarkdownUtils::generateImageLink(QStringLiteral("alt"), QStringLiteral("a.png"),
+                                                 QString()));
   QCOMPARE(convert(QStringLiteral("a.png"), QStringLiteral("alt"), QStringLiteral("t")),
-           QStringLiteral("![alt](a.png \"t\")"));
+           vte::MarkdownUtils::generateImageLink(QStringLiteral("alt"), QStringLiteral("a.png"),
+                                                 QStringLiteral("t")));
 }
 
 void TestTurndownJs::sizedImageBecomesTheCanonicalTag() {
@@ -140,15 +145,17 @@ void TestTurndownJs::sizedImageBecomesTheCanonicalTag() {
 
 // The same "valid positive integer" rule as the C++ side.
 void TestTurndownJs::onlyValidPositiveIntegersCountAsASize() {
+  const QString unsized =
+      vte::MarkdownUtils::generateImageLink(QString(), QStringLiteral("a.png"), QString());
   for (const auto &bad : {QStringLiteral("50%"), QStringLiteral("abc"), QStringLiteral("0"),
                           QStringLiteral("-5"), QStringLiteral("1.5"), QStringLiteral("")}) {
-    QVERIFY2(convert(QStringLiteral("a.png"), QString(), QString(), bad) ==
-                 QStringLiteral("![](a.png)"),
+    QVERIFY2(convert(QStringLiteral("a.png"), QString(), QString(), bad) == unsized,
              qPrintable(bad));
   }
   // Surrounding whitespace is tolerated, as in the C++ scanner.
-  QCOMPARE(convert(QStringLiteral("a.png"), QString(), QString(), QStringLiteral(" 500 ")),
-           QStringLiteral("<img src=\"a.png\" width=\"500\" />"));
+  QCOMPARE(
+      convert(QStringLiteral("a.png"), QString(), QString(), QStringLiteral(" 500 ")),
+      vte::MarkdownUtils::generateImageTag(QString(), QStringLiteral("a.png"), QString(), 500, 0));
 }
 
 void TestTurndownJs::valuesAreEscaped() {

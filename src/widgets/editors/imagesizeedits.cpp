@@ -23,9 +23,10 @@ int widenRemovalStart(const QString &p_content, int p_floor, int p_attrStart) {
   }
   return start;
 }
-} // namespace
-
-void vnotex::sortSpanEditsForApplication(QVector<SpanEdit> &p_edits) {
+// Sort into application order: descending by start, removal before insertion at
+// an equal start. Internal -- planHtmlImageSizeEdits() returns an already
+// ordered vector, so no caller needs to re-sort.
+void sortSpanEditsForApplication(QVector<SpanEdit> &p_edits) {
   // Descending by start so an earlier span stays valid while a later one is
   // written. At an equal start the REMOVAL (a non-empty span) must run before
   // the INSERTION (a zero-length span): running the insertion first would leave
@@ -39,6 +40,7 @@ void vnotex::sortSpanEditsForApplication(QVector<SpanEdit> &p_edits) {
     return p_a.m_end > p_b.m_end;
   });
 }
+} // namespace
 
 QVector<SpanEdit> vnotex::planHtmlImageSizeEdits(const QString &p_content, int p_regionStart,
                                                  const vte::HtmlImgTag &p_tag, int p_width,

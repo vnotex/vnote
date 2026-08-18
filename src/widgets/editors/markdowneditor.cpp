@@ -56,6 +56,7 @@
 #include <utils/clipboardutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
+#include <utils/imagedestinationrewriter.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
 #include <utils/webutils.h>
@@ -77,50 +78,6 @@ QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services
       themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")));
 }
 
-// Rewrite one image reference's destination in @p_text to the SOURCE-NEUTRAL
-// logical url @p_url, spelling it the way that reference's own syntax requires.
-// Returns whether anything was written.
-//
-// The replacement is ALWAYS measured with a source span, never with the length
-// of the cleaned destination: `a\_b.png` occupies 8 source characters and cleans
-// to 7, so the cleaned length would eat the character after it.
-//
-// For HTML the WHOLE `src` attribute is replaced, not just its value (D9-adjacent:
-// an unquoted `src=old.png` renamed to a name containing a space would otherwise
-// split into two attributes). MarkdownLink carries the VALUE span by contract, so
-// the region is re-scanned for the attribute span; anything that does not yield
-// exactly one tag with one usable `src` is skipped conservatively.
-bool rewriteImageDestination(QString &p_text, const vte::MarkdownLink &p_link,
-                             const QString &p_url) {
-  if (!p_link.hasUrlSpan()) {
-    return false;
-  }
-
-  if (p_link.m_syntax == vte::MarkdownLink::Syntax::Markdown) {
-    p_text.replace(p_link.m_urlStart, p_link.m_urlEnd - p_link.m_urlStart, p_url);
-    return true;
-  }
-
-  vte::RawTextState state;
-  const auto tags = vte::scanHtmlImgTags(
-      p_text.mid(p_link.m_regionStart, p_link.m_regionEnd - p_link.m_regionStart),
-      p_link.m_regionStart, &state);
-  if (tags.size() != 1) {
-    qWarning() << "skipped rewriting an HTML image whose tag could not be re-scanned"
-               << p_link.m_urlInLink;
-    return false;
-  }
-  const auto *srcAttr = tags.first().attr("src");
-  if (!srcAttr || srcAttr->m_attrStart < 0 || srcAttr->m_attrEnd <= srcAttr->m_attrStart) {
-    qWarning() << "skipped rewriting an HTML image with no usable src attribute"
-               << p_link.m_urlInLink;
-    return false;
-  }
-
-  p_text.replace(srcAttr->m_attrStart, srcAttr->m_attrEnd - srcAttr->m_attrStart,
-                 vte::spellHtmlSrcAttr(p_url));
-  return true;
-}
 } // namespace
 
 MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, int p_blockNumber,
@@ -1850,12 +1807,21 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
 
   if (p_link.m_syntax == vte::md::ImageLinkInfo::Syntax::Markdown) {
     if (newWidth <= 0 && newHeight <= 0) {
-      // Markdown has no size to remove; nothing to do.
-      return;
+      if (p_link.m_width <= 0 && p_link.m_height <= 0) {
+        // No declared size, so nothing to remove.
+        return;
+      }
+      // A Markdown image CAN carry a size, via the `=WxH` extension this editor
+      // parses and previews. Dropping it keeps the Markdown form -- converting
+      // to HTML here would be the opposite of what the user asked for.
+      edits.append({regionStart, regionEnd,
+                    vte::MarkdownUtils::generateImageLink(p_link.m_alt, p_link.m_destination,
+                                                          p_link.m_title, 0, 0)});
+    } else {
+      edits.append({regionStart, regionEnd,
+                    vte::MarkdownUtils::generateImageTag(p_link.m_alt, p_link.m_destination,
+                                                         p_link.m_title, newWidth, newHeight)});
     }
-    edits.append({regionStart, regionEnd,
-                  vte::MarkdownUtils::generateImageTag(p_link.m_alt, p_link.m_destination,
-                                                       p_link.m_title, newWidth, newHeight)});
   } else {
     vte::RawTextState state;
     const auto tags = vte::scanHtmlImgTags(region, regionStart, &state);
@@ -1893,8 +1859,8 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
     return;
   }
 
-  sortSpanEditsForApplication(edits);
-
+  // Already in application order: each whole-region branch above appends
+  // exactly ONE edit, and planHtmlImageSizeEdits() sorts before returning.
   auto cursor = m_textEdit->textCursor();
   cursor.beginEditBlock();
   for (const auto &edit : edits) {

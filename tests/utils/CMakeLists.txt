@@ -110,6 +110,7 @@ add_qt_test(test_contentmediautils
   SOURCES
     test_contentmediautils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/contentmediautils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/imagedestinationrewriter.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
