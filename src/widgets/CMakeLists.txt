@@ -18,6 +18,7 @@ target_sources(vnote PRIVATE
     dialogs/exportdialog2.cpp dialogs/exportdialog2.h
     dialogs/folderfilesfilterwidget.cpp dialogs/folderfilesfilterwidget.h
     dialogs/imageinsertdialog.cpp dialogs/imageinsertdialog.h
+    dialogs/imagesizedialog.cpp dialogs/imagesizedialog.h
     dialogs/importfolderdialog2.cpp dialogs/importfolderdialog2.h
     dialogs/linkinsertdialog.cpp dialogs/linkinsertdialog.h
     dialogs/managenotebooksdialog2.cpp dialogs/managenotebooksdialog2.h

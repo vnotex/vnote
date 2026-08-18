@@ -50,6 +50,20 @@
 //   test fixture) is NOT flagged: the signature requires the regex-escaped
 //   forms of all three of `![`, `]` and `(`.
 //
+// === HTML `<img>` too ===
+// The same rule applies to the HTML spelling of an image. There is exactly ONE
+// note-source `<img>` parser, vte::scanHtmlImgTags()
+// (libs/vtextedit/src/include/vtextedit/htmlimgscanner.h), and both the snapshot
+// API and the live editor walker call it. A second one would drift on quoting,
+// casing, entities, raw-text elements and the single-line rule, exactly as the
+// second Markdown parser drifted on `=WxH`.
+//
+// Scanners over RENDERED or CLIPBOARD html are a different problem and are
+// exempt: WebViewExporter rewrites what the web view produced, and the paste
+// path inspects what another application put on the clipboard. Neither ever
+// sees note source. Both carry a line-local `// image-parser-allow:` hatch
+// naming the reason; neither file is allow-listed wholesale.
+//
 // === Allow-list / escape hatch ===
 // Add a file to allowedFiles() with a one-line reason, or append
 // `// image-parser-allow: <reason>` (or `// NOLINT`) to any line the literal
@@ -76,15 +90,31 @@ private slots:
   void scanForRegexImageParsers();
   void detectorFlagsTheRegressionItGuards();
   void detectorIgnoresLegitimatePatterns();
+  void scanForHtmlImgParsers();
+  void htmlDetectorFlagsAttributeRegexes();
+  void htmlDetectorIgnoresLegitimatePatterns();
 
 private:
   static const QStringList &allowedFiles();
+  static const QStringList &htmlAllowedFiles();
   static const QStringList &scannedRoots();
   static const QStringList &escapeHatchMarkers();
   static bool isAllowed(const QString &p_relPath);
+  static bool isAllowedIn(const QString &p_relPath, const QStringList &p_allowed);
   static bool isImageLinkRegex(const QString &p_literal);
+  static bool isHtmlImgRegex(const QString &p_literal);
   static bool sourceHasImageLinkRegex(const QString &p_source);
+  static bool sourceHasHtmlImgRegex(const QString &p_source);
 };
+
+const QStringList &TestImageParserDrift::htmlAllowedFiles() {
+  static const QStringList files = {
+      // THE note-source `<img>` parser. Its whole job is to pattern-match one.
+      QStringLiteral("libs/vtextedit/src/utils/htmlimgscanner.cpp"),
+      QStringLiteral("libs/vtextedit/src/include/vtextedit/htmlimgscanner.h"),
+  };
+  return files;
+}
 
 const QStringList &TestImageParserDrift::allowedFiles() {
   static const QStringList files = {
@@ -105,14 +135,18 @@ const QStringList &TestImageParserDrift::scannedRoots() {
   return roots;
 }
 
-bool TestImageParserDrift::isAllowed(const QString &p_relPath) {
+bool TestImageParserDrift::isAllowedIn(const QString &p_relPath, const QStringList &p_allowed) {
   const QString normalized = QString(p_relPath).replace(QLatin1Char('\\'), QLatin1Char('/'));
-  for (const QString &allowed : allowedFiles()) {
+  for (const QString &allowed : p_allowed) {
     if (normalized.endsWith(allowed)) {
       return true;
     }
   }
   return false;
+}
+
+bool TestImageParserDrift::isAllowed(const QString &p_relPath) {
+  return isAllowedIn(p_relPath, allowedFiles());
 }
 
 const QStringList &TestImageParserDrift::escapeHatchMarkers() {
@@ -136,6 +170,53 @@ bool TestImageParserDrift::isImageLinkRegex(const QString &p_literal) {
 bool TestImageParserDrift::sourceHasImageLinkRegex(const QString &p_source) {
   for (const auto &lit : literalscan::extractLiterals(p_source)) {
     if (isImageLinkRegex(lit.text)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// The signature of an HTML `<img>` ATTRIBUTE regular expression: the tag name
+// together with an attribute name AND a regex construct that captures or
+// skips over its value. A literal that merely spells a tag (a generator, a
+// test fixture, a template) has no regex construct and is not flagged.
+bool TestImageParserDrift::isHtmlImgRegex(const QString &p_literal) {
+  const QString lower = p_literal.toLower();
+  if (!lower.contains(QStringLiteral("<img"))) {
+    return false;
+  }
+
+  static const QStringList attrs = {QStringLiteral("src"), QStringLiteral("width"),
+                                    QStringLiteral("height"), QStringLiteral("alt"),
+                                    QStringLiteral("title")};
+  bool hasAttr = false;
+  for (const QString &attr : attrs) {
+    if (lower.contains(attr)) {
+      hasAttr = true;
+      break;
+    }
+  }
+  if (!hasAttr) {
+    return false;
+  }
+
+  // A regex construct, spelled as it appears in a C++ literal (so the escapes
+  // are doubled).
+  static const QStringList constructs = {
+      QStringLiteral("([^"), QStringLiteral("(.*"), QStringLiteral("(.+"), QStringLiteral("[^>]"),
+      QStringLiteral("\\s"), QStringLiteral("\\S"), QStringLiteral("\\w"), QStringLiteral("\\d"),
+      QStringLiteral("(?:"), QStringLiteral("(?!")};
+  for (const QString &construct : constructs) {
+    if (p_literal.contains(construct)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TestImageParserDrift::sourceHasHtmlImgRegex(const QString &p_source) {
+  for (const auto &lit : literalscan::extractLiterals(p_source)) {
+    if (isHtmlImgRegex(lit.text)) {
       return true;
     }
   }
@@ -259,6 +340,94 @@ void TestImageParserDrift::detectorIgnoresLegitimatePatterns() {
   // Inside a comment, so not a literal at all.
   QVERIFY(!sourceHasImageLinkRegex(
       QStringLiteral("// the old pattern was \"\\\\!\\\\[(.*)\\\\]\\\\((.*)\\\\)\"\nint x = 0;")));
+}
+
+void TestImageParserDrift::scanForHtmlImgParsers() {
+  QStringList offenders;
+
+  for (const QString &root : scannedRoots()) {
+    QVERIFY2(QDir(root).exists(), qPrintable(QStringLiteral("missing root: ") + root));
+
+    int filesInRoot = 0;
+    QDirIterator it(root, QStringList{QStringLiteral("*.cpp"), QStringLiteral("*.h")}, QDir::Files,
+                    QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+      const QString path = it.next();
+      const QString rel = QDir(QStringLiteral(VNOTE_SOURCE_DIR)).relativeFilePath(path);
+      if (isAllowedIn(rel, htmlAllowedFiles())) {
+        continue;
+      }
+
+      QFile f(path);
+      if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        continue;
+      }
+      const QString source = QString::fromUtf8(f.readAll());
+      ++filesInRoot;
+
+      const QStringList lines = source.split(QLatin1Char('\n'));
+      for (const auto &lit : literalscan::extractLiterals(source)) {
+        if (!isHtmlImgRegex(lit.text)) {
+          continue;
+        }
+        if (literalscan::hasEscapeHatch(lines, lit, escapeHatchMarkers())) {
+          continue;
+        }
+        offenders.append(QStringLiteral("%1:%2: %3").arg(rel).arg(lit.firstLine).arg(lit.text));
+      }
+    }
+
+    QVERIFY2(filesInRoot > 50,
+             qPrintable(QStringLiteral("scanned only %1 files under %2; the root looks wrong")
+                            .arg(filesInRoot)
+                            .arg(root)));
+  }
+
+  if (!offenders.isEmpty()) {
+    const QString message =
+        QStringLiteral("A second HTML `<img>` parser appeared:\n  %1\n\n"
+                       "Note-source `<img>` parsing has exactly ONE implementation, "
+                       "vte::scanHtmlImgTags() in "
+                       "libs/vtextedit/src/include/vtextedit/htmlimgscanner.h. It already "
+                       "handles case-insensitive names, single/double/unquoted values, "
+                       "HTML entities, comments, raw-text elements (script/style/"
+                       "textarea/title) and the single-line rule, and it reports "
+                       "byte-exact attribute spans.\n\n"
+                       "If your scanner operates on RENDERED or CLIPBOARD html rather "
+                       "than note source, append `// image-parser-allow: <reason>` to "
+                       "the offending line.")
+            .arg(offenders.join(QStringLiteral("\n  ")));
+    QFAIL(qPrintable(message));
+  }
+}
+
+void TestImageParserDrift::htmlDetectorFlagsAttributeRegexes() {
+  // image-parser-allow: the shapes this gate exists to catch, as data.
+  QVERIFY(sourceHasHtmlImgRegex(
+      QStringLiteral("QRegularExpression re(\"<img ([^>]*)src=\\\"([^\\\"]+)\\\"([^>]*)>\");")));
+  // image-parser-allow: whitespace-based variant.
+  QVERIFY(sourceHasHtmlImgRegex(
+      QStringLiteral("auto r = QStringLiteral(\"<img\\\\s+width=(\\\\d+)\");")));
+  // image-parser-allow: non-capturing variant.
+  QVERIFY(sourceHasHtmlImgRegex(QStringLiteral("auto r = QStringLiteral(\"<IMG(?:\\\\s+alt)\");")));
+}
+
+void TestImageParserDrift::htmlDetectorIgnoresLegitimatePatterns() {
+  // A generator, which spells a tag but parses nothing.
+  QVERIFY(!sourceHasHtmlImgRegex(
+      QStringLiteral("auto s = QStringLiteral(\"<img src=\\\"%1\\\" width=\\\"%2\\\" />\");")));
+
+  // A test fixture / expected value.
+  QVERIFY(!sourceHasHtmlImgRegex(
+      QStringLiteral("const QString html = QStringLiteral(\"<img src=\\\"a.png\\\">\");")));
+
+  // A regex for a different tag entirely.
+  QVERIFY(!sourceHasHtmlImgRegex(QStringLiteral(
+      "QRegularExpression re(QStringLiteral(\"<a ([^>]*)href=\\\"([^\\\"]+)\\\"\"));")));
+
+  // Inside a comment, so not a literal at all.
+  QVERIFY(!sourceHasHtmlImgRegex(
+      QStringLiteral("// the old pattern was \"<img ([^>]*)src=(.*)>\"\nint x = 0;")));
 }
 
 } // namespace tests

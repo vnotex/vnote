@@ -566,6 +566,9 @@ add_qt_test(test_imagehostasync
     test_imagehostasync.cpp
   LINKS
     core_services
+    # The placeholder mirror spells its replacement with the production
+    # generator, vte::MarkdownUtils::generateImageLink().
+    VTextEdit
   GUILESS
 )
 

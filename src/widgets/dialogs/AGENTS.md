@@ -92,6 +92,55 @@ the session cache. The quick-note path is unrelated: its template name is persis
 | `ExportDialog2` | (`export` controller / inline) | Export notes |
 | `NewQuickAccessItemDialog` | (inline) | Add a quick-access entry (used inside Settings) |
 | `SnippetInfoWidget2` / snippet dialogs | `SnippetController` | Snippet metadata |
+| `ImageInsertDialog` | (inline, `MarkdownEditor`) | Insert an image; also the size-authoring surface (see below) |
+| `ImageSizeDialog` | (inline, `MarkdownEditor`) | `Image > Set Size…` on an existing image |
+
+## Image Size Authoring
+
+Two surfaces, both legacy-style dialogs (no `2` suffix, no `ServiceLocator`, driven directly by
+`MarkdownEditor`) rather than the `*Dialog2` controller pattern — they follow the shape of the
+`ImageInsertDialog` that was already there.
+
+- **`ImageInsertDialog`** gains optional **Width (px)** / **Height (px)** fields. They are left
+  **empty by default**; the source image's natural size appears only as *placeholder* text.
+  Prefilling would turn every single insert into an HTML `<img>`.
+- **`ImageSizeDialog`** is the `Image > Set Size…` action, prefilled from the image under the
+  cursor. Leaving **both** fields empty means "no size".
+
+Any nonzero size makes the emitted reference an HTML `<img …/>` rather than a Markdown link:
+Markdown has no portable way to express one (`=WxH` is understood by this editor but by few other
+tools). `vte::MarkdownUtils::generateImageLink(title, url, alt, w, h)` makes that choice in one
+place.
+
+### `Set Size…` conversion table
+
+`MarkdownEditor::setImageSize()`. All edits go through a single `QTextCursor` edit block (one undo
+step), applied in **descending span order** so earlier spans stay valid.
+
+| Current | New size | Result |
+|---|---|---|
+| Markdown | non-empty | replace the region with `generateImageTag(alt, dest, title, w, h)` |
+| Markdown | empty | no-op |
+| HTML | non-empty | edit `width`/`height` **in place**; insert a missing one right after `src`; **remove every occurrence** of a dimension whose new value is 0, and when setting one, update the first occurrence and remove all later duplicates |
+| HTML, `!hasUnknownAttrs() && !hasDuplicateAttrs()` **and** the round trip verifies | empty | replace the region with `![alt](dest "title")` |
+| HTML, otherwise | empty | remove all `width`/`height` in place; keep the tag |
+
+**Never regenerate an HTML tag VNote did not author** — `class`, `style`, `data-*`, `loading` and
+anything else the user wrote must survive. That is why the sized case edits attributes rather than
+re-emitting the tag.
+
+**HTML → Markdown is gated on a verified round trip, not a character blacklist.** Build the
+candidate Markdown, parse it back with `fetchImageLinks()`, and require exactly one image covering
+the whole candidate with the same decoded url, alt and title. A blacklist is provably insufficient:
+a bare `a\_b.png` destination parses back as `a_b.png`, a silently different file. The round trip
+compares only the *effective* (first-wins) attribute values, so it cannot observe a discarded
+duplicate — hence the separate `!hasDuplicateAttrs()` precondition.
+
+Clearing `width="100" width="200"` must remove BOTH: unmasking only the second would leave the
+image silently still sized.
+
+Parsing and generation live in vtextedit; see
+[`libs/vtextedit/AGENTS.md` § Image References](../../../libs/vtextedit/AGENTS.md#image-references-markdown-and-html).
 
 ## Capitalization Cleanup (Completed)
 

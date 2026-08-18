@@ -1,5 +1,7 @@
 #include "webviewexporter.h"
 
+#include "imgsrcrewriter.h"
+
 #include "exportfontresolver.h"
 #include "exportstyleresolver.h"
 #include "wkhtmltopdfhtmlpatch.h"
@@ -31,7 +33,12 @@
 #include <widgets/editors/plantumlhelper.h>
 using namespace vnotex;
 
-static const QString c_imgRegExp = "<img ([^>]*)src=\"(?!data:)([^\"]+)\"([^>]*)>";
+// image-parser-allow: this scans RENDERED html produced by the web view, not
+// note source. Note-source `<img>` parsing has exactly one implementation,
+// vte::scanHtmlImgTags()
+// (libs/vtextedit/src/include/vtextedit/htmlimgscanner.h). The `([^>]*)` groups
+// around `src` are what preserve every other attribute -- including the
+// `width` / `height` a sized image carries -- across the rewrites below.
 
 namespace {
 
@@ -685,41 +692,16 @@ bool WebViewExporter::embedStyleResources(QString &p_html) const {
 }
 
 bool WebViewExporter::embedBodyResources(const QUrl &p_baseUrl, QString &p_html) {
-  bool altered = false;
   if (p_baseUrl.isEmpty()) {
-    return altered;
+    return false;
   }
 
-  QRegularExpression reg(c_imgRegExp);
-
-  int pos = 0;
-  while (pos < p_html.size()) {
-    QRegularExpressionMatch match;
-    int idx = p_html.indexOf(reg, pos, &match);
-    if (idx == -1) {
-      break;
-    }
-
-    if (match.captured(2).isEmpty()) {
-      pos = idx + match.capturedLength();
-      continue;
-    }
-
-    QUrl srcUrl(p_baseUrl.resolved(match.captured(2)));
-    const auto dataURI = WebUtils::toDataUri(srcUrl, true);
-    if (dataURI.isEmpty()) {
-      pos = idx + match.capturedLength();
-    } else {
-      // Replace the url string in html.
-      QString newUrl =
-          QStringLiteral("<img %1src='%2'%3>").arg(match.captured(1), dataURI, match.captured(3));
-      p_html.replace(idx, match.capturedLength(), newUrl);
-      pos = idx + newUrl.size();
-      altered = true;
-    }
-  }
-
-  return altered;
+  // Shared with fixBodyResources() so the two passes cannot drift, and so the
+  // attribute-preservation guarantee (a sized image keeps its width/height) is
+  // testable without a web engine.
+  return rewriteRenderedImgSrc(p_html, QLatin1Char('\''), [&p_baseUrl](const QString &p_src) {
+    return WebUtils::toDataUri(p_baseUrl.resolved(p_src), true);
+  });
 }
 
 static QString getResourceRelativePath(const QString &p_file) {
@@ -731,42 +713,15 @@ static QString getResourceRelativePath(const QString &p_file) {
 
 bool WebViewExporter::fixBodyResources(const QUrl &p_baseUrl, const QString &p_folder,
                                        QString &p_html) {
-  bool altered = false;
   if (p_baseUrl.isEmpty()) {
-    return altered;
+    return false;
   }
 
-  QRegularExpression reg(c_imgRegExp);
-
-  int pos = 0;
-  while (pos < p_html.size()) {
-    QRegularExpressionMatch match;
-    int idx = p_html.indexOf(reg, pos, &match);
-    if (idx == -1) {
-      break;
-    }
-
-    if (match.captured(2).isEmpty()) {
-      pos = idx + match.capturedLength();
-      continue;
-    }
-
-    QUrl srcUrl(p_baseUrl.resolved(match.captured(2)));
-    QString targetFile = WebUtils::copyResource(srcUrl, p_folder);
-    if (targetFile.isEmpty()) {
-      pos = idx + match.capturedLength();
-    } else {
-      // Replace the url string in html.
-      QString newUrl =
-          QStringLiteral("<img %1src=\"%2\"%3>")
-              .arg(match.captured(1), getResourceRelativePath(targetFile), match.captured(3));
-      p_html.replace(idx, match.capturedLength(), newUrl);
-      pos = idx + newUrl.size();
-      altered = true;
-    }
-  }
-
-  return altered;
+  return rewriteRenderedImgSrc(
+      p_html, QLatin1Char('"'), [&p_baseUrl, &p_folder](const QString &p_src) {
+        const QString targetFile = WebUtils::copyResource(p_baseUrl.resolved(p_src), p_folder);
+        return targetFile.isEmpty() ? QString() : getResourceRelativePath(targetFile);
+      });
 }
 
 bool WebViewExporter::prepareLivePageForExport(RasterFlags p_flags, const QPageLayout *p_layout) {

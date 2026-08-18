@@ -175,6 +175,15 @@ LegacyImageMigrationController::detect(const QString &p_markdownText, const QStr
                                               vte::MarkdownLink::TypeFlag::LocalRelativeExternal);
 
   for (const auto &img : images) {
+    // HTML `<img>` images are OUT OF SCOPE for migration: migrating one means
+    // substituting the destination text in place, which is a Markdown-shaped
+    // edit (see the literal-spelling guard below). Note that
+    // referencedSourceKeys() deliberately does NOT filter by syntax -- it is a
+    // liveness check, and an HTML reference keeps an asset alive.
+    if (img.m_syntax != vte::MarkdownLink::Syntax::Markdown) {
+      continue;
+    }
+
     if (!img.m_exists || !img.hasUrlSpan() || img.m_urlInLink.isEmpty() || img.m_path.isEmpty()) {
       continue;
     }
@@ -445,6 +454,13 @@ QSet<QString> LegacyImageMigrationController::referencedSourceKeys(const QString
   // EVERY local shape, not just the relative ones this feature migrates: an
   // absolute path or a file: URL added after the migration is just as much a
   // live reference to the original, and deleting it would break the note.
+  //
+  // For the same reason there is deliberately NO Syntax filter here, even
+  // though detect() skips HTML images. This runs immediately before deleting a
+  // migrated original: if a note referenced one legacy asset from both a
+  // Markdown link and an `<img>`, excluding HTML would let the original be
+  // deleted once the Markdown reference had been rewritten, silently breaking
+  // the tag.
   //
   // One call suffices now. This used to be unioned with a second, relative-only
   // resolver, because the old implementation located destinations by searching

@@ -182,6 +182,17 @@ target_compile_definitions(test_image_parser_drift PRIVATE
   VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
+# The `src`-rewriting half of WebViewExporter, extracted so the guarantee that a
+# sized image keeps its width/height across an export is testable without a web
+# engine.
+add_qt_test(test_imgsrcrewriter
+  SOURCES
+    test_imgsrcrewriter.cpp
+    ${CMAKE_SOURCE_DIR}/src/export/imgsrcrewriter.cpp
+  GUILESS
+)
+target_include_directories(test_imgsrcrewriter PRIVATE ${CMAKE_SOURCE_DIR}/src)
+
 # Coverage gate between the vendored pdf.js tree on disk and the pdf.js block of
 # src/data/extra/extra.qrc. A file with no qrc entry 404s silently at runtime
 # inside the WebEngine page; nothing else in the build notices. See

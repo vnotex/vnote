@@ -17,6 +17,7 @@ private slots:
   void testCursorAtEndOfBlock();
   void testRegionSpanningBeyondBlock();
   void testEmptyLinks();
+  void testHtmlImageIsFoundLikeAnyOther();
 };
 
 namespace {
@@ -91,6 +92,40 @@ void TestImageLinkLookup::testEmptyLinks() {
                                         nullptr),
            ImageLinkHit::Found);
 }
+// The lookup is deliberately syntax-agnostic: it answers "is there an image
+// under the cursor?" from regions alone. An HTML `<img>` gets the same Image
+// submenu as a Markdown link, with no branch anywhere on the path. With the
+// single-line rule (D8) a tag never spans blocks, so SpansBeyondBlock cannot
+// occur for one.
+void TestImageLinkLookup::testHtmlImageIsFoundLikeAnyOther() {
+  // Block text: `x <img src="p.png" width="200"> y` at document position 100.
+  const QString block = QStringLiteral("x <img src=\"p.png\" width=\"200\"> y");
+  const int tagStart = block.indexOf(QLatin1Char('<'));
+  const int tagEnd = block.indexOf(QLatin1Char('>')) + 1;
+
+  vte::md::ImageLinkInfo html(vte::md::ElementRegion(100 + tagStart, 100 + tagEnd),
+                              QStringLiteral("p.png"), 200, 0);
+  html.m_syntax = vte::md::ImageLinkInfo::Syntax::Html;
+  const QVector<vte::md::ImageLinkInfo> links{html};
+
+  int index = -1;
+  QCOMPARE(ImageLinkLookup::imageLinkAt(links, 100 + tagStart, 100, block.size(), &index),
+           ImageLinkHit::Found);
+  QCOMPARE(index, 0);
+
+  // Anywhere inside, including the last character.
+  index = -1;
+  QCOMPARE(ImageLinkLookup::imageLinkAt(links, 100 + tagEnd - 1, 100, block.size(), &index),
+           ImageLinkHit::Found);
+  QCOMPARE(index, 0);
+  QCOMPARE(links.at(index).m_syntax, vte::md::ImageLinkInfo::Syntax::Html);
+  QCOMPARE(links.at(index).m_width, 200);
+
+  // Outside it, nothing.
+  index = -1;
+  QCOMPARE(ImageLinkLookup::imageLinkAt(links, 100, 100, block.size(), &index), ImageLinkHit::None);
+}
+
 } // namespace tests
 
 QTEST_APPLESS_MAIN(tests::TestImageLinkLookup)

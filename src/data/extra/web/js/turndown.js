@@ -26,6 +26,10 @@ class TurndownConverter {
         this.fixMark();
 
         this.fixParagraph();
+
+        // MUST be called: without it the bundled default image rule wins and
+        // every declared size is dropped.
+        this.fixImage();
     }
 
     turndown(p_html) {
@@ -95,23 +99,74 @@ class TurndownConverter {
     }
 
     fixImage() {
+        // Preserve a declared size on HTML -> Markdown conversion.
+        //
+        // Markdown has no portable way to express one, so a sized image is
+        // emitted as the canonical HTML tag instead -- the SAME spelling
+        // vte::MarkdownUtils::generateImageTag() produces (self-closing,
+        // double-quoted, attribute order src alt title width height), so both
+        // generators round trip through the one C++ scanner. Without this rule
+        // the bundled default image rule emits plain Markdown and "Parse to
+        // Markdown and Paste" silently strips every size.
+        let escapeAttr = function(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
+        // The same "valid positive integer" rule as the C++ side: a percentage,
+        // a non-integer or a non-positive value is no size at all.
+        let positiveInt = function(value) {
+            if (typeof value !== 'string' || !/^[0-9]+$/.test(value.trim())) {
+                return 0;
+            }
+            let n = parseInt(value.trim(), 10);
+            return n > 0 ? n : 0;
+        };
+
         this.ts.addRule('img_fix', {
             filter: 'img',
             replacement: function (content, node) {
-                let alt = node.alt || '';
-                if (/[\r\n\[\]]/g.test(alt)) {
-                    alt= '';
+                let src = node.getAttribute('src') || '';
+                if (!src) {
+                    return '';
                 }
 
-                let src = node.getAttribute('src') || '';
-
+                let alt = node.alt || '';
                 let title = node.title || '';
+
+                let width = positiveInt(node.getAttribute('width'));
+                let height = positiveInt(node.getAttribute('height'));
+
+                if (width > 0 || height > 0) {
+                    let tag = '<img src="' + escapeAttr(src) + '"';
+                    if (alt) {
+                        tag += ' alt="' + escapeAttr(alt) + '"';
+                    }
+                    if (title) {
+                        tag += ' title="' + escapeAttr(title) + '"';
+                    }
+                    if (width > 0) {
+                        tag += ' width="' + width + '"';
+                    }
+                    if (height > 0) {
+                        tag += ' height="' + height + '"';
+                    }
+                    return tag + ' />';
+                }
+
+                if (/[\r\n\[\]]/g.test(alt)) {
+                    alt = '';
+                }
                 if (/[\r\n\)"]/g.test(title)) {
                     title = '';
                 }
 
                 let titlePart = title ? ' "' + title + '"' : '';
-                return src ? '![' + alt + ']' + '(' + src + titlePart + ')' : ''
+                return '![' + alt + ']' + '(' + src + titlePart + ')';
             }
         });
     }

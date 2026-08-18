@@ -3,6 +3,8 @@
 #include <QSignalSpy>
 #include <QThread>
 
+#include <vtextedit/markdownutils.h>
+
 #include <core/services/imagehostworker.h>
 #include <imagehost/iimagehostprovider.h>
 #include <imagehost/imagehosttypes.h>
@@ -31,8 +33,10 @@ public:
   void setConfig(const QJsonObject &p_config) override { receivedConfig = p_config; }
 
   vnotex::ImageUploadResult upload(const QByteArray &, const QString &p_path) override {
-    if (shouldThrow) throw std::runtime_error("mock upload error");
-    if (delayMs > 0) QThread::msleep(delayMs);
+    if (shouldThrow)
+      throw std::runtime_error("mock upload error");
+    if (delayMs > 0)
+      QThread::msleep(delayMs);
     if (shouldFail)
       return {false, {}, QStringLiteral("mock failure"), {}};
     return {true, QStringLiteral("https://example.com/") + p_path, {}, {}};
@@ -66,6 +70,7 @@ private slots:
   void testGeneratePlaceholder();
   void testReplacePlaceholder();
   void testReplacePlaceholderMissing();
+  void testReplacePlaceholderWithSize();
   void testRemovePlaceholder();
   void testRemovePlaceholderPreservesContext();
   void testFullAsyncPipeline();
@@ -116,8 +121,8 @@ void TestImageHostAsync::testConfigIsolation() {
 
   QJsonObject capturedConfig;
   QThread thread;
-  auto *worker =
-      new vnotex::ImageHostWorker([&capturedConfig](const QString &) -> vnotex::IImageHostProvider * {
+  auto *worker = new vnotex::ImageHostWorker(
+      [&capturedConfig](const QString &) -> vnotex::IImageHostProvider * {
         auto *mock = new MockImageHostProvider(nullptr);
         // After setConfig is called by the worker, we capture it in upload.
         return mock;
@@ -236,29 +241,40 @@ static QString generatePlaceholder(int p_token, const QString &p_fileName) {
   return QStringLiteral("![Uploading %1...](vnote-upload-%2)").arg(p_fileName).arg(p_token);
 }
 
-static QString replacePlaceholder(const QString &p_content, int p_token,
-                                   const QString &p_realUrl, const QString &p_title) {
+// Mirrors MarkdownEditor::replacePlaceholder(). The final REPLACEMENT is spelled
+// by the production generator (a size makes it an HTML `<img>`), but the
+// PLACEHOLDER is always Markdown, which is what keeps the crude
+// lastIndexOf("![") / indexOf(')') scan below valid either way.
+static QString replacePlaceholder(const QString &p_content, int p_token, const QString &p_realUrl,
+                                  const QString &p_title, int p_width = 0, int p_height = 0) {
   const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
   int idx = p_content.indexOf(marker);
-  if (idx < 0) return p_content;
+  if (idx < 0)
+    return p_content;
   int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0) return p_content;
+  if (linkStart < 0)
+    return p_content;
   int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0) return p_content;
+  if (linkEnd < 0)
+    return p_content;
   QString result = p_content;
-  result.replace(linkStart, linkEnd - linkStart + 1,
-                 QStringLiteral("![%1](%2)").arg(p_title, p_realUrl));
+  result.replace(
+      linkStart, linkEnd - linkStart + 1,
+      vte::MarkdownUtils::generateImageLink(p_title, p_realUrl, QString(), p_width, p_height));
   return result;
 }
 
 static QString removePlaceholder(const QString &p_content, int p_token) {
   const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
   int idx = p_content.indexOf(marker);
-  if (idx < 0) return p_content;
+  if (idx < 0)
+    return p_content;
   int linkStart = p_content.lastIndexOf(QStringLiteral("!["), idx);
-  if (linkStart < 0) return p_content;
+  if (linkStart < 0)
+    return p_content;
   int linkEnd = p_content.indexOf(')', idx);
-  if (linkEnd < 0) return p_content;
+  if (linkEnd < 0)
+    return p_content;
   QString result = p_content;
   int removeEnd = linkEnd + 1;
   if (removeEnd < result.size() && result[removeEnd] == '\n') {
@@ -277,10 +293,10 @@ void TestImageHostAsync::testGeneratePlaceholder() {
 }
 
 void TestImageHostAsync::testReplacePlaceholder() {
-  QString content = QStringLiteral("Some text\n![Uploading image.png...](vnote-upload-42)\nMore text");
-  QString result = replacePlaceholder(content, 42,
-                                       QStringLiteral("https://example.com/image.png"),
-                                       QStringLiteral("image.png"));
+  QString content =
+      QStringLiteral("Some text\n![Uploading image.png...](vnote-upload-42)\nMore text");
+  QString result = replacePlaceholder(content, 42, QStringLiteral("https://example.com/image.png"),
+                                      QStringLiteral("image.png"));
   QVERIFY(!result.contains(QStringLiteral("vnote-upload-42")));
   QVERIFY(result.contains(QStringLiteral("https://example.com/image.png")));
   QVERIFY(result.contains(QStringLiteral("![image.png]")));
@@ -288,11 +304,27 @@ void TestImageHostAsync::testReplacePlaceholder() {
   QVERIFY(result.contains(QStringLiteral("More text")));
 }
 
+// A sized upload lands as the canonical HTML tag: Markdown has no portable way
+// to spell a size, and the placeholder being Markdown is what makes the scan
+// above still find it.
+void TestImageHostAsync::testReplacePlaceholderWithSize() {
+  QString content =
+      QStringLiteral("Some text\n![Uploading image.png...](vnote-upload-42)\nMore text");
+  QString result = replacePlaceholder(content, 42, QStringLiteral("https://example.com/image.png"),
+                                      QStringLiteral("image.png"), 500, 300);
+  QVERIFY(!result.contains(QStringLiteral("vnote-upload-42")));
+  QVERIFY2(result.contains(QStringLiteral(
+               "<img src=\"https://example.com/image.png\" alt=\"image.png\" width=\"500\" "
+               "height=\"300\" />")),
+           qPrintable(result));
+  QVERIFY(result.contains(QStringLiteral("Some text")));
+  QVERIFY(result.contains(QStringLiteral("More text")));
+}
+
 void TestImageHostAsync::testReplacePlaceholderMissing() {
   QString content = QStringLiteral("Some text without placeholder");
-  QString result = replacePlaceholder(content, 99,
-                                       QStringLiteral("https://example.com/img.png"),
-                                       QStringLiteral("img.png"));
+  QString result = replacePlaceholder(content, 99, QStringLiteral("https://example.com/img.png"),
+                                      QStringLiteral("img.png"));
   QCOMPARE(result, content);
 }
 
@@ -352,7 +384,8 @@ void TestImageHostAsync::testFullAsyncPipeline() {
   QCOMPARE(result.providerName, QStringLiteral("TestHost"));
 
   // Verify placeholder replacement would work with this result.
-  QString content = QStringLiteral("Text\n") + generatePlaceholder(10, QStringLiteral("photo.png")) + QStringLiteral("\nEnd");
+  QString content = QStringLiteral("Text\n") +
+                    generatePlaceholder(10, QStringLiteral("photo.png")) + QStringLiteral("\nEnd");
   QString replaced = replacePlaceholder(content, 10, result.url, QStringLiteral("photo.png"));
   QVERIFY(!replaced.contains(QStringLiteral("vnote-upload-10")));
   QVERIFY(replaced.contains(result.url));

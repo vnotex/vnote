@@ -63,6 +63,7 @@ private slots:
   void testDiskStateSatisfied();
   void testFinalizeGateRequiresCleanAndIdle();
   void testReferencedSourceKeysCollapseAliases();
+  void testHtmlImageIsNotMigratedButCountsAsAReference();
 
   // The descending QTextCursor rewrite loop.
   void testDescendingRewriteLoopProducesExpectedText();
@@ -623,8 +624,44 @@ void TestLegacyImageMigration::testReferencedSourceKeysCollapseAliases() {
   QVERIFY(!LegacyImageMigrationController::isStillReferenced(src, none));
 }
 
-// ============ The descending rewrite loop ============
+// HTML `<img>` images are out of scope for MIGRATION -- rewriting one means
+// substituting a Markdown destination in place -- but they MUST still count as
+// references. Otherwise a note that points at one legacy asset from both a
+// Markdown link and an `<img>` has its original deleted once the Markdown
+// reference has been rewritten, silently breaking the tag.
+void TestLegacyImageMigration::testHtmlImageIsNotMigratedButCountsAsAReference() {
+  TempDirFixture dir;
+  const QString base = dir.createDir(QStringLiteral("notes"));
+  const QString src = base + QStringLiteral("/vx_images/a.png");
+  writeStub(src);
 
+  // detect() ignores the HTML reference entirely.
+  {
+    const auto hits = LegacyImageMigrationController::detect(
+        QStringLiteral("<img src=\"vx_images/a.png\" width=\"500\">\n"), base, QString());
+    QVERIFY2(hits.isEmpty(), "an HTML image must not be offered for migration");
+  }
+
+  // But once the Markdown reference has been migrated, the surviving `<img>`
+  // still keeps the original alive.
+  {
+    const QString afterMarkdownRewrite =
+        QStringLiteral("![a](vx_assets/uuid/a.png)\n\n<img src=\"vx_images/a.png\">\n");
+    const auto keys =
+        LegacyImageMigrationController::referencedSourceKeys(afterMarkdownRewrite, base);
+    QVERIFY2(LegacyImageMigrationController::isStillReferenced(src, keys),
+             "an HTML reference must keep the original from being deleted");
+  }
+
+  // And with the tag removed too, the original is finally free.
+  {
+    const auto keys = LegacyImageMigrationController::referencedSourceKeys(
+        QStringLiteral("![a](vx_assets/uuid/a.png)\n"), base);
+    QVERIFY(!LegacyImageMigrationController::isStillReferenced(src, keys));
+  }
+}
+
+// ============ The descending rewrite loop ============
 void TestLegacyImageMigration::testDescendingRewriteLoopProducesExpectedText() {
   TempDirFixture dir;
   const QString base = dir.createDir(QStringLiteral("notes"));

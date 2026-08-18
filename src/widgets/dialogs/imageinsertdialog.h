@@ -31,6 +31,13 @@ public:
 
   QString getImageAltText() const;
 
+  // Optional size, in pixels. 0 means "not specified", which is what keeps an
+  // ordinary insert a Markdown link: any nonzero value makes the caller emit an
+  // HTML `<img>` instead.
+  int getImageWidth() const;
+
+  int getImageHeight() const;
+
   QString getImagePath() const;
   void setImagePath(const QString &p_path);
 
@@ -72,6 +79,10 @@ private:
   QLineEdit *m_imageTitleEdit = nullptr;
 
   QLineEdit *m_imageAltEdit = nullptr;
+
+  QLineEdit *m_imageWidthEdit = nullptr;
+
+  QLineEdit *m_imageHeightEdit = nullptr;
 
   QLabel *m_imageLabel = nullptr;
 

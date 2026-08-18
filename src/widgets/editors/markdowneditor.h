@@ -54,6 +54,11 @@ public:
     QString destFileName;
     QString title;
     QString altText;
+
+    // Declared size to spell once the real URL arrives. The PLACEHOLDER itself
+    // is always Markdown, whatever the final form is.
+    int width = 0;
+    int height = 0;
   };
 
   // Resolves the final clipboard link for the heading on 0-based line
@@ -132,7 +137,7 @@ public:
   // Static helpers for placeholder generation and replacement (testable).
   static QString generatePlaceholder(int p_token, const QString &p_fileName);
   static QString replacePlaceholder(const QString &p_content, int p_token, const QString &p_realUrl,
-                                    const QString &p_title);
+                                    const QString &p_title, int p_width = 0, int p_height = 0);
   static QString removePlaceholder(const QString &p_content, int p_token);
 
   // Sole authority for absolute-path -> markdown URL conversion. Applies the
@@ -185,16 +190,28 @@ private slots:
 private:
   // @p_insertText: whether insert text into the buffer after inserting image file.
   // @p_urlInLink: store the url in link if not null.
+  // @p_width/@p_height: optional declared size in pixels. 0 means unspecified;
+  //   any nonzero value makes the emitted reference an HTML `<img>` instead of
+  //   a Markdown link, since Markdown has no portable way to spell a size.
   bool insertImageToBufferFromLocalFile(const QString &p_title, const QString &p_altText,
                                         const QString &p_srcImagePath, bool p_insertText = true,
-                                        QString *p_urlInLink = nullptr);
+                                        QString *p_urlInLink = nullptr, int p_width = 0,
+                                        int p_height = 0);
 
   bool insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                   const QImage &p_image);
+                                   const QImage &p_image, int p_width = 0, int p_height = 0);
 
   void insertImageLink(const QString &p_title, const QString &p_altText,
                        const QString &p_destImagePath, bool p_insertText = true,
-                       QString *p_urlInLink = nullptr);
+                       QString *p_urlInLink = nullptr, int p_width = 0, int p_height = 0);
+
+  // Ask for a new declared size for the image reference @p_link and apply it.
+  //
+  // Never regenerates an HTML tag it did not author: an existing `<img>` has its
+  // `width` / `height` attributes edited IN PLACE, so `class`, `style`, `data-*`
+  // and anything else the user wrote survive. Converting HTML back to Markdown
+  // is gated on a verified round trip, not on a character blacklist.
+  void setImageSize(const vte::md::ImageLinkInfo &p_link);
 
   // Return true if it is processed.
   bool processHtmlFromMimeData(const QMimeData *p_source);
@@ -233,7 +250,8 @@ private:
   void setupTableHelper();
 
   // Return the dest file path of the image on success.
-  int saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName);
+  int saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName, int p_width = 0,
+                      int p_height = 0);
 
   void insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos, QAction *p_before);
 

@@ -14,8 +14,8 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-#include <vtextedit/markdownutils.h>
 #include <net/networkutils.h>
+#include <vtextedit/markdownutils.h>
 
 #include <core/configmgr2.h>
 #include <core/sessionconfig.h>
@@ -26,6 +26,18 @@
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
+
+namespace {
+// Tests find widgets by object name, never by label text.
+const char *kImageWidthEditName = "imageWidthEdit";
+const char *kImageHeightEditName = "imageHeightEdit";
+
+int positiveIntOrZero(const QLineEdit *p_edit) {
+  bool ok = false;
+  const int value = p_edit->text().trimmed().toInt(&ok);
+  return (ok && value > 0) ? value : 0;
+}
+} // namespace
 
 ImageInsertDialog::ImageInsertDialog(const QString &p_title, const QString &p_imageTitle,
                                      const QString &p_imageAlt, const QString &p_imagePath,
@@ -84,6 +96,24 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   gridLayout->addWidget(new QLabel(tr("Alt text"), mainWidget), 2, 0, 1, 1);
   gridLayout->addWidget(m_imageAltEdit, 2, 1, 1, 3);
 
+  // Optional size. Left EMPTY by default on purpose: pre-filling the source
+  // image's natural size would turn every single insert into an HTML `<img>`.
+  // The natural size is offered as a placeholder instead.
+  auto sizeValidator =
+      new QRegularExpressionValidator(QRegularExpression(QStringLiteral("[0-9]{0,6}")), mainWidget);
+
+  m_imageWidthEdit = WidgetsFactory::createLineEdit(QString(), mainWidget);
+  m_imageWidthEdit->setObjectName(QLatin1String(kImageWidthEditName));
+  m_imageWidthEdit->setValidator(sizeValidator);
+  gridLayout->addWidget(new QLabel(tr("Width (px)"), mainWidget), 3, 0, 1, 1);
+  gridLayout->addWidget(m_imageWidthEdit, 3, 1, 1, 1);
+
+  m_imageHeightEdit = WidgetsFactory::createLineEdit(QString(), mainWidget);
+  m_imageHeightEdit->setObjectName(QLatin1String(kImageHeightEditName));
+  m_imageHeightEdit->setValidator(sizeValidator);
+  gridLayout->addWidget(new QLabel(tr("Height (px)"), mainWidget), 3, 2, 1, 1);
+  gridLayout->addWidget(m_imageHeightEdit, 3, 3, 1, 1);
+
   // Preview area.
   m_imageLabel = new QLabel(mainWidget);
   m_imageLabel->setScaledContents(true);
@@ -91,7 +121,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   m_previewArea->setBackgroundRole(QPalette::Dark);
   m_previewArea->setWidget(m_imageLabel);
   m_previewArea->setMinimumSize(256, 256);
-  gridLayout->addWidget(m_previewArea, 3, 0, 1, 5);
+  gridLayout->addWidget(m_previewArea, 4, 0, 1, 5);
 
   setImageControlsVisible(false);
 
@@ -180,6 +210,10 @@ QString ImageInsertDialog::getImageTitle() const { return m_imageTitleEdit->text
 
 QString ImageInsertDialog::getImageAltText() const { return m_imageAltEdit->text(); }
 
+int ImageInsertDialog::getImageWidth() const { return positiveIntOrZero(m_imageWidthEdit); }
+
+int ImageInsertDialog::getImageHeight() const { return positiveIntOrZero(m_imageHeightEdit); }
+
 QString ImageInsertDialog::getImagePath() const {
   if (m_tempFile.isNull()) {
     return m_imagePathEdit->text();
@@ -199,10 +233,15 @@ void ImageInsertDialog::setImage(const QImage &p_image) {
   if (m_image.isNull()) {
     m_imageLabel->clear();
     setImageControlsVisible(false);
+    m_imageWidthEdit->setPlaceholderText(QString());
+    m_imageHeightEdit->setPlaceholderText(QString());
   } else {
     m_imageLabel->setPixmap(QPixmap::fromImage(m_image));
     m_imageLabel->adjustSize();
     setImageControlsVisible(true);
+    // A hint only -- never prefilled; see setupUI().
+    m_imageWidthEdit->setPlaceholderText(QString::number(m_image.width()));
+    m_imageHeightEdit->setPlaceholderText(QString::number(m_image.height()));
   }
 
   checkInput();

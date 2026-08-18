@@ -19,6 +19,7 @@
 #include <QTemporaryFile>
 #include <QTimer>
 
+#include <vtextedit/htmlimgscanner.h>
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/previewdata.h>
@@ -29,6 +30,7 @@
 #include <vtextedit/vtextedit.h>
 
 #include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/imagesizedialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/tableinsertdialog.h>
 #include <widgets/messageboxhelper.h>
@@ -71,6 +73,51 @@ QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services
   return qMakePair(
       themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
       themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")));
+}
+
+// Rewrite one image reference's destination in @p_text to the SOURCE-NEUTRAL
+// logical url @p_url, spelling it the way that reference's own syntax requires.
+// Returns whether anything was written.
+//
+// The replacement is ALWAYS measured with a source span, never with the length
+// of the cleaned destination: `a\_b.png` occupies 8 source characters and cleans
+// to 7, so the cleaned length would eat the character after it.
+//
+// For HTML the WHOLE `src` attribute is replaced, not just its value (D9-adjacent:
+// an unquoted `src=old.png` renamed to a name containing a space would otherwise
+// split into two attributes). MarkdownLink carries the VALUE span by contract, so
+// the region is re-scanned for the attribute span; anything that does not yield
+// exactly one tag with one usable `src` is skipped conservatively.
+bool rewriteImageDestination(QString &p_text, const vte::MarkdownLink &p_link,
+                             const QString &p_url) {
+  if (!p_link.hasUrlSpan()) {
+    return false;
+  }
+
+  if (p_link.m_syntax == vte::MarkdownLink::Syntax::Markdown) {
+    p_text.replace(p_link.m_urlStart, p_link.m_urlEnd - p_link.m_urlStart, p_url);
+    return true;
+  }
+
+  vte::RawTextState state;
+  const auto tags = vte::scanHtmlImgTags(
+      p_text.mid(p_link.m_regionStart, p_link.m_regionEnd - p_link.m_regionStart),
+      p_link.m_regionStart, &state);
+  if (tags.size() != 1) {
+    qWarning() << "skipped rewriting an HTML image whose tag could not be re-scanned"
+               << p_link.m_urlInLink;
+    return false;
+  }
+  const auto *srcAttr = tags.first().attr("src");
+  if (!srcAttr || srcAttr->m_attrStart < 0 || srcAttr->m_attrEnd <= srcAttr->m_attrStart) {
+    qWarning() << "skipped rewriting an HTML image with no usable src attribute"
+               << p_link.m_urlInLink;
+    return false;
+  }
+
+  p_text.replace(srcAttr->m_attrStart, srcAttr->m_attrEnd - srcAttr->m_attrStart,
+                 vte::spellHtmlSrcAttr(p_url));
+  return true;
 }
 } // namespace
 
@@ -300,11 +347,13 @@ void MarkdownEditor::typeImage() {
   enterInsertModeIfApplicable();
   if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
     insertImageToBufferFromLocalFile(dialog.getImageTitle(), dialog.getImageAltText(),
-                                     dialog.getImagePath());
+                                     dialog.getImagePath(), true, nullptr, dialog.getImageWidth(),
+                                     dialog.getImageHeight());
   } else {
     auto image = dialog.getImage();
     if (!image.isNull()) {
-      insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image);
+      insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
+                                  dialog.getImageWidth(), dialog.getImageHeight());
     }
   }
 }
@@ -354,7 +403,8 @@ EditorConfig &MarkdownEditor::getEditorConfig() const {
 bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
                                                       const QString &p_altText,
                                                       const QString &p_srcImagePath,
-                                                      bool p_insertText, QString *p_urlInLink) {
+                                                      bool p_insertText, QString *p_urlInLink,
+                                                      int p_width, int p_height) {
   auto destFileName = generateImageFileNameToInsertAs(p_title, QFileInfo(p_srcImagePath).suffix());
 
   QString destFilePath;
@@ -369,7 +419,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
           tr("Failed to read local image file (%1) (%2).").arg(p_srcImagePath, err.what()), this);
       return false;
     }
-    int token = saveToImageHost(ba, destFileName);
+    int token = saveToImageHost(ba, destFileName, p_width, p_height);
     if (token < 0) {
       return false;
     }
@@ -398,7 +448,7 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
     }
   }
 
-  insertImageLink(p_title, p_altText, destFilePath, p_insertText, p_urlInLink);
+  insertImageLink(p_title, p_altText, destFilePath, p_insertText, p_urlInLink, p_width, p_height);
   return true;
 }
 
@@ -408,7 +458,7 @@ QString MarkdownEditor::generateImageFileNameToInsertAs(const QString &p_title,
 }
 
 bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                                 const QImage &p_image) {
+                                                 const QImage &p_image, int p_width, int p_height) {
   // Save as PNG by default.
   const QString format("png");
   const auto destFileName = generateImageFileNameToInsertAs(p_title, format);
@@ -422,7 +472,7 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
     buffer.open(QIODevice::WriteOnly);
     p_image.save(&buffer, format.toStdString().c_str());
 
-    int token = saveToImageHost(ba, destFileName);
+    int token = saveToImageHost(ba, destFileName, p_width, p_height);
     if (token < 0) {
       return false;
     }
@@ -455,20 +505,21 @@ bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const Q
     }
   }
 
-  insertImageLink(p_title, p_altText, destFilePath);
+  insertImageLink(p_title, p_altText, destFilePath, true, nullptr, p_width, p_height);
   return true;
 }
 
 void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_altText,
                                      const QString &p_destImagePath, bool p_insertText,
-                                     QString *p_urlInLink) {
+                                     QString *p_urlInLink, int p_width, int p_height) {
   const auto urlInLink = getRelativeLink(p_destImagePath);
   if (p_urlInLink) {
     *p_urlInLink = urlInLink;
   }
   emit imageInserted(p_destImagePath, urlInLink);
   if (p_insertText) {
-    const auto imageLink = vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText);
+    const auto imageLink =
+        vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText, p_width, p_height);
     m_textEdit->insertPlainText(imageLink);
   }
 }
@@ -636,12 +687,13 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
     // Always measure the replacement with the RAW span. The cleaned
     // destination may be shorter (`a\_b.png` occupies 8 characters, cleans to
     // 7), and using its length would eat the character after it.
-    const int rawLength = img.m_urlEnd - img.m_urlStart;
+    // rewriteImageDestination() enforces that, and additionally replaces the
+    // WHOLE `src` attribute for an HTML image.
 
     // Check dedup — same source image already copied.
     auto it = copiedPaths.find(img.m_path);
     if (it != copiedPaths.end()) {
-      text.replace(img.m_urlStart, rawLength, it.value());
+      rewriteImageDestination(text, img, it.value());
       continue;
     }
 
@@ -655,10 +707,12 @@ bool MarkdownEditor::processRelativeImagesFromMimeData(const QMimeData *p_source
       continue;
     }
 
+    // The SOURCE-NEUTRAL url: the same asset may be referenced from both
+    // syntaxes, and each occurrence spells it its own way.
     copiedPaths.insert(img.m_path, urlInLink);
 
     // Rewrite URL in text.
-    text.replace(img.m_urlStart, rawLength, urlInLink);
+    rewriteImageDestination(text, img, urlInLink);
 
     m_lastPastedImagesCopied.append(img.m_urlInLink);
   }
@@ -715,7 +769,12 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source) {
   const QString html(p_source->html());
 
   // Process <img>.
-  QRegularExpression reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
+  // image-parser-allow: this scans CLIPBOARD html, not note source. Note-source
+  // `<img>` parsing has exactly one implementation, vte::scanHtmlImgTags()
+  // (libs/vtextedit/src/include/vtextedit/htmlimgscanner.h); this regex must
+  // never be used for it, and it must never grow into a note-source parser.
+  QRegularExpression reg(
+      "<img ([^>]*)src=\"([^\"]+)\"([^>]*)>"); // image-parser-allow: clipboard html only
   QRegularExpressionMatch match;
   if (html.indexOf(reg, 0, &match) != -1 && HtmlUtils::hasOnlyImgTag(html)) {
     if (p_source->hasImage()) {
@@ -1048,7 +1107,8 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source) {
   dialog.setImage(image);
   if (dialog.exec() == QDialog::Accepted) {
     enterInsertModeIfApplicable();
-    insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image);
+    insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
+                                dialog.getImageWidth(), dialog.getImageHeight());
   }
 }
 
@@ -1063,11 +1123,13 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
       enterInsertModeIfApplicable();
       if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
         insertImageToBufferFromLocalFile(dialog.getImageTitle(), dialog.getImageAltText(),
-                                         dialog.getImagePath());
+                                         dialog.getImagePath(), true, nullptr,
+                                         dialog.getImageWidth(), dialog.getImageHeight());
       } else {
         auto image = dialog.getImage();
         if (!image.isNull()) {
-          insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image);
+          insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
+                                      dialog.getImageWidth(), dialog.getImageHeight());
         }
       }
     }
@@ -1501,6 +1563,14 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
       continue;
     }
 
+    if (info.m_syntax == vte::MarkdownLink::Syntax::Html) {
+      // Rewrite ONLY the `src` attribute (D9). Regenerating the tag from the
+      // fields VNote knows about would silently destroy `class`, `style`,
+      // `data-*`, `loading` and anything else the user wrote.
+      rewriteImageDestination(p_text, info, urlInLink);
+      continue;
+    }
+
     // Replace URL in link.
     QString titleText;
     if (!info.m_title.isEmpty()) {
@@ -1547,7 +1617,8 @@ void MarkdownEditor::setImageHostController(ImageHostController *p_controller) {
   }
 }
 
-int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName) {
+int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName,
+                                    int p_width, int p_height) {
   if (!m_imageHostController) {
     return -1;
   }
@@ -1563,6 +1634,8 @@ int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString
   PlaceholderInfo info;
   info.placeholderMarkdown = placeholder;
   info.destFileName = p_destFileName;
+  info.width = p_width;
+  info.height = p_height;
   m_pendingUploads.insert(token, info);
   m_textEdit->insertPlainText(placeholder + "\n");
   return token;
@@ -1572,8 +1645,12 @@ QString MarkdownEditor::generatePlaceholder(int p_token, const QString &p_fileNa
   return QStringLiteral("![Uploading %1...](vnote-upload-%2)").arg(p_fileName).arg(p_token);
 }
 
+// The PLACEHOLDER is always Markdown (generatePlaceholder()), which is what
+// keeps the crude lastIndexOf("![") / indexOf(')') scan below valid even when the
+// replacement it writes is an HTML tag.
 QString MarkdownEditor::replacePlaceholder(const QString &p_content, int p_token,
-                                           const QString &p_realUrl, const QString &p_title) {
+                                           const QString &p_realUrl, const QString &p_title,
+                                           int p_width, int p_height) {
   const QString marker = QStringLiteral("vnote-upload-%1").arg(p_token);
   int idx = p_content.indexOf(marker);
   if (idx < 0)
@@ -1585,8 +1662,9 @@ QString MarkdownEditor::replacePlaceholder(const QString &p_content, int p_token
   if (linkEnd < 0)
     return p_content;
   QString result = p_content;
-  result.replace(linkStart, linkEnd - linkStart + 1,
-                 QStringLiteral("![%1](%2)").arg(p_title, p_realUrl));
+  result.replace(
+      linkStart, linkEnd - linkStart + 1,
+      vte::MarkdownUtils::generateImageLink(p_title, p_realUrl, QString(), p_width, p_height));
   return result;
 }
 
@@ -1621,7 +1699,8 @@ void MarkdownEditor::onUploadFinished(int p_token, const ImageHostAsyncResult &p
   if (p_result.success) {
     auto doc = m_textEdit->document();
     QString content = doc->toPlainText();
-    QString newContent = replacePlaceholder(content, p_token, p_result.url, info.destFileName);
+    QString newContent = replacePlaceholder(content, p_token, p_result.url, info.destFileName,
+                                            info.width, info.height);
     if (newContent != content) {
       QTextCursor cursor(doc);
       cursor.beginEditBlock();
@@ -1740,9 +1819,165 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
     imageSubMenu->addAction(act);
   }
 
+  {
+    // Enabled for BOTH syntaxes: setting a size on a Markdown image converts it
+    // to HTML, clearing it on an HTML image may convert it back.
+    const auto link = links[index];
+    auto act = new QAction(tr("Set Size..."), imageSubMenu);
+    connect(act, &QAction::triggered, imageSubMenu, [this, link]() { setImageSize(link); });
+    imageSubMenu->addAction(act);
+  }
+
   p_menu->insertSeparator(p_before);
 
   return true;
+}
+
+namespace {
+// One in-place text edit, expressed in absolute document positions.
+struct SpanEdit {
+  int m_start = 0;
+  int m_end = 0;
+  QString m_text;
+};
+
+// Extend a removal backwards over the whitespace that separated the attribute
+// from the one before it, so removing `width="5"` does not leave a double space.
+int widenRemovalStart(const QString &p_text, int p_regionStart, int p_attrStart) {
+  int start = p_attrStart;
+  while (start > p_regionStart && p_text.at(start - p_regionStart - 1).isSpace()) {
+    --start;
+  }
+  return start;
+}
+
+// Whether @p_candidate is a lossless Markdown spelling of the given values.
+//
+// A verified ROUND TRIP, not a character blacklist: a blacklist is provably
+// insufficient, because a bare `a\_b.png` destination parses back as `a_b.png`
+// -- a silently different file. The round trip compares only the EFFECTIVE
+// (first-wins) values, so it cannot observe a discarded duplicate attribute;
+// the caller must separately require !hasDuplicateAttrs().
+bool markdownRoundTrips(const QString &p_candidate, const QString &p_basePath, const QString &p_url,
+                        const QString &p_alt, const QString &p_title) {
+  const auto flags = vte::MarkdownLink::TypeFlag::LocalRelativeInternal |
+                     vte::MarkdownLink::TypeFlag::LocalRelativeExternal |
+                     vte::MarkdownLink::TypeFlag::LocalAbsolute |
+                     vte::MarkdownLink::TypeFlag::QtResource | vte::MarkdownLink::TypeFlag::Remote;
+  const auto links = vte::MarkdownUtils::fetchImageLinks(p_candidate, p_basePath, flags);
+  if (links.size() != 1) {
+    return false;
+  }
+
+  const auto &link = links.first();
+  return link.m_syntax == vte::MarkdownLink::Syntax::Markdown && link.m_regionStart == 0 &&
+         link.m_regionEnd == p_candidate.size() && link.m_urlInLink == p_url &&
+         link.m_alt == p_alt && link.m_title == p_title;
+}
+} // namespace
+
+void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
+  const int regionStart = p_link.m_region.m_startPos;
+  const int regionEnd = p_link.m_region.m_endPos;
+  const QString content = m_textEdit->document()->toPlainText();
+  if (regionStart < 0 || regionEnd > content.size() || regionEnd <= regionStart) {
+    return;
+  }
+  const QString region = content.mid(regionStart, regionEnd - regionStart);
+
+  ImageSizeDialog dialog(tr("Set Image Size"), p_link.m_width, p_link.m_height, this);
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  const int newWidth = dialog.getImageWidth();
+  const int newHeight = dialog.getImageHeight();
+
+  QVector<SpanEdit> edits;
+
+  if (p_link.m_syntax == vte::md::ImageLinkInfo::Syntax::Markdown) {
+    if (newWidth <= 0 && newHeight <= 0) {
+      // Markdown has no size to remove; nothing to do.
+      return;
+    }
+    edits.append({regionStart, regionEnd,
+                  vte::MarkdownUtils::generateImageTag(p_link.m_alt, p_link.m_destination,
+                                                       p_link.m_title, newWidth, newHeight)});
+  } else {
+    vte::RawTextState state;
+    const auto tags = vte::scanHtmlImgTags(region, regionStart, &state);
+    if (tags.size() != 1) {
+      qWarning() << "skipped resizing an HTML image whose tag could not be re-scanned"
+                 << p_link.m_destination;
+      return;
+    }
+    const auto &tag = tags.first();
+    const auto *srcAttr = tag.attr("src");
+    if (!srcAttr) {
+      return;
+    }
+
+    const bool wantsSize = newWidth > 0 || newHeight > 0;
+    if (!wantsSize && !tag.hasUnknownAttrs() && !tag.hasDuplicateAttrs()) {
+      // Only convert back to Markdown when the conversion is VERIFIABLY
+      // lossless. Both gates are needed: the round trip checks the effective
+      // values, the duplicate check catches a value it could never see.
+      const QString candidate =
+          vte::MarkdownUtils::generateImageLink(tag.alt(), tag.src(), tag.title(), 0, 0);
+      if (markdownRoundTrips(candidate, getBasePath(), tag.src(), tag.alt(), tag.title())) {
+        edits.append({regionStart, regionEnd, candidate});
+      }
+    }
+
+    if (edits.isEmpty()) {
+      // Edit the dimensions in place, keeping every attribute VNote did not
+      // author. A dimension being cleared has ALL its occurrences removed: only
+      // unmasking the second of `width="100" width="200"` would leave the image
+      // silently still sized.
+      const char *names[] = {"width", "height"};
+      const int values[] = {newWidth, newHeight};
+      for (int i = 0; i < 2; ++i) {
+        const QLatin1String name(names[i]);
+        bool first = true;
+        for (const auto &attr : tag.m_attrs) {
+          if (attr.m_name != name) {
+            continue;
+          }
+          if (first && values[i] > 0) {
+            edits.append({attr.m_attrStart, attr.m_attrEnd,
+                          QStringLiteral("%1=\"%2\"").arg(name).arg(values[i])});
+          } else {
+            edits.append(
+                {widenRemovalStart(content, regionStart, attr.m_attrStart), attr.m_attrEnd, {}});
+          }
+          first = false;
+        }
+
+        if (first && values[i] > 0) {
+          // Absent: insert right after `src`, matching the canonical order.
+          edits.append({srcAttr->m_attrEnd, srcAttr->m_attrEnd,
+                        QStringLiteral(" %1=\"%2\"").arg(name).arg(values[i])});
+        }
+      }
+    }
+  }
+
+  if (edits.isEmpty()) {
+    return;
+  }
+
+  // Descending, so an earlier span stays valid while a later one is written.
+  std::sort(edits.begin(), edits.end(),
+            [](const SpanEdit &p_a, const SpanEdit &p_b) { return p_a.m_start > p_b.m_start; });
+
+  auto cursor = m_textEdit->textCursor();
+  cursor.beginEditBlock();
+  for (const auto &edit : edits) {
+    cursor.setPosition(edit.m_start);
+    cursor.setPosition(edit.m_end, QTextCursor::KeepAnchor);
+    cursor.insertText(edit.m_text);
+  }
+  cursor.endEditBlock();
 }
 
 bool MarkdownEditor::prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
