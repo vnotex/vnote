@@ -33,6 +33,7 @@
 #include <widgets/dialogs/imagesizedialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/tableinsertdialog.h>
+#include <widgets/editors/imagesizeedits.h>
 #include <widgets/messageboxhelper.h>
 
 #include <widgets/dialogs/selectdialog.h>
@@ -1834,23 +1835,6 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
 }
 
 namespace {
-// One in-place text edit, expressed in absolute document positions.
-struct SpanEdit {
-  int m_start = 0;
-  int m_end = 0;
-  QString m_text;
-};
-
-// Extend a removal backwards over the whitespace that separated the attribute
-// from the one before it, so removing `width="5"` does not leave a double space.
-int widenRemovalStart(const QString &p_text, int p_regionStart, int p_attrStart) {
-  int start = p_attrStart;
-  while (start > p_regionStart && p_text.at(start - p_regionStart - 1).isSpace()) {
-    --start;
-  }
-  return start;
-}
-
 // Whether @p_candidate is a lossless Markdown spelling of the given values.
 //
 // A verified ROUND TRIP, not a character blacklist: a blacklist is provably
@@ -1912,8 +1896,7 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
       return;
     }
     const auto &tag = tags.first();
-    const auto *srcAttr = tag.attr("src");
-    if (!srcAttr) {
+    if (!tag.attr("src")) {
       return;
     }
 
@@ -1931,34 +1914,9 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
 
     if (edits.isEmpty()) {
       // Edit the dimensions in place, keeping every attribute VNote did not
-      // author. A dimension being cleared has ALL its occurrences removed: only
-      // unmasking the second of `width="100" width="200"` would leave the image
-      // silently still sized.
-      const char *names[] = {"width", "height"};
-      const int values[] = {newWidth, newHeight};
-      for (int i = 0; i < 2; ++i) {
-        const QLatin1String name(names[i]);
-        bool first = true;
-        for (const auto &attr : tag.m_attrs) {
-          if (attr.m_name != name) {
-            continue;
-          }
-          if (first && values[i] > 0) {
-            edits.append({attr.m_attrStart, attr.m_attrEnd,
-                          QStringLiteral("%1=\"%2\"").arg(name).arg(values[i])});
-          } else {
-            edits.append(
-                {widenRemovalStart(content, regionStart, attr.m_attrStart), attr.m_attrEnd, {}});
-          }
-          first = false;
-        }
-
-        if (first && values[i] > 0) {
-          // Absent: insert right after `src`, matching the canonical order.
-          edits.append({srcAttr->m_attrEnd, srcAttr->m_attrEnd,
-                        QStringLiteral(" %1=\"%2\"").arg(name).arg(values[i])});
-        }
-      }
+      // author. planHtmlImageSizeEdits() owns the duplicate, insertion and
+      // ordering rules, and is tested directly.
+      edits = planHtmlImageSizeEdits(content, regionStart, tag, newWidth, newHeight);
     }
   }
 
@@ -1966,9 +1924,7 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
     return;
   }
 
-  // Descending, so an earlier span stays valid while a later one is written.
-  std::sort(edits.begin(), edits.end(),
-            [](const SpanEdit &p_a, const SpanEdit &p_b) { return p_a.m_start > p_b.m_start; });
+  sortSpanEditsForApplication(edits);
 
   auto cursor = m_textEdit->textCursor();
   cursor.beginEditBlock();
@@ -1979,7 +1935,6 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
   }
   cursor.endEditBlock();
 }
-
 bool MarkdownEditor::prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                                                const QTextBlock &p_block) {
   auto data = vte::TextBlockData::get(p_block);

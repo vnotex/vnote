@@ -29,6 +29,22 @@ target_include_directories(test_imagelinklookup PRIVATE
   ${CMAKE_SOURCE_DIR}/src
 )
 
+# The span arithmetic behind `Image > Set Size...`. Extracted from
+# MarkdownEditor so it can be gated directly: every defect in it corrupts the
+# tag rather than merely producing a wrong size.
+add_qt_test(test_imagesizeedits
+  SOURCES
+    test_imagesizeedits.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/imagesizeedits.cpp
+  LINKS
+    Qt6::Core
+    VTextEdit
+  GUILESS
+)
+target_include_directories(test_imagesizeedits PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+)
+
 add_custom_command(TARGET test_imagelinklookup POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit>
@@ -1364,6 +1380,23 @@ if(TARGET Qt6::Qml)
     GUILESS
   )
   target_compile_definitions(test_pdfviewercore_js PRIVATE
+    VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  )
+
+  # TurndownConverter's image rule. It was defined but never installed for its
+  # entire existence, which silently dropped every declared image size on
+  # "Parse to Markdown and Paste" -- a defect no C++ test could observe.
+  # Evaluates the REAL src/data/extra/web/js/turndown.js and stubs only its
+  # collaborators, so the rule under test is the production one.
+  add_qt_test(test_turndown_js
+    SOURCES
+      test_turndown_js.cpp
+    LINKS
+      # Guarding on the target does NOT link QJSEngine; this does.
+      Qt6::Qml
+    GUILESS
+  )
+  target_compile_definitions(test_turndown_js PRIVATE
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
   )
 endif()
