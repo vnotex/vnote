@@ -39,8 +39,11 @@ set_source_files_properties(${VX_TS_FILES} PROPERTIES
 qt_add_translation(VX_QM_FILES ${VX_TS_FILES})
 add_custom_target(lrelease DEPENDS ${VX_QM_FILES})
 
-# TODO: VTextEdit translations
+# Pre-built .qm files shipped as-is. The VTextEdit ones are committed in the submodule and are
+# only refreshed by re-running VTextEdit's `update_translations` target and committing the result.
 list(APPEND VX_QM_FILES
+    ${CMAKE_CURRENT_LIST_DIR}/../libs/vtextedit/src/data/translations/vtextedit_ja.qm
+    ${CMAKE_CURRENT_LIST_DIR}/../libs/vtextedit/src/data/translations/vtextedit_zh_CN.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qdialogbuttonbox_zh_CN.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtbase_ja.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtbase_zh_CN.qm
