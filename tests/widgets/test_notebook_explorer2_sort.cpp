@@ -19,18 +19,21 @@
 
 #include <QtTest>
 
+#include <algorithm>
+
 #include <QApplication>
 #include <QDialog>
 #include <QFileInfo>
+#include <QHeaderView>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
-#include <QListWidget>
 #include <QPointer>
 #include <QSignalSpy>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
+#include <QTreeWidget>
 
 #include <vxcore/vxcore.h>
 
@@ -55,49 +58,83 @@ namespace tests {
 namespace {
 
 // Constants mirrored from src/widgets/dialogs/sortdialog2.cpp (private to
-// that TU). Tests discover the embedded list widget via this name per
-// src/widgets/dialogs/AGENTS.md "Test-discovery rule".
+// that TU). Tests discover the embedded tree widget via this name per
+// src/widgets/dialogs/AGENTS.md "Test-discovery rule" — the object name is the
+// contract, the widget type (now QTreeWidget) is not.
 const char *kListWidgetName = "sortListWidget";
 
-// Reorder the SortDialog2's list-widget items so that getSortedOrder()
-// returns @p_desiredOrder. Mutates the QListWidget directly.
+// Reorder the SortDialog2's rows so that getSortedOrder() returns
+// @p_desiredOrder. Mutates the QTreeWidget directly.
 void mutateDialogOrder(SortDialog2 *p_dlg, const QStringList &p_desiredOrder) {
-  auto *list = p_dlg->findChild<QListWidget *>(QLatin1String(kListWidgetName));
-  Q_ASSERT(list != nullptr);
-  // Take every item out, then re-insert in the desired order. We assume
-  // p_desiredOrder is a permutation of the current contents.
-  QHash<QString, QListWidgetItem *> byText;
-  while (list->count() > 0) {
-    auto *item = list->takeItem(0);
-    byText.insert(item->text(), item);
+  auto *tree = p_dlg->findChild<QTreeWidget *>(QLatin1String(kListWidgetName));
+  Q_ASSERT(tree != nullptr);
+  // Take every row out, then re-insert in the desired order. We assume
+  // p_desiredOrder is a permutation of the current contents. Keying on the
+  // raw name in column 0's UserRole matches what getSortedOrder() reads.
+  QHash<QString, QTreeWidgetItem *> byName;
+  while (tree->topLevelItemCount() > 0) {
+    auto *item = tree->takeTopLevelItem(0);
+    byName.insert(item->data(0, Qt::UserRole).toString(), item);
   }
   for (const auto &name : p_desiredOrder) {
-    auto *it = byText.take(name);
+    auto *it = byName.take(name);
     if (it) {
-      list->addItem(it);
+      tree->addTopLevelItem(it);
     }
   }
   // Any unused items get deleted (shouldn't happen for a true permutation).
-  for (auto *leftover : byText.values()) {
+  for (auto *leftover : byName.values()) {
     delete leftover;
   }
 }
 
+// Click a header section the portable way (signals are protected under Qt 5).
+void clickDialogHeader(SortDialog2 *p_dlg, int p_column) {
+  auto *tree = p_dlg->findChild<QTreeWidget *>(QLatin1String(kListWidgetName));
+  Q_ASSERT(tree != nullptr);
+  QMetaObject::invokeMethod(tree->header(), "sectionClicked", Qt::DirectConnection,
+                            Q_ARG(int, p_column));
+}
+
 // Build a childrenJson value matching the shape returned by
-// NotebookCoreService::listFolderChildren. Each entry has "name" and "type".
+// NotebookCoreService::listFolderChildren. Each entry carries "name", "type"
+// and the two epoch-ms timestamps vxcore always emits.
+//
+// The timestamps are derived from the entry's position so each child gets a
+// distinct, predictable key: created = (index+1) * 1000, modified in the
+// REVERSE order so a Created sort and a Modified sort cannot both pass with a
+// swapped field. Two special cases are injected to pin the "unknown timestamp"
+// rule: a name ending in "!zero" emits a literal 0 (vxcore's default for a
+// legacy record), and one ending in "!missing" omits the keys entirely. Both
+// must reach the dialog as an INVALID QDateTime — 0 must not render 1970.
 QJsonObject makeChildrenJson(const QStringList &p_folders, const QStringList &p_files) {
+  auto fill = [](QJsonObject &p_o, const QString &p_name, int p_index, int p_total) {
+    if (p_name.endsWith(QStringLiteral("!missing"))) {
+      return;
+    }
+    if (p_name.endsWith(QStringLiteral("!zero"))) {
+      p_o.insert(QStringLiteral("createdUtc"), 0);
+      p_o.insert(QStringLiteral("modifiedUtc"), 0);
+      return;
+    }
+    p_o.insert(QStringLiteral("createdUtc"), static_cast<double>((p_index + 1) * 1000));
+    p_o.insert(QStringLiteral("modifiedUtc"), static_cast<double>((p_total - p_index) * 1000));
+  };
+
   QJsonArray foldersArr;
-  for (const auto &name : p_folders) {
+  for (int i = 0; i < p_folders.size(); ++i) {
     QJsonObject o;
-    o.insert(QStringLiteral("name"), name);
+    o.insert(QStringLiteral("name"), p_folders.at(i));
     o.insert(QStringLiteral("type"), QStringLiteral("folder"));
+    fill(o, p_folders.at(i), i, p_folders.size());
     foldersArr.append(o);
   }
   QJsonArray filesArr;
-  for (const auto &name : p_files) {
+  for (int i = 0; i < p_files.size(); ++i) {
     QJsonObject o;
-    o.insert(QStringLiteral("name"), name);
+    o.insert(QStringLiteral("name"), p_files.at(i));
     o.insert(QStringLiteral("type"), QStringLiteral("file"));
+    fill(o, p_files.at(i), i, p_files.size());
     filesArr.append(o);
   }
   QJsonObject root;
@@ -179,6 +216,12 @@ private slots:
   void testOnlyFilesShowsOnlyFilesDialog();     // (5)
   void testOnlyFoldersShowsOnlyFoldersDialog(); // (6)
   void testEmptyJsonSkipsBothDialogs();         // (7)
+
+  // Column plumbing: the seam must read createdUtc/modifiedUtc off each child
+  // and hand them to the dialog, treating 0 / missing as unknown.
+  void testHeaderSortByCreatedInSeam();        // (8)
+  void testHeaderSortByModifiedInSeam();       // (9)
+  void testZeroAndMissingTimestampsAreBlank(); // (10)
 
   // CombinedNodeExplorer chain.
   void testCombinedExplorerForwardsSortRequested();
@@ -490,6 +533,107 @@ void TestNotebookExplorer2Sort::testEmptyJsonSkipsBothDialogs() {
   QCOMPARE(driver.modalsObserved(), 0);
   QVERIFY(result.newFolderOrder.isEmpty());
   QVERIFY(result.newFileOrder.isEmpty());
+}
+
+// ============================================================================
+// Column plumbing sub-tests
+// ============================================================================
+
+// (8) The seam feeds createdUtc through to the dialog. makeChildrenJson gives
+//     created keys in list order, so an ascending Created sort is a no-op and
+//     a descending one is the exact reverse — which a swapped or misread field
+//     could not reproduce (modifiedUtc runs the OTHER way).
+void TestNotebookExplorer2Sort::testHeaderSortByCreatedInSeam() {
+  NodeIdentifier parentId;
+  parentId.notebookId = QStringLiteral("nb-test");
+
+  const QJsonObject childrenJson = makeChildrenJson(
+      {QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")}, {});
+
+  DialogDriver driver({
+      [](SortDialog2 *p_dlg) {
+        clickDialogHeader(p_dlg, 1); // Created, ascending
+        clickDialogHeader(p_dlg, 1); // Created, descending
+        p_dlg->accept();
+      },
+  });
+  driver.start();
+
+  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  QCOMPARE(driver.modalsObserved(), 1);
+  QCOMPARE(result.newFolderOrder,
+           (QStringList{QStringLiteral("gamma"), QStringLiteral("beta"), QStringLiteral("alpha")}));
+}
+
+// (9) The seam feeds modifiedUtc through to the dialog. modified keys run in
+//     REVERSE list order, so an ASCENDING Modified sort reverses the list.
+void TestNotebookExplorer2Sort::testHeaderSortByModifiedInSeam() {
+  NodeIdentifier parentId;
+  parentId.notebookId = QStringLiteral("nb-test");
+
+  const QJsonObject childrenJson = makeChildrenJson(
+      {}, {QStringLiteral("one.md"), QStringLiteral("two.md"), QStringLiteral("three.md")});
+
+  DialogDriver driver({
+      [](SortDialog2 *p_dlg) {
+        clickDialogHeader(p_dlg, 2); // Modified, ascending
+        p_dlg->accept();
+      },
+  });
+  driver.start();
+
+  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  QCOMPARE(driver.modalsObserved(), 1);
+  QCOMPARE(result.newFileOrder, (QStringList{QStringLiteral("three.md"), QStringLiteral("two.md"),
+                                             QStringLiteral("one.md")}));
+}
+
+// (10) vxcore defaults both timestamps to 0 and emits them unconditionally, so
+//      a legacy child arrives as the NUMBER zero rather than an absent key.
+//      Both that and a genuinely absent key must render as an EMPTY cell (not
+//      1970-01-01) and sort LAST.
+void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
+  NodeIdentifier parentId;
+  parentId.notebookId = QStringLiteral("nb-test");
+
+  const QJsonObject childrenJson =
+      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("legacy!zero"),
+                        QStringLiteral("old!missing"), QStringLiteral("beta")},
+                       {});
+
+  QStringList blanks;
+  QStringList ascOrder;
+
+  DialogDriver driver({
+      [&](SortDialog2 *p_dlg) {
+        auto *tree = p_dlg->findChild<QTreeWidget *>(QLatin1String(kListWidgetName));
+        Q_ASSERT(tree != nullptr);
+        for (int i = 0; i < tree->topLevelItemCount(); ++i) {
+          auto *item = tree->topLevelItem(i);
+          if (item->text(1).isEmpty() && item->text(2).isEmpty() &&
+              !item->data(1, Qt::UserRole).isValid() && !item->data(2, Qt::UserRole).isValid()) {
+            blanks << item->data(0, Qt::UserRole).toString();
+          }
+        }
+        clickDialogHeader(p_dlg, 1); // Created, ascending
+        p_dlg->accept();
+      },
+  });
+  driver.start();
+
+  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  QCOMPARE(driver.modalsObserved(), 1);
+
+  std::sort(blanks.begin(), blanks.end());
+  QCOMPARE(blanks, (QStringList{QStringLiteral("legacy!zero"), QStringLiteral("old!missing")}));
+
+  // Unknown timestamps sort last, so the two dated folders lead.
+  ascOrder = result.newFolderOrder;
+  QCOMPARE(ascOrder.size(), 4);
+  QCOMPARE(ascOrder.at(0), QStringLiteral("alpha"));
+  QCOMPARE(ascOrder.at(1), QStringLiteral("beta"));
+  QVERIFY(ascOrder.mid(2).contains(QStringLiteral("legacy!zero")));
+  QVERIFY(ascOrder.mid(2).contains(QStringLiteral("old!missing")));
 }
 
 // ============================================================================
