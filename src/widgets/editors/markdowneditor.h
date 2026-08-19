@@ -233,7 +233,7 @@ private:
   void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
 
   // Update headings outline.
-  void updateHeadings(const QVector<vte::md::ElementRegion> &p_headerRegions);
+  void updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings);
 
   int getHeadingIndexByBlockNumber(int p_blockNumber) const;
 

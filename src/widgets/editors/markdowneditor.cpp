@@ -111,7 +111,7 @@ void MarkdownEditor::init() {
 
   connect(m_textEdit, &vte::VTextEdit::mouseReleased, this, &MarkdownEditor::handleMouseReleased);
 
-  connect(getHighlighter(), &vte::MarkdownHighlighter::headersUpdated, this,
+  connect(getHighlighter(), &vte::MarkdownHighlighter::headingsUpdated, this,
           &MarkdownEditor::updateHeadings);
 
   setupTableHelper();
@@ -1129,32 +1129,27 @@ int MarkdownEditor::getCurrentHeadingIndex() const {
   return getHeadingIndexByBlockNumber(blockNumber);
 }
 
-void MarkdownEditor::updateHeadings(const QVector<vte::md::ElementRegion> &p_headerRegions) {
+void MarkdownEditor::updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings) {
   m_headingSlugger.reset();
 
   QVector<Heading> headings;
-  headings.reserve(p_headerRegions.size());
+  headings.reserve(p_headings.size());
 
-  // Assume that each block contains only one line.
-  // Only support # syntax for now.
+  // The title and the anchor text are both derived from the cmark AST, so the
+  // outline shows (an approximation of) what the reader sees and the anchor
+  // agrees with the preview for CommonMark constructs. Preview-only markdown-it
+  // plugins are invisible to cmark; see md::HeadingInfo for the limits.
+  // A setext heading legitimately spans two blocks; findBlock() on the start
+  // position yields the title line, which is the one to scroll to.
   auto doc = document();
-  for (auto const &reg : p_headerRegions) {
-    auto block = doc->findBlock(reg.m_startPos);
+  for (auto const &elem : p_headings) {
+    auto block = doc->findBlock(elem.m_startPos);
     if (!block.isValid()) {
       continue;
     }
 
-    if (!block.contains(reg.m_endPos - 1)) {
-      qWarning() << "header accross multiple blocks, starting from block" << block.blockNumber()
-                 << block.text();
-    }
-
-    auto match = vte::MarkdownUtils::matchHeader(block.text());
-    if (match.m_matched) {
-      QString anchor = m_headingSlugger.slug(match.m_header);
-      Heading heading(match.m_header, match.m_level, block.blockNumber(), anchor);
-      headings.append(heading);
-    }
+    QString anchor = m_headingSlugger.slug(elem.m_anchorText);
+    headings.append(Heading(elem.m_title, elem.m_level, block.blockNumber(), anchor));
   }
 
   OutlineProvider::makePerfectHeadings(headings, m_headings);
