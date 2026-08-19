@@ -112,9 +112,9 @@ void NewNotebookDialog2::setupUI() {
   m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
   m_syncMethodCombo->setToolTip(tr("Git sync is supported only for bundled notebooks. "
                                    "Sync settings are configured immediately via the "
-                                   "Configure... button before notebook creation."));
+                                   "Configure button before notebook creation."));
 
-  m_configureSyncButton = new QPushButton(tr("Configure..."), mainWidget);
+  m_configureSyncButton = new QPushButton(tr("Configure"), mainWidget);
   m_configureSyncButton->setObjectName(QStringLiteral("configureSyncButton"));
   m_configureSyncButton->setToolTip(tr("Configure Git sync remote URL and credentials"));
   m_configureSyncButton->hide(); // shown only when Git is the active selection
@@ -341,7 +341,7 @@ void NewNotebookDialog2::updateOkButtonState() {
   setButtonEnabled(QDialogButtonBox::Ok, ok);
   if (auto *box = getDialogButtonBox()) {
     if (auto *okBtn = box->button(QDialogButtonBox::Ok)) {
-      okBtn->setToolTip(ok ? QString() : tr("Click 'Configure...' to set up Git sync first"));
+      okBtn->setToolTip(ok ? QString() : tr("Click 'Configure' to set up Git sync first"));
     }
   }
 }

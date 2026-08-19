@@ -32,9 +32,7 @@ QString bufferSaveErrorKey(const QString &p_bufferId) {
   return QStringLiteral("buffer.saveerror.%1").arg(p_bufferId);
 }
 
-QString imageHostKey(int p_token) {
-  return QStringLiteral("imagehost.upload.%1").arg(p_token);
-}
+QString imageHostKey(int p_token) { return QStringLiteral("imagehost.upload.%1").arg(p_token); }
 
 } // namespace
 
@@ -110,10 +108,10 @@ void NotificationRouter::connectServiceSources() {
               msg.m_attention = NotificationMessage::Attention::Interrupt;
               msg.m_duration = NotificationMessage::Duration::Long;
               msg.m_title = tr("Image upload failed");
-              msg.m_text = p_result.fileName.isEmpty()
-                               ? tr("Failed to upload the image to the image host.")
-                               : tr("Failed to upload \"%1\" to the image host.")
-                                     .arg(p_result.fileName);
+              msg.m_text =
+                  p_result.fileName.isEmpty()
+                      ? tr("Failed to upload the image to the image host.")
+                      : tr("Failed to upload \"%1\" to the image host.").arg(p_result.fileName);
               msg.m_details = p_result.errorMessage;
               // notify(), not renotify(): the token already makes each upload a
               // distinct incident, so this is always a fresh key and therefore
@@ -208,15 +206,13 @@ void NotificationRouter::retireSyncIncidents(const QString &p_notebookId) {
   if (!notifications || p_notebookId.isEmpty()) {
     return;
   }
-  notifications->dismissByDedupKey(
-      syncDedupKey(VXCORE_ERR_SYNC_AUTH_FAILED, p_notebookId));
+  notifications->dismissByDedupKey(syncDedupKey(VXCORE_ERR_SYNC_AUTH_FAILED, p_notebookId));
   notifications->dismissByDedupKey(syncDedupKey(VXCORE_ERR_SYNC_NETWORK, p_notebookId));
   notifications->dismissByDedupKey(syncDedupKey(VXCORE_ERR_UNKNOWN, p_notebookId));
 }
 
-void NotificationRouter::onSyncUserMessageRequested(const QString &p_notebookId,
-                                                    VxCoreError p_code, const QString &p_title,
-                                                    const QString &p_text,
+void NotificationRouter::onSyncUserMessageRequested(const QString &p_notebookId, VxCoreError p_code,
+                                                    const QString &p_title, const QString &p_text,
                                                     const QString &p_details) {
   auto *notifications = m_services.get<NotificationService>();
   if (!notifications) {
@@ -254,7 +250,7 @@ void NotificationRouter::onSyncUserMessageRequested(const QString &p_notebookId,
 
   if (p_code == VXCORE_ERR_SYNC_AUTH_FAILED) {
     NotificationAction openInfo;
-    openInfo.m_label = tr("Open Sync Info...");
+    openInfo.m_label = tr("Open Sync Info");
     openInfo.m_dismissOnTrigger = true;
     const QString notebookId = p_notebookId;
     openInfo.m_callback = [this, notebookId]() { emit openSyncInfoRequested(notebookId); };
@@ -289,8 +285,7 @@ void NotificationRouter::onViewWindowCreationFailed(const QString &p_fileType,
   msg.m_title = tr("Cannot open file");
   msg.m_text = p_path.isEmpty()
                    ? tr("No viewer is available for file type \"%1\".").arg(p_fileType)
-                   : tr("No viewer is available for \"%1\" (type \"%2\").")
-                         .arg(p_path, p_fileType);
+                   : tr("No viewer is available for \"%1\" (type \"%2\").").arg(p_path, p_fileType);
   notifications->notify(msg);
 }
 

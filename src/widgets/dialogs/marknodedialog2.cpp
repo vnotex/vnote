@@ -148,7 +148,7 @@ QWidget *MarkNodeDialog2::buildColorSection(const QString &p_title, const QStrin
   }
   btnLayout->addWidget(p_selectedIndicator);
 
-  auto *customBtn = new QPushButton(tr("Custom..."), btnRow);
+  auto *customBtn = new QPushButton(tr("Custom"), btnRow);
   connect(customBtn, &QPushButton::clicked, this,
           [this, p_swatchButtons, p_swatchCount, &p_selectedIndicator, &p_colorStorage]() {
             onCustomColor(p_swatchButtons, p_swatchCount, p_selectedIndicator, p_colorStorage);

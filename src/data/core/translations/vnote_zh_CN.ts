@@ -2886,7 +2886,7 @@
     <message>
         <location line="+24"/>
         <source>Only bundled notebooks can import a shared folder.</source>
-        <translation>只有捆绑式笔记本才能导入分享文件夹。</translation>
+        <translation>只有自包笔记本才能导入分享文件夹。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2993,7 +2993,7 @@
     <message>
         <location line="+30"/>
         <source>Only bundled notebooks can import a shared folder.</source>
-        <translation>只有捆绑式笔记本才能导入分享文件夹。</translation>
+        <translation>只有自包笔记本才能导入分享文件夹。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3324,12 +3324,12 @@
     <message>
         <location filename="../../../controllers/managenotebookscontroller.cpp" line="+38"/>
         <source>Bundled Notebook</source>
-        <translation>自包含笔记本</translation>
+        <translation>自包笔记本</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Raw Notebook</source>
-        <translation>原始笔记本</translation>
+        <translation>原生笔记本</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -3457,8 +3457,8 @@
     </message>
     <message>
         <location line="-79"/>
-        <source>Custom...</source>
-        <translation>自定义...</translation>
+        <source>Custom</source>
+        <translation>自定义</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4427,24 +4427,24 @@
     <message>
         <location line="+7"/>
         <source>Bundled notebook</source>
-        <translation>捆绑式笔记本</translation>
+        <translation>自包笔记本</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Raw notebook</source>
-        <translation>原始笔记本</translation>
+        <translation>原生笔记本</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Bundled: notebook with metadata stored in config files.
 Raw: plain folder structure with minimal VNote metadata.</source>
-        <translation>捆绑式：元数据存储在配置文件中的笔记本。
-原始：仅含最少 VNote 元数据的普通文件夹结构。</translation>
+        <translation>自包：元数据存储在配置文件中的笔记本。
+原生：仅含最少 VNote 元数据的普通文件夹结构。</translation>
     </message>
     <message>
         <location line="+35"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure... button before notebook creation.</source>
-        <translation>Git 同步仅支持捆绑式笔记本。同步设置会在创建笔记本前通过“配置...”按钮立即进行配置。</translation>
+        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation.</source>
+        <translation>Git 同步仅支持自包笔记本。同步设置会在创建笔记本前通过“配置”按钮立即进行配置。</translation>
     </message>
     <message>
         <location line="-62"/>
@@ -4472,7 +4472,7 @@ Raw: plain folder structure with minimal VNote metadata.</source>
 For raw notebooks, you can select an existing folder with files.
 The folder&apos;s contents will be indexed as notebook nodes.</source>
         <translation>笔记本的根文件夹。
-对于原始笔记本，可选择一个已包含文件的现有文件夹。
+对于原生笔记本，可选择一个已包含文件的现有文件夹。
 该文件夹的内容会被索引为笔记本节点。</translation>
     </message>
     <message>
@@ -4499,8 +4499,8 @@ A new notebook requires an empty folder or a non-existent path (will be created)
     </message>
     <message>
         <location line="+5"/>
-        <source>Configure...</source>
-        <translation>配置...</translation>
+        <source>Configure</source>
+        <translation>配置</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -4533,8 +4533,8 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+161"/>
-        <source>Click &apos;Configure...&apos; to set up Git sync first</source>
-        <translation>点击&quot;配置...&quot;以先配置 Git 同步</translation>
+        <source>Click &apos;Configure&apos; to set up Git sync first</source>
+        <translation>点击&quot;配置&quot;以先配置 Git 同步</translation>
     </message>
 </context>
 <context>
@@ -4857,7 +4857,7 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     <message>
         <location line="+2"/>
         <source>Open Folder as &amp;Raw Notebook</source>
-        <translation>打开文件夹为原始笔记本(&amp;R)</translation>
+        <translation>打开文件夹为原生笔记本(&amp;R)</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5011,7 +5011,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
     <message>
         <location line="+172"/>
         <source>Select Folder to Open as Raw Notebook</source>
-        <translation>选择要作为原始笔记本打开的文件夹</translation>
+        <translation>选择要作为原生笔记本打开的文件夹</translation>
     </message>
     <message>
         <location line="+114"/>
@@ -5553,12 +5553,12 @@ Open the bundle location?</source>
     <message>
         <location line="+58"/>
         <source>Raw</source>
-        <translation>原始</translation>
+        <translation>原生</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Bundled</source>
-        <translation>自包含</translation>
+        <translation>自包</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -5882,8 +5882,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+67"/>
-        <source>Open Sync Info...</source>
-        <translation>打开同步信息...</translation>
+        <source>Open Sync Info</source>
+        <translation>打开同步信息</translation>
     </message>
     <message>
         <location line="+32"/>

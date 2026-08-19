@@ -1745,7 +1745,7 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
     // Enabled for BOTH syntaxes: setting a size on a Markdown image converts it
     // to HTML, clearing it on an HTML image may convert it back.
     const auto link = links[index];
-    auto act = new QAction(tr("Set Size..."), imageSubMenu);
+    auto act = new QAction(tr("Set Size"), imageSubMenu);
     connect(act, &QAction::triggered, imageSubMenu, [this, link]() { setImageSize(link); });
     imageSubMenu->addAction(act);
   }

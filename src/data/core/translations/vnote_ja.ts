@@ -3457,8 +3457,8 @@
     </message>
     <message>
         <location line="-79"/>
-        <source>Custom...</source>
-        <translation>カスタム...</translation>
+        <source>Custom</source>
+        <translation>カスタム</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4443,8 +4443,8 @@ Raw: plain folder structure with minimal VNote metadata.</source>
     </message>
     <message>
         <location line="+35"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure... button before notebook creation.</source>
-        <translation>Git 同期はバンドルノートブックのみサポートされます。同期設定はノートブック作成前に「設定...」ボタンで直ちに構成されます。</translation>
+        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation.</source>
+        <translation>Git 同期はバンドルノートブックのみサポートされます。同期設定はノートブック作成前に「設定」ボタンで直ちに構成されます。</translation>
     </message>
     <message>
         <location line="-62"/>
@@ -4499,8 +4499,8 @@ A new notebook requires an empty folder or a non-existent path (will be created)
     </message>
     <message>
         <location line="+5"/>
-        <source>Configure...</source>
-        <translation>構成...</translation>
+        <source>Configure</source>
+        <translation>構成</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -4533,8 +4533,8 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+161"/>
-        <source>Click &apos;Configure...&apos; to set up Git sync first</source>
-        <translation>まず &apos;構成...&apos; をクリックして Git 同期を設定してください</translation>
+        <source>Click &apos;Configure&apos; to set up Git sync first</source>
+        <translation>まず &apos;構成&apos; をクリックして Git 同期を設定してください</translation>
     </message>
 </context>
 <context>
@@ -5884,8 +5884,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+67"/>
-        <source>Open Sync Info...</source>
-        <translation>同期情報を開く...</translation>
+        <source>Open Sync Info</source>
+        <translation>同期情報を開く</translation>
     </message>
     <message>
         <location line="+32"/>
