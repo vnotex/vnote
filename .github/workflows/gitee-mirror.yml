@@ -64,6 +64,7 @@ jobs:
       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
     steps:
       - name: Mask credentials
+        if: false
         run: |
           set -euo pipefail
           echo "::add-mask::$GITEE_TOKEN"
