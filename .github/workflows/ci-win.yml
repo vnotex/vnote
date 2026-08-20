@@ -112,6 +112,19 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Apply restore-section-numbering patch
+        shell: bash
+        run: |
+          if git apply --check package/restore-section-numbering.patch 2>/dev/null; then
+            git apply package/restore-section-numbering.patch
+            echo "Applied package/restore-section-numbering.patch"
+          elif git apply --reverse --check package/restore-section-numbering.patch 2>/dev/null; then
+            echo "restore-section-numbering.patch already applied, skipping"
+          else
+            echo "ERROR: package/restore-section-numbering.patch does not apply cleanly"
+            exit 1
+          fi
+
       # ---------------------------------------------------------------------
       # OpenSSL for the Qt 5.15 / Windows 7 variant.
       #

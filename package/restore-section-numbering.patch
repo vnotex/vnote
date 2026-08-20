@@ -1,0 +1,996 @@
+diff --git a/src/controllers/markdowneditorcontroller.cpp b/src/controllers/markdowneditorcontroller.cpp
+index 8c0f0b24..3e5916b8 100644
+--- a/src/controllers/markdowneditorcontroller.cpp
++++ b/src/controllers/markdowneditorcontroller.cpp
+@@ -337,6 +337,8 @@ MarkdownEditorController::currentEditorConfig() const {
+ 
+   snapshot.zoomDelta = mdConfig.getTextEditorConfig().getZoomDelta();
+   snapshot.shortcutLeaderKey = coreConfig.getShortcutLeaderKey();
++  snapshot.sectionNumberEnabled =
++      mdConfig.getSectionNumberMode() != MarkdownEditorConfig::SectionNumberMode::None;
+ 
+   return snapshot;
+ }
+@@ -361,6 +363,19 @@ MarkdownEditorController::prepareBufferState(const Buffer2 &p_buffer) {
+   return state;
+ }
+ 
++bool MarkdownEditorController::shouldEnableSectionNumber(
++    MarkdownEditorConfig::SectionNumberMode p_sectionNumberMode, int p_mode) {
++  switch (p_sectionNumberMode) {
++  case MarkdownEditorConfig::SectionNumberMode::None:
++    return false;
++  case MarkdownEditorConfig::SectionNumberMode::Read:
++    return p_mode == static_cast<int>(ViewWindowMode::Read);
++  case MarkdownEditorConfig::SectionNumberMode::Edit:
++    return p_mode == static_cast<int>(ViewWindowMode::Edit);
++  }
++  return false;
++}
++
+ int MarkdownEditorController::persistZoomDelta(int p_delta) {
+   auto *configMgr = m_services.get<ConfigMgr2>();
+   auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
+diff --git a/src/controllers/markdowneditorcontroller.h b/src/controllers/markdowneditorcontroller.h
+index 7d7b4103..6146deb6 100644
+--- a/src/controllers/markdowneditorcontroller.h
++++ b/src/controllers/markdowneditorcontroller.h
+@@ -38,6 +38,7 @@ public:
+   struct EditorConfigSnapshot {
+     int zoomDelta = 0;
+     QString shortcutLeaderKey; // raw key string from CoreConfig
++    bool sectionNumberEnabled = false;
+   };
+ 
+   // Preview helper configuration extracted from MarkdownEditorConfig.
+@@ -98,6 +99,14 @@ public:
+   // Extracts content, basePath, modified flag, revision from Buffer2.
+   static BufferState prepareBufferState(const Buffer2 &p_buffer);
+ 
++  // ============ Section Number ============
++
++  // Determine whether section numbering should be enabled for current mode.
++  // @p_sectionNumberMode: from MarkdownEditorConfig::getSectionNumberMode().
++  // @p_mode: current ViewWindowMode (Edit or Read).
++  static bool shouldEnableSectionNumber(MarkdownEditorConfig::SectionNumberMode p_sectionNumberMode,
++                                        int p_mode);
++
+   // ============ Zoom Persistence ============
+ 
+   // Persist text editor zoom delta to config. Returns the persisted delta.
+diff --git a/src/core/global.h b/src/core/global.h
+index df612232..9bc1b85c 100644
+--- a/src/core/global.h
++++ b/src/core/global.h
+@@ -75,6 +75,8 @@ enum FindOption {
+ };
+ Q_DECLARE_FLAGS(FindOptions, FindOption);
+ 
++enum OverrideState { NoOverride = 0, ForceEnable = 1, ForceDisable = 2 };
++
+ enum class Alignment { None, Left, Center, Right };
+ 
+ enum class ViewWindowMode { Read, Edit, Invalid };
+diff --git a/src/core/markdowneditorconfig.cpp b/src/core/markdowneditorconfig.cpp
+index 7518beb2..9fdcc5d7 100644
+--- a/src/core/markdowneditorconfig.cpp
++++ b/src/core/markdowneditorconfig.cpp
+@@ -41,6 +41,10 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
+   m_prependDotInRelativeLink = READBOOL(QStringLiteral("prependDotInRelativeLink"));
+   m_confirmBeforeClearObsoleteImages = READBOOL(QStringLiteral("confirmBeforeClearObsoleteImages"));
+ 
++  m_sectionNumberMode = stringToSectionNumberMode(READSTR(QStringLiteral("sectionNumber")));
++  m_sectionNumberBaseLevel = READINT(QStringLiteral("sectionNumberBaseLevel"));
++  m_sectionNumberStyle = stringToSectionNumberStyle(READSTR(QStringLiteral("sectionNumberStyle")));
++
+   m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrainImageWidth"));
+   m_imageAlignCenterEnabled = READBOOL(QStringLiteral("imageAlignCenter"));
+   m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
+@@ -87,6 +91,10 @@ QJsonObject MarkdownEditorConfig::toJson() const {
+   obj[QStringLiteral("prependDotInRelativeLink")] = m_prependDotInRelativeLink;
+   obj[QStringLiteral("confirmBeforeClearObsoleteImages")] = m_confirmBeforeClearObsoleteImages;
+ 
++  obj[QStringLiteral("sectionNumber")] = sectionNumberModeToString(m_sectionNumberMode);
++  obj[QStringLiteral("sectionNumberBaseLevel")] = m_sectionNumberBaseLevel;
++  obj[QStringLiteral("sectionNumberStyle")] = sectionNumberStyleToString(m_sectionNumberStyle);
++
+   obj[QStringLiteral("constrainImageWidth")] = m_constrainImageWidthEnabled;
+   obj[QStringLiteral("imageAlignCenter")] = m_imageAlignCenterEnabled;
+   obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
+@@ -279,6 +287,51 @@ void MarkdownEditorConfig::setCodeBlockLineWrapEnabled(bool p_enabled) {
+   updateConfig(m_codeBlockLineWrapEnabled, p_enabled, this);
+ }
+ 
++QString MarkdownEditorConfig::sectionNumberModeToString(SectionNumberMode p_mode) const {
++  switch (p_mode) {
++  case SectionNumberMode::None:
++    return QStringLiteral("none");
++
++  case SectionNumberMode::Edit:
++    return QStringLiteral("edit");
++
++  default:
++    return QStringLiteral("read");
++  }
++}
++
++MarkdownEditorConfig::SectionNumberMode
++MarkdownEditorConfig::stringToSectionNumberMode(const QString &p_str) const {
++  auto mode = p_str.toLower();
++  if (mode == QStringLiteral("none")) {
++    return SectionNumberMode::None;
++  } else if (mode == QStringLiteral("edit")) {
++    return SectionNumberMode::Edit;
++  } else {
++    return SectionNumberMode::Read;
++  }
++}
++
++QString MarkdownEditorConfig::sectionNumberStyleToString(SectionNumberStyle p_style) const {
++  switch (p_style) {
++  case SectionNumberStyle::DigDotDig:
++    return QStringLiteral("digdotdig");
++
++  default:
++    return QStringLiteral("digdotdigdot");
++  }
++}
++
++MarkdownEditorConfig::SectionNumberStyle
++MarkdownEditorConfig::stringToSectionNumberStyle(const QString &p_str) const {
++  auto style = p_str.toLower();
++  if (style == QStringLiteral("digdotdig")) {
++    return SectionNumberStyle::DigDotDig;
++  } else {
++    return SectionNumberStyle::DigDotDigDot;
++  }
++}
++
+ QString MarkdownEditorConfig::inplacePreviewSourceToString(InplacePreviewSource p_src) const {
+   switch (p_src) {
+   case InplacePreviewSource::ImageLink:
+@@ -314,6 +367,28 @@ MarkdownEditorConfig::stringToInplacePreviewSource(const QString &p_str) const {
+   }
+ }
+ 
++MarkdownEditorConfig::SectionNumberMode MarkdownEditorConfig::getSectionNumberMode() const {
++  return m_sectionNumberMode;
++}
++
++void MarkdownEditorConfig::setSectionNumberMode(SectionNumberMode p_mode) {
++  updateConfig(m_sectionNumberMode, p_mode, this);
++}
++
++int MarkdownEditorConfig::getSectionNumberBaseLevel() const { return m_sectionNumberBaseLevel; }
++
++void MarkdownEditorConfig::setSectionNumberBaseLevel(int p_level) {
++  updateConfig(m_sectionNumberBaseLevel, p_level, this);
++}
++
++MarkdownEditorConfig::SectionNumberStyle MarkdownEditorConfig::getSectionNumberStyle() const {
++  return m_sectionNumberStyle;
++}
++
++void MarkdownEditorConfig::setSectionNumberStyle(SectionNumberStyle p_style) {
++  updateConfig(m_sectionNumberStyle, p_style, this);
++}
++
+ bool MarkdownEditorConfig::getSmartTableEnabled() const { return m_smartTableEnabled; }
+ 
+ void MarkdownEditorConfig::setSmartTableEnabled(bool p_enabled) {
+diff --git a/src/core/markdowneditorconfig.h b/src/core/markdowneditorconfig.h
+index eaae107c..2be35bff 100644
+--- a/src/core/markdowneditorconfig.h
++++ b/src/core/markdowneditorconfig.h
+@@ -14,6 +14,15 @@ class IConfigMgr;
+ 
+ class MarkdownEditorConfig : public IConfig {
+ public:
++  enum SectionNumberMode { None, Read, Edit };
++
++  enum SectionNumberStyle {
++    // 1.1.
++    DigDotDigDot,
++    // 1.1
++    DigDotDig
++  };
++
+   // Mirrors vte::MarkdownEditorConfig::InplacePreviewSource. Kept as a separate enum on
+   // purpose: this one is the persisted user setting (see inplacePreviewSourceToString()),
+   // so its values are part of VNote's config file contract and must not change if the
+@@ -70,6 +79,15 @@ public:
+   bool getConfirmBeforeClearObsoleteImages() const;
+   void setConfirmBeforeClearObsoleteImages(bool p_confirm);
+ 
++  SectionNumberMode getSectionNumberMode() const;
++  void setSectionNumberMode(SectionNumberMode p_mode);
++
++  int getSectionNumberBaseLevel() const;
++  void setSectionNumberBaseLevel(int p_level);
++
++  SectionNumberStyle getSectionNumberStyle() const;
++  void setSectionNumberStyle(SectionNumberStyle p_style);
++
+   bool getConstrainImageWidthEnabled() const;
+   void setConstrainImageWidthEnabled(bool p_enabled);
+ 
+@@ -125,6 +143,12 @@ public:
+ private:
+   friend class MainConfig;
+ 
++  QString sectionNumberModeToString(SectionNumberMode p_mode) const;
++  SectionNumberMode stringToSectionNumberMode(const QString &p_str) const;
++
++  QString sectionNumberStyleToString(SectionNumberStyle p_style) const;
++  SectionNumberStyle stringToSectionNumberStyle(const QString &p_str) const;
++
+   void loadViewerResource(const QJsonObject &p_jobj);
+   QJsonObject saveViewerResource() const;
+ 
+@@ -174,6 +198,15 @@ private:
+   // Whether ask for user confirmation before clearing obsolete images.
+   bool m_confirmBeforeClearObsoleteImages = true;
+ 
++  // Whether enable section numbering.
++  SectionNumberMode m_sectionNumberMode = SectionNumberMode::None;
++
++  // 1 based.
++  int m_sectionNumberBaseLevel = 2;
++
++  // Section number style.
++  SectionNumberStyle m_sectionNumberStyle = SectionNumberStyle::DigDotDigDot;
++
+   // Whether enable image width constraint.
+   bool m_constrainImageWidthEnabled = true;
+ 
+diff --git a/src/core/markdownwebglobaloptions.cpp b/src/core/markdownwebglobaloptions.cpp
+index 88d707a8..417b1071 100644
+--- a/src/core/markdownwebglobaloptions.cpp
++++ b/src/core/markdownwebglobaloptions.cpp
+@@ -29,6 +29,8 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
+              .arg(Utils::boolToString(m_codeBlockLineNumberEnabled)) +
+          QStringLiteral("codeBlockLineWrapEnabled: %1,\n")
+              .arg(Utils::boolToString(m_codeBlockLineWrapEnabled)) +
++         QStringLiteral("sectionNumberEnabled: %1,\n")
++             .arg(Utils::boolToString(m_sectionNumberEnabled)) +
+          QStringLiteral("transparentBackgroundEnabled: %1,\n")
+              .arg(Utils::boolToString(m_transparentBackgroundEnabled)) +
+          QStringLiteral("scrollable: %1,\n").arg(Utils::boolToString(m_scrollable)) +
+@@ -37,7 +39,8 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
+          QStringLiteral("transformSvgToPngEnabled: %1,\n")
+              .arg(Utils::boolToString(m_transformSvgToPngEnabled)) +
+          QStringLiteral("mathJaxScale: %1,\n").arg(m_mathJaxScale) +
+-         QStringLiteral("removeCodeToolBarEnabled: %1\n")
++         QStringLiteral("removeCodeToolBarEnabled: %1,\n")
+              .arg(Utils::boolToString(m_removeCodeToolBarEnabled)) +
++         QStringLiteral("sectionNumberBaseLevel: %1\n").arg(m_sectionNumberBaseLevel) +
+          QStringLiteral("}");
+ }
+diff --git a/src/core/markdownwebglobaloptions.h b/src/core/markdownwebglobaloptions.h
+index 83dd6a05..6db62037 100644
+--- a/src/core/markdownwebglobaloptions.h
++++ b/src/core/markdownwebglobaloptions.h
+@@ -18,6 +18,10 @@ struct MarkdownWebGlobalOptions {
+ 
+   QString m_mathJaxScript;
+ 
++  bool m_sectionNumberEnabled = true;
++
++  int m_sectionNumberBaseLevel = 2;
++
+   bool m_constrainImageWidthEnabled = true;
+ 
+   bool m_imageAlignCenterEnabled = true;
+diff --git a/src/core/services/htmltemplateservice.cpp b/src/core/services/htmltemplateservice.cpp
+index e37635c2..7d86e2a9 100644
+--- a/src/core/services/htmltemplateservice.cpp
++++ b/src/core/services/htmltemplateservice.cpp
+@@ -232,6 +232,9 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
+     opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
+     opts.m_webGraphviz = p_config.getWebGraphviz();
+     opts.m_mathJaxScript = p_config.getMathJaxScript();
++    opts.m_sectionNumberEnabled =
++        p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
++    opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
+     opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
+     opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
+     opts.m_protectFromXss = p_config.getProtectFromXss();
+diff --git a/src/data/extra/web/css/globalstyles.css b/src/data/extra/web/css/globalstyles.css
+index 540195ca..ce8a5433 100644
+--- a/src/data/extra/web/css/globalstyles.css
++++ b/src/data/extra/web/css/globalstyles.css
+@@ -1,4 +1,78 @@
+ /* Styles here will be placed in the header of the HTML template as global embedded styles. */
++/* Section numbering */
++#vx-content.vx-section-number,
++#vx-content.vx-section-number-2 h1,
++#vx-content.vx-section-number-3 h1,
++#vx-content.vx-section-number-3 h2 {
++    counter-reset: section1 section2 section3 section4 section5 section6;
++}
++
++#vx-content.vx-section-number-1 h1,
++#vx-content.vx-section-number-2 h2,
++#vx-content.vx-section-number-3 h3 {
++    counter-reset: section2 section3 section4 seciton5 section6;
++}
++
++#vx-content.vx-section-number-1 h2,
++#vx-content.vx-section-number-2 h3,
++#vx-content.vx-section-number-3 h4 {
++    counter-reset: section3 section4 section5 section6;
++}
++
++#vx-content.vx-section-number-1 h3,
++#vx-content.vx-section-number-2 h4,
++#vx-content.vx-section-number-3 h5 {
++    counter-reset: section4 section5 section6;
++}
++
++#vx-content.vx-section-number-1 h4,
++#vx-content.vx-section-number-2 h5 {
++    counter-reset: section5 section6;
++}
++
++#vx-content.vx-section-number-1 h5 {
++    counter-reset: section6;
++}
++
++#vx-content.vx-section-number-1 h1::before,
++#vx-content.vx-section-number-2 h2::before,
++#vx-content.vx-section-number-3 h3::before {
++    counter-increment: section1;
++    content: counter(section1) ". ";
++}
++
++#vx-content.vx-section-number-1 h2::before,
++#vx-content.vx-section-number-2 h3::before,
++#vx-content.vx-section-number-3 h4::before {
++    counter-increment: section2;
++    content: counter(section1) "." counter(section2) ". ";
++}
++
++#vx-content.vx-section-number-1 h3::before,
++#vx-content.vx-section-number-2 h4::before,
++#vx-content.vx-section-number-3 h5::before {
++    counter-increment: section3;
++    content: counter(section1) "." counter(section2) "." counter(section3) ". ";
++}
++
++#vx-content.vx-section-number-1 h4::before,
++#vx-content.vx-section-number-2 h5::before,
++#vx-content.vx-section-number-3 h6::before {
++    counter-increment: section4;
++    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) ". ";
++}
++
++#vx-content.vx-section-number-1 h5::before,
++#vx-content.vx-section-number-2 h6::before {
++    counter-increment: section5;
++    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) "." counter(section5) ". ";
++}
++
++#vx-content.vx-section-number-1 h6::before {
++    counter-increment: section6;
++    content: counter(section1) "." counter(section2) "." counter(section3) "." counter(section4) "." counter(section5) "." counter(section6) ". ";
++}
++
+ #vx-content.vx-constrain-image-width img,
+ #vx-content.vx-constrain-image-width div.vx-plantuml-graph > svg,
+ #vx-content.vx-constrain-image-width div.vx-mermaid-graph,
+@@ -37,6 +111,39 @@ figcaption {
+     list-style: none;
+ }
+ 
++#vx-content.vx-section-number-1 .vx-table-of-contents ol {
++    counter-reset: toc;
++}
++#vx-content.vx-section-number-1 .vx-table-of-contents ol li {
++    counter-increment: toc;
++}
++#vx-content.vx-section-number-1 .vx-table-of-contents ol li:before {
++    content: counters(toc, '.') '. ';
++    font-family: cursive;
++}
++
++#vx-content.vx-section-number-2 .vx-table-of-contents > ol > li ol {
++    counter-reset: toc;
++}
++#vx-content.vx-section-number-2 .vx-table-of-contents > ol > li ol li {
++    counter-increment: toc;
++}
++#vx-content.vx-section-number-2 .vx-table-of-contents > ol > li ol li:before {
++    content: counters(toc, '.') '. ';
++    font-family: cursive;
++}
++
++#vx-content.vx-section-number-3 .vx-table-of-contents > ol > li > ol > li ol {
++    counter-reset: toc;
++}
++#vx-content.vx-section-number-3 .vx-table-of-contents > ol > li > ol > li ol li {
++    counter-increment: toc;
++}
++#vx-content.vx-section-number-3 .vx-table-of-contents > ol > li > ol > li ol li:before {
++    content: counters(toc, '.') '. ';
++    font-family: cursive;
++}
++
+ .vx-header-anchor {
+     visibility: hidden;
+     vertical-align: middle;
+diff --git a/src/data/extra/web/js/markdownviewercore.js b/src/data/extra/web/js/markdownviewercore.js
+index b25f700f..092a5233 100644
+--- a/src/data/extra/web/js/markdownviewercore.js
++++ b/src/data/extra/web/js/markdownviewercore.js
+@@ -23,6 +23,8 @@ class MarkdownViewerCore extends VXCore {
+ 
+         this.turndown = null;
+ 
++        this.sectionNumberBaseLevel = 2;
++
+         // Dict mapping from {id, index} to callback for renderGraph().
+         this.renderGraphCallbacks = {}
+     }
+@@ -45,6 +47,12 @@ class MarkdownViewerCore extends VXCore {
+ 
+         this.searcher = new MarkJs(this, this.contentContainer);
+ 
++        this.sectionNumberBaseLevel = window.vxOptions.sectionNumberBaseLevel;
++        if (this.sectionNumberBaseLevel > 3) {
++            console.warn('only support section number base level less than 3', this.sectionNumberBaseLevel);
++            this.sectionNumberBaseLevel = 3;
++        }
++
+         this.setContentContainerOption('vx-constrain-image-width',
+                                        window.vxOptions.constrainImageWidthEnabled || !window.vxOptions.scrollable);
+         this.setContentContainerOption('vx-image-align-center',
+@@ -255,6 +263,13 @@ class MarkdownViewerCore extends VXCore {
+         window.vxMarkdownAdapter.setCurrentHeadingAnchor(p_idx, p_anchor);
+     }
+ 
++    setSectionNumberEnabled(p_enabled) {
++        let sectionClass = 'vx-section-number';
++        let sectionLevelClass = 'vx-section-number-' + this.sectionNumberBaseLevel;
++        this.setContentContainerOption(sectionClass, p_enabled);
++        this.setContentContainerOption(sectionLevelClass, p_enabled);
++    }
++
+     scroll(p_up) {
+         EasyAccess.scroll(p_up);
+     }
+diff --git a/src/data/extra/web/js/nodelinemapper.js b/src/data/extra/web/js/nodelinemapper.js
+index 38b05f19..abfb1334 100644
+--- a/src/data/extra/web/js/nodelinemapper.js
++++ b/src/data/extra/web/js/nodelinemapper.js
+@@ -45,6 +45,8 @@ class NodeLineMapper {
+     updateHeadingNodes() {
+         this.headingNodes = this.container.querySelectorAll("h1, h2, h3, h4, h5, h6");
+         let headings = [];
++        let needSectionNumber = window.vxOptions.sectionNumberEnabled;
++        let regExp = Utils.headingSequenceRegExp();
+         for (let i = 0; i < this.headingNodes.length; ++i) {
+             let node = this.headingNodes[i];
+             let headingContent = this.getHeadingContent(node);
+@@ -53,8 +55,13 @@ class NodeLineMapper {
+                 level: parseInt(node.tagName.substr(1)),
+                 anchor: node.id
+             });
++            if (needSectionNumber && regExp.test(headingContent)) {
++                needSectionNumber = false;
++            }
+         }
+ 
++        this.adapter.setSectionNumberEnabled(needSectionNumber);
++
+         this.adapter.setHeadings(headings);
+     }
+ 
+diff --git a/src/export/webviewexporter.cpp b/src/export/webviewexporter.cpp
+index aed59490..b66b320d 100644
+--- a/src/export/webviewexporter.cpp
++++ b/src/export/webviewexporter.cpp
+@@ -198,6 +198,9 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
+   opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
+   opts.m_webGraphviz = p_config.getWebGraphviz();
+   opts.m_mathJaxScript = p_config.getMathJaxScript();
++  opts.m_sectionNumberEnabled =
++      p_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Read;
++  opts.m_sectionNumberBaseLevel = p_config.getSectionNumberBaseLevel();
+   opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
+   opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
+   opts.m_protectFromXss = p_config.getProtectFromXss();
+diff --git a/src/widgets/dialogs/settings/markdowneditorpage.cpp b/src/widgets/dialogs/settings/markdowneditorpage.cpp
+index 8ae21ce3..7e2a5b11 100644
+--- a/src/widgets/dialogs/settings/markdowneditorpage.cpp
++++ b/src/widgets/dialogs/settings/markdowneditorpage.cpp
+@@ -8,6 +8,7 @@
+ #include <QHBoxLayout>
+ #include <QLabel>
+ #include <QPushButton>
++#include <QSpinBox>
+ #include <QVBoxLayout>
+ 
+ #include <core/configmgr2.h>
+@@ -50,6 +51,20 @@ void MarkdownEditorPage::loadInternal() {
+   const auto &markdownConfig =
+       m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+ 
++  {
++    int idx =
++        m_sectionNumberComboBox->findData(static_cast<int>(markdownConfig.getSectionNumberMode()));
++    Q_ASSERT(idx != -1);
++    m_sectionNumberComboBox->setCurrentIndex(idx);
++
++    m_sectionNumberBaseLevelSpinBox->setValue(markdownConfig.getSectionNumberBaseLevel());
++
++    idx = m_sectionNumberStyleComboBox->findData(
++        static_cast<int>(markdownConfig.getSectionNumberStyle()));
++    Q_ASSERT(idx != -1);
++    m_sectionNumberStyleComboBox->setCurrentIndex(idx);
++  }
++
+   m_constrainImageWidthCheckBox->setChecked(markdownConfig.getConstrainImageWidthEnabled());
+ 
+   m_imageAlignCenterCheckBox->setChecked(markdownConfig.getImageAlignCenterEnabled());
+@@ -112,6 +127,21 @@ void MarkdownEditorPage::loadInternal() {
+ bool MarkdownEditorPage::saveInternal() {
+   auto &markdownConfig = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+ 
++  {
++    auto mode = m_sectionNumberComboBox->currentData().toInt();
++    markdownConfig.setSectionNumberMode(static_cast<MarkdownEditorConfig::SectionNumberMode>(mode));
++
++    if (m_sectionNumberBaseLevelSpinBox->isEnabled()) {
++      markdownConfig.setSectionNumberBaseLevel(m_sectionNumberBaseLevelSpinBox->value());
++    }
++
++    if (m_sectionNumberStyleComboBox->isEnabled()) {
++      auto style = m_sectionNumberStyleComboBox->currentData().toInt();
++      markdownConfig.setSectionNumberStyle(
++          static_cast<MarkdownEditorConfig::SectionNumberStyle>(style));
++    }
++  }
++
+   markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
+ 
+   markdownConfig.setImageAlignCenterEnabled(m_imageAlignCenterCheckBox->isChecked());
+@@ -452,6 +482,58 @@ void MarkdownEditorPage::setupGeneralGroup() {
+   auto *mainLayout = qobject_cast<QVBoxLayout *>(layout());
+   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("General"), QString(), this);
+ 
++  {
++    auto *sectionWidget = new QWidget(this);
++    auto *sectionLayout = new QHBoxLayout(sectionWidget);
++    sectionLayout->setContentsMargins(0, 0, 0, 0);
++
++    m_sectionNumberComboBox = WidgetsFactory::createComboBox(this);
++    m_sectionNumberComboBox->setToolTip(tr("Section number mode"));
++    m_sectionNumberComboBox->addItem(tr("None"),
++                                     (int)MarkdownEditorConfig::SectionNumberMode::None);
++    m_sectionNumberComboBox->addItem(tr("Read"),
++                                     (int)MarkdownEditorConfig::SectionNumberMode::Read);
++    m_sectionNumberComboBox->addItem(tr("Edit"),
++                                     (int)MarkdownEditorConfig::SectionNumberMode::Edit);
++    sectionLayout->addWidget(m_sectionNumberComboBox);
++    connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
++            &MarkdownEditorPage::pageIsChanged);
++
++    m_sectionNumberBaseLevelSpinBox = WidgetsFactory::createSpinBox(this);
++    m_sectionNumberBaseLevelSpinBox->setToolTip(
++        tr("Base level to start section numbering in edit mode"));
++    m_sectionNumberBaseLevelSpinBox->setRange(1, 6);
++    m_sectionNumberBaseLevelSpinBox->setSingleStep(1);
++    m_sectionNumberBaseLevelSpinBox->setEnabled(false);
++    sectionLayout->addWidget(m_sectionNumberBaseLevelSpinBox);
++    connect(m_sectionNumberBaseLevelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
++            &MarkdownEditorPage::pageIsChanged);
++
++    m_sectionNumberStyleComboBox = WidgetsFactory::createComboBox(this);
++    m_sectionNumberStyleComboBox->setToolTip(tr("Section number style"));
++    m_sectionNumberStyleComboBox->addItem(
++        tr("1.1."), (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot);
++    m_sectionNumberStyleComboBox->addItem(tr("1.1"),
++                                          (int)MarkdownEditorConfig::SectionNumberStyle::DigDotDig);
++    m_sectionNumberStyleComboBox->setEnabled(false);
++    sectionLayout->addWidget(m_sectionNumberStyleComboBox);
++    connect(m_sectionNumberStyleComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
++            &MarkdownEditorPage::pageIsChanged);
++
++    connect(m_sectionNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
++            [this](int p_index) {
++              m_sectionNumberBaseLevelSpinBox->setEnabled(
++                  p_index != MarkdownEditorConfig::SectionNumberMode::None);
++              m_sectionNumberStyleComboBox->setEnabled(
++                  p_index == MarkdownEditorConfig::SectionNumberMode::Edit);
++            });
++
++    const QString label(tr("Section number"));
++    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
++        label, m_sectionNumberComboBox->toolTip(), sectionWidget, this));
++    addSearchItem(label, m_sectionNumberComboBox->toolTip(), m_sectionNumberComboBox);
++  }
++
+   {
+     m_plantUmlModeComboBox = WidgetsFactory::createComboBox(this);
+     m_plantUmlModeComboBox->setToolTip(
+@@ -461,6 +543,7 @@ void MarkdownEditorPage::setupGeneralGroup() {
+     m_plantUmlModeComboBox->addItem(tr("Local JAR"), 1);
+ 
+     const QString label(tr("PlantUml"));
++    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+         label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox, this));
+     addSearchItem(label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox);
+diff --git a/src/widgets/dialogs/settings/markdowneditorpage.h b/src/widgets/dialogs/settings/markdowneditorpage.h
+index cfbcc5fc..d0128e7e 100644
+--- a/src/widgets/dialogs/settings/markdowneditorpage.h
++++ b/src/widgets/dialogs/settings/markdowneditorpage.h
+@@ -5,6 +5,7 @@
+ 
+ class QCheckBox;
+ class QDoubleSpinBox;
++class QSpinBox;
+ class QComboBox;
+ class QLineEdit;
+ 
+@@ -64,6 +65,12 @@ private:
+ 
+   QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
+ 
++  QComboBox *m_sectionNumberComboBox = nullptr;
++
++  QSpinBox *m_sectionNumberBaseLevelSpinBox = nullptr;
++
++  QComboBox *m_sectionNumberStyleComboBox = nullptr;
++
+   QCheckBox *m_smartTableCheckBox = nullptr;
+ 
+   QCheckBox *m_spellCheckCheckBox = nullptr;
+diff --git a/src/widgets/editors/markdowneditor.cpp b/src/widgets/editors/markdowneditor.cpp
+index e1039c07..cbde16a3 100644
+--- a/src/widgets/editors/markdowneditor.cpp
++++ b/src/widgets/editors/markdowneditor.cpp
+@@ -80,9 +80,10 @@ QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services
+ 
+ } // namespace
+ 
+-MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, int p_blockNumber,
+-                                 const QString &p_anchor)
+-    : m_name(p_name), m_level(p_level), m_blockNumber(p_blockNumber), m_anchor(p_anchor) {}
++MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, const QString &p_sectionNumber,
++                                 int p_blockNumber, const QString &p_anchor)
++    : m_name(p_name), m_level(p_level), m_sectionNumber(p_sectionNumber),
++      m_blockNumber(p_blockNumber), m_anchor(p_anchor) {}
+ 
+ MarkdownEditor::MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
+                                const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
+@@ -123,6 +124,12 @@ void MarkdownEditor::init() {
+   connect(m_textEdit, &vte::VTextEdit::cursorLineChanged, m_headingTimer,
+           QOverload<>::of(&QTimer::start));
+ 
++  m_sectionNumberTimer = new QTimer(this);
++  m_sectionNumberTimer->setInterval(1000);
++  m_sectionNumberTimer->setSingleShot(true);
++  connect(m_sectionNumberTimer, &QTimer::timeout, this,
++          [this]() { updateSectionNumber(m_headings); });
++
+   updateFromConfig(false);
+ }
+ 
+@@ -1130,6 +1137,24 @@ int MarkdownEditor::getCurrentHeadingIndex() const {
+ }
+ 
+ void MarkdownEditor::updateHeadings(const QVector<vte::md::ElementRegion> &p_headerRegions) {
++  bool needUpdateSectionNumber = false;
++  if (isReadOnly()) {
++    m_sectionNumberEnabled = false;
++  } else {
++    needUpdateSectionNumber =
++        m_config.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Edit;
++    if (m_overriddenSectionNumber != OverrideState::NoOverride) {
++      needUpdateSectionNumber = m_overriddenSectionNumber == OverrideState::ForceEnable;
++    }
++    if (needUpdateSectionNumber) {
++      m_sectionNumberEnabled = true;
++    } else if (m_sectionNumberEnabled) {
++      // On -> Off. We still need to do the clean up.
++      needUpdateSectionNumber = true;
++      m_sectionNumberEnabled = false;
++    }
++  }
++
+   m_headingSlugger.reset();
+ 
+   QVector<Heading> headings;
+@@ -1152,13 +1177,18 @@ void MarkdownEditor::updateHeadings(const QVector<vte::md::ElementRegion> &p_hea
+     auto match = vte::MarkdownUtils::matchHeader(block.text());
+     if (match.m_matched) {
+       QString anchor = m_headingSlugger.slug(match.m_header);
+-      Heading heading(match.m_header, match.m_level, block.blockNumber(), anchor);
++      Heading heading(match.m_header, match.m_level, match.m_sequence, block.blockNumber(), anchor);
+       headings.append(heading);
+     }
+   }
+ 
+   OutlineProvider::makePerfectHeadings(headings, m_headings);
+ 
++  if (needUpdateSectionNumber) {
++    // Use a timer to kick off the update to let user have time to undo.
++    m_sectionNumberTimer->start();
++  }
++
+   emit headingsChanged();
+ 
+   emit currentHeadingChanged();
+@@ -1542,6 +1572,86 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
+   proDlg.setValue(infos.size());
+ }
+ 
++static bool updateHeadingSectionNumber(QTextCursor &p_cursor, const QTextBlock &p_block,
++                                       const QString &p_sectionNumber, bool p_endingDot) {
++  if (!p_block.isValid()) {
++    return false;
++  }
++
++  QString text = p_block.text();
++  auto match = vte::MarkdownUtils::matchHeader(text);
++  Q_ASSERT(match.m_matched);
++
++  bool isSequence = false;
++  if (!match.m_sequence.isEmpty()) {
++    // Check if this sequence is the real sequence matching current style.
++    if (match.m_sequence.endsWith('.')) {
++      isSequence = p_endingDot;
++    } else {
++      isSequence = !p_endingDot;
++    }
++  }
++
++  int start = match.m_level + 1;
++  int end = match.m_level + match.m_spacesAfterMarker;
++  if (isSequence) {
++    end += match.m_sequence.size() + match.m_spacesAfterSequence;
++  }
++
++  Q_ASSERT(start <= end);
++
++  p_cursor.setPosition(p_block.position() + start);
++  if (start != end) {
++    p_cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
++  }
++
++  if (p_sectionNumber.isEmpty()) {
++    p_cursor.removeSelectedText();
++  } else {
++    p_cursor.insertText(p_sectionNumber + ' ');
++  }
++  return true;
++}
++
++bool MarkdownEditor::updateSectionNumber(const QVector<Heading> &p_headings) {
++  SectionNumber sectionNumber(7, 0);
++  int baseLevel = m_config.getSectionNumberBaseLevel();
++  if (baseLevel < 1 || baseLevel > 6) {
++    baseLevel = 1;
++  }
++
++  bool changed = false;
++  bool endingDot =
++      m_config.getSectionNumberStyle() == MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot;
++  auto doc = document();
++  QTextCursor cursor(doc);
++  cursor.beginEditBlock();
++  for (const auto &heading : p_headings) {
++    OutlineProvider::increaseSectionNumber(sectionNumber, heading.m_level, baseLevel);
++    auto sectionStr = m_sectionNumberEnabled
++                          ? OutlineProvider::joinSectionNumber(sectionNumber, endingDot)
++                          : QString();
++    if (heading.m_blockNumber > -1 && sectionStr != heading.m_sectionNumber) {
++      if (updateHeadingSectionNumber(cursor, doc->findBlockByNumber(heading.m_blockNumber),
++                                     sectionStr, endingDot)) {
++        changed = true;
++      }
++    }
++  }
++  cursor.endEditBlock();
++
++  return changed;
++}
++
++void MarkdownEditor::overrideSectionNumber(OverrideState p_state) {
++  if (m_overriddenSectionNumber == p_state) {
++    return;
++  }
++
++  m_overriddenSectionNumber = p_state;
++  getHighlighter()->updateHighlight();
++}
++
+ void MarkdownEditor::updateFromConfig(bool p_initialized) {
+   if (m_config.getTextEditorConfig().getZoomDelta() != 0) {
+     zoom(m_config.getTextEditorConfig().getZoomDelta());
+diff --git a/src/widgets/editors/markdowneditor.h b/src/widgets/editors/markdowneditor.h
+index 8732c9e0..390f4e43 100644
+--- a/src/widgets/editors/markdowneditor.h
++++ b/src/widgets/editors/markdowneditor.h
+@@ -37,13 +37,16 @@ public:
+   struct Heading {
+     Heading() = default;
+ 
+-    Heading(const QString &p_name, int p_level, int p_blockNumber = -1,
+-            const QString &p_anchor = QString());
++    Heading(const QString &p_name, int p_level, const QString &p_sectionNumber = QString(),
++            int p_blockNumber = -1, const QString &p_anchor = QString());
+ 
+     QString m_name;
+ 
+     int m_level = -1;
+ 
++    // 1.2. .
++    QString m_sectionNumber;
++
+     int m_blockNumber = -1;
+ 
+     QString m_anchor;
+@@ -126,6 +129,8 @@ public:
+ 
+   void scrollToHeading(int p_idx);
+ 
++  void overrideSectionNumber(OverrideState p_state);
++
+   void updateFromConfig(bool p_initialized = true);
+ 
+   QRgb getPreviewBackground() const;
+@@ -232,6 +237,7 @@ private:
+ 
+   void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
+ 
++  // Update section number.
+   // Update headings outline.
+   void updateHeadings(const QVector<vte::md::ElementRegion> &p_headerRegions);
+ 
+@@ -247,6 +253,9 @@ private:
+ 
+   void fetchImagesToLocalAndReplace(QString &p_text);
+ 
++  // Return true if there is change.
++  bool updateSectionNumber(const QVector<Heading> &p_headings);
++
+   void setupTableHelper();
+ 
+   // Return the dest file path of the image on success.
+@@ -292,6 +301,13 @@ private:
+ 
+   QTimer *m_headingTimer = nullptr;
+ 
++  QTimer *m_sectionNumberTimer = nullptr;
++
++  // Used to detect the config change and do a clean up.
++  bool m_sectionNumberEnabled = false;
++
++  OverrideState m_overriddenSectionNumber = OverrideState::NoOverride;
++
+   // Managed by QObject.
+   MarkdownTableHelper *m_tableHelper = nullptr;
+ 
+diff --git a/src/widgets/markdownviewwindow2.cpp b/src/widgets/markdownviewwindow2.cpp
+index e25435e7..7a2364d9 100644
+--- a/src/widgets/markdownviewwindow2.cpp
++++ b/src/widgets/markdownviewwindow2.cpp
+@@ -575,6 +575,16 @@ QSharedPointer<Outline> MarkdownViewWindow2::headingsToOutline(const QVector<T>
+     }
+   }
+ 
++  auto *configMgr = getServices().get<ConfigMgr2>();
++  const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
++  if (mdConfig.getSectionNumberMode() == MarkdownEditorConfig::SectionNumberMode::Edit) {
++    outline->m_sectionNumberBaseLevel = -1;
++  } else {
++    outline->m_sectionNumberBaseLevel = mdConfig.getSectionNumberBaseLevel();
++    outline->m_sectionNumberEndingDot =
++        mdConfig.getSectionNumberStyle() == MarkdownEditorConfig::SectionNumberStyle::DigDotDigDot;
++  }
++
+   return outline;
+ }
+ 
+diff --git a/src/widgets/outlineprovider.h b/src/widgets/outlineprovider.h
+index bd325737..39684542 100644
+--- a/src/widgets/outlineprovider.h
++++ b/src/widgets/outlineprovider.h
+@@ -32,6 +32,12 @@ struct Outline {
+   bool isEmpty() const;
+ 
+   QVector<Heading> m_headings;
++
++  // 1-based.
++  // -1 to disable section number by force.
++  int m_sectionNumberBaseLevel = 1;
++
++  bool m_sectionNumberEndingDot = true;
+ };
+ 
+ // Used to hold toc-related data of one ViewWindow.
+diff --git a/tests/core/test_markdowneditorcontroller.cpp b/tests/core/test_markdowneditorcontroller.cpp
+index 2ce20590..718060b7 100644
+--- a/tests/core/test_markdowneditorcontroller.cpp
++++ b/tests/core/test_markdowneditorcontroller.cpp
+@@ -5,6 +5,7 @@
+ 
+ #include <controllers/markdowneditorcontroller.h>
+ #include <core/editorconfig.h>
++#include <core/global.h>
+ #include <core/markdowneditorconfig.h>
+ #include <core/nodeidentifier.h>
+ #include <core/services/buffer2.h>
+@@ -32,6 +33,15 @@ class TestMarkdownEditorController : public QObject {
+   Q_OBJECT
+ 
+ private slots:
++  // ============ Group 1: shouldEnableSectionNumber (static) ============
++
++  void testSectionNumber_noneModeRead();
++  void testSectionNumber_noneModeEdit();
++  void testSectionNumber_readModeRead();
++  void testSectionNumber_readModeEdit();
++  void testSectionNumber_editModeEdit();
++  void testSectionNumber_editModeRead();
++
+   // ============ Group 2: getPreviewHelperConfig (static) ============
+ 
+   void testPreviewHelper_allDefaults();
+@@ -70,6 +80,9 @@ private slots:
+ private:
+   EditorConfig makeEditorConfig() { return EditorConfig(nullptr, nullptr); }
+ 
++  static const int c_readMode = static_cast<int>(ViewWindowMode::Read);
++  static const int c_editMode = static_cast<int>(ViewWindowMode::Edit);
++
+   // Group 4 members
+   VxCoreContextHandle m_context = nullptr;
+   BufferService *m_bufferService = nullptr;
+@@ -79,6 +92,44 @@ private:
+   QString m_notebookId;
+ };
+ 
++// ============ Group 1: shouldEnableSectionNumber ============
++
++void TestMarkdownEditorController::testSectionNumber_noneModeRead() {
++  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
++               MarkdownEditorConfig::SectionNumberMode::None, c_readMode),
++           false);
++}
++
++void TestMarkdownEditorController::testSectionNumber_noneModeEdit() {
++  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
++               MarkdownEditorConfig::SectionNumberMode::None, c_editMode),
++           false);
++}
++
++void TestMarkdownEditorController::testSectionNumber_readModeRead() {
++  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
++               MarkdownEditorConfig::SectionNumberMode::Read, c_readMode),
++           true);
++}
++
++void TestMarkdownEditorController::testSectionNumber_readModeEdit() {
++  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
++               MarkdownEditorConfig::SectionNumberMode::Read, c_editMode),
++           false);
++}
++
++void TestMarkdownEditorController::testSectionNumber_editModeEdit() {
++  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
++               MarkdownEditorConfig::SectionNumberMode::Edit, c_editMode),
++           true);
++}
++
++void TestMarkdownEditorController::testSectionNumber_editModeRead() {
++  QCOMPARE(MarkdownEditorController::shouldEnableSectionNumber(
++               MarkdownEditorConfig::SectionNumberMode::Edit, c_readMode),
++           false);
++}
++
+ // ============ Group 2: getPreviewHelperConfig ============
+ 
+ void TestMarkdownEditorController::testPreviewHelper_allDefaults() {
