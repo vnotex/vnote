@@ -2,9 +2,9 @@ name: CI-Windows
 
 on:
   push:
-    branches: [ master ]
+    branches: [ v4.5.0_zyx ]
   pull_request:
-    branches: [ master ]
+    branches: [ v4.5.0_zyx ]
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
@@ -16,7 +16,7 @@ on:
         default: false
 
 env:
-    VNOTE_VER: 4.5.0
+    VNOTE_VER: 4.5.0.1
 
 jobs:
   build:
