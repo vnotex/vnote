@@ -135,6 +135,10 @@ public:
   void fetchHeadingAnchor(const QString &p_text, int p_lineNumber,
                           const std::function<void(const HeadingAnchorResult &)> &p_callback);
 
+  // Tell the web side that the toggle of the task list item at 0-based source
+  // line @p_lineNumber was rejected.
+  void emitTaskListToggleRejected(int p_lineNumber);
+
   // Functions to be called from web side.
 public slots:
   void setWorkFinished();
@@ -184,6 +188,10 @@ public slots:
 
   void setHeadingAnchor(quint64 p_id, bool p_found, const QString &p_anchor);
 
+  // Web side requests to toggle the task list item at 0-based source line
+  // @p_lineNumber to @p_checked.
+  void toggleTaskListItem(int p_lineNumber, bool p_checked);
+
   // Signals to be connected at web side.
 signals:
   // Current Markdown text is updated.
@@ -225,6 +233,10 @@ signals:
 
   void headingAnchorRequested(quint64 p_id, const QString &p_text, int p_lineNumber);
 
+  // The toggle of the task list item at 0-based source line @p_lineNumber was
+  // rejected; the web side should restore the checkbox state.
+  void taskListToggleRejected(int p_lineNumber);
+
   // Signals to be connected at cpp side.
 signals:
   void graphPreviewDataReady(const PreviewData &p_data);
@@ -254,6 +266,9 @@ signals:
   void highlightCodeBlockReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
 
   void highlightMathReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
+
+  // Web side requested to toggle a task list item.
+  void taskListItemToggleRequested(int p_lineNumber, bool p_checked);
 
 private:
   void scrollToLine(int p_lineNumber);

@@ -68,6 +68,19 @@ private slots:
   void testContextMenu_exportAbsentWithSelection();
   void testContextMenu_exportAbsentWithoutHandler();
 
+  // ============ rewriteTaskListLine ============
+
+  void testRewriteTaskList_check();
+  void testRewriteTaskList_uncheck();
+  void testRewriteTaskList_orderedItem();
+  void testRewriteTaskList_upperCaseX();
+  void testRewriteTaskList_indented();
+  void testRewriteTaskList_blockquoted();
+  void testRewriteTaskList_nonTaskLine();
+  void testRewriteTaskList_stateMismatch();
+  void testRewriteTaskList_preservesTrailingMarkup();
+  void testRewriteTaskList_preservesCr();
+
 private:
   static const int c_readMode = static_cast<int>(ViewWindowMode::Read);
   static const int c_editMode = static_cast<int>(ViewWindowMode::Edit);
@@ -595,6 +608,81 @@ void TestMarkdownViewWindowController::testContextMenu_exportAbsentWithoutHandle
   }
   // Edit is still offered.
   QVERIFY(strippedText(result->actions()[0]).contains("Edit"));
+}
+
+// ============ rewriteTaskListLine ============
+
+void TestMarkdownViewWindowController::testRewriteTaskList_check() {
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("- [ ] milk"), true),
+           QStringLiteral("- [x] milk"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_uncheck() {
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("* [x] milk"), false),
+           QStringLiteral("* [ ] milk"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_orderedItem() {
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("1. [ ] milk"), true),
+           QStringLiteral("1. [x] milk"));
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("2) [ ] milk"), true),
+           QStringLiteral("2) [x] milk"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_upperCaseX() {
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("+ [X] milk"), false),
+           QStringLiteral("+ [ ] milk"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_indented() {
+  QCOMPARE(
+      MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("    - [ ] nested"), true),
+      QStringLiteral("    - [x] nested"));
+  QCOMPARE(
+      MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("\t- [ ] nested"), true),
+      QStringLiteral("\t- [x] nested"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_blockquoted() {
+  QCOMPARE(
+      MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("> - [ ] quoted"), true),
+      QStringLiteral("> - [x] quoted"));
+  QCOMPARE(
+      MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("> > - [x] quoted"), false),
+      QStringLiteral("> > - [ ] quoted"));
+  // markdown-it renders ">  > " (extra intra-prefix whitespace) as a nested
+  // quote too, so the prefix must not be limited to one space per '>'.
+  QCOMPARE(
+      MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral(">  > - [ ] quoted"), true),
+      QStringLiteral(">  > - [x] quoted"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_nonTaskLine() {
+  QVERIFY(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("just text"), true)
+              .isNull());
+  QVERIFY(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("- plain item"), true)
+              .isNull());
+  // No space between the bullet and the checkbox.
+  QVERIFY(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("-[ ] milk"), true)
+              .isNull());
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_stateMismatch() {
+  QVERIFY(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("- [x] milk"), true)
+              .isNull());
+  QVERIFY(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("- [ ] milk"), false)
+              .isNull());
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_preservesTrailingMarkup() {
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(
+               QStringLiteral("- [ ] **bold** and [link](a.md) [x]"), true),
+           QStringLiteral("- [x] **bold** and [link](a.md) [x]"));
+}
+
+void TestMarkdownViewWindowController::testRewriteTaskList_preservesCr() {
+  QCOMPARE(MarkdownViewWindowController::rewriteTaskListLine(QStringLiteral("- [ ] a\r"), true),
+           QStringLiteral("- [x] a\r"));
 }
 
 } // namespace tests

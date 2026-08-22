@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QMenu>
+#include <QRegularExpression>
 
 #include <functional>
 
@@ -123,6 +124,31 @@ int MarkdownViewWindowController::previewSyncIntervalMs() {
 MarkdownEditorConfig::EditViewMode
 MarkdownViewWindowController::getEditViewMode(const MarkdownEditorConfig &p_mdConfig) {
   return p_mdConfig.getEditViewMode();
+}
+
+QString MarkdownViewWindowController::rewriteTaskListLine(const QString &p_line, bool p_checked) {
+  // Marker, optional blockquote prefixes, list bullet, then the checkbox.
+  // The blockquote prefix allows arbitrary intra-prefix whitespace ("> > " and
+  // ">  > " both render as a nested quote), but each repetition must consume a
+  // '>' so the group cannot loop on an empty match.
+  static const QRegularExpression reg(
+      QStringLiteral("^([ \\t]*(?:>[ \\t]*)*(?:[-*+]|\\d+[.)])[ \\t]+\\[)([ xX])(\\])"));
+
+  const auto match = reg.match(p_line);
+  if (!match.hasMatch()) {
+    return QString();
+  }
+
+  const QChar state = match.captured(2).at(0);
+  const bool currentChecked = (state == QLatin1Char('x') || state == QLatin1Char('X'));
+  if (currentChecked == p_checked) {
+    // Stale DOM state.
+    return QString();
+  }
+
+  QString newLine(p_line);
+  newLine.replace(match.capturedStart(2), 1, p_checked ? QLatin1Char('x') : QLatin1Char(' '));
+  return newLine;
 }
 
 void MarkdownViewWindowController::setupCrossCopyMenu(

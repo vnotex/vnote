@@ -205,6 +205,10 @@ private:
   void handleImageHostChanged(const QString &p_providerName);
   void updateImageHostMenu();
 
+  // Apply a task list checkbox toggle requested from the preview.
+  // @p_lineNumber: 0-based source line of the task list item.
+  void onTaskListItemToggleRequested(int p_lineNumber, bool p_checked);
+
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;

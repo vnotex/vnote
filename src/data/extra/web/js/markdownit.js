@@ -152,7 +152,7 @@ class MarkdownIt extends VxWorker {
             return this.defaultValidateLink(p_url);
         };
 
-        this.mdit.use(window.markdownitTaskLists);
+        this.mdit.use(window.markdownitTaskLists, { enabled: true });
 
         this.mdit.use(window.markdownitSub);
 

@@ -2,6 +2,10 @@ ul.contains-task-list {
     list-style-type: none;
 }
 
+input.task-list-item-checkbox:not([disabled]) {
+    cursor: pointer;
+}
+
 /* Alert */
 .vx-alert {
     position: relative;

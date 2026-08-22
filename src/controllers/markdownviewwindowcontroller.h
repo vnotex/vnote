@@ -94,6 +94,15 @@ public:
   // Used to determine whether Edit mode shows editor-only or editor+preview.
   static MarkdownEditorConfig::EditViewMode getEditViewMode(const MarkdownEditorConfig &p_mdConfig);
 
+  // ============ Task List ============
+
+  // Rewrite a GFM task list line to the given checked state.
+  // Returns the rewritten line, or a null QString when @p_line is not a task
+  // list item whose current state is the opposite of @p_checked (stale DOM).
+  //
+  // Pure logic -- no side effects.
+  static QString rewriteTaskListLine(const QString &p_line, bool p_checked);
+
 private:
   void setupCrossCopyMenu(QMenu *p_menu, QAction *p_copyAct,
                           const MarkdownViewerContextInfo &p_info,

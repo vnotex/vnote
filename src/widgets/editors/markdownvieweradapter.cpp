@@ -297,8 +297,8 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
           emit graphRenderDataReady(id, timeStamp, format, data);
         });
   } else {
-    qWarning() << "MarkdownViewerAdapter::renderGraph unhandled lang=" << p_lang
-               << "id=" << p_id << "index=" << p_index;
+    qWarning() << "MarkdownViewerAdapter::renderGraph unhandled lang=" << p_lang << "id=" << p_id
+               << "index=" << p_index;
     Q_ASSERT(false);
   }
 }
@@ -321,9 +321,7 @@ void MarkdownViewerAdapter::highlightMath(int p_idx, quint64 p_timeStamp, const 
   }
 }
 
-void MarkdownViewerAdapter::onPdfRenderReady() {
-  emit pdfRenderReady();
-}
+void MarkdownViewerAdapter::onPdfRenderReady() { emit pdfRenderReady(); }
 
 void MarkdownViewerAdapter::setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles) {
   QVector<CssRuleStyle> ruleStyles;
@@ -379,4 +377,16 @@ void MarkdownViewerAdapter::fetchHeadingAnchor(
     pendAction(std::bind(&MarkdownViewerAdapter::fetchHeadingAnchor, this, p_text, p_lineNumber,
                          p_callback));
   }
+}
+
+void MarkdownViewerAdapter::toggleTaskListItem(int p_lineNumber, bool p_checked) {
+  if (p_lineNumber < 0) {
+    return;
+  }
+
+  emit taskListItemToggleRequested(p_lineNumber, p_checked);
+}
+
+void MarkdownViewerAdapter::emitTaskListToggleRejected(int p_lineNumber) {
+  emit taskListToggleRejected(p_lineNumber);
 }

@@ -1,5 +1,50 @@
 /* Main script file for MarkdownViewer. */
 
+window.vxTaskListHandlerInstalled = false;
+
+// Install a delegated click handler for task list checkboxes.
+// Idempotent: safe to call from either init order.
+function installTaskListHandler() {
+    if (window.vxTaskListHandlerInstalled) {
+        return;
+    }
+    if (!window.vxMarkdownAdapter || !window.vxcore || !window.vxcore.contentContainer) {
+        return;
+    }
+    window.vxTaskListHandlerInstalled = true;
+
+    window.vxcore.contentContainer.addEventListener('click', function(p_event) {
+        let target = p_event.target;
+        if (!target || target.tagName !== 'INPUT'
+            || !target.classList.contains('task-list-item-checkbox')) {
+            return;
+        }
+
+        let item = target.closest('[data-source-line]');
+        if (!item) {
+            // No source mapping, revert the optimistic toggle.
+            target.checked = !target.checked;
+            return;
+        }
+
+        let lineNumber = parseInt(item.getAttribute('data-source-line'), 10);
+        if (isNaN(lineNumber)) {
+            target.checked = !target.checked;
+            return;
+        }
+
+        window.vxMarkdownAdapter.toggleTaskListItem(lineNumber, target.checked);
+    });
+}
+
+function revertTaskListItem(p_lineNumber) {
+    let selector = '[data-source-line="' + p_lineNumber + '"] input.task-list-item-checkbox';
+    let checkbox = document.querySelector(selector);
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+    }
+}
+
 new QWebChannel(qt.webChannelTransport,
     function(p_channel) {
         let adapter = p_channel.objects.vxAdapter;
@@ -67,14 +112,20 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.graphRenderDataReady(p_id, p_index, p_format, p_data);
         });
 
+        adapter.taskListToggleRejected.connect(function(p_lineNumber) {
+            revertTaskListItem(p_lineNumber);
+        });
+
         console.log('QWebChannel has been set up');
         if (window.vxcore.initialized) {
             window.vxcore.kickOffMarkdown();
+            installTaskListHandler();
         }
     });
 
 window.vxcore.on('ready', function() {
     if (window.vxMarkdownAdapter) {
         window.vxcore.kickOffMarkdown();
+        installTaskListHandler();
     }
 });

@@ -1402,6 +1402,21 @@ if(TARGET Qt6::Qml)
   target_compile_definitions(test_turndown_js PRIVATE
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
   )
+
+  # Task list checkbox click glue in markdownviewer.js. The defect it gates is
+  # an install-ordering one: the QWebChannel callback and the window 'load'
+  # handler race, and only one of them can be the installer.
+  add_qt_test(test_markdownviewer_js
+    SOURCES
+      test_markdownviewer_js.cpp
+    LINKS
+      # Guarding on the target does NOT link QJSEngine; this does.
+      Qt6::Qml
+    GUILESS
+  )
+  target_compile_definitions(test_markdownviewer_js PRIVATE
+    VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  )
 endif()
 
 # In-place preview zoom: the pure scale arithmetic (zoom ratio vs. C++ raster factor).

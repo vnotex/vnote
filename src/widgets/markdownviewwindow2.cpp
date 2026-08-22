@@ -12,6 +12,7 @@
 #include <QPrinter>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QTimer>
@@ -487,6 +488,10 @@ void MarkdownViewWindow2::setupViewer() {
       m_pendingAnchor.clear();
     }
   });
+
+  // Task list checkbox toggle from the preview.
+  connect(adapterObj, &MarkdownViewerAdapter::taskListItemToggleRequested, this,
+          &MarkdownViewWindow2::onTaskListItemToggleRequested);
 
   // Print finished cleanup.
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
@@ -2028,6 +2033,117 @@ void MarkdownViewWindow2::applyLegacyImageMigration() {
   }
 
   showMessage(tr("Migrated %n image(s) to the assets folder.", "", distinctDestinations.size()));
+}
+
+void MarkdownViewWindow2::onTaskListItemToggleRequested(int p_lineNumber, bool p_checked) {
+  const auto reject = [this, p_lineNumber](const QString &p_msg) {
+    if (adapter()) {
+      adapter()->emitTaskListToggleRejected(p_lineNumber);
+    }
+    if (!p_msg.isEmpty()) {
+      showMessage(p_msg);
+    }
+  };
+
+  if (p_lineNumber < 0) {
+    reject(QString());
+    return;
+  }
+
+  auto &buffer = getBuffer();
+  if (!buffer.isValid()) {
+    reject(QString());
+    return;
+  }
+  if (buffer.isReadOnly()) {
+    reject(tr("This note is read-only."));
+    return;
+  }
+
+  auto *bufferSvc = getServices().get<BufferService>();
+  if (!bufferSvc) {
+    reject(QString());
+    return;
+  }
+
+  if (m_editor) {
+    // Hazard: getLatestContent() returns the editor text whenever the editor
+    // exists, even in Read mode. The edit MUST therefore go through the editor
+    // document, or the next active-writer pull reverts it.
+    auto *doc = m_editor->getTextEdit()->document();
+    const auto block = doc->findBlockByNumber(p_lineNumber);
+    if (!block.isValid()) {
+      reject(QString());
+      return;
+    }
+
+    const QString newLine =
+        MarkdownViewWindowController::rewriteTaskListLine(block.text(), p_checked);
+    if (newLine.isNull()) {
+      reject(QString());
+      return;
+    }
+
+    QTextCursor cur(block);
+    cur.beginEditBlock();
+    cur.setPosition(block.position());
+    cur.setPosition(block.position() + block.length() - 1, QTextCursor::KeepAnchor);
+    cur.insertText(newLine);
+    cur.endEditBlock();
+
+    if (isReadMode()) {
+      // m_propagateEditorToBuffer is false in Read mode, so push explicitly.
+      // getText() (not toPlainText()) re-applies the file/platform EOL policy.
+      if (!buffer.setContentRaw(bufferSvc->encodeContent(buffer.id(), m_editor->getText()))) {
+        // Roll the cursor edit back. Safe: nothing has run since endEditBlock(),
+        // so it is still the topmost undo command.
+        doc->undo();
+        reject(QString());
+        return;
+      }
+      // markDirty + m_editorDirty + statusChanged, so the tab's modified
+      // indicator updates immediately. Plain markDirty() emits nothing.
+      onEditorContentsChanged();
+    }
+    // Edit mode: contentsChanged -> onEditorContentsChanged -> markDirty and the
+    // preview debounce take over.
+  } else {
+    // Read mode with no editor: operate on the buffer content directly.
+    const QString text = buffer.decode(buffer.getContentRaw());
+    QStringList lines = text.split(QLatin1Char('\n'));
+    if (p_lineNumber >= lines.size()) {
+      reject(QString());
+      return;
+    }
+
+    const QString newLine =
+        MarkdownViewWindowController::rewriteTaskListLine(lines.at(p_lineNumber), p_checked);
+    if (newLine.isNull()) {
+      reject(QString());
+      return;
+    }
+
+    lines[p_lineNumber] = newLine;
+    if (!buffer.setContentRaw(
+            bufferSvc->encodeContent(buffer.id(), lines.join(QLatin1Char('\n'))))) {
+      reject(QString());
+      return;
+    }
+    onEditorContentsChanged();
+  }
+
+  // Do NOT re-render the viewer: the DOM is already correct and a re-render
+  // would reset the scroll position. setContentRaw bumped the vxcore content
+  // revision, so every sync cache must be advanced to it or the next focus /
+  // mode change forces a reload (destroying undo history).
+  const int rev = buffer.getRevision();
+  m_viewerBufferRevision = rev;
+  m_lastKnownRevision = rev;
+  if (m_editor) {
+    // Never set this to -1: a forced mismatch makes the next Read->Edit switch
+    // call VTextEditor::setText(), which wipes the undo stack.
+    m_textEditorBufferRevision = rev;
+  }
 }
 
 bool MarkdownViewWindow2::isLastWindowForBuffer() const {
