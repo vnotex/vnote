@@ -151,6 +151,22 @@ set "PATH=$QtBinDir;%PATH%"
 set "Qt6_DIR=$CmakePrefix"
 set "CMAKE_PREFIX_PATH=$QtDir"
 
+rem ── Apply restore-section-numbering patch (pack-time feature restore) ──
+cd /d "$RepoRoot"
+git apply --check "package\restore-section-numbering.patch" >nul 2>&1
+if errorlevel 1 (
+  git apply --reverse --check "package\restore-section-numbering.patch" >nul 2>&1
+  if errorlevel 1 (
+    echo [pack] ERROR: restore-section-numbering.patch cannot be applied
+    exit /b 1
+  ) else (
+    echo [pack] restore-section-numbering.patch already applied, skipping
+  )
+) else (
+  echo [pack] Applying restore-section-numbering.patch ...
+  git apply "package\restore-section-numbering.patch"
+  if errorlevel 1 exit /b 1
+)
 cd /d "$BuildDir"
 
 echo [pack] Configuring ...
