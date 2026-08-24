@@ -338,7 +338,9 @@ private:
 
   // Open a single buffer during session restore.
   // Resolves file type and calls m_view->openBuffer() for the view to create the ViewWindow2.
-  void openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
+  // Returns false when restoration was skipped before dispatch (invalid buffer handle, or a
+  // file type that has no viewer on this build); callers must then not try to activate it.
+  bool openRestoredBuffer(BufferService *p_bufferSvc, const QString &p_workspaceId,
                           const QString &p_bufferId, bool p_focus,
                           ViewWindowMode p_mode = ViewWindowMode::Read, int p_lineNumber = -1);
 

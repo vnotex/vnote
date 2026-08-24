@@ -7,7 +7,7 @@
 | Class | Purpose |
 |-------|---------|
 | `ThemeService` | GUI-aware theme management — loading themes, applying stylesheets |
-| `ViewWindowFactory` | Registry pattern mapping file types to `ViewWindow2` creators; plugins register new viewers here |
+| `ViewWindowFactory` | Registry pattern mapping file types to `ViewWindow2` creators; plugins register new viewers here. The built-in `"Pdf"` creator is **build-conditional**: it is registered only on Qt 6, because the vendored pdf.js bundles do not parse on Qt 5's QtWebEngine — see [`../data/extra/web/pdf.js/AGENTS.md`](../data/extra/web/pdf.js/AGENTS.md) |
 | `NavigationModeService` | Keyboard navigation mode service |
 
 ## utils/

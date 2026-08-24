@@ -72,6 +72,23 @@ Every route costs more than the platform is worth today:
 
 Users on the Qt 5.15 / Windows 7 package should open PDFs in an external viewer.
 
+### The viewer is compile-time gated off on Qt 5 (since 2026-08)
+
+VNote no longer tries to render the broken viewer. Two `QT_VERSION` gates:
+
+| Site | Effect on Qt 5 |
+|---|---|
+| `ViewWindowFactory::registerBuiltInCreators` (`src/gui/services/viewwindowfactory.cpp`) | The `"Pdf"` creator (and its `pdfviewwindow2.h` include) is not compiled in, so `hasCreator("PDF")` is false. `ViewAreaController::openBuffer` then takes its existing `QDesktopServices::openUrl` fallback and hands the PDF to the system default reader; a per-suffix external program configured in Settings still wins, as it is checked earlier. |
+| `ViewAreaController::openRestoredBuffer` (`src/controllers/viewareacontroller.cpp`) | A restored PDF tab is skipped with one `qInfo` line instead of raising a `viewWindowCreationFailed` notification at every startup. Nothing is closed or unregistered: the buffer stays in the workspace, so the same config opened under Qt 6 restores the tab intact. |
+
+`FileTypeCoreService`, vxcore's file-type config and the user's file associations are
+deliberately **untouched** — a `.pdf` still resolves to the `PDF` type everywhere. Filtering
+the type instead would map PDFs onto the editable, auto-saving `TextViewWindow2`, and the
+File Associations page's get→edit→set round trip would permanently delete the PDF entry from
+`vxcore.json`. `PdfViewWindow2`, `PdfViewWindowController`, `PdfViewerConfig` and
+`pdfviewercore.js` all stay compiled and tested; only instantiation is gated. If the bundles
+are ever transpiled per the section below, delete both gates.
+
 ### If you do decide to fix it
 
 The check to run first is a syntax-only one; do not assume `||=` is the whole gap:

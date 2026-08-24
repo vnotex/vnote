@@ -10,6 +10,7 @@
 #include <QUrl>
 #include <QVariantMap>
 #include <QWidget>
+#include <QtGlobal>
 
 #include <controllers/workspacewrapper.h>
 #include <core/configmgr2.h>
@@ -486,7 +487,10 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
               for (int j = 0; j < hiddenBufIds.size(); ++j) {
                 QString bid = hiddenBufIds[j].toString();
                 if (!bid.isEmpty() && bufferSvc) {
-                  openRestoredBuffer(bufferSvc, hiddenWsId, bid, false);
+                  if (!openRestoredBuffer(bufferSvc, hiddenWsId, bid, false) && bid == curBuf) {
+                    // No window exists for it; activating it would only warn.
+                    curBuf.clear();
+                  }
                 }
               }
               if (!curBuf.isEmpty() && m_view) {
@@ -1545,7 +1549,11 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
       for (int i = 0; i < bufferIds.size(); ++i) {
         QString bufferId = bufferIds[i].toString();
         if (!bufferId.isEmpty()) {
-          openRestoredBuffer(bufferSvc, p_targetWorkspaceId, bufferId, false);
+          if (!openRestoredBuffer(bufferSvc, p_targetWorkspaceId, bufferId, false) &&
+              bufferId == currentBufferId) {
+            // No window exists for it; activating it would only warn.
+            currentBufferId.clear();
+          }
         }
       }
 
@@ -1693,7 +1701,11 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
       qCDebug(lcWorkspace) << "    Opening buffer" << bufferId
                            << (bufferId == currentBufferId ? "(current)" : "(non-current)")
                            << "mode:" << modeStr << "cursor:" << lineNumber;
-      openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode, lineNumber);
+      if (!openRestoredBuffer(bufferSvc, wsId, bufferId, false, mode, lineNumber) &&
+          bufferId == currentBufferId) {
+        // No window exists for it; activating it would only warn.
+        currentBufferId.clear();
+      }
     }
 
     // After all buffers are opened in order, set the current buffer's tab as active.
@@ -1747,13 +1759,13 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
   // from addTab corrupting vxcore state.
 }
 
-void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
+bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
                                             const QString &p_workspaceId, const QString &p_bufferId,
                                             bool p_focus, ViewWindowMode p_mode, int p_lineNumber) {
   Buffer2 buf = p_bufferSvc->getBufferHandle(p_bufferId);
   if (!buf.isValid()) {
     qWarning() << "    Failed to get buffer handle:" << p_bufferId;
-    return;
+    return false;
   }
 
   // Resolve file type.
@@ -1766,6 +1778,25 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
   if (fileType.isEmpty()) {
     fileType = QStringLiteral("Text");
   }
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  // PDF has no built-in viewer on Qt 5 (see the ViewWindowFactory gate and
+  // src/data/extra/web/pdf.js/AGENTS.md). Restoring the tab would make
+  // ViewArea2::openBuffer emit viewWindowCreationFailed and raise an error
+  // notification at every startup; launching an external application unprompted
+  // at session restore is not acceptable either. So the tab is simply not
+  // recreated.
+  //
+  // Deliberately NOT closing or unregistering the buffer: it stays a member of
+  // the workspace, so the persisted session is untouched, no backup is
+  // discarded, and the tab reappears intact when the same config is opened by a
+  // Qt 6 build.
+  if (fileType.compare(QStringLiteral("PDF"), Qt::CaseInsensitive) == 0) {
+    qInfo() << "ViewAreaController::openRestoredBuffer: PDF viewing is unavailable on Qt 5 -"
+            << "skipping restore of" << buf.nodeId().relativePath;
+    return false;
+  }
+#endif
 
   qCDebug(lcWorkspace) << "    Opening restored buffer: buffer:" << p_bufferId
                        << "path:" << buf.nodeId().relativePath << "type:" << fileType
@@ -1780,6 +1811,7 @@ void ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
   if (m_view) {
     m_view->openBuffer(buf, fileType, p_workspaceId, settings);
   }
+  return true;
 }
 
 void ViewAreaController::checkCurrentViewWindowChange(const QString &p_workspaceId) {

@@ -1,11 +1,15 @@
 #include "viewwindowfactory.h"
 
 #include <QDebug>
+#include <QtGlobal>
 
 #include <widgets/markdownviewwindow2.h>
 #include <widgets/mindmapviewwindow2.h>
-#include <widgets/pdfviewwindow2.h>
 #include <widgets/textviewwindow2.h>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <widgets/pdfviewwindow2.h>
+#endif
 
 using namespace vnotex;
 
@@ -29,11 +33,18 @@ void ViewWindowFactory::registerBuiltInCreators() {
                      ViewWindowMode) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);
                   });
+  // The vendored pdf.js bundles do not parse on the Chromium that Qt 5's
+  // QtWebEngine ships, so PdfViewWindow2 can only ever render an empty viewer
+  // there. Leaving the type unregistered makes ViewAreaController fall back to
+  // the system default PDF application. See
+  // src/data/extra/web/pdf.js/AGENTS.md.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   registerCreator("Pdf",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
                      ViewWindowMode) -> ViewWindow2 * {
                     return new PdfViewWindow2(p_services, p_buffer, p_parent);
                   });
+#endif
   registerCreator("MindMap",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
                      ViewWindowMode) -> ViewWindow2 * {
