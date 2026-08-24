@@ -66,6 +66,8 @@ private:
 
   QCheckBox *m_smartTableCheckBox = nullptr;
 
+  QCheckBox *m_alignTableSourceCheckBox = nullptr;
+
   QCheckBox *m_spellCheckCheckBox = nullptr;
 
   QComboBox *m_plantUmlModeComboBox = nullptr;

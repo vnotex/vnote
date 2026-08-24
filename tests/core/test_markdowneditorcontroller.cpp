@@ -56,6 +56,8 @@ private slots:
   void testBuildMarkdownEditorConfigFromContent_emptyContent();
   void testBuildMarkdownEditorConfigFromContent_tableSourceOnByDefault();
   void testBuildMarkdownEditorConfigFromContent_tableSourceOff();
+  void testBuildMarkdownEditorConfigFromContent_alignTableSource();
+  void testBuildMarkdownEditorConfig_alignTableSource();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -248,6 +250,55 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_tabl
   QVERIFY(!config.isNull());
   QVERIFY2(!(config->m_inplacePreviewSources & vte::MarkdownEditorConfig::Table),
            "the table source must follow the user setting");
+}
+
+void TestMarkdownEditorController::testBuildMarkdownEditorConfigFromContent_alignTableSource() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+
+  auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!config.isNull());
+  QVERIFY2(!config->m_alignTableSourceEnabled, "aligned table source must be opt-in");
+
+  mdConfig.setAlignTableSourceEnabled(true);
+  config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!config.isNull());
+  QVERIFY2(config->m_alignTableSourceEnabled, "the flag must follow the user setting");
+
+  mdConfig.setAlignTableSourceEnabled(false);
+}
+
+void TestMarkdownEditorController::testBuildMarkdownEditorConfig_alignTableSource() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+
+  // The file-based builder has no placeholder-theme guard, so it must be given a real
+  // theme file: a default vte theme can reach QFontDatabase, which this GUILESS test
+  // cannot construct.
+  QTemporaryDir themeDir;
+  QVERIFY(themeDir.isValid());
+  const QString themeFile = QDir(themeDir.path()).filePath(QStringLiteral("md.theme"));
+  {
+    QFile f(themeFile);
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    QCOMPARE(f.write(kValidMarkdownThemeJson),
+             static_cast<qint64>(qstrlen(kValidMarkdownThemeJson)));
+  }
+
+  auto config = MarkdownEditorController::buildMarkdownEditorConfig(
+      ec, mdConfig, themeFile, QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!config.isNull());
+  QVERIFY2(!config->m_alignTableSourceEnabled, "aligned table source must be opt-in");
+
+  mdConfig.setAlignTableSourceEnabled(true);
+  config = MarkdownEditorController::buildMarkdownEditorConfig(ec, mdConfig, themeFile,
+                                                               QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!config.isNull());
+  QVERIFY2(config->m_alignTableSourceEnabled, "the flag must follow the user setting");
+
+  mdConfig.setAlignTableSourceEnabled(false);
 }
 
 // ============ Group 4: prepareBufferState ============

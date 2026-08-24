@@ -110,6 +110,9 @@ public:
 
   int getSmartTableInterval() const;
 
+  bool getAlignTableSourceEnabled() const;
+  void setAlignTableSourceEnabled(bool p_enabled);
+
   bool isSpellCheckEnabled() const;
   void setSpellCheckEnabled(bool p_enabled);
 
@@ -212,6 +215,11 @@ private:
 
   // Interval time to do smart table format.
   int m_smartTableInterval = 1000;
+
+  // Whether write an edited table sheet back as a column-aligned pipe table.
+  // Opt-in; affects only subsequent commits (nothing is reformatted retroactively),
+  // and only pipe tables (an HTML-backed or merged table is never padded).
+  bool m_alignTableSourceEnabled = false;
 
   // Override the config in TextEditorConfig.
   bool m_spellCheckEnabled = false;

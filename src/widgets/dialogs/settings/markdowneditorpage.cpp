@@ -86,6 +86,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
+  m_alignTableSourceCheckBox->setChecked(markdownConfig.getAlignTableSourceEnabled());
+
   m_spellCheckCheckBox->setChecked(markdownConfig.isSpellCheckEnabled());
 
   {
@@ -154,6 +156,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setCodeBlockLineWrapEnabled(m_codeBlockLineWrapCheckBox->isChecked());
 
   markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
+
+  markdownConfig.setAlignTableSourceEnabled(m_alignTableSourceCheckBox->isChecked());
 
   markdownConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
@@ -396,6 +400,20 @@ void MarkdownEditorPage::setupEditGroup() {
 
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(srcRow);
+  }
+
+  {
+    const QString label(tr("Align table source"));
+    m_alignTableSourceCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_alignTableSourceCheckBox->setToolTip(
+        tr("Write an edited table sheet back as a column-aligned pipe table. Only affects tables "
+           "you edit afterwards; existing source is never reformatted."));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_alignTableSourceCheckBox, m_alignTableSourceCheckBox->toolTip(), this));
+    addSearchItem(label, m_alignTableSourceCheckBox->toolTip(), m_alignTableSourceCheckBox);
+    connect(m_alignTableSourceCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
   }
 
   {

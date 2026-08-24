@@ -21,6 +21,41 @@
 
 using namespace vnotex;
 
+namespace {
+// The Markdown-specific vnotex -> vte field mapping shared by both builders. The two builders
+// differ only in how the theme is constructed; everything from here on is common, so a new
+// field must be added HERE and nowhere else. Duplicating it once made it possible to wire a
+// field into the file-based builder only, which is silently inert: every production caller
+// (markdownviewwindow2.cpp) goes through buildMarkdownEditorConfigFromContent.
+void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
+                               const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig) {
+  p_editorConfig->m_constrainInplacePreviewWidthEnabled =
+      p_mdConfig.getConstrainInplacePreviewWidthEnabled();
+
+  p_editorConfig->m_alignTableSourceEnabled = p_mdConfig.getAlignTableSourceEnabled();
+
+  // Map InplacePreviewSources flags from vnotex -> vte.
+  {
+    auto srcs = p_mdConfig.getInplacePreviewSources();
+    vte::MarkdownEditorConfig::InplacePreviewSources editorSrcs =
+        vte::MarkdownEditorConfig::NoInplacePreview;
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::ImageLink) {
+      editorSrcs |= vte::MarkdownEditorConfig::ImageLink;
+    }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock) {
+      editorSrcs |= vte::MarkdownEditorConfig::CodeBlock;
+    }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
+      editorSrcs |= vte::MarkdownEditorConfig::Math;
+    }
+    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Table) {
+      editorSrcs |= vte::MarkdownEditorConfig::Table;
+    }
+    p_editorConfig->m_inplacePreviewSources = editorSrcs;
+  }
+}
+} // namespace
+
 MarkdownEditorController::MarkdownEditorController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
@@ -147,28 +182,7 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdow
   // Wrap the text editor config in a markdown editor config.
   auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
 
-  editorConfig->m_constrainInplacePreviewWidthEnabled =
-      p_mdConfig.getConstrainInplacePreviewWidthEnabled();
-
-  // Map InplacePreviewSources flags from vnotex -> vte.
-  {
-    auto srcs = p_mdConfig.getInplacePreviewSources();
-    vte::MarkdownEditorConfig::InplacePreviewSources editorSrcs =
-        vte::MarkdownEditorConfig::NoInplacePreview;
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::ImageLink) {
-      editorSrcs |= vte::MarkdownEditorConfig::ImageLink;
-    }
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock) {
-      editorSrcs |= vte::MarkdownEditorConfig::CodeBlock;
-    }
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
-      editorSrcs |= vte::MarkdownEditorConfig::Math;
-    }
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Table) {
-      editorSrcs |= vte::MarkdownEditorConfig::Table;
-    }
-    editorConfig->m_inplacePreviewSources = editorSrcs;
-  }
+  applyMarkdownConfigFields(p_mdConfig, editorConfig);
 
   return editorConfig;
 }
@@ -284,28 +298,7 @@ MarkdownEditorController::buildMarkdownEditorConfigFromContent(
   // Wrap the text editor config in a markdown editor config.
   auto editorConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(textEditorConfig);
 
-  editorConfig->m_constrainInplacePreviewWidthEnabled =
-      p_mdConfig.getConstrainInplacePreviewWidthEnabled();
-
-  // Map InplacePreviewSources flags from vnotex -> vte.
-  {
-    auto srcs = p_mdConfig.getInplacePreviewSources();
-    vte::MarkdownEditorConfig::InplacePreviewSources editorSrcs =
-        vte::MarkdownEditorConfig::NoInplacePreview;
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::ImageLink) {
-      editorSrcs |= vte::MarkdownEditorConfig::ImageLink;
-    }
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::CodeBlock) {
-      editorSrcs |= vte::MarkdownEditorConfig::CodeBlock;
-    }
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Math) {
-      editorSrcs |= vte::MarkdownEditorConfig::Math;
-    }
-    if (srcs & MarkdownEditorConfig::InplacePreviewSource::Table) {
-      editorSrcs |= vte::MarkdownEditorConfig::Table;
-    }
-    editorConfig->m_inplacePreviewSources = editorSrcs;
-  }
+  applyMarkdownConfigFields(p_mdConfig, editorConfig);
 
   if (themeWasEmpty) {
     // Honor the empty-content contract: caller passed no theme JSON, so leave

@@ -53,6 +53,8 @@ private slots:
   void testTableMigration_leavesABlanketOptOutAlone();
   void testTableMigration_doesNotRunOnTheSameOrANewerVersion();
 
+  void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
+
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
   QString buildExtraDataFixture(TempDirFixture &p_tmp) const;
@@ -514,6 +516,27 @@ void TestConfigMgr2::testTableMigration_doesNotRunOnTheSameOrANewerVersion() {
 
   config.doVersionSpecificOverride(QStringLiteral("4.5.0"));
   QCOMPARE(mdConfig.getInplacePreviewSources(), Sources(Source::ImageLink));
+}
+
+void TestConfigMgr2::testAlignTableSource_jsonRoundTripAndAbsentKeyDefault() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+
+  QVERIFY2(!mdConfig.getAlignTableSourceEnabled(), "aligned table source must default to off");
+
+  mdConfig.setAlignTableSourceEnabled(true);
+  QJsonObject json = mdConfig.toJson();
+  QCOMPARE(json.value(QStringLiteral("alignTableSource")).toBool(), true);
+
+  MainConfig reloaded(m_configMgr);
+  auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
+  reloadedMd.fromJson(json);
+  QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), true);
+
+  // An existing vnotex.json has no such key; it must read back as off.
+  json.remove(QStringLiteral("alignTableSource"));
+  reloadedMd.fromJson(json);
+  QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), false);
 }
 
 } // namespace tests

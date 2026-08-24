@@ -57,6 +57,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
   m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
+  m_alignTableSourceEnabled = READBOOL(QStringLiteral("alignTableSource"));
 
   m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 
@@ -101,6 +102,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("codeBlockLineWrap")] = m_codeBlockLineWrapEnabled;
   obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
   obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
+  obj[QStringLiteral("alignTableSource")] = m_alignTableSourceEnabled;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
 
   {
@@ -321,6 +323,12 @@ void MarkdownEditorConfig::setSmartTableEnabled(bool p_enabled) {
 }
 
 int MarkdownEditorConfig::getSmartTableInterval() const { return m_smartTableInterval; }
+
+bool MarkdownEditorConfig::getAlignTableSourceEnabled() const { return m_alignTableSourceEnabled; }
+
+void MarkdownEditorConfig::setAlignTableSourceEnabled(bool p_enabled) {
+  updateConfig(m_alignTableSourceEnabled, p_enabled, this);
+}
 
 bool MarkdownEditorConfig::isSpellCheckEnabled() const { return m_spellCheckEnabled; }
 
