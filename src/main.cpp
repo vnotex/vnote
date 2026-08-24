@@ -57,6 +57,7 @@
 #include <gui/services/stickerfactory.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
+#include <gui/services/webengineprofileservice.h>
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
 #include <vtextedit/spellchecker.h>
@@ -645,6 +646,12 @@ int main(int argc, char *argv[]) {
     app.setThemeService(&themeService);
     themeService.setHookManager(&hookManager);
     qInfo() << "ThemeService registered";
+
+    // Shared QtWebEngine profile with a disk HTTP cache. Declared here (before MainWindow2) so
+    // that stack destruction tears the window - and every page using this profile - down first.
+    WebEngineProfileService webProfileService(configService.getDataPath(DataLocation::Local));
+    serviceLocator.registerService<WebEngineProfileService>(&webProfileService);
+    qInfo() << "WebEngineProfileService registered";
 
     // Initialize syntax highlighting repository (must happen before any TextEditor is created).
     // Legacy equivalent: VNoteX::initThemeMgr() -> ThemeMgr::addSyntaxHighlightingSearchPaths().

@@ -1,12 +1,16 @@
 #include "webpage.h"
 
 #include <QDebug>
+#include <QWebEngineProfile>
 
 #include <core/logging.h>
 
 using namespace vnotex;
 
 WebPage::WebPage(QWidget *p_parent) : QWebEnginePage(p_parent) {}
+
+WebPage::WebPage(QWebEngineProfile *p_profile, QWidget *p_parent)
+    : QWebEnginePage(p_profile, p_parent) {}
 
 bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
                                       bool p_isMainFrame) {

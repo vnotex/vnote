@@ -24,6 +24,10 @@
 #include <QWidget>
 #include <QWindow>
 #include <QWindowStateChangeEvent>
+#if defined(Q_OS_WIN)
+#include <QWebEnginePage>
+#include <QWebEngineView>
+#endif
 
 #include <QHotkey>
 
@@ -55,6 +59,7 @@
 #include <core/sessionconfig.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/webengineprofileservice.h>
 #include <gui/utils/widgetutils.h>
 
 #include <controllers/firstruncontroller.h>
@@ -287,6 +292,13 @@ void MainWindow2::setupUI() {
 
 #if defined(Q_OS_WIN)
   m_dummyWebView = new QWebEngineView(this);
+  {
+    // Warm up the profile actually used by the real viewers, not Qt's default one.
+    auto *profileService = m_serviceLocator.get<WebEngineProfileService>();
+    if (profileService && profileService->profile()) {
+      m_dummyWebView->setPage(new QWebEnginePage(profileService->profile(), m_dummyWebView));
+    }
+  }
   m_dummyWebView->setAttribute(Qt::WA_DontShowOnScreen);
 #endif
 }

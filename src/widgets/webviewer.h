@@ -5,13 +5,18 @@
 
 #include <core/global.h>
 
+class QWebEngineProfile;
+
 namespace vnotex {
 class WebViewer : public QWebEngineView {
   Q_OBJECT
 public:
-  WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent = nullptr);
+  // p_profile: nullptr means Qt's default profile. When non-null, it must outlive this viewer.
+  WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent = nullptr,
+            QWebEngineProfile *p_profile = nullptr);
 
-  WebViewer(const QColor &p_background, QWidget *p_parent = nullptr);
+  WebViewer(const QColor &p_background, QWidget *p_parent = nullptr,
+            QWebEngineProfile *p_profile = nullptr);
 
   virtual ~WebViewer();
 

@@ -10,7 +10,7 @@ class MindMapEditor : public WebViewer {
   Q_OBJECT
 public:
   MindMapEditor(MindMapEditorAdapter *p_adapter, const QColor &p_background, qreal p_zoomFactor,
-                QWidget *p_parent = nullptr);
+                QWidget *p_parent = nullptr, QWebEngineProfile *p_profile = nullptr);
 
   MindMapEditorAdapter *adapter() const;
 

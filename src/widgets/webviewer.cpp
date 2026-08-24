@@ -9,17 +9,17 @@
 
 using namespace vnotex;
 
-WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent)
+WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent,
+                     QWebEngineProfile *p_profile)
     : QWebEngineView(p_parent) {
   setAcceptDrops(false);
 
-  auto viewPage = new WebPage(this);
+  auto viewPage = p_profile ? new WebPage(p_profile, this) : new WebPage(this);
   setPage(viewPage);
 
   connect(viewPage, &QWebEnginePage::linkHovered, this, &WebViewer::linkHovered);
   connect(viewPage, &WebPage::localFileOpenRequested, this, &WebViewer::localFileOpenRequested);
-  connect(viewPage, &WebPage::externalLinkRequested, this,
-          &WebViewer::handleExternalLinkRequested);
+  connect(viewPage, &WebPage::externalLinkRequested, this, &WebViewer::handleExternalLinkRequested);
 
   // Avoid white flash before loading content.
   // Setting Qt::transparent will force GrayScale antialias rendering.
@@ -32,8 +32,8 @@ WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_
   }
 }
 
-WebViewer::WebViewer(const QColor &p_background, QWidget *p_parent)
-    : WebViewer(p_background, 1.0, p_parent) {}
+WebViewer::WebViewer(const QColor &p_background, QWidget *p_parent, QWebEngineProfile *p_profile)
+    : WebViewer(p_background, 1.0, p_parent, p_profile) {}
 
 WebViewer::~WebViewer() {}
 

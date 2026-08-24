@@ -1590,6 +1590,7 @@ int MarkdownEditor::saveToImageHost(const QByteArray &p_imageData, const QString
   info.destFileName = p_destFileName;
   info.width = p_width;
   info.height = p_height;
+  info.data = p_imageData;
   m_pendingUploads.insert(token, info);
   m_textEdit->insertPlainText(placeholder + "\n");
   return token;
@@ -1619,6 +1620,13 @@ void MarkdownEditor::onUploadFinished(int p_token, const ImageHostAsyncResult &p
   m_pendingUploads.erase(it);
 
   if (p_result.success) {
+    // Hand the uploaded bytes to the preview manager BEFORE the text edit: the
+    // edit triggers the re-highlight that produces the image link, so the seed
+    // must already be present when the preview resolves the URL.
+    if (auto *previewMgr = getPreviewMgr()) {
+      previewMgr->seedImageData(p_result.url, info.data);
+    }
+
     auto doc = m_textEdit->document();
     QString content = doc->toPlainText();
     QString newContent = replacePlaceholder(content, p_token, p_result.url, info.destFileName,

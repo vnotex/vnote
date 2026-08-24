@@ -11,6 +11,7 @@
 #include <core/servicelocator.h>
 #include <core/services/htmltemplateservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/webengineprofileservice.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 
@@ -56,7 +57,9 @@ void MindMapViewWindow2::setupEditor() {
 
   auto *adapterObj = new MindMapEditorAdapter(nullptr);
 
-  m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this);
+  auto *profileService = getServices().get<WebEngineProfileService>();
+  m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this,
+                               profileService ? profileService->profile() : nullptr);
   connect(m_editor, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });

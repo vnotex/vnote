@@ -59,6 +59,10 @@ public:
     // is always Markdown, whatever the final form is.
     int width = 0;
     int height = 0;
+
+    // The uploaded bytes, handed to the preview manager once the real URL is
+    // known so that the in-place preview does not fetch back what we just sent.
+    QByteArray data;
   };
 
   // Resolves the final clipboard link for the heading on 0-based line

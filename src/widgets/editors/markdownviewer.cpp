@@ -26,6 +26,7 @@
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <gui/services/webengineprofileservice.h>
 #include <gui/utils/imageutils.h>
 #include <utils/clipboardutils.h>
 #include <utils/utils.h>
@@ -41,6 +42,14 @@ static const char *c_propertyImageUrlAltered = "CopiedImageUrlAltered";
 // Indicate whether this clipboard change is triggered by cross copy.
 static const char *c_propertyCrossCopy = "CrossCopy";
 
+namespace {
+// Resolve the shared web engine profile, if the service is registered.
+QWebEngineProfile *resolveProfile(ServiceLocator &p_services) {
+  auto *svc = p_services.get<WebEngineProfileService>();
+  return svc ? svc->profile() : nullptr;
+}
+} // namespace
+
 MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator &p_services,
                                const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent)
     : MarkdownViewer(p_adapter, static_cast<const ViewWindow2 *>(nullptr), p_services, p_background,
@@ -49,8 +58,9 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator 
 MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow2 *p_viewWindow2,
                                ServiceLocator &p_services, const QColor &p_background,
                                qreal p_zoomFactor, QWidget *p_parent)
-    : WebViewer(p_background, p_zoomFactor, p_parent), m_adapter(p_adapter),
-      m_viewWindow2(p_viewWindow2), m_services(p_services) {
+    : WebViewer(p_background, p_zoomFactor, p_parent, resolveProfile(p_services)),
+      m_adapter(p_adapter), m_viewWindow2(p_viewWindow2), m_services(p_services) {
+
   m_adapter->setParent(this);
 
   auto channel = new QWebChannel(this);

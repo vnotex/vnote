@@ -11,6 +11,8 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/stickerfactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewwindowfactory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewwindowfactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/webengineprofileservice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/webengineprofileservice.h
 )
 
 target_include_directories(vnote PRIVATE
