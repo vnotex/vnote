@@ -1,7 +1,149 @@
-button#openFile, button#print, button#download, button#download + div.verticalToolbarSeparator {
+/* VNote-owned overrides for the vendored pdf.js viewer.
+ *
+ * Hide Open / Print / Save: VNote owns file opening and export, and the viewer's
+ * own affordances would write outside the notebook.
+ *
+ * NOTE the ids are pdf.js-version-specific. v6 renamed the main-toolbar buttons
+ * (`print` -> `printButton`, `download` -> `downloadButton`) and dropped the
+ * main-toolbar Open button entirely, so re-verify every selector below against
+ * web/pdf-viewer-template.html after a pdf.js bump — a stale selector fails
+ * silently by simply showing the button again.
+ */
+
+/* Main toolbar (v6: printButton / downloadButton live in one horizontal group,
+ * followed by a separator that would otherwise be left dangling). */
+button#printButton,
+button#downloadButton,
+div.toolbarHorizontalGroup:has(> button#printButton),
+div.toolbarHorizontalGroup:has(> button#printButton) + div.verticalToolbarSeparator {
     display: none;
 }
 
-button#secondaryOpenFile, button#secondaryPrint, button#secondaryDownload, button#secondaryDownload + div.horizontalToolbarSeparator {
+/* Secondary ("Tools") menu. `secondaryPrint`/`secondaryDownload` share a
+ * `.visibleMediumView` wrapper in v6; hiding the wrapper also removes the empty
+ * gap it would leave behind. */
+button#secondaryOpenFile,
+button#secondaryPrint,
+button#secondaryDownload,
+div.visibleMediumView:has(> button#secondaryPrint) {
     display: none;
+}
+
+/* ============ Comment / highlight overlay (VNote-owned) ============
+ *
+ * One absolutely-positioned layer per rendered page, sized to the page and
+ * holding one <div> per quad. Coordinates are stored in PDF page space in
+ * comments.json, so a zoom / rotate / resize only re-projects; nothing is
+ * recomputed from the DOM.
+ *
+ * Colors come EXCLUSIVELY from the --vx-comment-* custom properties that
+ * HtmlTemplateService injects from ThemeService::commentHighlightCssVariables().
+ * Never write a literal color here: it would be correct in one theme only, and
+ * this file is linked verbatim and is not processed by the theme token
+ * resolver.
+ */
+
+.vx-comment-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    /* Sits above the canvas but BELOW the text layer, so pdf.js keeps its own
+     * text selection and the highlight never blocks selecting through it. */
+    z-index: 1;
+    pointer-events: none;
+}
+
+.vx-comment-quad {
+    position: absolute;
+    border-radius: 2px;
+    /* Re-enabled per quad: the layer stays transparent to the mouse so only the
+     * highlights themselves are clickable. */
+    pointer-events: auto;
+    cursor: pointer;
+    background-color: var(--vx-comment-yellow);
+}
+
+.vx-comment-quad[data-vx-color="yellow"] { background-color: var(--vx-comment-yellow); }
+.vx-comment-quad[data-vx-color="green"]  { background-color: var(--vx-comment-green); }
+.vx-comment-quad[data-vx-color="blue"]   { background-color: var(--vx-comment-blue); }
+.vx-comment-quad[data-vx-color="pink"]   { background-color: var(--vx-comment-pink); }
+.vx-comment-quad[data-vx-color="purple"] { background-color: var(--vx-comment-purple); }
+
+/* A comment with a body gets a marker so a bare highlight is distinguishable. */
+.vx-comment-quad[data-vx-has-text="1"] {
+    border-bottom: 2px solid var(--vx-comment-selected-outline);
+}
+
+.vx-comment-quad.vx-comment-selected {
+    outline: 2px solid var(--vx-comment-selected-outline);
+    outline-offset: 1px;
+}
+/* Ink strokes. One <svg> per comment, sized to the page, so polyline points are
+ * the projected page-space coordinates directly. */
+.vx-comment-ink {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.vx-comment-ink polyline {
+    pointer-events: stroke;
+    cursor: pointer;
+    stroke: var(--vx-comment-yellow);
+}
+
+.vx-comment-ink polyline[data-vx-color="yellow"] { stroke: var(--vx-comment-yellow); }
+.vx-comment-ink polyline[data-vx-color="green"]  { stroke: var(--vx-comment-green); }
+.vx-comment-ink polyline[data-vx-color="blue"]   { stroke: var(--vx-comment-blue); }
+.vx-comment-ink polyline[data-vx-color="pink"]   { stroke: var(--vx-comment-pink); }
+.vx-comment-ink polyline[data-vx-color="purple"] { stroke: var(--vx-comment-purple); }
+
+.vx-comment-ink.vx-comment-selected polyline {
+    stroke-dasharray: 6 3;
+}
+
+/* Free-standing text boxes. */
+.vx-comment-freetext {
+    position: absolute;
+    pointer-events: auto;
+    cursor: pointer;
+    max-width: 60%;
+    padding: 2px 4px;
+    border-radius: 2px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    /* The page is white regardless of app theme, so the box is tinted with the
+     * highlight color and the text stays dark for legibility on paper. */
+    color: #202020; /* hardcoded-color-allow: painted on the PDF page, which pdf.js renders from the document and never themes */
+    background-color: var(--vx-comment-yellow);
+}
+
+.vx-comment-freetext[data-vx-color="yellow"] { background-color: var(--vx-comment-yellow); }
+.vx-comment-freetext[data-vx-color="green"]  { background-color: var(--vx-comment-green); }
+.vx-comment-freetext[data-vx-color="blue"]   { background-color: var(--vx-comment-blue); }
+.vx-comment-freetext[data-vx-color="pink"]   { background-color: var(--vx-comment-pink); }
+.vx-comment-freetext[data-vx-color="purple"] { background-color: var(--vx-comment-purple); }
+
+/* An empty box would be invisible and unselectable; give it a placeholder size. */
+.vx-comment-freetext-empty::before {
+    content: "\2026";
+    opacity: 0.6;
+}
+
+.vx-comment-freetext.vx-comment-selected {
+    outline: 2px solid var(--vx-comment-selected-outline);
+    outline-offset: 1px;
+}
+
+/* While Ink or Text is armed the layer must take the pointer, or pdf.js's text
+ * layer wins the drag and the user gets a selection instead of a stroke. */
+.vx-comment-layer.vx-comment-authoring {
+    pointer-events: auto;
 }

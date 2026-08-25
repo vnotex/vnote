@@ -6,6 +6,8 @@ set(SERVICES_SOURCES
   buffercoreservice.cpp
   bufferservice.cpp
   buffersavequeue.cpp
+  commentservice.cpp
+  commenttypes.cpp
   configcoreservice.cpp
   configservice.cpp
   searchcoreservice.cpp
@@ -63,6 +65,8 @@ set(SERVICES_HEADERS
   buffercoreservice.h
   bufferservice.h
   buffersavequeue.h
+  commentservice.h
+  commenttypes.h
   activityservice.h
   activitystatsservice.h
   ibuffercoreservice.h

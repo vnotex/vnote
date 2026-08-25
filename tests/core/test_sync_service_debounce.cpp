@@ -77,6 +77,7 @@ private slots:
   void test_manual_trigger_creates_no_debounce_timer();
   void test_shutdown_clears_debounce_timers();
   void test_independent_notebooks_have_independent_timers();
+  void test_working_tree_dirty_uses_the_auto_sync_path();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -371,6 +372,45 @@ void TestSyncServiceDebounce::test_independent_notebooks_have_independent_timers
   QTest::qWait(50); // drain A's flushed enqueue before teardown
   syncService.testForceLastSyncUtc(a, -1);
   syncService.testForceLastSyncUtc(b, -1);
+  guard.cleanup();
+}
+
+// CommentService writes comments.json with a plain QSaveFile, so vxcore emits no
+// file event and nothing would ever tell sync the working tree changed.
+// SyncService::notifyWorkingTreeDirty is that missing fact.
+//
+// The property under test is that it IS a fact, not "sync now": it must go
+// through the ordinary auto-sync path (guards + debounce + the "trigger"
+// coalesce key), NOT through triggerSyncNow. A burst of comment edits must
+// therefore cost at most one round-trip per window, and a notebook that is not
+// sync-ready must be ignored entirely rather than nudged.
+void TestSyncServiceDebounce::test_working_tree_dirty_uses_the_auto_sync_path() {
+  ServiceLocator services;
+  NotebookCoreService notebookService(m_context);
+  SyncCredentialsStore credStore(services);
+  tests::KeychainGuard guard(&credStore);
+  services.registerService<NotebookCoreService>(&notebookService);
+  services.registerService<SyncCredentialsStore>(&credStore);
+  SyncWorkQueueManager workQueue;
+  services.registerService<SyncWorkQueueManager>(&workQueue);
+  SyncService syncService(services);
+
+  const QString id = QStringLiteral("test-nb-dirty-routing");
+  syncService.testSetDebounceOverrideSeconds(kDebounceSeconds);
+
+  // The notebook is not enabled/registered, so the readiness guard on the
+  // auto-sync path must swallow this. triggerSyncNow deliberately BYPASSES that
+  // guard and the debounce; routing a sidecar write there instead would hammer
+  // the remote on every keystroke.
+  for (int i = 0; i < 5; ++i) {
+    syncService.notifyWorkingTreeDirty(id);
+  }
+
+  QVERIFY2(!syncService.testIsDebounceTimerActive(id),
+           "a dirty notification for a non-ready notebook must be ignored, not armed");
+  QVERIFY2(!syncService.isSyncInProgress(id),
+           "notifyWorkingTreeDirty must never start an immediate sync");
+
   guard.cleanup();
 }
 

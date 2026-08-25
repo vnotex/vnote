@@ -54,6 +54,8 @@ QString DockWidgetHelper::iconFileName(DockType p_dockType) {
     return "navigation_dock.svg";
   case DockType::OutlineDock:
     return "outline_dock.svg";
+  case DockType::CommentDock:
+    return "comment_dock.svg";
   case DockType::HistoryDock:
     return "history_dock.svg";
   case DockType::TagDock:
@@ -127,6 +129,9 @@ void DockWidgetHelper::setupDocks() {
   }
 
   setupDock(DockType::OutlineDock, tr("Outline"), QStringLiteral("OutlineDock.vnotex"),
+            Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, true);
+
+  setupDock(DockType::CommentDock, tr("Comments"), QStringLiteral("CommentDock.vnotex"),
             Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, true);
 
   setupDock(DockType::ConsoleDock, tr("Console"), QStringLiteral("ConsoleDock.vnotex"),

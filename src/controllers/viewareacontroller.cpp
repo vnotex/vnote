@@ -1779,8 +1779,8 @@ bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
     fileType = QStringLiteral("Text");
   }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-  // PDF has no built-in viewer on Qt 5 (see the ViewWindowFactory gate and
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+  // PDF has no built-in viewer below Qt 6.9 (see the ViewWindowFactory gate and
   // src/data/extra/web/pdf.js/AGENTS.md). Restoring the tab would make
   // ViewArea2::openBuffer emit viewWindowCreationFailed and raise an error
   // notification at every startup; launching an external application unprompted
@@ -1789,10 +1789,9 @@ bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
   //
   // Deliberately NOT closing or unregistering the buffer: it stays a member of
   // the workspace, so the persisted session is untouched, no backup is
-  // discarded, and the tab reappears intact when the same config is opened by a
-  // Qt 6 build.
+
   if (fileType.compare(QStringLiteral("PDF"), Qt::CaseInsensitive) == 0) {
-    qInfo() << "ViewAreaController::openRestoredBuffer: PDF viewing is unavailable on Qt 5 -"
+    qInfo() << "ViewAreaController::openRestoredBuffer: PDF viewing needs Qt 6.9+ -"
             << "skipping restore of" << buf.nodeId().relativePath;
     return false;
   }

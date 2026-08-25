@@ -13,6 +13,8 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/viewwindowfactory.h
     ${CMAKE_CURRENT_SOURCE_DIR}/webengineprofileservice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/webengineprofileservice.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/vxpdfschemehandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vxpdfschemehandler.h
 )
 
 target_include_directories(vnote PRIVATE

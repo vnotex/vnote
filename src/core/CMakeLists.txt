@@ -33,6 +33,7 @@ target_sources(vnote PRIVATE
     theme.cpp theme.h
     versioncontroller/iversioncontroller.h
     # DEPRECATED: VxCore singleton wrapper removed - use services via ServiceLocator instead
+    vxpdfscheme.h
     webresource.h
     widgetconfig.cpp widgetconfig.h
 )

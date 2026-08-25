@@ -8,6 +8,7 @@
 #include "editorconfig.h"
 #include "iconfigmgr.h"
 #include "markdowneditorconfig.h"
+#include "pdfviewerconfig.h"
 #include "texteditorconfig.h"
 #include "widgetconfig.h"
 
@@ -105,6 +106,27 @@ void MainConfig::doVersionSpecificOverride(const QString &p_previousVersion) {
                     MarkdownEditorConfig::InplacePreviewSource::NoInplacePreview)) {
       mdConfig.setInplacePreviewSources(srcs | MarkdownEditorConfig::InplacePreviewSource::Table);
     }
+  }
+
+  // 4.6.0: pdf.js was upgraded from v3.11.174 to v6.2.108. The bundle is ESM-only,
+  // so `build/pdf.js` / `web/viewer.js` / `pdfviewer.js` no longer exist and are
+  // replaced by `build/pdf.mjs` / `web/viewer.mjs` / `pdfviewer.mjs`.
+  //
+  // This override is MANDATORY, not cosmetic. `editor.pdf_viewer.viewerResource` is
+  // persisted verbatim for every existing user, and WebResource::init() takes the
+  // persisted object WHOLESALE (it even resizes the resource vector from the JSON),
+  // so there is no app-vs-user merge that could heal it. Without the reset, every
+  // upgrading user's PDF viewer would silently load three files that are not on
+  // disk and render a blank page.
+  //
+  // Same known limitation as the 4.4.4 override above: a downgrade stamps the
+  // version back down, so a later re-upgrade re-runs this and discards any manual
+  // customization of the script list a second time. That is the correct trade —
+  // a stale list here is a non-functional viewer, not a checkbox.
+  static const QVersionNumber c_pdfJsV6Version(4, 6, 0);
+  if (QVersionNumber::fromString(p_previousVersion) < c_pdfJsV6Version) {
+    auto &pdfConfig = getEditorConfig().getPdfViewerConfig();
+    pdfConfig.m_viewerResource = PdfViewerConfig::defaultViewerResource();
   }
 }
 

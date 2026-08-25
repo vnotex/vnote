@@ -156,8 +156,11 @@ const NodeIdentifier &ViewWindow2::getNodeId() const { return m_buffer.nodeId();
 
 void ViewWindow2::onNodeRenamed(const NodeIdentifier &p_newNodeId) {
   m_buffer.setNodeId(p_newNodeId);
+  handleNodeRetargeted(p_newNodeId);
   emit nameChanged();
 }
+
+void ViewWindow2::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) { Q_UNUSED(p_newNodeId); }
 
 // ============ Window Identity ============
 
@@ -178,6 +181,8 @@ QString ViewWindow2::getName() const {
 }
 
 QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return nullptr; }
+
+QSharedPointer<CommentProvider> ViewWindow2::getCommentProvider() const { return nullptr; }
 
 QString ViewWindow2::getTitle() const {
   QString name = getName();

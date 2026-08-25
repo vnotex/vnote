@@ -104,6 +104,22 @@ public:
   // Trigger a one-shot sync for a notebook. Invokes SyncWorker::triggerSync.
   void triggerSyncNow(const QString &p_notebookId);
 
+  // Report that VNote wrote something into @p_notebookId's working tree WITHOUT
+  // going through vxcore, so no `file.saved` event (and therefore no
+  // `sync.should_run`) was emitted for it.
+  //
+  // Currently the only such writer is CommentService, which commits
+  // `comments.json` with a plain QSaveFile. Without this the sidecar would sit
+  // uncommitted in a synced notebook until some unrelated edit happened to
+  // trigger a sync.
+  //
+  // This is a FACT, not "sync now": it enters the ordinary auto-sync path, so it
+  // inherits every guard (shutdown, readiness, auth circuit-breaker), the
+  // per-notebook trailing-throttle debounce and the "trigger" coalesce key. A
+  // burst of comment edits therefore produces at most one network round-trip
+  // per debounce window, never one per keystroke.
+  void notifyWorkingTreeDirty(const QString &p_notebookId);
+
   // Wave 12.2 / F5.9: request cancellation of an in-flight triggerSyncNow for
   // @p_notebookId. No-op if no sync is in flight or the notebook has no
   // active cancellation token. Cancellation is cooperative: the libgit2

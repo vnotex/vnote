@@ -12,9 +12,19 @@ WebPage::WebPage(QWidget *p_parent) : QWebEnginePage(p_parent) {}
 WebPage::WebPage(QWebEngineProfile *p_profile, QWidget *p_parent)
     : QWebEnginePage(p_profile, p_parent) {}
 
+void WebPage::setAllowedMainFrameUrlPredicate(std::function<bool(const QUrl &)> p_predicate) {
+  m_allowedMainFrameUrlPredicate = std::move(p_predicate);
+}
+
 bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
                                       bool p_isMainFrame) {
   Q_UNUSED(p_type);
+  // Checked before the isLocalFile() branch so a consumer-owned scheme can never
+  // be mistaken for a user-authored link. No allowlisted scheme is a local file
+  // today, so this does not change any existing behaviour.
+  if (p_isMainFrame && m_allowedMainFrameUrlPredicate && m_allowedMainFrameUrlPredicate(p_url)) {
+    return true;
+  }
   if (p_url.isLocalFile()) {
     emit localFileOpenRequested(p_url);
     return false;

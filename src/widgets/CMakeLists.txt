@@ -109,6 +109,8 @@ target_sources(vnote PRIVATE
     notificationpopup2.cpp notificationpopup2.h
     notificationtoast.cpp notificationtoast.h
     outlinepopup.cpp outlinepopup.h
+    commentpanel.cpp commentpanel.h
+    commentprovider.cpp commentprovider.h
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h
     pdfviewwindow2.cpp pdfviewwindow2.h

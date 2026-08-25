@@ -17,7 +17,7 @@ public:
 
   // State snapshot for applying PDF URL to the viewer.
   struct PdfUrlState {
-    QUrl templateUrl; // PDF.js template URL with ?file= query
+    QUrl templateUrl; // vxpdf:// viewer page URL with ?file= query
     bool valid = false;
   };
 
@@ -35,11 +35,12 @@ public:
 
   // ============ URL Construction ============
 
-  // Prepare the PDF viewer URL state from buffer node identity.
-  // @p_contentPath: absolute path to the PDF file on disk.
-  // @p_templatePath: path to the PDF.js HTML template.
+  // Build the `vxpdf://` viewer page URL for a document token.
+  // The `file` query carries a COMPLETE percent-encoded document URL
+  // (`vxpdf://pdf/document/<token>`), not a bare token, so pdf.js resolves it
+  // without depending on its base-URI rules.
   // Pure logic — no GUI dependencies.
-  static PdfUrlState preparePdfUrl(const QString &p_contentPath, const QString &p_templatePath);
+  static PdfUrlState preparePdfUrl(const QString &p_documentToken);
 
 private:
   ServiceLocator &m_services;

@@ -15,12 +15,12 @@
 // === Why QJSEngine and not a browser / npm harness ===
 // There is no JS test infrastructure in this repo: no package.json, no node in
 // CI, no QWebEngine or QJSEngine anywhere else under tests/. pdfviewercore.js
-// and pdfviewer.js were deliberately structured so that the entire testable
+// and pdfviewer.mjs were deliberately structured so that the entire testable
 // surface — including the pdf.js event wiring — is synchronous, DOM-free and
 // pdf.js-free plain JS, which QJSEngine executes directly.
 //
 // === Why the REAL files are evaluated ===
-// Both src/data/extra/web/pdf.js/pdfviewercore.js and .../pdfviewer.js are read
+// Both src/data/extra/web/pdf.js/pdfviewercore.js and .../pdfviewer.mjs are read
 // from disk and evaluated unmodified. Testing a transcribed copy would gate
 // nothing.
 //
@@ -73,10 +73,35 @@ QString readFile(const QString &p_path, QString *p_error) {
 // Everything pdfviewercore.js needs from the host environment. QJSEngine gives
 // no DOM, and pdfviewercore.js reads document.currentScript.src at construction
 // time to derive the worker path.
+//
+// `document.addEventListener` is a RECORDER, not a no-op: the file registers its
+// 'webviewerloaded' listener at load time, and that listener being present (and
+// firing) is the whole AppOptions contract — see
+// coreRegistersAWebViewerLoadedListener().
 const char *const c_corePrelude = R"JS(
 var window = this;
 var console = { log: function(){}, warn: function(){}, error: function(){} };
-var document = { currentScript: { src: "qrc:/web/pdf.js/pdfviewercore.js" } };
+window.__listeners = {};
+var document = {
+    currentScript: { src: "qrc:/web/pdf.js/pdfviewercore.js" },
+    addEventListener: function(p_name, p_cb) { window.__listeners[p_name] = p_cb; }
+};
+
+// Stand-in for viewer.mjs's AppOptions. Starts EMPTY so a case can prove nothing
+// was configured before the hook fired.
+window.__options = {};
+window.PDFViewerApplicationOptions = {
+    set: function(k, v) { window.__options[k] = v; },
+    get: function(k) { return window.__options[k]; }
+};
+
+// Dispatches the event pdf.js fires immediately before PDFViewerApplication.run().
+window.__fireWebViewerLoaded = function() {
+    var cb = window.__listeners['webviewerloaded'];
+    if (!cb) { throw new Error('no webviewerloaded listener registered'); }
+    cb({ type: 'webviewerloaded' });
+};
+
 class VXCore { constructor() {} on() {} emit() {} }
 )JS";
 
@@ -145,14 +170,18 @@ window.__fixture = [
 ];
 )JS";
 
-// Everything pdfviewer.js touches at file scope. window.PDFViewerApplication is
-// replaced by a full fake app here, because pdfviewer.js registers the bridge
+// Everything pdfviewer.mjs touches at file scope. window.PDFViewerApplication is
+// replaced by a full fake app here, because pdfviewer.mjs registers the bridge
 // from initializedPromise and the bridge needs an eventBus.
+//
+// Note there is deliberately no `pdfjsLib` stand-in: under the ESM build there is
+// no reliable global, and pdfviewer.mjs must not depend on one. If a future edit
+// reintroduces `pdfjsLib.…` at file scope, this prelude makes it a hard failure
+// instead of a silent runtime error in the browser.
 const char *const c_gluePrelude = R"JS(
 window.__channelCb = null;
 function QWebChannel(p_transport, p_cb) { window.__channelCb = p_cb; }
 var qt = { webChannelTransport: {} };
-var pdfjsLib = { GlobalWorkerOptions: {} };
 
 window.__initDeferred = {
     cbs: [],
@@ -167,12 +196,10 @@ window.__app.pdfLinkService = {
 };
 window.PDFViewerApplication = window.__app;
 
-// Stand-in for viewer.js's AppOptions (exported as window.PDFViewerApplicationOptions).
-// pdfviewer.js sets the sidebar options through it at file scope.
-window.__options = {};
-window.PDFViewerApplicationOptions = {
-    set: function(k, v) { window.__options[k] = v; }
-};
+// AppOptions is supplied by the CORE prelude, because pdfviewercore.js is what
+// configures it (from 'webviewerloaded'). pdfviewer.mjs must NOT touch it: a
+// deferred module runs after pdf.js has already read every option. Redefining
+// the stub here would mask that.
 
 // Must satisfy EVERYTHING the existing channel callback does, not just the new
 // outline calls: it connects urlUpdated unconditionally and first, so omitting
@@ -206,7 +233,30 @@ private slots:
   void rebuildResetsDestinations();
   void gluePublishesWhenChannelArrivesFirst();
   void gluePublishesWhenOutlineArrivesFirst();
-  void glueHidesSidebarOnLoad();
+  void coreRegistersAWebViewerLoadedListener();
+  void webViewerLoadedHidesSidebarOnLoad();
+  void webViewerLoadedSetsModuleWorkerSrc();
+  void webViewerLoadedDisablesPdfJsOwnAnnotationEditors();
+  void appOptionsAreUntouchedBeforeTheHookFires();
+
+  // Comment overlay coordinate math. Pure functions on PdfViewerCore, driven
+  // with a fake viewport so no DOM (and no pdf.js) is needed.
+  void clientRectProjectsIntoPdfPageSpace();
+  void pdfQuadProjectsBackToACssBox();
+  void projectionRoundTripsThroughAScaledViewport();
+  void degenerateQuadsProduceNoBox();
+  void selectionRectsGroupPerPage();
+  void selectionRectsAreCappedAndDegenerateOnesDropped();
+
+  // Tool state machine + the two new anchor types.
+  void toolIsAModeAndEscLeavesIt();
+  void inkDragProducesAPageSpaceStroke();
+  void aClickWithoutADragCommitsNoInk();
+  void freeTextIsOneShotAndPlacesAPageSpacePoint();
+  void inkStrokesProjectToPolylinePoints();
+  void aSecondPointerCannotHijackAnInkStroke();
+  void cancellingAnInkGestureDiscardsIt();
+  void extendInkDoesNotRebuildExistingComments();
 
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
@@ -253,7 +303,7 @@ void TestPdfViewerCoreJs::loadCore(QJSEngine &p_engine) {
 
 void TestPdfViewerCoreJs::loadGlue(QJSEngine &p_engine) {
   QString error;
-  const QString glue = readFile(webDir() + QStringLiteral("/pdf.js/pdfviewer.js"), &error);
+  const QString glue = readFile(webDir() + QStringLiteral("/pdf.js/pdfviewer.mjs"), &error);
   QVERIFY2(error.isEmpty(), qPrintable(error));
 
   const QJSValue prelude = p_engine.evaluate(QString::fromUtf8(c_gluePrelude));
@@ -261,7 +311,7 @@ void TestPdfViewerCoreJs::loadGlue(QJSEngine &p_engine) {
 
   const QJSValue res = p_engine.evaluate(glue);
   QVERIFY2(!res.isError(),
-           qPrintable(QStringLiteral("pdfviewer.js failed to evaluate: %1 (line %2)")
+           qPrintable(QStringLiteral("pdfviewer.mjs failed to evaluate: %1 (line %2)")
                           .arg(res.toString())
                           .arg(res.property(QStringLiteral("lineNumber")).toInt())));
 }
@@ -525,13 +575,577 @@ void TestPdfViewerCoreJs::gluePublishesWhenOutlineArrivesFirst() {
 // disablePreferences must be true — otherwise viewer.js's _initializeOptions() overwrites it
 // with the -1 (UNKNOWN) preference default, which lets the stored state or the document's
 // /PageMode re-open the navigation pane.
-void TestPdfViewerCoreJs::glueHidesSidebarOnLoad() {
+// === AppOptions: the WHEN matters more than the WHAT ===
+//
+// These used to assert `window.__options.<key>` after evaluating pdfviewer.mjs,
+// which proved nothing: a deferred module runs when readyState is already
+// "interactive", so viewer.mjs has ALREADY called webViewerLoad() ->
+// PDFViewerApplication.run(). The value landed in the options object and the
+// test went green while pdf.js had long since read the default. The editor
+// buttons stayed live and the sidebar options never applied.
+//
+// So the contract under test is now: pdfviewercore.js (a CLASSIC script, which
+// runs before any module) registers a 'webviewerloaded' listener, and that
+// listener is what configures AppOptions -- 'webviewerloaded' being pdf.js's
+// documented hook, dispatched immediately before run().
+
+void TestPdfViewerCoreJs::coreRegistersAWebViewerLoadedListener() {
   QJSEngine engine;
   loadCore(engine);
-  loadGlue(engine);
+
+  QVERIFY2(
+      eval(engine, QStringLiteral("window.__listeners['webviewerloaded'] !== undefined")).toBool(),
+      "pdfviewercore.js must register a 'webviewerloaded' listener; a module is too late "
+      "to configure AppOptions");
+}
+
+void TestPdfViewerCoreJs::webViewerLoadedHidesSidebarOnLoad() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QStringLiteral("window.__fireWebViewerLoaded();")).isError());
 
   QCOMPARE(eval(engine, QStringLiteral("window.__options.sidebarViewOnLoad")).toInt(), 0);
   QCOMPARE(eval(engine, QStringLiteral("window.__options.disablePreferences")).toBool(), true);
+}
+
+// The ESM bundle has no dependable `pdfjsLib` global, so the worker MUST be set
+// through AppOptions. It must also point at the `.mjs` worker: pdf.js decides
+// whether to spawn a module worker from that extension, and a `.js` URL would be
+// a 404 in the vendored v6 tree.
+void TestPdfViewerCoreJs::webViewerLoadedSetsModuleWorkerSrc() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QStringLiteral("window.__fireWebViewerLoaded();")).isError());
+
+  const QString workerSrc = eval(engine, QStringLiteral("window.__options.workerSrc")).toString();
+  QVERIFY2(!workerSrc.isEmpty(), "the webviewerloaded handler must set the workerSrc AppOption");
+  QVERIFY2(
+      workerSrc.endsWith(QStringLiteral("/build/pdf.worker.mjs")),
+      qPrintable(QStringLiteral("workerSrc must point at the ESM worker, got: %1").arg(workerSrc)));
+}
+
+// pdf.js's own Comment / Signature / Highlight / Text / Draw / Image editors
+// mutate the IN-MEMORY PDF and are persisted only through saveDocument(), which
+// VNote does not expose (it never modifies the PDF binary). Leaving them enabled
+// silently discards the user's work on tab close, and puts a second, incompatible
+// "Highlight" next to VNote's own. -1 is AnnotationEditorType.DISABLE.
+void TestPdfViewerCoreJs::webViewerLoadedDisablesPdfJsOwnAnnotationEditors() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QStringLiteral("window.__fireWebViewerLoaded();")).isError());
+
+  const QJSValue mode = eval(engine, QStringLiteral("window.__options.annotationEditorMode"));
+  QVERIFY2(!mode.isUndefined(),
+           "the webviewerloaded handler must disable pdf.js's built-in annotation editors");
+  QCOMPARE(mode.toInt(), -1);
+}
+
+// Nothing may be configured before the hook fires: that is what would silently
+// regress to the broken ordering.
+void TestPdfViewerCoreJs::appOptionsAreUntouchedBeforeTheHookFires() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  QVERIFY(
+      eval(engine, QStringLiteral("window.__options.annotationEditorMode === undefined")).toBool());
+  QVERIFY(eval(engine, QStringLiteral("window.__options.workerSrc === undefined")).toBool());
+}
+// ============ Comment overlay coordinate math ============
+//
+// Anchors are persisted in PDF PAGE SPACE, which is what makes a stored
+// highlight survive zoom, rotation and window resize: only the projection
+// changes. These cases pin both directions of that projection with a fake
+// viewport, so they fail if someone "simplifies" the math into CSS pixels.
+
+namespace {
+// A viewport that mimics pdf.js's: a scale, and a flipped Y axis (PDF space has
+// its origin at the bottom-left, CSS at the top-left).
+//
+// NOTE the `VXC` alias. `class PdfViewerCore` is a LEXICAL top-level binding, so
+// it does not become a property of the global object and is not visible to a
+// later, separate QJSEngine::evaluate() call. Reaching the statics through the
+// instance's constructor is what keeps these cases running against the REAL
+// shipped file rather than a copy.
+const char *const c_viewportHarness = R"JS(
+var VXC = window.vxcore.constructor;
+
+window.__makeViewport = function(p_scale, p_pageHeightPdf) {
+    return {
+        convertToPdfPoint: function(x, y) {
+            return [x / p_scale, p_pageHeightPdf - (y / p_scale)];
+        },
+        convertToViewportPoint: function(x, y) {
+            return [x * p_scale, (p_pageHeightPdf - y) * p_scale];
+        }
+    };
+};
+
+window.__rect = function(l, t, r, b) {
+    return { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t };
+};
+
+window.__pageRect = function(l, t) { return { left: l, top: t }; };
+)JS";
+} // namespace
+
+void TestPdfViewerCoreJs::clientRectProjectsIntoPdfPageSpace() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  // scale 2, page 500 PDF units tall, page element offset by (100, 50) on screen.
+  QVERIFY(!eval(engine, QStringLiteral("window.__vp = window.__makeViewport(2, 500);")).isError());
+  QVERIFY(!eval(engine, QStringLiteral("window.__q = VXC.clientRectToPdfQuad("
+                                       "  window.__rect(120, 70, 140, 90),"
+                                       "  window.__pageRect(100, 50), window.__vp);"))
+               .isError());
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__q.length")).toInt(), 8);
+  // Viewport coords are (20,20)-(40,40); at scale 2 that is PDF x 10..20 and,
+  // with the Y flip, PDF y 490 (top) down to 480 (bottom).
+  QCOMPARE(eval(engine, QStringLiteral("window.__q[0]")).toNumber(), 10.0);  // TL x
+  QCOMPARE(eval(engine, QStringLiteral("window.__q[1]")).toNumber(), 490.0); // TL y
+  QCOMPARE(eval(engine, QStringLiteral("window.__q[2]")).toNumber(), 20.0);  // TR x
+  QCOMPARE(eval(engine, QStringLiteral("window.__q[5]")).toNumber(), 480.0); // BR y
+  QCOMPARE(eval(engine, QStringLiteral("window.__q[6]")).toNumber(), 10.0);  // BL x
+}
+
+void TestPdfViewerCoreJs::pdfQuadProjectsBackToACssBox() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  QVERIFY(!eval(engine, QStringLiteral("window.__vp = window.__makeViewport(2, 500);")).isError());
+  QVERIFY(!eval(engine, QStringLiteral("window.__box = VXC.pdfQuadToPageBox("
+                                       "  [10,490, 20,490, 20,480, 10,480], window.__vp);"))
+               .isError());
+
+  QVERIFY(!eval(engine, QStringLiteral("window.__box === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.left")).toNumber(), 20.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.top")).toNumber(), 20.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.width")).toNumber(), 20.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.height")).toNumber(), 20.0);
+}
+
+// The property that actually matters: a highlight captured at one zoom must
+// land in the same place on the page at any other zoom.
+void TestPdfViewerCoreJs::projectionRoundTripsThroughAScaledViewport() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  QVERIFY(!eval(engine, QStringLiteral(
+                            "window.__captureVp = window.__makeViewport(1, 800);"
+                            "window.__q = VXC.clientRectToPdfQuad("
+                            "  window.__rect(10, 100, 210, 130), window.__pageRect(0, 0),"
+                            "  window.__captureVp);"
+                            // Re-project at 3x zoom.
+                            "window.__renderVp = window.__makeViewport(3, 800);"
+                            "window.__box = VXC.pdfQuadToPageBox(window.__q, window.__renderVp);"))
+               .isError());
+
+  // The box must scale exactly with the viewport, with no drift.
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.left")).toNumber(), 30.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.top")).toNumber(), 300.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.width")).toNumber(), 600.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box.height")).toNumber(), 90.0);
+}
+
+// A corrupt or hand-edited anchor must not produce an invisible zero-sized
+// element or a NaN-positioned one; it is simply not drawn.
+void TestPdfViewerCoreJs::degenerateQuadsProduceNoBox() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+  QVERIFY(!eval(engine, QStringLiteral("window.__vp = window.__makeViewport(1, 500);")).isError());
+
+  // Each expression is evaluated on its own so a THROW (which would make
+  // `=== null` unreachable and the assertion vacuous) is distinguishable from a
+  // genuine null.
+  const auto boxIsNull = [&engine](const QString &p_quad) {
+    const auto result =
+        eval(engine, QStringLiteral("VXC.pdfQuadToPageBox(%1, window.__vp) === null").arg(p_quad));
+    return !result.isError() && result.toBool();
+  };
+
+  QVERIFY(boxIsNull(QStringLiteral("null")));
+  QVERIFY(boxIsNull(QStringLiteral("[1,2,3]")));
+  // Zero area.
+  QVERIFY(boxIsNull(QStringLiteral("[5,5, 5,5, 5,5, 5,5]")));
+  // Non-finite.
+  QVERIFY(boxIsNull(QStringLiteral("[0,0, Infinity,0, 10,10, 0,10]")));
+
+  // Sanity: a good quad is NOT null, so the helper is not vacuously true.
+  QVERIFY(!boxIsNull(QStringLiteral("[0,500, 10,500, 10,490, 0,490]")));
+}
+
+// A selection dragged across a page break must become ONE anchor PER PAGE, or
+// the single `page` field on an anchor would be a lie.
+void TestPdfViewerCoreJs::selectionRectsGroupPerPage() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  QVERIFY(
+      !eval(engine, QStringLiteral("window.__vp = window.__makeViewport(1, 500);"
+                                   "window.__lookup = function(p_rect) {"
+                                   "  var page = p_rect.top < 100 ? 0 : 1;"
+                                   "  return { pageNumber: page, pageRect: window.__pageRect(0, 0),"
+                                   "           viewport: window.__vp };"
+                                   "};"
+                                   "window.__groups = VXC.groupRectsByPage(["
+                                   "  window.__rect(0, 10, 10, 20),"
+                                   "  window.__rect(0, 30, 10, 40),"
+                                   "  window.__rect(0, 110, 10, 120)"
+                                   "], window.__lookup, 512);"))
+           .isError());
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups.length")).toInt(), 2);
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups[0].page")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups[0].quads.length")).toInt(), 2);
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups[1].page")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups[1].quads.length")).toInt(), 1);
+}
+
+void TestPdfViewerCoreJs::selectionRectsAreCappedAndDegenerateOnesDropped() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  QVERIFY(
+      !eval(engine, QStringLiteral("window.__vp = window.__makeViewport(1, 500);"
+                                   "window.__lookup = function() {"
+                                   "  return { pageNumber: 0, pageRect: window.__pageRect(0, 0),"
+                                   "           viewport: window.__vp };"
+                                   "};"
+                                   // A collapsed caret rect carries no area and must be skipped.
+                                   "window.__rects = [window.__rect(0, 0, 0, 0)];"
+                                   "for (var i = 0; i < 50; ++i) {"
+                                   "  window.__rects.push(window.__rect(0, i, 10, i + 5));"
+                                   "}"
+                                   "window.__groups = VXC.groupRectsByPage("
+                                   "  window.__rects, window.__lookup, 10);"))
+           .isError());
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__groups[0].quads.length")).toInt(), 10);
+
+  // A page the lookup rejects contributes nothing rather than defaulting to 0.
+  QVERIFY(!eval(engine, QStringLiteral(
+                            "window.__none = VXC.groupRectsByPage("
+                            "  [window.__rect(0, 0, 10, 10)], function() { return null; }, 10);"))
+               .isError());
+  QCOMPARE(eval(engine, QStringLiteral("window.__none.length")).toInt(), 0);
+}
+
+// ============ Tools: ink and free text ============
+//
+// The tools are MODES, and a mode that cannot be left (or that leaks across a
+// document) is worse than no mode at all. These drive PdfViewerCore directly
+// with a fake pdf.js app, so the anchor geometry is checked without a browser.
+
+namespace {
+// A minimal pdf.js stand-in: one page, a known rect, and the same flipped-Y
+// viewport the real one uses.
+const char *const c_toolHarness = R"JS(
+// Enough DOM for the render path: extendInk() repaints during the drag so the
+// user sees the stroke as they draw, and renderAllComments() builds real nodes.
+window.__mkEl = function() {
+    var el = {
+        style: {},
+        className: '',
+        textContent: '',
+        attrs: {},
+        children: [],
+        classList: {
+            add: function() {}, remove: function() {}, toggle: function() {},
+            contains: function() { return false; }
+        },
+        setAttribute: function(k, v) { this.attrs[k] = v; },
+        getAttribute: function(k) { return this.attrs[k]; },
+        appendChild: function(c) { this.children.push(c); return c; },
+        addEventListener: function() {},
+        querySelector: function() { return null; }
+    };
+    return el;
+};
+document.createElement = function() { return window.__mkEl(); };
+document.createElementNS = function() { return window.__mkEl(); };
+
+window.__added = [];
+window.__toolFinished = 0;
+window.__pageCount = 0;
+
+window.__adapter = {
+    setDocumentPageCount: function(n) { window.__pageCount = n; },
+    setOutline: function() {},
+    requestAddComment: function(a, c) { window.__added.push({ anchor: a, color: c }); },
+    requestSelectComment: function() {},
+    requestDeleteComment: function() {},
+    notifyToolFinished: function() { window.__toolFinished++; }
+};
+
+window.__mkViewport = function(scale, pageHeightPdf) {
+    return {
+        scale: scale,
+        convertToPdfPoint: function(x, y) {
+            return [x / scale, pageHeightPdf - (y / scale)];
+        },
+        convertToViewportPoint: function(x, y) {
+            return [x * scale, (pageHeightPdf - y) * scale];
+        }
+    };
+};
+
+window.__pageDiv = {
+    getBoundingClientRect: function() {
+        return { left: 100, top: 50, right: 700, bottom: 850, width: 600, height: 800 };
+    },
+    querySelector: function() { return null; },
+    appendChild: function() {}
+};
+
+window.__app = {
+    pagesCount: 1,
+    pdfDocument: {},
+    pdfViewer: {
+        getPageView: function(i) {
+            return i === 0 ? { div: window.__pageDiv, viewport: window.__mkViewport(2, 800) } : null;
+        }
+    },
+    eventBus: { on: function() {} }
+};
+
+window.vxcore.commentApp = window.__app;
+window.vxcore.setCommentAdapter(window.__adapter);
+)JS";
+} // namespace
+
+void TestPdfViewerCoreJs::toolIsAModeAndEscLeavesIt() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.tool")).toString(), QStringLiteral("none"));
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.tool")).toString(), QStringLiteral("ink"));
+
+  // finishTool() is what Esc and the one-shot Text tool both call: it must drop
+  // the tool AND tell C++, or the toolbar toggle stays pressed.
+  eval(engine, QStringLiteral("window.vxcore.finishTool();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.tool")).toString(), QStringLiteral("none"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__toolFinished")).toInt(), 1);
+
+  // Idempotent: leaving a tool that is not armed must not spam the bridge.
+  eval(engine, QStringLiteral("window.vxcore.finishTool();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__toolFinished")).toInt(), 1);
+
+  // Switching tools must drop any in-flight stroke, or it would be committed
+  // into the wrong tool's gesture.
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.setTool('freetext');"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.inkDraft === null")).toBool());
+}
+
+void TestPdfViewerCoreJs::inkDragProducesAPageSpaceStroke() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  // scale 2, page 800 tall, page element at (100, 50).
+  const QJSValue drag = eval(engine, QStringLiteral("window.vxcore.setCommentColor('blue');"
+                                                    "window.vxcore.setTool('ink');"
+                                                    "window.vxcore.beginInk(140, 90);"
+                                                    "window.vxcore.extendInk(200, 150);"
+                                                    "window.vxcore.endInk();"));
+  QVERIFY2(!drag.isError(), qPrintable(drag.toString()));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.type")).toString(),
+           QStringLiteral("pdf-ink"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].color")).toString(),
+           QStringLiteral("blue"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.page")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.strokes.length")).toInt(), 1);
+
+  // Client (140,90) is (40,40) on the page; at scale 2 that is PDF (20, 780).
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.strokes[0][0]")).toNumber(), 20.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.strokes[0][1]")).toNumber(),
+           780.0);
+  // Client (200,150) is (100,100) -> PDF (50, 750).
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.strokes[0][2]")).toNumber(), 50.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.strokes[0][3]")).toNumber(),
+           750.0);
+
+  // The draft is cleared, so the next drag starts fresh.
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.inkDraft === null")).toBool());
+}
+
+// A click while Draw is armed is not a stroke; committing it would litter the
+// page with invisible one-point scribbles.
+void TestPdfViewerCoreJs::aClickWithoutADragCommitsNoInk() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.endInk();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 0);
+
+  // A drag that starts off-page is not a stroke either.
+  eval(engine, QStringLiteral("window.vxcore.beginInk(5, 5);"
+                              "window.vxcore.extendInk(6, 6);"
+                              "window.vxcore.endInk();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::freeTextIsOneShotAndPlacesAPageSpacePoint() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('freetext');"
+                              "window.vxcore.placeFreeText(140, 90);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.type")).toString(),
+           QStringLiteral("pdf-freetext"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.x")).toNumber(), 20.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.y")).toNumber(), 780.0);
+  QVERIFY(eval(engine, QStringLiteral("window.__added[0].anchor.fontSize > 0")).toBool());
+
+  // ONE-SHOT: placing disarms the tool and tells C++, so the toolbar toggle
+  // un-presses. That rule lives in placeFreeText() rather than only in the
+  // pointerdown handler precisely so it is reachable here.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.tool")).toString(), QStringLiteral("none"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__toolFinished")).toInt(), 1);
+
+  // ...and a second click without re-arming places nothing more.
+  eval(engine, QStringLiteral("window.vxcore.placeFreeText(200, 200);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
+
+  // Off-page clicks place nothing, and must NOT disarm.
+  eval(engine, QStringLiteral("window.vxcore.setTool('freetext');"
+                              "window.vxcore.placeFreeText(5, 5);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.tool")).toString(),
+           QStringLiteral("freetext"));
+}
+
+// Ink is stored in page space, so a stroke must re-project when the zoom
+// changes -- the same property the highlight quads have.
+void TestPdfViewerCoreJs::inkStrokesProjectToPolylinePoints() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.constructor.inkStrokeToPolylinePoints("
+                                       "  [20, 780, 50, 750], window.__mkViewport(1, 800))"))
+               .toString(),
+           QStringLiteral("20,20 50,50"));
+
+  // Same stroke at 3x zoom: every coordinate scales, nothing drifts.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.constructor.inkStrokeToPolylinePoints("
+                                       "  [20, 780, 50, 750], window.__mkViewport(3, 800))"))
+               .toString(),
+           QStringLiteral("60,60 150,150"));
+
+  // A malformed stroke draws nothing rather than a NaN path.
+  for (const auto &bad :
+       {QStringLiteral("null"), QStringLiteral("[1,2,3]"), QStringLiteral("[0, Infinity]")}) {
+    QCOMPARE(eval(engine, QStringLiteral("window.vxcore.constructor.inkStrokeToPolylinePoints("
+                                         "  %1, window.__mkViewport(1, 800))")
+                              .arg(bad))
+                 .toString(),
+             QString());
+  }
+}
+
+// Two pointers (a palm plus a pen, or two fingers) must not share one stroke.
+// Without pointer ownership the second down overwrites the draft, either
+// pointer's move extends it, and either pointer's up commits it.
+void TestPdfViewerCoreJs::aSecondPointerCannotHijackAnInkStroke() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90, 1);"));
+
+  // A second pointer is refused outright.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.beginInk(300, 300, 2)")).toBool(), false);
+
+  // Its movement does not extend the first pointer's stroke...
+  eval(engine, QStringLiteral("window.vxcore.extendInk(400, 400, 2);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.inkDraft.points.length")).toInt(), 2);
+
+  // ...and its release does not commit it.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.endInk(2)")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 0);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.inkDraft !== null")).toBool());
+
+  // The owning pointer still works.
+  eval(engine, QStringLiteral("window.vxcore.extendInk(200, 150, 1);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.endInk(1)")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
+}
+
+// pointercancel / lostpointercapture mean the gesture did NOT complete. Saving
+// it would persist a stroke the user aborted.
+void TestPdfViewerCoreJs::cancellingAnInkGestureDiscardsIt() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90, 1);"
+                              "window.vxcore.extendInk(200, 150, 1);"
+                              "window.vxcore.abortInk();"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 0);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.inkDraft === null")).toBool());
+
+  // Leaving the tool mid-stroke discards too, rather than committing a
+  // half-drawn scribble.
+  eval(engine, QStringLiteral("window.vxcore.beginInk(140, 90, 1);"
+                              "window.vxcore.extendInk(200, 150, 1);"
+                              "window.vxcore.finishTool();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 0);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.inkDraft === null")).toBool());
+}
+
+// A pen emits 60-240 samples a second. Rebuilding every comment on every page
+// per sample is quadratic in the comment set and visibly freezes the page, so
+// the draft owns a separate node and extendInk() must not touch the rest.
+void TestPdfViewerCoreJs::extendInkDoesNotRebuildExistingComments() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  // Count how often the render path builds comment nodes.
+  QVERIFY(!eval(engine, QStringLiteral(
+                            "window.__renderCalls = 0;"
+                            "window.vxcore.renderQuads = function() { window.__renderCalls++; };"
+                            "window.vxcore.renderInk = function() { window.__renderCalls++; };"
+                            "window.vxcore.renderFreeText = function() { window.__renderCalls++; };"
+                            "window.vxcore.setComments([{ id: 'a', color: 'yellow',"
+                            "  anchor: { type: 'pdf-quads', page: 0,"
+                            "            quads: [[0,0,1,0,1,1,0,1]], text: 'x' } }]);"))
+               .isError());
+
+  const int afterPublish = eval(engine, QStringLiteral("window.__renderCalls")).toInt();
+  QVERIFY2(afterPublish > 0, "publishing a comment set must render it");
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90, 1);"));
+  for (int i = 0; i < 20; ++i) {
+    eval(engine, QStringLiteral("window.vxcore.extendInk(%1, %2, 1);").arg(150 + i).arg(100 + i));
+  }
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__renderCalls")).toInt(), afterPublish);
 }
 
 } // namespace tests

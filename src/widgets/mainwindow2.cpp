@@ -71,6 +71,7 @@
 #include <qwebengineview.h>
 #include <unitedentry/unitedentrymgr.h>
 #include <views/inodeexplorer.h>
+#include <widgets/commentpanel.h>
 #include <widgets/consoleviewer.h>
 #include <widgets/dialogs/exportdialog2.h>
 #include <widgets/locationlist2.h>
@@ -723,6 +724,11 @@ void MainWindow2::setupOutlineViewer() {
   m_outlineViewer = new OutlineViewer(m_serviceLocator, QString(), this);
 }
 
+void MainWindow2::setupCommentPanel() {
+  m_commentPanel = new CommentPanel(m_serviceLocator, this);
+  m_commentPanel->setObjectName("CommentPanel.vnotex");
+}
+
 void MainWindow2::setupTagExplorer() {
   m_tagExplorer = new TagExplorer2(m_serviceLocator, this);
   m_tagExplorer->setObjectName("TagExplorer2.vnotex");
@@ -753,6 +759,8 @@ void MainWindow2::setupDocks() {
   setupNotebookExplorer();
 
   setupOutlineViewer();
+
+  setupCommentPanel();
 
   setupTagExplorer();
 
@@ -868,6 +876,9 @@ void MainWindow2::setupDocks() {
           [this]() {
             auto *win = m_viewArea->getCurrentViewWindow();
             m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
+            // Same re-point contract as the outline: a window type with no
+            // comment support hands back null and the dock simply goes empty.
+            m_commentPanel->setCommentProvider(win ? win->getCommentProvider() : nullptr);
 
             // Keep the OS window title in sync with the current note, and follow renames
             // of the currently-active window. Drop the previous window's connection first.
@@ -968,6 +979,8 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
     return m_notebookExplorer;
   case DockWidgetHelper::DockType::OutlineDock:
     return m_outlineViewer;
+  case DockWidgetHelper::DockType::CommentDock:
+    return m_commentPanel;
   case DockWidgetHelper::DockType::TagDock:
     return m_tagExplorer;
   case DockWidgetHelper::DockType::SnippetDock:

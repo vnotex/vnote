@@ -61,6 +61,29 @@ public:
   // Get palette color by name from current theme.
   QString paletteColor(const QString &p_name) const;
 
+  // Resolve one semantic comment-highlight token (see CommentColor) to a real
+  // CSS color.
+  //
+  // Highlights are painted ON the rendered PDF page, which pdf.js draws from
+  // the document itself and is therefore white (or whatever the PDF says)
+  // regardless of the application theme. The defaults are consequently anchored
+  // to the page, not to the palette — a "yellow" highlight has to stay readable
+  // on paper in all 12 themes. A theme MAY still override any token by defining
+  // `widgets.pdfcomment.<token>` in its palette.json; when it does not, the
+  // built-in translucent default is used.
+  //
+  // Returns a fully RESOLVED color, never an unresolved `@palette#`/`@base#`
+  // token: an unresolved token would be dropped by the CSS parser and the
+  // highlight would render invisible.
+  QString commentHighlightColor(const QString &p_token) const;
+
+  // A `:root { --vx-comment-<token>: <color>; ... }` block covering EVERY token
+  // in CommentColor::all(), for injection into the PDF viewer template.
+  // pdfviewer.css references only these custom properties, so it needs no
+  // literal color of its own and follows a theme switch for free (the template
+  // is force-regenerated and the page reloaded on themeChanged).
+  QString commentHighlightCssVariables() const;
+
   // Get file path of specified file type from current theme.
   QString getFile(Theme::File p_fileType) const;
 

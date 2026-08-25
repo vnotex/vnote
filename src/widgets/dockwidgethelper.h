@@ -28,6 +28,8 @@ public:
     SnippetDock,
     TaskDock,
     OutlineDock,
+    // Order MUST match m_docks; append before MaxDock only.
+    CommentDock,
     ConsoleDock,
     LocationListDock,
     MaxDock
@@ -93,8 +95,7 @@ private:
   };
 
   bool setupDock(DockType p_dockType, const QString &p_title, const QString &p_objectName,
-                 Qt::DockWidgetArea p_area, Qt::DockWidgetAreas p_allowedAreas,
-                 bool p_visible);
+                 Qt::DockWidgetArea p_area, Qt::DockWidgetAreas p_allowedAreas, bool p_visible);
 
   QDockWidget *createDockWidget(DockType p_dockType, const QString &p_title, QWidget *p_parent);
 

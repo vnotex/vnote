@@ -8,7 +8,7 @@
 #include <core/pdfviewerconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
-#include <utils/pathutils.h>
+#include <core/vxpdfscheme.h>
 
 using namespace vnotex;
 
@@ -48,23 +48,23 @@ QString PdfViewWindowController::buildAbsolutePath(const NodeIdentifier &p_nodeI
 }
 
 PdfViewWindowController::PdfUrlState
-PdfViewWindowController::preparePdfUrl(const QString &p_contentPath,
-                                       const QString &p_templatePath) {
+PdfViewWindowController::preparePdfUrl(const QString &p_documentToken) {
   PdfUrlState state;
 
-  if (p_contentPath.isEmpty() || p_templatePath.isEmpty()) {
+  if (p_documentToken.isEmpty()) {
     state.valid = false;
     return state;
   }
 
-  const auto fileUrl = PathUtils::pathToUrl(p_contentPath);
-  // Percent-encode the URL to handle special characters like # + & in file names.
-  const auto encodedUrl = QUrl::toPercentEncoding(fileUrl.toEncoded());
+  const auto documentUrl = VxPdfScheme::documentUrl(p_documentToken);
+  // Percent-encode the whole document URL so the `?file=` value survives the
+  // viewer's own query parsing intact (`:` and `/` must not stay literal).
+  const auto encodedUrl = QUrl::toPercentEncoding(documentUrl);
 
-  auto templateUrl = PathUtils::pathToUrl(p_templatePath);
-  templateUrl.setQuery("file=" + encodedUrl);
+  QUrl viewerUrl(VxPdfScheme::viewerUrl());
+  viewerUrl.setQuery(QStringLiteral("file=") + QString::fromLatin1(encodedUrl));
 
-  state.templateUrl = templateUrl;
+  state.templateUrl = viewerUrl;
   state.valid = true;
   return state;
 }

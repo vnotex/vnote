@@ -30,6 +30,7 @@ namespace vnotex {
 class ServiceLocator;
 class NotebookExplorer2;
 class OutlineViewer;
+class CommentPanel;
 class TagExplorer2;
 class SnippetPanel2;
 class SearchPanel2;
@@ -218,6 +219,8 @@ private:
   // Setup OutlineViewer as dock widget.
   void setupOutlineViewer();
 
+  void setupCommentPanel();
+
   // Setup TagExplorer2 as dock widget.
   void setupTagExplorer();
 
@@ -313,6 +316,8 @@ private:
 
   // OutlineViewer dock widget.
   OutlineViewer *m_outlineViewer = nullptr;
+
+  CommentPanel *m_commentPanel = nullptr;
 
   // TagExplorer2 dock widget.
   TagExplorer2 *m_tagExplorer = nullptr;

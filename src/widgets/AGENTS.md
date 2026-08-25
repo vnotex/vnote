@@ -452,3 +452,34 @@ private:
 - [`../views/AGENTS.md`](../views/AGENTS.md) — Views embedded in widgets
 - [`../gui/AGENTS.md`](../gui/AGENTS.md) — GUI services and utilities used by widgets
 - [`../../AGENTS.md`](../../AGENTS.md) — Architecture overview, MVC rules, ViewArea2 design decisions
+
+## Comment dock (`CommentPanel` + `CommentProvider`)
+
+The comment dock is a deliberate clone of the Outline dock's shape, so that adding comments to a
+second file type needs no dock work at all.
+
+- `ViewWindow2::getCommentProvider()` sits beside `getOutlineProvider()` and returns null by
+  default. `PdfViewWindow2` overrides it; `MainWindow2` re-points the dock on
+  `currentViewWindowChanged` with the same one line as the outline. A window type with no comment
+  support hands back null and the panel simply goes empty and disabled.
+- `CommentProvider` is a pure DATA + SIGNALS object. It holds a `CommentSet` and a selection, and
+  carries the view's intents (`activateRequested`, `textEditRequested`, `colorChangeRequested`,
+  `deleteRequested`) outward. **It never writes the store and holds no service** — every mutation
+  belongs to `CommentController` (`src/controllers/`), per the "views never modify data" rule.
+- `CommentPanel` is a pure view over whatever provider it currently holds. Two details are
+  load-bearing: it guards every programmatic repaint with `m_updating` so a `setPlainText` /
+  `setCurrentIndex` cannot echo an intent straight back, and it **flushes a pending keystroke
+  before switching providers**, or the edit would be applied to a different file's comment.
+- A comment whose `anchor.type` this build does not implement is listed (with an explanatory
+  tooltip) but not rendered on the page. It is still carried through `comments.json` untouched.
+- **The dock is a destination, not an entry point.** Comments are created on the PDF page:
+  select text, right-click, **Highlight ▸ <color>** (`PdfViewer::contextMenuEvent` emits
+  `highlightSelectionRequested`, which `PdfViewWindow2` routes to the adapter). Alt+drag is a
+  shortcut only. If you add comments to another file type, give it a discoverable affordance too —
+  an empty dock with no visible way to fill it reads as a broken feature.
+
+Adding a dock is four edits — `DockType` enum (order must match `m_docks`), `MainWindow2::setup*`,
+`MainWindow2::getDockWidget()`, `DockWidgetHelper::setupDocks()` + `iconFileName()` + an icon in
+`src/data/core/icons/` registered in `core.qrc`.
+
+Store contract: [`../core/services/AGENTS.md` § Comment store](../core/services/AGENTS.md#comment-store-commentsjson).

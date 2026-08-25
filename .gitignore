@@ -41,3 +41,12 @@ resulte.txt
 
 
 .codegraph/
+
+# The vendored pdf.js tree ships its own `build/` directory (pdf.mjs,
+# pdf.worker.mjs, pdf.sandbox.mjs). The broad `build*` rule above matches that
+# directory name too, which silently drops the ESM bundles from every commit and
+# leaves extra.qrc pointing at files a clean checkout does not have. Both lines
+# are required: git does not descend into an excluded directory, so the
+# directory itself has to be re-included before its contents can be.
+!src/data/extra/web/pdf.js/build/
+!src/data/extra/web/pdf.js/build/**

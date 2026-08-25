@@ -2,6 +2,8 @@
 
 #include <QDebug>
 
+#include <core/services/commenttypes.h>
+
 #include "../outlineprovider.h"
 
 using namespace vnotex;
@@ -27,6 +29,16 @@ constexpr int c_maxOutlineEntries = 5000;
 // 64 is far beyond any real PDF outline (the dock's own expand control only
 // goes to 6), and the legitimate producer never emits a skipped level at all.
 constexpr int c_maxOutlineLevel = 64;
+
+// A comment id is a UUID-without-braces (36 chars) minted by C++ and echoed
+// back by the page. Bounded so a hostile echo cannot be used to blow up a log
+// line or a lookup key.
+constexpr int c_maxCommentIdLength = 128;
+
+// Sanity ceiling on a reported page count. Independent of any real PDF limit —
+// it only has to be far above plausible documents and far below "unbounded", so
+// a hostile setDocumentPageCount cannot widen the anchor page check.
+constexpr int c_maxDocumentPages = 100000;
 } // namespace
 
 PdfViewerAdapter::Heading::Heading(const QString &p_name, int p_level)
@@ -54,7 +66,23 @@ PdfViewerAdapter::Heading PdfViewerAdapter::Heading::fromJson(const QJsonObject 
   return Heading(p_obj.value(QStringLiteral("name")).toString(), level, index);
 }
 
-PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent) {}
+PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent) {
+  // The false->true readiness transition is the ONLY point at which a
+  // replacement page's QWebChannel exists, so it is where a latched comment set
+  // has to be published. Without this, a set produced while a reload was in
+  // flight would be silently dropped.
+  connect(this, &WebViewAdapter::ready, this, [this]() {
+    if (m_commentsPublishPending) {
+      m_commentsPublishPending = false;
+      emit commentsUpdated(m_comments);
+    }
+    if (m_toolPublishPending) {
+      m_toolPublishPending = false;
+      emit commentColorChanged(m_commentColor);
+      emit toolChanged(toolToString(m_tool));
+    }
+  });
+}
 
 void PdfViewerAdapter::setUrl(const QString &p_url) {
   // TODO: Not supported yet.
@@ -115,4 +143,172 @@ void PdfViewerAdapter::scrollToOutlineItem(int p_idx) {
     // pendAction() Q_ASSERTs !m_ready, so the branch is required.
     pendAction([this, destIndex]() { emit outlineItemScrollRequested(destIndex); });
   }
+}
+
+// ============ Comments ============
+
+void PdfViewerAdapter::setComments(const QJsonArray &p_comments) {
+  m_comments = p_comments;
+  publishComments();
+}
+
+const QJsonArray &PdfViewerAdapter::getComments() const { return m_comments; }
+
+int PdfViewerAdapter::getDocumentPageCount() const { return m_documentPageCount; }
+
+void PdfViewerAdapter::clearComments() {
+  m_comments = QJsonArray();
+  m_documentPageCount = 0;
+  // Deliberately NOT published: the page this would target is being torn down.
+  // The latch is cleared too, so an empty set cannot be replayed over the
+  // replacement document's real set.
+  m_commentsPublishPending = false;
+
+  // The TOOL is not document state -- the toolbar still shows whatever the user
+  // armed -- so the replacement page has to be told about it, or the toggle
+  // would look pressed while the page sat in reading mode.
+  m_toolPublishPending = true;
+}
+
+void PdfViewerAdapter::publishComments() {
+  if (isReady()) {
+    emit commentsUpdated(m_comments);
+    return;
+  }
+  // Latch, do NOT queue: only the newest set matters, and pendAction would
+  // replay every intermediate snapshot on the next ready transition.
+  m_commentsPublishPending = true;
+}
+
+void PdfViewerAdapter::scrollToComment(const QString &p_id) {
+  if (p_id.isEmpty() || p_id.size() > c_maxCommentIdLength) {
+    return;
+  }
+  if (isReady()) {
+    emit commentScrollRequested(p_id);
+  } else {
+    pendAction([this, p_id]() { emit commentScrollRequested(p_id); });
+  }
+}
+
+void PdfViewerAdapter::captureSelection(const QString &p_color) {
+  const QString color = CommentColor::isValid(p_color) ? p_color : CommentColor::defaultToken();
+  // Deliberately NOT queued when the page is not ready: a selection only exists
+  // in a live document, so replaying this after a reload would act on whatever
+  // happened to be selected in the REPLACEMENT document.
+  if (isReady()) {
+    emit captureSelectionRequested(color);
+  }
+}
+
+QString PdfViewerAdapter::toolToString(Tool p_tool) {
+  switch (p_tool) {
+  case Tool::Highlight:
+    return QStringLiteral("highlight");
+  case Tool::Ink:
+    return QStringLiteral("ink");
+  case Tool::FreeText:
+    return QStringLiteral("freetext");
+  case Tool::None:
+    break;
+  }
+  return QStringLiteral("none");
+}
+
+void PdfViewerAdapter::setTool(Tool p_tool) {
+  if (m_tool == p_tool) {
+    return;
+  }
+  m_tool = p_tool;
+  publishTool();
+}
+
+PdfViewerAdapter::Tool PdfViewerAdapter::getTool() const { return m_tool; }
+
+void PdfViewerAdapter::setCommentColor(const QString &p_color) {
+  const QString color = CommentColor::isValid(p_color) ? p_color : CommentColor::defaultToken();
+  if (m_commentColor == color) {
+    return;
+  }
+  m_commentColor = color;
+  publishTool();
+}
+
+const QString &PdfViewerAdapter::getCommentColor() const { return m_commentColor; }
+
+void PdfViewerAdapter::publishTool() {
+  if (isReady()) {
+    emit commentColorChanged(m_commentColor);
+    emit toolChanged(toolToString(m_tool));
+    return;
+  }
+  // Latch, do NOT queue: only the newest tool/colour matters, and pendAction
+  // would replay every intermediate toggle on the next ready transition.
+  m_toolPublishPending = true;
+}
+
+void PdfViewerAdapter::notifyToolFinished() {
+  // The web side left the tool on its own (Esc, or a one-shot tool completing).
+  // Mirror it locally so the adapter and the toolbar cannot disagree.
+  m_tool = Tool::None;
+  emit toolFinished();
+}
+
+void PdfViewerAdapter::setDocumentPageCount(int p_pageCount) {
+  // Untrusted. A negative or absurd count would widen the anchor page bound
+  // that requestAddComment() relies on.
+  m_documentPageCount = (p_pageCount > 0 && p_pageCount <= c_maxDocumentPages) ? p_pageCount : 0;
+}
+
+void PdfViewerAdapter::requestAddComment(const QJsonObject &p_anchor, const QString &p_color) {
+  // Every field below arrives from the page and is therefore hostile input.
+  //
+  // Only a type this build can RENDER may be minted here. An unknown type is
+  // carried through from the store untouched, but the web side must never be
+  // able to invent one.
+  if (!isKnownAnchorType(p_anchor)) {
+    qWarning() << "PdfViewerAdapter: rejected comment anchor of unsupported type"
+               << p_anchor.value(QStringLiteral("type")).toString();
+    return;
+  }
+
+  if (!isAnchorStructurallyValid(p_anchor)) {
+    qWarning() << "PdfViewerAdapter: rejected structurally invalid comment anchor";
+    return;
+  }
+
+  // The per-type validators bound the page to >= 0 only; the real ceiling is the
+  // loaded document, which the web side reported on 'documentloaded'.
+  const int page = anchorPage(p_anchor);
+  if (m_documentPageCount <= 0 || page < 0 || page >= m_documentPageCount) {
+    qWarning() << "PdfViewerAdapter: rejected comment anchor on page" << page << "of"
+               << m_documentPageCount;
+    return;
+  }
+
+  QJsonObject anchor = p_anchor;
+  if (anchor.value(QStringLiteral("type")).toString() == PdfQuadsAnchor::type()) {
+    // Re-truncate rather than reject: an over-long selection is a plausible user
+    // action, not an attack, and losing the tail is better than losing the note.
+    anchor.insert(QStringLiteral("text"),
+                  PdfQuadsAnchor::text(p_anchor).left(PdfQuadsAnchor::maxAnchorTextLength()));
+  }
+
+  const QString color = CommentColor::isValid(p_color) ? p_color : CommentColor::defaultToken();
+
+  emit addCommentRequested(anchor, color);
+}
+
+void PdfViewerAdapter::requestSelectComment(const QString &p_id) {
+  if (p_id.isEmpty() || p_id.size() > c_maxCommentIdLength) {
+    return;
+  }
+  emit selectCommentRequested(p_id);
+}
+
+void PdfViewerAdapter::requestDeleteComment(const QString &p_id) {
+  if (p_id.isEmpty() || p_id.size() > c_maxCommentIdLength) {
+    return;
+  }
+  emit deleteCommentRequested(p_id);
 }

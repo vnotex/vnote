@@ -37,6 +37,7 @@ class EditReadDiscardAction;
 class EncodingButton;
 class FloatingWidget;
 class OutlineProvider;
+class CommentProvider;
 class ServiceLocator;
 class StatusWidget;
 class FindAndReplaceWidget2;
@@ -90,6 +91,11 @@ public:
   // Updates the buffer's NodeIdentifier and emits nameChanged() to refresh tab title.
   void onNodeRenamed(const NodeIdentifier &p_newNodeId);
 
+  // Hook for subclasses that hold per-file state keyed by NodeIdentifier (the
+  // comment store, for one) and must follow a rename/move. Called by
+  // onNodeRenamed() AFTER the buffer has been retargeted.
+  virtual void handleNodeRetargeted(const NodeIdentifier &p_newNodeId);
+
   // ============ Window Identity ============
 
   // Get the view area window ID assigned when this window was added to ViewArea2.
@@ -111,6 +117,12 @@ public:
   // Get the outline provider for this window (nullptr if not supported).
   // Subclasses that support outlines (e.g., MarkdownViewWindow2) override this.
   virtual QSharedPointer<OutlineProvider> getOutlineProvider() const;
+
+  // Per-file comments, for the comment dock. Null when this window type has no
+  // comment support (the default). Deliberately mirrors getOutlineProvider() so
+  // MainWindow2 can re-point the dock on currentViewWindowChanged with the same
+  // three lines, and a future Markdown implementation needs no dock rework.
+  virtual QSharedPointer<CommentProvider> getCommentProvider() const;
 
   // ============ Mode ============
 

@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include <core/services/commenttypes.h>
 #include <core/theme.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/themeutils.h>
@@ -49,6 +50,12 @@ private slots:
   void interfaceQssStylesMutedText();
   void mutedTextIsReadable_data();
   void mutedTextIsReadable();
+
+  void commentHighlightColorsAreDefinedForEveryToken_data();
+  void commentHighlightColorsAreDefinedForEveryToken();
+  void commentHighlightCssVariablesAreFullyResolved_data();
+  void commentHighlightCssVariablesAreFullyResolved();
+  void commentHighlightColorFallsBackForAnUnknownToken();
 
 private:
   QString m_themeFolder;
@@ -543,6 +550,83 @@ void TestThemeService::mutedTextIsReadable() {
                           .arg(themeName)
                           .arg(mutedRatio, 0, 'f', 2)
                           .arg(normalRatio, 0, 'f', 2)));
+}
+
+// ============ Comment highlight colors ============
+//
+// pdfviewer.css is linked VERBATIM into the PDF viewer template and is NOT
+// processed by the theme token resolver, so it can only reference CSS custom
+// properties. These cases pin the two halves of that contract: every schema
+// token gets a mapping, and what is injected is a RESOLVED color rather than an
+// unresolved `@palette#` / `@base#` token (which the CSS parser would silently
+// drop, leaving the highlight invisible).
+
+void TestThemeService::commentHighlightColorsAreDefinedForEveryToken_data() {
+  addBundledThemeRows();
+}
+
+void TestThemeService::commentHighlightColorsAreDefinedForEveryToken() {
+  QFETCH(QString, themeName);
+
+  auto cfg = makeConfig();
+  cfg.themeName = themeName;
+  vnotex::ThemeService svc(cfg);
+
+  const auto tokens = vnotex::CommentColor::all();
+  QVERIFY2(!tokens.isEmpty(), "the color schema is empty; the gate would be vacuous");
+
+  for (const auto &token : tokens) {
+    const auto color = svc.commentHighlightColor(token);
+    QVERIFY2(
+        !color.isEmpty(),
+        qPrintable(QStringLiteral("theme %1 has no color for token %2").arg(themeName, token)));
+    QVERIFY2(!color.contains(QLatin1Char('@')),
+             qPrintable(QStringLiteral("theme %1 leaves token %2 unresolved: %3")
+                            .arg(themeName, token, color)));
+    QVERIFY2(QColor::isValidColorName(color) || color.startsWith(QStringLiteral("rgba(")) ||
+                 color.startsWith(QStringLiteral("rgb(")) || color.startsWith(QLatin1Char('#')),
+             qPrintable(QStringLiteral("theme %1 token %2 is not a CSS color: %3")
+                            .arg(themeName, token, color)));
+  }
+}
+
+void TestThemeService::commentHighlightCssVariablesAreFullyResolved_data() {
+  addBundledThemeRows();
+}
+
+void TestThemeService::commentHighlightCssVariablesAreFullyResolved() {
+  QFETCH(QString, themeName);
+
+  auto cfg = makeConfig();
+  cfg.themeName = themeName;
+  vnotex::ThemeService svc(cfg);
+
+  const auto css = svc.commentHighlightCssVariables();
+  QVERIFY(css.startsWith(QStringLiteral(":root {")));
+  QVERIFY2(
+      !css.contains(QLatin1Char('@')),
+      qPrintable(QStringLiteral("theme %1 injects unresolved tokens:\n%2").arg(themeName, css)));
+  // Would let a palette value inject markup into the template.
+  QVERIFY(!css.contains(QStringLiteral("</style>"), Qt::CaseInsensitive));
+
+  for (const auto &token : vnotex::CommentColor::all()) {
+    QVERIFY2(
+        css.contains(QStringLiteral("--vx-comment-%1:").arg(token)),
+        qPrintable(QStringLiteral("theme %1 is missing --vx-comment-%2").arg(themeName, token)));
+  }
+  // The selection ring is VNote chrome and follows the palette, so it is part
+  // of the same block.
+  QVERIFY(css.contains(QStringLiteral("--vx-comment-selected-outline:")));
+}
+
+void TestThemeService::commentHighlightColorFallsBackForAnUnknownToken() {
+  vnotex::ThemeService svc(makeConfig());
+
+  // A hand-edited or newer-schema comments.json must never render unstyled.
+  const auto fallback = svc.commentHighlightColor(vnotex::CommentColor::defaultToken());
+  QCOMPARE(svc.commentHighlightColor(QStringLiteral("chartreuse")), fallback);
+  QCOMPARE(svc.commentHighlightColor(QStringLiteral("#ff00ff")), fallback);
+  QCOMPARE(svc.commentHighlightColor(QString()), fallback);
 }
 
 } // namespace tests

@@ -1361,7 +1361,7 @@ add_qt_test(test_pdfvieweradapter_outline
 )
 
 # JS half of the PDF outline contract, evaluated with QJSEngine against the REAL
-# src/data/extra/web/pdf.js/{pdfviewercore.js,pdfviewer.js}. This is the only
+# src/data/extra/web/pdf.js/{pdfviewercore.js,pdfviewer.mjs}. This is the only
 # gate covering the two bugs the outline design exists to prevent (a lossy
 # {name, level} wire format, and an adapter-presence guard that discards the
 # outline when the PDF loads before the QWebChannel callback runs).
@@ -1456,4 +1456,38 @@ add_qt_test(test_stickerdragoverlay
     test_stickerdragoverlay.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/stickerdragoverlay.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/stickerdraggeometry.cpp
+)
+
+# C++ half of the comment bridge: QWebChannel-facing bounds/validation, plus the
+# reload latch that makes a set published mid-reload arrive exactly once on the
+# replacement page.
+add_qt_test(test_pdfvieweradapter_comments
+  SOURCES
+    test_pdfvieweradapter_comments.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+# Comment dock. NOT GUILESS: the panel is a real widget and the debounce/flush
+# contract only means anything against real Qt widgets and a real event loop.
+add_qt_test(test_commentpanel
+  SOURCES
+    test_commentpanel.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/commentpanel.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/commentprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+  LINKS
+    core_services
+    vxcore
+    VTextEdit
+)
+target_include_directories(test_commentpanel PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )

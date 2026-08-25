@@ -60,9 +60,7 @@ QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale) 
   return PathUtils::dirName(p_folder);
 }
 
-Theme *Theme::fromFolder(const QString &p_folder) {
-  return fromFolder(p_folder, nullptr);
-}
+Theme *Theme::fromFolder(const QString &p_folder) { return fromFolder(p_folder, nullptr); }
 
 Theme *Theme::fromFolder(const QString &p_folder, PalettePreprocessor p_preprocessor) {
   Q_ASSERT(!p_folder.isEmpty());
@@ -327,6 +325,11 @@ QString Theme::paletteColor(const QString &p_name) const {
   return QString();
 }
 
+QString Theme::optionalPaletteColor(const QString &p_name) const {
+  const auto val = findValueByKeyPath(m_palette, p_name).toString();
+  return (!val.isEmpty() && !isRef(val)) ? val : QString();
+}
+
 QJsonObject Theme::readJsonFile(const QString &p_filePath) {
   QByteArray bytes;
   Error err = FileUtils2::readFile(p_filePath, &bytes);
@@ -416,4 +419,3 @@ QString Theme::getMarkdownEditorHighlightTheme() const {
 }
 
 QString Theme::name() const { return PathUtils::dirName(m_themeFolderPath); }
-

@@ -42,20 +42,25 @@
 //
 // === The locale list ===
 // The vendored locale set exists in THREE places: the folders under
-// web/pdf.js/web/locale/, the <file> entries in extra.qrc, and the
-// "[tag] / @import url(tag/viewer.properties)" pairs in the VNote-generated
-// web/locale/locale.properties (which pdf-viewer-template.html loads via
-// <link rel="resource" type="application/l10n">). The disk<->qrc slots below
-// cover the first two; localePropertiesMatchesVendoredLocales() covers the
-// third, because a folder shipped but not imported is silently never loaded and
-// an import with no folder 404s inside the page — the same silent-404 class this
-// file exists to eliminate.
+// web/pdf.js/web/locale/, the <file> entries in extra.qrc, and the entries of
+// the VNote-trimmed web/locale/locale.json manifest (which
+// pdf-viewer-template.html loads via <link rel="resource" type="application/l10n">).
+// The disk<->qrc slots below cover the first two; localeJsonMatchesVendoredLocales()
+// covers the third, because a folder shipped but not listed is silently never
+// loaded and an entry with no file 404s inside the page — the same silent-404
+// class this file exists to eliminate.
+//
+// pdf.js v6 replaced v3's `locale.properties` (INI sections + @import) with a flat
+// JSON map of LOWERCASED tag -> "<Tag>/viewer.ftl" (Fluent). This test was
+// rewritten for that format, not carried forward.
 
 #include <algorithm>
 
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSet>
 #include <QString>
@@ -71,7 +76,7 @@ class TestExtraQrcCoverage : public QObject {
 private slots:
   void everyPdfJsFileIsInQrc();
   void everyPdfJsQrcEntryExistsOnDisk();
-  void localePropertiesMatchesVendoredLocales();
+  void localeJsonMatchesVendoredLocales();
   void latexThemeFilesMatchQrc_data();
   void latexThemeFilesMatchQrc();
 
@@ -128,7 +133,8 @@ bool TestExtraQrcCoverage::isRuntimeFile(const QString &p_relPath) {
   // *.min.js ⇒ VNote loads the non-minified builds (see
   // PdfViewerConfig::defaultViewerResource), so a minified variant shipped
   // alongside would be dead weight in the .rcc.
-  if (p_relPath.endsWith(QLatin1String(".min.js"))) {
+  if (p_relPath.endsWith(QLatin1String(".min.js")) ||
+      p_relPath.endsWith(QLatin1String(".min.mjs"))) {
     return false;
   }
 
@@ -257,11 +263,11 @@ void TestExtraQrcCoverage::everyPdfJsQrcEntryExistsOnDisk() {
                      .arg(dangling.size())));
 }
 
-// The third copy of the locale list. Shipping a locale folder that
-// locale.properties does not import means it is silently never loaded; importing
-// one that does not exist 404s inside the WebEngine page. Neither shows up in the
-// build or in the two slots above.
-void TestExtraQrcCoverage::localePropertiesMatchesVendoredLocales() {
+// The third copy of the locale list. Shipping a locale folder that locale.json
+// does not list means it is silently never loaded; listing one that does not
+// exist 404s inside the WebEngine page. Neither shows up in the build or in the
+// two slots above.
+void TestExtraQrcCoverage::localeJsonMatchesVendoredLocales() {
   const QString localeDir =
       dataRoot() + QLatin1Char('/') + QLatin1String(c_pdfJsPrefix) + QStringLiteral("web/locale");
   const QDir dir(localeDir);
@@ -273,47 +279,58 @@ void TestExtraQrcCoverage::localePropertiesMatchesVendoredLocales() {
   }
   QVERIFY2(!onDisk.isEmpty(), "no vendored locale folders; the gate would be vacuous");
 
-  QFile f(dir.filePath(QStringLiteral("locale.properties")));
-  QVERIFY2(f.open(QIODevice::ReadOnly | QIODevice::Text),
+  QFile f(dir.filePath(QStringLiteral("locale.json")));
+  QVERIFY2(f.open(QIODevice::ReadOnly),
            qPrintable(QStringLiteral("cannot open %1").arg(f.fileName())));
 
-  // e.g.  [zh-CN]
-  static const QRegularExpression tagRe(QStringLiteral("^\\s*\\[([^\\]]+)\\]\\s*$"));
-  // e.g.  @import url(zh-CN/viewer.properties)
-  static const QRegularExpression importRe(QStringLiteral("^\\s*@import\\s+url\\(([^)]+)\\)\\s*$"));
+  QJsonParseError parseError{};
+  const auto doc = QJsonDocument::fromJson(f.readAll(), &parseError);
+  QVERIFY2(parseError.error == QJsonParseError::NoError,
+           qPrintable(
+               QStringLiteral("locale.json is not valid JSON: %1").arg(parseError.errorString())));
+  QVERIFY2(doc.isObject(), "locale.json must be a JSON object of tag -> <Tag>/viewer.ftl");
+
+  const QJsonObject manifest = doc.object();
+  QVERIFY2(!manifest.isEmpty(), "locale.json is empty; the gate would be vacuous");
+
+  // en-US is Fluent's fallback locale: trimming it would leave every untranslated
+  // string blank rather than English.
+  QVERIFY2(manifest.contains(QStringLiteral("en-us")),
+           "locale.json must keep the en-US fallback locale");
 
   QSet<QString> declared;
-  QStringList badImports;
-  QTextStream ts(&f);
-  while (!ts.atEnd()) {
-    const QString line = ts.readLine();
-
-    const auto tagMatch = tagRe.match(line);
-    if (tagMatch.hasMatch()) {
-      declared.insert(tagMatch.captured(1).trimmed());
+  QStringList badEntries;
+  QStringList badKeys;
+  for (auto it = manifest.constBegin(); it != manifest.constEnd(); ++it) {
+    const QString rel = it.value().toString();
+    if (rel.isEmpty() || !rel.endsWith(QStringLiteral("/viewer.ftl"))) {
+      badEntries.append(it.key() + QStringLiteral(" -> ") + rel);
+      continue;
+    }
+    if (!QFile::exists(dir.filePath(rel))) {
+      badEntries.append(rel);
       continue;
     }
 
-    const auto importMatch = importRe.match(line);
-    if (importMatch.hasMatch()) {
-      const QString rel = importMatch.captured(1).trimmed();
-      if (!QFile::exists(dir.filePath(rel))) {
-        badImports.append(rel);
-      }
+    const QString folder = rel.left(rel.size() - QStringLiteral("/viewer.ftl").size());
+    // pdf.js looks the manifest up by a lowercased tag; a mixed-case key would
+    // simply never match and the locale would silently never load.
+    if (it.key() != folder.toLower()) {
+      badKeys.append(it.key() + QStringLiteral(" (folder ") + folder + QLatin1Char(')'));
     }
+    declared.insert(folder);
   }
 
-  badImports.sort();
-  if (!badImports.isEmpty()) {
-    qWarning() << "locale.properties imports that do not resolve on disk:";
-    for (const QString &b : badImports) {
-      qWarning().noquote() << "  " << b;
-    }
-  }
-  QVERIFY2(badImports.isEmpty(),
-           qPrintable(QStringLiteral("%1 @import(s) in web/pdf.js/web/locale/locale.properties do "
-                                     "not exist on disk; they 404 inside the viewer page.")
-                          .arg(badImports.size())));
+  badEntries.sort();
+  badKeys.sort();
+  QVERIFY2(badEntries.isEmpty(),
+           qPrintable(QStringLiteral("locale.json entr(ies) that are malformed or do not exist "
+                                     "on disk (they 404 inside the viewer page): %1")
+                          .arg(badEntries.join(QStringLiteral(", ")))));
+  QVERIFY2(badKeys.isEmpty(),
+           qPrintable(QStringLiteral("locale.json key(s) are not the lowercased folder name, so "
+                                     "pdf.js can never match them: %1")
+                          .arg(badKeys.join(QStringLiteral(", ")))));
 
   QStringList notDeclared = (onDisk - declared).values();
   QStringList notVendored = (declared - onDisk).values();
@@ -321,12 +338,11 @@ void TestExtraQrcCoverage::localePropertiesMatchesVendoredLocales() {
   notVendored.sort();
 
   QVERIFY2(notDeclared.isEmpty(),
-           qPrintable(QStringLiteral("locale folder(s) vendored but not imported by "
-                                     "locale.properties (silently never loaded): %1")
+           qPrintable(QStringLiteral("locale folder(s) vendored but not listed in "
+                                     "locale.json (silently never loaded): %1")
                           .arg(notDeclared.join(QStringLiteral(", ")))));
   QVERIFY2(notVendored.isEmpty(),
-           qPrintable(QStringLiteral("locale.properties declares locale(s) with no vendored "
-                                     "folder: %1")
+           qPrintable(QStringLiteral("locale.json lists locale(s) with no vendored folder: %1")
                           .arg(notVendored.join(QStringLiteral(", ")))));
 }
 

@@ -14,7 +14,10 @@
 #include <core/error.h>
 #include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
+#include <core/pdfviewerconfig.h>
+#include <core/services/commenttypes.h>
 #include <core/services/configcoreservice.h>
+#include <core/webresource.h>
 #include <utils/fileutils2.h>
 
 #include <temp_dir_fixture.h>
@@ -54,6 +57,11 @@ private slots:
   void testTableMigration_addsTableAndKeepsOtherChoices();
   void testTableMigration_leavesABlanketOptOutAlone();
   void testTableMigration_doesNotRunOnTheSameOrANewerVersion();
+  void testPdfJsMigration_persistedListWinsOverTheCppDefault();
+  void testPdfJsMigration_resetsTheV3ScriptListInMemoryAndOnSave();
+  void testPdfJsMigration_doesNotRunOnTheSameOrANewerVersion();
+  void testPdfJsMigration_realUpgradeRewritesTheConfigFile();
+  void testPdfCommentColor_defaultsAndRoundTrips();
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
 
@@ -889,6 +897,228 @@ void TestConfigMgr2::testAnUnreadableConfigIsNeverOverwritten() {
     QTest::qWait(700);
   }
   QCOMPARE(onDiskBytes(), notAnObject);
+}
+
+// ============ pdf.js v6 migration (4.6.0) ============
+
+namespace {
+
+// The exact `editor.pdf_viewer.viewerResource` object every pre-4.6.0
+// installation has on disk (pdf.js v3.11.174, classic scripts).
+QJsonObject legacyPdfViewerResourceJson() {
+  auto makeResource = [](const QString &p_name, const QStringList &p_scripts,
+                         const QStringList &p_styles) {
+    QJsonObject obj;
+    obj[QStringLiteral("name")] = p_name;
+    obj[QStringLiteral("enabled")] = true;
+    obj[QStringLiteral("scripts")] = QJsonArray::fromStringList(p_scripts);
+    obj[QStringLiteral("styles")] = QJsonArray::fromStringList(p_styles);
+    return obj;
+  };
+
+  QJsonArray resources;
+  resources.append(makeResource(
+      QStringLiteral("built_in"),
+      {QStringLiteral("web/js/qwebchannel.js"), QStringLiteral("web/js/eventemitter.js"),
+       QStringLiteral("web/js/utils.js"), QStringLiteral("web/js/vxcore.js"),
+       QStringLiteral("web/pdf.js/pdfviewercore.js")},
+      {}));
+  resources.append(makeResource(
+      QStringLiteral("pdf.js"),
+      {QStringLiteral("web/pdf.js/build/pdf.js"), QStringLiteral("web/pdf.js/web/viewer.js")},
+      {QStringLiteral("web/pdf.js/web/viewer.css")}));
+  resources.append(makeResource(QStringLiteral("pdf_viewer"),
+                                {QStringLiteral("web/pdf.js/pdfviewer.js")},
+                                {QStringLiteral("web/pdf.js/pdfviewer.css")}));
+
+  QJsonObject viewerResource;
+  viewerResource[QStringLiteral("template")] =
+      QStringLiteral("web/pdf.js/web/pdf-viewer-template.html");
+  viewerResource[QStringLiteral("resources")] = resources;
+
+  QJsonObject section;
+  section[QStringLiteral("viewerResource")] = viewerResource;
+  return section;
+}
+
+QStringList allScripts(const WebResource &p_resource) {
+  QStringList out;
+  for (const auto &r : p_resource.m_resources) {
+    out += r.m_scripts;
+  }
+  return out;
+}
+
+} // namespace
+
+// The load-bearing precondition of the whole migration: WebResource::init takes
+// the persisted object WHOLESALE. If this ever stopped being true the override
+// below could be relaxed; while it IS true, the override is mandatory.
+void TestConfigMgr2::testPdfJsMigration_persistedListWinsOverTheCppDefault() {
+  MainConfig config(m_configMgr);
+  auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+  pdfConfig.fromJson(legacyPdfViewerResourceJson());
+
+  const auto scripts = allScripts(pdfConfig.getViewerResource());
+  QVERIFY2(scripts.contains(QStringLiteral("web/pdf.js/build/pdf.js")),
+           "the persisted v3 list must survive fromJson, or this test proves nothing");
+  QVERIFY(!scripts.contains(QStringLiteral("web/pdf.js/build/pdf.mjs")));
+}
+
+void TestConfigMgr2::testPdfJsMigration_resetsTheV3ScriptListInMemoryAndOnSave() {
+  MainConfig config(m_configMgr);
+  auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+  pdfConfig.fromJson(legacyPdfViewerResourceJson());
+  config.doVersionSpecificOverride(QStringLiteral("4.5.0"));
+
+  const auto scripts = allScripts(pdfConfig.getViewerResource());
+  // The v3 entries are gone...
+  QVERIFY2(
+      !scripts.contains(QStringLiteral("web/pdf.js/build/pdf.js")),
+      qPrintable(
+          QStringLiteral("stale v3 script survived: %1").arg(scripts.join(QStringLiteral(", ")))));
+  QVERIFY(!scripts.contains(QStringLiteral("web/pdf.js/web/viewer.js")));
+  QVERIFY(!scripts.contains(QStringLiteral("web/pdf.js/pdfviewer.js")));
+  // ...and the v6 ones are in.
+  QVERIFY(scripts.contains(QStringLiteral("web/pdf.js/build/pdf.mjs")));
+  QVERIFY(scripts.contains(QStringLiteral("web/pdf.js/web/viewer.mjs")));
+  QVERIFY(scripts.contains(QStringLiteral("web/pdf.js/pdfviewer.mjs")));
+
+  // The reset must also be what gets PERSISTED, or the next launch reloads v3.
+  const QString persisted =
+      QString::fromUtf8(QJsonDocument(pdfConfig.toJson()).toJson(QJsonDocument::Compact));
+  QVERIFY2(persisted.contains(QStringLiteral("web/pdf.js/build/pdf.mjs")), qPrintable(persisted));
+  QVERIFY2(!persisted.contains(QStringLiteral("web/pdf.js/build/pdf.js\"")), qPrintable(persisted));
+}
+
+void TestConfigMgr2::testPdfJsMigration_doesNotRunOnTheSameOrANewerVersion() {
+  MainConfig config(m_configMgr);
+  auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+  pdfConfig.fromJson(legacyPdfViewerResourceJson());
+
+  config.doVersionSpecificOverride(QStringLiteral("4.6.0"));
+  QVERIFY(allScripts(pdfConfig.getViewerResource())
+              .contains(QStringLiteral("web/pdf.js/build/pdf.js")));
+
+  config.doVersionSpecificOverride(QStringLiteral("4.7.0"));
+  QVERIFY(allScripts(pdfConfig.getViewerResource())
+              .contains(QStringLiteral("web/pdf.js/build/pdf.js")));
+}
+
+// The three cases above drive doVersionSpecificOverride() directly. This one
+// drives the PRODUCTION path end to end — an old vnotex.json on disk, a real
+// ConfigMgr2::init() + initAfterQtAppStarted(), and the debounced write back —
+// because that wiring (m_versionChanged, override-before-stamp, MainConfig::update)
+// is what actually has to reach an upgrading user, and none of it is exercised
+// by constructing a MainConfig by hand.
+void TestConfigMgr2::testPdfJsMigration_realUpgradeRewritesTheConfigFile() {
+  resetInstalledExtraData();
+
+  // A complete pre-4.6.0 vnotex.json: an old version stamp plus the v3 script list.
+  QJsonObject metadata;
+  metadata[QStringLiteral("version")] = QStringLiteral("4.5.0");
+  QJsonObject editor;
+  editor[QStringLiteral("pdf_viewer")] = legacyPdfViewerResourceJson();
+  QJsonObject mainConfig;
+  mainConfig[QStringLiteral("metadata")] = metadata;
+  mainConfig[QStringLiteral("editor")] = editor;
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"),
+                                               mainConfig));
+
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const QString fixture = buildExtraDataFixture(tmp);
+
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(fixture);
+    mgr.init();
+    QVERIFY2(mgr.isVersionChanged(), "the fixture did not produce a version change");
+
+    // The persisted v3 list must have been loaded, or the migration below would
+    // be proving nothing.
+    QVERIFY(allScripts(mgr.getConfig().getEditorConfig().getPdfViewerConfig().getViewerResource())
+                .contains(QStringLiteral("web/pdf.js/build/pdf.js")));
+
+    mgr.initAfterQtAppStarted();
+
+    QCOMPARE(mgr.getConfig().getVersion(), ConfigMgr2::getApplicationVersion());
+    const auto scripts =
+        allScripts(mgr.getConfig().getEditorConfig().getPdfViewerConfig().getViewerResource());
+    QVERIFY(!scripts.contains(QStringLiteral("web/pdf.js/build/pdf.js")));
+    QVERIFY(scripts.contains(QStringLiteral("web/pdf.js/build/pdf.mjs")));
+
+    // MainConfig::update() goes through ConfigMgr2's debounced writer, so the
+    // file only changes once the timer fires.
+    QTest::qWait(1500);
+  }
+
+  // Reload from disk exactly as the next launch would.
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  QVERIFY2(!persisted.isEmpty(), "the upgraded config was never written back");
+  QCOMPARE(MainConfig::peekVersion(persisted), ConfigMgr2::getApplicationVersion());
+
+  ConfigMgr2 reloaded(m_configService);
+  reloaded.init();
+  const auto reloadedScripts =
+      allScripts(reloaded.getConfig().getEditorConfig().getPdfViewerConfig().getViewerResource());
+  QVERIFY2(!reloadedScripts.contains(QStringLiteral("web/pdf.js/build/pdf.js")),
+           qPrintable(QStringLiteral("the v3 list came back from disk: %1")
+                          .arg(reloadedScripts.join(QStringLiteral(", ")))));
+  QVERIFY(reloadedScripts.contains(QStringLiteral("web/pdf.js/build/pdf.mjs")));
+  QVERIFY(reloadedScripts.contains(QStringLiteral("web/pdf.js/web/viewer.mjs")));
+  QVERIFY(reloadedScripts.contains(QStringLiteral("web/pdf.js/pdfviewer.mjs")));
+  // And a second launch must not be treated as another upgrade.
+  QVERIFY(!reloaded.isVersionChanged());
+}
+
+// The authoring colour is persisted so the toolbar comes back armed the way it
+// was left. It is a semantic token, never a literal colour, and an absent or
+// invalid value must fall back to the default rather than render unstyled --
+// which is also what makes it safe to add without a config migration.
+void TestConfigMgr2::testPdfCommentColor_defaultsAndRoundTrips() {
+  {
+    MainConfig config(m_configMgr);
+    auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+    // Absent key -> C++ default.
+    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+    pdfConfig.fromJson(QJsonObject());
+    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+
+    // Valid token round-trips through toJson/fromJson.
+    pdfConfig.setCommentColor(QStringLiteral("purple"));
+    QCOMPARE(pdfConfig.getCommentColor(), QStringLiteral("purple"));
+
+    MainConfig reloaded(m_configMgr);
+    auto &reloadedPdf = reloaded.getEditorConfig().getPdfViewerConfig();
+    reloadedPdf.fromJson(pdfConfig.toJson());
+    QCOMPARE(reloadedPdf.getCommentColor(), QStringLiteral("purple"));
+  }
+
+  {
+    // An invalid or literal colour is ignored, so a hand-edited config cannot
+    // produce an unstyled highlight.
+    MainConfig config(m_configMgr);
+    auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("commentColor"), QStringLiteral("#ff00ff"));
+    pdfConfig.fromJson(obj);
+    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+
+    obj.insert(QStringLiteral("commentColor"), QStringLiteral("chartreuse"));
+    pdfConfig.fromJson(obj);
+    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+
+    // The setter refuses one too, rather than storing it.
+    pdfConfig.setCommentColor(QStringLiteral("not-a-token"));
+    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+  }
 }
 
 } // namespace tests

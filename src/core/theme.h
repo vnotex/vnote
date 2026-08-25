@@ -34,6 +34,11 @@ public:
 
   QString paletteColor(const QString &p_name) const;
 
+  // Probe for an OPTIONAL palette key. Unlike paletteColor() this does not warn
+  // when the key is absent, so a caller with a legitimate built-in fallback (the
+  // PDF comment highlight colors) does not spam the log on every lookup.
+  QString optionalPaletteColor(const QString &p_name) const;
+
   // Get the file path of @p_fileType if exists.
   QString getFile(File p_fileType) const;
 

@@ -2,6 +2,8 @@
 
 #include "mainconfig.h"
 
+#include "services/commenttypes.h"
+
 #define READSTR(key) readString(appObj, userObj, (key))
 #define READBOOL(key) readBool(appObj, userObj, (key))
 #define READINT(key) readInt(appObj, userObj, (key))
@@ -14,12 +16,31 @@ PdfViewerConfig::PdfViewerConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
   initDefaults();
 }
 
-void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) { loadViewerResource(p_jobj); }
+void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) {
+  loadViewerResource(p_jobj);
+
+  // Absent key keeps the C++ default, which is what makes this safe to add
+  // without a config migration.
+  const auto color = p_jobj.value(QStringLiteral("commentColor")).toString();
+  if (CommentColor::isValid(color)) {
+    m_commentColor = color;
+  }
+}
 
 QJsonObject PdfViewerConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("viewerResource")] = saveViewerResource();
+  obj[QStringLiteral("commentColor")] = m_commentColor;
   return obj;
+}
+
+const QString &PdfViewerConfig::getCommentColor() const { return m_commentColor; }
+
+void PdfViewerConfig::setCommentColor(const QString &p_color) {
+  if (!CommentColor::isValid(p_color) || m_commentColor == p_color) {
+    return;
+  }
+  updateConfig(m_commentColor, p_color, this);
 }
 
 void PdfViewerConfig::loadViewerResource(const QJsonObject &p_jobj) {
@@ -31,7 +52,10 @@ QJsonObject PdfViewerConfig::saveViewerResource() const { return m_viewerResourc
 
 const WebResource &PdfViewerConfig::getViewerResource() const { return m_viewerResource; }
 
-void PdfViewerConfig::initDefaults() { m_viewerResource = defaultViewerResource(); }
+void PdfViewerConfig::initDefaults() {
+  m_viewerResource = defaultViewerResource();
+  m_commentColor = CommentColor::defaultToken();
+}
 
 WebResource PdfViewerConfig::defaultViewerResource() {
   WebResource res;
@@ -50,12 +74,17 @@ WebResource PdfViewerConfig::defaultViewerResource() {
   }
 
   // pdf.js
+  //
+  // ESM since v4: both entry points are `.mjs` and are emitted with
+  // type="module" by HtmlTemplateService::fillPdfResources(), which makes them
+  // DEFERRED. `pdfviewer.mjs` below must therefore also be a module, or it would
+  // run before pdf.mjs/viewer.mjs have executed.
   {
     WebResource::Resource r;
     r.m_name = QStringLiteral("pdf.js");
     r.m_enabled = true;
-    r.m_scripts = QStringList{QStringLiteral("web/pdf.js/build/pdf.js"),
-                              QStringLiteral("web/pdf.js/web/viewer.js")};
+    r.m_scripts = QStringList{QStringLiteral("web/pdf.js/build/pdf.mjs"),
+                              QStringLiteral("web/pdf.js/web/viewer.mjs")};
     r.m_styles = QStringList{QStringLiteral("web/pdf.js/web/viewer.css")};
     res.m_resources.append(r);
   }
@@ -65,7 +94,7 @@ WebResource PdfViewerConfig::defaultViewerResource() {
     WebResource::Resource r;
     r.m_name = QStringLiteral("pdf_viewer");
     r.m_enabled = true;
-    r.m_scripts = QStringList{QStringLiteral("web/pdf.js/pdfviewer.js")};
+    r.m_scripts = QStringList{QStringLiteral("web/pdf.js/pdfviewer.mjs")};
     r.m_styles = QStringList{QStringLiteral("web/pdf.js/pdfviewer.css")};
     res.m_resources.append(r);
   }

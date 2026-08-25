@@ -1506,6 +1506,14 @@ void SyncService::onDebounceTimeout(const QString &p_notebookId) {
 // SyncOps::triggerSync (with NULL cancellation token; auto path is
 // fire-and-forget). Best-effort: queue overflow / coalesce are silent —
 // do NOT emit syncFailed (auto-sync is opportunistic).
+void SyncService::notifyWorkingTreeDirty(const QString &p_notebookId) {
+  // Deliberately routed through the auto-sync path rather than triggerSyncNow:
+  // a sidecar write is not user intent to sync, so it must be debounced and
+  // coalesced like every other automatic trigger.
+  qCInfo(syncCategory) << "SyncService::notifyWorkingTreeDirty:" << p_notebookId;
+  onSyncShouldRun(p_notebookId);
+}
+
 void SyncService::onSyncShouldRun(const QString &p_notebookId) {
   qCInfo(syncCategory) << "SyncService::onSyncShouldRun: auto-sync triggered for" << p_notebookId;
   if (m_shutDown) {

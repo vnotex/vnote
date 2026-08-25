@@ -1032,3 +1032,15 @@ add_qt_test(test_updateservice
 # ~20 network flows over a local socket, two of them deliberately stalled; the
 # default 60s ctest timeout is too tight.
 set_tests_properties(test_updateservice PROPERTIES TIMEOUT 300)
+# comments.json sidecar store: schema round trip (including forward
+# compatibility with an unknown anchor type), location resolution across the
+# bundled / raw / external cases, the async coalescing save queue, and the
+# sibling rename/move/delete lifecycle.
+add_qt_test(test_commentservice
+  SOURCES
+    test_commentservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

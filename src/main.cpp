@@ -25,6 +25,7 @@
 #include <core/services/activityservice.h>
 #include <core/services/activitystatsservice.h>
 #include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/configservice.h>
 #include <core/services/eventbridge.h>
@@ -57,6 +58,7 @@
 #include <gui/services/stickerfactory.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
+#include <gui/services/vxpdfschemehandler.h>
 #include <gui/services/webengineprofileservice.h>
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
@@ -363,6 +365,9 @@ int main(int argc, char *argv[]) {
     TagService tagService(context, &hookManager);
     SnippetCoreService snippetCoreService(context);
     NotificationService notificationService;
+    // Declared after NotebookIoGate/HookManager (captured by pointer) so it is
+    // destroyed first and its workers drain while both are still alive.
+    CommentService commentService(&notebookService, &notebookIoGate, &hookManager);
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
@@ -373,6 +378,7 @@ int main(int argc, char *argv[]) {
     serviceLocator.registerService<VNote3MigrationService>(&migrationService);
     serviceLocator.registerService<BufferService>(&bufferService);
     serviceLocator.registerService<NotebookIoGate>(&notebookIoGate);
+    serviceLocator.registerService<CommentService>(&commentService);
     serviceLocator.registerService<SearchCoreService>(&searchService);
     serviceLocator.registerService<SearchService>(&searchAsyncService);
     serviceLocator.registerService<WorkspaceCoreService>(&workspaceService);
@@ -412,6 +418,12 @@ int main(int argc, char *argv[]) {
 
     SyncService syncService(serviceLocator);
     serviceLocator.registerService<SyncService>(&syncService);
+
+    // comments.json is written with a plain QSaveFile, so vxcore emits no
+    // file event for it. Feed the fact into the ordinary auto-sync debounce or
+    // a synced notebook would never commit the sidecar.
+    QObject::connect(&commentService, &CommentService::storeDirty, &syncService,
+                     &SyncService::notifyWorkingTreeDirty);
 
     SyncStateClassifier syncStateClassifier(serviceLocator);
     serviceLocator.registerService<SyncStateClassifier>(&syncStateClassifier);
@@ -488,6 +500,12 @@ int main(int argc, char *argv[]) {
     qInfo() << "StickerFactory registered";
 
     setOpenGLOption(configMgr);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    // MUST run before the QApplication is constructed: QtWebEngine snapshots the
+    // custom scheme registry at that point. See src/core/vxpdfscheme.h.
+    VxPdfSchemeHandler::registerScheme();
+#endif
 
     // Create Qt application
     QGuiApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
@@ -650,7 +668,8 @@ int main(int argc, char *argv[]) {
 
     // Shared QtWebEngine profile with a disk HTTP cache. Declared here (before MainWindow2) so
     // that stack destruction tears the window - and every page using this profile - down first.
-    WebEngineProfileService webProfileService(configService.getDataPath(DataLocation::Local));
+    WebEngineProfileService webProfileService(configService.getDataPath(DataLocation::Local),
+                                              &configMgr, &htmlTemplateService);
     serviceLocator.registerService<WebEngineProfileService>(&webProfileService);
     qInfo() << "WebEngineProfileService registered";
 

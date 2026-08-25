@@ -62,6 +62,7 @@ mechanism only and must never gain a `ConfigMgr2` dependency. Full contract, inc
 | `NewNotebookController` (sync portion) | New-notebook bootstrap via `bootstrapSync` (deletes notebook on enable failure) |
 | `DashboardController` | Home dashboard (vx://home) layout model, occupancy math, seed/default, and WidgetConfig persistence; the `DashboardBoard` widget is its pure view |
 | `NotificationRouter` | Turns subsystem failure signals into `NotificationMessage`s; owns attention/dedup policy (see below) |
+| `CommentController` | The ONLY mutator of a file's `comments.json` set. Owns the active `NodeIdentifier`, debounces and coalesces add/edit/color/delete intents, receives asynchronous `CommentService` completion, and surfaces failures **without** marking the buffer modified (see below) |
 
 ## NotificationRouter
 
@@ -147,3 +148,27 @@ This is the ONLY controller-side `deleteCredentials` call site. All other creden
 - [`../views/AGENTS.md`](../views/AGENTS.md) — Views that signal controllers
 - [`../widgets/AGENTS.md`](../widgets/AGENTS.md) — Widgets containing MVC wiring
 - [`../../AGENTS.md`](../../AGENTS.md) — Full MVC rules, architecture overview, hook system
+
+## CommentController
+
+The single mutation point for a file's comment set. Both the comment dock AND the QWebChannel
+overlay bridge are **views**: they emit intents (`addCommentRequested`, `textEditRequested`,
+`colorChangeRequested`, `deleteRequested`, `selectCommentRequested`) and never write anything.
+
+Rules that are load-bearing:
+
+- **It is a `QObject`, never a `QWidget`** — testable without a GUI, per the MVC rules.
+- **`setActiveFile()` flushes any pending write first.** A debounced save belongs to the OLD
+  identifier; letting it fire after the switch would serialize one file's comments against
+  another's path.
+- **`PdfViewWindow2`'s destructor calls `flushPendingSave()`**, or closing a tab within the
+  debounce window silently drops the user's last edit.
+- **Failures never mark the buffer modified.** Comments are not buffer content and the PDF
+  genuinely never changes; the window shows an `InlineBanner` instead. A read-only rejection also
+  flips the provider to non-editable so the dock disables its controls.
+- Two debounces exist and they are not redundant: the controller debounces the *intent* (so a
+  typing burst is one re-serialization and one list rebuild), and `CommentService` coalesces the
+  *write* on its own queue (so a burst is one `QSaveFile` commit).
+
+Store contract, path resolution and the sync-dirty notification:
+[`../core/services/AGENTS.md` § Comment store](../core/services/AGENTS.md#comment-store-commentsjson).

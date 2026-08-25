@@ -7,6 +7,7 @@
 #include <core/markdownwebglobaloptions.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/pdfviewerconfig.h>
+#include <core/vxpdfscheme.h>
 #include <core/webresource.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
@@ -33,8 +34,9 @@ QString HtmlTemplateService::readFile(const QString &p_filePath) const {
 }
 
 QString HtmlTemplateService::errorPage() {
-  return QStringLiteral("Failed to load HTML template. Check the logs for details. "
-                        "Try deleting the user configuration file and the default configuration file.");
+  return QStringLiteral(
+      "Failed to load HTML template. Check the logs for details. "
+      "Try deleting the user configuration file and the default configuration file.");
 }
 
 QString HtmlTemplateService::fillStyleTag(const QString &p_styleFile) {
@@ -75,8 +77,7 @@ void HtmlTemplateService::fillThemeStylesWithContent(QString &p_template,
     if (p_webStyleContent.contains(QStringLiteral("</style>"), Qt::CaseInsensitive)) {
       qWarning() << "HtmlTemplateService: web style content contains </style>, refusing to inline";
     } else {
-      styles +=
-          QStringLiteral("<style type=\"text/css\">\n%1\n</style>\n").arg(p_webStyleContent);
+      styles += QStringLiteral("<style type=\"text/css\">\n%1\n</style>\n").arg(p_webStyleContent);
     }
   }
   styles += fillStyleTag(p_highlightStyleSheetFile); // highlight CSS unchanged: still <link>
@@ -135,6 +136,48 @@ void HtmlTemplateService::fillResources(QString &p_template, const WebResource &
   }
 }
 
+QString HtmlTemplateService::fillStyleTagForUrl(const QString &p_url) {
+  if (p_url.isEmpty()) {
+    return QString();
+  }
+  return QStringLiteral("<link rel=\"stylesheet\" type=\"text/css\" href=\"%1\">\n").arg(p_url);
+}
+
+QString HtmlTemplateService::fillScriptTagForUrl(const QString &p_url, bool p_module) {
+  if (p_url.isEmpty()) {
+    return QString();
+  }
+  // A module script is deferred; a classic one is not. That ordering difference is
+  // the contract pdfviewer.mjs relies on — see its header comment.
+  return QStringLiteral("<script type=\"%1\" src=\"%2\"></script>\n")
+      .arg(p_module ? QStringLiteral("module") : QStringLiteral("text/javascript"), p_url);
+}
+
+void HtmlTemplateService::fillPdfResources(QString &p_template, const WebResource &p_resource) {
+  QString styles;
+  QString scripts;
+
+  for (const auto &ele : p_resource.m_resources) {
+    if (!ele.m_enabled || ele.isGlobal()) {
+      continue;
+    }
+    for (const auto &style : ele.m_styles) {
+      styles += fillStyleTagForUrl(VxPdfScheme::assetUrl(style));
+    }
+    for (const auto &script : ele.m_scripts) {
+      const bool isModule = script.endsWith(QStringLiteral(".mjs"), Qt::CaseInsensitive);
+      scripts += fillScriptTagForUrl(VxPdfScheme::assetUrl(script), isModule);
+    }
+  }
+
+  if (!styles.isEmpty()) {
+    p_template.replace(QStringLiteral("<!-- VX_STYLES_PLACEHOLDER -->"), styles);
+  }
+  if (!scripts.isEmpty()) {
+    p_template.replace(QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->"), scripts);
+  }
+}
+
 void HtmlTemplateService::fillResourcesByContent(QString &p_template,
                                                  const WebResource &p_resource) const {
   QString styles;
@@ -169,13 +212,16 @@ void HtmlTemplateService::fillResourcesByContent(QString &p_template,
 
 // ============ PDF Viewer Template ============
 
-void HtmlTemplateService::updatePdfViewerTemplate(const PdfViewerConfig &p_config, bool p_force) {
-  if (!p_force && p_config.revision() == m_pdfViewerTemplate.m_revision) {
+void HtmlTemplateService::updatePdfViewerTemplate(const PdfViewerConfig &p_config,
+                                                  const QString &p_commentColorsCss, bool p_force) {
+  if (!p_force && p_config.revision() == m_pdfViewerTemplate.m_revision &&
+      p_commentColorsCss == m_pdfViewerCommentColorsCss) {
     return;
   }
 
   m_pdfViewerTemplate.m_revision = p_config.revision();
-  generatePdfViewerTemplate(p_config, m_pdfViewerTemplate);
+  m_pdfViewerCommentColorsCss = p_commentColorsCss;
+  generatePdfViewerTemplate(p_config, p_commentColorsCss, m_pdfViewerTemplate);
 }
 
 const QString &HtmlTemplateService::getPdfViewerTemplate() const {
@@ -187,6 +233,7 @@ const QString &HtmlTemplateService::getPdfViewerTemplatePath() const {
 }
 
 void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_config,
+                                                    const QString &p_commentColorsCss,
                                                     Template &p_template) const {
   const auto &viewerResource = p_config.getViewerResource();
   p_template.m_templatePath = resolveConfigFile(viewerResource.m_template);
@@ -197,7 +244,19 @@ void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_con
     return;
   }
 
-  fillResources(p_template.m_template, viewerResource);
+  if (!p_commentColorsCss.isEmpty()) {
+    // Same defensive guard fillThemeStylesWithContent uses: content that closes
+    // the style element would let a palette value inject markup.
+    if (p_commentColorsCss.contains(QStringLiteral("</style>"), Qt::CaseInsensitive)) {
+      qWarning() << "HtmlTemplateService: comment colors contain </style>, refusing to inline";
+    } else {
+      p_template.m_template.replace(
+          QStringLiteral("<!-- VX_PDF_VARS_PLACEHOLDER -->"),
+          QStringLiteral("<style type=\"text/css\">\n%1</style>").arg(p_commentColorsCss));
+    }
+  }
+
+  fillPdfResources(p_template.m_template, viewerResource);
 }
 
 // ============ Markdown Viewer Template ============

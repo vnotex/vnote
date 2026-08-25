@@ -1,11 +1,17 @@
 #ifndef PDFVIEWWINDOW2_H
 #define PDFVIEWWINDOW2_H
 
+#include "commentprovider.h"
+#include "editors/pdfvieweradapter.h"
 #include "outlineprovider.h"
 #include "viewwindow2.h"
 
-namespace vnotex {
+class QActionGroup;
+class QToolButton;
 
+namespace vnotex {
+class CommentController;
+class InlineBanner;
 class PdfViewer;
 class PdfViewerAdapter;
 class PdfViewWindowController;
@@ -22,11 +28,15 @@ public:
   explicit PdfViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                           QWidget *p_parent = nullptr);
 
+  ~PdfViewWindow2() Q_DECL_OVERRIDE;
+
   QString getLatestContent() const Q_DECL_OVERRIDE;
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
+
+  QSharedPointer<CommentProvider> getCommentProvider() const Q_DECL_OVERRIDE;
 
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
@@ -38,6 +48,8 @@ protected slots:
 
 protected:
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
+
+  void handleNodeRetargeted(const NodeIdentifier &p_newNodeId) Q_DECL_OVERRIDE;
 
   void scrollUp() Q_DECL_OVERRIDE;
 
@@ -56,7 +68,32 @@ private:
 
   void setupOutlineProvider();
 
+  void setupComments();
+
+  void setupAnnotationToolBarActions(QToolBar *p_toolBar);
+
+  void setActiveTool(PdfViewerAdapter::Tool p_tool);
+
+  void setActiveColor(const QString &p_color);
+
+  // Repaints the toggles from the ADAPTER's state, which is the single source
+  // of truth: the web side can leave a tool by itself (Esc, or the one-shot
+  // Text tool completing), and the toolbar must follow rather than diverge.
+  void syncToolBarState();
+
+  // Enables/disables the authoring tools. Called on editability changes: a
+  // read-only file must not be drawable at all, rather than silently refusing
+  // each gesture after the fact.
+  void setAuthoringEnabled(bool p_enabled);
+
+  // Push the controller's set onto the overlay bridge as a JSON array.
+  void publishCommentsToViewer();
+
   PdfViewerAdapter *adapter() const;
+
+  // Drops the current vxpdf document token, if any, so the handler's registry
+  // cannot grow for the process lifetime. Idempotent.
+  void revokeDocumentToken();
 
   // Managed by QObject parent (this).
   PdfViewWindowController *m_controller = nullptr;
@@ -64,7 +101,23 @@ private:
   // Managed by QObject.
   PdfViewer *m_viewer = nullptr;
 
+  // Token registered with WebEngineProfileService for the currently displayed
+  // document. Replaced on every (re)load and revoked in the destructor.
+  QString m_documentToken;
+
   QSharedPointer<OutlineProvider> m_outlineProvider;
+
+  QSharedPointer<CommentProvider> m_commentProvider;
+
+  // Managed by QObject parent (this).
+  CommentController *m_commentController = nullptr;
+
+  // Lazily created on the first comment-store failure; managed by QObject.
+  InlineBanner *m_commentBanner = nullptr;
+
+  // Managed by QObject.
+  QActionGroup *m_toolGroup = nullptr;
+  QToolButton *m_colorButton = nullptr;
 };
 
 } // namespace vnotex

@@ -3,12 +3,14 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QHash>
 #include <QRegularExpression>
 
 #include "core/exception.h"
 #include "core/hookevents.h"
 #include "core/hooknames.h"
 #include "core/logging.h"
+#include "core/services/commenttypes.h"
 #include "core/services/hookmanager.h"
 #include "core/theme.h"
 #include <gui/utils/iconutils.h>
@@ -172,6 +174,69 @@ QString ThemeService::paletteColor(const QString &p_name) const {
   return m_currentTheme->paletteColor(p_name);
 }
 
+namespace {
+
+// Built-in comment-highlight colors, used when the theme does not override the
+// token. These are DATA (the user picks a color), not chrome, in the same sense
+// as the mark-node swatch palette and the notebook avatar colors — see
+// src/widgets/AGENTS.md § No Hardcoded Colors in C++.
+//
+// Deliberately translucent so the underlying glyphs stay readable, and anchored
+// to a white page rather than to the app palette, because pdf.js renders the
+// page from the PDF and does not tint it with the theme.
+QString builtInCommentHighlightColor(const QString &p_token) {
+  static const QHash<QString, QString> c_defaults = {
+      {QStringLiteral("yellow"), QStringLiteral("rgba(255, 214, 0, 0.38)")},
+      {QStringLiteral("green"), QStringLiteral("rgba(0, 200, 83, 0.32)")},
+      {QStringLiteral("blue"), QStringLiteral("rgba(41, 121, 255, 0.30)")},
+      {QStringLiteral("pink"), QStringLiteral("rgba(255, 64, 129, 0.30)")},
+      {QStringLiteral("purple"), QStringLiteral("rgba(170, 0, 255, 0.28)")}};
+  return c_defaults.value(p_token);
+}
+
+bool isResolvedColor(const QString &p_value) {
+  // translateStyleByPalette leaves an unknown token in place (it only warns), so
+  // a surviving '@' means the theme referenced something it does not define.
+  return !p_value.isEmpty() && !p_value.contains(QLatin1Char('@'));
+}
+
+} // namespace
+
+QString ThemeService::commentHighlightColor(const QString &p_token) const {
+  if (!CommentColor::isValid(p_token)) {
+    return builtInCommentHighlightColor(CommentColor::defaultToken());
+  }
+
+  if (m_currentTheme) {
+    // optionalPaletteColor(): a theme override is genuinely optional here, and
+    // paletteColor() would log a warning per token per PDF window.
+    const auto themed =
+        m_currentTheme->optionalPaletteColor(QStringLiteral("widgets#pdfcomment#") + p_token);
+    if (isResolvedColor(themed)) {
+      return themed;
+    }
+  }
+
+  return builtInCommentHighlightColor(p_token);
+}
+
+QString ThemeService::commentHighlightCssVariables() const {
+  QString vars;
+  const auto tokens = CommentColor::all();
+  for (const auto &token : tokens) {
+    vars += QStringLiteral("  --vx-comment-%1: %2;\n").arg(token, commentHighlightColor(token));
+  }
+  // The selected-highlight outline follows the theme's own focus/info color,
+  // because that ring is VNote chrome rather than a user-chosen highlight.
+  QString accent = paletteColor(QStringLiteral("base#info#fg"));
+  if (!isResolvedColor(accent)) {
+    accent = QStringLiteral("rgba(0, 0, 0, 0.75)");
+  }
+  vars += QStringLiteral("  --vx-comment-selected-outline: %1;\n").arg(accent);
+
+  return QStringLiteral(":root {\n%1}\n").arg(vars);
+}
+
 QString ThemeService::getFile(Theme::File p_fileType) const {
   return m_currentTheme->getFile(p_fileType);
 }
@@ -205,8 +270,8 @@ void ThemeService::switchTheme(const QString &p_name) { loadCurrentTheme(p_name)
 
 void ThemeService::setHookManager(HookManager *p_hookMgr) { m_hookMgr = p_hookMgr; }
 
-QVector<QPair<QString, QString>> ThemeService::collectThemeStyles(Theme::File p_themeFileType,
-                                                                  bool p_includeSearchPathCss) const {
+QVector<QPair<QString, QString>>
+ThemeService::collectThemeStyles(Theme::File p_themeFileType, bool p_includeSearchPathCss) const {
   QVector<QPair<QString, QString>> styles;
 
   // From themes.

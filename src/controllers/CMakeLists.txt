@@ -20,6 +20,7 @@ target_sources(vnote PRIVATE
     snippetcontroller.cpp snippetcontroller.h
     taskcontroller.cpp taskcontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
+    commentcontroller.cpp commentcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h
     mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h
     markdowneditorcontroller.cpp markdowneditorcontroller.h

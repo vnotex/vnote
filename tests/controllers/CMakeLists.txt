@@ -523,3 +523,16 @@ add_custom_command(TARGET test_dashboardcontroller_preview POST_BUILD
     $<TARGET_FILE_DIR:test_dashboardcontroller_preview>
 )
 
+
+# CommentController: the data-durability contract of the comment store's only
+# mutator (failed-save retry, malformed-store read-only, rename retarget,
+# file-switch flush). Links no widget code — the controller is a QObject.
+add_qt_test(test_commentcontroller
+  SOURCES
+    test_commentcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/commentcontroller.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

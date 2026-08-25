@@ -136,3 +136,27 @@ add_qt_test(test_notebooknodedelegate_sizehint
     Qt6::Widgets
     core_services
 )
+
+# vxpdf:// scheme handler: the MIME map and the document token registry. See the
+# header comment of the .cpp for what requestStarted() coverage would require
+# (a real QWebEngineUrlRequestJob, which has no public constructor).
+if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
+  find_package(Qt6 REQUIRED COMPONENTS WebEngineCore)
+  add_qt_test(test_vxpdfschemehandler
+    SOURCES
+      test_vxpdfschemehandler.cpp
+      ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
+    LINKS
+      Qt6::WebEngineCore
+      core_configs
+    GUILESS
+  )
+  target_include_directories(test_vxpdfschemehandler PRIVATE
+    ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+  )
+  add_custom_command(TARGET test_vxpdfschemehandler POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:VTextEdit>
+      $<TARGET_FILE_DIR:test_vxpdfschemehandler>
+  )
+endif()

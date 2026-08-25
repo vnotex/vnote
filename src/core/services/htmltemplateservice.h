@@ -38,7 +38,12 @@ public:
   // ============ PDF Viewer Template ============
 
   // Update PDF viewer template from config. No-op if revision unchanged (unless forced).
-  void updatePdfViewerTemplate(const PdfViewerConfig &p_config, bool p_force = false);
+  // @p_commentColorsCss: a `:root { --vx-comment-*: ... }` block of RESOLVED
+  //   colors from ThemeService::commentHighlightCssVariables(). Passed in as
+  //   plain content, keeping this service free of GUI dependencies exactly as
+  //   updateMarkdownViewerTemplate does with the web stylesheet.
+  void updatePdfViewerTemplate(const PdfViewerConfig &p_config,
+                               const QString &p_commentColorsCss = QString(), bool p_force = false);
 
   // Get the cached PDF viewer template HTML.
   const QString &getPdfViewerTemplate() const;
@@ -55,8 +60,7 @@ public:
   //                             linked via <link>.
   void updateMarkdownViewerTemplate(const MarkdownEditorConfig &p_config,
                                     const QString &p_webStyleContent,
-                                    const QString &p_highlightStyleSheetFile,
-                                    bool p_force = false);
+                                    const QString &p_highlightStyleSheetFile, bool p_force = false);
 
   // Get the cached Markdown viewer template HTML.
   const QString &getMarkdownViewerTemplate() const;
@@ -90,6 +94,16 @@ private:
   // Fill resource placeholders (styles/scripts) in a template using resolved config paths.
   void fillResources(QString &p_template, const WebResource &p_resource) const;
 
+  // PDF-specific resource resolution. The PDF viewer page is served over the
+  // `vxpdf://` scheme (see core/vxpdfscheme.h), so its <script>/<link> URLs must be
+  // same-origin `vxpdf://` URLs, NOT the absolute `file://` URLs fillResources()
+  // emits — a module fetched from a different origin is CORS-blocked. `.mjs`
+  // sources additionally get `type="module"`, decided purely by extension so the
+  // persisted WebResource JSON needs no new key.
+  //
+  // Markdown/MindMap resolution is deliberately left on `file://` and out of scope.
+  static void fillPdfResources(QString &p_template, const WebResource &p_resource);
+
   // Fill resource placeholders by inlining content (for export templates).
   void fillResourcesByContent(QString &p_template, const WebResource &p_resource) const;
 
@@ -103,6 +117,11 @@ private:
   // Generate script tag for a file path.
   static QString fillScriptTag(const QString &p_scriptFile);
 
+  // Style/script tags for an already-built URL. @p_module emits type="module".
+  static QString fillStyleTagForUrl(const QString &p_url);
+
+  static QString fillScriptTagForUrl(const QString &p_url, bool p_module);
+
   // Generate theme style tags from file paths.
   static void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
                               const QString &p_highlightStyleSheetFile);
@@ -113,7 +132,8 @@ private:
   static void fillThemeStylesWithContent(QString &p_template, const QString &p_webStyleContent,
                                          const QString &p_highlightStyleSheetFile);
 
-  void generatePdfViewerTemplate(const PdfViewerConfig &p_config, Template &p_template) const;
+  void generatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
+                                 Template &p_template) const;
 
   void generateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
                                      const QString &p_webStyleSheetFile,
@@ -122,6 +142,12 @@ private:
   ConfigMgr2 *m_configMgr = nullptr;
 
   Template m_pdfViewerTemplate;
+
+  // Part of the PDF template's cache key: a theme switch changes the resolved
+  // comment colors without changing the config revision, and the template must
+  // be regenerated for it.
+  QString m_pdfViewerCommentColorsCss;
+
   Template m_markdownViewerTemplate;
   Template m_mindMapEditorTemplate;
 };

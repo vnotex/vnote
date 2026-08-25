@@ -561,3 +561,129 @@ because it blocks on a nested event loop.
 - **Never** write outside the configuration directory as part of an update check.
 - **Never** read `assets[]`; the release page is the only affordance.
 - **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.
+
+---
+
+## Comment store (`comments.json`)
+
+`CommentService` ([`commentservice.h`](commentservice.h) / [`.cpp`](commentservice.cpp)) owns the
+per-file comment sidecar. Value types are in [`commenttypes.h`](commenttypes.h).
+
+It is **file-type-agnostic on purpose**. Only `Comment::m_anchor` carries file-type knowledge, so
+Markdown (or anything else) reuses the same service, schema, controller and dock by adding an
+anchor type — no rework of the store, the queue or the UI.
+
+### Where the store lives
+
+| Case | Path | Takes `NotebookIoGate`? |
+|---|---|---|
+| Bundled notebook | `getAttachmentsFolder()` + `/comments.json` | **yes** |
+| Raw notebook | `<filename>.comments.json` beside the file | no |
+| External file (empty `notebookId`) | `<filename>.comments.json` beside the file | no |
+
+One rule: **the store travels with the file.**
+
+`NotebookCoreService::getAttachmentsFolder()` **already returns `<assets-root>/<file-uuid>` and
+does NOT create the directory.** Use it as the single source of truth. Do NOT reconstruct the path
+from `getFileInfo()[kJsonKeyId]`, and do not assume the directory exists — the worker creates it
+under the gate, at write time. `tests/core/test_commentservice.cpp` asserts the directory is
+absent at resolve time precisely so a "helpful" eager mkdir cannot creep in.
+
+### Writes are asynchronous and coalescing
+
+This is a correctness requirement, not a performance tweak. `NotebookIoGate::ScopedLock` is
+**worker-thread-only** and blocks on construction, so a synchronous save from the dock or the
+QWebChannel bridge would either freeze the GUI or have to degrade to `ScopedTryLock` and drop
+edits under contention.
+
+The shape mirrors [`BufferSaveQueue`](buffersavequeue.h):
+
+1. the UI serializes a validated `CommentSet` to bytes and `scheduleSave()` returns;
+2. a pool worker takes `NotebookIoGate::ScopedLock(notebookId)` — **bundled stores only**;
+3. the worker `mkpath`s the parent, then commits with `QSaveFile`;
+4. completion is queued back to the service's owning thread;
+5. a newer pending snapshot **replaces** an older pending one for the same file;
+6. `shutdown()` drains deterministically and never discards a pending snapshot.
+
+Reads are synchronous: the file is small and `QSaveFile` commits by rename, so a reader sees
+either the old file or the new one, never a half-written one.
+
+### Read-only notebooks
+
+vxcore rejects asset writes on a read-only notebook **before touching disk**
+(`vxcore_buffer_api.cpp`), and a direct `QSaveFile` bypasses that guard. `scheduleSave()`
+therefore re-applies it via `NotebookCoreService::isNotebookReadOnly()` and emits
+`saveRejectedReadOnly` **before any mutex, queue insertion or worker dispatch**, so nothing is
+written. The UI surfaces this **without marking the buffer modified** — comments are not buffer
+content and the PDF genuinely never changes.
+
+### `storeDirty` → `SyncService`
+
+`comments.json` is written with a plain `QSaveFile`, so vxcore emits **no** `file.saved` event and
+therefore no `sync.should_run`. Without a nudge, a sidecar in a synced notebook would sit
+uncommitted until some unrelated edit happened to trigger a sync.
+
+`CommentService::storeDirty(notebookId)` is wired in `main.cpp` to
+`SyncService::notifyWorkingTreeDirty()`, which routes into the **ordinary auto-sync path** —
+deliberately not `triggerSyncNow`. A sidecar write is not user intent to sync, so it inherits every
+guard (shutdown, readiness, auth circuit-breaker), the per-notebook trailing-throttle debounce and
+the `"trigger"` coalesce key. A burst of comment edits costs at most one network round-trip per
+debounce window.
+
+### Sibling lifecycle
+
+A bundled store follows its file for free (the UUID folder is stable). A **sibling** store does
+not: renaming `paper.pdf` would orphan `paper.pdf.comments.json`. `CommentService` subscribes to
+`NodeAfterRename` / `NodeAfterMove` / `NodeAfterDelete` and moves or removes the sidecar, for
+`Kind::Sibling` only.
+
+These are **Qt-side `HookManager` hooks fired by `NotebookCoreService`**, not vxcore events, so
+they fire for raw notebooks too (vxcore's "raw notebooks emit no metadata events" note does not
+apply here).
+
+**Collision policy: the mover wins the name, the orphan stays put.** When the destination sidecar
+already exists it is NOT overwritten — destroying someone's comments to satisfy a move is never
+acceptable. The stale file is left for manual recovery and logged.
+
+### Schema and forward compatibility
+
+Full schema: the header comment of [`commenttypes.h`](commenttypes.h).
+
+**An older PDF-only build must round-trip a newer build's comments untouched.** Three mechanisms:
+
+- `Comment::m_anchor` is stored as a **raw `QJsonObject`** and never rebuilt from typed fields, so
+  an unknown `anchor.type` survives verbatim (and `Comment::isValid()` returns **true** for it — it
+  is valid-but-opaque, merely not renderable here);
+- unknown top-level keys are preserved in `m_extraKeys`, on both the comment and the document;
+- a known key always wins over `m_extraKeys` on write, so the preserved blob cannot shadow a typed
+  field.
+
+`toJson()` emits a **stably ordered** document (anchor type, then page, then id) so a git/sync diff
+shows only what changed and a conflict stays readable. The ordering is total for unknown anchor
+types too (page defaults to `-1`).
+
+`color` is a **semantic token**, never a literal hex: highlights are resolved by `ThemeService` and
+injected into the PDF template as CSS custom properties. An unknown or literal color normalizes to
+the default rather than rendering unstyled.
+
+### Anchor types
+
+| Type | Geometry | Body |
+|---|---|---|
+| `pdf-quads` | `page` + text-selection quads in PDF page space, plus the quoted `text` | `Comment::m_text` (optional note) |
+| `pdf-ink` | `page` + `strokes` (flat `[x0,y0,x1,y1,...]` polylines) + `width`, all in PDF page space | optional note |
+| `pdf-freetext` | `page` + `x`/`y` + `fontSize` | **the box's visible text** — editing it in the dock and on the page are the same operation |
+
+`isKnownAnchorType()` / `isAnchorStructurallyValid()` / `anchorPage()` dispatch on
+`anchor.type`. **Add a new type to all three**, or it will render but never persist (or
+sort into a random position). `isAnchorStructurallyValid()` returns **true** for an unknown
+non-empty type — valid-but-opaque, carried through untouched — and false for a typeless one.
+
+All geometry is stored in **PDF page space**, never CSS pixels, so zoom/rotate/resize only
+re-project. Every coordinate is finiteness-checked: a NaN would silently poison the overlay
+projection instead of failing loudly.
+
+These keys are Qt-only — vxcore never reads `comments.json` — so they stay **out** of
+`<vxcore/notebook_json_keys.h>` and out of `test_json_key_drift`'s gated list.
+
+Coverage: `tests/core/test_commentservice.cpp`.
