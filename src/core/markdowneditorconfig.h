@@ -113,6 +113,9 @@ public:
   bool getAlignTableSourceEnabled() const;
   void setAlignTableSourceEnabled(bool p_enabled);
 
+  bool getAutoFoldPreviewedBlocksEnabled() const;
+  void setAutoFoldPreviewedBlocksEnabled(bool p_enabled);
+
   bool isSpellCheckEnabled() const;
   void setSpellCheckEnabled(bool p_enabled);
 
@@ -220,6 +223,13 @@ private:
   // Opt-in; affects only subsequent commits (nothing is reformatted retroactively),
   // and only pipe tables (an HTML-backed or merged table is never padded).
   bool m_alignTableSourceEnabled = false;
+
+  // Whether fold a foldable region as soon as it first gets an in-place preview.
+  // Defaults to true (the historical behavior), so fromJson() MUST read it with the
+  // presence-aware readBool() overload. Only decides the initial state of a region that has
+  // not been settled yet: turning it off never unfolds what is already folded. Inert while
+  // text folding is off, since there would be no gutter to unfold with.
+  bool m_autoFoldPreviewedBlocksEnabled = true;
 
   // Override the config in TextEditorConfig.
   bool m_spellCheckEnabled = false;

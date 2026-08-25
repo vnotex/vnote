@@ -68,6 +68,8 @@ private:
 
   QCheckBox *m_alignTableSourceCheckBox = nullptr;
 
+  QCheckBox *m_autoFoldPreviewedBlocksCheckBox = nullptr;
+
   QCheckBox *m_spellCheckCheckBox = nullptr;
 
   QComboBox *m_plantUmlModeComboBox = nullptr;

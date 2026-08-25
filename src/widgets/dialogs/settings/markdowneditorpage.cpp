@@ -88,6 +88,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_alignTableSourceCheckBox->setChecked(markdownConfig.getAlignTableSourceEnabled());
 
+  m_autoFoldPreviewedBlocksCheckBox->setChecked(markdownConfig.getAutoFoldPreviewedBlocksEnabled());
+
   m_spellCheckCheckBox->setChecked(markdownConfig.isSpellCheckEnabled());
 
   {
@@ -158,6 +160,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
   markdownConfig.setAlignTableSourceEnabled(m_alignTableSourceCheckBox->isChecked());
+
+  markdownConfig.setAutoFoldPreviewedBlocksEnabled(m_autoFoldPreviewedBlocksCheckBox->isChecked());
 
   markdownConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
@@ -413,6 +417,21 @@ void MarkdownEditorPage::setupEditGroup() {
         m_alignTableSourceCheckBox, m_alignTableSourceCheckBox->toolTip(), this));
     addSearchItem(label, m_alignTableSourceCheckBox->toolTip(), m_alignTableSourceCheckBox);
     connect(m_alignTableSourceCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Auto fold previewed blocks"));
+    m_autoFoldPreviewedBlocksCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_autoFoldPreviewedBlocksCheckBox->setToolTip(
+        tr("Fold the source of a block as soon as it gets an in-place preview. Requires text "
+           "folding; turning it off does not unfold blocks that are already folded."));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_autoFoldPreviewedBlocksCheckBox, m_autoFoldPreviewedBlocksCheckBox->toolTip(), this));
+    addSearchItem(label, m_autoFoldPreviewedBlocksCheckBox->toolTip(),
+                  m_autoFoldPreviewedBlocksCheckBox);
+    connect(m_autoFoldPreviewedBlocksCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 

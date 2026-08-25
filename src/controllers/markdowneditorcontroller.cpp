@@ -34,6 +34,8 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
 
   p_editorConfig->m_alignTableSourceEnabled = p_mdConfig.getAlignTableSourceEnabled();
 
+  p_editorConfig->m_autoFoldPreviewedBlocksEnabled = p_mdConfig.getAutoFoldPreviewedBlocksEnabled();
+
   // Map InplacePreviewSources flags from vnotex -> vte.
   {
     auto srcs = p_mdConfig.getInplacePreviewSources();

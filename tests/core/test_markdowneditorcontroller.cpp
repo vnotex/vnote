@@ -58,6 +58,7 @@ private slots:
   void testBuildMarkdownEditorConfigFromContent_tableSourceOff();
   void testBuildMarkdownEditorConfigFromContent_alignTableSource();
   void testBuildMarkdownEditorConfig_alignTableSource();
+  void testBuildMarkdownEditorConfig_autoFoldPreviewedBlocks();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -301,8 +302,42 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfig_alignTableSourc
   mdConfig.setAlignTableSourceEnabled(false);
 }
 
-// ============ Group 4: prepareBufferState ============
+void TestMarkdownEditorController::testBuildMarkdownEditorConfig_autoFoldPreviewedBlocks() {
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
 
+  // Both builders share applyMarkdownConfigFields(), but assert through both anyway: the
+  // content-based one is the only builder with production callers.
+  auto content = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!content.isNull());
+  QVERIFY2(content->m_autoFoldPreviewedBlocksEnabled, "auto-folding must default to on");
+
+  mdConfig.setAutoFoldPreviewedBlocksEnabled(false);
+  content = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      ec, mdConfig, QString(), QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!content.isNull());
+  QVERIFY2(!content->m_autoFoldPreviewedBlocksEnabled, "the flag must follow the user setting");
+
+  QTemporaryDir themeDir;
+  QVERIFY(themeDir.isValid());
+  const QString themeFile = QDir(themeDir.path()).filePath(QStringLiteral("md.theme"));
+  {
+    QFile f(themeFile);
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    QCOMPARE(f.write(kValidMarkdownThemeJson),
+             static_cast<qint64>(qstrlen(kValidMarkdownThemeJson)));
+  }
+
+  auto fileBased = MarkdownEditorController::buildMarkdownEditorConfig(
+      ec, mdConfig, themeFile, QStringLiteral("default"), 1.0, 0);
+  QVERIFY(!fileBased.isNull());
+  QVERIFY2(!fileBased->m_autoFoldPreviewedBlocksEnabled, "the flag must follow the user setting");
+
+  mdConfig.setAutoFoldPreviewedBlocksEnabled(true);
+}
+
+// ============ Group 4: prepareBufferState ============
 void TestMarkdownEditorController::initTestCase() {
   QVERIFY(m_tempDir.isValid());
 

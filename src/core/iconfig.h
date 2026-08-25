@@ -96,6 +96,24 @@ protected:
     return p_obj.value(p_key).toBool();
   }
 
+  // Presence-aware overload, for a key whose default is NOT false.
+  //
+  // The plain readBool() above maps an absent key to false, which is correct only for a
+  // false-default setting. ConfigMgr2::init() skips fromJson() only when the config file is
+  // entirely absent, so on every existing installation a newly introduced key IS read - and a
+  // true-default one would silently flip to false on upgrade. Use this overload for any
+  // true-default key you ADD.
+  //
+  // The pre-existing true-default keys (markdowneditorconfig, widgetconfig, texteditorconfig,
+  // coreconfig) still use the two-argument form. They are not exposed to the upgrade path
+  // above, because any config file written by a version that had them also contains them;
+  // only a hand-edited or truncated file can hit it. Converting them is a separate audit with
+  // its own behavior change, deliberately not folded into the commit that added this overload.
+  static bool readBool(const QJsonObject &p_obj, const QString &p_key, bool p_defaultValue) {
+    const auto value = p_obj.value(p_key);
+    return value.isBool() ? value.toBool() : p_defaultValue;
+  }
+
   static int readInt(const QJsonObject &p_obj, const QString &p_key) {
     return p_obj.value(p_key).toInt();
   }

@@ -58,6 +58,10 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
   m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
   m_alignTableSourceEnabled = READBOOL(QStringLiteral("alignTableSource"));
+  // Defaults to true, so it must not go through READBOOL: an absent key would turn
+  // auto-folding off for every existing installation on upgrade.
+  m_autoFoldPreviewedBlocksEnabled =
+      readBool(p_jobj, QStringLiteral("autoFoldPreviewedBlocks"), true);
 
   m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 
@@ -103,6 +107,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
   obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
   obj[QStringLiteral("alignTableSource")] = m_alignTableSourceEnabled;
+  obj[QStringLiteral("autoFoldPreviewedBlocks")] = m_autoFoldPreviewedBlocksEnabled;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
 
   {
@@ -328,6 +333,14 @@ bool MarkdownEditorConfig::getAlignTableSourceEnabled() const { return m_alignTa
 
 void MarkdownEditorConfig::setAlignTableSourceEnabled(bool p_enabled) {
   updateConfig(m_alignTableSourceEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getAutoFoldPreviewedBlocksEnabled() const {
+  return m_autoFoldPreviewedBlocksEnabled;
+}
+
+void MarkdownEditorConfig::setAutoFoldPreviewedBlocksEnabled(bool p_enabled) {
+  updateConfig(m_autoFoldPreviewedBlocksEnabled, p_enabled, this);
 }
 
 bool MarkdownEditorConfig::isSpellCheckEnabled() const { return m_spellCheckEnabled; }

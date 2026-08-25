@@ -54,6 +54,7 @@ private slots:
   void testTableMigration_doesNotRunOnTheSameOrANewerVersion();
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
+  void testAutoFoldPreviewedBlocks_absentKeyKeepsTheTrueDefault();
 
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
@@ -539,7 +540,33 @@ void TestConfigMgr2::testAlignTableSource_jsonRoundTripAndAbsentKeyDefault() {
   QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), false);
 }
 
-} // namespace tests
+void TestConfigMgr2::testAutoFoldPreviewedBlocks_absentKeyKeepsTheTrueDefault() {
+  MainConfig config(m_configMgr);
+  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
 
+  QVERIFY2(mdConfig.getAutoFoldPreviewedBlocksEnabled(),
+           "auto-folding previewed blocks must default to on");
+
+  // The upgrade case: a vnotex.json written before this key existed. ConfigMgr2 still runs
+  // fromJson() on it, so an absent key must NOT be read as false or every existing
+  // installation would silently lose auto-folding.
+  QJsonObject json = mdConfig.toJson();
+  QVERIFY(json.contains(QStringLiteral("autoFoldPreviewedBlocks")));
+  json.remove(QStringLiteral("autoFoldPreviewedBlocks"));
+
+  MainConfig reloaded(m_configMgr);
+  auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
+  reloadedMd.fromJson(json);
+  QCOMPARE(reloadedMd.getAutoFoldPreviewedBlocksEnabled(), true);
+
+  // An explicit false must still survive the round trip.
+  mdConfig.setAutoFoldPreviewedBlocksEnabled(false);
+  json = mdConfig.toJson();
+  QCOMPARE(json.value(QStringLiteral("autoFoldPreviewedBlocks")).toBool(), false);
+  reloadedMd.fromJson(json);
+  QCOMPARE(reloadedMd.getAutoFoldPreviewedBlocksEnabled(), false);
+}
+
+} // namespace tests
 QTEST_GUILESS_MAIN(tests::TestConfigMgr2)
 #include "test_configmgr2.moc"
