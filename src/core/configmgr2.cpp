@@ -72,26 +72,96 @@ ConfigMgr2::~ConfigMgr2() {
   }
 }
 
+// Sections/keys whose object value is owned WHOLESALE by the user, i.e. where a present but
+// empty object is a deliberate "none", not "unset". merge_patch merges objects per key, so
+// without this the bundled default entries would come back and the user could never turn them
+// all off (see WidgetConfig::fromJson for the newNoteDefaultTemplates contract).
+struct UserOwnedObject {
+  const char *m_section;
+  const char *m_key;
+};
+
+constexpr UserOwnedObject kUserOwnedObjects[] = {{"widget", "newNoteDefaultTemplates"}};
+
+void ConfigMgr2::restoreUserOwnedObjects(QJsonObject &p_merged, const QJsonObject &p_raw) {
+  for (const auto &entry : kUserOwnedObjects) {
+    const QString section = QLatin1String(entry.m_section);
+    const QString key = QLatin1String(entry.m_key);
+
+    const auto rawSection = p_raw.value(section).toObject();
+    if (!rawSection.contains(key)) {
+      continue;
+    }
+
+    auto mergedSection = p_merged.value(section).toObject();
+    mergedSection[key] = rawSection.value(key);
+    p_merged[section] = mergedSection;
+  }
+}
+
+// RFC 7386 JSON Merge Patch: @p_patch (the user's document) applied on top of @p_target (the
+// defaults document). Objects merge per key, a null DELETES the key, and everything else -
+// including arrays - replaces wholesale.
+//
+// Applied Qt-side, on the ONE raw document read below, rather than through
+// ConfigCoreService::getConfigByNameWithDefaults(): that variant re-reads the file, so the
+// merged result and the raw snapshot used by restoreUserOwnedObjects() could come from two
+// different versions of it.
+static QJsonValue applyMergePatch(const QJsonValue &p_target, const QJsonValue &p_patch) {
+  if (!p_patch.isObject()) {
+    return p_patch;
+  }
+
+  QJsonObject result = p_target.isObject() ? p_target.toObject() : QJsonObject();
+  const auto patchObj = p_patch.toObject();
+  for (auto it = patchObj.begin(); it != patchObj.end(); ++it) {
+    if (it.value().isNull()) {
+      result.remove(it.key());
+    } else {
+      result[it.key()] = applyMergePatch(result.value(it.key()), it.value());
+    }
+  }
+  return result;
+}
+
 void ConfigMgr2::init() {
   qCDebug(lcConfig) << "ConfigMgr2 initializing with paths:"
                     << "app=" << m_appDataPath << "user=" << m_localDataPath;
 
-  // Load and initialize main config
+  // Load and initialize main config.
+  //
+  // The user's document is MERGED on top of the defaults: m_mainConfig is default-constructed
+  // (every child config has already run its initDefaults()), so its toJson() is exactly the
+  // defaults document. A key the file does not carry - a key added by a newer VNote, or one
+  // lost to a truncated/hand-edited file - therefore keeps its C++ default instead of being
+  // read back as false/0/"". Session config deliberately does NOT go through this path; see
+  // below.
   {
-    auto mainConfigJson =
-        m_configService->getConfigByName(DataLocation::App, kMainConfigFileBaseName);
-    m_versionChanged = MainConfig::peekVersion(mainConfigJson) != c_version.toString();
+    // ONE read, used both as the merge patch and as the presence oracle for the user-owned
+    // objects restored afterwards.
+    bool readOk = true;
+    const auto rawJson =
+        m_configService->getConfigByName(DataLocation::App, kMainConfigFileBaseName, &readOk);
 
-    if (mainConfigJson.isEmpty()) {
-      // Fresh start: no config file on disk. Keep the default-constructed config
-      // objects as-is (their C++ initDefaults() provide correct defaults).
-      qInfo() << "Fresh start detected, using default-constructed config";
+    if (!readOk) {
+      // The file exists but could not be read or parsed. Keep the in-memory defaults and
+      // refuse to write, so a transient read failure never overwrites the user's settings
+      // with defaults.
+      m_mainConfigReadFailed = true;
+      qWarning() << "Failed to read main config; running on defaults and suppressing writes";
     } else {
+      auto mainConfigJson = applyMergePatch(m_mainConfig->toJson(), rawJson).toObject();
+      restoreUserOwnedObjects(mainConfigJson, rawJson);
+      m_versionChanged = MainConfig::peekVersion(mainConfigJson) != c_version.toString();
       m_mainConfig->fromJson(mainConfigJson);
     }
   }
 
-  // Load and initialize session config
+  // Load and initialize session config.
+  //
+  // NOT merged on purpose: SessionConfig branches on isUndefinedKey() for systemTitleBar and
+  // minimizeToSystemTray, i.e. it distinguishes "absent" from "present and false". Merging
+  // defaults in would make absent impossible and silently change that behavior.
   {
     auto sessionConfigJson =
         m_configService->getConfigByName(DataLocation::Local, kSessionFileBaseName);
@@ -275,6 +345,14 @@ void ConfigMgr2::scheduleSessionConfigWrite() { m_sessionConfigWriteTimer->start
 
 void ConfigMgr2::doWriteMainConfig() {
   if (m_pendingMainConfig.isEmpty()) {
+    return;
+  }
+
+  if (m_mainConfigReadFailed) {
+    // init() could not read the existing config, so what we hold is defaults plus whatever
+    // this session changed. Writing that out would destroy the user's settings.
+    qWarning() << "Refusing to write main config: it could not be read at startup";
+    m_pendingMainConfig = QJsonObject();
     return;
   }
 

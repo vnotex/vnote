@@ -58,10 +58,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
   m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
   m_alignTableSourceEnabled = READBOOL(QStringLiteral("alignTableSource"));
-  // Defaults to true, so it must not go through READBOOL: an absent key would turn
-  // auto-folding off for every existing installation on upgrade.
-  m_autoFoldPreviewedBlocksEnabled =
-      readBool(p_jobj, QStringLiteral("autoFoldPreviewedBlocks"), true);
+  m_autoFoldPreviewedBlocksEnabled = READBOOL(QStringLiteral("autoFoldPreviewedBlocks"));
 
   m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 

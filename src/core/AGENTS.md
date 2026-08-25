@@ -114,7 +114,12 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
 #### Why ConfigMgr2 Exists
 
 `ConfigMgr2` wraps `ConfigCoreService` and adds:
-1. **Default merging** — `ConfigMgr2::init()` loads the `vnotex.json` config file via `ConfigCoreService::getConfigByName()`, then calls `MainConfig::fromJson()`. The `MainConfig` constructor first calls `initDefaults()` on all child configs, then `fromJson()` overlays only the keys present in the JSON. Missing keys keep their C++ defaults.
+1. **Default merging** — `ConfigMgr2::init()` reads `vnotex.json` ONCE (`ConfigCoreService::getConfigByName`, with the `bool *p_ok` out-param) and applies it as an RFC 7386 merge patch on top of the default-constructed `MainConfig`'s `toJson()` (objects merge per key, a JSON `null` deletes the key, arrays and scalars replace wholesale). The JSON handed to `MainConfig::fromJson()` therefore always carries **every** key, which is what makes a key that a user's older `vnotex.json` never had — or one lost to a truncated file — keep its C++ default. The read helpers in `IConfig` (`readBool`, `readInt`, `readReal`, `readString`) are NOT presence-aware: absent → `false`/`0`/`""`. Their correctness depends entirely on this merge, which is why a throwaway `MainConfig` built from raw `getConfigByName()` JSON (the anti-pattern above) wipes defaults. Three deliberate exceptions:
+   - **Objects the user owns wholesale** (`kUserOwnedObjects` in `configmgr2.cpp`, currently `widget.newNoteDefaultTemplates`) are restored from the raw document after the merge: for them a present-but-empty object means "none", and per-key merging would resurrect the bundled entries.
+   - **A config that exists but cannot be read** (unparseable, or valid JSON that is not an object) sets `m_mainConfigReadFailed`, which suppresses every main-config write for the session so defaults can never overwrite it. An absent or empty file is NOT a failure.
+   - **`session.json` is not merged**: `SessionConfig` uses `isUndefinedKey()` to distinguish "absent" from "present and false".
+
+   Regression gates: `testAbsentKeyKeepsTheCppDefaultForEveryField`, `testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected`, `testAnUnreadableConfigIsNeverOverwritten` in `tests/core/test_configmgr2.cpp`.
 2. **Debounced persistence** — Changes to config objects auto-save via 500ms debounced timers.
 3. **Path resolution** — `getFileFromConfigFolder()` resolves relative paths against the app data directory.
 4. **Version upgrade** — `upgradeMainConfigOnVersionChange()` runs the config migration (`doVersionSpecificOverride` then stamping `c_version`) when the persisted version differs.

@@ -158,6 +158,12 @@ private:
   void scheduleMainConfigWrite();
   void scheduleSessionConfigWrite();
 
+  // Put back the objects the user owns wholesale (e.g. widget.newNoteDefaultTemplates) after
+  // the defaults merge: merge_patch merges objects per key, which would resurrect the bundled
+  // entries of a map the user deliberately emptied. @p_raw is the unmerged document the merge
+  // was built from - the only place that still knows whether the key was present on disk.
+  static void restoreUserOwnedObjects(QJsonObject &p_merged, const QJsonObject &p_raw);
+
   // Perform version upgrade of the config itself (version-gated forced
   // overrides + version stamping). The bundled extra-data dump is NOT part of
   // this; it is owned by ensureExtraData(), which runs on every launch.
@@ -184,6 +190,11 @@ private:
 
   // Whether version changed since last run
   bool m_versionChanged = false;
+
+  // Set when init() could not READ an existing main config (as opposed to there being none).
+  // Suppresses every main-config write for the rest of the session so defaults cannot
+  // overwrite a config we merely failed to read.
+  bool m_mainConfigReadFailed = false;
 
   // Folders whose extra-data install failed during the last ensureExtraData().
   QVector<ExtraDataFailure> m_extraDataFailures;

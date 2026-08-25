@@ -48,11 +48,24 @@ public:
   QJsonObject getSessionConfig() const;
 
   // Get configuration by name for specified location.
-  QJsonObject getConfigByName(DataLocation p_location, const QString &p_baseName) const;
+  //
+  // @p_ok, when given, reports whether the config could be READ. An absent file is not a
+  // failure (it yields an empty object with *p_ok == true); a present-but-unreadable or
+  // unparseable one sets *p_ok to false.
+  QJsonObject getConfigByName(DataLocation p_location, const QString &p_baseName,
+                              bool *p_ok = nullptr) const;
 
-  // Get configuration by name with default values fallback.
+  // Get configuration by name, deep-merged (RFC 7386) on top of @p_defaults, so a key the
+  // user's file does not carry keeps its default value.
+  //
+  // @p_ok, when given, reports whether the config could actually be READ. An absent file is
+  // NOT a failure (it yields @p_defaults with *p_ok == true). A present-but-unreadable file
+  // sets *p_ok to false and also yields @p_defaults - vxcore deliberately distinguishes the
+  // two, and a caller that persists what it got back MUST check this flag or it will
+  // overwrite a config it merely failed to read.
   QJsonObject getConfigByNameWithDefaults(DataLocation p_location, const QString &p_baseName,
-                                          const QJsonObject &p_defaults) const;
+                                          const QJsonObject &p_defaults,
+                                          bool *p_ok = nullptr) const;
 
   // Update configuration by name. Returns Error for failure cases.
   Error updateConfigByName(DataLocation p_location, const QString &p_baseName,

@@ -4,8 +4,10 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QScopeGuard>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -54,11 +56,32 @@ private slots:
   void testTableMigration_doesNotRunOnTheSameOrANewerVersion();
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
-  void testAutoFoldPreviewedBlocks_absentKeyKeepsTheTrueDefault();
+
+  // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
+  void testAbsentKeyKeepsTheCppDefaultForEveryField();
+  void testAbsentSectionKeepsTheWholeSectionDefault();
+  void testUserValueStillWinsOverTheDefault();
+  void testWebResourceMergesPerKeyButReplacesArrays();
+  void testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected();
+  void testAnExplicitNullDeletesTheKey();
+  void testAnUnreadableConfigIsNeverOverwritten();
 
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
   QString buildExtraDataFixture(TempDirFixture &p_tmp) const;
+
+  // Write @p_onDisk as vnotex.json and load it back through a fresh ConfigMgr2, i.e. through
+  // the real getConfigByNameWithDefaults() merge path. Returns the loaded MainConfig::toJson().
+  QJsonObject loadThroughMergePath(const QJsonObject &p_onDisk) const;
+
+  // Every leaf (non-object) key of @p_obj, as a path of key names.
+  static QVector<QStringList> leafPaths(const QJsonObject &p_obj);
+
+  static QJsonValue valueAt(const QJsonObject &p_obj, const QStringList &p_path);
+
+  static QJsonObject withoutKeyAt(const QJsonObject &p_obj, const QStringList &p_path);
+
+  static QString pathToString(const QStringList &p_path);
 
   // Wipe the installed extra-data folders (and therefore their stamps) so each
   // scenario starts from a known state.
@@ -540,31 +563,332 @@ void TestConfigMgr2::testAlignTableSource_jsonRoundTripAndAbsentKeyDefault() {
   QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), false);
 }
 
-void TestConfigMgr2::testAutoFoldPreviewedBlocks_absentKeyKeepsTheTrueDefault() {
-  MainConfig config(m_configMgr);
-  auto &mdConfig = config.getEditorConfig().getMarkdownEditorConfig();
+// ============ Absent-key safety (the defaults merge) ============
 
-  QVERIFY2(mdConfig.getAutoFoldPreviewedBlocksEnabled(),
-           "auto-folding previewed blocks must default to on");
+QJsonObject TestConfigMgr2::loadThroughMergePath(const QJsonObject &p_onDisk) const {
+  const Error err =
+      m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), p_onDisk);
+  if (!err.isOk()) {
+    qWarning() << "failed to write the vnotex.json fixture:" << err.message();
+    return QJsonObject();
+  }
 
-  // The upgrade case: a vnotex.json written before this key existed. ConfigMgr2 still runs
-  // fromJson() on it, so an absent key must NOT be read as false or every existing
-  // installation would silently lose auto-folding.
-  QJsonObject json = mdConfig.toJson();
-  QVERIFY(json.contains(QStringLiteral("autoFoldPreviewedBlocks")));
-  json.remove(QStringLiteral("autoFoldPreviewedBlocks"));
+  ConfigMgr2 mgr(m_configService);
+  mgr.init();
+  return mgr.getConfig().toJson();
+}
+
+QVector<QStringList> TestConfigMgr2::leafPaths(const QJsonObject &p_obj) {
+  QVector<QStringList> paths;
+  for (auto it = p_obj.begin(); it != p_obj.end(); ++it) {
+    if (it.value().isObject()) {
+      const auto childPaths = leafPaths(it.value().toObject());
+      if (childPaths.isEmpty()) {
+        // An empty object is itself a leaf.
+        paths.append(QStringList{it.key()});
+        continue;
+      }
+      for (const auto &child : childPaths) {
+        paths.append(QStringList{it.key()} + child);
+      }
+    } else {
+      paths.append(QStringList{it.key()});
+    }
+  }
+  return paths;
+}
+
+QJsonValue TestConfigMgr2::valueAt(const QJsonObject &p_obj, const QStringList &p_path) {
+  QJsonValue value(p_obj);
+  for (const auto &key : p_path) {
+    value = value.toObject().value(key);
+  }
+  return value;
+}
+
+QJsonObject TestConfigMgr2::withoutKeyAt(const QJsonObject &p_obj, const QStringList &p_path) {
+  Q_ASSERT(!p_path.isEmpty());
+  QJsonObject obj = p_obj;
+  if (p_path.size() == 1) {
+    obj.remove(p_path.first());
+    return obj;
+  }
+
+  obj[p_path.first()] = withoutKeyAt(obj.value(p_path.first()).toObject(), p_path.mid(1));
+  return obj;
+}
+
+QString TestConfigMgr2::pathToString(const QStringList &p_path) {
+  return p_path.join(QLatin1Char('.'));
+}
+
+void TestConfigMgr2::testAbsentKeyKeepsTheCppDefaultForEveryField() {
+  // The generic gate. Serialize a default-constructed MainConfig, then drop each leaf key in
+  // turn, load the result through the real merge path, and assert the value still equals the
+  // default. This is what makes adding a config field with a non-zero default safe: the
+  // IConfig read helpers are not presence-aware, so absent-key safety comes entirely from the
+  // defaults merge in ConfigMgr2::init().
+  MainConfig defaults(m_configMgr);
+  const QJsonObject defaultsJson = defaults.toJson();
+
+  const auto paths = leafPaths(defaultsJson);
+  QVERIFY2(paths.size() > 50, qPrintable(QStringLiteral("only %1 leaf keys found; the defaults "
+                                                        "document looks wrong")
+                                             .arg(paths.size())));
+
+  for (const auto &path : paths) {
+    // widget.newNoteDefaultTemplates is owned wholesale by the user (a present but empty
+    // object means "none"), so it is deliberately restored from the RAW document and does
+    // not follow per-key merge semantics. testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected
+    // covers it instead.
+    if (path.size() > 1 && path.first() == QStringLiteral("widget") &&
+        path.at(1) == QStringLiteral("newNoteDefaultTemplates")) {
+      continue;
+    }
+
+    const QJsonObject loaded = loadThroughMergePath(withoutKeyAt(defaultsJson, path));
+    QVERIFY2(!loaded.isEmpty(), "the config could not be loaded back");
+    QVERIFY2(
+        valueAt(loaded, path) == valueAt(defaultsJson, path),
+        qPrintable(QStringLiteral("dropping \"%1\" did not keep its default (got %2, "
+                                  "expected %3)")
+                       .arg(pathToString(path),
+                            QString::fromUtf8(QJsonDocument(QJsonArray{valueAt(loaded, path)})
+                                                  .toJson(QJsonDocument::Compact)),
+                            QString::fromUtf8(QJsonDocument(QJsonArray{valueAt(defaultsJson, path)})
+                                                  .toJson(QJsonDocument::Compact)))));
+  }
+}
+
+void TestConfigMgr2::testAbsentSectionKeepsTheWholeSectionDefault() {
+  // A whole missing section (the shape a hand-truncated vnotex.json has) must not zero out
+  // every field in it. merge_patch merges objects per key, so the section comes back whole.
+  MainConfig defaults(m_configMgr);
+  const QJsonObject defaultsJson = defaults.toJson();
+
+  QJsonObject onDisk = defaultsJson;
+  onDisk.remove(QStringLiteral("editor"));
+
+  const QJsonObject loaded = loadThroughMergePath(onDisk);
+  QVERIFY(!loaded.isEmpty());
+  QCOMPARE(loaded.value(QStringLiteral("editor")), defaultsJson.value(QStringLiteral("editor")));
+}
+
+void TestConfigMgr2::testUserValueStillWinsOverTheDefault() {
+  // The merge must not turn into "defaults always win": a persisted value, including a
+  // non-default one nested inside the WebResource objects, has to survive.
+  MainConfig defaults(m_configMgr);
+  const QJsonObject defaultsJson = defaults.toJson();
+
+  MainConfig source(m_configMgr);
+  auto &sourceMd = source.getEditorConfig().getMarkdownEditorConfig();
+  sourceMd.setAutoFoldPreviewedBlocksEnabled(false);
+  sourceMd.setAlignTableSourceEnabled(true);
+
+  const QJsonObject loaded = loadThroughMergePath(source.toJson());
+  QVERIFY(!loaded.isEmpty());
 
   MainConfig reloaded(m_configMgr);
+  reloaded.fromJson(loaded);
   auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
-  reloadedMd.fromJson(json);
-  QCOMPARE(reloadedMd.getAutoFoldPreviewedBlocksEnabled(), true);
-
-  // An explicit false must still survive the round trip.
-  mdConfig.setAutoFoldPreviewedBlocksEnabled(false);
-  json = mdConfig.toJson();
-  QCOMPARE(json.value(QStringLiteral("autoFoldPreviewedBlocks")).toBool(), false);
-  reloadedMd.fromJson(json);
   QCOMPARE(reloadedMd.getAutoFoldPreviewedBlocksEnabled(), false);
+  QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), true);
+
+  // And an untouched neighbour still reads as its default.
+  QCOMPARE(valueAt(loaded, {QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                            QStringLiteral("zoomFactorInReadMode")}),
+           valueAt(defaultsJson, {QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                                  QStringLiteral("zoomFactorInReadMode")}));
+}
+
+void TestConfigMgr2::testWebResourceMergesPerKeyButReplacesArrays() {
+  // The nested WebResource objects used to be replaced wholesale by whatever the file held.
+  // After the merge they merge per key - a custom "template" with no "resources" keeps the
+  // default resources - while the "resources" ARRAY itself is still replaced wholesale
+  // (RFC 7386 does not merge arrays element-wise).
+  MainConfig defaults(m_configMgr);
+  const QJsonObject defaultsJson = defaults.toJson();
+  const QStringList mdPath{QStringLiteral("editor"), QStringLiteral("markdown_editor")};
+  const QJsonObject defaultViewer =
+      valueAt(defaultsJson, mdPath + QStringList{QStringLiteral("viewerResource")}).toObject();
+  QVERIFY2(!defaultViewer.value(QStringLiteral("resources")).toArray().isEmpty(),
+           "the default viewerResource carries no resources");
+
+  // Case 1: only "template" on disk.
+  {
+    QJsonObject onDisk = defaultsJson;
+    QJsonObject editor = onDisk.value(QStringLiteral("editor")).toObject();
+    QJsonObject md = editor.value(QStringLiteral("markdown_editor")).toObject();
+    md[QStringLiteral("viewerResource")] =
+        QJsonObject{{QStringLiteral("template"), QStringLiteral("web/custom.html")}};
+    editor[QStringLiteral("markdown_editor")] = md;
+    onDisk[QStringLiteral("editor")] = editor;
+
+    const QJsonObject loaded = loadThroughMergePath(onDisk);
+    QVERIFY(!loaded.isEmpty());
+    const QJsonObject viewer =
+        valueAt(loaded, mdPath + QStringList{QStringLiteral("viewerResource")}).toObject();
+    QCOMPARE(viewer.value(QStringLiteral("template")).toString(),
+             QStringLiteral("web/custom.html"));
+    QCOMPARE(viewer.value(QStringLiteral("resources")),
+             defaultViewer.value(QStringLiteral("resources")));
+  }
+
+  // Case 2: only "resources" on disk - the array replaces, the template defaults.
+  {
+    QJsonObject onDisk = defaultsJson;
+    QJsonObject editor = onDisk.value(QStringLiteral("editor")).toObject();
+    QJsonObject md = editor.value(QStringLiteral("markdown_editor")).toObject();
+    QJsonObject only{{QStringLiteral("name"), QStringLiteral("global_styles")},
+                     {QStringLiteral("enabled"), true},
+                     {QStringLiteral("styles"), QJsonArray{QStringLiteral("web/only.css")}},
+                     {QStringLiteral("scripts"), QJsonArray{}}};
+    md[QStringLiteral("viewerResource")] =
+        QJsonObject{{QStringLiteral("resources"), QJsonArray{only}}};
+    editor[QStringLiteral("markdown_editor")] = md;
+    onDisk[QStringLiteral("editor")] = editor;
+
+    const QJsonObject loaded = loadThroughMergePath(onDisk);
+    QVERIFY(!loaded.isEmpty());
+    const QJsonObject viewer =
+        valueAt(loaded, mdPath + QStringList{QStringLiteral("viewerResource")}).toObject();
+    QCOMPARE(viewer.value(QStringLiteral("resources")).toArray().size(), 1);
+    QCOMPARE(viewer.value(QStringLiteral("template")).toString(),
+             defaultViewer.value(QStringLiteral("template")).toString());
+  }
+}
+
+void TestConfigMgr2::testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected() {
+  // widget.newNoteDefaultTemplates is owned wholesale by the user: a PRESENT but empty object
+  // means "no default templates at all". merge_patch merges objects per key, so without the
+  // user-owned-object restore in ConfigMgr2::init() the bundled Markdown entry would come
+  // back and the setting could never be turned off.
+  MainConfig defaults(m_configMgr);
+  const QJsonObject defaultsJson = defaults.toJson();
+  const QStringList path{QStringLiteral("widget"), QStringLiteral("newNoteDefaultTemplates")};
+  QVERIFY2(!valueAt(defaultsJson, path).toObject().isEmpty(),
+           "the bundled default mapping is expected to be non-empty");
+
+  QJsonObject onDisk = withoutKeyAt(defaultsJson, path);
+  QJsonObject widget = onDisk.value(QStringLiteral("widget")).toObject();
+  widget[QStringLiteral("newNoteDefaultTemplates")] = QJsonObject();
+  onDisk[QStringLiteral("widget")] = widget;
+
+  const QJsonObject loaded = loadThroughMergePath(onDisk);
+  QVERIFY(!loaded.isEmpty());
+  QVERIFY2(valueAt(loaded, path).toObject().isEmpty(),
+           "an explicitly emptied newNoteDefaultTemplates was resurrected by the merge");
+
+  // A user-chosen mapping survives too, without the bundled entries leaking back in.
+  widget[QStringLiteral("newNoteDefaultTemplates")] =
+      QJsonObject{{QStringLiteral("Text"), QStringLiteral("mine.txt")}};
+  onDisk[QStringLiteral("widget")] = widget;
+  const QJsonObject loaded2 = loadThroughMergePath(onDisk);
+  QVERIFY(!loaded2.isEmpty());
+  QCOMPARE(valueAt(loaded2, path).toObject().size(), 1);
+  QCOMPARE(valueAt(loaded2, path).toObject().value(QStringLiteral("Text")).toString(),
+           QStringLiteral("mine.txt"));
+}
+
+void TestConfigMgr2::testAnExplicitNullDeletesTheKey() {
+  // Pinning merge_patch's (RFC 7386) null semantics: a JSON null DELETES the key rather than
+  // selecting the default, so the read helper's zero value applies. Nothing VNote writes ever
+  // emits null - this documents the one hole in absent-key safety so a future change that
+  // starts emitting nulls is caught here rather than in the field.
+  MainConfig defaults(m_configMgr);
+  const QJsonObject defaultsJson = defaults.toJson();
+
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                         QStringLiteral("autoFoldPreviewedBlocks")};
+  QCOMPARE(valueAt(defaultsJson, path).toBool(), true);
+
+  QJsonObject onDisk = defaultsJson;
+  QJsonObject editor = onDisk.value(QStringLiteral("editor")).toObject();
+  QJsonObject md = editor.value(QStringLiteral("markdown_editor")).toObject();
+  md[QStringLiteral("autoFoldPreviewedBlocks")] = QJsonValue(QJsonValue::Null);
+  editor[QStringLiteral("markdown_editor")] = md;
+  onDisk[QStringLiteral("editor")] = editor;
+
+  const QJsonObject loaded = loadThroughMergePath(onDisk);
+  QVERIFY(!loaded.isEmpty());
+  QCOMPARE(valueAt(loaded, path).toBool(), false);
+}
+
+void TestConfigMgr2::testAnUnreadableConfigIsNeverOverwritten() {
+  // A present-but-unparseable vnotex.json must not be mistaken for an absent one: the merge
+  // hands back the defaults so the app can still run, but ConfigMgr2 must then refuse EVERY
+  // main-config write for the session, or the user's settings would be replaced by defaults
+  // the moment anything touched the config.
+  const QString configFile =
+      QDir(m_configService->getDataPath(DataLocation::App)).filePath(QStringLiteral("vnotex.json"));
+
+  // Drain any debounced write the shared manager still owes (constructing a MainConfig on it
+  // schedules one), or it would land on our corrupt fixture mid-test.
+  const QJsonObject healthy = m_configMgr->getConfig().toJson();
+  QTest::qWait(700);
+
+  const QByteArray corrupt("{ this is not json");
+  const auto writeCorrupt = [&]() {
+    QFile file(configFile);
+    return file.open(QIODevice::WriteOnly | QIODevice::Truncate) &&
+           file.write(corrupt) == static_cast<qint64>(corrupt.size());
+  };
+  const auto onDiskBytes = [&]() {
+    QFile file(configFile);
+    return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray("<unreadable>");
+  };
+  // Whatever happens below, do not leave the corrupt fixture behind for the next test.
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+  });
+
+  QVERIFY(writeCorrupt());
+
+  // Path 1: the debounced timer fires while the manager is alive.
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+
+    // Running on defaults, and no upgrade migration is attempted.
+    QVERIFY(!mgr.isVersionChanged());
+    QVERIFY(mgr.getConfig()
+                .getEditorConfig()
+                .getMarkdownEditorConfig()
+                .getAutoFoldPreviewedBlocksEnabled());
+
+    mgr.getConfig().getEditorConfig().getMarkdownEditorConfig().setAlignTableSourceEnabled(true);
+    QTest::qWait(700);
+    QCOMPARE(onDiskBytes(), corrupt);
+  }
+  QCOMPARE(onDiskBytes(), corrupt);
+
+  // Path 2: the manager is destroyed with the write still PENDING, so the destructor's flush
+  // is the one that has to refuse.
+  QVERIFY(writeCorrupt());
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    mgr.getConfig().getEditorConfig().getMarkdownEditorConfig().setAlignTableSourceEnabled(true);
+    // No qWait: the 500 ms timer is still armed when the manager goes out of scope.
+  }
+  QCOMPARE(onDiskBytes(), corrupt);
+
+  // Path 3: syntactically valid JSON that is not an OBJECT. It parses, so it must not be
+  // mistaken for an empty config and overwritten either.
+  const QByteArray notAnObject("[1, 2, 3]");
+  {
+    QFile file(configFile);
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(file.write(notAnObject), static_cast<qint64>(notAnObject.size()));
+  }
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    QVERIFY(!mgr.isVersionChanged());
+    mgr.getConfig().getEditorConfig().getMarkdownEditorConfig().setAlignTableSourceEnabled(true);
+    QTest::qWait(700);
+  }
+  QCOMPARE(onDiskBytes(), notAnObject);
 }
 
 } // namespace tests

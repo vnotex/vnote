@@ -102,8 +102,12 @@ QJsonObject ConfigCoreService::getSessionConfig() const {
   return parseJsonObjectFromCStr(json);
 }
 
-QJsonObject ConfigCoreService::getConfigByName(DataLocation p_location,
-                                               const QString &p_baseName) const {
+QJsonObject ConfigCoreService::getConfigByName(DataLocation p_location, const QString &p_baseName,
+                                               bool *p_ok) const {
+  if (p_ok) {
+    *p_ok = false;
+  }
+
   if (!checkContext()) {
     return QJsonObject();
   }
@@ -113,14 +117,41 @@ QJsonObject ConfigCoreService::getConfigByName(DataLocation p_location,
       vxcore_context_get_config_by_name(m_context, static_cast<VxCoreDataLocation>(p_location),
                                         p_baseName.toUtf8().constData(), &json);
   if (err != VXCORE_OK) {
+    // An absent config is not a read failure: there is simply nothing there yet.
+    if (p_ok) {
+      *p_ok = (err == VXCORE_ERR_NOT_FOUND);
+    }
     return QJsonObject();
   }
-  return parseJsonObjectFromCStr(json);
+
+  // A payload that does not parse, or that is not a JSON OBJECT, is a read failure rather
+  // than an empty config: silently returning {} would let a caller overwrite it with
+  // defaults. An EMPTY payload is the exception - an empty file carries no settings to lose.
+  const QByteArray payload = QByteArray(json).trimmed();
+  vxcore_string_free(json);
+  if (payload.isEmpty()) {
+    if (p_ok) {
+      *p_ok = true;
+    }
+    return QJsonObject();
+  }
+
+  QJsonParseError parseError;
+  const auto doc = QJsonDocument::fromJson(payload, &parseError);
+  if (p_ok) {
+    *p_ok = (parseError.error == QJsonParseError::NoError && doc.isObject());
+  }
+  return doc.object();
 }
 
 QJsonObject ConfigCoreService::getConfigByNameWithDefaults(DataLocation p_location,
                                                            const QString &p_baseName,
-                                                           const QJsonObject &p_defaults) const {
+                                                           const QJsonObject &p_defaults,
+                                                           bool *p_ok) const {
+  if (p_ok) {
+    *p_ok = false;
+  }
+
   if (!checkContext()) {
     return p_defaults;
   }
@@ -130,7 +161,15 @@ QJsonObject ConfigCoreService::getConfigByNameWithDefaults(DataLocation p_locati
       m_context, static_cast<VxCoreDataLocation>(p_location), p_baseName.toUtf8().constData(),
       QJsonDocument(p_defaults).toJson(QJsonDocument::Compact).constData(), &json);
   if (err != VXCORE_OK) {
-    return QJsonObject();
+    // vxcore already folded "absent" into VXCORE_OK + defaults, so reaching here means the
+    // config exists but could not be read or parsed. Hand back the defaults (there is nothing
+    // better to run on) but report the failure, so the caller can refuse to persist over it.
+    qWarning() << "Failed to read config" << p_baseName << "with defaults: error=" << err;
+    return p_defaults;
+  }
+
+  if (p_ok) {
+    *p_ok = true;
   }
   return parseJsonObjectFromCStr(json);
 }

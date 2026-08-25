@@ -23,7 +23,10 @@ MainConfig::MainConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {
 MainConfig::~MainConfig() {}
 
 void MainConfig::fromJson(const QJsonObject &p_jobj) {
-  // p_jobj is already merged (defaults + user overrides)
+  // p_jobj MUST already be merged (defaults + user overrides). ConfigMgr2::init() guarantees
+  // this by applying the user's document as an RFC 7386 merge patch on top of the defaults;
+  // the child fromJson()s below map an absent key to false/0/"", so a raw, unmerged document
+  // would wipe every non-zero default.
   loadMetadata(p_jobj);
 
   for (auto &childConfig : m_childConfigs) {
