@@ -56,6 +56,14 @@ QString ViewWindow2::getName() const { return {}; }
 
 QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return {}; }
 
+// Added together with the comment dock: a ViewWindow2 with no comment support
+// hands back null and the panel simply goes empty.
+QSharedPointer<CommentProvider> ViewWindow2::getCommentProvider() const { return {}; }
+
+// Non-pure virtual, so it needs a body here too: a window that does not follow
+// a rename inherits the base no-op.
+void ViewWindow2::handleNodeRetargeted(const NodeIdentifier &) {}
+
 int ViewWindow2::getCursorPosition() const { return -1; }
 
 int ViewWindow2::getScrollPosition() const { return -1; }
