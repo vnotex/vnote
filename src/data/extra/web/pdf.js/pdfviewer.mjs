@@ -63,8 +63,8 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.captureSelection();
         });
 
-        adapter.commentColorChanged.connect(function(p_color) {
-            window.vxcore.setCommentColor(p_color);
+        adapter.toolOptionsChanged.connect(function(p_tool, p_options) {
+            window.vxcore.setToolOptions(p_tool, p_options);
         });
 
         adapter.toolChanged.connect(function(p_tool) {

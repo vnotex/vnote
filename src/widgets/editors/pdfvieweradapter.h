@@ -3,6 +3,7 @@
 
 #include "webviewadapter.h"
 
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
@@ -98,11 +99,25 @@ public:
 
   Tool getTool() const;
 
-  // Colour used by every tool. Applied immediately to the web side so the next
-  // capture (including an Alt+drag one) uses it.
-  void setCommentColor(const QString &p_color);
+  // The tool-key vocabulary shared with PdfViewerConfig and the web side.
+  static QString toolToString(Tool p_tool);
 
-  const QString &getCommentColor() const;
+  // Inverse of toolToString(). Anything unrecognized is Tool::None, so the
+  // mapping is spelled in exactly one place and cannot drift.
+  static Tool toolFromString(const QString &p_tool);
+
+  // Per-tool authoring options: colour for every tool, plus `width` for ink and
+  // `fontSize` for free text. Normalized on the way in (see
+  // PdfToolOptions::normalize) — the toolbar is trusted-ish, but this keeps one
+  // choke point and mirrors what the web side is allowed to send back.
+  //
+  // The payload stays JSON-PRIMITIVE (QJsonObject, not a QVariantMap of typed
+  // values) because it crosses QWebChannel.
+  void setToolOptions(Tool p_tool, const QJsonObject &p_options);
+
+  QJsonObject getToolOptions(Tool p_tool) const;
+
+  QJsonObject getToolOptions(const QString &p_tool) const;
 
   // Highest page index the web side will accept in an anchor. Set from
   // 'documentloaded'; 0 means "unknown", which rejects every anchor.
@@ -158,7 +173,9 @@ signals:
   // toolbar is showing, even across a reload.
   void toolChanged(const QString &p_tool);
 
-  void commentColorChanged(const QString &p_color);
+  // Latched alongside the tool: a reloaded page must come up FULLY configured,
+  // so the false->true readiness transition republishes EVERY tool's options.
+  void toolOptionsChanged(const QString &p_tool, const QJsonObject &p_options);
 
   // Signals to be connected at cpp side.
 signals:
@@ -189,8 +206,6 @@ private:
 
   void publishTool();
 
-  static QString toolToString(Tool p_tool);
-
   // Outline from web side, already passed through
   // OutlineProvider::makePerfectHeadings().
   QVector<Heading> m_headings;
@@ -203,10 +218,12 @@ private:
 
   Tool m_tool = Tool::None;
 
-  QString m_commentColor = QStringLiteral("yellow");
+  // Tool key -> normalized options object. Always populated for every tool in
+  // PdfToolOptions::toolNames(), so getToolOptions() is total.
+  QHash<QString, QJsonObject> m_toolOptions;
 
   // Same latch-not-queue rule as the comment set: a reload must come up in the
-  // CURRENT tool/colour, and only the newest values matter.
+  // CURRENT tool and per-tool options, and only the newest values matter.
   bool m_toolPublishPending = false;
 };
 } // namespace vnotex

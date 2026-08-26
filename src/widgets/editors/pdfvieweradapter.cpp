@@ -67,6 +67,10 @@ PdfViewerAdapter::Heading PdfViewerAdapter::Heading::fromJson(const QJsonObject 
 }
 
 PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent) {
+  for (const auto &tool : PdfToolOptions::toolNames()) {
+    m_toolOptions.insert(tool, PdfToolOptions::defaults(tool));
+  }
+
   // The false->true readiness transition is the ONLY point at which a
   // replacement page's QWebChannel exists, so it is where a latched comment set
   // has to be published. Without this, a set produced while a reload was in
@@ -78,7 +82,11 @@ PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent)
     }
     if (m_toolPublishPending) {
       m_toolPublishPending = false;
-      emit commentColorChanged(m_commentColor);
+      // EVERY tool, not just the active one: a reloaded page must come up fully
+      // configured, and the latch republishes only what the adapter holds.
+      for (const auto &tool : PdfToolOptions::toolNames()) {
+        emit toolOptionsChanged(tool, m_toolOptions.value(tool));
+      }
       emit toolChanged(toolToString(m_tool));
     }
   });
@@ -164,9 +172,10 @@ void PdfViewerAdapter::clearComments() {
   // replacement document's real set.
   m_commentsPublishPending = false;
 
-  // The TOOL is not document state -- the toolbar still shows whatever the user
-  // armed -- so the replacement page has to be told about it, or the toggle
-  // would look pressed while the page sat in reading mode.
+  // The TOOL and its per-tool options are not document state -- the toolbar
+  // still shows whatever the user armed -- so the replacement page has to be
+  // told about them, or the toggle would look pressed while the page sat in
+  // reading mode, and the next stroke would use the JS defaults.
   m_toolPublishPending = true;
 }
 
@@ -215,6 +224,19 @@ QString PdfViewerAdapter::toolToString(Tool p_tool) {
   return QStringLiteral("none");
 }
 
+PdfViewerAdapter::Tool PdfViewerAdapter::toolFromString(const QString &p_tool) {
+  if (p_tool == PdfToolOptions::highlightTool()) {
+    return Tool::Highlight;
+  }
+  if (p_tool == PdfToolOptions::inkTool()) {
+    return Tool::Ink;
+  }
+  if (p_tool == PdfToolOptions::freeTextTool()) {
+    return Tool::FreeText;
+  }
+  return Tool::None;
+}
+
 void PdfViewerAdapter::setTool(Tool p_tool) {
   if (m_tool == p_tool) {
     return;
@@ -225,25 +247,45 @@ void PdfViewerAdapter::setTool(Tool p_tool) {
 
 PdfViewerAdapter::Tool PdfViewerAdapter::getTool() const { return m_tool; }
 
-void PdfViewerAdapter::setCommentColor(const QString &p_color) {
-  const QString color = CommentColor::isValid(p_color) ? p_color : CommentColor::defaultToken();
-  if (m_commentColor == color) {
+void PdfViewerAdapter::setToolOptions(Tool p_tool, const QJsonObject &p_options) {
+  const auto tool = toolToString(p_tool);
+  if (!PdfToolOptions::isValidTool(tool)) {
+    // Tool::None carries no options.
     return;
   }
-  m_commentColor = color;
-  publishTool();
+
+  // One choke point for the Task 0 normalization: invalid colour -> default,
+  // non-finite scalar -> default, out-of-range scalar -> clamped.
+  const auto normalized = PdfToolOptions::normalize(tool, p_options);
+  if (m_toolOptions.value(tool) == normalized) {
+    return;
+  }
+  m_toolOptions.insert(tool, normalized);
+
+  if (isReady()) {
+    emit toolOptionsChanged(tool, normalized);
+    return;
+  }
+  // Latch, do NOT queue: only the newest options matter, and pendAction would
+  // replay every intermediate pick on the next ready transition.
+  m_toolPublishPending = true;
 }
 
-const QString &PdfViewerAdapter::getCommentColor() const { return m_commentColor; }
+QJsonObject PdfViewerAdapter::getToolOptions(Tool p_tool) const {
+  return getToolOptions(toolToString(p_tool));
+}
+
+QJsonObject PdfViewerAdapter::getToolOptions(const QString &p_tool) const {
+  return m_toolOptions.value(p_tool, PdfToolOptions::defaults(p_tool));
+}
 
 void PdfViewerAdapter::publishTool() {
   if (isReady()) {
-    emit commentColorChanged(m_commentColor);
     emit toolChanged(toolToString(m_tool));
     return;
   }
-  // Latch, do NOT queue: only the newest tool/colour matters, and pendAction
-  // would replay every intermediate toggle on the next ready transition.
+  // Latch, do NOT queue: only the newest tool matters, and pendAction would
+  // replay every intermediate toggle on the next ready transition.
   m_toolPublishPending = true;
 }
 

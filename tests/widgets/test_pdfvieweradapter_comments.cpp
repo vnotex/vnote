@@ -19,7 +19,9 @@
 
 #include <QtTest>
 
+#include <QHash>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QSignalSpy>
 
@@ -57,6 +59,8 @@ private slots:
   void inkAndFreeTextAnchorsAreAccepted();
   void newAnchorTypesAreStillPageBounded();
   void toolAndColourAreLatchedAcrossAReload();
+
+  void toolOptionsAreNormalizedOnTheWayIn();
   void toolFinishedFromTheWebSideClearsTheTool();
   void unknownAnchorTypesCannotBeMinted();
 
@@ -414,31 +418,150 @@ void TestPdfViewerAdapterComments::newAnchorTypesAreStillPageBounded() {
 }
 
 // The toolbar keeps showing the armed tool across a document reload, so the
-// replacement page must be told about it or the toggle would look pressed while
-// the page sat in reading mode.
+// replacement page must be told about it -- AND about every tool's options, not
+// just the active tool's, or a reloaded page comes up on the JS defaults.
 void TestPdfViewerAdapterComments::toolAndColourAreLatchedAcrossAReload() {
   PdfViewerAdapter adapter;
   adapter.setReady(true);
 
   QSignalSpy tools(&adapter, &PdfViewerAdapter::toolChanged);
-  QSignalSpy colors(&adapter, &PdfViewerAdapter::commentColorChanged);
+  QSignalSpy options(&adapter, &PdfViewerAdapter::toolOptionsChanged);
 
   adapter.setTool(PdfViewerAdapter::Tool::Ink);
-  adapter.setCommentColor(QStringLiteral("purple"));
+
+  QJsonObject inkOptions;
+  inkOptions.insert(QStringLiteral("color"), QStringLiteral("purple"));
+  inkOptions.insert(QStringLiteral("width"), 3.0);
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, inkOptions);
+
   QCOMPARE(tools.last().at(0).toString(), QStringLiteral("ink"));
-  QCOMPARE(colors.last().at(0).toString(), QStringLiteral("purple"));
+  QCOMPARE(options.last().at(0).toString(), QStringLiteral("ink"));
+  QCOMPARE(options.last().at(1).toJsonObject().value(QStringLiteral("color")).toString(),
+           QStringLiteral("purple"));
+
+  // === Per-tool independence: setting ink leaves the others alone. ===
+  QCOMPARE(adapter.getToolOptions(PdfViewerAdapter::Tool::Highlight)
+               .value(QStringLiteral("color"))
+               .toString(),
+           CommentColor::defaultToken());
+  QCOMPARE(adapter.getToolOptions(PdfViewerAdapter::Tool::FreeText)
+               .value(QStringLiteral("color"))
+               .toString(),
+           CommentColor::defaultToken());
 
   tools.clear();
-  colors.clear();
+  options.clear();
   adapter.clearComments();
   adapter.setReady(false);
   QCOMPARE(tools.count(), 0);
+  QCOMPARE(options.count(), 0);
 
   adapter.setReady(true);
   QCOMPARE(tools.count(), 1);
   QCOMPARE(tools.at(0).at(0).toString(), QStringLiteral("ink"));
-  QCOMPARE(colors.at(0).at(0).toString(), QStringLiteral("purple"));
   QCOMPARE(adapter.getTool(), PdfViewerAdapter::Tool::Ink);
+
+  // EVERY tool is republished, so the reloaded page is fully configured.
+  QCOMPARE(options.count(), 3);
+  QHash<QString, QJsonObject> republished;
+  for (const auto &call : options) {
+    republished.insert(call.at(0).toString(), call.at(1).toJsonObject());
+  }
+  QCOMPARE(republished.size(), 3);
+  QCOMPARE(republished.value(QStringLiteral("ink")).value(QStringLiteral("color")).toString(),
+           QStringLiteral("purple"));
+  QCOMPARE(republished.value(QStringLiteral("ink")).value(QStringLiteral("width")).toDouble(), 3.0);
+  QCOMPARE(republished.value(QStringLiteral("highlight")).value(QStringLiteral("color")).toString(),
+           CommentColor::defaultToken());
+  QCOMPARE(
+      republished.value(QStringLiteral("freetext")).value(QStringLiteral("fontSize")).toDouble(),
+      PdfToolOptions::defaultFontSize());
+}
+
+// The adapter re-applies the SAME normalization the config does, because the
+// same object is what the web side is allowed to send back.
+void TestPdfViewerAdapterComments::toolOptionsAreNormalizedOnTheWayIn() {
+  PdfViewerAdapter adapter;
+  adapter.setReady(true);
+
+  QSignalSpy options(&adapter, &PdfViewerAdapter::toolOptionsChanged);
+
+  // The SIGNAL PAYLOAD is asserted alongside the getter throughout: the page
+  // consumes the payload, so a getter that normalizes while the signal carries
+  // the raw value would leave the JS side configured with garbage.
+  // QJsonObject is not debug-streamable, so compare a canonical serialization.
+  const auto canonical = [](const QJsonObject &p_obj) {
+    return QString::fromUtf8(QJsonDocument(p_obj).toJson(QJsonDocument::Compact));
+  };
+  const auto lastFor = [&options, &canonical](const QString &p_tool) {
+    QJsonObject last;
+    for (const auto &call : options) {
+      if (call.at(0).toString() == p_tool) {
+        last = call.at(1).toJsonObject();
+      }
+    }
+    return canonical(last);
+  };
+
+  QJsonObject bad;
+  bad.insert(QStringLiteral("color"), QStringLiteral("#ff00ff"));
+  bad.insert(QStringLiteral("width"), 1.0e9);
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, bad);
+
+  auto stored = adapter.getToolOptions(PdfViewerAdapter::Tool::Ink);
+  QCOMPARE(stored.value(QStringLiteral("color")).toString(), CommentColor::defaultToken());
+  // Out of range CLAMPS.
+  QCOMPARE(stored.value(QStringLiteral("width")).toDouble(), PdfInkAnchor::maxWidth());
+  QCOMPARE(lastFor(QStringLiteral("ink")), canonical(stored));
+
+  // Non-finite carries no intent, so it takes the DEFAULT rather than a bound.
+  bad.insert(QStringLiteral("width"), QJsonValue(qQNaN()));
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, bad);
+  stored = adapter.getToolOptions(PdfViewerAdapter::Tool::Ink);
+  QCOMPARE(stored.value(QStringLiteral("width")).toDouble(), PdfToolOptions::defaultWidth());
+  QCOMPARE(lastFor(QStringLiteral("ink")), canonical(stored));
+
+  bad.insert(QStringLiteral("width"), QJsonValue(qInf()));
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, bad);
+  QCOMPARE(
+      adapter.getToolOptions(PdfViewerAdapter::Tool::Ink).value(QStringLiteral("width")).toDouble(),
+      PdfToolOptions::defaultWidth());
+
+  bad.insert(QStringLiteral("width"), -5.0);
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, bad);
+  stored = adapter.getToolOptions(PdfViewerAdapter::Tool::Ink);
+  QCOMPARE(stored.value(QStringLiteral("width")).toDouble(), PdfInkAnchor::minWidth());
+  QCOMPARE(lastFor(QStringLiteral("ink")), canonical(stored));
+
+  // A wrong JSON type is treated as absent.
+  QJsonObject wrongType;
+  wrongType.insert(QStringLiteral("color"), QJsonValue(7));
+  wrongType.insert(QStringLiteral("fontSize"), QStringLiteral("16"));
+  adapter.setToolOptions(PdfViewerAdapter::Tool::FreeText, wrongType);
+  stored = adapter.getToolOptions(PdfViewerAdapter::Tool::FreeText);
+  QCOMPARE(stored.value(QStringLiteral("color")).toString(), CommentColor::defaultToken());
+  QCOMPARE(stored.value(QStringLiteral("fontSize")).toDouble(), PdfToolOptions::defaultFontSize());
+
+  // Font size clamps to the free-text anchor's bounds, both ends.
+  QJsonObject size;
+  size.insert(QStringLiteral("fontSize"), 1.0e9);
+  adapter.setToolOptions(PdfViewerAdapter::Tool::FreeText, size);
+  stored = adapter.getToolOptions(PdfViewerAdapter::Tool::FreeText);
+  QCOMPARE(stored.value(QStringLiteral("fontSize")).toDouble(), PdfFreeTextAnchor::maxFontSize());
+  QCOMPARE(lastFor(QStringLiteral("freetext")), canonical(stored));
+
+  size.insert(QStringLiteral("fontSize"), 0.0);
+  adapter.setToolOptions(PdfViewerAdapter::Tool::FreeText, size);
+  QCOMPARE(adapter.getToolOptions(PdfViewerAdapter::Tool::FreeText)
+               .value(QStringLiteral("fontSize"))
+               .toDouble(),
+           PdfFreeTextAnchor::minFontSize());
+
+  // Tool::None carries no options and must not invent an entry.
+  options.clear();
+  adapter.setToolOptions(PdfViewerAdapter::Tool::None, bad);
+  QCOMPARE(options.count(), 0);
+  QVERIFY(adapter.getToolOptions(QStringLiteral("none")).isEmpty());
 }
 
 void TestPdfViewerAdapterComments::toolFinishedFromTheWebSideClearsTheTool() {

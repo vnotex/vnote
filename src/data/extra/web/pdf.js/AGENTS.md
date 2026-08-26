@@ -300,9 +300,58 @@ view-window toolbar (`PdfViewWindow2::setupAnnotationToolBarActions`):
 
 **A MODE is the point.** Arm Highlight once and every selection is captured,
 instead of a context-menu round trip per selection — that is the only reason
-pdf.js's buttons felt better, and it costs nothing to copy. The colour applies to
-all three and is persisted in `PdfViewerConfig::commentColor`, so the next window
-and the next launch start where the user left off.
+pdf.js's buttons felt better, and it costs nothing to copy.
+
+**Each tool owns its OWN settings**, persisted under `PdfViewerConfig`'s
+`tools` object and keyed by the *same* tool strings
+`PdfViewerAdapter::toolToString()` and this file use — one vocabulary end to
+end, so a value round-trips config → C++ → JS with no translation table to
+drift:
+
+| Tool | Key | Options |
+|---|---|---|
+| Highlight | `highlight` | `color` |
+| Draw | `ink` | `color`, `width` (PDF units) |
+| Text box | `freetext` | `color`, `fontSize` (PDF units) |
+
+`VX_INK_WIDTH` / `VX_FREETEXT_FONT_SIZE` are **defaults only**; the live values
+come from `this.toolOptions`, read through `optionsFor(tool)`. The C++ side
+publishes them with `toolOptionsChanged(tool, options)`, and the readiness latch
+republishes **every** tool (not just the armed one) so a reloaded page comes up
+fully configured. `setCommentColor()` survives as a thin alias that sets **the
+highlight colour only** — the page context menu carries an explicit colour with
+its `captureSelectionRequested`.
+
+Each toolbar button is a `QToolButton::MenuButtonPopup`: clicking the **body**
+arms/disarms the tool, clicking the **indicator** opens that tool's settings
+menu (5 colours, plus widths or font sizes). The whole thing lives in
+`PdfAnnotationToolBar` (`src/widgets/pdfannotationtoolbar.{h,cpp}`) rather than
+in `PdfViewWindow2`, so it is constructible in a test with a bare `QToolBar` and
+no WebEngine profile.
+
+The **normalize → persist → push-to-adapter** routing likewise lives outside the
+window, in `PdfToolOptionsRouter` (`src/widgets/pdftooloptionsrouter.{h,cpp}`),
+which takes the config and the adapter explicitly. Two things fail *silently*
+without it and are gated there:
+
+- **Startup hydration.** `PdfToolOptionsRouter::hydrate()` must run **before**
+  the first `false → true` readiness transition. The reload latch republishes
+  only what the adapter already holds, so skipping it means picks persist to
+  JSON and then a newly opened window comes up on the defaults.
+- **The context-menu route.** `captureHighlight()` persists the pick as the
+  highlight tool's colour and captures with the **same normalized token**, so
+  the page context menu and the toolbar menu cannot disagree.
+
+> **The `NoMenuIndicator` trap.** Do NOT set that dynamic property on these
+> buttons. Every theme's `interface.qss` hides the dropdown indicator for it
+> (e.g. `themes/pure/interface.qss:361`), and the indicator is the entire
+> affordance. `test_pdfannotationtoolbar` asserts the property is unset.
+
+> **Do not re-add a `QSignalBlocker` around the tick repaint in
+> `syncState()`.** `setChecked()` never emits `triggered`, so there is nothing
+> to echo back — but it does emit `changed`, which is how `QActionGroup` tracks
+> its current member. Blocking it leaves the group's bookkeeping stale and a
+> later user pick fails to clear the previous tick.
 
 The toolbar toggles are **not** authoritative: the web side can leave a tool by
 itself (Esc, or the one-shot Text tool completing), which reaches C++ as
@@ -341,7 +390,7 @@ Two routes, and the **context menu is the primary one**:
 
 | Route | Path |
 |---|---|
-| Select text → right-click → **Highlight ▸ <color>** | `PdfViewer::contextMenuEvent` → `highlightSelectionRequested` → `PdfViewerAdapter::captureSelection` → `captureSelectionRequested` → `vxcore.setCommentColor` + `captureSelection()` |
+| Select text → right-click → **Highlight ▸ <color>** | `PdfViewer::contextMenuEvent` → `highlightSelectionRequested` → `PdfViewWindow2` (which ALSO persists it as the highlight tool's colour, so the two pickers cannot disagree) → `PdfViewerAdapter::captureSelection` → `captureSelectionRequested` → `vxcore.setCommentColor` + `captureSelection()` |
 | **Alt + drag** (shortcut) | `mouseup` on `#viewerContainer` with `altKey` → `vxcore.captureSelection()` |
 
 **Do not delete the context menu and leave only Alt+drag.** That was the first
@@ -372,6 +421,12 @@ cache key, because a theme switch changes them without changing the config revis
 The **defaults are anchored to the page, not to the palette**: pdf.js renders the page from the
 PDF itself and does not tint it with the app theme, so a "yellow" highlight has to stay readable on
 paper in every theme. A theme MAY override any token with `widgets.pdfcomment.<token>`.
+
+The built-in token→colour table itself lives in
+`CommentColorSwatch::builtInColor()` (`src/gui/utils/commentcolorswatch.cpp`),
+which `ThemeService::commentHighlightColor()` calls. There must be exactly one
+table, so the chip drawn in Qt chrome cannot disagree with what is painted on
+the page — see [`src/gui/AGENTS.md`](../../../../gui/AGENTS.md).
 
 ### Bounds are enforced on BOTH sides
 

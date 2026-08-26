@@ -22,6 +22,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/commenttypes.h>
+#include <gui/utils/commentcolorswatch.h>
 #include <widgets/commentpanel.h>
 #include <widgets/commentprovider.h>
 
@@ -208,6 +209,13 @@ void TestCommentPanel::colorBoxShowsCapitalizedNamesButStoresRawTokens() {
              qPrintable(
                  QStringLiteral("row %1 label '%2' must start with a capital").arg(i).arg(label)));
     QCOMPARE(label, vnotex::CommentColor::displayName(token));
+
+    // The row now also carries a swatch. The fixture never calls
+    // setSwatchResolver(), so it must match the UNTHEMED helper exactly -- and
+    // adding an icon must not have changed what the row stores.
+    QVERIFY2(!box->itemIcon(i).isNull(), qPrintable(QStringLiteral("row %1 has no swatch").arg(i)));
+    QCOMPARE(box->itemIcon(i).pixmap(16, 16).toImage(),
+             vnotex::CommentColorSwatch::icon(token).pixmap(16, 16).toImage());
   }
 
   // Picking a row must still emit the lowercase token, not the label.

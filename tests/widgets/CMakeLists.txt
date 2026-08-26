@@ -191,6 +191,7 @@ add_qt_test(test_node_explorer_reload_expansion
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -238,6 +239,7 @@ add_qt_test(test_explorer_selection_after_save
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -391,6 +393,7 @@ add_qt_test(test_syncservice_lifecycle
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -946,6 +949,7 @@ add_qt_test(test_notebook_explorer2_sort
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1002,6 +1006,7 @@ add_qt_test(test_two_columns_node_explorer_sort
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1086,6 +1091,7 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1128,6 +1134,7 @@ add_qt_test(test_activitysticker
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1169,6 +1176,7 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1286,6 +1294,7 @@ add_qt_test(test_notificationtoast
     test_notificationtoast.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/notificationtoast.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1325,6 +1334,7 @@ add_qt_test(test_notificationpopup2
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -1473,6 +1483,52 @@ add_qt_test(test_pdfvieweradapter_comments
     vxcore
   GUILESS
 )
+# The PDF annotation toolbar: three MenuButtonPopup tool buttons, each with its
+# own settings menu. Extracted out of PdfViewWindow2 precisely so it is
+# constructible here with a bare QToolBar and no WebEngine profile. NOT GUILESS:
+# popupMode(), menus and the disabled state only mean anything against real
+# widgets.
+#
+# No themeservice.cpp: neither pdfannotationtoolbar.cpp nor
+# commentcolorswatch.cpp names a ThemeService symbol (the colour arrives as an
+# injected resolver, which defaults to the built-ins). core_services IS
+# required, for the out-of-line CommentColor::displayName().
+add_qt_test(test_pdfannotationtoolbar
+  SOURCES
+    test_pdfannotationtoolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/pdfannotationtoolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
+  LINKS
+    # core_configs carries pdfviewerconfig.cpp (and the IConfig base it needs).
+    core_configs
+    core_services
+    vxcore
+    VTextEdit
+)
+target_include_directories(test_pdfannotationtoolbar PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+)
+
+# The normalize -> persist -> push-to-adapter routing, extracted out of
+# PdfViewWindow2 so it is testable without a window and a WebEngine profile.
+# It gates the two things that fail SILENTLY otherwise: startup hydration
+# (settings persist, then a new window comes up on defaults) and the page
+# context menu's Highlight route agreeing with the toolbar menu.
+add_qt_test(test_pdftooloptionsrouter
+  SOURCES
+    test_pdftooloptionsrouter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/pdftooloptionsrouter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+  LINKS
+    core_configs
+    core_services
+    vxcore
+  GUILESS
+)
+
 # Comment dock. NOT GUILESS: the panel is a real widget and the debounce/flush
 # contract only means anything against real Qt widgets and a real event loop.
 add_qt_test(test_commentpanel
@@ -1482,6 +1538,8 @@ add_qt_test(test_commentpanel
     ${CMAKE_SOURCE_DIR}/src/widgets/commentprovider.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    # The dock's colour combo now paints swatches with this leaf helper.
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
   LINKS
     core_services

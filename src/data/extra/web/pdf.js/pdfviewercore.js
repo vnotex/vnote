@@ -48,7 +48,14 @@ class PdfViewerCore extends VXCore {
         this.commentAdapter = null;
         this.selectedCommentId = null;
         this.commentApp = null;
-        this.commentColor = 'yellow';
+        // Per-tool authoring options, keyed by the SAME tool names C++ uses.
+        // Each tool owns its own colour; `width` belongs to ink and `fontSize`
+        // to freetext. VX_INK_WIDTH / VX_FREETEXT_FONT_SIZE are DEFAULTS only.
+        this.toolOptions = {
+            highlight: { color: 'yellow' },
+            ink: { color: 'yellow', width: VX_INK_WIDTH },
+            freetext: { color: 'yellow', fontSize: VX_FREETEXT_FONT_SIZE }
+        };
         // 'none' | 'highlight' | 'ink' | 'freetext'. A MODE, mirroring pdf.js's
         // own toolbar: arm once, then every gesture authors, instead of a
         // per-gesture menu round trip.
@@ -512,12 +519,13 @@ class PdfViewerCore extends VXCore {
             return false;
         }
 
+        var inkOptions = this.optionsFor('ink');
         this.commentAdapter.requestAddComment({
             type: 'pdf-ink',
             page: draft.pageNumber,
             strokes: [draft.points],
-            width: VX_INK_WIDTH
-        }, this.commentColor);
+            width: typeof inkOptions.width === 'number' ? inkOptions.width : VX_INK_WIDTH
+        }, inkOptions.color);
         return true;
     }
 
@@ -579,10 +587,12 @@ class PdfViewerCore extends VXCore {
         if (!line) {
             return;
         }
+        var inkOptions = this.optionsFor('ink');
+        var inkWidth = typeof inkOptions.width === 'number' ? inkOptions.width : VX_INK_WIDTH;
         line.setAttribute('points',
                           PdfViewerCore.inkStrokeToPolylinePoints(draft.points, view.viewport));
-        line.setAttribute('stroke-width', String(VX_INK_WIDTH * (view.viewport.scale || 1)));
-        line.setAttribute('data-vx-color', this.commentColor);
+        line.setAttribute('stroke-width', String(inkWidth * (view.viewport.scale || 1)));
+        line.setAttribute('data-vx-color', inkOptions.color);
     }
 
     // === Free text ===
@@ -599,13 +609,15 @@ class PdfViewerCore extends VXCore {
         }
         var pt = PdfViewerCore.clientPointToPdfPoint(p_clientX, p_clientY, info.pageRect,
                                                      info.viewport);
+        var textOptions = this.optionsFor('freetext');
         this.commentAdapter.requestAddComment({
             type: 'pdf-freetext',
             page: info.pageNumber,
             x: pt[0],
             y: pt[1],
-            fontSize: VX_FREETEXT_FONT_SIZE
-        }, this.commentColor);
+            fontSize: typeof textOptions.fontSize === 'number' ? textOptions.fontSize
+                                                               : VX_FREETEXT_FONT_SIZE
+        }, textOptions.color);
         // One-shot: placing a box disarms the tool, matching how every other
         // "insert something here" action behaves. Kept HERE rather than in the
         // pointerdown handler so the rule is testable and cannot be bypassed by
@@ -649,7 +661,35 @@ class PdfViewerCore extends VXCore {
     }
 
     setCommentColor(p_color) {
-        this.commentColor = p_color;
+        // NARROWED: this is the HIGHLIGHT colour only. It exists because the
+        // page context menu carries an explicit colour with its
+        // captureSelectionRequested; every other colour arrives via
+        // setToolOptions().
+        this.toolOptions.highlight.color = p_color;
+    }
+
+    // Merge C++'s per-tool options into the map. Unknown tools are ignored; a
+    // missing key leaves the current value alone.
+    setToolOptions(p_tool, p_options) {
+        var current = this.toolOptions[p_tool];
+        if (!current || !p_options) {
+            return;
+        }
+        if (typeof p_options.color === 'string') {
+            current.color = p_options.color;
+        }
+        if (typeof p_options.width === 'number' && isFinite(p_options.width)) {
+            current.width = p_options.width;
+        }
+        if (typeof p_options.fontSize === 'number' && isFinite(p_options.fontSize)) {
+            current.fontSize = p_options.fontSize;
+        }
+    }
+
+    // Total: an unknown tool yields an empty object rather than undefined, so
+    // every call site can read a property without guarding.
+    optionsFor(p_tool) {
+        return this.toolOptions[p_tool] || {};
     }
 
     // 'none' | 'highlight' | 'ink' | 'freetext'.
@@ -790,13 +830,14 @@ class PdfViewerCore extends VXCore {
             return self.pageInfoForClientRect(p_rect);
         }, VX_MAX_COMMENT_QUADS);
 
+        var highlightColor = this.optionsFor('highlight').color;
         for (var g = 0; g < groups.length; ++g) {
             this.commentAdapter.requestAddComment({
                 type: 'pdf-quads',
                 page: groups[g].page,
                 quads: groups[g].quads,
                 text: text.substring(0, VX_MAX_ANCHOR_TEXT)
-            }, this.commentColor);
+            }, highlightColor);
         }
 
         if (groups.length > 0) {

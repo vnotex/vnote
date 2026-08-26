@@ -345,8 +345,11 @@ muted color from the system palette at runtime.) When adding a theme, add
 What is **not** an offender, and is not flagged:
 
 - A color literal used as **data** rather than chrome — the mark-node swatch
-  palette (`marknodedialog2.cpp`) and the notebook avatar colors
-  (`notebookselector2.cpp`) offer colors *to* the user.
+  palette (`marknodedialog2.cpp`), the notebook avatar colors
+  (`notebookselector2.cpp`), and `CommentColorSwatch`
+  ([`../gui/AGENTS.md § CommentColorSwatch`](../gui/AGENTS.md#commentcolorswatch)),
+  which paints the comment-colour chip with `QPainter` and offers colors *to*
+  the user.
 - A colorless style string, e.g. `"QLabel { font-style: italic; }"`. (Prefer
   `QFont` anyway; and for the menu indicator use the `NoMenuIndicator` property
   documented above, not an inline stylesheet.)

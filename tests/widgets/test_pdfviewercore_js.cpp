@@ -258,6 +258,14 @@ private slots:
   void cancellingAnInkGestureDiscardsIt();
   void extendInkDoesNotRebuildExistingComments();
 
+  void eachToolUsesItsOwnColour();
+
+  void setCommentColorIsHighlightOnly();
+
+  void scalarOptionsReachTheAnchors();
+
+  void inkDraftDomReflectsTheConfiguredInk();
+
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
   // top level, so re-evaluating it in the same engine would be a redeclaration.
@@ -857,20 +865,41 @@ window.__mkEl = function() {
         textContent: '',
         attrs: {},
         children: [],
+        // renderInkDraft() reaches the <polyline> through svg.firstChild, so the
+        // stub has to maintain it or the whole draft path silently no-ops.
+        firstChild: null,
         classList: {
             add: function() {}, remove: function() {}, toggle: function() {},
             contains: function() { return false; }
         },
         setAttribute: function(k, v) { this.attrs[k] = v; },
         getAttribute: function(k) { return this.attrs[k]; },
-        appendChild: function(c) { this.children.push(c); return c; },
+        appendChild: function(c) {
+            this.children.push(c);
+            if (this.children.length === 1) { this.firstChild = c; }
+            return c;
+        },
         addEventListener: function() {},
         querySelector: function() { return null; }
     };
     return el;
 };
 document.createElement = function() { return window.__mkEl(); };
-document.createElementNS = function() { return window.__mkEl(); };
+// Every SVG node the draft path builds is recorded, which is how the ink-draft
+// DOM assertions reach the <polyline> without teaching the stub a real
+// querySelector (that would change what every other test sees).
+window.__nsEls = [];
+document.createElementNS = function() {
+    var el = window.__mkEl();
+    window.__nsEls.push(el);
+    return el;
+};
+window.__attrEl = function(name) {
+    for (var i = window.__nsEls.length - 1; i >= 0; --i) {
+        if (window.__nsEls[i].attrs[name] !== undefined) { return window.__nsEls[i]; }
+    }
+    return null;
+};
 
 window.__added = [];
 window.__toolFinished = 0;
@@ -919,6 +948,28 @@ window.__app = {
 window.vxcore.commentApp = window.__app;
 window.vxcore.setCommentAdapter(window.__adapter);
 )JS";
+
+// Minimal text-selection stub, layered ON TOP of c_toolHarness: one non-empty
+// rect well inside the harness page, so captureSelection() produces exactly one
+// pdf-quads intent.
+const char *const c_selectionHarness = R"JS(
+window.getSelection = function() {
+    return {
+        isCollapsed: false,
+        rangeCount: 1,
+        toString: function() { return 'selected text'; },
+        getRangeAt: function() {
+            return {
+                getClientRects: function() {
+                    return [{ left: 150, top: 100, right: 250, bottom: 120,
+                              width: 100, height: 20 }];
+                }
+            };
+        },
+        removeAllRanges: function() {}
+    };
+};
+)JS";
 } // namespace
 
 void TestPdfViewerCoreJs::toolIsAModeAndEscLeavesIt() {
@@ -954,12 +1005,14 @@ void TestPdfViewerCoreJs::inkDragProducesAPageSpaceStroke() {
   loadCore(engine);
   QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
 
-  // scale 2, page 800 tall, page element at (100, 50).
-  const QJSValue drag = eval(engine, QStringLiteral("window.vxcore.setCommentColor('blue');"
-                                                    "window.vxcore.setTool('ink');"
-                                                    "window.vxcore.beginInk(140, 90);"
-                                                    "window.vxcore.extendInk(200, 150);"
-                                                    "window.vxcore.endInk();"));
+  // scale 2, page 800 tall, page element at (100, 50). The INK tool's own
+  // options drive the colour -- setCommentColor() is highlight-only now.
+  const QJSValue drag =
+      eval(engine, QStringLiteral("window.vxcore.setToolOptions('ink', { color: 'blue' });"
+                                  "window.vxcore.setTool('ink');"
+                                  "window.vxcore.beginInk(140, 90);"
+                                  "window.vxcore.extendInk(200, 150);"
+                                  "window.vxcore.endInk();"));
   QVERIFY2(!drag.isError(), qPrintable(drag.toString()));
 
   QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
@@ -1146,6 +1199,113 @@ void TestPdfViewerCoreJs::extendInkDoesNotRebuildExistingComments() {
   }
 
   QCOMPARE(eval(engine, QStringLiteral("window.__renderCalls")).toInt(), afterPublish);
+}
+
+// Requirement 4, at the page: each tool paints with ITS OWN colour. Config and
+// adapter independence can pass while the page still paints everything one
+// colour, so this is a separate gate.
+void TestPdfViewerCoreJs::eachToolUsesItsOwnColour() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_selectionHarness)).isError());
+
+  QVERIFY(!eval(engine,
+                QStringLiteral("window.vxcore.setToolOptions('highlight', { color: 'yellow' });"
+                               "window.vxcore.setToolOptions('ink', { color: 'blue' });"
+                               "window.vxcore.setToolOptions('freetext', { color: 'purple' });"))
+               .isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.extendInk(200, 150);"
+                              "window.vxcore.endInk();"));
+  eval(engine, QStringLiteral("window.vxcore.setTool('freetext');"
+                              "window.vxcore.placeFreeText(140, 90);"));
+  eval(engine, QStringLiteral("window.vxcore.setTool('highlight');"
+                              "window.vxcore.captureSelection();"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 3);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.type")).toString(),
+           QStringLiteral("pdf-ink"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].color")).toString(),
+           QStringLiteral("blue"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[1].anchor.type")).toString(),
+           QStringLiteral("pdf-freetext"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[1].color")).toString(),
+           QStringLiteral("purple"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[2].anchor.type")).toString(),
+           QStringLiteral("pdf-quads"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[2].color")).toString(),
+           QStringLiteral("yellow"));
+}
+
+// setCommentColor() survives, but its meaning NARROWED to the highlight tool:
+// the page context menu carries an explicit colour with its capture request.
+// Every other tool must be untouched by it.
+void TestPdfViewerCoreJs::setCommentColorIsHighlightOnly() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setToolOptions('ink', { color: 'blue' });"
+                              "window.vxcore.setToolOptions('freetext', { color: 'purple' });"
+                              "window.vxcore.setCommentColor('pink');"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.optionsFor('highlight').color")).toString(),
+           QStringLiteral("pink"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.optionsFor('ink').color")).toString(),
+           QStringLiteral("blue"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.optionsFor('freetext').color")).toString(),
+           QStringLiteral("purple"));
+}
+
+// Width and font size were hardcoded constants; the menus now drive them, and
+// the anchor is what the store keeps.
+void TestPdfViewerCoreJs::scalarOptionsReachTheAnchors() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setToolOptions('ink', { width: 3.0 });"
+                              "window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.extendInk(200, 150);"
+                              "window.vxcore.endInk();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.width")).toNumber(), 3.0);
+
+  eval(engine, QStringLiteral("window.vxcore.setToolOptions('freetext', { fontSize: 16 });"
+                              "window.vxcore.setTool('freetext');"
+                              "window.vxcore.placeFreeText(140, 90);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added.length")).toInt(), 2);
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[1].anchor.fontSize")).toNumber(), 16.0);
+
+  // An absent key leaves the current value alone rather than resetting it.
+  eval(engine, QStringLiteral("window.vxcore.setToolOptions('ink', { color: 'green' });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.optionsFor('ink').width")).toNumber(), 3.0);
+}
+
+// renderInkDraft() is changed but otherwise ungated: the provisional stroke the
+// user sees WHILE drawing must already match the configured ink settings.
+void TestPdfViewerCoreJs::inkDraftDomReflectsTheConfiguredInk() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setToolOptions('ink', { color: 'green', width: 3.0 });"
+                              "window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.extendInk(200, 150);"));
+
+  // The polyline is the node carrying stroke-width. The harness viewport is at
+  // scale 2, so 3.0 PDF units render as 6 CSS pixels.
+  QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('stroke-width').attrs['stroke-width']"))
+               .toString(),
+           QStringLiteral("6"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('data-vx-color').attrs['data-vx-color']"))
+               .toString(),
+           QStringLiteral("green"));
 }
 
 } // namespace tests

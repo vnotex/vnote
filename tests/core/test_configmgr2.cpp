@@ -61,7 +61,10 @@ private slots:
   void testPdfJsMigration_resetsTheV3ScriptListInMemoryAndOnSave();
   void testPdfJsMigration_doesNotRunOnTheSameOrANewerVersion();
   void testPdfJsMigration_realUpgradeRewritesTheConfigFile();
-  void testPdfCommentColor_defaultsAndRoundTrips();
+  void testPdfToolOptions_defaultsAndRoundTrips();
+
+  void testPdfToolOptions_normalization_data();
+  void testPdfToolOptions_normalization();
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
 
@@ -1076,49 +1079,302 @@ void TestConfigMgr2::testPdfJsMigration_realUpgradeRewritesTheConfigFile() {
   QVERIFY(!reloaded.isVersionChanged());
 }
 
-// The authoring colour is persisted so the toolbar comes back armed the way it
-// was left. It is a semantic token, never a literal colour, and an absent or
-// invalid value must fall back to the default rather than render unstyled --
-// which is also what makes it safe to add without a config migration.
-void TestConfigMgr2::testPdfCommentColor_defaultsAndRoundTrips() {
+// Per-tool authoring options are persisted so the toolbar comes back armed the
+// way it was left, and each tool owns its OWN colour. The colour is a semantic
+// token, never a literal; the scalars are clamped to the anchor validators'
+// bounds so config can never express an anchor those validators would reject.
+//
+// The normalization table under test (see the plan's Task 0):
+//   key absent / wrong type -> default; invalid colour -> default;
+//   non-finite scalar -> default; out-of-range scalar -> CLAMPED.
+void TestConfigMgr2::testPdfToolOptions_defaultsAndRoundTrips() {
+  const auto highlight = PdfToolOptions::highlightTool();
+  const auto ink = PdfToolOptions::inkTool();
+  const auto freetext = PdfToolOptions::freeTextTool();
+
   {
     MainConfig config(m_configMgr);
     auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
 
-    // Absent key -> C++ default.
-    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+    // Absent key -> C++ defaults, which is what makes this safe to add without
+    // a config migration.
+    for (const auto &tool : PdfViewerConfig::toolNames()) {
+      QCOMPARE(pdfConfig.getToolOptions(tool).m_color, CommentColor::defaultToken());
+    }
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfToolOptions::defaultWidth());
+    QCOMPARE(pdfConfig.getToolOptions(freetext).m_fontSize, PdfToolOptions::defaultFontSize());
+
     pdfConfig.fromJson(QJsonObject());
-    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+    QCOMPARE(pdfConfig.getToolOptions(highlight).m_color, CommentColor::defaultToken());
 
-    // Valid token round-trips through toJson/fromJson.
-    pdfConfig.setCommentColor(QStringLiteral("purple"));
-    QCOMPARE(pdfConfig.getCommentColor(), QStringLiteral("purple"));
+    // === Per-tool independence (requirement 4) ===
+    auto inkOptions = pdfConfig.getToolOptions(ink);
+    inkOptions.m_color = QStringLiteral("blue");
+    inkOptions.m_width = 3.0;
+    pdfConfig.setToolOptions(ink, inkOptions);
 
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, QStringLiteral("blue"));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, 3.0);
+    // The other two are untouched: a shared-value regression would break this
+    // silently otherwise.
+    QCOMPARE(pdfConfig.getToolOptions(highlight).m_color, CommentColor::defaultToken());
+    QCOMPARE(pdfConfig.getToolOptions(freetext).m_color, CommentColor::defaultToken());
+
+    auto textOptions = pdfConfig.getToolOptions(freetext);
+    textOptions.m_color = QStringLiteral("purple");
+    textOptions.m_fontSize = 16.0;
+    pdfConfig.setToolOptions(freetext, textOptions);
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, QStringLiteral("blue"));
+
+    // Round-trips through toJson/fromJson, exactly.
     MainConfig reloaded(m_configMgr);
     auto &reloadedPdf = reloaded.getEditorConfig().getPdfViewerConfig();
     reloadedPdf.fromJson(pdfConfig.toJson());
-    QCOMPARE(reloadedPdf.getCommentColor(), QStringLiteral("purple"));
+    QCOMPARE(reloadedPdf.getToolOptions(ink).m_color, QStringLiteral("blue"));
+    QCOMPARE(reloadedPdf.getToolOptions(ink).m_width, 3.0);
+    QCOMPARE(reloadedPdf.getToolOptions(freetext).m_color, QStringLiteral("purple"));
+    QCOMPARE(reloadedPdf.getToolOptions(freetext).m_fontSize, 16.0);
+    QCOMPARE(reloadedPdf.getToolOptions(highlight).m_color, CommentColor::defaultToken());
+
+    // The serialized JSON carries the same values, and only the keys the tool
+    // actually owns.
+    const auto tools = pdfConfig.toJson().value(QStringLiteral("tools")).toObject();
+    QCOMPARE(tools.value(ink).toObject().value(QStringLiteral("width")).toDouble(), 3.0);
+    QVERIFY(!tools.value(highlight).toObject().contains(QStringLiteral("width")));
+    QVERIFY(!tools.value(highlight).toObject().contains(QStringLiteral("fontSize")));
   }
 
   {
-    // An invalid or literal colour is ignored, so a hand-edited config cannot
-    // produce an unstyled highlight.
+    // Normalization, asserting the EXACT resulting value -- "the anchor still
+    // validates" would pass for both a default and a clamped value and could
+    // not distinguish the two policies.
+    MainConfig config(m_configMgr);
+    auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+    const auto build = [&](const QJsonObject &p_inkObj) {
+      QJsonObject tools;
+      tools.insert(ink, p_inkObj);
+      QJsonObject obj;
+      obj.insert(QStringLiteral("tools"), tools);
+      return obj;
+    };
+
+    // An invalid or literal colour falls back to the default, so a hand-edited
+    // config cannot produce an unstyled highlight.
+    QJsonObject inkObj;
+    inkObj.insert(QStringLiteral("color"), QStringLiteral("#ff00ff"));
+    pdfConfig.fromJson(build(inkObj));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, CommentColor::defaultToken());
+
+    inkObj.insert(QStringLiteral("color"), QStringLiteral("chartreuse"));
+    pdfConfig.fromJson(build(inkObj));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, CommentColor::defaultToken());
+
+    // Wrong JSON type is treated as absent.
+    inkObj.insert(QStringLiteral("color"), QJsonValue(7));
+    inkObj.insert(QStringLiteral("width"), QStringLiteral("3.0"));
+    pdfConfig.fromJson(build(inkObj));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, CommentColor::defaultToken());
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfToolOptions::defaultWidth());
+
+    // Out of range CLAMPS: "width 1e9" plainly means "as thick as possible".
+    inkObj.insert(QStringLiteral("color"), QStringLiteral("green"));
+    inkObj.insert(QStringLiteral("width"), 1.0e9);
+    pdfConfig.fromJson(build(inkObj));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfInkAnchor::maxWidth());
+
+    inkObj.insert(QStringLiteral("width"), -5.0);
+    pdfConfig.fromJson(build(inkObj));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfInkAnchor::minWidth());
+
+    // Non-finite carries no intent to preserve, so it takes the DEFAULT rather
+    // than a bound.
+    inkObj.insert(QStringLiteral("width"), QJsonValue(qQNaN()));
+    pdfConfig.fromJson(build(inkObj));
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfToolOptions::defaultWidth());
+
+    // Font size, same table.
+    {
+      QJsonObject tools;
+      QJsonObject textObj;
+      textObj.insert(QStringLiteral("fontSize"), 1000.0);
+      tools.insert(freetext, textObj);
+      QJsonObject obj;
+      obj.insert(QStringLiteral("tools"), tools);
+      pdfConfig.fromJson(obj);
+      QCOMPARE(pdfConfig.getToolOptions(freetext).m_fontSize, PdfFreeTextAnchor::maxFontSize());
+    }
+
+    // fromJson RESETS before overlaying, so a second call cannot retain stale
+    // state from the first: the ink colour set two calls ago is gone.
+    pdfConfig.fromJson(QJsonObject());
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, CommentColor::defaultToken());
+    QCOMPARE(pdfConfig.getToolOptions(freetext).m_fontSize, PdfToolOptions::defaultFontSize());
+
+    // The setter normalizes too, rather than storing garbage.
+    auto bad = pdfConfig.getToolOptions(ink);
+    bad.m_color = QStringLiteral("not-a-token");
+    bad.m_width = 1.0e9;
+    pdfConfig.setToolOptions(ink, bad);
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_color, CommentColor::defaultToken());
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfInkAnchor::maxWidth());
+  }
+
+  {
+    // Back-compat: the shared `commentColor` this branch shipped before the
+    // per-tool split seeds all three, so an already-picked value does not
+    // silently reset to yellow.
     MainConfig config(m_configMgr);
     auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
 
     QJsonObject obj;
-    obj.insert(QStringLiteral("commentColor"), QStringLiteral("#ff00ff"));
+    obj.insert(QStringLiteral("commentColor"), QStringLiteral("pink"));
     pdfConfig.fromJson(obj);
-    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+    for (const auto &tool : PdfViewerConfig::toolNames()) {
+      QCOMPARE(pdfConfig.getToolOptions(tool).m_color, QStringLiteral("pink"));
+    }
 
-    obj.insert(QStringLiteral("commentColor"), QStringLiteral("chartreuse"));
+    // `tools` wins when both are present.
+    QJsonObject tools;
+    QJsonObject inkObj;
+    inkObj.insert(QStringLiteral("color"), QStringLiteral("green"));
+    tools.insert(PdfToolOptions::inkTool(), inkObj);
+    obj.insert(QStringLiteral("tools"), tools);
     pdfConfig.fromJson(obj);
-    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
-
-    // The setter refuses one too, rather than storing it.
-    pdfConfig.setCommentColor(QStringLiteral("not-a-token"));
-    QCOMPARE(pdfConfig.getCommentColor(), CommentColor::defaultToken());
+    QCOMPARE(pdfConfig.getToolOptions(PdfToolOptions::inkTool()).m_color, QStringLiteral("green"));
+    QCOMPARE(pdfConfig.getToolOptions(highlight).m_color, CommentColor::defaultToken());
   }
+}
+
+// The Task 0 normalization table, one row per class, asserted on BOTH the
+// getter and the serialized JSON.
+//
+// The serialized value matters independently: a getter that normalizes while
+// toJson() writes the raw value would persist something fromJson() then
+// rewrites, and the config would silently change under the user across a
+// restart. (The adapter payload for the same table is gated by
+// test_pdfvieweradapter_comments, which shares the PdfToolOptions choke point.)
+void TestConfigMgr2::testPdfToolOptions_normalization_data() {
+  QTest::addColumn<QString>("tool");
+  QTest::addColumn<QString>("key");
+  QTest::addColumn<QJsonValue>("input");
+  QTest::addColumn<QJsonValue>("expected");
+
+  const auto ink = PdfToolOptions::inkTool();
+  const auto freetext = PdfToolOptions::freeTextTool();
+  const auto highlight = PdfToolOptions::highlightTool();
+  const auto colorKey = PdfToolOptions::colorKey();
+  const auto widthKey = PdfToolOptions::widthKey();
+  const auto sizeKey = PdfToolOptions::fontSizeKey();
+
+  const QJsonValue defaultColor(CommentColor::defaultToken());
+  const QJsonValue defaultWidth(PdfToolOptions::defaultWidth());
+  const QJsonValue defaultSize(PdfToolOptions::defaultFontSize());
+
+  // --- colour ---
+  QTest::newRow("colour valid") << ink << colorKey << QJsonValue(QStringLiteral("blue"))
+                                << QJsonValue(QStringLiteral("blue"));
+  QTest::newRow("colour absent") << ink << colorKey << QJsonValue(QJsonValue::Undefined)
+                                 << defaultColor;
+  QTest::newRow("colour literal hex")
+      << ink << colorKey << QJsonValue(QStringLiteral("#ff00ff")) << defaultColor;
+  QTest::newRow("colour css name")
+      << ink << colorKey << QJsonValue(QStringLiteral("chartreuse")) << defaultColor;
+  QTest::newRow("colour wrong type") << ink << colorKey << QJsonValue(7) << defaultColor;
+  QTest::newRow("colour null") << ink << colorKey << QJsonValue(QJsonValue::Null) << defaultColor;
+  QTest::newRow("colour on highlight")
+      << highlight << colorKey << QJsonValue(QStringLiteral("pink"))
+      << QJsonValue(QStringLiteral("pink"));
+
+  // --- ink width ---
+  QTest::newRow("width in range") << ink << widthKey << QJsonValue(3.0) << QJsonValue(3.0);
+  QTest::newRow("width absent") << ink << widthKey << QJsonValue(QJsonValue::Undefined)
+                                << defaultWidth;
+  QTest::newRow("width wrong type")
+      << ink << widthKey << QJsonValue(QStringLiteral("3.0")) << defaultWidth;
+  // Non-finite carries no intent to preserve -> DEFAULT, not a bound.
+  QTest::newRow("width nan") << ink << widthKey << QJsonValue(qQNaN()) << defaultWidth;
+  QTest::newRow("width +inf") << ink << widthKey << QJsonValue(qInf()) << defaultWidth;
+  QTest::newRow("width -inf") << ink << widthKey << QJsonValue(-qInf()) << defaultWidth;
+  // Finite but out of range -> CLAMPED: "width 1e9" plainly means "as thick as
+  // possible", and the bound is the anchor validator's.
+  QTest::newRow("width above max")
+      << ink << widthKey << QJsonValue(1.0e9) << QJsonValue(PdfInkAnchor::maxWidth());
+  QTest::newRow("width below min")
+      << ink << widthKey << QJsonValue(-5.0) << QJsonValue(PdfInkAnchor::minWidth());
+  QTest::newRow("width exactly max") << ink << widthKey << QJsonValue(PdfInkAnchor::maxWidth())
+                                     << QJsonValue(PdfInkAnchor::maxWidth());
+  QTest::newRow("width exactly min") << ink << widthKey << QJsonValue(PdfInkAnchor::minWidth())
+                                     << QJsonValue(PdfInkAnchor::minWidth());
+
+  // --- free-text font size ---
+  QTest::newRow("size in range") << freetext << sizeKey << QJsonValue(16.0) << QJsonValue(16.0);
+  QTest::newRow("size absent") << freetext << sizeKey << QJsonValue(QJsonValue::Undefined)
+                               << defaultSize;
+  QTest::newRow("size wrong type") << freetext << sizeKey << QJsonValue(true) << defaultSize;
+  QTest::newRow("size nan") << freetext << sizeKey << QJsonValue(qQNaN()) << defaultSize;
+  QTest::newRow("size +inf") << freetext << sizeKey << QJsonValue(qInf()) << defaultSize;
+  QTest::newRow("size above max") << freetext << sizeKey << QJsonValue(1.0e9)
+                                  << QJsonValue(PdfFreeTextAnchor::maxFontSize());
+  QTest::newRow("size below min") << freetext << sizeKey << QJsonValue(0.0)
+                                  << QJsonValue(PdfFreeTextAnchor::minFontSize());
+  QTest::newRow("size exactly min")
+      << freetext << sizeKey << QJsonValue(PdfFreeTextAnchor::minFontSize())
+      << QJsonValue(PdfFreeTextAnchor::minFontSize());
+}
+
+void TestConfigMgr2::testPdfToolOptions_normalization() {
+  QFETCH(QString, tool);
+  QFETCH(QString, key);
+  QFETCH(QJsonValue, input);
+  QFETCH(QJsonValue, expected);
+
+  MainConfig config(m_configMgr);
+  auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+  QJsonObject toolObj;
+  if (!input.isUndefined()) {
+    toolObj.insert(key, input);
+  }
+  QJsonObject tools;
+  tools.insert(tool, toolObj);
+  QJsonObject obj;
+  obj.insert(QStringLiteral("tools"), tools);
+
+  pdfConfig.fromJson(obj);
+
+  // QJsonValue is not debug-streamable, so compare a canonical serialization.
+  const auto canonical = [](const QJsonValue &p_value) {
+    return QString::fromUtf8(
+        QJsonDocument(QJsonObject{{QStringLiteral("v"), p_value}}).toJson(QJsonDocument::Compact));
+  };
+
+  // 1. the getter
+  const auto options = pdfConfig.getToolOptions(tool);
+  const QJsonValue fromGetter = key == PdfToolOptions::colorKey() ? QJsonValue(options.m_color)
+                                : key == PdfToolOptions::widthKey()
+                                    ? QJsonValue(options.m_width)
+                                    : QJsonValue(options.m_fontSize);
+  QCOMPARE(canonical(fromGetter), canonical(expected));
+
+  // 2. the serialized JSON
+  const auto serialized =
+      pdfConfig.toJson().value(QStringLiteral("tools")).toObject().value(tool).toObject();
+  QCOMPARE(canonical(serialized.value(key)), canonical(expected));
+
+  // 3. and it is a FIXED POINT: re-reading what was written changes nothing.
+  QJsonObject reTools;
+  reTools.insert(tool, serialized);
+  QJsonObject reObj;
+  reObj.insert(QStringLiteral("tools"), reTools);
+  pdfConfig.fromJson(reObj);
+  QCOMPARE(canonical(pdfConfig.toJson()
+                         .value(QStringLiteral("tools"))
+                         .toObject()
+                         .value(tool)
+                         .toObject()
+                         .value(key)),
+           canonical(expected));
 }
 
 } // namespace tests

@@ -42,9 +42,24 @@ add_qt_test(test_themeservice
   SOURCES
     test_themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+  LINKS
+    Qt6::Gui
+    Qt6::Widgets
+    core_services
+)
+
+# The comment colour chip, shared by all three colour pickers. It is a LEAF: it
+# names no ThemeService symbol, so it links on its own. That property is what
+# lets test_commentpanel and test_pdfannotationtoolbar compile the widgets that
+# draw swatches without linking themeservice.cpp.
+add_qt_test(test_commentcolorswatch
+  SOURCES
+    test_commentcolorswatch.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
   LINKS
     Qt6::Gui
     Qt6::Widgets
@@ -128,6 +143,7 @@ add_qt_test(test_notebooknodedelegate_sizehint
     ${CMAKE_SOURCE_DIR}/src/views/notebooknodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp

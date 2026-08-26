@@ -13,6 +13,7 @@
 #include "core/services/commenttypes.h"
 #include "core/services/hookmanager.h"
 #include "core/theme.h"
+#include <gui/utils/commentcolorswatch.h>
 #include <gui/utils/iconutils.h>
 #include <gui/utils/themeutils.h>
 #include <utils/pathutils.h>
@@ -176,24 +177,6 @@ QString ThemeService::paletteColor(const QString &p_name) const {
 
 namespace {
 
-// Built-in comment-highlight colors, used when the theme does not override the
-// token. These are DATA (the user picks a color), not chrome, in the same sense
-// as the mark-node swatch palette and the notebook avatar colors — see
-// src/widgets/AGENTS.md § No Hardcoded Colors in C++.
-//
-// Deliberately translucent so the underlying glyphs stay readable, and anchored
-// to a white page rather than to the app palette, because pdf.js renders the
-// page from the PDF and does not tint it with the theme.
-QString builtInCommentHighlightColor(const QString &p_token) {
-  static const QHash<QString, QString> c_defaults = {
-      {QStringLiteral("yellow"), QStringLiteral("rgba(255, 214, 0, 0.38)")},
-      {QStringLiteral("green"), QStringLiteral("rgba(0, 200, 83, 0.32)")},
-      {QStringLiteral("blue"), QStringLiteral("rgba(41, 121, 255, 0.30)")},
-      {QStringLiteral("pink"), QStringLiteral("rgba(255, 64, 129, 0.30)")},
-      {QStringLiteral("purple"), QStringLiteral("rgba(170, 0, 255, 0.28)")}};
-  return c_defaults.value(p_token);
-}
-
 bool isResolvedColor(const QString &p_value) {
   // translateStyleByPalette leaves an unknown token in place (it only warns), so
   // a surviving '@' means the theme referenced something it does not define.
@@ -204,7 +187,7 @@ bool isResolvedColor(const QString &p_value) {
 
 QString ThemeService::commentHighlightColor(const QString &p_token) const {
   if (!CommentColor::isValid(p_token)) {
-    return builtInCommentHighlightColor(CommentColor::defaultToken());
+    return CommentColorSwatch::builtInColor(CommentColor::defaultToken());
   }
 
   if (m_currentTheme) {
@@ -217,7 +200,9 @@ QString ThemeService::commentHighlightColor(const QString &p_token) const {
     }
   }
 
-  return builtInCommentHighlightColor(p_token);
+  // The built-in table lives in CommentColorSwatch (the SSOT), so the chip
+  // drawn in Qt chrome and the colour painted on the page cannot disagree.
+  return CommentColorSwatch::builtInColor(p_token);
 }
 
 QString ThemeService::commentHighlightCssVariables() const {

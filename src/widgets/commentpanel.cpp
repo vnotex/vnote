@@ -132,9 +132,9 @@ void CommentPanel::setupUI() {
   const auto colors = CommentColor::all();
   for (const auto &token : colors) {
     // Label is the translated display name; the DATA stays the raw token, which
-    // is what reaches comments.json. A translation must never change what is
-    // stored.
-    m_colorBox->addItem(CommentColor::displayName(token), token);
+    // is what reaches comments.json. Neither a translation NOR the swatch icon
+    // may change what is stored.
+    m_colorBox->addItem(swatchIcon(token), CommentColor::displayName(token), token);
   }
   actionsLayout->addWidget(m_colorBox);
   actionsLayout->addStretch();
@@ -183,6 +183,27 @@ void CommentPanel::flushPendingTextEdit() {
   m_pendingTextId.clear();
   m_pendingText.clear();
   emit m_provider->textEditRequested(id, text);
+}
+
+QIcon CommentPanel::swatchIcon(const QString &p_token) const {
+  return CommentColorSwatch::icon(m_resolve, p_token, 16, m_borderCss);
+}
+
+void CommentPanel::setSwatchResolver(CommentColorSwatch::ColorResolver p_resolve,
+                                     QString p_borderCss) {
+  // BOTH are re-supplied, not just the callback: the border travels as a value
+  // and would otherwise outlive the theme it came from.
+  m_resolve = std::move(p_resolve);
+  m_borderCss = std::move(p_borderCss);
+
+  if (!m_colorBox) {
+    return;
+  }
+  // The icons are persistent, so they are rebuilt here rather than lazily. The
+  // item DATA is untouched — only the decoration changes.
+  for (int i = 0; i < m_colorBox->count(); ++i) {
+    m_colorBox->setItemIcon(i, swatchIcon(m_colorBox->itemData(i).toString()));
+  }
 }
 
 void CommentPanel::setCommentProvider(const QSharedPointer<CommentProvider> &p_provider) {

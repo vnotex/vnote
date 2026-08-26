@@ -4,6 +4,8 @@
 #include <QSharedPointer>
 #include <QWidget>
 
+#include <gui/utils/commentcolorswatch.h>
+
 class QComboBox;
 class QLabel;
 class QListWidget;
@@ -35,6 +37,14 @@ public:
 
   void setCommentProvider(const QSharedPointer<CommentProvider> &p_provider);
 
+  // Theme switch. Takes the RESOLVER (and the themed border), not a
+  // ThemeService: commentpanel.cpp must not name a ThemeService symbol, or
+  // test_commentpanel — which compiles this file without themeservice.cpp —
+  // stops linking. MainWindow2 builds the resolver, since it already holds the
+  // service and the themeChanged connection. Until then the built-in colours
+  // are used.
+  void setSwatchResolver(CommentColorSwatch::ColorResolver p_resolve, QString p_borderCss);
+
 private slots:
   void onCommentsChanged();
 
@@ -63,7 +73,13 @@ private:
 
   QString selectedId() const;
 
+  QIcon swatchIcon(const QString &p_token) const;
+
   ServiceLocator &m_services;
+
+  CommentColorSwatch::ColorResolver m_resolve;
+
+  QString m_borderCss;
 
   QSharedPointer<CommentProvider> m_provider;
 

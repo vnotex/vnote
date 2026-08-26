@@ -2,6 +2,8 @@
 # Contains GUI-dependent utility functions (QPixmap, QColor, QPalette, etc.)
 
 target_sources(vnote PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/commentcolorswatch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/commentcolorswatch.h
     ${CMAKE_CURRENT_SOURCE_DIR}/guiutils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/guiutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/iconutils.cpp

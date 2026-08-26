@@ -2,6 +2,34 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>CommentPanel</name>
+    <message>
+        <location filename="../../../widgets/commentpanel.cpp" line="+51"/>
+        <source>(drawing)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>(empty text box)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>(highlight)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>(unsupported annotation)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>p.%1 </source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="../../../gui/utils/widgetutils.cpp" line="+82"/>
@@ -58,7 +86,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../../controllers/markdownviewwindowcontroller.cpp" line="+30"/>
+        <location filename="../../../controllers/markdownviewwindowcontroller.cpp" line="+31"/>
         <source>&amp;Edit</source>
         <translation>编辑(&amp;E)</translation>
     </message>
@@ -78,7 +106,7 @@
         <translation>复制</translation>
     </message>
     <message>
-        <location line="+80"/>
+        <location line="+105"/>
         <source>Cross Copy</source>
         <translation>交叉复制</translation>
     </message>
@@ -268,400 +296,294 @@
         <translation>图床</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+245"/>
-        <location line="+33"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+143"/>
-        <location line="+23"/>
-        <location line="+53"/>
-        <location line="+10"/>
         <source>Refusing to share: %1 is a symbolic link, junction or reparse point.</source>
-        <translation>拒绝共享：%1 是符号链接、连接点或重解析点。</translation>
+        <translation type="vanished">拒绝共享：%1 是符号链接、连接点或重解析点。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-79"/>
         <source>Source directory is missing: %1</source>
-        <translation>源目录不存在：%1</translation>
+        <translation type="vanished">源目录不存在：%1</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Refusing to share: %1 is not a regular file.</source>
-        <translation>拒绝共享：%1 不是普通文件。</translation>
+        <translation type="vanished">拒绝共享：%1 不是普通文件。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Refusing to share: %1 is not readable.</source>
-        <translation>拒绝共享：%1 不可读。</translation>
+        <translation type="vanished">拒绝共享：%1 不可读。</translation>
     </message>
     <message>
-        <location line="+69"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide on the destination filesystem, which does not distinguish letter case.</source>
-        <translation>%3 中的“%1”与“%2”在不区分大小写的目标文件系统上会冲突。</translation>
+        <translation type="vanished">%3 中的“%1”与“%2”在不区分大小写的目标文件系统上会冲突。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="-184"/>
         <source>A file record in vx.json is not an object.</source>
-        <translation>vx.json 中的某个文件记录不是对象。</translation>
+        <translation type="vanished">vx.json 中的某个文件记录不是对象。</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>A file record is missing a valid &quot;id&quot;.</source>
-        <translation>某个文件记录缺少有效的“id”。</translation>
+        <translation type="vanished">某个文件记录缺少有效的“id”。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>A file record is missing a valid &quot;name&quot;.</source>
-        <translation>某个文件记录缺少有效的“name”。</translation>
+        <translation type="vanished">某个文件记录缺少有效的“name”。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>File record &quot;%1&quot; has non-numeric timestamps.</source>
-        <translation>文件记录“%1”的时间戳不是数字。</translation>
+        <translation type="vanished">文件记录“%1”的时间戳不是数字。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>File record &quot;%1&quot; has a non-object &quot;metadata&quot;.</source>
-        <translation>文件记录“%1”的“metadata”不是对象。</translation>
+        <translation type="vanished">文件记录“%1”的“metadata”不是对象。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>File record &quot;%1&quot; has a non-array &quot;tags&quot;.</source>
-        <translation>文件记录“%1”的“tags”不是数组。</translation>
+        <translation type="vanished">文件记录“%1”的“tags”不是数组。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>File record &quot;%1&quot; has a non-string tag entry.</source>
-        <translation>文件记录“%1”中存在非字符串的标签项。</translation>
+        <translation type="vanished">文件记录“%1”中存在非字符串的标签项。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>File record &quot;%1&quot; has a non-array &quot;attachments&quot;.</source>
-        <translation>文件记录“%1”的“attachments”不是数组。</translation>
+        <translation type="vanished">文件记录“%1”的“attachments”不是数组。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>File record &quot;%1&quot; has a non-string attachment entry.</source>
-        <translation>文件记录“%1”中存在非字符串的附件项。</translation>
+        <translation type="vanished">文件记录“%1”中存在非字符串的附件项。</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Missing folder metadata: %1</source>
-        <translation>缺少文件夹元数据：%1</translation>
+        <translation type="vanished">缺少文件夹元数据：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Cannot read folder metadata: %1</source>
-        <translation>无法读取文件夹元数据：%1</translation>
+        <translation type="vanished">无法读取文件夹元数据：%1</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="+218"/>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+9"/>
         <source>Malformed folder metadata: %1</source>
-        <translation>文件夹元数据格式错误：%1</translation>
+        <translation type="vanished">文件夹元数据格式错误：%1</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+6"/>
         <source>Folder metadata is missing a valid &quot;id&quot;: %1</source>
-        <translation>文件夹元数据缺少有效的“id”：%1</translation>
+        <translation type="vanished">文件夹元数据缺少有效的“id”：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata is missing a valid &quot;name&quot;: %1</source>
-        <translation>文件夹元数据缺少有效的“name”：%1</translation>
+        <translation type="vanished">文件夹元数据缺少有效的“name”：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata name does not match its directory: %1</source>
-        <translation>文件夹元数据中的名称与其目录不匹配：%1</translation>
+        <translation type="vanished">文件夹元数据中的名称与其目录不匹配：%1</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <location line="+35"/>
         <source>Duplicate id &quot;%1&quot; in %2</source>
-        <translation>%2 中存在重复的 id“%1”</translation>
+        <translation type="vanished">%2 中存在重复的 id“%1”</translation>
     </message>
     <message>
-        <location line="-28"/>
         <source>Folder metadata has non-numeric timestamps: %1</source>
-        <translation>文件夹元数据的时间戳不是数字：%1</translation>
+        <translation type="vanished">文件夹元数据的时间戳不是数字：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata has a non-object &quot;metadata&quot;: %1</source>
-        <translation>文件夹元数据的“metadata”不是对象：%1</translation>
+        <translation type="vanished">文件夹元数据的“metadata”不是对象：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata has a non-array &quot;files&quot;: %1</source>
-        <translation>文件夹元数据的“files”不是数组：%1</translation>
+        <translation type="vanished">文件夹元数据的“files”不是数组：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata has a non-array &quot;folders&quot;: %1</source>
-        <translation>文件夹元数据的“folders”不是数组：%1</translation>
+        <translation type="vanished">文件夹元数据的“folders”不是数组：%1</translation>
     </message>
     <message>
-        <location line="+21"/>
-        <location line="+33"/>
         <source>Unsafe child name &quot;%1&quot; in %2</source>
-        <translation>%2 中存在不安全的子项名称“%1”</translation>
+        <translation type="vanished">%2 中存在不安全的子项名称“%1”</translation>
     </message>
     <message>
-        <location line="-27"/>
-        <location line="+33"/>
         <source>Duplicate or colliding child name &quot;%1&quot; in %2</source>
-        <translation>%2 中存在重复或冲突的子项名称“%1”</translation>
+        <translation type="vanished">%2 中存在重复或冲突的子项名称“%1”</translation>
     </message>
     <message>
-        <location line="-19"/>
         <source>Indexed file &quot;%1&quot; is missing from disk under %2</source>
-        <translation>索引中的文件“%1”在 %2 下的磁盘上不存在</translation>
+        <translation type="vanished">索引中的文件“%1”在 %2 下的磁盘上不存在</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>A folder entry in %1 is not a string.</source>
-        <translation>%1 中的某个文件夹项不是字符串。</translation>
+        <translation type="vanished">%1 中的某个文件夹项不是字符串。</translation>
     </message>
     <message>
-        <location line="+24"/>
         <source>Indexed folder &quot;%1&quot; is missing from disk under %2</source>
-        <translation>索引中的文件夹“%1”在 %2 下的磁盘上不存在</translation>
+        <translation type="vanished">索引中的文件夹“%1”在 %2 下的磁盘上不存在</translation>
     </message>
     <message>
-        <location line="+26"/>
         <source>Orphan folder metadata found at %1</source>
-        <translation>在 %1 发现孤立的文件夹元数据</translation>
+        <translation type="vanished">在 %1 发现孤立的文件夹元数据</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="-9"/>
-        <location line="+146"/>
-        <location line="+49"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+51"/>
-        <location line="+49"/>
         <source>Cannot read %1</source>
-        <translation>无法读取 %1</translation>
+        <translation type="vanished">无法读取 %1</translation>
     </message>
     <message>
-        <location line="-176"/>
-        <location line="+132"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-44"/>
         <source>Cannot write %1</source>
-        <translation>无法写入 %1</translation>
+        <translation type="vanished">无法写入 %1</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location line="+42"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+14"/>
-        <location line="+42"/>
         <source>Read failed for %1</source>
-        <translation>读取 %1 失败</translation>
+        <translation type="vanished">读取 %1 失败</translation>
     </message>
     <message>
-        <location line="-183"/>
-        <location line="+148"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-35"/>
         <source>Write failed for %1</source>
-        <translation>写入 %1 失败</translation>
+        <translation type="vanished">写入 %1 失败</translation>
     </message>
     <message>
-        <location line="-286"/>
-        <location line="+24"/>
-        <location line="+136"/>
         <source>Refusing to import: %1 is a symbolic link, junction or reparse point.</source>
-        <translation>拒绝导入：%1 是符号链接、目录联接或重解析点。</translation>
+        <translation type="vanished">拒绝导入：%1 是符号链接、目录联接或重解析点。</translation>
     </message>
     <message>
-        <location line="-153"/>
         <source>Bundle directory is missing: %1</source>
-        <translation>缺少分享包目录：%1</translation>
+        <translation type="vanished">缺少分享包目录：%1</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Refusing to import: %1 is not a regular file.</source>
-        <translation>拒绝导入：%1 不是普通文件。</translation>
+        <translation type="vanished">拒绝导入：%1 不是普通文件。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Refusing to import: %1 is not readable.</source>
-        <translation>拒绝导入：%1 不可读。</translation>
+        <translation type="vanished">拒绝导入：%1 不可读。</translation>
     </message>
     <message>
-        <location line="+56"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide in this notebook, whose filesystem does not distinguish letter case.</source>
-        <translation>%3 中的“%1”与“%2”会在此笔记本中冲突，因为其文件系统不区分字母大小写。</translation>
+        <translation type="vanished">%3 中的“%1”与“%2”会在此笔记本中冲突，因为其文件系统不区分字母大小写。</translation>
     </message>
     <message>
-        <location line="+55"/>
         <source>The selected path is not a folder.</source>
-        <translation>所选路径不是文件夹。</translation>
+        <translation type="vanished">所选路径不是文件夹。</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>This folder is not a VNote share bundle: it has no &quot;%1&quot; directory.</source>
-        <translation>该文件夹不是 VNote 分享包：其中没有“%1”目录。</translation>
+        <translation type="vanished">该文件夹不是 VNote 分享包：其中没有“%1”目录。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>This folder is not a VNote share bundle: it contains no folder to import.</source>
-        <translation>该文件夹不是 VNote 分享包：其中没有可导入的文件夹。</translation>
+        <translation type="vanished">该文件夹不是 VNote 分享包：其中没有可导入的文件夹。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>This folder is not a VNote share bundle: it contains more than one folder.</source>
-        <translation>该文件夹不是 VNote 分享包：其中包含多个文件夹。</translation>
+        <translation type="vanished">该文件夹不是 VNote 分享包：其中包含多个文件夹。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>The bundle&apos;s folder name is not usable: %1</source>
-        <translation>分享包的文件夹名称不可用：%1</translation>
+        <translation type="vanished">分享包的文件夹名称不可用：%1</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>This folder is not a VNote share bundle: the metadata for &quot;%1&quot; is missing.</source>
-        <translation>该文件夹不是 VNote 分享包：缺少“%1”的元数据。</translation>
+        <translation type="vanished">该文件夹不是 VNote 分享包：缺少“%1”的元数据。</translation>
     </message>
     <message>
-        <location line="+87"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+10"/>
         <source>Flush failed for %1</source>
-        <translation>刷新 %1 失败</translation>
+        <translation type="vanished">刷新 %1 失败</translation>
     </message>
     <message>
-        <location line="+45"/>
-        <location line="+13"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+47"/>
-        <location line="+14"/>
         <source>Cannot create %1</source>
-        <translation>无法创建 %1</translation>
+        <translation type="vanished">无法创建 %1</translation>
     </message>
     <message>
-        <location line="+177"/>
         <source>%1 — %2 notes, %3 subfolders</source>
-        <translation>%1 — %2 篇笔记，%3 个子文件夹</translation>
+        <translation type="vanished">%1 — %2 篇笔记，%3 个子文件夹</translation>
     </message>
     <message>
-        <location line="+31"/>
         <source>Internal error: no commit handler was supplied.</source>
-        <translation>内部错误：未提供提交处理器。</translation>
+        <translation type="vanished">内部错误：未提供提交处理器。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Internal error: no id oracle was supplied.</source>
-        <translation>内部错误：未提供 id 分配器。</translation>
+        <translation type="vanished">内部错误：未提供 id 分配器。</translation>
     </message>
     <message>
-        <location line="+45"/>
         <source>The bundle contains duplicate node ids and cannot be imported.</source>
-        <translation>该分享包含有重复的节点 id，无法导入。</translation>
+        <translation type="vanished">该分享包含有重复的节点 id，无法导入。</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <location line="+157"/>
         <source>This folder is already in this notebook. Importing it again would overwrite the existing notes, so nothing was changed.</source>
-        <translation>该文件夹已在此笔记本中。再次导入会覆盖已有的笔记，因此未做任何更改。</translation>
+        <translation type="vanished">该文件夹已在此笔记本中。再次导入会覆盖已有的笔记，因此未做任何更改。</translation>
     </message>
     <message>
-        <location line="-145"/>
         <source>Could not find a free name for &quot;%1&quot; in the destination.</source>
-        <translation>无法在目标位置为“%1”找到可用的名称。</translation>
+        <translation type="vanished">无法在目标位置为“%1”找到可用的名称。</translation>
     </message>
     <message>
-        <location line="+15"/>
         <source>Cannot create a staging folder inside the notebook.</source>
-        <translation>无法在笔记本中创建暂存文件夹。</translation>
+        <translation type="vanished">无法在笔记本中创建暂存文件夹。</translation>
     </message>
     <message>
-        <location line="+142"/>
         <source>&quot;%1&quot; was created in the destination while the import was being prepared.</source>
-        <translation>准备导入期间，目标位置中创建了“%1”。</translation>
+        <translation type="vanished">准备导入期间，目标位置中创建了“%1”。</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Injected attach failure.</source>
-        <translation>注入的挂载失败。</translation>
+        <translation type="vanished">注入的挂载失败。</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>The folder could not be added to the notebook.</source>
-        <translation>无法将该文件夹添加到笔记本。</translation>
+        <translation type="vanished">无法将该文件夹添加到笔记本。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+34"/>
         <source>The source folder changed while it was being copied.</source>
-        <translation>源文件夹在复制过程中发生了变化。</translation>
+        <translation type="vanished">源文件夹在复制过程中发生了变化。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+19"/>
         <source>The source folder changed while it was being copied (%1).</source>
-        <translation>源文件夹在复制过程中发生了变化（%1）。</translation>
+        <translation type="vanished">源文件夹在复制过程中发生了变化（%1）。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="-428"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+24"/>
         <source>The copied folder is incomplete.</source>
-        <translation>复制后的文件夹不完整。</translation>
+        <translation type="vanished">复制后的文件夹不完整。</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+14"/>
         <source>The copied folder is incomplete or corrupted (%1).</source>
-        <translation>复制后的文件夹不完整或已损坏（%1）。</translation>
+        <translation type="vanished">复制后的文件夹不完整或已损坏（%1）。</translation>
     </message>
     <message>
-        <location line="+18"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+18"/>
         <source>The copied folder is corrupted (%1).</source>
-        <translation>复制后的文件夹已损坏（%1）。</translation>
+        <translation type="vanished">复制后的文件夹已损坏（%1）。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+106"/>
         <source>Cannot create a temporary folder in the destination.</source>
-        <translation>无法在目标位置创建临时文件夹。</translation>
+        <translation type="vanished">无法在目标位置创建临时文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="+255"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+23"/>
         <source>A temporary copy could not be removed and is still at %1. Delete it manually.</source>
-        <translation>临时副本无法删除，仍位于 %1。请手动删除。</translation>
+        <translation type="vanished">临时副本无法删除，仍位于 %1。请手动删除。</translation>
     </message>
     <message>
-        <location line="+48"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+49"/>
         <source>Injected copy failure.</source>
-        <translation>注入的复制失败。</translation>
+        <translation type="vanished">注入的复制失败。</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+25"/>
         <source>Injected verification failure.</source>
-        <translation>注入的校验失败。</translation>
+        <translation type="vanished">注入的校验失败。</translation>
     </message>
     <message>
-        <location line="+34"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+19"/>
         <source>Injected publish failure.</source>
-        <translation>注入的发布失败。</translation>
+        <translation type="vanished">注入的发布失败。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+29"/>
         <source>The folder changed while it was being prepared.</source>
-        <translation>文件夹在准备过程中发生了变化。</translation>
+        <translation type="vanished">文件夹在准备过程中发生了变化。</translation>
     </message>
     <message>
-        <location line="+47"/>
         <source>Could not move the prepared bundle into %1.</source>
-        <translation>无法将准备好的包移动到 %1。</translation>
+        <translation type="vanished">无法将准备好的包移动到 %1。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Could not create the bundle folder in the destination.</source>
-        <translation>无法在目标位置创建包文件夹。</translation>
+        <translation type="vanished">无法在目标位置创建包文件夹。</translation>
     </message>
 </context>
 <context>
     <name>QWebEnginePage</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+391"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+401"/>
         <source>&amp;Back</source>
         <translation>后退(&amp;B)</translation>
     </message>
@@ -950,45 +872,36 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+637"/>
         <source>The note is no longer open.</source>
-        <translation>该笔记已不再打开。</translation>
+        <translation type="vanished">该笔记已不再打开。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>A note was closed while the folder was being prepared.</source>
-        <translation>在准备文件夹时有笔记被关闭。</translation>
+        <translation type="vanished">在准备文件夹时有笔记被关闭。</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location line="+44"/>
         <source>An open note is still being saved. Try again in a moment.</source>
-        <translation>已打开的笔记仍在保存中，请稍后重试。</translation>
+        <translation type="vanished">已打开的笔记仍在保存中，请稍后重试。</translation>
     </message>
     <message>
-        <location line="-40"/>
         <source>Could not read the latest content of an open note.</source>
-        <translation>无法读取已打开笔记的最新内容。</translation>
+        <translation type="vanished">无法读取已打开笔记的最新内容。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>An open note has unsaved changes but its notebook is read-only.</source>
-        <translation>已打开的笔记有未保存的修改，但其笔记本为只读。</translation>
+        <translation type="vanished">已打开的笔记有未保存的修改，但其笔记本为只读。</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Saving an open note was cancelled.</source>
-        <translation>保存已打开的笔记已取消。</translation>
+        <translation type="vanished">保存已打开的笔记已取消。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>The notebook is busy syncing. Try again in a moment.</source>
-        <translation>笔记本正在同步，请稍后重试。</translation>
+        <translation type="vanished">笔记本正在同步，请稍后重试。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Could not write an open note to disk.</source>
-        <translation>无法将已打开的笔记写入磁盘。</translation>
+        <translation type="vanished">无法将已打开的笔记写入磁盘。</translation>
     </message>
 </context>
 <context>
@@ -997,6 +910,57 @@
         <location filename="../../../widgets/dashboard/calendarsticker.cpp" line="+31"/>
         <source>Calendar</source>
         <translation>日历</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::CommentController</name>
+    <message>
+        <location filename="../../../controllers/commentcontroller.cpp" line="+38"/>
+        <source>This notebook is read-only, so comments cannot be saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Failed to save comments: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>The comment store could not be read, so comments are read-only for this file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>Comments cannot be added to this file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>This file already has the maximum number of comments (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::CommentPanel</name>
+    <message>
+        <location filename="../../../widgets/commentpanel.cpp" line="+34"/>
+        <source>Select a highlight to edit its note.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Add a note...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Delete</source>
+        <translation type="unfinished">删除</translation>
+    </message>
+    <message>
+        <location line="+147"/>
+        <source>This comment was created by a newer version of VNote and cannot be shown on the page.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1010,70 +974,56 @@
 <context>
     <name>vnotex::CustomCommandProvider</name>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="+23"/>
         <source>Custom Command</source>
-        <translation>自定义命令</translation>
+        <translation type="vanished">自定义命令</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Command is not configured</source>
-        <translation>未配置命令</translation>
+        <translation type="vanished">未配置命令</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Failed to create temporary file</source>
-        <translation>无法创建临时文件</translation>
+        <translation type="vanished">无法创建临时文件</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <location line="+104"/>
         <source>Invalid command: %1</source>
-        <translation>无效的命令：%1</translation>
+        <translation type="vanished">无效的命令：%1</translation>
     </message>
     <message>
-        <location line="-92"/>
         <source>Command not found: %1</source>
-        <translation>未找到命令：%1</translation>
+        <translation type="vanished">未找到命令：%1</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Command timed out after 30 seconds</source>
-        <translation>命令在 30 秒后超时</translation>
+        <translation type="vanished">命令在 30 秒后超时</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Command failed (exit code %1): %2</source>
-        <translation>命令执行失败（退出码 %1）：%2</translation>
+        <translation type="vanished">命令执行失败（退出码 %1）：%2</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>No URL returned by command</source>
-        <translation>命令未返回 URL</translation>
+        <translation type="vanished">命令未返回 URL</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>Delete is not supported by custom command provider</source>
-        <translation>自定义命令提供方不支持删除</translation>
+        <translation type="vanished">自定义命令提供方不支持删除</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.</source>
-        <translation>兼容 Typora 的上传命令。图片文件路径会作为最后一个参数追加。标准输出的最后一行非空内容会作为上传后的图片 URL。</translation>
+        <translation type="vanished">兼容 Typora 的上传命令。图片文件路径会作为最后一个参数追加。标准输出的最后一行非空内容会作为上传后的图片 URL。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Command is empty</source>
-        <translation>命令为空</translation>
+        <translation type="vanished">命令为空</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Program not found in PATH: %1</source>
-        <translation>在 PATH 中未找到程序：%1</translation>
+        <translation type="vanished">在 PATH 中未找到程序：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Configuration is valid. Program found: %1</source>
-        <translation>配置有效。已找到程序：%1</translation>
+        <translation type="vanished">配置有效。已找到程序：%1</translation>
     </message>
 </context>
 <context>
@@ -1154,17 +1104,17 @@
 <context>
     <name>vnotex::DockWidgetHelper</name>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="+129"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="+131"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+6"/>
         <source>Console</source>
         <translation>控制台</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-21"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
@@ -1194,7 +1144,12 @@
         <translation>任务</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+8"/>
+        <source>Comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Location List</source>
         <translation>位置列表</translation>
     </message>
@@ -2386,146 +2341,115 @@
 <context>
     <name>vnotex::GitHubProvider</name>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="+20"/>
         <source>GitHub Repository</source>
-        <translation>GitHub 仓库</translation>
+        <translation type="vanished">GitHub 仓库</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.</source>
-        <translation>拥有 &apos;repo&apos; 权限的 GitHub 个人访问令牌。在 GitHub → Settings → Developer settings → Personal access tokens 处生成。</translation>
+        <translation type="vanished">拥有 &apos;repo&apos; 权限的 GitHub 个人访问令牌。在 GitHub → Settings → Developer settings → Personal access tokens 处生成。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Your GitHub username.</source>
-        <translation>您的 GitHub 用户名。</translation>
+        <translation type="vanished">您的 GitHub 用户名。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Name of the GitHub repository to store images. Must already exist.</source>
-        <translation>用于存放图片的 GitHub 仓库名。必须已存在。</translation>
+        <translation type="vanished">用于存放图片的 GitHub 仓库名。必须已存在。</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>个人令牌/用户名/仓库名不能为空。</translation>
+        <translation type="vanished">个人令牌/用户名/仓库名不能为空。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Private repository is not supported.</source>
-        <translation>不支持私有仓库。</translation>
+        <translation type="vanished">不支持私有仓库。</translation>
     </message>
     <message>
-        <location line="+43"/>
         <source>Failed to create image with empty path.</source>
-        <translation>无法从空路径创建图片。</translation>
+        <translation type="vanished">无法从空路径创建图片。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+57"/>
         <source>Invalid GitHub image host configuration.</source>
-        <translation>无效的GitHub图床配置。</translation>
+        <translation type="vanished">无效的GitHub图床配置。</translation>
     </message>
     <message>
-        <location line="-46"/>
         <source>The resource already exists at the image host (%1).</source>
-        <translation>该资源已经存在于图床(%1)。</translation>
+        <translation type="vanished">该资源已经存在于图床(%1)。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床查询资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床查询资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+11"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床创建资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床创建资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location line="+62"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
-        <translation>无法获取该资源的SHA值(%1)(%2)。</translation>
+        <translation type="vanished">无法获取该资源的SHA值(%1)(%2)。</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>Failed to delete resource (%1) (%2).</source>
-        <translation>无法删除资源(%1)(%2)。</translation>
+        <translation type="vanished">无法删除资源(%1)(%2)。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::GiteeProvider</name>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="+19"/>
         <source>Gitee Repository</source>
-        <translation>Gitee 仓库</translation>
+        <translation type="vanished">Gitee 仓库</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.</source>
-        <translation>拥有 &apos;projects&apos; 权限的 Gitee 个人访问令牌。在 Gitee → 设置 → 安全设置 → 私人令牌处生成。</translation>
+        <translation type="vanished">拥有 &apos;projects&apos; 权限的 Gitee 个人访问令牌。在 Gitee → 设置 → 安全设置 → 私人令牌处生成。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Your Gitee username.</source>
-        <translation>您的 Gitee 用户名。</translation>
+        <translation type="vanished">您的 Gitee 用户名。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Name of the Gitee repository to store images. Must already exist.</source>
-        <translation>用于存放图片的 Gitee 仓库名。必须已存在。</translation>
+        <translation type="vanished">用于存放图片的 Gitee 仓库名。必须已存在。</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>个人令牌/用户名/仓库名不能为空。</translation>
+        <translation type="vanished">个人令牌/用户名/仓库名不能为空。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Private repository is not supported.</source>
-        <translation>不支持私有仓库。</translation>
+        <translation type="vanished">不支持私有仓库。</translation>
     </message>
     <message>
-        <location line="+46"/>
         <source>Failed to create image with empty path.</source>
-        <translation>无法从空路径创建图片。</translation>
+        <translation type="vanished">无法从空路径创建图片。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+63"/>
         <source>Invalid Gitee image host configuration.</source>
-        <translation>无效的码云图床配置。</translation>
+        <translation type="vanished">无效的码云图床配置。</translation>
     </message>
     <message>
-        <location line="-50"/>
         <source>The resource already exists at the image host (%1).</source>
-        <translation>该资源已经存在于图床(%1)。</translation>
+        <translation type="vanished">该资源已经存在于图床(%1)。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床查询资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床查询资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <location line="+12"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
-        <translation>无法在图床创建资源(%1)(%2)(%3)。</translation>
+        <translation type="vanished">无法在图床创建资源(%1)(%2)(%3)。</translation>
     </message>
     <message>
-        <location line="+35"/>
         <source>Failed to fetch information about the resource (%1).</source>
-        <translation>无法获取该资源的信息(%1)。</translation>
+        <translation type="vanished">无法获取该资源的信息(%1)。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
-        <translation>无法获取该资源的SHA值(%1)(%2)。</translation>
+        <translation type="vanished">无法获取该资源的SHA值(%1)(%2)。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Failed to delete resource (%1) (%2).</source>
-        <translation>无法删除资源(%1)(%2)。</translation>
+        <translation type="vanished">无法删除资源(%1)(%2)。</translation>
     </message>
 </context>
 <context>
@@ -2749,35 +2673,30 @@
 <context>
     <name>vnotex::ImageHostService</name>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="+219"/>
         <source>No provider</source>
-        <translation>无提供方</translation>
+        <translation type="vanished">无提供方</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Upload cancelled by hook</source>
-        <translation>上传已被钩子取消</translation>
+        <translation type="vanished">上传已被钩子取消</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>GitHub Repository</source>
-        <translation>GitHub 仓库</translation>
+        <translation type="vanished">GitHub 仓库</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Gitee Repository</source>
-        <translation>Gitee 仓库</translation>
+        <translation type="vanished">Gitee 仓库</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Custom Command</source>
-        <translation>自定义命令</translation>
+        <translation type="vanished">自定义命令</translation>
     </message>
 </context>
 <context>
     <name>vnotex::ImageInsertDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+65"/>
+        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+77"/>
         <source>&amp;Browse</source>
         <translation>浏览(&amp;B)</translation>
     </message>
@@ -2797,6 +2716,16 @@
         <translation>替代文本</translation>
     </message>
     <message>
+        <location line="+12"/>
+        <source>Width (px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Height (px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+79"/>
         <source>Select Image To Insert</source>
         <translation>选择图片插入</translation>
@@ -2805,6 +2734,24 @@
         <location line="+1"/>
         <source>Images (*.png *.xpm *.jpg *.bmp *.gif *.svg *.webp);;All (*.*)</source>
         <translation>图片(*.png *.xpm *.jpg *.bmp *.gif *.svg *.webp);;全部文件(*.*)</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ImageSizeDialog</name>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="+49"/>
+        <source>Width (px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Height (px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Leave both empty to remove the size.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3049,12 +2996,12 @@
 <context>
     <name>vnotex::LegacyImageMigrationController</name>
     <message>
-        <location filename="../../../controllers/legacyimagemigrationcontroller.cpp" line="+282"/>
+        <location filename="../../../controllers/legacyimagemigrationcontroller.cpp" line="+295"/>
         <source>Internal error: image migration is not wired up.</source>
         <translation>内部错误：图片迁移功能未接入。</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+57"/>
         <source>Failed to copy &quot;%1&quot; into the assets folder.</source>
         <translation>无法将 &quot;%1&quot; 复制到资源文件夹。</translation>
     </message>
@@ -3119,7 +3066,7 @@
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="+153"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="+159"/>
         <source>VNote</source>
         <translation>VNote</translation>
     </message>
@@ -3139,7 +3086,7 @@
         <translation>经 3 次尝试后仍无法解决同步冲突。请手动解决或联系支持。</translation>
     </message>
     <message>
-        <location line="+293"/>
+        <location line="+300"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>关闭时，是否将%1最小化到系统托盘而非退出？</translation>
     </message>
@@ -3154,7 +3101,7 @@
         <translation>%1仍然在此运行。</translation>
     </message>
     <message>
-        <location line="+401"/>
+        <location line="+428"/>
         <location line="+49"/>
         <source>Global</source>
         <translation>全局</translation>
@@ -3474,39 +3421,39 @@
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+250"/>
-        <location line="+660"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+256"/>
+        <location line="+689"/>
         <source>Insert Link</source>
         <translation>插入链接</translation>
     </message>
     <message>
-        <location line="-649"/>
+        <location line="-678"/>
         <source>Insert Image</source>
         <translation>插入图片</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Insert Table</source>
         <translation>插入表格</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+57"/>
         <source>Failed to read local image file (%1) (%2).</source>
         <translation>无法读取本地图片文件(%1)(%2)。</translation>
     </message>
     <message>
-        <location line="+153"/>
+        <location line="+154"/>
         <source>For advanced paste, try the &quot;Rich Paste&quot; and &quot;Parse to Markdown and Paste&quot; on the editor&apos;s context menu</source>
         <translation>更多高级粘贴，请尝试编辑器上下文菜单中的“多功能粘贴”和“解析为Markdown并粘贴”功能</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+74"/>
         <location line="+1"/>
         <source>Paste with Linked Images</source>
         <translation>以关联图片的方式粘贴</translation>
     </message>
     <message>
-        <location line="+62"/>
+        <location line="+79"/>
         <source>Pasted with Linked Images</source>
         <translation>已以关联图片的方式粘贴</translation>
     </message>
@@ -3531,7 +3478,7 @@
         <translation>已跳过：</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+32"/>
         <location line="+37"/>
         <location line="+73"/>
         <source>Insert From Clipboard</source>
@@ -3606,12 +3553,12 @@
         <translation>从剪切板插入图片</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Insert Image From URL</source>
         <translation>从URL插入图片</translation>
     </message>
     <message>
-        <location line="+173"/>
+        <location line="+170"/>
         <source>&amp;Read</source>
         <translation>阅读(&amp;R)</translation>
     </message>
@@ -3621,7 +3568,7 @@
         <translation>多功能粘贴</translation>
     </message>
     <message>
-        <location line="+412"/>
+        <location line="+442"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
@@ -3636,8 +3583,8 @@
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <location line="-1088"/>
-        <location line="+640"/>
+        <location line="-1138"/>
+        <location line="+660"/>
         <source>Paste as Plain Text</source>
         <translation>粘贴为纯文本</translation>
     </message>
@@ -3652,12 +3599,22 @@
         <translation>插入片段</translation>
     </message>
     <message>
-        <location line="+396"/>
+        <location line="+426"/>
         <source>View Image</source>
         <translation>查看图片</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+42"/>
+        <source>Set Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Set Image Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+110"/>
         <source>Copy In-Place Preview</source>
         <translation>复制原地预览</translation>
     </message>
@@ -3673,12 +3630,12 @@
         <translation>复制链接</translation>
     </message>
     <message>
-        <location line="-452"/>
+        <location line="-558"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
     </message>
     <message>
-        <location line="-964"/>
+        <location line="-1031"/>
         <source>Image insertion from local file is not supported without a buffer.</source>
         <translation>无缓冲区时不支持从本地文件插入图片。</translation>
     </message>
@@ -3698,7 +3655,7 @@
         <translation>无法从数据插入图片。</translation>
     </message>
     <message>
-        <location line="+894"/>
+        <location line="+961"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
@@ -4051,7 +4008,7 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+639"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+644"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确定要打开链接（%1）吗？</translation>
     </message>
@@ -4083,7 +4040,7 @@
         <translation>无法打印为PDF</translation>
     </message>
     <message>
-        <location line="+229"/>
+        <location line="+256"/>
         <source>Failed to save the preference.</source>
         <translation>保存设置失败。</translation>
     </message>
@@ -4093,14 +4050,19 @@
         <translation>迁移图片失败。</translation>
     </message>
     <message numerus="yes">
-        <location line="+51"/>
+        <location line="+54"/>
         <source>Migrated %n image(s) to the assets folder.</source>
         <translation>
             <numerusform>已将 %n 张图片迁移到资源文件夹。</numerusform>
         </translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+24"/>
+        <source>This note is read-only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+173"/>
         <source>Local</source>
         <translation>本地</translation>
     </message>
@@ -4174,7 +4136,7 @@
 <context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+193"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+196"/>
         <location line="+8"/>
         <source>Replace is not supported yet</source>
         <translation>不支持替换</translation>
@@ -4761,60 +4723,48 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+890"/>
         <source>Invalid arguments</source>
-        <translation>参数无效</translation>
+        <translation type="vanished">参数无效</translation>
     </message>
     <message>
-        <location line="+38"/>
         <source>Cancelled by hook</source>
-        <translation>已被钩子取消</translation>
+        <translation type="vanished">已被钩子取消</translation>
     </message>
     <message>
-        <location line="+83"/>
         <source>OK</source>
-        <translation>成功</translation>
+        <translation type="vanished">成功</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Invalid argument</source>
-        <translation>参数无效</translation>
+        <translation type="vanished">参数无效</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Folder not found</source>
-        <translation>未找到文件夹</translation>
+        <translation type="vanished">未找到文件夹</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Invalid state</source>
-        <translation>状态无效</translation>
+        <translation type="vanished">状态无效</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Submitted order is not a valid permutation of the folder&apos;s children</source>
-        <translation>提交的顺序不是该文件夹子项的有效排列</translation>
+        <translation type="vanished">提交的顺序不是该文件夹子项的有效排列</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Reorder is not supported for this notebook type</source>
-        <translation>此笔记本类型不支持重新排序</translation>
+        <translation type="vanished">此笔记本类型不支持重新排序</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Unknown error while reordering</source>
-        <translation>重新排序时发生未知错误</translation>
+        <translation type="vanished">重新排序时发生未知错误</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>vxcore error %1 while reordering</source>
-        <translation>重新排序时发生 vxcore 错误 %1</translation>
+        <translation type="vanished">重新排序时发生 vxcore 错误 %1</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+44"/>
         <source>vxcore context is not initialized</source>
-        <translation>vxcore 上下文尚未初始化</translation>
+        <translation type="vanished">vxcore 上下文尚未初始化</translation>
     </message>
 </context>
 <context>
@@ -5856,12 +5806,12 @@ Continue?</source>
 <context>
     <name>vnotex::NotificationRouter</name>
     <message>
-        <location filename="../../../controllers/notificationrouter.cpp" line="+112"/>
+        <location filename="../../../controllers/notificationrouter.cpp" line="+110"/>
         <source>Image upload failed</source>
         <translation>图片上传失败</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Failed to upload the image to the image host.</source>
         <translation>无法将图片上传到图床。</translation>
     </message>
@@ -5871,7 +5821,7 @@ Continue?</source>
         <translation>无法将 &quot;%1&quot; 上传到图床。</translation>
     </message>
     <message>
-        <location line="+74"/>
+        <location line="+73"/>
         <source>Bundled resources not updated</source>
         <translation>内置资源未更新</translation>
     </message>
@@ -5881,7 +5831,7 @@ Continue?</source>
         <translation>VNote 无法更新内置的 &quot;%1&quot; 数据，其中部分内容可能已过时。VNote 将在下次启动时重试。</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+65"/>
         <source>Open Sync Info</source>
         <translation>打开同步信息</translation>
     </message>
@@ -5901,7 +5851,7 @@ Continue?</source>
         <translation>没有可用于 &quot;%1&quot;（类型 &quot;%2&quot;）的查看器。</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+18"/>
         <source>Auto-save stopped</source>
         <translation>自动保存已停止</translation>
     </message>
@@ -6380,6 +6330,58 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+18"/>
         <source>Expansion level: %1</source>
         <translation>扩展层级: %1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::PdfAnnotationToolBar</name>
+    <message>
+        <location filename="../../../widgets/pdfannotationtoolbar.cpp" line="+26"/>
+        <source>Thin</source>
+        <translation>细</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+6"/>
+        <source>Medium</source>
+        <translation>中</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>Thick</source>
+        <translation>粗</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Small</source>
+        <translation>小</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Large</source>
+        <translation>大</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Highlight</source>
+        <translation>高亮</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Draw</source>
+        <translation>绘制</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Text box</source>
+        <translation>文本框</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::PdfViewer</name>
+    <message>
+        <location filename="../../../widgets/editors/pdfviewer.cpp" line="+61"/>
+        <source>Highlight</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6905,7 +6907,22 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SortDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="+67"/>
+        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="+139"/>
+        <source>Name</source>
+        <translation type="unfinished">名字</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Created</source>
+        <translation type="unfinished">已创建</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Modified</source>
+        <translation type="unfinished">已修改</translation>
+    </message>
+    <message>
+        <location line="+31"/>
         <source>Move to &amp;Top</source>
         <translation>移到顶部(&amp;T)</translation>
     </message>
@@ -7003,34 +7020,28 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncService</name>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="+154"/>
         <source>Sync is in progress for this notebook. Please wait for sync to complete before closing.</source>
-        <translation>该笔记本正在同步。请等待同步完成后再关闭。</translation>
+        <translation type="vanished">该笔记本正在同步。请等待同步完成后再关闭。</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Sync work is queued for this notebook (%1 item(s)). Cancel the queued sync from the toolbar before closing.</source>
-        <translation>该笔记本有同步任务排队中（%1 项）。请先在工具栏中取消排队的同步任务再关闭。</translation>
+        <translation type="vanished">该笔记本有同步任务排队中（%1 项）。请先在工具栏中取消排队的同步任务再关闭。</translation>
     </message>
     <message>
-        <location line="+130"/>
         <source>PAT is required to enable sync.</source>
-        <translation>启用同步需要 PAT。</translation>
+        <translation type="vanished">启用同步需要 PAT。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Remote URL is required to enable sync.</source>
-        <translation>启用同步需要远端 URL。</translation>
+        <translation type="vanished">启用同步需要远端 URL。</translation>
     </message>
     <message>
-        <location line="+501"/>
         <source>Failed to persist sync configuration to notebook after enable.</source>
-        <translation>启用后无法将同步配置持久化到笔记本。</translation>
+        <translation type="vanished">启用后无法将同步配置持久化到笔记本。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Notebook service not available.</source>
-        <translation>笔记本服务不可用。</translation>
+        <translation type="vanished">笔记本服务不可用。</translation>
     </message>
 </context>
 <context>
@@ -7268,25 +7279,22 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
-        <location filename="../../../core/services/task.cpp" line="+403"/>
         <source>[Task (%1) started]
 </source>
-        <translation>[任务(%1)已启动]
+        <translation type="vanished">[任务(%1)已启动]
 </translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>[Task (%1) error occurred (%2)]
 </source>
-        <translation>[任务(%1)遇到错误(%2)]
+        <translation type="vanished">[任务(%1)遇到错误(%2)]
 </translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>
 [Task (%1) finished (%2)]
 </source>
-        <translation>
+        <translation type="vanished">
 [任务(%1)已结束(%2)]
 </translation>
     </message>
@@ -7621,7 +7629,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ThemeService</name>
     <message>
-        <location filename="../../../gui/services/themeservice.cpp" line="+217"/>
+        <location filename="../../../gui/services/themeservice.cpp" line="+267"/>
         <source>[Theme] %1 %2</source>
         <translation>[主题]%1 %2</translation>
     </message>
@@ -7815,55 +7823,43 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+207"/>
         <source>Refusing to contact an unexpected host: %1</source>
-        <translation>拒绝连接到非预期的主机：%1</translation>
+        <translation type="vanished">拒绝连接到非预期的主机：%1</translation>
     </message>
     <message>
-        <location line="-4"/>
-        <location line="+35"/>
         <source>Cancelled.</source>
-        <translation>已取消。</translation>
+        <translation type="vanished">已取消。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>The request to %1 timed out.</source>
-        <translation>对 %1 的请求超时。</translation>
+        <translation type="vanished">对 %1 的请求超时。</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+25"/>
         <source>Too many redirects.</source>
-        <translation>重定向次数过多。</translation>
+        <translation type="vanished">重定向次数过多。</translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+36"/>
         <source>The response from %1 is unexpectedly large.</source>
-        <translation>%1 返回的响应过大。</translation>
+        <translation type="vanished">%1 返回的响应过大。</translation>
     </message>
     <message>
-        <location line="+105"/>
         <source>The latest release could not be identified.</source>
-        <translation>无法识别最新版本。</translation>
+        <translation type="vanished">无法识别最新版本。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::VNote3MigrationService</name>
     <message>
-        <location filename="../../../core/services/vnote3migrationservice.cpp" line="+374"/>
         <source>File &apos;%1&apos;: notebook has no attachment folder configured, skipping attachments</source>
-        <translation>文件 &apos;%1&apos;：笔记本未配置附件文件夹，已跳过附件</translation>
+        <translation type="vanished">文件 &apos;%1&apos;：笔记本未配置附件文件夹，已跳过附件</translation>
     </message>
     <message>
-        <location line="+62"/>
         <source>File &apos;%1&apos;: attachment subfolders are not listed in the attachment panel; use &apos;Open Folder&apos; to reach them</source>
-        <translation>文件 &apos;%1&apos;：附件子文件夹不会显示在附件面板中；请使用 &apos;打开文件夹&apos; 访问它们</translation>
+        <translation type="vanished">文件 &apos;%1&apos;：附件子文件夹不会显示在附件面板中；请使用 &apos;打开文件夹&apos; 访问它们</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>File &apos;%1&apos;: attachment copy incomplete, keeping the legacy attachment folder</source>
-        <translation>文件 &apos;%1&apos;：附件复制不完整，保留旧的附件文件夹</translation>
+        <translation type="vanished">文件 &apos;%1&apos;：附件复制不完整，保留旧的附件文件夹</translation>
     </message>
 </context>
 <context>
@@ -7992,7 +7988,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>移除分屏与工作区</translation>
     </message>
     <message>
-        <location line="+265"/>
+        <location line="+349"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
@@ -8017,7 +8013,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>关闭右侧标签页</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="-98"/>
         <source>Copy Path</source>
         <translation>复制路径</translation>
     </message>
@@ -8115,7 +8111,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>选择片段</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="+261"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="+266"/>
         <source>Do you want to save changes to &quot;%1&quot;?</source>
         <translation>是否保存对 &quot;%1&quot; 的更改？</translation>
     </message>
@@ -8286,12 +8282,12 @@ Continue?</source>
 <context>
     <name>vnotex::WebViewExporter</name>
     <message>
-        <location filename="../../../export/webviewexporter.cpp" line="+656"/>
+        <location filename="../../../export/webviewexporter.cpp" line="+663"/>
         <source>Table of Contents</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+117"/>
         <source>Timed out while rasterizing the diagrams of this note.</source>
         <translation>光栅化此笔记中的图表时超时。</translation>
     </message>

@@ -17,8 +17,10 @@
 using namespace vnotex;
 
 PdfViewer::PdfViewer(PdfViewerAdapter *p_adapter, const QColor &p_background, qreal p_zoomFactor,
-                     QWidget *p_parent, QWebEngineProfile *p_profile)
-    : WebViewer(p_background, p_zoomFactor, p_parent, p_profile), m_adapter(p_adapter) {
+                     QWidget *p_parent, QWebEngineProfile *p_profile,
+                     CommentColorSwatch::ColorResolver p_resolve, QString p_borderCss)
+    : WebViewer(p_background, p_zoomFactor, p_parent, p_profile), m_adapter(p_adapter),
+      m_resolve(std::move(p_resolve)), m_borderCss(std::move(p_borderCss)) {
   m_adapter->setParent(this);
 
   auto channel = new QWebChannel(this);
@@ -41,6 +43,12 @@ PdfViewer::PdfViewer(PdfViewerAdapter *p_adapter, const QColor &p_background, qr
 
 PdfViewerAdapter *PdfViewer::adapter() const { return m_adapter; }
 
+void PdfViewer::setSwatchResolver(CommentColorSwatch::ColorResolver p_resolve,
+                                  QString p_borderCss) {
+  m_resolve = std::move(p_resolve);
+  m_borderCss = std::move(p_borderCss);
+}
+
 void PdfViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   QScopedPointer<QMenu> menu(createStandardContextMenu());
   if (!menu) {
@@ -55,7 +63,8 @@ void PdfViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     // CommentColor::all() must show up here and in the comment dock together,
     // and both take their label from CommentColor::displayName().
     for (const auto &token : CommentColor::all()) {
-      auto *act = highlight->addAction(CommentColor::displayName(token));
+      auto *act = highlight->addAction(CommentColorSwatch::icon(m_resolve, token, 16, m_borderCss),
+                                       CommentColor::displayName(token));
       connect(act, &QAction::triggered, this,
               [this, token]() { emit highlightSelectionRequested(token); });
     }

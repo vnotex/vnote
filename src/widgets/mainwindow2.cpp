@@ -727,6 +727,21 @@ void MainWindow2::setupOutlineViewer() {
 void MainWindow2::setupCommentPanel() {
   m_commentPanel = new CommentPanel(m_serviceLocator, this);
   m_commentPanel->setObjectName("CommentPanel.vnotex");
+
+  // The panel holds no ThemeService by design (see CommentPanel::
+  // setSwatchResolver), so the resolver is built HERE and re-supplied on every
+  // theme change — the border travels as a value and would otherwise go stale.
+  if (auto *themeService = m_serviceLocator.get<ThemeService>()) {
+    const auto applySwatches = [this, themeService]() {
+      m_commentPanel->setSwatchResolver(
+          [themeService](const QString &p_token) {
+            return themeService->commentHighlightColor(p_token);
+          },
+          themeService->paletteColor(QStringLiteral("base#border")));
+    };
+    applySwatches();
+    connect(themeService, &ThemeService::themeChanged, m_commentPanel, applySwatches);
+  }
 }
 
 void MainWindow2::setupTagExplorer() {

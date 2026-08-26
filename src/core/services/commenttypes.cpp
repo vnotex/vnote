@@ -102,6 +102,77 @@ QString CommentColor::displayName(const QString &p_token) {
   return p_token;
 }
 
+// ============ PdfToolOptions ============
+
+QStringList PdfToolOptions::toolNames() {
+  return QStringList{highlightTool(), inkTool(), freeTextTool()};
+}
+
+bool PdfToolOptions::isValidTool(const QString &p_tool) { return toolNames().contains(p_tool); }
+
+bool PdfToolOptions::hasWidth(const QString &p_tool) { return p_tool == inkTool(); }
+
+bool PdfToolOptions::hasFontSize(const QString &p_tool) { return p_tool == freeTextTool(); }
+
+QJsonObject PdfToolOptions::defaults(const QString &p_tool) {
+  QJsonObject obj;
+  if (!isValidTool(p_tool)) {
+    // An unknown tool has no options at all, rather than a plausible-looking
+    // colour-only object a caller might then persist.
+    return obj;
+  }
+  obj.insert(colorKey(), CommentColor::defaultToken());
+  if (hasWidth(p_tool)) {
+    obj.insert(widthKey(), defaultWidth());
+  }
+  if (hasFontSize(p_tool)) {
+    obj.insert(fontSizeKey(), defaultFontSize());
+  }
+  return obj;
+}
+
+namespace {
+// The scalar half of the Task 0 table, shared by width and font size.
+//
+// Non-finite is NOT clamped: a NaN carries no intent to preserve, whereas
+// "width 1e9" plainly means "as thick as possible" and clamping respects it.
+double normalizeScalar(const QJsonValue &p_value, double p_default, double p_min, double p_max) {
+  if (!p_value.isDouble()) {
+    // Absent, or a string/bool/array where a number belongs.
+    return p_default;
+  }
+  const double value = p_value.toDouble();
+  if (!std::isfinite(value)) {
+    return p_default;
+  }
+  return qBound(p_min, value, p_max);
+}
+} // namespace
+
+QJsonObject PdfToolOptions::normalize(const QString &p_tool, const QJsonObject &p_options) {
+  QJsonObject obj = defaults(p_tool);
+  if (obj.isEmpty()) {
+    return obj;
+  }
+
+  const auto colorValue = p_options.value(colorKey());
+  if (colorValue.isString() && CommentColor::isValid(colorValue.toString())) {
+    obj.insert(colorKey(), colorValue.toString());
+  }
+
+  if (hasWidth(p_tool)) {
+    obj.insert(widthKey(), normalizeScalar(p_options.value(widthKey()), defaultWidth(),
+                                           PdfInkAnchor::minWidth(), PdfInkAnchor::maxWidth()));
+  }
+  if (hasFontSize(p_tool)) {
+    obj.insert(fontSizeKey(),
+               normalizeScalar(p_options.value(fontSizeKey()), defaultFontSize(),
+                               PdfFreeTextAnchor::minFontSize(), PdfFreeTextAnchor::maxFontSize()));
+  }
+
+  return obj;
+}
+
 // ============ PdfQuadsAnchor ============
 
 QJsonObject PdfQuadsAnchor::make(int p_page, const QVector<QVector<double>> &p_quads,

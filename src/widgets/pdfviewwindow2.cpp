@@ -20,12 +20,15 @@
 #include <core/services/htmltemplateservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/webengineprofileservice.h>
+#include <gui/utils/commentcolorswatch.h>
 
 #include "commentprovider.h"
 #include "editors/pdfviewer.h"
 #include "editors/pdfvieweradapter.h"
 #include "inlinebanner.h"
 #include "outlinepopup.h"
+#include "pdfannotationtoolbar.h"
+#include "pdftooloptionsrouter.h"
 
 using namespace vnotex;
 
@@ -41,6 +44,7 @@ QSharedPointer<Outline> outlineFromHeadings(const QVector<PdfViewerAdapter::Head
 
   return outline;
 }
+
 } // namespace
 
 PdfViewWindow2::PdfViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
@@ -105,47 +109,30 @@ void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
 // The three authoring tools, mirroring pdf.js's own toolbar layout. A MODE is
 // what makes this cheap: arm Highlight once and every selection is captured,
 // instead of a per-selection context-menu round trip.
+//
+// Each button carries its OWN settings menu (colour, plus width or font size),
+// opened by the dropdown indicator; the button body still arms/disarms. The
+// construction lives in PdfAnnotationToolBar so it is testable without a window
+// and a WebEngine profile.
 void PdfViewWindow2::setupAnnotationToolBarActions(QToolBar *p_toolBar) {
-  m_toolGroup = new QActionGroup(this);
-  // Non-exclusive: clicking the armed tool again must DISARM it, which an
-  // exclusive group forbids (it keeps one member checked forever).
-  m_toolGroup->setExclusive(false);
+  m_annotationToolBar = new PdfAnnotationToolBar({}, QString(), this);
 
-  const auto addTool = [this, p_toolBar](PdfViewerAdapter::Tool p_tool, const QString &p_icon,
-                                         const QString &p_text) {
-    auto *act =
-        p_toolBar->addAction(ViewWindowToolBarHelper2::generateIcon(getServices(), p_icon), p_text);
-    act->setCheckable(true);
-    act->setData(static_cast<int>(p_tool));
-    m_toolGroup->addAction(act);
-    connect(act, &QAction::triggered, this, [this, p_tool](bool p_checked) {
-      setActiveTool(p_checked ? p_tool : PdfViewerAdapter::Tool::None);
-    });
-    return act;
-  };
+  auto &services = getServices();
+  m_annotationToolBar->install(p_toolBar, [&services](const QString &p_iconName) {
+    return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+  });
 
-  addTool(PdfViewerAdapter::Tool::Highlight, QStringLiteral("type_mark_editor.svg"),
-          tr("Highlight"));
-  addTool(PdfViewerAdapter::Tool::Ink, QStringLiteral("edit_editor.svg"), tr("Draw"));
-  addTool(PdfViewerAdapter::Tool::FreeText, QStringLiteral("type_code_editor.svg"), tr("Text box"));
+  connect(m_annotationToolBar, &PdfAnnotationToolBar::toolToggled, this,
+          [this](const QString &p_tool, bool p_armed) {
+            setActiveTool(p_armed ? PdfViewerAdapter::toolFromString(p_tool)
+                                  : PdfViewerAdapter::Tool::None);
+          });
+  connect(m_annotationToolBar, &PdfAnnotationToolBar::colorPicked, this,
+          &PdfViewWindow2::setToolColor);
+  connect(m_annotationToolBar, &PdfAnnotationToolBar::scalarPicked, this,
+          &PdfViewWindow2::setToolScalar);
 
-  // Colour applies to all three tools, so it sits beside them rather than
-  // inside any one of them.
-  m_colorButton = new QToolButton(p_toolBar);
-  m_colorButton->setPopupMode(QToolButton::InstantPopup);
-  m_colorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  m_colorButton->setAutoRaise(true);
-  m_colorButton->setProperty("NoMenuIndicator", true);
-
-  auto *colorMenu = new QMenu(m_colorButton);
-  for (const auto &token : CommentColor::all()) {
-    auto *act = colorMenu->addAction(CommentColor::displayName(token));
-    act->setCheckable(true);
-    act->setData(token);
-    connect(act, &QAction::triggered, this, [this, token]() { setActiveColor(token); });
-  }
-  m_colorButton->setMenu(colorMenu);
-  p_toolBar->addWidget(m_colorButton);
+  applySwatchResolvers();
 }
 
 void PdfViewWindow2::setActiveTool(PdfViewerAdapter::Tool p_tool) {
@@ -155,26 +142,76 @@ void PdfViewWindow2::setActiveTool(PdfViewerAdapter::Tool p_tool) {
   syncToolBarState();
 }
 
-void PdfViewWindow2::setActiveColor(const QString &p_color) {
-  if (auto *a = adapter()) {
-    a->setCommentColor(p_color);
+QHash<QString, PdfViewerConfig::ToolOptions> PdfViewWindow2::currentToolOptions() const {
+  QHash<QString, PdfViewerConfig::ToolOptions> options;
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!configMgr) {
+    return options;
   }
-  // Persisted, so the next window and the next launch start where the user left
-  // off rather than back at yellow.
-  if (auto *configMgr = getServices().get<ConfigMgr2>()) {
-    configMgr->getEditorConfig().getPdfViewerConfig().setCommentColor(p_color);
+  const auto &config = configMgr->getEditorConfig().getPdfViewerConfig();
+  for (const auto &tool : PdfViewerConfig::toolNames()) {
+    options.insert(tool, config.getToolOptions(tool));
+  }
+  return options;
+}
+
+void PdfViewWindow2::applyToolOptions(const QString &p_tool, bool p_isColor, const QString &p_token,
+                                      double p_value) {
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  auto &config = configMgr->getEditorConfig().getPdfViewerConfig();
+
+  if (p_isColor) {
+    PdfToolOptionsRouter::applyColor(config, adapter(), p_tool, p_token);
+  } else {
+    PdfToolOptionsRouter::applyScalar(config, adapter(), p_tool, p_value);
   }
   syncToolBarState();
 }
 
-void PdfViewWindow2::setAuthoringEnabled(bool p_enabled) {
-  if (m_toolGroup) {
-    for (auto *act : m_toolGroup->actions()) {
-      act->setEnabled(p_enabled);
-    }
+void PdfViewWindow2::setToolColor(const QString &p_tool, const QString &p_token) {
+  applyToolOptions(p_tool, /*p_isColor=*/true, p_token, 0.0);
+}
+
+void PdfViewWindow2::setToolScalar(const QString &p_tool, double p_value) {
+  applyToolOptions(p_tool, /*p_isColor=*/false, QString(), p_value);
+}
+
+void PdfViewWindow2::hydrateToolOptions() {
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
   }
-  if (m_colorButton) {
-    m_colorButton->setEnabled(p_enabled);
+  PdfToolOptionsRouter::hydrate(configMgr->getEditorConfig().getPdfViewerConfig(), adapter());
+}
+
+void PdfViewWindow2::applySwatchResolvers() {
+  auto *themeService = getServices().get<ThemeService>();
+  if (!themeService) {
+    return;
+  }
+
+  // Captured by pointer, which is safe: ThemeService is constructed before
+  // MainWindow2 (src/main.cpp), so reverse destruction tears down every widget
+  // holding it first.
+  CommentColorSwatch::ColorResolver resolver = [themeService](const QString &p_token) {
+    return themeService->commentHighlightColor(p_token);
+  };
+  const auto borderCss = themeService->paletteColor(QStringLiteral("base#border"));
+
+  if (m_annotationToolBar) {
+    m_annotationToolBar->setSwatchResolver(resolver, borderCss);
+  }
+  if (m_viewer) {
+    m_viewer->setSwatchResolver(resolver, borderCss);
+  }
+}
+
+void PdfViewWindow2::setAuthoringEnabled(bool p_enabled) {
+  if (m_annotationToolBar) {
+    m_annotationToolBar->setAuthoringEnabled(p_enabled);
   }
 
   // Disarm whatever was active, or the page would stay in a tool the toolbar
@@ -186,28 +223,12 @@ void PdfViewWindow2::setAuthoringEnabled(bool p_enabled) {
 
 void PdfViewWindow2::syncToolBarState() {
   auto *a = adapter();
-  if (!a) {
+  if (!a || !m_annotationToolBar) {
     return;
   }
 
-  if (m_toolGroup) {
-    for (auto *act : m_toolGroup->actions()) {
-      const auto tool = static_cast<PdfViewerAdapter::Tool>(act->data().toInt());
-      QSignalBlocker blocker(act);
-      act->setChecked(tool == a->getTool());
-    }
-  }
-
-  if (m_colorButton) {
-    const auto color = a->getCommentColor();
-    m_colorButton->setText(CommentColor::displayName(color));
-    if (auto *menu = m_colorButton->menu()) {
-      for (auto *act : menu->actions()) {
-        QSignalBlocker blocker(act);
-        act->setChecked(act->data().toString() == color);
-      }
-    }
-  }
+  m_annotationToolBar->syncState(PdfViewerAdapter::toolToString(a->getTool()),
+                                 currentToolOptions());
 }
 
 void PdfViewWindow2::setupOutlineProvider() {
@@ -283,10 +304,18 @@ void PdfViewWindow2::setupComments() {
   // === Page context menu (view) -> overlay ===
   // The discoverable way to create a highlight. It has to round-trip through
   // the adapter because only the web side knows what is selected and where.
+  //
+  // It goes through the SAME router the toolbar menu uses, so the pick is also
+  // persisted as the highlight tool's colour and the two pickers cannot
+  // disagree.
   connect(m_viewer, &PdfViewer::highlightSelectionRequested, this, [this](const QString &p_color) {
-    if (auto *a = adapter()) {
-      a->captureSelection(p_color);
+    auto *configMgr = getServices().get<ConfigMgr2>();
+    if (!configMgr) {
+      return;
     }
+    PdfToolOptionsRouter::captureHighlight(configMgr->getEditorConfig().getPdfViewerConfig(),
+                                           adapter(), p_color);
+    syncToolBarState();
   });
 
   // === Dock (view) -> controller ===
@@ -308,10 +337,9 @@ void PdfViewWindow2::setupComments() {
   if (pdfAdapter) {
     connect(pdfAdapter, &PdfViewerAdapter::toolFinished, this, &PdfViewWindow2::syncToolBarState);
 
-    if (auto *configMgr = getServices().get<ConfigMgr2>()) {
-      pdfAdapter->setCommentColor(
-          configMgr->getEditorConfig().getPdfViewerConfig().getCommentColor());
-    }
+    // BEFORE the first ready transition, so the reload latch republishes the
+    // persisted settings rather than the adapter's own defaults.
+    hydrateToolOptions();
   }
   syncToolBarState();
 }
@@ -357,8 +385,13 @@ void PdfViewWindow2::setupViewer() {
 
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
   auto *profileService = getServices().get<WebEngineProfileService>();
-  m_viewer = new PdfViewer(pdfAdapter, themeService->getBaseBackground(), 1.0, this,
-                           profileService ? profileService->profile() : nullptr);
+  m_viewer = new PdfViewer(
+      pdfAdapter, themeService->getBaseBackground(), 1.0, this,
+      profileService ? profileService->profile() : nullptr,
+      [themeService](const QString &p_token) {
+        return themeService->commentHighlightColor(p_token);
+      },
+      themeService->paletteColor(QStringLiteral("base#border")));
   connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
@@ -411,6 +444,10 @@ void PdfViewWindow2::handleThemeChanged() {
 
   // Update WebEngine page background color.
   m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());
+
+  // The colour chips are theme-dependent, and the BORDER travels as a value
+  // rather than a callback, so both must be re-supplied — not merely redrawn.
+  applySwatchResolvers();
 
   // Reload the viewer content with the new template.
   syncEditorFromBuffer();

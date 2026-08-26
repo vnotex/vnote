@@ -666,6 +666,43 @@ types too (page defaults to `-1`).
 injected into the PDF template as CSS custom properties. An unknown or literal color normalizes to
 the default rather than rendering unstyled.
 
+### PDF tool options (`PdfToolOptions`)
+
+`PdfToolOptions` (in [`commenttypes.h`](commenttypes.h)) is the **single
+normalization choke point** for the three PDF annotation tools' persisted
+settings. Both `PdfViewerConfig` (`fromJson`, `setToolOptions`) and
+`PdfViewerAdapter::setToolOptions` call it; a second copy of the policy would
+eventually disagree with the first.
+
+The tool keys — `highlight`, `ink`, `freetext` — are the **same strings**
+`PdfViewerAdapter::toolToString()` and the web side already use. One vocabulary
+end to end means a value round-trips config → C++ → JS with no translation
+table to drift. `color` is carried by every tool; `width` by ink only and
+`fontSize` by free text only, and the serialized object **omits** the key for a
+tool that does not carry it.
+
+The contract:
+
+| Input | Result |
+|---|---|
+| Key absent | the freshly initialized per-tool default |
+| Wrong JSON type (string where a number belongs, etc.) | treated as absent → default |
+| Colour not in `CommentColor::all()` (incl. a literal hex) | **default** colour |
+| Width / font size non-finite (NaN, Inf) | **default** for that field |
+| Width / font size finite but out of range | **clamped** to `PdfInkAnchor::min/maxWidth()` or `PdfFreeTextAnchor::min/maxFontSize()` |
+
+The split is deliberate: a non-finite number carries no intent to preserve,
+whereas "width 1e9" plainly means "as thick as possible" and clamping respects
+it. Clamping to the **anchor validators'** bounds also guarantees config can
+never express an anchor `PdfInkAnchor::isValid()` / `PdfFreeTextAnchor::
+isValid()` would reject.
+
+`PdfViewerConfig::fromJson()` **resets to defaults before overlaying**, so
+calling it twice with different objects cannot retain stale state from the
+first call. Tests assert the **exact** normalized value — the getter, the
+serialized JSON and the adapter signal payload — never merely "the resulting
+anchor validates", which passes for both a default and a clamped value.
+
 ### Anchor types
 
 | Type | Geometry | Body |

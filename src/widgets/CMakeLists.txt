@@ -113,6 +113,8 @@ target_sources(vnote PRIVATE
     commentprovider.cpp commentprovider.h
     outlineprovider.cpp outlineprovider.h
     outlineviewer.cpp outlineviewer.h
+    pdfannotationtoolbar.cpp pdfannotationtoolbar.h
+    pdftooloptionsrouter.cpp pdftooloptionsrouter.h
     pdfviewwindow2.cpp pdfviewwindow2.h
     propertydefs.cpp propertydefs.h
     quickselector.cpp quickselector.h

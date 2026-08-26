@@ -6,12 +6,17 @@
 #include "outlineprovider.h"
 #include "viewwindow2.h"
 
+#include <QHash>
+
+#include <core/pdfviewerconfig.h>
+
 class QActionGroup;
 class QToolButton;
 
 namespace vnotex {
 class CommentController;
 class InlineBanner;
+class PdfAnnotationToolBar;
 class PdfViewer;
 class PdfViewerAdapter;
 class PdfViewWindowController;
@@ -74,7 +79,30 @@ private:
 
   void setActiveTool(PdfViewerAdapter::Tool p_tool);
 
-  void setActiveColor(const QString &p_color);
+  // Routes one settings change through PdfToolOptionsRouter (normalize ->
+  // persist -> push to the adapter), then repaints the ticks. The routing
+  // itself deliberately lives in the router, which is testable without a window
+  // and a WebEngine profile.
+  void applyToolOptions(const QString &p_tool, bool p_isColor, const QString &p_token,
+                        double p_value);
+
+  void setToolColor(const QString &p_tool, const QString &p_token);
+
+  void setToolScalar(const QString &p_tool, double p_value);
+
+  // Current per-tool options, read from PdfViewerConfig.
+  QHash<QString, PdfViewerConfig::ToolOptions> currentToolOptions() const;
+
+  // Seeds the adapter from persisted config BEFORE the first ready transition.
+  // Without it, menu picks persist to JSON but a newly opened PDF window comes
+  // up on adapter/JS defaults — the saved settings would appear forgotten, and
+  // the reload latch cannot compensate (it republishes only what the adapter
+  // already holds).
+  void hydrateToolOptions();
+
+  // Builds the ThemeService-backed swatch resolver and hands it, plus the
+  // themed border, to every widget that draws a colour chip.
+  void applySwatchResolvers();
 
   // Repaints the toggles from the ADAPTER's state, which is the single source
   // of truth: the web side can leave a tool by itself (Esc, or the one-shot
@@ -115,11 +143,10 @@ private:
   // Lazily created on the first comment-store failure; managed by QObject.
   InlineBanner *m_commentBanner = nullptr;
 
-  // Managed by QObject.
-  QActionGroup *m_toolGroup = nullptr;
-  QToolButton *m_colorButton = nullptr;
+  // Owns the three tool buttons and their settings menus. Managed by QObject
+  // parent (this).
+  PdfAnnotationToolBar *m_annotationToolBar = nullptr;
 };
-
 } // namespace vnotex
 
 #endif // PDFVIEWWINDOW2_H

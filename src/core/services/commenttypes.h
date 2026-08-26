@@ -71,6 +71,62 @@ QString displayName(const QString &p_token);
 
 } // namespace CommentColor
 
+// Per-tool authoring options for the three PDF annotation tools.
+//
+// The tool keys are the SAME strings PdfViewerAdapter::toolToString() and the
+// web side use. One vocabulary end to end means a value round-trips
+// config -> C++ -> JS with no translation table to drift.
+//
+// This namespace is the SINGLE normalization choke point (PdfViewerConfig and
+// PdfViewerAdapter both call it), because a second copy of the policy would
+// eventually disagree with the first. The policy:
+//
+//   key absent / wrong JSON type      -> that field's default
+//   colour not in CommentColor::all() -> default colour
+//   width / font size non-finite      -> default (a NaN carries no intent)
+//   width / font size out of range    -> CLAMPED to the anchor validator's
+//                                        bounds (so config can never express an
+//                                        anchor PdfInkAnchor::isValid() or
+//                                        PdfFreeTextAnchor::isValid() rejects)
+namespace PdfToolOptions {
+
+inline QString highlightTool() { return QStringLiteral("highlight"); }
+
+inline QString inkTool() { return QStringLiteral("ink"); }
+
+inline QString freeTextTool() { return QStringLiteral("freetext"); }
+
+QStringList toolNames();
+
+bool isValidTool(const QString &p_tool);
+
+// Which scalar the tool carries. Only one tool has each, and the serialized
+// object omits the key for tools that do not.
+bool hasWidth(const QString &p_tool);
+
+bool hasFontSize(const QString &p_tool);
+
+inline QString colorKey() { return QStringLiteral("color"); }
+
+inline QString widthKey() { return QStringLiteral("width"); }
+
+inline QString fontSizeKey() { return QStringLiteral("fontSize"); }
+
+inline double defaultWidth() { return 1.5; }
+
+inline double defaultFontSize() { return 12.0; }
+
+// Freshly initialized options for @p_tool. An unknown tool yields an EMPTY
+// object — it has no options at all, rather than a plausible-looking
+// colour-only one a caller might then persist.
+QJsonObject defaults(const QString &p_tool);
+
+// Applies the table above. Total for a known tool: any input yields a fully
+// populated, in-range object. An unknown tool yields an empty object.
+QJsonObject normalize(const QString &p_tool, const QJsonObject &p_options);
+
+} // namespace PdfToolOptions
+
 // Helpers for the one anchor type implemented in v1.
 namespace PdfQuadsAnchor {
 

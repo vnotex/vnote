@@ -19,28 +19,89 @@ PdfViewerConfig::PdfViewerConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
 void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) {
   loadViewerResource(p_jobj);
 
+  // RESET before overlaying, so calling fromJson() twice with different objects
+  // cannot retain stale state from the first call.
+  m_toolOptions.clear();
+  for (const auto &tool : toolNames()) {
+    m_toolOptions.insert(tool, ToolOptions());
+  }
+
+  // Back-compat: the shared `commentColor` shipped in this branch before the
+  // per-tool split. Seeding all three from it stops an already-picked value
+  // from silently resetting to yellow.
+  const auto legacyColor = p_jobj.value(QStringLiteral("commentColor")).toString();
+  const bool hasTools = p_jobj.value(QStringLiteral("tools")).isObject();
+  if (!hasTools && CommentColor::isValid(legacyColor)) {
+    for (auto it = m_toolOptions.begin(); it != m_toolOptions.end(); ++it) {
+      it->m_color = legacyColor;
+    }
+    return;
+  }
+
   // Absent key keeps the C++ default, which is what makes this safe to add
   // without a config migration.
-  const auto color = p_jobj.value(QStringLiteral("commentColor")).toString();
-  if (CommentColor::isValid(color)) {
-    m_commentColor = color;
+  const auto toolsObj = p_jobj.value(QStringLiteral("tools")).toObject();
+  for (const auto &tool : toolNames()) {
+    m_toolOptions.insert(tool, toolOptionsFromJson(tool, toolsObj.value(tool).toObject()));
   }
 }
 
 QJsonObject PdfViewerConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("viewerResource")] = saveViewerResource();
-  obj[QStringLiteral("commentColor")] = m_commentColor;
+
+  QJsonObject tools;
+  for (const auto &tool : toolNames()) {
+    tools[tool] = toolOptionsToJson(tool, getToolOptions(tool));
+  }
+  obj[QStringLiteral("tools")] = tools;
   return obj;
 }
 
-const QString &PdfViewerConfig::getCommentColor() const { return m_commentColor; }
+QStringList PdfViewerConfig::toolNames() { return PdfToolOptions::toolNames(); }
 
-void PdfViewerConfig::setCommentColor(const QString &p_color) {
-  if (!CommentColor::isValid(p_color) || m_commentColor == p_color) {
+QJsonObject PdfViewerConfig::toolOptionsToJson(const QString &p_tool,
+                                               const ToolOptions &p_options) {
+  QJsonObject raw;
+  raw.insert(PdfToolOptions::colorKey(), p_options.m_color);
+  if (PdfToolOptions::hasWidth(p_tool)) {
+    raw.insert(PdfToolOptions::widthKey(), p_options.m_width);
+  }
+  if (PdfToolOptions::hasFontSize(p_tool)) {
+    raw.insert(PdfToolOptions::fontSizeKey(), p_options.m_fontSize);
+  }
+  return PdfToolOptions::normalize(p_tool, raw);
+}
+
+PdfViewerConfig::ToolOptions PdfViewerConfig::toolOptionsFromJson(const QString &p_tool,
+                                                                  const QJsonObject &p_obj) {
+  const auto normalized = PdfToolOptions::normalize(p_tool, p_obj);
+
+  ToolOptions options;
+  options.m_color = normalized.value(PdfToolOptions::colorKey()).toString();
+  // A tool that does not carry the scalar keeps the struct default, so the
+  // value stays meaningful if the tool ever grows one.
+  if (PdfToolOptions::hasWidth(p_tool)) {
+    options.m_width = normalized.value(PdfToolOptions::widthKey()).toDouble();
+  }
+  if (PdfToolOptions::hasFontSize(p_tool)) {
+    options.m_fontSize = normalized.value(PdfToolOptions::fontSizeKey()).toDouble();
+  }
+  return options;
+}
+
+PdfViewerConfig::ToolOptions PdfViewerConfig::getToolOptions(const QString &p_tool) const {
+  return m_toolOptions.value(p_tool, ToolOptions());
+}
+
+void PdfViewerConfig::setToolOptions(const QString &p_tool, const ToolOptions &p_options) {
+  if (!PdfToolOptions::isValidTool(p_tool)) {
     return;
   }
-  updateConfig(m_commentColor, p_color, this);
+  // Same normalization as the JSON path, so the getter can never hand back a
+  // value the serializer would have rewritten.
+  const auto normalized = toolOptionsFromJson(p_tool, toolOptionsToJson(p_tool, p_options));
+  updateConfig(m_toolOptions[p_tool], normalized, this);
 }
 
 void PdfViewerConfig::loadViewerResource(const QJsonObject &p_jobj) {
@@ -54,7 +115,10 @@ const WebResource &PdfViewerConfig::getViewerResource() const { return m_viewerR
 
 void PdfViewerConfig::initDefaults() {
   m_viewerResource = defaultViewerResource();
-  m_commentColor = CommentColor::defaultToken();
+  m_toolOptions.clear();
+  for (const auto &tool : toolNames()) {
+    m_toolOptions.insert(tool, ToolOptions());
+  }
 }
 
 WebResource PdfViewerConfig::defaultViewerResource() {
