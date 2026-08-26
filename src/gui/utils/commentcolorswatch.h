@@ -41,6 +41,12 @@ QColor parseCssColor(const QString &p_css);
 // Paints the chip. An unparseable resolved fill falls back to
 // builtInColor(p_token), then to the default token's built-in — never to a
 // null/black chip. @p_borderCss empty yields a neutral grey border.
+//
+// Carries TWO states. QIcon::Off (the default, and what every non-menu caller
+// gets) has the 1px chip border; QIcon::On — which Qt selects for a CHECKED
+// action — does not, because a checkable menu action with an icon gets no
+// checkmark and every theme rings the icon itself to mean "checked". Without
+// the second state that theme ring would stack on top of ours.
 QIcon icon(const ColorResolver &p_resolve, const QString &p_token, int p_sizePx = 16,
            const QString &p_borderCss = QString());
 

@@ -88,13 +88,24 @@ void PdfViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
 
+  // A leading separator stands in for the Edit/Read toggle that opens
+  // MarkdownViewWindow2's toolbar. A PDF is not editable, so there is no toggle
+  // here, and without it the first action sits flush against the dock edge.
+  toolBar->addSeparator();
+
   addLeftCommonToolBarActions(toolBar);
+
+  // The authoring tools sit in the LEFT group, next to Save/Tag/Attachment and
+  // separated from them, exactly where MarkdownViewWindow2 puts its formatting
+  // actions. They are the content-authoring verbs for this window; the right
+  // group is for view-level chrome (outline, layout, find, print).
+  toolBar->addSeparator();
+  setupAnnotationToolBarActions(toolBar);
+
   addRightCommonToolBarActions(toolBar);
 }
 
 void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
-  setupAnnotationToolBarActions(p_toolBar);
-
   // Outline popup button (right corner, first): wire it to this window's outline provider.
   auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
   auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAct));

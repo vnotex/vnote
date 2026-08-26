@@ -65,6 +65,8 @@ private slots:
   void aDefaultResolverEqualsTheUnthemedOverload();
 
   void aThemedResolverWins();
+
+  void theCheckedStateDropsTheChipBorder();
 };
 
 void TestCommentColorSwatch::parsesEveryDeclaredForm_data() {
@@ -184,6 +186,51 @@ void TestCommentColorSwatch::aThemedResolverWins() {
   const auto actual =
       centrePixel(CommentColorSwatch::icon(themed, QStringLiteral("yellow"), c_size), c_size);
   QVERIFY(nearlyEqual(actual, QColor(0, 0, 255)));
+}
+
+// A checkable QAction that carries an icon gets NO checkmark and NO radio dot --
+// the icon takes over the indicator column -- so every theme marks "checked"
+// with `QMenu::icon:checked { border: 2px solid ... }`. Our own chip border
+// underneath that would stack two rings on the selected row.
+//
+// Qt picks QIcon::On for a checked action, so the fix is a second state rather
+// than anything the caller has to remember to do.
+void TestCommentColorSwatch::theCheckedStateDropsTheChipBorder() {
+  const auto icon = CommentColorSwatch::icon(QStringLiteral("yellow"), c_size);
+
+  const auto off = icon.pixmap(c_size, c_size, QIcon::Normal, QIcon::Off).toImage();
+  const auto on = icon.pixmap(c_size, c_size, QIcon::Normal, QIcon::On).toImage();
+
+  // Both states exist and are genuinely different artwork.
+  QVERIFY(!off.isNull());
+  QVERIFY(!on.isNull());
+  QVERIFY(off != on);
+
+  // Same size, and the FILL is identical -- only the border differs, so a
+  // checked row does not appear to change colour.
+  QCOMPARE(on.size(), off.size());
+  QVERIFY(
+      nearlyEqual(on.pixelColor(c_size / 2, c_size / 2), off.pixelColor(c_size / 2, c_size / 2)));
+
+  // The corner is the border pixel. Off has the grey chip border; On is the
+  // fill all the way to the edge.
+  const auto fill = off.pixelColor(c_size / 2, c_size / 2);
+  QVERIFY2(!nearlyEqual(off.pixelColor(0, 0), fill), "Off state must keep its chip border");
+  QVERIFY2(nearlyEqual(on.pixelColor(0, 0), fill), "On state must NOT draw a chip border");
+  QVERIFY2(nearlyEqual(on.pixelColor(c_size - 1, c_size - 1), fill),
+           "On state must fill to the far corner too");
+
+  // pixmap() with no state argument means Off, which is what the comment dock's
+  // combo and every non-menu caller gets.
+  QCOMPARE(icon.pixmap(c_size, c_size).toImage(), off);
+
+  // Holds for every token, not just yellow.
+  for (const auto &token : CommentColor::all()) {
+    const auto each = CommentColorSwatch::icon(token, c_size);
+    QVERIFY2(each.pixmap(c_size, c_size, QIcon::Normal, QIcon::On).toImage() !=
+                 each.pixmap(c_size, c_size, QIcon::Normal, QIcon::Off).toImage(),
+             qPrintable(token));
+  }
 }
 
 } // namespace tests

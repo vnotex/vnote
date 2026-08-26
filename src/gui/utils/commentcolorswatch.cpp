@@ -123,18 +123,38 @@ QIcon CommentColorSwatch::icon(const ColorResolver &p_resolve, const QString &p_
     border = c_fallbackBorder;
   }
 
-  QPixmap pixmap(p_sizePx, p_sizePx);
-  pixmap.fill(Qt::transparent);
-  {
+  const auto chip = [p_sizePx, &fill, &border](bool p_withBorder) {
+    QPixmap pixmap(p_sizePx, p_sizePx);
+    pixmap.fill(Qt::transparent);
+
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, false);
     painter.setBrush(compositeOverWhite(fill));
-    painter.setPen(border);
-    // The border is 1px, so inset by one to keep it inside the pixmap.
-    painter.drawRect(0, 0, p_sizePx - 1, p_sizePx - 1);
-  }
+    painter.setPen(p_withBorder ? QPen(border) : QPen(Qt::NoPen));
+    if (p_withBorder) {
+      // The border is 1px, so inset by one to keep it inside the pixmap.
+      painter.drawRect(0, 0, p_sizePx - 1, p_sizePx - 1);
+    } else {
+      painter.drawRect(0, 0, p_sizePx, p_sizePx);
+    }
+    return pixmap;
+  };
 
-  return QIcon(pixmap);
+  // TWO STATES, because Qt uses QIcon::On for a CHECKED action.
+  //
+  // A checkable QAction that also carries an icon gets no checkmark and no
+  // radio dot — the icon takes over the indicator column — so every theme marks
+  // "checked" with `QMenu::icon:checked { border: 2px solid ... }`. Drawing our
+  // own 1px chip border underneath that would stack two rings on the selected
+  // row, which reads as a rendering artifact rather than a selection cue.
+  //
+  // Off (unchecked, and every non-menu caller such as the dock's combo, which
+  // never uses On) keeps the chip border, since nothing else delimits a pale
+  // swatch against a pale background.
+  QIcon icon;
+  icon.addPixmap(chip(true), QIcon::Normal, QIcon::Off);
+  icon.addPixmap(chip(false), QIcon::Normal, QIcon::On);
+  return icon;
 }
 
 QIcon CommentColorSwatch::icon(const QString &p_token, int p_sizePx) {

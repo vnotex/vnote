@@ -50,7 +50,11 @@ void PdfAnnotationToolBar::install(QToolBar *p_toolBar, const IconProvider &p_ic
 
   addTool(p_toolBar, PdfToolOptions::highlightTool(), QStringLiteral("type_mark_editor.svg"),
           tr("Highlight"), p_icons);
-  addTool(p_toolBar, PdfToolOptions::inkTool(), QStringLiteral("edit_editor.svg"), tr("Draw"),
+  // NOT edit_editor.svg: that pencil is the Edit/Read toggle sitting in this
+  // same toolbar (viewwindowtoolbarhelper2.cpp), and two identical icons a few
+  // pixels apart is worse than no icon. A handwritten squiggle also says
+  // "freehand ink" rather than "edit this file".
+  addTool(p_toolBar, PdfToolOptions::inkTool(), QStringLiteral("draw_editor.svg"), tr("Draw"),
           p_icons);
   addTool(p_toolBar, PdfToolOptions::freeTextTool(), QStringLiteral("type_code_editor.svg"),
           tr("Text box"), p_icons);
