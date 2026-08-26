@@ -43,6 +43,16 @@ public:
 
   QSharedPointer<CommentProvider> getCommentProvider() const Q_DECL_OVERRIDE;
 
+  // A PDF is never edited in place, so this window can never be modified and
+  // the Save action could never leave its disabled state:
+  //   - onEditorContentsChanged() is not connected here, so m_editorDirty
+  //     cannot become true;
+  //   - setModified() below is inert and nothing writes buffer content;
+  //   - comments are side data, persisted to comments.json by CommentController
+  //     and CommentService, which never touch Buffer2.
+  // If any of those three stops holding, this must go back to true.
+  bool isSaveSupported() const Q_DECL_OVERRIDE { return false; }
+
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 

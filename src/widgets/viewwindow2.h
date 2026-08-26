@@ -196,6 +196,19 @@ public:
   // Default: false (no picker). Text/Markdown windows override to return true.
   virtual bool isEncodingSupported() const { return false; }
 
+  // ============ Saving ============
+
+  // Whether this window can ever produce unsaved changes, i.e. whether the Save
+  // action and its Ctrl+S shortcut are meaningful here.
+  //
+  // Default: true. A window that overrides this to false gets NO Save button
+  // and NO shortcut, because the action would be permanently greyed out — the
+  // toolbar would advertise a capability the window does not have. Override
+  // only when isModified() genuinely cannot become true: no editor writes to
+  // the buffer, setModified() is inert, and any side data the window edits is
+  // persisted through its own store rather than through Buffer2.
+  virtual bool isSaveSupported() const { return true; }
+
   // ============ Lifecycle ============
 
   // Called before the window is closed.

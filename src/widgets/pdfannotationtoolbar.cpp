@@ -56,7 +56,10 @@ void PdfAnnotationToolBar::install(QToolBar *p_toolBar, const IconProvider &p_ic
   // "freehand ink" rather than "edit this file".
   addTool(p_toolBar, PdfToolOptions::inkTool(), QStringLiteral("draw_editor.svg"), tr("Draw"),
           p_icons);
-  addTool(p_toolBar, PdfToolOptions::freeTextTool(), QStringLiteral("type_code_editor.svg"),
+  // NOT type_code_editor.svg: that `</>` means INLINE CODE in the markdown
+  // toolbar. A T in a box is what every PDF tool (Acrobat, pdf.js) uses for a
+  // free-text annotation, and it says what the tool actually places.
+  addTool(p_toolBar, PdfToolOptions::freeTextTool(), QStringLiteral("textbox_editor.svg"),
           tr("Text box"), p_icons);
 }
 

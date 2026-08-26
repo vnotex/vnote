@@ -426,7 +426,14 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
 void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
   // The read-only indicator lives on the view-window TAB (a lock badge to the
   // left of the title, see ViewSplit2::effectiveTabIcon), not in this toolbar.
-  addAction(p_toolBar, ViewWindowToolBarHelper2::Save);
+  //
+  // Save is omitted entirely for a window that can never be modified, rather
+  // than shown permanently greyed out: a control that is disabled for the whole
+  // lifetime of every instance advertises a capability that does not exist.
+  // Skipping it also skips its Ctrl+S shortcut, which is the point.
+  if (isSaveSupported()) {
+    addAction(p_toolBar, ViewWindowToolBarHelper2::Save);
+  }
   addAction(p_toolBar, ViewWindowToolBarHelper2::WordCount);
   if (getBuffer().isTagSupported()) {
     addAction(p_toolBar, ViewWindowToolBarHelper2::Tag);
