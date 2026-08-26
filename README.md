@@ -54,3 +54,7 @@ For more development guidelines, see [AGENTS.md](AGENTS.md).
 
 ## License
 VNote is licensed under [GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0).
+
+Bundled third-party material and the notices its licenses require — the Lucide
+(ISC/MIT) and IconPark (Apache-2.0) icon sets — are recorded in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

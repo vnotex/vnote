@@ -55,3 +55,6 @@ scripts\init.cmd
 
 ## 许可
 VNote遵循[GNU LGPLv3](https://opensource.org/licenses/LGPL-3.0)许可。
+
+本项目附带的第三方素材及其许可要求的声明——Lucide（ISC/MIT）与 IconPark（Apache-2.0）
+图标集——记录于 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
