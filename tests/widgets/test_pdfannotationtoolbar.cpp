@@ -74,6 +74,8 @@ private slots:
   void disablingAuthoringDisablesTheMenusToo();
 
   void menuColoursCarrySwatchIcons();
+
+  void theBrokenThemeCheckRingIsSuppressed();
 };
 
 void TestPdfAnnotationToolBar::thereAreExactlyThreeToolButtonsAndNoColourButton() {
@@ -339,6 +341,28 @@ void TestPdfAnnotationToolBar::menuColoursCarrySwatchIcons() {
   const auto after =
       menuActionWithData(menu, QStringLiteral("yellow"))->icon().pixmap(16, 16).toImage();
   QVERIFY(before != after);
+}
+
+// Every interface.qss marks a checked icon-bearing action with
+// `QMenu::icon:checked { border: 2px solid @widgets#qmenu#fg; }`. Qt draws that
+// around the icon SUB-CONTROL rect and clips it to a PARTIAL box at fractional
+// device pixel ratios -- at 1.5 only the top and bottom edges survive, which
+// looks like a rendering fault. The swatch carries its own tick instead, so the
+// ring has to be suppressed or the broken one comes back.
+void TestPdfAnnotationToolBar::theBrokenThemeCheckRingIsSuppressed() {
+  QToolBar toolBar;
+  PdfAnnotationToolBar bar;
+  bar.install(&toolBar);
+
+  for (const auto &tool : PdfViewerConfig::toolNames()) {
+    auto *menu = bar.toolMenu(tool);
+    QVERIFY2(menu, qPrintable(tool));
+
+    const auto sheet = menu->styleSheet().simplified().remove(QLatin1Char(' '));
+    QVERIFY2(sheet.contains(QStringLiteral("QMenu::icon:checked{border:none;}")),
+             qPrintable(QStringLiteral("%1 menu does not neutralise the themed check ring: '%2'")
+                            .arg(tool, menu->styleSheet())));
+  }
 }
 
 } // namespace tests

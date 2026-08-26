@@ -105,6 +105,21 @@ void PdfAnnotationToolBar::addTool(QToolBar *p_toolBar, const QString &p_tool,
 void PdfAnnotationToolBar::buildMenu(ToolEntry &p_entry, const QString &p_tool) {
   p_entry.m_menu = new QMenu(p_entry.m_button);
 
+  // Suppress the themed checked-icon ring on THIS menu only.
+  //
+  // Every interface.qss marks a checked icon-bearing action with
+  // `QMenu::icon:checked { border: 2px solid @widgets#qmenu#fg; }`. Qt draws
+  // that around the icon SUB-CONTROL rect, and at fractional device pixel
+  // ratios it clips into a partial box — at 1.5 only the top and bottom edges
+  // survive, which reads as a rendering fault. The colour rows carry a tick
+  // painted into the swatch instead (CommentColorSwatch), so the ring is
+  // redundant here as well as broken.
+  //
+  // Colourless by construction, so this is not a themed value being hardcoded
+  // (see src/widgets/AGENTS.md § No Hardcoded Colors in C++) and it leaves every
+  // other QMenu rule inherited from the application stylesheet intact.
+  p_entry.m_menu->setStyleSheet(QStringLiteral("QMenu::icon:checked { border: none; }"));
+
   // Driven by the schema, NOT a hand-written list: a token added to
   // CommentColor::all() shows up in every picker at once.
   p_entry.m_colorGroup = new QActionGroup(p_entry.m_menu);

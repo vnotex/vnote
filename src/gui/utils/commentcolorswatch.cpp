@@ -1,5 +1,6 @@
 #include "commentcolorswatch.h"
 
+#include <QGuiApplication>
 #include <QHash>
 #include <QPainter>
 #include <QPixmap>
@@ -123,37 +124,57 @@ QIcon CommentColorSwatch::icon(const ColorResolver &p_resolve, const QString &p_
     border = c_fallbackBorder;
   }
 
-  const auto chip = [p_sizePx, &fill, &border](bool p_withBorder) {
-    QPixmap pixmap(p_sizePx, p_sizePx);
+  const auto chip = [p_sizePx, &fill, &border](bool p_selected) {
+    // DEVICE-PIXEL-RATIO AWARE: a fixed p_sizePx pixmap with no DPR is only
+    // p_sizePx/dpr LOGICAL pixels on a scaled display, so it would be upscaled
+    // and blurry.
+    const qreal dpr = qApp ? qApp->devicePixelRatio() : 1.0;
+    QPixmap pixmap(qRound(p_sizePx * dpr), qRound(p_sizePx * dpr));
+    pixmap.setDevicePixelRatio(dpr);
     pixmap.fill(Qt::transparent);
 
+    // The painter works in LOGICAL coordinates once the ratio is set, so the
+    // geometry below is unchanged by scaling.
+    const QColor solid = compositeOverWhite(fill);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, false);
-    painter.setBrush(compositeOverWhite(fill));
-    painter.setPen(p_withBorder ? QPen(border) : QPen(Qt::NoPen));
-    if (p_withBorder) {
-      // The border is 1px, so inset by one to keep it inside the pixmap.
-      painter.drawRect(0, 0, p_sizePx - 1, p_sizePx - 1);
-    } else {
-      painter.drawRect(0, 0, p_sizePx, p_sizePx);
+    painter.setBrush(solid);
+    painter.setPen(border);
+    // The border is 1px, so inset by one to keep it inside the pixmap.
+    painter.drawRect(0, 0, p_sizePx - 1, p_sizePx - 1);
+
+    if (p_selected) {
+      // The SELECTED marker is drawn INSIDE the pixmap on purpose. Every theme
+      // marks a checked icon-bearing menu action with
+      // `QMenu::icon:checked { border: 2px solid ... }`, but Qt draws that
+      // around the icon SUB-CONTROL rect, and at fractional device pixel ratios
+      // it clips to a partial box — left and right edges missing at 1.5. A tick
+      // we paint ourselves cannot come apart, and looks the same in all 12
+      // themes. PdfAnnotationToolBar suppresses the theme rule to match.
+      //
+      // Contrast is computed, not assumed: the built-ins are translucent over
+      // white and always want a dark tick, but a theme may override a token
+      // with an opaque dark colour.
+      const bool darkFill = solid.lightnessF() < 0.5;
+      QPen tick(darkFill ? QColor(255, 255, 255) : QColor(0, 0, 0));
+      tick.setWidthF(qMax(1.5, p_sizePx / 8.0));
+      tick.setCapStyle(Qt::RoundCap);
+      tick.setJoinStyle(Qt::RoundJoin);
+      painter.setRenderHint(QPainter::Antialiasing, true);
+      painter.setPen(tick);
+      const qreal s = p_sizePx;
+      painter.drawPolyline(QPolygonF(
+          {QPointF(s * 0.22, s * 0.53), QPointF(s * 0.42, s * 0.73), QPointF(s * 0.78, s * 0.29)}));
     }
     return pixmap;
   };
 
-  // TWO STATES, because Qt uses QIcon::On for a CHECKED action.
-  //
-  // A checkable QAction that also carries an icon gets no checkmark and no
-  // radio dot — the icon takes over the indicator column — so every theme marks
-  // "checked" with `QMenu::icon:checked { border: 2px solid ... }`. Drawing our
-  // own 1px chip border underneath that would stack two rings on the selected
-  // row, which reads as a rendering artifact rather than a selection cue.
-  //
-  // Off (unchecked, and every non-menu caller such as the dock's combo, which
-  // never uses On) keeps the chip border, since nothing else delimits a pale
-  // swatch against a pale background.
+  // TWO STATES, because Qt uses QIcon::On for a CHECKED action. Off is the bare
+  // chip; On carries a tick. Callers that are not checkable (the dock's combo,
+  // the page context menu) only ever see Off.
   QIcon icon;
-  icon.addPixmap(chip(true), QIcon::Normal, QIcon::Off);
-  icon.addPixmap(chip(false), QIcon::Normal, QIcon::On);
+  icon.addPixmap(chip(false), QIcon::Normal, QIcon::Off);
+  icon.addPixmap(chip(true), QIcon::Normal, QIcon::On);
   return icon;
 }
 

@@ -28,8 +28,11 @@ QColor overWhite(int p_r, int p_g, int p_b, double p_alpha) {
 }
 
 QColor centrePixel(const QIcon &p_icon, int p_sizePx) {
+  // Sampled from the IMAGE's own centre, not p_sizePx/2: the pixmap is
+  // device-pixel-ratio aware, so on a scaled display it is larger than
+  // p_sizePx.
   const auto image = p_icon.pixmap(p_sizePx, p_sizePx).toImage();
-  return image.pixelColor(p_sizePx / 2, p_sizePx / 2);
+  return image.pixelColor(image.width() / 2, image.height() / 2);
 }
 
 // Two 8-bit channels may differ by one after the round trip through a pixmap.
@@ -66,7 +69,9 @@ private slots:
 
   void aThemedResolverWins();
 
-  void theCheckedStateDropsTheChipBorder();
+  void theCheckedStateIsTickedOnTheChip();
+
+  void theTickContrastsWithADarkFill();
 };
 
 void TestCommentColorSwatch::parsesEveryDeclaredForm_data() {
@@ -122,7 +127,7 @@ void TestCommentColorSwatch::everyTokenYieldsASizedIcon() {
   for (const auto &token : CommentColor::all()) {
     const auto icon = CommentColorSwatch::icon(token, c_size);
     QVERIFY2(!icon.isNull(), qPrintable(token));
-    QCOMPARE(icon.pixmap(c_size, c_size).size(), QSize(c_size, c_size));
+    QCOMPARE(icon.pixmap(c_size, c_size).deviceIndependentSize().toSize(), QSize(c_size, c_size));
     // Every token must have a built-in, or the chip silently falls back.
     QVERIFY2(!CommentColorSwatch::builtInColor(token).isEmpty(), qPrintable(token));
   }
@@ -190,12 +195,15 @@ void TestCommentColorSwatch::aThemedResolverWins() {
 
 // A checkable QAction that carries an icon gets NO checkmark and NO radio dot --
 // the icon takes over the indicator column -- so every theme marks "checked"
-// with `QMenu::icon:checked { border: 2px solid ... }`. Our own chip border
-// underneath that would stack two rings on the selected row.
+// with `QMenu::icon:checked { border: 2px solid ... }`. Qt draws that around the
+// icon SUB-CONTROL rect, and at fractional device pixel ratios it clips into a
+// PARTIAL box (top and bottom edges only at 1.5), which reads as a rendering
+// fault rather than a selection cue.
 //
-// Qt picks QIcon::On for a checked action, so the fix is a second state rather
-// than anything the caller has to remember to do.
-void TestCommentColorSwatch::theCheckedStateDropsTheChipBorder() {
+// So the selected marker is painted into the pixmap instead, where nothing can
+// clip it. Qt picks QIcon::On for a checked action, so this costs the caller
+// nothing beyond suppressing the theme rule.
+void TestCommentColorSwatch::theCheckedStateIsTickedOnTheChip() {
   const auto icon = CommentColorSwatch::icon(QStringLiteral("yellow"), c_size);
 
   const auto off = icon.pixmap(c_size, c_size, QIcon::Normal, QIcon::Off).toImage();
@@ -205,20 +213,34 @@ void TestCommentColorSwatch::theCheckedStateDropsTheChipBorder() {
   QVERIFY(!off.isNull());
   QVERIFY(!on.isNull());
   QVERIFY(off != on);
-
-  // Same size, and the FILL is identical -- only the border differs, so a
-  // checked row does not appear to change colour.
   QCOMPARE(on.size(), off.size());
-  QVERIFY(
-      nearlyEqual(on.pixelColor(c_size / 2, c_size / 2), off.pixelColor(c_size / 2, c_size / 2)));
 
-  // The corner is the border pixel. Off has the grey chip border; On is the
-  // fill all the way to the edge.
-  const auto fill = off.pixelColor(c_size / 2, c_size / 2);
+  const auto fill = off.pixelColor(off.width() / 2, off.height() / 2);
+
+  // BOTH states keep the chip border: nothing else delimits a pale swatch
+  // against a pale menu, and the theme ring is no longer available to do it.
   QVERIFY2(!nearlyEqual(off.pixelColor(0, 0), fill), "Off state must keep its chip border");
-  QVERIFY2(nearlyEqual(on.pixelColor(0, 0), fill), "On state must NOT draw a chip border");
-  QVERIFY2(nearlyEqual(on.pixelColor(c_size - 1, c_size - 1), fill),
-           "On state must fill to the far corner too");
+  QVERIFY2(!nearlyEqual(on.pixelColor(0, 0), fill), "On state must keep its chip border too");
+
+  // The fill is preserved away from the tick, so a checked row does not appear
+  // to change colour.
+  const int sx = qRound(off.width() * 0.2);
+  QVERIFY(nearlyEqual(on.pixelColor(sx, sx), off.pixelColor(sx, sx)));
+
+  // The tick itself: On has strongly contrasting pixels that Off does not.
+  const auto contrastingPixels = [&fill](const QImage &p_img) {
+    int n = 0;
+    for (int y = 0; y < p_img.height(); ++y) {
+      for (int x = 0; x < p_img.width(); ++x) {
+        if (qAbs(p_img.pixelColor(x, y).lightnessF() - fill.lightnessF()) > 0.35) {
+          ++n;
+        }
+      }
+    }
+    return n;
+  };
+  QVERIFY2(contrastingPixels(on) > contrastingPixels(off) + c_size / 2,
+           "On state must carry a visible tick");
 
   // pixmap() with no state argument means Off, which is what the comment dock's
   // combo and every non-menu caller gets.
@@ -231,6 +253,28 @@ void TestCommentColorSwatch::theCheckedStateDropsTheChipBorder() {
                  each.pixmap(c_size, c_size, QIcon::Normal, QIcon::Off).toImage(),
              qPrintable(token));
   }
+}
+
+// The tick must stay visible if a theme overrides a token with an opaque dark
+// colour, so its colour is computed from the fill rather than assumed dark.
+void TestCommentColorSwatch::theTickContrastsWithADarkFill() {
+  CommentColorSwatch::ColorResolver dark = [](const QString &) {
+    return QStringLiteral("rgb(0, 0, 0)");
+  };
+  const auto on = CommentColorSwatch::icon(dark, QStringLiteral("yellow"), c_size)
+                      .pixmap(c_size, c_size, QIcon::Normal, QIcon::On)
+                      .toImage();
+
+  bool light = false;
+  for (int y = 0; y < on.height() && !light; ++y) {
+    for (int x = 0; x < on.width(); ++x) {
+      if (on.pixelColor(x, y).lightnessF() > 0.7) {
+        light = true;
+        break;
+      }
+    }
+  }
+  QVERIFY2(light, "A dark fill must get a light tick");
 }
 
 } // namespace tests
