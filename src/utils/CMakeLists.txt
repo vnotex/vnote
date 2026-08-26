@@ -3,6 +3,7 @@ target_sources(vnote PRIVATE
     imagedestinationrewriter.cpp imagedestinationrewriter.h
     cursorpreservationpolicy.cpp cursorpreservationpolicy.h
     asyncworker.cpp asyncworker.h
+    autostartutils.cpp autostartutils.h
     callbackpool.cpp callbackpool.h
     clipboardutils.cpp clipboardutils.h
     docsutils.cpp docsutils.h

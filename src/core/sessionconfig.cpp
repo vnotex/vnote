@@ -164,6 +164,10 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
     m_minimizeToSystemTray = readBool(coreObj, QStringLiteral("minimizeToSystemTray")) ? 1 : 0;
   }
 
+  if (!isUndefinedKey(coreObj, QStringLiteral("startOnSystemStartup"))) {
+    m_startOnSystemStartup = readBool(coreObj, QStringLiteral("startOnSystemStartup"));
+  }
+
   {
     const auto quickAccessArr = coreObj.value(QStringLiteral("quickAccess")).toArray();
     m_quickAccessItems.resize(quickAccessArr.size());
@@ -188,6 +192,7 @@ QJsonObject SessionConfig::saveCore() const {
   if (m_minimizeToSystemTray != -1) {
     coreObj[QStringLiteral("minimizeToSystemTray")] = m_minimizeToSystemTray > 0;
   }
+  coreObj[QStringLiteral("startOnSystemStartup")] = m_startOnSystemStartup;
   coreObj[QStringLiteral("quickAccess")] = saveQuickAccessItems();
   coreObj[QStringLiteral("externalMediaDefaultPath")] = m_externalMediaDefaultPath;
   coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
@@ -327,6 +332,12 @@ int SessionConfig::getMinimizeToSystemTray() const { return m_minimizeToSystemTr
 
 void SessionConfig::setMinimizeToSystemTray(bool p_enabled) {
   updateConfig(m_minimizeToSystemTray, p_enabled ? 1 : 0, this);
+}
+
+bool SessionConfig::getStartOnSystemStartup() const { return m_startOnSystemStartup; }
+
+void SessionConfig::setStartOnSystemStartup(bool p_enabled) {
+  updateConfig(m_startOnSystemStartup, p_enabled, this);
 }
 
 void SessionConfig::doVersionSpecificOverride() {

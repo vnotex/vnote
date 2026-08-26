@@ -468,6 +468,14 @@ add_qt_test(test_sessionconfig_search
   GUILESS
 )
 
+add_qt_test(test_sessionconfig_startup
+  SOURCES
+    test_sessionconfig_startup.cpp
+  LINKS
+    core_configs
+  GUILESS
+)
+
 add_qt_test(test_searchhighlightcontext
   SOURCES
     test_searchhighlightcontext.cpp

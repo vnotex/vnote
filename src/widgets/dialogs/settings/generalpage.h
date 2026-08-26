@@ -30,6 +30,8 @@ private:
 
   QCheckBox *m_systemTrayCheckBox = nullptr;
 
+  QCheckBox *m_startOnStartupCheckBox = nullptr;
+
   QCheckBox *m_recoverLastSessionCheckBox = nullptr;
 
   QCheckBox *m_checkForUpdatesCheckBox = nullptr;

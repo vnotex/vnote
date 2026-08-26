@@ -60,6 +60,7 @@
 #include <gui/services/webengineprofileservice.h>
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
+#include <utils/autostartutils.h>
 #include <vtextedit/spellchecker.h>
 #include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
@@ -740,6 +741,15 @@ int main(int argc, char *argv[]) {
     ActivityStatsService activityStatsService(context);
     serviceLocator.registerService<ActivityStatsService>(&activityStatsService);
     qInfo() << "ActivityStatsService registered";
+
+    // Reconcile the launch-on-login registration (config is the intent).
+    // Primary instance only: we are past SingleInstanceGuard here.
+    // Skipped when no session config was read: the default false would otherwise look like a
+    // deliberate "off" and REMOVE a Run entry the user actually wants.
+    if (configMgr.isSessionConfigLoaded() &&
+        !AutoStartUtils::reconcile(configMgr.getSessionConfig().getStartOnSystemStartup())) {
+      qWarning() << "failed to reconcile the Windows startup entry";
+    }
 
     // Create MainWindow2 with ServiceLocator
     MainWindow2 mainWindow(serviceLocator);

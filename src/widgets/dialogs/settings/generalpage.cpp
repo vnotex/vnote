@@ -10,6 +10,7 @@
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/sessionconfig.h>
+#include <utils/autostartutils.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
 
@@ -78,6 +79,20 @@ void GeneralPage::setupUI() {
   }
 #endif
 
+  // AutoStartUtils::isSupported() is the single platform gate for this row, so the
+  // widget and the code that effects it can never disagree about where it applies.
+  if (AutoStartUtils::isSupported()) {
+    const QString label(tr("Start VNote on system startup"));
+    m_startOnStartupCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_startOnStartupCheckBox->setToolTip(
+        tr("Launch VNote automatically when you log in to Windows."));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_startOnStartupCheckBox, m_startOnStartupCheckBox->toolTip(), this));
+    addSearchItem(label, m_startOnStartupCheckBox->toolTip(), m_startOnStartupCheckBox);
+    connect(m_startOnStartupCheckBox, &QCheckBox::stateChanged, this, &GeneralPage::pageIsChanged);
+  }
+
   {
     const QString label(tr("Recover last session on start"));
     m_recoverLastSessionCheckBox = WidgetsFactory::createCheckBox(label, this);
@@ -145,6 +160,11 @@ void GeneralPage::loadInternal() {
     m_systemTrayCheckBox->setChecked(toTray > 0);
   }
 
+  if (m_startOnStartupCheckBox) {
+    // The config is the intent; do not read the registry here.
+    m_startOnStartupCheckBox->setChecked(sessionConfig.getStartOnSystemStartup());
+  }
+
   m_recoverLastSessionCheckBox->setChecked(
       m_services.get<ConfigCoreService>()->isRecoverLastSessionEnabled());
 
@@ -173,6 +193,17 @@ bool GeneralPage::saveInternal() {
   if (m_systemTrayCheckBox) {
     // This will override the -1 state. That is fine.
     sessionConfig.setMinimizeToSystemTray(m_systemTrayCheckBox->isChecked());
+  }
+
+  if (m_startOnStartupCheckBox) {
+    const bool enabled = m_startOnStartupCheckBox->isChecked();
+    // reconcile() covers every case: enable, disable, stale value, and no-op.
+    // Write the registry first, and update the config only on success.
+    if (!AutoStartUtils::reconcile(enabled)) {
+      setError(tr("Failed to update the Windows startup entry."));
+      return false;
+    }
+    sessionConfig.setStartOnSystemStartup(enabled);
   }
 
   if (!m_services.get<ConfigCoreService>()->setRecoverLastSessionEnabled(

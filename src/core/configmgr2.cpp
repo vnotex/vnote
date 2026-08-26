@@ -167,6 +167,7 @@ void ConfigMgr2::init() {
         m_configService->getConfigByName(DataLocation::Local, kSessionFileBaseName);
     if (!sessionConfigJson.isEmpty()) {
       m_sessionConfig->fromJson(sessionConfigJson);
+      m_sessionConfigLoaded = true;
     }
   }
 
@@ -208,6 +209,8 @@ const MainConfig &ConfigMgr2::getConfig() const { return *m_mainConfig; }
 SessionConfig &ConfigMgr2::getSessionConfig() { return *m_sessionConfig; }
 
 const SessionConfig &ConfigMgr2::getSessionConfig() const { return *m_sessionConfig; }
+
+bool ConfigMgr2::isSessionConfigLoaded() const { return m_sessionConfigLoaded; }
 
 CoreConfig &ConfigMgr2::getCoreConfig() { return m_mainConfig->getCoreConfig(); }
 

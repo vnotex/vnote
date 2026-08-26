@@ -1,4 +1,11 @@
 # Utils module tests
+add_qt_test(test_autostartutils
+  SOURCES
+    test_autostartutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/autostartutils.cpp
+  GUILESS
+)
+
 add_qt_test(test_pathutils
   SOURCES
     test_pathutils.cpp

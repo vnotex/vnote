@@ -84,8 +84,8 @@ public:
     bool matchesSuffix(const QString &p_suffix) const;
 
     bool operator==(const ExternalProgram &p_other) const {
-      return m_name == p_other.m_name && m_command == p_other.m_command
-             && m_shortcut == p_other.m_shortcut && m_suffixes == p_other.m_suffixes;
+      return m_name == p_other.m_name && m_command == p_other.m_command &&
+             m_shortcut == p_other.m_shortcut && m_suffixes == p_other.m_suffixes;
     }
 
     bool operator!=(const ExternalProgram &p_other) const { return !(*this == p_other); }
@@ -127,6 +127,9 @@ public:
 
   int getMinimizeToSystemTray() const;
   void setMinimizeToSystemTray(bool p_enabled);
+
+  bool getStartOnSystemStartup() const;
+  void setStartOnSystemStartup(bool p_enabled);
 
   const ExportOption &getExportOption() const;
   void setExportOption(const ExportOption &p_option);
@@ -217,6 +220,9 @@ private:
   // 0 for disabling minimizing to system tray;
   // 1 for enabling minimizing to system tray.
   int m_minimizeToSystemTray = -1;
+
+  // Whether to launch VNote on system startup (effected on Windows only).
+  bool m_startOnSystemStartup = false;
 
   ExportOption m_exportOption;
 

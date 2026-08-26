@@ -80,6 +80,10 @@ public:
   SessionConfig &getSessionConfig();
   const SessionConfig &getSessionConfig() const;
 
+  // Whether a session config document was actually read and parsed by init(). When false, the
+  // SessionConfig holds C++ defaults only, which must not be mistaken for a user's choice.
+  bool isSessionConfigLoaded() const;
+
   // Convenience accessors for child configs within MainConfig.
   CoreConfig &getCoreConfig();
   const CoreConfig &getCoreConfig() const;
@@ -195,6 +199,11 @@ private:
   // Suppresses every main-config write for the rest of the session so defaults cannot
   // overwrite a config we merely failed to read.
   bool m_mainConfigReadFailed = false;
+
+  // Set when init() actually parsed a session config document. False means either there is
+  // no session config yet or it could not be read; in both cases the in-memory SessionConfig
+  // holds pure C++ defaults, so its values must not be treated as a deliberate user intent.
+  bool m_sessionConfigLoaded = false;
 
   // Folders whose extra-data install failed during the last ensureExtraData().
   QVector<ExtraDataFailure> m_extraDataFailures;
