@@ -52,13 +52,22 @@ void PdfAnnotationToolBar::install(QToolBar *p_toolBar, const IconProvider &p_ic
           tr("Highlight"), p_icons);
   // NOT edit_editor.svg: that pencil is the Edit/Read toggle sitting in this
   // same toolbar (viewwindowtoolbarhelper2.cpp), and two identical icons a few
-  // pixels apart is worse than no icon. A handwritten squiggle also says
-  // "freehand ink" rather than "edit this file".
+  // pixels apart is worse than no icon.
+  //
+  // Stock Lucide icons, matching the rest of the icon set (edit_editor.svg is
+  // lucide-pencil). Normalized to an explicit stroke="#000000" rather than
+  // Lucide's "currentColor", because IconUtils::fetchIcon recolors by rewriting
+  // the stroke attribute and Qt's SVG renderer does not resolve currentColor
+  // reliably.
+  //
+  // Draw is lucide-signature, NOT lucide-pen-line/pencil-line: those are the
+  // same pencil the Edit/Read toggle uses in this very toolbar. A handwritten
+  // stroke also says "freehand ink" rather than "edit this file".
   addTool(p_toolBar, PdfToolOptions::inkTool(), QStringLiteral("draw_editor.svg"), tr("Draw"),
           p_icons);
-  // NOT type_code_editor.svg: that `</>` means INLINE CODE in the markdown
-  // toolbar. A T in a box is what every PDF tool (Acrobat, pdf.js) uses for a
-  // free-text annotation, and it says what the tool actually places.
+  // Text box is lucide-type. NOT type_code_editor.svg, whose `</>` means INLINE
+  // CODE in the markdown toolbar and says nothing about placing a text box; a
+  // bare T is what Acrobat and pdf.js both use for a free-text annotation.
   addTool(p_toolBar, PdfToolOptions::freeTextTool(), QStringLiteral("textbox_editor.svg"),
           tr("Text box"), p_icons);
 }
