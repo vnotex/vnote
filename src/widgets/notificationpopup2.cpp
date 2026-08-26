@@ -27,6 +27,13 @@ const QString c_fgPalette = QStringLiteral("widgets#toolbar#icon#fg");
 // Cap the list so a long backlog cannot grow the menu past the screen. Without
 // this the QMenu simply keeps growing; there is no implicit bound.
 constexpr double c_maxHeightRatio = 0.6;
+
+// The rows are built from word-wrapping labels, whose horizontal size hint
+// collapses to nearly nothing. Without an explicit floor the QMenu adopts that
+// tiny hint and truncates titles and action buttons. Expressed in average
+// character widths so it follows the UI font / DPI instead of being a fixed
+// pixel count.
+constexpr int c_minWidthChars = 44;
 } // namespace
 
 NotificationPopup2::NotificationPopup2(ServiceLocator &p_services, QToolButton *p_btn,
@@ -43,12 +50,11 @@ NotificationPopup2::NotificationPopup2(ServiceLocator &p_services, QToolButton *
   if (service) {
     // messageAdded matters now that nothing auto-pops: an already-open popup
     // would otherwise miss a message that arrived while it was on screen.
-    connect(service, &NotificationService::messageAdded, this,
-            [this](const NotificationMessage &) {
-              if (isVisible()) {
-                rebuild();
-              }
-            });
+    connect(service, &NotificationService::messageAdded, this, [this](const NotificationMessage &) {
+      if (isVisible()) {
+        rebuild();
+      }
+    });
     connect(service, &NotificationService::messagesCleared, this, [this]() {
       if (isVisible()) {
         rebuild();
@@ -92,6 +98,11 @@ NotificationPopup2::NotificationPopup2(ServiceLocator &p_services, QToolButton *
 void NotificationPopup2::setupUI() {
   m_container = new QWidget(this);
 
+  // QMenu sizes a QWidgetAction from its widget's size hint expanded to the
+  // widget's minimum size, so this is what actually widens the popup.
+  const int minWidth = m_container->fontMetrics().averageCharWidth() * c_minWidthChars;
+  m_container->setMinimumWidth(qMin(minWidth, WidgetUtils::availableScreenSize(this).width() / 3));
+
   auto *mainLayout = new QVBoxLayout(m_container);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(4);
@@ -132,9 +143,8 @@ void NotificationPopup2::setupUI() {
   scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   scroll->setWidget(bodyWidget);
-  scroll->setMaximumHeight(
-      qMax(120, static_cast<int>(WidgetUtils::availableScreenSize(this).height() *
-                                 c_maxHeightRatio)));
+  scroll->setMaximumHeight(qMax(
+      120, static_cast<int>(WidgetUtils::availableScreenSize(this).height() * c_maxHeightRatio)));
 
   mainLayout->addWidget(scroll);
 
@@ -185,8 +195,7 @@ QIcon NotificationPopup2::severityIcon(NotificationMessage::Severity p_severity)
 
   // Per-severity tint via the shared semantic roles, falling back to the
   // uniform toolbar icon color for a theme that lacks one.
-  const QString token =
-      QStringLiteral("base#%1#fg").arg(QLatin1String(severityState(p_severity)));
+  const QString token = QStringLiteral("base#%1#fg").arg(QLatin1String(severityState(p_severity)));
   QString fg = themeService->paletteColor(token);
   if (fg.isEmpty()) {
     fg = themeService->paletteColor(c_fgPalette);
