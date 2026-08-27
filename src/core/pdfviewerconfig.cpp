@@ -26,20 +26,9 @@ void PdfViewerConfig::fromJson(const QJsonObject &p_jobj) {
     m_toolOptions.insert(tool, ToolOptions());
   }
 
-  // Back-compat: the shared `commentColor` shipped in this branch before the
-  // per-tool split. Seeding all three from it stops an already-picked value
-  // from silently resetting to yellow.
-  const auto legacyColor = p_jobj.value(QStringLiteral("commentColor")).toString();
-  const bool hasTools = p_jobj.value(QStringLiteral("tools")).isObject();
-  if (!hasTools && CommentColor::isValid(legacyColor)) {
-    for (auto it = m_toolOptions.begin(); it != m_toolOptions.end(); ++it) {
-      it->m_color = legacyColor;
-    }
-    return;
-  }
-
-  // Absent key keeps the C++ default, which is what makes this safe to add
-  // without a config migration.
+  // Absent key keeps the C++ default. In practice ConfigMgr2::init() merges the
+  // user's document over the defaults document, so `tools` is always present by
+  // the time this runs; the fallback matters only for a direct fromJson() call.
   const auto toolsObj = p_jobj.value(QStringLiteral("tools")).toObject();
   for (const auto &tool : toolNames()) {
     m_toolOptions.insert(tool, toolOptionsFromJson(tool, toolsObj.value(tool).toObject()));

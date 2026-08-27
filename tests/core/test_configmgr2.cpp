@@ -1219,31 +1219,6 @@ void TestConfigMgr2::testPdfToolOptions_defaultsAndRoundTrips() {
     QCOMPARE(pdfConfig.getToolOptions(ink).m_color, CommentColor::defaultToken());
     QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfInkAnchor::maxWidth());
   }
-
-  {
-    // Back-compat: the shared `commentColor` this branch shipped before the
-    // per-tool split seeds all three, so an already-picked value does not
-    // silently reset to yellow.
-    MainConfig config(m_configMgr);
-    auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
-
-    QJsonObject obj;
-    obj.insert(QStringLiteral("commentColor"), QStringLiteral("pink"));
-    pdfConfig.fromJson(obj);
-    for (const auto &tool : PdfViewerConfig::toolNames()) {
-      QCOMPARE(pdfConfig.getToolOptions(tool).m_color, QStringLiteral("pink"));
-    }
-
-    // `tools` wins when both are present.
-    QJsonObject tools;
-    QJsonObject inkObj;
-    inkObj.insert(QStringLiteral("color"), QStringLiteral("green"));
-    tools.insert(PdfToolOptions::inkTool(), inkObj);
-    obj.insert(QStringLiteral("tools"), tools);
-    pdfConfig.fromJson(obj);
-    QCOMPARE(pdfConfig.getToolOptions(PdfToolOptions::inkTool()).m_color, QStringLiteral("green"));
-    QCOMPARE(pdfConfig.getToolOptions(highlight).m_color, CommentColor::defaultToken());
-  }
 }
 
 // The Task 0 normalization table, one row per class, asserted on BOTH the
