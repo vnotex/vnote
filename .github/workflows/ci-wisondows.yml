@@ -1,0 +1,164 @@
+name: CI-Windows
+
+on:
+  push:
+    branches: [ v4.5.0_zyx ]
+  pull_request:
+    branches: [ v4.5.0_zyx ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+env:
+  # MUST match project(VNote VERSION ...) in CMakeLists.txt. CPack names the
+  # ZIP and its top-level directory from the CMake version, so any drift here
+  # makes every "VNote-<ver>-win64" lookup fail (observed as
+  # "Extracted dir 'Vnote-<ver>-win64' not found" in the Verify step).
+  VNOTE_VER: 4.5.0.1
+
+jobs:
+  build:
+    name: "Build on Win64 Qt 6"
+    runs-on: windows-2022
+    timeout-minutes: 120
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Init Submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{runner.workspace}}/Qt
+          key: ${{runner.os}}-win64_msvc2022_64-QtCache-6.10.3
+
+      - name: Install Qt Official Build
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 6.10.3
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: "qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat"
+          tools: tools_opensslv3_x64
+          cache: 'true'
+
+      - name: Create Build Dir
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      - name: Apply restore-section-numbering patch
+        shell: bash
+        run: |
+          if git apply --check package/restore-section-numbering.patch 2>/dev/null; then
+            git apply package/restore-section-numbering.patch
+            echo "Applied package/restore-section-numbering.patch"
+          elif git apply --reverse --check package/restore-section-numbering.patch 2>/dev/null; then
+            echo "restore-section-numbering.patch already applied, skipping"
+          else
+            echo "ERROR: package/restore-section-numbering.patch does not apply cleanly"
+            exit 1
+          fi
+
+      # NOTE on the `7z x VNote*.zip` below: extract IN PLACE, never with `-o*`.
+      # The CPack ZIP already carries a single top-level VNote-x.y.z-win64/
+      # directory, so `-o*` (which names the output directory after the archive)
+      # nests it twice and leaves the install root two levels down.
+      - name: Configure and Build Project
+        shell: cmd
+        env:
+          VS_CMD: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
+          VNOTE_TESTS: "ON"
+        run: |
+          cmake --version
+          call "%VS_CMD%"
+          where cl || echo "cl.exe not on PATH"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=6 -DVNOTE_BUILD_TESTS=%VNOTE_TESTS% %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
+          type cmake-configure.log
+          REM cmd reports only the LAST command's exit code, so every step here
+          REM needs its own `|| exit /b 1`.
+          cmake --build . || exit /b 1
+          cmake --build . --target=pack || exit /b 1
+          7z x VNote*.zip || exit /b 1
+          dir
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Verify test registration
+        # Gate proving Qt6::Qml (qtdeclarative) is actually available. If it is
+        # missing, CMake silently skips the PDF-outline JS test target.
+        shell: pwsh
+        run: |
+          $registered = ctest -C Release -N | Select-String -SimpleMatch "test_pdfviewercore_js"
+          if (-not $registered) {
+            throw "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing"
+          }
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build and Run Tests
+        shell: cmd
+        env:
+          VS_CMD: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
+        run: |
+          call "%VS_CMD%"
+          ctest -C Release --output-on-failure
+        working-directory: ${{runner.workspace}}/build
+
+      # Runs on EVERY build, not just releases: this is the gate proving
+      # package/prune-package.cmake actually ran. If the CPack hook is ever
+      # renamed or silently skipped, the SDK artifacts come back and the only
+      # symptom is a slightly larger ZIP -- exactly the kind of regression that
+      # reaches users unnoticed.
+      - name: Verify package ships no SDK artifacts
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          $extracted = "VNote-${{env.VNOTE_VER}}-win64"
+          if (-not (Test-Path -LiteralPath $extracted)) {
+            Write-Error "Extracted dir '$extracted' not found"; exit 1
+          }
+          # Everything VNote loads lives at the package root, so any of these
+          # directories is by definition not a runtime dependency.
+          $forbidden = @('bin', 'include', 'lib', 'mkspecs')
+          $found = @($forbidden | Where-Object { Test-Path -LiteralPath (Join-Path $extracted $_) })
+          if ($found) {
+            foreach ($f in $found) {
+              Get-ChildItem -Recurse -File (Join-Path $extracted $f) |
+                Select-Object -First 20 |
+                ForEach-Object { Write-Host "   $($_.FullName)" }
+            }
+            Write-Error "Package ships SDK/dev artifacts ($($found -join ', ')); prune-package.cmake did not run"
+            exit 1
+          }
+
+          # vnote.exe and QtWebEngineProcess.exe are the only executables the
+          # package should carry.
+          $strayExe = @(Get-ChildItem -File -Filter '*.exe' $extracted |
+                        Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe') })
+          if ($strayExe) {
+            Write-Error "Package ships unexpected executable(s): $($strayExe.Name -join ', ')"
+            exit 1
+          }
+          Write-Host "No SDK artifacts under $extracted"
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VNote-${{env.VNOTE_VER}}-win64
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64
+
+      - name: Archive Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: VNote-${{env.VNOTE_VER}}-win64.msi
+          path: ${{runner.workspace}}/build/VNote*.msi

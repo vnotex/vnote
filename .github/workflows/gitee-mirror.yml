@@ -52,7 +52,9 @@ jobs:
   # Job A - push master + release tags to Gitee.
   # ---------------------------------------------------------------------------
   sync-code:
-    if: github.event_name == 'push'
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'vnotex/vnote'
     runs-on: ubuntu-latest
     environment: GiteeMirror
     timeout-minutes: 30
@@ -64,6 +66,7 @@ jobs:
       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
     steps:
       - name: Mask credentials
+        if: false
         run: |
           set -euo pipefail
           echo "::add-mask::$GITEE_TOKEN"
@@ -106,12 +109,14 @@ jobs:
   # Job B - mirror one published release to Gitee.
   # ---------------------------------------------------------------------------
   mirror-release:
-    if: >-
+    if: |
+      github.repository == 'vnotex/vnote' && (
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'release' &&
        !github.event.release.draft &&
        !github.event.release.prerelease &&
        github.event.release.tag_name != 'continuous-build')
+       )
     runs-on: ubuntu-latest
     environment: GiteeMirror
     timeout-minutes: 30
