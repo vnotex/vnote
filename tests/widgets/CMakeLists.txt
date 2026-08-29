@@ -185,6 +185,7 @@ add_qt_test(test_node_explorer_reload_expansion
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
@@ -233,6 +234,7 @@ add_qt_test(test_explorer_selection_after_save
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
@@ -943,6 +945,7 @@ add_qt_test(test_notebook_explorer2_sort
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
@@ -1000,6 +1003,7 @@ add_qt_test(test_two_columns_node_explorer_sort
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmodeviewwrapper.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h

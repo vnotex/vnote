@@ -132,6 +132,7 @@ add_qt_test(test_missing_nodes_qt
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.h
   LINKS

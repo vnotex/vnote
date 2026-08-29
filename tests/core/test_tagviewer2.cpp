@@ -1,8 +1,9 @@
-#include <QtTest>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QRegularExpression>
 #include <QTemporaryDir>
+#include <QtTest>
 
 #include <core/global.h>
 #include <core/nodeidentifier.h>
@@ -58,7 +59,20 @@ private slots:
   void testInlineCreateTagPath();
   void testInlineSelectExistingTag();
 
+  // Multi-node tri-state.
+  void testMultiNodeAllTagSelected();
+  void testMultiNodePartialState();
+  void testPartialClickAddsToAll();
+  void testAllClickRemovesFromAll();
+  void testUntouchedPartialTagStaysOutOfBothDeltas();
+  void testTooltipOnlyCountsForPartial();
+  void testUnreadableTargetIsExcludedFromTriState();
+  void testSaveRefusesMultiNodeSelection();
+  void testReturnOnListTogglesExactlyOnce();
+
 private:
+  // Find the item carrying p_tag, or nullptr.
+  QListWidgetItem *itemForTag(TagViewer2 *p_viewer, const QString &p_tag) const;
   // Helper to create a bundled test notebook and return its ID.
   QString createTestNotebook(const QString &p_path);
 
@@ -624,6 +638,266 @@ void TestTagViewer2::testInlineSelectExistingTag() {
   QVERIFY(list->item(0)->data(UserRole2).toBool());
   // Search cleared.
   QVERIFY(search->text().isEmpty());
+}
+// ===== Multi-node tri-state =====
+
+QListWidgetItem *TestTagViewer2::itemForTag(TagViewer2 *p_viewer, const QString &p_tag) const {
+  auto *list = tagList(p_viewer);
+  if (!list) {
+    return nullptr;
+  }
+  for (int i = 0; i < list->count(); ++i) {
+    if (list->item(i)->data(Qt::UserRole).toString() == p_tag) {
+      return list->item(i);
+    }
+  }
+  return nullptr;
+}
+
+void TestTagViewer2::testMultiNodeAllTagSelected() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_multi_all_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "b.md", "work"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  auto *item = itemForTag(&viewer, "work");
+  QVERIFY(item != nullptr);
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::All));
+  QVERIFY(!item->font().italic());
+  QVERIFY(viewer.addedTags().isEmpty());
+  QVERIFY(viewer.removedTags().isEmpty());
+}
+
+void TestTagViewer2::testMultiNodePartialState() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_multi_partial_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "half"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "half"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  auto *item = itemForTag(&viewer, "half");
+  QVERIFY(item != nullptr);
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::Partial));
+  QVERIFY(item->font().italic());
+  QVERIFY(item->toolTip().contains(QStringLiteral("1")));
+  QVERIFY(item->toolTip().contains(QStringLiteral("2")));
+}
+
+void TestTagViewer2::testPartialClickAddsToAll() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_partial_click_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "half"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "half"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  auto *list = tagList(&viewer);
+  auto *item = itemForTag(&viewer, "half");
+  QVERIFY(item != nullptr);
+  QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    list->visualItemRect(item).center());
+
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::All));
+  QVERIFY(!item->font().italic());
+  QVERIFY(viewer.addedTags().contains(QStringLiteral("half")));
+  QVERIFY(!viewer.removedTags().contains(QStringLiteral("half")));
+}
+
+void TestTagViewer2::testAllClickRemovesFromAll() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_all_click_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "b.md", "work"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  auto *list = tagList(&viewer);
+  auto *item = itemForTag(&viewer, "work");
+  QVERIFY(item != nullptr);
+  QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    list->visualItemRect(item).center());
+
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::None));
+  QVERIFY(viewer.removedTags().contains(QStringLiteral("work")));
+  QVERIFY(!viewer.addedTags().contains(QStringLiteral("work")));
+}
+
+void TestTagViewer2::testUntouchedPartialTagStaysOutOfBothDeltas() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_untouched_partial_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "half"));
+  QVERIFY(m_tagCoreService->createTag(nbId, "other"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "half"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  // Touch only "other".
+  auto *list = tagList(&viewer);
+  auto *other = itemForTag(&viewer, "other");
+  QVERIFY(other != nullptr);
+  QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    list->visualItemRect(other).center());
+
+  QVERIFY(!viewer.addedTags().contains(QStringLiteral("half")));
+  QVERIFY(!viewer.removedTags().contains(QStringLiteral("half")));
+  QVERIFY(viewer.addedTags().contains(QStringLiteral("other")));
+}
+
+void TestTagViewer2::testTooltipOnlyCountsForPartial() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_tooltip_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "work"));
+  QVERIFY(m_tagCoreService->createTag(nbId, "none"));
+  QVERIFY(m_tagCoreService->createTag(nbId, "half"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "b.md", "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "half"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  QCOMPARE(itemForTag(&viewer, "work")->toolTip(), QStringLiteral("work"));
+  QCOMPARE(itemForTag(&viewer, "none")->toolTip(), QStringLiteral("none"));
+  QVERIFY(itemForTag(&viewer, "half")->toolTip() != QStringLiteral("half"));
+}
+
+// A target whose tags cannot be read must not be counted as "has no tags":
+// NotebookCoreService::getFileInfo returns an EMPTY object on failure, so
+// counting it would show a universally applied tag as Partial, and two clicks on
+// that item would untag it from every file that legitimately had it.
+void TestTagViewer2::testUnreadableTargetIsExcludedFromTriState() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_unreadable_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "work"));
+  QVERIFY(m_tagCoreService->tagFile(nbId, "a.md", "work"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, bogus;
+  a.notebookId = bogus.notebookId = nbId;
+  a.relativePath = "a.md";
+  // Never created — getFileInfo fails for it.
+  bogus.relativePath = "does-not-exist.md";
+  viewer.setNodeIds({a, bogus});
+
+  QCOMPARE(viewer.unreadableTargetCount(), 1);
+
+  auto *item = itemForTag(&viewer, "work");
+  QVERIFY(item != nullptr);
+  // All readable targets carry it, so it is All — NOT Partial.
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::All));
+  QVERIFY(!item->font().italic());
+}
+
+// save() is the legacy single-node overwrite path (TagPopup2 only). Reaching it
+// with a batch selection would write only the first file's whole tag array and
+// silently drop the rest.
+void TestTagViewer2::testSaveRefusesMultiNodeSelection() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_save_guard_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  m_notebookService->createFile(nbId, "", "b.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "work"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a, b;
+  a.notebookId = b.notebookId = nbId;
+  a.relativePath = "a.md";
+  b.relativePath = "b.md";
+  viewer.setNodeIds({a, b});
+
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("single-node legacy path")));
+  QVERIFY(!viewer.save());
+
+  // Neither file was touched.
+  for (const auto &path : {QStringLiteral("a.md"), QStringLiteral("b.md")}) {
+    const auto tags =
+        m_notebookService->getFileInfo(nbId, path).value(QStringLiteral("tags")).toArray();
+    QVERIFY(tags.isEmpty());
+  }
+}
+
+// The tri-state cycle is not self-inverse (Partial -> All -> None), so exactly
+// ONE toggle may happen per gesture. itemActivated is deliberately not connected;
+// Return is routed through the viewer's event filter instead.
+void TestTagViewer2::testReturnOnListTogglesExactlyOnce() {
+  QString nbId = createTestNotebook(m_tempDir.filePath("tv2_return_toggle_nb"));
+  QVERIFY(!nbId.isEmpty());
+
+  m_notebookService->createFile(nbId, "", "a.md");
+  QVERIFY(m_tagCoreService->createTag(nbId, "work"));
+
+  TagViewer2 viewer(m_serviceLocator);
+  NodeIdentifier a;
+  a.notebookId = nbId;
+  a.relativePath = "a.md";
+  viewer.setNodeIds({a});
+
+  auto *list = tagList(&viewer);
+  auto *item = itemForTag(&viewer, "work");
+  QVERIFY(item != nullptr);
+  list->setCurrentItem(item);
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::None));
+
+  QTest::keyClick(list, Qt::Key_Return);
+
+  // One toggle: None -> All. A double fire would have landed back on None.
+  QCOMPARE(item->data(UserRole2).toInt(), static_cast<int>(TagViewer2::TagState::All));
+  QVERIFY(viewer.addedTags().contains(QStringLiteral("work")));
 }
 
 } // namespace tests

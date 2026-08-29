@@ -23,11 +23,7 @@ public:
     QJsonValue metadata;
   };
 
-  enum Roles {
-    TagNameRole = Qt::UserRole + 1,
-    TagParentRole,
-    TagMetadataRole
-  };
+  enum Roles { TagNameRole = Qt::UserRole + 1, TagParentRole, TagMetadataRole };
 
   explicit TagModel(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~TagModel() override;
@@ -66,6 +62,10 @@ private:
   QString tagNameForIndexId(quintptr p_indexId) const;
   ServiceLocator &m_services;
   QString m_notebookId;
+  // Set when a tagsChanged for this notebook arrived and the coalescing reload
+  // has not run yet. Batch tag edits fire one tagsChanged per file per tag, and
+  // each reload is a full beginResetModel + listTags + cache rebuild.
+  bool m_reloadPending = false;
   mutable QMap<QString, TagNodeInfo> m_nodeCache;
   mutable QMap<QString, QVector<QString>> m_childrenCache;
   mutable QHash<QString, quintptr> m_indexIdCache;

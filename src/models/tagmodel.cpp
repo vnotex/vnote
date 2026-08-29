@@ -22,8 +22,7 @@ TagModel::TagModel(ServiceLocator &p_services, QObject *p_parent)
   }
 }
 
-TagModel::~TagModel() {
-}
+TagModel::~TagModel() {}
 
 QModelIndex TagModel::index(int p_row, int p_column, const QModelIndex &p_parent) const {
   if (m_notebookId.isEmpty() || p_row < 0 || p_column < 0 || p_column > 0) {
@@ -153,9 +152,7 @@ void TagModel::setNotebookId(const QString &p_notebookId) {
   emit notebookChanged();
 }
 
-QString TagModel::getNotebookId() const {
-  return m_notebookId;
-}
+QString TagModel::getNotebookId() const { return m_notebookId; }
 
 void TagModel::reload() {
   beginResetModel();
@@ -206,9 +203,26 @@ void TagModel::reload() {
 }
 
 void TagModel::onTagsChanged(const QString &p_notebookId) {
-  if (p_notebookId == m_notebookId) {
-    reload();
+  if (p_notebookId != m_notebookId) {
+    return;
   }
+
+  // Coalesce: a batch tag edit emits one tagsChanged per file per tag (all
+  // synchronous on the GUI thread), and each reload() is a full
+  // beginResetModel + listTags + cache rebuild. Collapse the whole burst into a
+  // single reload posted to the event loop, which still runs before the next
+  // repaint so the tag tree is never visibly stale.
+  if (m_reloadPending) {
+    return;
+  }
+  m_reloadPending = true;
+  QMetaObject::invokeMethod(
+      this,
+      [this]() {
+        m_reloadPending = false;
+        reload();
+      },
+      Qt::QueuedConnection);
 }
 
 void TagModel::reloadTag(const QString &p_tagName) {
@@ -368,4 +382,3 @@ QString TagModel::fullTagPath(const QString &p_tagName) const {
 
   return parts.join(QLatin1Char('/'));
 }
-

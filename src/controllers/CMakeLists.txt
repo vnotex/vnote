@@ -5,6 +5,7 @@ target_sources(vnote PRIVATE
     notebooknodecontroller.cpp notebooknodecontroller.h
     notebooknodecontroller_reorder.cpp
     notebooknodecontroller_shareseam.cpp
+    notebooknodecontroller_tagseam.cpp
     newnotebookcontroller.cpp newnotebookcontroller.h
     newnotecontroller.cpp newnotecontroller.h
     newfoldercontroller.cpp newfoldercontroller.h

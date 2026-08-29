@@ -21,6 +21,7 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/tagservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
@@ -190,6 +191,15 @@ NotebookNodeController::dedupeDescendants(const QList<NodeIdentifier> &p_ids) co
 
 bool NotebookNodeController::isSingleEffectiveSelection(const NodeIdentifier &p_clickedId) const {
   return resolveSelection(p_clickedId).size() == 1;
+}
+
+QList<NodeIdentifier>
+NotebookNodeController::resolveTagTargets(const NodeIdentifier &p_clickedId) const {
+  if (!p_clickedId.isValid()) {
+    return {};
+  }
+  return filterTagTargets(resolveSelection(p_clickedId), p_clickedId,
+                          [this](const NodeIdentifier &p_id) { return getNodeInfo(p_id); });
 }
 
 QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
@@ -497,7 +507,7 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
       auto *tagAction = p_menu->addAction(tr("&Tags"));
       connect(tagAction, &QAction::triggered, this,
               [this, p_nodeId]() { manageNodeTags(p_nodeId); });
-      tagAction->setEnabled(isSingleEffectiveSelection(p_nodeId) && !p_readOnly);
+      tagAction->setEnabled(!p_readOnly && !resolveTagTargets(p_nodeId).isEmpty());
     }
   }
 }
@@ -1031,7 +1041,11 @@ void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
   if (isNotebookReadOnly(p_nodeId.notebookId)) {
     return;
   }
-  emit manageTagsRequested(p_nodeId);
+  const auto ids = resolveTagTargets(p_nodeId);
+  if (ids.isEmpty()) {
+    return;
+  }
+  emit manageTagsRequested(ids);
 }
 
 bool NotebookNodeController::canPaste() const { return !m_clipboard->nodes.isEmpty(); }
@@ -1190,6 +1204,56 @@ void NotebookNodeController::handleMarkResult(const NodeIdentifier &p_nodeId,
     NodeIdentifier parentId = getParentFolder(p_nodeId);
     nbModel->reloadNode(parentId);
   }
+}
+
+bool NotebookNodeController::handleTagDeltaResult(const NodeIdentifier &p_nodeId,
+                                                  const QSet<QString> &p_added,
+                                                  const QSet<QString> &p_removed) {
+  if (p_added.isEmpty() && p_removed.isEmpty()) {
+    return true;
+  }
+  if (!p_nodeId.isValid() || isNotebookReadOnly(p_nodeId.notebookId)) {
+    return false;
+  }
+
+  const NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (!nodeInfo.isValid() || nodeInfo.isFolder || nodeInfo.isRoot()) {
+    return false;
+  }
+
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  auto *tagService = m_services.get<TagService>();
+  if (!notebookService || !tagService) {
+    return false;
+  }
+
+  // Orchestration (pre-read, plan, issue, aggregate) lives in
+  // notebooknodecontroller_tagseam.cpp so it is covered by a real controller
+  // test; this method only binds it to the services.
+  TagDeltaIo io;
+  io.readTags = [notebookService, &p_nodeId](QSet<QString> &p_out) {
+    VxCoreError err = VXCORE_OK;
+    const auto fileInfo =
+        notebookService->getFileInfo(p_nodeId.notebookId, p_nodeId.relativePath, &err);
+    if (err != VXCORE_OK) {
+      // getFileInfo returns an empty object on failure, indistinguishable from
+      // "no tags".
+      return false;
+    }
+    const auto tagsArray = fileInfo.value(QLatin1String(vxcore::kJsonKeyTags)).toArray();
+    for (const auto &tagVal : tagsArray) {
+      p_out.insert(tagVal.toString());
+    }
+    return true;
+  };
+  io.tagFile = [tagService, &p_nodeId](const QString &p_tag) {
+    return tagService->tagFile(p_nodeId.notebookId, p_nodeId.relativePath, p_tag);
+  };
+  io.untagFile = [tagService, &p_nodeId](const QString &p_tag) {
+    return tagService->untagFile(p_nodeId.notebookId, p_nodeId.relativePath, p_tag);
+  };
+
+  return applyTagDelta(io, p_added, p_removed);
 }
 
 void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds,

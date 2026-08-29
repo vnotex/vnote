@@ -143,7 +143,7 @@ private slots:
   void onPropertiesRequested(const NodeIdentifier &p_nodeId);
   void onMarkRequested(const QList<NodeIdentifier> &p_ids);
   void onIgnoreRequested(const NodeIdentifier &p_nodeId);
-  void onManageTagsRequested(const NodeIdentifier &p_nodeId);
+  void onManageTagsRequested(const QList<NodeIdentifier> &p_ids);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onInfoMessage(const QString &p_title, const QString &p_message);
 

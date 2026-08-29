@@ -3,6 +3,7 @@
 
 #include <QDataStream>
 #include <QList>
+#include <QSet>
 #include <QSharedPointer>
 #include <QWidget>
 
@@ -92,6 +93,10 @@ public:
   virtual void suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) = 0;
   virtual void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
                                 const QString &p_bgColor) = 0;
+  // Batch Tags flow: per-id apply of the delta produced by ViewTagsDialog2.
+  // The view (NotebookExplorer2) shows ONE dialog and loops the ids over this.
+  virtual bool handleTagDeltaResult(const NodeIdentifier &p_nodeId, const QSet<QString> &p_added,
+                                    const QSet<QString> &p_removed) = 0;
 
   // === Reload ===
   virtual void reloadNode(const NodeIdentifier &p_nodeId) = 0;
@@ -143,7 +148,7 @@ signals:
   void markRequested(const QList<NodeIdentifier> &p_ids);
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 
-  void manageTagsRequested(const NodeIdentifier &p_nodeId);
+  void manageTagsRequested(const QList<NodeIdentifier> &p_ids);
 
   // === Status signals ===
   void errorOccurred(const QString &p_title, const QString &p_message);

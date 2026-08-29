@@ -1832,13 +1832,35 @@ void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId) {
   }
 }
 
-void NotebookExplorer2::onManageTagsRequested(const NodeIdentifier &p_nodeId) {
-  if (!p_nodeId.isValid()) {
+void NotebookExplorer2::onManageTagsRequested(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty() || !m_nodeExplorer) {
     return;
   }
 
-  ViewTagsDialog2 dialog(m_services, p_nodeId, window());
-  dialog.exec();
+  // ONE dialog for the whole batch; the per-id apply is looped here (see
+  // src/controllers/AGENTS.md § Multi-Target Actions with Dialogs).
+  ViewTagsDialog2 dialog(m_services, p_ids, window());
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  const auto added = dialog.addedTags();
+  const auto removed = dialog.removedTags();
+  if (added.isEmpty() && removed.isEmpty()) {
+    return;
+  }
+
+  bool allOk = true;
+  for (const auto &id : p_ids) {
+    if (!m_nodeExplorer->handleTagDeltaResult(id, added, removed)) {
+      allOk = false;
+    }
+  }
+
+  if (!allOk) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to update tags for some files."),
+                             window());
+  }
 }
 
 void NotebookExplorer2::onErrorOccurred(const QString &p_title, const QString &p_message) {

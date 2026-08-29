@@ -262,6 +262,15 @@ void CombinedNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
   }
 }
 
+bool CombinedNodeExplorer::handleTagDeltaResult(const NodeIdentifier &p_nodeId,
+                                                const QSet<QString> &p_added,
+                                                const QSet<QString> &p_removed) {
+  if (!m_controller) {
+    return false;
+  }
+  return m_controller->handleTagDeltaResult(p_nodeId, p_added, p_removed);
+}
+
 void CombinedNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
   if (!m_model) {
     return;

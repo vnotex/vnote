@@ -162,6 +162,15 @@ public slots:
   void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName);
   void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
                         const QString &p_bgColor);
+  // Per-id apply primitive for the batch Tags flow. Applies the DELTA produced
+  // by ViewTagsDialog2: tags in p_added are applied with TagService::tagFile,
+  // tags in p_removed are dropped with TagService::untagFile. Deliberately NOT
+  // a whole-array rewrite (updateFileTags) — a read-modify-write would erase
+  // concurrent/hook-driven tag changes and would silently succeed for a
+  // remove-only delta when getFileInfo fails. Re-checks read-only + eligibility.
+  // Returns false if any call fails.
+  bool handleTagDeltaResult(const NodeIdentifier &p_nodeId, const QSet<QString> &p_added,
+                            const QSet<QString> &p_removed);
   void handleDeleteConfirmed(const QList<NodeIdentifier> &p_nodeIds, bool p_permanent);
   void handleRemoveConfirmed(const QList<NodeIdentifier> &p_nodeIds);
   void handleImportFiles(const NodeIdentifier &p_targetFolderId, const QStringList &p_files);
@@ -216,7 +225,7 @@ signals:
 
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 
-  void manageTagsRequested(const NodeIdentifier &p_nodeId);
+  void manageTagsRequested(const QList<NodeIdentifier> &p_ids);
 
   // T7 (notebook-explorer-drag-reorder): emitted after the service confirms
   // a successful folder-children reorder. The View should reload the folder
@@ -253,6 +262,55 @@ public:
   static bool isFolderShareEligible(const NodeInfo &p_nodeInfo, bool p_notebookIsBundled,
                                     bool p_singleEffectiveSelection);
 
+  // Pure target-filter behind resolveTagTargets(), extracted into
+  // notebooknodecontroller_tagseam.cpp so controller tests can link the REAL
+  // production predicate without the controller's 18+ transitive service deps.
+  // p_infoLookup plays the role of getNodeInfo(); an unresolved id must yield a
+  // default-constructed NodeInfo, exactly as the controller sees it.
+  //
+  // Keeps only ids that resolve to a valid, non-folder, non-root node in the
+  // SAME notebook as the clicked node, de-duplicated and order-preserving.
+  using NodeInfoLookup = std::function<NodeInfo(const NodeIdentifier &)>;
+  static QList<NodeIdentifier> filterTagTargets(const QList<NodeIdentifier> &p_resolvedSelection,
+                                                const NodeIdentifier &p_clickedId,
+                                                const NodeInfoLookup &p_infoLookup);
+
+  // The ops handleTagDeltaResult actually issues for ONE file, after dropping
+  // the ones that would be no-ops on it. Sorted, so the order is deterministic.
+  struct TagDeltaOps {
+    QStringList toAdd;
+    QStringList toRemove;
+  };
+
+  // Pure delta planner behind handleTagDeltaResult, extracted into
+  // notebooknodecontroller_tagseam.cpp alongside filterTagTargets so controller
+  // tests can link the REAL production decision.
+  //
+  // vxcore's incremental primitives are NOT idempotent (TagFile returns
+  // VXCORE_ERR_ALREADY_EXISTS, UntagFile returns VXCORE_ERR_NOT_FOUND), and a
+  // delta derived from a Partial tag necessarily hits both across a batch. So a
+  // tag already present is dropped from toAdd and a tag already absent is dropped
+  // from toRemove, leaving every remaining failure a genuine one.
+  static TagDeltaOps planTagDelta(const QSet<QString> &p_currentTags, const QSet<QString> &p_added,
+                                  const QSet<QString> &p_removed);
+
+  // I/O seam for applyTagDelta, so the orchestration can be driven without the
+  // controller's services. readTags returns false when the file's current tags
+  // could NOT be determined; tagFile / untagFile return false on failure.
+  struct TagDeltaIo {
+    std::function<bool(QSet<QString> &)> readTags;
+    std::function<bool(const QString &)> tagFile;
+    std::function<bool(const QString &)> untagFile;
+  };
+
+  // Pre-read -> plan -> issue -> aggregate, for ONE file. Returns false when the
+  // pre-read fails (nothing is issued in that case) or when any issued op fails.
+  // Extracted alongside planTagDelta so controller tests cover the REAL
+  // orchestration; handleTagDeltaResult adds only its read-only / eligibility
+  // guards and binds this to the services.
+  static bool applyTagDelta(const TagDeltaIo &p_io, const QSet<QString> &p_added,
+                            const QSet<QString> &p_removed);
+
 private:
   // Resolve selection following Qt right-click convention:
   // - If clicked node is in current selection, return full selection
@@ -264,6 +322,12 @@ private:
   // Check if clicked node represents a single effective selection (for action enable/disable).
   // Returns true if resolveSelection(p_clickedId).size() == 1.
   bool isSingleEffectiveSelection(const NodeIdentifier &p_clickedId) const;
+
+  // Eligible targets for the "Tags" action, derived from resolveSelection().
+  // Keeps only nodes that resolve to a valid, non-folder, non-root node in the
+  // SAME notebook as the clicked node. Drives both action enablement and
+  // execution so the menu never offers an action that would be a no-op.
+  QList<NodeIdentifier> resolveTagTargets(const NodeIdentifier &p_clickedId) const;
 
   // Add actions to context menu based on node type. p_readOnly greys out
   // mutating actions when the clicked notebook is read-only.

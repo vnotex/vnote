@@ -449,6 +449,16 @@ void TwoColumnsNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
   }
 }
 
+bool TwoColumnsNodeExplorer::handleTagDeltaResult(const NodeIdentifier &p_nodeId,
+                                                  const QSet<QString> &p_added,
+                                                  const QSet<QString> &p_removed) {
+  NotebookNodeController *controller = controllerForNode(p_nodeId);
+  if (!controller) {
+    return false;
+  }
+  return controller->handleTagDeltaResult(p_nodeId, p_added, p_removed);
+}
+
 void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {
   // Auto-detect folder vs file based on node info
   NodeInfo info = getNodeInfo(p_nodeId);

@@ -53,6 +53,8 @@ public:
   void suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) override;
   void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
                         const QString &p_bgColor) override;
+  bool handleTagDeltaResult(const NodeIdentifier &p_nodeId, const QSet<QString> &p_added,
+                            const QSet<QString> &p_removed) override;
 
   void reloadNode(const NodeIdentifier &p_nodeId) override;
   void startInlineRename(const NodeIdentifier &p_nodeId) override;

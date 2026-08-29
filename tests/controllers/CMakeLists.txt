@@ -536,3 +536,17 @@ add_qt_test(test_commentcontroller
     vxcore
   GUILESS
 )
+
+# Batch tag editing: the REAL filterTagTargets eligibility predicate (linked from
+# its own seam TU, same precedent as notebooknodecontroller_shareseam.cpp) plus
+# the tagFile / untagFile delta semantics handleTagDeltaResult relies on,
+# exercised against real services.
+add_qt_test(test_notebooknodecontroller_tagtargets
+  SOURCES
+    test_notebooknodecontroller_tagtargets.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

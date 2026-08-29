@@ -30,6 +30,10 @@ void NotebookNodeController::handleNewFolderResult(const NodeIdentifier &, const
 void NotebookNodeController::handleRenameResult(const NodeIdentifier &, const QString &) {}
 void NotebookNodeController::handleMarkResult(const NodeIdentifier &, const QString &,
                                               const QString &) {}
+bool NotebookNodeController::handleTagDeltaResult(const NodeIdentifier &, const QSet<QString> &,
+                                                  const QSet<QString> &) {
+  return true;
+}
 void NotebookNodeController::handleDeleteConfirmed(const QList<NodeIdentifier> &, bool) {}
 void NotebookNodeController::handleRemoveConfirmed(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::handleImportFiles(const NodeIdentifier &, const QStringList &) {}
