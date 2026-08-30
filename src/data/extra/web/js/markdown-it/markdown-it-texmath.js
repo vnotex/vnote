@@ -96,7 +96,10 @@ texmath.block = (rule) =>
             if (parentType === 'blockquote') // remove all leading '>' inside multiline formula
                 match[1] = match[1].replace(/(\n*?^(?:\s*>)+)/gm,'');
             // begin token
-            let token = state.push(rule.name, 'math', 1);  // 'math_block'
+            // VNote patch: upstream pushes nesting=1 without a closing token, so every math block
+            // permanently inflates state.level and the block tokenizer silently truncates the
+            // document at options.maxNesting. Math blocks are self-closing -> nesting must be 0.
+            let token = state.push(rule.name, 'math', 0);  // 'math_block'
             token.block = true;
             token.tag = rule.tag;
             token.markup = '';

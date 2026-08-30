@@ -127,6 +127,10 @@ class MarkdownIt extends VxWorker {
             typographer: this.options.enableTypographer,
             langPrefix: this.options.languagePrefix,
             quotes: this.options.quotes,
+            // Defense-in-depth against an unbalanced third-party token pusher inflating
+            // state.level (which makes the block tokenizer silently truncate the document).
+            // Not the fix for the math-block bug; see markdown-it-texmath.js.
+            maxNesting: 500,
             highlight: (p_str, p_lang) => {
                 /* We will use asynchronous higlight.
                 if (p_lang && !this.langsToSkipHighlight.has(p_lang)) {

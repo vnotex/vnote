@@ -190,6 +190,22 @@ target_compile_definitions(test_image_parser_drift PRIVATE
   VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
+# Grep-gate regression test: the vendored markdown-it-texmath block rule must
+# push its token with nesting 0. Upstream pushes 1 without a closing token, so
+# every math block permanently inflates state.level and markdown-it's block
+# tokenizer silently truncates the document at options.maxNesting (default 100)
+# -- a note with 101 formulas lost everything after the 100th. Also gates the
+# explicit `maxNesting: 500` in markdownit.js. See
+# tests/utils/test_texmath_nesting_drift.cpp.
+add_qt_test(test_texmath_nesting_drift
+  SOURCES
+    test_texmath_nesting_drift.cpp
+  GUILESS
+)
+target_compile_definitions(test_texmath_nesting_drift PRIVATE
+  VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 # The `src`-rewriting half of WebViewExporter, extracted so the guarantee that a
 # sized image keeps its width/height across an export is testable without a web
 # engine.
