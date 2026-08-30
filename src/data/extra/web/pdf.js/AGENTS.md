@@ -311,10 +311,10 @@ drift:
 | Tool | Key | Options |
 |---|---|---|
 | Highlight | `highlight` | `color` |
-| Draw | `ink` | `color`, `width` (PDF units) |
+| Draw | `ink` | `color`, `width` (PDF units), `opacity` (0.1-1.0) |
 | Text box | `freetext` | `color`, `fontSize` (PDF units) |
 
-`VX_INK_WIDTH` / `VX_FREETEXT_FONT_SIZE` are **defaults only**; the live values
+`VX_INK_WIDTH` / `VX_INK_OPACITY` / `VX_FREETEXT_FONT_SIZE` are **defaults only**; the live values
 come from `this.toolOptions`, read through `optionsFor(tool)`. The C++ side
 publishes them with `toolOptionsChanged(tool, options)`, and the readiness latch
 republishes **every** tool (not just the armed one) so a reloaded page comes up
@@ -324,10 +324,20 @@ its `captureSelectionRequested`.
 
 Each toolbar button is a `QToolButton::MenuButtonPopup`: clicking the **body**
 arms/disarms the tool, clicking the **indicator** opens that tool's settings
-menu (5 colours, plus widths or font sizes). The whole thing lives in
+menu: five colour presets, plus **sliders** — Thickness + Opacity for Draw, Font
+size for Text box. The slider rows are `QWidgetAction`s (a plain action would
+close the menu on the first click and make the slider undraggable) and commit on
+`valueChanged`, so the draft stroke previews live. The whole thing lives in
 `PdfAnnotationToolBar` (`src/widgets/pdfannotationtoolbar.{h,cpp}`) rather than
 in `PdfViewWindow2`, so it is constructible in a test with a bare `QToolBar` and
 no WebEngine profile.
+
+`opacity` is stored **per anchor**, beside `width`, so two strokes drawn at
+different settings each keep their own; an anchor with no `opacity` key (written
+by an older build) renders solid. The slider ranges are deliberately NARROWER
+than the schema ranges (thickness tops out at 24 vs `PdfInkAnchor::maxWidth()`
+64; font size 6-72 vs 4-144), so a hand-edited config value is clamped for
+DISPLAY only and never written back.
 
 The **normalize → persist → push-to-adapter** routing likewise lives outside the
 window, in `PdfToolOptionsRouter` (`src/widgets/pdftooloptionsrouter.{h,cpp}`),
@@ -351,7 +361,10 @@ without it and are gated there:
 > `syncState()`.** `setChecked()` never emits `triggered`, so there is nothing
 > to echo back — but it does emit `changed`, which is how `QActionGroup` tracks
 > its current member. Blocking it leaves the group's bookkeeping stale and a
-> later user pick fails to clear the previous tick.
+> later user pick fails to clear the previous tick. The **sliders** in the same
+> function follow the OPPOSITE rule and MUST be blocked: `QSlider::setValue`
+> does emit `valueChanged`, which is wired up as a user pick and would echo
+> straight back out and persist. Do not "harmonise" the two.
 
 The toolbar toggles are **not** authoritative: the web side can leave a tool by
 itself (Esc, or the one-shot Text tool completing), which reaches C++ as

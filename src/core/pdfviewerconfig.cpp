@@ -59,6 +59,9 @@ QJsonObject PdfViewerConfig::toolOptionsToJson(const QString &p_tool,
   if (PdfToolOptions::hasFontSize(p_tool)) {
     raw.insert(PdfToolOptions::fontSizeKey(), p_options.m_fontSize);
   }
+  if (PdfToolOptions::hasOpacity(p_tool)) {
+    raw.insert(PdfToolOptions::opacityKey(), p_options.m_opacity);
+  }
   return PdfToolOptions::normalize(p_tool, raw);
 }
 
@@ -75,6 +78,9 @@ PdfViewerConfig::ToolOptions PdfViewerConfig::toolOptionsFromJson(const QString 
   }
   if (PdfToolOptions::hasFontSize(p_tool)) {
     options.m_fontSize = normalized.value(PdfToolOptions::fontSizeKey()).toDouble();
+  }
+  if (PdfToolOptions::hasOpacity(p_tool)) {
+    options.m_opacity = normalized.value(PdfToolOptions::opacityKey()).toDouble();
   }
   return options;
 }

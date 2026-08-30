@@ -31,6 +31,7 @@ const char *const c_keyWidth = "width";
 const char *const c_keyX = "x";
 const char *const c_keyY = "y";
 const char *const c_keyFontSize = "fontSize";
+const char *const c_keyOpacity = "opacity";
 
 // These keys are Qt-only: vxcore never reads comments.json, so they stay OUT of
 // <vxcore/notebook_json_keys.h> and out of test_json_key_drift's gated list.
@@ -114,6 +115,8 @@ bool PdfToolOptions::hasWidth(const QString &p_tool) { return p_tool == inkTool(
 
 bool PdfToolOptions::hasFontSize(const QString &p_tool) { return p_tool == freeTextTool(); }
 
+bool PdfToolOptions::hasOpacity(const QString &p_tool) { return p_tool == inkTool(); }
+
 QJsonObject PdfToolOptions::defaults(const QString &p_tool) {
   QJsonObject obj;
   if (!isValidTool(p_tool)) {
@@ -127,6 +130,9 @@ QJsonObject PdfToolOptions::defaults(const QString &p_tool) {
   }
   if (hasFontSize(p_tool)) {
     obj.insert(fontSizeKey(), defaultFontSize());
+  }
+  if (hasOpacity(p_tool)) {
+    obj.insert(opacityKey(), defaultOpacity());
   }
   return obj;
 }
@@ -168,6 +174,11 @@ QJsonObject PdfToolOptions::normalize(const QString &p_tool, const QJsonObject &
     obj.insert(fontSizeKey(),
                normalizeScalar(p_options.value(fontSizeKey()), defaultFontSize(),
                                PdfFreeTextAnchor::minFontSize(), PdfFreeTextAnchor::maxFontSize()));
+  }
+  if (hasOpacity(p_tool)) {
+    obj.insert(opacityKey(),
+               normalizeScalar(p_options.value(opacityKey()), defaultOpacity(),
+                               PdfInkAnchor::minOpacity(), PdfInkAnchor::maxOpacity()));
   }
 
   return obj;
@@ -245,7 +256,7 @@ bool PdfQuadsAnchor::isValid(const QJsonObject &p_anchor) {
 // ============ PdfInkAnchor ============
 
 QJsonObject PdfInkAnchor::make(int p_page, const QVector<QVector<double>> &p_strokes,
-                               double p_width) {
+                               double p_width, double p_opacity) {
   QJsonArray strokes;
   for (const auto &stroke : p_strokes) {
     QJsonArray points;
@@ -260,6 +271,7 @@ QJsonObject PdfInkAnchor::make(int p_page, const QVector<QVector<double>> &p_str
   anchor.insert(QLatin1String(c_keyPage), p_page);
   anchor.insert(QLatin1String(c_keyStrokes), strokes);
   anchor.insert(QLatin1String(c_keyWidth), qBound(minWidth(), p_width, maxWidth()));
+  anchor.insert(QLatin1String(c_keyOpacity), qBound(minOpacity(), p_opacity, maxOpacity()));
   return anchor;
 }
 
@@ -270,6 +282,12 @@ int PdfInkAnchor::page(const QJsonObject &p_anchor) {
 
 double PdfInkAnchor::width(const QJsonObject &p_anchor) {
   const auto value = p_anchor.value(QLatin1String(c_keyWidth));
+  return value.isDouble() ? value.toDouble() : 1.0;
+}
+
+double PdfInkAnchor::opacity(const QJsonObject &p_anchor) {
+  // Absent means "written before opacity existed": render solid.
+  const auto value = p_anchor.value(QLatin1String(c_keyOpacity));
   return value.isDouble() ? value.toDouble() : 1.0;
 }
 
@@ -288,6 +306,20 @@ bool PdfInkAnchor::isValid(const QJsonObject &p_anchor) {
   const double w = widthValue.toDouble();
   if (w < minWidth() || w > maxWidth()) {
     return false;
+  }
+
+  // Opacity is OPTIONAL (legacy anchors have none), but a PRESENT value must be
+  // a finite double in range -- a malformed one is rejected, never clamped,
+  // because anchors arriving from the page are untrusted.
+  if (p_anchor.contains(QLatin1String(c_keyOpacity))) {
+    const auto opacityValue = p_anchor.value(QLatin1String(c_keyOpacity));
+    if (!isFiniteNumber(opacityValue)) {
+      return false;
+    }
+    const double o = opacityValue.toDouble();
+    if (o < minOpacity() || o > maxOpacity()) {
+      return false;
+    }
   }
 
   const auto strokesValue = p_anchor.value(QLatin1String(c_keyStrokes));

@@ -2,12 +2,18 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QMenu>
 #include <QSignalBlocker>
+#include <QSlider>
 #include <QToolBar>
 #include <QToolButton>
+#include <QWidgetAction>
 
 #include <core/services/commenttypes.h>
+
+#include "propertydefs.h"
 
 using namespace vnotex;
 
@@ -16,22 +22,22 @@ namespace {
 // Size of the colour chip painted into every menu row.
 constexpr int c_swatchSizePx = 16;
 
-struct ScalarChoice {
-  const char *m_label;
-  double m_value;
-};
+// Slider coordinates. Integer sliders, so each row scales its double value.
+//
+// The ink range tops out at 24.0 PDF units, well below PdfInkAnchor::maxWidth()
+// (64): a 64pt pen is unusable, and a hand-edited config can still express one
+// -- syncState clamps such a value for DISPLAY only and never writes it back.
+// The font-size range is likewise narrower than PdfFreeTextAnchor's 4..144.
+constexpr int c_inkWidthSliderMin = 1;
+constexpr int c_inkWidthSliderMax = 240;
+constexpr double c_inkWidthSliderScale = 10.0;
 
-// Ink stroke widths, in PDF units. Inside PdfInkAnchor::min/maxWidth().
-const ScalarChoice c_inkWidths[] = {
-    {QT_TRANSLATE_NOOP("vnotex::PdfAnnotationToolBar", "Thin"), 0.75},
-    {QT_TRANSLATE_NOOP("vnotex::PdfAnnotationToolBar", "Medium"), 1.5},
-    {QT_TRANSLATE_NOOP("vnotex::PdfAnnotationToolBar", "Thick"), 3.0}};
+constexpr int c_fontSizeSliderMin = 6;
+constexpr int c_fontSizeSliderMax = 72;
 
-// Free-text font sizes, in PDF units. Inside PdfFreeTextAnchor::min/maxFontSize().
-const ScalarChoice c_fontSizes[] = {
-    {QT_TRANSLATE_NOOP("vnotex::PdfAnnotationToolBar", "Small"), 9.0},
-    {QT_TRANSLATE_NOOP("vnotex::PdfAnnotationToolBar", "Medium"), 12.0},
-    {QT_TRANSLATE_NOOP("vnotex::PdfAnnotationToolBar", "Large"), 16.0}};
+constexpr int c_opacitySliderMin = 10;
+constexpr int c_opacitySliderMax = 100;
+constexpr double c_opacitySliderScale = 100.0;
 
 } // namespace
 
@@ -134,33 +140,123 @@ void PdfAnnotationToolBar::buildMenu(ToolEntry &p_entry, const QString &p_tool) 
             [this, p_tool, token]() { emit colorPicked(p_tool, token); });
   }
 
-  const ScalarChoice *choices = nullptr;
-  int count = 0;
   if (PdfToolOptions::hasWidth(p_tool)) {
-    choices = c_inkWidths;
-    count = static_cast<int>(sizeof(c_inkWidths) / sizeof(c_inkWidths[0]));
+    p_entry.m_menu->addSeparator();
+    addSliderRow(p_entry, tr("Thickness"), c_inkWidthSliderMin, c_inkWidthSliderMax,
+                 p_entry.m_scalarAction, p_entry.m_scalarRow, p_entry.m_scalarSlider,
+                 p_entry.m_scalarValue);
+    p_entry.m_scalarSlider->setValue(sliderFromScalar(p_tool, PdfToolOptions::defaultWidth()));
   } else if (PdfToolOptions::hasFontSize(p_tool)) {
-    choices = c_fontSizes;
-    count = static_cast<int>(sizeof(c_fontSizes) / sizeof(c_fontSizes[0]));
+    p_entry.m_menu->addSeparator();
+    addSliderRow(p_entry, tr("Font size"), c_fontSizeSliderMin, c_fontSizeSliderMax,
+                 p_entry.m_scalarAction, p_entry.m_scalarRow, p_entry.m_scalarSlider,
+                 p_entry.m_scalarValue);
+    p_entry.m_scalarSlider->setValue(sliderFromScalar(p_tool, PdfToolOptions::defaultFontSize()));
   }
 
-  if (count > 0) {
-    p_entry.m_menu->addSeparator();
-    // A SECOND, independently exclusive group: picking a width must not clear
-    // the colour tick.
-    p_entry.m_scalarGroup = new QActionGroup(p_entry.m_menu);
-    p_entry.m_scalarGroup->setExclusive(true);
-    for (int i = 0; i < count; ++i) {
-      const double value = choices[i].m_value;
-      auto *act = p_entry.m_menu->addAction(tr(choices[i].m_label));
-      act->setCheckable(true);
-      act->setData(value);
-      p_entry.m_scalarGroup->addAction(act);
-      p_entry.m_scalarActions.append(act);
-      connect(act, &QAction::triggered, this,
-              [this, p_tool, value]() { emit scalarPicked(p_tool, value); });
-    }
+  if (p_entry.m_scalarSlider) {
+    // Committed on valueChanged, NOT sliderReleased: the draft stroke has to
+    // preview live, and keyboard/arrow adjustment emits nothing else.
+    // ConfigMgr2 debounces the write by 500 ms, so this is not write-amplifying.
+    connect(p_entry.m_scalarSlider, &QSlider::valueChanged, this, [this, p_tool](int p_value) {
+      emit scalarPicked(p_tool, scalarFromSlider(p_tool, p_value));
+    });
   }
+
+  if (PdfToolOptions::hasOpacity(p_tool)) {
+    addSliderRow(p_entry, tr("Opacity"), c_opacitySliderMin, c_opacitySliderMax,
+                 p_entry.m_opacityAction, p_entry.m_opacityRow, p_entry.m_opacitySlider,
+                 p_entry.m_opacityValue);
+    p_entry.m_opacitySlider->setValue(sliderFromOpacity(PdfToolOptions::defaultOpacity()));
+    connect(p_entry.m_opacitySlider, &QSlider::valueChanged, this, [this, p_tool](int p_value) {
+      emit opacityPicked(p_tool, opacityFromSlider(p_value));
+    });
+  }
+
+  // The labels have to show something before the first syncState(), or a menu
+  // opened on a fresh window reads as broken.
+  updateSliderLabels(p_entry, p_tool);
+}
+
+void PdfAnnotationToolBar::addSliderRow(ToolEntry &p_entry, const QString &p_caption, int p_min,
+                                        int p_max, QWidgetAction *&p_action, QWidget *&p_row,
+                                        QSlider *&p_slider, QLabel *&p_value) {
+  // The QWidgetAction is parented to the menu and takes ownership of the row
+  // widget; everything below is a non-owning pointer.
+  p_action = new QWidgetAction(p_entry.m_menu);
+
+  auto *row = new QWidget();
+  auto *layout = new QHBoxLayout(row);
+  layout->setContentsMargins(12, 4, 12, 4);
+  layout->setSpacing(8);
+
+  auto *caption = new QLabel(p_caption, row);
+  layout->addWidget(caption);
+
+  auto *slider = new QSlider(Qt::Horizontal, row);
+  slider->setRange(p_min, p_max);
+  slider->setMinimumWidth(120);
+  layout->addWidget(slider, 1);
+
+  auto *value = new QLabel(row);
+  // Secondary text, via the themed property. Never setEnabled(false), and never
+  // a colour literal -- see src/widgets/AGENTS.md § No Hardcoded Colors in C++.
+  // Set plainly rather than through WidgetUtils::setPropertyDynamically: the row
+  // has not been polished yet, so there is nothing to repolish, and this keeps
+  // the component free of a gui/ dependency.
+  value->setProperty(PropertyDefs::c_mutedText, true);
+  value->setMinimumWidth(36);
+  value->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+  layout->addWidget(value);
+
+  p_action->setDefaultWidget(row);
+  p_entry.m_menu->addAction(p_action);
+
+  p_row = row;
+  p_slider = slider;
+  p_value = value;
+}
+
+void PdfAnnotationToolBar::updateSliderLabels(ToolEntry &p_entry, const QString &p_tool) {
+  if (p_entry.m_scalarValue && p_entry.m_scalarSlider) {
+    const double scalar = scalarFromSlider(p_tool, p_entry.m_scalarSlider->value());
+    p_entry.m_scalarValue->setText(PdfToolOptions::hasFontSize(p_tool)
+                                       ? QString::number(static_cast<int>(scalar))
+                                       : QString::number(scalar, 'f', 1));
+  }
+  if (p_entry.m_opacityValue && p_entry.m_opacitySlider) {
+    p_entry.m_opacityValue->setText(QStringLiteral("%1%").arg(p_entry.m_opacitySlider->value()));
+  }
+}
+
+double PdfAnnotationToolBar::scalarFromSlider(const QString &p_tool, int p_sliderValue) {
+  if (PdfToolOptions::hasWidth(p_tool)) {
+    return p_sliderValue / c_inkWidthSliderScale;
+  }
+  if (PdfToolOptions::hasFontSize(p_tool)) {
+    return static_cast<double>(p_sliderValue);
+  }
+  return 0.0;
+}
+
+int PdfAnnotationToolBar::sliderFromScalar(const QString &p_tool, double p_value) {
+  if (PdfToolOptions::hasWidth(p_tool)) {
+    return qBound(c_inkWidthSliderMin, static_cast<int>(qRound(p_value * c_inkWidthSliderScale)),
+                  c_inkWidthSliderMax);
+  }
+  if (PdfToolOptions::hasFontSize(p_tool)) {
+    return qBound(c_fontSizeSliderMin, static_cast<int>(qRound(p_value)), c_fontSizeSliderMax);
+  }
+  return 0;
+}
+
+double PdfAnnotationToolBar::opacityFromSlider(int p_sliderValue) {
+  return p_sliderValue / c_opacitySliderScale;
+}
+
+int PdfAnnotationToolBar::sliderFromOpacity(double p_value) {
+  return qBound(c_opacitySliderMin, static_cast<int>(qRound(p_value * c_opacitySliderScale)),
+                c_opacitySliderMax);
 }
 
 QIcon PdfAnnotationToolBar::swatchIcon(const QString &p_token) const {
@@ -201,8 +297,25 @@ void PdfAnnotationToolBar::setAuthoringEnabled(bool p_enabled) {
     for (auto *act : const_cast<const QList<QAction *> &>(it->m_colorActions)) {
       act->setEnabled(p_enabled);
     }
-    for (auto *act : const_cast<const QList<QAction *> &>(it->m_scalarActions)) {
-      act->setEnabled(p_enabled);
+    // The QWidgetAction AND its widget: an enabled child widget inside a
+    // disabled action is still interactive in some styles.
+    if (it->m_scalarAction) {
+      it->m_scalarAction->setEnabled(p_enabled);
+    }
+    if (it->m_scalarRow) {
+      it->m_scalarRow->setEnabled(p_enabled);
+    }
+    if (it->m_scalarSlider) {
+      it->m_scalarSlider->setEnabled(p_enabled);
+    }
+    if (it->m_opacityAction) {
+      it->m_opacityAction->setEnabled(p_enabled);
+    }
+    if (it->m_opacityRow) {
+      it->m_opacityRow->setEnabled(p_enabled);
+    }
+    if (it->m_opacitySlider) {
+      it->m_opacitySlider->setEnabled(p_enabled);
     }
   }
 }
@@ -229,9 +342,23 @@ void PdfAnnotationToolBar::syncState(
     const double scalar = PdfToolOptions::hasWidth(tool)      ? options.m_width
                           : PdfToolOptions::hasFontSize(tool) ? options.m_fontSize
                                                               : 0.0;
-    for (auto *act : const_cast<const QList<QAction *> &>(it->m_scalarActions)) {
-      act->setChecked(qFuzzyCompare(act->data().toDouble(), scalar));
+    if (it->m_scalarSlider) {
+      // MUST be blocked, which is the OPPOSITE of the QAction::setChecked case
+      // above: QSlider::setValue DOES emit valueChanged, and that signal is the
+      // very thing wired up as a user pick, so an unblocked repaint would echo
+      // straight back out and persist. Do not "harmonise" the two rules.
+      //
+      // The slider range is deliberately narrower than the schema range, so a
+      // hand-edited config value is clamped for DISPLAY only -- nothing is
+      // written back.
+      const QSignalBlocker blocker(it->m_scalarSlider);
+      it->m_scalarSlider->setValue(sliderFromScalar(tool, scalar));
     }
+    if (it->m_opacitySlider) {
+      const QSignalBlocker blocker(it->m_opacitySlider);
+      it->m_opacitySlider->setValue(sliderFromOpacity(options.m_opacity));
+    }
+    updateSliderLabels(*it, tool);
   }
 }
 
@@ -245,6 +372,22 @@ QToolButton *PdfAnnotationToolBar::toolButton(const QString &p_tool) const {
 
 QMenu *PdfAnnotationToolBar::toolMenu(const QString &p_tool) const {
   return m_tools.value(p_tool).m_menu;
+}
+
+QSlider *PdfAnnotationToolBar::scalarSlider(const QString &p_tool) const {
+  return m_tools.value(p_tool).m_scalarSlider;
+}
+
+QWidgetAction *PdfAnnotationToolBar::scalarAction(const QString &p_tool) const {
+  return m_tools.value(p_tool).m_scalarAction;
+}
+
+QSlider *PdfAnnotationToolBar::opacitySlider(const QString &p_tool) const {
+  return m_tools.value(p_tool).m_opacitySlider;
+}
+
+QWidgetAction *PdfAnnotationToolBar::opacityAction(const QString &p_tool) const {
+  return m_tools.value(p_tool).m_opacityAction;
 }
 
 QList<QAction *> PdfAnnotationToolBar::toolActions() const {

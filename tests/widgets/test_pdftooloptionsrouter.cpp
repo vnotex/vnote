@@ -57,6 +57,8 @@ private slots:
 
   void theRouterNormalizesExactlyLikeTheConfig();
 
+  void opacityIsCarriedByHydrationAndByApplyOpacity();
+
 private:
   VxCoreContextHandle m_context = nullptr;
   ConfigCoreService *m_configService = nullptr;
@@ -249,6 +251,56 @@ void TestPdfToolOptionsRouter::theRouterNormalizesExactlyLikeTheConfig() {
   QCOMPARE(PdfToolOptionsRouter::applyColor(pdfConfig, &adapter, QStringLiteral("bogus"),
                                             QStringLiteral("blue")),
            QString());
+}
+
+// Ink opacity rides the same route as the width. It is INK ONLY: an opacity
+// on highlight or free text would be a schema key nothing reads.
+void TestPdfToolOptionsRouter::opacityIsCarriedByHydrationAndByApplyOpacity() {
+  MainConfig config(m_configMgr);
+  auto &pdfConfig = config.getEditorConfig().getPdfViewerConfig();
+
+  PdfViewerConfig::ToolOptions ink;
+  ink.m_opacity = 0.35;
+  pdfConfig.setToolOptions(PdfToolOptions::inkTool(), ink);
+
+  PdfViewerAdapter adapter;
+  PdfToolOptionsRouter::hydrate(pdfConfig, &adapter);
+  QCOMPARE(adapter.getToolOptions(PdfToolOptions::inkTool())
+               .value(PdfToolOptions::opacityKey())
+               .toDouble(),
+           0.35);
+  // The key is absent for the tools that do not carry it.
+  QVERIFY(!adapter.getToolOptions(PdfToolOptions::highlightTool())
+               .contains(PdfToolOptions::opacityKey()));
+  QVERIFY(!adapter.getToolOptions(PdfToolOptions::freeTextTool())
+               .contains(PdfToolOptions::opacityKey()));
+
+  adapter.setReady(true);
+
+  // applyOpacity returns the STORED value, so an out-of-range pick reports what
+  // was actually kept rather than what was asked for.
+  QCOMPARE(PdfToolOptionsRouter::applyOpacity(pdfConfig, &adapter, PdfToolOptions::inkTool(), 0.5),
+           0.5);
+  QCOMPARE(pdfConfig.getToolOptions(PdfToolOptions::inkTool()).m_opacity, 0.5);
+  QCOMPARE(adapter.getToolOptions(PdfViewerAdapter::Tool::Ink)
+               .value(PdfToolOptions::opacityKey())
+               .toDouble(),
+           0.5);
+
+  QCOMPARE(PdfToolOptionsRouter::applyOpacity(pdfConfig, &adapter, PdfToolOptions::inkTool(), 9.0),
+           PdfInkAnchor::maxOpacity());
+  QCOMPARE(PdfToolOptionsRouter::applyOpacity(pdfConfig, &adapter, PdfToolOptions::inkTool(), 0.0),
+           PdfInkAnchor::minOpacity());
+
+  // No-op for every tool that carries no opacity, and for an unknown one.
+  QCOMPARE(
+      PdfToolOptionsRouter::applyOpacity(pdfConfig, &adapter, PdfToolOptions::highlightTool(), 0.5),
+      0.0);
+  QCOMPARE(
+      PdfToolOptionsRouter::applyOpacity(pdfConfig, &adapter, PdfToolOptions::freeTextTool(), 0.5),
+      0.0);
+  QCOMPARE(PdfToolOptionsRouter::applyOpacity(pdfConfig, &adapter, QStringLiteral("bogus"), 0.5),
+           0.0);
 }
 
 } // namespace tests

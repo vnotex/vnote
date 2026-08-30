@@ -63,6 +63,20 @@ double PdfToolOptionsRouter::applyScalar(PdfViewerConfig &p_config, PdfViewerAda
   return PdfToolOptions::hasWidth(p_tool) ? stored.m_width : stored.m_fontSize;
 }
 
+double PdfToolOptionsRouter::applyOpacity(PdfViewerConfig &p_config, PdfViewerAdapter *p_adapter,
+                                          const QString &p_tool, double p_value) {
+  if (!PdfToolOptions::hasOpacity(p_tool)) {
+    return 0.0;
+  }
+
+  auto options = p_config.getToolOptions(p_tool);
+  options.m_opacity = p_value;
+  p_config.setToolOptions(p_tool, options);
+  push(p_config, p_adapter, p_tool);
+
+  return p_config.getToolOptions(p_tool).m_opacity;
+}
+
 void PdfToolOptionsRouter::captureHighlight(PdfViewerConfig &p_config, PdfViewerAdapter *p_adapter,
                                             const QString &p_token) {
   const auto stored = applyColor(p_config, p_adapter, PdfToolOptions::highlightTool(), p_token);

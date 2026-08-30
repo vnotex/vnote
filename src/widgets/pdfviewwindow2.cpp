@@ -142,6 +142,8 @@ void PdfViewWindow2::setupAnnotationToolBarActions(QToolBar *p_toolBar) {
           &PdfViewWindow2::setToolColor);
   connect(m_annotationToolBar, &PdfAnnotationToolBar::scalarPicked, this,
           &PdfViewWindow2::setToolScalar);
+  connect(m_annotationToolBar, &PdfAnnotationToolBar::opacityPicked, this,
+          &PdfViewWindow2::setToolOpacity);
 
   applySwatchResolvers();
 }
@@ -188,6 +190,16 @@ void PdfViewWindow2::setToolColor(const QString &p_tool, const QString &p_token)
 
 void PdfViewWindow2::setToolScalar(const QString &p_tool, double p_value) {
   applyToolOptions(p_tool, /*p_isColor=*/false, QString(), p_value);
+}
+
+void PdfViewWindow2::setToolOpacity(const QString &p_tool, double p_value) {
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  auto &config = configMgr->getEditorConfig().getPdfViewerConfig();
+  PdfToolOptionsRouter::applyOpacity(config, adapter(), p_tool, p_value);
+  syncToolBarState();
 }
 
 void PdfViewWindow2::hydrateToolOptions() {

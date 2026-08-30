@@ -15,6 +15,7 @@ const VX_MAX_ANCHOR_TEXT = 4096;
 // bridge and must not trust these.
 const VX_MAX_INK_POINTS = 4096;
 const VX_INK_WIDTH = 1.5;
+const VX_INK_OPACITY = 1;
 const VX_FREETEXT_FONT_SIZE = 12.0;
 
 // Below this the drag was a click, not a stroke; committing it would litter the
@@ -49,11 +50,12 @@ class PdfViewerCore extends VXCore {
         this.selectedCommentId = null;
         this.commentApp = null;
         // Per-tool authoring options, keyed by the SAME tool names C++ uses.
-        // Each tool owns its own colour; `width` belongs to ink and `fontSize`
-        // to freetext. VX_INK_WIDTH / VX_FREETEXT_FONT_SIZE are DEFAULTS only.
+        // Each tool owns its own colour; `width` and `opacity` belong to ink and
+        // `fontSize` to freetext. VX_INK_WIDTH / VX_INK_OPACITY /
+        // VX_FREETEXT_FONT_SIZE are DEFAULTS only.
         this.toolOptions = {
             highlight: { color: 'yellow' },
-            ink: { color: 'yellow', width: VX_INK_WIDTH },
+            ink: { color: 'yellow', width: VX_INK_WIDTH, opacity: VX_INK_OPACITY },
             freetext: { color: 'yellow', fontSize: VX_FREETEXT_FONT_SIZE }
         };
         // 'none' | 'highlight' | 'ink' | 'freetext'. A MODE, mirroring pdf.js's
@@ -524,7 +526,8 @@ class PdfViewerCore extends VXCore {
             type: 'pdf-ink',
             page: draft.pageNumber,
             strokes: [draft.points],
-            width: typeof inkOptions.width === 'number' ? inkOptions.width : VX_INK_WIDTH
+            width: typeof inkOptions.width === 'number' ? inkOptions.width : VX_INK_WIDTH,
+            opacity: typeof inkOptions.opacity === 'number' ? inkOptions.opacity : VX_INK_OPACITY
         }, inkOptions.color);
         return true;
     }
@@ -589,9 +592,12 @@ class PdfViewerCore extends VXCore {
         }
         var inkOptions = this.optionsFor('ink');
         var inkWidth = typeof inkOptions.width === 'number' ? inkOptions.width : VX_INK_WIDTH;
+        var inkOpacity = typeof inkOptions.opacity === 'number' ? inkOptions.opacity : VX_INK_OPACITY;
         line.setAttribute('points',
                           PdfViewerCore.inkStrokeToPolylinePoints(draft.points, view.viewport));
         line.setAttribute('stroke-width', String(inkWidth * (view.viewport.scale || 1)));
+        // Opacity is scale-independent: it is NOT multiplied by viewport.scale.
+        line.setAttribute('stroke-opacity', String(inkOpacity));
         line.setAttribute('data-vx-color', inkOptions.color);
     }
 
@@ -683,6 +689,9 @@ class PdfViewerCore extends VXCore {
         }
         if (typeof p_options.fontSize === 'number' && isFinite(p_options.fontSize)) {
             current.fontSize = p_options.fontSize;
+        }
+        if (typeof p_options.opacity === 'number' && isFinite(p_options.opacity)) {
+            current.opacity = p_options.opacity;
         }
     }
 
@@ -938,6 +947,10 @@ class PdfViewerCore extends VXCore {
         // Stroke width is stored in PDF units and must scale with the viewport,
         // or a zoomed-in scribble would stay hairline.
         var width = (p_comment.anchor.width || 1) * (p_viewport.scale || 1);
+        // Absent means the comment predates the opacity field: render it solid.
+        // Scale-independent, so unlike the width it is NOT multiplied.
+        var opacity = typeof p_comment.anchor.opacity === 'number'
+            ? p_comment.anchor.opacity : 1;
 
         var self = this;
         for (var s = 0; s < strokes.length; ++s) {
@@ -949,6 +962,7 @@ class PdfViewerCore extends VXCore {
             line.setAttribute('points', points);
             line.setAttribute('fill', 'none');
             line.setAttribute('stroke-width', String(width));
+            line.setAttribute('stroke-opacity', String(opacity));
             line.setAttribute('stroke-linecap', 'round');
             line.setAttribute('stroke-linejoin', 'round');
             line.setAttribute('data-vx-color', p_comment.color || 'yellow');

@@ -59,6 +59,8 @@ private slots:
   void everyColorTokenHasACapitalizedDisplayName();
   void inkAnchorValidation_data();
   void inkAnchorValidation();
+
+  void inkOpacityDefaultsToSolidAndIsNormalizedInkOnly();
   void freeTextAnchorValidation_data();
   void freeTextAnchorValidation();
   void anchorDispatchCoversEveryKnownType();
@@ -414,6 +416,32 @@ void TestCommentService::inkAnchorValidation_data() {
   QJsonObject wrongType = inkAnchor(0, one, 1.5);
   wrongType.insert(QStringLiteral("type"), PdfQuadsAnchor::type());
   QTest::newRow("wrong type") << wrongType << false;
+
+  // Opacity is OPTIONAL: an anchor written before the field existed must stay
+  // valid, or every legacy scribble would vanish from the page.
+  QTest::newRow("legacy anchor without opacity") << inkAnchor(0, one, 1.5) << true;
+
+  QJsonObject withOpacity = inkAnchor(0, one, 1.5);
+  withOpacity.insert(QStringLiteral("opacity"), 0.35);
+  QTest::newRow("in-range opacity") << withOpacity << true;
+
+  // A PRESENT but malformed opacity is REJECTED, not clamped: anchors arriving
+  // from the page are untrusted (the adapter copies them verbatim).
+  QJsonObject hugeOpacity = inkAnchor(0, one, 1.5);
+  hugeOpacity.insert(QStringLiteral("opacity"), 1.0e9);
+  QTest::newRow("opacity above the range") << hugeOpacity << false;
+
+  QJsonObject zeroOpacity = inkAnchor(0, one, 1.5);
+  zeroOpacity.insert(QStringLiteral("opacity"), 0.0);
+  QTest::newRow("opacity below the range") << zeroOpacity << false;
+
+  QJsonObject nanOpacity = inkAnchor(0, one, 1.5);
+  nanOpacity.insert(QStringLiteral("opacity"), std::numeric_limits<double>::quiet_NaN());
+  QTest::newRow("non-finite opacity") << nanOpacity << false;
+
+  QJsonObject stringOpacity = inkAnchor(0, one, 1.5);
+  stringOpacity.insert(QStringLiteral("opacity"), QStringLiteral("0.5"));
+  QTest::newRow("string opacity") << stringOpacity << false;
 }
 
 void TestCommentService::inkAnchorValidation() {
@@ -425,6 +453,74 @@ void TestCommentService::inkAnchorValidation() {
   // whose type is pdf-quads and which must be rejected by the quads validator
   // it dispatches to -- so in both cases the expected result is `valid`.
   QCOMPARE(isAnchorStructurallyValid(anchor), valid);
+}
+
+void TestCommentService::inkOpacityDefaultsToSolidAndIsNormalizedInkOnly() {
+  // A legacy anchor with no opacity key reads as fully opaque, so an old
+  // scribble keeps rendering exactly as it always did.
+  QJsonArray strokes;
+  strokes.append(flatStroke(3));
+  QCOMPARE(PdfInkAnchor::opacity(inkAnchor(0, strokes, 1.5)), 1.0);
+
+  // make() clamps, like the width.
+  const auto anchor = PdfInkAnchor::make(0, {{0.0, 0.0, 1.0, 1.0}}, 1.5, 0.35);
+  QCOMPARE(PdfInkAnchor::opacity(anchor), 0.35);
+  QVERIFY(PdfInkAnchor::isValid(anchor));
+  QCOMPARE(PdfInkAnchor::opacity(PdfInkAnchor::make(0, {{0.0, 0.0, 1.0, 1.0}}, 1.5, 9.0)),
+           PdfInkAnchor::maxOpacity());
+  QCOMPARE(PdfInkAnchor::opacity(PdfInkAnchor::make(0, {{0.0, 0.0, 1.0, 1.0}}, 1.5, -1.0)),
+           PdfInkAnchor::minOpacity());
+  // The default keeps every existing call site emitting a solid stroke.
+  QCOMPARE(PdfInkAnchor::opacity(PdfInkAnchor::make(0, {{0.0, 0.0, 1.0, 1.0}}, 1.5)), 1.0);
+
+  // Tool options: ink carries opacity, nothing else does.
+  QVERIFY(PdfToolOptions::hasOpacity(PdfToolOptions::inkTool()));
+  QVERIFY(!PdfToolOptions::hasOpacity(PdfToolOptions::highlightTool()));
+  QVERIFY(!PdfToolOptions::hasOpacity(PdfToolOptions::freeTextTool()));
+
+  const auto inkDefaults = PdfToolOptions::defaults(PdfToolOptions::inkTool());
+  QCOMPARE(inkDefaults.value(PdfToolOptions::opacityKey()).toDouble(),
+           PdfToolOptions::defaultOpacity());
+  QVERIFY(!PdfToolOptions::defaults(PdfToolOptions::highlightTool())
+               .contains(PdfToolOptions::opacityKey()));
+  QVERIFY(!PdfToolOptions::defaults(PdfToolOptions::freeTextTool())
+               .contains(PdfToolOptions::opacityKey()));
+
+  // Same split as the width: non-finite -> default (a NaN carries no intent),
+  // finite but out of range -> clamped. The EXACT value is asserted, because
+  // "the result validates" passes for both.
+  const auto normalizedOf = [](double p_value) {
+    QJsonObject raw;
+    raw.insert(PdfToolOptions::opacityKey(), p_value);
+    return PdfToolOptions::normalize(PdfToolOptions::inkTool(), raw)
+        .value(PdfToolOptions::opacityKey())
+        .toDouble();
+  };
+  QCOMPARE(normalizedOf(0.35), 0.35);
+  QCOMPARE(normalizedOf(1.0e9), PdfInkAnchor::maxOpacity());
+  QCOMPARE(normalizedOf(-5.0), PdfInkAnchor::minOpacity());
+  QCOMPARE(normalizedOf(std::numeric_limits<double>::quiet_NaN()),
+           PdfToolOptions::defaultOpacity());
+
+  QJsonObject wrongType;
+  wrongType.insert(PdfToolOptions::opacityKey(), QStringLiteral("0.5"));
+  QCOMPARE(PdfToolOptions::normalize(PdfToolOptions::inkTool(), wrongType)
+               .value(PdfToolOptions::opacityKey())
+               .toDouble(),
+           PdfToolOptions::defaultOpacity());
+
+  // The key is never emitted for a tool that does not carry it.
+  QVERIFY(!PdfToolOptions::normalize(PdfToolOptions::freeTextTool(), wrongType)
+               .contains(PdfToolOptions::opacityKey()));
+
+  // A stored comment survives the document round trip with the EXACT value --
+  // "it still validates" would pass for a silently defaulted 1.0 too.
+  CommentSet set;
+  set.m_comments.append(Comment::create(PdfInkAnchor::make(1, {{0.0, 0.0, 1.0, 1.0}}, 1.5, 0.35),
+                                        QString(), CommentColor::defaultToken()));
+  const auto reloaded = CommentSet::fromJson(set.toJson());
+  QCOMPARE(reloaded.m_comments.size(), 1);
+  QCOMPARE(PdfInkAnchor::opacity(reloaded.m_comments.at(0).m_anchor), 0.35);
 }
 
 void TestCommentService::freeTextAnchorValidation_data() {

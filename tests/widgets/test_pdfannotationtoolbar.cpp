@@ -8,10 +8,13 @@
 #include <QtTest>
 
 #include <QAction>
+#include <QLabel>
 #include <QMenu>
 #include <QSignalSpy>
+#include <QSlider>
 #include <QToolBar>
 #include <QToolButton>
+#include <QWidgetAction>
 
 #include <core/pdfviewerconfig.h>
 #include <core/services/commenttypes.h>
@@ -65,11 +68,13 @@ private slots:
 
   void theToolGroupIsNonExclusiveSoTheArmedToolCanBeDisarmed();
 
-  void eachMenuOffersEveryColourAndTheRightScalars();
+  void eachMenuOffersEveryColourAndTheRightSliders();
 
-  void colourAndScalarGroupsAreIndependentlyExclusive();
+  void thePickerGroupsAreIndependent();
 
-  void syncStateMovesTheTicks();
+  void syncStateMovesTheTicksAndTheSlidersWithoutEchoing();
+
+  void anOutOfSliderRangeStoredValueIsClampedForDisplayOnly();
 
   void disablingAuthoringDisablesTheMenusToo();
 
@@ -136,13 +141,14 @@ void TestPdfAnnotationToolBar::theToolGroupIsNonExclusiveSoTheArmedToolCanBeDisa
   QCOMPARE(toggles.last().at(1).toBool(), false);
 }
 
-void TestPdfAnnotationToolBar::eachMenuOffersEveryColourAndTheRightScalars() {
+void TestPdfAnnotationToolBar::eachMenuOffersEveryColourAndTheRightSliders() {
   QToolBar toolBar;
   PdfAnnotationToolBar bar;
   bar.install(&toolBar);
 
   QSignalSpy colors(&bar, &PdfAnnotationToolBar::colorPicked);
   QSignalSpy scalars(&bar, &PdfAnnotationToolBar::scalarPicked);
+  QSignalSpy opacities(&bar, &PdfAnnotationToolBar::opacityPicked);
 
   for (const auto &tool : PdfViewerConfig::toolNames()) {
     auto *menu = bar.toolMenu(tool);
@@ -156,9 +162,20 @@ void TestPdfAnnotationToolBar::eachMenuOffersEveryColourAndTheRightScalars() {
       QVERIFY(act->isCheckable());
     }
 
-    const int expectedScalars =
-        (PdfToolOptions::hasWidth(tool) || PdfToolOptions::hasFontSize(tool)) ? 3 : 0;
-    QCOMPARE(checkableMenuActions(menu).size(), CommentColor::all().size() + expectedScalars);
+    // Colour is the ONLY checkable row now: the scalar presets became sliders.
+    QCOMPARE(checkableMenuActions(menu).size(), CommentColor::all().size());
+
+    // And exactly the slider rows the tool is supposed to carry, no more.
+    int sliderRows = 0;
+    for (auto *act : menu->actions()) {
+      if (auto *widgetAct = qobject_cast<QWidgetAction *>(act)) {
+        sliderRows += widgetAct->defaultWidget()->findChildren<QSlider *>().size();
+      }
+    }
+    const int expected = tool == PdfToolOptions::inkTool()        ? 2
+                         : tool == PdfToolOptions::freeTextTool() ? 1
+                                                                  : 0;
+    QCOMPARE(sliderRows, expected);
   }
 
   // Picking carries the tool AND the raw token.
@@ -167,52 +184,67 @@ void TestPdfAnnotationToolBar::eachMenuOffersEveryColourAndTheRightScalars() {
   QCOMPARE(colors.last().at(0).toString(), PdfToolOptions::inkTool());
   QCOMPARE(colors.last().at(1).toString(), QStringLiteral("blue"));
 
-  // Ink offers widths inside PdfInkAnchor's bounds; free text offers sizes
-  // inside PdfFreeTextAnchor's.
-  auto *thick = menuActionWithData(bar.toolMenu(PdfToolOptions::inkTool()), 3.0);
-  QVERIFY(thick);
-  thick->trigger();
+  // Draw carries Thickness AND Opacity; Text box only Font size; Highlight
+  // neither.
+  auto *thickness = bar.scalarSlider(PdfToolOptions::inkTool());
+  QVERIFY(thickness);
+  QCOMPARE(thickness->minimum(), 1);
+  QCOMPARE(thickness->maximum(), 240);
+
+  auto *opacity = bar.opacitySlider(PdfToolOptions::inkTool());
+  QVERIFY(opacity);
+  QCOMPARE(opacity->minimum(), 10);
+  QCOMPARE(opacity->maximum(), 100);
+
+  auto *fontSize = bar.scalarSlider(PdfToolOptions::freeTextTool());
+  QVERIFY(fontSize);
+  QCOMPARE(fontSize->minimum(), 6);
+  QCOMPARE(fontSize->maximum(), 72);
+  // Opacity is Draw-only: a Text box or Highlight opacity slider would be a
+  // feature nobody asked for and a schema key nothing reads.
+  QVERIFY(!bar.opacitySlider(PdfToolOptions::freeTextTool()));
+  QVERIFY(!bar.opacitySlider(PdfToolOptions::highlightTool()));
+  QVERIFY(!bar.scalarSlider(PdfToolOptions::highlightTool()));
+
+  // Each row is a QWidgetAction, NOT a plain action: a plain one would close the
+  // menu on the first click and make the slider undraggable.
+  QVERIFY(bar.scalarAction(PdfToolOptions::inkTool()));
+  QVERIFY(bar.opacityAction(PdfToolOptions::inkTool()));
+  QVERIFY(bar.scalarAction(PdfToolOptions::inkTool())->defaultWidget());
+
+  // Moving a slider emits ONCE, with the mapped double.
+  thickness->setValue(30);
   QCOMPARE(scalars.count(), 1);
   QCOMPARE(scalars.last().at(0).toString(), PdfToolOptions::inkTool());
   QCOMPARE(scalars.last().at(1).toDouble(), 3.0);
 
-  auto *large = menuActionWithData(bar.toolMenu(PdfToolOptions::freeTextTool()), 16.0);
-  QVERIFY(large);
-  large->trigger();
+  fontSize->setValue(16);
   QCOMPARE(scalars.count(), 2);
   QCOMPARE(scalars.last().at(0).toString(), PdfToolOptions::freeTextTool());
   QCOMPARE(scalars.last().at(1).toDouble(), 16.0);
 
-  // The EXACT menus, in order. Asserting only "three entries, all in bounds"
-  // would pass for Thin/Medium/Thick 1/2/3, which is not what was specified.
-  const auto scalarsOf = [&bar](const QString &p_tool) {
-    QList<double> values;
-    for (auto *act : bar.toolMenu(p_tool)->actions()) {
-      if (act->isCheckable() && act->data().typeId() == QMetaType::Double) {
-        values.append(act->data().toDouble());
-      }
-    }
-    return values;
-  };
-  QCOMPARE(scalarsOf(PdfToolOptions::inkTool()), (QList<double>{0.75, 1.5, 3.0}));
-  QCOMPARE(scalarsOf(PdfToolOptions::freeTextTool()), (QList<double>{9.0, 12.0, 16.0}));
+  opacity->setValue(35);
+  QCOMPARE(opacities.count(), 1);
+  QCOMPARE(opacities.last().at(0).toString(), PdfToolOptions::inkTool());
+  QCOMPARE(opacities.last().at(1).toDouble(), 0.35);
 
-  // And each stays inside the anchor validators' bounds, so a menu pick can
-  // never produce an anchor those validators would reject.
-  for (double value : scalarsOf(PdfToolOptions::inkTool())) {
-    QVERIFY(value >= PdfInkAnchor::minWidth() && value <= PdfInkAnchor::maxWidth());
+  // Every reachable slider position stays inside the anchor validators' bounds,
+  // so a slider pick can never produce an anchor those validators would reject.
+  for (int v : {thickness->minimum(), thickness->maximum()}) {
+    const double width = PdfAnnotationToolBar::scalarFromSlider(PdfToolOptions::inkTool(), v);
+    QVERIFY(width >= PdfInkAnchor::minWidth() && width <= PdfInkAnchor::maxWidth());
   }
-  for (double value : scalarsOf(PdfToolOptions::freeTextTool())) {
-    QVERIFY(value >= PdfFreeTextAnchor::minFontSize() && value <= PdfFreeTextAnchor::maxFontSize());
+  for (int v : {fontSize->minimum(), fontSize->maximum()}) {
+    const double size = PdfAnnotationToolBar::scalarFromSlider(PdfToolOptions::freeTextTool(), v);
+    QVERIFY(size >= PdfFreeTextAnchor::minFontSize() && size <= PdfFreeTextAnchor::maxFontSize());
   }
-
-  // The default width/font size must be OFFERABLE, or a fresh config shows no
-  // tick at all.
-  QVERIFY(scalarsOf(PdfToolOptions::inkTool()).contains(PdfToolOptions::defaultWidth()));
-  QVERIFY(scalarsOf(PdfToolOptions::freeTextTool()).contains(PdfToolOptions::defaultFontSize()));
+  for (int v : {opacity->minimum(), opacity->maximum()}) {
+    const double o = PdfAnnotationToolBar::opacityFromSlider(v);
+    QVERIFY(o >= PdfInkAnchor::minOpacity() && o <= PdfInkAnchor::maxOpacity());
+  }
 }
 
-void TestPdfAnnotationToolBar::colourAndScalarGroupsAreIndependentlyExclusive() {
+void TestPdfAnnotationToolBar::thePickerGroupsAreIndependent() {
   QToolBar toolBar;
   PdfAnnotationToolBar bar;
   bar.install(&toolBar);
@@ -221,43 +253,48 @@ void TestPdfAnnotationToolBar::colourAndScalarGroupsAreIndependentlyExclusive() 
   PdfViewerConfig::ToolOptions ink;
   ink.m_color = QStringLiteral("green");
   ink.m_width = 3.0;
+  ink.m_opacity = 0.5;
   options.insert(PdfToolOptions::inkTool(), ink);
   bar.syncState(PdfToolOptions::inkTool(), options);
 
   auto *menu = bar.toolMenu(PdfToolOptions::inkTool());
   QVERIFY(menuActionWithData(menu, QStringLiteral("green"))->isChecked());
-  QVERIFY(menuActionWithData(menu, 3.0)->isChecked());
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::inkTool())->value(), 30);
+  QCOMPARE(bar.opacitySlider(PdfToolOptions::inkTool())->value(), 50);
 
-  // Picking a WIDTH must not clear the colour tick, and vice versa. Checking is
-  // what QActionGroup governs (QAction::trigger() does not toggle; the QMenu
-  // sets the state and then triggers), so drive it the same way the menu does.
-  menuActionWithData(menu, 0.75)->setChecked(true);
-  menuActionWithData(menu, 0.75)->trigger();
+  // Moving the thickness slider must not clear the colour tick, and picking a
+  // colour must not move a slider.
+  bar.scalarSlider(PdfToolOptions::inkTool())->setValue(8);
   QVERIFY(menuActionWithData(menu, QStringLiteral("green"))->isChecked());
-  QVERIFY(!menuActionWithData(menu, 3.0)->isChecked());
-  QVERIFY(menuActionWithData(menu, 0.75)->isChecked());
+  QCOMPARE(bar.opacitySlider(PdfToolOptions::inkTool())->value(), 50);
 
   menuActionWithData(menu, QStringLiteral("pink"))->setChecked(true);
   menuActionWithData(menu, QStringLiteral("pink"))->trigger();
-  QVERIFY(menuActionWithData(menu, 0.75)->isChecked());
   QVERIFY(!menuActionWithData(menu, QStringLiteral("green"))->isChecked());
-  // Exactly one tick per group, which is what "independently exclusive" means.
-  QCOMPARE(checkedCount(checkableMenuActions(menu)), 2);
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::inkTool())->value(), 8);
+  // Exactly one colour tick, which is what "exclusive colour group" means.
+  QCOMPARE(checkedCount(checkableMenuActions(menu)), 1);
 }
 
-void TestPdfAnnotationToolBar::syncStateMovesTheTicks() {
+void TestPdfAnnotationToolBar::syncStateMovesTheTicksAndTheSlidersWithoutEchoing() {
   QToolBar toolBar;
   PdfAnnotationToolBar bar;
   bar.install(&toolBar);
 
   QSignalSpy toggles(&bar, &PdfAnnotationToolBar::toolToggled);
   QSignalSpy colors(&bar, &PdfAnnotationToolBar::colorPicked);
+  QSignalSpy scalars(&bar, &PdfAnnotationToolBar::scalarPicked);
+  QSignalSpy opacities(&bar, &PdfAnnotationToolBar::opacityPicked);
 
   QHash<QString, PdfViewerConfig::ToolOptions> options;
   PdfViewerConfig::ToolOptions freetext;
   freetext.m_color = QStringLiteral("purple");
   freetext.m_fontSize = 9.0;
   options.insert(PdfToolOptions::freeTextTool(), freetext);
+  PdfViewerConfig::ToolOptions ink;
+  ink.m_width = 2.5;
+  ink.m_opacity = 0.4;
+  options.insert(PdfToolOptions::inkTool(), ink);
 
   bar.syncState(PdfToolOptions::freeTextTool(), options);
 
@@ -267,17 +304,66 @@ void TestPdfAnnotationToolBar::syncStateMovesTheTicks() {
 
   auto *menu = bar.toolMenu(PdfToolOptions::freeTextTool());
   QVERIFY(menuActionWithData(menu, QStringLiteral("purple"))->isChecked());
-  QVERIFY(menuActionWithData(menu, 9.0)->isChecked());
-  QCOMPARE(checkedCount(checkableMenuActions(menu)), 2);
+  QCOMPARE(checkedCount(checkableMenuActions(menu)), 1);
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::freeTextTool())->value(), 9);
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::inkTool())->value(), 25);
+  QCOMPARE(bar.opacitySlider(PdfToolOptions::inkTool())->value(), 40);
 
   // The web side can disarm a tool by itself, so syncState must be able to
   // clear every tick too.
   bar.syncState(QStringLiteral("none"), options);
   QVERIFY(!bar.toolAction(PdfToolOptions::freeTextTool())->isChecked());
 
-  // Repainting is not a user action: nothing may echo back out.
+  // Repainting is not a user action: nothing may echo back out. QSlider::setValue
+  // DOES emit valueChanged, so without the QSignalBlocker this loops.
   QCOMPARE(toggles.count(), 0);
   QCOMPARE(colors.count(), 0);
+  QCOMPARE(scalars.count(), 0);
+  QCOMPARE(opacities.count(), 0);
+}
+
+// The slider ranges are deliberately NARROWER than the schema ranges (width 24
+// vs 64, font size 6-72 vs 4-144). A hand-edited config value outside them must
+// be clamped for DISPLAY only -- silently rewriting the user's 40pt pen on first
+// paint would be data loss.
+void TestPdfAnnotationToolBar::anOutOfSliderRangeStoredValueIsClampedForDisplayOnly() {
+  QToolBar toolBar;
+  PdfAnnotationToolBar bar;
+  bar.install(&toolBar);
+
+  QSignalSpy scalars(&bar, &PdfAnnotationToolBar::scalarPicked);
+  QSignalSpy opacities(&bar, &PdfAnnotationToolBar::opacityPicked);
+
+  QHash<QString, PdfViewerConfig::ToolOptions> options;
+  PdfViewerConfig::ToolOptions ink;
+  ink.m_width = 40.0;
+  options.insert(PdfToolOptions::inkTool(), ink);
+  PdfViewerConfig::ToolOptions small;
+  small.m_fontSize = 4.0;
+  options.insert(PdfToolOptions::freeTextTool(), small);
+
+  bar.syncState(PdfToolOptions::inkTool(), options);
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::inkTool())->value(), 240);
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::freeTextTool())->value(), 6);
+
+  // The VALUE LABEL is clamped too. A thumb pinned at the top beside a label
+  // reading "40.0" would be a worse lie than either alone.
+  const auto labelOf = [](QWidgetAction *p_action) {
+    const auto labels = p_action->defaultWidget()->findChildren<QLabel *>();
+    return labels.isEmpty() ? QString() : labels.last()->text();
+  };
+  QCOMPARE(labelOf(bar.scalarAction(PdfToolOptions::inkTool())), QStringLiteral("24.0"));
+  QCOMPARE(labelOf(bar.scalarAction(PdfToolOptions::freeTextTool())), QStringLiteral("6"));
+
+  PdfViewerConfig::ToolOptions large;
+  large.m_fontSize = 144.0;
+  options.insert(PdfToolOptions::freeTextTool(), large);
+  bar.syncState(PdfToolOptions::inkTool(), options);
+  QCOMPARE(bar.scalarSlider(PdfToolOptions::freeTextTool())->value(), 72);
+
+  // Clamping is display-only: nothing is emitted, so nothing is written back.
+  QCOMPARE(scalars.count(), 0);
+  QCOMPARE(opacities.count(), 0);
 }
 
 void TestPdfAnnotationToolBar::disablingAuthoringDisablesTheMenusToo() {
@@ -288,6 +374,7 @@ void TestPdfAnnotationToolBar::disablingAuthoringDisablesTheMenusToo() {
   QSignalSpy toggles(&bar, &PdfAnnotationToolBar::toolToggled);
   QSignalSpy colors(&bar, &PdfAnnotationToolBar::colorPicked);
   QSignalSpy scalars(&bar, &PdfAnnotationToolBar::scalarPicked);
+  QSignalSpy opacities(&bar, &PdfAnnotationToolBar::opacityPicked);
 
   bar.setAuthoringEnabled(false);
 
@@ -304,14 +391,30 @@ void TestPdfAnnotationToolBar::disablingAuthoringDisablesTheMenusToo() {
       QVERIFY2(!act->isEnabled(), qPrintable(tool));
       act->trigger();
     }
+
+    // The QWidgetAction, its row widget AND the slider: an enabled child widget
+    // inside a disabled action is still interactive in some styles.
+    if (auto *act = bar.scalarAction(tool)) {
+      QVERIFY2(!act->isEnabled(), qPrintable(tool));
+      QVERIFY2(!act->defaultWidget()->isEnabled(), qPrintable(tool));
+      QVERIFY2(!bar.scalarSlider(tool)->isEnabled(), qPrintable(tool));
+    }
+    if (auto *act = bar.opacityAction(tool)) {
+      QVERIFY2(!act->isEnabled(), qPrintable(tool));
+      QVERIFY2(!act->defaultWidget()->isEnabled(), qPrintable(tool));
+      QVERIFY2(!bar.opacitySlider(tool)->isEnabled(), qPrintable(tool));
+    }
   }
 
   QCOMPARE(toggles.count(), 0);
   QCOMPARE(colors.count(), 0);
   QCOMPARE(scalars.count(), 0);
+  QCOMPARE(opacities.count(), 0);
 
   // And it comes back.
   bar.setAuthoringEnabled(true);
+  QVERIFY(bar.scalarSlider(PdfToolOptions::inkTool())->isEnabled());
+  QVERIFY(bar.opacitySlider(PdfToolOptions::inkTool())->isEnabled());
   bar.toolAction(PdfToolOptions::inkTool())->trigger();
   QCOMPARE(toggles.count(), 1);
 }

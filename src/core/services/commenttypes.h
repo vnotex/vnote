@@ -106,15 +106,22 @@ bool hasWidth(const QString &p_tool);
 
 bool hasFontSize(const QString &p_tool);
 
+// Stroke opacity, ink only. Absent on every other tool.
+bool hasOpacity(const QString &p_tool);
+
 inline QString colorKey() { return QStringLiteral("color"); }
 
 inline QString widthKey() { return QStringLiteral("width"); }
 
 inline QString fontSizeKey() { return QStringLiteral("fontSize"); }
 
+inline QString opacityKey() { return QStringLiteral("opacity"); }
+
 inline double defaultWidth() { return 1.5; }
 
 inline double defaultFontSize() { return 12.0; }
+
+inline double defaultOpacity() { return 1.0; }
 
 // Freshly initialized options for @p_tool. An unknown tool yields an EMPTY
 // object — it has no options at all, rather than a plausible-looking
@@ -188,11 +195,21 @@ inline double minWidth() { return 0.1; }
 
 inline double maxWidth() { return 64.0; }
 
-QJsonObject make(int p_page, const QVector<QVector<double>> &p_strokes, double p_width);
+// Stroke opacity. The key is OPTIONAL on the anchor: a comment written by a
+// build that predates it has no `opacity` and renders fully opaque.
+inline double minOpacity() { return 0.1; }
+
+inline double maxOpacity() { return 1.0; }
+
+QJsonObject make(int p_page, const QVector<QVector<double>> &p_strokes, double p_width,
+                 double p_opacity = 1.0);
 
 int page(const QJsonObject &p_anchor);
 
 double width(const QJsonObject &p_anchor);
+
+// 1.0 when the key is absent (legacy anchors), so an old comment renders solid.
+double opacity(const QJsonObject &p_anchor);
 
 bool isValid(const QJsonObject &p_anchor);
 

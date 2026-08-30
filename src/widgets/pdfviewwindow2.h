@@ -100,6 +100,8 @@ private:
 
   void setToolScalar(const QString &p_tool, double p_value);
 
+  void setToolOpacity(const QString &p_tool, double p_value);
+
   // Current per-tool options, read from PdfViewerConfig.
   QHash<QString, PdfViewerConfig::ToolOptions> currentToolOptions() const;
 

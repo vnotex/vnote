@@ -36,6 +36,10 @@ QString applyColor(PdfViewerConfig &p_config, PdfViewerAdapter *p_adapter, const
 double applyScalar(PdfViewerConfig &p_config, PdfViewerAdapter *p_adapter, const QString &p_tool,
                    double p_value);
 
+// Ink stroke opacity. A tool that carries no opacity is a no-op returning 0.0.
+double applyOpacity(PdfViewerConfig &p_config, PdfViewerAdapter *p_adapter, const QString &p_tool,
+                    double p_value);
+
 // The page context menu route: persist the pick as the HIGHLIGHT tool's colour
 // (so the toolbar menu and the context menu cannot disagree), then ask the
 // overlay to capture the current selection with that same normalized token.

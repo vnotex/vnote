@@ -16,8 +16,9 @@ public:
   // its OWN colour, so switching from a yellow highlight to a blue pen and back
   // does not mean re-picking every time.
   //
-  // @m_width applies to "ink" only and @m_fontSize to "freetext" only; the
-  // serialized object omits the key for the tools that do not carry it.
+  // @m_width and @m_opacity apply to "ink" only and @m_fontSize to "freetext"
+  // only; the serialized object omits the key for the tools that do not carry
+  // it.
   struct ToolOptions {
     // A semantic CommentColor token, never a literal colour.
     QString m_color = QStringLiteral("yellow");
@@ -27,9 +28,13 @@ public:
 
     double m_fontSize = 12.0;
 
+    // Ink stroke opacity, 0.1 - 1.0. Ink only.
+    double m_opacity = 1.0;
+
     bool operator==(const ToolOptions &p_other) const {
       return m_color == p_other.m_color && qFuzzyCompare(m_width, p_other.m_width) &&
-             qFuzzyCompare(m_fontSize, p_other.m_fontSize);
+             qFuzzyCompare(m_fontSize, p_other.m_fontSize) &&
+             qFuzzyCompare(m_opacity, p_other.m_opacity);
     }
 
     bool operator!=(const ToolOptions &p_other) const { return !(*this == p_other); }

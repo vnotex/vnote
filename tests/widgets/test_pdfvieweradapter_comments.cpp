@@ -395,6 +395,33 @@ void TestPdfViewerAdapterComments::inkAndFreeTextAnchorsAreAccepted() {
   // The quads-only `text` truncation must not be applied to types with no such field.
   QVERIFY(!spy.at(0).at(0).toJsonObject().contains(QStringLiteral("text")));
   QVERIFY(!spy.at(1).at(0).toJsonObject().contains(QStringLiteral("text")));
+
+  // A valid opacity survives the verbatim anchor copy.
+  spy.clear();
+  adapter.requestAddComment(PdfInkAnchor::make(2, {{0.0, 0.0, 5.0, 5.0}}, 1.5, 0.35),
+                            QStringLiteral("blue"));
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.at(0).at(0).toJsonObject().value(QStringLiteral("opacity")).toDouble(), 0.35);
+
+  // A legacy anchor with NO opacity is still accepted.
+  spy.clear();
+  auto legacy = PdfInkAnchor::make(2, {{0.0, 0.0, 5.0, 5.0}}, 1.5);
+  legacy.remove(QStringLiteral("opacity"));
+  adapter.requestAddComment(legacy, QStringLiteral("blue"));
+  QCOMPARE(spy.count(), 1);
+  QVERIFY(!spy.at(0).at(0).toJsonObject().contains(QStringLiteral("opacity")));
+
+  // A malformed one is REJECTED, not clamped: the adapter copies the anchor
+  // verbatim, so rejection is the only policy that keeps the store clean.
+  spy.clear();
+  for (const QJsonValue &bogus :
+       {QJsonValue(1.0e9), QJsonValue(qQNaN()), QJsonValue(QStringLiteral("0.5"))}) {
+    auto anchor = PdfInkAnchor::make(2, {{0.0, 0.0, 5.0, 5.0}}, 1.5);
+    anchor.insert(QStringLiteral("opacity"), bogus);
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*rejected.*")));
+    adapter.requestAddComment(anchor, QStringLiteral("blue"));
+  }
+  QCOMPARE(spy.count(), 0);
 }
 
 // The page ceiling comes from the shared dispatch, so it must hold for the new
@@ -432,6 +459,7 @@ void TestPdfViewerAdapterComments::toolAndColourAreLatchedAcrossAReload() {
   QJsonObject inkOptions;
   inkOptions.insert(QStringLiteral("color"), QStringLiteral("purple"));
   inkOptions.insert(QStringLiteral("width"), 3.0);
+  inkOptions.insert(QStringLiteral("opacity"), 0.35);
   adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, inkOptions);
 
   QCOMPARE(tools.last().at(0).toString(), QStringLiteral("ink"));
@@ -471,6 +499,8 @@ void TestPdfViewerAdapterComments::toolAndColourAreLatchedAcrossAReload() {
   QCOMPARE(republished.value(QStringLiteral("ink")).value(QStringLiteral("color")).toString(),
            QStringLiteral("purple"));
   QCOMPARE(republished.value(QStringLiteral("ink")).value(QStringLiteral("width")).toDouble(), 3.0);
+  QCOMPARE(republished.value(QStringLiteral("ink")).value(QStringLiteral("opacity")).toDouble(),
+           0.35);
   QCOMPARE(republished.value(QStringLiteral("highlight")).value(QStringLiteral("color")).toString(),
            CommentColor::defaultToken());
   QCOMPARE(
@@ -562,6 +592,27 @@ void TestPdfViewerAdapterComments::toolOptionsAreNormalizedOnTheWayIn() {
   adapter.setToolOptions(PdfViewerAdapter::Tool::None, bad);
   QCOMPARE(options.count(), 0);
   QVERIFY(adapter.getToolOptions(QStringLiteral("none")).isEmpty());
+
+  // Opacity follows the same table, and is INK ONLY.
+  QJsonObject opacity;
+  opacity.insert(QStringLiteral("opacity"), 1.0e9);
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, opacity);
+  stored = adapter.getToolOptions(PdfViewerAdapter::Tool::Ink);
+  QCOMPARE(stored.value(QStringLiteral("opacity")).toDouble(), PdfInkAnchor::maxOpacity());
+
+  opacity.insert(QStringLiteral("opacity"), QJsonValue(qQNaN()));
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink, opacity);
+  QCOMPARE(adapter.getToolOptions(PdfViewerAdapter::Tool::Ink)
+               .value(QStringLiteral("opacity"))
+               .toDouble(),
+           PdfToolOptions::defaultOpacity());
+
+  adapter.setToolOptions(PdfViewerAdapter::Tool::FreeText, opacity);
+  QVERIFY(!adapter.getToolOptions(PdfViewerAdapter::Tool::FreeText)
+               .contains(QStringLiteral("opacity")));
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Highlight, opacity);
+  QVERIFY(!adapter.getToolOptions(PdfViewerAdapter::Tool::Highlight)
+               .contains(QStringLiteral("opacity")));
 }
 
 void TestPdfViewerAdapterComments::toolFinishedFromTheWebSideClearsTheTool() {

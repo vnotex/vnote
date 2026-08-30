@@ -266,6 +266,8 @@ private slots:
 
   void inkDraftDomReflectsTheConfiguredInk();
 
+  void inkOpacityReachesTheAnchorTheDraftAndTheRender();
+
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
   // top level, so re-evaluating it in the same engine would be a redeclaration.
@@ -1306,6 +1308,66 @@ void TestPdfViewerCoreJs::inkDraftDomReflectsTheConfiguredInk() {
   QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('data-vx-color').attrs['data-vx-color']"))
                .toString(),
            QStringLiteral("green"));
+}
+
+// Opacity is the one option the C++ chain can persist and push while JS
+// silently discards it, in which case the slider looks functional and does
+// nothing. Gate all four hops: retained -> anchor -> draft DOM -> render DOM.
+void TestPdfViewerCoreJs::inkOpacityReachesTheAnchorTheDraftAndTheRender() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+
+  // The default is solid, so a build that never sets it renders as before.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.optionsFor('ink').opacity")).toNumber(), 1.0);
+
+  eval(engine, QStringLiteral("window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.extendInk(200, 150);"
+                              "window.vxcore.endInk();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.opacity")).toNumber(), 1.0);
+
+  // setToolOptions() must COPY it -- this is the hop that would otherwise drop
+  // the whole feature on the floor.
+  eval(engine, QStringLiteral("window.vxcore.setToolOptions('ink', { opacity: 0.35 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.optionsFor('ink').opacity")).toNumber(),
+           0.35);
+
+  eval(engine, QStringLiteral("window.__added = [];"
+                              "window.vxcore.setTool('ink');"
+                              "window.vxcore.beginInk(140, 90);"
+                              "window.vxcore.extendInk(200, 150);"));
+  // The in-flight stroke previews at the chosen opacity. Unlike the width it is
+  // NOT multiplied by viewport.scale.
+  QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('stroke-opacity').attrs['stroke-opacity']"))
+               .toString(),
+           QStringLiteral("0.35"));
+
+  eval(engine, QStringLiteral("window.vxcore.endInk();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__added[0].anchor.opacity")).toNumber(), 0.35);
+
+  // A stored comment renders with ITS OWN opacity, so two strokes drawn at
+  // different settings keep them.
+  eval(engine, QStringLiteral("window.__nsEls = [];"
+                              "window.vxcore.renderInk(window.__mkEl(),"
+                              "  { id: 'a', color: 'yellow',"
+                              "    anchor: { type: 'pdf-ink', page: 0, strokes: [[20,780,50,750]],"
+                              "              width: 1.5, opacity: 0.2 } },"
+                              "  window.__mkViewport(2, 800));"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('stroke-opacity').attrs['stroke-opacity']"))
+               .toString(),
+           QStringLiteral("0.2"));
+
+  // ...and a LEGACY comment with no opacity key renders solid.
+  eval(engine, QStringLiteral("window.__nsEls = [];"
+                              "window.vxcore.renderInk(window.__mkEl(),"
+                              "  { id: 'b', color: 'yellow',"
+                              "    anchor: { type: 'pdf-ink', page: 0, strokes: [[20,780,50,750]],"
+                              "              width: 1.5 } },"
+                              "  window.__mkViewport(2, 800));"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('stroke-opacity').attrs['stroke-opacity']"))
+               .toString(),
+           QStringLiteral("1"));
 }
 
 } // namespace tests

@@ -1501,6 +1501,7 @@ add_qt_test(test_pdfannotationtoolbar
   SOURCES
     test_pdfannotationtoolbar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/pdfannotationtoolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
   LINKS
     # core_configs carries pdfviewerconfig.cpp (and the IConfig base it needs).

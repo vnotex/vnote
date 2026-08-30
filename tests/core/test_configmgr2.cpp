@@ -1103,6 +1103,9 @@ void TestConfigMgr2::testPdfToolOptions_defaultsAndRoundTrips() {
     }
     QCOMPARE(pdfConfig.getToolOptions(ink).m_width, PdfToolOptions::defaultWidth());
     QCOMPARE(pdfConfig.getToolOptions(freetext).m_fontSize, PdfToolOptions::defaultFontSize());
+    // Opacity is ink-only, defaults to solid, and needs no config migration:
+    // an existing vnotex.json simply has no `opacity` key.
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_opacity, PdfToolOptions::defaultOpacity());
 
     pdfConfig.fromJson(QJsonObject());
     QCOMPARE(pdfConfig.getToolOptions(highlight).m_color, CommentColor::defaultToken());
@@ -1111,10 +1114,12 @@ void TestConfigMgr2::testPdfToolOptions_defaultsAndRoundTrips() {
     auto inkOptions = pdfConfig.getToolOptions(ink);
     inkOptions.m_color = QStringLiteral("blue");
     inkOptions.m_width = 3.0;
+    inkOptions.m_opacity = 0.4;
     pdfConfig.setToolOptions(ink, inkOptions);
 
     QCOMPARE(pdfConfig.getToolOptions(ink).m_color, QStringLiteral("blue"));
     QCOMPARE(pdfConfig.getToolOptions(ink).m_width, 3.0);
+    QCOMPARE(pdfConfig.getToolOptions(ink).m_opacity, 0.4);
     // The other two are untouched: a shared-value regression would break this
     // silently otherwise.
     QCOMPARE(pdfConfig.getToolOptions(highlight).m_color, CommentColor::defaultToken());
@@ -1132,6 +1137,7 @@ void TestConfigMgr2::testPdfToolOptions_defaultsAndRoundTrips() {
     reloadedPdf.fromJson(pdfConfig.toJson());
     QCOMPARE(reloadedPdf.getToolOptions(ink).m_color, QStringLiteral("blue"));
     QCOMPARE(reloadedPdf.getToolOptions(ink).m_width, 3.0);
+    QCOMPARE(reloadedPdf.getToolOptions(ink).m_opacity, 0.4);
     QCOMPARE(reloadedPdf.getToolOptions(freetext).m_color, QStringLiteral("purple"));
     QCOMPARE(reloadedPdf.getToolOptions(freetext).m_fontSize, 16.0);
     QCOMPARE(reloadedPdf.getToolOptions(highlight).m_color, CommentColor::defaultToken());
@@ -1140,8 +1146,12 @@ void TestConfigMgr2::testPdfToolOptions_defaultsAndRoundTrips() {
     // actually owns.
     const auto tools = pdfConfig.toJson().value(QStringLiteral("tools")).toObject();
     QCOMPARE(tools.value(ink).toObject().value(QStringLiteral("width")).toDouble(), 3.0);
+    QCOMPARE(tools.value(ink).toObject().value(QStringLiteral("opacity")).toDouble(), 0.4);
     QVERIFY(!tools.value(highlight).toObject().contains(QStringLiteral("width")));
     QVERIFY(!tools.value(highlight).toObject().contains(QStringLiteral("fontSize")));
+    // Opacity belongs to ink alone.
+    QVERIFY(!tools.value(highlight).toObject().contains(QStringLiteral("opacity")));
+    QVERIFY(!tools.value(freetext).toObject().contains(QStringLiteral("opacity")));
   }
 
   {
@@ -1296,6 +1306,20 @@ void TestConfigMgr2::testPdfToolOptions_normalization_data() {
   QTest::newRow("size exactly min")
       << freetext << sizeKey << QJsonValue(PdfFreeTextAnchor::minFontSize())
       << QJsonValue(PdfFreeTextAnchor::minFontSize());
+
+  // --- ink opacity (same table as the width) ---
+  const auto opacityKey = PdfToolOptions::opacityKey();
+  const QJsonValue defaultOpacity(PdfToolOptions::defaultOpacity());
+  QTest::newRow("opacity in range") << ink << opacityKey << QJsonValue(0.35) << QJsonValue(0.35);
+  QTest::newRow("opacity absent") << ink << opacityKey << QJsonValue(QJsonValue::Undefined)
+                                  << defaultOpacity;
+  QTest::newRow("opacity wrong type")
+      << ink << opacityKey << QJsonValue(QStringLiteral("0.5")) << defaultOpacity;
+  QTest::newRow("opacity nan") << ink << opacityKey << QJsonValue(qQNaN()) << defaultOpacity;
+  QTest::newRow("opacity above max")
+      << ink << opacityKey << QJsonValue(1.0e9) << QJsonValue(PdfInkAnchor::maxOpacity());
+  QTest::newRow("opacity below min")
+      << ink << opacityKey << QJsonValue(0.0) << QJsonValue(PdfInkAnchor::minOpacity());
 }
 
 void TestConfigMgr2::testPdfToolOptions_normalization() {
@@ -1326,9 +1350,10 @@ void TestConfigMgr2::testPdfToolOptions_normalization() {
 
   // 1. the getter
   const auto options = pdfConfig.getToolOptions(tool);
-  const QJsonValue fromGetter = key == PdfToolOptions::colorKey() ? QJsonValue(options.m_color)
-                                : key == PdfToolOptions::widthKey()
-                                    ? QJsonValue(options.m_width)
+  const QJsonValue fromGetter = key == PdfToolOptions::colorKey()   ? QJsonValue(options.m_color)
+                                : key == PdfToolOptions::widthKey() ? QJsonValue(options.m_width)
+                                : key == PdfToolOptions::opacityKey()
+                                    ? QJsonValue(options.m_opacity)
                                     : QJsonValue(options.m_fontSize);
   QCOMPARE(canonical(fromGetter), canonical(expected));
 

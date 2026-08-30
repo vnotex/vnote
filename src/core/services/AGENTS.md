@@ -677,9 +677,9 @@ eventually disagree with the first.
 The tool keys — `highlight`, `ink`, `freetext` — are the **same strings**
 `PdfViewerAdapter::toolToString()` and the web side already use. One vocabulary
 end to end means a value round-trips config → C++ → JS with no translation
-table to drift. `color` is carried by every tool; `width` by ink only and
-`fontSize` by free text only, and the serialized object **omits** the key for a
-tool that does not carry it.
+table to drift. `color` is carried by every tool; `width` and `opacity` by ink
+only and `fontSize` by free text only, and the serialized object **omits** the
+key for a tool that does not carry it.
 
 The contract:
 
@@ -688,8 +688,8 @@ The contract:
 | Key absent | the freshly initialized per-tool default |
 | Wrong JSON type (string where a number belongs, etc.) | treated as absent → default |
 | Colour not in `CommentColor::all()` (incl. a literal hex) | **default** colour |
-| Width / font size non-finite (NaN, Inf) | **default** for that field |
-| Width / font size finite but out of range | **clamped** to `PdfInkAnchor::min/maxWidth()` or `PdfFreeTextAnchor::min/maxFontSize()` |
+| Width / font size / opacity non-finite (NaN, Inf) | **default** for that field |
+| Width / font size / opacity finite but out of range | **clamped** to `PdfInkAnchor::min/maxWidth()`, `PdfFreeTextAnchor::min/maxFontSize()` or `PdfInkAnchor::min/maxOpacity()` |
 
 The split is deliberate: a non-finite number carries no intent to preserve,
 whereas "width 1e9" plainly means "as thick as possible" and clamping respects
@@ -708,7 +708,7 @@ anchor validates", which passes for both a default and a clamped value.
 | Type | Geometry | Body |
 |---|---|---|
 | `pdf-quads` | `page` + text-selection quads in PDF page space, plus the quoted `text` | `Comment::m_text` (optional note) |
-| `pdf-ink` | `page` + `strokes` (flat `[x0,y0,x1,y1,...]` polylines) + `width`, all in PDF page space | optional note |
+| `pdf-ink` | `page` + `strokes` (flat `[x0,y0,x1,y1,...]` polylines) + `width`, all in PDF page space, plus an OPTIONAL `opacity` | optional note |
 | `pdf-freetext` | `page` + `x`/`y` + `fontSize` | **the box's visible text** — editing it in the dock and on the page are the same operation |
 
 `isKnownAnchorType()` / `isAnchorStructurallyValid()` / `anchorPage()` dispatch on
@@ -719,6 +719,14 @@ non-empty type — valid-but-opaque, carried through untouched — and false for
 All geometry is stored in **PDF page space**, never CSS pixels, so zoom/rotate/resize only
 re-project. Every coordinate is finiteness-checked: a NaN would silently poison the overlay
 projection instead of failing loudly.
+
+**`pdf-ink`'s `opacity` is optional, and absent means `1.0`.** An anchor written by a build
+that predates the field must stay valid and render solid, so `PdfInkAnchor::isValid()` accepts
+its absence — but a **present** value must be a finite double in `[minOpacity, maxOpacity]`,
+otherwise the anchor is **rejected**. Rejection rather than clamping is deliberate: the
+adapter copies an inbound anchor **verbatim** (`PdfViewerAdapter::requestAddComment`), so
+clamping there would have to be a second copy of the policy. Config-side values still clamp,
+via the `PdfToolOptions::normalize` table above.
 
 These keys are Qt-only — vxcore never reads `comments.json` — so they stay **out** of
 `<vxcore/notebook_json_keys.h>` and out of `test_json_key_drift`'s gated list.

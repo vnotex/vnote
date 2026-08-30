@@ -14,9 +14,12 @@
 
 class QAction;
 class QActionGroup;
+class QLabel;
 class QMenu;
+class QSlider;
 class QToolBar;
 class QToolButton;
+class QWidgetAction;
 
 namespace vnotex {
 
@@ -77,6 +80,27 @@ public:
 
   QMenu *toolMenu(const QString &p_tool) const;
 
+  // The Thickness (ink) / Font size (freetext) slider row. Null for a tool that
+  // carries no scalar.
+  QSlider *scalarSlider(const QString &p_tool) const;
+
+  QWidgetAction *scalarAction(const QString &p_tool) const;
+
+  // The Opacity slider row. Ink only; null everywhere else.
+  QSlider *opacitySlider(const QString &p_tool) const;
+
+  QWidgetAction *opacityAction(const QString &p_tool) const;
+
+  // Slider coordinates <-> stored PDF-unit values. Exposed so the gate can
+  // assert the mapping instead of hardcoding a second copy of it.
+  static double scalarFromSlider(const QString &p_tool, int p_sliderValue);
+
+  static int sliderFromScalar(const QString &p_tool, double p_value);
+
+  static double opacityFromSlider(int p_sliderValue);
+
+  static int sliderFromOpacity(double p_value);
+
   QList<QAction *> toolActions() const;
 
   // True when the tool group is non-exclusive, i.e. clicking the armed tool
@@ -91,21 +115,44 @@ signals:
   // Ink width, or free-text font size — whichever scalar the tool carries.
   void scalarPicked(const QString &p_tool, double p_value);
 
+  // Ink stroke opacity, 0.1 - 1.0.
+  void opacityPicked(const QString &p_tool, double p_value);
+
 private:
   struct ToolEntry {
     QAction *m_action = nullptr;
     QToolButton *m_button = nullptr;
     QMenu *m_menu = nullptr;
     QActionGroup *m_colorGroup = nullptr;
-    QActionGroup *m_scalarGroup = nullptr;
     QList<QAction *> m_colorActions;
-    QList<QAction *> m_scalarActions;
+
+    // Thickness / Font size row. All non-owning: the QWidgetAction owns its row
+    // widget and the menu owns the action.
+    QWidgetAction *m_scalarAction = nullptr;
+    QWidget *m_scalarRow = nullptr;
+    QSlider *m_scalarSlider = nullptr;
+    QLabel *m_scalarValue = nullptr;
+
+    // Opacity row, ink only.
+    QWidgetAction *m_opacityAction = nullptr;
+    QWidget *m_opacityRow = nullptr;
+    QSlider *m_opacitySlider = nullptr;
+    QLabel *m_opacityValue = nullptr;
   };
 
   void addTool(QToolBar *p_toolBar, const QString &p_tool, const QString &p_iconName,
                const QString &p_text, const IconProvider &p_icons);
 
   void buildMenu(ToolEntry &p_entry, const QString &p_tool);
+
+  // Builds one caption + slider + value-label row and adds it to the menu as a
+  // QWidgetAction. Fills the four out-params with non-owning pointers.
+  void addSliderRow(ToolEntry &p_entry, const QString &p_caption, int p_min, int p_max,
+                    QWidgetAction *&p_action, QWidget *&p_row, QSlider *&p_slider,
+                    QLabel *&p_value);
+
+  // Repaints both value labels from the sliders' CURRENT positions.
+  void updateSliderLabels(ToolEntry &p_entry, const QString &p_tool);
 
   void rebuildSwatchIcons();
 
