@@ -129,6 +129,14 @@ private:
   // Push the controller's set onto the overlay bridge as a JSON array.
   void publishCommentsToViewer();
 
+  // Opens the overlay's INLINE editor on a freshly added free-text box.
+  //
+  // Without this the Text tool ends at an empty "…" placeholder whose only
+  // editor is the comment dock -- which is closed by default, so the tool read
+  // as broken. A non-free-text comment (a highlight, a stroke) is ignored: it
+  // has no on-page body to type into.
+  void beginInlineTextEdit(const QString &p_id);
+
   PdfViewerAdapter *adapter() const;
 
   // Drops the current vxpdf document token, if any, so the handler's registry

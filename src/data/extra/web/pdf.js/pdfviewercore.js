@@ -10,6 +10,18 @@ const VX_MAX_OUTLINE_ENTRIES = 5000;
 const VX_MAX_COMMENT_QUADS = 512;
 const VX_MAX_ANCHOR_TEXT = 4096;
 
+// Bound on a comment BODY, i.e. what the inline free-text editor sends back.
+// Mirrors Comment::maxTextLength(); independent by design, like the caps above.
+const VX_MAX_COMMENT_TEXT = 16384;
+
+// Debounce for streaming an in-progress free-text body to C++. Typing is NOT
+// held until blur: a page teardown (tab close, reload, window close) does not
+// reliably deliver one, and text that only ever existed inside the
+// contenteditable would be lost. Mirrors the comment dock, which likewise
+// debounces keystrokes into intents rather than waiting for focus to move.
+const VX_FREETEXT_FLUSH_MS = 400;
+
+
 // Mirrors PdfInkAnchor / PdfFreeTextAnchor in src/core/services/commenttypes.h.
 // Independent by design: the C++ side re-validates everything crossing the
 // bridge and must not trust these.
@@ -66,6 +78,35 @@ class PdfViewerCore extends VXCore {
         this.inkDraft = null;
         // null until 'documentloaded' reports it; see the page-count rendezvous.
         this.pendingPageCount = null;
+
+        // === Inline free-text editing ===
+        // The Text tool writes WHERE THE USER CLICKED. Placing a box used to
+        // leave an empty "…" placeholder whose only editor was the comment
+        // dock, which is closed by default -- so the tool read as broken.
+        //
+        // `editingCommentId` is the box currently acting as a contenteditable.
+        // `editingIsNew` marks the box the Text tool just placed: abandoning
+        // THAT one empty removes it again, because the user never wrote a
+        // comment. `editingDraftText` survives the layer rebuilds a scroll or
+        // zoom triggers, and `editingRerender` tells the blur handler that a
+        // blur came from that rebuild rather than from the user leaving.
+        this.editingCommentId = null;
+        this.editingIsNew = false;
+        this.editingEl = null;
+        this.editingDraftText = null;
+        this.editingRerender = false;
+        // The body the box had when the editor opened, so Esc on an EXISTING
+        // box can put back what the debounced stream already wrote.
+        this.editingOriginalText = null;
+        // Newest body already streamed to C++, and the pending debounce timer.
+        this.editingFlushedText = null;
+        this.editingFlushTimer = null;
+        // Caret position carried across a layer rebuild, in characters.
+        this.editingCaretOffset = -1;
+        // Pushed from C++ (CommentController::editableChanged). Defaults to
+        // FALSE: a box whose store would refuse the write must not accept
+        // keystrokes, or the user types into a void.
+        this.commentsEditable = false;
     }
 
     initOnLoad() {
@@ -632,6 +673,410 @@ class PdfViewerCore extends VXCore {
         return true;
     }
 
+    // === Inline free-text editing ===
+
+    commentById(p_id) {
+        for (var i = 0; i < this.comments.length; ++i) {
+            if (this.comments[i] && this.comments[i].id === p_id) {
+                return this.comments[i];
+            }
+        }
+        return null;
+    }
+
+    // Pushed from C++. Losing editability closes the box.
+    //
+    // The draft is flushed FIRST, best effort. When the flag changed for a
+    // reason other than a refused write (the active file changed, a store that
+    // failed to LOAD) the controller still accepts it, and that is the only
+    // moment it can. When the store has just REFUSED a write, the flush is
+    // refused too -- see the residual documented in AGENTS.md.
+    //
+    // The close is then deliberately closeFreeTextEdit(), NOT
+    // cancelFreeTextEdit(): `CommentController` gates `setCommentText` AND
+    // `deleteComment` on the same flag it has just cleared, so a revert (or the
+    // delete of a new box) would be refused as well and would only create the
+    // illusion of a restore that never happened.
+    setCommentsEditable(p_editable) {
+        this.commentsEditable = !!p_editable;
+        if (!this.commentsEditable) {
+            this.flushFreeTextDraft();
+            this.closeFreeTextEdit();
+        }
+    }
+
+    // Open the inline editor on a free-text box. @p_isNew marks the box the
+    // Text tool just placed (C++ drives that route right after minting the
+    // comment); a double-click on an existing box passes false.
+    beginFreeTextEdit(p_id, p_isNew) {
+        if (!p_id || !this.commentsEditable) {
+            return false;
+        }
+        var comment = this.commentById(p_id);
+        if (!comment || !comment.anchor || comment.anchor.type !== 'pdf-freetext') {
+            return false;
+        }
+        if (this.editingCommentId === p_id) {
+            return true;
+        }
+
+        // Commit the PREVIOUS box first: switching boxes must never silently
+        // drop what was typed into the one being left.
+        this.commitFreeTextEdit();
+
+        this.editingCommentId = p_id;
+        this.editingIsNew = !!p_isNew;
+        this.editingDraftText = comment.text || '';
+        this.editingOriginalText = comment.text || '';
+        this.editingFlushedText = null;
+        this.editingCaretOffset = -1;
+        this.renderAllComments();
+        return true;
+    }
+
+    // The live editor text, or the draft when the node is gone (a repaint is in
+    // flight), or null when there is nothing to read at all.
+    //
+    // Reads through flattenEditorText() rather than innerText whenever the node
+    // is a real DOM element, so that the BODY and the CARET are measured in the
+    // SAME coordinates -- see walkEditorText() for why that matters.
+    currentFreeTextEditText() {
+        var el = this.editingEl;
+        if (el) {
+            if (el.childNodes) {
+                return PdfViewerCore.flattenEditorText(el);
+            }
+            var text = (typeof el.innerText === 'string') ? el.innerText : el.textContent;
+            if (typeof text === 'string') {
+                return text;
+            }
+        }
+        return (typeof this.editingDraftText === 'string') ? this.editingDraftText : null;
+    }
+
+    // Arm the streaming debounce. TRAILING throttle: an already-armed timer is
+    // kept, so a typing burst costs one intent rather than one per keystroke.
+    scheduleFreeTextFlush() {
+        if (typeof setTimeout !== 'function' || this.editingFlushTimer !== null) {
+            return;
+        }
+        var self = this;
+        this.editingFlushTimer = setTimeout(function() {
+            self.editingFlushTimer = null;
+            self.flushFreeTextDraft();
+        }, VX_FREETEXT_FLUSH_MS);
+    }
+
+    cancelFreeTextFlush() {
+        if (this.editingFlushTimer !== null && typeof clearTimeout === 'function') {
+            clearTimeout(this.editingFlushTimer);
+        }
+        this.editingFlushTimer = null;
+    }
+
+    // Stream the CURRENT draft WITHOUT closing the editor, so text is safe from
+    // a teardown that never delivers a blur.
+    //
+    // Deliberately never deletes and never writes an empty body: those are
+    // COMMIT decisions. A user who has just selected-all before retyping must
+    // not have their box removed from under them mid-gesture.
+    flushFreeTextDraft() {
+        if (!this.editingCommentId || !this.commentAdapter) {
+            return false;
+        }
+        var raw = this.currentFreeTextEditText();
+        if (raw === null) {
+            return false;
+        }
+        var text = PdfViewerCore.normalizeFreeTextBody(raw);
+        if (PdfViewerCore.isBlankFreeTextBody(text) || text === this.editingFlushedText) {
+            return false;
+        }
+        this.editingFlushedText = text;
+        this.commentAdapter.requestSetCommentText(this.editingCommentId, text);
+        return true;
+    }
+
+    // Persist what is in the editor and close it.
+    commitFreeTextEdit() {
+        if (!this.editingCommentId) {
+            return;
+        }
+        this.applyFreeTextEdit(this.editingCommentId, this.currentFreeTextEditText());
+    }
+
+    // Split out of commitFreeTextEdit() so the decision table -- and it IS a
+    // table: new/existing x blank/non-blank -- is reachable with no DOM at all.
+    //
+    // Everything here is an INTENT: C++ re-validates and remains the only
+    // writer, exactly like the add/delete routes.
+    applyFreeTextEdit(p_id, p_text) {
+        var wasNew = this.editingIsNew;
+        this.closeFreeTextEdit();
+
+        if (!this.commentAdapter) {
+            return;
+        }
+        // No trustworthy text (the page was torn down mid-edit): persist
+        // nothing rather than guessing.
+        if (p_text === null || p_text === undefined) {
+            return;
+        }
+
+        var text = PdfViewerCore.normalizeFreeTextBody(p_text);
+        if (PdfViewerCore.isBlankFreeTextBody(text)) {
+            if (wasNew) {
+                // The user placed a box and wrote nothing. Removing it is what
+                // "nothing happened" has to look like -- leaving an empty "…"
+                // placeholder behind is what made this feature read as broken.
+                this.commentAdapter.requestDeleteComment(p_id);
+                return;
+            }
+            // An EXISTING box the user cleared ON PURPOSE. Apply it, exactly as
+            // clearing it in the dock would: the two editors edit the same
+            // field, so they must not disagree. It stays on the page as the
+            // visible, clickable placeholder. Deleting it here would destroy a
+            // comment nobody asked to delete.
+            this.commentAdapter.requestSetCommentText(p_id, '');
+            return;
+        }
+        this.commentAdapter.requestSetCommentText(p_id, text);
+    }
+
+    // Esc, or losing editability.
+    //
+    // A brand-new box goes away whatever was typed: the user asked to abandon
+    // the box, not merely the keystrokes. An existing box is REVERTED -- the
+    // streaming flush above may already have written part of the draft, so
+    // "cancel" has to put the original body back rather than just stop.
+    cancelFreeTextEdit() {
+        var id = this.editingCommentId;
+        if (!id) {
+            return;
+        }
+        var wasNew = this.editingIsNew;
+        var original = this.editingOriginalText;
+        var flushed = this.editingFlushedText;
+        this.closeFreeTextEdit();
+
+        if (!this.commentAdapter) {
+            return;
+        }
+        if (wasNew) {
+            this.commentAdapter.requestDeleteComment(id);
+            return;
+        }
+        if (flushed !== null && flushed !== original) {
+            this.commentAdapter.requestSetCommentText(id, original || '');
+        }
+    }
+
+    closeFreeTextEdit() {
+        if (!this.editingCommentId) {
+            return;
+        }
+        this.discardFreeTextEditState();
+        this.renderAllComments();
+    }
+
+    // Clear the session WITHOUT dispatching anything and WITHOUT repainting.
+    // The teardown paths use this directly, because they are about to rebuild
+    // (or throw away) the whole overlay themselves.
+    discardFreeTextEditState() {
+        this.cancelFreeTextFlush();
+        this.editingCommentId = null;
+        this.editingIsNew = false;
+        this.editingEl = null;
+        this.editingDraftText = null;
+        this.editingOriginalText = null;
+        this.editingFlushedText = null;
+        this.editingCaretOffset = -1;
+    }
+
+    // TRANSPORT-level fixes only: platform line endings, the NUL that would
+    // truncate the string on the C++ side, the single trailing newline Chromium
+    // leaves for the closing <br>, and the cap.
+    //
+    // Leading, interior and further trailing whitespace is the USER'S text and
+    // is preserved -- an indented body must round-trip. Whether a body counts as
+    // empty is a SEPARATE question; see isBlankFreeTextBody().
+    static normalizeFreeTextBody(p_text) {
+        if (typeof p_text !== 'string') {
+            return '';
+        }
+        var text = p_text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\0/g, '');
+        text = text.replace(/\n$/, '');
+        return text.substring(0, VX_MAX_COMMENT_TEXT);
+    }
+
+    // A box holding only whitespace is indistinguishable from an empty one on
+    // the page, so it must take the same route. NBSP counts: that is what
+    // contenteditable stores for a run of spaces.
+    static isBlankFreeTextBody(p_text) {
+        if (typeof p_text !== 'string') {
+            return true;
+        }
+        return p_text.replace(/[\s\u00a0]/g, '').length === 0;
+    }
+
+    // Caret position inside the editor, in characters, or -1 when it cannot be
+    // determined. Captured BEFORE a layer rebuild replaces the node.
+    captureCaretOffset() {
+        var el = this.editingEl;
+        if (!el || !el.childNodes || typeof window === 'undefined' ||
+            typeof window.getSelection !== 'function') {
+            return -1;
+        }
+        var selection = window.getSelection();
+        if (!selection || !selection.rangeCount || typeof selection.getRangeAt !== 'function') {
+            return -1;
+        }
+        var range = selection.getRangeAt(0);
+        if (!range || (typeof el.contains === 'function' && !el.contains(range.endContainer))) {
+            return -1;
+        }
+        return PdfViewerCore.walkEditorText(el, range.endContainer, range.endOffset).offset;
+    }
+
+    // Canonical plaintext form of the editable's subtree: text nodes, plus one
+    // '\n' per <br> and per block child after the first. That models the DOM
+    // shapes a plaintext-only contenteditable produces -- it is NOT a general
+    // implementation of innerText's layout semantics, and does not need to be.
+    static flattenEditorText(p_root) {
+        return PdfViewerCore.walkEditorText(p_root, null, -1).text;
+    }
+
+    // ONE walk that produces both the flattened text and the flattened index of
+    // a (node, offset) DOM boundary.
+    //
+    // Measuring the caret with Range.toString() and reading the body with
+    // innerText is the trap this exists to avoid: a Range concatenates text-node
+    // DATA only, so it contributes no character for a <br> or for the boundary
+    // between two block children, while innerText contributes '\n' for both. The
+    // captured offset would then be short by one PER LINE, and the repaint that
+    // re-seeds the node from the draft (which does contain the newlines) would
+    // silently move the caret backwards -- so the rest of the sentence would be
+    // typed into the middle of the previous one.
+    static walkEditorText(p_root, p_boundaryNode, p_boundaryOffset) {
+        var state = { text: '', offset: -1 };
+        PdfViewerCore.walkEditorNode(p_root, p_boundaryNode, p_boundaryOffset, state);
+        return state;
+    }
+
+    static walkEditorNode(p_node, p_bNode, p_bOffset, p_state) {
+        if (!p_node) {
+            return;
+        }
+
+        if (p_node.nodeType === 3) {
+            var value = p_node.nodeValue || '';
+            if (p_node === p_bNode && p_state.offset < 0) {
+                var within = p_bOffset < 0 ? 0 : (p_bOffset > value.length ? value.length : p_bOffset);
+                p_state.offset = p_state.text.length + within;
+            }
+            p_state.text += value;
+            return;
+        }
+
+        if (PdfViewerCore.nodeNameOf(p_node) === 'BR') {
+            if (p_node === p_bNode && p_state.offset < 0) {
+                p_state.offset = p_state.text.length;
+            }
+            p_state.text += '\n';
+            return;
+        }
+
+        var kids = p_node.childNodes ? Array.prototype.slice.call(p_node.childNodes) : [];
+        for (var i = 0; i < kids.length; ++i) {
+            if (p_node === p_bNode && i === p_bOffset && p_state.offset < 0) {
+                p_state.offset = p_state.text.length;
+            }
+            // A block child after the first starts a new visual line, which is
+            // exactly what innerText reports.
+            if (i > 0 && PdfViewerCore.isBlockNode(kids[i])) {
+                p_state.text += '\n';
+            }
+            PdfViewerCore.walkEditorNode(kids[i], p_bNode, p_bOffset, p_state);
+        }
+
+        if (p_node === p_bNode && p_state.offset < 0 && p_bOffset >= kids.length) {
+            p_state.offset = p_state.text.length;
+        }
+    }
+
+    static nodeNameOf(p_node) {
+        return (p_node && p_node.nodeName) ? String(p_node.nodeName).toUpperCase() : '';
+    }
+
+    static isBlockNode(p_node) {
+        if (!p_node || p_node.nodeType !== 1) {
+            return false;
+        }
+        var name = PdfViewerCore.nodeNameOf(p_node);
+        return name === 'DIV' || name === 'P';
+    }
+
+    // Resolve a character offset to a (text node, offset) pair by a pre-order
+    // walk. The rebuilt node is seeded through textContent, so its subtree is a
+    // single text node carrying the newlines literally -- which is what makes a
+    // plain character walk the correct inverse of walkEditorText() here.
+    //
+    // Returns null when the offset is past the end, in which case the caller
+    // collapses to the end instead.
+    static caretTargetForOffset(p_el, p_offset) {
+        if (!p_el || p_offset < 0) {
+            return null;
+        }
+        var remaining = p_offset;
+        var stack = [p_el];
+        while (stack.length > 0) {
+            var node = stack.shift();
+            if (node.nodeType === 3) {
+                var len = node.nodeValue ? node.nodeValue.length : 0;
+                if (remaining <= len) {
+                    return { node: node, offset: remaining };
+                }
+                remaining -= len;
+                continue;
+            }
+            var kids = node.childNodes ? Array.prototype.slice.call(node.childNodes) : [];
+            stack = kids.concat(stack);
+        }
+        return null;
+    }
+
+    // Put focus (and the caret) back after a layer rebuild. A caret silently
+    // reset to offset 0 would interleave the user's typing with what is already
+    // in the box, which is worse than not restoring focus at all.
+    focusFreeTextEditor() {
+        var el = this.editingEl;
+        if (!el || typeof el.focus !== 'function') {
+            return;
+        }
+        el.focus();
+
+        if (typeof document === 'undefined' || typeof document.createRange !== 'function' ||
+            typeof window === 'undefined' || typeof window.getSelection !== 'function') {
+            return;
+        }
+        var selection = window.getSelection();
+        if (!selection || typeof selection.addRange !== 'function') {
+            return;
+        }
+
+        var range = document.createRange();
+        var target = PdfViewerCore.caretTargetForOffset(el, this.editingCaretOffset);
+        if (target) {
+            range.setStart(target.node, target.offset);
+            range.collapse(true);
+        } else {
+            range.selectNodeContents(el);
+            range.collapse(false);
+        }
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
     setCommentAdapter(p_adapter) {
         this.commentAdapter = p_adapter;
         this.publishPageCount();
@@ -663,6 +1108,12 @@ class PdfViewerCore extends VXCore {
 
     setComments(p_comments) {
         this.comments = Array.isArray(p_comments) ? p_comments : [];
+        if (this.editingCommentId && !this.commentById(this.editingCommentId)) {
+            // The box being edited is gone (deleted from the dock, or by our
+            // own abandon-blank round trip). Close the editor silently: there
+            // is nothing left to write to.
+            this.discardFreeTextEditState();
+        }
         this.renderAllComments();
     }
 
@@ -706,6 +1157,9 @@ class PdfViewerCore extends VXCore {
         if (this.tool === p_tool) {
             return;
         }
+        // Arming a tool leaves the box: COMMIT rather than discard, because
+        // reaching for the toolbar is not a request to throw text away.
+        this.commitFreeTextEdit();
         this.abortInk();
         this.inkDraft = null;
         this.tool = p_tool;
@@ -781,6 +1235,13 @@ class PdfViewerCore extends VXCore {
     // bound: a stale count would let an anchor be accepted for a page the NEW
     // document may not have.
     resetComments() {
+        // FLUSH FIRST, while the adapter and the ids are still those of the
+        // document being torn down. The debounce means up to VX_FREETEXT_FLUSH_MS
+        // of typing may not have been streamed yet, and this is the last moment
+        // it can be: everything below deliberately dispatches nothing.
+        this.flushFreeTextDraft();
+        this.discardFreeTextEditState();
+
         this.comments = [];
         this.selectedCommentId = null;
         this.pendingPageCount = null;
@@ -872,6 +1333,27 @@ class PdfViewerCore extends VXCore {
             return;
         }
 
+        // The rebuild below removes the inline editor's node, which fires a
+        // blur. That is DOM churn, not the user leaving the box, so the blur
+        // handler must not commit on it -- and the node is re-created (with the
+        // uncommitted draft, the focus and the caret) before this returns.
+        this.editingCaretOffset = this.captureCaretOffset();
+        this.editingRerender = true;
+        this.editingEl = null;
+        try {
+            this.renderCommentLayers(app);
+        } finally {
+            this.editingRerender = false;
+        }
+
+        this.applyToolCursor();
+        // A repaint wipes the layers, so the in-flight draft has to be put back
+        // (and re-projected, if this repaint was a zoom or rotate).
+        this.renderInkDraft();
+        this.focusFreeTextEditor();
+    }
+
+    renderCommentLayers(app) {
         // Bucket by page so each layer is rebuilt exactly once.
         var byPage = {};
         var known = { 'pdf-quads': 1, 'pdf-ink': 1, 'pdf-freetext': 1 };
@@ -907,14 +1389,7 @@ class PdfViewerCore extends VXCore {
                     this.renderComment(layer, list[c], view.viewport);
                 }
             }
-
-
         }
-
-        this.applyToolCursor();
-        // A repaint wipes the layers, so the in-flight draft has to be put back
-        // (and re-projected, if this repaint was a zoom or rotate).
-        this.renderInkDraft();
     }
 
     renderComment(p_layer, p_comment, p_viewport) {
@@ -998,9 +1473,13 @@ class PdfViewerCore extends VXCore {
         }
 
         var el = document.createElement('div');
+        var editing = (p_comment.id && p_comment.id === this.editingCommentId);
         el.className = 'vx-comment-freetext';
         if (p_comment.id === this.selectedCommentId) {
             el.className += ' vx-comment-selected';
+        }
+        if (editing) {
+            el.className += ' vx-comment-freetext-editing';
         }
         el.style.left = pos.x + 'px';
         el.style.top = pos.y + 'px';
@@ -1008,16 +1487,23 @@ class PdfViewerCore extends VXCore {
         el.setAttribute('data-vx-color', p_comment.color || 'yellow');
         el.setAttribute('data-vx-id', p_comment.id);
         // textContent, never innerHTML: the body is user text and must never be
-        // parsed as markup.
-        el.textContent = p_comment.text || '';
-        if (!p_comment.text) {
+        // parsed as markup. While editing, the DRAFT wins -- a repaint caused by
+        // a scroll or zoom must not throw away uncommitted keystrokes.
+        if (editing && typeof this.editingDraftText === 'string') {
+            el.textContent = this.editingDraftText;
+        } else {
+            el.textContent = p_comment.text || '';
+        }
+        // The placeholder ellipsis is a ::before, so it would sit INSIDE the
+        // editable and be indistinguishable from typed text.
+        if (!p_comment.text && !editing) {
             el.classList.add('vx-comment-freetext-empty');
         }
 
         var self = this;
         (function(p_id) {
             el.addEventListener('click', function(p_event) {
-                if (self.tool !== 'none') {
+                if (self.tool !== 'none' || self.editingCommentId === p_id) {
                     return;
                 }
                 p_event.stopPropagation();
@@ -1025,7 +1511,84 @@ class PdfViewerCore extends VXCore {
                     self.commentAdapter.requestSelectComment(p_id);
                 }
             });
+
+            // The discoverable way BACK into a box: the same gesture that
+            // renames a file everywhere else.
+            el.addEventListener('dblclick', function(p_event) {
+                if (self.tool !== 'none' || self.editingCommentId === p_id) {
+                    return;
+                }
+                p_event.preventDefault();
+                p_event.stopPropagation();
+                self.beginFreeTextEdit(p_id, false);
+            });
         })(p_comment.id);
+
+        if (editing) {
+            // plaintext-only keeps a paste from injecting markup; the fallback
+            // to plain `true` is still safe, because the body is read back with
+            // flattenEditorText(), which walks text nodes and line breaks and
+            // never interprets markup.
+            el.contentEditable = 'plaintext-only';
+            el.setAttribute('contenteditable', 'plaintext-only');
+
+            // Every listener below is scoped to THIS node. A layer rebuild
+            // leaves the detached predecessors alive (and still wired), and an
+            // event from one of those must never act on the CURRENT session.
+            (function(p_el) {
+                el.addEventListener('input', function() {
+                    if (self.editingEl !== p_el) {
+                        return;
+                    }
+                    self.editingDraftText = self.currentFreeTextEditText();
+                    // Streamed on a debounce rather than held until blur: a
+                    // teardown does not reliably deliver one, and text that
+                    // only ever lived in the contenteditable would be lost.
+                    self.scheduleFreeTextFlush();
+                });
+
+                el.addEventListener('keydown', function(p_event) {
+                    if (self.editingEl !== p_el) {
+                        return;
+                    }
+                    if (p_event.key === 'Escape') {
+                        p_event.preventDefault();
+                        p_event.stopPropagation();
+                        self.cancelFreeTextEdit();
+                        return;
+                    }
+                    if (p_event.key === 'Enter' && (p_event.ctrlKey || p_event.metaKey)) {
+                        p_event.preventDefault();
+                        p_event.stopPropagation();
+                        self.commitFreeTextEdit();
+                        return;
+                    }
+                    // Everything else is typing, and must not reach pdf.js's
+                    // own single-key shortcuts (r rotates, s switches tool...).
+                    p_event.stopPropagation();
+                });
+
+                el.addEventListener('blur', function() {
+                    // Two ways this is NOT the user leaving the box: the layer
+                    // rebuild that detached the node, and a stale predecessor
+                    // firing after it was replaced.
+                    if (self.editingRerender || self.editingEl !== p_el) {
+                        return;
+                    }
+                    self.commitFreeTextEdit();
+                });
+            })(el);
+
+            // Clicking inside the box is not a page gesture.
+            el.addEventListener('pointerdown', function(p_event) {
+                p_event.stopPropagation();
+            });
+            el.addEventListener('mouseup', function(p_event) {
+                p_event.stopPropagation();
+            });
+
+            this.editingEl = el;
+        }
 
         p_layer.appendChild(el);
     }

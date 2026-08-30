@@ -88,6 +88,9 @@ PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent)
         emit toolOptionsChanged(tool, m_toolOptions.value(tool));
       }
       emit toolChanged(toolToString(m_tool));
+      // Editability rides the same latch: it is authoring state, not document
+      // state, so the replacement page has to be told about it too.
+      emit commentsEditableChanged(m_commentsEditable);
     }
   });
 }
@@ -172,10 +175,11 @@ void PdfViewerAdapter::clearComments() {
   // replacement document's real set.
   m_commentsPublishPending = false;
 
-  // The TOOL and its per-tool options are not document state -- the toolbar
-  // still shows whatever the user armed -- so the replacement page has to be
-  // told about them, or the toggle would look pressed while the page sat in
-  // reading mode, and the next stroke would use the JS defaults.
+  // The TOOL, its per-tool options and the editability flag are not document
+  // state -- the toolbar still shows whatever the user armed -- so the
+  // replacement page has to be told about them, or the toggle would look
+  // pressed while the page sat in reading mode, and the next stroke would use
+  // the JS defaults.
   m_toolPublishPending = true;
 }
 
@@ -209,6 +213,35 @@ void PdfViewerAdapter::captureSelection(const QString &p_color) {
     emit captureSelectionRequested(color);
   }
 }
+
+void PdfViewerAdapter::beginCommentTextEdit(const QString &p_id) {
+  if (p_id.isEmpty() || p_id.size() > c_maxCommentIdLength) {
+    return;
+  }
+  // Deliberately NOT queued when the page is not ready, for the same reason
+  // captureSelection() is not: an edit SESSION only exists in a live document,
+  // and replaying it after a reload would open an editor on whatever comment
+  // happened to inherit that id in the replacement document.
+  if (isReady()) {
+    emit commentTextEditRequested(p_id);
+  }
+}
+
+void PdfViewerAdapter::setCommentsEditable(bool p_editable) {
+  if (m_commentsEditable == p_editable) {
+    return;
+  }
+  m_commentsEditable = p_editable;
+
+  if (isReady()) {
+    emit commentsEditableChanged(m_commentsEditable);
+    return;
+  }
+  // Latch, do NOT queue: only the newest value matters.
+  m_toolPublishPending = true;
+}
+
+bool PdfViewerAdapter::areCommentsEditable() const { return m_commentsEditable; }
 
 QString PdfViewerAdapter::toolToString(Tool p_tool) {
   switch (p_tool) {
@@ -353,4 +386,14 @@ void PdfViewerAdapter::requestDeleteComment(const QString &p_id) {
     return;
   }
   emit deleteCommentRequested(p_id);
+}
+
+void PdfViewerAdapter::requestSetCommentText(const QString &p_id, const QString &p_text) {
+  if (p_id.isEmpty() || p_id.size() > c_maxCommentIdLength) {
+    return;
+  }
+  // TRUNCATE rather than reject: an over-long note is a plausible user action,
+  // not an attack, and losing the tail is better than losing the note. The
+  // controller re-applies the same cap, which is the authoritative one.
+  emit setCommentTextRequested(p_id, p_text.left(Comment::maxTextLength()));
 }

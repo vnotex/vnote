@@ -85,6 +85,19 @@ public:
   // user guessing a modifier key.
   void captureSelection(const QString &p_color);
 
+  // Ask the overlay to open its INLINE editor on a free-text box, so the Text
+  // tool writes where the user clicked. Driven right after the comment is
+  // minted; without it a placed box is an empty "…" placeholder whose only
+  // editor is the comment dock, which is closed by default.
+  void beginCommentTextEdit(const QString &p_id);
+
+  // Whether the store will accept a write for the active file. Pushed so the
+  // overlay can REFUSE to open its editor on a read-only file rather than let
+  // the user type into something that is silently discarded.
+  void setCommentsEditable(bool p_editable);
+
+  bool areCommentsEditable() const;
+
   // The active authoring tool. Modelled on pdf.js's own toolbar because a MODE
   // is what makes highlighting cheap: arm it once and every selection is
   // captured, instead of a per-selection menu round trip.
@@ -149,6 +162,12 @@ public slots:
   // ignores an unknown id.
   void requestSelectComment(const QString &p_id);
 
+  // The inline free-text editor was committed. UNTRUSTED: the id is
+  // length-bounded and the body is TRUNCATED (never rejected) to
+  // Comment::maxTextLength() -- losing the tail of an over-long note is better
+  // than losing the note.
+  void requestSetCommentText(const QString &p_id, const QString &p_text);
+
   void requestDeleteComment(const QString &p_id);
 
   // The web side dropped out of an authoring tool by itself (Esc, or a one-shot
@@ -169,6 +188,12 @@ signals:
 
   void captureSelectionRequested(const QString &p_color);
 
+  void commentTextEditRequested(const QString &p_id);
+
+  // Latched alongside the tool: a reloaded page must come up knowing whether it
+  // may author at all.
+  void commentsEditableChanged(bool p_editable);
+
   // Latched like the comment set: the web side must come up in the tool the
   // toolbar is showing, even across a reload.
   void toolChanged(const QString &p_tool);
@@ -186,6 +211,8 @@ signals:
   void addCommentRequested(const QJsonObject &p_anchor, const QString &p_color);
 
   void selectCommentRequested(const QString &p_id);
+
+  void setCommentTextRequested(const QString &p_id, const QString &p_text);
 
   void deleteCommentRequested(const QString &p_id);
 
@@ -215,6 +242,10 @@ private:
   bool m_commentsPublishPending = false;
 
   int m_documentPageCount = 0;
+
+  // Defaults to FALSE so a page that comes up before C++ has said anything
+  // cannot accept keystrokes the store would refuse.
+  bool m_commentsEditable = false;
 
   Tool m_tool = Tool::None;
 

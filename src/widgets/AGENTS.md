@@ -478,7 +478,10 @@ second file type needs no dock work at all.
 - **The dock is a destination, not an entry point.** Comments are created on the PDF page:
   select text, right-click, **Highlight ▸ <color>** (`PdfViewer::contextMenuEvent` emits
   `highlightSelectionRequested`, which `PdfViewWindow2` routes to the adapter). Alt+drag is a
-  shortcut only. If you add comments to another file type, give it a discoverable affordance too —
+  shortcut only. A `pdf-freetext` box is additionally edited **on the page** — its body is
+  `Comment::m_text`, so the dock editor and the box's inline editor are the same operation
+  (see [pdf.js AGENTS.md § The Text tool types ON THE PAGE](../data/extra/web/pdf.js/AGENTS.md)).
+  If you add comments to another file type, give it a discoverable affordance too —
   an empty dock with no visible way to fill it reads as a broken feature.
 
 Adding a dock is four edits — `DockType` enum (order must match `m_docks`), `MainWindow2::setup*`,

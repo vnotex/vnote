@@ -64,6 +64,10 @@ private slots:
   void toolFinishedFromTheWebSideClearsTheTool();
   void unknownAnchorTypesCannotBeMinted();
 
+  void setCommentTextIsBoundedAndTruncatedNotRejected();
+  void beginCommentTextEditIsDroppedWhenThePageIsNotReady();
+  void editabilityIsLatchedAcrossAReload();
+
 private:
   static QJsonObject validAnchor(int p_page = 0, const QString &p_text = QStringLiteral("q"));
   static QJsonArray oneComment(const QString &p_id);
@@ -642,6 +646,86 @@ void TestPdfViewerAdapterComments::unknownAnchorTypesCannotBeMinted() {
   QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*unsupported type.*")));
   adapter.requestAddComment(future, CommentColor::defaultToken());
   QCOMPARE(spy.count(), 0);
+}
+
+// === Inline free-text editing ===
+
+// The body comes from a contenteditable in the page, so it is hostile input
+// like everything else here. An over-long body is TRUNCATED rather than
+// refused: dropping the tail of a long note is recoverable, dropping the note
+// is not.
+void TestPdfViewerAdapterComments::setCommentTextIsBoundedAndTruncatedNotRejected() {
+  PdfViewerAdapter adapter;
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::setCommentTextRequested);
+
+  const QString hugeId(4096, QLatin1Char('a'));
+  adapter.requestSetCommentText(hugeId, QStringLiteral("hi"));
+  adapter.requestSetCommentText(QString(), QStringLiteral("hi"));
+  QCOMPARE(spy.count(), 0);
+
+  adapter.requestSetCommentText(QStringLiteral("real-id"), QStringLiteral("hello"));
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.at(0).at(0).toString(), QStringLiteral("real-id"));
+  QCOMPARE(spy.at(0).at(1).toString(), QStringLiteral("hello"));
+
+  const QString overlong(Comment::maxTextLength() + 500, QLatin1Char('x'));
+  adapter.requestSetCommentText(QStringLiteral("real-id"), overlong);
+  QCOMPARE(spy.count(), 2);
+  QCOMPARE(spy.at(1).at(1).toString().size(), Comment::maxTextLength());
+}
+
+// Same rule as captureSelection: an edit SESSION only exists in a live
+// document, so it must never be replayed onto the replacement page — the id
+// would open an editor on whatever comment happened to inherit it.
+void TestPdfViewerAdapterComments::beginCommentTextEditIsDroppedWhenThePageIsNotReady() {
+  PdfViewerAdapter adapter;
+  adapter.setReady(true);
+  adapter.setReady(false);
+
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::commentTextEditRequested);
+  adapter.beginCommentTextEdit(QStringLiteral("some-id"));
+  QCOMPARE(spy.count(), 0);
+
+  adapter.setReady(true);
+  QCOMPARE(spy.count(), 0);
+
+  // ...and it is id-bounded like every other echoed id.
+  adapter.beginCommentTextEdit(QString());
+  adapter.beginCommentTextEdit(QString(4096, QLatin1Char('a')));
+  QCOMPARE(spy.count(), 0);
+
+  adapter.beginCommentTextEdit(QStringLiteral("real-id"));
+  QCOMPARE(spy.count(), 1);
+}
+
+// Editability is authoring state, not document state: a reloaded page must come
+// up knowing whether it may accept keystrokes at all, or a read-only file's
+// boxes would silently swallow the user's typing.
+void TestPdfViewerAdapterComments::editabilityIsLatchedAcrossAReload() {
+  PdfViewerAdapter adapter;
+  QCOMPARE(adapter.areCommentsEditable(), false);
+
+  adapter.setReady(true);
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::commentsEditableChanged);
+
+  adapter.setCommentsEditable(true);
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.at(0).at(0).toBool(), true);
+  QCOMPARE(adapter.areCommentsEditable(), true);
+
+  // Idempotent: republishing an unchanged value would be pure noise.
+  adapter.setCommentsEditable(true);
+  QCOMPARE(spy.count(), 1);
+
+  // A reload: the window drives the adapter to not-ready and clears the
+  // document state.
+  adapter.setReady(false);
+  adapter.clearComments();
+  adapter.setReady(true);
+
+  // The replacement page is told again, with the value the adapter still holds.
+  QCOMPARE(spy.count(), 2);
+  QCOMPARE(spy.at(1).at(0).toBool(), true);
 }
 
 } // namespace tests

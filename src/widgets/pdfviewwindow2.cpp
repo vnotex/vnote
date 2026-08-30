@@ -299,7 +299,18 @@ void PdfViewWindow2::setupComments() {
     // on a read-only file would be dispatched, refused, and leave the
     // user looking at something that was never saved.
     setAuthoringEnabled(p_editable);
+    // The overlay needs it too, or a double-click would open an inline editor
+    // whose every keystroke the store is going to throw away.
+    if (auto *a = adapter()) {
+      a->setCommentsEditable(p_editable);
+    }
   });
+
+  // The Text tool is a PLACE-then-TYPE gesture, and the typing half lives on
+  // the page. Connected after commentsChanged above, so the overlay already
+  // holds the new comment by the time the editor is opened on it.
+  connect(m_commentController, &CommentController::commentAdded, this,
+          &PdfViewWindow2::beginInlineTextEdit);
 
   connect(m_commentController, &CommentController::failed, this, [this](const QString &p_message) {
     // Surfaced without touching the buffer's modified state: comments are not
@@ -322,6 +333,8 @@ void PdfViewWindow2::setupComments() {
             &CommentController::selectComment);
     connect(pdfAdapter, &PdfViewerAdapter::deleteCommentRequested, m_commentController,
             &CommentController::deleteComment);
+    connect(pdfAdapter, &PdfViewerAdapter::setCommentTextRequested, m_commentController,
+            &CommentController::setCommentText);
   }
 
   // === Page context menu (view) -> overlay ===
@@ -386,6 +399,28 @@ void PdfViewWindow2::publishCommentsToViewer() {
     payload.append(comment.toJson());
   }
   pdfAdapter->setComments(payload);
+}
+
+void PdfViewWindow2::beginInlineTextEdit(const QString &p_id) {
+  auto *pdfAdapter = adapter();
+  if (!pdfAdapter || !m_commentController) {
+    return;
+  }
+
+  const auto &comments = m_commentController->getComments();
+  const int idx = comments.indexOfId(p_id);
+  if (idx < 0) {
+    return;
+  }
+
+  const auto &comment = comments.m_comments[idx];
+  if (comment.m_anchor.value(QStringLiteral("type")).toString() != PdfFreeTextAnchor::type()) {
+    // A highlight or a stroke has no on-page body; its note is written in the
+    // dock.
+    return;
+  }
+
+  pdfAdapter->beginCommentTextEdit(p_id);
 }
 
 void PdfViewWindow2::setupViewer() {

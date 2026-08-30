@@ -196,19 +196,47 @@ window.__app.pdfLinkService = {
 };
 window.PDFViewerApplication = window.__app;
 
+// pdfviewer.mjs registers its last-chance free-text flush at FILE SCOPE, on
+// window 'pagehide' and document 'visibilitychange', so the recorders have to
+// exist BEFORE the file is evaluated. (The core prelude's document recorder has
+// already captured 'webviewerloaded' by now, so replacing it here is safe.)
+window.__winListeners = {};
+window.addEventListener = function(p_name, p_cb) { window.__winListeners[p_name] = p_cb; };
+window.__docListeners = {};
+document.addEventListener = function(p_name, p_cb) { window.__docListeners[p_name] = p_cb; };
+document.visibilityState = 'visible';
+
 // AppOptions is supplied by the CORE prelude, because pdfviewercore.js is what
 // configures it (from 'webviewerloaded'). pdfviewer.mjs must NOT touch it: a
 // deferred module runs after pdf.js has already read every option. Redefining
 // the stub here would mask that.
 
-// Must satisfy EVERYTHING the existing channel callback does, not just the new
-// outline calls: it connects urlUpdated unconditionally and first, so omitting
-// that would make the callback throw before setOutlineAdapter() is reached.
+// Must satisfy EVERYTHING the channel callback does, not just the outline
+// calls: it connects every signal unconditionally and in order, so ONE missing
+// stub makes the whole callback throw at that point and silently skips every
+// connection after it. (setOutlineAdapter() runs early, so the outline cases
+// would still pass while the comment wiring was never established -- which is
+// exactly what happened before this list was completed. Assert the callback
+// itself does not throw.)
 window.__scrollHandler = null;
+window.__editHandler = null;
+window.__editableHandler = null;
+window.__texts = [];
+window.__deleted = [];
 window.__fakeAdapter = {
     urlUpdated:                 { connect: function() {} },
     outlineItemScrollRequested: { connect: function(fn) { window.__scrollHandler = fn; } },
+    commentsUpdated:            { connect: function() {} },
+    commentScrollRequested:     { connect: function() {} },
+    commentTextEditRequested:   { connect: function(fn) { window.__editHandler = fn; } },
+    commentsEditableChanged:    { connect: function(fn) { window.__editableHandler = fn; } },
+    captureSelectionRequested:  { connect: function() {} },
+    toolOptionsChanged:         { connect: function() {} },
+    toolChanged:                { connect: function() {} },
     setOutline: function(o) { window.__published.push(o); },
+    setDocumentPageCount: function() {},
+    requestSetCommentText: function(id, t) { window.__texts.push({ id: id, text: t }); },
+    requestDeleteComment: function(id) { window.__deleted.push(id); },
     setReady:   function() {}
 };
 )JS";
@@ -267,6 +295,21 @@ private slots:
   void inkDraftDomReflectsTheConfiguredInk();
 
   void inkOpacityReachesTheAnchorTheDraftAndTheRender();
+
+  // The inline free-text editor: the Text tool's typing half.
+  void freeTextEditIsRefusedWhenTheStoreIsReadOnly();
+  void freeTextEditCommitsTheBodyAsAnIntent();
+  void anAbandonedNewBoxIsRemovedNotLeftEmpty();
+  void anExistingBoxClearedOnPurposeIsEmptiedNotDeleted();
+  void typingIsStreamedSoATeardownCannotLoseIt();
+  void escapeRevertsAnExistingBoxAndDropsANewOne();
+  void aRepaintKeepsTheEditorOpenAndItsDraftIntact();
+  void aGenuineBlurCommitsExactlyOnce();
+  void freeTextBodyIsNormalizedAndCapped();
+  void caretOffsetResolvesToATextNodePosition();
+  void caretAndBodyAreMeasuredInTheSameCoordinates();
+  void glueFlushesTheDraftOnPageLifecycleEvents();
+  void glueWiresTheInlineEditorSignals();
 
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
@@ -546,8 +589,13 @@ void TestPdfViewerCoreJs::gluePublishesWhenChannelArrivesFirst() {
   loadCore(engine);
   loadGlue(engine);
 
-  eval(engine,
-       QStringLiteral("window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
+  // The callback connects every signal in order, so a throw partway through
+  // would silently skip the rest of the wiring while leaving the outline
+  // assertions below green.
+  const QJSValue cb =
+      eval(engine,
+           QStringLiteral("window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
+  QVERIFY2(!cb.isError(), qPrintable(cb.toString()));
   eval(engine, QStringLiteral("window.__initDeferred.resolve();"));
   eval(engine, QStringLiteral("window.__app.eventBus.fire('documentloaded');"));
 
@@ -860,13 +908,42 @@ namespace {
 const char *const c_toolHarness = R"JS(
 // Enough DOM for the render path: extendInk() repaints during the drag so the
 // user sees the stroke as they draw, and renderAllComments() builds real nodes.
+//
+// Nodes carry `nodeType` / `nodeName` / `childNodes` and textContent installs a
+// real TEXT NODE, so the production body reader (flattenEditorText(), chosen for
+// anything with childNodes) is the branch these cases execute -- a stub without
+// childNodes would silently exercise the fallback instead.
+//
+// Listeners are RETAINED rather than swallowed, and replacing a node's
+// textContent dispatches 'blur' on the element children it removes. A browser
+// gives no such guarantee for an arbitrary removal; this is a deliberately
+// CONSERVATIVE worst case, so the blur-vs-DOM-churn guard is exercised on every
+// layer rebuild instead of only in the (unreproducible) real timing.
+window.__fire = function(p_el, p_type, p_event) {
+    if (!p_el || !p_el.listeners || !p_el.listeners[p_type]) {
+        return 0;
+    }
+    var evt = p_event || {};
+    if (typeof evt.preventDefault !== 'function') { evt.preventDefault = function() {}; }
+    if (typeof evt.stopPropagation !== 'function') { evt.stopPropagation = function() {}; }
+    var list = p_el.listeners[p_type];
+    for (var i = 0; i < list.length; ++i) { list[i](evt); }
+    return list.length;
+};
+
+window.__mkTextNode = function(p_value) {
+    return { nodeType: 3, nodeValue: p_value, childNodes: [] };
+};
+
 window.__mkEl = function() {
     var el = {
+        nodeType: 1,
+        nodeName: 'DIV',
+        childNodes: [],
         style: {},
         className: '',
-        textContent: '',
         attrs: {},
-        children: [],
+        listeners: {},
         // renderInkDraft() reaches the <polyline> through svg.firstChild, so the
         // stub has to maintain it or the whole draft path silently no-ops.
         firstChild: null,
@@ -877,13 +954,44 @@ window.__mkEl = function() {
         setAttribute: function(k, v) { this.attrs[k] = v; },
         getAttribute: function(k) { return this.attrs[k]; },
         appendChild: function(c) {
-            this.children.push(c);
-            if (this.children.length === 1) { this.firstChild = c; }
+            this.childNodes.push(c);
+            this.firstChild = this.childNodes[0];
             return c;
         },
-        addEventListener: function() {},
+        addEventListener: function(t, fn) {
+            if (!this.listeners[t]) { this.listeners[t] = []; }
+            this.listeners[t].push(fn);
+        },
         querySelector: function() { return null; }
     };
+    Object.defineProperty(el, 'children', {
+        get: function() {
+            var out = [];
+            for (var i = 0; i < el.childNodes.length; ++i) {
+                if (el.childNodes[i].nodeType === 1) { out.push(el.childNodes[i]); }
+            }
+            return out;
+        }
+    });
+    Object.defineProperty(el, 'textContent', {
+        get: function() {
+            var out = '';
+            for (var i = 0; i < el.childNodes.length; ++i) {
+                if (el.childNodes[i].nodeType === 3) { out += el.childNodes[i].nodeValue; }
+            }
+            return out;
+        },
+        set: function(v) {
+            // Assigning textContent REMOVES every existing child, which is what
+            // detaches a focused contenteditable during a layer rebuild.
+            var removed = el.children;
+            for (var i = 0; i < removed.length; ++i) {
+                window.__fire(removed[i], 'blur');
+            }
+            el.childNodes = (v === '') ? [] : [window.__mkTextNode(v)];
+            el.firstChild = el.childNodes.length ? el.childNodes[0] : null;
+        }
+    });
     return el;
 };
 document.createElement = function() { return window.__mkEl(); };
@@ -906,13 +1014,17 @@ window.__attrEl = function(name) {
 window.__added = [];
 window.__toolFinished = 0;
 window.__pageCount = 0;
+window.__deleted = [];
+window.__texts = [];
+window.__selected = [];
 
 window.__adapter = {
     setDocumentPageCount: function(n) { window.__pageCount = n; },
     setOutline: function() {},
     requestAddComment: function(a, c) { window.__added.push({ anchor: a, color: c }); },
-    requestSelectComment: function() {},
-    requestDeleteComment: function() {},
+    requestSelectComment: function(id) { window.__selected.push(id); },
+    requestDeleteComment: function(id) { window.__deleted.push(id); },
+    requestSetCommentText: function(id, t) { window.__texts.push({ id: id, text: t }); },
     notifyToolFinished: function() { window.__toolFinished++; }
 };
 
@@ -929,11 +1041,15 @@ window.__mkViewport = function(scale, pageHeightPdf) {
 };
 
 window.__pageDiv = {
+    // The layer is RETAINED, as a real page div retains it: that is what makes
+    // the next renderAllComments() clear a layer that still holds the editor,
+    // and therefore fire the blur the guard has to ignore.
+    __layer: null,
     getBoundingClientRect: function() {
         return { left: 100, top: 50, right: 700, bottom: 850, width: 600, height: 800 };
     },
-    querySelector: function() { return null; },
-    appendChild: function() {}
+    querySelector: function() { return this.__layer; },
+    appendChild: function(c) { this.__layer = c; return c; }
 };
 
 window.__app = {
@@ -1368,6 +1484,538 @@ void TestPdfViewerCoreJs::inkOpacityReachesTheAnchorTheDraftAndTheRender() {
   QCOMPARE(eval(engine, QStringLiteral("window.__attrEl('stroke-opacity').attrs['stroke-opacity']"))
                .toString(),
            QStringLiteral("1"));
+}
+
+// ============ The inline free-text editor ============
+//
+// The Text tool is a PLACE-then-TYPE gesture, and until the editor existed only
+// the first half worked: placing a box left an empty "…" placeholder whose only
+// editor was the comment dock, which is closed by default. These cases pin the
+// decision table (new/existing x empty/non-empty) and the repaint behaviour.
+
+namespace {
+// Layered ON TOP of c_toolHarness: one free-text comment on the harness page,
+// plus a "type this" helper. The stub element carries textContent (and no
+// innerText), which is exactly what currentFreeTextEditText() falls back to.
+const char *const c_freeTextHarness = R"JS(
+window.__seedFreeText = function(p_text) {
+    window.vxcore.setComments([{
+        id: 'ft1',
+        color: 'yellow',
+        text: p_text || '',
+        anchor: { type: 'pdf-freetext', page: 0, x: 20, y: 780, fontSize: 12 }
+    }]);
+};
+
+window.__type = function(p_text) {
+    window.vxcore.editingEl.textContent = p_text;
+    // Through the REAL 'input' listener, so the draft bookkeeping and the
+    // streaming debounce are exercised rather than bypassed.
+    window.__fire(window.vxcore.editingEl, 'input');
+};
+)JS";
+} // namespace
+
+// A read-only store must not accept keystrokes at all. Letting the box open and
+// then dropping the write is the same silent-discard failure the pdf.js editors
+// were disabled for.
+void TestPdfViewerCoreJs::freeTextEditIsRefusedWhenTheStoreIsReadOnly() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  // The default is NOT editable, so a page that comes up before C++ has said
+  // anything is inert.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.commentsEditable")).toBool(), false);
+
+  eval(engine, QStringLiteral("window.__seedFreeText('');"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.beginFreeTextEdit('ft1', true)")).toBool(),
+           false);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+
+  // ...and a mid-edit loss of editability makes ONE best-effort flush of the
+  // unstreamed tail (the flag may have changed for a reason other than a
+  // refused write, and that is the only moment the tail can still be handed
+  // over) and then closes the box.
+  //
+  // It must NOT revert or delete: `CommentController` gates setCommentText and
+  // deleteComment on the same flag it has just cleared, so either would be
+  // refused and would only fake a restore that never happened.
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              "window.__type('typed');"
+                              "window.vxcore.flushFreeTextDraft();"
+                              "window.__texts = [];"
+                              // A tail the debounce has not carried yet.
+                              "window.__type('typed more');"
+                              "window.vxcore.setCommentsEditable(false);"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(),
+           QStringLiteral("typed more"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::freeTextEditCommitsTheBodyAsAnIntent() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
+           QStringLiteral("ft1"));
+  // The editor node exists and is the box itself, not a floating overlay.
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingEl !== null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingEl.attrs['data-vx-id']")).toString(),
+           QStringLiteral("ft1"));
+
+  eval(engine, QStringLiteral("window.__type('a note');"
+                              "window.vxcore.commitFreeTextEdit();"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].id")).toString(), QStringLiteral("ft1"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(),
+           QStringLiteral("a note"));
+  // Committing CLOSES the editor, and never deletes a box that carries text.
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+}
+
+// "I clicked by mistake" has to look like nothing happened. Leaving the empty
+// placeholder behind is what made the tool read as broken in the first place.
+void TestPdfViewerCoreJs::anAbandonedNewBoxIsRemovedNotLeftEmpty() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              // Whitespace only is still empty.
+                              "window.__type('   \\n  ');"
+                              "window.vxcore.commitFreeTextEdit();"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted[0]")).toString(), QStringLiteral("ft1"));
+}
+
+// The mirror case: clearing an EXISTING box is an explicit edit, so it writes
+// an EMPTY BODY rather than deleting the comment. The dock's editor and the
+// box's editor edit the same field and must not disagree -- and deleting a
+// comment nobody asked to delete is worse than a visible empty placeholder.
+void TestPdfViewerCoreJs::anExistingBoxClearedOnPurposeIsEmptiedNotDeleted() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('old body');"
+                              "window.vxcore.beginFreeTextEdit('ft1', false);"
+                              "window.__type('');"
+                              "window.vxcore.commitFreeTextEdit();"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].id")).toString(), QStringLiteral("ft1"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(), QString());
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+}
+
+// The body must not live only in the contenteditable: a tab close, a reload or
+// a window close does not reliably deliver a blur, and every teardown path
+// discards the draft (after flushing it, which is what the tail of this case
+// pins).
+void TestPdfViewerCoreJs::typingIsStreamedSoATeardownCannotLoseIt() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              "window.__type('half a sentence');"));
+
+  // The debounce timer is driven directly: QJSEngine has no setTimeout, which
+  // is exactly why the flush body is a separate, callable method.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.flushFreeTextDraft()")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(),
+           QStringLiteral("half a sentence"));
+  // The editor is STILL OPEN: streaming is not committing.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
+           QStringLiteral("ft1"));
+
+  // Unchanged text does not re-dispatch...
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.flushFreeTextDraft()")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+
+  // ...and a draft that has been emptied is NOT streamed as a delete or as an
+  // empty write: a mid-gesture select-all must not remove the box.
+  eval(engine, QStringLiteral("window.__type('   ');"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.flushFreeTextDraft()")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+
+  // The debounce leaves a window in which nothing has been streamed yet, so
+  // document teardown ('pagesdestroy' / 'documenterror' -> resetComments) must
+  // flush FIRST, while the adapter and the ids are still the old document's.
+  eval(engine, QStringLiteral("window.__texts = [];"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              "window.__type('never streamed');"
+                              "window.vxcore.resetComments();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(),
+           QStringLiteral("never streamed"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+  // Teardown never deletes: the box belongs to a document that is going away.
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::escapeRevertsAnExistingBoxAndDropsANewOne() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  // Esc on a NEW box abandons the box, not merely the keystrokes -- even when
+  // something was typed, and even when it was already streamed. Driven through
+  // the SHIPPED keydown listener rather than by calling the method.
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              "window.__type('half-written');"
+                              "window.vxcore.flushFreeTextDraft();"
+                              "window.__texts = [];"
+                              "window.__fire(window.vxcore.editingEl, 'keydown',"
+                              "              { key: 'Escape' });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 1);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+
+  // Esc on an EXISTING box REVERTS: the streaming flush may already have
+  // written part of the draft, so merely stopping is not enough.
+  eval(engine, QStringLiteral("window.__deleted = [];"
+                              "window.__texts = [];"
+                              "window.__seedFreeText('stored');"
+                              "window.vxcore.beginFreeTextEdit('ft1', false);"
+                              "window.__type('scratch');"
+                              "window.vxcore.flushFreeTextDraft();"
+                              "window.vxcore.cancelFreeTextEdit();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+  // One streamed write, then the revert.
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 2);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[1].text")).toString(),
+           QStringLiteral("stored"));
+
+  // ...and an existing box that was never streamed needs no revert write at all.
+  eval(engine, QStringLiteral("window.__texts = [];"
+                              "window.__seedFreeText('stored');"
+                              "window.vxcore.beginFreeTextEdit('ft1', false);"
+                              "window.vxcore.cancelFreeTextEdit();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 0);
+}
+
+// Scrolling, zooming or rotating rebuilds every comment layer, which detaches
+// the editor's node and fires a blur. The editor must come back with the
+// uncommitted text still in it -- and that blur must NOT be mistaken for the
+// user leaving the box, or the session would end on every scroll.
+void TestPdfViewerCoreJs::aRepaintKeepsTheEditorOpenAndItsDraftIntact() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              "window.__type('mid-sentence');"
+                              "window.__oldEl = window.vxcore.editingEl;"
+                              // What 'pagerendered' / 'scalechanging' do.
+                              "window.vxcore.renderAllComments();"));
+
+  // The rebuild really did replace the node (otherwise the guard below would be
+  // vacuous: the harness layer fires blur on every child it detaches).
+  QVERIFY(eval(engine, QStringLiteral("window.__oldEl !== window.vxcore.editingEl")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
+           QStringLiteral("ft1"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingEl.textContent")).toString(),
+           QStringLiteral("mid-sentence"));
+  // ...and it is read back through the PRODUCTION path: the node carries real
+  // child nodes, so currentFreeTextEditText() takes its flattenEditorText()
+  // branch here rather than the stub-only fallback.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingEl.childNodes.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingEl.childNodes[0].nodeType")).toInt(),
+           3);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.currentFreeTextEditText()")).toString(),
+           QStringLiteral("mid-sentence"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__deleted.length")).toInt(), 0);
+  // The flag is transient: a genuine blur AFTER the repaint must still commit.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingRerender")).toBool(), false);
+
+  // A blur from the STALE node is inert -- it is not the editor any more.
+  eval(engine, QStringLiteral("window.__fire(window.__oldEl, 'blur');"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
+           QStringLiteral("ft1"));
+}
+
+// The other half of the guard: a real blur, through the shipped listener,
+// commits once and closes the session.
+void TestPdfViewerCoreJs::aGenuineBlurCommitsExactlyOnce() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_freeTextHarness)).isError());
+
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(true);"
+                              "window.__seedFreeText('');"
+                              "window.vxcore.beginFreeTextEdit('ft1', true);"
+                              "window.__type('typed by hand');"
+                              "window.__el = window.vxcore.editingEl;"
+                              "window.__fire(window.__el, 'blur');"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(),
+           QStringLiteral("typed by hand"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.editingCommentId === null")).toBool());
+
+  // A second blur on the same (now detached) node dispatches nothing more.
+  eval(engine, QStringLiteral("window.__fire(window.__el, 'blur');"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+}
+
+void TestPdfViewerCoreJs::freeTextBodyIsNormalizedAndCapped() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  // TRANSPORT fixes only: CRLF, the single trailing newline Chromium keeps for
+  // its closing <br>, and the NUL that would truncate on the C++ side.
+  QCOMPARE(eval(engine, QStringLiteral("VXC.normalizeFreeTextBody('a\\r\\nb\\n')")).toString(),
+           QStringLiteral("a\nb"));
+  QCOMPARE(eval(engine, QStringLiteral("VXC.normalizeFreeTextBody('a\\u0000b')")).toString(),
+           QStringLiteral("ab"));
+  QCOMPARE(eval(engine, QStringLiteral("VXC.normalizeFreeTextBody(null)")).toString(), QString());
+
+  // The user's OWN whitespace round-trips: an indented body must survive.
+  QCOMPARE(eval(engine, QStringLiteral("VXC.normalizeFreeTextBody('  indented  ')")).toString(),
+           QStringLiteral("  indented  "));
+
+  // "Is it empty" is a SEPARATE question, and NBSP counts -- that is what
+  // contenteditable stores for a run of spaces.
+  QVERIFY(eval(engine, QStringLiteral("VXC.isBlankFreeTextBody('')")).toBool());
+  QVERIFY(eval(engine, QStringLiteral("VXC.isBlankFreeTextBody(' \\n\\u00a0 ')")).toBool());
+  QVERIFY(eval(engine, QStringLiteral("VXC.isBlankFreeTextBody(null)")).toBool());
+  QVERIFY(!eval(engine, QStringLiteral("VXC.isBlankFreeTextBody('  x  ')")).toBool());
+
+  // Capped independently of the C++ side, which re-applies its own cap.
+  QCOMPARE(eval(engine, QStringLiteral("VXC.normalizeFreeTextBody("
+                                       "  new Array(20000).join('x')).length"))
+               .toInt(),
+           16384);
+}
+
+// The caret has to survive a layer rebuild, and "put it back at the end" is not
+// good enough: a repaint arriving mid-word (a scroll, a zoom, the echo of a
+// streamed write) would otherwise move the caret out from under the user and
+// interleave the rest of the sentence. The resolver is pure tree-walking, so it
+// is testable without a real selection.
+void TestPdfViewerCoreJs::caretOffsetResolvesToATextNodePosition() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  // Chromium splits an edited box into several text nodes around its <br>s, so
+  // the offset is a CHARACTER count across the whole subtree, not an index into
+  // one node.
+  QVERIFY(!eval(engine, QStringLiteral("window.__txt = function(v) {"
+                                       "  return { nodeType: 3, nodeValue: v, childNodes: [] };"
+                                       "};"
+                                       "window.__el = { nodeType: 1, childNodes: ["
+                                       "  window.__txt('abc'),"
+                                       "  { nodeType: 1, childNodes: [window.__txt('de')] },"
+                                       "  window.__txt('fg')"
+                                       "] };"))
+               .isError());
+
+  const auto resolve = [&engine](int p_offset) {
+    return json(engine, QStringLiteral("(function(t) {"
+                                       "  return t === null ? null"
+                                       "                    : { v: t.node.nodeValue,"
+                                       "                        o: t.offset };"
+                                       "})(VXC.caretTargetForOffset(window.__el, %1))")
+                            .arg(p_offset));
+  };
+
+  QCOMPARE(resolve(0), QStringLiteral("{\"v\":\"abc\",\"o\":0}"));
+  QCOMPARE(resolve(2), QStringLiteral("{\"v\":\"abc\",\"o\":2}"));
+  // Crossing into the nested element, in document order.
+  QCOMPARE(resolve(4), QStringLiteral("{\"v\":\"de\",\"o\":1}"));
+  QCOMPARE(resolve(6), QStringLiteral("{\"v\":\"fg\",\"o\":1}"));
+  // The very end resolves rather than falling off.
+  QCOMPARE(resolve(7), QStringLiteral("{\"v\":\"fg\",\"o\":2}"));
+
+  // Past the end / unknown offset yields null, and focusFreeTextEditor()
+  // collapses to the end instead of silently landing at 0.
+  QCOMPARE(resolve(99), QStringLiteral("null"));
+  QCOMPARE(resolve(-1), QStringLiteral("null"));
+}
+
+// The body and the caret MUST be measured in one coordinate system.
+//
+// Chromium represents an entered line break as a <br> (or a block child), which
+// innerText reports as '\n' but a DOM Range does NOT contribute a character
+// for. Measuring the caret with Range.toString() while reading the body with
+// innerText therefore leaves the offset short by one PER LINE -- and since the
+// rebuilt node is re-seeded from the draft, which does carry the newlines, the
+// caret would silently drift backwards and the rest of the sentence would land
+// in the middle of the previous one.
+void TestPdfViewerCoreJs::caretAndBodyAreMeasuredInTheSameCoordinates() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_viewportHarness)).isError());
+
+  QVERIFY(
+      !eval(engine, QStringLiteral("window.__txt = function(v) {"
+                                   "  return { nodeType: 3, nodeValue: v, childNodes: [] };"
+                                   "};"
+                                   "window.__br = { nodeType: 1, nodeName: 'BR', childNodes: [] };"
+                                   "window.__t1 = window.__txt('abc');"
+                                   "window.__t2 = window.__txt('def');"
+                                   // What a two-line plaintext-only box actually is.
+                                   "window.__el = { nodeType: 1, nodeName: 'DIV',"
+                                   "                childNodes: [window.__t1, window.__br,"
+                                   "                             window.__t2] };"))
+           .isError());
+
+  // The body carries the line break, exactly as innerText would report it.
+  QCOMPARE(eval(engine, QStringLiteral("VXC.flattenEditorText(window.__el)")).toString(),
+           QStringLiteral("abc\ndef"));
+
+  // ...and the caret after the 'd' is offset 5 in THOSE coordinates. A
+  // Range.toString() measurement would have said 4, i.e. before the 'd'.
+  QCOMPARE(eval(engine, QStringLiteral("VXC.walkEditorText(window.__el, window.__t2, 1).offset"))
+               .toInt(),
+           5);
+  // The boundary before the <br>, and the very start / end of the box.
+  QCOMPARE(eval(engine, QStringLiteral("VXC.walkEditorText(window.__el, window.__t1, 3).offset"))
+               .toInt(),
+           3);
+  QCOMPARE(eval(engine, QStringLiteral("VXC.walkEditorText(window.__el, window.__el, 0).offset"))
+               .toInt(),
+           0);
+  QCOMPARE(eval(engine, QStringLiteral("VXC.walkEditorText(window.__el, window.__el, 3).offset"))
+               .toInt(),
+           7);
+
+  // Round trip: that offset resolves back into the SINGLE text node the rebuild
+  // produces (renderFreeText seeds the new node through textContent).
+  QVERIFY(!eval(engine, QStringLiteral("window.__rebuilt = { nodeType: 1, nodeName: 'DIV',"
+                                       "  childNodes: [window.__txt('abc\\ndef')] };"))
+               .isError());
+  QCOMPARE(json(engine, QStringLiteral("(function(t) { return { v: t.node.nodeValue, o: t.offset };"
+                                       "})(VXC.caretTargetForOffset(window.__rebuilt, 5))")),
+           QStringLiteral("{\"v\":\"abc\\ndef\",\"o\":5}"));
+
+  // A block-element line boundary counts the same way.
+  QVERIFY(!eval(engine, QStringLiteral(
+                            "window.__blocks = { nodeType: 1, nodeName: 'DIV', childNodes: ["
+                            "  { nodeType: 1, nodeName: 'DIV', childNodes: [window.__txt('one')] },"
+                            "  { nodeType: 1, nodeName: 'DIV', childNodes: [window.__txt('two')] }"
+                            "] };"))
+               .isError());
+  QCOMPARE(eval(engine, QStringLiteral("VXC.flattenEditorText(window.__blocks)")).toString(),
+           QStringLiteral("one\ntwo"));
+}
+
+// The debounce leaves a window of unstreamed characters, so the page-lifecycle
+// events are the last chance to get them across the bridge. They are registered
+// at file scope in pdfviewer.mjs, which is why this drives the GLUE.
+void TestPdfViewerCoreJs::glueFlushesTheDraftOnPageLifecycleEvents() {
+  QJSEngine engine;
+  loadCore(engine);
+  loadGlue(engine);
+
+  QVERIFY2(eval(engine, QStringLiteral("typeof window.__winListeners['pagehide'] === 'function'"))
+               .toBool(),
+           "pdfviewer.mjs must register a pagehide flush");
+  QVERIFY2(eval(engine,
+                QStringLiteral("typeof window.__docListeners['visibilitychange'] === 'function'"))
+               .toBool(),
+           "pdfviewer.mjs must register a visibilitychange flush");
+
+  const QJSValue cb =
+      eval(engine,
+           QStringLiteral("window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
+  QVERIFY2(!cb.isError(), qPrintable(cb.toString()));
+
+  // An open editor holding text the debounce has NOT yet streamed.
+  QVERIFY(!eval(engine,
+                QStringLiteral("window.__texts = [];"
+                               "window.vxcore.setCommentsEditable(true);"
+                               "window.vxcore.comments = [{ id: 'ft1', color: 'yellow', text: '',"
+                               "  anchor: { type: 'pdf-freetext', page: 0, x: 1, y: 1,"
+                               "            fontSize: 12 } }];"
+                               "window.vxcore.editingCommentId = 'ft1';"
+                               "window.vxcore.editingIsNew = true;"
+                               "window.vxcore.editingDraftText = 'unstreamed';"))
+               .isError());
+
+  // A VISIBLE visibilitychange is not a teardown and must dispatch nothing.
+  eval(engine, QStringLiteral("document.visibilityState = 'visible';"
+                              "window.__docListeners['visibilitychange']();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 0);
+
+  eval(engine, QStringLiteral("document.visibilityState = 'hidden';"
+                              "window.__docListeners['visibilitychange']();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts[0].text")).toString(),
+           QStringLiteral("unstreamed"));
+
+  // pagehide right afterwards must not write the same body twice.
+  eval(engine, QStringLiteral("window.__winListeners['pagehide']();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__texts.length")).toInt(), 1);
+}
+
+// The channel callback connects every signal in order, so a missing connection
+// is invisible unless it is asserted: the outline cases would stay green while
+// the inline editor was never wired at all.
+void TestPdfViewerCoreJs::glueWiresTheInlineEditorSignals() {
+  QJSEngine engine;
+  loadCore(engine);
+  loadGlue(engine);
+
+  const QJSValue cb =
+      eval(engine,
+           QStringLiteral("window.__channelCb({ objects: { vxAdapter: window.__fakeAdapter } });"));
+  QVERIFY2(!cb.isError(), qPrintable(cb.toString()));
+
+  QVERIFY(eval(engine, QStringLiteral("typeof window.__editHandler === 'function'")).toBool());
+  QVERIFY(eval(engine, QStringLiteral("typeof window.__editableHandler === 'function'")).toBool());
+
+  // commentsEditableChanged reaches the core...
+  eval(engine, QStringLiteral("window.__editableHandler(true);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.commentsEditable")).toBool(), true);
+
+  // ...and commentTextEditRequested opens the editor, flagged as a NEW box (the
+  // only route C++ drives it from is a just-placed one).
+  eval(engine, QStringLiteral("window.vxcore.comments = [{ id: 'ft1', color: 'yellow', text: '',"
+                              "  anchor: { type: 'pdf-freetext', page: 0, x: 1, y: 1,"
+                              "            fontSize: 12 } }];"
+                              "window.__editHandler('ft1');"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
+           QStringLiteral("ft1"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingIsNew")).toBool(), true);
 }
 
 } // namespace tests

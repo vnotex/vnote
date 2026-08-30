@@ -57,6 +57,17 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.scrollToComment(p_id);
         });
 
+        // The inline free-text editor. Driven from C++ right after a box is
+        // placed, so the Text tool writes where the user clicked instead of
+        // leaving an empty placeholder behind.
+        adapter.commentTextEditRequested.connect(function(p_id) {
+            window.vxcore.beginFreeTextEdit(p_id, true);
+        });
+
+        adapter.commentsEditableChanged.connect(function(p_editable) {
+            window.vxcore.setCommentsEditable(p_editable);
+        });
+
         // Driven by the page context menu on the C++ side.
         adapter.captureSelectionRequested.connect(function(p_color) {
             window.vxcore.setCommentColor(p_color);
@@ -174,9 +185,19 @@ window.PDFViewerApplication.initializedPromise.then(function() {
     container.addEventListener('lostpointercapture', discard);
 
     // Esc leaves any authoring tool. Without it an armed tool can only be
-    // cleared from the toolbar, which is a long way from the page.
+    // cleared from the toolbar, which is a long way from the page. The
+    // free-text editor handles its OWN Esc (and stops propagation), so this is
+    // only the fallback for a box that somehow lost focus while still open.
     window.addEventListener('keydown', function(p_event) {
-        if (p_event.key === 'Escape' && window.vxcore.tool !== 'none') {
+        if (p_event.key !== 'Escape') {
+            return;
+        }
+        if (window.vxcore.editingCommentId) {
+            p_event.preventDefault();
+            window.vxcore.cancelFreeTextEdit();
+            return;
+        }
+        if (window.vxcore.tool !== 'none') {
             p_event.preventDefault();
             window.vxcore.finishTool();
         }
@@ -188,3 +209,28 @@ window.vxcore.on('ready', function() {
         window.vxAdapter.setReady(true);
     }
 });
+
+// Last-chance flush of an in-progress free-text body.
+//
+// Typing is streamed on a debounce (see pdfviewercore.js), so up to one
+// debounce window of text exists only inside the contenteditable. 'pagehide'
+// and a hidden 'visibilitychange' are the page-lifecycle events that fire
+// before a navigation, a reload or the window going away, and they are the last
+// point at which the QWebChannel is still usable.
+//
+// This is a NARROWING, not a guarantee: nothing running in the page can survive
+// the render process simply being killed. 'documenterror' / 'pagesdestroy' are
+// covered separately, inside resetComments().
+if (typeof window.addEventListener === 'function') {
+    const flushFreeText = function() {
+        if (window.vxcore) {
+            window.vxcore.flushFreeTextDraft();
+        }
+    };
+    window.addEventListener('pagehide', flushFreeText);
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            flushFreeText();
+        }
+    });
+}

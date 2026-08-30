@@ -296,7 +296,7 @@ view-window toolbar (`PdfViewWindow2::setupAnnotationToolBarActions`):
 |---|---|---|
 | Highlight | drag over text | `pdf-quads` |
 | Draw | drag on the page (one drag = one comment) | `pdf-ink` |
-| Text box | click to place; one-shot, then disarms | `pdf-freetext` |
+| Text box | click to place, then type IN the box; one-shot, then disarms | `pdf-freetext` |
 
 **A MODE is the point.** Arm Highlight once and every selection is captured,
 instead of a context-menu round trip per selection — that is the only reason
@@ -396,6 +396,120 @@ user gets a selection instead of a stroke.
 > from a private paste path), and the serialized form is a PDF annotation dict —
 > storing it would couple `comments.json` to a pdf.js version and orphan the data
 > on a bump.
+
+### The Text tool types ON THE PAGE (`beginFreeTextEdit`)
+
+**Placing a box is only half the gesture.** For one release the Text tool minted a
+`pdf-freetext` comment with an empty body and stopped there: the box rendered as the
+`.vx-comment-freetext-empty` ellipsis placeholder, `CommentController::commentAdded` had
+**zero receivers**, and the only editor was the comment dock — which is closed by default.
+The tool was indistinguishable from broken. Do not remove the inline editor without
+providing another affordance on the page.
+
+The box **is** the editor: while `editingCommentId` names it, `renderFreeText` marks the same
+element `contenteditable="plaintext-only"`. Routing:
+
+| Step | Where |
+|---|---|
+| place → mint comment | `placeFreeText` → `requestAddComment` → `CommentController::addComment` |
+| `commentAdded(id)` → is it `pdf-freetext`? | `PdfViewWindow2::beginInlineTextEdit` (the ONLY receiver of that signal) |
+| open the editor | `PdfViewerAdapter::beginCommentTextEdit` → `commentTextEditRequested` → `beginFreeTextEdit(id, /*isNew=*/true)` |
+| type | `input` → `scheduleFreeTextFlush` → (400 ms trailing throttle) → `requestSetCommentText` |
+| commit | blur / Ctrl+Enter → `applyFreeTextEdit` → `requestSetCommentText` |
+| re-open an existing box | **double-click** → `beginFreeTextEdit(id, false)` |
+
+Six rules that are load-bearing:
+
+- **Typing is STREAMED, not held until blur.** A page teardown (tab close, reload, window
+  close) does not reliably deliver a blur, and a body that only ever existed inside the
+  contenteditable would be lost with it — `PdfViewWindow2`'s destructor can only flush what
+  `CommentController` already received. `flushFreeTextDraft()` therefore pushes the current
+  draft on a `VX_FREETEXT_FLUSH_MS` (400 ms) trailing throttle (the same shape the comment
+  dock uses for its own keystrokes). It deliberately **never deletes and never writes a blank
+  body**: those are commit decisions, and a user who has just selected-all before retyping
+  must not have the box removed from under them.
+
+  The debounce leaves a window in which the newest characters have not been streamed, so
+  every boundary that can still reach the bridge flushes **first**: `resetComments()` (i.e.
+  `documenterror` / `pagesdestroy`) calls `flushFreeTextDraft()` before it discards anything,
+  `setCommentsEditable(false)` makes one best-effort flush before closing, `pdfviewer.mjs`
+  flushes from `pagehide` and from a hidden `visibilitychange`, and the ordinary
+  click-elsewhere / close-the-tab gesture blurs the box, which commits synchronously in the
+  render process before the click is acted on.
+
+  > **This is a NARROWING, not a guarantee, and the two residuals are known.** (1) A close
+  > that never blurs the box and never delivers a page-lifecycle event — a killed render
+  > process — loses up to one debounce window; nothing running in the page can cover that, and
+  > `PdfViewWindow2`'s destructor can only flush what `CommentController` already received.
+  > (2) When editability is lost *because a write was refused* (`saveRejectedReadOnly`),
+  > `CommentController` has already cleared `m_editable`, so the best-effort flush is refused
+  > too and the unstreamed tail is unrecoverable — but the file is read-only, so that text had
+  > nowhere to go in the first place, and the window shows the read-only `InlineBanner`.
+  > Do not delete these flush points, and do not "fix" the residuals by streaming on every
+  > keystroke: each streamed write echoes back as a full `setComments` publish, which rebuilds
+  > the comment dock's list and the page's comment layers.
+- **`beginCommentTextEdit` is NOT queued across a reload** (same rule as `captureSelection`):
+  an edit *session* only exists in a live document, and replaying it would open an editor on
+  whatever comment inherited that id in the replacement document.
+- **The blank/new × blank/existing table.** Abandoning a **new** box blank DELETES it — "I
+  clicked by mistake" has to look like nothing happened, and the leftover `…` placeholder is
+  exactly the bug this feature fixes. Clearing an **existing** box writes an empty body
+  (`requestSetCommentText(id, "")`) rather than deleting it: the dock's editor and the box's
+  editor edit the *same* field, so they must not disagree, and deleting a comment nobody
+  asked to delete is worse than leaving a visible, clickable placeholder. Blank means
+  whitespace-only too (`isBlankFreeTextBody`, NBSP included — that is what contenteditable
+  stores for a run of spaces). `normalizeFreeTextBody` does **transport** fixes only (CRLF,
+  NUL, the single trailing newline Chromium leaves for its closing `<br>`, the cap); it does
+  NOT trim, because an indented body must round-trip.
+- **Esc REVERTS, it does not merely stop.** Because the flush above may already have written
+  part of the draft, `cancelFreeTextEdit` puts `editingOriginalText` back on an existing box
+  (only when something was actually streamed), and deletes a new one whatever was typed. This
+  is the USER-driven route only; see the editability rule below for the involuntary one.
+- **A repaint must not end the session.** `renderAllComments` rebuilds every layer (scroll,
+  zoom, rotate all trigger it), which destroys the editor node and fires a blur. The blur
+  handler ignores it while `editingRerender` is set, `editingDraftText` re-seeds the
+  re-created node, and `focusFreeTextEditor()` restores the caret to the offset
+  `captureCaretOffset()` recorded *before* the rebuild — a caret silently reset to 0 would
+  interleave the user's typing with what is already there. The caret is measured with
+  `walkEditorText()`, the **same** walk that produces the body — measuring with
+  `Range.toString()` while reading with `innerText` is a trap, because a Range contributes no
+  character for a `<br>` or a block boundary while `innerText` contributes `\n`, so the offset
+  would be short by one per line. Every editor listener is additionally **scoped to its own
+  node** (`self.editingEl !== p_el` → return): the detached predecessors stay alive and wired,
+  and an event from one of them must never act on the current session.
+- **Editability is pushed, not assumed.** `PdfViewerAdapter::setCommentsEditable` (latched
+  alongside the tool) gates `beginFreeTextEdit`, and `commentsEditable` defaults to `false`,
+  so a page that comes up before C++ has spoken cannot swallow keystrokes the store would
+  refuse. This is the same silent-discard failure pdf.js's own editors are disabled for.
+
+  Losing editability mid-edit makes one **best-effort flush** and then closes the box with
+  `closeFreeTextEdit()` — *not* `cancelFreeTextEdit()`. `CommentController` gates
+  `setCommentText` and `deleteComment` on the same `m_editable` flag it has just cleared (a
+  late `saveRejectedReadOnly` is exactly how this happens), so a revert or a delete emitted
+  here would be refused too and would only fake a restore that never occurred. The flush is
+  worth attempting anyway, because the flag also changes for reasons that leave the write gate
+  open. See the residual noted under the streaming rule above.
+
+Coverage: `freeTextEditIsRefusedWhenTheStoreIsReadOnly`,
+`anAbandonedNewBoxIsRemovedNotLeftEmpty`, `anExistingBoxClearedOnPurposeIsEmptiedNotDeleted`,
+`typingIsStreamedSoATeardownCannotLoseIt`, `escapeRevertsAnExistingBoxAndDropsANewOne`,
+`aRepaintKeepsTheEditorOpenAndItsDraftIntact`, `aGenuineBlurCommitsExactlyOnce`,
+`caretOffsetResolvesToATextNodePosition`, `caretAndBodyAreMeasuredInTheSameCoordinates`,
+`glueWiresTheInlineEditorSignals`, `glueFlushesTheDraftOnPageLifecycleEvents` in
+`tests/widgets/test_pdfviewercore_js.cpp`;
+`setCommentTextIsBoundedAndTruncatedNotRejected`,
+`beginCommentTextEditIsDroppedWhenThePageIsNotReady`, `editabilityIsLatchedAcrossAReload` in
+`tests/widgets/test_pdfvieweradapter_comments.cpp`.
+
+> The JS test harness models the DOM closely enough that these are not vacuous: nodes carry
+> `nodeType` / `childNodes` and `textContent` installs a real text node (so the cases execute
+> the production `flattenEditorText()` reader, not a stub-only fallback), stub elements
+> **retain** their listeners, `window.__fire()` dispatches them, and the fake page div
+> **retains** its comment layer so clearing it dispatches `blur` on the children it removes.
+> That last part is a deliberately CONSERVATIVE worst case rather than a browser guarantee —
+> it makes the blur-vs-DOM-churn guard run on every rebuild instead of only in timing nobody
+> can reproduce. Do not "simplify" the harness back into a no-op `addEventListener`; that is
+> what made the first version of these cases pass without executing anything.
 
 ### Capture gestures (there must always be a discoverable one)
 

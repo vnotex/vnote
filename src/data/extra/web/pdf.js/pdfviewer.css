@@ -142,6 +142,17 @@ div.visibleMediumView:has(> button#secondaryPrint) {
     outline-offset: 1px;
 }
 
+/* The box IS the editor: the Text tool writes where the user clicked, instead
+ * of in a dock they first have to find and open. min-width keeps a freshly
+ * placed, still-empty box big enough to see and to click back into. */
+.vx-comment-freetext-editing {
+    cursor: text;
+    min-width: 4em;
+    min-height: 1em;
+    outline: 2px solid var(--vx-comment-selected-outline);
+    outline-offset: 1px;
+}
+
 /* While Ink or Text is armed the layer must take the pointer, or pdf.js's text
  * layer wins the drag and the user gets a selection instead of a stroke. */
 .vx-comment-layer.vx-comment-authoring {
