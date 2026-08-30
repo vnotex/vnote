@@ -10,6 +10,8 @@ A feature release that adds shared-folder import, two paper themes, movable dash
 * **Editor**
     * The cursor position is now restored when a buffer is reloaded from disk
     * In-place previews (images, diagrams, formulas) zoom together with the editor
+    * Interactive table previews are built on demand instead of all at once, so opening, editing and scrolling a note with many tables is several times faster and uses far less memory; a table that is far off screen still reserves its space and folds its source exactly as before
+    * In a document with an extreme number of HTML tables, cell syntax highlighting is dropped past a document-wide budget of 5000 cells; the tables themselves still render and remain editable
     * The source of a previewed fenced-code, display-math or table block is folded automatically when its preview appears; unfolding it by hand is respected
     * The interactive table in-place preview is enabled by default: tables can be edited in place as a real rich-text sheet, with syntax-highlighted cells, row/column/alignment operations from its Table menu, and Enter in the last cell appending a row; its preview sheet no longer draws a stray frame and background
     * Block quotes continue automatically on Enter, including nested and lazily-continued ones
