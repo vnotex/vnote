@@ -16,6 +16,9 @@ private slots:
 
   void testSymmetry();
   void testIdenticalNames();
+  void testWhitespaceIsNotAmbiguous();
+  void testNonAsciiByteOrdering();
+  void testStrictWeakOrdering();
 };
 
 void TestStringUtils::testNaturalCompare_data() {
@@ -95,6 +98,121 @@ void TestStringUtils::testNaturalCompare_data() {
   QTest::newRow("1.0<2.0") << "1.0" << "2.0" << true;
   QTest::newRow("1.1<1.2") << "1.1" << "1.2" << true;
   QTest::newRow("1.2<1.15") << "1.2" << "1.15" << true;
+
+  // Wide fixed-width numeric fields (years, dates, zero-padded ids) are
+  // compared left-aligned, not by magnitude. Issue #2741: comparing them by
+  // magnitude made "人员管理-2026" (4 digits) sort before "人员管理-20220301"
+  // (8 digits), scattering same-year notes through the list.
+  QTest::newRow("date 2022<2026") << "report-2022" << "report-2026" << true;
+  QTest::newRow("date 20220301<2026") << "report-20220301" << "report-2026" << true;
+  QTest::newRow("date 2026<20260115") << "report-2026" << "report-20260115" << true;
+  QTest::newRow("date 20221115<20260115") << "report-20221115" << "report-20260115" << true;
+  QTest::newRow("date 202601<20260115") << "report-202601" << "report-20260115" << true;
+  QTest::newRow("date 2026>20220301") << "report-2026" << "report-20220301" << false;
+
+  // Counters stay below the wide-field threshold and keep numeric ordering.
+  QTest::newRow("counter 9<123") << "Note 9" << "Note 123" << true;
+  QTest::newRow("counter 999<1000") << "Note 999" << "Note 1000" << true;
+
+  // Accepted trade-off of the width heuristic: a counter that reaches the
+  // threshold is compared as a fixed-width field, so magnitude ordering is lost
+  // above 4 digits. Locked in so it cannot change silently.
+  QTest::newRow("counter 10000<9999") << "Note 10000" << "Note 9999" << true;
+
+  // Mixed 3/4/8-digit runs must stay transitive: short runs are numerically
+  // below every wide run, and wide runs order lexicographically among themselves.
+  QTest::newRow("mixed 999<1000") << "999" << "1000" << true;
+  QTest::newRow("mixed 1000<10000000") << "1000" << "10000000" << true;
+  QTest::newRow("mixed 999<10000000") << "999" << "10000000" << true;
+
+  // A zero-leading run takes the existing left-aligned path regardless of width.
+  QTest::newRow("zeropad 09999<1000") << "09999" << "1000" << true;
+  QTest::newRow("zeropad 1000<10000") << "1000" << "10000" << true;
+  QTest::newRow("zeropad 09999<10000") << "09999" << "10000" << true;
+
+  // The raw-byte tie-break must never override a digit-run result: byte order
+  // would put "Note2" after "Note 10" (because of the space), natural order
+  // must not.
+  QTest::newRow("tiebreak Note2<Note10") << "Note2" << "Note 10" << true;
+  QTest::newRow("tiebreak Note10>Note2") << "Note 10" << "Note2" << false;
+}
+
+void TestStringUtils::testStrictWeakOrdering() {
+  // NotebookNodeProxyModel::lessThan() feeds this to std::sort via
+  // QSortFilterProxyModel; a comparator that is not a strict weak ordering can
+  // crash. Assert irreflexivity, asymmetry and transitivity over names that
+  // span every branch: short runs, wide runs, zero-padded runs, whitespace and
+  // case variants, and non-ASCII.
+  const QStringList names = {"999",
+                             "1000",
+                             "09999",
+                             "10000000",
+                             "Note 9",
+                             "Note 999",
+                             "Note 1000",
+                             "Note2",
+                             "Note 10",
+                             "report-2022",
+                             "report-20220301",
+                             "report-2026",
+                             "report-20260115",
+                             "alpha",
+                             "ALPHA",
+                             "Report 2026",
+                             "Report2026",
+                             QStringLiteral("\u4eba\u5458\u7ba1\u7406-2026"),
+                             QStringLiteral("\u8d22\u52a1\u7ba1\u7406-20220301"),
+                             ""};
+
+  for (const auto &a : names) {
+    QVERIFY2(!naturalCompare(a, a), qPrintable(QString("irreflexivity: %1").arg(a)));
+  }
+
+  for (const auto &a : names) {
+    for (const auto &b : names) {
+      QVERIFY2(!(naturalCompare(a, b) && naturalCompare(b, a)),
+               qPrintable(QString("asymmetry: %1 / %2").arg(a, b)));
+    }
+  }
+
+  for (const auto &a : names) {
+    for (const auto &b : names) {
+      if (!naturalCompare(a, b)) {
+        continue;
+      }
+      for (const auto &c : names) {
+        if (!naturalCompare(b, c)) {
+          continue;
+        }
+        QVERIFY2(naturalCompare(a, c),
+                 qPrintable(QString("transitivity: %1 < %2 < %3").arg(a, b, c)));
+      }
+    }
+  }
+}
+
+void TestStringUtils::testWhitespaceIsNotAmbiguous() {
+  // Internal whitespace is ignored when ordering, but two names that differ
+  // only by whitespace must still get a deterministic, antisymmetric order --
+  // otherwise their position in the explorer is arbitrary.
+  QVERIFY(naturalCompare("Report 2026", "Report2026") !=
+          naturalCompare("Report2026", "Report 2026"));
+  QVERIFY(naturalCompare("A B", "AB") != naturalCompare("AB", "A B"));
+}
+
+void TestStringUtils::testNonAsciiByteOrdering() {
+  // Names are compared as UTF-8 bytes. Bytes >= 0x80 must be compared as
+  // unsigned, so non-ASCII sorts after ASCII (code point order), and must be
+  // left untouched by the ASCII-only case folding so distinct CJK names never
+  // collapse to equal. (The implementation no longer calls <ctype.h>, so this
+  // holds under every locale; the test itself does not switch locales.)
+  QVERIFY(naturalCompare(QStringLiteral("Alpha"), QStringLiteral("\u4eba\u5458")));
+  QVERIFY(!naturalCompare(QStringLiteral("\u4eba\u5458"), QStringLiteral("Alpha")));
+
+  // Distinct CJK names must never compare equal.
+  const QString a = QStringLiteral("\u4eba\u5458\u7ba1\u7406");
+  const QString b = QStringLiteral("\u8d22\u52a1\u7ba1\u7406");
+  QVERIFY(naturalCompare(a, b) != naturalCompare(b, a));
 }
 
 void TestStringUtils::testNaturalCompare() {
