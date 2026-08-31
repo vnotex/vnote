@@ -187,9 +187,7 @@ void ViewWindow2::showReadOnlyWarning() {
   // this branch is unreachable. Kept here so the mirror matches production.
   MessageBoxHelper::notify(
       MessageBoxHelper::Warning,
-      tr("This notebook is read-only (%1). Changes cannot be saved.").arg(getName()),
-      tr("To enable editing, close this notebook and re-open it from the remote URL with a "
-         "valid Personal Access Token."),
+      tr("This file is read-only (%1). Changes cannot be saved.").arg(getName()), QString(),
       QString(), this);
 }
 
@@ -335,12 +333,17 @@ void TestViewWindow2ReadOnlySaveWarning::testSingleEnqueueOnReadOnlyBufferShowsM
   QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
-  Buffer2 buf = openBuffer(relPath);
-  QVERIFY(buf.isValid());
-  QVERIFY(buf.setContentRaw(QByteArray("original\n")));
-  QVERIFY(buf.save());
+  // Seed a writable baseline on disk, close, THEN flip RO and re-open: a
+  // buffer's read-only state is resolved when it is opened.
+  Buffer2 seed = openBuffer(relPath);
+  QVERIFY(seed.isValid());
+  QVERIFY(seed.setContentRaw(QByteArray("original\n")));
+  QVERIFY(seed.save());
+  m_bufferService->closeBuffer(seed.id());
 
   setNotebookReadOnly(true);
+  Buffer2 buf = openBuffer(relPath);
+  QVERIFY(buf.isValid());
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
@@ -365,11 +368,15 @@ void TestViewWindow2ReadOnlySaveWarning::testRapidEnqueuesAreDeduped() {
   const QString relPath = QStringLiteral("ro_burst.md");
   QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
+  // Seed a writable baseline on disk, close, THEN flip RO and re-open.
+  Buffer2 seed = openBuffer(relPath);
+  QVERIFY(seed.isValid());
+  QVERIFY(seed.setContentRaw(QByteArray("original\n")));
+  QVERIFY(seed.save());
+  m_bufferService->closeBuffer(seed.id());
+  setNotebookReadOnly(true);
   Buffer2 buf = openBuffer(relPath);
   QVERIFY(buf.isValid());
-  QVERIFY(buf.setContentRaw(QByteArray("original\n")));
-  QVERIFY(buf.save());
-  setNotebookReadOnly(true);
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
@@ -392,9 +399,10 @@ void TestViewWindow2ReadOnlySaveWarning::testCooldownExpiryAllowsSecondModal() {
   const QString relPath = QStringLiteral("ro_cooldown.md");
   QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
+  // Read-only is resolved at open time, so flip the notebook BEFORE opening.
+  setNotebookReadOnly(true);
   Buffer2 buf = openBuffer(relPath);
   QVERIFY(buf.isValid());
-  setNotebookReadOnly(true);
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
@@ -423,11 +431,15 @@ void TestViewWindow2ReadOnlySaveWarning::testMarkDirtyRejectionAlsoShowsModal() 
   const QString relPath = QStringLiteral("ro_markdirty.md");
   QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
+  // Seed a writable baseline on disk, close, THEN flip RO and re-open.
+  Buffer2 seed = openBuffer(relPath);
+  QVERIFY(seed.isValid());
+  QVERIFY(seed.setContentRaw(QByteArray("original\n")));
+  QVERIFY(seed.save());
+  m_bufferService->closeBuffer(seed.id());
+  setNotebookReadOnly(true);
   Buffer2 buf = openBuffer(relPath);
   QVERIFY(buf.isValid());
-  QVERIFY(buf.setContentRaw(QByteArray("original\n")));
-  QVERIFY(buf.save());
-  setNotebookReadOnly(true);
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
@@ -451,12 +463,12 @@ void TestViewWindow2ReadOnlySaveWarning::testRejectionForOtherBufferDoesNotShowM
   QVERIFY(!m_notebookService->createFile(m_notebookId, QString(), relA).isEmpty());
   QVERIFY(!m_notebookService->createFile(m_notebookId, QString(), relB).isEmpty());
 
+  // Read-only is resolved at open time, so flip the notebook BEFORE opening.
+  setNotebookReadOnly(true);
   Buffer2 bufA = openBuffer(relA);
   Buffer2 bufB = openBuffer(relB);
   QVERIFY(bufA.isValid());
   QVERIFY(bufB.isValid());
-
-  setNotebookReadOnly(true);
   QVERIFY(bufA.isReadOnly());
   QVERIFY(bufB.isReadOnly());
 

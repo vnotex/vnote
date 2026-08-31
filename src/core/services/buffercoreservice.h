@@ -111,7 +111,13 @@ public:
   // Resolves the buffer ID to its owning notebook, then queries the notebook's
   // read-only flag via vxcore_notebook_is_read_only.
   // Returns false on any error (buffer not found, notebook not found, vxcore error).
-  bool isBufferReadOnly(const QString &p_bufferId) const override;
+  //
+  // This is the notebook-derived FACT only, and it is NOT the buffer's
+  // read-only state: BufferService resolves that ONCE at open time (this
+  // value ORed with FileOpenSettings::m_readOnly) and every later query goes
+  // through BufferService::isBufferReadOnly. Do NOT call this to decide
+  // whether a buffer may be edited.
+  bool isNotebookReadOnlyForBuffer(const QString &p_bufferId) const;
 
   // Check if the buffer's file has been modified or deleted externally.
   // Updates the buffer's internal state (query with getState() afterwards).

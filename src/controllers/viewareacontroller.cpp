@@ -418,7 +418,13 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
     if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty()) {
       wsSvc->removeBuffer(p_workspaceId, p_bufferId);
       // NOTE: vxcore auto-closes the buffer when it's removed from all workspaces
-      // (see workspace_manager.cpp).
+      // (see workspace_manager.cpp), which bypasses BufferService::closeBuffer.
+      // Tell the service so it can drop its per-buffer state (dirty flags,
+      // revisions, encoding override, the resolved read-only fact); it no-ops
+      // while the buffer is still open in another workspace.
+      if (auto *bufferSvc = m_services.get<BufferService>()) {
+        bufferSvc->forgetBufferIfClosed(p_bufferId);
+      }
     }
   }
   if (m_currentWindowId == p_windowId) {

@@ -66,6 +66,12 @@ BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookM
       m_saveQueue, &BufferSaveQueue::saveRejectedReadOnly, asQObject(),
       [this](const QString &p_bufferId) { emit saveRejectedReadOnly(p_bufferId); },
       Qt::DirectConnection);
+
+  // Closing a notebook drops its buffers inside vxcore without routing through
+  // closeBuffer(); sweep them out of the per-buffer maps here.
+  m_hookMgr->addAction<NotebookCloseEvent>(
+      HookNames::NotebookAfterClose,
+      [this](HookContext &, const NotebookCloseEvent &) { pruneClosedBuffers(); }, 10);
 }
 
 BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookMgr,
@@ -146,14 +152,20 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
     return Buffer2(); // Failed to open.
   }
 
+  // Resolve the buffer's read-only state ONCE, BEFORE firing FileAfterOpen.
+  // ViewAreaController creates the ViewWindow2 synchronously inside that hook
+  // and reads Buffer2::isReadOnly() to decide whether the editor is editable,
+  // so resolving afterwards would hand out a writable editor for a read-only
+  // buffer. The per-open override and the notebook's own read-only flag are
+  // ORed here; from now on nothing else needs to know which one applied.
+  //
+  // vxcore dedups buffers by path, so re-opening an already-open file returns
+  // the same id and the FIRST resolution wins: once read-only, the shared
+  // buffer stays read-only until it is closed (fail-closed on purpose).
+  resolveReadOnlyOnce(bufferId, p_settings.m_readOnly);
+
   event.bufferId = bufferId;
   m_hookMgr->doAction(HookNames::FileAfterOpen, event);
-
-  // Honor the per-open read-only override: the notebook may be writable, but a
-  // buffer explicitly opened read-only (e.g. "View Logs") must stay read-only.
-  if (p_settings.m_readOnly) {
-    m_forcedReadOnlyBuffers.insert(bufferId);
-  }
 
   qDebug() << "BufferService::openBuffer succeeded bufferId:" << bufferId;
   return Buffer2(this, m_hookMgr, bufferId, p_nodeId);
@@ -203,19 +215,72 @@ Buffer2 BufferService::openVirtualBuffer(const QString &p_address) {
 }
 
 bool BufferService::closeBuffer(const QString &p_bufferId) {
-  // Clean up auto-save state for this buffer.
+  discardBufferState(p_bufferId);
+  return BufferCoreService::closeBuffer(p_bufferId);
+}
+
+void BufferService::discardBufferState(const QString &p_bufferId) {
+  // Clean up all per-buffer transient state.
   m_dirtyBuffers.remove(p_bufferId);
   m_activeWriters.remove(p_bufferId);
   m_saveFailureCounts.remove(p_bufferId);
   m_virtualBufferIds.remove(p_bufferId);
-  m_forcedReadOnlyBuffers.remove(p_bufferId);
+  m_readOnlyBuffers.remove(p_bufferId);
+  m_readOnlyResolvedBuffers.remove(p_bufferId);
   m_revisions.remove(p_bufferId);
   m_bufferEncodings.remove(p_bufferId);
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
   }
+}
 
-  return BufferCoreService::closeBuffer(p_bufferId);
+bool BufferService::forgetBufferIfClosed(const QString &p_bufferId) {
+  if (p_bufferId.isEmpty()) {
+    return false;
+  }
+  // vxcore auto-closes a buffer once it is removed from its last workspace, so
+  // the ordinary tab-close path never reaches closeBuffer() above. Ask vxcore
+  // whether the buffer still exists (listBuffers, not getBuffer — the latter
+  // logs a warning for an unknown id, which is the expected case here) and drop
+  // the Qt-side state if it is gone. Without this every per-buffer map,
+  // including the resolved read-only fact, would grow for the whole session.
+  const QJsonArray buffers = BufferCoreService::listBuffers();
+  for (const auto &v : buffers) {
+    if (v.toObject().value(QStringLiteral("id")).toString() == p_bufferId) {
+      return false; // Still open elsewhere.
+    }
+  }
+
+  discardBufferState(p_bufferId);
+  return true;
+}
+
+int BufferService::pruneClosedBuffers() {
+  // Sweep for buffers vxcore closed without telling us. Closing a notebook
+  // drops all of its buffers inside vxcore (CloseBuffersForNotebook), which
+  // reaches neither closeBuffer() nor the per-tab forgetBufferIfClosed() hook.
+  // vxcore has no buffer-closed event, so a sweep is the available mechanism.
+  QSet<QString> live;
+  const QJsonArray buffers = BufferCoreService::listBuffers();
+  for (const auto &v : buffers) {
+    const QString id = v.toObject().value(QStringLiteral("id")).toString();
+    if (!id.isEmpty()) {
+      live.insert(id);
+    }
+  }
+
+  // m_readOnlyResolvedBuffers is a superset of every buffer this service has
+  // seen through openBuffer/getBufferHandle, so it is the right roster to
+  // sweep. Snapshot it: discardBufferState mutates it.
+  const QList<QString> tracked = m_readOnlyResolvedBuffers.values();
+  int dropped = 0;
+  for (const QString &id : tracked) {
+    if (!live.contains(id)) {
+      discardBufferState(id);
+      ++dropped;
+    }
+  }
+  return dropped;
 }
 
 // ============ Per-Buffer Encoding ============
@@ -269,7 +334,32 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
   nodeId.notebookId = bufJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   nodeId.relativePath = bufJson.value(QStringLiteral("filePath")).toString();
 
+  // Adoption: a buffer restored from the session was created inside vxcore
+  // before this service existed, so it never went through openBuffer. Resolve
+  // its read-only state here — BEFORE the handle escapes — or the restored
+  // ViewWindow2 would be built writable for a read-only notebook.
+  resolveReadOnlyOnce(p_bufferId, false);
+
   return Buffer2(this, m_hookMgr, p_bufferId, nodeId);
+}
+
+void BufferService::resolveReadOnlyOnce(const QString &p_bufferId, bool p_forcedReadOnly) {
+  // Monotonic: an explicit read-only open ALWAYS applies, even to a buffer that
+  // was already resolved writable. vxcore dedups buffers by path, so opening a
+  // file normally and then via a read-only entry point (e.g. "View Logs")
+  // yields the SAME buffer id; without this upgrade the second open would be
+  // silently ignored and the editor would stay writable. Read-only is never
+  // downgraded — the buffer must be closed for that.
+  if (p_forcedReadOnly) {
+    m_readOnlyBuffers.insert(p_bufferId);
+  }
+  if (m_readOnlyResolvedBuffers.contains(p_bufferId)) {
+    return;
+  }
+  m_readOnlyResolvedBuffers.insert(p_bufferId);
+  if (BufferCoreService::isNotebookReadOnlyForBuffer(p_bufferId)) {
+    m_readOnlyBuffers.insert(p_bufferId);
+  }
 }
 
 // ============ Pass-through methods ============
@@ -300,11 +390,8 @@ bool BufferService::isVirtualBuffer(const QString &p_bufferId) const {
 QJsonArray BufferService::listBuffers() const { return BufferCoreService::listBuffers(); }
 
 bool BufferService::isBufferReadOnly(const QString &p_bufferId) const {
-  // Per-open override (FileOpenSettings::m_readOnly) OR the notebook's read-only flag.
-  if (m_forcedReadOnlyBuffers.contains(p_bufferId)) {
-    return true;
-  }
-  return BufferCoreService::isBufferReadOnly(p_bufferId);
+  // Resolved once at open time; see openBuffer.
+  return m_readOnlyBuffers.contains(p_bufferId);
 }
 
 // ============ BufferCoreService wrappers ============

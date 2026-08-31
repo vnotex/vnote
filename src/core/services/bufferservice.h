@@ -105,6 +105,22 @@ public:
   // Cleans up auto-save state and closes the buffer in vxcore.
   bool closeBuffer(const QString &p_bufferId);
 
+  // Drop this service's per-buffer state IF vxcore no longer holds the buffer.
+  // vxcore auto-closes a buffer when it is removed from its last workspace, so
+  // the ordinary tab-close path never calls closeBuffer() above; callers on
+  // that path (ViewAreaController::onViewWindowClosed) must invoke this after
+  // the workspace removal or every per-buffer map — dirty flags, revisions,
+  // encodings, the resolved read-only fact — grows for the whole session.
+  // No-op (returns false) while the buffer is still open in another workspace.
+  bool forgetBufferIfClosed(const QString &p_bufferId);
+
+  // Drop the state of every tracked buffer vxcore no longer holds, and return
+  // how many were dropped. Fired from the NotebookAfterClose hook: closing a
+  // notebook drops its buffers inside vxcore without passing through either
+  // closeBuffer() or forgetBufferIfClosed(). vxcore emits no buffer-closed
+  // event, so this sweep is the available mechanism.
+  int pruneClosedBuffers();
+
   // ============ Per-Buffer Encoding (transient) ============
 
   // Encoding used to decode/encode this buffer's raw bytes. Defaults to
@@ -164,8 +180,10 @@ public:
   using BufferCoreService::getState;
   using BufferCoreService::insertAsset;
   using BufferCoreService::insertAssetRaw;
-  // Overrides base to OR the per-open FileOpenSettings::m_readOnly override
-  // (forced-read-only set) with the notebook-derived read-only state.
+  // A buffer's read-only state is resolved ONCE, at open time (see
+  // openBuffer): FileOpenSettings::m_readOnly ORed with the owning notebook's
+  // read-only flag. This query is a plain lookup of that resolved state, so
+  // callers never learn (or need to care) WHY a buffer is read-only.
   bool isBufferReadOnly(const QString &p_bufferId) const override;
   using BufferCoreService::isModified;
   using BufferCoreService::peekContentRaw;
@@ -313,14 +331,14 @@ signals:
   void bufferExternallyChanged(const QString &p_bufferId, BufferState p_state);
 
   // Emitted when markDirty() refuses to mark a buffer dirty because the
-  // buffer's owning notebook is read-only (T16). The buffer is NOT added to
+  // buffer is read-only (T16). The buffer is NOT added to
   // the dirty set, the revision counter is NOT bumped, and no auto-save is
   // scheduled. UI orchestration (T28 modal warning) subscribes to this so
   // the user learns why their edit was discarded.
   void dirtyRejectedReadOnly(const QString &p_bufferId);
 
   // Forwarded from the internal BufferSaveQueue (T28). Fires when an enqueue
-  // is rejected because the owning notebook is read-only — the disk file is
+  // is rejected because the buffer is read-only — the disk file is
   // NEVER touched in that case. Surfaced on BufferService so UI consumers
   // (ViewWindow2 modal warning) do not have to reach into the private save
   // queue. Emitted on this object's owning (UI) thread because the queue's
@@ -338,6 +356,18 @@ private:
   // Async save-completion handler wired to BufferSaveQueue::saveFinished.
   void onSaveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                       const QString &p_errorMsg);
+
+  // Resolve a buffer's read-only state: p_forcedReadOnly (the per-open
+  // FileOpenSettings override) ORed with the owning notebook's read-only flag,
+  // the latter queried only the first time the buffer is seen. Called from
+  // openBuffer and from getBufferHandle (session restore adoption). Monotonic:
+  // a forced-read-only open always upgrades a deduplicated writable buffer,
+  // and read-only is never downgraded before the buffer is closed.
+  void resolveReadOnlyOnce(const QString &p_bufferId, bool p_forcedReadOnly);
+
+  // Drop every per-buffer map entry for this buffer. Shared by closeBuffer and
+  // forgetBufferIfClosed.
+  void discardBufferState(const QString &p_bufferId);
 
   struct ActiveWriter {
     quintptr key = 0;
@@ -367,10 +397,16 @@ private:
   // Used to skip auto-save/sync for virtual buffers.
   QSet<QString> m_virtualBufferIds;
 
-  // Buffers opened with FileOpenSettings::m_readOnly. ORed into
-  // isBufferReadOnly so a forced-read-only buffer is treated as read-only
-  // even when its notebook is writable. GUI-thread only (no mutex needed).
-  QSet<QString> m_forcedReadOnlyBuffers;
+  // Buffers resolved as read-only (FileOpenSettings::m_readOnly OR the owning
+  // notebook's read-only flag). Single source of truth for isBufferReadOnly;
+  // cleared on closeBuffer. GUI-thread only (no mutex needed).
+  QSet<QString> m_readOnlyBuffers;
+
+  // Buffers whose read-only state has already been resolved. Distinguishes
+  // "resolved as writable" from "never resolved" so a session-restored buffer
+  // adopted via getBufferHandle is resolved exactly once, and a later open of
+  // the same (deduplicated) buffer cannot downgrade it to writable.
+  QSet<QString> m_readOnlyResolvedBuffers;
 
   // Map from buffer ID to the active writer's content fetch callback.
   QHash<QString, ActiveWriter> m_activeWriters;

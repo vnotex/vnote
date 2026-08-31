@@ -475,7 +475,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     // immutable for the buffer's lifetime (T22 no-live-transition rule), so
     // setting once at construction is sufficient.
     if (getBuffer().isValid() && getBuffer().isReadOnly()) {
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     connect(act, &QAction::triggered, this, [this]() { save(); });
     connect(this, &ViewWindow2::statusChanged, this, [this]() {
@@ -548,7 +548,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     // a RO buffer if a subclass starts in Edit mode.
     if (getBuffer().isValid() && getBuffer().isReadOnly()) {
       act->setEnabled(false);
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     // Default button click triggers Heading 1.
     connect(act, &QAction::triggered, this, [this]() { handleTypeAction(TypeHeading1); });
@@ -581,9 +581,8 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     connect(act, &QAction::triggered, this,
             [this, typeActionId]() { handleTypeAction(typeActionId); });
     // T27: combine visibility (Edit-mode only) with enabled-state (writable
-    // notebook only). Every formatting / insert action mutates the buffer, so
-    // they are all disabled when the owning notebook is read-only. Re-query
-    // isReadOnly() each refresh per the "do not cache" rule.
+    // buffer only). Every formatting / insert action mutates the buffer, so
+    // they are all disabled when the buffer is read-only.
     connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
       const bool inEdit = (m_mode == ViewWindowMode::Edit);
       act->setVisible(inEdit);
@@ -595,7 +594,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     // an enabled formatting action on a RO buffer that opens in Edit mode.
     if (getBuffer().isValid() && getBuffer().isReadOnly()) {
       act->setEnabled(false);
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     break;
   }
@@ -645,12 +644,11 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     if (tagPopup) {
       tagPopup->setNodeId(getBuffer().nodeId());
     }
-    // T27: editing tags mutates the node, so disable on a read-only notebook and
-    // surface the same tooltip as Save/format. Notebook RO state is immutable for
-    // the buffer's lifetime; re-query isReadOnly() per the "do not cache" rule.
+    // T27: editing tags mutates the node, so disable on a read-only buffer and
+    // surface the same tooltip as Save/format.
     if (getBuffer().isValid() && getBuffer().isReadOnly()) {
       act->setEnabled(false);
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     break;
   }
@@ -671,7 +669,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     const bool attReadOnly = attBuf.isValid() && attBuf.isReadOnly();
     act->setEnabled(attBuf.isAttachmentSupported() && !attReadOnly);
     if (attReadOnly) {
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     // Set initial icon state.
     updateAttachmentIcon();
@@ -976,15 +974,14 @@ void ViewWindow2::showReadOnlyWarning() {
     return;
   }
 
-  // Plain-English wording per plan; do NOT mention VXCORE_ERR_READ_ONLY. The
-  // notebook name is substituted via getName() (the file's display name).
-  // Two-line layout: first line states the read-only fact, second line gives
-  // the recovery instruction.
+  // The buffer's read-only state is resolved once, when it is opened (a
+  // read-only notebook, or an explicitly read-only open such as "View Logs").
+  // The view deliberately does NOT explain which one applied: it only reports
+  // the fact. Do NOT mention VXCORE_ERR_READ_ONLY, and do NOT re-introduce a
+  // cause-specific recovery hint here.
   MessageBoxHelper::notify(
       MessageBoxHelper::Warning,
-      tr("This notebook is read-only (%1). Changes cannot be saved.").arg(getName()),
-      tr("To enable editing, close this notebook and re-open it from the remote URL with a "
-         "valid Personal Access Token."),
+      tr("This file is read-only (%1). Changes cannot be saved.").arg(getName()), QString(),
       QString(), this);
 }
 

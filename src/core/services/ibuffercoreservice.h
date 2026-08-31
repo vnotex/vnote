@@ -10,7 +10,8 @@ namespace vnotex {
 // BufferSaveQueue exercises on its worker thread. Extracted so unit tests can
 // inject a fake without spinning up a real vxcore context.
 //
-// Production: BufferCoreService implements this interface.
+// Production: BufferCoreService implements this interface, and BufferService
+// (which derives from it) is what BufferSaveQueue is actually constructed with.
 // Tests: a header-only fake implements it directly.
 class IBufferCoreService {
 public:
@@ -24,15 +25,20 @@ public:
   // Returns true on success.
   virtual bool saveBuffer(const QString &p_bufferId) = 0;
 
-  // Check whether the buffer's owning notebook is read-only.
+  // Whether the buffer is read-only.
   //
   // BufferSaveQueue::enqueue() consults this BEFORE acquiring any mutex so
-  // a read-only notebook can never reach setContentRaw/saveBuffer on disk.
+  // a read-only buffer can never reach setContentRaw/saveBuffer on disk.
   //
-  // Default returns false (writable). The default keeps pre-existing fake
-  // implementations source-compatible — they continue to behave as before.
-  // Production code (BufferCoreService) overrides to query vxcore; new
-  // fakes that need to simulate a read-only notebook override and return true.
+  // This is a per-buffer FACT, resolved once when the buffer enters
+  // BufferService (the per-open FileOpenSettings::m_readOnly override ORed
+  // with the owning notebook's read-only flag) — implementers must not
+  // re-derive it per call.
+  //
+  // Default returns false (writable), which keeps pre-existing fake
+  // implementations source-compatible. Production behaviour comes from
+  // BufferService's override; a fake that needs to simulate a read-only
+  // buffer overrides this and returns true.
   virtual bool isBufferReadOnly(const QString &p_bufferId) const {
     (void)p_bufferId;
     return false;

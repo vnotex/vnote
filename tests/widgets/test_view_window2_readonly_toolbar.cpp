@@ -176,7 +176,7 @@ public:
     act->setEnabled(false);
     // T27 mirror: surface the RO state on the tooltip up front.
     if (getBuffer().isValid() && getBuffer().isReadOnly()) {
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     connect(this, &ViewWindow2::statusChanged, this, [this, act]() {
       const auto &buf = getBuffer();
@@ -198,7 +198,7 @@ public:
     });
     if (getBuffer().isValid() && getBuffer().isReadOnly()) {
       act->setEnabled(false);
-      act->setToolTip(tr("Read-only notebook \u2014 cannot edit"));
+      act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     return act;
   }
@@ -330,14 +330,17 @@ void TestViewWindow2ReadOnlyToolbar::testSaveActionDisabledForReadOnlyBuffer() {
   const QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
+  // Seed a writable baseline on disk, close, THEN flip RO and re-open: a
+  // buffer's read-only state is resolved when it is opened.
+  vnotex::Buffer2 seed = openBuffer(relPath);
+  QVERIFY(seed.isValid());
+  QVERIFY(seed.setContentRaw(QByteArray("original\n")));
+  QVERIFY(seed.save());
+  m_bufferService->closeBuffer(seed.id());
+
+  setNotebookReadOnly(true);
   vnotex::Buffer2 buf = openBuffer(relPath);
   QVERIFY(buf.isValid());
-  QVERIFY(buf.setContentRaw(QByteArray("original\n")));
-  QVERIFY(buf.save());
-
-  // Open MUST happen before flipping RO (open itself is read-only safe but
-  // we want the writable baseline pre-RO).
-  setNotebookReadOnly(true);
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
@@ -385,10 +388,10 @@ void TestViewWindow2ReadOnlyToolbar::testInsertActionDisabledForReadOnlyBufferIn
   const QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
+  // Read-only is resolved at open time, so flip the notebook BEFORE opening.
+  setNotebookReadOnly(true);
   vnotex::Buffer2 buf = openBuffer(relPath);
   QVERIFY(buf.isValid());
-
-  setNotebookReadOnly(true);
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
@@ -444,10 +447,10 @@ void TestViewWindow2ReadOnlyToolbar::testReadOnlyTooltipPresent() {
   const QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
   QVERIFY(!fileId.isEmpty());
 
+  // Read-only is resolved at open time, so flip the notebook BEFORE opening.
+  setNotebookReadOnly(true);
   vnotex::Buffer2 buf = openBuffer(relPath);
   QVERIFY(buf.isValid());
-
-  setNotebookReadOnly(true);
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);

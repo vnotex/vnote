@@ -280,16 +280,16 @@ bool BufferCoreService::isModified(const QString &p_bufferId) const {
   return modified != 0;
 }
 
-bool BufferCoreService::isBufferReadOnly(const QString &p_bufferId) const {
+bool BufferCoreService::isNotebookReadOnlyForBuffer(const QString &p_bufferId) const {
   if (!checkContext()) {
-    qWarning() << "isBufferReadOnly: context invalid";
+    qWarning() << "isNotebookReadOnlyForBuffer: context invalid";
     return false;
   }
 
   // Get buffer info (contains notebook ID and path)
   QJsonObject bufferJson = getBuffer(p_bufferId);
   if (bufferJson.isEmpty()) {
-    qWarning() << "isBufferReadOnly: failed to get buffer info for" << p_bufferId;
+    qWarning() << "isNotebookReadOnlyForBuffer: failed to get buffer info for" << p_bufferId;
     return false;
   }
 
@@ -297,7 +297,7 @@ bool BufferCoreService::isBufferReadOnly(const QString &p_bufferId) const {
   QString notebookId = bufferJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   if (notebookId.isEmpty()) {
     // Virtual/external buffers may not have a notebook ID
-    qDebug() << "isBufferReadOnly: buffer has no notebookId (external or virtual)";
+    qDebug() << "isNotebookReadOnlyForBuffer: buffer has no notebookId (external or virtual)";
     return false;
   }
 
@@ -306,7 +306,7 @@ bool BufferCoreService::isBufferReadOnly(const QString &p_bufferId) const {
   VxCoreError err =
       vxcore_notebook_is_read_only(m_context, notebookId.toUtf8().constData(), &readOnly);
   if (err != VXCORE_OK) {
-    qWarning() << "isBufferReadOnly: failed to query notebook" << notebookId
+    qWarning() << "isNotebookReadOnlyForBuffer: failed to query notebook" << notebookId
                << QString::fromUtf8(vxcore_error_message(err));
     return false;
   }

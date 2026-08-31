@@ -101,8 +101,10 @@ public:
   // Check if buffer has unsaved modifications.
   bool isModified() const;
 
-  // Check if the buffer's owning notebook is read-only.
-  // Returns false on any error (invalid handle, notebook not found, vxcore error).
+  // The buffer's resolved read-only state (see BufferService::isBufferReadOnly):
+  // a per-buffer fact fixed when the buffer was opened, covering both a
+  // read-only notebook and an explicitly read-only open.
+  // Returns false for an invalid handle.
   bool isReadOnly() const noexcept;
 
   // Get buffer content revision number.
