@@ -192,6 +192,19 @@ window.PDFViewerApplication.initializedPromise.then(function() {
         if (p_event.key !== 'Escape') {
             return;
         }
+        // A drag is the innermost gesture, so it is cancelled FIRST -- and it
+        // reverts with zero writes.
+        //
+        // `pendingMoveId` is included deliberately: a move whose request was
+        // rejected (stale page count) or refused (editability lost) gets no
+        // authoritative publish to reconcile it, and while it is pending
+        // beginFreeTextDrag() refuses every new drag. Escape is the user's only
+        // way out of that state.
+        if (window.vxcore.dragCommentId || window.vxcore.pendingMoveId) {
+            p_event.preventDefault();
+            window.vxcore.cancelFreeTextDrag();
+            return;
+        }
         if (window.vxcore.editingCommentId) {
             p_event.preventDefault();
             window.vxcore.cancelFreeTextEdit();

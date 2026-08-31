@@ -511,6 +511,84 @@ Coverage: `freeTextEditIsRefusedWhenTheStoreIsReadOnly`,
 > can reproduce. Do not "simplify" the harness back into a no-op `addEventListener`; that is
 > what made the first version of these cases pass without executing anything.
 
+#### Moving a box
+
+A placed box can be repositioned by **pressing and dragging its body**. The gesture has three
+gates and is refused unless all three hold: the tool is `none` (an armed Highlight/Draw/Text must
+keep drawing), the store is **editable**, and the box is **not** the one being edited. A press
+that never travels `VX_DRAG_THRESHOLD_PX` (4 px) stays an ordinary click, so selection and the
+double-click-to-edit route are untouched.
+
+The intent is deliberately **narrow**: `requestMoveComment(id, page, x, y)`, not a generic
+`setCommentAnchor`, so a hostile page cannot rewrite the anchor's `type` or `fontSize`.
+`CommentController::moveComment` mutates a **copy** of the raw `QJsonObject` and replaces only
+`page`/`x`/`y` — a rebuild via `PdfFreeTextAnchor::make()` would silently destroy every key a
+newer build wrote. It must **not** emit `commentAdded`: that signal's only receiver is
+`PdfViewWindow2::beginInlineTextEdit`, so a move would re-open the inline editor on the box.
+
+Rules that are load-bearing:
+
+- **The preview is a DEDICATED node, and cross-page cannot be done inside `renderFreeText`
+  alone.** `renderCommentLayers` buckets by the *persisted* `anchor.page` and hands
+  `renderFreeText` that page's layer and viewport, so a preview for another page would be
+  appended to the wrong layer with the wrong projection. The dragged (or pending) id is
+  therefore **skipped** in the bucketing pass and rendered afterwards into the layer of
+  `dragPoint.page`, projected with **that** page's viewport, carrying `vx-comment-dragging`.
+- **The drag point lives in PAGE space and the grab offset is in PDF UNITS.** A scroll, zoom or
+  rotate mid-drag is normal and repaints everything; page space re-projects for free, while a
+  client-pixel grab offset would go stale the moment the user zoomed. Within a page the node is
+  moved by writing `style.left/top` in place — a full `renderAllComments()` per pointer sample is
+  quadratic in the comment set, the same reason the ink draft owns its own node. A page **change**
+  is the one case that does repaint, because the node has to move to another layer.
+- **Window-level listeners, NOT `setPointerCapture`** — the opposite of ink. A free-text node is
+  destroyed and re-created by every `renderAllComments()`, which would silently drop the capture
+  and the rest of the gesture. The price is a mandatory idempotent `teardownFreeTextDrag()`,
+  called from `endFreeTextDrag`, `pointercancel`, Escape, `setTool()`,
+  `setCommentsEditable(false)`, `resetComments()` and a publish that no longer contains the
+  dragged comment.
+- **Active drag and pending commit are two states, not one.** `setComments()` fires for EVERY
+  mutation (an unrelated dock edit, the inline editor's own debounced flush), so an **active**
+  drag deliberately survives a publish and ends only when the dragged id disappears. A **pending**
+  move — one `requestMoveComment` sent, authoritative set not back yet — is dropped by the next
+  publish whatever it says: C++ is the source of truth. **`cancelFreeTextDrag()` covers BOTH**,
+  and the glue's Escape handler tests both fields: a move the adapter rejected (stale page count)
+  or the controller refused (editability lost) never gets a publish, and while it is pending
+  `beginFreeTextDrag()` refuses every new drag — Escape is the only way out of that state.
+- **A no-op move sends nothing.** A drop at the exact start point is refused by the controller
+  anyway, so no publish would ever come back to clear a pending preview; the state is cleared
+  locally instead. Nothing may be left waiting on a publish that cannot arrive.
+- **A drop outside every page CLAMPS into the source page's rect** rather than being refused —
+  the user plainly meant "over there", and a silent no-op reads as a broken gesture.
+- **`suppressClickForId` is an ID, not a boolean**, cleared both by the matching box's own click
+  handler and unconditionally from a `setTimeout(…, 0)`: a drag released off the box produces no
+  click at all, and a stuck flag would swallow the next genuine click on a different comment.
+- The CSS carries `user-select: none` / `touch-action: none` on the movable, **non-editing** class
+  (so the inline editor stays selectable). `stopPropagation()` does not suppress a default action,
+  which is what would otherwise let the browser select the box body during the drag.
+
+Coverage: `aShortPressStillSelectsInsteadOfMoving`,
+`draggingABoxCommitsExactlyOneMoveOnPointerUp`,
+`aDragIsRefusedWhileAToolIsArmedOrTheStoreIsReadOnly`,
+`aDragIsRefusedWhileTheBoxIsBeingEdited`, `aSecondPointerDuringADragIsRefused`,
+`escapeAndPointerCancelRevertADragWithoutWriting`,
+`aRepaintDuringADragKeepsThePreviewAtTheDraggedPoint`, `aZoomDuringADragKeepsTheGrabOffset`,
+`aDropOnAnotherPageCommitsThatPage`, `aDropOffAnyPageClampsIntoTheSourcePage`,
+`aDragThatReturnsToItsStartSendsNothingAndClearsItsState`,
+`anUnrelatedCommentPublishDoesNotEndAnActiveDrag`,
+`deletingTheDraggedCommentDuringADragCancelsIt`,
+`aPendingMoveIsClearedByTheMatchingPublishAndOverriddenByADifferentOne`,
+`aSecondDragLeavesExactlyOneSetOfWindowListeners`,
+`aDragThatProducesNoClickDoesNotSuppressTheNextClick`,
+`aPendingMoveIsCancellableAndBlocksASecondDrag`,
+`glueEscapeCancelsBothAnActiveDragAndAPendingMove` in
+`tests/widgets/test_pdfviewercore_js.cpp`; `aValidMoveIsForwarded`,
+`moveIsRejectedOutsideThePageRange`, `moveIsRejectedForANonFiniteCoordinate`,
+`moveIsRejectedForAnOverlongId` in `tests/widgets/test_pdfvieweradapter_comments.cpp`;
+`moveCommentRewritesOnlyPageXAndY`, `moveCommentIsRefusedOnAReadOnlyStore`,
+`moveCommentIgnoresNonFreeTextAnchors`, `aMoveToTheSamePointIsANoOp` in
+`tests/controllers/test_commentcontroller.cpp`.
+
+
 ### Capture gestures (there must always be a discoverable one)
 
 Two routes, and the **context menu is the primary one**:

@@ -1,6 +1,7 @@
 #include "pdfvieweradapter.h"
 
 #include <QDebug>
+#include <QtMath>
 
 #include <core/services/commenttypes.h>
 
@@ -386,6 +387,30 @@ void PdfViewerAdapter::requestDeleteComment(const QString &p_id) {
     return;
   }
   emit deleteCommentRequested(p_id);
+}
+
+void PdfViewerAdapter::requestMoveComment(const QString &p_id, int p_page, double p_x, double p_y) {
+  if (p_id.isEmpty() || p_id.size() > c_maxCommentIdLength) {
+    // The id itself is NOT logged: it is attacker-controlled and unbounded.
+    qWarning() << "PdfViewerAdapter: rejected comment move with an invalid id of length"
+               << p_id.size();
+    return;
+  }
+
+  // Same ceiling requestAddComment() applies: the loaded document, as reported
+  // on 'documentloaded'. A reload resets it, so a stale move is rejected here.
+  if (m_documentPageCount <= 0 || p_page < 0 || p_page >= m_documentPageCount) {
+    qWarning() << "PdfViewerAdapter: rejected comment move to page" << p_page << "of"
+               << m_documentPageCount;
+    return;
+  }
+
+  if (!qIsFinite(p_x) || !qIsFinite(p_y)) {
+    qWarning() << "PdfViewerAdapter: rejected comment move with a non-finite coordinate";
+    return;
+  }
+
+  emit moveCommentRequested(p_id, p_page, p_x, p_y);
 }
 
 void PdfViewerAdapter::requestSetCommentText(const QString &p_id, const QString &p_text) {

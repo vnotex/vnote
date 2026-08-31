@@ -54,10 +54,21 @@ private slots:
   void selectionIsClearedWhenItsCommentIsDeleted();
   void aDetachedControllerAcceptsNothing();
 
+  void moveCommentRewritesOnlyPageXAndY();
+  void moveCommentIsRefusedOnAReadOnlyStore();
+  void moveCommentIgnoresNonFreeTextAnchors();
+  void aMoveToTheSamePointIsANoOp();
+
 private:
   NodeIdentifier externalFile(const QString &p_name) const;
 
   static QJsonObject anchor(int p_page);
+
+  // A pdf-freetext anchor carrying a key this build knows nothing about, so a
+  // mutation that rebuilds the object instead of copying it is caught.
+  static QJsonObject freeTextAnchor(int p_page, double p_x, double p_y);
+
+  QString createRawNotebook(const QString &p_name);
 
   // Drives the controller's debounce without waiting on wall-clock time.
   void flushAndSettle(CommentController &p_controller);
@@ -120,6 +131,21 @@ QJsonObject TestCommentController::anchor(int p_page) {
   QVector<QVector<double>> quads;
   quads.append(QVector<double>{0, 0, 10, 0, 10, 10, 0, 10});
   return PdfQuadsAnchor::make(p_page, quads, QStringLiteral("quoted"));
+}
+
+QJsonObject TestCommentController::freeTextAnchor(int p_page, double p_x, double p_y) {
+  auto obj = PdfFreeTextAnchor::make(p_page, p_x, p_y, 17.5);
+  obj.insert(QStringLiteral("vxFutureKey"), QStringLiteral("keep me"));
+  return obj;
+}
+
+QString TestCommentController::createRawNotebook(const QString &p_name) {
+  const QString root = QDir(m_tmp->path()).filePath(p_name);
+  if (!QDir().mkpath(root)) {
+    return QString();
+  }
+  const QString configJson = QStringLiteral("{\"name\": \"%1\", \"version\": \"1\"}").arg(p_name);
+  return m_notebooks->createNotebook(root, configJson, NotebookType::Raw);
 }
 
 void TestCommentController::flushAndSettle(CommentController &p_controller) {
@@ -335,6 +361,121 @@ void TestCommentController::aDetachedControllerAcceptsNothing() {
   virtualId.relativePath = QStringLiteral("vx://home");
   controller.setActiveFile(virtualId);
   QVERIFY(!controller.isEditable());
+}
+
+// A move is the first GEOMETRY mutation, and the anchor is stored VERBATIM
+// (commenttypes.h:285). Rebuilding it from typed fields would silently destroy
+// a newer build's keys, so the move must rewrite a COPY.
+void TestCommentController::moveCommentRewritesOnlyPageXAndY() {
+  CommentController controller(*m_services);
+  const auto nodeId = externalFile(QStringLiteral("move.pdf"));
+  controller.setActiveFile(nodeId);
+
+  controller.addComment(freeTextAnchor(0, 100.0, 640.0), QStringLiteral("blue"));
+  const auto id = controller.getComments().m_comments.first().m_id;
+  controller.setCommentText(id, QStringLiteral("body"));
+
+  QSignalSpy changed(&controller, &CommentController::commentsChanged);
+  QSignalSpy added(&controller, &CommentController::commentAdded);
+
+  controller.moveComment(id, 2, 55.5, 120.25);
+
+  QVERIFY(!changed.isEmpty());
+  QVERIFY2(added.isEmpty(), "commentAdded would re-open the inline editor on the moved box");
+
+  const auto &comment = controller.getComments().m_comments.first();
+  QCOMPARE(comment.m_anchor.value(QStringLiteral("page")).toInt(), 2);
+  QCOMPARE(comment.m_anchor.value(QStringLiteral("x")).toDouble(), 55.5);
+  QCOMPARE(comment.m_anchor.value(QStringLiteral("y")).toDouble(), 120.25);
+  // Everything else survived.
+  QCOMPARE(comment.m_anchor.value(QStringLiteral("type")).toString(), PdfFreeTextAnchor::type());
+  QCOMPARE(comment.m_anchor.value(QStringLiteral("fontSize")).toDouble(), 17.5);
+  QCOMPARE(comment.m_anchor.value(QStringLiteral("vxFutureKey")).toString(),
+           QStringLiteral("keep me"));
+  QCOMPARE(comment.m_text, QStringLiteral("body"));
+  QCOMPARE(comment.m_color, QStringLiteral("blue"));
+
+  flushAndSettle(controller);
+  const auto reloaded = m_service->load(nodeId);
+  QCOMPARE(reloaded.m_comments.m_comments.first().m_anchor.value(QStringLiteral("x")).toDouble(),
+           55.5);
+}
+
+void TestCommentController::moveCommentIsRefusedOnAReadOnlyStore() {
+  const QString notebookId = createRawNotebook(QStringLiteral("ro-move"));
+  QVERIFY(!notebookId.isEmpty());
+  const QString root = m_notebooks->buildAbsolutePath(notebookId, QString());
+  const QString file = QDir(root).filePath(QStringLiteral("locked.pdf"));
+  QVERIFY(QFile(file).open(QIODevice::WriteOnly));
+
+  NodeIdentifier nodeId;
+  nodeId.notebookId = notebookId;
+  nodeId.relativePath = QStringLiteral("locked.pdf");
+
+  // Seed a store while the notebook is still writable.
+  CommentSet seed;
+  seed.m_comments.append(
+      Comment::create(freeTextAnchor(0, 10.0, 20.0), QString(), CommentColor::defaultToken()));
+  const QString seededId = seed.m_comments.first().m_id;
+  QSignalSpy saved(m_service, &CommentService::saveFinished);
+  m_service->scheduleSave(nodeId, seed);
+  QVERIFY(saved.wait(5000));
+
+  QCOMPARE(vxcore_notebook_set_read_only(m_context, notebookId.toUtf8().constData(), true),
+           VXCORE_OK);
+
+  CommentController controller(*m_services);
+  controller.setActiveFile(nodeId);
+  QVERIFY2(!controller.isEditable(), "a read-only notebook must not be editable");
+  QCOMPARE(controller.getComments().m_comments.size(), 1);
+
+  QSignalSpy changed(&controller, &CommentController::commentsChanged);
+  controller.moveComment(seededId, 0, 999.0, 999.0);
+
+  QVERIFY(changed.isEmpty());
+  QVERIFY(!controller.hasUnsavedChanges());
+  const auto &untouched = controller.getComments().m_comments.first();
+  QCOMPARE(untouched.m_anchor.value(QStringLiteral("x")).toDouble(), 10.0);
+
+  QCOMPARE(vxcore_notebook_set_read_only(m_context, notebookId.toUtf8().constData(), false),
+           VXCORE_OK);
+}
+
+// pdf-ink and pdf-quads carry their geometry in a shape this narrow intent
+// cannot express, so a move must leave them completely alone.
+void TestCommentController::moveCommentIgnoresNonFreeTextAnchors() {
+  CommentController controller(*m_services);
+  controller.setActiveFile(externalFile(QStringLiteral("quads.pdf")));
+
+  controller.addComment(anchor(1), CommentColor::defaultToken());
+  const auto id = controller.getComments().m_comments.first().m_id;
+  const auto before = controller.getComments().m_comments.first().m_anchor;
+
+  QSignalSpy changed(&controller, &CommentController::commentsChanged);
+  controller.moveComment(id, 0, 1.0, 2.0);
+
+  QVERIFY(changed.isEmpty());
+  QCOMPARE(controller.getComments().m_comments.first().m_anchor, before);
+}
+
+// A drag that ends where it started must produce NO publish -- so nothing on
+// the page may be left waiting on one -- and no write.
+void TestCommentController::aMoveToTheSamePointIsANoOp() {
+  CommentController controller(*m_services);
+  controller.setActiveFile(externalFile(QStringLiteral("noop.pdf")));
+
+  controller.addComment(freeTextAnchor(1, 33.0, 44.0), CommentColor::defaultToken());
+  const auto id = controller.getComments().m_comments.first().m_id;
+
+  // Settle first, so hasUnsavedChanges() below reflects only the move.
+  flushAndSettle(controller);
+  QVERIFY(!controller.hasUnsavedChanges());
+
+  QSignalSpy changed(&controller, &CommentController::commentsChanged);
+  controller.moveComment(id, 1, 33.0, 44.0);
+
+  QVERIFY2(changed.isEmpty(), "a same-point move must not publish");
+  QVERIFY2(!controller.hasUnsavedChanges(), "a same-point move must not schedule a write");
 }
 
 } // namespace tests

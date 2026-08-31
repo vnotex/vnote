@@ -24,6 +24,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSignalSpy>
+#include <QtMath>
 
 #include <core/services/commenttypes.h>
 #include <widgets/editors/pdfvieweradapter.h>
@@ -67,6 +68,11 @@ private slots:
   void setCommentTextIsBoundedAndTruncatedNotRejected();
   void beginCommentTextEditIsDroppedWhenThePageIsNotReady();
   void editabilityIsLatchedAcrossAReload();
+
+  void aValidMoveIsForwarded();
+  void moveIsRejectedOutsideThePageRange();
+  void moveIsRejectedForANonFiniteCoordinate();
+  void moveIsRejectedForAnOverlongId();
 
 private:
   static QJsonObject validAnchor(int p_page = 0, const QString &p_text = QStringLiteral("q"));
@@ -726,6 +732,75 @@ void TestPdfViewerAdapterComments::editabilityIsLatchedAcrossAReload() {
   // The replacement page is told again, with the value the adapter still holds.
   QCOMPARE(spy.count(), 2);
   QCOMPARE(spy.at(1).at(0).toBool(), true);
+}
+
+// A move is the first GEOMETRY intent, and it is deliberately NARROW: only the
+// page and the coordinates cross, so a hostile page cannot rewrite the anchor's
+// type or fontSize.
+void TestPdfViewerAdapterComments::aValidMoveIsForwarded() {
+  PdfViewerAdapter adapter;
+  adapter.setDocumentPageCount(5);
+
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::moveCommentRequested);
+  adapter.requestMoveComment(QStringLiteral("real-id"), 3, 12.5, -4.25);
+
+  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.at(0).at(0).toString(), QStringLiteral("real-id"));
+  QCOMPARE(spy.at(0).at(1).toInt(), 3);
+  QCOMPARE(spy.at(0).at(2).toDouble(), 12.5);
+  QCOMPARE(spy.at(0).at(3).toDouble(), -4.25);
+}
+
+// Rejected, never clamped: clamping is the page's job, and an out-of-range page
+// here means the page is lying (or is stale after a reload, which resets the
+// count to 0 and therefore refuses everything).
+void TestPdfViewerAdapterComments::moveIsRejectedOutsideThePageRange() {
+  PdfViewerAdapter adapter;
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::moveCommentRequested);
+
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*rejected.*")));
+  adapter.requestMoveComment(QStringLiteral("id"), 0, 1.0, 1.0);
+  QCOMPARE(spy.count(), 0);
+
+  adapter.setDocumentPageCount(2);
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*rejected.*")));
+  adapter.requestMoveComment(QStringLiteral("id"), 2, 1.0, 1.0);
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*rejected.*")));
+  adapter.requestMoveComment(QStringLiteral("id"), -1, 1.0, 1.0);
+  QCOMPARE(spy.count(), 0);
+
+  adapter.requestMoveComment(QStringLiteral("id"), 1, 1.0, 1.0);
+  QCOMPARE(spy.count(), 1);
+}
+
+void TestPdfViewerAdapterComments::moveIsRejectedForANonFiniteCoordinate() {
+  PdfViewerAdapter adapter;
+  adapter.setDocumentPageCount(3);
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::moveCommentRequested);
+
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*rejected.*")));
+  adapter.requestMoveComment(QStringLiteral("id"), 0, qQNaN(), 1.0);
+  QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral(".*rejected.*")));
+  adapter.requestMoveComment(QStringLiteral("id"), 0, 1.0, qInf());
+  QCOMPARE(spy.count(), 0);
+}
+
+void TestPdfViewerAdapterComments::moveIsRejectedForAnOverlongId() {
+  PdfViewerAdapter adapter;
+  adapter.setDocumentPageCount(3);
+  QSignalSpy spy(&adapter, &PdfViewerAdapter::moveCommentRequested);
+
+  // The rejection is LOGGED (bounded, and without echoing the hostile id), like
+  // every other move rejection.
+  QTest::ignoreMessage(QtWarningMsg,
+                       QRegularExpression(QStringLiteral(".*rejected comment move with an "
+                                                         "invalid id.*")));
+  adapter.requestMoveComment(QString(), 0, 1.0, 1.0);
+  QTest::ignoreMessage(QtWarningMsg,
+                       QRegularExpression(QStringLiteral(".*rejected comment move with an "
+                                                         "invalid id.*")));
+  adapter.requestMoveComment(QString(4096, QLatin1Char('a')), 0, 1.0, 1.0);
+  QCOMPARE(spy.count(), 0);
 }
 
 } // namespace tests

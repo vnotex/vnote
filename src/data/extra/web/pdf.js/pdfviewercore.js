@@ -34,6 +34,11 @@ const VX_FREETEXT_FONT_SIZE = 12.0;
 // page with invisible one-point scribbles.
 const VX_MIN_INK_POINTS = 2;
 
+// Below this a press-and-release on a text box is a CLICK (select / double
+// click to edit), not a move. Without it every click would nudge the box.
+const VX_DRAG_THRESHOLD_PX = 4;
+
+
 class PdfViewerCore extends VXCore {
     constructor() {
         super();
@@ -107,6 +112,34 @@ class PdfViewerCore extends VXCore {
         // FALSE: a box whose store would refuse the write must not accept
         // keystrokes, or the user types into a void.
         this.commentsEditable = false;
+
+        // === Moving a free-text box ===
+        // TWO distinct states, deliberately not collapsed into one:
+        //
+        //   * ACTIVE DRAG   -- a pointer is down. Lives from pointerdown to
+        //     pointerup/cancel and is purely local: no bridge traffic at all.
+        //   * PENDING COMMIT -- one requestMoveComment has been sent and the
+        //     authoritative set has not come back yet. It keeps the box drawn at
+        //     the dropped position so it does not visibly snap back and forth.
+        //
+        // `dragGrabDx/Dy` are in PDF UNITS, not client pixels: a zoom mid-drag
+        // would make a pixel offset wrong, whereas a page-space one survives.
+        this.dragCommentId = null;
+        this.dragPointerId = null;
+        this.dragStartClientX = 0;
+        this.dragStartClientY = 0;
+        this.dragMoved = false;
+        this.dragOriginPoint = null;
+        this.dragPoint = null;
+        this.dragGrabDx = 0;
+        this.dragGrabDy = 0;
+        this.dragEl = null;
+        this.dragHandlers = null;
+        this.pendingMoveId = null;
+        this.pendingMovePoint = null;
+        // Id-scoped, NOT a global boolean: a drag that never produces a click
+        // must not swallow the next genuine click on some OTHER comment.
+        this.suppressClickForId = null;
     }
 
     initOnLoad() {
@@ -673,6 +706,321 @@ class PdfViewerCore extends VXCore {
         return true;
     }
 
+    // === Moving a free-text box ===
+
+    // True while the drag preview owns the box, i.e. the pointer has travelled
+    // far enough that this is a move rather than a click.
+    isDraggingFreeText() {
+        return !!this.dragCommentId && this.dragMoved;
+    }
+
+    // The id whose box is currently drawn from a PREVIEW point rather than from
+    // its persisted anchor, and that point. Null when neither is live.
+    freeTextPreview() {
+        if (this.isDraggingFreeText() && this.dragPoint) {
+            return { id: this.dragCommentId, point: this.dragPoint };
+        }
+        if (this.pendingMoveId && this.pendingMovePoint) {
+            return { id: this.pendingMoveId, point: this.pendingMovePoint };
+        }
+        return null;
+    }
+
+    // Press on a box body. Refused unless this is plain reading mode on an
+    // editable store and the box is not the one being edited.
+    beginFreeTextDrag(p_id, p_event, p_el) {
+        if (this.tool !== 'none' || !this.commentsEditable) {
+            return false;
+        }
+        if (this.editingCommentId === p_id) {
+            return false;
+        }
+        if (p_event && p_event.button !== undefined && p_event.button !== 0) {
+            return false;
+        }
+        // A second pointer during a drag is refused outright, same rule as ink.
+        if (this.dragCommentId) {
+            return false;
+        }
+        // ...and so is a drag started on a preview whose move has not been
+        // reconciled yet: the origin and the grab offset would be computed from
+        // the STALE persisted anchor, so the box would jump.
+        if (this.pendingMoveId) {
+            return false;
+        }
+        var comment = this.commentById(p_id);
+        if (!comment || !comment.anchor || comment.anchor.type !== 'pdf-freetext') {
+            return false;
+        }
+
+        var info = this.pageInfoForPoint(p_event.clientX, p_event.clientY);
+        if (!info) {
+            return false;
+        }
+        // Without window listeners the gesture could be started but never
+        // finished, which would strand the box mid-drag. Refuse instead.
+        if (typeof window.addEventListener !== 'function' ||
+            typeof window.removeEventListener !== 'function') {
+            return false;
+        }
+        var pt = PdfViewerCore.clientPointToPdfPoint(p_event.clientX, p_event.clientY,
+                                                     info.pageRect, info.viewport);
+
+        this.dragCommentId = p_id;
+        this.dragPointerId = (p_event.pointerId === undefined ? null : p_event.pointerId);
+        this.dragStartClientX = p_event.clientX;
+        this.dragStartClientY = p_event.clientY;
+        this.dragMoved = false;
+        this.dragOriginPoint = {
+            page: comment.anchor.page,
+            x: comment.anchor.x,
+            y: comment.anchor.y
+        };
+        this.dragPoint = {
+            page: this.dragOriginPoint.page,
+            x: this.dragOriginPoint.x,
+            y: this.dragOriginPoint.y
+        };
+        // PDF units, so a zoom mid-drag cannot make the grab point slide.
+        this.dragGrabDx = comment.anchor.x - pt[0];
+        this.dragGrabDy = comment.anchor.y - pt[1];
+        this.dragEl = p_el || null;
+
+        if (p_event.stopPropagation) {
+            p_event.stopPropagation();
+        }
+
+        // WINDOW listeners, deliberately NOT setPointerCapture (which is what
+        // ink uses): a free-text node is destroyed and re-created by every
+        // renderAllComments(), and a scroll during a drag is perfectly normal,
+        // so the capture would be dropped silently along with the rest of the
+        // gesture.
+        var self = this;
+        this.dragHandlers = {
+            move: function(p_ev) { self.updateFreeTextDrag(p_ev); },
+            up: function(p_ev) { self.endFreeTextDrag(p_ev); },
+            cancel: function(p_ev) {
+                if (!self.dragOwnsPointer(p_ev)) {
+                    return;
+                }
+                self.cancelFreeTextDrag();
+            }
+        };
+        window.addEventListener('pointermove', this.dragHandlers.move);
+        window.addEventListener('pointerup', this.dragHandlers.up);
+        window.addEventListener('pointercancel', this.dragHandlers.cancel);
+        return true;
+    }
+
+    dragOwnsPointer(p_event) {
+        if (!this.dragCommentId) {
+            return false;
+        }
+        if (this.dragPointerId === null || !p_event || p_event.pointerId === undefined) {
+            return true;
+        }
+        return this.dragPointerId === p_event.pointerId;
+    }
+
+    updateFreeTextDrag(p_event) {
+        if (!this.dragOwnsPointer(p_event)) {
+            return;
+        }
+        var dx = p_event.clientX - this.dragStartClientX;
+        var dy = p_event.clientY - this.dragStartClientY;
+        var justStarted = false;
+        if (!this.dragMoved) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) < VX_DRAG_THRESHOLD_PX) {
+                // Still a click.
+                return;
+            }
+            this.dragMoved = true;
+            justStarted = true;
+        }
+
+        var previousPage = this.dragPoint ? this.dragPoint.page : -1;
+        var point = this.dragPointForClient(p_event.clientX, p_event.clientY);
+        if (point) {
+            this.dragPoint = point;
+        }
+
+        if (justStarted || !this.dragPoint || this.dragPoint.page !== previousPage) {
+            // The preview node has to move to another page's layer (or be
+            // created for the first time), which only a rebuild can do.
+            this.renderAllComments();
+            return;
+        }
+        this.moveDragNode();
+    }
+
+    // Convert a client point into the box's new PDF-space anchor, or null when
+    // the pointer is in the gutter / outside every page.
+    dragPointForClient(p_clientX, p_clientY) {
+        var info = this.pageInfoForPoint(p_clientX, p_clientY);
+        if (!info) {
+            return null;
+        }
+        var pt = PdfViewerCore.clientPointToPdfPoint(p_clientX, p_clientY, info.pageRect,
+                                                     info.viewport);
+        return {
+            page: info.pageNumber,
+            x: pt[0] + this.dragGrabDx,
+            y: pt[1] + this.dragGrabDy
+        };
+    }
+
+    // A drop outside every page CLAMPS into the source page rather than being
+    // refused: the user plainly meant "over there", and a silent no-op reads as
+    // a broken gesture.
+    dragPointClampedToSourcePage(p_clientX, p_clientY) {
+        var app = this.commentApp;
+        var origin = this.dragOriginPoint;
+        if (!app || !app.pdfViewer || !origin) {
+            return null;
+        }
+        var view = app.pdfViewer.getPageView(origin.page);
+        if (!view || !view.div || !view.viewport) {
+            return null;
+        }
+        var rect = view.div.getBoundingClientRect();
+        var x = Math.min(Math.max(p_clientX, rect.left), rect.right);
+        var y = Math.min(Math.max(p_clientY, rect.top), rect.bottom);
+        var pt = PdfViewerCore.clientPointToPdfPoint(x, y, rect, view.viewport);
+        return { page: origin.page, x: pt[0] + this.dragGrabDx, y: pt[1] + this.dragGrabDy };
+    }
+
+    // Move the preview node WITHIN its page. Never a full repaint: that is
+    // quadratic in the comment set, for the same reason the ink draft owns its
+    // own node.
+    moveDragNode() {
+        var app = this.commentApp;
+        if (!this.dragEl || !this.dragPoint || !app || !app.pdfViewer) {
+            return;
+        }
+        var view = app.pdfViewer.getPageView(this.dragPoint.page);
+        if (!view || !view.viewport) {
+            return;
+        }
+        var pos = PdfViewerCore.pdfPointToPageXY(this.dragPoint.x, this.dragPoint.y,
+                                                 view.viewport);
+        if (!pos) {
+            return;
+        }
+        this.dragEl.style.left = pos.x + 'px';
+        this.dragEl.style.top = pos.y + 'px';
+    }
+
+    endFreeTextDrag(p_event) {
+        if (!this.dragOwnsPointer(p_event)) {
+            return false;
+        }
+
+        var moved = this.dragMoved;
+        var id = this.dragCommentId;
+        var origin = this.dragOriginPoint;
+        var point = this.dragPoint;
+        if (moved && p_event) {
+            var dropped = this.dragPointForClient(p_event.clientX, p_event.clientY);
+            if (!dropped) {
+                dropped = this.dragPointClampedToSourcePage(p_event.clientX, p_event.clientY);
+            }
+            if (dropped) {
+                point = dropped;
+            }
+        }
+
+        this.teardownFreeTextDrag();
+        this.clearFreeTextDragState();
+
+        if (!moved) {
+            // A press that never travelled. No bridge traffic, no repaint (the
+            // node must survive so its own click handler can select the box).
+            return false;
+        }
+
+        if (!point || !origin ||
+            (point.page === origin.page && point.x === origin.x && point.y === origin.y)) {
+            // Dropped exactly where it started. The controller would refuse it,
+            // and no publish would ever come back to clear a pending preview --
+            // so nothing may be left waiting on one.
+            this.renderAllComments();
+            return false;
+        }
+
+        if (!this.commentAdapter) {
+            this.renderAllComments();
+            return false;
+        }
+
+        this.pendingMoveId = id;
+        this.pendingMovePoint = point;
+        // The pointerup is about to be followed by a click on the box; that
+        // click is part of the drag, not a selection gesture.
+        this.armClickSuppression(id);
+        this.renderAllComments();
+        this.commentAdapter.requestMoveComment(id, point.page, point.x, point.y);
+        return true;
+    }
+
+    armClickSuppression(p_id) {
+        var self = this;
+        this.suppressClickForId = p_id;
+        // Cleared unconditionally on the next turn as well: a drag released off
+        // the box (or whose node was replaced) produces no click at all, and a
+        // stuck id would swallow the next genuine one.
+        if (typeof setTimeout !== 'function') {
+            return;
+        }
+        setTimeout(function() {
+            if (self.suppressClickForId === p_id) {
+                self.suppressClickForId = null;
+            }
+        }, 0);
+    }
+
+    // Idempotent. Called from EVERY exit: pointerup, pointercancel, Escape,
+    // setTool, setCommentsEditable(false), resetComments, and a published set
+    // that no longer contains the dragged comment.
+    teardownFreeTextDrag() {
+        if (!this.dragHandlers) {
+            return;
+        }
+        window.removeEventListener('pointermove', this.dragHandlers.move);
+        window.removeEventListener('pointerup', this.dragHandlers.up);
+        window.removeEventListener('pointercancel', this.dragHandlers.cancel);
+        this.dragHandlers = null;
+    }
+
+    clearFreeTextDragState() {
+        this.dragCommentId = null;
+        this.dragPointerId = null;
+        this.dragMoved = false;
+        this.dragOriginPoint = null;
+        this.dragPoint = null;
+        this.dragGrabDx = 0;
+        this.dragGrabDy = 0;
+        this.dragEl = null;
+    }
+
+    // Abort with ZERO writes: the box snaps back to its persisted anchor.
+    //
+    // It covers BOTH states. A pending commit is not guaranteed a publish -- the
+    // adapter can reject the move (stale page count, non-finite value) and the
+    // controller can refuse it (editability lost in the meantime) -- so a cancel
+    // that only cleared the ACTIVE drag would leave the box drawn forever at a
+    // position that was never persisted.
+    cancelFreeTextDrag() {
+        if (!this.dragCommentId && !this.pendingMoveId) {
+            return false;
+        }
+        this.teardownFreeTextDrag();
+        this.clearFreeTextDragState();
+        this.pendingMoveId = null;
+        this.pendingMovePoint = null;
+        this.renderAllComments();
+        return true;
+    }
+
     // === Inline free-text editing ===
 
     commentById(p_id) {
@@ -700,6 +1048,7 @@ class PdfViewerCore extends VXCore {
     setCommentsEditable(p_editable) {
         this.commentsEditable = !!p_editable;
         if (!this.commentsEditable) {
+            this.cancelFreeTextDrag();
             this.flushFreeTextDraft();
             this.closeFreeTextEdit();
         }
@@ -1114,7 +1463,25 @@ class PdfViewerCore extends VXCore {
             // is nothing left to write to.
             this.discardFreeTextEditState();
         }
+        this.reconcileFreeTextDrag();
         this.renderAllComments();
+    }
+
+    // setComments() fires for EVERY mutation, including unrelated dock edits and
+    // inline-text flushes, so an active drag deliberately SURVIVES a publish --
+    // only the disappearance of the dragged comment ends it.
+    reconcileFreeTextDrag() {
+        if (this.dragCommentId && !this.commentById(this.dragCommentId)) {
+            this.teardownFreeTextDrag();
+            this.clearFreeTextDragState();
+        }
+        if (this.pendingMoveId) {
+            // Either the move landed, the comment is gone, or C++ decided
+            // something else -- in all three cases C++ is the source of truth
+            // and the local preview is dropped.
+            this.pendingMoveId = null;
+            this.pendingMovePoint = null;
+        }
     }
 
     setCommentColor(p_color) {
@@ -1160,6 +1527,7 @@ class PdfViewerCore extends VXCore {
         // Arming a tool leaves the box: COMMIT rather than discard, because
         // reaching for the toolbar is not a request to throw text away.
         this.commitFreeTextEdit();
+        this.cancelFreeTextDrag();
         this.abortInk();
         this.inkDraft = null;
         this.tool = p_tool;
@@ -1241,6 +1609,14 @@ class PdfViewerCore extends VXCore {
         // it can be: everything below deliberately dispatches nothing.
         this.flushFreeTextDraft();
         this.discardFreeTextEditState();
+
+        // A drag belongs to the document being torn down. Torn down locally:
+        // everything below deliberately dispatches nothing.
+        this.teardownFreeTextDrag();
+        this.clearFreeTextDragState();
+        this.pendingMoveId = null;
+        this.pendingMovePoint = null;
+        this.suppressClickForId = null;
 
         this.comments = [];
         this.selectedCommentId = null;
@@ -1354,6 +1730,13 @@ class PdfViewerCore extends VXCore {
     }
 
     renderCommentLayers(app) {
+        // The box being dragged (or whose move is awaiting confirmation) is
+        // rendered from a PREVIEW point instead, into whatever page that point
+        // is on -- which cannot be done inside the per-page pass below, because
+        // it buckets by the PERSISTED anchor.page and would hand renderFreeText
+        // the wrong layer and the wrong viewport.
+        var preview = this.freeTextPreview();
+
         // Bucket by page so each layer is rebuilt exactly once.
         var byPage = {};
         var known = { 'pdf-quads': 1, 'pdf-ink': 1, 'pdf-freetext': 1 };
@@ -1362,6 +1745,9 @@ class PdfViewerCore extends VXCore {
             if (!comment || !comment.anchor || !known[comment.anchor.type]) {
                 // An anchor type this build does not implement is simply not
                 // rendered; it is still carried in comments.json untouched.
+                continue;
+            }
+            if (preview && comment.id === preview.id) {
                 continue;
             }
             var page = comment.anchor.page;
@@ -1374,6 +1760,10 @@ class PdfViewerCore extends VXCore {
             }
             byPage[key].push(comment);
         }
+
+        // Every layer is about to be wiped, so the previous preview node is
+        // gone whatever happens.
+        this.dragEl = null;
 
         for (var p = 0; p < app.pagesCount; ++p) {
             var view = app.pdfViewer.getPageView(p);
@@ -1388,6 +1778,16 @@ class PdfViewerCore extends VXCore {
                 for (var c = 0; c < list.length; ++c) {
                     this.renderComment(layer, list[c], view.viewport);
                 }
+            }
+        }
+
+        if (preview) {
+            var previewComment = this.commentById(preview.id);
+            var previewView = app.pdfViewer.getPageView(preview.point.page);
+            if (previewComment && previewView && previewView.div && previewView.viewport) {
+                this.dragEl = this.renderFreeText(this.commentLayerForPage(previewView),
+                                                  previewComment, previewView.viewport,
+                                                  preview.point);
             }
         }
     }
@@ -1465,21 +1865,32 @@ class PdfViewerCore extends VXCore {
         p_layer.appendChild(svg);
     }
 
-    renderFreeText(p_layer, p_comment, p_viewport) {
-        var pos = PdfViewerCore.pdfPointToPageXY(p_comment.anchor.x, p_comment.anchor.y,
-                                                 p_viewport);
+    // @p_overridePoint, when given, is a {page,x,y} PREVIEW position (a live
+    // drag or a move awaiting confirmation) used instead of the persisted
+    // anchor. Returns the node, so the caller can keep hold of the preview.
+    renderFreeText(p_layer, p_comment, p_viewport, p_overridePoint) {
+        var anchorX = p_overridePoint ? p_overridePoint.x : p_comment.anchor.x;
+        var anchorY = p_overridePoint ? p_overridePoint.y : p_comment.anchor.y;
+        var pos = PdfViewerCore.pdfPointToPageXY(anchorX, anchorY, p_viewport);
         if (!pos) {
-            return;
+            return null;
         }
 
         var el = document.createElement('div');
         var editing = (p_comment.id && p_comment.id === this.editingCommentId);
+        var movable = (!editing && this.commentsEditable && this.tool === 'none');
         el.className = 'vx-comment-freetext';
         if (p_comment.id === this.selectedCommentId) {
             el.className += ' vx-comment-selected';
         }
         if (editing) {
             el.className += ' vx-comment-freetext-editing';
+        }
+        if (movable) {
+            el.className += ' vx-comment-freetext-movable';
+        }
+        if (p_overridePoint) {
+            el.className += ' vx-comment-dragging';
         }
         el.style.left = pos.x + 'px';
         el.style.top = pos.y + 'px';
@@ -1503,6 +1914,12 @@ class PdfViewerCore extends VXCore {
         var self = this;
         (function(p_id) {
             el.addEventListener('click', function(p_event) {
+                if (self.suppressClickForId === p_id) {
+                    // The trailing click of a drag that just moved this box.
+                    self.suppressClickForId = null;
+                    p_event.stopPropagation();
+                    return;
+                }
                 if (self.tool !== 'none' || self.editingCommentId === p_id) {
                     return;
                 }
@@ -1522,6 +1939,12 @@ class PdfViewerCore extends VXCore {
                 p_event.stopPropagation();
                 self.beginFreeTextEdit(p_id, false);
             });
+
+            if (movable) {
+                el.addEventListener('pointerdown', function(p_event) {
+                    self.beginFreeTextDrag(p_id, p_event, el);
+                });
+            }
         })(p_comment.id);
 
         if (editing) {
@@ -1591,6 +2014,7 @@ class PdfViewerCore extends VXCore {
         }
 
         p_layer.appendChild(el);
+        return el;
     }
 
     renderQuads(p_layer, p_comment, p_viewport) {

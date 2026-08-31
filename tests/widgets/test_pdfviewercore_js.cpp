@@ -311,6 +311,26 @@ private slots:
   void glueFlushesTheDraftOnPageLifecycleEvents();
   void glueWiresTheInlineEditorSignals();
 
+  // Moving a free-text box by dragging it.
+  void aShortPressStillSelectsInsteadOfMoving();
+  void draggingABoxCommitsExactlyOneMoveOnPointerUp();
+  void aDragIsRefusedWhileAToolIsArmedOrTheStoreIsReadOnly();
+  void aDragIsRefusedWhileTheBoxIsBeingEdited();
+  void aSecondPointerDuringADragIsRefused();
+  void escapeAndPointerCancelRevertADragWithoutWriting();
+  void aRepaintDuringADragKeepsThePreviewAtTheDraggedPoint();
+  void aZoomDuringADragKeepsTheGrabOffset();
+  void aDropOnAnotherPageCommitsThatPage();
+  void aDropOffAnyPageClampsIntoTheSourcePage();
+  void aDragThatReturnsToItsStartSendsNothingAndClearsItsState();
+  void anUnrelatedCommentPublishDoesNotEndAnActiveDrag();
+  void deletingTheDraggedCommentDuringADragCancelsIt();
+  void aPendingMoveIsClearedByTheMatchingPublishAndOverriddenByADifferentOne();
+  void aSecondDragLeavesExactlyOneSetOfWindowListeners();
+  void aDragThatProducesNoClickDoesNotSuppressTheNextClick();
+  void aPendingMoveIsCancellableAndBlocksASecondDrag();
+  void glueEscapeCancelsBothAnActiveDragAndAPendingMove();
+
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
   // top level, so re-evaluating it in the same engine would be a redeclaration.
@@ -1017,6 +1037,7 @@ window.__pageCount = 0;
 window.__deleted = [];
 window.__texts = [];
 window.__selected = [];
+window.__moves = [];
 
 window.__adapter = {
     setDocumentPageCount: function(n) { window.__pageCount = n; },
@@ -1025,6 +1046,9 @@ window.__adapter = {
     requestSelectComment: function(id) { window.__selected.push(id); },
     requestDeleteComment: function(id) { window.__deleted.push(id); },
     requestSetCommentText: function(id, t) { window.__texts.push({ id: id, text: t }); },
+    requestMoveComment: function(id, page, x, y) {
+        window.__moves.push({ id: id, page: page, x: x, y: y });
+    },
     notifyToolFinished: function() { window.__toolFinished++; }
 };
 
@@ -1052,6 +1076,45 @@ window.__pageDiv = {
     appendChild: function(c) { this.__layer = c; return c; }
 };
 
+// A SECOND page, retained independently, so a cross-page drag can be asserted
+// on the PARENT of the preview node rather than merely on its CSS coordinates.
+// It sits directly below the first one, with the same width.
+window.__pageDiv2 = {
+    __layer: null,
+    getBoundingClientRect: function() {
+        return { left: 100, top: 900, right: 700, bottom: 1700, width: 600, height: 800 };
+    },
+    querySelector: function() { return this.__layer; },
+    appendChild: function(c) { this.__layer = c; return c; }
+};
+
+// Window-level listeners are ARRAYS with real removal, because the drag
+// registers three of them per gesture and the leak-free teardown is exactly
+// what has to be gated.
+window.__winL = {};
+window.addEventListener = function(p_name, p_cb) {
+    if (!window.__winL[p_name]) { window.__winL[p_name] = []; }
+    window.__winL[p_name].push(p_cb);
+};
+window.removeEventListener = function(p_name, p_cb) {
+    var list = window.__winL[p_name];
+    if (!list) { return; }
+    for (var i = list.length - 1; i >= 0; --i) {
+        if (list[i] === p_cb) { list.splice(i, 1); }
+    }
+};
+window.__winCount = function(p_name) {
+    return window.__winL[p_name] ? window.__winL[p_name].length : 0;
+};
+window.__fireWin = function(p_name, p_event) {
+    var list = (window.__winL[p_name] || []).slice();
+    var evt = p_event || {};
+    if (typeof evt.preventDefault !== 'function') { evt.preventDefault = function() {}; }
+    if (typeof evt.stopPropagation !== 'function') { evt.stopPropagation = function() {}; }
+    for (var i = 0; i < list.length; ++i) { list[i](evt); }
+    return list.length;
+};
+
 window.__app = {
     pagesCount: 1,
     pdfDocument: {},
@@ -1061,6 +1124,30 @@ window.__app = {
         }
     },
     eventBus: { on: function() {} }
+};
+
+// Opt-in two-page mode. Kept separate so no existing single-page case changes
+// behaviour just because the drag cases needed a second page.
+window.__useTwoPages = function(p_scale) {
+    var scale = p_scale || 2;
+    window.__app.pagesCount = 2;
+    window.__app.pdfViewer.getPageView = function(i) {
+        if (i === 0) {
+            return { div: window.__pageDiv, viewport: window.__mkViewport(scale, 800) };
+        }
+        if (i === 1) {
+            return { div: window.__pageDiv2, viewport: window.__mkViewport(scale, 800) };
+        }
+        return null;
+    };
+};
+
+// Rebind page 0 at a different zoom, so a scale change mid-drag can be staged.
+window.__setScale = function(p_scale) {
+    window.__app.pdfViewer.getPageView = function(i) {
+        return i === 0 ? { div: window.__pageDiv, viewport: window.__mkViewport(p_scale, 800) }
+                       : null;
+    };
 };
 
 window.vxcore.commentApp = window.__app;
@@ -2016,6 +2103,637 @@ void TestPdfViewerCoreJs::glueWiresTheInlineEditorSignals() {
   QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
            QStringLiteral("ft1"));
   QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingIsNew")).toBool(), true);
+}
+
+// ============ Moving a free-text box ============
+//
+// The gesture is press-and-drag on the box body, and it is the FIRST geometry
+// mutation in the comment subsystem. The properties that matter are: it never
+// fires during the gesture, it commits exactly once, it reverts for free, and
+// it can never strand window listeners or leave the preview on the wrong page.
+
+namespace {
+// Layered ON TOP of c_toolHarness. Two free-text boxes, so a click-suppression
+// case can prove the suppression is scoped to ONE id.
+const char *const c_dragHarness = R"JS(
+window.__seedBoxes = function() {
+    window.vxcore.setComments([
+        { id: 'ft1', color: 'yellow', text: 'one',
+          anchor: { type: 'pdf-freetext', page: 0, x: 20, y: 780, fontSize: 12 } },
+        { id: 'ft2', color: 'yellow', text: 'two',
+          anchor: { type: 'pdf-freetext', page: 0, x: 200, y: 400, fontSize: 12 } }
+    ]);
+};
+
+window.__layerOf = function(p_div) { return p_div.__layer; };
+
+window.__box = function(p_id) {
+    var divs = [window.__pageDiv, window.__pageDiv2];
+    for (var d = 0; d < divs.length; ++d) {
+        var layer = divs[d].__layer;
+        if (!layer) { continue; }
+        for (var i = 0; i < layer.childNodes.length; ++i) {
+            var el = layer.childNodes[i];
+            if (el && el.attrs && el.attrs['data-vx-id'] === p_id) { return el; }
+        }
+    }
+    return null;
+};
+
+// The page div whose layer currently holds the box, or null.
+window.__boxPage = function(p_id) {
+    var divs = [window.__pageDiv, window.__pageDiv2];
+    for (var d = 0; d < divs.length; ++d) {
+        var layer = divs[d].__layer;
+        if (!layer) { continue; }
+        for (var i = 0; i < layer.childNodes.length; ++i) {
+            var el = layer.childNodes[i];
+            if (el && el.attrs && el.attrs['data-vx-id'] === p_id) { return divs[d]; }
+        }
+    }
+    return null;
+};
+
+window.__press = function(p_id, p_x, p_y, p_pointerId) {
+    var el = window.__box(p_id);
+    if (!el) { throw new Error('no box ' + p_id); }
+    return window.__fire(el, 'pointerdown',
+                         { clientX: p_x, clientY: p_y, button: 0,
+                           pointerId: (p_pointerId === undefined ? 1 : p_pointerId) });
+};
+
+window.__drag = function(p_x, p_y, p_pointerId) {
+    return window.__fireWin('pointermove',
+                            { clientX: p_x, clientY: p_y,
+                              pointerId: (p_pointerId === undefined ? 1 : p_pointerId) });
+};
+
+window.__release = function(p_x, p_y, p_pointerId) {
+    return window.__fireWin('pointerup',
+                            { clientX: p_x, clientY: p_y,
+                              pointerId: (p_pointerId === undefined ? 1 : p_pointerId) });
+};
+
+window.__armed = function() {
+    return window.__winCount('pointermove') + window.__winCount('pointerup') +
+           window.__winCount('pointercancel');
+};
+
+// QJSEngine has no setTimeout, and the click-suppression fallback is armed
+// through one. Without a real queue the case could not tell "the fallback ran"
+// from "the fallback does not exist", which is exactly the regression it is
+// supposed to gate.
+window.__timeouts = [];
+window.setTimeout = function(p_cb) {
+    window.__timeouts.push(p_cb);
+    return window.__timeouts.length;
+};
+window.__runTimeouts = function() {
+    var due = window.__timeouts;
+    window.__timeouts = [];
+    for (var i = 0; i < due.length; ++i) { due[i](); }
+    return due.length;
+};
+
+window.__ready = function() {
+    window.vxcore.setCommentsEditable(true);
+    window.__seedBoxes();
+    window.vxcore.renderAllComments();
+};
+)JS";
+} // namespace
+
+// Below the threshold the gesture is a CLICK. Without this every click on a box
+// would nudge it by a pixel or two and write a comment to disk.
+void TestPdfViewerCoreJs::aShortPressStillSelectsInsteadOfMoving() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === 'ft1'")).toBool());
+
+  // Two pixels: still a click.
+  eval(engine, QStringLiteral("window.__drag(142, 91);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragMoved")).toBool(), false);
+  eval(engine, QStringLiteral("window.__release(142, 91);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+
+  // The box's own click handler still selects, because the sub-threshold path
+  // deliberately does NOT repaint (a repaint would destroy the node the click
+  // is about to be delivered to).
+  eval(engine, QStringLiteral("window.__fire(window.__box('ft1'), 'click', {});"));
+  QCOMPARE(json(engine, QStringLiteral("window.__selected")), QStringLiteral("[\"ft1\"]"));
+}
+
+void TestPdfViewerCoreJs::draggingABoxCommitsExactlyOneMoveOnPointerUp() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+
+  // The grab point IS the anchor here, so the offset is zero and the drop point
+  // is simply the pointer's page-space position.
+  eval(engine, QStringLiteral("window.__drag(200, 150);"));
+  eval(engine, QStringLiteral("window.__drag(260, 210);"));
+  QVERIFY2(eval(engine, QStringLiteral("window.__moves.length === 0")).toBool(),
+           "no bridge traffic may happen during the gesture");
+
+  eval(engine, QStringLiteral("window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].id")).toString(), QStringLiteral("ft1"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].page")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].x")).toNumber(), 50.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].y")).toNumber(), 750.0);
+
+  // The preview survives until the authoritative set comes back, so the box
+  // does not visibly snap home and out again.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.pendingMoveId")).toString(),
+           QStringLiteral("ft1"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::aDragIsRefusedWhileAToolIsArmedOrTheStoreIsReadOnly() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  // Read-only: no movable class, and the intent is refused even if called
+  // directly.
+  eval(engine, QStringLiteral("window.__seedBoxes(); window.vxcore.renderAllComments();"));
+  QCOMPARE(eval(engine,
+                QStringLiteral("window.vxcore.beginFreeTextDrag('ft1',"
+                               "  { clientX: 140, clientY: 90, button: 0, pointerId: 1 }, null)"))
+               .toBool(),
+           false);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === null")).toBool());
+
+  // Armed tool: the layer is authoring, and a press must draw, not move.
+  eval(engine, QStringLiteral("window.__ready(); window.vxcore.setTool('ink');"
+                              "window.vxcore.renderAllComments();"));
+  QCOMPARE(eval(engine,
+                QStringLiteral("window.vxcore.beginFreeTextDrag('ft1',"
+                               "  { clientX: 140, clientY: 90, button: 0, pointerId: 1 }, null)"))
+               .toBool(),
+           false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::aDragIsRefusedWhileTheBoxIsBeingEdited() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"
+                              "window.vxcore.beginFreeTextEdit('ft1', false);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.editingCommentId")).toString(),
+           QStringLiteral("ft1"));
+
+  QCOMPARE(eval(engine,
+                QStringLiteral("window.vxcore.beginFreeTextDrag('ft1',"
+                               "  { clientX: 140, clientY: 90, button: 0, pointerId: 1 }, null)"))
+               .toBool(),
+           false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+
+  // The OTHER box is still movable while this one is being edited.
+  QCOMPARE(eval(engine,
+                QStringLiteral("window.vxcore.beginFreeTextDrag('ft2',"
+                               "  { clientX: 140, clientY: 90, button: 0, pointerId: 1 }, null)"))
+               .toBool(),
+           true);
+}
+
+// Same rule as ink: a palm alongside a pen must not hijack (or duplicate) the
+// gesture.
+void TestPdfViewerCoreJs::aSecondPointerDuringADragIsRefused() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90, 1);"));
+  const int armed = eval(engine, QStringLiteral("window.__armed()")).toInt();
+  QCOMPARE(armed, 3);
+
+  QCOMPARE(eval(engine,
+                QStringLiteral("window.vxcore.beginFreeTextDrag('ft2',"
+                               "  { clientX: 300, clientY: 300, button: 0, pointerId: 2 }, null)"))
+               .toBool(),
+           false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 3);
+
+  // A move/up carrying the OTHER pointer id is ignored outright.
+  eval(engine, QStringLiteral("window.__drag(300, 300, 2);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragMoved")).toBool(), false);
+  eval(engine, QStringLiteral("window.__release(300, 300, 2);"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === 'ft1'")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::escapeAndPointerCancelRevertADragWithoutWriting() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(300, 300);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragMoved")).toBool(), true);
+
+  eval(engine, QStringLiteral("window.__fireWin('pointercancel', { pointerId: 1 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+  // Snapped back to the persisted anchor.
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("40px"));
+
+  // Esc takes the same route (the glue calls cancelFreeTextDrag directly).
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"
+                              "window.__drag(300, 300);"
+                              "window.vxcore.cancelFreeTextDrag();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+}
+
+// A scroll / zoom / rotate during a drag repaints EVERY layer, which destroys
+// the preview node. The drag point lives in page space precisely so the repaint
+// re-projects it instead of losing it.
+void TestPdfViewerCoreJs::aRepaintDuringADragKeepsThePreviewAtTheDraggedPoint() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(200, 150);"));
+
+  eval(engine, QStringLiteral("window.vxcore.renderAllComments();"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === 'ft1'")).toBool());
+  // (50, 750) in page space projects to (100, 100) at scale 2.
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("100px"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.top")).toString(),
+           QStringLiteral("100px"));
+  // ...and the preview node the drag holds is the one that is actually in the
+  // layer, or a subsequent in-place move would update a detached node.
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragEl === window.__box('ft1')")).toBool());
+}
+
+// The grab offset is stored in PDF UNITS. In client pixels it would go stale
+// the moment the user zoomed mid-drag, and the box would jump.
+void TestPdfViewerCoreJs::aZoomDuringADragKeepsTheGrabOffset() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  // Grabbed at page-space (30, 770) on an anchor at (20, 780): offset (-10, +10).
+  eval(engine, QStringLiteral("window.__press('ft1', 160, 110);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragGrabDx")).toNumber(), -10.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragGrabDy")).toNumber(), 10.0);
+
+  eval(engine, QStringLiteral("window.__setScale(4);"));
+  // At scale 4 the pointer at (300, 250) is page-space (50, 750).
+  eval(engine, QStringLiteral("window.__drag(300, 250);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragPoint.x")).toNumber(), 40.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragPoint.y")).toNumber(), 760.0);
+}
+
+// The preview must be rendered into the TARGET page's layer with that page's
+// viewport. Asserting only the CSS coordinates would pass for a node appended
+// to the wrong layer.
+void TestPdfViewerCoreJs::aDropOnAnotherPageCommitsThatPage() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__useTwoPages(2); window.__ready();"));
+  QVERIFY(eval(engine, QStringLiteral("window.__boxPage('ft1') === window.__pageDiv")).toBool());
+
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(200, 1000);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragPoint.page")).toInt(), 1);
+  QVERIFY2(eval(engine, QStringLiteral("window.__boxPage('ft1') === window.__pageDiv2")).toBool(),
+           "the preview must live in the TARGET page's comment layer");
+
+  eval(engine, QStringLiteral("window.__release(200, 1000);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].page")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].x")).toNumber(), 50.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].y")).toNumber(), 750.0);
+}
+
+// A drop in the gutter is CLAMPED into the source page, not refused: the user
+// plainly meant "over there", and a silent no-op reads as a broken gesture.
+void TestPdfViewerCoreJs::aDropOffAnyPageClampsIntoTheSourcePage() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__useTwoPages(2); window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(200, 150);"));
+  // 870 is between page 0's bottom (850) and page 1's top (900).
+  eval(engine, QStringLiteral("window.__release(200, 870);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].page")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].x")).toNumber(), 50.0);
+  // Clamped to the page's bottom edge: (850 - 50) / 2 = 400 from the top.
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves[0].y")).toNumber(), 400.0);
+}
+
+// The controller refuses a same-point move, so no publish would ever come back
+// to clear a pending preview. Nothing may be left waiting on one.
+void TestPdfViewerCoreJs::aDragThatReturnsToItsStartSendsNothingAndClearsItsState() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(300, 300);"));
+  eval(engine, QStringLiteral("window.__release(140, 90);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === null")).toBool());
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.pendingMoveId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("40px"));
+}
+
+// setComments() fires for EVERY mutation, including an unrelated dock edit and
+// the inline editor's own debounced flush. Ending the drag on one would make
+// dragging while anything else happens impossible.
+void TestPdfViewerCoreJs::anUnrelatedCommentPublishDoesNotEndAnActiveDrag() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(200, 150);"));
+
+  eval(engine, QStringLiteral(
+                   "window.vxcore.setComments(["
+                   "  { id: 'ft1', color: 'yellow', text: 'one',"
+                   "    anchor: { type: 'pdf-freetext', page: 0, x: 20, y: 780, fontSize: 12 } },"
+                   "  { id: 'ft2', color: 'blue', text: 'edited elsewhere',"
+                   "    anchor: { type: 'pdf-freetext', page: 0, x: 200, y: 400,"
+                   "              fontSize: 12 } }]);"));
+
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === 'ft1'")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.dragPoint.x")).toNumber(), 50.0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("100px"));
+
+  eval(engine, QStringLiteral("window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 1);
+}
+
+void TestPdfViewerCoreJs::deletingTheDraggedCommentDuringADragCancelsIt() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+  eval(engine, QStringLiteral("window.__drag(200, 150);"));
+
+  eval(engine, QStringLiteral("window.vxcore.setComments(["
+                              "  { id: 'ft2', color: 'yellow', text: 'two',"
+                              "    anchor: { type: 'pdf-freetext', page: 0, x: 200, y: 400,"
+                              "              fontSize: 12 } }]);"));
+
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+
+  // A late pointerup from the abandoned gesture writes nothing.
+  eval(engine, QStringLiteral("window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+}
+
+// C++ is the source of truth: whatever the publish says wins, and the local
+// preview is dropped either way.
+void TestPdfViewerCoreJs::aPendingMoveIsClearedByTheMatchingPublishAndOverriddenByADifferentOne() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"
+                              "window.__drag(200, 150);"
+                              "window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.pendingMoveId")).toString(),
+           QStringLiteral("ft1"));
+
+  // The matching publish clears the preview and the box keeps its position.
+  eval(engine, QStringLiteral("window.vxcore.setComments(["
+                              "  { id: 'ft1', color: 'yellow', text: 'one',"
+                              "    anchor: { type: 'pdf-freetext', page: 0, x: 50, y: 750,"
+                              "              fontSize: 12 } }]);"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.pendingMoveId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("100px"));
+
+  // A publish carrying a DIFFERENT anchor wins over the local preview.
+  eval(engine, QStringLiteral("window.__press('ft1', 200, 150);"
+                              "window.__drag(300, 250);"
+                              "window.__release(300, 250);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.pendingMoveId")).toString(),
+           QStringLiteral("ft1"));
+  eval(engine, QStringLiteral("window.vxcore.setComments(["
+                              "  { id: 'ft1', color: 'yellow', text: 'one',"
+                              "    anchor: { type: 'pdf-freetext', page: 0, x: 20, y: 780,"
+                              "              fontSize: 12 } }]);"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.pendingMoveId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("40px"));
+}
+
+// Three window listeners are registered per gesture. Leaking one set per drag
+// would make every subsequent pointer move run N stale handlers.
+void TestPdfViewerCoreJs::aSecondDragLeavesExactlyOneSetOfWindowListeners() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  for (int i = 0; i < 2; ++i) {
+    eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"));
+    QCOMPARE(eval(engine, QStringLiteral("window.__winCount('pointermove')")).toInt(), 1);
+    QCOMPARE(eval(engine, QStringLiteral("window.__winCount('pointerup')")).toInt(), 1);
+    QCOMPARE(eval(engine, QStringLiteral("window.__winCount('pointercancel')")).toInt(), 1);
+    eval(engine, QStringLiteral("window.__drag(200, 150); window.__release(200, 150);"
+                                "window.vxcore.pendingMoveId = null;"
+                                "window.vxcore.pendingMovePoint = null;"
+                                "window.__seedBoxes();"));
+    QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+  }
+}
+
+// suppressClickForId is an ID, not a global boolean: a drag released off the
+// box produces no click at all, and a stuck flag would swallow the next genuine
+// click on a DIFFERENT comment.
+void TestPdfViewerCoreJs::aDragThatProducesNoClickDoesNotSuppressTheNextClick() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"
+                              "window.__drag(200, 150);"
+                              "window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.suppressClickForId")).toString(),
+           QStringLiteral("ft1"));
+
+  // A click on ANOTHER box is unaffected.
+  eval(engine, QStringLiteral("window.__fire(window.__box('ft2'), 'click', {});"));
+  QCOMPARE(json(engine, QStringLiteral("window.__selected")), QStringLiteral("[\"ft2\"]"));
+
+  // THE case: this drag produced no trailing click at all (released off the box,
+  // or the node was replaced). The unconditional next-turn fallback must clear
+  // the flag anyway, or the next genuine click on that box would be swallowed.
+  QCOMPARE(eval(engine, QStringLiteral("window.__runTimeouts()")).toInt(), 1);
+  QVERIFY2(eval(engine, QStringLiteral("window.vxcore.suppressClickForId === null")).toBool(),
+           "a drag that produced no click must not leave the suppression armed");
+  eval(engine, QStringLiteral("window.__selected = [];"
+                              "window.__fire(window.__box('ft1'), 'click', {});"));
+  QCOMPARE(json(engine, QStringLiteral("window.__selected")), QStringLiteral("[\"ft1\"]"));
+
+  // ...and when the trailing click DOES arrive, it is swallowed exactly once.
+  eval(engine, QStringLiteral("window.__seedBoxes();"
+                              "window.__press('ft1', 200, 150);"
+                              "window.__drag(260, 210);"
+                              "window.__release(260, 210);"
+                              "window.__selected = [];"
+                              "window.__fire(window.__box('ft1'), 'click', {});"));
+  QCOMPARE(json(engine, QStringLiteral("window.__selected")), QStringLiteral("[]"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.suppressClickForId === null")).toBool());
+
+  eval(engine, QStringLiteral("window.__fire(window.__box('ft1'), 'click', {});"));
+  QCOMPARE(json(engine, QStringLiteral("window.__selected")), QStringLiteral("[\"ft1\"]"));
+}
+
+// A pending commit is NOT guaranteed a publish: the adapter can reject the move
+// (stale page count, non-finite value) and the controller can refuse it
+// (editability lost in the meantime). A cancel that cleared only the ACTIVE
+// drag would leave the box drawn forever at a position that was never saved.
+void TestPdfViewerCoreJs::aPendingMoveIsCancellableAndBlocksASecondDrag() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+
+  eval(engine, QStringLiteral("window.__ready();"));
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"
+                              "window.__drag(200, 150);"
+                              "window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.pendingMoveId")).toString(),
+           QStringLiteral("ft1"));
+
+  // A second drag on the still-unreconciled preview would take its origin and
+  // grab offset from the STALE persisted anchor, so the box would jump.
+  QCOMPARE(eval(engine,
+                QStringLiteral("window.vxcore.beginFreeTextDrag('ft1',"
+                               "  { clientX: 200, clientY: 150, button: 0, pointerId: 2 }, null)"))
+               .toBool(),
+           false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+
+  // Losing editability cancels the pending preview too, and writes nothing.
+  eval(engine, QStringLiteral("window.vxcore.setCommentsEditable(false);"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.pendingMoveId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("40px"));
+}
+
+// Escape is routed by the SHIPPED glue, not by the core, so it has to be driven
+// through pdfviewer.mjs's own listener. A core-only test would stay green while
+// the production condition covered the wrong state.
+void TestPdfViewerCoreJs::glueEscapeCancelsBothAnActiveDragAndAPendingMove() {
+  QJSEngine engine;
+  loadCore(engine);
+  loadGlue(engine);
+  // The bridge block bails out early without a #viewerContainer, and the Escape
+  // listener is registered AFTER it -- so the container stub is what makes this
+  // case reach the handler at all.
+  eval(engine,
+       QStringLiteral("window.__container = { listeners: {},"
+                      "  addEventListener: function(t, fn) { this.listeners[t] = fn; } };"
+                      "document.getElementById = function() { return window.__container; };"));
+  // The keydown listener is registered from initializedPromise, and the glue
+  // prelude's recorder is what captures it.
+  eval(engine, QStringLiteral("window.__initDeferred.resolve();"));
+  QVERIFY2(eval(engine, QStringLiteral("typeof window.__winListeners['keydown'] === 'function'"))
+               .toBool(),
+           "pdfviewer.mjs must register the global Escape handler");
+
+  // Now layer the page/DOM fakes on top (they replace window.addEventListener
+  // with the array recorder the drag needs; the keydown callback above is
+  // already captured).
+  eval(engine, QStringLiteral("window.__escape = window.__winListeners['keydown'];"));
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_dragHarness)).isError());
+  eval(engine, QStringLiteral("window.__ready();"));
+
+  // An ACTIVE drag: Escape reverts it with no bridge traffic.
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90); window.__drag(300, 300);"));
+  eval(engine, QStringLiteral("window.__escape({ key: 'Escape',"
+                              "  preventDefault: function() {},"
+                              "  stopPropagation: function() {} });"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === null")).toBool());
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__armed()")).toInt(), 0);
+
+  // A PENDING move: the request may have been rejected by the adapter or
+  // refused by the controller, in which case no publish will ever reconcile it
+  // and beginFreeTextDrag() refuses every further drag. Escape is the way out.
+  eval(engine, QStringLiteral("window.__press('ft1', 140, 90);"
+                              "window.__drag(200, 150);"
+                              "window.__release(200, 150);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.pendingMoveId")).toString(),
+           QStringLiteral("ft1"));
+
+  eval(engine, QStringLiteral("window.__escape({ key: 'Escape',"
+                              "  preventDefault: function() {},"
+                              "  stopPropagation: function() {} });"));
+  QVERIFY2(eval(engine, QStringLiteral("window.vxcore.pendingMoveId === null")).toBool(),
+           "Escape must clear a pending move, or free-text dragging stays disabled");
+  QCOMPARE(eval(engine, QStringLiteral("window.__moves.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__box('ft1').style.left")).toString(),
+           QStringLiteral("40px"));
+
+  // ...and a new drag is possible again.
+  QCOMPARE(eval(engine, QStringLiteral("window.__press('ft1', 140, 90)")).toInt(), 1);
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === 'ft1'")).toBool());
 }
 
 } // namespace tests

@@ -153,6 +153,26 @@ div.visibleMediumView:has(> button#secondaryPrint) {
     outline-offset: 1px;
 }
 
+/* A box can be repositioned by dragging its body, but only in plain reading
+ * mode on an editable store (the class is applied by renderFreeText).
+ *
+ * user-select is what actually stops the browser selecting the box body during
+ * a mouse drag -- stopPropagation() does not suppress a default action --  and
+ * touch-action stops Chromium starting a page pan and firing pointercancel on
+ * touch. Both are scoped to the NON-editing class so the inline editor stays
+ * selectable. */
+.vx-comment-freetext-movable {
+    cursor: move;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+/* The live drag preview / a move awaiting C++'s confirmation. */
+.vx-comment-dragging {
+    opacity: 0.85;
+}
+
 /* While Ink or Text is armed the layer must take the pointer, or pdf.js's text
  * layer wins the drag and the user gets a selection instead of a stroke. */
 .vx-comment-layer.vx-comment-authoring {

@@ -219,6 +219,48 @@ void CommentController::setCommentColor(const QString &p_id, const QString &p_co
   publish();
 }
 
+void CommentController::moveComment(const QString &p_id, int p_page, double p_x, double p_y) {
+  if (!m_editable) {
+    return;
+  }
+  const int idx = indexOf(p_id);
+  if (idx < 0) {
+    return;
+  }
+
+  const QJsonObject &oldAnchor = m_comments.m_comments[idx].m_anchor;
+  if (oldAnchor.value(QStringLiteral("type")).toString() != PdfFreeTextAnchor::type()) {
+    // Only free-text boxes are movable; ink and quads carry their geometry in a
+    // shape this intent cannot express.
+    return;
+  }
+
+  // Mutate a COPY and replace only the three geometry keys. Never rebuild via
+  // PdfFreeTextAnchor::make(): that would drop fontSize's exact value and every
+  // key this build does not know about.
+  QJsonObject newAnchor = oldAnchor;
+  newAnchor.insert(QStringLiteral("page"), p_page);
+  newAnchor.insert(QStringLiteral("x"), p_x);
+  newAnchor.insert(QStringLiteral("y"), p_y);
+
+  if (newAnchor == oldAnchor) {
+    // A drag that ended where it started. No save, no publish, no modifiedUtc
+    // bump — and the page must not be waiting on a publish that never comes.
+    return;
+  }
+
+  if (!PdfFreeTextAnchor::isValid(newAnchor)) {
+    qWarning() << "CommentController: refusing a move that would invalidate the anchor";
+    return;
+  }
+
+  m_comments.m_comments[idx].m_anchor = newAnchor;
+  m_comments.m_comments[idx].m_modifiedUtc = QDateTime::currentSecsSinceEpoch();
+
+  scheduleSave();
+  publish();
+}
+
 void CommentController::deleteComment(const QString &p_id) {
   if (!m_editable) {
     return;

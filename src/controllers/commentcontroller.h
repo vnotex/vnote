@@ -69,6 +69,14 @@ public slots:
 
   void setCommentColor(const QString &p_id, const QString &p_color);
 
+  // Reposition an existing pdf-freetext box. The ONLY geometry mutator.
+  //
+  // It rewrites `page`, `x` and `y` on a COPY of the stored anchor object, so
+  // `fontSize` and any key a newer build wrote survive verbatim
+  // (commenttypes.h:285). It deliberately does NOT emit commentAdded, or the
+  // move would re-open the inline editor on the box.
+  void moveComment(const QString &p_id, int p_page, double p_x, double p_y);
+
   void deleteComment(const QString &p_id);
 
   void selectComment(const QString &p_id);

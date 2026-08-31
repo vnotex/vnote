@@ -335,6 +335,8 @@ void PdfViewWindow2::setupComments() {
             &CommentController::deleteComment);
     connect(pdfAdapter, &PdfViewerAdapter::setCommentTextRequested, m_commentController,
             &CommentController::setCommentText);
+    connect(pdfAdapter, &PdfViewerAdapter::moveCommentRequested, m_commentController,
+            &CommentController::moveComment);
   }
 
   // === Page context menu (view) -> overlay ===

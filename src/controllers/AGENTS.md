@@ -153,11 +153,20 @@ This is the ONLY controller-side `deleteCredentials` call site. All other creden
 
 The single mutation point for a file's comment set. Both the comment dock AND the QWebChannel
 overlay bridge are **views**: they emit intents (`addCommentRequested`, `textEditRequested`,
-`colorChangeRequested`, `deleteRequested`, `selectCommentRequested`) and never write anything.
+`colorChangeRequested`, `deleteRequested`, `selectCommentRequested`, `moveCommentRequested`) and
+never write anything.
 
 Rules that are load-bearing:
 
 - **It is a `QObject`, never a `QWidget`** — testable without a GUI, per the MVC rules.
+- **`moveComment` is the only GEOMETRY mutator, and it rewrites a COPY of the anchor.**
+  `Comment::m_anchor` is stored verbatim (`commenttypes.h:285`), so it replaces only `page`, `x`
+  and `y` and never rebuilds the object from typed fields — otherwise `fontSize` and every key a
+  newer build wrote would be silently destroyed. It accepts `pdf-freetext` anchors only, returns
+  without publishing or scheduling a write when the point is unchanged (nothing on the page may
+  wait on a publish that will never arrive), and deliberately does **not** emit `commentAdded`,
+  whose only receiver is `PdfViewWindow2::beginInlineTextEdit` and would re-open the inline editor
+  on the moved box.
 - **`setActiveFile()` flushes any pending write first.** A debounced save belongs to the OLD
   identifier; letting it fire after the switch would serialize one file's comments against
   another's path.

@@ -170,6 +170,15 @@ public slots:
 
   void requestDeleteComment(const QString &p_id);
 
+  // The overlay finished a drag of a pdf-freetext box. UNTRUSTED: the id is
+  // length-bounded, the page is re-validated against the loaded document, and
+  // the coordinates must be finite. Rejected -- never clamped: clamping is the
+  // page's job, and an out-of-range value here means the page is lying.
+  //
+  // Deliberately NARROW rather than a generic setCommentAnchor: a hostile page
+  // must not be able to rewrite the anchor's type or fontSize.
+  void requestMoveComment(const QString &p_id, int p_page, double p_x, double p_y);
+
   // The web side dropped out of an authoring tool by itself (Esc, or a one-shot
   // tool completing). UNTRUSTED, but it carries no payload beyond the fact.
   void notifyToolFinished();
@@ -215,6 +224,8 @@ signals:
   void setCommentTextRequested(const QString &p_id, const QString &p_text);
 
   void deleteCommentRequested(const QString &p_id);
+
+  void moveCommentRequested(const QString &p_id, int p_page, double p_x, double p_y);
 
   // The web side finished an authoring gesture and dropped back to reading, so
   // the toolbar toggle must un-press itself. Emitted for one-shot tools
