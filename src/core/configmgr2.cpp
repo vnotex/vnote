@@ -411,6 +411,16 @@ void ConfigMgr2::setExtraDataSourceRootOverrideForTesting(const QString &p_root)
 }
 
 void ConfigMgr2::ensureExtraData(bool p_force) {
+  // DEVELOPER NOTE (this has already cost one wasted measurement run):
+  // web assets are COPIED OUT of vnote_extra.rcc into <appData>/web/ and the app
+  // loads them from there, gated by the per-folder version stamp below. Editing
+  // src/data/extra/web/js/*.js and rebuilding therefore changes NOTHING at
+  // runtime until either the version is bumped or the file is copied across by
+  // hand:
+  //   Copy-Item src\data\extra\web\js\<f>.js "$env:APPDATA\VNote\web\js\<f>.js" -Force
+  // Deleting <appData>/web/.vnote-extra-version forces a full re-copy at the
+  // next launch.
+  //
   // Cleared on entry so a successful retry within the same process empties the
   // list rather than accumulating stale entries.
   m_extraDataFailures.clear();

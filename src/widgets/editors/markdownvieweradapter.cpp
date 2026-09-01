@@ -5,6 +5,7 @@
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
 #include "plantumlhelper.h"
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <gui/utils/guiutils.h>
 
@@ -274,8 +275,10 @@ void MarkdownViewerAdapter::reset() {
 
 void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QString &p_format,
                                         const QString &p_lang, const QString &p_text) {
-  qInfo() << "MarkdownViewerAdapter::renderGraph id=" << p_id << "index=" << p_index
-          << "format=" << p_format << "lang=" << p_lang << "textLen=" << p_text.size();
+  // Per-diagram: keep this behind a logging category. An ungated qInfo() here costs a
+  // synchronous formatted write for every diagram in a document.
+  qCDebug(lcUi) << "MarkdownViewerAdapter::renderGraph id=" << p_id << "index=" << p_index
+                << "format=" << p_format << "lang=" << p_lang << "textLen=" << p_text.size();
   if (p_text.isEmpty()) {
     emit graphRenderDataReady(p_id, p_index, p_format, QString());
     return;

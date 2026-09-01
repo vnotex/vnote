@@ -12,6 +12,7 @@
 #include "markdowneditor.h"
 #include "plantumlhelper.h"
 #include "previewscaleutils.h"
+#include <core/logging.h>
 
 using namespace vnotex;
 
@@ -216,8 +217,9 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
 
   if (!m_webPlantUmlEnabled && checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang)) {
     // Local PlantUml.
-    qInfo() << "PreviewHelper: local PlantUml in-place preview idx=" << p_blockPreviewIdx
-            << "lang=" << blockData.m_lang;
+    // Per-preview: gated, so it costs nothing unless the category is enabled.
+    qCDebug(lcUi) << "PreviewHelper: local PlantUml in-place preview idx=" << p_blockPreviewIdx
+                  << "lang=" << blockData.m_lang;
     PlantUmlHelper::getInst().process(
         static_cast<quint64>(p_blockPreviewIdx), m_codeBlockTimeStamp, QStringLiteral("svg"),
         vte::TextUtils::removeCodeBlockFence(blockData.m_text), this,

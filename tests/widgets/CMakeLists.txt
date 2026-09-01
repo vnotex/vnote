@@ -1431,6 +1431,19 @@ if(TARGET Qt6::Qml)
   target_compile_definitions(test_markdownviewer_js PRIVATE
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
   )
+
+  # Read-mode graph render pass: finishWork() exactly-once, the concurrency bound,
+  # and GraphCache in-flight coalescing. Same QJSEngine seam.
+  add_qt_test(test_graphrenderer_js
+    SOURCES
+      test_graphrenderer_js.cpp
+    LINKS
+      Qt6::Qml
+    GUILESS
+  )
+  target_compile_definitions(test_graphrenderer_js PRIVATE
+    VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  )
 endif()
 
 # In-place preview zoom: the pure scale arithmetic (zoom ratio vs. C++ raster factor).

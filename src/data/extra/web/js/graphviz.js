@@ -31,6 +31,12 @@ class Graphviz extends GraphRenderer {
         if (!this.useWeb) {
             this.extraScripts = [];
         }
+
+        // The web path runs viz.js (WASM) in-page and is CPU-bound, like Mermaid.
+        // The local path is a process round trip per diagram and must stay
+        // unbounded, or a document full of diagrams gets dramatically slower.
+        // See GraphRenderer.concurrencyLimit.
+        this.concurrencyLimit = this.useWeb ? 4 : 0;
     }
 
     initialize(p_callback) {

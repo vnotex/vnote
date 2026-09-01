@@ -12,6 +12,16 @@ class Mermaid extends GraphRenderer {
         this.theme = 'default';
 
         this.langs = ['mermaid'];
+
+        // CPU-bound and in-page: 200 diagrams complete linearly at ~39 ms each with
+        // no stalls, so the continuations saturate the main thread for the whole
+        // pass. See GraphRenderer.concurrencyLimit.
+        this.concurrencyLimit = 4;
+
+        // Mermaid is the one renderer that opts into the artifact cache: its output
+        // is a self-contained SVG string, and Utils.renamespaceSvgIds makes a second
+        // insertion of it safe. See GraphRenderer.graphCache.
+        this.graphCache = new GraphCache();
     }
 
     initialize(p_callback) {
@@ -20,22 +30,37 @@ class Mermaid extends GraphRenderer {
                startOnLoad: false,
                theme: this.theme
            });
+            // The theme is baked into the rendered SVG but is fixed for the lifetime
+            // of the page, so it is handled by clearing here rather than by widening
+            // every cache key. In-source %%{init}%% directives ARE part of the source
+            // text and therefore already part of the key.
+            this.graphCache.clear();
             p_callback();
         });
+    }
+
+    // Cache key for a read-mode diagram. Everything that varies the produced SVG and
+    // is not the source text goes in here.
+    graphCacheKey(p_text) {
+        return this.graphCache.generateKey(['mermaid', 'svg', this.theme, 'read', p_text]);
     }
 
     // Render @p_node as Mermaid graph.
     // Return true on success.
     async renderOne(p_node, p_idx) {
+        const src = p_node.textContent;
         let graphSvg = null;
         try {
-            const { svg } = await mermaid.render('vx-mermaid-graph-' + p_idx,
-                                                 p_node.textContent);
-            graphSvg = svg;
+            graphSvg = await this.graphCache.request(this.graphCacheKey(src), async () => {
+                const { svg } = await mermaid.render('vx-mermaid-graph-' + p_idx, src);
+                return svg;
+            });
         } catch (p_err) {
             console.error('failed to render Mermaid', p_err);
             // Clean the container element, or Mermaid won't render the graph with
-            // the same id.
+            // the same id. Only the node that actually invoked mermaid.render()
+            // leaves one behind; for a node that merely joined a failed in-flight
+            // entry this lookup finds nothing, which is correct.
             let graphNode = document.getElementById('vx-mermaid-graph-' + p_idx);
             if (graphNode) {
                 let parentNode = graphNode.parentElement;
@@ -55,9 +80,16 @@ class Mermaid extends GraphRenderer {
         graphDiv.classList.add(this.graphDivClass);
         // Keep the graph source: the PDF export re-renders the diagram with SVG (instead of HTML)
         // labels before rasterizing it. See rasterizeAllForExport().
-        graphDiv.setAttribute('data-mermaid-src', p_node.textContent);
+        graphDiv.setAttribute('data-mermaid-src', src);
         try {
+            // A single parse, exactly as before, then the ids are re-namespaced on
+            // the live nodes. Unconditionally, not just on a cache hit: the same
+            // string may be inserted by any number of nodes, and one code path is
+            // one thing to get right. Mermaid embeds a <style> scoped by the diagram
+            // id plus url(#...) marker references, so a verbatim second insertion
+            // would resolve both against the first copy.
             graphDiv.innerHTML = graphSvg;
+            Utils.renamespaceSvgIds(graphDiv, '-vx' + p_idx);
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
         } catch (p_err) {
             console.error('incorrect graph SVG definition', p_err);
@@ -269,7 +301,6 @@ class Mermaid extends GraphRenderer {
         }
 
         p_container.appendChild(graphDiv);
-        console.log(graphDiv);
         return graphDiv;
     }
 
@@ -283,7 +314,6 @@ class Mermaid extends GraphRenderer {
         }
 
         let graphDiv = await this.renderTextInternal(p_container, p_text, p_idx);
-        console.log(graphDiv);
         p_callback(graphDiv);
     }
 }

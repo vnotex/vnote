@@ -18,6 +18,11 @@ class PlantUml extends GraphRenderer {
         this.useWeb = true;
 
         this.nextLocalGraphIndex = 1;
+
+        // (serverUrl, format, text) -> encoded URL. getPlantUMLOnlineUrl() runs
+        // Zopfli synchronously, which is what makes the dispatch loop cost 2.6 s for
+        // 200 diagrams; a document that repeats a diagram pays it once.
+        this.urlCache = new LruCache(256);
     }
 
     registerInternal() {
@@ -32,6 +37,14 @@ class PlantUml extends GraphRenderer {
         if (!this.useWeb) {
             this.extraScripts = [];
         }
+
+        // Web mode is I/O-bound once the request is out, but building each URL
+        // costs a synchronous Zopfli compression, so an unbounded dispatch loop
+        // blocks the page for the whole document. A large batch keeps plenty of
+        // requests in flight while still yielding to the compositor. The local path
+        // is a process round trip with no such synchronous cost, so leave it
+        // unbounded. See GraphRenderer.concurrencyLimit.
+        this.concurrencyLimit = this.useWeb ? 32 : 0;
         console.log('plantuml registerInternal: vxOptions.webPlantUml=', window.vxOptions.webPlantUml,
                     'useWeb=', this.useWeb, 'workerId=', this.id);
     }
@@ -78,7 +91,7 @@ class PlantUml extends GraphRenderer {
                               p_node.textContent,
                               func(this, p_node));
         } else {
-            console.log('plantuml renderOne(local): idx=', p_idx, 'format=', this.format,
+            if (window.vxGraphVerbose) console.log('plantuml renderOne(local): idx=', p_idx, 'format=', this.format,
                         'textLen=', p_node.textContent.length);
             this.renderLocal(this.format, p_node.textContent, func(this, p_node));
         }
@@ -114,6 +127,13 @@ class PlantUml extends GraphRenderer {
 
         if (p_format == 'png') {
             Utils.httpGet(url, 'blob', function(p_resp) {
+                // A transport failure hands back null. Report an empty result
+                // rather than throwing, so the node still completes its pass.
+                if (!p_resp) {
+                    p_callback(p_format, '');
+                    return;
+                }
+
                 let blob = p_resp;
                 let reader = new FileReader();
                 reader.onload = function () {
@@ -121,17 +141,26 @@ class PlantUml extends GraphRenderer {
                     let png = dataUrl.substring(dataUrl.indexOf(',') + 1);
                     p_callback(p_format, png);
                 };
+                reader.onerror = function () { p_callback(p_format, ''); };
 
                 reader.readAsDataURL(blob);
             });
         } else if (p_format == 'svg') {
             Utils.httpGet(url, 'text', function(p_resp) {
-                p_callback(p_format, p_resp);
+                p_callback(p_format, p_resp || '');
             });
         }
     }
 
     getPlantUMLOnlineUrl(p_serverUrl, p_format, p_text) {
+        // Length-prefixed, so no two different triples share a key.
+        const key = p_serverUrl.length + ':' + p_serverUrl + '|'
+                    + p_format.length + ':' + p_format + '|' + p_text;
+        const cached = this.urlCache.get(key);
+        if (cached !== undefined) {
+            return cached;
+        }
+
         let s = unescape(encodeURIComponent(p_text));
         let arr = [];
         for (let i = 0; i < s.length; i++) {
@@ -141,13 +170,14 @@ class PlantUml extends GraphRenderer {
         let compressor = new Zopfli.RawDeflate(arr);
         let compressed = compressor.compress();
         let url = p_serverUrl + "/" + p_format + "/" + encode64_(compressed);
+        this.urlCache.set(key, url);
         return url;
     }
 
     // A helper function to render PlantUml via local JAR.
     renderLocal(p_format, p_text, p_callback) {
         let index = this.nextLocalGraphIndex++;
-        console.log('plantuml renderLocal: workerId=', this.id, 'index=', index,
+        if (window.vxGraphVerbose) console.log('plantuml renderLocal: workerId=', this.id, 'index=', index,
                     'format=', p_format, 'textLen=', p_text.length);
         this.vxcore.renderGraph(this.id,
             index,
@@ -155,14 +185,14 @@ class PlantUml extends GraphRenderer {
             'puml',
             p_text,
             function(id, index, format, data) {
-                console.log('plantuml renderLocal result: id=', id, 'index=', index,
+                if (window.vxGraphVerbose) console.log('plantuml renderLocal result: id=', id, 'index=', index,
                             'format=', format, 'dataLen=', data ? data.length : 0);
                 p_callback(format, data);
             });
     }
 
     handlePlantUmlResult(p_node, p_format, p_result) {
-        console.log('plantuml handlePlantUmlResult: format=', p_format,
+        if (window.vxGraphVerbose) console.log('plantuml handlePlantUmlResult: format=', p_format,
                     'resultLen=', p_result ? p_result.length : 0,
                     'hasNode=', !!p_node);
         if (p_node && p_result.length > 0) {

@@ -8,6 +8,11 @@ class FlowchartJs extends GraphRenderer {
         this.graphDivClass = 'vx-flowchartjs-graph';
 
         this.langs = ['flow', 'flowchart'];
+
+        // Fully synchronous and in-page: without a bound, the whole document is
+        // rendered inside a single task and nothing is painted until it ends.
+        // See GraphRenderer.concurrencyLimit.
+        this.concurrencyLimit = 8;
     }
 
     // Render @p_node as Flowchart.js graph.

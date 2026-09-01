@@ -10,6 +10,9 @@ class WaveDromRenderer extends GraphRenderer {
                              this.scriptFolderPath + '/wavedrom/wavedrom.min.js'];
 
         this.langs = ['wavedrom', 'wave'];
+
+        // Fully synchronous and in-page. See GraphRenderer.concurrencyLimit.
+        this.concurrencyLimit = 8;
     }
 
     // Render @p_node as WaveDrom graph.
