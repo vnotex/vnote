@@ -3,6 +3,7 @@
 
 #include "webviewadapter.h"
 
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QScopedPointer>
@@ -10,6 +11,8 @@
 #include <QTextCharFormat>
 
 #include <core/global.h>
+
+class QTimer;
 
 namespace vnotex {
 class ServiceLocator;
@@ -289,6 +292,26 @@ private:
   QStringList m_crossCopyTargets;
 
   ServiceLocator *m_services = nullptr; // Non-owning; set by ServiceLocator-aware constructor
+
+  // Diagnostics for the in-place preview bridge. Accumulated per generation and
+  // reported once on a 2s idle timer, never per result. See
+  // .kilo/plans/1788310000000-trace-edit-mode-preview-perf.md.
+  void perfNoteDecode(quint64 p_timeStamp, qint64 p_nsecs, int p_chars, int p_bytes);
+
+  void perfReportDecode();
+
+  struct PerfDecodeStats {
+    int m_count = 0;
+    qint64 m_nsecs = 0;
+    qint64 m_maxNsecs = 0;
+    qint64 m_chars = 0;
+    qint64 m_bytes = 0;
+  };
+
+  QTimer *m_perfDecodeTimer = nullptr;
+
+  // Generation timestamp -> decode statistics.
+  QHash<quint64, PerfDecodeStats> m_perfDecodeStats;
 };
 } // namespace vnotex
 

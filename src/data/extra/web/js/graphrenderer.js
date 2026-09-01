@@ -365,6 +365,11 @@ class GraphRenderer extends VxWorker {
 
         console.info('graph timing', this.name,
                      'nodes=' + count,
+                     // Wall clock, so this pass can be overlaid with the
+                     // edit-mode in-place summary and the C++ lifecycle
+                     // markers. Everything else here is relative to startMs.
+                     'startEpochMs=' + this.startMs,
+                     'endEpochMs=' + (this.startMs + total),
                      'dispatch=' + (this.dispatchDoneMs - this.startMs) + 'ms',
                      'first=' + first + 'ms',
                      'p25=' + quartile(0.25) + 'ms',

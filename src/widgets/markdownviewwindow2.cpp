@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QEvent>
@@ -29,6 +30,7 @@
 #include <controllers/markdownviewwindowcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/logging.h>
 #include <core/markdowneditorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
@@ -733,6 +735,18 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       static_cast<int>(m_previousMode), static_cast<int>(m_mode), m_editor != nullptr,
       m_viewer != nullptr, p_syncBuffer);
 
+  // Diagnostics: the two preview pipelines (read-mode render and edit-mode
+  // in-place preview) share one JS main thread, and their overlap is invisible
+  // without a timestamp on each boundary. See
+  // .kilo/plans/1788310000000-trace-edit-mode-preview-perf.md.
+  qCDebug(lcPerfPreview) << "setModeInternal prevMode=" << static_cast<int>(m_previousMode)
+                         << "mode=" << static_cast<int>(m_mode)
+                         << "setupViewer=" << transition.needSetupViewer
+                         << "setupEditor=" << transition.needSetupEditor
+                         << "syncEditorFromBuffer=" << transition.syncEditorFromBuffer
+                         << "syncViewerFromBuffer=" << transition.syncViewerFromBuffer
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch();
+
   // Lazy init: create viewer if needed.
   if (transition.needSetupViewer) {
     setupViewer();
@@ -918,6 +932,11 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
   m_pendingAnchor.clear();
 
   auto state = MarkdownEditorController::prepareBufferState(getBuffer());
+  // Diagnostics: entering Edit mode with no viewer still hands the WHOLE
+  // document to the viewer here, which starts the read-mode render pass (H0).
+  qCDebug(lcPerfPreview) << "syncViewerFromBuffer mode=" << static_cast<int>(m_mode)
+                         << "valid=" << state.valid << "chars=" << state.content.size()
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch();
   if (state.valid) {
     int lineNumber = -1;
     if (p_syncPositionFromEditMode) {

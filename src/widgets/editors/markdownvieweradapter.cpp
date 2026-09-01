@@ -1,6 +1,9 @@
 #include "markdownvieweradapter.h"
 
+#include <QDateTime>
+#include <QElapsedTimer>
 #include <QMap>
+#include <QTimer>
 
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
@@ -79,10 +82,19 @@ void MarkdownViewerAdapter::setText(int p_revision, const QString &p_text, int p
   }
 
   if (isReady()) {
+    // Diagnostics: this is where the read-mode render pass actually starts. A
+    // queued setText does not start it - the pending action only runs when the
+    // viewer signals ready - so the caller's timestamp is not the pass start.
+    qCDebug(lcPerfPreview) << "adapter setText dispatched revision=" << p_revision
+                           << "chars=" << p_text.size()
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch();
     m_revision = p_revision;
     emit textUpdated(p_text);
     scrollToPosition(Position(p_lineNumber, ""));
   } else {
+    qCDebug(lcPerfPreview) << "adapter setText queued revision=" << p_revision
+                           << "chars=" << p_text.size()
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch();
     pendAction(std::bind(QOverload<int, const QString &, int>::of(&MarkdownViewerAdapter::setText),
                          this, p_revision, p_text, p_lineNumber));
   }
@@ -127,11 +139,61 @@ int MarkdownViewerAdapter::getTopLineNumber() const { return m_topLineNumber; }
 void MarkdownViewerAdapter::setGraphPreviewData(quint64 p_id, quint64 p_timeStamp,
                                                 const QString &p_format, const QString &p_data,
                                                 bool p_base64, bool p_needScale) {
+  // Diagnostics: the UTF-8 + base64 decode is the first C++-side cost of a
+  // preview result and is otherwise invisible between "JS finished" and
+  // "PreviewHelper has a pixmap". Accumulated per generation and reported once
+  // on an idle timer; a per-result log line would itself distort the bridge
+  // path being measured. Gated, so it costs nothing when the category is muted.
+  const bool perf = lcPerfPreview().isDebugEnabled();
+  QElapsedTimer timer;
+  if (perf) {
+    timer.start();
+  }
+
   auto ba = p_data.toUtf8();
   if (p_base64 && !ba.isEmpty()) {
     ba = QByteArray::fromBase64(ba);
   }
+
+  if (perf) {
+    perfNoteDecode(p_timeStamp, timer.nsecsElapsed(), p_data.size(), ba.size());
+  }
+
   emit graphPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale));
+}
+
+void MarkdownViewerAdapter::perfNoteDecode(quint64 p_timeStamp, qint64 p_nsecs, int p_chars,
+                                           int p_bytes) {
+  // Keyed by generation rather than kept as one mutable record: results from an
+  // older generation can interleave with a newer one over the bridge, and a
+  // single record would flip back and forth and fragment both summaries.
+  auto &stats = m_perfDecodeStats[p_timeStamp];
+  ++stats.m_count;
+  stats.m_nsecs += p_nsecs;
+  stats.m_maxNsecs = qMax(stats.m_maxNsecs, p_nsecs);
+  stats.m_chars += p_chars;
+  stats.m_bytes += p_bytes;
+
+  if (!m_perfDecodeTimer) {
+    m_perfDecodeTimer = new QTimer(this);
+    m_perfDecodeTimer->setSingleShot(true);
+    m_perfDecodeTimer->setInterval(2000);
+    connect(m_perfDecodeTimer, &QTimer::timeout, this, &MarkdownViewerAdapter::perfReportDecode);
+  }
+  m_perfDecodeTimer->start();
+}
+
+void MarkdownViewerAdapter::perfReportDecode() {
+  // Reported only once the whole bridge has been idle, so each generation gets
+  // exactly one line no matter how the results interleaved.
+  for (auto it = m_perfDecodeStats.constBegin(); it != m_perfDecodeStats.constEnd(); ++it) {
+    qCDebug(lcPerfPreview) << "adapter graph decode summary ts=" << it.key()
+                           << "results=" << it.value().m_count
+                           << "totalDecodeUs=" << (it.value().m_nsecs / 1000)
+                           << "maxDecodeUs=" << (it.value().m_maxNsecs / 1000)
+                           << "chars=" << it.value().m_chars << "bytes=" << it.value().m_bytes;
+  }
+  m_perfDecodeStats.clear();
 }
 
 void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id, quint64 p_timeStamp,

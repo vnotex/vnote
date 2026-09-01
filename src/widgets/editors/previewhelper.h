@@ -1,8 +1,10 @@
 #ifndef PREVIEWHELPER_H
 #define PREVIEWHELPER_H
 
+#include <QElapsedTimer>
 #include <QObject>
 #include <QPixmap>
+#include <QVector>
 
 #include <vtextedit/global.h>
 #include <vtextedit/lrucache.h>
@@ -234,6 +236,102 @@ private:
   QTimer *m_codeBlockPublishTimer = nullptr;
 
   QTimer *m_mathBlockPublishTimer = nullptr;
+
+  // ---------------------------------------------------------------------
+  // Diagnostics for the edit-mode in-place preview pipeline.
+  // Measurement only: nothing below changes behaviour, and every field is
+  // written only while lcPerfPreview is debug-enabled. See
+  // .kilo/plans/1788310000000-trace-edit-mode-preview-perf.md.
+  // ---------------------------------------------------------------------
+  struct PreviewPerfStats {
+    // The generation this data belongs to. A zoom or an edit bumps
+    // m_codeBlockTimeStamp and starts a new batch while the old one drains;
+    // keying on the timestamp keeps two passes from being averaged together.
+    TimeStamp m_timeStamp = 0;
+
+    qint64 m_generationStartMs = 0;
+    // Wall clock, so these records can be overlaid with the markers logged by
+    // MarkdownViewWindow2 and with the JS-side summary.
+    qint64 m_generationStartEpochMs = 0;
+    int m_blocks = 0;
+    int m_needPreview = 0;
+    int m_cacheHits = 0;
+    int m_cacheMisses = 0;
+    int m_dispatched = 0;
+    qint64 m_dispatchMs = 0;
+
+    // Number of times codeBlocksUpdated() restarted the 1000ms request debounce
+    // before the generation actually started.
+    int m_requestRestarts = 0;
+
+    int m_results = 0;
+    int m_failures = 0;
+    qint64 m_lastResultMs = 0;
+    QVector<qint64> m_roundTripMs;
+    QVector<qint64> m_decodeMs;
+    QVector<qint64> m_handlerMs;
+    QVector<int> m_payloadBytes;
+
+    // Publish-side accounting. Starts and restarts are counted separately: an
+    // unconditional counter would also count the first start and every start
+    // after a publish, which is exactly the distinction H1 turns on.
+    int m_publishStarts = 0;
+    int m_publishRestarts = 0;
+    // Publications that actually emitted (relayouted) vs. every call into
+    // updateEditorInplacePreviewCodeBlock(), including the synchronous one
+    // handleCodeBlocksUpdate() always makes and the no-op early returns.
+    int m_publishes = 0;
+    int m_publishInvocations = 0;
+    qint64 m_publishDeadlineMs = -1;
+    qint64 m_publishMaxLatenessMs = 0;
+    qint64 m_publishTotalMs = 0;
+    qint64 m_emitPreviewMs = 0;
+    qint64 m_emitObsoleteMs = 0;
+
+    qint64 m_heartbeatMaxLatenessMs = 0;
+    int m_heartbeatTicks = 0;
+  };
+
+  bool perfEnabled() const;
+
+  // Elapsed milliseconds on the monotonic diagnostics clock.
+  qint64 perfNowMs() const;
+
+  void perfBeginGeneration();
+
+  void perfStartHeartbeat();
+
+  // Called on every result; (re)arms the idle timer that prints the summary.
+  void perfNoteActivity();
+
+  void perfReportSummary();
+
+  QElapsedTimer m_perfClock;
+
+  PreviewPerfStats m_perfStats;
+
+  // Request-debounce restarts observed before the next generation starts.
+  int m_perfPendingRequestRestarts = 0;
+
+  // Guards against a generation being summarized twice.
+  bool m_perfReported = true;
+
+  // Bounded retries while the batch is still draining.
+  int m_perfIdleAttempts = 0;
+
+  // Dispatch time per code block preview index, for round-trip latency.
+  QVector<qint64> m_perfRequestMs;
+
+  // 100ms tick whose own lateness measures GUI-thread stalls. A blocked GUI
+  // thread and a slow renderer are indistinguishable without it.
+  QTimer *m_perfHeartbeatTimer = nullptr;
+
+  qint64 m_perfHeartbeatLastMs = 0;
+
+  // There is no "last node" to key off on the edit path (a not-ready adapter
+  // silently drops graphPreviewRequested), so the summary is printed on an idle
+  // timer instead of on completion.
+  QTimer *m_perfSummaryTimer = nullptr;
 };
 } // namespace vnotex
 

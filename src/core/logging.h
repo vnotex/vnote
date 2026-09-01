@@ -11,6 +11,10 @@ Q_DECLARE_LOGGING_CATEGORY(lcVim)
 Q_DECLARE_LOGGING_CATEGORY(lcVxBridge)
 Q_DECLARE_LOGGING_CATEGORY(lcUi)
 Q_DECLARE_LOGGING_CATEGORY(lcConfig)
+// Diagnostics for the in-place (edit mode) preview pipeline. Shared by
+// MarkdownViewWindow2, MarkdownViewerAdapter and PreviewHelper, which is why it
+// lives here rather than being repeated file-locally.
+Q_DECLARE_LOGGING_CATEGORY(lcPerfPreview)
 
 namespace vnotex {
 

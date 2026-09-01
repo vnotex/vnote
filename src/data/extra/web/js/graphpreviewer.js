@@ -16,6 +16,14 @@ class GraphPreviewer {
 
         this.currentColor = null;
 
+        // Diagnostics only. See
+        // .kilo/plans/1788310000000-trace-edit-mode-preview-perf.md.
+        // Per-item values are kept in arrays and only one summary line is
+        // printed, on a 2s idle timer: there is no "last node" to key off on the
+        // edit path, unlike a read-mode GraphRenderer pass.
+        this.perfStats = null;
+        this.perfSummaryTimer = null;
+
         window.addEventListener(
             'resize',
             () => {
@@ -24,6 +32,223 @@ class GraphPreviewer {
                 }
             },
             { passive: true });
+    }
+
+    // performance.now(), not Date.now(): Chromium clamps wall-clock timer
+    // resolution in some configurations.
+    perfNow() {
+        if (typeof performance !== 'undefined' && performance.now) {
+            return performance.now();
+        }
+        return Date.now();
+    }
+
+    // A generation is identified by its timestamp. A zoom or an edit starts a
+    // new batch while the old one drains; keying on the timestamp keeps two
+    // passes from being silently averaged together.
+    perfStatsFor(p_timeStamp) {
+        if (!this.perfStats || this.perfStats.timeStamp !== p_timeStamp) {
+            this.perfStats = {
+                timeStamp: p_timeStamp,
+                start: this.perfNow(),
+                startEpoch: Date.now(),
+                requests: 0,
+                renders: 0,
+                rasters: 0,
+                failures: 0,
+                reported: false,
+                incompleteReported: false,
+                idleAttempts: 0,
+                // Tracked separately: one combined counter cannot tell a render
+                // backlog from a raster backlog.
+                outstandingRequests: 0,
+                outstandingRenders: 0,
+                outstandingRasters: 0,
+                maxOutstandingRequests: 0,
+                maxOutstandingRenders: 0,
+                maxOutstandingRasters: 0,
+                renderMs: [],
+                rasterizeMs: [],
+                payloadChars: [],
+                // id -> { renderStart, rasterStart }. A counter is only ever
+                // moved for a request that was explicitly opened here, so a
+                // path that bypasses one of the phases cannot leak or
+                // double-count.
+                pending: {},
+                lastSend: 0
+            };
+        }
+        return this.perfStats;
+    }
+
+    // Armed on COMPLETION only: arming it on request receipt would let a slow
+    // first diagram print a summary of a batch that is still running.
+    perfArmSummary() {
+        if (this.perfSummaryTimer !== null) {
+            clearTimeout(this.perfSummaryTimer);
+        }
+        this.perfSummaryTimer = setTimeout(() => {
+            this.perfSummaryTimer = null;
+            this.perfReport();
+        }, 2000);
+    }
+
+    // @p_hasRenderPhase: false for PlantUml/Graphviz, which are served by an
+    // external process and have no render callback to close.
+    perfNoteRequest(p_timeStamp, p_id, p_hasRenderPhase) {
+        try {
+            let st = this.perfStatsFor(p_timeStamp);
+            if (st.pending[p_id]) {
+                // Same id re-issued within one generation; close the old record.
+                delete st.pending[p_id];
+                st.outstandingRequests = Math.max(0, st.outstandingRequests - 1);
+            }
+            st.pending[p_id] = {
+                renderStart: p_hasRenderPhase ? this.perfNow() : 0,
+                rasterStart: 0
+            };
+            st.requests++;
+            st.outstandingRequests++;
+            st.maxOutstandingRequests = Math.max(st.maxOutstandingRequests,
+                                                 st.outstandingRequests);
+            if (p_hasRenderPhase) {
+                st.outstandingRenders++;
+                st.maxOutstandingRenders = Math.max(st.maxOutstandingRenders,
+                                                    st.outstandingRenders);
+            }
+        } catch (err) {
+        }
+    }
+
+    perfPending(p_timeStamp, p_id) {
+        if (!this.perfStats || this.perfStats.timeStamp !== p_timeStamp) {
+            return null;
+        }
+        return this.perfStats.pending[p_id] || null;
+    }
+
+    perfNoteRender(p_timeStamp, p_id) {
+        try {
+            let rec = this.perfPending(p_timeStamp, p_id);
+            if (!rec || !rec.renderStart) {
+                return;
+            }
+            let st = this.perfStats;
+            st.renders++;
+            st.outstandingRenders = Math.max(0, st.outstandingRenders - 1);
+            st.renderMs.push(this.perfNow() - rec.renderStart);
+            rec.renderStart = 0;
+        } catch (err) {
+        }
+    }
+
+    perfNoteRasterStart(p_timeStamp, p_id) {
+        try {
+            let rec = this.perfPending(p_timeStamp, p_id);
+            if (!rec || rec.rasterStart) {
+                return;
+            }
+            let st = this.perfStats;
+            st.outstandingRasters++;
+            st.maxOutstandingRasters = Math.max(st.maxOutstandingRasters,
+                                                st.outstandingRasters);
+            rec.rasterStart = this.perfNow();
+        } catch (err) {
+        }
+    }
+
+    // Called from setGraphPreviewData, so every completion path of an opened
+    // request is counted, including the failure paths that send empty data.
+    perfNoteSend(p_timeStamp, p_id, p_chars) {
+        try {
+            let rec = this.perfPending(p_timeStamp, p_id);
+            if (!rec) {
+                return;
+            }
+            let st = this.perfStats;
+            delete st.pending[p_id];
+            st.outstandingRequests = Math.max(0, st.outstandingRequests - 1);
+            if (rec.renderStart) {
+                st.outstandingRenders = Math.max(0, st.outstandingRenders - 1);
+            }
+            if (rec.rasterStart) {
+                st.outstandingRasters = Math.max(0, st.outstandingRasters - 1);
+                st.rasters++;
+                st.rasterizeMs.push(this.perfNow() - rec.rasterStart);
+            }
+            if (!p_chars) {
+                st.failures++;
+            }
+            st.payloadChars.push(p_chars || 0);
+            st.lastSend = this.perfNow();
+            this.perfArmSummary();
+        } catch (err) {
+        }
+    }
+
+    perfQuantiles(p_values) {
+        if (!p_values || p_values.length === 0) {
+            return 'n/a';
+        }
+        let vals = p_values.slice().sort((a, b) => a - b);
+        let last = vals.length - 1;
+        let at = (p) => vals[Math.min(last, Math.max(0, Math.round(p * last)))];
+        return 'min=' + vals[0].toFixed(1)
+            + ' p50=' + at(0.5).toFixed(1)
+            + ' p90=' + at(0.9).toFixed(1)
+            + ' max=' + vals[last].toFixed(1);
+    }
+
+    // Wrapped in try/catch for the reason spelled out in graphrenderer.js: a
+    // half-updated %APPDATA%/web/js can leave an older class without a method
+    // this calls, and diagnostics must never break the pipeline they measure.
+    perfReport() {
+        try {
+            let st = this.perfStats;
+            if (!st || st.reported || st.requests === 0) {
+                return;
+            }
+
+            if (st.outstandingRequests > 0) {
+                if (st.idleAttempts < 5) {
+                    // Still draining (a slow PlantUml round trip, say). Wait for
+                    // another idle interval rather than reporting a partial batch.
+                    st.idleAttempts++;
+                    this.perfArmSummary();
+                    return;
+                }
+                // Something never came back. Report that as its own diagnostic,
+                // and do NOT mark the generation reported: a late completion
+                // still gets to produce the real summary.
+                if (!st.incompleteReported) {
+                    st.incompleteReported = true;
+                    console.info('inplace graph timing INCOMPLETE ts=' + st.timeStamp
+                        + ' requests=' + st.requests
+                        + ' stillOutstanding=' + st.outstandingRequests);
+                }
+                return;
+            }
+
+            st.reported = true;
+            let chars = st.payloadChars.reduce((a, b) => a + b, 0);
+            // console.info, not console.log/warn/error: WebPage::javaScriptConsoleMessage
+            // forwards only InfoMessageLevel into vnote.web.js.
+            console.info('inplace graph timing ts=' + st.timeStamp
+                + ' startEpochMs=' + st.startEpoch
+                + ' requests=' + st.requests
+                + ' renders=' + st.renders
+                + ' rasters=' + st.rasters
+                + ' failures=' + st.failures
+                + ' stillOutstanding=' + st.outstandingRequests
+                + ' spanMs=' + (st.lastSend - st.start).toFixed(1)
+                + ' maxInFlight[requests=' + st.maxOutstandingRequests
+                + ' renders=' + st.maxOutstandingRenders
+                + ' rasters=' + st.maxOutstandingRasters + ']'
+                + ' renderMs[' + this.perfQuantiles(st.renderMs) + ']'
+                + ' rasterizeMs[' + this.perfQuantiles(st.rasterizeMs) + ']'
+                + ' payloadChars=' + chars);
+        } catch (err) {
+        }
     }
 
     // Interface 1.
@@ -37,28 +262,41 @@ class GraphPreviewer {
         this.initOnFirstPreview();
 
         if (p_lang === 'flow' || p_lang === 'flowchart') {
+            this.perfNoteRequest(p_timeStamp, p_id, true);
             this.vxcore.getWorker('flowchartjs').renderText(this.container,
                 p_text,
                 this.flowchartJsIdx++,
                 (graphDiv) => {
+                    this.perfNoteRender(p_timeStamp, p_id);
                     this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'wavedrom') {
+            this.perfNoteRequest(p_timeStamp, p_id, true);
             this.vxcore.getWorker('wavedrom').renderText(this.container,
                 p_text,
                 this.waveDromIdx++,
                 (graphDiv) => {
+                    this.perfNoteRender(p_timeStamp, p_id);
                     this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'mermaid') {
+            this.perfNoteRequest(p_timeStamp, p_id, true);
             this.vxcore.getWorker('mermaid').renderText(this.container,
                 p_text,
                 this.mermaidIdx++,
                 (graphDiv) => {
+                    // Measured at this boundary rather than inside mermaid.js:
+                    // Mermaid.renderText() has no cache, no concurrency limit
+                    // and no yield, so the callback boundary IS the whole
+                    // mermaid.render() cost for this request (H2).
+                    this.perfNoteRender(p_timeStamp, p_id);
                     this.fixSvgRelativeWidth(graphDiv.firstElementChild);
                     this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'puml' || p_lang === 'plantuml') {
+            // No render phase: served by an external process, so there is no
+            // in-page render callback to close.
+            this.perfNoteRequest(p_timeStamp, p_id, false);
             let func = function(p_previewer, p_id, p_timeStamp) {
                 let previewer = p_previewer;
                 let id = p_id;
@@ -76,6 +314,7 @@ class GraphPreviewer {
             this.vxcore.getWorker('plantuml').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
         } else if (p_lang === 'dot' || p_lang === 'graphviz') {
+            this.perfNoteRequest(p_timeStamp, p_id, false);
             let func = function(p_previewer, p_id, p_timeStamp) {
                 let previewer = p_previewer;
                 let id = p_id;
@@ -92,6 +331,9 @@ class GraphPreviewer {
             this.vxcore.getWorker('graphviz').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
         } else if (p_lang === 'mathjax') {
+            // Completes through setGraphPreviewData (processSvgAsPng's default
+            // setter), so it is counted as a request with a raster phase only.
+            this.perfNoteRequest(p_timeStamp, p_id, false);
             this.renderMath(p_id, p_timeStamp, p_text, null, p_scale);
             return;
         } else {
@@ -153,6 +395,10 @@ class GraphPreviewer {
     }
 
     processSvgAsPng(p_id, p_timeStamp, p_svgNode, p_dataSetter = null, p_scale = 1) {
+        // Math previews carry their own id/timestamp namespace and complete via
+        // setMathPreviewData, which is not instrumented; only the graph path
+        // (no explicit setter) participates in the raster accounting.
+        const isGraphPath = !p_dataSetter;
         if (!p_dataSetter) {
             p_dataSetter = this.setGraphPreviewData.bind(this);
         }
@@ -163,6 +409,10 @@ class GraphPreviewer {
         }
 
         this.scaleSvg(p_svgNode, p_scale);
+
+        if (isGraphPath) {
+            this.perfNoteRasterStart(p_timeStamp, p_id);
+        }
 
         // Serialize as well-formed XML rather than using outerHTML. In an HTML
         // document, outerHTML emits void/empty elements without a self-closing
@@ -255,6 +505,7 @@ class GraphPreviewer {
     }
 
     setGraphPreviewData(p_id, p_timeStamp, p_format = '', p_data = '', p_base64 = false, p_needScale = false) {
+        this.perfNoteSend(p_timeStamp, p_id, p_data ? p_data.length : 0);
         let previewData = {
             id: p_id,
             timeStamp: p_timeStamp,

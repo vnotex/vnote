@@ -11,6 +11,7 @@ Q_LOGGING_CATEGORY(lcVim, "vnote.vim")
 Q_LOGGING_CATEGORY(lcVxBridge, "vnote.vxbridge")
 Q_LOGGING_CATEGORY(lcUi, "vnote.ui")
 Q_LOGGING_CATEGORY(lcConfig, "vnote.config")
+Q_LOGGING_CATEGORY(lcPerfPreview, "vnote.perf.preview")
 
 namespace vnotex {
 

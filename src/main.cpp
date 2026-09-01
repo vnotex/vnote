@@ -277,7 +277,8 @@ int main(int argc, char *argv[]) {
                                  "vnote.vxbridge.debug=true\n"
                                  "vnote.ui.debug=true\n"
                                  "vnote.config.debug=true\n"
-                                 "vnote.perf.save.debug=true");
+                                 "vnote.perf.save.debug=true\n"
+                                 "vnote.perf.preview.debug=true");
     }
     if (qgetenv("VXCORE_LOG_LEVEL").isEmpty()) {
       qputenv("VXCORE_LOG_LEVEL", "debug");
