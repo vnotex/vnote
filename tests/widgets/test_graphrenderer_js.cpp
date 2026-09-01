@@ -53,7 +53,32 @@ var console = {
   error: function(){ window.__errors.push(Array.prototype.join.call(arguments, ' ')); }
 };
 
-var document = { currentScript: { src: 'file:///web/js/graphrenderer.js' } };
+// QJSEngine rejects `this` inside these stubs, so the listener table is held on
+// window rather than on the document object itself.
+window.__docListeners = {};
+var document = {
+  currentScript: { src: 'file:///web/js/graphrenderer.js' },
+  hidden: false,
+  addEventListener: function(p_type, p_cb) {
+    var table = window.__docListeners;
+    (table[p_type] = table[p_type] || []).push(p_cb);
+  }
+};
+// Chromium throttles and then freezes timers in a hidden page. __hidePage()
+// models the part that actually breaks a live pass: the pending macrotask
+// continuation is dropped and never runs.
+window.__hidePage = function() {
+  document.hidden = true;
+  var dropped = window.__timers.length;
+  window.__timers = [];
+  return dropped;
+};
+window.__showPage = function() {
+  document.hidden = false;
+  var cbs = window.__docListeners['visibilitychange'] || [];
+  for (var i = 0; i < cbs.length; ++i) { cbs[i](); }
+  return cbs.length;
+};
 
 window.__timers = [];
 function setTimeout(p_cb) { window.__timers.push(p_cb); return window.__timers.length; }
@@ -272,6 +297,7 @@ private slots:
   void testPass_throwingRenderOneStillFinishes();
   void testPass_rejectedAsyncRenderOneStillFinishes();
   void testPass_resetWhileLiveIsReported();
+  void testPass_frozenWhileHiddenResumesWhenShown();
   void testPass_surplusCompletionDoesNotFinishTwice();
 
   // The bound itself.
@@ -468,6 +494,42 @@ void TestGraphRendererJs::testPass_resetWhileLiveIsReported() {
   run(engine, QStringLiteral("window.__r.completeAll()"));
   drainMicrotasks();
   QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 0);
+}
+
+void TestGraphRendererJs::testPass_frozenWhileHiddenResumesWhenShown() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  // Switching to edit mode hides the viewer, and Chromium throttles then
+  // freezes timers in a hidden page. A pass that is live at that moment loses
+  // the macrotask continuation scheduled by scheduleNextBatch() and freezes:
+  // nextBatchScheduled latched true, nothing in flight, nodes undispatched,
+  // finishWork() never called. Observed in the field as a read-mode Mermaid
+  // pass that stopped at 72 of 200 nodes and never recovered.
+  run(engine, QStringLiteral("window.__startPass(20, 4, 'async')"));
+  run(engine, QStringLiteral("window.__r.completeAll()"));
+  drainMicrotasks();
+
+  // A continuation is pending at this point; hiding the page drops it.
+  QVERIFY(intOf(engine, QStringLiteral("window.__hidePage()")) > 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__timers.length")), 0);
+  QVERIFY(intOf(engine, QStringLiteral("window.__r.nextBatchScheduled ? 1 : 0")) == 1);
+
+  const int dispatched = intOf(engine, QStringLiteral("window.__r.nextNodeIndex"));
+  QVERIFY2(dispatched < 20, qPrintable(QStringLiteral("dispatched=%1").arg(dispatched)));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 0);
+
+  // Frozen: no timer can revive it, which is what made this invisible.
+  QCOMPARE(intOf(engine, QStringLiteral("window.__runTimers()")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.nextNodeIndex")), dispatched);
+
+  // Showing the page again must clear the latch and resume dispatching.
+  QCOMPARE(intOf(engine, QStringLiteral("window.__showPage()")), 1);
+  QVERIFY(intOf(engine, QStringLiteral("window.__r.nextNodeIndex")) > dispatched);
+
+  QVERIFY(intOf(engine, QStringLiteral("window.__drivePass()")) >= 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.renderCount")), 20);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 1);
 }
 
 void TestGraphRendererJs::testPass_surplusCompletionDoesNotFinishTwice() {

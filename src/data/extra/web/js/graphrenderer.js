@@ -69,6 +69,42 @@ class GraphRenderer extends VxWorker {
         this.watchdogTimer = null;
         this.watchdogLastCount = -1;
         this.watchdogReports = 0;
+
+        // Chromium throttles, and eventually freezes, timers in a hidden page.
+        // Switching to edit mode hides the viewer, so a pass that is live at
+        // that moment loses the setTimeout continuation scheduled by
+        // scheduleNextBatch(): nextBatchScheduled stays latched true, no render
+        // is in flight, and the pass is frozen forever with nodes undispatched.
+        // It never reaches finishWork(), so the viewer never reports that round
+        // as finished either. Choosing setTimeout over requestAnimationFrame
+        // (see scheduleNextBatch) avoided the rAF form of this hazard but not
+        // this one.
+        //
+        // The macrotask yield exists to let the compositor paint, and a hidden
+        // page has nothing to paint - so rather than fight the throttle, resume
+        // when the page comes back. Clearing the latch is what makes this a
+        // recovery rather than just another scheduling attempt. A stale timer
+        // that fires later is harmless: dispatchBatch() re-reads pendingInBatch
+        // against the limit, so the concurrency window stays bounded.
+        //
+        // In the constructor rather than registerInternal(), because this is
+        // per-instance page state and does not depend on being registered as a
+        // worker. Feature-checked for the JS test harness's document stub.
+        //
+        // The receiver is captured explicitly instead of relying on an arrow
+        // function: QJSEngine, which runs this file in the tests, raises
+        // "ReferenceError: this is not defined" for a lexically captured `this`
+        // invoked from a stored callback.
+        const renderer = this;
+        if (typeof document !== 'undefined' && document
+            && typeof document.addEventListener === 'function') {
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden && renderer.passActive) {
+                    renderer.nextBatchScheduled = false;
+                    renderer.dispatchBatch();
+                }
+            });
+        }
     }
 
     // Report a contract violation or a render failure.
