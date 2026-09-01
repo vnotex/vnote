@@ -131,8 +131,9 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
       addIconAction(p_toolBar, QStringLiteral("zoom_in_editor.svg"), tr("Zoom In"), p_icons);
   connect(m_zoomInAction, &QAction::triggered, this, [this]() { emit zoomStepRequested(true); });
 
-  // 5. Overflow.
-  m_separators.append(p_toolBar->addSeparator());
+  // 5. The overflow MENU is built now; the toolbar entry that opens it is
+  //    placed later, by installOverflowAction(), because it belongs at the very
+  //    end of the toolbar -- after everything the base class appends.
   buildOverflowMenu(p_toolBar, p_icons);
 
   // Nothing is live until the first accepted viewer state.
@@ -161,25 +162,9 @@ QMenu *PdfViewerToolBar::addModeSubmenu(const QString &p_title, const QList<QStr
 }
 
 void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider &p_icons) {
-  // A PLAIN action carrying its menu -- NOT addWidget() with a pre-built
-  // QToolButton.
-  //
-  // This is the difference between the overflow menu surviving a narrow window
-  // and vanishing from it. When a QToolBar runs out of room it hides the
-  // trailing items and re-offers them through its own extension ("»") popup,
-  // which is built by adding the hidden ACTIONS to a QMenu. A QWidgetAction
-  // cannot render there, so an addWidget()-ed button simply disappears and
-  // every verb behind it -- rotate, cursor, scroll mode, spread mode and
-  // document properties -- becomes unreachable. The plain
-  // actions beside it (Readable Width, Find and Replace) kept working, which is
-  // what made the hole look like a missing button rather than a broken layout.
-  //
-  // With the menu on the ACTION, both surfaces work from one declaration:
-  // QToolButton::menu() falls back to defaultAction()->menu() on the toolbar,
-  // and QMenu renders an action-with-a-menu as a SUBMENU inside the extension
-  // popup. It also makes the icon reachable by
-  // ViewWindowToolBarHelper2::refreshToolBarIcons(), which only iterates the
-  // toolbar's own actions.
+  // Only the MENU. The toolbar entry that opens it is added by
+  // installOverflowAction(), which runs after the base class has finished the
+  // toolbar so the button can sit at the very end.
   m_overflowMenu = new QMenu(p_toolBar);
 
   m_rotateCwAction = m_overflowMenu->addAction(
@@ -209,7 +194,43 @@ void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider
   m_documentPropertiesAction->setProperty("iconName", QStringLiteral("info.svg"));
   connect(m_documentPropertiesAction, &QAction::triggered, this,
           [this]() { emit documentPropertiesRequested(); });
+}
 
+// Placed separately from install(), and LAST of the three placement steps.
+//
+// The overflow button is the toolbar's catch-all, so it belongs at the very end
+// -- after Readable Width, Presentation Mode and Find And Replace, all of which
+// the base class appends once addAdditionalRightToolBarActions() has returned.
+// Only PdfViewWindow2::setupToolBar(), which calls addRightCommonToolBarActions()
+// itself, can reach that position.
+QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons) {
+  Q_ASSERT(p_toolBar);
+  Q_ASSERT(m_overflowMenu);
+  Q_ASSERT(!m_overflowAction);
+
+  // No leading separator: the button is already the last thing on the toolbar,
+  // so it reads as its own group without one, and the extra rule only adds
+  // clutter next to the window edge.
+
+  // A PLAIN action carrying its menu -- NOT addWidget() with a pre-built
+  // QToolButton.
+  //
+  // This is the difference between the overflow menu surviving a narrow window
+  // and vanishing from it. When a QToolBar runs out of room it hides the
+  // trailing items and re-offers them through its own extension ("»") popup,
+  // which is built by adding the hidden ACTIONS to a QMenu. A QWidgetAction
+  // cannot render there, so an addWidget()-ed button simply disappears and
+  // every verb behind it -- rotate, cursor, scroll mode, spread mode and
+  // document properties -- becomes unreachable. The plain actions beside it
+  // (Readable Width, Find and Replace) kept working, which is what made the
+  // hole look like a missing button rather than a broken layout.
+  //
+  // With the menu on the ACTION, both surfaces work from one declaration:
+  // QToolButton::menu() falls back to defaultAction()->menu() on the toolbar,
+  // and QMenu renders an action-with-a-menu as a SUBMENU inside the extension
+  // popup. It also makes the icon reachable by
+  // ViewWindowToolBarHelper2::refreshToolBarIcons(), which only iterates the
+  // toolbar's own actions.
   m_overflowAction = addIconAction(p_toolBar, QStringLiteral("menu.svg"), tr("More"), p_icons);
   m_overflowAction->setMenu(m_overflowMenu);
 
@@ -224,6 +245,13 @@ void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider
     // unset.)
     m_overflowButton->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
   }
+
+  // install()'s enable sweep has already run, so match whatever state it left.
+  m_overflowAction->setEnabled(m_state.m_valid);
+  if (m_overflowButton) {
+    m_overflowButton->setEnabled(m_state.m_valid);
+  }
+  return m_overflowAction;
 }
 
 // Deliberately NOT part of install(): this action belongs to a different region

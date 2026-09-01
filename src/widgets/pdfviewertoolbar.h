@@ -49,9 +49,17 @@ public:
 
   // Creates the actions, widgets and menus on @p_toolBar. Call once.
   //
+  // Placement happens in THREE steps, because the toolbar is shared with the
+  // base class and two of the positions are only reachable later:
+  //
+  //   1. install()                   -- sidebar, Outline hook, page, zoom, and
+  //                                     the overflow MENU's contents
+  //   2. installPresentationAction() -- from ViewWindow2::addAdditionalViewToolBarActions()
+  //   3. installOverflowAction()     -- after ViewWindow2::addRightCommonToolBarActions()
+  //
   // @p_afterSidebar runs between the sidebar toggle and the page controls, and
   // is where PdfViewWindow2 inserts the Outline popup. It is a hook rather than
-  // a second install phase because the popup needs a ServiceLocator and an
+  // a fourth step because the popup needs a ServiceLocator and an
   // OutlineProvider, and this component deliberately holds neither.
   void install(QToolBar *p_toolBar, const IconProvider &p_icons = {},
                const std::function<void()> &p_afterSidebar = {});
@@ -65,6 +73,15 @@ public:
   // there rather than in the overflow menu because it changes how the content is
   // presented, exactly like Readable Width beside it.
   QAction *installPresentationAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
+
+  // Adds the overflow ("More") entry that opens the menu install() built, and
+  // returns it.
+  //
+  // LAST of the three steps: the catch-all button belongs at the very end of
+  // the toolbar, after Readable Width, Presentation Mode and Find And Replace,
+  // which the base class appends once addAdditionalRightToolBarActions() has
+  // returned. Only PdfViewWindow2::setupToolBar() can reach that position.
+  QAction *installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 
   // Re-supply the icons after a theme switch.
   //

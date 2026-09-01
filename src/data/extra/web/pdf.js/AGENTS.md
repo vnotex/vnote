@@ -264,12 +264,21 @@ reproduced as a native Qt widget on `PdfViewWindow2`'s view-window toolbar
 of two.
 
 Layout, left to right: sidebar toggle → Outline → page (prev / spin box / `of N`
-/ next) → zoom (out / combo / in) → the overflow `⋮` menu (rotate, cursor,
-scroll mode, spread mode, document properties). **Presentation Mode is not in
-that menu** — it sits out on the toolbar beside Readable Width, which is the
-other action that changes how the content is presented, and is installed through
-`ViewWindow2::addAdditionalViewToolBarActions()` because that slot belongs to the
-base class.
+/ next) → zoom (out / combo / in) → *[base class: Readable Width, Presentation
+Mode, Find And Replace]* → the overflow `⋮` menu (rotate, cursor, scroll mode,
+spread mode, document properties).
+
+Placement happens in **three** steps, because the toolbar is shared with
+`ViewWindow2` and two of the positions are only reachable after it has run:
+
+| Step | Called from | Places |
+|---|---|---|
+| `install()` | `addAdditionalRightToolBarActions()` | sidebar, Outline hook, page, zoom, and the overflow menu's *contents* |
+| `installPresentationAction()` | `addAdditionalViewToolBarActions()` | Presentation Mode, beside Readable Width — the other action that changes how content is presented |
+| `installOverflowAction()` | `PdfViewWindow2::setupToolBar()`, after `addRightCommonToolBarActions()` | the `⋮` entry, last on the toolbar |
+
+Each late step must re-apply the current enabled state, because `install()`'s
+enable sweep has already run by the time it is called.
 
 ### Hidden with CSS, plus a runtime tripwire — never DOM removal
 

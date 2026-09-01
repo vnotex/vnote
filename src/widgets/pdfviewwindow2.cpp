@@ -104,6 +104,17 @@ void PdfViewWindow2::setupToolBar() {
   setupAnnotationToolBarActions(toolBar);
 
   addRightCommonToolBarActions(toolBar);
+
+  // LAST, deliberately: the overflow "More" button is the toolbar's catch-all
+  // and belongs at the very end, after Readable Width, Presentation Mode and
+  // Find And Replace. Those are appended by addRightCommonToolBarActions()
+  // above, so this is the only place that can reach the position.
+  if (m_viewerToolBar) {
+    auto &services = getServices();
+    m_viewerToolBar->installOverflowAction(toolBar, [&services](const QString &p_iconName) {
+      return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+    });
+  }
 }
 
 void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
