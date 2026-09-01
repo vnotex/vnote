@@ -64,6 +64,11 @@ class GraphRenderer extends VxWorker {
         // enumerate every input varying its output, or whose output cannot be
         // safely inserted twice, leaves this null and pays nothing for it.
         this.graphCache = null;
+
+        // Stall detection for a live pass; see startPassWatchdog().
+        this.watchdogTimer = null;
+        this.watchdogLastCount = -1;
+        this.watchdogReports = 0;
     }
 
     // Report a contract violation or a render failure.
@@ -80,6 +85,65 @@ class GraphRenderer extends VxWorker {
     // someone asks with QT_LOGGING_RULES="vnote.web.js=true" (or --verbose).
     reportProblem(...p_args) {
         console.info(...p_args);
+    }
+
+    // A pass that STALLS - a renderOne() promise that neither resolves nor
+    // rejects, so finishRenderingOne() is never called for it and
+    // scheduleNextBatch() parks forever on `pendingInBatch >= limit` - is
+    // otherwise indistinguishable in the log from a pass that was never armed:
+    // both simply produce no further output. The dump below separates the two
+    // possible causes. pendingInBatch === limit means the renders themselves
+    // never settled; pendingInBatch < limit with work left means the
+    // scheduling chain was dropped.
+    //
+    // setInterval rather than a setTimeout chain, and behind a feature check,
+    // so this is inert under the JS test harness: the harness provides only a
+    // queueing setTimeout, and tests assert the exact number of macrotasks a
+    // pass consumes (that bound is what keeps the viewer painting). A
+    // diagnostic must not be able to weaken that assertion.
+    startPassWatchdog() {
+        if (typeof setInterval !== 'function') {
+            return;
+        }
+
+        this.stopPassWatchdog();
+        this.watchdogLastCount = -1;
+        this.watchdogReports = 0;
+        this.watchdogTimer = setInterval(() => {
+            if (!this.passActive) {
+                this.stopPassWatchdog();
+                return;
+            }
+
+            // Progress since the last tick: healthy, even for a slow pass.
+            if (this.numOfRenderedNodes !== this.watchdogLastCount) {
+                this.watchdogLastCount = this.numOfRenderedNodes;
+                return;
+            }
+
+            // Bounded, so a wedged pass cannot spam the log forever.
+            if (++this.watchdogReports > 3) {
+                this.stopPassWatchdog();
+                return;
+            }
+
+            this.reportProblem('graph render pass made no progress', this.name,
+                               'done=' + this.numOfRenderedNodes,
+                               'dispatched=' + this.nextNodeIndex,
+                               'total=' + this.nodesToRender.length,
+                               'pendingInBatch=' + this.pendingInBatch,
+                               'limit=' + this.concurrencyLimit,
+                               'nextBatchScheduled=' + this.nextBatchScheduled,
+                               'inDispatch=' + this.inDispatch,
+                               'generation=' + this.passGeneration);
+        }, 5000);
+    }
+
+    stopPassWatchdog() {
+        if (this.watchdogTimer !== null && typeof clearInterval === 'function') {
+            clearInterval(this.watchdogTimer);
+        }
+        this.watchdogTimer = null;
     }
 
 
@@ -106,6 +170,7 @@ class GraphRenderer extends VxWorker {
         // Retires every callback still outstanding from the previous pass, so a
         // late completion cannot be counted against the new one.
         ++this.passGeneration;
+        this.stopPassWatchdog();
         this.nextNodeIndex = 0;
         this.pendingInBatch = 0;
         this.inDispatch = false;
@@ -242,6 +307,8 @@ class GraphRenderer extends VxWorker {
         this.nextNodeIndex = 0;
         this.pendingInBatch = 0;
         this.nextBatchScheduled = false;
+
+        this.startPassWatchdog();
 
         this.dispatchBatch();
     }
@@ -463,6 +530,7 @@ class GraphRenderer extends VxWorker {
         }
 
         this.passActive = false;
+        this.stopPassWatchdog();
         if (this.dispatchDoneMs === 0) {
             this.dispatchDoneMs = Date.now();
         }
