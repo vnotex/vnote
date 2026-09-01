@@ -168,6 +168,16 @@ private:
 
   void handleMathBlocksUpdate();
 
+  // Request a debounced publication of the in-place previews. Async results
+  // arrive one at a time (one per diagram/math block), and each publication
+  // costs a full document relayout; coalescing the ones that land close
+  // together keeps the editor from churning for seconds on a preview-heavy
+  // document. The publish always emits the WHOLE current data set, so a delayed
+  // publish is inherently the latest state.
+  void requestUpdateEditorInplacePreviewCodeBlock();
+
+  void requestUpdateEditorInplacePreviewMathBlock();
+
   MarkdownEditor *m_editor = nullptr;
 
   QTextDocument *m_document = nullptr;
@@ -218,6 +228,12 @@ private:
   QVector<vte::md::MathBlock> m_pendingMathBlocks;
 
   QTimer *m_mathBlockTimer = nullptr;
+
+  // Debounce timers for PUBLISHING preview results (as opposed to the
+  // request-side m_codeBlockTimer/m_mathBlockTimer above).
+  QTimer *m_codeBlockPublishTimer = nullptr;
+
+  QTimer *m_mathBlockPublishTimer = nullptr;
 };
 } // namespace vnotex
 

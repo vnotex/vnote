@@ -84,6 +84,29 @@ PreviewHelper::PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent)
   m_mathBlockTimer->setSingleShot(true);
   m_mathBlockTimer->setInterval(interval);
   connect(m_mathBlockTimer, &QTimer::timeout, this, &PreviewHelper::handleMathBlocksUpdate);
+
+  // Response-side debounce. Async preview results arrive one per block; without
+  // this, N diagrams cause N relayouts of the whole document.
+  const int publishInterval = 50;
+  m_codeBlockPublishTimer = new QTimer(this);
+  m_codeBlockPublishTimer->setSingleShot(true);
+  m_codeBlockPublishTimer->setInterval(publishInterval);
+  connect(m_codeBlockPublishTimer, &QTimer::timeout, this,
+          &PreviewHelper::updateEditorInplacePreviewCodeBlock);
+
+  m_mathBlockPublishTimer = new QTimer(this);
+  m_mathBlockPublishTimer->setSingleShot(true);
+  m_mathBlockPublishTimer->setInterval(publishInterval);
+  connect(m_mathBlockPublishTimer, &QTimer::timeout, this,
+          &PreviewHelper::updateEditorInplacePreviewMathBlock);
+}
+
+void PreviewHelper::requestUpdateEditorInplacePreviewCodeBlock() {
+  m_codeBlockPublishTimer->start();
+}
+
+void PreviewHelper::requestUpdateEditorInplacePreviewMathBlock() {
+  m_mathBlockPublishTimer->start();
 }
 
 void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
@@ -246,7 +269,7 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
     return;
   }
   if (p_data.m_id >= static_cast<quint64>(m_codeBlocksData.size()) || p_data.m_data.isEmpty()) {
-    updateEditorInplacePreviewCodeBlock();
+    requestUpdateEditorInplacePreviewCodeBlock();
     return;
   }
 
@@ -263,10 +286,15 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
                                  previewData->m_background, m_tabStopWidth);
 
-  updateEditorInplacePreviewCodeBlock();
+  requestUpdateEditorInplacePreviewCodeBlock();
 }
 
 void PreviewHelper::updateEditorInplacePreviewCodeBlock() {
+  // Any pending debounced publication is subsumed by this one: the publish
+  // always emits the whole current m_codeBlocksData, so letting a queued timer
+  // fire afterwards would only repeat the relayout.
+  m_codeBlockPublishTimer->stop();
+
   QSet<int> obsoleteBlocks;
   QVector<QSharedPointer<vte::PreviewItem>> previewItems;
   previewItems.reserve(m_codeBlocksData.size());
@@ -374,6 +402,9 @@ void PreviewHelper::inplacePreviewMathBlock(int p_blockPreviewIdx) {
 }
 
 void PreviewHelper::updateEditorInplacePreviewMathBlock() {
+  // See updateEditorInplacePreviewCodeBlock().
+  m_mathBlockPublishTimer->stop();
+
   QSet<int> obsoleteBlocks;
   QVector<QSharedPointer<vte::PreviewItem>> previewItems;
   previewItems.reserve(m_mathBlocksData.size());
@@ -411,7 +442,7 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
     return;
   }
   if (p_data.m_id >= static_cast<quint64>(m_mathBlocksData.size()) || p_data.m_data.isEmpty()) {
-    updateEditorInplacePreviewMathBlock();
+    requestUpdateEditorInplacePreviewMathBlock();
     return;
   }
 
@@ -426,7 +457,7 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
                                  m_tabStopWidth);
 
-  updateEditorInplacePreviewMathBlock();
+  requestUpdateEditorInplacePreviewMathBlock();
 }
 
 qreal PreviewHelper::getEditorScaleFactor(qreal p_zoomRatio) const {
@@ -455,6 +486,15 @@ void PreviewHelper::editorZoomChanged() {
 
   // Invalidate every in-flight response immediately, so a pre-zoom raster can
   // never be cached against the new ratio.
+  //
+  // A publication that is only DEBOUNCED has already passed its timestamp
+  // check and stored its raster, so bumping the generation cannot stop it: the
+  // timer callback carries no generation of its own. Cancel it here instead.
+  // refreshPreviewHighlight() below starts a new generation, which publishes
+  // the correctly scaled set when it settles.
+  m_codeBlockPublishTimer->stop();
+  m_mathBlockPublishTimer->stop();
+
   ++m_codeBlockTimeStamp;
   ++m_mathBlockTimeStamp;
 
@@ -477,7 +517,7 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
   Q_ASSERT(p_format == QStringLiteral("svg"));
 
   if (p_id >= static_cast<quint64>(m_codeBlocksData.size()) || p_data.isEmpty()) {
-    updateEditorInplacePreviewCodeBlock();
+    requestUpdateEditorInplacePreviewCodeBlock();
     return;
   }
 
@@ -492,7 +532,7 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
                                  previewData->m_background, m_tabStopWidth);
 
-  updateEditorInplacePreviewCodeBlock();
+  requestUpdateEditorInplacePreviewCodeBlock();
 }
 
 bool PreviewHelper::needForcedBackground(const QString &p_lang) const {
