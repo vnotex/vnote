@@ -12,6 +12,7 @@
 #include <core/services/task.h>
 #include <core/services/taskservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/treeviewutils.h>
 #include <models/tasktreemodel.h>
 #include <models/treefilterproxymodel.h>
 #include <widgets/titlebar.h>
@@ -40,6 +41,7 @@ void TaskPanel2::setupUI() {
   m_treeView = new QTreeView(this);
   m_treeView->setModel(m_proxyModel);
   m_treeView->setHeaderHidden(true);
+  TreeViewUtils::applyIndentation(m_treeView);
   m_treeView->setContextMenuPolicy(Qt::CustomContextMenu);
   m_treeView->setSelectionMode(QAbstractItemView::SingleSelection);
   m_treeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -51,12 +53,11 @@ void TaskPanel2::setupUI() {
   connect(m_treeView, &QTreeView::customContextMenuRequested, this,
           &TaskPanel2::onContextMenuRequested);
 
-  connect(m_controller, &TaskController::errorOccurred, this, [this](const QString &p_msg) {
-    QMessageBox::warning(window(), tr("Task"), p_msg);
-  });
+  connect(m_controller, &TaskController::errorOccurred, this,
+          [this](const QString &p_msg) { QMessageBox::warning(window(), tr("Task"), p_msg); });
 
-  connect(m_titleBar, &TitleBar::searchTextChanged,
-          m_proxyModel, &TreeFilterProxyModel::setFilterText);
+  connect(m_titleBar, &TitleBar::searchTextChanged, m_proxyModel,
+          &TreeFilterProxyModel::setFilterText);
   connect(m_proxyModel, &TreeFilterProxyModel::filterActiveChanged, this,
           [this]() { m_treeView->expandAll(); });
 
@@ -73,8 +74,8 @@ void TaskPanel2::setupUI() {
 }
 
 void TaskPanel2::setupTitleBar() {
-  m_titleBar =
-      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Search, this);
+  m_titleBar = new TitleBar(m_services.get<ThemeService>(), QString(), false,
+                            TitleBar::Action::Search, this);
   m_titleBar->setActionButtonsAlwaysShown(true);
   m_titleBar->setSearchPlaceholder(tr("Search tasks"));
 
@@ -88,8 +89,7 @@ void TaskPanel2::setupTitleBar() {
 
   auto *openFolderBtn =
       m_titleBar->addActionButton(QStringLiteral("open_folder.svg"), tr("Open Task Folder"));
-  connect(openFolderBtn, &QToolButton::clicked, this,
-          [this]() { m_controller->openTaskFolder(); });
+  connect(openFolderBtn, &QToolButton::clicked, this, [this]() { m_controller->openTaskFolder(); });
 
   auto *refreshBtn = m_titleBar->addActionButton(QStringLiteral("reload.svg"), tr("Reload"));
   connect(refreshBtn, &QToolButton::clicked, this, [this]() { m_controller->refreshTasks(); });
@@ -127,8 +127,7 @@ void TaskPanel2::onContextMenuRequested(const QPoint &p_pos) {
 
   menu.addAction(tr("Run"), this, [this, task]() { m_controller->runTask(task); });
 
-  menu.addAction(tr("Edit"), this,
-                 [this, task]() { emit editTaskFileRequested(task->getFile()); });
+  menu.addAction(tr("Edit"), this, [this, task]() { emit editTaskFileRequested(task->getFile()); });
 
   // Delete removes the whole .json task file, so only offer it on top-level
   // task rows (a sub-task shares its parent's file).

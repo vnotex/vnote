@@ -12,6 +12,9 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/imageutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/treehorizontalscrollhelper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/treehorizontalscrollhelper.h
+    # Header-only on purpose: several test targets compile the dock views
+    # without linking any gui/utils source. Do NOT add a .cpp for it.
+    ${CMAKE_CURRENT_SOURCE_DIR}/treeviewutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/themeutils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/themeutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/textcursorpreserver.cpp

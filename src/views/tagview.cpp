@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <QSortFilterProxyModel>
 
+#include <gui/utils/treeviewutils.h>
 #include <gui/utils/widgetutils.h>
 #include <models/tagmodel.h>
 
@@ -18,7 +19,7 @@ void TagView::setupView() {
   setContextMenuPolicy(Qt::CustomContextMenu);
 
   setHeaderHidden(true);
-  setIndentation(16);
+  TreeViewUtils::applyIndentation(this);
   setUniformRowHeights(true);
   setAnimated(true);
 

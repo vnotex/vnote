@@ -3,6 +3,7 @@
 #include <QItemSelectionModel>
 #include <QSortFilterProxyModel>
 
+#include <gui/utils/treeviewutils.h>
 #include <gui/utils/widgetutils.h>
 #include <models/outlinemodel.h>
 
@@ -19,6 +20,9 @@ void OutlineView::setupView() {
 
   // Animate expand/collapse transitions.
   setAnimated(true);
+
+  // Share the indentation step with the other dock trees.
+  TreeViewUtils::applyIndentation(this);
 
   // Show horizontal scrollbar when content overflows.
   WidgetUtils::showHorizontalScrollbar(this);

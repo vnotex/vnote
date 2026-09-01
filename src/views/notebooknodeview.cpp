@@ -14,6 +14,7 @@
 #include <QUrl>
 
 #include <controllers/notebooknodecontroller.h>
+#include <gui/utils/treeviewutils.h>
 #include <gui/utils/widgetutils.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
@@ -158,7 +159,7 @@ void NotebookNodeView::setupView() {
 
   // Appearance
   setHeaderHidden(true);
-  setIndentation(16);
+  TreeViewUtils::applyIndentation(this);
   setUniformRowHeights(true);
   setAnimated(true);
 

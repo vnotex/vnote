@@ -153,6 +153,14 @@ add_qt_test(test_notebooknodedelegate_sizehint
     core_services
 )
 
+# TreeViewUtils is header-only (see src/gui/utils/treeviewutils.h), so this
+# target needs no extra SOURCES and no extra LINKS. The five call sites are
+# covered by the grep gate tests/utils/test_tree_indentation_drift.cpp.
+add_qt_test(test_treeviewindentation
+  SOURCES
+    test_treeviewindentation.cpp
+)
+
 # vxpdf:// scheme handler: the MIME map and the document token registry. See the
 # header comment of the .cpp for what requestStarted() coverage would require
 # (a real QWebEngineUrlRequestJob, which has no public constructor).

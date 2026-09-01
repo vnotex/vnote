@@ -4,6 +4,8 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 
+#include <gui/utils/treeviewutils.h>
+
 using namespace vnotex;
 
 SearchResultView::SearchResultView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
@@ -18,7 +20,7 @@ void SearchResultView::setupView() {
   setRootIsDecorated(true);
   setUniformRowHeights(true);
   setEditTriggers(QAbstractItemView::NoEditTriggers);
-  setIndentation(16);
+  TreeViewUtils::applyIndentation(this);
 }
 
 void SearchResultView::setModel(QAbstractItemModel *p_model) {

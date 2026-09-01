@@ -175,6 +175,19 @@ target_compile_definitions(test_hardcoded_color_drift PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
+# Grep-gate regression test: item indentation must come from the one shared
+# helper (vnotex::TreeViewUtils), or the Notebooks / Tags / Search / Outline /
+# Tasks dock trees drift apart again. Qt style sheets have no `indentation`
+# property, so this cannot be enforced in interface.qss.
+add_qt_test(test_tree_indentation_drift
+  SOURCES
+    test_tree_indentation_drift.cpp
+  GUILESS
+)
+target_compile_definitions(test_tree_indentation_drift PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 # Grep-gate regression test: no regular-expression Markdown image parser may
 # come back. vtextedit 2d07683 + vnote 5f811d45 deleted the `=WxH` group from
 # such an expression and thereby stopped it matching sized images at all,
