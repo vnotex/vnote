@@ -50,7 +50,19 @@ void PdfViewer::setSwatchResolver(CommentColorSwatch::ColorResolver p_resolve,
 }
 
 void PdfViewer::contextMenuEvent(QContextMenuEvent *p_event) {
+  // The standard menu moved between the two Qt majors VNote builds against, and
+  // neither spelling compiles on both: QWebEngineView::createStandardContextMenu()
+  // arrived in Qt 6.2, while QWebEnginePage's overload is gone in Qt 6.
+  //
+  // This class is only INSTANTIATED above Qt 6.9 (ViewWindowFactory registers
+  // the PDF creator conditionally), but it is always COMPILED -- which is why
+  // the Qt 5.15 / Windows 7 packaging job broke here while every Qt 6 job stayed
+  // green. See .github/AGENTS.md.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
   QScopedPointer<QMenu> menu(createStandardContextMenu());
+#else
+  QScopedPointer<QMenu> menu(page()->createStandardContextMenu());
+#endif
   if (!menu) {
     menu.reset(new QMenu(this));
   }
