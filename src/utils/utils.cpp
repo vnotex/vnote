@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
