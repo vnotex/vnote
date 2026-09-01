@@ -136,6 +136,96 @@ public:
   // 'documentloaded'; 0 means "unknown", which rejects every anchor.
   int getDocumentPageCount() const;
 
+  // ============ Viewer controls ============
+
+  // The normalized viewer state pushed up by the web side, after validation.
+  // Everything here is display state for PdfViewerToolBar; the ADAPTER is the
+  // single source of truth and the toolbar repaints from it, never from its own
+  // clicks.
+  struct ViewerState {
+    // 1-based, as pdf.js reports it. 0 means "no document".
+    int m_page = 0;
+
+    int m_pageCount = 0;
+
+    // The numeric zoom factor actually in effect (1.0 == 100%).
+    double m_scale = 1.0;
+
+    // 'auto' | 'page-actual' | 'page-fit' | 'page-width', or a numeric string.
+    QString m_scaleValue = QStringLiteral("auto");
+
+    // One of 0 / 90 / 180 / 270.
+    int m_rotation = 0;
+
+    // pdf.js ScrollMode: 0 vertical, 1 horizontal, 2 wrapped, 3 page.
+    int m_scrollMode = 0;
+
+    // pdf.js SpreadMode: 0 none, 1 odd, 2 even.
+    int m_spreadMode = 0;
+
+    // pdf.js CursorTool: 0 select, 1 hand.
+    int m_cursorTool = 0;
+
+    bool m_sidebarOpen = false;
+
+    // False until the first ACCEPTED state arrives. The toolbar keeps every
+    // control disabled while this is false, so a blank window has no live
+    // controls rather than controls that silently do nothing.
+    bool m_valid = false;
+  };
+
+  const ViewerState &getViewerState() const;
+
+  // Drop the DOCUMENT-dependent viewer state (page count, validity, find
+  // query) across a reload, and ARM the replay of the page/zoom/rotation/mode
+  // the user was looking at. Deliberately does NOT clear the replay values --
+  // that is the entire point: a theme switch reloads the page and must come
+  // back to page 7 at 150%, not to page 1.
+  void clearViewerState();
+
+  // Whether a replay is armed and still waiting for the replacement document.
+  // Exposed for the gate; production code never branches on it.
+  bool isViewerReplayPending() const;
+
+  // ---- Replayed commands ----
+  // These are view state a reload must not silently reset, so the adapter keeps
+  // a REPLAY copy distinct from the current state and re-applies it once on the
+  // replacement document.
+
+  void gotoPage(int p_page);
+
+  // 'auto' | 'page-actual' | 'page-fit' | 'page-width' | a numeric string.
+  void setZoom(const QString &p_value);
+
+  void stepZoom(bool p_zoomIn);
+
+  void setRotation(int p_degrees);
+
+  void setScrollMode(int p_mode);
+
+  void setSpreadMode(int p_mode);
+
+  void setCursorTool(int p_tool);
+
+  // ---- One-shot commands, never replayed ----
+  // Same reasoning as captureSelection(): a transient action only means
+  // anything in a LIVE document, and replaying it after a reload would act on
+  // the replacement.
+
+  void toggleSidebar();
+
+  void showDocumentProperties();
+
+  // NOTE: there is deliberately no startPrint()/printDocument() and no
+  // enterPresentationMode(). Neither verb can be completed from inside the
+  // page: pdf.js's print service destroys its own prepared DOM on a hardcoded
+  // 20 ms timer that Qt's asynchronous print cannot be sequenced against, and
+  // Chromium refuses requestFullscreen() without a renderer user gesture. See
+  // PdfViewWindow2::isPrintSupported() and PdfViewWindow2::setPresentationMode().
+
+  // Drop the find highlight. One-shot: a find session belongs to a live page.
+  void clearFind();
+
   // Functions to be called from web side.
 public slots:
   // Set the flat outline. Each element is
@@ -183,6 +273,14 @@ public slots:
   // tool completing). UNTRUSTED, but it carries no payload beyond the fact.
   void notifyToolFinished();
 
+  // The web side's normalized viewer state (page, zoom, rotation, scroll /
+  // spread / cursor mode, sidebar). UNTRUSTED like every other slot here: page
+  // must be in [1, pageCount], the scale finite and positive, the rotation one
+  // of {0,90,180,270} and each mode in range. A payload failing ANY check is
+  // dropped whole with a qWarning and the previous state kept -- never
+  // partially applied, or the toolbar would show a mix of two documents.
+  void setViewerState(const QJsonObject &p_state);
+
   // Signals to be connected at web side.
 signals:
   void urlUpdated(const QString &p_url);
@@ -211,9 +309,34 @@ signals:
   // so the false->true readiness transition republishes EVERY tool's options.
   void toolOptionsChanged(const QString &p_tool, const QJsonObject &p_options);
 
+  // ---- Viewer control commands ----
+  void pageRequested(int p_page);
+
+  void zoomRequested(const QString &p_value);
+
+  void zoomStepRequested(bool p_zoomIn);
+
+  void rotationRequested(int p_degrees);
+
+  void scrollModeRequested(int p_mode);
+
+  void spreadModeRequested(int p_mode);
+
+  void cursorToolRequested(int p_tool);
+
+  void sidebarToggleRequested();
+
+  void documentPropertiesRequested();
+
+  void findCleared();
+
   // Signals to be connected at cpp side.
 signals:
   void outlineChanged();
+
+  // The viewer state changed (or was cleared). The toolbar repaints from
+  // getViewerState() -- the adapter is the single source of truth.
+  void viewerStateChanged();
 
   // Intents from the overlay. The adapter never mutates the store itself —
   // that is CommentController's job (views/bridges emit intents only).
@@ -267,6 +390,44 @@ private:
   // Same latch-not-queue rule as the comment set: a reload must come up in the
   // CURRENT tool and per-tool options, and only the newest values matter.
   bool m_toolPublishPending = false;
+
+  // ---- Viewer controls ----
+
+  ViewerState m_viewerState;
+
+  // The values to re-apply after a reload. Refreshed by EVERY accepted state
+  // push, not only by toolbar requests: a page reached by scrolling, by an
+  // outline click, from a sidebar thumbnail or with a keyboard shortcut must
+  // survive the reload too.
+  //
+  // Deliberately distinct from m_viewerState, which clearViewerState() blanks.
+  int m_replayPage = 0;
+
+  QString m_replayZoom;
+
+  int m_replayRotation = 0;
+
+  int m_replayScrollMode = 0;
+
+  int m_replaySpreadMode = 0;
+
+  int m_replayCursorTool = 0;
+
+  // A freshly constructed adapter has NO replay value, so a new window opens at
+  // pdf.js's own defaults.
+  bool m_replayValid = false;
+
+  // Armed by clearViewerState(). While set, incoming states do NOT refresh the
+  // replay values -- otherwise the replacement document's own initial
+  // page-1 / default-scale push would overwrite exactly what is about to be
+  // replayed.
+  bool m_replayPending = false;
+
+  // Emits the replay commands once, and disarms.
+  void replayViewerState();
+
+  // Copies the accepted state into the replay slots.
+  void captureViewerReplay();
 };
 } // namespace vnotex
 

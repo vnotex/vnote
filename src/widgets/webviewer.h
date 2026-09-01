@@ -22,6 +22,22 @@ public:
 
   void findText(const QString &p_text, FindOptions p_options);
 
+  // NOTE: HTML5 fullscreen is deliberately NOT enabled here.
+  //
+  // QWebEngineSettings::FullScreenSupportEnabled is off by default, and turning
+  // it on would make `document.fullscreenEnabled` true for EVERY web view
+  // (Markdown preview, mind map) while only some of them have a host able to
+  // move the widget -- Chromium would then believe it is fullscreen with
+  // nothing on screen having changed. Enabling it is also not enough on its
+  // own: Chromium requires transient renderer user activation for
+  // requestFullscreen(), which a click on a Qt QAction routed through
+  // QWebChannel does not carry, so a Qt-initiated request is refused and the
+  // page swallows the rejection silently.
+  //
+  // A view window that wants a distraction-free mode drives
+  // ViewWindow2::setContentFullScreen() from the Qt side instead; see
+  // PdfViewWindow2's presentation mode.
+
 signals:
   void linkHovered(const QString &p_url);
 

@@ -19,6 +19,7 @@ class InlineBanner;
 class PdfAnnotationToolBar;
 class PdfViewer;
 class PdfViewerAdapter;
+class PdfViewerToolBar;
 class PdfViewWindowController;
 
 // Concrete ViewWindow2 subclass for PDF files.
@@ -61,6 +62,14 @@ public slots:
 protected slots:
   void setModified(bool p_modified) Q_DECL_OVERRIDE;
 
+  void handleFindTextChanged(const QString &p_text, FindOptions p_options) Q_DECL_OVERRIDE;
+
+  void handleFindNext(const QStringList &p_texts, FindOptions p_options) Q_DECL_OVERRIDE;
+
+  void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
+
+  void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
+
 protected:
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
@@ -74,6 +83,12 @@ protected:
 
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
+  void addAdditionalViewToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
+
+  // A pdf.js viewer cannot be printed reliably; see the comment on the
+  // override in the .cpp.
+  bool isPrintSupported() const Q_DECL_OVERRIDE;
+
 private:
   void setupUI();
 
@@ -86,6 +101,25 @@ private:
   void setupComments();
 
   void setupAnnotationToolBarActions(QToolBar *p_toolBar);
+
+  // Builds the native replacements for pdf.js's hidden built-in toolbar strip
+  // and wires their intents onto the adapter. Called from
+  // addAdditionalRightToolBarActions(), BEFORE the Outline button.
+  void setupViewerToolBarActions(QToolBar *p_toolBar);
+
+  // Repaints the viewer controls from the ADAPTER's state, which is the single
+  // source of truth: the page changes the page, zoom, rotation and modes by
+  // itself (scrolling, an outline click, a keyboard shortcut, presentation mode
+  // forcing page-scroll), so a tick painted from the user's click would
+  // diverge.
+  void syncViewerToolBarState();
+
+  // Presentation mode, driven from Qt rather than through pdf.js's own
+  // HTML5-fullscreen one (which Chromium refuses without a renderer user
+  // gesture). See the comment above togglePresentationMode() in the .cpp.
+  void togglePresentationMode();
+
+  void setPresentationMode(bool p_on);
 
   void setActiveTool(PdfViewerAdapter::Tool p_tool);
 
@@ -157,6 +191,12 @@ private:
 
   QSharedPointer<CommentProvider> m_commentProvider;
 
+  // The view state to restore when leaving presentation mode. Captured on
+  // entry, so leaving returns to what the user was actually looking at.
+  QString m_prePresentationZoom;
+
+  int m_prePresentationScrollMode = 0;
+
   // Managed by QObject parent (this).
   CommentController *m_commentController = nullptr;
 
@@ -166,6 +206,10 @@ private:
   // Owns the three tool buttons and their settings menus. Managed by QObject
   // parent (this).
   PdfAnnotationToolBar *m_annotationToolBar = nullptr;
+
+  // Owns the sidebar / page / zoom / overflow controls that replace pdf.js's
+  // built-in toolbar strip. Managed by QObject parent (this).
+  PdfViewerToolBar *m_viewerToolBar = nullptr;
 };
 } // namespace vnotex
 

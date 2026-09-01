@@ -33,6 +33,7 @@ namespace vnotex {
 
 class AttachmentDragDropAreaIndicator2;
 class AttachmentPopup2;
+class ContentFullScreenHost;
 class EditReadDiscardAction;
 class EncodingButton;
 class FloatingWidget;
@@ -373,6 +374,38 @@ protected:
   // @p_widget: The editor widget to display. nullptr is allowed (clears existing widget).
   void setCentralWidget(QWidget *p_widget);
 
+  // ---- Content fullscreen ----
+  //
+  // Lifts the CENTRAL WIDGET out of this window into a frameless fullscreen
+  // top-level, and puts it back. Generic on purpose: it is plain widget
+  // reparenting with no knowledge of what the central widget is, so any view
+  // window can use it (a web view asking for HTML5 fullscreen, a future
+  // distraction-free mode, a slideshow).
+  //
+  // Only the central widget travels — the toolbar, find bar, banners and status
+  // widget stay behind with the window, which is what makes this a *content*
+  // fullscreen rather than a window one.
+  //
+  // Returns false when there is nothing to do (no central widget, or already in
+  // the requested state). A caller driving this from a page request must treat
+  // false as "the page and Qt disagree" rather than ignoring it.
+  bool setContentFullScreen(bool p_on);
+
+  bool isContentFullScreen() const;
+
+  // Label for the floating exit button shown while the content is fullscreen.
+  // Name the MODE the caller entered, not the mechanism -- "Exit Full Screen"
+  // reads as the application's own full-screen toggle. Call before entering.
+  void setContentFullScreenExitText(const QString &p_text) { m_contentFullScreenExitText = p_text; }
+
+signals:
+  // Escape was pressed while the content is fullscreen. Deliberately an INTENT
+  // rather than an automatic exit: the owner usually has to tell the content
+  // first (a web page must be driven out through Chromium, or it keeps
+  // believing it is fullscreen and rejects the next request).
+  void contentFullScreenExitRequested();
+
+protected:
   // Add a widget below the central widget (above status widget).
   void addBottomWidget(QWidget *p_widget);
 
@@ -415,8 +448,36 @@ protected:
   // right-side actions.
   virtual void addAdditionalRightToolBarActions(QToolBar *p_toolBar);
 
+  // Add subclass-specific actions in the VIEW-MODE slot: immediately after
+  // Readable Width and before Find And Replace.
+  //
+  // A second hook rather than a parameter to the one above, because the two
+  // positions mean different things. `addAdditionalRightToolBarActions` is the
+  // window's own chrome; this one sits with the actions that change how the
+  // content is presented, which is where a reader looks for them.
+  // `PdfViewWindow2` puts Presentation Mode here.
+  //
+  // Defined INLINE, like isPrintSupported(): several tests link a hand-written
+  // stub of viewwindow2.cpp rather than compiling it, so an out-of-line default
+  // would make every one of them fail to link on an unresolved symbol.
+  virtual void addAdditionalViewToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
+
   // Handle print action.
   virtual void handlePrint();
+
+  // Whether this window can actually print. Returning false omits the Print
+  // action from the toolbar entirely.
+  //
+  // The default is true, so existing windows are unaffected; a window type that
+  // cannot print must OPT OUT rather than inherit a button that does nothing
+  // (the base handlePrint() is a no-op). PdfViewWindow2 is the current opt-out
+  // -- see the comment on its override for why a pdf.js viewer cannot be
+  // printed reliably.
+  //
+  // Defined INLINE on purpose: several tests link a hand-written stub of
+  // viewwindow2.cpp rather than compiling it, so an out-of-line default would
+  // make every one of them fail to link on an unresolved symbol.
+  virtual bool isPrintSupported() const { return true; }
 
   // ============ Find and Replace ============
 
@@ -429,6 +490,12 @@ protected:
   // Set the replace-enabled state on the find-and-replace widget.
   // Useful for subclasses to disable replace in read-only modes.
   void setFindAndReplaceReplaceEnabled(bool p_enabled);
+
+  // Enable/disable individual find OPTIONS on the find-and-replace widget.
+  // Useful for a backend that cannot honour one of them -- pdf.js's
+  // findController has no regular-expression mode, and a live-but-ignored check
+  // box reads as a broken search.
+  void setFindAndReplaceOptionsEnabled(FindOptions p_options, bool p_enabled);
 
   // @p_currentMatchIndex: 0-based.
   void showFindResult(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
@@ -613,6 +680,14 @@ private:
 
   // Managed by QObject.
   QWidget *m_centralWidget = nullptr;
+
+  // The helper that does the reparenting while the content is fullscreen; null
+  // until first used. Lives in contentfullscreenhost.{h,cpp} so the mechanics
+  // are unit-testable -- no test compiles viewwindow2.cpp.
+  ContentFullScreenHost *m_fullScreenHost = nullptr;
+
+  // Empty until a subclass names its fullscreen mode.
+  QString m_contentFullScreenExitText;
 
   // Managed by QObject.
   QToolBar *m_toolBar = nullptr;

@@ -77,6 +77,14 @@
         <file>icons/print_editor.svg</file>
         <file>icons/stay_on_top.svg</file>
         <file>icons/outline_editor.svg</file>
+        <file>icons/sidebar_editor.svg</file>
+        <file>icons/page_previous_editor.svg</file>
+        <file>icons/page_next_editor.svg</file>
+        <file>icons/zoom_out_editor.svg</file>
+        <file>icons/zoom_in_editor.svg</file>
+        <file>icons/rotate_cw_editor.svg</file>
+        <file>icons/rotate_ccw_editor.svg</file>
+        <file>icons/presentation_editor.svg</file>
         <file>icons/readable_width_editor.svg</file>
         <file>icons/find_replace_editor.svg</file>
         <file>icons/search.svg</file>

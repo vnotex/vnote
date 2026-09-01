@@ -82,6 +82,65 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.setTool(p_tool);
         });
 
+        // === Viewer controls ===
+        //
+        // Same unconditional rule as the outline/comment adapters: C++ may
+        // already hold a replay page/zoom for this document, and nothing fires
+        // again once 'documentloaded' has passed.
+        window.vxcore.setViewerAdapter(adapter);
+
+        adapter.pageRequested.connect(function(p_page) {
+            window.vxcore.gotoPage(p_page);
+        });
+
+        adapter.zoomRequested.connect(function(p_value) {
+            window.vxcore.setZoom(p_value);
+        });
+
+        adapter.zoomStepRequested.connect(function(p_zoomIn) {
+            if (p_zoomIn) {
+                window.vxcore.zoomIn();
+            } else {
+                window.vxcore.zoomOut();
+            }
+        });
+
+        adapter.rotationRequested.connect(function(p_degrees) {
+            window.vxcore.setRotation(p_degrees);
+        });
+
+        adapter.scrollModeRequested.connect(function(p_mode) {
+            window.vxcore.setScrollMode(p_mode);
+        });
+
+        adapter.spreadModeRequested.connect(function(p_mode) {
+            window.vxcore.setSpreadMode(p_mode);
+        });
+
+        adapter.cursorToolRequested.connect(function(p_tool) {
+            window.vxcore.setCursorTool(p_tool);
+        });
+
+        adapter.sidebarToggleRequested.connect(function() {
+            window.vxcore.toggleSidebar();
+        });
+
+        adapter.documentPropertiesRequested.connect(function() {
+            window.vxcore.showDocumentProperties();
+        });
+
+        // No print and no presentation-mode signal: neither verb can be
+        // completed from inside the page. See PdfViewWindow2::isPrintSupported()
+        // and PdfViewWindow2::setPresentationMode().
+
+        adapter.findTextRequested.connect(function(p_texts, p_options) {
+            window.vxcore.findText(p_texts, p_options);
+        });
+
+        adapter.findCleared.connect(function() {
+            window.vxcore.clearFind();
+        });
+
         console.log('QWebChannel has been set up');
 
         if (window.vxcore.initialized) {
@@ -102,6 +161,13 @@ new QWebChannel(qt.webChannelTransport,
 window.PDFViewerApplication.initializedPromise.then(function() {
     window.vxcore.attachOutlineBridge(window.PDFViewerApplication);
     window.vxcore.attachCommentBridge(window.PDFViewerApplication);
+    // The native-toolbar bridge. Registered from initializedPromise for the
+    // same reason as the other two: the eventBus does not exist at file scope,
+    // and registering from the QWebChannel callback instead inverts the race
+    // and can miss 'documentloaded' entirely.
+    window.vxcore.attachViewerBridge(window.PDFViewerApplication);
+    // Tripwire: warns when pdf.js renames the container the CSS hides.
+    window.vxcore.checkBuiltInToolbar();
 
     // Highlight-on-selection. Bound to mouseup on the viewer container rather
     // than to 'selectionchange', which fires continuously while dragging and

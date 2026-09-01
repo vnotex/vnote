@@ -1,3 +1,68 @@
+/* ============ The built-in toolbar strip is hidden ============
+ *
+ * Every control it carried is reproduced as a native Qt widget on
+ * PdfViewWindow2's view-window toolbar (PdfViewerToolBar), so the window has one
+ * chrome instead of two.
+ *
+ * HIDDEN, not removed from the DOM: viewer.mjs holds references to the toolbar's
+ * children (#pageNumber, #numPages, #scaleSelect, ...) and configures them
+ * during initialization, so removing the container throws. PdfViewerCore's
+ * checkBuiltInToolbar() warns at runtime if an id is ever renamed upstream --
+ * without it a rename fails silently, by simply showing the strip again.
+ *
+ * #loadingBar is a child of #toolbarContainer, so the load-progress bar goes
+ * with it. That is accepted; see src/data/extra/web/pdf.js/AGENTS.md.
+ *
+ * === WHY #toolbarContainer ITSELF IS NOT `display: none` ===
+ *
+ * In pdf.js v6 the SIDEBAR (#viewsManager -- thumbnails / outline / attachments
+ * / layers, with its own view-selector row) is a DESCENDANT of the toolbar
+ * strip: #toolbarContainer > #toolbarViewer > #toolbarViewerLeft > #viewsManager
+ * (web/pdf-viewer-template.html). Hiding the ancestor hides the sidebar too, and
+ * the native Toggle Sidebar action becomes a button that opens something
+ * invisible.
+ *
+ * #viewsManager is `position: absolute` with `inset-block-start: calc(100% + 8px)`
+ * resolved against #toolbarContainer, which is the nearest positioned ancestor
+ * (`position: relative`, web/viewer.css:8040). `display: contents` would destroy
+ * that containing block and throw the pane off-screen, and #toolbarContainer
+ * also DEFINES --menuitem-height for the sidebar's popup menus.
+ *
+ * So the container is kept, positioned and zero-height, and only its VISIBLE
+ * chrome is hidden. */
+#toolbarContainer {
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    border-bottom: none;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+#toolbarViewer {
+    height: 0;
+}
+
+/* Everything in the strip except the sidebar pane. */
+#toolbarViewerLeft > *:not(#viewsManager),
+#toolbarViewerMiddle,
+#toolbarViewerRight,
+#loadingBar {
+    display: none;
+}
+
+/* Reclaim the 32 px the strip occupied.
+ *
+ * Do NOT zero --toolbar-height at :root. #toolbarSidebar's HEIGHT and
+ * #sidebarContent's block-start inset read the same variable (web/viewer.css),
+ * so a sidebar row would collapse to nothing. Only #viewerContainer's top inset
+ * refers to the strip being hidden here, so only that is overridden -- and it is
+ * written as an explicit length rather than via the variable, which also
+ * sidesteps the higher-specificity compact/touch density overrides. */
+#viewerContainer {
+    inset-block-start: 0;
+}
+
 /* VNote-owned overrides for the vendored pdf.js viewer.
  *
  * Hide Open / Print / Save: VNote owns file opening and export, and the viewer's

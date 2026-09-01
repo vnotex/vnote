@@ -38,6 +38,13 @@ const VX_MIN_INK_POINTS = 2;
 // click to edit), not a move. Without it every click would nudge the box.
 const VX_DRAG_THRESHOLD_PX = 4;
 
+// Zoom bounds. Mirrors pdf.js's own MIN_SCALE / MAX_SCALE in web/viewer.mjs.
+// The C++ side (PdfViewerAdapter) re-checks the same bounds independently, the
+// same way every other cap crossing this bridge is duplicated -- re-verify both
+// on a pdf.js upgrade.
+const VX_MIN_SCALE = 0.1;
+const VX_MAX_SCALE = 25.0;
+
 
 class PdfViewerCore extends VXCore {
     constructor() {
@@ -140,6 +147,37 @@ class PdfViewerCore extends VXCore {
         // Id-scoped, NOT a global boolean: a drag that never produces a click
         // must not swallow the next genuine click on some OTHER comment.
         this.suppressClickForId = null;
+
+        // === Viewer controls (the native toolbar's back end) ===
+        // pdf.js's own #toolbarContainer is hidden by pdfviewer.css; VNote drives
+        // the same verbs from its Qt view-window toolbar instead. The app and the
+        // adapter arrive from two independent async chains, exactly like the
+        // outline and comment bridges, so both are recorded unconditionally.
+        this.viewerApp = null;
+        this.viewerAdapter = null;
+        // The single normalized object pushed upward. C++ re-validates every
+        // field (it crosses the QWebChannel and is therefore untrusted there),
+        // so this is a convenience shape, not a trust boundary.
+        this.viewerState = {
+            page: 1,
+            pageCount: 0,
+            scale: 1,
+            scaleValue: 'auto',
+            rotation: 0,
+            scrollMode: 0,
+            spreadMode: 0,
+            cursorTool: 0,
+            sidebarOpen: false
+        };
+
+        // Last query list ACCEPTED by findText(). Retained because
+        // 'updatefindmatchescount' carries only {current, total} and cannot
+        // reconstruct it, and because a repeat of the same query has to become
+        // type:'again' (next/previous) rather than a fresh search.
+        this.findQuery = null;
+        // Query + the options that change WHICH matches exist. A repeat with the
+        // same signature is next/previous; anything else is a fresh search.
+        this.findSignature = null;
     }
 
     initOnLoad() {
@@ -311,6 +349,435 @@ class PdfViewerCore extends VXCore {
                 console.error('failed to fetch PDF outline: ' + p_e);
             });
         });
+    }
+
+    // === Viewer controls ===
+    //
+    // pdf.js's built-in toolbar strip is hidden (pdfviewer.css) and reproduced
+    // as native Qt widgets on PdfViewWindow2's view-window toolbar. This layer
+    // is the bridge: eventBus -> one normalized state object upward, and named
+    // command entry points downward.
+    //
+    // The C++ side is the SINGLE SOURCE OF TRUTH for what the toolbar shows, and
+    // it is fed only from the AUTHORITATIVE `*changed` events -- never
+    // optimistically from the user's click. That is why the commands below
+    // deliberately dispatch pdf.js's COMMAND events (`switchscrollmode`) and the
+    // bridge listens to pdf.js's STATE events (`scrollmodechanged`); the two are
+    // different names and confusing them yields a toolbar that ticks a mode
+    // pdf.js refused.
+
+    setViewerAdapter(p_adapter) {
+        this.viewerAdapter = p_adapter;
+        // Publish whatever is already known: the adapter may arrive long after
+        // 'documentloaded', and no event fires again for that document.
+        this.pushViewerState();
+    }
+
+    // Push the CURRENT normalized state. One call per accepted event, so a
+    // caller can assert "one event -> one push".
+    pushViewerState() {
+        if (!this.viewerAdapter) {
+            return false;
+        }
+        this.viewerAdapter.setViewerState({
+            page: this.viewerState.page,
+            pageCount: this.viewerState.pageCount,
+            scale: this.viewerState.scale,
+            scaleValue: this.viewerState.scaleValue,
+            rotation: this.viewerState.rotation,
+            scrollMode: this.viewerState.scrollMode,
+            spreadMode: this.viewerState.spreadMode,
+            cursorTool: this.viewerState.cursorTool,
+            sidebarOpen: this.viewerState.sidebarOpen
+        });
+        return true;
+    }
+
+    // Snapshot everything readable from the app in one go. Used on
+    // 'pagesloaded' / 'documentloaded', where several fields change at once and
+    // a per-field event is not guaranteed.
+    syncViewerStateFromApp() {
+        var app = this.viewerApp;
+        if (!app) {
+            return;
+        }
+        var viewer = app.pdfViewer;
+        if (viewer) {
+            if (typeof viewer.currentPageNumber === 'number') {
+                this.viewerState.page = viewer.currentPageNumber;
+            }
+            if (typeof viewer.currentScale === 'number') {
+                this.viewerState.scale = viewer.currentScale;
+            }
+            if (viewer.currentScaleValue !== undefined && viewer.currentScaleValue !== null) {
+                this.viewerState.scaleValue = String(viewer.currentScaleValue);
+            }
+            if (typeof viewer.pagesRotation === 'number') {
+                this.viewerState.rotation = viewer.pagesRotation;
+            }
+            if (typeof viewer.scrollMode === 'number') {
+                this.viewerState.scrollMode = viewer.scrollMode;
+            }
+            if (typeof viewer.spreadMode === 'number') {
+                this.viewerState.spreadMode = viewer.spreadMode;
+            }
+        }
+        if (typeof app.pagesCount === 'number') {
+            this.viewerState.pageCount = app.pagesCount;
+        }
+        // There is NO PDFViewerApplication.pdfSidebar in v6; the pane is owned
+        // by `viewsManager`. Looking for the old name yields a permanently
+        // dead toggle, which is exactly the failure this note exists to prevent.
+        if (app.viewsManager && typeof app.viewsManager.visibleView === 'number') {
+            this.viewerState.sidebarOpen = app.viewsManager.visibleView !== 0;
+        }
+    }
+
+    attachViewerBridge(p_app) {
+        var self = this;
+        this.viewerApp = p_app;
+
+        if (!p_app || !p_app.eventBus) {
+            return false;
+        }
+
+        p_app.eventBus.on('pagechanging', function(p_evt) {
+            if (p_evt && typeof p_evt.pageNumber === 'number') {
+                self.viewerState.page = p_evt.pageNumber;
+            }
+            self.pushViewerState();
+        });
+
+        var loaded = function() {
+            self.syncViewerStateFromApp();
+            self.pushViewerState();
+        };
+        p_app.eventBus.on('documentloaded', loaded);
+        p_app.eventBus.on('pagesloaded', loaded);
+
+        p_app.eventBus.on('scalechanging', function(p_evt) {
+            if (p_evt && typeof p_evt.scale === 'number') {
+                self.viewerState.scale = p_evt.scale;
+            }
+            if (p_evt && p_evt.presetValue !== undefined && p_evt.presetValue !== null) {
+                self.viewerState.scaleValue = String(p_evt.presetValue);
+            } else if (p_evt && typeof p_evt.scale === 'number') {
+                // No preset means a numeric zoom; carry the number so the combo
+                // can show a percentage rather than a stale "Automatic".
+                self.viewerState.scaleValue = String(p_evt.scale);
+            }
+            self.pushViewerState();
+        });
+
+        p_app.eventBus.on('rotationchanging', function(p_evt) {
+            if (p_evt && typeof p_evt.pagesRotation === 'number') {
+                self.viewerState.rotation = p_evt.pagesRotation;
+            }
+            self.pushViewerState();
+        });
+
+        // 'scrollmodechanged' / 'spreadmodechanged' are the STATE events.
+        // 'switchscrollmode' / 'switchspreadmode' are the COMMANDS -- listening
+        // to those instead would tick the toolbar from our own request and miss
+        // the mode pdf.js forces internally (presentation mode does exactly
+        // that).
+        p_app.eventBus.on('scrollmodechanged', function(p_evt) {
+            if (p_evt && typeof p_evt.mode === 'number') {
+                self.viewerState.scrollMode = p_evt.mode;
+            }
+            self.pushViewerState();
+        });
+
+        p_app.eventBus.on('spreadmodechanged', function(p_evt) {
+            if (p_evt && typeof p_evt.mode === 'number') {
+                self.viewerState.spreadMode = p_evt.mode;
+            }
+            self.pushViewerState();
+        });
+
+        p_app.eventBus.on('cursortoolchanged', function(p_evt) {
+            if (p_evt && typeof p_evt.tool === 'number') {
+                self.viewerState.cursorTool = p_evt.tool;
+            }
+            self.pushViewerState();
+        });
+
+        p_app.eventBus.on('sidebarviewchanged', function(p_evt) {
+            if (p_evt && typeof p_evt.view === 'number') {
+                // SidebarView.NONE === 0.
+                self.viewerState.sidebarOpen = p_evt.view !== 0;
+            }
+            self.pushViewerState();
+        });
+
+        p_app.eventBus.on('updatefindmatchescount', function(p_evt) {
+            self.reportFindMatches(p_evt);
+        });
+        p_app.eventBus.on('updatefindcontrolstate', function(p_evt) {
+            self.reportFindMatches(p_evt);
+        });
+
+        return true;
+    }
+
+    // === Commands ===
+    //
+    // Every one is a guarded no-op when the app is unset, so a control clicked
+    // before (or after) a document exists is inert rather than throwing.
+
+    viewerDispatch(p_name, p_payload) {
+        var app = this.viewerApp;
+        if (!app || !app.eventBus || typeof app.eventBus.dispatch !== 'function') {
+            return false;
+        }
+        var payload = p_payload || {};
+        payload.source = payload.source || null;
+        app.eventBus.dispatch(p_name, payload);
+        return true;
+    }
+
+    gotoPage(p_page) {
+        var page = Number(p_page);
+        if (!isFinite(page)) {
+            return false;
+        }
+        page = Math.round(page);
+        var count = this.viewerState.pageCount;
+        if (page < 1 || (count > 0 && page > count)) {
+            // CLAMPED rather than forwarded: the spin box is bounded on the C++
+            // side too, and the two caps are independent by design.
+            page = Math.min(Math.max(page, 1), count > 0 ? count : 1);
+        }
+        return this.viewerDispatch('pagenumberchanged', { value: String(page) });
+    }
+
+    // 'auto' | 'page-actual' | 'page-fit' | 'page-width' | a numeric string.
+    setZoom(p_value) {
+        if (typeof p_value === 'number') {
+            p_value = String(p_value);
+        }
+        if (typeof p_value !== 'string' || p_value.length === 0) {
+            return false;
+        }
+        var presets = { 'auto': 1, 'page-actual': 1, 'page-fit': 1, 'page-width': 1 };
+        if (!presets[p_value]) {
+            var num = Number(p_value);
+            // Mirrors pdf.js's own MIN_SCALE / MAX_SCALE (web/viewer.mjs). The
+            // C++ side re-checks the same bounds independently.
+            if (!isFinite(num) || num < VX_MIN_SCALE || num > VX_MAX_SCALE) {
+                console.warn('vxcore: refused zoom value ' + p_value);
+                return false;
+            }
+        }
+        return this.viewerDispatch('scalechanged', { value: p_value });
+    }
+
+    zoomIn() { return this.viewerDispatch('zoomin', {}); }
+
+    zoomOut() { return this.viewerDispatch('zoomout', {}); }
+
+    setRotation(p_deg) {
+        var deg = Number(p_deg);
+        if (!isFinite(deg)) {
+            return false;
+        }
+        deg = ((Math.round(deg) % 360) + 360) % 360;
+        if (deg % 90 !== 0) {
+            return false;
+        }
+        var app = this.viewerApp;
+        if (!app || !app.pdfViewer) {
+            return false;
+        }
+        app.pdfViewer.pagesRotation = deg;
+        return true;
+    }
+
+    rotateBy(p_delta) {
+        var delta = Number(p_delta);
+        if (!isFinite(delta) || (Math.round(delta) % 90) !== 0) {
+            return false;
+        }
+        return this.viewerDispatch(delta > 0 ? 'rotatecw' : 'rotateccw', {});
+    }
+
+    setScrollMode(p_mode) {
+        var mode = Number(p_mode);
+        // -1 (UNKNOWN) .. 3 (PAGE) in pdf.js; only the four real modes are
+        // accepted here.
+        if (!isFinite(mode) || mode < 0 || mode > 3 || Math.round(mode) !== mode) {
+            return false;
+        }
+        return this.viewerDispatch('switchscrollmode', { mode: mode });
+    }
+
+    setSpreadMode(p_mode) {
+        var mode = Number(p_mode);
+        if (!isFinite(mode) || mode < 0 || mode > 2 || Math.round(mode) !== mode) {
+            return false;
+        }
+        return this.viewerDispatch('switchspreadmode', { mode: mode });
+    }
+
+    setCursorTool(p_tool) {
+        var tool = Number(p_tool);
+        if (!isFinite(tool) || tool < 0 || tool > 1 || Math.round(tool) !== tool) {
+            return false;
+        }
+        return this.viewerDispatch('switchcursortool', { tool: tool });
+    }
+
+    // There is NO PDFViewerApplication.pdfSidebar in pdf.js v6: the pane and its
+    // own view-selector toolbar belong to `viewsManager`.
+    toggleSidebar() {
+        var app = this.viewerApp;
+        if (!app || !app.viewsManager || typeof app.viewsManager.toggle !== 'function') {
+            return false;
+        }
+        app.viewsManager.toggle();
+        return true;
+    }
+
+    showDocumentProperties() { return this.viewerDispatch('documentproperties', {}); }
+
+    // NOTE: there is deliberately no startPrint()/printDocument() and no
+    // enterPresentationMode(). Neither verb can be completed from inside the
+    // page:
+    //
+    //   * The print service destroys its own prepared #printContainer (and
+    //     revokes every page's blob URL) on a hardcoded 20 ms timer in
+    //     performPrint() (web/viewer.mjs:14052), while QWebEngineView::print()
+    //     is asynchronous and gives no signal that Chromium has captured the
+    //     DOM. Nothing on the Qt side can win that race deterministically, and
+    //     QWebEngineView::print() on its own cannot reach the service at all --
+    //     pdf.js suppresses the native `beforeprint` (web/viewer.mjs:14134).
+    //     PdfViewWindow2 therefore omits the Print action entirely.
+    //
+    //   * Presentation mode is built on HTML5 fullscreen, and Chromium refuses
+    //     requestFullscreen() without transient renderer user activation, which
+    //     a click on a Qt QAction relayed over QWebChannel does not carry.
+    //     VNote runs its own presentation mode from the Qt side instead.
+    //
+    // A command that crosses this bridge and dead-ends is worse than no
+    // command; test_pdfviewercore_js asserts both stay gone.
+
+    // === Find ===
+    //
+    // VNote's own FindAndReplaceWidget2 drives pdf.js's findController rather
+    // than QWebEngineView::findText, because pdf.js builds a text layer only for
+    // VISIBLE pages -- a native find would silently miss every unrendered one.
+
+    static normalizeFindTexts(p_texts) {
+        var list = [];
+        if (typeof p_texts === 'string') {
+            p_texts = [p_texts];
+        }
+        if (!p_texts || typeof p_texts.length !== 'number') {
+            return list;
+        }
+        for (var i = 0; i < p_texts.length; ++i) {
+            var t = p_texts[i];
+            if (typeof t === 'string' && t.length > 0) {
+                list.push(t);
+            }
+        }
+        return list;
+    }
+
+    // The full search SIGNATURE: the query plus every option that changes which
+    // matches exist. Comparing only the text is a trap -- pdf.js's own dirty
+    // check compares the query and treats type:'again' as pure navigation
+    // (web/viewer.mjs), so toggling Case Sensitive on the same word would merely
+    // step through the matches computed with the OLD setting.
+    static findSignature(p_texts, p_options) {
+        var options = p_options || {};
+        return JSON.stringify({
+            q: p_texts,
+            c: !!options.caseSensitive,
+            w: !!options.wholeWordOnly
+        });
+    }
+
+    findText(p_texts, p_options) {
+        var options = p_options || {};
+        // REFUSED, not silently searched literally: pdf.js's findController has
+        // no regular-expression mode, and quietly matching the pattern text
+        // would look like a broken search rather than an unsupported option.
+        if (options.regularExpression) {
+            console.warn('vxcore: regular-expression find is not supported by the PDF viewer');
+            return false;
+        }
+
+        var texts = PdfViewerCore.normalizeFindTexts(p_texts);
+        if (texts.length === 0) {
+            return this.clearFind();
+        }
+
+        var signature = PdfViewerCore.findSignature(texts, options);
+        var again = (signature === this.findSignature);
+        this.findQuery = texts;
+        this.findSignature = signature;
+
+        return this.viewerDispatch('find', {
+            type: again ? 'again' : '',
+            query: texts.length === 1 ? texts[0] : texts,
+            caseSensitive: !!options.caseSensitive,
+            entireWord: !!options.wholeWordOnly,
+            highlightAll: true,
+            findPrevious: !!options.findBackward,
+            matchDiacritics: false
+        });
+    }
+
+    clearFind() {
+        this.findQuery = null;
+        this.findSignature = null;
+        var ok = this.viewerDispatch('findbarclose', {});
+        if (this.viewerAdapter) {
+            this.viewerAdapter.setFindText([], 0, -1);
+        }
+        return ok;
+    }
+
+    // pdf.js reports `current` 1-BASED; ViewWindow2::showFindResult expects a
+    // 0-based index and adds one for display, so the conversion has to happen
+    // exactly here. -1 means "no current match".
+    reportFindMatches(p_evt) {
+        if (!this.viewerAdapter || !this.findQuery) {
+            return false;
+        }
+        var counts = (p_evt && p_evt.matchesCount) ? p_evt.matchesCount : null;
+        var total = (counts && typeof counts.total === 'number') ? counts.total : 0;
+        var current = (counts && typeof counts.current === 'number') ? counts.current : 0;
+        var index = (total > 0 && current > 0) ? current - 1 : -1;
+        this.viewerAdapter.setFindText(this.findQuery, total, index);
+        return true;
+    }
+
+    // Tripwire for an upstream id rename. The strip itself is hidden with CSS
+    // (see pdfviewer.css) rather than removed from the DOM, because viewer.mjs
+    // holds references to the toolbar's children and would throw.
+    //
+    // BOTH ids matter, and #viewsManager is the subtle one: in v6 the sidebar
+    // pane lives INSIDE #toolbarContainer, so the CSS hides the strip's visible
+    // chrome piece by piece rather than the container. A rename of either id
+    // leaves a visible stray strip or an invisible sidebar.
+    checkBuiltInToolbar() {
+        if (typeof document === 'undefined' || typeof document.getElementById !== 'function') {
+            return false;
+        }
+        var ok = true;
+        if (!document.getElementById('toolbarContainer')) {
+            console.warn('vxcore: #toolbarContainer is missing -- pdf.js may have renamed it, ' +
+                         'and the CSS that hides the built-in toolbar no longer applies');
+            ok = false;
+        }
+        if (!document.getElementById('viewsManager')) {
+            console.warn('vxcore: #viewsManager is missing -- the sidebar pane may have been ' +
+                         'renamed, and the CSS that keeps it visible no longer applies');
+            ok = false;
+        }
+        return ok;
     }
 
     // === Comment overlay ===

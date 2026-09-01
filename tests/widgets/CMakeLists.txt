@@ -1527,6 +1527,21 @@ target_include_directories(test_pdfannotationtoolbar PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
 
+# The widget reparenting behind ViewWindow2's content fullscreen (HTML5
+# fullscreen from a web view -- pdf.js's presentation mode is the first
+# consumer). Extracted into its own component precisely so it can be gated: no
+# test compiles viewwindow2.cpp, and reparenting fails as a stuck, blank or
+# orphaned window rather than as a crash.
+#
+# NOT GUILESS: real windows, real layouts, real focus.
+add_qt_test(test_contentfullscreenhost
+  SOURCES
+    test_contentfullscreenhost.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/contentfullscreenhost.cpp
+  LINKS
+    Qt6::Widgets
+)
+
 # The normalize -> persist -> push-to-adapter routing, extracted out of
 # PdfViewWindow2 so it is testable without a window and a WebEngine profile.
 # It gates the two things that fail SILENTLY otherwise: startup hydration
@@ -1545,6 +1560,46 @@ add_qt_test(test_pdftooloptionsrouter
     core_services
     vxcore
   GUILESS
+)
+
+# C++ half of the viewer-control bridge: setViewerState()'s untrusted-payload
+# validation, and the reload REPLAY. The replay is the part that fails silently
+# -- handleThemeChanged() reloads the whole page, so without it every theme
+# switch jumps back to page 1 at the default zoom. GUILESS for the same reason
+# the other adapter gates are.
+add_qt_test(test_pdfvieweradapter_viewer
+  SOURCES
+    test_pdfvieweradapter_viewer.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)
+
+# The native replacement for pdf.js's built-in toolbar strip. Extracted out of
+# PdfViewWindow2 precisely so it is constructible here with a bare QToolBar and
+# no WebEngine profile -- PdfViewWindow2 is only instantiated above Qt 6.9 and
+# its setup functions are private. NOT GUILESS: menus, checked states, spin
+# boxes and combos only mean anything against real widgets.
+#
+# pdfvieweradapter.cpp comes along only for ViewerState, which the toolbar takes
+# as its sync payload so the adapter stays the single source of truth.
+add_qt_test(test_pdfviewertoolbar
+  SOURCES
+    test_pdfviewertoolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/pdfviewertoolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+  LINKS
+    core_services
+    vxcore
 )
 
 # Comment dock. NOT GUILESS: the panel is a real widget and the debounce/flush

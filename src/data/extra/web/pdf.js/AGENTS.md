@@ -256,6 +256,225 @@ reproducible post-processing step applied to the whole vendored tree.
 
 ---
 
+## The viewer-control bridge (the native toolbar)
+
+pdf.js's built-in toolbar strip is **hidden**, and every control it carried is
+reproduced as a native Qt widget on `PdfViewWindow2`'s view-window toolbar
+(`PdfViewerToolBar`, `src/widgets/pdfviewertoolbar.{h,cpp}`). One chrome instead
+of two.
+
+Layout, left to right: sidebar toggle → Outline → page (prev / spin box / `of N`
+/ next) → zoom (out / combo / in) → the overflow `⋮` menu (rotate, cursor,
+scroll mode, spread mode, document properties). **Presentation Mode is not in
+that menu** — it sits out on the toolbar beside Readable Width, which is the
+other action that changes how the content is presented, and is installed through
+`ViewWindow2::addAdditionalViewToolBarActions()` because that slot belongs to the
+base class.
+
+### Hidden with CSS, plus a runtime tripwire — never DOM removal
+
+`pdfviewer.css` hides the strip's chrome and reclaims the space by overriding
+**only `#viewerContainer`'s block-start inset**.
+
+- **`#toolbarContainer` itself is NOT `display: none`.** In v6 the **sidebar**
+  (`#viewsManager` — thumbnails / outline / attachments / layers, with its own
+  view-selector row) is a *descendant* of the strip:
+  `#toolbarContainer > #toolbarViewer > #toolbarViewerLeft > #viewsManager`.
+  Hiding the ancestor makes Toggle Sidebar open something invisible.
+  `#viewsManager` is `position: absolute` with
+  `inset-block-start: calc(100% + 8px)` resolved against `#toolbarContainer`
+  (the nearest positioned ancestor, `web/viewer.css:8040`), and
+  `#toolbarContainer` also defines `--menuitem-height` for the sidebar's popup
+  menus — so `display: contents` is not an option either. The container is kept,
+  positioned and **zero-height**, and only its visible chrome is hidden:
+  `#toolbarViewerLeft > *:not(#viewsManager)`, `#toolbarViewerMiddle`,
+  `#toolbarViewerRight`, `#loadingBar`.
+- **Do not remove the container from the DOM.** `viewer.mjs` holds references to
+  its children (`#pageNumber`, `#numPages`, `#scaleSelect`, …) and configures
+  them during initialization; removing it throws.
+- **Do not zero `--toolbar-height` at `:root`.** `#toolbarSidebar`'s *height* and
+  `#sidebarContent`'s inset read the same variable (`web/viewer.css:6921`,
+  `:6951`). The override is written as an explicit length, which also sidesteps
+  the higher-specificity compact/touch density rules at `:6831`.
+- `PdfViewerCore.checkBuiltInToolbar()` warns when **either** `#toolbarContainer`
+  or `#viewsManager` is absent. `theSidebarIsNotInsideTheHiddenToolbarSubtree`
+  additionally asserts the CSS/template relationship against the real files.
+- `#loadingBar` is a child of `#toolbarContainer` (`web/viewer.css:8076`), so
+  the load-progress bar goes with it. **Accepted**; if a large PDF reads as
+  frozen rather than loading, add a native indicator rather than un-hiding the
+  strip.
+
+### Verified v6.2.108 API surface (use these, not the obvious guesses)
+
+| Need | Correct API |
+|---|---|
+| Toggle the sidebar | `app.viewsManager.toggle()` — **there is no `PDFViewerApplication.pdfSidebar`** |
+| Sidebar open state | `sidebarviewchanged`; `view === SidebarView.NONE (0)` means closed |
+| Scroll / spread state | `scrollmodechanged` / `spreadmodechanged` |
+| Scroll / spread command | `switchscrollmode` / `switchspreadmode` |
+| Find | `find` with `{type, query, caseSensitive, entireWord, highlightAll, findPrevious, matchDiacritics}`; `type: ""` new, `"again"` next/prev |
+| Clear find | `findbarclose` |
+| Find results | `updatefindmatchescount` / `updatefindcontrolstate` → `matchesCount.{current,total}`, **`current` is 1-based** |
+
+**COMMAND events and STATE events are different names, and confusing them is the
+defect this table exists to prevent.** The bridge listens ONLY to the state
+events; the commands dispatch the command events. A bridge wired to
+`switchscrollmode` would tick the toolbar from VNote's own request and miss the
+scroll mode presentation mode forces internally (`web/viewer.mjs:20094`).
+`modeStateComesFromTheChangedEventNotTheSwitchCommand` is the gate.
+
+### The state push
+
+`attachViewerBridge(app)` subscribes to the state events and pushes ONE
+normalized object per event — `{page, pageCount, scale, scaleValue, rotation,
+scrollMode, spreadMode, cursorTool, sidebarOpen}` — into
+`PdfViewerAdapter::setViewerState`. `setViewerAdapter()` publishes once by
+itself, the same rendezvous shape (and for the same reason) as the outline and
+page-count ones: the QWebChannel callback and `documentloaded` are independent
+async chains and either can win.
+
+The C++ side **re-validates every field**, checking each one's exact JSON type
+first, and drops a bad payload **whole** (page in `[1, pageCount]`, finite scale
+within pdf.js's own `MIN_SCALE`/`MAX_SCALE`, rotation in `{0,90,180,270}`, each
+mode in range, `sidebarOpen` genuinely a boolean). Reading through
+`toInt(default)` would make a missing or wrong-typed field indistinguishable
+from a legitimate one; a partially applied state would show a mix of two
+documents in the toolbar. A state with `pageCount < 1` is dropped **quietly** —
+that is the normal pre-load push, and accepting it would take the toolbar live
+on a blank window. `PdfViewerAdapter` is the **single source of truth**;
+`PdfViewerToolBar::syncState()` repaints from it and never from its own clicks.
+
+### Replayed vs. one-shot
+
+`PdfViewWindow2::handleThemeChanged()` reloads the whole page. That is the
+common case, not an edge case, so:
+
+| Class | Verbs | Rule |
+|---|---|---|
+| **Replayed** | page, zoom, rotation, scroll / spread / cursor mode | Re-applied once on the replacement document |
+| **One-shot** | document properties, sidebar toggle, clear find | Never latched, never queued — same reasoning as `captureSelection` |
+
+Five replay rules, each of which fails silently if broken:
+
+1. The replay values are refreshed by every **accepted state push**, not only by
+   a toolbar request — a page reached by scrolling, by an outline click, from a
+   sidebar thumbnail or with a keyboard shortcut must survive the reload too.
+2. `clearViewerState()` (called from `syncEditorFromBuffer`) clears the
+   document-dependent state but **preserves** the replay values, and arms
+   `m_replayPending`.
+3. While pending, an incoming state does **not** refresh the replay values, and
+   the replay fires on the first accepted push. Otherwise the replacement
+   document's own page-1 / default-scale push would overwrite exactly what is
+   about to be replayed, and the *second* theme switch would land on page 1.
+4. **The replay latch has two halves.** The glue publishes the viewer state
+   (`setViewerAdapter` → `setViewerState`) *before* it calls `setReady(true)`, so
+   when the QWebChannel callback loses the race to `documentloaded` the loaded
+   state arrives while the bridge is still not-ready. `replayViewerState()` then
+   keeps the flag armed, and the `ready` handler in `PdfViewerAdapter`'s
+   constructor fires it. `documentloaded` never fires again for that document,
+   so a version with only the state-side half loses the replay silently.
+5. A freshly constructed adapter has **no** replay value, so a new window opens
+   at pdf.js's defaults.
+
+Coverage: `tests/widgets/test_pdfvieweradapter_viewer.cpp`.
+
+### Find
+
+VNote's `FindAndReplaceWidget2` drives pdf.js's `findController` — **not**
+`QWebEngineView::findText`, which would silently miss every page never scrolled
+into view, because pdf.js builds a text layer only for visible pages.
+
+- The last accepted query list is retained **in JS**, together with a search
+  **signature** (`query + caseSensitive + wholeWordOnly`).
+  `updatefindmatchescount` carries only `{current, total}` and cannot
+  reconstruct the query, and a repeat of the same signature must become
+  `type: "again"` rather than restarting from the top. **The signature, not the
+  text, is what decides new-vs-again**: pdf.js's own dirty check compares the
+  query and treats `"again"` as pure navigation, so a text-only comparison would
+  turn "same word, Case Sensitive now ticked" into a step through the matches
+  computed with the *old* setting. `findBackward` is deliberately NOT in the
+  signature — it is navigation, not a change to the match set.
+- Option mapping: `wholeWordOnly → entireWord`, `findBackward → findPrevious`,
+  `highlightAll: true` always.
+- **`regularExpression` is REFUSED**, not searched literally: `findController`
+  has no regex mode, and quietly matching the pattern text reads as a broken
+  search. `PdfViewWindow2::handleFindAndReplaceWidgetOpened()` additionally
+  disables the check box (and Replace, which a PDF can never support). Disabling
+  an option in `FindAndReplaceWidget2` also **clears** it — the options are
+  persisted globally, so a box ticked in a Markdown window would otherwise come
+  back ticked here and make every PDF search a silent no-op behind a greyed-out
+  tick.
+- `current` is converted to **`current - 1`** before `adapter.setFindText(...)`,
+  because `ViewWindow2::showFindResult` takes a 0-based index and adds one for
+  display. `-1` when there is no current match. Forwarding it unconverted makes
+  the first match read "2/N".
+- Without the `findTextReady → showFindResult` connection in `PdfViewWindow2`
+  the bar shows no match count at all.
+
+### Printing and presentation mode: two verbs the page cannot finish
+
+Both are the same trap in different shapes: **Qt WebEngine only ANNOUNCES the
+browser API, and Chromium refuses the parts that need a user gesture.** Neither
+is routed through the eventBus, and neither has a command on `PdfViewerAdapter`
+or `PdfViewerCore` — a command that crosses this bridge and dead-ends is worse
+than no command. `test_pdfviewercore_js` asserts `printDocument`, `startPrint`
+and `enterPresentationMode` all stay gone.
+
+#### Printing is NOT offered (`PdfViewWindow2::isPrintSupported()` returns false)
+
+Both available routes are broken, so the Print action is omitted from the PDF
+window's toolbar rather than shipped dead:
+
+- `QWebEngineView::print()` alone prints the **live DOM**, which holds only the
+  pages Chromium has scrolled into view. pdf.js's print service — the thing that
+  renders every page into `#printContainer` — is unreachable that way: pdf.js
+  installs a `beforeprint` listener that calls `stopImmediatePropagation()` on
+  any event whose `detail !== "custom"` (`web/viewer.mjs:14134`), and the native
+  `beforeprint` Qt fires is exactly that.
+- Driving pdf.js's own `window.print()` first and printing from
+  `QWebEngineView::printRequested` *does* reach the print service, but **races
+  it**: `performPrint()` calls `abort()` on a hardcoded 20 ms timer
+  (`web/viewer.mjs:14052`), which empties `#printContainer` and revokes every
+  page's blob URL, while `QWebEngineView::print()` is asynchronous and gives no
+  signal that Chromium has captured the DOM. Nothing on the Qt side can win that
+  race deterministically.
+
+Closing the gap needs either a patch to the vendored bundle (which every upgrade
+would have to re-apply — see
+[Do not hand-patch](#do-not-hand-patch-the-vendored-bundles)) or a VNote-owned
+print pipeline, most plausibly rendering the file with `QPdfDocument` onto a
+`QPrinter` with no pdf.js involvement at all.
+
+`ViewWindow2::isPrintSupported()` is the opt-out hook, and it defaults to
+**true** so no existing window is affected.
+
+#### Presentation mode is VNote's, not pdf.js's
+
+pdf.js builds presentation mode on HTML5 fullscreen, and Chromium requires
+**transient renderer user activation** for `requestFullscreen()`. A click on a
+Qt `QAction` relayed over QWebChannel carries none, so the request is refused —
+and pdf.js swallows the rejected promise, which makes the whole feature a
+silently dead button. (It does not even *construct* `pdfPresentationMode` unless
+`document.fullscreenEnabled` is true, which additionally needs
+`QWebEngineSettings::FullScreenSupportEnabled`; that is deliberately left off,
+see the note in `src/widgets/webviewer.h`.)
+
+So `PdfViewWindow2::setPresentationMode()` does the two halves itself:
+`ViewWindow2::setContentFullScreen()` lifts the viewer into a fullscreen
+top-level, and the adapter puts the document into `page-fit` +
+`ScrollMode::PAGE`. The pre-entry zoom and scroll mode are captured on the way
+in so leaving restores what the user was actually looking at.
+
+**Leaving** is Escape or the floating **"Exit Presentation Mode"** button — the
+toolbar that armed presentation mode stayed behind with the window and is not
+reachable. The label deliberately names the mode rather than the mechanism;
+"Exit Full Screen" would read as the application's own full-screen toggle.
+Escape has to be filtered at the application level, because Chromium's render
+widget consumes the key before it can reach the container; see
+[widgets AGENTS.md § Content fullscreen](../../../../widgets/AGENTS.md).
+
+---
+
 ## The comment / highlight overlay
 
 VNote owns highlighting entirely. pdf.js's own annotation editors are NOT used: there is no public

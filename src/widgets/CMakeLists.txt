@@ -115,6 +115,8 @@ target_sources(vnote PRIVATE
     outlineviewer.cpp outlineviewer.h
     pdfannotationtoolbar.cpp pdfannotationtoolbar.h
     pdftooloptionsrouter.cpp pdftooloptionsrouter.h
+    contentfullscreenhost.cpp contentfullscreenhost.h
+    pdfviewertoolbar.cpp pdfviewertoolbar.h
     pdfviewwindow2.cpp pdfviewwindow2.h
     propertydefs.cpp propertydefs.h
     quickselector.cpp quickselector.h

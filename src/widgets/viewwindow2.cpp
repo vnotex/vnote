@@ -40,6 +40,7 @@
 
 #include "attachmentdragdropareaindicator2.h"
 #include "attachmentpopup2.h"
+#include "contentfullscreenhost.h"
 #include "editors/statusbar.h"
 #include "editors/statuswidget.h"
 #include "editreaddiscardaction.h"
@@ -117,6 +118,11 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
 }
 
 ViewWindow2::~ViewWindow2() {
+  // Before anything else: the central widget currently lives in a separate
+  // top-level, and letting this window die around it would leave a visible,
+  // un-closable fullscreen artefact on screen.
+  setContentFullScreen(false);
+
   if (m_statusWidget) {
     m_statusWidget->setParent(nullptr);
   }
@@ -260,6 +266,12 @@ bool ViewWindow2::isModified() const {
 // ============ Lifecycle ============
 
 bool ViewWindow2::aboutToClose(bool p_force) {
+  // A fullscreen container would otherwise sit in front of the Save/Discard
+  // dialog below, which is modal to THIS window and would be invisible behind
+  // it. Coming back also guarantees the central widget is owned by this window
+  // again if the close is refused.
+  setContentFullScreen(false);
+
   if (!p_force && isModified()) {
     // Show Save/Discard/Cancel dialog for unsaved changes.
     int ret = MessageBoxHelper::questionSaveDiscardCancel(
@@ -349,6 +361,10 @@ void ViewWindow2::addToolBar(QToolBar *p_bar) {
 void ViewWindow2::addTopWidget(QWidget *p_widget) { m_topLayout->addWidget(p_widget); }
 
 void ViewWindow2::setCentralWidget(QWidget *p_widget) {
+  // A swap while fullscreen would leave the OLD central widget stranded in the
+  // container and put the new one in a layout nobody can see. Come back first.
+  setContentFullScreen(false);
+
   if (m_centralWidget) {
     m_contentLayout->removeWidget(m_centralWidget);
     m_centralWidget->deleteLater();
@@ -360,6 +376,33 @@ void ViewWindow2::setCentralWidget(QWidget *p_widget) {
     m_centralWidget->show();
     applyReadableWidth();
   }
+}
+
+bool ViewWindow2::isContentFullScreen() const {
+  return m_fullScreenHost && m_fullScreenHost->isFullScreen();
+}
+
+bool ViewWindow2::setContentFullScreen(bool p_on) {
+  if (!m_fullScreenHost) {
+    if (!p_on) {
+      return false;
+    }
+    m_fullScreenHost = new ContentFullScreenHost(this);
+    connect(m_fullScreenHost, &ContentFullScreenHost::exitRequested, this,
+            &ViewWindow2::contentFullScreenExitRequested);
+    if (!m_contentFullScreenExitText.isEmpty()) {
+      m_fullScreenHost->setExitButtonText(m_contentFullScreenExitText);
+    }
+  }
+
+  const bool changed =
+      m_fullScreenHost->setFullScreen(p_on, m_centralWidget, m_contentLayout, window());
+  if (changed && !p_on) {
+    // Only the CONTENT travelled, so the window's own readable-width policy has
+    // to be re-applied to the widget that just came back.
+    applyReadableWidth();
+  }
+  return changed;
 }
 
 void ViewWindow2::addBottomWidget(QWidget *p_widget) { m_bottomLayout->addWidget(p_widget); }
@@ -447,9 +490,15 @@ void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
   ViewWindowToolBarHelper2::addSpacer(p_toolBar);
   addAdditionalRightToolBarActions(p_toolBar);
   addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
+  addAdditionalViewToolBarActions(p_toolBar);
   addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
-  m_printAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Print);
-  connect(m_printAction, &QAction::triggered, this, &ViewWindow2::handlePrint);
+  // Opt-out rather than opt-in, so existing windows are unaffected: a window
+  // type that cannot print must say so instead of shipping a dead button (the
+  // base handlePrint() is a no-op).
+  if (isPrintSupported()) {
+    m_printAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Print);
+    connect(m_printAction, &QAction::triggered, this, &ViewWindow2::handlePrint);
+  }
 }
 
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
@@ -1189,6 +1238,12 @@ bool ViewWindow2::findAndReplaceWidgetVisible() const {
 void ViewWindow2::setFindAndReplaceReplaceEnabled(bool p_enabled) {
   if (m_findAndReplace) {
     m_findAndReplace->setReplaceEnabled(p_enabled);
+  }
+}
+
+void ViewWindow2::setFindAndReplaceOptionsEnabled(FindOptions p_options, bool p_enabled) {
+  if (m_findAndReplace) {
+    m_findAndReplace->setOptionsEnabled(p_options, p_enabled);
   }
 }
 

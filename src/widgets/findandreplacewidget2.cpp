@@ -304,6 +304,18 @@ QString FindAndReplaceWidget2::getFindText() const { return m_findLineEdit->text
 FindOptions FindAndReplaceWidget2::getOptions() const { return m_options; }
 
 void FindAndReplaceWidget2::setOptionsEnabled(FindOptions p_options, bool p_enabled) {
+  // Disabling an option also CLEARS it. The options are persisted globally
+  // (updateFindOptions -> WidgetConfig), so a box ticked in a Markdown window
+  // comes back ticked here; leaving it set would keep sending an option this
+  // backend refuses, and every search would silently do nothing behind a
+  // greyed-out tick.
+  //
+  // setFindOptions() mutes the check boxes while it works, so this does NOT
+  // write the view-specific limitation back into the global preference.
+  if (!p_enabled) {
+    setFindOptions(m_options & ~p_options);
+  }
+
   if (p_options & FindOption::CaseSensitive) {
     m_caseSensitiveCheckBox->setEnabled(p_enabled);
   }

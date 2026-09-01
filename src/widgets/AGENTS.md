@@ -6,8 +6,43 @@ Widgets are UI components that receive `ServiceLocator&` via constructor injecti
 
 Many existing files here carry a `2` suffix (e.g., `MainWindow2`, `NotebookExplorer2`). This is a historical artifact of the now-complete migration off the legacy singleton architecture — the pre-migration counterparts have been removed, and the suffix is simply the retained name for those existing classes (renaming them would be needless churn). **New code does NOT get a suffix unless the name genuinely conflicts with an existing type.** Since the migration is finished, a brand-new widget with no `1`/legacy counterpart should use the plain name (e.g. `EncodingButton`, not `EncodingButton2`). Never introduce a `3` suffix. See [Widget Construction Pattern](#widget-construction-pattern) below for the constructor-injection pattern all widgets follow.
 
-## Hiding the QToolButton Menu Indicator
+## Toolbar Buttons With a Popup Menu
 
+Put the menu on the **QAction**, and let the toolbar create the button:
+
+```cpp
+auto *act = p_toolBar->addAction(icon, tr("More"));
+act->setMenu(menu);                                     // <- on the ACTION
+auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(act));
+btn->setPopupMode(QToolButton::InstantPopup);
+```
+
+**Do NOT build a `QToolButton` yourself and add it with `QToolBar::addWidget()`.**
+That produces a `QWidgetAction`, and when the toolbar runs out of horizontal room
+it hides the trailing items and re-offers them through its own extension (`»`)
+popup — which it builds by adding the hidden **actions** to a `QMenu`. A
+`QWidgetAction` cannot render there, so the button silently **disappears** and
+every verb behind it becomes unreachable, while the plain actions beside it keep
+working. This shipped once in `PdfViewerToolBar`: at narrow widths the whole
+overflow menu (rotate, cursor, scroll mode, spread mode, presentation, document
+properties) was simply gone.
+
+With the menu on the action both surfaces work from one declaration:
+`QToolButton::menu()` falls back to `defaultAction()->menu()` on the toolbar, and
+`QMenu` renders an action-with-a-menu as a **submenu** inside the extension
+popup. It also makes the icon reachable by
+`ViewWindowToolBarHelper2::refreshToolBarIcons()`, which only iterates the
+toolbar's own actions. Precedents: `Outline` / `Tag` / `Attachment` in
+`viewwindowtoolbarhelper2.cpp`. Gate:
+`theOverflowMenuSurvivesANarrowToolBar` in `tests/widgets/test_pdfviewertoolbar.cpp`,
+which resizes a real toolbar until it overflows.
+
+`addWidget()` remains correct for something that genuinely **is** a widget — a
+spin box, a combo, a slider. Those degrade by vanishing at narrow widths, which
+is accepted; make sure a plain-action route to the same operation exists (the
+PDF page spin box is flanked by prev/next page actions for exactly this reason).
+
+## Hiding the QToolButton Menu Indicator
 Plain-text status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
 (e.g. the status bar "Spelling" menu, the `EncodingButton`, the toolbar theme
 switcher) must NOT show the built-in dropdown-arrow menu indicator. Use the
@@ -44,6 +79,84 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewArea2` — QSplitter tree managing split panes (pure view, no business logic)
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
+
+#### Right-hand toolbar slots
+
+`addRightCommonToolBarActions()` builds the right group in a fixed order, with
+**two** subclass hooks in it:
+
+| Position | What |
+|---|---|
+| spacer | |
+| `addAdditionalRightToolBarActions()` | the window's own chrome (PDF: the whole viewer toolbar + Outline) |
+| Readable Width | |
+| `addAdditionalViewToolBarActions()` | actions that change how the content is **presented** (PDF: Presentation Mode) |
+| Find And Replace | |
+| Print, when `isPrintSupported()` | |
+
+Two hooks rather than one, because the positions mean different things — and a
+subclass cannot reach the second one from the first, since the base class adds
+Readable Width only after `addAdditionalRightToolBarActions()` has returned.
+
+#### Content fullscreen
+
+`ViewWindow2::setContentFullScreen(bool)` lifts **only the central widget** into
+a frameless fullscreen top-level; the toolbar, find bar, banners and status
+widget stay behind. Generic on purpose — plain widget reparenting with no
+knowledge of what is being moved, so a web view asking for HTML5 fullscreen, a
+future distraction-free mode and a slideshow are all the same operation.
+
+The mechanics live in `ContentFullScreenHost` (`contentfullscreenhost.{h,cpp}`)
+rather than inline, because **no test compiles `viewwindow2.cpp`** — it drags in
+the whole widget world — and reparenting fails as a stuck, blank or orphaned
+window rather than as a crash. Gate: `tests/widgets/test_contentfullscreenhost.cpp`.
+
+Three rules that are not optional:
+
+- **Escape must be caught at the APPLICATION level.** A filter on the container
+  only sees events *delivered to the container*, and a key press goes to the
+  focus widget — which for a `QWebEngineView` is Chromium's render widget
+  several levels down, and it consumes the event rather than letting it
+  propagate up. A container-only filter shipped presentation mode with **no
+  working exit at all**. The host installs the filter on `QCoreApplication` and
+  scopes it in `ownsEventTarget()`; `QEvent::ShortcutOverride` is claimed too,
+  so no `QShortcut` can steal Escape first.
+- **There must always be a VISIBLE way out.** Everything else — toolbar, menus —
+  stayed behind, so the host's floating exit button is the only thing on screen
+  that can end fullscreen. A key nobody can see is not an affordance, and this
+  one was not even reaching us. Label it with
+  `ViewWindow2::setContentFullScreenExitText()` naming the **mode** the caller
+  entered, not the mechanism — `PdfViewWindow2` passes "Exit Presentation Mode",
+  because "Exit Full Screen" reads as the application's own full-screen toggle
+  and sends the user to the View menu. The Escape hint is appended to the
+  tooltip automatically.
+- **Escape is an intent, not an exit.** The host emits `exitRequested` /
+  `ViewWindow2::contentFullScreenExitRequested` and does nothing else, so the
+  owner can tear down whatever the fullscreen mode set up (a zoom, a scroll
+  mode, a page state) before the widget moves back.
+- **Come back before anything structural.** `setCentralWidget()`,
+  `aboutToClose()` and the destructor all call `setContentFullScreen(false)`
+  first; otherwise the central widget is stranded in an orphaned top-level, or
+  a modal dialog opens behind a fullscreen window.
+
+**HTML5 fullscreen is deliberately NOT wired to this.**
+`QWebEngineSettings::FullScreenSupportEnabled` stays off: enabling it would make
+`document.fullscreenEnabled` true for every web view while only some have a host
+able to move the widget, and it is not sufficient anyway — Chromium requires
+transient renderer user activation for `requestFullscreen()`, which a click on a
+Qt `QAction` relayed over QWebChannel does not carry. A view window that wants a
+distraction-free or presentation mode drives `setContentFullScreen()` itself;
+`PdfViewWindow2::setPresentationMode()` is the worked example.
+
+**The same announce-only trap applies to printing**, and there it is worse:
+`window.print()` in a page only reaches `QWebEngineView::printRequested`, and for
+a pdf.js viewer `QWebEngineView::print()` prints only the pages Chromium has
+rendered. `ViewWindow2::isPrintSupported()` (default **true**) is the opt-out
+hook that keeps a window from inheriting a Print button its `handlePrint()`
+cannot honour; `PdfViewWindow2` is the current opt-out. See
+[pdf.js AGENTS.md § Printing and presentation mode](../data/extra/web/pdf.js/AGENTS.md)
+for why neither print route works there.
+
 - `ViewWindowFactory` (in `../gui/services/`) — registry mapping file types to `ViewWindow2` creators
 
 ### Concrete ViewWindows
@@ -59,6 +172,12 @@ The split-pane editor area, designed around vxcore workspaces:
   filler headings, so a heading's position is NOT its destination index. See
   `src/data/extra/web/pdf.js/pdfviewercore.js` and
   `tests/widgets/test_pdfviewercore_js.cpp`.
+  pdf.js's own toolbar strip is hidden; its controls are reproduced by
+  `PdfViewerToolBar` (`pdfviewertoolbar.{h,cpp}`) on the view-window toolbar.
+  **`PdfViewerAdapter` is the single source of truth** — the toolbar repaints
+  from `viewerStateChanged`, never optimistically from its own clicks, because
+  the page changes page/zoom/rotation/modes by itself. See
+  [pdf.js AGENTS.md § The viewer-control bridge](../data/extra/web/pdf.js/AGENTS.md).
 - `MindMapViewWindow2` — mind map viewer
 - `WidgetViewWindow2` — generic widget-hosting window
 

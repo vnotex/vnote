@@ -80,11 +80,22 @@ QString readFile(const QString &p_path, QString *p_error) {
 // coreRegistersAWebViewerLoadedListener().
 const char *const c_corePrelude = R"JS(
 var window = this;
-var console = { log: function(){}, warn: function(){}, error: function(){} };
+// console.warn is a RECORDER, not a no-op: checkBuiltInToolbar() and the
+// regular-expression refusal are OBSERVABLE only through it.
+window.__warnings = [];
+var console = {
+    log: function(){},
+    warn: function(m){ window.__warnings.push(String(m)); },
+    error: function(){}
+};
 window.__listeners = {};
+// Elements checkBuiltInToolbar() may find. Empty by default, so the tripwire
+// case is the DEFAULT behaviour and has to be opted out of.
+window.__domIds = {};
 var document = {
     currentScript: { src: "qrc:/web/pdf.js/pdfviewercore.js" },
-    addEventListener: function(p_name, p_cb) { window.__listeners[p_name] = p_cb; }
+    addEventListener: function(p_name, p_cb) { window.__listeners[p_name] = p_cb; },
+    getElementById: function(p_id) { return window.__domIds[p_id] || null; }
 };
 
 // Stand-in for viewer.mjs's AppOptions. Starts EMPTY so a case can prove nothing
@@ -140,20 +151,79 @@ window.__makeDoc = function(p_app, p_raw, p_supersede) {
 window.__makeApp = function(p_raw, p_supersede) {
     var handlers = {};
     var app = {
+        __dispatched: [],
         eventBus: {
             on: function(name, fn) {
                 if (!handlers[name]) { handlers[name] = []; }
                 handlers[name].push(fn);
             },
-            fire: function(name) {
+            // The event object is forwarded, because the viewer bridge reads
+            // evt.pageNumber / evt.scale / evt.mode / evt.matchesCount. The
+            // outline and comment handlers ignore it.
+            fire: function(name, evt) {
                 var hs = handlers[name] || [];
-                for (var i = 0; i < hs.length; ++i) { hs[i](); }
+                for (var i = 0; i < hs.length; ++i) { hs[i](evt); }
+            },
+            // RECORD-ONLY, deliberately: the production commands dispatch
+            // pdf.js's COMMAND events ('switchscrollmode') while the bridge
+            // listens for its STATE events ('scrollmodechanged'), so a fake that
+            // also re-entered the listeners would hide exactly the confusion
+            // these cases exist to catch.
+            dispatch: function(name, payload) {
+                app.__dispatched.push({ name: name, payload: payload });
+            },
+            count: function(name) {
+                return (handlers[name] || []).length;
             }
         },
         pdfDocument: null
     };
     app.pdfDocument = window.__makeDoc(app, p_raw, p_supersede);
     return app;
+};
+
+// A viewer app with the members the control bridge reads, plus a recording
+// viewsManager (there is NO PDFViewerApplication.pdfSidebar in pdf.js v6).
+window.__makeViewerApp = function() {
+    var app = window.__makeApp([], false);
+    app.pagesCount = 20;
+    app.pdfViewer = {
+        currentPageNumber: 1,
+        currentScale: 1,
+        currentScaleValue: 'auto',
+        pagesRotation: 0,
+        scrollMode: 0,
+        spreadMode: 0
+    };
+    app.__sidebarToggles = 0;
+    app.viewsManager = {
+        visibleView: 0,
+        toggle: function() { app.__sidebarToggles += 1; }
+    };
+    return app;
+};
+
+// Records every setViewerState / setFindText push.
+window.__makeViewerAdapter = function() {
+    return {
+        states: [],
+        finds: [],
+        setViewerState: function(s) { this.states.push(s); },
+        setFindText: function(t, total, index) {
+            this.finds.push({ texts: t, total: total, index: index });
+        }
+    };
+};
+
+window.__dispatchedNames = function(p_app) {
+    return p_app.__dispatched.map(function(e) { return e.name; });
+};
+
+window.__lastDispatch = function(p_app, p_name) {
+    for (var i = p_app.__dispatched.length - 1; i >= 0; --i) {
+        if (p_app.__dispatched[i].name === p_name) { return p_app.__dispatched[i].payload; }
+    }
+    return null;
 };
 
 // Mixes destination-bearing and destination-less entries across three levels,
@@ -223,6 +293,14 @@ window.__editHandler = null;
 window.__editableHandler = null;
 window.__texts = [];
 window.__deleted = [];
+// Every viewer-control signal, captured so a case can drive the C++ side of the
+// bridge. ONE missing stub makes the whole channel callback throw at that
+// point and silently skips every connection after it.
+window.__viewerHandlers = {};
+window.__connectViewer = function(p_name) {
+    return { connect: function(fn) { window.__viewerHandlers[p_name] = fn; } };
+};
+window.__viewerStates = [];
 window.__fakeAdapter = {
     urlUpdated:                 { connect: function() {} },
     outlineItemScrollRequested: { connect: function(fn) { window.__scrollHandler = fn; } },
@@ -233,8 +311,21 @@ window.__fakeAdapter = {
     captureSelectionRequested:  { connect: function() {} },
     toolOptionsChanged:         { connect: function() {} },
     toolChanged:                { connect: function() {} },
+    pageRequested:              window.__connectViewer('page'),
+    zoomRequested:              window.__connectViewer('zoom'),
+    zoomStepRequested:          window.__connectViewer('zoomStep'),
+    rotationRequested:          window.__connectViewer('rotation'),
+    scrollModeRequested:        window.__connectViewer('scrollMode'),
+    spreadModeRequested:        window.__connectViewer('spreadMode'),
+    cursorToolRequested:        window.__connectViewer('cursorTool'),
+    sidebarToggleRequested:     window.__connectViewer('sidebar'),
+    documentPropertiesRequested: window.__connectViewer('documentProperties'),
+    findTextRequested:          window.__connectViewer('find'),
+    findCleared:                window.__connectViewer('findCleared'),
     setOutline: function(o) { window.__published.push(o); },
     setDocumentPageCount: function() {},
+    setViewerState: function(s) { window.__viewerStates.push(s); },
+    setFindText: function() {},
     requestSetCommentText: function(id, t) { window.__texts.push({ id: id, text: t }); },
     requestDeleteComment: function(id) { window.__deleted.push(id); },
     setReady:   function() {}
@@ -330,6 +421,22 @@ private slots:
   void aDragThatProducesNoClickDoesNotSuppressTheNextClick();
   void aPendingMoveIsCancellableAndBlocksASecondDrag();
   void glueEscapeCancelsBothAnActiveDragAndAPendingMove();
+
+  // The viewer-control bridge behind the native toolbar.
+  void viewerBridgeRegistersItsListeners();
+  void eachViewerEventProducesExactlyOneStatePush();
+  void modeStateComesFromTheChangedEventNotTheSwitchCommand();
+  void toggleSidebarReachesViewsManager();
+  void gotoPageClampsAndRejectsGarbage();
+  void setZoomAcceptsPresetsAndRefusesGarbage();
+  void findDistinguishesANewQueryFromNextAndPrevious();
+  void findReportsTheFirstMatchAsIndexZero();
+  void anEmptyFindQueryClosesTheFindBar();
+  void aRegularExpressionFindIsRefused();
+  void theBuiltInToolbarGuardWarnsWhenTheContainerIsGone();
+  void theSidebarIsNotInsideTheHiddenToolbarSubtree();
+  void changingAFindOptionStartsAFreshSearch();
+  void glueWiresTheViewerControlSignals();
 
 private:
   // Fresh engine per case: pdfviewercore.js declares `class PdfViewerCore` at
@@ -2734,6 +2841,548 @@ void TestPdfViewerCoreJs::glueEscapeCancelsBothAnActiveDragAndAPendingMove() {
   // ...and a new drag is possible again.
   QCOMPARE(eval(engine, QStringLiteral("window.__press('ft1', 140, 90)")).toInt(), 1);
   QVERIFY(eval(engine, QStringLiteral("window.vxcore.dragCommentId === 'ft1'")).toBool());
+}
+
+// ============ The viewer-control bridge ============
+//
+// The back end of the native toolbar that replaces pdf.js's hidden built-in
+// strip. Two classes of defect are gated here and are invisible from C++:
+//
+//   1. Listening to the COMMAND event ('switchscrollmode') instead of the STATE
+//      event ('scrollmodechanged'), which ticks the toolbar from our own
+//      request and misses the mode pdf.js forces internally.
+//   2. Reaching for PDFViewerApplication.pdfSidebar, which does not exist in
+//      v6 -- the pane belongs to `viewsManager` -- yielding a dead toggle.
+
+void TestPdfViewerCoreJs::viewerBridgeRegistersItsListeners() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.vxcore.attachViewerBridge(window.__app);"));
+
+  for (const auto &name :
+       {QStringLiteral("pagechanging"), QStringLiteral("pagesloaded"),
+        QStringLiteral("documentloaded"), QStringLiteral("scalechanging"),
+        QStringLiteral("rotationchanging"), QStringLiteral("scrollmodechanged"),
+        QStringLiteral("spreadmodechanged"), QStringLiteral("cursortoolchanged"),
+        QStringLiteral("sidebarviewchanged"), QStringLiteral("updatefindmatchescount"),
+        QStringLiteral("updatefindcontrolstate")}) {
+    QVERIFY2(eval(engine, QStringLiteral("window.__app.eventBus.count('%1')").arg(name)).toInt() >
+                 0,
+             qPrintable(QStringLiteral("no viewer-bridge listener for %1").arg(name)));
+  }
+}
+
+void TestPdfViewerCoreJs::eachViewerEventProducesExactlyOneStatePush() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.__adapter = window.__makeViewerAdapter();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.vxcore.setViewerAdapter(window.__adapter);"));
+  // setViewerAdapter() publishes once itself, so the rendezvous cannot lose the
+  // state when the adapter arrives after 'documentloaded'.
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states.length")).toInt(), 1);
+
+  eval(engine, QStringLiteral("window.__adapter.states = [];"));
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('pagechanging', { pageNumber: 7 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states.length")).toInt(), 1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[0].page")).toInt(), 7);
+
+  eval(engine,
+       QStringLiteral(
+           "window.__app.eventBus.fire('scalechanging', { scale: 1.5, presetValue: '1.5' });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states.length")).toInt(), 2);
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[1].scaleValue")).toString(),
+           QStringLiteral("1.5"));
+  // The page is CARRIED, not reset: the state object is cumulative.
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[1].page")).toInt(), 7);
+
+  // A zoom with no preset (Ctrl+wheel) still reports a usable value, or the
+  // combo would show a stale "Automatic".
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('scalechanging', { scale: 1.37 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[2].scaleValue")).toString(),
+           QStringLiteral("1.37"));
+
+  eval(engine,
+       QStringLiteral("window.__app.eventBus.fire('rotationchanging', { pagesRotation: 90 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[3].rotation")).toInt(), 90);
+
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('cursortoolchanged', { tool: 1 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[4].cursorTool")).toInt(), 1);
+
+  // SidebarView.NONE === 0 means closed.
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('sidebarviewchanged', { view: 1 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[5].sidebarOpen")).toBool(), true);
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('sidebarviewchanged', { view: 0 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[6].sidebarOpen")).toBool(), false);
+
+  // 'pagesloaded' snapshots everything at once: several fields change together
+  // and there is no per-field event for them.
+  eval(engine, QStringLiteral("window.__app.pagesCount = 42;"
+                              "window.__app.pdfViewer.currentPageNumber = 3;"
+                              "window.__app.eventBus.fire('pagesloaded', {});"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[7].pageCount")).toInt(), 42);
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[7].page")).toInt(), 3);
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states.length")).toInt(), 8);
+}
+
+// Fails against a bridge wired to 'switchscrollmode' / 'switchspreadmode' --
+// the COMMANDS, not the state events. That version would tick the toolbar from
+// our own request and never notice the scroll mode presentation mode forces.
+void TestPdfViewerCoreJs::modeStateComesFromTheChangedEventNotTheSwitchCommand() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.__adapter = window.__makeViewerAdapter();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.vxcore.setViewerAdapter(window.__adapter);"
+                              "window.__adapter.states = [];"));
+
+  // The COMMAND events must move nothing.
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('switchscrollmode', { mode: 3 });"
+                              "window.__app.eventBus.fire('switchspreadmode', { mode: 2 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states.length")).toInt(), 0);
+
+  // The STATE events are what the toolbar follows.
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('scrollmodechanged', { mode: 3 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[0].scrollMode")).toInt(), 3);
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('spreadmodechanged', { mode: 2 });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.states[1].spreadMode")).toInt(), 2);
+
+  // ...and the commands go out under pdf.js's own names.
+  eval(engine, QStringLiteral("window.vxcore.setScrollMode(1); window.vxcore.setSpreadMode(1);"
+                              "window.vxcore.setCursorTool(1);"));
+  QCOMPARE(json(engine, QStringLiteral("window.__dispatchedNames(window.__app)")),
+           QStringLiteral("[\"switchscrollmode\",\"switchspreadmode\",\"switchcursortool\"]"));
+
+  // Out-of-range modes are refused rather than forwarded.
+  eval(engine, QStringLiteral("window.__app.__dispatched = [];"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setScrollMode(9)")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setSpreadMode(-1)")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setCursorTool('hand')")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__dispatched.length")).toInt(), 0);
+}
+
+// There is NO PDFViewerApplication.pdfSidebar in pdf.js v6. Reaching for it is
+// not a compile error in JS -- it is a permanently dead toggle.
+void TestPdfViewerCoreJs::toggleSidebarReachesViewsManager() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.vxcore.attachViewerBridge(window.__app);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.toggleSidebar()")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__sidebarToggles")).toInt(), 1);
+  // Nothing goes through the event bus for this one.
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__dispatched.length")).toInt(), 0);
+
+  // An app without a viewsManager is an inert no-op, not a throw.
+  eval(engine, QStringLiteral("delete window.__app.viewsManager;"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.toggleSidebar()")).toBool(), false);
+}
+
+void TestPdfViewerCoreJs::gotoPageClampsAndRejectsGarbage() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.__app.eventBus.fire('pagesloaded', {});"));
+
+  eval(engine, QStringLiteral("window.vxcore.gotoPage(7);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app,"
+                                       " 'pagenumberchanged').value"))
+               .toString(),
+           QStringLiteral("7"));
+
+  // CLAMPED, not forwarded: the C++ spin box is bounded too, and the two caps
+  // are independent by design.
+  eval(engine, QStringLiteral("window.vxcore.gotoPage(9999);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app,"
+                                       " 'pagenumberchanged').value"))
+               .toString(),
+           QStringLiteral("20"));
+  eval(engine, QStringLiteral("window.vxcore.gotoPage(-4);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app,"
+                                       " 'pagenumberchanged').value"))
+               .toString(),
+           QStringLiteral("1"));
+
+  // Garbage is refused outright rather than clamped to 1: a NaN page is a bug
+  // somewhere, not a user intent.
+  eval(engine, QStringLiteral("window.__app.__dispatched = [];"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.gotoPage('seven')")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.gotoPage(undefined)")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__dispatched.length")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::setZoomAcceptsPresetsAndRefusesGarbage() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.vxcore.attachViewerBridge(window.__app);"));
+
+  for (const auto &value :
+       {QStringLiteral("auto"), QStringLiteral("page-actual"), QStringLiteral("page-fit"),
+        QStringLiteral("page-width"), QStringLiteral("1.5")}) {
+    QVERIFY2(eval(engine, QStringLiteral("window.vxcore.setZoom('%1')").arg(value)).toBool(),
+             qPrintable(QStringLiteral("setZoom refused %1").arg(value)));
+  }
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'scalechanged').value"))
+               .toString(),
+           QStringLiteral("1.5"));
+
+  eval(engine, QStringLiteral("window.__app.__dispatched = [];"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom('page-everything')")).toBool(),
+           false);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom('')")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom(-2)")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__dispatched.length")).toInt(), 0);
+
+  // The bounds are pdf.js's own MIN_SCALE / MAX_SCALE (0.1 / 25.0). Too tight a
+  // ceiling is not harmless: it would reject a legitimate zoom and leave the
+  // toolbar reporting a scale the document no longer has.
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom('25')")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom('0.1')")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom('25.5')")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setZoom('0.05')")).toBool(), false);
+
+  // The step verbs go out under pdf.js's own names.
+  eval(engine, QStringLiteral("window.__app.__dispatched = [];"
+                              "window.vxcore.zoomIn(); window.vxcore.zoomOut();"));
+  QCOMPARE(json(engine, QStringLiteral("window.__dispatchedNames(window.__app)")),
+           QStringLiteral("[\"zoomin\",\"zoomout\"]"));
+
+  // Document properties goes through the event bus rather than by poking app
+  // internals.
+  eval(engine, QStringLiteral("window.__app.__dispatched = [];"
+                              "window.vxcore.showDocumentProperties();"));
+  QCOMPARE(json(engine, QStringLiteral("window.__dispatchedNames(window.__app)")),
+           QStringLiteral("[\"documentproperties\"]"));
+
+  // Two verbs that CANNOT be completed from inside the page, and so must not
+  // come back as commands that cross the bridge and dead-end:
+  //
+  //   * printing -- pdf.js destroys its prepared #printContainer on a hardcoded
+  //     20 ms timer (web/viewer.mjs:14052) that Qt's asynchronous print cannot
+  //     be sequenced against, and QWebEngineView::print() alone cannot reach the
+  //     print service at all (web/viewer.mjs:14134);
+  //   * presentation mode -- Chromium refuses requestFullscreen() without
+  //     transient renderer user activation, which a Qt QAction click relayed
+  //     over QWebChannel does not carry.
+  for (const auto &name : {QStringLiteral("printDocument"), QStringLiteral("startPrint"),
+                           QStringLiteral("enterPresentationMode")}) {
+    QVERIFY2(
+        eval(engine, QStringLiteral("typeof window.vxcore.%1").arg(name)).toString() ==
+            QStringLiteral("undefined"),
+        qPrintable(
+            QStringLiteral("%1() must not come back: it cannot work from the page").arg(name)));
+  }
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setRotation(90)")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.pdfViewer.pagesRotation")).toInt(), 90);
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.setRotation(45)")).toBool(), false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.pdfViewer.pagesRotation")).toInt(), 90);
+}
+
+// type:'' starts a NEW search; type:'again' is next/previous. Getting this
+// wrong makes "find next" restart from the top forever.
+void TestPdfViewerCoreJs::findDistinguishesANewQueryFromNextAndPrevious() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.__adapter = window.__makeViewerAdapter();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.vxcore.setViewerAdapter(window.__adapter);"));
+
+  eval(engine, QStringLiteral("window.vxcore.findText(['alpha'], {});"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QString());
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').query")).toString(),
+      QStringLiteral("alpha"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').highlightAll"))
+               .toBool(),
+           true);
+
+  // The SAME query again is next, not a restart.
+  eval(engine, QStringLiteral("window.vxcore.findText(['alpha'], {});"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QStringLiteral("again"));
+
+  eval(engine, QStringLiteral("window.vxcore.findText(['alpha'], { findBackward: true });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').findPrevious"))
+               .toBool(),
+           true);
+
+  // A different query is a fresh search again.
+  eval(engine, QStringLiteral("window.vxcore.findText(['beta'], "
+                              "{ caseSensitive: true, wholeWordOnly: true });"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QString());
+  // wholeWordOnly maps to entireWord -- pdf.js's spelling, not VNote's.
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').entireWord"))
+               .toBool(),
+           true);
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').caseSensitive"))
+               .toBool(),
+           true);
+}
+
+// pdf.js reports `current` 1-BASED; ViewWindow2::showFindResult expects a
+// 0-based index and adds one for display. Forwarding it unconverted makes the
+// first match read "2/N".
+void TestPdfViewerCoreJs::findReportsTheFirstMatchAsIndexZero() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.__adapter = window.__makeViewerAdapter();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.vxcore.setViewerAdapter(window.__adapter);"
+                              "window.vxcore.findText(['alpha'], {});"));
+
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('updatefindmatchescount',"
+                              " { matchesCount: { current: 1, total: 5 } });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.finds[0].index")).toInt(), 0);
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.finds[0].total")).toInt(), 5);
+  QCOMPARE(json(engine, QStringLiteral("window.__adapter.finds[0].texts")),
+           QStringLiteral("[\"alpha\"]"));
+
+  // No match at all: -1, not 0 -- which showFindResult would render as "1/0".
+  eval(engine, QStringLiteral("window.__app.eventBus.fire('updatefindcontrolstate',"
+                              " { matchesCount: { current: 0, total: 0 } });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.finds[1].index")).toInt(), -1);
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.finds[1].total")).toInt(), 0);
+}
+
+void TestPdfViewerCoreJs::anEmptyFindQueryClosesTheFindBar() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.__adapter = window.__makeViewerAdapter();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.vxcore.setViewerAdapter(window.__adapter);"
+                              "window.vxcore.findText(['alpha'], {});"
+                              "window.__app.__dispatched = [];"
+                              "window.__adapter.finds = [];"));
+
+  eval(engine, QStringLiteral("window.vxcore.findText([''], {});"));
+  QCOMPARE(json(engine, QStringLiteral("window.__dispatchedNames(window.__app)")),
+           QStringLiteral("[\"findbarclose\"]"));
+  QVERIFY(eval(engine, QStringLiteral("window.vxcore.findQuery === null")).toBool());
+  // The counter is cleared too, or the find bar keeps showing the last count.
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.finds[0].index")).toInt(), -1);
+
+  // With no retained query, a stray match report is ignored rather than
+  // resurrecting a stale count.
+  eval(engine, QStringLiteral("window.__adapter.finds = [];"
+                              "window.__app.eventBus.fire('updatefindmatchescount',"
+                              " { matchesCount: { current: 1, total: 3 } });"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__adapter.finds.length")).toInt(), 0);
+}
+
+// REFUSED, not silently searched literally: pdf.js's findController has no
+// regular-expression mode, and quietly matching the pattern text would look
+// like a broken search.
+void TestPdfViewerCoreJs::aRegularExpressionFindIsRefused() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.vxcore.attachViewerBridge(window.__app);"));
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.findText(['a.*b'],"
+                                       " { regularExpression: true })"))
+               .toBool(),
+           false);
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__dispatched.length")).toInt(), 0);
+  QVERIFY2(eval(engine, QStringLiteral("window.__warnings.join('|')"))
+               .toString()
+               .contains(QStringLiteral("regular-expression")),
+           "a refused regex find must say so, or it looks like nothing happened");
+}
+
+// The strip is hidden with CSS rather than removed from the DOM (viewer.mjs
+// holds references to its children and would throw). A silent upstream rename
+// would therefore just show it again; this is the tripwire.
+//
+// #viewsManager is checked too, and it is the SUBTLE one: in v6 the sidebar
+// pane lives INSIDE #toolbarContainer, so the CSS hides the strip's chrome
+// piece by piece rather than the container. A rename there leaves an invisible
+// sidebar behind a live Toggle Sidebar button.
+void TestPdfViewerCoreJs::theBuiltInToolbarGuardWarnsWhenTheContainerIsGone() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.checkBuiltInToolbar()")).toBool(), false);
+  QVERIFY2(eval(engine, QStringLiteral("window.__warnings.join('|')"))
+               .toString()
+               .contains(QStringLiteral("toolbarContainer")),
+           "a renamed #toolbarContainer must produce a log line, not silence");
+
+  // Only the container back: the sidebar id is still reported.
+  eval(engine, QStringLiteral("window.__warnings = [];"
+                              "window.__domIds['toolbarContainer'] = { id: 'toolbarContainer' };"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.checkBuiltInToolbar()")).toBool(), false);
+  QVERIFY2(eval(engine, QStringLiteral("window.__warnings.join('|')"))
+               .toString()
+               .contains(QStringLiteral("viewsManager")),
+           "a renamed #viewsManager must warn too -- the sidebar is INSIDE the hidden strip");
+
+  eval(engine, QStringLiteral("window.__warnings = [];"
+                              "window.__domIds['viewsManager'] = { id: 'viewsManager' };"));
+  QCOMPARE(eval(engine, QStringLiteral("window.vxcore.checkBuiltInToolbar()")).toBool(), true);
+  QCOMPARE(eval(engine, QStringLiteral("window.__warnings.length")).toInt(), 0);
+}
+
+// The shipped CSS must NOT hide #toolbarContainer outright: in pdf.js v6 the
+// sidebar (#viewsManager, with its own thumbnails/outline/attachments/layers
+// selector row) is a DESCENDANT of it, so `display: none` there makes Toggle
+// Sidebar open something invisible. Asserted against the real files, because
+// this is a relationship between two of them.
+void TestPdfViewerCoreJs::theSidebarIsNotInsideTheHiddenToolbarSubtree() {
+  QString error;
+
+  const QString html =
+      readFile(webDir() + QStringLiteral("/pdf.js/web/pdf-viewer-template.html"), &error);
+  QVERIFY2(error.isEmpty(), qPrintable(error));
+  const QString css = readFile(webDir() + QStringLiteral("/pdf.js/pdfviewer.css"), &error);
+  QVERIFY2(error.isEmpty(), qPrintable(error));
+
+  // The premise: the sidebar really is nested inside the strip. If pdf.js ever
+  // moves it out, this whole constraint (and the CSS gymnastics it forces)
+  // can be simplified -- so fail loudly rather than silently over-constraining.
+  const int containerAt = html.indexOf(QStringLiteral("id=\"toolbarContainer\""));
+  const int sidebarAt = html.indexOf(QStringLiteral("id=\"viewsManager\""));
+  const int viewerAt = html.indexOf(QStringLiteral("id=\"viewerContainer\""));
+  QVERIFY(containerAt > 0 && sidebarAt > containerAt && viewerAt > sidebarAt);
+
+  QVERIFY2(!css.contains(QRegularExpression(
+               QStringLiteral("#toolbarContainer\\s*\\{[^}]*display\\s*:\\s*none"))),
+           "#toolbarContainer must not be display:none -- #viewsManager is inside it");
+  QVERIFY2(!css.contains(QRegularExpression(
+               QStringLiteral("#toolbarViewerLeft\\s*\\{[^}]*display\\s*:\\s*none"))),
+           "#toolbarViewerLeft must not be display:none -- #viewsManager is inside it");
+  // ...and the strip's chrome IS hidden, or the whole feature is a no-op.
+  QVERIFY(css.contains(QStringLiteral("#toolbarViewerLeft > *:not(#viewsManager)")));
+  QVERIFY(css.contains(QStringLiteral("#toolbarViewerMiddle")));
+  QVERIFY(css.contains(QStringLiteral("#toolbarViewerRight")));
+}
+
+// Fails against a bridge that decides new-vs-again from the query TEXT alone.
+// pdf.js's own dirty check compares the query and treats type:'again' as pure
+// navigation, so toggling Case Sensitive on the same word would merely step
+// through the matches computed with the OLD setting.
+void TestPdfViewerCoreJs::changingAFindOptionStartsAFreshSearch() {
+  QJSEngine engine;
+  loadCore(engine);
+
+  eval(engine, QStringLiteral("window.__app = window.__makeViewerApp();"
+                              "window.vxcore.attachViewerBridge(window.__app);"
+                              "window.vxcore.findText(['alpha'], {});"));
+
+  eval(engine, QStringLiteral("window.vxcore.findText(['alpha'], { caseSensitive: true });"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QString());
+
+  eval(engine, QStringLiteral("window.vxcore.findText(['alpha'], { caseSensitive: true });"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QStringLiteral("again"));
+
+  eval(engine,
+       QStringLiteral(
+           "window.vxcore.findText(['alpha'], { caseSensitive: true, wholeWordOnly: true });"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QString());
+
+  // findBackward is NAVIGATION, not a match-set change: it must stay 'again',
+  // or Find Previous would restart the search from the top every time.
+  eval(engine,
+       QStringLiteral("window.vxcore.findText(['alpha'],"
+                      " { caseSensitive: true, wholeWordOnly: true, findBackward: true });"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').type")).toString(),
+      QStringLiteral("again"));
+}
+
+// The glue is where a missing connect silently disables a whole control: the
+// QWebChannel callback connects every signal in order, so ONE typo throws and
+// skips everything after it.
+void TestPdfViewerCoreJs::glueWiresTheViewerControlSignals() {
+  QJSEngine engine;
+  loadCore(engine);
+  loadGlue(engine);
+
+  const QJSValue res =
+      eval(engine, QStringLiteral("window.__channelCb("
+                                  "{ objects: { vxAdapter: window.__fakeAdapter } })"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+
+  for (const auto &name :
+       {QStringLiteral("page"), QStringLiteral("zoom"), QStringLiteral("zoomStep"),
+        QStringLiteral("rotation"), QStringLiteral("scrollMode"), QStringLiteral("spreadMode"),
+        QStringLiteral("cursorTool"), QStringLiteral("sidebar"),
+        QStringLiteral("documentProperties"), QStringLiteral("find"),
+        QStringLiteral("findCleared")}) {
+    QVERIFY2(eval(engine,
+                  QStringLiteral("typeof window.__viewerHandlers['%1'] === 'function'").arg(name))
+                 .toBool(),
+             qPrintable(QStringLiteral("glue did not connect %1").arg(name)));
+  }
+
+  // The glue prelude's app carries the outline fixture; give it the members the
+  // viewer bridge reads before the deferred block runs.
+  eval(engine, QStringLiteral("window.__app.pagesCount = 20;"
+                              "window.__app.pdfViewer = { currentPageNumber: 1, currentScale: 1,"
+                              "  currentScaleValue: 'auto', pagesRotation: 0, scrollMode: 0,"
+                              "  spreadMode: 0 };"
+                              "window.__app.__sidebarToggles = 0;"
+                              "window.__app.viewsManager = { visibleView: 0,"
+                              "  toggle: function() { window.__app.__sidebarToggles += 1; } };"));
+
+  // The bridge and the tripwire are registered from initializedPromise, NOT
+  // from the channel callback -- registering them there inverts the race and
+  // can miss 'documentloaded' entirely.
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.eventBus.count('scrollmodechanged')")).toInt(),
+           0);
+  eval(engine, QStringLiteral("window.__initDeferred.resolve();"));
+  QVERIFY(eval(engine, QStringLiteral("window.__app.eventBus.count('scrollmodechanged')")).toInt() >
+          0);
+  QVERIFY2(eval(engine, QStringLiteral("window.__warnings.join('|')"))
+               .toString()
+               .contains(QStringLiteral("toolbarContainer")),
+           "checkBuiltInToolbar() must run from the glue's initializedPromise block");
+
+  // ...and the adapter reaches the core, so a replayed page/zoom is not lost.
+  eval(engine, QStringLiteral("window.__viewerHandlers['page'](5);"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__lastDispatch(window.__app,"
+                                       " 'pagenumberchanged').value"))
+               .toString(),
+           QStringLiteral("5"));
+
+  eval(engine, QStringLiteral("window.__viewerHandlers['sidebar']();"));
+  QCOMPARE(eval(engine, QStringLiteral("window.__app.__sidebarToggles")).toInt(), 1);
+
+  eval(engine, QStringLiteral("window.__app.__dispatched = [];"
+                              "window.__viewerHandlers['find'](['alpha'], {});"));
+  QCOMPARE(
+      eval(engine, QStringLiteral("window.__lastDispatch(window.__app, 'find').query")).toString(),
+      QStringLiteral("alpha"));
 }
 
 } // namespace tests

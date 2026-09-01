@@ -29,6 +29,7 @@
 #include "outlinepopup.h"
 #include "pdfannotationtoolbar.h"
 #include "pdftooloptionsrouter.h"
+#include "pdfviewertoolbar.h"
 
 using namespace vnotex;
 
@@ -98,7 +99,7 @@ void PdfViewWindow2::setupToolBar() {
   // The authoring tools sit in the LEFT group, next to Save/Tag/Attachment and
   // separated from them, exactly where MarkdownViewWindow2 puts its formatting
   // actions. They are the content-authoring verbs for this window; the right
-  // group is for view-level chrome (outline, layout, find, print).
+  // group is for view-level chrome (outline, layout, find).
   toolBar->addSeparator();
   setupAnnotationToolBarActions(toolBar);
 
@@ -106,15 +107,133 @@ void PdfViewWindow2::setupToolBar() {
 }
 
 void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
-  // Outline popup button (right corner, first): wire it to this window's outline provider.
-  auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
-  auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAct));
-  if (toolBtn) {
-    auto *outlinePopup = dynamic_cast<OutlinePopup *>(toolBtn->menu());
-    if (outlinePopup) {
-      outlinePopup->setOutlineProvider(m_outlineProvider);
-    }
+  // The native replacements for pdf.js's hidden built-in strip. The Outline
+  // popup is inserted by the hook below, between the sidebar toggle and the
+  // page controls -- both are view chrome of the same kind, and the sequence
+  // mirrors where pdf.js put them.
+  setupViewerToolBarActions(p_toolBar);
+  // ViewWindow2::addRightCommonToolBarActions() appends ToggleLayoutMode, then
+  // calls addAdditionalViewToolBarActions() (where Presentation Mode lands),
+  // then Find And Replace. Print is opted out of; see isPrintSupported().
+}
+
+// Presentation Mode sits with Readable Width rather than in the overflow menu:
+// both change how the content is PRESENTED, and that is where a reader looks
+// for them. The intent is already connected in setupViewerToolBarActions(),
+// which runs earlier in the same toolbar build.
+void PdfViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
+  if (!m_viewerToolBar) {
+    return;
   }
+  auto &services = getServices();
+  m_viewerToolBar->installPresentationAction(p_toolBar, [&services](const QString &p_iconName) {
+    return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+  });
+}
+
+// The sidebar / outline / page / zoom / overflow controls that stand in for
+// pdf.js's own toolbar (hidden by pdfviewer.css). The construction lives in
+// PdfViewerToolBar so it is testable with a bare QToolBar and no WebEngine
+// profile; this function is only the wiring.
+//
+// The adapter is resolved LAZILY inside every lambda, matching the headingClicked
+// comment above: setupToolBar() runs after setupViewer() today, but nothing in
+// the toolbar's contract depends on that ordering.
+void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
+  m_viewerToolBar = new PdfViewerToolBar(this);
+
+  auto &services = getServices();
+  m_viewerToolBar->install(
+      p_toolBar,
+      [&services](const QString &p_iconName) {
+        return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+      },
+      [this, p_toolBar]() {
+        // Outline popup button: wire it to this window's outline provider. It
+        // needs the ServiceLocator and the provider, which is exactly why
+        // PdfViewerToolBar takes a hook rather than building it itself.
+        auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
+        auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAct));
+        if (toolBtn) {
+          auto *outlinePopup = dynamic_cast<OutlinePopup *>(toolBtn->menu());
+          if (outlinePopup) {
+            outlinePopup->setOutlineProvider(m_outlineProvider);
+          }
+        }
+      });
+
+  connect(m_viewerToolBar, &PdfViewerToolBar::pageRequested, this, [this](int p_page) {
+    if (auto *a = adapter()) {
+      a->gotoPage(p_page);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::zoomRequested, this, [this](const QString &p_value) {
+    if (auto *a = adapter()) {
+      a->setZoom(p_value);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::zoomStepRequested, this, [this](bool p_zoomIn) {
+    if (auto *a = adapter()) {
+      a->stepZoom(p_zoomIn);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::rotationRequested, this, [this](int p_degrees) {
+    if (auto *a = adapter()) {
+      a->setRotation(p_degrees);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::scrollModeRequested, this, [this](int p_mode) {
+    if (auto *a = adapter()) {
+      a->setScrollMode(p_mode);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::spreadModeRequested, this, [this](int p_mode) {
+    if (auto *a = adapter()) {
+      a->setSpreadMode(p_mode);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::cursorToolRequested, this, [this](int p_tool) {
+    if (auto *a = adapter()) {
+      a->setCursorTool(p_tool);
+    }
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::sidebarToggleRequested, this, [this]() {
+    if (auto *a = adapter()) {
+      a->toggleSidebar();
+    }
+    // The tick is NOT set from the click: pdf.js answers with
+    // 'sidebarviewchanged', and the toolbar repaints from that. Repaint now so a
+    // refused toggle snaps back rather than showing a state that never happened.
+    syncViewerToolBarState();
+  });
+  connect(m_viewerToolBar, &PdfViewerToolBar::presentationModeRequested, this,
+          &PdfViewWindow2::togglePresentationMode);
+  connect(m_viewerToolBar, &PdfViewerToolBar::documentPropertiesRequested, this, [this]() {
+    if (auto *a = adapter()) {
+      a->showDocumentProperties();
+    }
+  });
+
+  if (auto *a = adapter()) {
+    connect(a, &PdfViewerAdapter::viewerStateChanged, this,
+            &PdfViewWindow2::syncViewerToolBarState);
+    // Without this the find bar shows no match count at all -- the analogue of
+    // MarkdownViewWindow2's findTextReady connection.
+    connect(a, &PdfViewerAdapter::findTextReady, this,
+            [this](const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex) {
+              showFindResult(p_texts, p_totalMatches, p_currentMatchIndex);
+            });
+  }
+
+  syncViewerToolBarState();
+}
+
+void PdfViewWindow2::syncViewerToolBarState() {
+  if (!m_viewerToolBar) {
+    return;
+  }
+  auto *a = adapter();
+  m_viewerToolBar->syncState(a ? a->getViewerState() : PdfViewerAdapter::ViewerState());
 }
 
 // The three authoring tools, mirroring pdf.js's own toolbar layout. A MODE is
@@ -456,11 +575,52 @@ void PdfViewWindow2::setupViewer() {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
 
+  // Names the mode the user actually entered. "Exit Full Screen" would read as
+  // the application's own full-screen toggle and send them to the View menu.
+  setContentFullScreenExitText(tr("Exit Presentation Mode"));
+
+  // Escape leaves presentation mode. Driven entirely from Qt: see
+  // togglePresentationMode() for why pdf.js's own HTML5-fullscreen presentation
+  // mode is not used.
+  connect(this, &ViewWindow2::contentFullScreenExitRequested, this,
+          [this]() { setPresentationMode(false); });
+
   // Outline pipeline: PDF bookmarks -> OutlineProvider.
   connect(pdfAdapter, &PdfViewerAdapter::outlineChanged, this, [this]() {
     m_outlineProvider->setOutline(outlineFromHeadings(adapter()->getOutlineHeadings()));
   });
 }
+
+// ============ Printing is deliberately not offered ============
+//
+// A pdf.js viewer cannot be printed reliably from Qt, and a Print button that
+// produces a blank or partial document is worse than no Print button. The
+// user's PDF is a file on disk; the OS reader prints it correctly.
+//
+// The two obvious routes are both broken:
+//
+//   * QWebEngineView::print() alone prints the LIVE DOM, which holds only the
+//     pages Chromium has scrolled into view. pdf.js's print service -- the
+//     thing that renders every page into #printContainer -- is unreachable
+//     that way: pdf.js installs a `beforeprint` listener that calls
+//     stopImmediatePropagation() on any event whose detail is not "custom"
+//     (web/viewer.mjs:14134), and the native beforeprint Qt fires is exactly
+//     that.
+//
+//   * Driving pdf.js's own window.print() first and printing from
+//     QWebEngineView::printRequested does reach the print service, but races
+//     it: performPrint() calls abort() on a hardcoded 20 ms timer
+//     (web/viewer.mjs:14052), which empties #printContainer and revokes every
+//     page's blob URL, while QWebEngineView::print() is asynchronous and gives
+//     no signal that Chromium has captured the DOM. Nothing on the Qt side can
+//     win that race deterministically.
+//
+// Closing the gap needs either a patch to the vendored pdf.js (which every
+// upgrade would have to re-apply) or a VNote-owned print pipeline -- most
+// plausibly rendering the file with QPdfDocument and painting it onto a
+// QPrinter, with no pdf.js involvement at all. Until one of those exists, the
+// action is omitted rather than shipped dead.
+bool PdfViewWindow2::isPrintSupported() const { return false; }
 
 QString PdfViewWindow2::getLatestContent() const { return QString(); }
 
@@ -509,6 +669,16 @@ void PdfViewWindow2::handleThemeChanged() {
   // rather than a callback, so both must be re-supplied — not merely redrawn.
   applySwatchResolvers();
 
+  // ViewWindow2::handleThemeChanged() -> refreshToolBarIcons() covers the plain
+  // toolbar actions, but it iterates the TOOLBAR's actions only: the overflow
+  // menu's entries and the overflow QToolButton itself are unreachable that way.
+  if (m_viewerToolBar) {
+    auto &services = getServices();
+    m_viewerToolBar->refreshIcons([&services](const QString &p_iconName) {
+      return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+    });
+  }
+
   // Reload the viewer content with the new template.
   syncEditorFromBuffer();
 }
@@ -528,8 +698,18 @@ void PdfViewWindow2::syncEditorFromBuffer() {
   if (auto *pdfAdapter = adapter()) {
     pdfAdapter->clearOutline();
     pdfAdapter->clearComments();
+    // Drops the DOCUMENT-dependent viewer state (page count, validity) and ARMS
+    // the page/zoom/rotation/mode replay. The replay VALUES deliberately
+    // survive: this runs on every reload, and a theme switch is a reload -- so
+    // without it a theme change would silently jump back to page 1.
+    pdfAdapter->clearViewerState();
+    // The find highlight belongs to the page being torn down.
+    pdfAdapter->clearFind();
     pdfAdapter->setReady(false);
   }
+  // Re-disables every viewer control until the replacement document reports a
+  // state.
+  syncViewerToolBarState();
 
   // Replace-then-revoke: the new token is registered before the old one is
   // dropped, so the two can never collide and a failed registration leaves the
@@ -579,11 +759,127 @@ void PdfViewWindow2::revokeDocumentToken() {
   m_documentToken.clear();
 }
 
-void PdfViewWindow2::scrollUp() {}
+void PdfViewWindow2::scrollUp() {
+  auto *a = adapter();
+  if (!a) {
+    return;
+  }
+  const auto &state = a->getViewerState();
+  if (state.m_valid && state.m_page > 1) {
+    a->gotoPage(state.m_page - 1);
+  }
+}
 
-void PdfViewWindow2::scrollDown() {}
+void PdfViewWindow2::scrollDown() {
+  auto *a = adapter();
+  if (!a) {
+    return;
+  }
+  const auto &state = a->getViewerState();
+  if (state.m_valid && state.m_page < state.m_pageCount) {
+    a->gotoPage(state.m_page + 1);
+  }
+}
 
-void PdfViewWindow2::zoom(bool p_zoomIn) { Q_UNUSED(p_zoomIn); }
+void PdfViewWindow2::zoom(bool p_zoomIn) {
+  if (auto *a = adapter()) {
+    a->stepZoom(p_zoomIn);
+  }
+}
+
+// ============ Presentation mode ============
+//
+// Driven entirely from Qt, and deliberately NOT through pdf.js's own
+// presentation mode.
+//
+// pdf.js builds that on HTML5 fullscreen, and Chromium requires transient
+// renderer USER ACTIVATION for requestFullscreen(). A click on a Qt QAction
+// relayed over QWebChannel carries none, so the request is refused -- and
+// pdf.js swallows the rejected promise, which makes the whole feature a
+// silently dead button. (pdf.js does not even CONSTRUCT its presentation-mode
+// object unless `document.fullscreenEnabled` is true, which additionally
+// requires QWebEngineSettings::FullScreenSupportEnabled; see the note in
+// webviewer.h for why that is not turned on globally.)
+//
+// So VNote does the two halves itself: ViewWindow2 lifts the viewer into a
+// fullscreen top-level, and the adapter puts the document into page-fit +
+// page-at-a-time scrolling. Both halves are things we already own and can test.
+
+void PdfViewWindow2::togglePresentationMode() { setPresentationMode(!isContentFullScreen()); }
+
+void PdfViewWindow2::setPresentationMode(bool p_on) {
+  if (p_on == isContentFullScreen()) {
+    return;
+  }
+
+  auto *a = adapter();
+
+  if (p_on) {
+    if (!a || !a->getViewerState().m_valid) {
+      // No document: a fullscreen blank page is worse than an inert button.
+      return;
+    }
+    // Captured BEFORE the switch, so leaving restores what the user was
+    // actually looking at rather than a hardcoded default.
+    m_prePresentationZoom = a->getViewerState().m_scaleValue;
+    m_prePresentationScrollMode = a->getViewerState().m_scrollMode;
+
+    if (!setContentFullScreen(true)) {
+      return;
+    }
+    a->setZoom(QStringLiteral("page-fit"));
+    // pdf.js ScrollMode::PAGE.
+    a->setScrollMode(3);
+    return;
+  }
+
+  setContentFullScreen(false);
+  if (a) {
+    if (!m_prePresentationZoom.isEmpty()) {
+      a->setZoom(m_prePresentationZoom);
+    }
+    a->setScrollMode(m_prePresentationScrollMode);
+  }
+  m_prePresentationZoom.clear();
+}
+
+// ============ Find and Replace ============
+//
+// VNote's find bar drives pdf.js's findController rather than
+// QWebEngineView::findText, because pdf.js builds a text layer only for VISIBLE
+// pages -- a native find would silently miss every page never scrolled into
+// view.
+
+void PdfViewWindow2::handleFindTextChanged(const QString &p_text, FindOptions p_options) {
+  if (!(p_options & FindOption::IncrementalSearch)) {
+    return;
+  }
+  if (auto *a = adapter()) {
+    a->findText(QStringList(p_text), p_options);
+  }
+}
+
+void PdfViewWindow2::handleFindNext(const QStringList &p_texts, FindOptions p_options) {
+  if (auto *a = adapter()) {
+    a->findText(p_texts, p_options);
+  }
+}
+
+void PdfViewWindow2::handleFindAndReplaceWidgetOpened() {
+  // A PDF is never written, so Replace has nothing to do -- and the base class's
+  // handleReplace/handleReplaceAll are no-ops, so leaving the buttons live would
+  // make them silently do nothing. Regular expressions are unsupported by
+  // pdf.js's findController and are refused on the JS side; disabling the box
+  // says so before the user tries.
+  setFindAndReplaceReplaceEnabled(false);
+  setFindAndReplaceOptionsEnabled(FindOption::RegularExpression, false);
+}
+
+void PdfViewWindow2::handleFindAndReplaceWidgetClosed() {
+  if (auto *a = adapter()) {
+    a->clearFind();
+  }
+}
 
 PdfViewerAdapter *PdfViewWindow2::adapter() const {
   if (m_viewer) {
