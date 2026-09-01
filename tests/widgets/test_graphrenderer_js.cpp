@@ -345,6 +345,17 @@ void TestGraphRendererJs::setupRenderer(QJSEngine &p_engine) {
   evalFile(p_engine, QStringLiteral("graphcache.js"), QStringLiteral("GraphCache"));
   evalFile(p_engine, QStringLiteral("graphrenderer.js"), QStringLiteral("GraphRenderer"));
 
+  // GraphRenderer funnels every contract violation and render failure through
+  // reportProblem(), which logs at INFO level on purpose: WebPage only forwards
+  // InfoMessageLevel, so a diagnostic written with console.error never reaches
+  // vnote.log. Capture the funnel rather than a console level, so these
+  // assertions keep meaning what they say if the level ever changes again.
+  auto hook = p_engine.evaluate(
+      QStringLiteral("GraphRenderer.prototype.reportProblem = function() {"
+                     "  window.__errors.push(Array.prototype.join.call(arguments, ' '));"
+                     "};"));
+  QVERIFY2(!hook.isError(), qPrintable(hook.toString()));
+
   res = p_engine.evaluate(QString::fromUtf8(c_testRenderer));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 }

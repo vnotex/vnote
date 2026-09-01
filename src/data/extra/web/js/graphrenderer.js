@@ -66,6 +66,23 @@ class GraphRenderer extends VxWorker {
         this.graphCache = null;
     }
 
+    // Report a contract violation or a render failure.
+    //
+    // console.info, NOT console.error: WebPage::javaScriptConsoleMessage
+    // (src/widgets/webpage.cpp) forwards ONLY InfoMessageLevel into the
+    // vnote.web.js logging category. Everything logged at warn or error level is
+    // dropped before it reaches vnote.log, so a diagnostic written with
+    // console.error is invisible in exactly the situation it exists for - a
+    // stalled pass and a pass that reported why it broke look identical.
+    //
+    // These stay silent in normal operation, because they only fire on a
+    // violated invariant or a failed render, and they are only forwarded when
+    // someone asks with QT_LOGGING_RULES="vnote.web.js=true" (or --verbose).
+    reportProblem(...p_args) {
+        console.info(...p_args);
+    }
+
+
     reset() {
         // reset() is called from the basicMarkdownRendered handler, i.e. at the
         // start of the next round. If a pass is still live at that point the
@@ -73,7 +90,7 @@ class GraphRenderer extends VxWorker {
         // violated; say so here, because clearing the state below is what would
         // otherwise hide it from the check in renderNodes().
         if (this.passActive) {
-            console.error('graph render pass reset while still live', this.name);
+            this.reportProblem('graph render pass reset while still live', this.name);
         }
 
         this.graphIdx = 0;
@@ -128,7 +145,7 @@ class GraphRenderer extends VxWorker {
                 try {
                     p_callback();
                 } catch (p_err) {
-                    console.error('renderer initialization failed', this.name, p_err);
+                    this.reportProblem('renderer initialization failed', this.name, p_err);
                     this.abandonPendingPass();
                 }
             });
@@ -207,7 +224,7 @@ class GraphRenderer extends VxWorker {
         // building per-pass context objects for a case the architecture prevents - if
         // this ever fires, that is the signal to build the heavier machinery.
         if (this.passActive) {
-            console.error('graph render pass started while one is still live', this.name);
+            this.reportProblem('graph render pass started while one is still live', this.name);
         }
 
         // Timing, reported by reportTiming() when the last node lands.
@@ -280,7 +297,7 @@ class GraphRenderer extends VxWorker {
                 // has already been superseded.
                 if (outcome && typeof outcome.then === 'function') {
                     outcome.then(undefined, (p_err) => {
-                        console.error('failed to render graph node', this.name, p_err);
+                        this.reportProblem('failed to render graph node', this.name, p_err);
                         if (this.passGeneration === generation) {
                             this.finishRenderingOne();
                         }
@@ -288,7 +305,7 @@ class GraphRenderer extends VxWorker {
                 }
             } catch (p_err) {
                 // A synchronously throwing renderOne(), same reasoning.
-                console.error('failed to render graph node', this.name, p_err);
+                this.reportProblem('failed to render graph node', this.name, p_err);
                 this.finishRenderingOne();
             }
         }
@@ -410,7 +427,7 @@ class GraphRenderer extends VxWorker {
         // numOfRenderedNodes <= nextNodeIndex makes that impossible: the pass
         // can now only complete once everything really was dispatched.
         if (this.numOfRenderedNodes >= this.nextNodeIndex) {
-            console.error('graph render completion from a retired pass', this.name);
+            this.reportProblem('graph render completion from a retired pass', this.name);
             return;
         }
 
@@ -459,7 +476,7 @@ class GraphRenderer extends VxWorker {
         try {
             this.reportTiming();
         } catch (p_err) {
-            console.error('failed to report graph timing', this.name, p_err);
+            this.reportProblem('failed to report graph timing', this.name, p_err);
         }
 
         this.nodesToRender = [];

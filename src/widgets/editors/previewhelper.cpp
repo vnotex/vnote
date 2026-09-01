@@ -314,7 +314,8 @@ void PreviewHelper::codeBlocksUpdated(vte::TimeStamp p_timeStamp,
       ++m_perfPendingRequestRestarts;
     } else {
       qCDebug(lcPerfPreview) << "codeBlocksUpdated first ts=" << p_timeStamp
-                             << "codeBlocks=" << p_codeBlocks.size() << "atMs=" << perfNowMs();
+                             << "codeBlocks=" << p_codeBlocks.size()
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch();
     }
   }
   m_codeBlockTimer->start();
