@@ -299,7 +299,9 @@ void SortDialog2::sortByColumn(int p_column) {
     for (int i = 0; i < cnt; ++i) {
       auto *it = m_treeWidget->topLevelItem(i);
       if (selectedNames.contains(it->data(kColName, Qt::UserRole).toString())) {
-        const QModelIndex idx = m_treeWidget->indexFromItem(it, kColName);
+        // Not indexFromItem(): it is protected in Qt 5. These are all top-level
+        // rows, so the model index is addressable directly.
+        const QModelIndex idx = m_treeWidget->model()->index(i, kColName);
         selection.select(idx, idx.sibling(idx.row(), lastColumn));
       }
     }
