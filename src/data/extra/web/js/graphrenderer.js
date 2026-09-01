@@ -352,6 +352,12 @@ class GraphRenderer extends VxWorker {
 
         const total = this.completionMs[count - 1];
         const first = this.completionMs[0];
+        // Nearest-rank: idx = min(n - 1, floor(p * n)). completionMs is
+        // monotonically non-decreasing by construction, so it is already
+        // sorted. The SAME rule is used by GraphPreviewer.perfQuantiles() and
+        // by PreviewHelper::perfQuartiles() in C++; change one, change all
+        // three, or a p50 stops meaning the same thing across the summaries
+        // these logs exist to be compared against.
         const quartile = (p_f) => this.completionMs[Math.min(count - 1,
                                                              Math.floor(count * p_f))];
 
@@ -392,6 +398,22 @@ class GraphRenderer extends VxWorker {
 
     // Called when finishing rendering one node.
     finishRenderingOne() {
+        // A pass can only ever see as many completions as it has DISPATCHED.
+        // Subclasses call this directly with no generation of their own (the
+        // rejection arm in dispatchBatch() is the only site that can check
+        // one), so a callback left over from a retired pass - an outstanding
+        // `await mermaid.render`, an in-flight PlantUml round trip - would
+        // otherwise be counted against the live pass. Because completePass()
+        // fires on `>= nodesToRender.length`, that inflated count would end the
+        // pass early, clear nodesToRender, and silently drop every node not yet
+        // dispatched while still reporting the pass as finished. Enforcing
+        // numOfRenderedNodes <= nextNodeIndex makes that impossible: the pass
+        // can now only complete once everything really was dispatched.
+        if (this.numOfRenderedNodes >= this.nextNodeIndex) {
+            console.error('graph render completion from a retired pass', this.name);
+            return;
+        }
+
         // Milliseconds since the pass started. Recorded for every node, so the
         // arrival curve is available even when a pass never completes.
         if (this.startMs > 0) {

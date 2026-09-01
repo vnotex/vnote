@@ -186,17 +186,22 @@ class GraphPreviewer {
         }
     }
 
+    // Nearest-rank on a sorted array: idx = min(n - 1, floor(p * n)).
+    // The SAME rule is used by GraphRenderer.reportTiming() and by
+    // PreviewHelper::perfQuartiles() in C++, because these three summaries are
+    // meant to be read side by side - a p50 must mean one thing across all of
+    // them. Change one, change all three.
     perfQuantiles(p_values) {
         if (!p_values || p_values.length === 0) {
             return 'n/a';
         }
         let vals = p_values.slice().sort((a, b) => a - b);
-        let last = vals.length - 1;
-        let at = (p) => vals[Math.min(last, Math.max(0, Math.round(p * last)))];
+        let n = vals.length;
+        let at = (p) => vals[Math.min(n - 1, Math.floor(p * n))];
         return 'min=' + vals[0].toFixed(1)
             + ' p50=' + at(0.5).toFixed(1)
             + ' p90=' + at(0.9).toFixed(1)
-            + ' max=' + vals[last].toFixed(1);
+            + ' max=' + vals[n - 1].toFixed(1);
     }
 
     // Wrapped in try/catch for the reason spelled out in graphrenderer.js: a

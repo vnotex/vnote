@@ -166,20 +166,52 @@ void PreviewHelper::perfNoteActivity() {
   perfStartHeartbeat();
 }
 
+// One completion of a dispatched request, whatever served it. A failed or empty
+// result still closes a request and must be counted, or the summary would wait
+// for a completion that is never coming.
+void PreviewHelper::perfNoteResult(quint64 p_id, qint64 p_entryMs, qint64 p_decodeMs, int p_bytes,
+                                   bool p_failed) {
+  ++m_perfStats.m_results;
+  if (p_failed) {
+    ++m_perfStats.m_failures;
+  } else {
+    m_perfStats.m_decodeMs.append(p_decodeMs);
+    m_perfStats.m_payloadBytes.append(p_bytes);
+  }
+  m_perfStats.m_lastResultMs = p_entryMs;
+
+  const qint64 requestMs =
+      (p_id < static_cast<quint64>(m_perfRequestMs.size())) ? m_perfRequestMs[p_id] : 0;
+  if (requestMs > 0) {
+    // Request dispatch -> handler entry. Subtracting the JS-side compute+raster
+    // duration reported by graphpreviewer.js leaves the transport plus
+    // GUI-thread queueing cost, which is H5.
+    m_perfStats.m_roundTripMs.append(p_entryMs - requestMs);
+  }
+
+  perfNoteActivity();
+}
+
 namespace {
 // min / p50 / p90 / max of a copy of @p_values, as a single log-friendly string.
+//
+// Nearest-rank on a sorted array: idx = min(n - 1, floor(p * n)). The SAME rule
+// is used by GraphPreviewer.perfQuantiles() and GraphRenderer.reportTiming() in
+// the web layer, because these three summaries are meant to be read side by
+// side - a p50 must mean one thing across all of them. Change one, change all
+// three.
 QString perfQuartiles(QVector<qint64> p_values) {
   if (p_values.isEmpty()) {
     return QStringLiteral("n/a");
   }
   std::sort(p_values.begin(), p_values.end());
-  const auto last = p_values.size() - 1;
-  const auto at = [&p_values, last](double p) {
-    auto idx = static_cast<decltype(last)>(p * static_cast<double>(last));
+  const auto count = p_values.size();
+  const auto at = [&p_values, count](double p) {
+    auto idx = static_cast<decltype(count)>(p * static_cast<double>(count));
     if (idx < 0) {
       idx = 0;
-    } else if (idx > last) {
-      idx = last;
+    } else if (idx > count - 1) {
+      idx = count - 1;
     }
     return p_values[idx];
   };
@@ -485,12 +517,7 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
   }
   if (p_data.m_id >= static_cast<quint64>(m_codeBlocksData.size()) || p_data.m_data.isEmpty()) {
     if (perf) {
-      // A failed/empty completion still closes a dispatched request, so it must
-      // count towards the batch or the summary would wait forever.
-      ++m_perfStats.m_results;
-      ++m_perfStats.m_failures;
-      m_perfStats.m_lastResultMs = entryMs;
-      perfNoteActivity();
+      perfNoteResult(p_data.m_id, entryMs, 0, 0, true);
     }
     requestUpdateEditorInplacePreviewCodeBlock();
     return;
@@ -512,20 +539,7 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
                                  previewData->m_background, m_tabStopWidth);
 
   if (perf) {
-    ++m_perfStats.m_results;
-    m_perfStats.m_lastResultMs = entryMs;
-    m_perfStats.m_decodeMs.append(decodeMs);
-    m_perfStats.m_payloadBytes.append(p_data.m_data.size());
-    const qint64 requestMs = (p_data.m_id < static_cast<quint64>(m_perfRequestMs.size()))
-                                 ? m_perfRequestMs[p_data.m_id]
-                                 : 0;
-    if (requestMs > 0) {
-      // Request dispatch -> handler entry. Subtracting the JS-side
-      // compute+raster duration reported by graphpreviewer.js leaves the
-      // transport plus GUI-thread queueing cost, which is H5.
-      m_perfStats.m_roundTripMs.append(entryMs - requestMs);
-    }
-    perfNoteActivity();
+    perfNoteResult(p_data.m_id, entryMs, decodeMs, p_data.m_data.size(), false);
   }
 
   requestUpdateEditorInplacePreviewCodeBlock();
@@ -802,6 +816,9 @@ void PreviewHelper::setWebGraphvizEnabled(bool p_enabled) { m_webGraphvizEnabled
 
 void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
                                     const QString &p_data, bool p_forcedBackground) {
+  const bool perf = perfEnabled();
+  const qint64 entryMs = perf ? perfNowMs() : 0;
+
   if (p_timeStamp != m_codeBlockTimeStamp) {
     return;
   }
@@ -810,22 +827,38 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
   Q_ASSERT(p_format == QStringLiteral("svg"));
 
   if (p_id >= static_cast<quint64>(m_codeBlocksData.size()) || p_data.isEmpty()) {
+    if (perf) {
+      perfNoteResult(p_id, entryMs, 0, 0, true);
+    }
     requestUpdateEditorInplacePreviewCodeBlock();
     return;
   }
 
   auto &blockData = m_codeBlocksData[p_id];
+  const qint64 decodeStartMs = perf ? perfNowMs() : 0;
   auto previewData = QSharedPointer<GraphPreviewData>::create(
       p_timeStamp, p_format, p_data.toUtf8(), true,
       p_forcedBackground ? m_editor->getPreviewBackground() : 0,
       getEditorScaleFactor(m_codeBlockRequestZoomRatio), m_codeBlockRequestZoomRatio);
+  const qint64 decodeMs = perf ? perfNowMs() - decodeStartMs : 0;
   m_codeBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
                                  previewData->m_background, m_tabStopWidth);
 
+  if (perf) {
+    // Locally served blocks are counted into m_dispatched exactly like the web
+    // ones, so they must close here too - otherwise a run with local PlantUml
+    // or Graphviz would always be summarized as INCOMPLETE.
+    perfNoteResult(p_id, entryMs, decodeMs, p_data.size(), false);
+  }
+
   requestUpdateEditorInplacePreviewCodeBlock();
+
+  if (perf) {
+    m_perfStats.m_handlerMs.append(perfNowMs() - entryMs);
+  }
 }
 
 bool PreviewHelper::needForcedBackground(const QString &p_lang) const {

@@ -304,6 +304,9 @@ private:
   // Called on every result; (re)arms the idle timer that prints the summary.
   void perfNoteActivity();
 
+  void perfNoteResult(quint64 p_id, qint64 p_entryMs, qint64 p_decodeMs, int p_bytes,
+                      bool p_failed);
+
   void perfReportSummary();
 
   QElapsedTimer m_perfClock;
