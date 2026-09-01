@@ -40,8 +40,6 @@ private:
 
   const int m_hPadding = 6;
 
-  const int m_vPadding = 4;
-
   const int m_lineSpacing = 2;
 
   const int m_iconSize = 16;

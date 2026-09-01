@@ -5,12 +5,12 @@
 #include <QApplication>
 #include <QPainter>
 
+#include <gui/utils/itemviewutils.h>
 #include <models/searchresultmodel.h>
 
 using namespace vnotex;
 
-SearchResultDelegate::SearchResultDelegate(QWidget *p_parent)
-    : QStyledItemDelegate(p_parent) {}
+SearchResultDelegate::SearchResultDelegate(QWidget *p_parent) : QStyledItemDelegate(p_parent) {}
 
 SearchResultDelegate::~SearchResultDelegate() {}
 
@@ -20,20 +20,30 @@ void SearchResultDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem
     return;
   }
 
+  // Paint from the initialized option, so the font used to lay the row out is the
+  // same one sizeHint() measured (Qt::FontRole is only visible post-init).
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+
   bool isFileResult = p_index.data(SearchResultModel::IsFileResultRole).toBool();
   if (isFileResult) {
-    paintFileResult(p_painter, p_option, p_index);
+    paintFileResult(p_painter, opt, p_index);
   } else {
-    paintLineResult(p_painter, p_option, p_index);
+    paintLineResult(p_painter, opt, p_index);
   }
 }
 
 QSize SearchResultDelegate::sizeHint(const QStyleOptionViewItem &p_option,
                                      const QModelIndex &p_index) const {
-  Q_UNUSED(p_index);
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
 
-  QFontMetrics fm(p_option.font);
-  int height = fm.height() + m_vPadding * 2;
+  // The delegate owns the content height; the theme owns the padding. These rows
+  // paint text plus a textual match-count badge and no icon at all, and the model
+  // exposes no Qt::DecorationRole, so there is deliberately no icon-size floor
+  // here — one would make Search TALLER than comparable plain-delegate rows at
+  // small font sizes.
+  const int height = opt.fontMetrics.height() + ItemViewUtils::verticalChrome(opt);
   return QSize(200, height);
 }
 
@@ -120,8 +130,8 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
   style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
 
   int lineNumber = p_index.data(SearchResultModel::LineNumberRole).toInt();
-  const auto segments = p_index.data(SearchResultModel::SegmentsRole)
-                            .value<QVector<SearchMatchSegment>>();
+  const auto segments =
+      p_index.data(SearchResultModel::SegmentsRole).value<QVector<SearchMatchSegment>>();
   QString lineText = p_index.data(Qt::DisplayRole).toString();
 
   QColor textColor = (p_option.state & QStyle::State_Selected)
@@ -185,7 +195,7 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
     }
 
     int x = lineRect.left();
-    int cursor = 0;  // Next unpainted character index.
+    int cursor = 0; // Next unpainted character index.
     for (const SearchMatchSegment &seg : ranges) {
       // Clamp against already-painted text so partially overlapping segments
       // still highlight their tail instead of being dropped entirely.

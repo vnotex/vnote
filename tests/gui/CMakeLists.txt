@@ -161,6 +161,42 @@ add_qt_test(test_treeviewindentation
     test_treeviewindentation.cpp
 )
 
+# ItemViewUtils is header-only (see src/gui/utils/itemviewutils.h), so this
+# target needs no extra SOURCES. NOT GUILESS: add_qt_test() then supplies
+# Qt6::Gui + Qt6::Widgets, and the assertions need a real QApplication so
+# QStyleSheetStyle is actually installed on the probe widget. The five delegate
+# call sites are covered by the grep gate tests/utils/test_itemheight_drift.cpp.
+add_qt_test(test_itemviewutils
+  SOURCES
+    test_itemviewutils.cpp
+)
+target_include_directories(test_itemviewutils PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+)
+
+# Guards the Qt behaviour that lets the dock views skip hand-rolled cache
+# invalidation on a theme switch. See the header comment of the .cpp.
+add_qt_test(test_uniformrowheight_invalidation
+  SOURCES
+    test_uniformrowheight_invalidation.cpp
+)
+
+# StyledItemDelegate's highlighted-segment branch is the one delegate path the
+# grep gate cannot meaningfully check, because it measures a QTextDocument rather
+# than the row content. See the header comment of the .cpp.
+add_qt_test(test_styleditemdelegate_height
+  SOURCES
+    test_styleditemdelegate_height.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
+  LINKS
+    Qt6::Widgets
+)
+target_include_directories(test_styleditemdelegate_height PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
 # vxpdf:// scheme handler: the MIME map and the document token registry. See the
 # header comment of the .cpp for what requestStarted() coverage would require
 # (a real QWebEngineUrlRequestJob, which has no public constructor).

@@ -188,6 +188,20 @@ target_compile_definitions(test_tree_indentation_drift PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
+# Grep-gate regression test: a custom item delegate owns the CONTENT height of a
+# row, the theme owns the PADDING. A delegate that hardcodes its vertical padding
+# never reaches QStyleSheetStyle::sizeFromContents(CT_ItemViewItem), so the
+# theme's `::item { padding: ...; }` is silently dropped and the dock rows drift.
+# See tests/utils/test_itemheight_drift.cpp.
+add_qt_test(test_itemheight_drift
+  SOURCES
+    test_itemheight_drift.cpp
+  GUILESS
+)
+target_compile_definitions(test_itemheight_drift PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 # Grep-gate regression test: no regular-expression Markdown image parser may
 # come back. vtextedit 2d07683 + vnote 5f811d45 deleted the `=WxH` group from
 # such an expression and thereby stopped it matching sized images at all,

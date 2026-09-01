@@ -7,6 +7,7 @@
 
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/itemviewutils.h>
 
 using namespace vnotex;
 
@@ -42,8 +43,7 @@ QColor TaskEntryDelegate::resolveTextColor(const QStyleOptionViewItem &p_option)
             themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#selected#fg")));
       }
     } else if (p_option.state & QStyle::State_MouseOver) {
-      color =
-          QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#hover#fg")));
+      color = QColor(themeService->paletteColor(QStringLiteral("widgets#qtreeview#item#hover#fg")));
     }
 
     if (!color.isValid()) {
@@ -103,14 +103,21 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
   // The selected row's background reduces contrast, so dim less there.
   dimColor.setAlpha((p_option.state & QStyle::State_Selected) ? 200 : 150);
 
-  const QFont nameFont = p_option.font;
+  // The initialized option is the only place Qt::FontRole is visible, and it is
+  // what sizeHint() measured; use it for every font/metric decision below.
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+
+  const QFont nameFont = opt.font;
   const QFont smallFont = pathFont(nameFont);
   const QFontMetrics nameFm(nameFont);
   const QFontMetrics smallFm(smallFont);
 
-  // Line 1: the task label.
-  QRect nameRect(contentRect.left(), contentRect.top() + m_vPadding, contentRect.width(),
-                 nameFm.height());
+  // Line 1: the task label. The theme owns the padding (QSS `::item`); chrome is
+  // the combined top+bottom figure and every shipped theme is symmetric, so half
+  // of it is the top offset. See gui/utils/itemviewutils.h.
+  QRect nameRect(contentRect.left(), contentRect.top() + ItemViewUtils::verticalChrome(opt) / 2,
+                 contentRect.width(), nameFm.height());
   p_painter->setFont(nameFont);
   p_painter->setPen(textColor);
   p_painter->drawText(nameRect, Qt::AlignLeft | Qt::AlignVCenter,
@@ -138,16 +145,21 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
 
 QSize TaskEntryDelegate::sizeHint(const QStyleOptionViewItem &p_option,
                                   const QModelIndex &p_index) const {
-  const QFontMetrics nameFm(p_option.font);
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+
+  // The delegate owns the content height; the theme owns the padding.
+  const int chrome = ItemViewUtils::verticalChrome(opt);
+  const QFontMetrics nameFm(opt.fontMetrics);
 
   const QString path = p_index.data(PathRole).toString();
   if (path.isEmpty()) {
-    return QSize(200, qMax(nameFm.height(), m_iconSize) + m_vPadding * 2);
+    return QSize(200, qMax(nameFm.height(), m_iconSize) + chrome);
   }
 
-  const QFontMetrics smallFm(pathFont(p_option.font));
+  const QFontMetrics smallFm(pathFont(opt.font));
   const int textHeight = nameFm.height() + m_lineSpacing + smallFm.height();
 
   // Width is determined by the view.
-  return QSize(200, qMax(textHeight, m_iconSize) + m_vPadding * 2);
+  return QSize(200, qMax(textHeight, m_iconSize) + chrome);
 }

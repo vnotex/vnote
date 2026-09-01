@@ -10,6 +10,9 @@ target_sources(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/iconutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/imageutils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/imageutils.h
+    # Header-only on purpose, same reason as treeviewutils.h below: several test
+    # targets compile the delegates without linking any gui/utils source.
+    ${CMAKE_CURRENT_SOURCE_DIR}/itemviewutils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/treehorizontalscrollhelper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/treehorizontalscrollhelper.h
     # Header-only on purpose: several test targets compile the dock views

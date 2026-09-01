@@ -18,8 +18,7 @@ public:
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
              const QModelIndex &p_index) const override;
 
-  QSize sizeHint(const QStyleOptionViewItem &p_option,
-                 const QModelIndex &p_index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const override;
 
 private:
   // Paint a file-level result row (bold name + match count badge)
@@ -31,7 +30,6 @@ private:
                        const QModelIndex &p_index) const;
 
   const int m_hPadding = 6;
-  const int m_vPadding = 3;
 };
 
 } // namespace vnotex

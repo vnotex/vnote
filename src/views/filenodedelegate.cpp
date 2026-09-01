@@ -6,11 +6,12 @@
 #include <QRegularExpression>
 #include <QTimer>
 
+#include "nodeiconhelper.h"
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/itemviewutils.h>
 #include <models/notebooknodemodel.h>
-#include "nodeiconhelper.h"
 
 using namespace vnotex;
 
@@ -37,7 +38,12 @@ void FileNodeDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p_
     return;
   }
 
-  paintFileNode(p_painter, p_option, nodeInfo, p_index);
+  // Paint from the initialized option, so the font used to lay the row out is the
+  // same one sizeHint() measured (Qt::FontRole is only visible post-init).
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+
+  paintFileNode(p_painter, opt, nodeInfo, p_index);
 }
 
 void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionViewItem &p_option,
@@ -60,7 +66,11 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
   // --- Layout Calculations ---
   // Line 1: icon + name
   // Lines 2-3: two-line preview + tags (tags on first preview line)
-  int contentTop = p_option.rect.y() + m_vPadding;
+  // The theme owns the outer padding (QSS `::item`); chrome is the combined
+  // top+bottom figure, and every shipped theme is symmetric, so half of it is
+  // the top offset. See gui/utils/itemviewutils.h. p_option arrives already
+  // initialized from paint().
+  int contentTop = p_option.rect.y() + ItemViewUtils::verticalChrome(p_option) / 2;
   int line1Height = m_iconSize + m_hPadding;
 
   // Preview font for height calculations
@@ -75,12 +85,14 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
 
   QRect line1Rect = QRect(p_option.rect.x(), contentTop, p_option.rect.width(), line1Height);
   int previewTop = contentTop + line1Height + m_lineSpacing;
-  QRect previewLine1Rect = QRect(p_option.rect.x(), previewTop, p_option.rect.width(), previewLineHeight);
+  QRect previewLine1Rect =
+      QRect(p_option.rect.x(), previewTop, p_option.rect.width(), previewLineHeight);
   QRect previewLine2Rect = QRect(p_option.rect.x(), previewTop + previewLineHeight + m_lineSpacing,
-                                  p_option.rect.width(), previewLineHeight);
+                                 p_option.rect.width(), previewLineHeight);
 
   // --- Line 1: Icon + Name ---
-  QRect iconRect(line1Rect.x() + m_hPadding, line1Rect.y() + (line1Height - m_iconSize) / 2, m_iconSize, m_iconSize);
+  QRect iconRect(line1Rect.x() + m_hPadding, line1Rect.y() + (line1Height - m_iconSize) / 2,
+                 m_iconSize, m_iconSize);
 
   QRect nameRect = line1Rect;
   nameRect.setLeft(iconRect.right() + m_hPadding);
@@ -164,7 +176,8 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
       // Second preview line with remaining text
       QString remainingText = previewText.mid(charsOnLine1).trimmed();
       if (!remainingText.isEmpty()) {
-        QString line2Text = previewFm.elidedText(remainingText, Qt::ElideRight, preview2Rect.width());
+        QString line2Text =
+            previewFm.elidedText(remainingText, Qt::ElideRight, preview2Rect.width());
         p_painter->drawText(preview2Rect, Qt::AlignLeft | Qt::AlignVCenter, line2Text);
       }
     } else {
@@ -284,14 +297,17 @@ int FileNodeDelegate::paintTags(QPainter *p_painter, const QRect &p_rect, const 
   return p_rect.right() - x; // Total width consumed
 }
 
-QSize FileNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const {
-  QFontMetrics fm(p_option.font);
+QSize FileNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
+                                 const QModelIndex &p_index) const {
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+  const QFontMetrics fm(opt.fontMetrics);
 
   // Line 1: icon height or font height (whichever larger)
   int line1Height = qMax(fm.height(), m_iconSize) + m_hPadding;
 
   // Lines 2-3: two lines for preview (smaller font)
-  QFont smallFont = p_option.font;
+  QFont smallFont = opt.font;
   int pointSize = smallFont.pointSize();
   if (pointSize > 2) {
     smallFont.setPointSize(pointSize - 1);
@@ -299,14 +315,17 @@ QSize FileNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option, const QMo
   int previewLineHeight = QFontMetrics(smallFont).height();
   int previewBlockHeight = previewLineHeight * 2 + m_lineSpacing; // Two lines of preview
 
-  // Base height = line1 + preview block + vertical padding
-  int totalHeight = line1Height + m_lineSpacing + previewBlockHeight + 2 * m_vPadding;
+  // Base height = line1 + preview block + the theme's vertical chrome. These
+  // rows are deliberately multi-line cards; only the padding component is
+  // theme-driven.
+  int totalHeight =
+      line1Height + m_lineSpacing + previewBlockHeight + ItemViewUtils::verticalChrome(opt);
 
   // Line 4 (optional): tags line - only if node has tags
   NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
   if (!nodeInfo.tags.isEmpty()) {
     // Tags use smaller font
-    QFont tagFont = p_option.font;
+    QFont tagFont = opt.font;
     int tagPointSize = tagFont.pointSize();
     if (tagPointSize > 2) {
       tagFont.setPointSize(tagPointSize - 2);
@@ -315,7 +334,9 @@ QSize FileNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option, const QMo
     totalHeight += m_lineSpacing + tagLineHeight;
   }
 
-  // Ensure minimum height
+  // Minimum card height, independent of the theme: under a 2px-padding theme
+  // (native) the computed height can fall below what the two-line card needs to
+  // stay legible.
   totalHeight = qMax(totalHeight, 48);
 
   return QSize(200, totalHeight); // Width will be determined by view
@@ -365,11 +386,11 @@ QColor FileNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
   if (p_option.state & QStyle::State_Selected) {
     // Check active vs inactive window state
     if (p_option.state & QStyle::State_Active) {
-      textColor =
-          QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#fg")));
+      textColor = QColor(
+          themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#fg")));
     } else {
-      textColor =
-          QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#inactive#fg")));
+      textColor = QColor(themeService->paletteColor(
+          QStringLiteral("widgets#qlistview#item#selected#inactive#fg")));
     }
     // Fallback to general selected color if specific one not found
     if (!textColor.isValid()) {
@@ -377,7 +398,8 @@ QColor FileNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
           QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#selected#fg")));
     }
   } else if (p_option.state & QStyle::State_MouseOver) {
-    textColor = QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#hover#fg")));
+    textColor =
+        QColor(themeService->paletteColor(QStringLiteral("widgets#qlistview#item#hover#fg")));
   }
 
   // Fallback to normal text color
@@ -392,7 +414,6 @@ QColor FileNodeDelegate::getNodeTextColor(const NodeInfo &p_nodeInfo,
 
   return textColor;
 }
-
 
 void FileNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_index) const {
   Q_UNUSED(p_index);
@@ -412,8 +433,6 @@ void FileNodeDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_ind
   QString text = lineEdit->text();
   int lastDot = text.lastIndexOf(QLatin1Char('.'));
   if (lastDot > 0) {
-    QTimer::singleShot(0, lineEdit, [lineEdit, lastDot]() {
-      lineEdit->setSelection(0, lastDot);
-    });
+    QTimer::singleShot(0, lineEdit, [lineEdit, lastDot]() { lineEdit->setSelection(0, lastDot); });
   }
 }

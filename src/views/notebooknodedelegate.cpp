@@ -8,6 +8,7 @@
 #include "nodeiconhelper.h"
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/itemviewutils.h>
 #include <models/notebooknodemodel.h>
 
 using namespace vnotex;
@@ -29,7 +30,12 @@ void NotebookNodeDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem
     return;
   }
 
-  paintNode(p_painter, p_option, nodeInfo);
+  // Paint from the initialized option, so the font used to lay the row out is the
+  // same one sizeHint() measured (Qt::FontRole is only visible post-init).
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+
+  paintNode(p_painter, opt, nodeInfo);
 }
 
 void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionViewItem &p_option,
@@ -162,11 +168,17 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
 
 QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
                                      const QModelIndex &p_index) const {
-  QFontMetrics fm(p_option.font);
-  const int height = qMax(fm.height(), m_iconSize) + m_vPadding * 2;
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
+
+  // The delegate owns the content height; the theme owns the padding.
+  const QFontMetrics fm(opt.fontMetrics);
+  const int height = qMax(fm.height(), m_iconSize) + ItemViewUtils::verticalChrome(opt);
 
   NodeInfo nodeInfo = p_index.data(INodeListModel::NodeInfoRole).value<NodeInfo>();
   if (!nodeInfo.isValid()) {
+    // paint() defers to the base delegate for such an index, so its size must
+    // come from there too; both branches now carry the same theme chrome.
     return QStyledItemDelegate::sizeHint(p_option, p_index);
   }
 
