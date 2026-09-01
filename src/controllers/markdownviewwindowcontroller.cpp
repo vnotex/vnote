@@ -113,6 +113,15 @@ MarkdownViewWindowController::ModeTransition MarkdownViewWindowController::compu
     }
   }
 
+  // The constructor's initial transition performs the first buffer read, which
+  // lazily loads content and bumps the vxcore revision. The revision captured by
+  // ViewWindow2's constructor is stale from that point on, and would otherwise be
+  // misread as an external modification on the next focus-gained event.
+  if (p_currentMode == static_cast<int>(ViewWindowMode::Invalid) &&
+      (result.syncEditorFromBuffer || result.syncViewerFromBuffer)) {
+    result.adoptInitialRevision = true;
+  }
+
   return result;
 }
 

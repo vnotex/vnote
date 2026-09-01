@@ -778,6 +778,16 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     syncViewerFromBuffer(transition.syncPositionFromPrevMode);
   }
 
+  // The initial buffer read above lazily loaded the content and bumped the
+  // vxcore revision past what ViewWindow2's constructor captured. Adopt it now,
+  // before the show/focus/processEvents() sequence below delivers a focus event:
+  // onFocusGained() would otherwise read the stale revision as an external
+  // modification and re-sync -- a full viewer page reload that discards any
+  // render pass already running in the page.
+  if (transition.adoptInitialRevision) {
+    m_lastKnownRevision = getBuffer().isValid() ? getBuffer().getRevision() : 0;
+  }
+
   // Show/hide widgets and set focus.
   switch (m_mode) {
   case ViewWindowMode::Read:
@@ -938,6 +948,17 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
                          << "valid=" << state.valid << "chars=" << state.content.size()
                          << "atMs=" << QDateTime::currentMSecsSinceEpoch();
   if (state.valid) {
+    // Diagnostics: a reload here tears the page down. If the adapter is already
+    // ready, the page had finished loading and may be running a render pass that
+    // is about to be discarded silently -- the failure mode this line exists to
+    // make greppable. No suppression: reloading unconditionally is correct.
+    if (adapter()->isReady()) {
+      qCDebug(lcPerfPreview) << "syncViewerFromBuffer discarding a loaded page"
+                             << "viewerRevision=" << m_viewerBufferRevision
+                             << "revision=" << state.revision
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch();
+    }
+
     int lineNumber = -1;
     if (p_syncPositionFromEditMode) {
       lineNumber = getEditLineNumber();

@@ -66,12 +66,18 @@ public:
     bool syncPositionFromPrevMode = false;
     bool restoreEditViewMode = false;    // Re-entering Edit with existing editor
     bool syncBufferToActiveView = false; // Post-switch: sync buffer to whichever view is active
+
+    // The Invalid -> Read/Edit transition made in the constructor. The first buffer
+    // read lazily loads content and bumps the vxcore revision, so the revision the
+    // base class captured before construction is already stale by the time this
+    // transition ends.
+    bool adoptInitialRevision = false;
   };
 
   // ============ Mode Switching ============
 
   // Compute what operations are needed for a mode transition.
-  // @p_currentMode: current ViewWindowMode as int (Invalid=-1/Read=0/Edit=1).
+  // @p_currentMode: current ViewWindowMode as int (Read=0/Edit=1/Invalid=2).
   // @p_targetMode: target ViewWindowMode as int.
   // @p_hasEditor: whether the editor widget has been lazily created.
   // @p_hasViewer: whether the viewer widget has been lazily created.
