@@ -484,9 +484,12 @@ const QIcon &DockWidgetHelper::getDockIcon(DockType p_dockType, bool p_isSideBar
   const auto fg = themeService->paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#fg");
   const auto selectedFg =
       themeService->paletteColor("widgets#mainwindow#dockwidget_tabbar#icon#selected#fg");
-  auto sideBarFg = themeService->paletteColor("widgets#mainwindow#side_bar#icon#fg");
-  auto sideBarSelectedFg =
-      themeService->paletteColor("widgets#mainwindow#side_bar#icon#selected#fg");
+  // A theme need not style the side bar separately; when it does not, we fall
+  // back to the tabbar colors below, so probe without warning.
+  auto sideBarFg = themeService->optionalPaletteColor(
+      "widgets#mainwindow#side_bar#icon#fg"); // palette-token-optional: tabbar fallback
+  auto sideBarSelectedFg = themeService->optionalPaletteColor(
+      "widgets#mainwindow#side_bar#icon#selected#fg"); // palette-token-optional: tabbar fallback
 
   if (sideBarFg.isEmpty()) {
     sideBarFg = fg;

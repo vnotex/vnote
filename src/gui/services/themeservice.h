@@ -61,6 +61,12 @@ public:
   // Get palette color by name from current theme.
   QString paletteColor(const QString &p_name) const;
 
+  // Probe for an OPTIONAL palette color: returns an empty string without
+  // warning when the current theme does not define the token. Use this (and
+  // mark the literal `// palette-token-optional: <reason>`) when the call site
+  // has its own fallback.
+  QString optionalPaletteColor(const QString &p_name) const;
+
   // Resolve one semantic comment-highlight token (see CommentColor) to a real
   // CSS color.
   //

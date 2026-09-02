@@ -53,6 +53,11 @@ add_qt_test(test_theme_core
   GUILESS
 )
 
+# The C++ palette-token gate scans src/ for palette-path-shaped string literals.
+target_compile_definitions(test_theme_core PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 add_qt_test(test_searchservice
   SOURCES
     test_searchservice.cpp

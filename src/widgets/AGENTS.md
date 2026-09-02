@@ -483,6 +483,33 @@ If you genuinely need a literal, append `// hardcoded-color-allow: <reason>` to
 any line the literal spans. Use it sparingly — every existing case was
 removable.
 
+## Every Palette Token Must Exist in Every Theme
+
+`ThemeService::paletteColor()` returns an **empty string** for a token no theme
+defines — it only `qWarning`s. Interpolated into a stylesheet, Qt then drops the
+declaration; handed to `QColor`, the color is invalid.
+
+`tests/core/test_theme.cpp::testCppPaletteTokensDefined` scans `src/` for every
+string literal shaped like a palette path (`base#…`, `widgets#…`, `palette#…`)
+and fails the build if any bundled theme does not resolve it. It is shape-based,
+so bare `"..."` literals, `QStringLiteral(...)` and file-scope `c_*` constants
+are all covered. Its sibling `testInterfaceQssFullyResolved` does the same for
+tokens named in `interface.qss`; both share one resolver so they cannot drift.
+
+Adding a token means adding it to **all** themes under
+`src/data/extra/themes/`. Prefer an existing role — `base#normal#border`, not a
+new `base#border`. `native` is the smallest palette (no `base.content`, no
+`base.hover`); a copy-paste from `pure` will produce dangling refs the gate
+catches. Themes that declare `"backfill-system-palette": true` may leave
+`@palette#active#<role>` / `@palette#disabled#<role>` leaves to
+`ThemeUtils::backfillSystemPalette`, but only for the roles that function
+actually creates — `@palette#inactive#…` and a misspelled role both fail.
+
+If the token is a deliberate **probe** with its own fallback, call
+`ThemeService::optionalPaletteColor()` (no warning) and append
+`// palette-token-optional: <reason>` to any line the literal spans.
+`DockWidgetHelper::getDockIcon` is the reference case.
+
 ## MVC Rule for Widgets
 
 See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for widgets: **All layers receive `ServiceLocator&`** via constructor injection (enables DI and testing).

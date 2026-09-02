@@ -175,6 +175,11 @@ QString ThemeService::paletteColor(const QString &p_name) const {
   return m_currentTheme->paletteColor(p_name);
 }
 
+QString ThemeService::optionalPaletteColor(const QString &p_name) const {
+  Q_ASSERT(m_currentTheme);
+  return m_currentTheme->optionalPaletteColor(p_name);
+}
+
 namespace {
 
 bool isResolvedColor(const QString &p_value) {

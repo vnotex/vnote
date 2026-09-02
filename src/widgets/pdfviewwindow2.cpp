@@ -352,7 +352,7 @@ void PdfViewWindow2::applySwatchResolvers() {
   CommentColorSwatch::ColorResolver resolver = [themeService](const QString &p_token) {
     return themeService->commentHighlightColor(p_token);
   };
-  const auto borderCss = themeService->paletteColor(QStringLiteral("base#border"));
+  const auto borderCss = themeService->paletteColor(QStringLiteral("base#normal#border"));
 
   if (m_annotationToolBar) {
     m_annotationToolBar->setSwatchResolver(resolver, borderCss);
@@ -581,7 +581,7 @@ void PdfViewWindow2::setupViewer() {
       [themeService](const QString &p_token) {
         return themeService->commentHighlightColor(p_token);
       },
-      themeService->paletteColor(QStringLiteral("base#border")));
+      themeService->paletteColor(QStringLiteral("base#normal#border")));
   connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });

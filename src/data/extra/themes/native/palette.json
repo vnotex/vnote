@@ -161,6 +161,50 @@
                 "bg" : "@base#master#bg"
             }
         },
+        "qtreeview" : {
+            "fg" : "@base#normal#fg",
+            "bg" : "@base#normal#bg",
+            "item" : {
+                "hover" : {
+                    "fg" : "@base#normal#fg",
+                    "bg" : "@palette#active#alternate_base"
+                },
+                "selected" : {
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg",
+                    "active" : {
+                        "fg" : "@base#selected#fg",
+                        "bg" : "@base#selected#bg"
+                    },
+                    "inactive" : {
+                        "fg" : "@base#normal#fg",
+                        "bg" : "@palette#active#alternate_base"
+                    }
+                }
+            }
+        },
+        "qlistview" : {
+            "fg" : "@base#normal#fg",
+            "bg" : "@base#normal#bg",
+            "item" : {
+                "hover" : {
+                    "fg" : "@base#normal#fg",
+                    "bg" : "@palette#active#alternate_base"
+                },
+                "selected" : {
+                    "fg" : "@base#selected#fg",
+                    "bg" : "@base#selected#bg",
+                    "active" : {
+                        "fg" : "@base#selected#fg",
+                        "bg" : "@base#selected#bg"
+                    },
+                    "inactive" : {
+                        "fg" : "@base#normal#fg",
+                        "bg" : "@palette#active#alternate_base"
+                    }
+                }
+            }
+        },
         "mainwindow" : {
             "dockwidget_tabbar" : {
                 "icon" : {

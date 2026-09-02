@@ -737,7 +737,7 @@ void MainWindow2::setupCommentPanel() {
           [themeService](const QString &p_token) {
             return themeService->commentHighlightColor(p_token);
           },
-          themeService->paletteColor(QStringLiteral("base#border")));
+          themeService->paletteColor(QStringLiteral("base#normal#border")));
     };
     applySwatches();
     connect(themeService, &ThemeService::themeChanged, m_commentPanel, applySwatches);
