@@ -39,13 +39,10 @@ class Graphviz extends GraphRenderer {
         this.concurrencyLimit = this.useWeb ? 4 : 0;
     }
 
-    initialize(p_callback) {
-        return super.initialize(() => {
-            if (this.useWeb) {
-                this.viz = new Viz();
-            }
-            p_callback();
-        });
+    initializeRenderer() {
+        if (this.useWeb) {
+            this.viz = new Viz();
+        }
     }
 
     // viz.js corrupts its underlying WASM instance once a render throws, so any
@@ -183,6 +180,7 @@ class Graphviz extends GraphRenderer {
         let func = () => {
             if (!this.viz) {
                 console.log("viz is not ready yet");
+                p_callback(null);
                 return;
             }
             this.viz.renderSVGElement(p_text)
@@ -195,7 +193,7 @@ class Graphviz extends GraphRenderer {
                 });
         };
 
-        if (!this.initialize(func)) {
+        if (!this.initialize(func, () => p_callback(null))) {
             return;
         }
 

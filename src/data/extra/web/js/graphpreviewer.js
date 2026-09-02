@@ -295,7 +295,9 @@ class GraphPreviewer {
                     // and no yield, so the callback boundary IS the whole
                     // mermaid.render() cost for this request (H2).
                     this.perfNoteRender(p_timeStamp, p_id);
-                    this.fixSvgRelativeWidth(graphDiv.firstElementChild);
+                    if (graphDiv) {
+                        this.fixSvgRelativeWidth(graphDiv.firstElementChild);
+                    }
                     this.processGraph(p_id, p_timeStamp, graphDiv, p_scale);
                 });
         } else if (p_lang === 'puml' || p_lang === 'plantuml') {

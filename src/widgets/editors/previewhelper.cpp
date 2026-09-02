@@ -5,16 +5,21 @@
 #include <QElapsedTimer>
 #include <QTextBlock>
 #include <QTextDocument>
+#include <QTextEdit>
 #include <QTimer>
+#include <QWidget>
 
 #include <algorithm>
 
 #include <vtextedit/texteditorconfig.h>
+#include <vtextedit/texteditutils.h>
 #include <vtextedit/textutils.h>
+#include <vtextedit/vtextedit.h>
 
 #include "graphvizhelper.h"
 #include "markdowneditor.h"
 #include "plantumlhelper.h"
+#include "previewdispatchplanner.h"
 #include "previewscaleutils.h"
 #include <core/logging.h>
 
@@ -331,7 +336,7 @@ void PreviewHelper::handleCodeBlocksUpdate() {
     perfBeginGeneration();
   }
 
-  QVector<int> needPreviewBlocks;
+  QVector<PreviewDispatchRequest> needPreviewBlocks;
 
   for (int i = 0; i < m_pendingCodeBlocks.size(); ++i) {
     const auto &cb = m_pendingCodeBlocks[i];
@@ -369,7 +374,7 @@ void PreviewHelper::handleCodeBlocksUpdate() {
 
     if (m_inplacePreviewCodeBlocksEnabled && needPreview.first && !cacheHit) {
       m_codeBlocksData[blockPreviewIdx].m_text = cb.m_text;
-      needPreviewBlocks.push_back(blockPreviewIdx);
+      needPreviewBlocks.append({blockPreviewIdx, cb.m_startBlock, cb.m_endBlock});
     }
 
     if (perf) {
@@ -395,12 +400,25 @@ void PreviewHelper::handleCodeBlocksUpdate() {
                            << "atMs=" << m_perfStats.m_generationStartEpochMs;
   }
 
+  QPair<int, int> visibleRange(-1, -1);
+  auto *textEdit = m_editor ? m_editor->getTextEdit() : nullptr;
+  auto *viewport = textEdit ? textEdit->viewport() : nullptr;
+  auto *window = textEdit ? textEdit->window() : nullptr;
+  if (m_editor && textEdit && m_document && viewport && window && m_document->documentLayout() &&
+      textEdit->document() == m_document && m_editor->isVisible() && textEdit->isVisible() &&
+      viewport->isVisible() && window->isVisible() && viewport->width() > 0 &&
+      viewport->height() > 0 && !(window->windowState() & Qt::WindowMinimized)) {
+    visibleRange = vte::TextEditUtils::visibleBlockRange(textEdit);
+  }
+  const auto dispatchRequests =
+      PreviewDispatchPlanner::visibleFirst(needPreviewBlocks, m_document, visibleRange);
+
   const qint64 dispatchStartMs = perf ? perfNowMs() : 0;
-  for (auto idx : needPreviewBlocks) {
-    if (perf && idx < m_perfRequestMs.size()) {
-      m_perfRequestMs[idx] = perfNowMs();
+  for (const auto &request : dispatchRequests) {
+    if (perf && request.m_previewId < m_perfRequestMs.size()) {
+      m_perfRequestMs[request.m_previewId] = perfNowMs();
     }
-    inplacePreviewCodeBlock(idx);
+    inplacePreviewCodeBlock(request.m_previewId);
   }
 
   if (perf) {

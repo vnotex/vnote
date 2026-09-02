@@ -187,10 +187,44 @@ class FailingInitRenderer extends TestRenderer {
     this.extraScripts = ['/web/js/some-library.js'];
   }
 
-  initialize(p_callback) {
-    return super.initialize(() => {
-      throw new ReferenceError('someLibrary is not defined');
-    });
+  initializeRenderer() {
+    throw new ReferenceError('someLibrary is not defined');
+  }
+}
+
+class QueuedInitRenderer extends TestRenderer {
+  constructor() {
+    super();
+    this.initialized = false;
+    this.extraScripts = ['/web/js/some-library.js'];
+    this.libraryInitCount = 0;
+    this.callbackCount = 0;
+  }
+
+  initializeRenderer() { ++this.libraryInitCount; }
+}
+
+class NoScriptFailingInitRenderer extends FailingInitRenderer {
+  constructor() {
+    super();
+    this.extraScripts = [];
+  }
+}
+
+class MissingLibraryRenderer extends QueuedInitRenderer {
+  initializeRenderer() {
+    if (typeof missingLibrary === 'undefined') {
+      throw new Error('library is not available');
+    }
+  }
+}
+
+class MissingThemeRenderer extends QueuedInitRenderer {
+  initializeRenderer() {
+    window.WaveDrom = {RenderWaveForm: function() {}};
+    if (typeof WaveSkin === 'undefined' || !Array.isArray(WaveSkin.default)) {
+      throw new Error('theme is not available');
+    }
   }
 }
 
@@ -206,6 +240,81 @@ window.__startFailingInitPass = function(p_count) {
   window.__r = r;
 
   r.doRender();
+  return r;
+};
+
+window.__queueInitializations = function(p_count) {
+  window.__scriptLoads = [];
+  var r = new QueuedInitRenderer();
+  window.__r = r;
+  for (var i = 0; i < p_count; ++i) {
+    r.initialize(function() { ++r.callbackCount; });
+  }
+  return r;
+};
+
+window.__queueFailingInitializations = function(p_count) {
+  window.__finishWorkCalls = 0;
+  window.__scriptLoads = [];
+  var r = new FailingInitRenderer();
+  r.failureCount = 0;
+  window.__r = r;
+  r.nodesToRender = [{idx: 0}];
+  r.doRender();
+  for (var i = 0; i < p_count; ++i) {
+    r.initialize(function() {}, function() { ++r.failureCount; });
+  }
+  return r;
+};
+
+window.__queueThrowingCallback = function() {
+  window.__scriptLoads = [];
+  var r = new QueuedInitRenderer();
+  window.__r = r;
+  r.initialize(function() { throw new Error('callback failed'); });
+  r.initialize(function() { ++r.callbackCount; });
+  return r;
+};
+
+window.__queueRejectingCallback = function() {
+  window.__scriptLoads = [];
+  var r = new QueuedInitRenderer();
+  r.failureCount = 0;
+  window.__r = r;
+  r.initialize(function() { return Promise.reject(new Error('callback rejected')); },
+               function() { ++r.failureCount; });
+  r.initialize(function() { ++r.callbackCount; });
+  return r;
+};
+
+window.__startNoScriptFailingInitPass = function() {
+  window.__finishWorkCalls = 0;
+  var r = new NoScriptFailingInitRenderer();
+  r.nodesToRender = [{idx: 0}];
+  window.__r = r;
+  r.doRender();
+  return r;
+};
+
+window.__retryAfterMissingLibrary = function() {
+  window.__scriptLoads = [];
+  var r = new MissingLibraryRenderer();
+  r.failureCount = 0;
+  window.__r = r;
+  r.initialize(function() {}, function() { ++r.failureCount; });
+  window.__scriptLoads.shift()();
+  r.initialize(function() {}, function() { ++r.failureCount; });
+  return r;
+};
+
+window.__retryAfterMissingTheme = function() {
+  window.__scriptLoads = [];
+  var r = new MissingThemeRenderer();
+  r.failureCount = 0;
+  window.__r = r;
+  r.initialize(function() {}, function() { ++r.failureCount; });
+  window.__scriptLoads.shift()();
+  r.initialize(function() {}, function() { ++r.failureCount; });
   return r;
 };
 
@@ -307,6 +416,13 @@ private slots:
 
   // Initialization and diagnostics must not be able to cost the finish.
   void testInit_failureInAsyncInitializeStillFinishes();
+  void testInit_concurrentCallersShareLoadAndAllResume();
+  void testInit_failureSettlesAllCallersAndRemainsUninitialized();
+  void testInit_throwingCallbackDoesNotSuppressLaterCallbacks();
+  void testInit_rejectingCallbackSettlesFailure();
+  void testInit_noScriptFailureStillFinishes();
+  void testInit_missingLibraryRemainsRetryable();
+  void testInit_partialDependencyRemainsRetryable();
   void testTiming_reportFailureDoesNotBlockFinish();
 
   // GraphCache.
@@ -606,6 +722,90 @@ void TestGraphRendererJs::testInit_failureInAsyncInitializeStillFinishes() {
   QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 1);
   QCOMPARE(intOf(engine, QStringLiteral("window.__r.renderCount")), 0);
   QCOMPARE(intOf(engine, QStringLiteral("window.__errors.length")), 1);
+}
+
+void TestGraphRendererJs::testInit_concurrentCallersShareLoadAndAllResume() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__queueInitializations(7)"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__scriptLoads.length")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.callbackCount")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.libraryInitCount")), 0);
+
+  run(engine, QStringLiteral("window.__scriptLoads[0]()"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.callbackCount")), 7);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.libraryInitCount")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initialized ? 1 : 0")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initializing ? 1 : 0")), 0);
+}
+
+void TestGraphRendererJs::testInit_failureSettlesAllCallersAndRemainsUninitialized() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__queueFailingInitializations(7)"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__scriptLoads.length")), 1);
+  run(engine, QStringLiteral("window.__scriptLoads[0]()"));
+
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.failureCount")), 7);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initialized ? 1 : 0")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initializing ? 1 : 0")), 0);
+}
+
+void TestGraphRendererJs::testInit_throwingCallbackDoesNotSuppressLaterCallbacks() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__queueThrowingCallback()"));
+  run(engine, QStringLiteral("window.__scriptLoads[0]()"));
+
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.callbackCount")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__errors.length")), 1);
+}
+
+void TestGraphRendererJs::testInit_rejectingCallbackSettlesFailure() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__queueRejectingCallback()"));
+  run(engine, QStringLiteral("window.__scriptLoads[0]()"));
+  drainMicrotasks();
+
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.callbackCount")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.failureCount")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__errors.length")), 1);
+}
+
+void TestGraphRendererJs::testInit_noScriptFailureStillFinishes() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__startNoScriptFailingInitPass()"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initialized ? 1 : 0")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__errors.length")), 1);
+}
+
+void TestGraphRendererJs::testInit_missingLibraryRemainsRetryable() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__retryAfterMissingLibrary()"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.failureCount")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initialized ? 1 : 0")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__scriptLoads.length")), 1);
+}
+
+void TestGraphRendererJs::testInit_partialDependencyRemainsRetryable() {
+  QJSEngine engine;
+  setupRenderer(engine);
+
+  run(engine, QStringLiteral("window.__retryAfterMissingTheme()"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.failureCount")), 1);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.initialized ? 1 : 0")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__scriptLoads.length")), 1);
 }
 
 void TestGraphRendererJs::testTiming_reportFailureDoesNotBlockFinish() {

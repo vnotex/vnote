@@ -4,6 +4,8 @@ class GraphRenderer extends VxWorker {
         super();
 
         this.initialized = false;
+        this.initializing = false;
+        this.initializeWaiters = [];
         this.graphIdx = 0;
         this.graphDivClass = '';
 
@@ -225,35 +227,77 @@ class GraphRenderer extends VxWorker {
     // Return ture if we could continue.
     // Initialize may load additional libraries dynamically, in which case we need
     // to suspend our execution for now and call p_callback() later.
-    initialize(p_callback) {
+    initialize(p_callback, p_failureCallback = null) {
         if (this.initialized) {
             return true;
         }
 
-        console.info('render initialized:', this.name);
-
-        this.initialized = true;
-        if (this.extraScripts.length > 0) {
-            Utils.loadScripts(this.extraScripts, () => {
-                // p_callback here is the SUBCLASS's wrapper, and that wrapper
-                // dereferences the library that was just loaded - Mermaid.initialize
-                // calls mermaid.initialize(), Graphviz.initialize does `new Viz()`.
-                // If the script failed to load, those throw a ReferenceError before
-                // ever reaching renderNodes(), so without this guard a failed script
-                // still deadlocks the viewer: no pass is armed, and nothing will
-                // ever call finishWork(). Utils.loadScript's onerror arm is only
-                // half the fix; this is the other half.
-                try {
-                    p_callback();
-                } catch (p_err) {
-                    this.reportProblem('renderer initialization failed', this.name, p_err);
-                    this.abandonPendingPass();
-                }
-            });
+        if (this.initializing) {
+            this.initializeWaiters.push({success: p_callback, failure: p_failureCallback});
             return false;
         }
 
-        return true;
+        console.info('render initialized:', this.name);
+
+        if (this.extraScripts.length == 0) {
+            try {
+                this.initializeRenderer();
+                this.initialized = true;
+                return true;
+            } catch (p_err) {
+                this.reportProblem('renderer initialization failed', this.name, p_err);
+                this.runInitializeCallback(p_failureCallback, null);
+                return false;
+            }
+        }
+
+        this.initializing = true;
+        this.initializeWaiters.push({success: p_callback, failure: p_failureCallback});
+        Utils.loadScripts(this.extraScripts, () => {
+            this.initializing = false;
+            const waiters = this.initializeWaiters;
+            this.initializeWaiters = [];
+            try {
+                this.initializeRenderer();
+                this.initialized = true;
+            } catch (p_err) {
+                this.reportProblem('renderer initialization failed', this.name, p_err);
+                for (const waiter of waiters) {
+                    this.runInitializeCallback(waiter.failure, null);
+                }
+                return;
+            }
+
+            for (const waiter of waiters) {
+                this.runInitializeCallback(waiter.success, waiter.failure);
+            }
+        });
+        return false;
+    }
+
+    initializeRenderer() {
+    }
+
+    runInitializeCallback(p_callback, p_failureCallback) {
+        if (!p_callback) {
+            return;
+        }
+        try {
+            const result = p_callback();
+            if (result && typeof result.then === 'function') {
+                result.catch((p_err) => {
+                    this.reportProblem('renderer initialization callback failed', this.name, p_err);
+                    if (p_failureCallback && p_failureCallback !== p_callback) {
+                        this.runInitializeCallback(p_failureCallback, null);
+                    }
+                });
+            }
+        } catch (p_err) {
+            this.reportProblem('renderer initialization callback failed', this.name, p_err);
+            if (p_failureCallback && p_failureCallback !== p_callback) {
+                this.runInitializeCallback(p_failureCallback, null);
+            }
+        }
     }
 
     // Release the finishWork() debt taken on by doRender() when initialization
@@ -308,15 +352,20 @@ class GraphRenderer extends VxWorker {
         // From here until renderNodes() runs, this renderer owes exactly one
         // finishWork() that no pass state is yet tracking. See abandonPendingPass().
         this.initPendingForPass = true;
-        if (!this.initialize(() => {
-                this.initPendingForPass = false;
+        const startPass = () => {
+            try {
                 this.renderNodes();
-            })) {
+                this.initPendingForPass = false;
+            } catch (p_err) {
+                this.reportProblem('graph render pass failed to start', this.name, p_err);
+                this.abandonPendingPass();
+            }
+        };
+        if (!this.initialize(startPass, () => this.abandonPendingPass())) {
             return;
         }
 
-        this.initPendingForPass = false;
-        this.renderNodes();
+        startPass();
     }
 
     renderNodes() {

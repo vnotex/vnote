@@ -1462,6 +1462,20 @@ add_qt_test(test_previewscaleutils
     Qt6::Svg
 )
 
+# Edit-mode graph preview dispatch policy. GUILESS: QTextDocument and QTextBlock
+# visibility need QtGui, but no widgets, VTextEdit, or renderer stack.
+add_qt_test(test_previewdispatchplanner
+  SOURCES
+    test_previewdispatchplanner.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/previewdispatchplanner.cpp
+  LINKS
+    Qt6::Gui
+  GUILESS
+)
+target_compile_definitions(test_previewdispatchplanner PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+
 # Pure sticker drag math (hit zones + raw candidate geometry). GUILESS: only
 # QSize/QPoint value types are involved. Compiles ONLY stickerdraggeometry.cpp
 # -- the built-in sticker sources are deliberately not pulled in (stickerfactory

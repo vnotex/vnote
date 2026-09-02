@@ -15,6 +15,15 @@ class WaveDromRenderer extends GraphRenderer {
         this.concurrencyLimit = 8;
     }
 
+    initializeRenderer() {
+        if (typeof WaveDrom === 'undefined'
+            || typeof WaveDrom.RenderWaveForm !== 'function'
+            || typeof WaveSkin === 'undefined'
+            || !Array.isArray(WaveSkin.default)) {
+            throw new Error('WaveDrom library is not available');
+        }
+    }
+
     // Render @p_node as WaveDrom graph.
     // Return true on success.
     renderOne(p_node, p_idx) {
@@ -48,7 +57,7 @@ class WaveDromRenderer extends GraphRenderer {
         if (!this.initialize(() => {
                 let graphDiv = this.renderTextInternal(p_container, p_text, p_idx);
                 p_callback(graphDiv);
-            })) {
+            }, () => p_callback(null))) {
             return;
         }
 

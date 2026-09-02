@@ -49,7 +49,7 @@ class PlantUml extends GraphRenderer {
                     'useWeb=', this.useWeb, 'workerId=', this.id);
     }
 
-    initialize(p_callback) {
+    initialize(p_callback, p_failureCallback = null) {
         if (super.initialized) {
             return true;
         }
@@ -59,7 +59,16 @@ class PlantUml extends GraphRenderer {
             console.log('override PlantUml Web service', this.serverUrl);
         }
 
-        return super.initialize(p_callback);
+        return super.initialize(p_callback, p_failureCallback);
+    }
+
+    initializeRenderer() {
+        if (this.useWeb
+            && (typeof Zopfli === 'undefined'
+                || typeof Zopfli.RawDeflate !== 'function'
+                || typeof encode64_ !== 'function')) {
+            throw new Error('PlantUML web libraries are not available');
+        }
     }
 
     // Interface 1.
@@ -113,7 +122,7 @@ class PlantUml extends GraphRenderer {
                               p_callback);
         }
 
-        if (!this.initialize(func)) {
+        if (!this.initialize(func, () => p_callback('png', ''))) {
             return;
         }
 

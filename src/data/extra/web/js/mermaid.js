@@ -24,19 +24,16 @@ class Mermaid extends GraphRenderer {
         this.graphCache = new GraphCache();
     }
 
-    initialize(p_callback) {
-        return super.initialize(() => {
-           mermaid.initialize({
-               startOnLoad: false,
-               theme: this.theme
-           });
-            // The theme is baked into the rendered SVG but is fixed for the lifetime
-            // of the page, so it is handled by clearing here rather than by widening
-            // every cache key. In-source %%{init}%% directives ARE part of the source
-            // text and therefore already part of the key.
-            this.graphCache.clear();
-            p_callback();
+    initializeRenderer() {
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: this.theme
         });
+        // The theme is baked into the rendered SVG but is fixed for the lifetime
+        // of the page, so it is handled by clearing here rather than by widening
+        // every cache key. In-source %%{init}%% directives ARE part of the source
+        // text and therefore already part of the key.
+        this.graphCache.clear();
     }
 
     // Cache key for a read-mode diagram. Everything that varies the produced SVG and
@@ -309,7 +306,7 @@ class Mermaid extends GraphRenderer {
         if (!this.initialize(async () => {
                 let graphDiv = await this.renderTextInternal(p_container, p_text, p_idx);
                 p_callback(graphDiv);
-            })) {
+            }, () => p_callback(null))) {
             return;
         }
 
