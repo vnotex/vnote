@@ -487,7 +487,9 @@ void MainWindow2::restoreWindowGeometry() {
 
   if (!sg.m_mainState.isEmpty()) {
     // Will also restore the state of dock widgets.
-    restoreState(sg.m_mainState);
+    if (restoreState(sg.m_mainState)) {
+      m_dockWidgetHelper.updateDockWidgetTabBar();
+    }
   }
 }
 

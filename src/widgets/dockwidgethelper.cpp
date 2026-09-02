@@ -321,8 +321,7 @@ void DockWidgetHelper::updateDockWidgetTabBar() {
       iconOnly = false;
     }
 
-    bool isSideBar =
-        iconOnly && (tabShape == QTabBar::RoundedWest || tabShape == QTabBar::TriangularWest);
+    bool isSideBar = iconOnly;
     if (tabBar->property(PropertyDefs::c_mainWindowSideBar).toBool() != isSideBar) {
       WidgetUtils::setPropertyDynamically(tabBar, PropertyDefs::c_mainWindowSideBar, isSideBar);
     }
