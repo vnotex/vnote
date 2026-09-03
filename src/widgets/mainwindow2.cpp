@@ -158,6 +158,12 @@ void MainWindow2::setupUI() {
   // Window title
   setWindowTitle(tr("VNote"));
 
+  // Keep the top-level constraint explicit. Otherwise QLayout's default
+  // constraint may replace it while a long wrapped line relayouts during a
+  // cross-screen move, making Windows expand the frameless window to the
+  // virtual desktop width (issue #2742).
+  setMinimumSize(600, 450);
+
   // Setup ViewArea2 as central widget.
   setupViewArea();
 
