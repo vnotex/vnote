@@ -5,6 +5,7 @@
 
 class QComboBox;
 class QCheckBox;
+class QLineEdit;
 
 namespace vnotex {
 class GeneralPage : public SettingsPage {
@@ -25,6 +26,8 @@ private:
   void setupUI();
 
   QComboBox *m_localeComboBox = nullptr;
+
+  QLineEdit *m_appNameLineEdit = nullptr;
 
   QComboBox *m_openGLComboBox = nullptr;
 

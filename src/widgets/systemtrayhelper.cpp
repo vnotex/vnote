@@ -13,7 +13,8 @@
 
 using namespace vnotex;
 
-QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win, const ConfigMgr2 *p_configMgr) {
+QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win,
+                                                   const ConfigMgr2 *p_configMgr) {
 #if defined(Q_OS_MACOS)
   QIcon icon(":/vnotex/data/core/logo/vnote_mono.png");
   icon.setIsMask(true);
@@ -22,17 +23,17 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win, const Con
 #endif
 
   auto trayIcon = new QSystemTrayIcon(icon, p_win);
-  trayIcon->setToolTip(qApp->applicationName());
+  trayIcon->setToolTip(qApp->applicationDisplayName());
 
   MainWindow2::connect(trayIcon, &QSystemTrayIcon::activated, p_win,
-                      [p_win](QSystemTrayIcon::ActivationReason p_reason) {
-                        Q_UNUSED(p_reason);
+                       [p_win](QSystemTrayIcon::ActivationReason p_reason) {
+                         Q_UNUSED(p_reason);
 #if !defined(Q_OS_MACOS)
-                        if (p_reason == QSystemTrayIcon::Trigger) {
-                          p_win->showMainWindow();
-                        }
+                         if (p_reason == QSystemTrayIcon::Trigger) {
+                           p_win->showMainWindow();
+                         }
 #endif
-                      });
+                       });
 
   auto menu = WidgetsFactory::createMenu(p_win);
   trayIcon->setContextMenu(menu);

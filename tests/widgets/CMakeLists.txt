@@ -311,6 +311,7 @@ add_qt_test(test_settings_persistence
     test_settings_persistence.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/quickaccesspage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/fileassociationpage.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/generalpage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspagehelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/newquickaccessitemdialog.cpp
@@ -325,6 +326,7 @@ add_qt_test(test_settings_persistence
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/autostartutils.cpp
   LINKS
     core_configs
     core_services

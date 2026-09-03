@@ -35,9 +35,17 @@ const QString &CoreConfig::getTheme() const { return m_theme; }
 
 void CoreConfig::setTheme(const QString &p_name) { updateConfig(m_theme, p_name, this); }
 
+const QString &CoreConfig::getAppName() const { return m_appName; }
+
+void CoreConfig::setAppName(const QString &p_name) {
+  updateConfig(m_appName, normalizeAppName(p_name), this);
+}
+
 void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_theme = READSTR(QStringLiteral("theme"));
+
+  m_appName = normalizeAppName(READSTR(QStringLiteral("appName")));
 
   m_locale = READSTR(QStringLiteral("locale"));
   if (!m_locale.isEmpty() && !getAvailableLocales().contains(m_locale)) {
@@ -97,6 +105,7 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 QJsonObject CoreConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("theme")] = m_theme;
+  obj[QStringLiteral("appName")] = m_appName;
   obj[QStringLiteral("locale")] = m_locale;
   obj[QStringLiteral("shortcuts")] = saveShortcuts();
   obj[QStringLiteral("shortcutLeaderKey")] = m_shortcutLeaderKey;
@@ -211,6 +220,11 @@ QString CoreConfig::normalizeUpdateSource(const QString &p_source) {
     return QStringLiteral("github");
   }
   return QStringLiteral("gitee");
+}
+
+QString CoreConfig::normalizeAppName(const QString &p_name) {
+  const QString name = p_name.trimmed();
+  return name.isEmpty() ? QStringLiteral("VNote") : name;
 }
 
 const QString &CoreConfig::getUpdateSource() const { return m_updateSource; }

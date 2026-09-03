@@ -91,6 +91,10 @@ public:
   const QString &getTheme() const;
   void setTheme(const QString &p_name);
 
+  // Display-only branding. Keep ConfigMgr2::c_appName for stable application identity.
+  const QString &getAppName() const;
+  void setAppName(const QString &p_name);
+
   const QString &getLocale() const;
   void setLocale(const QString &p_locale);
 
@@ -178,10 +182,14 @@ private:
   // hand-edited or legacy config is not silently dropped). Anything else -> 0.
   static qint64 parseLastUpdateCheckTime(const QJsonValue &p_value);
 
+  static QString normalizeAppName(const QString &p_name);
+
   void initDefaults();
 
   // Theme name.
   QString m_theme{"pure"};
+
+  QString m_appName{QStringLiteral("VNote")};
 
   // User-specified locale, such as zh_CN, en_US.
   // Empty if not specified.

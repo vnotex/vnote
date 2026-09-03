@@ -1,5 +1,6 @@
 #include "detachedwindow.h"
 
+#include <QApplication>
 #include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QSplitter>
@@ -12,7 +13,7 @@ DetachedWindow::DetachedWindow(ServiceLocator &p_services, const QString &p_work
                                QWidget *p_parent)
     : QWidget(p_parent), m_services(p_services), m_workspaceId(p_workspaceId) {
   setAttribute(Qt::WA_DeleteOnClose, false);
-  setWindowTitle(tr("VNote"));
+  setWindowTitle(qApp->applicationDisplayName());
 
   auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);

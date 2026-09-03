@@ -19,12 +19,14 @@
 #include <QVBoxLayout>
 
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/templateservice.h>
 #include <core/sessionconfig.h>
 #include <widgets/dialogs/settings/fileassociationpage.h>
+#include <widgets/dialogs/settings/generalpage.h>
 #include <widgets/dialogs/settings/quickaccesspage.h>
 
 #include <vxcore/vxcore.h>
@@ -46,6 +48,7 @@ private slots:
   void test_reloadClearsTheBoxWhenTheConfigIsEmpty();
   void test_quickAccessRoundTripsItsItems();
   void test_reloadKeepsProgramRowsAboveTheAddButton();
+  void test_generalPageLoadsAppNameAndRequiresRestartWhenEdited();
 
 private:
   void seedQuickAccess(const QStringList &p_paths);
@@ -87,6 +90,7 @@ void TestSettingsPersistence::init() {
   m_services->registerService<FileTypeCoreService>(m_fileTypeService);
 
   m_configMgr = new ConfigMgr2(m_configService);
+  m_configMgr->init();
   m_services->registerService<ConfigMgr2>(m_configMgr);
 
   // QuickAccessPage embeds a NoteTemplateSelector, which dereferences this
@@ -96,6 +100,7 @@ void TestSettingsPersistence::init() {
 }
 
 void TestSettingsPersistence::cleanup() {
+  m_configMgr->getCoreConfig().setAppName(QStringLiteral("VNote"));
   m_configMgr->getSessionConfig().setQuickAccessItems({});
   m_configMgr->getSessionConfig().setExternalPrograms({});
 
@@ -228,6 +233,21 @@ void TestSettingsPersistence::test_reloadKeepsProgramRowsAboveTheAddButton() {
     }
   }
   QCOMPARE(rowCount, 1);
+}
+
+void TestSettingsPersistence::test_generalPageLoadsAppNameAndRequiresRestartWhenEdited() {
+  m_configMgr->getCoreConfig().setAppName(QStringLiteral("My Notes"));
+
+  GeneralPage page(*m_services);
+  page.load();
+
+  auto *edit = page.findChild<QLineEdit *>(QStringLiteral("applicationDisplayNameLineEdit"));
+  QVERIFY(edit);
+  QCOMPARE(edit->text(), QStringLiteral("My Notes"));
+  QVERIFY(!page.isRestartNeeded());
+
+  edit->setText(QStringLiteral("Work Notes"));
+  QVERIFY(page.isRestartNeeded());
 }
 
 } // namespace tests

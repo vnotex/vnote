@@ -37,6 +37,8 @@ private slots:
   void testUpdateSourceIsAlwaysPersistedSoExistingConfigsKeepTheirs();
   void testUpdateSourceNormalizesUnknownAndCaseVariants();
   void testUpdateSourceRoundTrips();
+  void testAppNameDefaultAndNormalization();
+  void testAppNameSetterAndRoundTrip();
 
 private:
   MockConfigMgr m_mockMgr;
@@ -371,6 +373,39 @@ void TestCoreConfig::testUpdateSourceRoundTrips() {
   CoreConfig reloaded(&m_mockMgr, nullptr);
   reloaded.fromJson(out);
   QCOMPARE(reloaded.getUpdateSource(), QStringLiteral("github"));
+}
+
+void TestCoreConfig::testAppNameDefaultAndNormalization() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  QCOMPARE(cfg.getAppName(), QStringLiteral("VNote"));
+
+  cfg.fromJson(QJsonObject());
+  QCOMPARE(cfg.getAppName(), QStringLiteral("VNote"));
+
+  QJsonObject json;
+  json[QStringLiteral("appName")] = QStringLiteral("  Notes  ");
+  cfg.fromJson(json);
+  QCOMPARE(cfg.getAppName(), QStringLiteral("Notes"));
+
+  json[QStringLiteral("appName")] = QStringLiteral("   ");
+  cfg.fromJson(json);
+  QCOMPARE(cfg.getAppName(), QStringLiteral("VNote"));
+}
+
+void TestCoreConfig::testAppNameSetterAndRoundTrip() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.setAppName(QStringLiteral("  Notes <Work> & Home  "));
+  QCOMPARE(cfg.getAppName(), QStringLiteral("Notes <Work> & Home"));
+
+  const auto out = cfg.toJson();
+  QCOMPARE(out.value(QStringLiteral("appName")).toString(), QStringLiteral("Notes <Work> & Home"));
+
+  CoreConfig reloaded(&m_mockMgr, nullptr);
+  reloaded.fromJson(out);
+  QCOMPARE(reloaded.getAppName(), QStringLiteral("Notes <Work> & Home"));
+
+  reloaded.setAppName(QStringLiteral("\t"));
+  QCOMPARE(reloaded.getAppName(), QStringLiteral("VNote"));
 }
 
 } // namespace tests

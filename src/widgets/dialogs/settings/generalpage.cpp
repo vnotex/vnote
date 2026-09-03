@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QLineEdit>
 #include <QVBoxLayout>
 
 #include "settingspagehelper.h"
@@ -15,6 +16,10 @@
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
+
+namespace {
+const char c_appNameLineEditName[] = "applicationDisplayNameLineEdit";
+}
 
 GeneralPage::GeneralPage(ServiceLocator &p_services, QWidget *p_parent)
     : SettingsPage(p_services, p_parent) {
@@ -43,6 +48,21 @@ void GeneralPage::setupUI() {
                                                                m_localeComboBox, this));
     addSearchItem(label, m_localeComboBox->toolTip(), m_localeComboBox);
     connect(m_localeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &GeneralPage::pageIsChangedWithRestartNeeded);
+  }
+
+  {
+    m_appNameLineEdit = WidgetsFactory::createLineEdit(this);
+    m_appNameLineEdit->setObjectName(QLatin1String(c_appNameLineEditName));
+    m_appNameLineEdit->setToolTip(
+        tr("Name shown in window titles, the system tray, and About. Requires a restart."));
+
+    const QString label(tr("Application display name"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_appNameLineEdit->toolTip(),
+                                                               m_appNameLineEdit, this));
+    addSearchItem(label, m_appNameLineEdit->toolTip(), m_appNameLineEdit);
+    connect(m_appNameLineEdit, &QLineEdit::textChanged, this,
             &GeneralPage::pageIsChangedWithRestartNeeded);
   }
 
@@ -149,6 +169,8 @@ void GeneralPage::loadInternal() {
     m_localeComboBox->setCurrentIndex(idx);
   }
 
+  m_appNameLineEdit->setText(coreConfig.getAppName());
+
   if (m_openGLComboBox) {
     int idx = m_openGLComboBox->findData(sessionConfig.getOpenGL());
     Q_ASSERT(idx != -1);
@@ -184,6 +206,8 @@ bool GeneralPage::saveInternal() {
     auto locale = m_localeComboBox->currentData().toString();
     coreConfig.setLocale(locale);
   }
+
+  coreConfig.setAppName(m_appNameLineEdit->text());
 
   if (m_openGLComboBox) {
     int opt = m_openGLComboBox->currentData().toInt();

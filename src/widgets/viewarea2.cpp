@@ -1,5 +1,6 @@
 #include "viewarea2.h"
 
+#include <QApplication>
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -1197,7 +1198,7 @@ void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
   connect(split, &ViewSplit2::viewWindowCloseRequested, this,
           [this](ViewWindow2 *w) { m_controller->closeViewWindow(w->getViewWindowId(), false); });
   connect(split, &ViewSplit2::currentViewWindowChanged, dw, [dw](ViewWindow2 *w) {
-    dw->setWindowTitle(w ? w->getTitle() : DetachedWindow::tr("VNote"));
+    dw->setWindowTitle(w ? w->getTitle() : qApp->applicationDisplayName());
   });
 
   dw->show();

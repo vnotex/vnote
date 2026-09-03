@@ -137,12 +137,12 @@ void MainWindow2::updateWindowTitle() {
     return;
   }
 
-  QString title = ConfigMgr2::c_appName; // "VNote"
+  QString title = qApp->applicationDisplayName();
   auto *win = m_viewArea ? m_viewArea->getCurrentViewWindow() : nullptr;
   if (win) {
     const QString name = win->getName();
     if (!name.isEmpty()) {
-      title = QStringLiteral("%1 - %2").arg(name, ConfigMgr2::c_appName);
+      title = QStringLiteral("%1 - %2").arg(name, qApp->applicationDisplayName());
     }
   }
   setWindowTitle(title);
@@ -156,7 +156,7 @@ ViewArea2 *MainWindow2::getViewArea() const { return m_viewArea; }
 
 void MainWindow2::setupUI() {
   // Window title
-  setWindowTitle(tr("VNote"));
+  setWindowTitle(qApp->applicationDisplayName());
 
   // Keep the top-level constraint explicit. Otherwise QLayout's default
   // constraint may replace it while a long wrapped line relayouts during a
@@ -540,7 +540,7 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
     int ret = MessageBoxHelper::questionYesNo(MessageBoxHelper::Question,
                                               tr("Do you want to minimize %1 to system tray "
                                                  "instead of quitting when closed?")
-                                                  .arg(qApp->applicationName()),
+                                                  .arg(qApp->applicationDisplayName()),
                                               tr("You could change the option in Settings later."),
                                               QString(), this);
     if (ret == QMessageBox::Yes) {
@@ -603,8 +603,8 @@ void MainWindow2::closeEvent(QCloseEvent *p_event) {
     hide();
     p_event->ignore();
     if (needShowMessage) {
-      m_trayIcon->showMessage(ConfigMgr2::c_appName,
-                              tr("%1 is still running here.").arg(ConfigMgr2::c_appName));
+      m_trayIcon->showMessage(qApp->applicationDisplayName(),
+                              tr("%1 is still running here.").arg(qApp->applicationDisplayName()));
     }
   }
 }
@@ -1353,8 +1353,8 @@ void MainWindow2::setupNotifications() {
     if (!m_trayIcon || !m_trayIcon->isVisible()) {
       return;
     }
-    m_trayIcon->showMessage(p_msg.m_title.isEmpty() ? ConfigMgr2::c_appName : p_msg.m_title,
-                            p_msg.m_text);
+    m_trayIcon->showMessage(
+        p_msg.m_title.isEmpty() ? qApp->applicationDisplayName() : p_msg.m_title, p_msg.m_text);
   });
 
   // The popup is private to NotificationButton2, so the toast asks rather than

@@ -565,6 +565,7 @@ int main(int argc, char *argv[]) {
       app.setWindowIcon(QIcon(iconPath));
 
       app.setApplicationName(ConfigMgr2::c_appName);
+      app.setApplicationDisplayName(configMgr.getCoreConfig().getAppName());
       app.setOrganizationName(ConfigMgr2::c_orgName);
 
       app.setApplicationVersion(ConfigMgr2::getApplicationVersion());

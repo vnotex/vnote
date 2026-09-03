@@ -558,7 +558,8 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
 
   menu->addAction(MainWindow2::tr("About"), menu, [this]() {
     auto info = MainWindow2::tr("<h3>%1</h3><h4>%2</h4>")
-                    .arg(qApp->applicationDisplayName(), qApp->applicationVersion());
+                    .arg(qApp->applicationDisplayName().toHtmlEscaped(),
+                         qApp->applicationVersion().toHtmlEscaped());
     const auto text = MainWindow2::tr(
         "A pleasant note-taking platform, focusing on native experience, open source since 2016.");
     QMessageBox::about(m_mainWindow, MainWindow2::tr("About"), info + text);
