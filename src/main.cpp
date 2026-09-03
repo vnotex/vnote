@@ -612,6 +612,13 @@ int main(int argc, char *argv[]) {
     const auto guardResult = guard.tryRun();
     if (guardResult != SingleInstanceGuard::TryRunResult::Primary) {
       if (guardResult == SingleInstanceGuard::TryRunResult::Secondary) {
+        if (!cmdOptions.m_pathsToOpen.isEmpty()) {
+          Logger::configure(configMgr.getLogFile(), cmdOptions.m_verbose, cmdOptions.m_logToStderr,
+                            cmdOptions.m_quiet);
+          qInfo() << "Secondary-instance launch arguments:" << app.arguments()
+                  << "paths to forward:" << cmdOptions.m_pathsToOpen
+                  << "detached:" << cmdOptions.m_detachedView;
+        }
         if (cmdOptions.m_detachedView) {
           // Forward as a detached-view open. Do NOT raise/show the running main
           // window; only the new detached window should appear.
@@ -643,11 +650,13 @@ int main(int argc, char *argv[]) {
     const auto pendingOpenConnection =
         QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &app,
                          [&pendingOpenRequests](const QStringList &p_files) {
+                           qInfo() << "Queued startup IPC open request:" << p_files;
                            pendingOpenRequests.append(PendingOpenRequest{p_files, false});
                          });
     const auto pendingDetachedConnection =
         QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &app,
                          [&pendingOpenRequests](const QStringList &p_files) {
+                           qInfo() << "Queued startup detached IPC open request:" << p_files;
                            pendingOpenRequests.append(PendingOpenRequest{p_files, true});
                          });
     const auto pendingShowConnection =
@@ -693,6 +702,10 @@ int main(int argc, char *argv[]) {
     // the buffered startup logs unflushed, which is the desired quiet behavior.
     Logger::configure(configMgr.getLogFile(), cmdOptions.m_verbose, cmdOptions.m_logToStderr,
                       cmdOptions.m_quiet);
+
+    qInfo() << "Launch arguments:" << app.arguments();
+    qInfo() << "Parsed paths to open:" << cmdOptions.m_pathsToOpen
+            << "detached:" << cmdOptions.m_detachedView;
 
     qInfo() << QStringLiteral("%1 (v%2) started at %3 (%4)")
                    .arg(ConfigMgr2::c_appName, app.applicationVersion(),
@@ -785,10 +798,15 @@ int main(int argc, char *argv[]) {
     // Handle requests forwarded from a second instance (files passed to
     // "Open with VNote" while VNote is already running, plus raise/show).
     QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &mainWindow,
-                     [&mainWindow](const QStringList &p_files) { mainWindow.openFiles(p_files); });
-    QObject::connect(
-        &guard, &SingleInstanceGuard::openFilesDetachedRequested, &mainWindow,
-        [&mainWindow](const QStringList &p_files) { mainWindow.openFiles(p_files, true); });
+                     [&mainWindow](const QStringList &p_files) {
+                       qInfo() << "Received IPC open request:" << p_files;
+                       mainWindow.openFiles(p_files);
+                     });
+    QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &mainWindow,
+                     [&mainWindow](const QStringList &p_files) {
+                       qInfo() << "Received detached IPC open request:" << p_files;
+                       mainWindow.openFiles(p_files, true);
+                     });
     QObject::connect(&guard, &SingleInstanceGuard::showRequested, &mainWindow,
                      &MainWindow2::showMainWindow);
 
@@ -811,6 +829,8 @@ int main(int argc, char *argv[]) {
     qInfo() << "MainWindow2 shown";
 
     for (const auto &request : pendingOpenRequests) {
+      qInfo() << "Replaying pending open request:" << request.m_files
+              << "detached:" << request.m_detached;
       mainWindow.openFiles(request.m_files, request.m_detached);
     }
     if (pendingShow) {
@@ -821,6 +841,8 @@ int main(int argc, char *argv[]) {
     WidgetUtils::calculateScaleFactor(mainWindow.windowHandle()->screen());
     themeService.setBaseBackground(mainWindow.palette().color(QPalette::Base));
 
+    qInfo() << "Queueing startup paths for post-init:" << cmdOptions.m_pathsToOpen
+            << "detached:" << cmdOptions.m_detachedView;
     mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen, cmdOptions.m_detachedView);
 
     // Register the native Service provider only now: the startup flow is

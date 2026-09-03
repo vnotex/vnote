@@ -298,6 +298,7 @@ void MainWindow2::setupUI() {
   }
 
 #if defined(Q_OS_WIN)
+  // Keep the warm-up page alive until the first real WebEngine pages have been constructed.
   m_dummyWebView = new QWebEngineView(this);
   {
     // Warm up the profile actually used by the real viewers, not Qt's default one.
@@ -348,17 +349,12 @@ void MainWindow2::setupNavigationMode() {
 }
 
 void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached) {
+  qInfo() << "MainWindow2::kickOffPostInit: paths:" << p_pathsToOpen << "detached:" << p_detached;
+
   // Restore notebook explorer state from session config.
   auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
 
   QTimer::singleShot(300, [this, p_pathsToOpen]() {
-#if defined(Q_OS_WIN)
-    if (m_dummyWebView) {
-      delete m_dummyWebView;
-      m_dummyWebView = nullptr;
-    }
-#endif
-
     loadStateAndGeometry();
     validateDockProportions();
 
@@ -393,6 +389,8 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detac
 }
 
 void MainWindow2::openFiles(const QStringList &p_paths, bool p_detached) {
+  qInfo() << "MainWindow2::openFiles: paths:" << p_paths << "detached:" << p_detached
+          << "post-init complete:" << m_postInitComplete;
   if (p_paths.isEmpty()) {
     return;
   }
@@ -408,6 +406,7 @@ void MainWindow2::openFiles(const QStringList &p_paths, bool p_detached) {
 }
 
 void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
+  qInfo() << "MainWindow2::doOpenFiles: paths:" << p_paths << "detached:" << p_detached;
   if (p_paths.isEmpty()) {
     return;
   }
@@ -427,6 +426,8 @@ void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
     // relative command-line arguments (e.g. "./note.md") open correctly.
     const QFileInfo finfo(path);
     const QString absolutePath = finfo.absoluteFilePath();
+    qInfo() << "MainWindow2::doOpenFiles: resolved path:" << absolutePath
+            << "exists:" << finfo.exists() << "directory:" << finfo.isDir();
 
     if (!finfo.exists()) {
       qWarning() << "MainWindow2::doOpenFiles: path does not exist:" << absolutePath;
@@ -446,6 +447,7 @@ void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
 
     FileOpenSettings settings;
     settings.m_detachedView = p_detached;
+    qInfo() << "MainWindow2::doOpenFiles: opening external file:" << absolutePath;
     bufferSvc->openBuffer(nodeId, settings);
   }
 }
@@ -453,6 +455,7 @@ void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
 void MainWindow2::drainPendingOpenBatches() {
   const auto batches = m_pendingOpenBatches;
   m_pendingOpenBatches.clear();
+  qInfo() << "MainWindow2::drainPendingOpenBatches: batch count:" << batches.size();
 
   ViewAreaController *controller = m_viewArea ? m_viewArea->getController() : nullptr;
   for (const auto &batch : batches) {
@@ -717,6 +720,13 @@ void MainWindow2::setupViewArea() {
     // Drain queued opens in arrival order; detached batches each get a fresh
     // detached window.
     drainPendingOpenBatches();
+#if defined(Q_OS_WIN)
+    if (m_dummyWebView) {
+      // Defer teardown until after restored and command-line WebEngine pages finish construction.
+      m_dummyWebView->deleteLater();
+      m_dummyWebView = nullptr;
+    }
+#endif
     // Only then release queued Service capture requests: a capture opens a
     // buffer, which must land in the restored vxcore workspace.
     m_captureDispatcher.setReady();

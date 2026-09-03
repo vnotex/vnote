@@ -14,45 +14,53 @@ static const char *c_context = "vnotex::MainWindow";
 
 CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_arguments) {
   QCommandLineParser parser;
-  parser.setApplicationDescription(QCoreApplication::translate(c_context, "A pleasant note-taking platform."));
+  parser.setApplicationDescription(
+      QCoreApplication::translate(c_context, "A pleasant note-taking platform."));
   const auto helpOpt = parser.addHelpOption();
   const auto versionOpt = parser.addVersionOption();
 
   // Positional arguments.
-  parser.addPositionalArgument("paths", QCoreApplication::translate(c_context, "Files or folders to open."));
+  parser.addPositionalArgument("paths",
+                               QCoreApplication::translate(c_context, "Files or folders to open."));
 
-  const QCommandLineOption verboseOpt("verbose", QCoreApplication::translate(c_context, "Print more logs."));
+  const QCommandLineOption verboseOpt("verbose",
+                                      QCoreApplication::translate(c_context, "Print more logs."));
   parser.addOption(verboseOpt);
 
-  const QCommandLineOption logStderrOpt("log-stderr", QCoreApplication::translate(c_context, "Log to stderr."));
+  const QCommandLineOption logStderrOpt("log-stderr",
+                                        QCoreApplication::translate(c_context, "Log to stderr."));
   parser.addOption(logStderrOpt);
 
-  const QCommandLineOption quietOpt("quiet",
-                                    QCoreApplication::translate(c_context, "Suppress non-critical console logs."));
+  const QCommandLineOption quietOpt(
+      "quiet", QCoreApplication::translate(c_context, "Suppress non-critical console logs."));
   parser.addOption(quietOpt);
 
-  const QCommandLineOption watchThemesOpt("watch-themes",
-                                          QCoreApplication::translate(c_context, "Watch theme folder for changes."));
+  const QCommandLineOption watchThemesOpt(
+      "watch-themes", QCoreApplication::translate(c_context, "Watch theme folder for changes."));
   parser.addOption(watchThemesOpt);
 
   const QCommandLineOption detachedViewOpt(
-      "detached-view", QCoreApplication::translate(c_context, "Open files in a detached view split."));
+      "detached-view",
+      QCoreApplication::translate(c_context, "Open files in a detached view split."));
   parser.addOption(detachedViewOpt);
 
   // WebEngine options.
   // No need to handle them. Just add them to the parser to avoid parse error.
   {
-    QCommandLineOption webRemoteDebuggingPortOpt("remote-debugging-port",
-                                                 QCoreApplication::translate(c_context, "WebEngine remote debugging port."),
-                                                 QCoreApplication::translate(c_context, "port_number"));
+    QCommandLineOption webRemoteDebuggingPortOpt(
+        "remote-debugging-port",
+        QCoreApplication::translate(c_context, "WebEngine remote debugging port."),
+        QCoreApplication::translate(c_context, "port_number"));
     webRemoteDebuggingPortOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webRemoteDebuggingPortOpt);
 
-    QCommandLineOption webNoSandboxOpt("no-sandbox", QCoreApplication::translate(c_context, "WebEngine without sandbox."));
+    QCommandLineOption webNoSandboxOpt(
+        "no-sandbox", QCoreApplication::translate(c_context, "WebEngine without sandbox."));
     webNoSandboxOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webNoSandboxOpt);
 
-    QCommandLineOption webDisableGpu("disable-gpu", QCoreApplication::translate(c_context, "WebEngine with GPU disabled."));
+    QCommandLineOption webDisableGpu(
+        "disable-gpu", QCoreApplication::translate(c_context, "WebEngine with GPU disabled."));
     webDisableGpu.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webDisableGpu);
   }
@@ -75,6 +83,7 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
   // Position arguments.
   const auto args = parser.positionalArguments();
   m_pathsToOpen = args;
+  qInfo() << "Command-line parser received:" << p_arguments << "positional paths:" << m_pathsToOpen;
 
   if (parser.isSet(verboseOpt)) {
     m_verbose = true;
