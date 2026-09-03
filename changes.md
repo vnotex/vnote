@@ -1,4 +1,33 @@
 # Changes
+## v4.6.0
+A feature release that adds PDF comments, batch tag editing and substantial Markdown preview improvements on top of VNote 4.5.0:
+
+* **PDF viewer and comments**
+    * The bundled pdf.js viewer was upgraded to v6 and now supports per-file PDF comments: draw, highlight and place movable text boxes, with per-tool colour, size and opacity settings
+    * The built-in web toolbar was replaced by native Qt controls, including an overflow menu and a dedicated comments panel
+    * The built-in PDF viewer is disabled on the Qt 5 / Windows 7 build because pdf.js v6 requires a newer web engine; PDFs continue to open with the configured external application
+* **Editor and Markdown**
+    * Task-list checkboxes in the read-mode preview are clickable
+    * The edit-mode outline shows rendered heading titles, and image sizes can be authored from the image context menu
+    * New settings align Markdown table source and automatically fold previewed blocks
+    * Interactive table previews are built on demand, preserving space for off-screen tables while substantially reducing opening, editing and scrolling costs; syntax highlighting is capped at 5000 cells in extreme documents
+    * Read-mode diagrams appear progressively, duplicate Mermaid renders share one result, and repeated PlantUML diagrams reuse their encoded server URL
+    * In-place previews publish results in batches, prioritize visible graph previews and recover cleanly when a render pass stalls, is hidden or is replaced
+    * Notes with more than 100 math blocks are no longer silently truncated, image-host images are not downloaded again for each preview, and multiline inline highlights render correctly
+    * Prism was upgraded to 1.30.0 with every bundled language
+* **Tags**: tags can be added to or removed from multiple selected files in one operation
+* **Interface**
+    * The right dock tabs now use the same compact sidebar treatment as the left dock, with consistent indentation and theme-owned row spacing
+    * The sort dialog shows Name, Created and Modified columns and compares wide digit runs as fields
+    * VNote can start automatically when signing in to Windows
+    * The application display name used in window titles, the system tray and About can be customized
+    * Windows spanning screens expand on the correct display, notification popups no longer truncate horizontally, and the notebook context menu places **Close** at the end
+* **Fixes**
+    * Opening a file through Windows **Open with** no longer crashes when the WebEngine process inherits an incompatible command line
+    * Read-only state is resolved when a buffer opens, preventing stale permissions from leaking into later operations
+    * Context menus use the correct Qt API on each supported major version
+* **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
+
 ## v4.5.0
 A feature release that adds shared-folder import, two paper themes, movable dashboard stickers and a batch of export fixes on top of VNote 4.4.3:
 
@@ -10,10 +39,6 @@ A feature release that adds shared-folder import, two paper themes, movable dash
 * **Editor**
     * The cursor position is now restored when a buffer is reloaded from disk
     * In-place previews (images, diagrams, formulas) zoom together with the editor
-    * Interactive table previews are built on demand instead of all at once, so opening, editing and scrolling a note with many tables is several times faster and uses far less memory; a table that is far off screen still reserves its space and folds its source exactly as before
-    * Diagrams in the read-mode preview now appear progressively instead of all at once at the end: a note with hundreds of Mermaid, Graphviz, Flowchart or WaveDrom diagrams no longer freezes the preview for several seconds with nothing on screen. The total time is unchanged — the wait is now visible rather than frozen, at the cost of the document reflowing as each diagram lands
-    * A Mermaid diagram that appears more than once in a note is rendered only once, even when every copy is requested before the first one finishes; a repeated PlantUML diagram reuses its encoded server URL instead of re-compressing it
-    * In a document with an extreme number of HTML tables, cell syntax highlighting is dropped past a document-wide budget of 5000 cells; the tables themselves still render and remain editable
     * The source of a previewed fenced-code, display-math or table block is folded automatically when its preview appears; unfolding it by hand is respected
     * The interactive table in-place preview is enabled by default: tables can be edited in place as a real rich-text sheet, with syntax-highlighted cells, row/column/alignment operations from its Table menu, and Enter in the last cell appending a row; its preview sheet no longer draws a stray frame and background
     * Block quotes continue automatically on Enter, including nested and lazily-continued ones
