@@ -53,6 +53,8 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_folderController = new NotebookNodeController(m_services, this);
   m_folderController->setModel(m_folderModel);
   m_folderController->setView(m_folderView);
+  m_folderController->setSelectNodeCallback(
+      [this](const NodeIdentifier &p_nodeId) { selectNode(p_nodeId); });
   m_folderView->setController(m_folderController);
 
   m_splitter->addWidget(m_folderView);
@@ -77,6 +79,8 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_fileController->setModel(m_fileModel);
   // Note: FileListView is not a NotebookNodeView, so we use a callback instead of setView()
   m_fileController->setSelectedNodesCallback([this]() { return m_fileView->selectedNodeIds(); });
+  m_fileController->setSelectNodeCallback(
+      [this](const NodeIdentifier &p_nodeId) { selectNode(p_nodeId); });
   m_fileView->setController(m_fileController);
 
   // Share clipboard between folder and file controllers
@@ -164,6 +168,12 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
   // pane surfaces the dialog. NotebookExplorer2 owns the QDialog.
   connect(p_controller, &NotebookNodeController::missingNodeRemovalRequested, this,
           &TwoColumnsNodeExplorer::missingNodeRemovalRequested);
+  connect(p_controller, &NotebookNodeController::crossNotebookPasteRequested, this,
+          [this, p_controller](const NodeTransferRequest &p_request) {
+            m_pendingTransferController = p_controller;
+            emit crossNotebookPasteRequested(p_request);
+            m_pendingTransferController = nullptr;
+          });
   connect(p_controller, &NotebookNodeController::propertiesRequested, this,
           &TwoColumnsNodeExplorer::propertiesRequested);
   connect(p_controller, &NotebookNodeController::exportNodeRequested, this,
@@ -457,6 +467,14 @@ bool TwoColumnsNodeExplorer::handleTagDeltaResult(const NodeIdentifier &p_nodeId
     return false;
   }
   return controller->handleTagDeltaResult(p_nodeId, p_added, p_removed);
+}
+
+NodeTransferBatchResult
+TwoColumnsNodeExplorer::executeCrossNotebookPaste(const NodeTransferRequest &p_request,
+                                                  const NodeTransferCallbacks &p_callbacks) {
+  auto *controller = m_pendingTransferController ? m_pendingTransferController : m_folderController;
+  return controller ? controller->executeCrossNotebookPaste(p_request, p_callbacks)
+                    : NodeTransferBatchResult();
 }
 
 void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {

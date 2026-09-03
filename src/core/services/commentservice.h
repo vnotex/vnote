@@ -4,9 +4,12 @@
 #include <QHash>
 #include <QMutex>
 #include <QObject>
+#include <QPointer>
 #include <QQueue>
 #include <QString>
 #include <QWaitCondition>
+
+#include <functional>
 
 #include <core/nodeidentifier.h>
 
@@ -65,6 +68,56 @@ class CommentService : public QObject {
   Q_OBJECT
 
 public:
+  class FlushParticipantLease {
+  public:
+    FlushParticipantLease() = default;
+    ~FlushParticipantLease();
+
+    FlushParticipantLease(const FlushParticipantLease &) = delete;
+    FlushParticipantLease &operator=(const FlushParticipantLease &) = delete;
+
+    FlushParticipantLease(FlushParticipantLease &&p_other) noexcept;
+    FlushParticipantLease &operator=(FlushParticipantLease &&p_other) noexcept;
+
+    void setGeneration(quint64 p_generation);
+    void retarget(const NodeIdentifier &p_nodeId, quint64 p_generation);
+    void reset();
+
+    bool isValid() const { return !m_service.isNull() && m_id != 0; }
+
+  private:
+    friend class CommentService;
+
+    FlushParticipantLease(CommentService *p_service, quint64 p_id);
+
+    QPointer<CommentService> m_service;
+    quint64 m_id = 0;
+  };
+
+  class FlushCheckpoint {
+  public:
+    bool isValid() const { return m_valid; }
+
+  private:
+    friend class CommentService;
+
+    bool m_valid = false;
+    QString m_notebookId;
+    QString m_relativePath;
+    bool m_isFolder = false;
+    QHash<quint64, quint64> m_participantGenerations;
+    QHash<QString, quint64> m_jobGenerations;
+  };
+
+  struct FlushResult {
+    enum class Status { Succeeded, WriteFailed, Timeout, Cancelled };
+
+    Status m_status = Status::Succeeded;
+    quint64 m_failedGeneration = 0;
+    QString m_error;
+    FlushCheckpoint m_checkpoint;
+  };
+
   // Where a file's store lives, and how it must be written.
   struct Location {
     enum class Kind {
@@ -126,6 +179,23 @@ public:
   void scheduleSave(const NodeIdentifier &p_nodeId, const CommentSet &p_comments,
                     quint64 p_generation = 0);
 
+  // Registers an active owner of in-memory comment state. The generation must
+  // be advanced whenever that state changes; the callback must synchronously
+  // hand the current generation to scheduleSave(). Callbacks are never invoked
+  // while m_mutex is held.
+  FlushParticipantLease registerFlushParticipant(const NodeIdentifier &p_nodeId,
+                                                 std::function<void()> p_flushCallback,
+                                                 quint64 p_generation = 0);
+
+  // Flushes an exact file or every file below a folder and waits only for the
+  // matching comment jobs. A successful result carries a checkpoint for the
+  // transfer's callback-free final precondition.
+  FlushResult flushAndWaitForIdle(const QString &p_notebookId, const QString &p_relativePath,
+                                  bool p_isFolder, int p_timeoutMs,
+                                  const std::function<bool()> &p_isCancelled = {});
+
+  bool isFlushCheckpointCurrent(const FlushCheckpoint &p_checkpoint) const;
+
   // Stop accepting new jobs and wait up to @p_timeoutMs for workers to drain.
   bool shutdown(int p_timeoutMs = 5000);
 
@@ -164,9 +234,26 @@ private:
     // Save only.
     QByteArray m_payload;
     quint64 m_generation = 0;
+    quint64 m_sequence = 0;
 
     // Move only: the destination sidecar.
     QString m_destPath;
+  };
+
+  struct Participant {
+    quint64 m_id = 0;
+    NodeIdentifier m_nodeId;
+    quint64 m_generation = 0;
+    std::function<void()> m_flushCallback;
+  };
+
+  struct JobState {
+    NodeIdentifier m_nodeId;
+    quint64 m_latestScheduledSequence = 0;
+    quint64 m_latestCompletedSequence = 0;
+    quint64 m_latestCompletedGeneration = 0;
+    bool m_latestCompletedOk = true;
+    QString m_latestError;
   };
 
   static QString jobKey(const NodeIdentifier &p_nodeId);
@@ -174,7 +261,7 @@ private:
   static QString jobKey(const QString &p_notebookId, const QString &p_relativePath);
 
   // Appends @p_job to its file's FIFO and dispatches a worker if idle.
-  void enqueue(const QString &p_key, const Job &p_job);
+  void enqueue(const QString &p_key, Job p_job);
 
   void runWorker(const QString &p_key);
 
@@ -197,19 +284,40 @@ private:
   // True when the notebook exists and is NOT bundled.
   bool isSiblingNotebook(const QString &p_notebookId) const;
 
+  static bool matchesScope(const NodeIdentifier &p_nodeId, const QString &p_notebookId,
+                           const QString &p_relativePath, bool p_isFolder);
+
+  void unregisterFlushParticipant(quint64 p_id);
+  void updateFlushParticipant(quint64 p_id, const NodeIdentifier *p_nodeId, quint64 p_generation);
+
+  QHash<quint64, quint64> matchingParticipantGenerationsLocked(const QString &p_notebookId,
+                                                               const QString &p_relativePath,
+                                                               bool p_isFolder) const;
+  QHash<QString, quint64> matchingJobGenerationsLocked(const QString &p_notebookId,
+                                                       const QString &p_relativePath,
+                                                       bool p_isFolder) const;
+  bool hasMatchingJobsLocked(const QString &p_notebookId, const QString &p_relativePath,
+                             bool p_isFolder) const;
+
   NotebookCoreService *m_notebookService = nullptr;
 
   NotebookIoGate *m_ioGate = nullptr;
 
   HookManager *m_hookMgr = nullptr;
 
-  // Guards m_queues, m_running, m_inFlightCount, m_stopping.
+  // Guards queues, participants, job states, m_inFlightCount and m_stopping.
   mutable QMutex m_mutex;
   QWaitCondition m_drained;
+  QWaitCondition m_stateChanged;
 
   // Per-file FIFO. Save jobs coalesce with the tail; Move/Remove never do.
   QHash<QString, QQueue<Job>> m_queues;
   QHash<QString, bool> m_running;
+  QHash<QString, JobState> m_jobStates;
+
+  QHash<quint64, Participant> m_participants;
+  quint64 m_nextParticipantId = 1;
+  quint64 m_nextJobSequence = 1;
 
   int m_inFlightCount = 0;
   bool m_stopping = false;

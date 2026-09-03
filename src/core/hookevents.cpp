@@ -68,6 +68,36 @@ NodeMoveEvent NodeMoveEvent::fromVariantMap(const QVariantMap &p_args) {
   return e;
 }
 
+// ===== NodeTransferEvent =====
+
+QVariantMap NodeTransferEvent::toVariantMap() const {
+  QVariantMap m;
+  m[QStringLiteral("sourceNotebookId")] = sourceNotebookId;
+  m[QStringLiteral("sourceRelativePath")] = sourceRelativePath;
+  m[QStringLiteral("destinationNotebookId")] = destinationNotebookId;
+  m[QStringLiteral("destinationRelativePath")] = destinationRelativePath;
+  m[QStringLiteral("requestedOperation")] = requestedOperation;
+  m[QStringLiteral("isFolder")] = isFolder;
+  m[QStringLiteral("actualStatus")] = actualStatus;
+  m[QStringLiteral("destinationNodeId")] = destinationNodeId;
+  m[QStringLiteral("sourceRemains")] = sourceRemains;
+  return m;
+}
+
+NodeTransferEvent NodeTransferEvent::fromVariantMap(const QVariantMap &p_args) {
+  NodeTransferEvent e;
+  e.sourceNotebookId = p_args.value(QStringLiteral("sourceNotebookId")).toString();
+  e.sourceRelativePath = p_args.value(QStringLiteral("sourceRelativePath")).toString();
+  e.destinationNotebookId = p_args.value(QStringLiteral("destinationNotebookId")).toString();
+  e.destinationRelativePath = p_args.value(QStringLiteral("destinationRelativePath")).toString();
+  e.requestedOperation = p_args.value(QStringLiteral("requestedOperation")).toString();
+  e.isFolder = p_args.value(QStringLiteral("isFolder")).toBool();
+  e.actualStatus = p_args.value(QStringLiteral("actualStatus")).toString();
+  e.destinationNodeId = p_args.value(QStringLiteral("destinationNodeId")).toString();
+  e.sourceRemains = p_args.value(QStringLiteral("sourceRemains"), true).toBool();
+  return e;
+}
+
 // ===== NodeReorderEvent =====
 
 QVariantMap NodeReorderEvent::toVariantMap() const {

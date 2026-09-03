@@ -10,6 +10,7 @@
 #include <core/fileopensettings.h>
 #include <core/global.h>
 #include <core/nodeidentifier.h>
+#include <core/services/nodetransferservice.h>
 #include <nodeinfo.h>
 
 class QMenu;
@@ -97,6 +98,9 @@ public:
   // The view (NotebookExplorer2) shows ONE dialog and loops the ids over this.
   virtual bool handleTagDeltaResult(const NodeIdentifier &p_nodeId, const QSet<QString> &p_added,
                                     const QSet<QString> &p_removed) = 0;
+  virtual NodeTransferBatchResult
+  executeCrossNotebookPaste(const NodeTransferRequest &p_request,
+                            const NodeTransferCallbacks &p_callbacks = NodeTransferCallbacks()) = 0;
 
   // === Reload ===
   virtual void reloadNode(const NodeIdentifier &p_nodeId) = 0;
@@ -144,6 +148,7 @@ signals:
   // connects to this and shows ONE batch confirmation dialog (views own
   // dialogs; controllers MUST NOT).
   void missingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds);
+  void crossNotebookPasteRequested(const NodeTransferRequest &p_request);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void markRequested(const QList<NodeIdentifier> &p_ids);
   void ignoreRequested(const NodeIdentifier &p_nodeId);

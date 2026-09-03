@@ -21,6 +21,7 @@ private slots:
   void testNodeOperationEventRoundTrip();
   void testNodeRenameEventRoundTrip();
   void testNodeMoveEventRoundTrip();
+  void testNodeTransferEventRoundTrip();
   void testFileOpenEventRoundTrip();
   void testFileOpenSettingsCursorOffsetTransport();
   void testFileOpenSettingsDetachedViewTransport();
@@ -54,12 +55,14 @@ private slots:
 
   // Typed doAction emission tests.
   void testTypedDoActionNodeOperationEvent();
+  void testTypedDoActionNodeTransferEvent();
   void testTypedDoActionFileOpenEvent();
   void testTypedDoActionBufferEvent();
   void testTypedDoActionViewWindowMoveEvent();
 
   // Typed addAction subscription tests.
   void testTypedAddActionNodeRenameEvent();
+  void testTypedAddActionNodeTransferEvent();
   void testTypedAddActionBufferEvent();
   void testTypedAddActionViewWindowCloseEvent();
 
@@ -145,6 +148,32 @@ void TestHookEvents::testNodeMoveEventRoundTrip() {
   QCOMPARE(restored.oldRelativePath, orig.oldRelativePath);
   QCOMPARE(restored.newRelativePath, orig.newRelativePath);
   QCOMPARE(restored.isFolder, orig.isFolder);
+}
+
+void TestHookEvents::testNodeTransferEventRoundTrip() {
+  NodeTransferEvent orig;
+  orig.sourceNotebookId = QStringLiteral("nb-source");
+  orig.sourceRelativePath = QStringLiteral("projects/report.md");
+  orig.destinationNotebookId = QStringLiteral("nb-destination");
+  orig.destinationRelativePath = QStringLiteral("archive/report (2).md");
+  orig.requestedOperation = QStringLiteral("move");
+  orig.isFolder = false;
+  orig.actualStatus = QStringLiteral("moved");
+  orig.destinationNodeId = QStringLiteral("node-destination-uuid");
+  orig.sourceRemains = false;
+
+  QVariantMap map = orig.toVariantMap();
+  NodeTransferEvent restored = NodeTransferEvent::fromVariantMap(map);
+
+  QCOMPARE(restored.sourceNotebookId, orig.sourceNotebookId);
+  QCOMPARE(restored.sourceRelativePath, orig.sourceRelativePath);
+  QCOMPARE(restored.destinationNotebookId, orig.destinationNotebookId);
+  QCOMPARE(restored.destinationRelativePath, orig.destinationRelativePath);
+  QCOMPARE(restored.requestedOperation, orig.requestedOperation);
+  QCOMPARE(restored.isFolder, orig.isFolder);
+  QCOMPARE(restored.actualStatus, orig.actualStatus);
+  QCOMPARE(restored.destinationNodeId, orig.destinationNodeId);
+  QCOMPARE(restored.sourceRemains, orig.sourceRemains);
 }
 
 void TestHookEvents::testFileOpenEventRoundTrip() {
@@ -376,6 +405,46 @@ void TestHookEvents::testTypedDoActionNodeOperationEvent() {
   m_hookMgr->removeAction(hookId);
 }
 
+void TestHookEvents::testTypedDoActionNodeTransferEvent() {
+  bool fired = false;
+  QVariantMap captured;
+  int hookId = m_hookMgr->addAction(
+      HookNames::NodeAfterTransfer,
+      [&fired, &captured](HookContext &, const QVariantMap &p_args) {
+        fired = true;
+        captured = p_args;
+      },
+      10);
+
+  NodeTransferEvent event;
+  event.sourceNotebookId = QStringLiteral("nb-transfer-source");
+  event.sourceRelativePath = QStringLiteral("notes/source.md");
+  event.destinationNotebookId = QStringLiteral("nb-transfer-destination");
+  event.destinationRelativePath = QStringLiteral("inbox/source.md");
+  event.requestedOperation = QStringLiteral("copy");
+  event.isFolder = false;
+  event.actualStatus = QStringLiteral("copied");
+  event.destinationNodeId = QStringLiteral("destination-uuid");
+  event.sourceRemains = true;
+
+  m_hookMgr->doAction(HookNames::NodeAfterTransfer, event);
+
+  QVERIFY(fired);
+  QCOMPARE(captured[QStringLiteral("sourceNotebookId")].toString(), event.sourceNotebookId);
+  QCOMPARE(captured[QStringLiteral("sourceRelativePath")].toString(), event.sourceRelativePath);
+  QCOMPARE(captured[QStringLiteral("destinationNotebookId")].toString(),
+           event.destinationNotebookId);
+  QCOMPARE(captured[QStringLiteral("destinationRelativePath")].toString(),
+           event.destinationRelativePath);
+  QCOMPARE(captured[QStringLiteral("requestedOperation")].toString(), event.requestedOperation);
+  QCOMPARE(captured[QStringLiteral("isFolder")].toBool(), event.isFolder);
+  QCOMPARE(captured[QStringLiteral("actualStatus")].toString(), event.actualStatus);
+  QCOMPARE(captured[QStringLiteral("destinationNodeId")].toString(), event.destinationNodeId);
+  QCOMPARE(captured[QStringLiteral("sourceRemains")].toBool(), event.sourceRemains);
+
+  m_hookMgr->removeAction(hookId);
+}
+
 void TestHookEvents::testTypedDoActionFileOpenEvent() {
   bool fired = false;
   QVariantMap captured;
@@ -494,6 +563,40 @@ void TestHookEvents::testTypedAddActionNodeRenameEvent() {
   QCOMPARE(captured.isFolder, false);
   QCOMPARE(captured.oldName, QStringLiteral("old.md"));
   QCOMPARE(captured.newName, QStringLiteral("new.md"));
+
+  m_hookMgr->removeAction(hookId);
+}
+
+void TestHookEvents::testTypedAddActionNodeTransferEvent() {
+  bool fired = false;
+  NodeTransferEvent captured;
+  int hookId = m_hookMgr->addAction<NodeTransferEvent>(
+      HookNames::NodeBeforeTransfer,
+      [&fired, &captured](HookContext &p_ctx, const NodeTransferEvent &p_event) {
+        fired = true;
+        captured = p_event;
+        p_ctx.cancel();
+      },
+      10);
+
+  NodeTransferEvent event;
+  event.sourceNotebookId = QStringLiteral("nb-before-source");
+  event.sourceRelativePath = QStringLiteral("folder");
+  event.destinationNotebookId = QStringLiteral("nb-before-destination");
+  event.destinationRelativePath = QStringLiteral("target/folder");
+  event.requestedOperation = QStringLiteral("move");
+  event.isFolder = true;
+
+  bool cancelled = m_hookMgr->doAction(HookNames::NodeBeforeTransfer, event);
+
+  QVERIFY(fired);
+  QVERIFY(cancelled);
+  QCOMPARE(captured.sourceNotebookId, event.sourceNotebookId);
+  QCOMPARE(captured.sourceRelativePath, event.sourceRelativePath);
+  QCOMPARE(captured.destinationNotebookId, event.destinationNotebookId);
+  QCOMPARE(captured.destinationRelativePath, event.destinationRelativePath);
+  QCOMPARE(captured.requestedOperation, event.requestedOperation);
+  QCOMPARE(captured.isFolder, event.isFolder);
 
   m_hookMgr->removeAction(hookId);
 }

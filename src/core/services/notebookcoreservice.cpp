@@ -6,6 +6,8 @@
 #include <QVariantMap>
 #include <QtConcurrent>
 
+#include <utility>
+
 #include <nlohmann/json.hpp>
 
 #include <core/hookcontext.h>
@@ -17,6 +19,34 @@
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
+
+PreparedNodeTransfer::~PreparedNodeTransfer() {
+  if (m_context && m_handle) {
+    vxcore_node_transfer_free(m_context, m_handle);
+  }
+}
+
+PreparedNodeTransfer::PreparedNodeTransfer(PreparedNodeTransfer &&p_other) noexcept
+    : m_error(p_other.m_error), m_errorMessage(std::move(p_other.m_errorMessage)),
+      m_context(p_other.m_context), m_handle(p_other.m_handle) {
+  p_other.m_context = nullptr;
+  p_other.m_handle = nullptr;
+}
+
+PreparedNodeTransfer &PreparedNodeTransfer::operator=(PreparedNodeTransfer &&p_other) noexcept {
+  if (this != &p_other) {
+    if (m_context && m_handle) {
+      vxcore_node_transfer_free(m_context, m_handle);
+    }
+    m_error = p_other.m_error;
+    m_errorMessage = std::move(p_other.m_errorMessage);
+    m_context = p_other.m_context;
+    m_handle = p_other.m_handle;
+    p_other.m_context = nullptr;
+    p_other.m_handle = nullptr;
+  }
+  return *this;
+}
 
 NotebookCoreService::NotebookCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
@@ -396,6 +426,126 @@ bool NotebookCoreService::isNotebookReadOnly(const QString &p_notebookId) const 
     return false;
   }
   return readOnly;
+}
+
+PreparedNodeTransfer
+NotebookCoreService::prepareNodeTransfer(const NodeTransferCoreRequest &p_request,
+                                         const NodeTransferProgressCallback &p_progress) {
+  PreparedNodeTransfer prepared;
+  prepared.m_context = m_context;
+  if (!checkContext()) {
+    prepared.m_error = VXCORE_ERR_NOT_INITIALIZED;
+    prepared.m_errorMessage = contextErrorMessage(prepared.m_error);
+    return prepared;
+  }
+  if (p_request.m_sourceNotebookId.isEmpty() || p_request.m_sourceRelativePath.isEmpty() ||
+      p_request.m_destinationNotebookId.isEmpty()) {
+    prepared.m_error = VXCORE_ERR_INVALID_PARAM;
+    prepared.m_errorMessage = QString::fromUtf8(vxcore_error_message(prepared.m_error));
+    return prepared;
+  }
+
+  QJsonObject options;
+  options[QStringLiteral("operation")] = p_request.m_operation == NodeTransferOperation::Move
+                                             ? QStringLiteral("move")
+                                             : QStringLiteral("copy");
+  options[QStringLiteral("conflictPolicy")] = QStringLiteral("rename");
+  options[QStringLiteral("timestampPolicy")] = p_request.m_operation == NodeTransferOperation::Move
+                                                   ? QStringLiteral("preserve")
+                                                   : QStringLiteral("reset");
+  options[QStringLiteral("createMissingTags")] = true;
+  options[QStringLiteral("preserveRelativeLinks")] = true;
+
+  struct CallbackState {
+    const NodeTransferProgressCallback *m_callback = nullptr;
+  } callbackState;
+  callbackState.m_callback = &p_progress;
+  auto progressThunk = [](const char *p_phase, uint64_t p_completed, uint64_t p_total,
+                          void *p_userData) -> int {
+    auto *state = static_cast<CallbackState *>(p_userData);
+    if (!state || !state->m_callback || !*state->m_callback) {
+      return 0;
+    }
+    NodeTransferProgress progress;
+    progress.m_phase = QString::fromUtf8(p_phase ? p_phase : "");
+    progress.m_completedBytes = p_completed;
+    progress.m_totalBytes = p_total;
+    try {
+      return (*state->m_callback)(progress) ? 0 : 1;
+    } catch (...) {
+      return 1;
+    }
+  };
+
+  const QByteArray sourceNotebook = p_request.m_sourceNotebookId.toUtf8();
+  const QByteArray sourcePath = p_request.m_sourceRelativePath.toUtf8();
+  const QByteArray destinationNotebook = p_request.m_destinationNotebookId.toUtf8();
+  const QByteArray destinationPath =
+      (p_request.m_destinationFolderPath.isEmpty() ? QStringLiteral(".")
+                                                   : p_request.m_destinationFolderPath)
+          .toUtf8();
+  const QByteArray optionsJson = QJsonDocument(options).toJson(QJsonDocument::Compact);
+  prepared.m_error =
+      vxcore_node_transfer_prepare(m_context, sourceNotebook.constData(), sourcePath.constData(),
+                                   destinationNotebook.constData(), destinationPath.constData(),
+                                   optionsJson.constData(), p_progress ? progressThunk : nullptr,
+                                   p_progress ? &callbackState : nullptr, &prepared.m_handle);
+  if (prepared.m_error != VXCORE_OK) {
+    prepared.m_errorMessage = contextErrorMessage(prepared.m_error);
+  }
+  return prepared;
+}
+
+NodeTransferCoreResult NotebookCoreService::commitNodeTransfer(PreparedNodeTransfer &p_prepared) {
+  if (!checkContext()) {
+    return parseNodeTransferResult(VXCORE_ERR_NOT_INITIALIZED, nullptr);
+  }
+  if (!p_prepared.m_handle || p_prepared.m_context != m_context) {
+    return parseNodeTransferResult(VXCORE_ERR_INVALID_PARAM, nullptr);
+  }
+  VxCoreNodeTransferHandle handle = p_prepared.m_handle;
+  p_prepared.m_handle = nullptr;
+  p_prepared.m_context = nullptr;
+  char *resultJson = nullptr;
+  const VxCoreError error = vxcore_node_transfer_commit(m_context, handle, &resultJson);
+  p_prepared.m_error = error;
+  p_prepared.m_errorMessage = error == VXCORE_OK ? QString() : contextErrorMessage(error);
+  return parseNodeTransferResult(error, resultJson);
+}
+
+VxCoreError NotebookCoreService::dispatchNodeTransferEvents(NodeTransferCoreResult &p_result) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  if (p_result.m_eventBatchId.isEmpty()) {
+    return VXCORE_OK;
+  }
+  const QByteArray batchId = p_result.m_eventBatchId.toUtf8();
+  const VxCoreError error = vxcore_node_transfer_dispatch_events(m_context, batchId.constData());
+  if (error == VXCORE_OK) {
+    p_result.m_eventBatchId.clear();
+  }
+  return error;
+}
+
+void NotebookCoreService::freePreparedNodeTransfer(PreparedNodeTransfer &p_prepared) {
+  if (p_prepared.m_context && p_prepared.m_handle) {
+    vxcore_node_transfer_free(p_prepared.m_context, p_prepared.m_handle);
+  }
+  p_prepared.m_handle = nullptr;
+  p_prepared.m_context = nullptr;
+}
+
+NodeTransferCoreResult
+NotebookCoreService::finalizeTransferredMove(const QJsonObject &p_resumeToken) {
+  if (!checkContext()) {
+    return parseNodeTransferResult(VXCORE_ERR_NOT_INITIALIZED, nullptr);
+  }
+  const QByteArray tokenJson = QJsonDocument(p_resumeToken).toJson(QJsonDocument::Compact);
+  char *resultJson = nullptr;
+  const VxCoreError error =
+      vxcore_node_finalize_transfer_move(m_context, tokenJson.constData(), &resultJson);
+  return parseNodeTransferResult(error, resultJson);
 }
 
 // Sync operations - thin wrappers around vxcore C sync APIs.
@@ -1683,4 +1833,72 @@ QJsonArray NotebookCoreService::parseJsonArrayFromCStr(char *p_str) {
     return QJsonArray();
   }
   return doc.array();
+}
+
+NodeTransferCoreResult NotebookCoreService::parseNodeTransferResult(VxCoreError p_error,
+                                                                    char *p_resultJson) const {
+  NodeTransferCoreResult result;
+  result.m_error = p_error;
+  if (p_error != VXCORE_OK) {
+    if (p_resultJson) {
+      vxcore_string_free(p_resultJson);
+    }
+    result.m_errorMessage = contextErrorMessage(p_error);
+    return result;
+  }
+
+  QJsonParseError parseError;
+  const QJsonDocument document =
+      QJsonDocument::fromJson(p_resultJson ? QByteArray(p_resultJson) : QByteArray(), &parseError);
+  if (p_resultJson) {
+    vxcore_string_free(p_resultJson);
+  }
+  if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+    result.m_errorMessage =
+        QStringLiteral("Invalid node transfer result: %1").arg(parseError.errorString());
+    return result;
+  }
+
+  const QJsonObject object = document.object();
+  const QString status = object.value(QStringLiteral("status")).toString();
+  if (status == QLatin1String("copied")) {
+    result.m_status = NodeTransferCoreResult::Status::Copied;
+  } else if (status == QLatin1String("moved")) {
+    result.m_status = NodeTransferCoreResult::Status::Moved;
+  } else if (status == QLatin1String("copiedSourceRetained")) {
+    result.m_status = NodeTransferCoreResult::Status::CopiedSourceRetained;
+  } else if (status == QLatin1String("moveRecoveryRequired")) {
+    result.m_status = NodeTransferCoreResult::Status::MoveRecoveryRequired;
+    result.m_error = VXCORE_ERR_INVALID_STATE;
+    result.m_errorMessage =
+        QStringLiteral("Move destination is durable, but source recovery is required");
+  } else {
+    result.m_errorMessage = QStringLiteral("Invalid node transfer status: %1").arg(status);
+    return result;
+  }
+  result.m_sourceNotebookId = object.value(QStringLiteral("sourceNotebookId")).toString();
+  result.m_sourceRelativePath = object.value(QStringLiteral("sourceRelativePath")).toString();
+  result.m_destinationNotebookId = object.value(QStringLiteral("destinationNotebookId")).toString();
+  result.m_destinationRelativePath =
+      object.value(QStringLiteral("destinationRelativePath")).toString();
+  result.m_destinationNodeId = object.value(QStringLiteral("destinationNodeId")).toString();
+  result.m_isFolder = object.value(QStringLiteral("isFolder")).toBool();
+  const QJsonArray createdTags = object.value(QStringLiteral("createdTagPaths")).toArray();
+  for (const auto &tag : createdTags) {
+    if (tag.isString()) {
+      result.m_createdTagPaths.append(tag.toString());
+    }
+  }
+  result.m_resumeToken = object.value(QStringLiteral("resumeToken")).toObject();
+  result.m_eventBatchId = object.value(QStringLiteral("eventBatchId")).toString();
+  return result;
+}
+
+QString NotebookCoreService::contextErrorMessage(VxCoreError p_error) const {
+  const char *message = nullptr;
+  if (m_context && vxcore_context_get_last_error(m_context, &message) == VXCORE_OK && message &&
+      *message) {
+    return QString::fromUtf8(message);
+  }
+  return QString::fromUtf8(vxcore_error_message(p_error));
 }

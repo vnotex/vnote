@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 
+#include <functional>
 #include <string>
 
 #include <core/noncopyable.h>
@@ -57,6 +58,65 @@ struct FolderImportPaths {
   QString m_metadataRoot;
 
   bool isValid() const { return m_error == VXCORE_OK; }
+};
+
+enum class NodeTransferOperation { Copy, Move };
+
+struct NodeTransferCoreRequest {
+  QString m_sourceNotebookId;
+  QString m_sourceRelativePath;
+  QString m_destinationNotebookId;
+  QString m_destinationFolderPath;
+  NodeTransferOperation m_operation = NodeTransferOperation::Copy;
+};
+
+struct NodeTransferProgress {
+  QString m_phase;
+  quint64 m_completedBytes = 0;
+  quint64 m_totalBytes = 0;
+};
+
+using NodeTransferProgressCallback = std::function<bool(const NodeTransferProgress &)>;
+
+struct NodeTransferCoreResult {
+  enum class Status { Invalid, Copied, Moved, CopiedSourceRetained, MoveRecoveryRequired };
+
+  bool isSuccess() const {
+    return m_error == VXCORE_OK && m_status != Status::Invalid &&
+           m_status != Status::MoveRecoveryRequired;
+  }
+
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  QString m_errorMessage;
+  Status m_status = Status::Invalid;
+  QString m_sourceNotebookId;
+  QString m_sourceRelativePath;
+  QString m_destinationNotebookId;
+  QString m_destinationRelativePath;
+  QString m_destinationNodeId;
+  bool m_isFolder = false;
+  QStringList m_createdTagPaths;
+  QJsonObject m_resumeToken;
+  QString m_eventBatchId;
+};
+
+struct PreparedNodeTransfer {
+  PreparedNodeTransfer() = default;
+  ~PreparedNodeTransfer();
+  PreparedNodeTransfer(const PreparedNodeTransfer &) = delete;
+  PreparedNodeTransfer &operator=(const PreparedNodeTransfer &) = delete;
+  PreparedNodeTransfer(PreparedNodeTransfer &&p_other) noexcept;
+  PreparedNodeTransfer &operator=(PreparedNodeTransfer &&p_other) noexcept;
+
+  bool isValid() const { return m_error == VXCORE_OK && m_handle != nullptr; }
+
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  QString m_errorMessage;
+
+private:
+  friend class NotebookCoreService;
+  VxCoreContextHandle m_context = nullptr;
+  VxCoreNodeTransferHandle m_handle = nullptr;
 };
 
 class HookManager;
@@ -159,6 +219,18 @@ public:
   // so UI badges fail closed rather than misreporting an editable notebook
   // as read-only.
   bool isNotebookReadOnly(const QString &p_notebookId) const;
+
+  // Cross-notebook transfer operations. prepare may invoke the synchronous
+  // progress callback; commit/finalize are callback-free and consume their
+  // prepared handle/result JSON entirely inside this wrapper. commit performs
+  // vxcore's final prepared-source fingerprint validation for Copy and Move.
+  PreparedNodeTransfer prepareNodeTransfer(
+      const NodeTransferCoreRequest &p_request,
+      const NodeTransferProgressCallback &p_progress = NodeTransferProgressCallback());
+  NodeTransferCoreResult commitNodeTransfer(PreparedNodeTransfer &p_prepared);
+  VxCoreError dispatchNodeTransferEvents(NodeTransferCoreResult &p_result);
+  void freePreparedNodeTransfer(PreparedNodeTransfer &p_prepared);
+  NodeTransferCoreResult finalizeTransferredMove(const QJsonObject &p_resumeToken);
 
   // Sync operations (8 methods). Thin wrappers around vxcore C sync APIs.
   // All methods return VxCoreError directly so callers can react to specific
@@ -437,6 +509,9 @@ private:
 
   // Parse JSON string to QJsonArray from C string (takes ownership, frees p_str).
   static QJsonArray parseJsonArrayFromCStr(char *p_str);
+
+  NodeTransferCoreResult parseNodeTransferResult(VxCoreError p_error, char *p_resultJson) const;
+  QString contextErrorMessage(VxCoreError p_error) const;
 
   // T6 helper: build the {"folders":[...],"files":[...]} JSON consumed by
   // vxcore_folder_set_children_order. Either sub-array is omitted if its

@@ -87,6 +87,8 @@ void CombinedNodeExplorer::setupUI() {
   // to the outer widget (NotebookExplorer2), which owns the dialog.
   connect(m_controller, &NotebookNodeController::missingNodeRemovalRequested, this,
           &CombinedNodeExplorer::missingNodeRemovalRequested);
+  connect(m_controller, &NotebookNodeController::crossNotebookPasteRequested, this,
+          &CombinedNodeExplorer::crossNotebookPasteRequested);
   connect(m_controller, &NotebookNodeController::propertiesRequested, this,
           &CombinedNodeExplorer::propertiesRequested);
   connect(m_controller, &NotebookNodeController::exportNodeRequested, this,
@@ -269,6 +271,13 @@ bool CombinedNodeExplorer::handleTagDeltaResult(const NodeIdentifier &p_nodeId,
     return false;
   }
   return m_controller->handleTagDeltaResult(p_nodeId, p_added, p_removed);
+}
+
+NodeTransferBatchResult
+CombinedNodeExplorer::executeCrossNotebookPaste(const NodeTransferRequest &p_request,
+                                                const NodeTransferCallbacks &p_callbacks) {
+  return m_controller ? m_controller->executeCrossNotebookPaste(p_request, p_callbacks)
+                      : NodeTransferBatchResult();
 }
 
 void CombinedNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId) {

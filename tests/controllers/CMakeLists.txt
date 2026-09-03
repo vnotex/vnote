@@ -298,6 +298,27 @@ add_qt_test(test_notebook_node_controller_reorder
     core_services
     vxcore
 )
+
+# Cross-notebook Paste controller policy. The structured request/routing and
+# result reconciliation are pure seams on NotebookNodeController, so this target
+# avoids the full explorer/model dependency graph while testing production code.
+add_qt_test(test_notebook_node_controller_transfer
+  SOURCES
+    test_notebook_node_controller_transfer.cpp
+    test_notebook_node_controller_transfer_stubs.cpp
+  LINKS
+    Qt6::Widgets
+    core_services
+    vxcore
+  GUILESS
+)
+target_include_directories(test_notebook_node_controller_transfer PRIVATE
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/controllers
+)
+target_compile_definitions(test_notebook_node_controller_transfer PRIVATE
+  VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
 target_include_directories(test_notebook_node_controller_reorder PRIVATE
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/controllers

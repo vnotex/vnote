@@ -20,6 +20,13 @@ When adding a multi-target action that requires user input via a dialog, the MVC
 
 **Rule for new actions**: When adding a multi-target action that requires user input via a dialog, the request signal MUST take `QList<NodeIdentifier>` (even when size is 1); the View slot MUST show ONE dialog; the apply path MUST stay per-id and be looped in the slot. **Use ONE method/signal name per action — widen the signature rather than introducing parallel singular/plural variants.** NEVER define a per-id signal that the view will fire N dialogs from.
 
+Cross-notebook Paste follows the same ownership boundary with a typed batch: the controller emits
+`crossNotebookPasteRequested` without mutating storage, `NotebookExplorer2` owns one application-
+modal progress dialog, and the view calls back through `INodeExplorer::executeCrossNotebookPaste`.
+The controller then invokes `NodeTransferService`, reconciles structured clipboard entries, reloads
+models, and selects the returned destination. Same-notebook paste always reconstructs and uses the
+original path identifiers; optional stable UUID/kind/resume data must not affect that branch.
+
 **Audit summary**: As of 2026-05-16, the only multi-target action that previously violated this rule was Mark; its `markRequested` signal was widened to `QList<NodeIdentifier>` (same name, one method) per the contract. As of 2026-08-03, the two remaining *undocumented* blocking modals were removed:
 
 - `AttachmentController::addAttachments()` / `deleteAttachments()` no longer open a `QFileDialog` / `QMessageBox`. Both were triggered from `QAction` handlers in `src/widgets/attachmentpopup2.cpp`, so the view was already on the stack and no new signal was needed: the popup now shows the dialog (parented to `AttachmentPopup2::dialogParent()`, i.e. the tool button's window — `this` is a `QMenu` and would be the wrong parent) and calls `addAttachments(const QStringList &)` with the result. The popup re-applies the controller's guards so no dialog is raised whose result would be discarded; the controller keeps its own guards as defense in depth. Gate: `tests/controllers/test_attachmentcontroller.cpp` is `GUILESS` and drives both paths — before this change either call blocked on a modal.

@@ -6,7 +6,7 @@
 #include <QTimer>
 
 #include <core/nodeidentifier.h>
-#include <core/services/commenttypes.h>
+#include <core/services/commentservice.h>
 
 namespace vnotex {
 
@@ -105,6 +105,8 @@ private slots:
 private:
   void scheduleSave();
 
+  void registerFlushParticipant();
+
   void publish();
 
   int indexOf(const QString &p_id) const;
@@ -135,6 +137,8 @@ private:
   // for it has arrived yet, so the timer does not enqueue the same generation
   // repeatedly.
   quint64 m_inFlightGeneration = 0;
+
+  CommentService::FlushParticipantLease m_flushParticipantLease;
 };
 
 } // namespace vnotex

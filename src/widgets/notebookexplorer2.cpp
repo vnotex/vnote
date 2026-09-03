@@ -804,6 +804,8 @@ void NotebookExplorer2::setupCombinedMode() {
   // because controllers MUST NOT show QDialog (src/controllers/AGENTS.md).
   connect(explorer, &CombinedNodeExplorer::sortRequested, this,
           &NotebookExplorer2::onSortRequested);
+  connect(explorer, &CombinedNodeExplorer::crossNotebookPasteRequested, this,
+          &NotebookExplorer2::onCrossNotebookPasteRequested);
 
   // File system watcher: track expand/collapse
   connect(explorer, &INodeExplorer::folderExpanded, this, [this](const NodeIdentifier &p_folderId) {
@@ -869,6 +871,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
   // CombinedNodeExplorer — one slot serves both explorer types.
   connect(explorer, &TwoColumnsNodeExplorer::sortRequested, this,
           &NotebookExplorer2::onSortRequested);
+  connect(explorer, &TwoColumnsNodeExplorer::crossNotebookPasteRequested, this,
+          &NotebookExplorer2::onCrossNotebookPasteRequested);
 
   // File system watcher: track expand/collapse
   connect(explorer, &INodeExplorer::folderExpanded, this, [this](const NodeIdentifier &p_folderId) {
@@ -2004,6 +2008,71 @@ void NotebookExplorer2::onShareFolderRequested(const NodeIdentifier &p_nodeId) {
                              result.m_errorMessage, QString(), this);
     break;
   }
+}
+
+void NotebookExplorer2::onCrossNotebookPasteRequested(const NodeTransferRequest &p_request) {
+  if (m_nodeTransferActive || !m_nodeExplorer || p_request.m_items.isEmpty()) {
+    return;
+  }
+
+  QProgressDialog progress(tr("Preparing node transfer..."), tr("Cancel"), 0, 100, nullptr);
+  progress.setWindowTitle(tr("Paste Nodes"));
+  progress.setWindowModality(Qt::ApplicationModal);
+  progress.setAutoClose(false);
+  progress.setAutoReset(false);
+  progress.setMinimumDuration(0);
+  progress.setValue(0);
+
+  QPointer<NotebookExplorer2> selfGuard(this);
+  QPointer<QProgressDialog> progressGuard(&progress);
+  NodeTransferCallbacks callbacks;
+  callbacks.m_phaseChanged = [progressGuard](int p_index, int p_total, const QString &p_phase,
+                                             const QString &p_item) {
+    if (!progressGuard) {
+      return;
+    }
+    progressGuard->setLabelText(
+        tr("%1 of %2: %3\n%4").arg(p_index + 1).arg(p_total).arg(p_item, p_phase));
+  };
+  callbacks.m_byteProgress = [progressGuard](quint64 p_done, quint64 p_total) {
+    if (progressGuard && p_total > 0) {
+      const double percent = (static_cast<double>(p_done) * 100.0) / p_total;
+      progressGuard->setValue(qBound(0, static_cast<int>(percent), 100));
+    }
+  };
+  callbacks.m_isCancelled = [selfGuard, progressGuard]() {
+    return !selfGuard || !progressGuard || progressGuard->wasCanceled();
+  };
+
+  m_nodeTransferActive = true;
+  const NodeTransferBatchResult result =
+      m_nodeExplorer->executeCrossNotebookPaste(p_request, callbacks);
+  progress.reset();
+  progress.close();
+  if (!selfGuard) {
+    return;
+  }
+  m_nodeTransferActive = false;
+
+  if (result.m_failedCount == 0 && result.m_sourceRetainedCount == 0) {
+    return;
+  }
+  QStringList reasons;
+  for (const auto &item : result.m_items) {
+    if (item.m_status == NodeTransferItemResult::Status::Failed ||
+        item.m_status == NodeTransferItemResult::Status::CopiedSourceRetained) {
+      const QString name = item.m_source.m_relativePath.section(QLatin1Char('/'), -1);
+      reasons.append(tr("%1: %2").arg(name, item.m_errorMessage));
+    }
+  }
+  const QString summary = tr("%1 copied, %2 moved, %3 left at the source, %4 failed.")
+                              .arg(result.m_copiedCount)
+                              .arg(result.m_movedCount)
+                              .arg(result.m_sourceRetainedCount)
+                              .arg(result.m_failedCount);
+  MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Paste completed with issues."),
+                           summary + QLatin1Char('\n') + reasons.join(QLatin1Char('\n')), QString(),
+                           this);
 }
 
 void NotebookExplorer2::onNodeActivated(const NodeIdentifier &p_nodeId,

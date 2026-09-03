@@ -25,6 +25,10 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <QSignalSpy>
+#include <QThread>
+
+#include <atomic>
+#include <thread>
 
 #include <core/nodeidentifier.h>
 #include <core/services/commentservice.h>
@@ -82,6 +86,16 @@ private slots:
   void lifecycleOpsAreOrderedBehindPendingSaves();
   void rapidSavesCoalesceToTheNewestSnapshot();
   void savingEmitsStoreDirtyForANotebookOnly();
+
+  // ---- scoped flush ----
+  void flushMatchesExactFileAndFolderDescendants();
+  void flushDoesNotMatchSiblingPrefixesOrOtherNotebooks();
+  void flushParticipantSchedulesAndDrainsPendingSave();
+  void flushReportsWriteFailureAndGeneration();
+  void flushFailureIsClearedByANewerSuccessfulGeneration();
+  void flushCheckpointDetectsANewerEdit();
+  void flushCanBeCancelled();
+  void flushTimesOutWithoutWaitingForUnrelatedWork();
 
   // ---- sibling lifecycle ----
   void renamingARawFileMovesItsSidecar();
@@ -844,6 +858,178 @@ void TestCommentService::savingEmitsStoreDirtyForANotebookOnly() {
   QVERIFY(doneSpy.wait(5000));
   QTest::qWait(50);
   QCOMPARE(dirtySpy.count(), 0);
+}
+
+void TestCommentService::flushMatchesExactFileAndFolderDescendants() {
+  int exactCalls = 0;
+  int childCalls = 0;
+  int siblingPrefixCalls = 0;
+
+  NodeIdentifier exact{QStringLiteral("flush-nb"), QStringLiteral("folder/a.pdf")};
+  NodeIdentifier child{QStringLiteral("flush-nb"), QStringLiteral("folder/child/b.pdf")};
+  NodeIdentifier siblingPrefix{QStringLiteral("flush-nb"), QStringLiteral("folderish/c.pdf")};
+
+  auto exactLease = m_service->registerFlushParticipant(exact, [&exactCalls]() { ++exactCalls; });
+  auto childLease = m_service->registerFlushParticipant(child, [&childCalls]() { ++childCalls; });
+  auto siblingLease = m_service->registerFlushParticipant(
+      siblingPrefix, [&siblingPrefixCalls]() { ++siblingPrefixCalls; });
+
+  auto result = m_service->flushAndWaitForIdle(exact.notebookId, exact.relativePath, false, 1000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QCOMPARE(exactCalls, 1);
+  QCOMPARE(childCalls, 0);
+
+  result = m_service->flushAndWaitForIdle(exact.notebookId, QStringLiteral("folder"), true, 1000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QCOMPARE(exactCalls, 2);
+  QCOMPARE(childCalls, 1);
+  QCOMPARE(siblingPrefixCalls, 0);
+  QVERIFY(m_service->isFlushCheckpointCurrent(result.m_checkpoint));
+}
+
+void TestCommentService::flushDoesNotMatchSiblingPrefixesOrOtherNotebooks() {
+  int prefixCalls = 0;
+  int otherNotebookCalls = 0;
+  NodeIdentifier prefix{QStringLiteral("scope-nb"), QStringLiteral("docs-old/a.pdf")};
+  NodeIdentifier other{QStringLiteral("other-nb"), QStringLiteral("docs/a.pdf")};
+  auto prefixLease =
+      m_service->registerFlushParticipant(prefix, [&prefixCalls]() { ++prefixCalls; });
+  auto otherLease =
+      m_service->registerFlushParticipant(other, [&otherNotebookCalls]() { ++otherNotebookCalls; });
+
+  const auto result = m_service->flushAndWaitForIdle(QStringLiteral("scope-nb"),
+                                                     QStringLiteral("docs"), true, 1000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QCOMPARE(prefixCalls, 0);
+  QCOMPARE(otherNotebookCalls, 0);
+}
+
+void TestCommentService::flushParticipantSchedulesAndDrainsPendingSave() {
+  NodeIdentifier nodeId;
+  nodeId.relativePath = QDir(m_tmp->path()).filePath(QStringLiteral("debounced.pdf"));
+
+  CommentSet set;
+  set.m_comments.append(makeComment(0, QStringLiteral("still in debounce")));
+  auto lease = m_service->registerFlushParticipant(
+      nodeId, [this, nodeId, set]() { m_service->scheduleSave(nodeId, set, 7); }, 7);
+
+  const auto result = m_service->flushAndWaitForIdle(QString(), nodeId.relativePath, false, 5000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QVERIFY(m_service->isFlushCheckpointCurrent(result.m_checkpoint));
+
+  const auto loaded = m_service->load(nodeId);
+  QCOMPARE(loaded.m_status, CommentService::LoadResult::Status::Loaded);
+  QCOMPARE(loaded.m_comments.m_comments.first().m_text, QStringLiteral("still in debounce"));
+}
+
+void TestCommentService::flushReportsWriteFailureAndGeneration() {
+  const QString blocker = QDir(m_tmp->path()).filePath(QStringLiteral("not-a-directory"));
+  QFile blockerFile(blocker);
+  QVERIFY(blockerFile.open(QIODevice::WriteOnly));
+  blockerFile.close();
+
+  NodeIdentifier nodeId;
+  nodeId.relativePath = QDir(blocker).filePath(QStringLiteral("paper.pdf"));
+  CommentSet set;
+  set.m_comments.append(makeComment(0, QStringLiteral("cannot land")));
+  m_service->scheduleSave(nodeId, set, 42);
+
+  const auto result = m_service->flushAndWaitForIdle(QString(), nodeId.relativePath, false, 5000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::WriteFailed);
+  QCOMPARE(result.m_failedGeneration, 42ull);
+  QVERIFY(!result.m_error.isEmpty());
+}
+
+void TestCommentService::flushFailureIsClearedByANewerSuccessfulGeneration() {
+  NodeIdentifier nodeId;
+  nodeId.relativePath = QDir(m_tmp->path()).filePath(QStringLiteral("retry.pdf"));
+
+  CommentSet set;
+  set.m_comments.append(makeComment(0, QStringLiteral("retry")));
+
+  const QString storePath = nodeId.relativePath + CommentService::siblingSuffix();
+  QVERIFY(QDir().mkpath(storePath));
+  m_service->scheduleSave(nodeId, set, 1);
+  auto result = m_service->flushAndWaitForIdle(QString(), nodeId.relativePath, false, 5000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::WriteFailed);
+  QCOMPARE(result.m_failedGeneration, 1ull);
+
+  QVERIFY(QDir(storePath).removeRecursively());
+  m_service->scheduleSave(nodeId, set, 2);
+  result = m_service->flushAndWaitForIdle(QString(), nodeId.relativePath, false, 5000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QVERIFY(m_service->isFlushCheckpointCurrent(result.m_checkpoint));
+}
+
+void TestCommentService::flushCheckpointDetectsANewerEdit() {
+  NodeIdentifier nodeId{QStringLiteral("generation-nb"), QStringLiteral("doc.pdf")};
+  auto lease = m_service->registerFlushParticipant(nodeId, []() {});
+
+  const auto result =
+      m_service->flushAndWaitForIdle(nodeId.notebookId, nodeId.relativePath, false, 1000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QVERIFY(m_service->isFlushCheckpointCurrent(result.m_checkpoint));
+
+  lease.setGeneration(1);
+  QVERIFY(!m_service->isFlushCheckpointCurrent(result.m_checkpoint));
+}
+
+void TestCommentService::flushCanBeCancelled() {
+  NodeIdentifier nodeId{QStringLiteral("cancel-nb"), QStringLiteral("doc.pdf")};
+  int calls = 0;
+  auto lease = m_service->registerFlushParticipant(nodeId, [&calls]() { ++calls; });
+
+  const auto result = m_service->flushAndWaitForIdle(nodeId.notebookId, nodeId.relativePath, false,
+                                                     1000, []() { return true; });
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Cancelled);
+  QCOMPARE(calls, 0);
+}
+
+void TestCommentService::flushTimesOutWithoutWaitingForUnrelatedWork() {
+  const QString root = QDir(m_tmp->path()).filePath(QStringLiteral("blocked-nb"));
+  QVERIFY(QDir().mkpath(root));
+  const QString configJson = QStringLiteral("{\"name\": \"blocked-nb\", \"version\": \"1\"}");
+  const QString notebookId = m_notebooks->createNotebook(root, configJson, NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  QVERIFY(!m_notebooks->createFile(notebookId, QString(), QStringLiteral("blocked.pdf")).isEmpty());
+
+  std::atomic<bool> gateHeld{false};
+  std::atomic<bool> releaseGate{false};
+  std::thread holder([&]() {
+    NotebookIoGate::ScopedLock lock(*m_gate, notebookId);
+    gateHeld.store(true);
+    while (!releaseGate.load()) {
+      QThread::msleep(1);
+    }
+  });
+  for (int i = 0; i < 1000 && !gateHeld.load(); ++i) {
+    QThread::msleep(1);
+  }
+  if (!gateHeld.load()) {
+    releaseGate.store(true);
+    holder.join();
+    QFAIL("the test holder never acquired the notebook gate");
+  }
+
+  NodeIdentifier blocked{notebookId, QStringLiteral("blocked.pdf")};
+  CommentSet set;
+  set.m_comments.append(makeComment(0, QStringLiteral("blocked")));
+  m_service->scheduleSave(blocked, set, 9);
+
+  const auto timeoutResult =
+      m_service->flushAndWaitForIdle(notebookId, blocked.relativePath, false, 30);
+
+  const auto unrelatedResult = m_service->flushAndWaitForIdle(
+      QStringLiteral("unrelated-nb"), QStringLiteral("anything.pdf"), false, 1000);
+  const bool blockedStillBusy = m_service->isBusy(blocked);
+
+  releaseGate.store(true);
+  holder.join();
+  waitForIdle(blocked);
+
+  QCOMPARE(timeoutResult.m_status, CommentService::FlushResult::Status::Timeout);
+  QCOMPARE(unrelatedResult.m_status, CommentService::FlushResult::Status::Succeeded);
+  QVERIFY(blockedStillBusy);
 }
 
 // ============ Sibling lifecycle ============

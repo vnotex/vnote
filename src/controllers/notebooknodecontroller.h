@@ -1,6 +1,8 @@
 #ifndef NOTEBOOKNODECONTROLLER_H
 #define NOTEBOOKNODECONTROLLER_H
 
+#include <QHash>
+#include <QJsonObject>
 #include <QList>
 #include <QObject>
 #include <QSet>
@@ -9,8 +11,10 @@
 #include <functional>
 
 #include <core/fileopensettings.h>
+#include <core/services/nodetransferservice.h>
 #include <models/inodelistmodel.h>
 #include <nodeinfo.h>
+#include <vxcore/notebook_json_keys.h>
 
 class QMenu;
 
@@ -61,6 +65,9 @@ public:
   void copyNodes(const QList<NodeIdentifier> &p_nodeIds);
   void cutNodes(const QList<NodeIdentifier> &p_nodeIds);
   void pasteNodes(const NodeIdentifier &p_targetFolderId);
+  NodeTransferBatchResult
+  executeCrossNotebookPaste(const NodeTransferRequest &p_request,
+                            const NodeTransferCallbacks &p_callbacks = NodeTransferCallbacks());
   void duplicateNode(const NodeIdentifier &p_nodeId);
   void renameNode(const NodeIdentifier &p_nodeId);
   void markNode(const NodeIdentifier &p_nodeId);
@@ -154,6 +161,120 @@ public:
   // Set callback to get selected nodes (for views that don't inherit NotebookNodeView)
   using SelectedNodesCallback = std::function<QList<NodeIdentifier>()>;
   void setSelectedNodesCallback(SelectedNodesCallback p_callback);
+  using SelectNodeCallback = std::function<void(const NodeIdentifier &)>;
+  void setSelectNodeCallback(SelectNodeCallback p_callback);
+
+  struct ClipboardItem {
+    NodeIdentifier originalId;
+    QString stableNodeId;
+    bool hasKind = false;
+    bool isFolder = false;
+    QJsonObject moveResumeToken;
+  };
+
+  struct TransferApplyPlan {
+    QList<int> removeClipboardIndexes;
+    QHash<int, QJsonObject> resumeTokens;
+    QList<NodeIdentifier> sourceParents;
+    QList<NodeIdentifier> missingSources;
+    bool destinationCommitted = false;
+    NodeIdentifier firstDestination;
+  };
+
+  // Pure seams used by pasteNodes()/executeCrossNotebookPaste(). They keep the
+  // same-notebook decision and clipboard result policy independently testable.
+  static ClipboardItem clipboardItemFromNodeConfig(const NodeIdentifier &p_originalId,
+                                                   const QJsonObject &p_nodeConfig) {
+    ClipboardItem item;
+    item.originalId = p_originalId;
+    const QString type = p_nodeConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString();
+    if (type == QLatin1String("folder") || type == QLatin1String("file")) {
+      item.stableNodeId = p_nodeConfig.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+      item.hasKind = !item.stableNodeId.isEmpty();
+      item.isFolder = type == QLatin1String("folder");
+    }
+    return item;
+  }
+
+  static bool allClipboardItemsBelongTo(const QList<ClipboardItem> &p_items,
+                                        const QString &p_notebookId) {
+    for (const auto &item : p_items) {
+      if (item.originalId.notebookId != p_notebookId) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static NodeTransferRequest buildCrossNotebookRequest(const QList<ClipboardItem> &p_items,
+                                                       bool p_isCut,
+                                                       const NodeIdentifier &p_targetFolderId) {
+    NodeTransferRequest request;
+    if (p_items.isEmpty()) {
+      return request;
+    }
+    request.m_sourceNotebookId = p_items.first().originalId.notebookId;
+    request.m_destinationNotebookId = p_targetFolderId.notebookId;
+    request.m_destinationFolderPath = p_targetFolderId.relativePath;
+    request.m_operation = p_isCut ? NodeTransferOperation::Move : NodeTransferOperation::Copy;
+    request.m_items.reserve(p_items.size());
+    for (const auto &item : p_items) {
+      NodeTransferSourceItem source;
+      source.m_nodeId = item.stableNodeId;
+      source.m_relativePath = item.originalId.relativePath;
+      source.m_isFolder = item.hasKind && item.isFolder;
+      request.m_items.append(source);
+    }
+    return request;
+  }
+
+  static TransferApplyPlan planTransferApply(const QList<ClipboardItem> &p_items, bool p_isCut,
+                                             const NodeTransferBatchResult &p_result) {
+    TransferApplyPlan plan;
+    QSet<NodeIdentifier> sourceParents;
+    QSet<NodeIdentifier> missingSources;
+    const int count = qMin(p_items.size(), p_result.m_items.size());
+    for (int index = 0; index < count; ++index) {
+      const auto &result = p_result.m_items.at(index);
+      const auto &clipboardItem = p_items.at(index);
+      if (!clipboardItem.stableNodeId.isEmpty() && result.m_error == VXCORE_ERR_NODE_NOT_EXISTS &&
+          !missingSources.contains(clipboardItem.originalId)) {
+        missingSources.insert(clipboardItem.originalId);
+        plan.missingSources.append(clipboardItem.originalId);
+      }
+      if (result.destinationCommitted()) {
+        plan.destinationCommitted = true;
+        if (!plan.firstDestination.isValid() && result.m_destination.isValid()) {
+          plan.firstDestination = {result.m_destination.m_notebookId,
+                                   result.m_destination.m_relativePath};
+        }
+      }
+      if (!p_isCut) {
+        continue;
+      }
+      if (result.m_status == NodeTransferItemResult::Status::Moved) {
+        plan.removeClipboardIndexes.append(index);
+        const QString sourcePath = result.m_source.m_relativePath.isEmpty()
+                                       ? clipboardItem.originalId.relativePath
+                                       : result.m_source.m_relativePath;
+        NodeIdentifier sourceId{clipboardItem.originalId.notebookId, sourcePath};
+        NodeIdentifier parent{sourceId.notebookId, sourceId.parentPath()};
+        if (!sourceParents.contains(parent)) {
+          sourceParents.insert(parent);
+          plan.sourceParents.append(parent);
+        }
+      } else if ((result.m_status == NodeTransferItemResult::Status::CopiedSourceRetained ||
+                  result.m_recoveryRequired) &&
+                 !result.m_resumeToken.isEmpty()) {
+        plan.resumeTokens.insert(index, result.m_resumeToken);
+      }
+    }
+    if (!plan.firstDestination.isValid() && p_result.m_firstSuccessfulDestination.isValid()) {
+      plan.firstDestination = {p_result.m_firstSuccessfulDestination.m_notebookId,
+                               p_result.m_firstSuccessfulDestination.m_relativePath};
+    }
+    return plan;
+  }
 
 public slots:
   // Slots for handling dialog results from View
@@ -209,6 +330,10 @@ signals:
   // show QDialog (per src/controllers/AGENTS.md). Single-node by design:
   // exactly one bundle is produced per invocation.
   void shareFolderRequested(const NodeIdentifier &p_nodeId);
+
+  // Cross-notebook paste is a request for the View to own progress/cancel UI.
+  // No storage mutation has occurred when this signal is emitted.
+  void crossNotebookPasteRequested(const NodeTransferRequest &p_request);
 
   // T8 (notebook-explorer-drag-reorder): emitted when the user invokes the
   // "Sort..." action (context menu or keyboard). The View (NotebookExplorer2)
@@ -380,10 +505,11 @@ private:
   INodeListModel *m_model = nullptr;
   NotebookNodeView *m_view = nullptr;
   SelectedNodesCallback m_selectedNodesCallback;
+  SelectNodeCallback m_selectNodeCallback;
 
   // Clipboard state (shared between controllers via shared pointer)
   struct ClipboardState {
-    QList<NodeIdentifier> nodes;
+    QList<ClipboardItem> items;
     bool isCut = false;
   };
   QSharedPointer<ClipboardState> m_clipboard;
@@ -395,5 +521,7 @@ private:
 };
 
 } // namespace vnotex
+
+Q_DECLARE_METATYPE(vnotex::NodeTransferRequest)
 
 #endif // NOTEBOOKNODECONTROLLER_H

@@ -162,6 +162,7 @@ private slots:
   // WidgetConfig, and the modal QProgressDialog that keeps the UI responsive
   // and carries Cancel while the synchronous copy runs.
   void onShareFolderRequested(const NodeIdentifier &p_nodeId);
+  void onCrossNotebookPasteRequested(const NodeTransferRequest &p_request);
 
   // Sync UI handlers (T15).
   void onSyncButtonClicked();
@@ -307,6 +308,7 @@ private:
   // are STACK-local in onShareFolderRequested (see the comment there), so this
   // widget owns no share state that a nested destruction could tear down.
   bool m_folderShareActive = false;
+  bool m_nodeTransferActive = false;
 
   // Auto-prompt-on-open set (sync-info-on-open). Populated in importNotebook's
   // notebookOpened lambda with the just-interactively-opened notebook id, then

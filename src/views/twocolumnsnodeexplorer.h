@@ -71,6 +71,9 @@ public:
                         const QString &p_bgColor) override;
   bool handleTagDeltaResult(const NodeIdentifier &p_nodeId, const QSet<QString> &p_added,
                             const QSet<QString> &p_removed) override;
+  NodeTransferBatchResult executeCrossNotebookPaste(
+      const NodeTransferRequest &p_request,
+      const NodeTransferCallbacks &p_callbacks = NodeTransferCallbacks()) override;
 
   // Reload a node in the appropriate model
   // INodeExplorer interface - auto-detects folder vs file
@@ -150,6 +153,7 @@ private:
   FileListView *m_fileView = nullptr;
   FileNodeDelegate *m_fileDelegate = nullptr;
   NotebookNodeController *m_fileController = nullptr;
+  NotebookNodeController *m_pendingTransferController = nullptr;
 
   // Layout
   QSplitter *m_splitter = nullptr;

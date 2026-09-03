@@ -278,6 +278,17 @@ Full rationale and the two-phase sync gate:
 
 ---
 
+## Cross-Notebook Node Transfer
+
+Cross-notebook copy and move operations must go through
+[`NodeTransferService`](src/core/services/nodetransferservice.h). VNote owns editor/comment
+durability, sync exclusion, IO-gate ordering, hooks, clipboard policy, progress, and UI feedback;
+vxcore owns snapshotting, identity regeneration, storage transactions, recovery, and mutation facts.
+Controllers and widgets must not call the vxcore transfer API directly. Full orchestration contract:
+[src/core/services/AGENTS.md § Cross-Notebook Node Transfer](src/core/services/AGENTS.md#cross-notebook-node-transfer).
+
+---
+
 ## Search Threading Contract
 
 Content search in vxcore owns NO thread pool: it enqueues one work item per file-chunk onto the

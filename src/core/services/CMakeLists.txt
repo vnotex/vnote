@@ -13,6 +13,7 @@ set(SERVICES_SOURCES
   searchcoreservice.cpp
   searchservice.cpp
   notebookcoreservice.cpp
+  nodetransferservice.cpp
   notebookiogate.cpp
   historyservice.cpp
   notificationservice.cpp
@@ -76,6 +77,7 @@ set(SERVICES_HEADERS
   searchcoreservice.h
   searchservice.h
   notebookcoreservice.h
+  nodetransferservice.h
   notebookiogate.h
   historyservice.h
   notificationservice.h
@@ -194,4 +196,3 @@ if(VNOTE_KEYCHAIN_AVAILABLE)
     )
   endif()
 endif()
-

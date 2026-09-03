@@ -80,6 +80,7 @@ void CommentController::setActiveFile(const NodeIdentifier &p_nodeId) {
   // Never carry a pending write across a file switch: it would be serialized
   // against the OLD identifier but land after the new set was published.
   flushPendingSave();
+  m_flushParticipantLease.reset();
 
   m_nodeId = p_nodeId;
   m_selectedId.clear();
@@ -117,6 +118,10 @@ void CommentController::setActiveFile(const NodeIdentifier &p_nodeId) {
     emit editableChanged(m_editable);
   }
 
+  // Register before publishing: a synchronous commentsChanged receiver may
+  // immediately issue an edit intent, and that generation must be visible to a
+  // concurrent transfer precondition.
+  registerFlushParticipant();
   publish();
   emit selectionChanged(m_selectedId);
 
@@ -136,6 +141,7 @@ void CommentController::retargetActiveFile(const NodeIdentifier &p_newNodeId) {
   // CommentService has a sidecar move queued behind any pending write, so
   // reading from disk here would race it. Re-aiming is enough.
   m_nodeId = p_newNodeId;
+  m_flushParticipantLease.retarget(m_nodeId, m_dirtyGeneration);
 
   if (hasUnsavedChanges()) {
     // The pending edit must land at the NEW path. Restarting the timer (rather
@@ -294,7 +300,17 @@ void CommentController::selectComment(const QString &p_id) {
 
 void CommentController::scheduleSave() {
   ++m_dirtyGeneration;
+  m_flushParticipantLease.setGeneration(m_dirtyGeneration);
   m_saveTimer->start();
+}
+
+void CommentController::registerFlushParticipant() {
+  auto *service = m_services.get<CommentService>();
+  if (!service || m_nodeId.relativePath.isEmpty() || m_nodeId.isVirtual()) {
+    return;
+  }
+  m_flushParticipantLease = service->registerFlushParticipant(
+      m_nodeId, [this]() { flushPendingSave(); }, m_dirtyGeneration);
 }
 
 void CommentController::onSaveTimeout() {

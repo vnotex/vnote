@@ -1049,3 +1049,12 @@ add_qt_test(test_commentservice
     vxcore
   GUILESS
 )
+
+add_qt_test(test_nodetransferservice
+  SOURCES
+    test_nodetransferservice.cpp
+  LINKS
+    core_services
+    vxcore
+  GUILESS
+)

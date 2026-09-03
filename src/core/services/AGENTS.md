@@ -449,6 +449,33 @@ vxcore's `mark_dirty` → `MaybeEnqueueSync` → `Emit("sync.should_run")` chain
 
 ---
 
+## Cross-Notebook Node Transfer
+
+`NodeTransferService` is the only VNote-side entry point for cross-notebook Copy/Paste and
+Cut/Paste. It keeps application policy outside vxcore and keeps dialogs outside services.
+
+Per item, the service flushes matching open buffers and comment participants for Copy, blocks Move
+when an open non-virtual buffer is in the selected subtree, atomically leases both notebook IDs in
+`SyncWorkQueueManager`, and calls `NotebookCoreService::prepareNodeTransfer()` with no IO gate held.
+After preparation it fires the cancellable before-transfer hook, acquires both `NotebookIoGate`
+locks in sorted notebook-ID order with bounded try-locks, revalidates buffer/comment state, and runs
+the callback-free commit. Gates are released before the maintenance lease, and hooks are fired only
+after both are released. Never pump events, invoke callbacks, emit signals, or fire hooks while an
+IO gate is held.
+
+The explorer controller owns application-local clipboard retention and model refresh. It emits one
+list-valued request for cross-notebook Paste; `NotebookExplorer2` owns one modal progress dialog and
+calls the explorer's apply method. Successful Cut entries are removed individually, failed entries
+remain, and `CopiedSourceRetained` retains its resume token so retry calls finalization only and can
+never import a duplicate. The existing same-notebook path and drag/drop route remain separate.
+
+vxcore owns storage facts: bundled-notebook validation, private snapshots, fresh IDs, assets/link and
+tag fidelity, atomic conflict naming/publication, source-removal journaling, recovery, and mutation
+events. VNote must not reproduce those mechanisms; vxcore must not know about buffers, comments,
+clipboard state, sync scheduling, hooks, progress dialogs, or policy defaults.
+
+---
+
 ## Search Threading Contract
 
 > Moved here from the root `AGENTS.md`. VNote's side of this contract is the

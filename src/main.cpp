@@ -34,6 +34,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/htmltemplateservice.h>
 #include <core/services/imagehostservice.h>
+#include <core/services/nodetransferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/notificationservice.h>
@@ -419,6 +420,10 @@ int main(int argc, char *argv[]) {
 
     SyncService syncService(serviceLocator);
     serviceLocator.registerService<SyncService>(&syncService);
+
+    NodeTransferService nodeTransferService(&notebookService, &bufferService, &commentService,
+                                            &syncWorkQueueManager, &notebookIoGate, &hookManager);
+    serviceLocator.registerService<NodeTransferService>(&nodeTransferService);
 
     // comments.json is written with a plain QSaveFile, so vxcore emits no
     // file event for it. Feed the fact into the ordinary auto-sync debounce or

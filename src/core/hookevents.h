@@ -46,6 +46,23 @@ struct NodeMoveEvent {
   static NodeMoveEvent fromVariantMap(const QVariantMap &p_args);
 };
 
+// Typed event struct for NodeBeforeTransfer, NodeAfterTransfer.
+// Cross-notebook transfers use a separate payload from the one-notebook NodeMoveEvent.
+struct NodeTransferEvent {
+  QString sourceNotebookId;
+  QString sourceRelativePath;
+  QString destinationNotebookId;
+  QString destinationRelativePath;
+  QString requestedOperation; // "copy" or "move"
+  bool isFolder = false;
+  QString actualStatus;      // Empty before transfer; result status after transfer.
+  QString destinationNodeId; // Empty until a destination is durable.
+  bool sourceRemains = true;
+
+  QVariantMap toVariantMap() const;
+  static NodeTransferEvent fromVariantMap(const QVariantMap &p_args);
+};
+
 // Typed event struct for NodeBeforeReorder, NodeAfterReorder.
 struct NodeReorderEvent {
   QString notebookId;

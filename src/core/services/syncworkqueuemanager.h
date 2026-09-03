@@ -6,7 +6,9 @@
 #include <QObject>
 #include <QQueue>
 #include <QString>
+#include <QStringList>
 #include <functional>
+#include <memory>
 
 class QThreadPool;
 
@@ -34,8 +36,33 @@ namespace vnotex {
 class SyncWorkQueueManager : public QObject {
   Q_OBJECT
 
+private:
+  struct LeaseControl;
+
 public:
   using Work = std::function<void()>;
+
+  class MaintenanceLease {
+  public:
+    MaintenanceLease() = default;
+    ~MaintenanceLease();
+
+    MaintenanceLease(const MaintenanceLease &) = delete;
+    MaintenanceLease &operator=(const MaintenanceLease &) = delete;
+    MaintenanceLease(MaintenanceLease &&p_other) noexcept;
+    MaintenanceLease &operator=(MaintenanceLease &&p_other) noexcept;
+
+    bool isValid() const;
+    explicit operator bool() const { return isValid(); }
+    void release();
+
+  private:
+    friend class SyncWorkQueueManager;
+    MaintenanceLease(const std::shared_ptr<LeaseControl> &p_control, quint64 p_token);
+
+    std::shared_ptr<LeaseControl> m_control;
+    quint64 m_token = 0;
+  };
 
   /// Result of a SyncWorkQueueManager::enqueue() call.
   enum class EnqueueResult {
@@ -101,6 +128,11 @@ public:
   // Returns true if pool drained within timeout.
   bool shutdown(int p_timeoutMs = 5000);
 
+  // Atomically pause dispatch for all specified notebooks if every one is idle
+  // and unleased. IDs are deduplicated and sorted before acquisition. Enqueued
+  // work remains subject to normal coalescing/cap rules and starts on release.
+  MaintenanceLease tryAcquireMaintenance(const QStringList &p_notebookIds);
+
   // Test-facing inspectors.
   int queueDepth(const QString &p_notebookId) const;
   bool isRunning(const QString &p_notebookId) const;
@@ -141,16 +173,22 @@ private:
     QQueue<WorkItem> queue;
     bool running = false;
     bool hasPending = false;
+    quint64 maintenanceToken = 0;
   };
 
   // Worker loop: pulls and runs items for p_notebookId until queue is empty.
   // Runs on a QThreadPool worker thread.
   void runLoop(const QString &p_notebookId);
+  void releaseMaintenance(quint64 p_token);
+  void startRunners(const QStringList &p_notebookIds);
 
   mutable QMutex m_mutex;
   QHash<QString, PerNotebook> m_perNotebook;
+  QHash<quint64, QStringList> m_maintenanceLeases;
+  std::shared_ptr<LeaseControl> m_leaseControl;
   QThreadPool *m_pool;
   bool m_shutdown = false;
+  quint64 m_nextMaintenanceToken = 1;
   int m_maxDepth = 4; // Default queue-depth cap per notebook
 };
 

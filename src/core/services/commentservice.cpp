@@ -1,5 +1,6 @@
 #include "commentservice.h"
 
+#include <QDeadlineTimer>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -9,6 +10,8 @@
 #include <QMutexLocker>
 #include <QSaveFile>
 #include <QThreadPool>
+
+#include <utility>
 
 #include <vxcore/notebook_json_keys.h>
 
@@ -35,6 +38,52 @@ bool isRawNotebookConfig(const QJsonObject &p_config) {
 
 } // namespace
 
+CommentService::FlushParticipantLease::FlushParticipantLease(CommentService *p_service,
+                                                             quint64 p_id)
+    : m_service(p_service), m_id(p_id) {}
+
+CommentService::FlushParticipantLease::~FlushParticipantLease() { reset(); }
+
+CommentService::FlushParticipantLease::FlushParticipantLease(
+    FlushParticipantLease &&p_other) noexcept
+    : m_service(p_other.m_service), m_id(p_other.m_id) {
+  p_other.m_service.clear();
+  p_other.m_id = 0;
+}
+
+CommentService::FlushParticipantLease &
+CommentService::FlushParticipantLease::operator=(FlushParticipantLease &&p_other) noexcept {
+  if (this != &p_other) {
+    reset();
+    m_service = p_other.m_service;
+    m_id = p_other.m_id;
+    p_other.m_service.clear();
+    p_other.m_id = 0;
+  }
+  return *this;
+}
+
+void CommentService::FlushParticipantLease::setGeneration(quint64 p_generation) {
+  if (m_service && m_id != 0) {
+    m_service->updateFlushParticipant(m_id, nullptr, p_generation);
+  }
+}
+
+void CommentService::FlushParticipantLease::retarget(const NodeIdentifier &p_nodeId,
+                                                     quint64 p_generation) {
+  if (m_service && m_id != 0) {
+    m_service->updateFlushParticipant(m_id, &p_nodeId, p_generation);
+  }
+}
+
+void CommentService::FlushParticipantLease::reset() {
+  if (m_service && m_id != 0) {
+    m_service->unregisterFlushParticipant(m_id);
+  }
+  m_service.clear();
+  m_id = 0;
+}
+
 CommentService::CommentService(NotebookCoreService *p_notebookService, NotebookIoGate *p_ioGate,
                                HookManager *p_hookMgr, QObject *p_parent)
     : QObject(p_parent), m_notebookService(p_notebookService), m_ioGate(p_ioGate),
@@ -43,6 +92,13 @@ CommentService::CommentService(NotebookCoreService *p_notebookService, NotebookI
 }
 
 CommentService::~CommentService() {
+  {
+    QMutexLocker locker(&m_mutex);
+    m_stopping = true;
+    m_participants.clear();
+    m_stateChanged.wakeAll();
+  }
+
   if (m_hookMgr) {
     for (int id : m_hookIds) {
       m_hookMgr->removeAction(id);
@@ -66,6 +122,49 @@ CommentService::~CommentService() {
   while (m_inFlightCount > 0) {
     m_drained.wait(&m_mutex);
   }
+}
+
+CommentService::FlushParticipantLease CommentService::registerFlushParticipant(
+    const NodeIdentifier &p_nodeId, std::function<void()> p_flushCallback, quint64 p_generation) {
+  if (p_nodeId.relativePath.isEmpty() || !p_flushCallback) {
+    return FlushParticipantLease();
+  }
+
+  QMutexLocker locker(&m_mutex);
+  if (m_stopping) {
+    return FlushParticipantLease();
+  }
+
+  const quint64 id = m_nextParticipantId++;
+  Participant participant;
+  participant.m_id = id;
+  participant.m_nodeId = p_nodeId;
+  participant.m_generation = p_generation;
+  participant.m_flushCallback = std::move(p_flushCallback);
+  m_participants.insert(id, std::move(participant));
+  m_stateChanged.wakeAll();
+  return FlushParticipantLease(this, id);
+}
+
+void CommentService::unregisterFlushParticipant(quint64 p_id) {
+  QMutexLocker locker(&m_mutex);
+  if (m_participants.remove(p_id) > 0) {
+    m_stateChanged.wakeAll();
+  }
+}
+
+void CommentService::updateFlushParticipant(quint64 p_id, const NodeIdentifier *p_nodeId,
+                                            quint64 p_generation) {
+  QMutexLocker locker(&m_mutex);
+  auto it = m_participants.find(p_id);
+  if (it == m_participants.end()) {
+    return;
+  }
+  if (p_nodeId) {
+    it->m_nodeId = *p_nodeId;
+  }
+  it->m_generation = p_generation;
+  m_stateChanged.wakeAll();
 }
 
 // ============ Location ============
@@ -188,7 +287,7 @@ QString CommentService::jobKey(const NodeIdentifier &p_nodeId) {
   return jobKey(p_nodeId.notebookId, p_nodeId.relativePath);
 }
 
-void CommentService::enqueue(const QString &p_key, const Job &p_job) {
+void CommentService::enqueue(const QString &p_key, Job p_job) {
   bool needLaunch = false;
 
   {
@@ -196,6 +295,13 @@ void CommentService::enqueue(const QString &p_key, const Job &p_job) {
     if (m_stopping) {
       qCWarning(commentServiceLog) << "job after shutdown ignored for" << p_key;
       return;
+    }
+
+    auto &state = m_jobStates[p_key];
+    state.m_nodeId = p_job.m_nodeId;
+    if (p_job.m_kind == Job::Kind::Save) {
+      p_job.m_sequence = m_nextJobSequence++;
+      state.m_latestScheduledSequence = p_job.m_sequence;
     }
 
     auto &queue = m_queues[p_key];
@@ -216,6 +322,7 @@ void CommentService::enqueue(const QString &p_key, const Job &p_job) {
       ++m_inFlightCount;
       needLaunch = true;
     }
+    m_stateChanged.wakeAll();
   }
 
   if (needLaunch) {
@@ -228,6 +335,17 @@ void CommentService::scheduleSave(const NodeIdentifier &p_nodeId, const CommentS
                                   quint64 p_generation) {
   const auto location = resolveLocation(p_nodeId);
   if (!location.isValid()) {
+    {
+      QMutexLocker locker(&m_mutex);
+      auto &state = m_jobStates[jobKey(p_nodeId)];
+      state.m_nodeId = p_nodeId;
+      state.m_latestScheduledSequence = m_nextJobSequence++;
+      state.m_latestCompletedSequence = state.m_latestScheduledSequence;
+      state.m_latestCompletedGeneration = p_generation;
+      state.m_latestCompletedOk = false;
+      state.m_latestError = tr("Cannot locate the comment store for this file.");
+      m_stateChanged.wakeAll();
+    }
     emit saveFinished(p_nodeId, p_generation, false,
                       tr("Cannot locate the comment store for this file."));
     return;
@@ -239,6 +357,17 @@ void CommentService::scheduleSave(const NodeIdentifier &p_nodeId, const CommentS
   if (!location.m_notebookId.isEmpty() && m_notebookService &&
       m_notebookService->isNotebookReadOnly(location.m_notebookId)) {
     qCWarning(commentServiceLog) << "save rejected: notebook is read-only" << location.m_notebookId;
+    {
+      QMutexLocker locker(&m_mutex);
+      auto &state = m_jobStates[jobKey(p_nodeId)];
+      state.m_nodeId = p_nodeId;
+      state.m_latestScheduledSequence = m_nextJobSequence++;
+      state.m_latestCompletedSequence = state.m_latestScheduledSequence;
+      state.m_latestCompletedGeneration = p_generation;
+      state.m_latestCompletedOk = false;
+      state.m_latestError = tr("This notebook is read-only.");
+      m_stateChanged.wakeAll();
+    }
     emit saveRejectedReadOnly(p_nodeId);
     return;
   }
@@ -272,12 +401,22 @@ void CommentService::runWorker(const QString &p_key) {
         if (m_inFlightCount == 0) {
           m_drained.wakeAll();
         }
+        m_stateChanged.wakeAll();
         return;
       }
       job = it.value().dequeue();
     }
 
     QString error;
+    if (job.m_kind == Job::Kind::Save) {
+      QMutexLocker locker(&m_mutex);
+      auto &state = m_jobStates[p_key];
+      state.m_latestCompletedSequence = job.m_sequence;
+      state.m_latestCompletedGeneration = job.m_generation;
+      state.m_latestCompletedOk = false;
+      state.m_latestError = QStringLiteral("comment write is still in progress");
+      m_stateChanged.wakeAll();
+    }
     try {
       // Worker thread only. Serializes against BufferSaveQueue workers and the
       // git-stage phase of SyncOps on the same working tree.
@@ -317,7 +456,25 @@ void CommentService::runWorker(const QString &p_key) {
     // Only a Save reports back: Move/Remove are internal bookkeeping with no
     // caller waiting on them, and reporting them would look like a save result.
     if (job.m_kind != Job::Kind::Save) {
+      QMutexLocker locker(&m_mutex);
+      m_stateChanged.wakeAll();
       continue;
+    }
+
+    {
+      QMutexLocker locker(&m_mutex);
+      auto &state = m_jobStates[p_key];
+      state.m_nodeId = job.m_nodeId;
+      // A synchronous rejection can record a newer sequence while this older
+      // worker is still running. Never let the late older completion erase the
+      // newer failure/generation fact.
+      if (job.m_sequence >= state.m_latestCompletedSequence) {
+        state.m_latestCompletedSequence = job.m_sequence;
+        state.m_latestCompletedGeneration = job.m_generation;
+        state.m_latestCompletedOk = ok;
+        state.m_latestError = error;
+      }
+      m_stateChanged.wakeAll();
     }
 
     const auto nodeId = job.m_nodeId;
@@ -392,12 +549,231 @@ bool CommentService::isBusy(const NodeIdentifier &p_nodeId) const {
   return (it != m_queues.constEnd() && !it.value().isEmpty()) || m_running.value(key, false);
 }
 
+bool CommentService::matchesScope(const NodeIdentifier &p_nodeId, const QString &p_notebookId,
+                                  const QString &p_relativePath, bool p_isFolder) {
+  if (p_nodeId.notebookId != p_notebookId) {
+    return false;
+  }
+  if (p_nodeId.relativePath == p_relativePath) {
+    return true;
+  }
+  if (!p_isFolder) {
+    return false;
+  }
+  if (p_relativePath.isEmpty()) {
+    return true;
+  }
+  QString folder = p_relativePath;
+  while (folder.endsWith(QLatin1Char('/'))) {
+    folder.chop(1);
+  }
+  if (folder.isEmpty()) {
+    return true;
+  }
+  return p_nodeId.relativePath.startsWith(folder + QLatin1Char('/'));
+}
+
+QHash<quint64, quint64> CommentService::matchingParticipantGenerationsLocked(
+    const QString &p_notebookId, const QString &p_relativePath, bool p_isFolder) const {
+  QHash<quint64, quint64> generations;
+  for (auto it = m_participants.constBegin(); it != m_participants.constEnd(); ++it) {
+    if (matchesScope(it->m_nodeId, p_notebookId, p_relativePath, p_isFolder)) {
+      generations.insert(it.key(), it->m_generation);
+    }
+  }
+  return generations;
+}
+
+QHash<QString, quint64> CommentService::matchingJobGenerationsLocked(const QString &p_notebookId,
+                                                                     const QString &p_relativePath,
+                                                                     bool p_isFolder) const {
+  QHash<QString, quint64> generations;
+  for (auto it = m_jobStates.constBegin(); it != m_jobStates.constEnd(); ++it) {
+    if (it->m_latestScheduledSequence > 0 &&
+        matchesScope(it->m_nodeId, p_notebookId, p_relativePath, p_isFolder)) {
+      generations.insert(it.key(), it->m_latestScheduledSequence);
+    }
+  }
+  return generations;
+}
+
+bool CommentService::hasMatchingJobsLocked(const QString &p_notebookId,
+                                           const QString &p_relativePath, bool p_isFolder) const {
+  for (auto it = m_running.constBegin(); it != m_running.constEnd(); ++it) {
+    if (!it.value()) {
+      continue;
+    }
+    const auto state = m_jobStates.constFind(it.key());
+    if (state != m_jobStates.constEnd() &&
+        matchesScope(state->m_nodeId, p_notebookId, p_relativePath, p_isFolder)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+CommentService::FlushResult
+CommentService::flushAndWaitForIdle(const QString &p_notebookId, const QString &p_relativePath,
+                                    bool p_isFolder, int p_timeoutMs,
+                                    const std::function<bool()> &p_isCancelled) {
+  FlushResult result;
+  QDeadlineTimer deadline(qMax(0, p_timeoutMs));
+
+  for (;;) {
+    if (p_isCancelled && p_isCancelled()) {
+      result.m_status = FlushResult::Status::Cancelled;
+      return result;
+    }
+
+    QVector<Participant> participants;
+    QHash<quint64, quint64> flushedGenerations;
+    {
+      QMutexLocker locker(&m_mutex);
+      if (m_stopping) {
+        result.m_status = FlushResult::Status::WriteFailed;
+        result.m_error = QStringLiteral("comment service is shutting down");
+        return result;
+      }
+      for (auto it = m_participants.constBegin(); it != m_participants.constEnd(); ++it) {
+        if (matchesScope(it->m_nodeId, p_notebookId, p_relativePath, p_isFolder)) {
+          participants.append(it.value());
+          flushedGenerations.insert(it.key(), it->m_generation);
+        }
+      }
+    }
+
+    try {
+      for (const auto &participant : participants) {
+        participant.m_flushCallback();
+      }
+    } catch (const std::exception &e) {
+      result.m_status = FlushResult::Status::WriteFailed;
+      result.m_error = QStringLiteral("flush callback failed: %1").arg(QString::fromUtf8(e.what()));
+      return result;
+    } catch (...) {
+      result.m_status = FlushResult::Status::WriteFailed;
+      result.m_error = QStringLiteral("flush callback failed with an unknown exception");
+      return result;
+    }
+
+    if (deadline.hasExpired()) {
+      result.m_status = FlushResult::Status::Timeout;
+      return result;
+    }
+
+    QMutexLocker locker(&m_mutex);
+    for (;;) {
+      locker.unlock();
+      const bool cancelled = p_isCancelled && p_isCancelled();
+      locker.relock();
+      if (cancelled) {
+        result.m_status = FlushResult::Status::Cancelled;
+        return result;
+      }
+
+      if (!hasMatchingJobsLocked(p_notebookId, p_relativePath, p_isFolder)) {
+        const auto currentParticipants =
+            matchingParticipantGenerationsLocked(p_notebookId, p_relativePath, p_isFolder);
+        if (currentParticipants != flushedGenerations) {
+          break;
+        }
+
+        const auto jobGenerations =
+            matchingJobGenerationsLocked(p_notebookId, p_relativePath, p_isFolder);
+        for (auto it = jobGenerations.constBegin(); it != jobGenerations.constEnd(); ++it) {
+          const auto state = m_jobStates.constFind(it.key());
+          if (state == m_jobStates.constEnd() ||
+              state->m_latestCompletedSequence != state->m_latestScheduledSequence ||
+              !state->m_latestCompletedOk) {
+            result.m_status = FlushResult::Status::WriteFailed;
+            if (state != m_jobStates.constEnd()) {
+              result.m_failedGeneration = state->m_latestCompletedGeneration;
+              result.m_error = state->m_latestError;
+            }
+            if (result.m_error.isEmpty()) {
+              result.m_error = QStringLiteral("comment write did not complete durably");
+            }
+            return result;
+          }
+        }
+
+        for (auto it = m_participants.constBegin(); it != m_participants.constEnd(); ++it) {
+          if (!matchesScope(it->m_nodeId, p_notebookId, p_relativePath, p_isFolder) ||
+              it->m_generation == 0) {
+            continue;
+          }
+          const auto state = m_jobStates.constFind(jobKey(it->m_nodeId));
+          if (state == m_jobStates.constEnd() || !state->m_latestCompletedOk ||
+              state->m_latestCompletedGeneration < it->m_generation) {
+            result.m_status = FlushResult::Status::WriteFailed;
+            result.m_failedGeneration = it->m_generation;
+            result.m_error = QStringLiteral("flush participant generation was not saved");
+            return result;
+          }
+        }
+
+        result.m_status = FlushResult::Status::Succeeded;
+        result.m_checkpoint.m_valid = true;
+        result.m_checkpoint.m_notebookId = p_notebookId;
+        result.m_checkpoint.m_relativePath = p_relativePath;
+        result.m_checkpoint.m_isFolder = p_isFolder;
+        result.m_checkpoint.m_participantGenerations = currentParticipants;
+        result.m_checkpoint.m_jobGenerations = jobGenerations;
+        return result;
+      }
+
+      const qint64 remaining = deadline.remainingTime();
+      if (remaining <= 0) {
+        result.m_status = FlushResult::Status::Timeout;
+        return result;
+      }
+      m_stateChanged.wait(&m_mutex, static_cast<unsigned long>(qMin<qint64>(remaining, 25)));
+    }
+
+    if (deadline.hasExpired()) {
+      result.m_status = FlushResult::Status::Timeout;
+      return result;
+    }
+  }
+}
+
+bool CommentService::isFlushCheckpointCurrent(const FlushCheckpoint &p_checkpoint) const {
+  if (!p_checkpoint.m_valid) {
+    return false;
+  }
+
+  QMutexLocker locker(&m_mutex);
+  if (m_stopping) {
+    return false;
+  }
+  if (hasMatchingJobsLocked(p_checkpoint.m_notebookId, p_checkpoint.m_relativePath,
+                            p_checkpoint.m_isFolder) ||
+      matchingParticipantGenerationsLocked(p_checkpoint.m_notebookId, p_checkpoint.m_relativePath,
+                                           p_checkpoint.m_isFolder) !=
+          p_checkpoint.m_participantGenerations ||
+      matchingJobGenerationsLocked(p_checkpoint.m_notebookId, p_checkpoint.m_relativePath,
+                                   p_checkpoint.m_isFolder) != p_checkpoint.m_jobGenerations) {
+    return false;
+  }
+
+  for (auto it = p_checkpoint.m_jobGenerations.constBegin();
+       it != p_checkpoint.m_jobGenerations.constEnd(); ++it) {
+    const auto state = m_jobStates.constFind(it.key());
+    if (state == m_jobStates.constEnd() || state->m_latestCompletedSequence != it.value() ||
+        !state->m_latestCompletedOk) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool CommentService::shutdown(int p_timeoutMs) {
   QMutexLocker locker(&m_mutex);
   if (m_stopping && m_inFlightCount == 0) {
     return true;
   }
   m_stopping = true;
+  m_stateChanged.wakeAll();
   // Do NOT clear m_queues: a dispatched worker is counted as in-flight and must
   // still commit its newest snapshot, or the user's last edit is lost.
 
@@ -483,6 +859,8 @@ void CommentService::onNodeMoved(const QString &p_notebookId, const QString &p_o
 
   Job job;
   job.m_kind = Job::Kind::Move;
+  job.m_nodeId.notebookId = p_notebookId;
+  job.m_nodeId.relativePath = p_oldRelativePath;
   job.m_location.m_kind = Location::Kind::Sibling;
   job.m_location.m_notebookId = p_notebookId;
   job.m_location.m_storePath = oldAbs + siblingSuffix();
@@ -510,6 +888,8 @@ void CommentService::onNodeDeleted(const QString &p_notebookId, const QString &p
 
   Job job;
   job.m_kind = Job::Kind::Remove;
+  job.m_nodeId.notebookId = p_notebookId;
+  job.m_nodeId.relativePath = p_relativePath;
   job.m_location.m_kind = Location::Kind::Sibling;
   job.m_location.m_notebookId = p_notebookId;
   job.m_location.m_storePath = abs + siblingSuffix();

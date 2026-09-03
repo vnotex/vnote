@@ -13,6 +13,9 @@
 #include <QSet>
 #include <QUrl>
 
+#include <algorithm>
+#include <functional>
+
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/events.h>
@@ -20,6 +23,7 @@
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/nodetransferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/tagservice.h>
 #include <core/services/workspacecoreservice.h>
@@ -142,6 +146,10 @@ bool NotebookNodeController::isSingleClickActivationEnabled() const {
 
 void NotebookNodeController::setSelectedNodesCallback(SelectedNodesCallback p_callback) {
   m_selectedNodesCallback = p_callback;
+}
+
+void NotebookNodeController::setSelectNodeCallback(SelectNodeCallback p_callback) {
+  m_selectNodeCallback = p_callback;
 }
 
 QList<NodeIdentifier>
@@ -721,17 +729,41 @@ void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier>
 }
 
 void NotebookNodeController::copyNodes(const QList<NodeIdentifier> &p_nodeIds) {
-  m_clipboard->nodes = p_nodeIds;
+  m_clipboard->items.clear();
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  const auto nodeIds = dedupeDescendants(p_nodeIds);
+  for (const auto &nodeId : nodeIds) {
+    ClipboardItem item = clipboardItemFromNodeConfig(nodeId, QJsonObject());
+    if (notebookService && isNotebookBundled(nodeId.notebookId)) {
+      VxCoreError nodeError = VXCORE_OK;
+      const QJsonObject node =
+          notebookService->getFolderConfig(nodeId.notebookId, nodeId.relativePath, &nodeError);
+      if (nodeError == VXCORE_OK) {
+        item = clipboardItemFromNodeConfig(nodeId, node);
+      }
+    }
+    m_clipboard->items.append(item);
+  }
   m_clipboard->isCut = false;
 }
 
 void NotebookNodeController::cutNodes(const QList<NodeIdentifier> &p_nodeIds) {
-  m_clipboard->nodes = p_nodeIds;
-  m_clipboard->isCut = true;
+  copyNodes(p_nodeIds);
+  m_clipboard->isCut = !m_clipboard->items.isEmpty();
 }
 
 void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) {
-  if (m_clipboard->nodes.isEmpty() || !p_targetFolderId.isValid()) {
+  if (m_clipboard->items.isEmpty() || !p_targetFolderId.isValid()) {
+    return;
+  }
+  QList<NodeIdentifier> clipboardNodes;
+  clipboardNodes.reserve(m_clipboard->items.size());
+  for (const auto &item : m_clipboard->items) {
+    clipboardNodes.append(item.originalId);
+  }
+  if (!allClipboardItemsBelongTo(m_clipboard->items, p_targetFolderId.notebookId)) {
+    emit crossNotebookPasteRequested(
+        buildCrossNotebookRequest(m_clipboard->items, m_clipboard->isCut, p_targetFolderId));
     return;
   }
   // Read-only gating (move/copy semantics): block writing INTO a read-only
@@ -740,7 +772,7 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
   if (isNotebookReadOnly(p_targetFolderId.notebookId)) {
     return;
   }
-  if (m_clipboard->isCut && isSelectionReadOnly(m_clipboard->nodes)) {
+  if (m_clipboard->isCut && isSelectionReadOnly(clipboardNodes)) {
     return;
   }
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -772,7 +804,7 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
   // loop, mirroring the openNodes preflight pattern.
   QList<NodeIdentifier> missingSourceIds;
 
-  for (const NodeIdentifier &nodeId : m_clipboard->nodes) {
+  for (const NodeIdentifier &nodeId : clipboardNodes) {
     if (m_clipboard->isCut) {
       notifyBeforeNodeOperation(nodeId, QStringLiteral("move"));
       // Remember source parent for later refresh
@@ -892,7 +924,7 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
         nbModel->reloadNode(parentId);
       }
     }
-    m_clipboard->nodes.clear();
+    m_clipboard->items.clear();
     m_clipboard->isCut = false;
   }
 
@@ -909,6 +941,193 @@ void NotebookNodeController::pasteNodes(const NodeIdentifier &p_targetFolderId) 
     m_view->expandToNode(firstPastedNode);
     m_view->selectNode(firstPastedNode);
   }
+}
+
+NodeTransferBatchResult
+NotebookNodeController::executeCrossNotebookPaste(const NodeTransferRequest &p_request,
+                                                  const NodeTransferCallbacks &p_callbacks) {
+  NodeTransferBatchResult batch;
+  auto *transferService = m_services.get<NodeTransferService>();
+  if (!transferService) {
+    for (const auto &item : p_request.m_items) {
+      NodeTransferItemResult result;
+      result.m_source = item;
+      result.m_error = VXCORE_ERR_INVALID_STATE;
+      result.m_errorMessage = tr("The node transfer service is unavailable.");
+      batch.m_items.append(result);
+      ++batch.m_failedCount;
+    }
+    return batch;
+  }
+
+  const QList<ClipboardItem> clipboardSnapshot = m_clipboard->items;
+  const bool clipboardWasCut = m_clipboard->isCut;
+  QVector<NodeTransferItemResult> orderedResults(clipboardSnapshot.size());
+  QVector<bool> hasResult(clipboardSnapshot.size(), false);
+  QSet<int> finalizedIndexes;
+  QList<NodeIdentifier> finalizedSourceParents;
+  NodeTransferRequest transferRequest = p_request;
+  transferRequest.m_items.clear();
+  QVector<int> transferIndexes;
+  const int requestCount = qMin(clipboardSnapshot.size(), p_request.m_items.size());
+  for (int index = 0; index < requestCount; ++index) {
+    if (!clipboardSnapshot.at(index).moveResumeToken.isEmpty()) {
+      if (p_callbacks.m_isCancelled && p_callbacks.m_isCancelled()) {
+        continue;
+      }
+      orderedResults[index] =
+          transferService->finalizeTransferredMove(clipboardSnapshot.at(index).moveResumeToken);
+      hasResult[index] = true;
+      finalizedIndexes.insert(index);
+      if (orderedResults.at(index).m_status == NodeTransferItemResult::Status::Moved) {
+        NodeIdentifier sourceId = clipboardSnapshot.at(index).originalId;
+        if (!orderedResults.at(index).m_source.m_relativePath.isEmpty()) {
+          sourceId.relativePath = orderedResults.at(index).m_source.m_relativePath;
+        }
+        finalizedSourceParents.append({sourceId.notebookId, sourceId.parentPath()});
+      }
+    } else if (clipboardSnapshot.at(index).stableNodeId.isEmpty() ||
+               !clipboardSnapshot.at(index).hasKind ||
+               clipboardSnapshot.at(index).originalId.notebookId != p_request.m_sourceNotebookId) {
+      auto &result = orderedResults[index];
+      result.m_source = p_request.m_items.at(index);
+      result.m_status = NodeTransferItemResult::Status::Failed;
+      result.m_error = VXCORE_ERR_UNSUPPORTED;
+      result.m_errorMessage = tr("This clipboard entry cannot be transferred between notebooks.");
+      hasResult[index] = true;
+    } else {
+      transferIndexes.append(index);
+      transferRequest.m_items.append(p_request.m_items.at(index));
+    }
+  }
+
+  if (!transferRequest.m_items.isEmpty()) {
+    const auto transferResult = transferService->transfer(transferRequest, p_callbacks);
+    const int resultCount = qMin(transferIndexes.size(), transferResult.m_items.size());
+    for (int index = 0; index < resultCount; ++index) {
+      const int clipboardIndex = transferIndexes.at(index);
+      orderedResults[clipboardIndex] = transferResult.m_items.at(index);
+      hasResult[clipboardIndex] = true;
+    }
+  }
+
+  const bool cancelled = p_callbacks.m_isCancelled && p_callbacks.m_isCancelled();
+  for (int index = 0; index < clipboardSnapshot.size(); ++index) {
+    NodeTransferItemResult result;
+    if (hasResult.at(index)) {
+      result = orderedResults.at(index);
+    } else {
+      result.m_source.m_nodeId = clipboardSnapshot.at(index).stableNodeId;
+      result.m_source.m_relativePath = clipboardSnapshot.at(index).originalId.relativePath;
+      result.m_source.m_isFolder = clipboardSnapshot.at(index).isFolder;
+      result.m_status = cancelled ? NodeTransferItemResult::Status::Cancelled
+                                  : NodeTransferItemResult::Status::Failed;
+      result.m_error = cancelled ? VXCORE_ERR_CANCELLED : VXCORE_ERR_INVALID_STATE;
+      result.m_errorMessage = cancelled ? tr("Node transfer was cancelled.")
+                                        : tr("The clipboard entry could not be transferred.");
+    }
+    if (result.destinationCommitted() && !batch.m_firstSuccessfulDestination.isValid()) {
+      batch.m_firstSuccessfulDestination = result.m_destination;
+    }
+    switch (result.m_status) {
+    case NodeTransferItemResult::Status::Copied:
+      ++batch.m_copiedCount;
+      break;
+    case NodeTransferItemResult::Status::Moved:
+      ++batch.m_movedCount;
+      break;
+    case NodeTransferItemResult::Status::CopiedSourceRetained:
+      ++batch.m_sourceRetainedCount;
+      break;
+    case NodeTransferItemResult::Status::Failed:
+      ++batch.m_failedCount;
+      if (result.m_recoveryRequired) {
+        ++batch.m_recoveryRequiredCount;
+      }
+      break;
+    case NodeTransferItemResult::Status::Cancelled:
+      ++batch.m_cancelledCount;
+      break;
+    }
+    batch.m_items.append(result);
+  }
+
+  auto plan = planTransferApply(clipboardSnapshot, clipboardWasCut, batch);
+  // Resume finalization deletes only the retained source. Its destination was
+  // committed by an earlier paste and must not trigger a second target refresh,
+  // nodesPasted signal, or destination selection.
+  if (!finalizedIndexes.isEmpty()) {
+    for (const auto &parent : finalizedSourceParents) {
+      if (!plan.sourceParents.contains(parent)) {
+        plan.sourceParents.append(parent);
+      }
+    }
+    plan.destinationCommitted = false;
+    plan.firstDestination = {};
+    for (int index = 0; index < batch.m_items.size(); ++index) {
+      if (!finalizedIndexes.contains(index) && batch.m_items.at(index).destinationCommitted()) {
+        plan.destinationCommitted = true;
+        plan.firstDestination = {batch.m_items.at(index).m_destination.m_notebookId,
+                                 batch.m_items.at(index).m_destination.m_relativePath};
+        break;
+      }
+    }
+  }
+  bool clipboardUnchanged = m_clipboard->isCut == clipboardWasCut &&
+                            m_clipboard->items.size() == clipboardSnapshot.size();
+  for (int index = 0; clipboardUnchanged && index < clipboardSnapshot.size(); ++index) {
+    const auto &current = m_clipboard->items.at(index);
+    const auto &snapshot = clipboardSnapshot.at(index);
+    clipboardUnchanged = current.originalId == snapshot.originalId &&
+                         current.stableNodeId == snapshot.stableNodeId &&
+                         current.hasKind == snapshot.hasKind &&
+                         current.isFolder == snapshot.isFolder &&
+                         current.moveResumeToken == snapshot.moveResumeToken;
+  }
+  if (clipboardUnchanged) {
+    for (auto it = plan.resumeTokens.constBegin(); it != plan.resumeTokens.constEnd(); ++it) {
+      if (it.key() < m_clipboard->items.size()) {
+        m_clipboard->items[it.key()].moveResumeToken = it.value();
+      }
+    }
+    QList<int> removalIndexes = plan.removeClipboardIndexes;
+    std::sort(removalIndexes.begin(), removalIndexes.end(), std::greater<int>());
+    for (int index : removalIndexes) {
+      if (index < m_clipboard->items.size()) {
+        m_clipboard->items.removeAt(index);
+      }
+    }
+    if (m_clipboard->items.isEmpty()) {
+      m_clipboard->isCut = false;
+    }
+  }
+
+  if (auto *model = dynamic_cast<NotebookNodeModel *>(m_model)) {
+    for (const auto &parent : plan.sourceParents) {
+      model->reloadNode(parent);
+    }
+    if (plan.destinationCommitted) {
+      model->reloadNode({p_request.m_destinationNotebookId, p_request.m_destinationFolderPath});
+    }
+  }
+  const auto missing = filterSuppressedMissingNodes(plan.missingSources);
+  if (!missing.isEmpty()) {
+    emit missingNodeRemovalRequested(missing);
+  }
+  if (plan.destinationCommitted) {
+    const NodeIdentifier target{p_request.m_destinationNotebookId,
+                                p_request.m_destinationFolderPath};
+    emit nodesPasted(target);
+    if (plan.firstDestination.isValid()) {
+      if (m_selectNodeCallback) {
+        m_selectNodeCallback(plan.firstDestination);
+      } else if (m_view) {
+        m_view->expandToNode(plan.firstDestination);
+        m_view->selectNode(plan.firstDestination);
+      }
+    }
+  }
+  return batch;
 }
 
 void NotebookNodeController::duplicateNode(const NodeIdentifier &p_nodeId) {
@@ -939,6 +1158,11 @@ void NotebookNodeController::markNode(const NodeIdentifier &p_nodeId) {
 
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
                                        const NodeIdentifier &p_targetFolderId) {
+  for (const auto &nodeId : p_nodeIds) {
+    if (nodeId.notebookId != p_targetFolderId.notebookId) {
+      return; // Drag/drop remains same-notebook only.
+    }
+  }
   // Cross-parent drag-move: reject MOVE-in (read-only target) or MOVE-out
   // (any read-only source). Copy is the only operation permitted out of a
   // read-only notebook and does not flow through here.
@@ -1048,7 +1272,7 @@ void NotebookNodeController::manageNodeTags(const NodeIdentifier &p_nodeId) {
   emit manageTagsRequested(ids);
 }
 
-bool NotebookNodeController::canPaste() const { return !m_clipboard->nodes.isEmpty(); }
+bool NotebookNodeController::canPaste() const { return !m_clipboard->items.isEmpty(); }
 
 void NotebookNodeController::shareClipboardWith(NotebookNodeController *p_other) {
   if (p_other && p_other != this) {
@@ -1606,7 +1830,7 @@ void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &p_ids) 
     // Duplicate via copy+paste-to-same-folder (auto-suffix handled by pasteNodes).
     copyNodes(QList<NodeIdentifier>{id});
     pasteNodes(parentId);
-    m_clipboard->nodes.clear();
+    m_clipboard->items.clear();
   }
   if (failures > 0) {
     qWarning() << "duplicateNodes: failed to duplicate" << failures << "of" << ids.size()

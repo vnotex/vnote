@@ -5,6 +5,7 @@
 #include <QThread>
 #include <QVector>
 #include <QtTest>
+#include <type_traits>
 
 #include <core/services/syncworkqueuemanager.h>
 
@@ -18,6 +19,12 @@ private slots:
   void parallel_across_notebooks();
   void shutdown_drains_within_5s();
   void no_leak_on_shutdown();
+  void maintenance_acquisition_is_atomic_and_normalized();
+  void maintenance_refuses_running_and_pending_work();
+  void maintenance_defers_enqueued_work_until_release();
+  void maintenance_preserves_coalescing_and_queue_cap();
+  void maintenance_lease_move_destruction_and_shutdown_are_safe();
+  void opposite_id_order_acquisition_does_not_deadlock();
 };
 
 void TestSyncWorkQueueManager::serial_per_notebook() {
@@ -153,6 +160,181 @@ void TestSyncWorkQueueManager::no_leak_on_shutdown() {
   // Small wait — should NOT execute.
   QThread::msleep(50);
   QVERIFY(finished.loadAcquire() < 1000);
+}
+
+void TestSyncWorkQueueManager::maintenance_acquisition_is_atomic_and_normalized() {
+  vnotex::SyncWorkQueueManager mgr;
+
+  auto leaseA = mgr.tryAcquireMaintenance({QStringLiteral("A"), QStringLiteral("A")});
+  QVERIFY(leaseA.isValid());
+
+  auto both = mgr.tryAcquireMaintenance({QStringLiteral("B"), QStringLiteral("A")});
+  QVERIFY(!both.isValid());
+
+  // Failed multi-notebook acquisition must not leave an otherwise-idle ID leased.
+  auto leaseB = mgr.tryAcquireMaintenance({QStringLiteral("B")});
+  QVERIFY(leaseB.isValid());
+  QVERIFY(!mgr.tryAcquireMaintenance(QStringList()).isValid());
+}
+
+void TestSyncWorkQueueManager::maintenance_refuses_running_and_pending_work() {
+  vnotex::SyncWorkQueueManager mgr;
+
+  QCOMPARE(mgr.enqueue(QStringLiteral("A"), []() { QThread::msleep(500); }),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QTRY_VERIFY_WITH_TIMEOUT(mgr.isRunning(QStringLiteral("A")), 5000);
+  QVERIFY(!mgr.tryAcquireMaintenance({QStringLiteral("A")}).isValid());
+
+  QCOMPARE(mgr.enqueue(QStringLiteral("A"), []() {}),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QVERIFY(mgr.queueDepth(QStringLiteral("A")) > 0);
+  QVERIFY(!mgr.tryAcquireMaintenance({QStringLiteral("A"), QStringLiteral("B")}).isValid());
+
+  QTRY_VERIFY_WITH_TIMEOUT(!mgr.isRunning(QStringLiteral("A")), 5000);
+
+  mgr.testForceInFlight(QStringLiteral("B"), true);
+  QCOMPARE(mgr.enqueue(QStringLiteral("B"), []() {}),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  mgr.testForceInFlight(QStringLiteral("B"), false);
+  QVERIFY(!mgr.isRunning(QStringLiteral("B")));
+  QCOMPARE(mgr.queueDepth(QStringLiteral("B")), 1);
+  QVERIFY(!mgr.tryAcquireMaintenance({QStringLiteral("B")}).isValid());
+  QCOMPARE(mgr.cancelPending(QStringLiteral("B")), 1);
+}
+
+void TestSyncWorkQueueManager::maintenance_defers_enqueued_work_until_release() {
+  vnotex::SyncWorkQueueManager mgr;
+  QAtomicInt completed{0};
+  auto lease =
+      mgr.tryAcquireMaintenance({QStringLiteral("B"), QStringLiteral("A"), QStringLiteral("A")});
+  QVERIFY(lease.isValid());
+
+  QCOMPARE(mgr.enqueue(QStringLiteral("A"), [&]() { completed.fetchAndAddOrdered(1); }),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QCOMPARE(mgr.enqueue(QStringLiteral("B"), [&]() { completed.fetchAndAddOrdered(1); }),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QThread::msleep(50);
+  QCOMPARE(completed.loadAcquire(), 0);
+  QVERIFY(!mgr.isRunning(QStringLiteral("A")));
+  QVERIFY(!mgr.isRunning(QStringLiteral("B")));
+  QCOMPARE(mgr.queueDepth(QStringLiteral("A")), 1);
+  QCOMPARE(mgr.queueDepth(QStringLiteral("B")), 1);
+
+  lease.release();
+  QTRY_COMPARE_WITH_TIMEOUT(completed.loadAcquire(), 2, 5000);
+  QTRY_VERIFY_WITH_TIMEOUT(
+      !mgr.isRunning(QStringLiteral("A")) && !mgr.isRunning(QStringLiteral("B")), 5000);
+}
+
+void TestSyncWorkQueueManager::maintenance_preserves_coalescing_and_queue_cap() {
+  vnotex::SyncWorkQueueManager mgr;
+  mgr.setMaxDepth(2);
+  QAtomicInt completed{0};
+  auto lease = mgr.tryAcquireMaintenance({QStringLiteral("A")});
+  QVERIFY(lease.isValid());
+
+  QCOMPARE(mgr.enqueue(
+               QStringLiteral("A"), [&]() { completed.fetchAndAddOrdered(1); },
+               QStringLiteral("trigger")),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QCOMPARE(mgr.enqueue(
+               QStringLiteral("A"), [&]() { completed.fetchAndAddOrdered(100); },
+               QStringLiteral("trigger")),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Coalesced);
+  QCOMPARE(mgr.enqueue(QStringLiteral("A"), [&]() { completed.fetchAndAddOrdered(1); }),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QCOMPARE(mgr.enqueue(QStringLiteral("A"), [&]() { completed.fetchAndAddOrdered(100); }),
+           vnotex::SyncWorkQueueManager::EnqueueResult::QueueFull);
+  QCOMPARE(mgr.queueDepth(QStringLiteral("A")), 2);
+
+  lease.release();
+  QTRY_COMPARE_WITH_TIMEOUT(completed.loadAcquire(), 2, 5000);
+}
+
+void TestSyncWorkQueueManager::maintenance_lease_move_destruction_and_shutdown_are_safe() {
+  static_assert(!std::is_copy_constructible<vnotex::SyncWorkQueueManager::MaintenanceLease>::value,
+                "maintenance lease must be move-only");
+  static_assert(std::is_move_constructible<vnotex::SyncWorkQueueManager::MaintenanceLease>::value,
+                "maintenance lease must be movable");
+
+  vnotex::SyncWorkQueueManager mgr;
+  QAtomicInt completed{0};
+  {
+    auto first = mgr.tryAcquireMaintenance({QStringLiteral("A")});
+    QVERIFY(first.isValid());
+    vnotex::SyncWorkQueueManager::MaintenanceLease second;
+    second = std::move(first);
+    QVERIFY(!first.isValid());
+    QVERIFY(second.isValid());
+    QCOMPARE(mgr.enqueue(QStringLiteral("A"), [&]() { completed.fetchAndAddOrdered(1); }),
+             vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+    first.release();
+    QCOMPARE(completed.loadAcquire(), 0);
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(completed.loadAcquire(), 1, 5000);
+
+  auto shutdownLease = mgr.tryAcquireMaintenance({QStringLiteral("B")});
+  QVERIFY(shutdownLease.isValid());
+  QCOMPARE(mgr.enqueue(QStringLiteral("B"), [&]() { completed.fetchAndAddOrdered(100); }),
+           vnotex::SyncWorkQueueManager::EnqueueResult::Accepted);
+  QVERIFY(mgr.shutdown(5000));
+  QVERIFY(!shutdownLease.isValid());
+  shutdownLease.release();
+  shutdownLease.release();
+  QCOMPARE(completed.loadAcquire(), 1);
+
+  vnotex::SyncWorkQueueManager::MaintenanceLease survivingLease;
+  {
+    auto *temporaryManager = new vnotex::SyncWorkQueueManager();
+    survivingLease = temporaryManager->tryAcquireMaintenance({QStringLiteral("C")});
+    QVERIFY(survivingLease.isValid());
+    delete temporaryManager;
+  }
+  QVERIFY(!survivingLease.isValid());
+  survivingLease.release();
+}
+
+void TestSyncWorkQueueManager::opposite_id_order_acquisition_does_not_deadlock() {
+  vnotex::SyncWorkQueueManager mgr;
+  QAtomicInt ready{0};
+  QAtomicInt start{0};
+  QAtomicInt acquired{0};
+
+  auto run = [&](const QStringList &p_ids) {
+    ready.fetchAndAddOrdered(1);
+    while (!start.loadAcquire()) {
+      QThread::yieldCurrentThread();
+    }
+    for (int i = 0; i < 500; ++i) {
+      auto lease = mgr.tryAcquireMaintenance(p_ids);
+      if (lease.isValid()) {
+        acquired.fetchAndAddOrdered(1);
+      }
+      QThread::yieldCurrentThread();
+    }
+  };
+
+  QThread *forward = QThread::create([&]() { run({QStringLiteral("A"), QStringLiteral("B")}); });
+  QThread *reverse = QThread::create([&]() { run({QStringLiteral("B"), QStringLiteral("A")}); });
+  forward->start();
+  reverse->start();
+  QTRY_COMPARE_WITH_TIMEOUT(ready.loadAcquire(), 2, 5000);
+  start.storeRelease(1);
+  const bool forwardDone = forward->wait(5000);
+  const bool reverseDone = reverse->wait(5000);
+  if (!forwardDone) {
+    forward->terminate();
+    forward->wait();
+  }
+  if (!reverseDone) {
+    reverse->terminate();
+    reverse->wait();
+  }
+  delete forward;
+  delete reverse;
+
+  QVERIFY2(forwardDone && reverseDone, "opposite-order maintenance acquisition deadlocked");
+  QVERIFY(acquired.loadAcquire() > 0);
 }
 
 } // namespace tests
