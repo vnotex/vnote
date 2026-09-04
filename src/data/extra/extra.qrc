@@ -76,6 +76,7 @@
         <file>web/js/prism.js</file>
         <file>web/js/codeblockactions.js</file>
         <file>web/js/exportcodecopy.js</file>
+        <file>web/js/exportlinkfallback.js</file>
         <file>web/js/svg-to-image.js</file>
         <file>web/js/computed-style-to-inline-style.js</file>
         <file>web/js/turndown/turndown.js</file>

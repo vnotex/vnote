@@ -233,10 +233,10 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
   fillGlobalStyles(htmlTemplate, exportResource, p_configMgr, QString());
   HtmlTemplateUtils::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
 
-  // Always inject the self-contained code-block copy handler + styling, independent of the
-  // user-mutable exportResource config (an existing config persisted before issue #2674 would
-  // otherwise omit them, leaving the copy button non-functional/unstyled in exports). Injected
-  // ahead of the placeholder so fillResourcesByContent() still appends any config resources.
+  // Always inject the self-contained exported-page handlers + copy-button styling, independent
+  // of the user-mutable exportResource config (existing persisted config would otherwise omit
+  // them). Injected ahead of the placeholder so fillResourcesByContent() still appends any
+  // config resources.
   {
     const auto copyScript =
         readTemplateFile(resolveConfigFile(p_configMgr, QStringLiteral("web/js/exportcodecopy.js")),
@@ -244,6 +244,14 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
     if (!copyScript.isEmpty()) {
       htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
                            copyScript + QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
+    }
+
+    const auto linkFallbackScript = readTemplateFile(
+        resolveConfigFile(p_configMgr, QStringLiteral("web/js/exportlinkfallback.js")),
+        "failed to read export link fallback script");
+    if (!linkFallbackScript.isEmpty()) {
+      htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
+                           linkFallbackScript + QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
     }
 
     const auto copyStyle = readTemplateFile(
