@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QSizePolicy>
 #include <QStackedLayout>
 #include <QTimer>
 #include <QToolButton>
@@ -34,6 +35,9 @@ StatusBar::StatusBar(const StatusBarDef &p_def, QWidget *p_parent) : QWidget(p_p
   m_messageLabel = new QLabel(this);
   m_messageLabel->setObjectName(QStringLiteral("StatusBarMessageLabel"));
   m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+  // A transient message may be an arbitrarily long URL. Its natural width must
+  // not become the central pane's minimum width and take space from dock panes.
+  m_messageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
   m_stackLayout->addWidget(m_messageLabel);
 
   m_stackLayout->setCurrentWidget(m_columnsHost);

@@ -39,6 +39,7 @@ private slots:
   void testOnMenuTriggeredFires();
   void testShowMessageSwapsAndRestores();
   void testMessageVisibilitySignal();
+  void testLongMessageDoesNotChangeWidthHints();
   void testColumnIndexProperty();
 
 private:
@@ -415,6 +416,23 @@ void TestStatusBar::testMessageVisibilitySignal() {
   QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2000);
   QCOMPARE(spy.takeFirst().at(0).toBool(), false);
   QVERIFY(!bar.isMessageVisible());
+}
+
+void TestStatusBar::testLongMessageDoesNotChangeWidthHints() {
+  StatusBarDef def;
+  StatusBarColumn label;
+  label.type = StatusBarColumnType::Label;
+  label.text = QStringLiteral("Ready");
+  def << label;
+  StatusBar bar(def);
+
+  const int sizeHintWidth = bar.sizeHint().width();
+  const int minimumSizeHintWidth = bar.minimumSizeHint().width();
+
+  bar.showMessage(QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x')), 0);
+
+  QCOMPARE(bar.sizeHint().width(), sizeHintWidth);
+  QCOMPARE(bar.minimumSizeHint().width(), minimumSizeHintWidth);
 }
 
 void TestStatusBar::testColumnIndexProperty() {
