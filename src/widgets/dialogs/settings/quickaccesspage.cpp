@@ -127,7 +127,7 @@ void QuickAccessPage::setupUI() {
         m_quickNoteFolderPathInput->setPlaceholderText(
             tr("Empty to use current explored folder dynamically"));
         m_quickNoteFolderPathInput->setToolTip(
-            tr("Snippet variables are supported, e.g. journal/%yyyy%/%MM%."));
+            tr("Snippet variables are supported, e.g. journal/%yyyy%/%MM%"));
         infoLayout->addRow(label, m_quickNoteFolderPathInput);
         addSearchItem(label, m_quickNoteFolderPathInput);
         connect(m_quickNoteFolderPathInput, &LocationInputWithBrowseButton::textChanged, this,

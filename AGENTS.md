@@ -181,6 +181,12 @@ use `setEnabled(false)` to mute text. See
 [src/widgets/AGENTS.md § No Hardcoded Colors in C++](src/widgets/AGENTS.md#no-hardcoded-colors-in-c)
 for the decision table and the escape hatch.
 
+### Tooltip Copy
+
+Tooltip text MUST NOT end with sentence-ending punctuation. Keep punctuation needed between
+sentences or clauses; write parenthetical qualifiers such as `(restart required)` in lowercase
+without terminal punctuation.
+
 ### Naming Conventions
 
 | Element | Convention | Example |

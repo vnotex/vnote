@@ -291,7 +291,7 @@ void CommentPanel::reload() {
       if (!comment.hasKnownAnchorType()) {
         // Carried through untouched, but not renderable here.
         item->setToolTip(tr("This comment was created by a newer version of VNote and "
-                            "cannot be shown on the page."));
+                            "cannot be shown on the page"));
       } else if (!comment.m_text.isEmpty()) {
         item->setToolTip(comment.m_text);
       }

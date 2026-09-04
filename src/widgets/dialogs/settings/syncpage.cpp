@@ -27,7 +27,7 @@ void SyncPage::setupUI() {
     m_autoSyncDebounceSpinBox->setSuffix(QStringLiteral(" s"));
     m_autoSyncDebounceSpinBox->setSpecialValueText(tr("Immediate"));
     m_autoSyncDebounceSpinBox->setToolTip(
-        tr("Auto-sync runs at most once per this interval. 0 = sync immediately on every change."));
+        tr("Auto-sync runs at most once per this interval. 0 = sync immediately on every change"));
 
     const QString label(tr("Auto-sync interval"));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(

@@ -1102,8 +1102,8 @@
     </message>
     <message>
         <location line="+147"/>
-        <source>This comment was created by a newer version of VNote and cannot be shown on the page.</source>
-        <translation>此批注由较新版本的 VNote 创建，无法在页面上显示。</translation>
+        <source>This comment was created by a newer version of VNote and cannot be shown on the page</source>
+        <translation>此批注由较新版本的 VNote 创建，无法在页面上显示</translation>
     </message>
 </context>
 <context>
@@ -1197,8 +1197,8 @@
     </message>
     <message>
         <location line="+22"/>
-        <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.</source>
-        <translation>兼容 Typora 的上传命令。图片文件路径会作为最后一个参数追加。标准输出的最后一行非空内容会作为上传后的图片 URL。</translation>
+        <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL</source>
+        <translation>兼容 Typora 的上传命令。图片文件路径会作为最后一个参数追加。标准输出的最后一行非空内容会作为上传后的图片 URL</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -1848,8 +1848,8 @@
     </message>
     <message>
         <location line="-84"/>
-        <source>Supports placeholders such as [page], [title] and [date].</source>
-        <translation>支持诸如 [page]、[title] 和 [date] 之类的占位符。</translation>
+        <source>Supports placeholders such as [page], [title] and [date]</source>
+        <translation>支持诸如 [page]、[title] 和 [date] 之类的占位符</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2439,8 +2439,8 @@
     </message>
     <message>
         <location line="+12"/>
-        <source>Name shown in window titles, the system tray, and About. Requires a restart.</source>
-        <translation>显示在窗口标题、系统托盘和“关于”中的名称。需要重启。</translation>
+        <source>Name shown in window titles, the system tray, and About (restart required)</source>
+        <translation>显示在窗口标题、系统托盘和“关于”中的名称（需要重启）</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -2494,8 +2494,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Launch VNote automatically when you log in to Windows.</source>
-        <translation>登录 Windows 时自动启动 VNote。</translation>
+        <source>Launch VNote automatically when you log in to Windows</source>
+        <translation>登录 Windows 时自动启动 VNote</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2519,8 +2519,8 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Where VNote checks for new releases.</source>
-        <translation>VNote 检查新版本的来源。</translation>
+        <source>Where VNote checks for new releases</source>
+        <translation>VNote 检查新版本的来源</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -2553,18 +2553,18 @@
     </message>
     <message>
         <location line="+21"/>
-        <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.</source>
-        <translation>拥有 &apos;repo&apos; 权限的 GitHub 个人访问令牌。在 GitHub → Settings → Developer settings → Personal access tokens 处生成。</translation>
+        <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens</source>
+        <translation>拥有 &apos;repo&apos; 权限的 GitHub 个人访问令牌。在 GitHub → Settings → Developer settings → Personal access tokens 处生成</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Your GitHub username.</source>
-        <translation>您的 GitHub 用户名。</translation>
+        <source>Your GitHub username</source>
+        <translation>您的 GitHub 用户名</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Name of the GitHub repository to store images. Must already exist.</source>
-        <translation>用于存放图片的 GitHub 仓库名。必须已存在。</translation>
+        <source>Name of the GitHub repository to store images. Must already exist</source>
+        <translation>用于存放图片的 GitHub 仓库名。必须已存在</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -2623,18 +2623,18 @@
     </message>
     <message>
         <location line="+21"/>
-        <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.</source>
-        <translation>拥有 &apos;projects&apos; 权限的 Gitee 个人访问令牌。在 Gitee → 设置 → 安全设置 → 私人令牌处生成。</translation>
+        <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens</source>
+        <translation>拥有 &apos;projects&apos; 权限的 Gitee 个人访问令牌。在 Gitee → 设置 → 安全设置 → 私人令牌处生成</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Your Gitee username.</source>
-        <translation>您的 Gitee 用户名。</translation>
+        <source>Your Gitee username</source>
+        <translation>您的 Gitee 用户名</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Name of the Gitee repository to store images. Must already exist.</source>
-        <translation>用于存放图片的 Gitee 仓库名。必须已存在。</translation>
+        <source>Name of the Gitee repository to store images. Must already exist</source>
+        <translation>用于存放图片的 Gitee 仓库名。必须已存在</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -3145,8 +3145,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Copy an ordinary folder from disk into this notebook. New ids and timestamps are generated for the imported notes.</source>
-        <translation>将磁盘上的普通文件夹复制到此笔记本。导入的笔记会生成新的 id 和时间戳。</translation>
+        <source>Copy an ordinary folder from disk into this notebook. New ids and timestamps are generated for the imported notes</source>
+        <translation>将磁盘上的普通文件夹复制到此笔记本。导入的笔记会生成新的 id 和时间戳</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -3155,8 +3155,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Import a folder shared from VNote, keeping its notes&apos; ids, dates, tags and attachments.</source>
-        <translation>导入从 VNote 分享的文件夹，并保留其笔记的 id、日期、标签和附件。</translation>
+        <source>Import a folder shared from VNote, keeping its notes&apos; ids, dates, tags and attachments</source>
+        <translation>导入从 VNote 分享的文件夹，并保留其笔记的 id、日期、标签和附件</translation>
     </message>
     <message>
         <location line="+41"/>
@@ -3181,18 +3181,18 @@
     </message>
     <message>
         <location line="+30"/>
-        <source>Only bundled notebooks can import a shared folder.</source>
-        <translation>只有自包笔记本才能导入分享文件夹。</translation>
+        <source>Only bundled notebooks can import a shared folder</source>
+        <translation>只有自包笔记本才能导入分享文件夹</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>This notebook is read-only.</source>
-        <translation>该笔记本为只读。</translation>
+        <source>This notebook is read-only</source>
+        <translation>该笔记本为只读</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>This destination cannot accept a shared folder.</source>
-        <translation>该目标位置无法接受分享文件夹。</translation>
+        <source>This destination cannot accept a shared folder</source>
+        <translation>该目标位置无法接受分享文件夹</translation>
     </message>
     <message>
         <location line="+86"/>
@@ -4001,8 +4001,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Wrap long lines in code blocks in read mode.</source>
-        <translation>在阅读模式下对代码块中的长行自动换行。</translation>
+        <source>Wrap long lines in code blocks in read mode</source>
+        <translation>在阅读模式下对代码块中的长行自动换行</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -4056,8 +4056,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Render a table as an editable sheet which writes back to the Markdown source.</source>
-        <translation>将表格渲染为可编辑的表格控件，编辑结果会写回 Markdown 源文本。</translation>
+        <source>Render a table as an editable sheet which writes back to the Markdown source</source>
+        <translation>将表格渲染为可编辑的表格控件，编辑结果会写回 Markdown 源文本</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -4066,8 +4066,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Write an edited table sheet back as a column-aligned pipe table. Only affects tables you edit afterwards; existing source is never reformatted.</source>
-        <translation>将编辑后的表格工作表写回为列对齐的管道表格。仅影响之后编辑的表格；现有源文本不会被重新格式化。</translation>
+        <source>Write an edited table sheet back as a column-aligned pipe table. Only affects tables you edit afterwards; existing source is never reformatted</source>
+        <translation>将编辑后的表格工作表写回为列对齐的管道表格。仅影响之后编辑的表格；现有源文本不会被重新格式化</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -4076,8 +4076,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Fold the source of a block as soon as it gets an in-place preview. Requires text folding; turning it off does not unfold blocks that are already folded.</source>
-        <translation>块获得原地预览后立即折叠其源文本。需要启用文本折叠；关闭此选项不会展开已折叠的块。</translation>
+        <source>Fold the source of a block as soon as it gets an in-place preview. Requires text folding; turning it off does not unfold blocks that are already folded</source>
+        <translation>块获得原地预览后立即折叠其源文本。需要启用文本折叠；关闭此选项不会展开已折叠的块</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -4656,14 +4656,14 @@
     <message>
         <location line="+1"/>
         <source>Bundled: notebook with metadata stored in config files.
-Raw: plain folder structure with minimal VNote metadata.</source>
+Raw: plain folder structure with minimal VNote metadata</source>
         <translation>自包：元数据存储在配置文件中的笔记本。
-原生：仅含最少 VNote 元数据的普通文件夹结构。</translation>
+原生：仅含最少 VNote 元数据的普通文件夹结构</translation>
     </message>
     <message>
         <location line="+35"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation.</source>
-        <translation>Git 同步仅支持自包笔记本。同步设置会在创建笔记本前通过“配置”按钮立即进行配置。</translation>
+        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation</source>
+        <translation>Git 同步仅支持自包笔记本。同步设置会在创建笔记本前通过“配置”按钮立即进行配置</translation>
     </message>
     <message>
         <location line="-62"/>
@@ -4689,17 +4689,17 @@ Raw: plain folder structure with minimal VNote metadata.</source>
         <location line="+7"/>
         <source>Root folder of the notebook.
 For raw notebooks, you can select an existing folder with files.
-The folder&apos;s contents will be indexed as notebook nodes.</source>
+The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>笔记本的根文件夹。
 对于原生笔记本，可选择一个已包含文件的现有文件夹。
-该文件夹的内容会被索引为笔记本节点。</translation>
+该文件夹的内容会被索引为笔记本节点</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Root folder of the notebook.
-A new notebook requires an empty folder or a non-existent path (will be created).</source>
+A new notebook requires an empty folder or a non-existent path (will be created)</source>
         <translation>笔记本的根文件夹。
-新笔记本需要一个空文件夹或一个不存在的路径（将自动创建）。</translation>
+新笔记本需要一个空文件夹或一个不存在的路径（将自动创建）</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -4735,10 +4735,10 @@ A new notebook requires an empty folder or a non-existent path (will be created)
         <location line="+13"/>
         <source>Name or path for the assets folder.
 Can be a folder name (vx_assets), relative path, or absolute path.
-Relative paths resolve against each note file&apos;s parent directory.</source>
+Relative paths resolve against each note file&apos;s parent directory</source>
         <translation>资源文件夹的名称或路径。
 可以是文件夹名（vx_assets）、相对路径或绝对路径。
-相对路径相对于每个笔记文件所在目录解析。</translation>
+相对路径相对于每个笔记文件所在目录解析</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4944,8 +4944,8 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+14"/>
-        <source>Maximum number of results returned by a search.</source>
-        <translation>一次搜索返回的最大结果数。</translation>
+        <source>Maximum number of results returned by a search</source>
+        <translation>一次搜索返回的最大结果数</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -5411,8 +5411,8 @@ GitHub 拒绝了已保存的个人访问令牌 (HTTP 401)。该令牌可能已�
     </message>
     <message>
         <location line="+2"/>
-        <source>Click to bootstrap sync for this notebook.</source>
-        <translation>点击以为该笔记本引导同步。</translation>
+        <source>Click to bootstrap sync for this notebook</source>
+        <translation>点击以为该笔记本引导同步</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -5875,8 +5875,8 @@ Description: %4</source>
     </message>
     <message>
         <location line="+7"/>
-        <source>Personal Access Token used to authenticate against the remote (optional).</source>
-        <translation>用于向远端进行身份验证的个人访问令牌（可选）。</translation>
+        <source>Personal Access Token used to authenticate against the remote (optional)</source>
+        <translation>用于向远端进行身份验证的个人访问令牌（可选）</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -5890,8 +5890,8 @@ Description: %4</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Remote git repository URL used for syncing this notebook.</source>
-        <translation>用于同步该笔记本的远端 Git 仓库 URL。</translation>
+        <source>Remote git repository URL used for syncing this notebook</source>
+        <translation>用于同步该笔记本的远端 Git 仓库 URL</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -5906,9 +5906,9 @@ Description: %4</source>
     <message>
         <location line="+1"/>
         <source>Personal Access Token used to authenticate against the remote.
-Leave blank to keep the existing token.</source>
+Leave blank to keep the existing token</source>
         <translation>用于向远端进行身份验证的个人访问令牌。
-留空以保留现有令牌。</translation>
+留空以保留现有令牌</translation>
     </message>
     <message>
         <location line="-38"/>
@@ -5945,9 +5945,9 @@ Leave blank to keep the existing token.</source>
         <location line="-120"/>
         <source>Disable git sync for this notebook. Local commit history is preserved
 on disk, but no further syncing will occur and the stored credentials
-are deleted from the system keychain.</source>
+are deleted from the system keychain</source>
         <translation>禁用该笔记本的 Git 同步。本地提交历史会保留在磁盘上，
-但不再进行同步，且存储的凭据会从系统密钥串中删除。</translation>
+但不再进行同步，且存储的凭据会从系统密钥串中删除</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -6291,8 +6291,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Open an existing VNote notebook from a local folder on disk.</source>
-        <translation>从磁盘上的本地文件夹打开一个现有的 VNote 笔记本。</translation>
+        <source>Open an existing VNote notebook from a local folder on disk</source>
+        <translation>从磁盘上的本地文件夹打开一个现有的 VNote 笔记本</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6302,8 +6302,8 @@ Continue?</source>
     </message>
     <message>
         <location line="-106"/>
-        <source>Clone a VNote notebook from a remote git URL or a file:// path.</source>
-        <translation>从远程 git URL 或 file:// 路径克隆一个 VNote 笔记本。</translation>
+        <source>Clone a VNote notebook from a remote git URL or a file:// path</source>
+        <translation>从远程 git URL 或 file:// 路径克隆一个 VNote 笔记本</translation>
     </message>
     <message>
         <location line="+41"/>
@@ -6317,8 +6317,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>Close this dialog and import a legacy VNote3 notebook.</source>
-        <translation>关闭此对话框并导入旧版 VNote3 笔记本。</translation>
+        <source>Close this dialog and import a legacy VNote3 notebook</source>
+        <translation>关闭此对话框并导入旧版 VNote3 笔记本</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -6337,8 +6337,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Root folder of an existing VNote notebook (must contain a valid notebook config).</source>
-        <translation>现有 VNote 笔记本的根文件夹（必须包含有效的笔记本配置）。</translation>
+        <source>Root folder of an existing VNote notebook (must contain a valid notebook config)</source>
+        <translation>现有 VNote 笔记本的根文件夹（必须包含有效的笔记本配置）</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -6362,8 +6362,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Remote git URL. Only HTTPS and file:// schemes are supported.</source>
-        <translation>远程 git URL。仅支持 HTTPS 和 file:// 协议。</translation>
+        <source>Remote git URL. Only HTTPS and file:// schemes are supported</source>
+        <translation>远程 git URL。仅支持 HTTPS 和 file:// 协议</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -6372,8 +6372,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing.</source>
-        <translation>如果为空，笔记本将正常打开（完全可编辑），同步已配置但未激活。稍后添加令牌即可开始同步。</translation>
+        <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing</source>
+        <translation>如果为空，笔记本将正常打开（完全可编辑），同步已配置但未激活。稍后添加令牌即可开始同步</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -6387,8 +6387,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Local folder that will receive the cloned notebook. It must either not exist yet (it will be created) or be an existing empty directory.</source>
-        <translation>用于接收克隆笔记本的本地文件夹。它必须尚不存在（将会被创建）或是一个现有的空目录。</translation>
+        <source>Local folder that will receive the cloned notebook. It must either not exist yet (it will be created) or be an existing empty directory</source>
+        <translation>用于接收克隆笔记本的本地文件夹。它必须尚不存在（将会被创建）或是一个现有的空目录</translation>
     </message>
     <message>
         <location line="+91"/>
@@ -6855,8 +6855,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+58"/>
-        <source>Snippet variables are supported, e.g. journal/%yyyy%/%MM%.</source>
-        <translation>支持代码片段变量，例如 journal/%yyyy%/%MM%。</translation>
+        <source>Snippet variables are supported, e.g. journal/%yyyy%/%MM%</source>
+        <translation>支持代码片段变量，例如 journal/%yyyy%/%MM%</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -7413,8 +7413,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Auto-sync runs at most once per this interval. 0 = sync immediately on every change.</source>
-        <translation>自动同步在此间隔内最多运行一次。0 = 每次更改立即同步。</translation>
+        <source>Auto-sync runs at most once per this interval. 0 = sync immediately on every change</source>
+        <translation>自动同步在此间隔内最多运行一次。0 = 每次更改立即同步</translation>
     </message>
     <message>
         <location line="+2"/>

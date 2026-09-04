@@ -62,7 +62,7 @@ void NoteManagementPage::setupUI() {
     m_searchMaxResultsSpinBox->setObjectName(QStringLiteral("SearchMaxResultsSpinBox"));
     m_searchMaxResultsSpinBox->setRange(1, 100000);
     m_searchMaxResultsSpinBox->setSingleStep(100);
-    m_searchMaxResultsSpinBox->setToolTip(tr("Maximum number of results returned by a search."));
+    m_searchMaxResultsSpinBox->setToolTip(tr("Maximum number of results returned by a search"));
 
     const QString label(tr("Search maximum results"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));

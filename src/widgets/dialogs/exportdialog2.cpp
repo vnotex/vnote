@@ -491,7 +491,7 @@ void ExportDialog2::setupUI() {
     m_pdfFooterRightEdit = WidgetsFactory::createLineEdit(page);
     m_pdfFooterRightEdit->setObjectName(QLatin1String(kPdfFooterRightName));
     m_pdfFooterRightEdit->setToolTip(
-        tr("Supports placeholders such as [page], [title] and [date]."));
+        tr("Supports placeholders such as [page], [title] and [date]"));
     layout->addRow(tr("Footer right"), m_pdfFooterRightEdit);
 
     m_pdfAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);

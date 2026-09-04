@@ -81,13 +81,13 @@ void OpenNotebookDialog2::setupUI() {
   auto *modeRow = new QHBoxLayout();
   m_localModeRadio = new QRadioButton(tr("Local folder"), mainWidget);
   m_localModeRadio->setObjectName(QLatin1String(kLocalModeRadioName));
-  m_localModeRadio->setToolTip(tr("Open an existing VNote notebook from a local folder on disk."));
+  m_localModeRadio->setToolTip(tr("Open an existing VNote notebook from a local folder on disk"));
   m_localModeRadio->setChecked(true);
 
   m_remoteModeRadio = new QRadioButton(tr("Remote URL"), mainWidget);
   m_remoteModeRadio->setObjectName(QLatin1String(kRemoteModeRadioName));
   m_remoteModeRadio->setToolTip(
-      tr("Clone a VNote notebook from a remote git URL or a file:// path."));
+      tr("Clone a VNote notebook from a remote git URL or a file:// path"));
 
   m_modeGroup = new QButtonGroup(this);
   m_modeGroup->setExclusive(true);
@@ -155,7 +155,7 @@ void OpenNotebookDialog2::setupUI() {
     // Load-bearing: the Open button above is explicitly setDefault(true), and a
     // freshly added auto-default push button would contend for the Enter key.
     m_openV3Button->setAutoDefault(false);
-    m_openV3Button->setToolTip(tr("Close this dialog and import a legacy VNote3 notebook."));
+    m_openV3Button->setToolTip(tr("Close this dialog and import a legacy VNote3 notebook"));
     connect(m_openV3Button, &QPushButton::clicked, this,
             &OpenNotebookDialog2::onOpenV3NotebookClicked);
   }
@@ -177,7 +177,7 @@ void OpenNotebookDialog2::setupLocalPage(QWidget *p_page) {
                                   tr("Select Notebook Root Folder"));
   m_localRootInput->setPlaceholderText(tr("Select the root folder of an existing VNote notebook"));
   m_localRootInput->setToolTip(
-      tr("Root folder of an existing VNote notebook (must contain a valid notebook config)."));
+      tr("Root folder of an existing VNote notebook (must contain a valid notebook config)"));
   layout->addRow(tr("Root folder path"), m_localRootInput);
 
   connect(m_localRootInput, &LocationInputWithBrowseButton::textChanged, this,
@@ -192,7 +192,7 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remoteUrlEdit->setObjectName(QLatin1String(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(
       tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
-  m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported."));
+  m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
   layout->addRow(tr("Remote URL"), m_remoteUrlEdit);
 
   // PAT field (password echo). "(optional)" hint lives in the placeholder so
@@ -203,7 +203,7 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remotePatEdit->setPlaceholderText(tr("Optional — leave empty to open without syncing yet"));
   m_remotePatEdit->setToolTip(
       tr("If empty, the notebook opens normally (fully editable) with sync configured but "
-         "inactive. Add a token later to start syncing."));
+         "inactive. Add a token later to start syncing"));
   layout->addRow(tr("Personal Access Token"), m_remotePatEdit);
 
   // Local root folder: project-standard LocationInputWithBrowseButton. Must
@@ -217,7 +217,7 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remoteDestInput->setPlaceholderText(tr("Folder to clone into (must not exist or be empty)"));
   m_remoteDestInput->setToolTip(
       tr("Local folder that will receive the cloned notebook. It must either not exist yet "
-         "(it will be created) or be an existing empty directory."));
+         "(it will be created) or be an existing empty directory"));
   layout->addRow(tr("Local root folder"), m_remoteDestInput);
 
   // Wire field-change validation. Per plan refine-open-notebook-dialog the

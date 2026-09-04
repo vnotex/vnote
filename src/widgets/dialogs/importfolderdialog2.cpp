@@ -78,14 +78,14 @@ void ImportFolderDialog2::setupUI() {
   m_externalModeRadio->setObjectName(QLatin1String(kExternalModeRadioName));
   m_externalModeRadio->setToolTip(
       tr("Copy an ordinary folder from disk into this notebook. New ids and timestamps are "
-         "generated for the imported notes."));
+         "generated for the imported notes"));
   m_externalModeRadio->setChecked(true);
 
   m_bundleModeRadio = new QRadioButton(tr("Shared folder from VNote"), mainWidget);
   m_bundleModeRadio->setObjectName(QLatin1String(kBundleModeRadioName));
   m_bundleModeRadio->setToolTip(
       tr("Import a folder shared from VNote, keeping its notes' ids, dates, tags and "
-         "attachments."));
+         "attachments"));
 
   m_modeGroup = new QButtonGroup(this);
   m_modeGroup->setExclusive(true);
@@ -187,13 +187,13 @@ void ImportFolderDialog2::applyBundleModeAvailability() {
   QString reason;
   switch (paths.m_error) {
   case VXCORE_ERR_UNSUPPORTED:
-    reason = tr("Only bundled notebooks can import a shared folder.");
+    reason = tr("Only bundled notebooks can import a shared folder");
     break;
   case VXCORE_ERR_READ_ONLY:
-    reason = tr("This notebook is read-only.");
+    reason = tr("This notebook is read-only");
     break;
   default:
-    reason = tr("This destination cannot accept a shared folder.");
+    reason = tr("This destination cannot accept a shared folder");
     break;
   }
 

@@ -147,7 +147,7 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services, QWi
   if (m_patEdit) {
     m_patEdit->setPlaceholderText(QString());
     m_patEdit->setToolTip(
-        tr("Personal Access Token used to authenticate against the remote (optional)."));
+        tr("Personal Access Token used to authenticate against the remote (optional)"));
   }
 
   // m_controller remains nullptr — this signals pre-create mode to
@@ -162,13 +162,13 @@ void NotebookSyncInfoDialog2::setupUI() {
   // is read-only. Constructed hidden; refreshReadOnlyBanner toggles visibility
   // post-setup once the notebook's RO state has been queried via
   // NotebookCoreService::isNotebookReadOnly (T21).
-  m_readOnlyBanner = new InlineBanner(
-      InlineBanner::Severity::Warning,
-      tr("This notebook is currently open in read-only mode. To enable editing, "
-         "close this notebook and re-open it from the remote URL with a valid "
-         "Personal Access Token. Adding a PAT here will be saved, but editing "
-         "will only become available after closing and re-opening the notebook."),
-      centralWidget);
+  m_readOnlyBanner =
+      new InlineBanner(InlineBanner::Severity::Warning,
+                       tr("This notebook is currently open in read-only mode. To enable editing, "
+                          "close this notebook and re-open it from the remote URL with a valid "
+                          "Personal Access Token. Adding a PAT here will be saved, but editing "
+                          "will only become available after closing and re-opening the notebook."),
+                       centralWidget);
   m_readOnlyBanner->setObjectName(QString::fromLatin1(kReadOnlyBannerLabelName));
   m_readOnlyBanner->hide();
   formLayout->addRow(m_readOnlyBanner);
@@ -184,7 +184,7 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_remoteUrlEdit = WidgetsFactory::createLineEdit(centralWidget);
   m_remoteUrlEdit->setObjectName(QString::fromLatin1(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(tr("https://github.com/example/notes.git"));
-  m_remoteUrlEdit->setToolTip(tr("Remote git repository URL used for syncing this notebook."));
+  m_remoteUrlEdit->setToolTip(tr("Remote git repository URL used for syncing this notebook"));
   formLayout->addRow(tr("Remote URL"), m_remoteUrlEdit);
   connect(m_remoteUrlEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
 
@@ -217,7 +217,7 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_patEdit->setEchoMode(QLineEdit::Password);
   m_patEdit->setPlaceholderText(tr("Leave blank to keep existing"));
   m_patEdit->setToolTip(tr("Personal Access Token used to authenticate against the remote.\n"
-                           "Leave blank to keep the existing token."));
+                           "Leave blank to keep the existing token"));
   formLayout->addRow(tr("Personal Access Token"), m_patEdit);
   connect(m_patEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
 
@@ -248,7 +248,7 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_disableSyncButton->setToolTip(
       tr("Disable git sync for this notebook. Local commit history is preserved\n"
          "on disk, but no further syncing will occur and the stored credentials\n"
-         "are deleted from the system keychain."));
+         "are deleted from the system keychain"));
   actionLayout->addWidget(m_disableSyncButton);
   connect(m_disableSyncButton, &QPushButton::clicked, this,
           &NotebookSyncInfoDialog2::onDisableSyncClicked);

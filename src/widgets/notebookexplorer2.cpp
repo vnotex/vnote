@@ -2420,7 +2420,7 @@ void NotebookExplorer2::updateSyncButtonState() {
   } else if (syncInProgress) {
     tooltip = tr("Sync in progress");
   } else if (!syncReady) {
-    tooltip = tr("Click to bootstrap sync for this notebook.");
+    tooltip = tr("Click to bootstrap sync for this notebook");
   } else {
     tooltip = tr("Sync Now");
   }

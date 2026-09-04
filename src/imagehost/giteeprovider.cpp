@@ -32,18 +32,16 @@ QJsonObject GiteeProvider::getConfig() const {
   return obj;
 }
 
-QHash<QString, ConfigFieldHint> GiteeProvider::getConfigFieldHints() const
-{
+QHash<QString, ConfigFieldHint> GiteeProvider::getConfigFieldHints() const {
   return {
-    {QStringLiteral("personalAccessToken"),
-     {QStringLiteral("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
-      tr("Gitee Personal Access Token with 'projects' scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.")}},
-    {QStringLiteral("userName"),
-     {QStringLiteral("username"),
-      tr("Your Gitee username.")}},
-    {QStringLiteral("repositoryName"),
-     {QStringLiteral("my-image-repo"),
-      tr("Name of the Gitee repository to store images. Must already exist.")}},
+      {QStringLiteral("personalAccessToken"),
+       {QStringLiteral("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+        tr("Gitee Personal Access Token with 'projects' scope. Generate at Gitee → Settings → "
+           "Security Settings → Personal Access Tokens")}},
+      {QStringLiteral("userName"), {QStringLiteral("username"), tr("Your Gitee username")}},
+      {QStringLiteral("repositoryName"),
+       {QStringLiteral("my-image-repo"),
+        tr("Name of the Gitee repository to store images. Must already exist")}},
   };
 }
 
@@ -105,7 +103,7 @@ QString GiteeProvider::addAccessToken(const QString &p_token, QString p_url) {
 }
 
 NetworkReply GiteeProvider::getRepoInfo(const QString &p_token, const QString &p_userName,
-                                             const QString &p_repoName) const {
+                                        const QString &p_repoName) const {
   auto rawHeader = prepareCommonHeaders();
   auto urlStr = QStringLiteral("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
   auto reply = NetworkAccess::request(QUrl(addAccessToken(p_token, urlStr)), rawHeader);

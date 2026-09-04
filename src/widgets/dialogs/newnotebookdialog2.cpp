@@ -76,7 +76,7 @@ void NewNotebookDialog2::setupUI() {
   m_typeCombo->addItem(tr("Bundled notebook"), static_cast<int>(NotebookType::Bundled));
   m_typeCombo->addItem(tr("Raw notebook"), static_cast<int>(NotebookType::Raw));
   m_typeCombo->setToolTip(tr("Bundled: notebook with metadata stored in config files.\n"
-                             "Raw: plain folder structure with minimal VNote metadata."));
+                             "Raw: plain folder structure with minimal VNote metadata"));
   layout->addRow(tr("Type"), m_typeCombo);
 
   // Update root folder tooltip based on selected notebook type.
@@ -86,11 +86,11 @@ void NewNotebookDialog2::setupUI() {
       m_rootFolderInput->setToolTip(
           tr("Root folder of the notebook.\n"
              "For raw notebooks, you can select an existing folder with files.\n"
-             "The folder's contents will be indexed as notebook nodes."));
+             "The folder's contents will be indexed as notebook nodes"));
     } else {
       m_rootFolderInput->setToolTip(
           tr("Root folder of the notebook.\n"
-             "A new notebook requires an empty folder or a non-existent path (will be created)."));
+             "A new notebook requires an empty folder or a non-existent path (will be created)"));
     }
   };
 
@@ -112,7 +112,7 @@ void NewNotebookDialog2::setupUI() {
   m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
   m_syncMethodCombo->setToolTip(tr("Git sync is supported only for bundled notebooks. "
                                    "Sync settings are configured immediately via the "
-                                   "Configure button before notebook creation."));
+                                   "Configure button before notebook creation"));
 
   m_configureSyncButton = new QPushButton(tr("Configure"), mainWidget);
   m_configureSyncButton->setObjectName(QStringLiteral("configureSyncButton"));
@@ -165,7 +165,7 @@ void NewNotebookDialog2::setupUI() {
   m_assetsFolderEdit->setToolTip(
       tr("Name or path for the assets folder.\n"
          "Can be a folder name (vx_assets), relative path, or absolute path.\n"
-         "Relative paths resolve against each note file's parent directory."));
+         "Relative paths resolve against each note file's parent directory"));
   advancedLayout->addRow(tr("Assets folder"), m_assetsFolderEdit);
 
   m_advancedSection->setVisible(false);

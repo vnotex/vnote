@@ -8,23 +8,13 @@
 
 using namespace vnotex;
 
-CustomCommandProvider::CustomCommandProvider(QObject *p_parent)
-  : IImageHostProvider(p_parent)
-{
-}
+CustomCommandProvider::CustomCommandProvider(QObject *p_parent) : IImageHostProvider(p_parent) {}
 
-QString CustomCommandProvider::typeId() const
-{
-  return QStringLiteral("custom_command");
-}
+QString CustomCommandProvider::typeId() const { return QStringLiteral("custom_command"); }
 
-QString CustomCommandProvider::displayName() const
-{
-  return tr("Custom Command");
-}
+QString CustomCommandProvider::displayName() const { return tr("Custom Command"); }
 
-ImageUploadResult CustomCommandProvider::upload(const QByteArray &p_data, const QString &p_path)
-{
+ImageUploadResult CustomCommandProvider::upload(const QByteArray &p_data, const QString &p_path) {
   Q_UNUSED(p_path);
 
   ImageUploadResult result;
@@ -73,9 +63,8 @@ ImageUploadResult CustomCommandProvider::upload(const QByteArray &p_data, const 
 
   if (process.exitCode() != 0) {
     const QString stderrOutput = QString::fromUtf8(process.readAllStandardError()).trimmed();
-    result.errorMessage = tr("Command failed (exit code %1): %2")
-                            .arg(process.exitCode())
-                            .arg(stderrOutput);
+    result.errorMessage =
+        tr("Command failed (exit code %1): %2").arg(process.exitCode()).arg(stderrOutput);
     return result;
   }
 
@@ -103,47 +92,39 @@ ImageUploadResult CustomCommandProvider::upload(const QByteArray &p_data, const 
   return result;
 }
 
-bool CustomCommandProvider::supportsDelete() const
-{
-  return false;
-}
+bool CustomCommandProvider::supportsDelete() const { return false; }
 
-bool CustomCommandProvider::remove(const QString &p_url, QString &p_msg)
-{
+bool CustomCommandProvider::remove(const QString &p_url, QString &p_msg) {
   Q_UNUSED(p_url);
   p_msg = tr("Delete is not supported by custom command provider");
   return false;
 }
 
-bool CustomCommandProvider::ownsUrl(const QString &p_url) const
-{
+bool CustomCommandProvider::ownsUrl(const QString &p_url) const {
   Q_UNUSED(p_url);
   return false;
 }
 
-QJsonObject CustomCommandProvider::getConfig() const
-{
+QJsonObject CustomCommandProvider::getConfig() const {
   QJsonObject obj;
   obj[QStringLiteral("command")] = m_command;
   return obj;
 }
 
-QHash<QString, ConfigFieldHint> CustomCommandProvider::getConfigFieldHints() const
-{
+QHash<QString, ConfigFieldHint> CustomCommandProvider::getConfigFieldHints() const {
   return {
-    {QStringLiteral("command"),
-     {QStringLiteral("picgo upload"),
-      tr("Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.")}},
+      {QStringLiteral("command"),
+       {QStringLiteral("picgo upload"),
+        tr("Typora-compatible upload command. The image file path is appended as the last "
+           "argument. The last non-empty line of stdout is used as the uploaded image URL")}},
   };
 }
 
-void CustomCommandProvider::setConfig(const QJsonObject &p_config)
-{
+void CustomCommandProvider::setConfig(const QJsonObject &p_config) {
   m_command = p_config.value(QStringLiteral("command")).toString();
 }
 
-bool CustomCommandProvider::testConfig(const QJsonObject &p_config, QString &p_msg)
-{
+bool CustomCommandProvider::testConfig(const QJsonObject &p_config, QString &p_msg) {
   const QString command = p_config.value(QStringLiteral("command")).toString();
   if (command.isEmpty()) {
     p_msg = tr("Command is empty");
@@ -168,7 +149,4 @@ bool CustomCommandProvider::testConfig(const QJsonObject &p_config, QString &p_m
   return true;
 }
 
-bool CustomCommandProvider::ready() const
-{
-  return !m_command.isEmpty();
-}
+bool CustomCommandProvider::ready() const { return !m_command.isEmpty(); }

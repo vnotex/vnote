@@ -90,25 +90,25 @@ QString SyncStateClassifier::tooltipFor(SyncState p_state) const {
 #define VX_TR(text) QCoreApplication::translate("SyncStateClassifier", text)
   switch (p_state) {
   case SyncState::S0:
-    return VX_TR("Sync is disabled for this notebook.");
+    return VX_TR("Sync is disabled for this notebook");
   case SyncState::S1:
-    return VX_TR("Sync is partially configured: remote URL is missing.");
+    return VX_TR("Sync is partially configured: remote URL is missing");
   case SyncState::S2:
-    return VX_TR("Sync is partially configured: missing credentials.");
+    return VX_TR("Sync is partially configured: missing credentials");
   case SyncState::S3:
-    return VX_TR("Sync is partially configured: no backend selected.");
+    return VX_TR("Sync is partially configured: no backend selected");
   case SyncState::S4:
     return VX_TR("Sync is configured on disk but not yet active. Reopen the "
-                 "notebook to activate.");
+                 "notebook to activate");
   case SyncState::S5:
-    return VX_TR("Sync is ready.");
+    return VX_TR("Sync is ready");
   case SyncState::S6:
     return VX_TR("Orphan credentials detected: sync is disabled but a stored "
-                 "token remains. Re-enable sync or wipe the token.");
+                 "token remains. Re-enable sync or wipe the token");
   case SyncState::S7:
-    return VX_TR("Sync is in progress.");
+    return VX_TR("Sync is in progress");
   }
-  return VX_TR("Unknown sync state.");
+  return VX_TR("Unknown sync state");
 #undef VX_TR
 }
 

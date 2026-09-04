@@ -1102,8 +1102,8 @@
     </message>
     <message>
         <location line="+147"/>
-        <source>This comment was created by a newer version of VNote and cannot be shown on the page.</source>
-        <translation>このコメントは新しいバージョンの VNote で作成されたため、ページ上に表示できません。</translation>
+        <source>This comment was created by a newer version of VNote and cannot be shown on the page</source>
+        <translation>このコメントは新しいバージョンの VNote で作成されたため、ページ上に表示できません</translation>
     </message>
 </context>
 <context>
@@ -1197,8 +1197,8 @@
     </message>
     <message>
         <location line="+22"/>
-        <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL.</source>
-        <translation>Typora 互換のアップロードコマンド。画像ファイルのパスが最後の引数として追加されます。標準出力の最後の非空行がアップロード済み画像の URL として使用されます。</translation>
+        <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL</source>
+        <translation>Typora 互換のアップロードコマンド。画像ファイルのパスが最後の引数として追加されます。標準出力の最後の非空行がアップロード済み画像の URL として使用されます</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -1648,7 +1648,7 @@
     <message>
         <location line="+2"/>
         <source>Copy referenced resources next to the exported file (or embed them when Embed images is checked), so the page renders standalone</source>
-        <translation>参照されているリソースをエクスポート先ファイルの隣にコピーします（「画像を埋め込む」が有効な場合は埋め込みます）。ページ単体で表示できるようになります。</translation>
+        <translation>参照されているリソースをエクスポート先ファイルの隣にコピーします（「画像を埋め込む」が有効な場合は埋め込みます）。ページ単体で表示できるようになります</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -1848,8 +1848,8 @@
     </message>
     <message>
         <location line="-84"/>
-        <source>Supports placeholders such as [page], [title] and [date].</source>
-        <translation>[page]、[title]、[date] などのプレースホルダーをサポートします。</translation>
+        <source>Supports placeholders such as [page], [title] and [date]</source>
+        <translation>[page]、[title]、[date] などのプレースホルダーをサポートします</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2439,8 +2439,8 @@
     </message>
     <message>
         <location line="+12"/>
-        <source>Name shown in window titles, the system tray, and About. Requires a restart.</source>
-        <translation>ウィンドウタイトル、システムトレイ、アプリケーション情報に表示される名前です。再起動が必要です。</translation>
+        <source>Name shown in window titles, the system tray, and About (restart required)</source>
+        <translation>ウィンドウタイトル、システムトレイ、アプリケーション情報に表示される名前です（再起動が必要）</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -2494,8 +2494,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Launch VNote automatically when you log in to Windows.</source>
-        <translation>Windows にログインしたときに VNote を自動的に起動します。</translation>
+        <source>Launch VNote automatically when you log in to Windows</source>
+        <translation>Windows にログインしたときに VNote を自動的に起動します</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2519,8 +2519,8 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Where VNote checks for new releases.</source>
-        <translation>VNote が新しいリリースを確認する取得元です。</translation>
+        <source>Where VNote checks for new releases</source>
+        <translation>VNote が新しいリリースを確認する取得元です</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -2553,18 +2553,18 @@
     </message>
     <message>
         <location line="+21"/>
-        <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.</source>
-        <translation>&apos;repo&apos; スコープを持つ GitHub 個人アクセストークン。GitHub → Settings → Developer settings → Personal access tokens で生成してください。</translation>
+        <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens</source>
+        <translation>&apos;repo&apos; スコープを持つ GitHub 個人アクセストークン。GitHub → Settings → Developer settings → Personal access tokens で生成してください</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Your GitHub username.</source>
-        <translation>あなたの GitHub ユーザー名。</translation>
+        <source>Your GitHub username</source>
+        <translation>あなたの GitHub ユーザー名</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Name of the GitHub repository to store images. Must already exist.</source>
-        <translation>画像を保存する GitHub リポジトリの名前。既に存在している必要があります。</translation>
+        <source>Name of the GitHub repository to store images. Must already exist</source>
+        <translation>画像を保存する GitHub リポジトリの名前。既に存在している必要があります</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -2623,18 +2623,18 @@
     </message>
     <message>
         <location line="+21"/>
-        <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens.</source>
-        <translation>&apos;projects&apos; スコープを持つ Gitee 個人アクセストークン。Gitee → Settings → Security Settings → Personal Access Tokens で生成してください。</translation>
+        <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens</source>
+        <translation>&apos;projects&apos; スコープを持つ Gitee 個人アクセストークン。Gitee → Settings → Security Settings → Personal Access Tokens で生成してください</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Your Gitee username.</source>
-        <translation>あなたの Gitee ユーザー名。</translation>
+        <source>Your Gitee username</source>
+        <translation>あなたの Gitee ユーザー名</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Name of the Gitee repository to store images. Must already exist.</source>
-        <translation>画像を保存する Gitee リポジトリの名前。既に存在している必要があります。</translation>
+        <source>Name of the Gitee repository to store images. Must already exist</source>
+        <translation>画像を保存する Gitee リポジトリの名前。既に存在している必要があります</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -3145,8 +3145,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Copy an ordinary folder from disk into this notebook. New ids and timestamps are generated for the imported notes.</source>
-        <translation>ディスク上の通常のフォルダをこのノートブックにコピーします。インポートされたノートには新しい ID とタイムスタンプが生成されます。</translation>
+        <source>Copy an ordinary folder from disk into this notebook. New ids and timestamps are generated for the imported notes</source>
+        <translation>ディスク上の通常のフォルダをこのノートブックにコピーします。インポートされたノートには新しい ID とタイムスタンプが生成されます</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -3155,8 +3155,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Import a folder shared from VNote, keeping its notes&apos; ids, dates, tags and attachments.</source>
-        <translation>VNote から共有されたフォルダを、ノートの ID・日付・タグ・添付ファイルを保持したままインポートします。</translation>
+        <source>Import a folder shared from VNote, keeping its notes&apos; ids, dates, tags and attachments</source>
+        <translation>VNote から共有されたフォルダを、ノートの ID・日付・タグ・添付ファイルを保持したままインポートします</translation>
     </message>
     <message>
         <location line="+41"/>
@@ -3181,18 +3181,18 @@
     </message>
     <message>
         <location line="+30"/>
-        <source>Only bundled notebooks can import a shared folder.</source>
-        <translation>共有フォルダをインポートできるのはバンドル型ノートブックのみです。</translation>
+        <source>Only bundled notebooks can import a shared folder</source>
+        <translation>共有フォルダをインポートできるのはバンドル型ノートブックのみです</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>This notebook is read-only.</source>
-        <translation>このノートブックは読み取り専用です。</translation>
+        <source>This notebook is read-only</source>
+        <translation>このノートブックは読み取り専用です</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>This destination cannot accept a shared folder.</source>
-        <translation>この保存先は共有フォルダを受け入れられません。</translation>
+        <source>This destination cannot accept a shared folder</source>
+        <translation>この保存先は共有フォルダを受け入れられません</translation>
     </message>
     <message>
         <location line="+86"/>
@@ -4006,8 +4006,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Wrap long lines in code blocks in read mode.</source>
-        <translation>閲覧モードでコードブロック内の長い行を折り返します。</translation>
+        <source>Wrap long lines in code blocks in read mode</source>
+        <translation>閲覧モードでコードブロック内の長い行を折り返します</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -4061,8 +4061,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Render a table as an editable sheet which writes back to the Markdown source.</source>
-        <translation>テーブルを編集可能なシートとして表示し、編集内容を Markdown のソースに書き戻します。</translation>
+        <source>Render a table as an editable sheet which writes back to the Markdown source</source>
+        <translation>テーブルを編集可能なシートとして表示し、編集内容を Markdown のソースに書き戻します</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -4071,8 +4071,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Write an edited table sheet back as a column-aligned pipe table. Only affects tables you edit afterwards; existing source is never reformatted.</source>
-        <translation>編集したテーブルシートを、列を揃えたパイプテーブルとしてソースに書き戻します。以降に編集するテーブルにのみ適用され、既存のソースが再整形されることはありません。</translation>
+        <source>Write an edited table sheet back as a column-aligned pipe table. Only affects tables you edit afterwards; existing source is never reformatted</source>
+        <translation>編集したテーブルシートを、列を揃えたパイプテーブルとしてソースに書き戻します。以降に編集するテーブルにのみ適用され、既存のソースが再整形されることはありません</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -4081,8 +4081,8 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Fold the source of a block as soon as it gets an in-place preview. Requires text folding; turning it off does not unfold blocks that are already folded.</source>
-        <translation>ブロックにインプレイスプレビューが表示された時点で、そのソースを折りたたみます。テキストの折りたたみ機能が必要です。この設定をオフにしても、すでに折りたたまれているブロックは展開されません。</translation>
+        <source>Fold the source of a block as soon as it gets an in-place preview. Requires text folding; turning it off does not unfold blocks that are already folded</source>
+        <translation>ブロックにインプレイスプレビューが表示された時点で、そのソースを折りたたみます。テキストの折りたたみ機能が必要です。この設定をオフにしても、すでに折りたたまれているブロックは展開されません</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -4656,14 +4656,14 @@
     <message>
         <location line="+1"/>
         <source>Bundled: notebook with metadata stored in config files.
-Raw: plain folder structure with minimal VNote metadata.</source>
+Raw: plain folder structure with minimal VNote metadata</source>
         <translation>バンドル：メタデータを設定ファイルに保存するノートブック。
-生：最小限の VNote メタデータのみのプレーンなフォルダー構造。</translation>
+生：最小限の VNote メタデータのみのプレーンなフォルダー構造</translation>
     </message>
     <message>
         <location line="+35"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation.</source>
-        <translation>Git 同期はバンドルノートブックのみサポートされます。同期設定はノートブック作成前に「設定」ボタンで直ちに構成されます。</translation>
+        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation</source>
+        <translation>Git 同期はバンドルノートブックのみサポートされます。同期設定はノートブック作成前に「設定」ボタンで直ちに構成されます</translation>
     </message>
     <message>
         <location line="-62"/>
@@ -4689,17 +4689,17 @@ Raw: plain folder structure with minimal VNote metadata.</source>
         <location line="+7"/>
         <source>Root folder of the notebook.
 For raw notebooks, you can select an existing folder with files.
-The folder&apos;s contents will be indexed as notebook nodes.</source>
+The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>ノートブックのルートフォルダー。
 Raw ノートブックの場合、ファイルを含む既存のフォルダーを選択できます。
-フォルダーの内容はノートブックのノードとしてインデックス化されます。</translation>
+フォルダーの内容はノートブックのノードとしてインデックス化されます</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Root folder of the notebook.
-A new notebook requires an empty folder or a non-existent path (will be created).</source>
+A new notebook requires an empty folder or a non-existent path (will be created)</source>
         <translation>ノートブックのルートフォルダー。
-新しいノートブックには、空のフォルダーまたは存在しないパス (作成されます) が必要です。</translation>
+新しいノートブックには、空のフォルダーまたは存在しないパス (作成されます) が必要です</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -4735,10 +4735,10 @@ A new notebook requires an empty folder or a non-existent path (will be created)
         <location line="+13"/>
         <source>Name or path for the assets folder.
 Can be a folder name (vx_assets), relative path, or absolute path.
-Relative paths resolve against each note file&apos;s parent directory.</source>
+Relative paths resolve against each note file&apos;s parent directory</source>
         <translation>アセットフォルダーの名前またはパス。
 フォルダー名 (vx_assets)、相対パス、絶対パスを指定できます。
-相対パスは各ノートファイルの親ディレクトリを基準に解決されます。</translation>
+相対パスは各ノートファイルの親ディレクトリを基準に解決されます</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4944,8 +4944,8 @@ Relative paths resolve against each note file&apos;s parent directory.</source>
     </message>
     <message>
         <location line="+14"/>
-        <source>Maximum number of results returned by a search.</source>
-        <translation>検索で返される結果の最大数。</translation>
+        <source>Maximum number of results returned by a search</source>
+        <translation>検索で返される結果の最大数</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -5411,8 +5411,8 @@ GitHub が保存された個人アクセストークンを拒否しました (HT
     </message>
     <message>
         <location line="+2"/>
-        <source>Click to bootstrap sync for this notebook.</source>
-        <translation>クリックしてこのノートブックの同期をブートストラップします。</translation>
+        <source>Click to bootstrap sync for this notebook</source>
+        <translation>クリックしてこのノートブックの同期をブートストラップします</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -5875,8 +5875,8 @@ Description: %4</source>
     </message>
     <message>
         <location line="+7"/>
-        <source>Personal Access Token used to authenticate against the remote (optional).</source>
-        <translation>リモートに対する認証に使用する個人アクセストークン (任意)。</translation>
+        <source>Personal Access Token used to authenticate against the remote (optional)</source>
+        <translation>リモートに対する認証に使用する個人アクセストークン (任意)</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -5890,8 +5890,8 @@ Description: %4</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Remote git repository URL used for syncing this notebook.</source>
-        <translation>このノートブックの同期に使用するリモート Git リポジトリの URL。</translation>
+        <source>Remote git repository URL used for syncing this notebook</source>
+        <translation>このノートブックの同期に使用するリモート Git リポジトリの URL</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -5906,9 +5906,9 @@ Description: %4</source>
     <message>
         <location line="+1"/>
         <source>Personal Access Token used to authenticate against the remote.
-Leave blank to keep the existing token.</source>
+Leave blank to keep the existing token</source>
         <translation>リモートに対する認証に使用する個人アクセストークン。
-既存のトークンを保持するには空白のままにしてください。</translation>
+既存のトークンを保持するには空白のままにしてください</translation>
     </message>
     <message>
         <location line="-38"/>
@@ -5945,10 +5945,10 @@ Leave blank to keep the existing token.</source>
         <location line="-120"/>
         <source>Disable git sync for this notebook. Local commit history is preserved
 on disk, but no further syncing will occur and the stored credentials
-are deleted from the system keychain.</source>
+are deleted from the system keychain</source>
         <translation>このノートブックの Git 同期を無効化します。ローカルのコミット履歴は
 ディスク上に保持されますが、以降の同期は行われず、保存されている認証情報は
-システムキーチェーンから削除されます。</translation>
+システムキーチェーンから削除されます</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -6293,8 +6293,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Open an existing VNote notebook from a local folder on disk.</source>
-        <translation>ディスク上のローカルフォルダーから既存の VNote ノートブックを開きます。</translation>
+        <source>Open an existing VNote notebook from a local folder on disk</source>
+        <translation>ディスク上のローカルフォルダーから既存の VNote ノートブックを開きます</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -6304,8 +6304,8 @@ Continue?</source>
     </message>
     <message>
         <location line="-106"/>
-        <source>Clone a VNote notebook from a remote git URL or a file:// path.</source>
-        <translation>リモート git URL または file:// パスから VNote ノートブックをクローンします。</translation>
+        <source>Clone a VNote notebook from a remote git URL or a file:// path</source>
+        <translation>リモート git URL または file:// パスから VNote ノートブックをクローンします</translation>
     </message>
     <message>
         <location line="+41"/>
@@ -6319,8 +6319,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>Close this dialog and import a legacy VNote3 notebook.</source>
-        <translation>このダイアログを閉じて、従来の VNote3 ノートブックをインポートします。</translation>
+        <source>Close this dialog and import a legacy VNote3 notebook</source>
+        <translation>このダイアログを閉じて、従来の VNote3 ノートブックをインポートします</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -6339,8 +6339,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Root folder of an existing VNote notebook (must contain a valid notebook config).</source>
-        <translation>既存の VNote ノートブックのルートフォルダー（有効なノートブック設定を含む必要があります）。</translation>
+        <source>Root folder of an existing VNote notebook (must contain a valid notebook config)</source>
+        <translation>既存の VNote ノートブックのルートフォルダー（有効なノートブック設定を含む必要があります）</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -6364,8 +6364,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>Remote git URL. Only HTTPS and file:// schemes are supported.</source>
-        <translation>リモート git URL。HTTPS と file:// スキームのみサポートされます。</translation>
+        <source>Remote git URL. Only HTTPS and file:// schemes are supported</source>
+        <translation>リモート git URL。HTTPS と file:// スキームのみサポートされます</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -6374,8 +6374,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing.</source>
-        <translation>空欄の場合、ノートブックは通常どおり（完全に編集可能な状態で）開き、同期は構成されますが非アクティブです。後でトークンを追加すると同期を開始できます。</translation>
+        <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing</source>
+        <translation>空欄の場合、ノートブックは通常どおり（完全に編集可能な状態で）開き、同期は構成されますが非アクティブです。後でトークンを追加すると同期を開始できます</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -6389,8 +6389,8 @@ Continue?</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Local folder that will receive the cloned notebook. It must either not exist yet (it will be created) or be an existing empty directory.</source>
-        <translation>クローンしたノートブックを受け取るローカルフォルダー。まだ存在しない（作成されます）か、既存の空のディレクトリである必要があります。</translation>
+        <source>Local folder that will receive the cloned notebook. It must either not exist yet (it will be created) or be an existing empty directory</source>
+        <translation>クローンしたノートブックを受け取るローカルフォルダー。まだ存在しない（作成されます）か、既存の空のディレクトリである必要があります</translation>
     </message>
     <message>
         <location line="+91"/>
@@ -6857,8 +6857,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+58"/>
-        <source>Snippet variables are supported, e.g. journal/%yyyy%/%MM%.</source>
-        <translation>スニペット変数がサポートされています。例: journal/%yyyy%/%MM%。</translation>
+        <source>Snippet variables are supported, e.g. journal/%yyyy%/%MM%</source>
+        <translation>スニペット変数がサポートされています。例: journal/%yyyy%/%MM%</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -7415,8 +7415,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+2"/>
-        <source>Auto-sync runs at most once per this interval. 0 = sync immediately on every change.</source>
-        <translation>自動同期はこの間隔ごとに最大 1 回実行されます。0 = 変更のたびに即時同期。</translation>
+        <source>Auto-sync runs at most once per this interval. 0 = sync immediately on every change</source>
+        <translation>自動同期はこの間隔ごとに最大 1 回実行されます。0 = 変更のたびに即時同期</translation>
     </message>
     <message>
         <location line="+2"/>

@@ -292,7 +292,7 @@ void MarkdownEditorPage::setupReadGroup() {
   {
     const QString label(tr("Code block line wrap"));
     m_codeBlockLineWrapCheckBox = WidgetsFactory::createCheckBox(label, this);
-    m_codeBlockLineWrapCheckBox->setToolTip(tr("Wrap long lines in code blocks in read mode."));
+    m_codeBlockLineWrapCheckBox->setToolTip(tr("Wrap long lines in code blocks in read mode"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
         m_codeBlockLineWrapCheckBox, m_codeBlockLineWrapCheckBox->toolTip(), this));
@@ -397,7 +397,7 @@ void MarkdownEditorPage::setupEditGroup() {
 
     m_inplacePreviewSourceTableCheckBox = WidgetsFactory::createCheckBox(tr("Table"), this);
     m_inplacePreviewSourceTableCheckBox->setToolTip(
-        tr("Render a table as an editable sheet which writes back to the Markdown source."));
+        tr("Render a table as an editable sheet which writes back to the Markdown source"));
     srcRowLayout->addWidget(m_inplacePreviewSourceTableCheckBox);
     connect(m_inplacePreviewSourceTableCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -411,7 +411,7 @@ void MarkdownEditorPage::setupEditGroup() {
     m_alignTableSourceCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_alignTableSourceCheckBox->setToolTip(
         tr("Write an edited table sheet back as a column-aligned pipe table. Only affects tables "
-           "you edit afterwards; existing source is never reformatted."));
+           "you edit afterwards; existing source is never reformatted"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
         m_alignTableSourceCheckBox, m_alignTableSourceCheckBox->toolTip(), this));
@@ -425,7 +425,7 @@ void MarkdownEditorPage::setupEditGroup() {
     m_autoFoldPreviewedBlocksCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_autoFoldPreviewedBlocksCheckBox->setToolTip(
         tr("Fold the source of a block as soon as it gets an in-place preview. Requires text "
-           "folding; turning it off does not unfold blocks that are already folded."));
+           "folding; turning it off does not unfold blocks that are already folded"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
         m_autoFoldPreviewedBlocksCheckBox, m_autoFoldPreviewedBlocksCheckBox->toolTip(), this));

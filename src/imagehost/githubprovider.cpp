@@ -33,18 +33,16 @@ QJsonObject GitHubProvider::getConfig() const {
   return obj;
 }
 
-QHash<QString, ConfigFieldHint> GitHubProvider::getConfigFieldHints() const
-{
+QHash<QString, ConfigFieldHint> GitHubProvider::getConfigFieldHints() const {
   return {
-    {QStringLiteral("personalAccessToken"),
-     {QStringLiteral("ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
-      tr("GitHub Personal Access Token with 'repo' scope. Generate at GitHub → Settings → Developer settings → Personal access tokens.")}},
-    {QStringLiteral("userName"),
-     {QStringLiteral("octocat"),
-      tr("Your GitHub username.")}},
-    {QStringLiteral("repositoryName"),
-     {QStringLiteral("my-image-repo"),
-      tr("Name of the GitHub repository to store images. Must already exist.")}},
+      {QStringLiteral("personalAccessToken"),
+       {QStringLiteral("ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+        tr("GitHub Personal Access Token with 'repo' scope. Generate at GitHub → Settings → "
+           "Developer settings → Personal access tokens")}},
+      {QStringLiteral("userName"), {QStringLiteral("octocat"), tr("Your GitHub username")}},
+      {QStringLiteral("repositoryName"),
+       {QStringLiteral("my-image-repo"),
+        tr("Name of the GitHub repository to store images. Must already exist")}},
   };
 }
 
@@ -107,7 +105,7 @@ NetworkAccess::RawHeaderPairs GitHubProvider::prepareCommonHeaders(const QString
 }
 
 NetworkReply GitHubProvider::getRepoInfo(const QString &p_token, const QString &p_userName,
-                                              const QString &p_repoName) const {
+                                         const QString &p_repoName) const {
   auto rawHeader = prepareCommonHeaders(p_token);
   const auto urlStr = QStringLiteral("%1/repos/%2/%3").arg(c_apiUrl, p_userName, p_repoName);
   auto reply = NetworkAccess::request(QUrl(urlStr), rawHeader);

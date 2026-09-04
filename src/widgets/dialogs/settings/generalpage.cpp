@@ -55,7 +55,7 @@ void GeneralPage::setupUI() {
     m_appNameLineEdit = WidgetsFactory::createLineEdit(this);
     m_appNameLineEdit->setObjectName(QLatin1String(c_appNameLineEditName));
     m_appNameLineEdit->setToolTip(
-        tr("Name shown in window titles, the system tray, and About. Requires a restart."));
+        tr("Name shown in window titles, the system tray, and About (restart required)"));
 
     const QString label(tr("Application display name"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
@@ -105,7 +105,7 @@ void GeneralPage::setupUI() {
     const QString label(tr("Start VNote on system startup"));
     m_startOnStartupCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_startOnStartupCheckBox->setToolTip(
-        tr("Launch VNote automatically when you log in to Windows."));
+        tr("Launch VNote automatically when you log in to Windows"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
         m_startOnStartupCheckBox, m_startOnStartupCheckBox->toolTip(), this));
@@ -139,7 +139,7 @@ void GeneralPage::setupUI() {
 
   {
     m_updateSourceComboBox = WidgetsFactory::createComboBox(this);
-    m_updateSourceComboBox->setToolTip(tr("Where VNote checks for new releases."));
+    m_updateSourceComboBox->setToolTip(tr("Where VNote checks for new releases"));
 
     // Gitee first: it is the default source (see
     // CoreConfig::normalizeUpdateSource), so index 0 is also the no-match
