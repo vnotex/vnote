@@ -13,8 +13,8 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QScreen>
-#include <QSizePolicy>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QTimer>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -40,8 +40,12 @@
 
 using namespace vnotex;
 
-UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
-                         const QSize &p_iconSize, QWidget *p_parent)
+namespace {
+constexpr int c_maxInputWidth = 480;
+} // namespace
+
+UnitedEntry::UnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, const QSize &p_iconSize,
+                         QWidget *p_parent)
     : QWidget(p_parent), m_services(p_services), m_mgr(p_mgr), m_iconSize(p_iconSize) {
   Q_ASSERT(m_mgr);
 
@@ -84,8 +88,11 @@ void UnitedEntry::setupUI() {
   m_comboBox = WidgetsFactory::createEditableComboBox(this);
   m_comboBox->setInsertPolicy(QComboBox::NoInsert);
   m_comboBox->setCompleter(nullptr);
-  m_comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  m_comboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   m_comboBox->setMinimumWidth(300);
+  m_comboBox->setMaximumWidth(c_maxInputWidth);
+  m_comboBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+  setMaximumWidth(c_maxInputWidth);
   m_comboBox->lineEdit()->setPlaceholderText(tr("Type to command"));
   m_comboBox->lineEdit()->setClearButtonEnabled(true);
   m_comboBox->lineEdit()->installEventFilter(this);
@@ -115,7 +122,8 @@ void UnitedEntry::setupUI() {
   setupActions();
 
   m_popup = new EntryPopup();
-  m_popup->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+  m_popup->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint |
+                          Qt::WindowDoesNotAcceptFocus);
   m_popup->setAttribute(Qt::WA_ShowWithoutActivating);
   m_popup->installEventFilter(this);
   m_popup->hide();
@@ -640,8 +648,8 @@ void UnitedEntry::handleFocusChanged(QWidget *p_old, QWidget *p_now) {
         return;
       }
       auto *fw = QApplication::focusWidget();
-      if (fw == m_comboBox || fw == m_comboBox->lineEdit()
-          || WidgetUtils::isOrAncestorOf(m_popup, fw)) {
+      if (fw == m_comboBox || fw == m_comboBox->lineEdit() ||
+          WidgetUtils::isOrAncestorOf(m_popup, fw)) {
         return;
       }
       deactivate();
