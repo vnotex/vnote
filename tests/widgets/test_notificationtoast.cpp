@@ -18,6 +18,7 @@
 #include <core/services/notificationservice.h>
 #include <gui/services/themeservice.h>
 #include <widgets/notificationtoast.h>
+#include <widgets/propertydefs.h>
 
 using namespace vnotex;
 
@@ -143,6 +144,7 @@ void TestNotificationToast::test_closeControlUsesThemedIconAndHidesOnlyTheToast(
   QVERIFY(closeButton->text().isEmpty());
   QVERIFY(!closeButton->icon().isNull());
   QCOMPARE(closeButton->iconSize(), QSize(16, 16));
+  QVERIFY(closeButton->property(PropertyDefs::c_actionToolButton).toBool());
   QCOMPARE(closeButton->focusPolicy(), Qt::NoFocus);
 
   closeButton->click();

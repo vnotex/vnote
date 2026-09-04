@@ -27,11 +27,13 @@
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
+#include <QToolButton>
 #include <QWidget>
 
 #include <core/global.h>
 #include <core/logging.h>
 #include <widgets/messageboxhelper.h>
+#include <widgets/propertydefs.h>
 
 using namespace vnotex;
 
@@ -45,6 +47,11 @@ void WidgetUtils::updateStyle(QWidget *p_widget) {
   p_widget->style()->unpolish(p_widget);
   p_widget->style()->polish(p_widget);
   p_widget->update();
+}
+
+void WidgetUtils::setupCloseToolButton(QToolButton *p_button) {
+  p_button->setProperty(PropertyDefs::c_actionToolButton, true);
+  p_button->setIconSize(QSize(16, 16));
 }
 
 qreal WidgetUtils::calculateScaleFactor(const QScreen *p_screen) {

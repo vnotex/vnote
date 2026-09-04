@@ -20,6 +20,7 @@ class QShortcut;
 class QLineEdit;
 class QLayout;
 class QPushButton;
+class QToolButton;
 class QSplitter;
 class QScreen;
 class QFormLayout;
@@ -38,6 +39,7 @@ public:
                                      const QVariant &p_val = QVariant());
 
   static void updateStyle(QWidget *p_widget);
+  static void setupCloseToolButton(QToolButton *p_button);
 
   static qreal calculateScaleFactor(const QScreen *p_screen = nullptr);
 

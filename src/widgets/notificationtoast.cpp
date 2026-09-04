@@ -98,9 +98,8 @@ void NotificationToast::setupUI() {
   headerLayout->addStretch();
 
   m_closeButton = new QToolButton(this);
+  WidgetUtils::setupCloseToolButton(m_closeButton);
   m_closeButton->setFocusPolicy(Qt::NoFocus);
-  m_closeButton->setProperty(PropertyDefs::c_actionToolButton, true);
-  m_closeButton->setIconSize(QSize(16, 16));
   m_closeButton->setToolTip(tr("Close"));
   refreshCloseIcon();
   connect(m_closeButton, &QToolButton::clicked, this, [this]() { hideToast(); });

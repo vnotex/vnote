@@ -12,7 +12,6 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#include "propertydefs.h"
 #include "widgetsfactory.h"
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -54,7 +53,7 @@ void FindAndReplaceWidget2::setupUI() {
     auto *themeService = m_services.get<ThemeService>();
     auto iconFile = themeService->getIconFile(QStringLiteral("close.svg"));
     auto closeBtn = new QToolButton(this);
-    closeBtn->setProperty(PropertyDefs::c_actionToolButton, true);
+    WidgetUtils::setupCloseToolButton(closeBtn);
     titleLayout->addWidget(closeBtn);
 
     auto closeAct = new QAction(IconUtils::fetchIcon(iconFile), QString(), closeBtn);
