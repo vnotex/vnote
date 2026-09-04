@@ -27,9 +27,12 @@ private slots:
   void testCreateNoteWithCursorMark();
   void testCreateNoteWithoutCursorMark();
   void testCreateNoteOverrides();
+  void testCreateNoteFolderOverride();
+  void testCreateRootNoteFolderOverride();
   void testCreateNoteLiteralContentIsVerbatim();
   void testCreateNoteLiteralContentCleared();
   void testCreateQuickNoteExpandsBody();
+  void testCreateQuickNoteFolderOverride();
   void testCreateQuickNoteSequencedOverrides();
   void testCreateQuickNoteMissingNotebook();
   void testBundledTitleTemplateYieldsHeadingAndCaretBelowIt();
@@ -134,6 +137,34 @@ void TestNewNoteController::testCreateNoteOverrides() {
   QCOMPARE(readNote(result.nodeId), QStringLiteral("file mynote.md base mynote"));
 }
 
+void TestNewNoteController::testCreateNoteFolderOverride() {
+  const QString folderPath = QStringLiteral("hexo/posts");
+  QVERIFY(!m_notebookService->createFolderPath(m_notebookId, folderPath).isEmpty());
+
+  NewNoteController controller(m_services);
+  NewNoteInput input;
+  input.notebookId = m_notebookId;
+  input.parentFolderPath = folderPath;
+  input.name = QStringLiteral("note.md");
+  input.templateContent = QStringLiteral("categories: %folder%");
+
+  NewNoteResult result = controller.createNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(readNote(result.nodeId), QStringLiteral("categories: hexo/posts"));
+}
+
+void TestNewNoteController::testCreateRootNoteFolderOverride() {
+  NewNoteController controller(m_services);
+  NewNoteInput input;
+  input.notebookId = m_notebookId;
+  input.name = QStringLiteral("root_folder.md");
+  input.templateContent = QStringLiteral("categories: %folder%");
+
+  NewNoteResult result = controller.createNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(readNote(result.nodeId), QStringLiteral("categories: "));
+}
+
 // Literal capture (macOS Services): the controller must persist the dialog text
 // byte-for-byte. Nothing in it may be interpreted as a snippet, a magic symbol,
 // a cursor mark or a selection mark, and no whitespace may be trimmed.
@@ -193,6 +224,24 @@ void TestNewNoteController::testCreateQuickNoteExpandsBody() {
   QCOMPARE(result.cursorOffset, 5); // "head " == 5.
   QVERIFY(result.nodeId.relativePath.endsWith(QStringLiteral(".md")));
   QCOMPARE(readNote(result.nodeId), QStringLiteral("head tail"));
+}
+
+void TestNewNoteController::testCreateQuickNoteFolderOverride() {
+  NewNoteController controller(m_services);
+  QuickNoteInput input;
+  input.notebookId = m_notebookId;
+  input.parentFolderPath = QStringLiteral("quick/category");
+  input.noteNameScheme = QStringLiteral("folder.md");
+  input.templateContent = QStringLiteral("%folder% / %note% / %no%");
+
+  NewNoteResult result = controller.createQuickNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(result.nodeId.parentPath(), QStringLiteral("quick/category"));
+
+  const QString finalName = result.nodeId.relativePath.section(QLatin1Char('/'), -1);
+  const QString baseName = finalName.left(finalName.lastIndexOf(QLatin1Char('.')));
+  QCOMPARE(readNote(result.nodeId),
+           QStringLiteral("quick/category / %1 / %2").arg(finalName, baseName));
 }
 
 void TestNewNoteController::testCreateQuickNoteSequencedOverrides() {

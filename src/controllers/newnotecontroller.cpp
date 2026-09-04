@@ -128,7 +128,8 @@ NewNoteResult NewNoteController::createNote(const NewNoteInput &p_input) {
     result.cursorOffset = p_input.literalContent.size();
   } else if (!p_input.templateContent.isEmpty()) {
     // Write template content if provided.
-    EvaluatedTemplate evaluated = evaluateTemplateContent(p_input.templateContent, p_input.name);
+    EvaluatedTemplate evaluated =
+        evaluateTemplateContent(p_input.templateContent, p_input.name, filePath);
 
     Error err = FileUtils2::writeFile(resolveFullPath(), evaluated.content.toUtf8());
     if (err) {
@@ -193,9 +194,13 @@ NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) 
     return result;
   }
 
+  const QString relativePath =
+      folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName;
+
   if (!p_input.templateContent.isEmpty()) {
-    // note/no overrides derive from the FINAL sequenced filename.
-    EvaluatedTemplate evaluated = evaluateTemplateContent(p_input.templateContent, newFileName);
+    // note/no overrides derive from the FINAL sequenced filename; folder derives from its path.
+    EvaluatedTemplate evaluated =
+        evaluateTemplateContent(p_input.templateContent, newFileName, relativePath);
     QString fullPath = QDir(parentAbsPath).filePath(newFileName);
     Error err = FileUtils2::writeFile(fullPath, evaluated.content.toUtf8());
     if (err) {
@@ -209,18 +214,20 @@ NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) 
 
   result.success = true;
   result.nodeId.notebookId = p_input.notebookId;
-  result.nodeId.relativePath =
-      folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName;
+  result.nodeId.relativePath = relativePath;
   return result;
 }
 
 EvaluatedTemplate NewNoteController::evaluateTemplateContent(const QString &p_content,
-                                                             const QString &p_name) {
-  // Provide magic-symbol overrides (%note%, %no%) derived from the note name,
-  // mirroring the legacy SnippetMgr::generateOverrides(fileName). expandContent
-  // additionally processes a top-level "@@" cursor mark and "$$" selection mark.
+                                                             const QString &p_name,
+                                                             const QString &p_relativePath) {
+  // Provide magic-symbol overrides (%note%, %folder%, %no%) derived from the note destination,
+  // mirroring the legacy SnippetMgr::generateOverrides(fileName). expandContent additionally
+  // processes a top-level "@@" cursor mark and "$$" selection mark.
   QJsonObject overrides;
   overrides.insert(QStringLiteral("note"), p_name);
+  overrides.insert(QStringLiteral("folder"),
+                   NodeIdentifier{QString(), p_relativePath}.parentPath());
   overrides.insert(QStringLiteral("no"), QFileInfo(p_name).completeBaseName());
 
   QJsonObject r = m_services.get<SnippetCoreService>()->expandContent(p_content, overrides);

@@ -248,11 +248,14 @@ public:
   };
 
   // Generate snippet override keys from Buffer2's NodeIdentifier.
-  // Returns QJsonObject with "note" (relative path) and "no" (basename without extension).
+  // Returns QJsonObject with "note" (relative path), "folder" (notebook-relative parent path),
+  // and "no" (basename without extension).
   template <typename _ViewWindow> static QJsonObject generateSnippetOverrides2(_ViewWindow *p_win) {
     QJsonObject overrides;
     const auto &nodeId = p_win->getBuffer().nodeId();
     overrides[QStringLiteral("note")] = nodeId.relativePath;
+    overrides[QStringLiteral("folder")] =
+        nodeId.notebookId.isEmpty() ? QString() : nodeId.parentPath();
     QFileInfo fi(nodeId.relativePath);
     overrides[QStringLiteral("no")] = fi.completeBaseName();
     return overrides;

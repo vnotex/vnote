@@ -13,7 +13,7 @@ class ServiceLocator;
 // Where a new note's body comes from.
 enum class NewNoteBodyMode {
   // Expand templateContent through the snippet engine (cursor/selection marks,
-  // %note%/%no% overrides).
+  // %note%/%folder%/%no% overrides).
   Template,
   // Write literalContent verbatim: no snippet or template interpretation, so
   // "%note%", "@@", "$$", tabs and surrounding whitespace all stay literal.
@@ -86,9 +86,10 @@ public:
   // formerly inlined in NotebookExplorer2.
   NewNoteResult createQuickNote(const QuickNoteInput &p_input);
 
-  // Evaluate template content with snippets. Returns expanded content plus the
-  // caret position derived from a top-level "@@" cursor mark (-1 if absent).
-  EvaluatedTemplate evaluateTemplateContent(const QString &p_content, const QString &p_name);
+  // Evaluate template content with %note%, %folder%, and %no% overrides. Returns expanded content
+  // plus the caret position derived from a top-level "@@" cursor mark (-1 if absent).
+  EvaluatedTemplate evaluateTemplateContent(const QString &p_content, const QString &p_name,
+                                            const QString &p_relativePath);
 
 private:
   ServiceLocator &m_services;

@@ -165,6 +165,7 @@ private slots:
 
   void testOverrideGeneration();
   void testOverrideGenerationNoExtension();
+  void testApplyFolderOverride();
   void testSymbolDetectionFound();
   void testSymbolDetectionNotFound();
   void testSymbolDetectionIncomplete();
@@ -283,6 +284,7 @@ void TestSnippetApply::testOverrideGeneration() {
 
   const auto result = TextViewWindowHelper::generateSnippetOverrides2(&win);
   QCOMPARE(result[QStringLiteral("note")].toString(), QStringLiteral("notes/hello.md"));
+  QCOMPARE(result[QStringLiteral("folder")].toString(), QStringLiteral("notes"));
   QCOMPARE(result[QStringLiteral("no")].toString(), QStringLiteral("hello"));
 }
 
@@ -297,6 +299,7 @@ void TestSnippetApply::testOverrideGenerationNoExtension() {
 
   const auto result = TextViewWindowHelper::generateSnippetOverrides2(&win);
   QCOMPARE(result[QStringLiteral("note")].toString(), QStringLiteral("README"));
+  QCOMPARE(result[QStringLiteral("folder")].toString(), QString());
   QCOMPARE(result[QStringLiteral("no")].toString(), QStringLiteral("README"));
 }
 
@@ -406,6 +409,23 @@ void TestSnippetApply::testSymbolDetectionAtBoundary() {
   QVERIFY(result.found);
   QCOMPARE(result.name, QStringLiteral("name"));
   QCOMPARE(result.start, start);
+}
+
+void TestSnippetApply::testApplyFolderOverride() {
+  QVERIFY(m_snippetService->createSnippet(QStringLiteral("test_snip"),
+                                          makeValidSnippet(QStringLiteral("%folder%"))));
+
+  Buffer2 buffer = openBuffer(QStringLiteral("notes/hello.md"));
+  QVERIFY(buffer.isValid());
+
+  vte::VTextEdit textEdit;
+  MockEditor editor;
+  editor.m_textEdit = &textEdit;
+  auto win = makeWindow(editor, buffer);
+
+  TextViewWindowHelper::applySnippetByName2(&win, QStringLiteral("test_snip"));
+
+  QCOMPARE(textEdit.toPlainText(), QStringLiteral("notes"));
 }
 
 void TestSnippetApply::testApplyByNameSuccess() {
