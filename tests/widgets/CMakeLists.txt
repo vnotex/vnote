@@ -191,6 +191,7 @@ add_qt_test(test_node_explorer_reload_expansion
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -240,6 +241,7 @@ add_qt_test(test_explorer_selection_after_save
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -879,6 +881,7 @@ add_qt_test(test_notebook_selector2_readonly_badge
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
@@ -953,6 +956,7 @@ add_qt_test(test_notebook_explorer2_sort
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -1011,6 +1015,7 @@ add_qt_test(test_two_columns_node_explorer_sort
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.h
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -1096,6 +1101,7 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -1139,6 +1145,7 @@ add_qt_test(test_activitysticker
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -1181,6 +1188,7 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
