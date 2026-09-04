@@ -25,6 +25,8 @@ public:
 
   void open(const QString &p_text);
 
+  void setFindTextNoMatch(bool p_noMatch);
+
   void close();
 
   QString getFindText() const;

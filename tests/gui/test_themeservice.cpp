@@ -42,6 +42,8 @@ private slots:
 
   void interfaceQssFullyResolved_data();
   void interfaceQssFullyResolved();
+  void interfaceQssStylesErrorLineEdit_data();
+  void interfaceQssStylesErrorLineEdit();
   void interfaceQssStylesInlineBanner_data();
   void interfaceQssStylesInlineBanner();
   void interfaceQssStylesSeverityText_data();
@@ -405,6 +407,46 @@ void TestThemeService::interfaceQssFullyResolved() {
              qPrintable(QStringLiteral("%1 interface.qss has an unresolved token: ...%2...")
                             .arg(themeName, qss.mid(qMax(0, idx - 60), 160))));
   }
+}
+
+void TestThemeService::interfaceQssStylesErrorLineEdit_data() { addBundledThemeRows(); }
+
+void TestThemeService::interfaceQssStylesErrorLineEdit() {
+  QFETCH(QString, themeName);
+
+  const QString qss = resolvedInterfaceQss(themeName);
+  QVERIFY(!qss.isEmpty());
+
+  const QString selector = QStringLiteral("QLineEdit[State=\"error\"]");
+  const QString body = qssRuleBody(qss, selector);
+  QVERIFY2(
+      !body.isEmpty(),
+      qPrintable(QStringLiteral("%1 interface.qss has no error QLineEdit rule").arg(themeName)));
+  QVERIFY2(body.contains(QStringLiteral("border:")),
+           qPrintable(QStringLiteral("%1 error QLineEdit rule has no border; body was:%2")
+                          .arg(themeName, body)));
+
+  for (const auto &pseudoState : {QStringLiteral("hover"), QStringLiteral("focus")}) {
+    const QString stateSelector = selector + QLatin1Char(':') + pseudoState;
+    const QString stateBody = qssRuleBody(qss, stateSelector);
+    QVERIFY2(!stateBody.isEmpty(),
+             qPrintable(QStringLiteral("%1 interface.qss has no error QLineEdit %2 rule")
+                            .arg(themeName, pseudoState)));
+    QVERIFY2(stateBody.contains(QStringLiteral("border:")),
+             qPrintable(QStringLiteral("%1 error QLineEdit %2 rule has no border; body was:%3")
+                            .arg(themeName, pseudoState, stateBody)));
+  }
+
+  const int selectorPosition = qss.indexOf(selector + QStringLiteral(" {"));
+  const int lastFocusPosition = qss.lastIndexOf(QStringLiteral("QLineEdit:focus"));
+  const int lastHoverPosition = qss.lastIndexOf(QStringLiteral("QLineEdit:hover"));
+  const int lastCompetingPosition = qMax(lastFocusPosition, lastHoverPosition);
+  QVERIFY2(lastCompetingPosition < 0 || selectorPosition > lastCompetingPosition,
+           qPrintable(QStringLiteral("%1 error QLineEdit selector at %2 does not follow the last "
+                                     "focus/hover selector at %3")
+                          .arg(themeName)
+                          .arg(selectorPosition)
+                          .arg(lastCompetingPosition)));
 }
 
 // InlineBanner is styled purely through the theme (it sets no inline

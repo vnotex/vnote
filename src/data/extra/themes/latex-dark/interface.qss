@@ -652,6 +652,18 @@ QLineEdit:hover {
     background-color: @widgets#qlineedit#hover#bg;
 }
 
+QLineEdit[State="error"] {
+    border: 1px solid @widgets#qwidget#error#border;
+}
+
+QLineEdit[State="error"]:hover {
+    border: 1px solid @widgets#qwidget#error#border;
+}
+
+QLineEdit[State="error"]:focus {
+    border: 1px solid @widgets#qwidget#error#border;
+}
+
 QLineEdit:disabled {
     color: @widgets#qlineedit#disabled#fg;
 }

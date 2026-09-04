@@ -11,7 +11,9 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QVariant>
 
+#include "propertydefs.h"
 #include "widgetsfactory.h"
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -73,8 +75,10 @@ void FindAndReplaceWidget2::setupUI() {
     m_findLineEdit = WidgetsFactory::createLineEdit(this);
     m_findLineEdit->setPlaceholderText(tr("Search"));
     m_findLineEdit->setClearButtonEnabled(true);
-    connect(m_findLineEdit, &QLineEdit::textChanged, m_findTextTimer,
-            QOverload<>::of(&QTimer::start));
+    connect(m_findLineEdit, &QLineEdit::textChanged, this, [this]() {
+      setFindTextNoMatch(false);
+      m_findTextTimer->start();
+    });
 
     setFocusProxy(m_findLineEdit);
 
@@ -164,6 +168,15 @@ void FindAndReplaceWidget2::setReplaceEnabled(bool p_enabled) {
   for (auto widget : m_replaceRelatedWidgets) {
     widget->setEnabled(p_enabled);
   }
+}
+
+void FindAndReplaceWidget2::setFindTextNoMatch(bool p_noMatch) {
+  const QVariant state = p_noMatch ? QVariant(QStringLiteral("error")) : QVariant();
+  if (m_findLineEdit->property(PropertyDefs::c_state) == state) {
+    return;
+  }
+
+  WidgetUtils::setPropertyDynamically(m_findLineEdit, PropertyDefs::c_state, state);
 }
 
 void FindAndReplaceWidget2::keyPressEvent(QKeyEvent *p_event) {
@@ -286,6 +299,7 @@ void FindAndReplaceWidget2::setFindOptions(FindOptions p_options) {
 }
 
 void FindAndReplaceWidget2::open(const QString &p_text) {
+  setFindTextNoMatch(false);
   show();
 
   if (!p_text.isEmpty()) {

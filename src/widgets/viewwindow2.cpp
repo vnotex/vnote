@@ -1345,8 +1345,16 @@ void ViewWindow2::findNextOnLastFind(bool p_forward) {
 void ViewWindow2::showFindResult(const QStringList &p_texts, int p_totalMatches,
                                  int p_currentMatchIndex) {
   if (p_texts.isEmpty() || p_texts[0].isEmpty()) {
+    if (m_findAndReplace && m_findAndReplace->getFindText().isEmpty()) {
+      m_findAndReplace->setFindTextNoMatch(false);
+    }
     showMessage(QString());
     return;
+  }
+
+  if (m_findAndReplace && m_findAndReplace->isVisible() && p_texts.size() == 1 &&
+      p_texts.constFirst() == m_findAndReplace->getFindText()) {
+    m_findAndReplace->setFindTextNoMatch(p_totalMatches == 0);
   }
 
   if (p_totalMatches == 0) {

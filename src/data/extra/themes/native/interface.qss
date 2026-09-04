@@ -24,6 +24,18 @@ QWidget[HitSettingWidget="true"] {
     border: 1px solid @base#error#fg;
 }
 
+QLineEdit[State="error"] {
+    border: 1px solid @base#error#fg;
+}
+
+QLineEdit[State="error"]:hover {
+    border: 1px solid @base#error#fg;
+}
+
+QLineEdit[State="error"]:focus {
+    border: 1px solid @base#error#fg;
+}
+
 *[State="success"] {
     border: 1px solid @base#success#fg;
 }
