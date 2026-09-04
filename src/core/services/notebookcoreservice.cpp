@@ -485,11 +485,12 @@ NotebookCoreService::prepareNodeTransfer(const NodeTransferCoreRequest &p_reques
                                                    : p_request.m_destinationFolderPath)
           .toUtf8();
   const QByteArray optionsJson = QJsonDocument(options).toJson(QJsonDocument::Compact);
-  prepared.m_error =
-      vxcore_node_transfer_prepare(m_context, sourceNotebook.constData(), sourcePath.constData(),
-                                   destinationNotebook.constData(), destinationPath.constData(),
-                                   optionsJson.constData(), p_progress ? progressThunk : nullptr,
-                                   p_progress ? &callbackState : nullptr, &prepared.m_handle);
+  const VxCoreNodeTransferProgressCallback progressCallback =
+      p_progress ? static_cast<VxCoreNodeTransferProgressCallback>(progressThunk) : nullptr;
+  prepared.m_error = vxcore_node_transfer_prepare(
+      m_context, sourceNotebook.constData(), sourcePath.constData(),
+      destinationNotebook.constData(), destinationPath.constData(), optionsJson.constData(),
+      progressCallback, p_progress ? &callbackState : nullptr, &prepared.m_handle);
   if (prepared.m_error != VXCORE_OK) {
     prepared.m_errorMessage = contextErrorMessage(prepared.m_error);
   }
