@@ -329,7 +329,10 @@ void MarkdownEditorPage::setupReadGroup() {
           QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner);
         } else {
           QFile f(path);
-          f.open(QIODevice::WriteOnly); // create empty file
+          // Create an empty file.
+          if (!f.open(QIODevice::WriteOnly)) {
+            return;
+          }
           f.close();
         }
       }
