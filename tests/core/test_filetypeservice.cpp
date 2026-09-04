@@ -61,9 +61,7 @@ void TestFileTypeService::testConstructorWithNullContext() {
   QVERIFY(service.getFileType(QStringLiteral("test.md")).m_typeName.isEmpty());
 }
 
-void TestFileTypeService::testConstructorWithValidContext() {
-  QVERIFY(m_service != nullptr);
-}
+void TestFileTypeService::testConstructorWithValidContext() { QVERIFY(m_service != nullptr); }
 
 void TestFileTypeService::testGetAllFileTypes() {
   QVector<FileType> types = m_service->getAllFileTypes();
@@ -139,6 +137,10 @@ void TestFileTypeService::testFileTypeFields() {
   QVERIFY(!type.m_displayName.isEmpty());
   QVERIFY(!type.m_suffixes.isEmpty());
   QVERIFY(type.m_isNewable);
+  QVERIFY(type.m_isSearchable);
+  QVERIFY(!m_service->getFileTypeByName(QStringLiteral("PDF")).m_isSearchable);
+  QVERIFY(m_service->getFileTypeByName(QStringLiteral("MindMap")).m_isSearchable);
+  QVERIFY(!m_service->getFileTypeByName(QStringLiteral("Others")).m_isSearchable);
 }
 
 } // namespace tests

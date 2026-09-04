@@ -13,7 +13,7 @@
 using namespace vnotex;
 
 FileTypeCoreService::FileTypeCoreService(VxCoreContextHandle p_context, const QString &p_locale,
-                                 QObject *p_parent)
+                                         QObject *p_parent)
     : QObject(p_parent), m_context(p_context), m_locale(p_locale) {}
 
 FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
@@ -21,6 +21,7 @@ FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
 
   type.m_typeName = p_obj["name"].toString();
   type.m_isNewable = p_obj["isNewable"].toBool();
+  type.m_isSearchable = p_obj["isSearchable"].toBool(false);
 
   // Get default displayName from vxcore
   QString defaultDisplayName = p_obj["displayName"].toString();
@@ -162,6 +163,7 @@ bool FileTypeCoreService::setAllFileTypes(const QVector<FileType> &p_types) {
     QJsonObject obj;
     obj["name"] = ft.m_typeName;
     obj["isNewable"] = ft.m_isNewable;
+    obj["isSearchable"] = ft.m_isSearchable;
     obj["displayName"] =
         ft.m_defaultDisplayName.isEmpty() ? ft.m_displayName : ft.m_defaultDisplayName;
 
@@ -183,8 +185,7 @@ bool FileTypeCoreService::setAllFileTypes(const QVector<FileType> &p_types) {
 
   VxCoreError err = vxcore_filetype_set(m_context, jsonBytes.constData());
   if (err != VXCORE_OK) {
-    qWarning() << "vxcore_filetype_set failed:"
-               << QString::fromUtf8(vxcore_error_message(err));
+    qWarning() << "vxcore_filetype_set failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
   }
 
