@@ -29,6 +29,7 @@ public:
     bool caseSensitive = false;
     bool useRegex = false;
     QString filePattern;
+    SearchController::FileSearchOptions fileSearchOptions;
   };
 
   FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr, QObject *p_parent = nullptr);

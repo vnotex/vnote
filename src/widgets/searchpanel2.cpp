@@ -12,8 +12,8 @@
 
 #include <controllers/searchcontroller.h>
 #include <core/configmgr2.h>
-#include <core/sessionconfig.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <widgets/widgetsfactory.h>
 
@@ -30,9 +30,7 @@ SearchPanel2::SearchPanel2(ServiceLocator &p_services, QWidget *p_parent)
 
 SearchPanel2::~SearchPanel2() = default;
 
-SearchController *SearchPanel2::getController() const {
-  return m_controller;
-}
+SearchController *SearchPanel2::getController() const { return m_controller; }
 
 void SearchPanel2::setCurrentNotebookId(const QString &p_notebookId) {
   m_controller->setCurrentNotebookId(p_notebookId);
@@ -128,30 +126,28 @@ void SearchPanel2::setupUI() {
 void SearchPanel2::setupConnections() {
   connect(m_keywordCombo->lineEdit(), &QLineEdit::returnPressed, this, &SearchPanel2::startSearch);
   connect(m_filePatternEdit, &QLineEdit::returnPressed, this, &SearchPanel2::startSearch);
-  connect(m_scopeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int idx) {
-            if (!m_initialized) {
-              return;
-            }
+  connect(m_scopeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+    if (!m_initialized) {
+      return;
+    }
 
-            auto *cm = m_services.get<ConfigMgr2>();
-            if (cm) {
-              cm->getWidgetConfig().setSearchScope(idx);
-            }
-          });
+    auto *cm = m_services.get<ConfigMgr2>();
+    if (cm) {
+      cm->getWidgetConfig().setSearchScope(idx);
+    }
+  });
   connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [this](int) { updateModeDependentOptions(); });
-  connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int idx) {
-            if (!m_initialized) {
-              return;
-            }
+  connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+    if (!m_initialized) {
+      return;
+    }
 
-            auto *cm = m_services.get<ConfigMgr2>();
-            if (cm) {
-              cm->getWidgetConfig().setSearchMode(idx);
-            }
-          });
+    auto *cm = m_services.get<ConfigMgr2>();
+    if (cm) {
+      cm->getWidgetConfig().setSearchMode(idx);
+    }
+  });
   connect(m_caseSensitiveCheck, &QCheckBox::toggled, this, [this](bool checked) {
     if (!m_initialized) {
       return;
@@ -191,16 +187,11 @@ void SearchPanel2::setupConnections() {
     }
   });
 
-  connect(m_controller, &SearchController::searchStarted,
-          this, &SearchPanel2::onSearchStarted);
-  connect(m_controller, &SearchController::searchFinished,
-          this, &SearchPanel2::onSearchFinished);
-  connect(m_controller, &SearchController::searchFailed,
-          this, &SearchPanel2::onSearchFailed);
-  connect(m_controller, &SearchController::searchCancelled,
-          this, &SearchPanel2::onSearchCancelled);
-  connect(m_controller, &SearchController::progressUpdated,
-          this, &SearchPanel2::onProgressUpdated);
+  connect(m_controller, &SearchController::searchStarted, this, &SearchPanel2::onSearchStarted);
+  connect(m_controller, &SearchController::searchFinished, this, &SearchPanel2::onSearchFinished);
+  connect(m_controller, &SearchController::searchFailed, this, &SearchPanel2::onSearchFailed);
+  connect(m_controller, &SearchController::searchCancelled, this, &SearchPanel2::onSearchCancelled);
+  connect(m_controller, &SearchController::progressUpdated, this, &SearchPanel2::onProgressUpdated);
 
   updateModeDependentOptions();
 }
@@ -252,12 +243,13 @@ void SearchPanel2::startSearch() {
   const bool useRegex = m_regexCheck->isChecked();
   const QString filePattern = m_filePatternEdit->text().trimmed();
 
-  qDebug() << "SearchPanel2::startSearch: keyword:" << keyword
-           << "scope:" << scope << "mode:" << mode
-           << "caseSensitive:" << caseSensitive << "regex:" << useRegex
+  qDebug() << "SearchPanel2::startSearch: keyword:" << keyword << "scope:" << scope
+           << "mode:" << mode << "caseSensitive:" << caseSensitive << "regex:" << useRegex
            << "filePattern:" << filePattern;
 
-  m_controller->search(keyword, scope, mode, caseSensitive, useRegex, filePattern);
+  SearchController::FileSearchOptions fileSearchOptions;
+  m_controller->search(keyword, scope, mode, caseSensitive, useRegex, filePattern,
+                       fileSearchOptions);
 }
 
 void SearchPanel2::onSearchStarted() {

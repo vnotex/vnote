@@ -62,7 +62,8 @@ void SearchController::setCurrentFolderId(const NodeIdentifier &p_folderId) {
 }
 
 void SearchController::search(const QString &p_keyword, int p_scope, int p_searchMode,
-                              bool p_caseSensitive, bool p_useRegex, const QString &p_filePattern) {
+                              bool p_caseSensitive, bool p_useRegex, const QString &p_filePattern,
+                              const FileSearchOptions &p_fileSearchOptions) {
   qCDebug(lcUi) << "SearchController::search: keyword:" << p_keyword << "scope:" << p_scope
                 << "mode:" << p_searchMode << "caseSensitive:" << p_caseSensitive
                 << "regex:" << p_useRegex << "filePattern:" << p_filePattern;
@@ -83,7 +84,8 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
     m_lastFindOptions |= RegularExpression;
   }
 
-  m_queryJson = buildQueryJson(p_keyword, p_searchMode, p_caseSensitive, p_useRegex, p_filePattern);
+  m_queryJson = buildQueryJson(p_keyword, p_searchMode, p_caseSensitive, p_useRegex, p_filePattern,
+                               p_fileSearchOptions);
   if (m_queryJson.isEmpty()) {
     emit searchFailed(tr("Failed to build search query."));
     return;
@@ -322,7 +324,8 @@ void SearchController::onSearchBatch(int p_token, const SearchResult &p_result) 
 
 QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchMode,
                                          bool p_caseSensitive, bool p_useRegex,
-                                         const QString &p_filePattern) const {
+                                         const QString &p_filePattern,
+                                         const FileSearchOptions &p_fileSearchOptions) const {
   QJsonObject queryObj;
 
   const int maxResults = m_services.get<ConfigMgr2>()->getCoreConfig().getSearchMaxResults();
@@ -336,12 +339,27 @@ QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchM
     queryObj.insert(QStringLiteral("maxResults"), QJsonValue(maxResults));
     break;
 
-  case FileNameSearch:
+  case FileNameSearch: {
     queryObj.insert(QStringLiteral("pattern"), QJsonValue(p_keyword));
     queryObj.insert(QStringLiteral("includeFiles"), QJsonValue(true));
-    queryObj.insert(QStringLiteral("includeFolders"), QJsonValue(true));
+    queryObj.insert(QStringLiteral("includeFolders"),
+                    QJsonValue(p_fileSearchOptions.includeFolders));
+    QString matchTarget;
+    switch (p_fileSearchOptions.matchTarget) {
+    case MatchName:
+      matchTarget = QStringLiteral("name");
+      break;
+    case MatchPath:
+      matchTarget = QStringLiteral("path");
+      break;
+    case MatchNameAndPath:
+      matchTarget = QStringLiteral("nameAndPath");
+      break;
+    }
+    queryObj.insert(QLatin1String(vxcore::kJsonKeyMatchTarget), QJsonValue(matchTarget));
     queryObj.insert(QStringLiteral("maxResults"), QJsonValue(maxResults));
     break;
+  }
 
   case TagSearch: {
     QJsonArray tags;

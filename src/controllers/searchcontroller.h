@@ -26,6 +26,12 @@ public:
   enum SearchScope { Buffers = 0, CurrentFolder = 1, CurrentNotebook = 2, AllNotebooks = 3 };
 
   enum SearchMode { FileNameSearch = 0, ContentSearch = 1, TagSearch = 2 };
+  enum FileSearchMatchTarget { MatchName = 0, MatchPath = 1, MatchNameAndPath = 2 };
+
+  struct FileSearchOptions {
+    bool includeFolders = true;
+    FileSearchMatchTarget matchTarget = MatchNameAndPath;
+  };
 
   explicit SearchController(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
@@ -35,7 +41,8 @@ public:
   void setCurrentFolderId(const NodeIdentifier &p_folderId);
 
   void search(const QString &p_keyword, int p_scope, int p_searchMode, bool p_caseSensitive,
-              bool p_useRegex, const QString &p_filePattern);
+              bool p_useRegex, const QString &p_filePattern,
+              const FileSearchOptions &p_fileSearchOptions);
   void cancel();
   void activateResult(const QModelIndex &p_index);
 
@@ -60,7 +67,8 @@ private:
   };
 
   QString buildQueryJson(const QString &p_keyword, int p_searchMode, bool p_caseSensitive,
-                         bool p_useRegex, const QString &p_filePattern) const;
+                         bool p_useRegex, const QString &p_filePattern,
+                         const FileSearchOptions &p_fileSearchOptions) const;
   QString buildFoldersInputFilesJson(const QString &p_folderPath) const;
   QString buildFilesInputFilesJson(const QStringList &p_files) const;
   void dispatchSearch(const SearchTarget &p_target);

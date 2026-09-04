@@ -131,6 +131,8 @@ void TestFindUnitedEntry::testObjectNamePath() {
 
     const auto params = FindUnitedEntry::mapArgsToSearchParams(parser);
     QCOMPARE(params.searchMode, static_cast<int>(SearchController::FileNameSearch));
+    QVERIFY(!params.fileSearchOptions.includeFolders);
+    QCOMPARE(params.fileSearchOptions.matchTarget, SearchController::MatchName);
   }
 
   {
@@ -141,6 +143,21 @@ void TestFindUnitedEntry::testObjectNamePath() {
 
     const auto params = FindUnitedEntry::mapArgsToSearchParams(parser);
     QCOMPARE(params.searchMode, static_cast<int>(SearchController::FileNameSearch));
+    QVERIFY(!params.fileSearchOptions.includeFolders);
+    QCOMPARE(params.fileSearchOptions.matchTarget, SearchController::MatchPath);
+  }
+
+  {
+    QCommandLineParser parser;
+    setupParser(parser);
+    QVERIFY(
+        parser.parse({QStringLiteral("find"), QStringLiteral("-b"), QStringLiteral("name"),
+                      QStringLiteral("-b"), QStringLiteral("path"), QStringLiteral("myquery")}));
+
+    const auto params = FindUnitedEntry::mapArgsToSearchParams(parser);
+    QCOMPARE(params.searchMode, static_cast<int>(SearchController::FileNameSearch));
+    QVERIFY(!params.fileSearchOptions.includeFolders);
+    QCOMPARE(params.fileSearchOptions.matchTarget, SearchController::MatchNameAndPath);
   }
 }
 
@@ -226,8 +243,7 @@ void TestFindUnitedEntry::testContextGetterSetter() {
 void TestFindUnitedEntry::testResolveEntryNameExact() {
   const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
                              QStringLiteral("history")};
-  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("find")),
-           QStringLiteral("find"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("find")), QStringLiteral("find"));
   QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("history")),
            QStringLiteral("history"));
 }
@@ -262,8 +278,7 @@ void TestFindUnitedEntry::testResolveEntryNameEmptyInput() {
 
 void TestFindUnitedEntry::testResolveEntryNameExactWinsOverPrefix() {
   const QList<QString> names{QStringLiteral("find"), QStringLiteral("finder")};
-  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("find")),
-           QStringLiteral("find"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("find")), QStringLiteral("find"));
 }
 
 void TestFindUnitedEntry::testResolveEntryNameEmptyList() {

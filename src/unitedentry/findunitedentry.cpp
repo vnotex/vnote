@@ -26,8 +26,7 @@ using namespace vnotex;
 FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
                                  QObject *p_parent)
     : IUnitedEntry("find", tr("Search for files in notebooks"), p_mgr, p_parent),
-      m_services(p_services),
-      m_helper(p_services.get<ThemeService>()) {
+      m_services(p_services), m_helper(p_services.get<ThemeService>()) {
   m_processTimer = new QTimer(this);
   m_processTimer->setSingleShot(true);
   m_processTimer->setInterval(500);
@@ -38,8 +37,8 @@ FindUnitedEntry::FindUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_m
 }
 
 void FindUnitedEntry::initOnFirstProcess() {
-  m_parser.setApplicationDescription(tr(
-      "Search for files in notebooks with advanced options for scope, object and so on."));
+  m_parser.setApplicationDescription(
+      tr("Search for files in notebooks with advanced options for scope, object and so on."));
 
   m_parser.addPositionalArgument("keywords", tr("Keywords to search for."));
 
@@ -106,22 +105,33 @@ FindUnitedEntry::mapArgsToSearchParams(const QCommandLineParser &p_parser) {
 
   bool hasContent = false;
   bool hasTag = false;
-  bool hasNameOrPath = false;
+  bool hasName = false;
+  bool hasPath = false;
   const auto objectStrs = p_parser.values(QStringLiteral("b"));
   for (const auto &str : objectStrs) {
     if (str == QStringLiteral("content")) {
       hasContent = true;
     } else if (str == QStringLiteral("tag")) {
       hasTag = true;
-    } else if (str == QStringLiteral("name") || str == QStringLiteral("path")) {
-      hasNameOrPath = true;
+    } else if (str == QStringLiteral("name")) {
+      hasName = true;
+    } else if (str == QStringLiteral("path")) {
+      hasPath = true;
     }
   }
 
   if (hasContent) {
     params.searchMode = SearchController::ContentSearch;
-  } else if (hasNameOrPath || objectStrs.size() > 1) {
+  } else if (hasName || hasPath || objectStrs.size() > 1) {
     params.searchMode = SearchController::FileNameSearch;
+    params.fileSearchOptions.includeFolders = false;
+    if (hasName && !hasPath) {
+      params.fileSearchOptions.matchTarget = SearchController::MatchName;
+    } else if (hasPath && !hasName) {
+      params.fileSearchOptions.matchTarget = SearchController::MatchPath;
+    } else {
+      params.fileSearchOptions.matchTarget = SearchController::MatchNameAndPath;
+    }
   } else if (hasTag) {
     params.searchMode = SearchController::TagSearch;
   }
@@ -164,12 +174,16 @@ void FindUnitedEntry::processInternal(
     return;
   }
 
-  const bool sameSearch = m_hasLastSearchParams && m_lastSearchParams.keyword == params.keyword &&
-                          m_lastSearchParams.scope == params.scope &&
-                          m_lastSearchParams.searchMode == params.searchMode &&
-                          m_lastSearchParams.caseSensitive == params.caseSensitive &&
-                          m_lastSearchParams.useRegex == params.useRegex &&
-                          m_lastSearchParams.filePattern == params.filePattern;
+  const bool sameSearch =
+      m_hasLastSearchParams && m_lastSearchParams.keyword == params.keyword &&
+      m_lastSearchParams.scope == params.scope &&
+      m_lastSearchParams.searchMode == params.searchMode &&
+      m_lastSearchParams.caseSensitive == params.caseSensitive &&
+      m_lastSearchParams.useRegex == params.useRegex &&
+      m_lastSearchParams.filePattern == params.filePattern &&
+      m_lastSearchParams.fileSearchOptions.includeFolders ==
+          params.fileSearchOptions.includeFolders &&
+      m_lastSearchParams.fileSearchOptions.matchTarget == params.fileSearchOptions.matchTarget;
   if (sameSearch && m_resultTree) {
     p_popupWidgetFunc(m_resultTree);
     finish();
@@ -297,7 +311,8 @@ void FindUnitedEntry::doProcessInternal() {
   m_searchActive = true;
   m_searchController->search(m_lastSearchParams.keyword, m_lastSearchParams.scope,
                              m_lastSearchParams.searchMode, m_lastSearchParams.caseSensitive,
-                             m_lastSearchParams.useRegex, m_lastSearchParams.filePattern);
+                             m_lastSearchParams.useRegex, m_lastSearchParams.filePattern,
+                             m_lastSearchParams.fileSearchOptions);
 }
 
 void FindUnitedEntry::stop() {

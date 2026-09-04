@@ -12,9 +12,9 @@
 #include <controllers/searchcontroller.h>
 #undef private
 
-#include <core/servicelocator.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/searchcoreservice.h>
 #include <models/searchresultmodel.h>
@@ -34,6 +34,7 @@ private slots:
   void testCancelDelegates();
   void testSearchWithNoNotebook();
   void testBuildQueryJsonContentSearch();
+  void testBuildQueryJsonFileSearchOptions();
   void testConfiguredMaxResultsAppliedToAllModes();
   void testStaleTokenRejection();
 
@@ -145,7 +146,8 @@ void TestSearchController::testCancelDelegates() {
 
   fixture.controller->setCurrentNotebookId(m_notebookId);
   fixture.controller->search(QStringLiteral("test"), vnotex::SearchController::CurrentNotebook,
-                             vnotex::SearchController::ContentSearch, false, false, QString());
+                             vnotex::SearchController::ContentSearch, false, false, QString(),
+                             vnotex::SearchController::FileSearchOptions());
   fixture.controller->cancel();
 
   QTRY_VERIFY_WITH_TIMEOUT(!fixture.searchService->isSearching(), 5000);
@@ -159,7 +161,8 @@ void TestSearchController::testSearchWithNoNotebook() {
 
   fixture.controller->setCurrentNotebookId(QString());
   fixture.controller->search(QStringLiteral("abc"), vnotex::SearchController::CurrentNotebook,
-                             vnotex::SearchController::ContentSearch, false, false, QString());
+                             vnotex::SearchController::ContentSearch, false, false, QString(),
+                             vnotex::SearchController::FileSearchOptions());
 
   QCOMPARE(failedSpy.count(), 1);
   QVERIFY(failedSpy.takeFirst().at(0).toString().contains(QStringLiteral("No current notebook")));
@@ -174,7 +177,7 @@ void TestSearchController::testBuildQueryJsonContentSearch() {
   fixture.controller->setCurrentNotebookId(QString());
   fixture.controller->search(QStringLiteral("hello"), vnotex::SearchController::CurrentNotebook,
                              vnotex::SearchController::ContentSearch, true, true,
-                             QStringLiteral("*.md"));
+                             QStringLiteral("*.md"), vnotex::SearchController::FileSearchOptions());
 
   const QString jsonText = fixture.controller->m_queryJson;
   QVERIFY(!jsonText.isEmpty());
@@ -192,6 +195,33 @@ void TestSearchController::testBuildQueryJsonContentSearch() {
   QCOMPARE(patterns.first().toString(), QStringLiteral("*.md"));
 }
 
+void TestSearchController::testBuildQueryJsonFileSearchOptions() {
+  ControllerFixture fixture(m_ctx);
+  fixture.configMgr->getCoreConfig().setSearchMaxResults(100);
+
+  vnotex::SearchController::FileSearchOptions options;
+  options.includeFolders = false;
+  options.matchTarget = vnotex::SearchController::MatchName;
+  fixture.controller->search(QStringLiteral("needle"), vnotex::SearchController::CurrentNotebook,
+                             vnotex::SearchController::FileNameSearch, false, false, QString(),
+                             options);
+
+  QJsonObject obj = QJsonDocument::fromJson(fixture.controller->m_queryJson.toUtf8()).object();
+  QCOMPARE(obj.value(QStringLiteral("includeFiles")).toBool(), true);
+  QCOMPARE(obj.value(QStringLiteral("includeFolders")).toBool(), false);
+  QCOMPARE(obj.value(QStringLiteral("matchTarget")).toString(), QStringLiteral("name"));
+
+  options.includeFolders = true;
+  options.matchTarget = vnotex::SearchController::MatchPath;
+  fixture.controller->search(QStringLiteral("needle"), vnotex::SearchController::CurrentNotebook,
+                             vnotex::SearchController::FileNameSearch, false, false, QString(),
+                             options);
+
+  obj = QJsonDocument::fromJson(fixture.controller->m_queryJson.toUtf8()).object();
+  QCOMPARE(obj.value(QStringLiteral("includeFolders")).toBool(), true);
+  QCOMPARE(obj.value(QStringLiteral("matchTarget")).toString(), QStringLiteral("path"));
+}
+
 void TestSearchController::testConfiguredMaxResultsAppliedToAllModes() {
   ControllerFixture fixture(m_ctx);
   fixture.configMgr->getCoreConfig().setSearchMaxResults(250);
@@ -202,7 +232,8 @@ void TestSearchController::testConfiguredMaxResultsAppliedToAllModes() {
                        vnotex::SearchController::TagSearch};
   for (int mode : modes) {
     fixture.controller->search(QStringLiteral("hello"), vnotex::SearchController::CurrentNotebook,
-                               mode, false, false, QString());
+                               mode, false, false, QString(),
+                               vnotex::SearchController::FileSearchOptions());
     const QString jsonText = fixture.controller->m_queryJson;
     QVERIFY2(!jsonText.isEmpty(), qPrintable(QStringLiteral("empty query for mode %1").arg(mode)));
     const QJsonObject obj = QJsonDocument::fromJson(jsonText.toUtf8()).object();
@@ -217,13 +248,15 @@ void TestSearchController::testStaleTokenRejection() {
 
   fixture.controller->setCurrentNotebookId(m_notebookId);
   fixture.controller->search(QStringLiteral("aaa"), vnotex::SearchController::CurrentNotebook,
-                             vnotex::SearchController::ContentSearch, false, false, QString());
+                             vnotex::SearchController::ContentSearch, false, false, QString(),
+                             vnotex::SearchController::FileSearchOptions());
 
   QTRY_VERIFY_WITH_TIMEOUT(!fixture.controller->m_activeTokens.isEmpty(), 2000);
   int tokenA = *fixture.controller->m_activeTokens.begin();
 
   fixture.controller->search(QStringLiteral("bbb"), vnotex::SearchController::CurrentNotebook,
-                             vnotex::SearchController::ContentSearch, false, false, QString());
+                             vnotex::SearchController::ContentSearch, false, false, QString(),
+                             vnotex::SearchController::FileSearchOptions());
 
   QVERIFY(!fixture.controller->m_activeTokens.contains(tokenA));
 
