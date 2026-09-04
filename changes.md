@@ -21,6 +21,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * The sort dialog shows Name, Created and Modified columns and compares wide digit runs as fields
     * VNote can start automatically when signing in to Windows
     * The application display name used in window titles, the system tray and About can be customized
+    * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
     * Windows spanning screens expand on the correct display, notification popups no longer truncate horizontally, and the notebook context menu places **Close** at the end
 * **Fixes**
     * Opening a file through Windows **Open with** no longer crashes when the WebEngine process inherits an incompatible command line

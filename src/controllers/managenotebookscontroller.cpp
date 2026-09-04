@@ -31,6 +31,7 @@ NotebookInfo ManageNotebooksController::getNotebookInfo(const QString &p_noteboo
   info.name = config[QLatin1String(vxcore::kJsonKeyName)].toString();
   info.description = config[QLatin1String(vxcore::kJsonKeyDescription)].toString();
   info.rootFolder = config[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
+  info.recycleBinFolder = config[QLatin1String(vxcore::kJsonKeyRecycleBinFolder)].toString();
   info.type = config[QLatin1String(vxcore::kJsonKeyType)].toString();
 
   // Map type to user-friendly display name.
@@ -78,12 +79,13 @@ ManageNotebooksController::updateNotebook(const NotebookUpdateInput &p_input) {
 
   auto *notebookService = m_services.get<NotebookCoreService>();
 
-  // Read existing config, update only name and description, then write back.
+  // Read existing config, update only editable fields, then write back.
   // vxcore does NOT support partial updates - missing fields get default values.
   // Note: rootFolder and type in the JSON are ignored by vxcore (not part of NotebookConfig).
   QJsonObject config = notebookService->getNotebookConfig(p_input.notebookId);
   config[QLatin1String(vxcore::kJsonKeyName)] = p_input.name.trimmed();
   config[QLatin1String(vxcore::kJsonKeyDescription)] = p_input.description;
+  config[QLatin1String(vxcore::kJsonKeyRecycleBinFolder)] = p_input.recycleBinFolder.trimmed();
 
   QString configJson = QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact));
   if (!notebookService->updateNotebookConfig(p_input.notebookId, configJson)) {
@@ -112,10 +114,10 @@ NotebookOperationResult ManageNotebooksController::closeNotebook(const QString &
     // A NotebookBeforeClose handler (e.g. SyncService blocking on an in-flight
     // sync) can supply an accurate, user-facing reason in-band. Prefer it over
     // the generic fallback, which only fits a raw vxcore failure.
-    result.errorMessage =
-        hookReason.isEmpty() ? tr("Failed to close notebook. There may be unsaved changes in open "
-                                  "files. Please save or discard changes and try again.")
-                             : hookReason;
+    result.errorMessage = hookReason.isEmpty()
+                              ? tr("Failed to close notebook. There may be unsaved changes in open "
+                                   "files. Please save or discard changes and try again.")
+                              : hookReason;
     return result;
   }
 

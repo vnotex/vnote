@@ -15,6 +15,7 @@ struct NotebookUpdateInput {
   QString notebookId;
   QString name;
   QString description;
+  QString recycleBinFolder;
 };
 
 // Result structure for notebook operations.
@@ -35,6 +36,7 @@ struct NotebookInfo {
   QString name;
   QString description;
   QString rootFolder;
+  QString recycleBinFolder;
   QString type;
   QString typeDisplayName;
 };
@@ -59,7 +61,7 @@ public:
   // Validate notebook name.
   ManageNotebooksValidationResult validateName(const QString &p_name) const;
 
-  // Update notebook configuration (name and description only).
+  // Update editable notebook configuration.
   NotebookOperationResult updateNotebook(const NotebookUpdateInput &p_input);
 
   // Close a notebook (remove from VNote without deleting files).

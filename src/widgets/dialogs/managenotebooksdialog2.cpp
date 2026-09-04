@@ -15,12 +15,17 @@
 #include <core/servicelocator.h>
 
 #include "../listwidget.h"
+#include "../locationinputwithbrowsebutton.h"
 #include "../messageboxhelper.h"
 #include "../propertydefs.h"
 #include "../widgetsfactory.h"
 #include <utils/widgetutils.h>
 
 using namespace vnotex;
+
+namespace {
+const char *kRecycleBinFolderInputName = "recycleBinFolderInput";
+}
 
 ManageNotebooksDialog2::ManageNotebooksDialog2(ServiceLocator &p_services,
                                                const QString &p_currentNotebookId,
@@ -87,6 +92,19 @@ void ManageNotebooksDialog2::setupUI() {
 
   rootFolderWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   formLayout->addRow(tr("Root folder"), rootFolderWidget);
+
+  // Recycle bin folder (bundled notebooks only).
+  m_recycleBinFolderInput = new LocationInputWithBrowseButton(infoWidget);
+  m_recycleBinFolderInput->setObjectName(QLatin1String(kRecycleBinFolderInputName));
+  m_recycleBinFolderInput->setBrowseType(LocationInputWithBrowseButton::Folder,
+                                         tr("Select Recycle Bin Folder"));
+  m_recycleBinFolderInput->setPlaceholderText(QStringLiteral("vx_notebook/recycle_bin"));
+  m_recycleBinFolderInput->setToolTip(
+      tr("Absolute path, or a path relative to the notebook root. Empty uses "
+         "vx_notebook/recycle_bin"));
+  formLayout->addRow(tr("Recycle bin folder"), m_recycleBinFolderInput);
+  connect(m_recycleBinFolderInput, &LocationInputWithBrowseButton::textChanged, this,
+          [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
 
   // Notebook type (read-only label).
   m_typeLabel = new QLabel(infoWidget);
@@ -166,11 +184,14 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
   // Block signals while populating to avoid triggering unsaved changes.
   m_nameEdit->blockSignals(true);
   m_descriptionEdit->blockSignals(true);
+  m_recycleBinFolderInput->blockSignals(true);
 
   if (p_notebookId.isEmpty()) {
     m_nameEdit->clear();
     m_descriptionEdit->clear();
     m_rootFolderEdit->clear();
+    m_recycleBinFolderInput->setText(QString());
+    m_recycleBinFolderInput->setEnabled(false);
     m_typeLabel->clear();
     m_closeBtn->setEnabled(false);
   } else {
@@ -179,6 +200,8 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
     m_nameEdit->setText(info.name);
     m_descriptionEdit->setPlainText(info.description);
     m_rootFolderEdit->setText(info.rootFolder);
+    m_recycleBinFolderInput->setText(info.recycleBinFolder);
+    m_recycleBinFolderInput->setEnabled(info.type == QStringLiteral("bundled"));
     m_typeLabel->setText(info.typeDisplayName);
 
     m_closeBtn->setEnabled(true);
@@ -186,6 +209,7 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
 
   m_nameEdit->blockSignals(false);
   m_descriptionEdit->blockSignals(false);
+  m_recycleBinFolderInput->blockSignals(false);
 
   setChangesUnsaved(false);
 }
@@ -205,6 +229,7 @@ bool ManageNotebooksDialog2::saveChangesToNotebook() {
   input.notebookId = m_currentNotebookId;
   input.name = m_nameEdit->text();
   input.description = m_descriptionEdit->toPlainText();
+  input.recycleBinFolder = m_recycleBinFolderInput->text();
 
   NotebookOperationResult result = m_controller->updateNotebook(input);
 

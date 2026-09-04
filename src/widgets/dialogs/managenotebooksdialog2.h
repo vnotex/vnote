@@ -13,6 +13,7 @@ class QPushButton;
 namespace vnotex {
 
 class ManageNotebooksController;
+class LocationInputWithBrowseButton;
 class ServiceLocator;
 
 // ManageNotebooksDialog2 - Dialog for managing notebooks using DI architecture.
@@ -73,6 +74,7 @@ private:
   QLineEdit *m_nameEdit = nullptr;
   QPlainTextEdit *m_descriptionEdit = nullptr;
   QLineEdit *m_rootFolderEdit = nullptr;
+  LocationInputWithBrowseButton *m_recycleBinFolderInput = nullptr;
   QLabel *m_typeLabel = nullptr;
   QPushButton *m_closeBtn = nullptr;
 

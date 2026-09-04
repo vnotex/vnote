@@ -393,6 +393,7 @@ add_qt_test(test_syncservice_lifecycle
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/listwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/navigationmode.cpp
