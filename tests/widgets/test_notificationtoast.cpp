@@ -7,13 +7,16 @@
 
 #include <QtTest>
 
+#include <QFileInfo>
 #include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QToolButton>
 #include <QWidget>
 
 #include <core/servicelocator.h>
 #include <core/services/notificationservice.h>
+#include <gui/services/themeservice.h>
 #include <widgets/notificationtoast.h>
 
 using namespace vnotex;
@@ -28,6 +31,7 @@ private slots:
   void cleanup();
 
   void test_showsOnInterruptAdded();
+  void test_closeControlUsesThemedIconAndHidesOnlyTheToast();
   void test_ignoresPassiveAdded();
   void test_interruptUpdateRefreshesButDoesNotRaise();
   void test_replacementRestartsTheTimer();
@@ -45,9 +49,9 @@ private slots:
   void test_dismissedMessageActionIsInert();
 
 private:
-  NotificationMessage interrupt(const QString &p_text,
-                                NotificationMessage::Duration p_duration =
-                                    NotificationMessage::Duration::Persist) const;
+  NotificationMessage interrupt(
+      const QString &p_text,
+      NotificationMessage::Duration p_duration = NotificationMessage::Duration::Persist) const;
 
   // The host widget is deliberately never shown, so QWidget::isVisible() would
   // be false no matter what the toast does. isHidden() reflects the toast's OWN
@@ -59,6 +63,7 @@ private:
   // rebuilt per test alongside the service it points at.
   ServiceLocator *m_services = nullptr;
   NotificationService *m_notifications = nullptr;
+  ThemeService *m_themeService = nullptr;
   QWidget *m_host = nullptr;
   NotificationToast *m_toast = nullptr;
 };
@@ -74,11 +79,23 @@ TestNotificationToast::interrupt(const QString &p_text,
   return msg;
 }
 
-
 void TestNotificationToast::init() {
   m_services = new ServiceLocator();
   m_notifications = new NotificationService();
   m_services->registerService<NotificationService>(m_notifications);
+
+  QString pure = QFINDTESTDATA("../../src/data/extra/themes/pure");
+  if (pure.isEmpty()) {
+    pure = QFINDTESTDATA("src/data/extra/themes/pure");
+  }
+  QVERIFY2(!pure.isEmpty(), "bundled 'pure' theme not found");
+
+  ThemeServiceConfig themeConfig;
+  themeConfig.themeName = QStringLiteral("pure");
+  themeConfig.locale = QStringLiteral("en_US");
+  themeConfig.appDataPath = QFileInfo(QFileInfo(pure).absolutePath()).absolutePath();
+  m_themeService = new ThemeService(themeConfig);
+  m_services->registerService<ThemeService>(m_themeService);
 
   m_host = new QWidget();
   m_host->resize(800, 600);
@@ -93,6 +110,9 @@ void TestNotificationToast::cleanup() {
   m_host = nullptr;
   m_toast = nullptr;
 
+  delete m_themeService;
+  m_themeService = nullptr;
+
   delete m_notifications;
   m_notifications = nullptr;
 
@@ -105,6 +125,31 @@ void TestNotificationToast::test_showsOnInterruptAdded() {
 
   QVERIFY(toastShown());
   QCOMPARE(m_toast->shownId(), id);
+}
+
+void TestNotificationToast::test_closeControlUsesThemedIconAndHidesOnlyTheToast() {
+  const quint64 id = m_notifications->notify(interrupt(QStringLiteral("boom")));
+  QVERIFY(toastShown());
+
+  QToolButton *closeButton = nullptr;
+  for (auto *button : m_toast->findChildren<QToolButton *>()) {
+    if (button->toolTip() == QObject::tr("Close")) {
+      closeButton = button;
+      break;
+    }
+  }
+
+  QVERIFY2(closeButton, "the toast has no Close tool button");
+  QVERIFY(closeButton->text().isEmpty());
+  QVERIFY(!closeButton->icon().isNull());
+  QCOMPARE(closeButton->iconSize(), QSize(16, 16));
+  QCOMPARE(closeButton->focusPolicy(), Qt::NoFocus);
+
+  closeButton->click();
+
+  QVERIFY(!toastShown());
+  QCOMPARE(m_toast->shownId(), quint64(0));
+  QVERIFY(m_notifications->isActive(id));
 }
 
 // Safe-by-default: a producer that did not ask for attention gets none.
@@ -122,9 +167,8 @@ void TestNotificationToast::test_ignoresPassiveAdded() {
 void TestNotificationToast::test_interruptUpdateRefreshesButDoesNotRaise() {
   // Short duration so the "did the timer restart?" question is observable in
   // bounded wall-clock time.
-  const quint64 id =
-      m_notifications->notify(interrupt(QStringLiteral("first"),
-                                        NotificationMessage::Duration::Short));
+  const quint64 id = m_notifications->notify(
+      interrupt(QStringLiteral("first"), NotificationMessage::Duration::Short));
   QVERIFY(toastShown());
 
   // Burn most of the Short budget, then update. If the update restarted the
@@ -132,8 +176,8 @@ void TestNotificationToast::test_interruptUpdateRefreshesButDoesNotRaise() {
   QTest::qWait(2200);
   QVERIFY2(toastShown(), "the toast retired early; the timing assumption is wrong");
 
-  NotificationMessage next = interrupt(QStringLiteral("second"),
-                                       NotificationMessage::Duration::Short);
+  NotificationMessage next =
+      interrupt(QStringLiteral("second"), NotificationMessage::Duration::Short);
   QVERIFY(m_notifications->update(id, next));
 
   QVERIFY(toastShown());
@@ -156,16 +200,15 @@ void TestNotificationToast::test_interruptUpdateRefreshesButDoesNotRaise() {
 // Replacement IS a new event, so it does restart the budget -- the counterpart
 // to the rule above.
 void TestNotificationToast::test_replacementRestartsTheTimer() {
-  m_notifications->notify(interrupt(QStringLiteral("first"),
-                                    NotificationMessage::Duration::Short));
+  m_notifications->notify(interrupt(QStringLiteral("first"), NotificationMessage::Duration::Short));
   QVERIFY(toastShown());
 
   QTest::qWait(2200);
   QVERIFY(toastShown());
 
   // A different message entirely.
-  m_notifications->notify(interrupt(QStringLiteral("second"),
-                                    NotificationMessage::Duration::Short));
+  m_notifications->notify(
+      interrupt(QStringLiteral("second"), NotificationMessage::Duration::Short));
   QVERIFY(toastShown());
 
   // Past the FIRST message's deadline but inside the second's.

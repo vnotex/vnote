@@ -12,6 +12,7 @@ class QHBoxLayout;
 class QLabel;
 class QProgressBar;
 class QTimer;
+class QToolButton;
 class QVBoxLayout;
 
 namespace vnotex {
@@ -101,6 +102,8 @@ private:
 
   void reposition();
 
+  void refreshCloseIcon();
+
   QIcon severityIcon(NotificationMessage::Severity p_severity) const;
 
   static const char *severityState(NotificationMessage::Severity p_severity);
@@ -110,6 +113,7 @@ private:
   QLabel *m_iconLabel = nullptr;
   QLabel *m_titleLabel = nullptr;
   QLabel *m_textLabel = nullptr;
+  QToolButton *m_closeButton = nullptr;
   QProgressBar *m_progressBar = nullptr;
   QHBoxLayout *m_actionLayout = nullptr;
   QVBoxLayout *m_mainLayout = nullptr;

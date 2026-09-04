@@ -1298,6 +1298,7 @@ add_qt_test(test_markdownvieweradapter_anchor
 add_qt_test(test_notificationtoast
   SOURCES
     test_notificationtoast.cpp
+    ${CMAKE_SOURCE_DIR}/src/data/core/core.qrc
     ${CMAKE_SOURCE_DIR}/src/widgets/notificationtoast.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp

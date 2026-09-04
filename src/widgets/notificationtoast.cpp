@@ -9,6 +9,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 #include <core/servicelocator.h>
@@ -96,10 +97,14 @@ void NotificationToast::setupUI() {
   headerLayout->addWidget(m_titleLabel);
   headerLayout->addStretch();
 
-  auto *closeBtn = new QPushButton(tr("Close"), this);
-  closeBtn->setFocusPolicy(Qt::NoFocus);
-  connect(closeBtn, &QPushButton::clicked, this, [this]() { hideToast(); });
-  headerLayout->addWidget(closeBtn);
+  m_closeButton = new QToolButton(this);
+  m_closeButton->setFocusPolicy(Qt::NoFocus);
+  m_closeButton->setProperty(PropertyDefs::c_actionToolButton, true);
+  m_closeButton->setIconSize(QSize(16, 16));
+  m_closeButton->setToolTip(tr("Close"));
+  refreshCloseIcon();
+  connect(m_closeButton, &QToolButton::clicked, this, [this]() { hideToast(); });
+  headerLayout->addWidget(m_closeButton);
 
   m_mainLayout->addLayout(headerLayout);
 
@@ -175,6 +180,7 @@ void NotificationToast::setupConnections() {
   auto *themeService = m_services.get<ThemeService>();
   if (themeService) {
     connect(themeService, &ThemeService::themeChanged, this, [this]() {
+      refreshCloseIcon();
       if (!isVisible() || m_shownId == 0) {
         return;
       }
@@ -246,13 +252,24 @@ QIcon NotificationToast::severityIcon(NotificationMessage::Severity p_severity) 
 
   // Per-severity tint via the shared semantic roles, which every bundled theme
   // already defines.
-  const QString token =
-      QStringLiteral("base#%1#fg").arg(QLatin1String(severityState(p_severity)));
+  const QString token = QStringLiteral("base#%1#fg").arg(QLatin1String(severityState(p_severity)));
   QString fg = themeService->paletteColor(token);
   if (fg.isEmpty()) {
     fg = themeService->paletteColor(QStringLiteral("widgets#toolbar#icon#fg"));
   }
   return IconUtils::fetchIcon(themeService->getIconFile(iconName), fg);
+}
+
+void NotificationToast::refreshCloseIcon() {
+  auto *themeService = m_services.get<ThemeService>();
+  if (!themeService) {
+    m_closeButton->setIcon(QIcon());
+    return;
+  }
+
+  const QString fg = themeService->paletteColor(QStringLiteral("widgets#qmenu#fg"));
+  m_closeButton->setIcon(
+      IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("close.svg")), fg));
 }
 
 void NotificationToast::render(const NotificationMessage &p_msg) {
