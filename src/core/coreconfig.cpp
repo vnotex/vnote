@@ -13,6 +13,9 @@ namespace {
 const int c_defaultSearchMaxResults = 1000;
 const int c_minSearchMaxResults = 1;
 const int c_maxSearchMaxResults = 100000;
+const int c_defaultRecycleBinRetentionDays = 60;
+const int c_minRecycleBinRetentionDays = 1;
+const int c_maxRecycleBinRetentionDays = 3650;
 } // namespace
 
 #define READSTR(key) readString(p_jobj, (key))
@@ -77,6 +80,17 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
   m_lastUpdateCheckTime =
       parseLastUpdateCheckTime(read(p_jobj, QStringLiteral("lastUpdateCheckTime")));
 
+  m_recycleBinAutoCleanupEnabled = READBOOL(QStringLiteral("recycleBinAutoCleanupEnabled"));
+
+  const auto retentionDaysKey = QStringLiteral("recycleBinRetentionDays");
+  m_recycleBinRetentionDays = p_jobj.contains(retentionDaysKey)
+                                  ? qBound(c_minRecycleBinRetentionDays, READINT(retentionDaysKey),
+                                           c_maxRecycleBinRetentionDays)
+                                  : c_defaultRecycleBinRetentionDays;
+
+  m_recycleBinCleanupEnabledSinceUtc =
+      parseLastUpdateCheckTime(read(p_jobj, QStringLiteral("recycleBinCleanupEnabledSinceUtc")));
+
   m_historyMaxCount = READINT(QStringLiteral("historyMaxCount"));
   if (m_historyMaxCount < 0) {
     m_historyMaxCount = 100;
@@ -117,6 +131,10 @@ QJsonObject CoreConfig::toJson() const {
   // Decimal string: IConfig::readInt is 32-bit and QJsonValue::toInt() would
   // truncate an epoch-millisecond value.
   obj[QStringLiteral("lastUpdateCheckTime")] = QString::number(m_lastUpdateCheckTime);
+  obj[QStringLiteral("recycleBinAutoCleanupEnabled")] = m_recycleBinAutoCleanupEnabled;
+  obj[QStringLiteral("recycleBinRetentionDays")] = m_recycleBinRetentionDays;
+  obj[QStringLiteral("recycleBinCleanupEnabledSinceUtc")] =
+      QString::number(m_recycleBinCleanupEnabledSinceUtc);
   obj[QStringLiteral("historyMaxCount")] = m_historyMaxCount;
   obj[QStringLiteral("searchMaxResults")] = m_searchMaxResults;
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
@@ -206,6 +224,37 @@ bool CoreConfig::isCheckForUpdatesOnStartEnabled() const { return m_checkForUpda
 
 void CoreConfig::setCheckForUpdatesOnStartEnabled(bool p_enabled) {
   updateConfig(m_checkForUpdatesOnStartEnabled, p_enabled, this);
+}
+
+bool CoreConfig::isRecycleBinAutoCleanupEnabled() const { return m_recycleBinAutoCleanupEnabled; }
+
+void CoreConfig::setRecycleBinAutoCleanupEnabled(bool p_enabled, qint64 p_nowUtcMs) {
+  if (p_enabled) {
+    if (m_recycleBinAutoCleanupEnabled) {
+      return;
+    }
+    setRecycleBinCleanupEnabledSinceUtc(qMax<qint64>(1, p_nowUtcMs));
+    updateConfig(m_recycleBinAutoCleanupEnabled, true, this);
+    return;
+  }
+
+  updateConfig(m_recycleBinAutoCleanupEnabled, false, this);
+  setRecycleBinCleanupEnabledSinceUtc(0);
+}
+
+int CoreConfig::getRecycleBinRetentionDays() const { return m_recycleBinRetentionDays; }
+
+void CoreConfig::setRecycleBinRetentionDays(int p_days) {
+  updateConfig(m_recycleBinRetentionDays,
+               qBound(c_minRecycleBinRetentionDays, p_days, c_maxRecycleBinRetentionDays), this);
+}
+
+qint64 CoreConfig::getRecycleBinCleanupEnabledSinceUtc() const {
+  return m_recycleBinCleanupEnabledSinceUtc;
+}
+
+void CoreConfig::setRecycleBinCleanupEnabledSinceUtc(qint64 p_utcMs) {
+  updateConfig(m_recycleBinCleanupEnabledSinceUtc, qMax<qint64>(0, p_utcMs), this);
 }
 
 QString CoreConfig::normalizeUpdateSource(const QString &p_source) {

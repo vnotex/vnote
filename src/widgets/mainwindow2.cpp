@@ -64,6 +64,7 @@
 
 #include <controllers/firstruncontroller.h>
 #include <controllers/notificationrouter.h>
+#include <controllers/recyclebincontroller.h>
 #include <controllers/searchcontroller.h>
 #include <controllers/syncconflictcontroller.h>
 #include <controllers/updatecontroller.h>
@@ -261,6 +262,8 @@ void MainWindow2::setupUI() {
     }
   }
 
+  m_recycleBinController = new RecycleBinController(m_serviceLocator, this);
+  m_recycleBinController->startAutomaticCleanup();
   // First-run experience: construct BEFORE kickOffPostInit() so the controller's
   // MainWindowAfterStart subscription (priority 5) is registered before the hook
   // fires. Surface the created notebook via a queued connection so the explorer

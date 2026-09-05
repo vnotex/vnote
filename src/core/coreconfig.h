@@ -116,6 +116,15 @@ public:
   bool isCheckForUpdatesOnStartEnabled() const;
   void setCheckForUpdatesOnStartEnabled(bool p_enabled);
 
+  bool isRecycleBinAutoCleanupEnabled() const;
+  void setRecycleBinAutoCleanupEnabled(bool p_enabled, qint64 p_nowUtcMs);
+
+  int getRecycleBinRetentionDays() const;
+  void setRecycleBinRetentionDays(int p_days);
+
+  qint64 getRecycleBinCleanupEnabledSinceUtc() const;
+  void setRecycleBinCleanupEnabledSinceUtc(qint64 p_utcMs);
+
   // Which forge VNote checks for a newer release: "github" or "gitee".
   // Anything that is not an explicit "github" (including an absent key)
   // normalizes to "gitee".
@@ -221,6 +230,13 @@ private:
 
   // Epoch ms (UTC) of the last started update check. 0 == never.
   qint64 m_lastUpdateCheckTime = 0;
+
+  bool m_recycleBinAutoCleanupEnabled = false;
+
+  int m_recycleBinRetentionDays = 60;
+
+  // Epoch ms (UTC) when automatic cleanup was first enabled. 0 == unset.
+  qint64 m_recycleBinCleanupEnabledSinceUtc = 0;
 
   // Max count of the history items for each notebook and session config.
   int m_historyMaxCount = 100;

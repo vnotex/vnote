@@ -40,6 +40,10 @@ private slots:
   void testAppNameDefaultAndNormalization();
   void testAppNameSetterAndRoundTrip();
 
+  void testRecycleBinCleanupDefaultsAndRetentionBounds();
+  void testRecycleBinCleanupTimestampRoundTripAndMalformedValues();
+  void testRecycleBinCleanupEnableDisableTransitions();
+
 private:
   MockConfigMgr m_mockMgr;
 };
@@ -406,6 +410,77 @@ void TestCoreConfig::testAppNameSetterAndRoundTrip() {
 
   reloaded.setAppName(QStringLiteral("\t"));
   QCOMPARE(reloaded.getAppName(), QStringLiteral("VNote"));
+}
+
+void TestCoreConfig::testRecycleBinCleanupDefaultsAndRetentionBounds() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.fromJson(QJsonObject());
+  QVERIFY(!cfg.isRecycleBinAutoCleanupEnabled());
+  QCOMPARE(cfg.getRecycleBinRetentionDays(), 60);
+  QCOMPARE(cfg.getRecycleBinCleanupEnabledSinceUtc(), Q_INT64_C(0));
+
+  QJsonObject low;
+  low[QStringLiteral("recycleBinRetentionDays")] = -10;
+  cfg.fromJson(low);
+  QCOMPARE(cfg.getRecycleBinRetentionDays(), 1);
+
+  QJsonObject high;
+  high[QStringLiteral("recycleBinRetentionDays")] = 5000;
+  cfg.fromJson(high);
+  QCOMPARE(cfg.getRecycleBinRetentionDays(), 3650);
+
+  cfg.setRecycleBinRetentionDays(0);
+  QCOMPARE(cfg.getRecycleBinRetentionDays(), 1);
+  cfg.setRecycleBinRetentionDays(5000);
+  QCOMPARE(cfg.getRecycleBinRetentionDays(), 3650);
+}
+
+void TestCoreConfig::testRecycleBinCleanupTimestampRoundTripAndMalformedValues() {
+  const qint64 stamp = Q_INT64_C(1785337074532);
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  cfg.setRecycleBinCleanupEnabledSinceUtc(stamp);
+  const QJsonObject saved = cfg.toJson();
+  QVERIFY(saved.value(QStringLiteral("recycleBinCleanupEnabledSinceUtc")).isString());
+  QCOMPARE(saved.value(QStringLiteral("recycleBinCleanupEnabledSinceUtc")).toString(),
+           QString::number(stamp));
+
+  CoreConfig reloaded(&m_mockMgr, nullptr);
+  reloaded.fromJson(saved);
+  QCOMPARE(reloaded.getRecycleBinCleanupEnabledSinceUtc(), stamp);
+
+  const QVector<QJsonValue> invalidValues{QJsonValue(QStringLiteral("invalid")),
+                                          QJsonValue(QStringLiteral("0")),
+                                          QJsonValue(QStringLiteral("-1")),
+                                          QJsonValue(0.0),
+                                          QJsonValue(-1.0),
+                                          QJsonValue(true)};
+  for (const auto &value : invalidValues) {
+    QJsonObject json;
+    json[QStringLiteral("recycleBinCleanupEnabledSinceUtc")] = value;
+    CoreConfig invalid(&m_mockMgr, nullptr);
+    invalid.fromJson(json);
+    QCOMPARE(invalid.getRecycleBinCleanupEnabledSinceUtc(), Q_INT64_C(0));
+  }
+}
+
+void TestCoreConfig::testRecycleBinCleanupEnableDisableTransitions() {
+  CoreConfig cfg(&m_mockMgr, nullptr);
+  const qint64 firstEnable = Q_INT64_C(1785337074532);
+  cfg.setRecycleBinAutoCleanupEnabled(true, firstEnable);
+  QVERIFY(cfg.isRecycleBinAutoCleanupEnabled());
+  QCOMPARE(cfg.getRecycleBinCleanupEnabledSinceUtc(), firstEnable);
+
+  cfg.setRecycleBinAutoCleanupEnabled(true, firstEnable + 1000);
+  QCOMPARE(cfg.getRecycleBinCleanupEnabledSinceUtc(), firstEnable);
+  cfg.setRecycleBinRetentionDays(30);
+  QCOMPARE(cfg.getRecycleBinCleanupEnabledSinceUtc(), firstEnable);
+
+  cfg.setRecycleBinAutoCleanupEnabled(false, firstEnable + 2000);
+  QVERIFY(!cfg.isRecycleBinAutoCleanupEnabled());
+  QCOMPARE(cfg.getRecycleBinCleanupEnabledSinceUtc(), Q_INT64_C(0));
+
+  cfg.setRecycleBinAutoCleanupEnabled(true, -5);
+  QCOMPARE(cfg.getRecycleBinCleanupEnabledSinceUtc(), Q_INT64_C(1));
 }
 
 } // namespace tests

@@ -119,6 +119,32 @@ private:
   VxCoreNodeTransferHandle m_handle = nullptr;
 };
 
+struct RecycleBinCleanupResult {
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  QString m_errorMessage;
+  int m_removedCount = 0;
+};
+
+class PreparedRecycleBinCleanup {
+public:
+  PreparedRecycleBinCleanup() = default;
+  ~PreparedRecycleBinCleanup();
+  PreparedRecycleBinCleanup(const PreparedRecycleBinCleanup &) = delete;
+  PreparedRecycleBinCleanup &operator=(const PreparedRecycleBinCleanup &) = delete;
+  PreparedRecycleBinCleanup(PreparedRecycleBinCleanup &&p_other) noexcept;
+  PreparedRecycleBinCleanup &operator=(PreparedRecycleBinCleanup &&p_other) noexcept;
+
+  bool isValid() const { return m_error == VXCORE_OK && m_handle != nullptr; }
+  void cancel();
+
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  QString m_errorMessage;
+
+private:
+  friend class NotebookCoreService;
+  VxCoreRecycleBinCleanup *m_handle = nullptr;
+};
+
 class HookManager;
 class NotebookIoGate;
 
@@ -212,6 +238,9 @@ public:
   // Recycle bin operations (bundled notebooks only).
   QString getRecycleBinPath(const QString &p_notebookId) const;
   bool emptyRecycleBin(const QString &p_notebookId);
+  PreparedRecycleBinCleanup prepareRecycleBinCleanup(const QString &p_notebookId,
+                                                     qint64 p_cutoffUtcMs);
+  RecycleBinCleanupResult executeRecycleBinCleanup(PreparedRecycleBinCleanup &p_prepared);
 
   // Read-only state query. Wraps vxcore_notebook_is_read_only so widgets do
   // not need a back-door into the private VxCore context. Returns false on

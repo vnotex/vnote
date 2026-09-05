@@ -1,18 +1,57 @@
+#include <QDateTime>
+#include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
+#include <QFileInfo>
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <thread>
+
+#include <controllers/recyclebincontroller.h>
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
+#include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 #include <temp_dir_fixture.h>
 
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
 
 namespace tests {
+
+namespace {
+
+bool WriteFileAt(const QString &p_path, qint64 p_modifiedUtcMs) {
+  if (!QDir().mkpath(QFileInfo(p_path).absolutePath())) {
+    return false;
+  }
+  QFile file(p_path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    return false;
+  }
+  if (file.write("content") < 0) {
+    return false;
+  }
+  file.close();
+  if (!file.open(QIODevice::ReadWrite)) {
+    return false;
+  }
+  return file.setFileTime(QDateTime::fromMSecsSinceEpoch(p_modifiedUtcMs, Qt::UTC),
+                          QFileDevice::FileModificationTime);
+}
+
+} // namespace
 
 class TestNotebookService : public QObject {
   Q_OBJECT
@@ -60,6 +99,12 @@ private slots:
   void testMoveFileCancelledByHook();
   void testMoveFolderCancelledByHook();
 
+  void testRecycleBinCleanupServiceWrapper();
+  void testAutomaticCleanupStartupOpenAndDuplicateSuppression();
+  void testAutomaticCleanupGraceRepair();
+  void testAutomaticCleanupSkipsReadOnlyAndRaw();
+  void testAutomaticCleanupDestructorCancelsGateWait();
+
 private:
   // Helper to create test notebook and return ID.
   QString createTestNotebook(const QString &p_path);
@@ -68,6 +113,10 @@ private:
   NotebookCoreService *m_service = nullptr;
   HookManager *m_hookMgr = nullptr;
   TempDirFixture m_tempDir;
+  ConfigCoreService *m_configService = nullptr;
+  ConfigMgr2 *m_configMgr = nullptr;
+  NotebookIoGate *m_ioGate = nullptr;
+  ServiceLocator *m_services = nullptr;
 };
 
 void TestNotebookService::initTestCase() {
@@ -89,9 +138,29 @@ void TestNotebookService::initTestCase() {
   // Create HookManager and wire it to the service.
   m_hookMgr = new HookManager(this);
   m_service->setHookManager(m_hookMgr);
+
+  m_configService = new ConfigCoreService(m_context);
+  m_configMgr = new ConfigMgr2(m_configService);
+  m_configMgr->init();
+  m_ioGate = new NotebookIoGate();
+  m_service->setNotebookIoGate(m_ioGate);
+  m_services = new ServiceLocator();
+  m_services->registerService<NotebookCoreService>(m_service);
+  m_services->registerService<HookManager>(m_hookMgr);
+  m_services->registerService<ConfigMgr2>(m_configMgr);
+  m_services->registerService<NotebookIoGate>(m_ioGate);
 }
 
 void TestNotebookService::cleanupTestCase() {
+  delete m_services;
+  m_services = nullptr;
+  delete m_ioGate;
+  m_ioGate = nullptr;
+  delete m_configMgr;
+  m_configMgr = nullptr;
+  delete m_configService;
+  m_configService = nullptr;
+
   delete m_hookMgr;
   m_hookMgr = nullptr;
 
@@ -105,6 +174,8 @@ void TestNotebookService::cleanupTestCase() {
 }
 
 void TestNotebookService::cleanup() {
+  m_configMgr->getCoreConfig().setRecycleBinAutoCleanupEnabled(false, 0);
+  m_configMgr->getCoreConfig().setRecycleBinRetentionDays(60);
   // Close all notebooks after each test.
   QJsonArray notebooks = m_service->listNotebooks();
   for (const auto &notebookVal : notebooks) {
@@ -657,6 +728,208 @@ void TestNotebookService::testMoveFolderCancelledByHook() {
   QVERIFY(movedConfig.isEmpty());
 
   m_hookMgr->removeAction(hookId);
+}
+
+void TestNotebookService::testRecycleBinCleanupServiceWrapper() {
+  const qint64 now = Q_INT64_C(1785337074532);
+  const qint64 day = Q_INT64_C(24) * 60 * 60 * 1000;
+  const QString root = m_tempDir.filePath(QStringLiteral("cleanup_service_notebook"));
+  const QString notebookId = createTestNotebook(root);
+  QVERIFY(!notebookId.isEmpty());
+  const QString recycleBin = m_service->getRecycleBinPath(notebookId);
+  QVERIFY(!recycleBin.isEmpty());
+  const QString oldPath = QDir(recycleBin).filePath(QStringLiteral("old.md"));
+  const QString newPath = QDir(recycleBin).filePath(QStringLiteral("new.md"));
+  QVERIFY(WriteFileAt(oldPath, now - 2 * day));
+  QVERIFY(WriteFileAt(newPath, now));
+
+  auto prepared = m_service->prepareRecycleBinCleanup(notebookId, now - day);
+  QVERIFY(prepared.isValid());
+  const RecycleBinCleanupResult result = m_service->executeRecycleBinCleanup(prepared);
+  QCOMPARE(result.m_error, VXCORE_OK);
+  QCOMPARE(result.m_removedCount, 1);
+  QVERIFY(!QFileInfo::exists(oldPath));
+  QVERIFY(QFileInfo::exists(newPath));
+
+  const QString cancelledPath = QDir(recycleBin).filePath(QStringLiteral("cancelled.md"));
+  QVERIFY(WriteFileAt(cancelledPath, now - 2 * day));
+  auto cancelled = m_service->prepareRecycleBinCleanup(notebookId, now - day);
+  QVERIFY(cancelled.isValid());
+  cancelled.cancel();
+  const RecycleBinCleanupResult cancelledResult = m_service->executeRecycleBinCleanup(cancelled);
+  QCOMPARE(cancelledResult.m_error, VXCORE_ERR_CANCELLED);
+  QCOMPARE(cancelledResult.m_removedCount, 0);
+  QVERIFY(QFileInfo::exists(cancelledPath));
+}
+
+void TestNotebookService::testAutomaticCleanupStartupOpenAndDuplicateSuppression() {
+  const qint64 now = Q_INT64_C(1785337074532);
+  const qint64 day = Q_INT64_C(24) * 60 * 60 * 1000;
+  auto &config = m_configMgr->getCoreConfig();
+  config.setRecycleBinRetentionDays(1);
+  config.setRecycleBinAutoCleanupEnabled(true, now - 2 * day);
+
+  const QString firstRoot = m_tempDir.filePath(QStringLiteral("cleanup_controller_startup"));
+  const QString firstId = createTestNotebook(firstRoot);
+  const QString firstOld =
+      QDir(m_service->getRecycleBinPath(firstId)).filePath(QStringLiteral("old.md"));
+  QVERIFY(WriteFileAt(firstOld, now - 2 * day));
+
+  RecycleBinController controller(*m_services);
+  controller.setNowProviderForTesting([now]() { return now; });
+  QStringList completedIds;
+  QList<VxCoreError> completedErrors;
+  QList<int> removedCounts;
+  connect(&controller, &RecycleBinController::automaticCleanupFinished, this,
+          [&](const QString &p_notebookId, VxCoreError p_error, int p_removedCount) {
+            completedIds.append(p_notebookId);
+            completedErrors.append(p_error);
+            removedCounts.append(p_removedCount);
+          });
+  controller.startAutomaticCleanup();
+  m_hookMgr->doAction(HookNames::MainWindowAfterStart);
+  QTRY_COMPARE_WITH_TIMEOUT(completedIds.size(), 1, 5000);
+  QCOMPARE(completedIds[0], firstId);
+  QCOMPARE(completedErrors[0], VXCORE_OK);
+  QCOMPARE(removedCounts[0], 1);
+  QVERIFY(!QFileInfo::exists(firstOld));
+
+  const QString secondRoot = m_tempDir.filePath(QStringLiteral("cleanup_controller_open"));
+  const QString secondId = createTestNotebook(secondRoot);
+  const QString secondOld =
+      QDir(m_service->getRecycleBinPath(secondId)).filePath(QStringLiteral("old.md"));
+  QVERIFY(WriteFileAt(secondOld, now - 2 * day));
+  QVERIFY(m_service->closeNotebook(secondId));
+  QCOMPARE(m_service->openNotebook(secondRoot), secondId);
+  QTRY_COMPARE_WITH_TIMEOUT(completedIds.size(), 2, 5000);
+  QCOMPARE(completedIds[1], secondId);
+  QCOMPARE(completedErrors[1], VXCORE_OK);
+  QCOMPARE(removedCounts[1], 1);
+  QVERIFY(!QFileInfo::exists(secondOld));
+
+  const QString duplicateOld =
+      QDir(m_service->getRecycleBinPath(firstId)).filePath(QStringLiteral("duplicate.md"));
+  QVERIFY(WriteFileAt(duplicateOld, now - 2 * day));
+  NotebookOpenEvent event;
+  event.notebookId = firstId;
+  m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
+  m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
+  QTRY_COMPARE_WITH_TIMEOUT(completedIds.size(), 3, 5000);
+  QTest::qWait(200);
+  QCOMPARE(completedIds.size(), 3);
+  QCOMPARE(completedIds[2], firstId);
+  QCOMPARE(removedCounts[2], 1);
+}
+
+void TestNotebookService::testAutomaticCleanupGraceRepair() {
+  const qint64 now = Q_INT64_C(1785337074532);
+  const qint64 day = Q_INT64_C(24) * 60 * 60 * 1000;
+  auto &config = m_configMgr->getCoreConfig();
+  config.setRecycleBinRetentionDays(60);
+  config.setRecycleBinAutoCleanupEnabled(true, now - 90 * day);
+  config.setRecycleBinCleanupEnabledSinceUtc(0);
+
+  const QString root = m_tempDir.filePath(QStringLiteral("cleanup_controller_grace"));
+  const QString notebookId = createTestNotebook(root);
+  const QString oldPath =
+      QDir(m_service->getRecycleBinPath(notebookId)).filePath(QStringLiteral("old.md"));
+  QVERIFY(WriteFileAt(oldPath, now - 90 * day));
+
+  RecycleBinController controller(*m_services);
+  controller.setNowProviderForTesting([now]() { return now; });
+  int completionCount = 0;
+  connect(&controller, &RecycleBinController::automaticCleanupFinished, this,
+          [&](const QString &, VxCoreError, int) { ++completionCount; });
+  controller.startAutomaticCleanup();
+  m_hookMgr->doAction(HookNames::MainWindowAfterStart);
+  QCOMPARE(config.getRecycleBinCleanupEnabledSinceUtc(), now);
+  QCOMPARE(completionCount, 0);
+  QVERIFY(QFileInfo::exists(oldPath));
+
+  config.setRecycleBinCleanupEnabledSinceUtc(now + day);
+  NotebookOpenEvent event;
+  event.notebookId = notebookId;
+  m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
+  QCOMPARE(config.getRecycleBinCleanupEnabledSinceUtc(), now);
+  QCOMPARE(completionCount, 0);
+  QVERIFY(QFileInfo::exists(oldPath));
+}
+
+void TestNotebookService::testAutomaticCleanupSkipsReadOnlyAndRaw() {
+  const qint64 now = Q_INT64_C(1785337074532);
+  const qint64 day = Q_INT64_C(24) * 60 * 60 * 1000;
+  auto &config = m_configMgr->getCoreConfig();
+  config.setRecycleBinRetentionDays(1);
+  config.setRecycleBinAutoCleanupEnabled(true, now - 2 * day);
+
+  const QString bundledRoot = m_tempDir.filePath(QStringLiteral("cleanup_controller_readonly"));
+  const QString bundledId = createTestNotebook(bundledRoot);
+  const QString oldPath =
+      QDir(m_service->getRecycleBinPath(bundledId)).filePath(QStringLiteral("old.md"));
+  QVERIFY(WriteFileAt(oldPath, now - 2 * day));
+  QCOMPARE(vxcore_notebook_set_read_only(m_context, bundledId.toUtf8().constData(), 1), VXCORE_OK);
+
+  const QString rawRoot = m_tempDir.filePath(QStringLiteral("cleanup_controller_raw"));
+  const QString rawId =
+      m_service->createNotebook(rawRoot, QStringLiteral(R"({"name":"Raw"})"), NotebookType::Raw);
+  QVERIFY(!rawId.isEmpty());
+
+  RecycleBinController controller(*m_services);
+  controller.setNowProviderForTesting([now]() { return now; });
+  QList<VxCoreError> errors;
+  connect(&controller, &RecycleBinController::automaticCleanupFinished, this,
+          [&](const QString &, VxCoreError p_error, int) { errors.append(p_error); });
+  controller.startAutomaticCleanup();
+  m_hookMgr->doAction(HookNames::MainWindowAfterStart);
+  QTRY_COMPARE_WITH_TIMEOUT(errors.size(), 2, 5000);
+  QVERIFY(errors.contains(VXCORE_ERR_READ_ONLY));
+  QVERIFY(errors.contains(VXCORE_ERR_UNSUPPORTED));
+  QVERIFY(QFileInfo::exists(oldPath));
+  QCOMPARE(vxcore_notebook_set_read_only(m_context, bundledId.toUtf8().constData(), 0), VXCORE_OK);
+}
+
+void TestNotebookService::testAutomaticCleanupDestructorCancelsGateWait() {
+  const qint64 now = Q_INT64_C(1785337074532);
+  const qint64 day = Q_INT64_C(24) * 60 * 60 * 1000;
+  auto &config = m_configMgr->getCoreConfig();
+  config.setRecycleBinRetentionDays(1);
+  config.setRecycleBinAutoCleanupEnabled(true, now - 2 * day);
+
+  const QString root = m_tempDir.filePath(QStringLiteral("cleanup_controller_cancel"));
+  const QString notebookId = createTestNotebook(root);
+  const QString oldPath =
+      QDir(m_service->getRecycleBinPath(notebookId)).filePath(QStringLiteral("old.md"));
+  QVERIFY(WriteFileAt(oldPath, now - 2 * day));
+
+  std::atomic_bool releaseGate{false};
+  std::promise<void> gateLocked;
+  auto gateLockedFuture = gateLocked.get_future();
+  std::thread holder([&]() {
+    NotebookIoGate::ScopedLock lock(*m_ioGate, notebookId);
+    gateLocked.set_value();
+    while (!releaseGate.load(std::memory_order_relaxed)) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  });
+  gateLockedFuture.wait();
+
+  auto *controller = new RecycleBinController(*m_services);
+  controller->setNowProviderForTesting([now]() { return now; });
+  controller->startAutomaticCleanup();
+  NotebookOpenEvent event;
+  event.notebookId = notebookId;
+  m_hookMgr->doAction(HookNames::NotebookAfterOpen, event);
+  QTest::qWait(150);
+
+  QElapsedTimer elapsed;
+  elapsed.start();
+  delete controller;
+  const qint64 destructionMs = elapsed.elapsed();
+  releaseGate.store(true, std::memory_order_relaxed);
+  holder.join();
+
+  QVERIFY2(destructionMs < 2000, "controller teardown remained blocked on the notebook I/O gate");
+  QVERIFY(QFileInfo::exists(oldPath));
 }
 
 } // namespace tests

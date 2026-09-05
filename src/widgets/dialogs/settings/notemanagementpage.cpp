@@ -1,6 +1,8 @@
 #include "notemanagementpage.h"
 
+#include <QCheckBox>
 #include <QComboBox>
+#include <QDateTime>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -73,6 +75,44 @@ void NoteManagementPage::setupUI() {
             &NoteManagementPage::pageIsChanged);
   }
 
+  {
+    const QString label(tr("Automatically clean recycle bins"));
+    m_recycleBinAutoCleanupCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_recycleBinAutoCleanupCheckBox->setObjectName(QStringLiteral("RecycleBinAutoCleanupCheckBox"));
+    m_recycleBinAutoCleanupCheckBox->setToolTip(
+        tr("Permanently delete recycle bin entries older than the retention period"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_recycleBinAutoCleanupCheckBox, m_recycleBinAutoCleanupCheckBox->toolTip(), this));
+    addSearchItem(label, m_recycleBinAutoCleanupCheckBox->toolTip(),
+                  m_recycleBinAutoCleanupCheckBox);
+    connect(m_recycleBinAutoCleanupCheckBox, &QCheckBox::toggled, this, [this](bool p_enabled) {
+      m_recycleBinRetentionDaysSpinBox->setEnabled(p_enabled);
+      pageIsChanged();
+    });
+  }
+
+  {
+    m_recycleBinRetentionDaysSpinBox = WidgetsFactory::createSpinBox(this);
+    m_recycleBinRetentionDaysSpinBox->setObjectName(
+        QStringLiteral("RecycleBinRetentionDaysSpinBox"));
+    m_recycleBinRetentionDaysSpinBox->setRange(1, 3650);
+    m_recycleBinRetentionDaysSpinBox->setSuffix(tr(" days"));
+    m_recycleBinRetentionDaysSpinBox->setToolTip(
+        tr("Number of days to keep items in notebook recycle bins"));
+    m_recycleBinRetentionDaysSpinBox->setEnabled(false);
+
+    const QString label(tr("Recycle bin retention"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(
+        SettingsPageHelper::createSettingRow(label, m_recycleBinRetentionDaysSpinBox->toolTip(),
+                                             m_recycleBinRetentionDaysSpinBox, this));
+    addSearchItem(label, m_recycleBinRetentionDaysSpinBox->toolTip(),
+                  m_recycleBinRetentionDaysSpinBox);
+    connect(m_recycleBinRetentionDaysSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &NoteManagementPage::pageIsChanged);
+  }
+
   mainLayout->addStretch();
 }
 
@@ -97,6 +137,10 @@ void NoteManagementPage::loadInternal() {
   }
 
   m_searchMaxResultsSpinBox->setValue(coreConfig.getSearchMaxResults());
+
+  m_recycleBinAutoCleanupCheckBox->setChecked(coreConfig.isRecycleBinAutoCleanupEnabled());
+  m_recycleBinRetentionDaysSpinBox->setValue(coreConfig.getRecycleBinRetentionDays());
+  m_recycleBinRetentionDaysSpinBox->setEnabled(m_recycleBinAutoCleanupCheckBox->isChecked());
 }
 
 bool NoteManagementPage::saveInternal() {
@@ -113,6 +157,10 @@ bool NoteManagementPage::saveInternal() {
   }
 
   coreConfig.setSearchMaxResults(m_searchMaxResultsSpinBox->value());
+
+  coreConfig.setRecycleBinRetentionDays(m_recycleBinRetentionDaysSpinBox->value());
+  coreConfig.setRecycleBinAutoCleanupEnabled(m_recycleBinAutoCleanupCheckBox->isChecked(),
+                                             QDateTime::currentMSecsSinceEpoch());
 
   return true;
 }

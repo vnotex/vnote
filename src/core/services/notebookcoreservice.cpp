@@ -48,6 +48,30 @@ PreparedNodeTransfer &PreparedNodeTransfer::operator=(PreparedNodeTransfer &&p_o
   return *this;
 }
 
+PreparedRecycleBinCleanup::~PreparedRecycleBinCleanup() {
+  vxcore_recycle_bin_cleanup_free(m_handle);
+}
+
+PreparedRecycleBinCleanup::PreparedRecycleBinCleanup(PreparedRecycleBinCleanup &&p_other) noexcept
+    : m_error(p_other.m_error), m_errorMessage(std::move(p_other.m_errorMessage)),
+      m_handle(p_other.m_handle) {
+  p_other.m_handle = nullptr;
+}
+
+PreparedRecycleBinCleanup &
+PreparedRecycleBinCleanup::operator=(PreparedRecycleBinCleanup &&p_other) noexcept {
+  if (this != &p_other) {
+    vxcore_recycle_bin_cleanup_free(m_handle);
+    m_error = p_other.m_error;
+    m_errorMessage = std::move(p_other.m_errorMessage);
+    m_handle = p_other.m_handle;
+    p_other.m_handle = nullptr;
+  }
+  return *this;
+}
+
+void PreparedRecycleBinCleanup::cancel() { vxcore_recycle_bin_cleanup_cancel(m_handle); }
+
 NotebookCoreService::NotebookCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
 
@@ -408,6 +432,41 @@ bool NotebookCoreService::emptyRecycleBin(const QString &p_notebookId) {
     return false;
   }
   return true;
+}
+
+PreparedRecycleBinCleanup NotebookCoreService::prepareRecycleBinCleanup(const QString &p_notebookId,
+                                                                        qint64 p_cutoffUtcMs) {
+  PreparedRecycleBinCleanup prepared;
+  if (!checkContext()) {
+    prepared.m_error = VXCORE_ERR_NOT_INITIALIZED;
+    prepared.m_errorMessage = contextErrorMessage(prepared.m_error);
+    return prepared;
+  }
+
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  prepared.m_error = vxcore_notebook_prepare_recycle_bin_cleanup(m_context, notebookId.constData(),
+                                                                 p_cutoffUtcMs, &prepared.m_handle);
+  if (prepared.m_error != VXCORE_OK) {
+    prepared.m_errorMessage = contextErrorMessage(prepared.m_error);
+  }
+  return prepared;
+}
+
+RecycleBinCleanupResult
+NotebookCoreService::executeRecycleBinCleanup(PreparedRecycleBinCleanup &p_prepared) {
+  RecycleBinCleanupResult result;
+  if (!p_prepared.m_handle) {
+    result.m_error =
+        p_prepared.m_error == VXCORE_OK ? VXCORE_ERR_INVALID_PARAM : p_prepared.m_error;
+    result.m_errorMessage = QString::fromUtf8(vxcore_error_message(result.m_error));
+    return result;
+  }
+
+  result.m_error = vxcore_recycle_bin_cleanup_execute(p_prepared.m_handle, &result.m_removedCount);
+  if (result.m_error != VXCORE_OK) {
+    result.m_errorMessage = QString::fromUtf8(vxcore_error_message(result.m_error));
+  }
+  return result;
 }
 
 bool NotebookCoreService::isNotebookReadOnly(const QString &p_notebookId) const {

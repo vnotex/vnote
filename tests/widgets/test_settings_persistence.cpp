@@ -11,11 +11,13 @@
 // The pages are constructed for real (not stubbed as in test_settings_slug),
 // so this is NOT GUILESS: it needs a QApplication.
 
+#include <QCheckBox>
 #include <QtTest>
 
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include <core/configmgr2.h>
@@ -27,6 +29,7 @@
 #include <core/sessionconfig.h>
 #include <widgets/dialogs/settings/fileassociationpage.h>
 #include <widgets/dialogs/settings/generalpage.h>
+#include <widgets/dialogs/settings/notemanagementpage.h>
 #include <widgets/dialogs/settings/quickaccesspage.h>
 
 #include <vxcore/vxcore.h>
@@ -49,6 +52,9 @@ private slots:
   void test_quickAccessRoundTripsItsItems();
   void test_reloadKeepsProgramRowsAboveTheAddButton();
   void test_generalPageLoadsAppNameAndRequiresRestartWhenEdited();
+
+  void test_noteManagementLoadsRecycleBinCleanupSettings();
+  void test_noteManagementPersistsRecycleBinCleanupSettings();
 
 private:
   void seedQuickAccess(const QStringList &p_paths);
@@ -101,6 +107,8 @@ void TestSettingsPersistence::init() {
 
 void TestSettingsPersistence::cleanup() {
   m_configMgr->getCoreConfig().setAppName(QStringLiteral("VNote"));
+  m_configMgr->getCoreConfig().setRecycleBinAutoCleanupEnabled(false, 0);
+  m_configMgr->getCoreConfig().setRecycleBinRetentionDays(60);
   m_configMgr->getSessionConfig().setQuickAccessItems({});
   m_configMgr->getSessionConfig().setExternalPrograms({});
 
@@ -248,6 +256,65 @@ void TestSettingsPersistence::test_generalPageLoadsAppNameAndRequiresRestartWhen
 
   edit->setText(QStringLiteral("Work Notes"));
   QVERIFY(page.isRestartNeeded());
+}
+
+void TestSettingsPersistence::test_noteManagementLoadsRecycleBinCleanupSettings() {
+  auto &config = m_configMgr->getCoreConfig();
+  config.setRecycleBinAutoCleanupEnabled(false, 0);
+  config.setRecycleBinRetentionDays(60);
+
+  NoteManagementPage page(*m_services);
+  page.load();
+  auto *enabled = page.findChild<QCheckBox *>(QStringLiteral("RecycleBinAutoCleanupCheckBox"));
+  auto *retention = page.findChild<QSpinBox *>(QStringLiteral("RecycleBinRetentionDaysSpinBox"));
+  QVERIFY(enabled);
+  QVERIFY(retention);
+  QVERIFY(!enabled->isChecked());
+  QVERIFY(!retention->isEnabled());
+  QCOMPARE(retention->value(), 60);
+
+  config.setRecycleBinRetentionDays(45);
+  config.setRecycleBinAutoCleanupEnabled(true, Q_INT64_C(1785337074532));
+  page.load();
+  QVERIFY(enabled->isChecked());
+  QVERIFY(retention->isEnabled());
+  QCOMPARE(retention->value(), 45);
+
+  enabled->setChecked(false);
+  QVERIFY(!retention->isEnabled());
+  enabled->setChecked(true);
+  QVERIFY(retention->isEnabled());
+}
+
+void TestSettingsPersistence::test_noteManagementPersistsRecycleBinCleanupSettings() {
+  auto &config = m_configMgr->getCoreConfig();
+  config.setRecycleBinAutoCleanupEnabled(false, 0);
+  config.setRecycleBinRetentionDays(60);
+
+  NoteManagementPage page(*m_services);
+  page.load();
+  auto *enabled = page.findChild<QCheckBox *>(QStringLiteral("RecycleBinAutoCleanupCheckBox"));
+  auto *retention = page.findChild<QSpinBox *>(QStringLiteral("RecycleBinRetentionDaysSpinBox"));
+  QVERIFY(enabled);
+  QVERIFY(retention);
+  enabled->setChecked(true);
+  retention->setValue(90);
+  QVERIFY(page.save());
+  QVERIFY(config.isRecycleBinAutoCleanupEnabled());
+  QCOMPARE(config.getRecycleBinRetentionDays(), 90);
+  QVERIFY(config.getRecycleBinCleanupEnabledSinceUtc() > 0);
+
+  NoteManagementPage reloaded(*m_services);
+  reloaded.load();
+  auto *reloadedEnabled =
+      reloaded.findChild<QCheckBox *>(QStringLiteral("RecycleBinAutoCleanupCheckBox"));
+  auto *reloadedRetention =
+      reloaded.findChild<QSpinBox *>(QStringLiteral("RecycleBinRetentionDaysSpinBox"));
+  QVERIFY(reloadedEnabled);
+  QVERIFY(reloadedRetention);
+  QVERIFY(reloadedEnabled->isChecked());
+  QVERIFY(reloadedRetention->isEnabled());
+  QCOMPARE(reloadedRetention->value(), 90);
 }
 
 } // namespace tests

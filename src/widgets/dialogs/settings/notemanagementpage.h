@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+class QCheckBox;
 class QComboBox;
 class QSpinBox;
 
@@ -29,6 +30,10 @@ private:
   QComboBox *m_defaultOpenModeComboBox = nullptr;
 
   QSpinBox *m_searchMaxResultsSpinBox = nullptr;
+
+  QCheckBox *m_recycleBinAutoCleanupCheckBox = nullptr;
+
+  QSpinBox *m_recycleBinRetentionDaysSpinBox = nullptr;
 };
 } // namespace vnotex
 

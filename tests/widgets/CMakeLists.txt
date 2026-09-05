@@ -314,6 +314,7 @@ add_qt_test(test_settings_persistence
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/quickaccesspage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/fileassociationpage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/generalpage.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/notemanagementpage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspage.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspagehelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/newquickaccessitemdialog.cpp

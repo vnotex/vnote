@@ -109,9 +109,12 @@ add_qt_test(test_configservice
 add_qt_test(test_notebookservice
   SOURCES
     test_notebookservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/recyclebincontroller.cpp
   LINKS
     core_services
+    core_configs
     vxcore
+    Qt6::Concurrent
   GUILESS
 )
 

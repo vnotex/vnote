@@ -44,6 +44,7 @@ class MainWindowTaskContext;
 
 class ToolBarHelper2;
 class SyncConflictController;
+class RecycleBinController;
 class FirstRunController;
 class UpdateController;
 class NotificationRouter;
@@ -350,6 +351,9 @@ private:
   // Long-lived conflict-resolution orchestrator (T13). Owned by MainWindow2.
   // Wired in setupUI() to SyncService::conflictsDetected.
   SyncConflictController *m_syncConflictController = nullptr;
+
+  // Long-lived owner of hook-driven recycle-bin retention policy.
+  RecycleBinController *m_recycleBinController = nullptr;
 
   // First-run experience controller (creates a default notebook on version
   // change when zero notebooks exist). Owned by MainWindow2; surfacing handled
