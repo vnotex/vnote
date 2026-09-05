@@ -27,9 +27,9 @@ by assuming from file names. Where that failed, the file says so — see
 - **License:** ISC, with an MIT-licensed subset inherited from Feather
 - **Full text:** [`licenses/Lucide-LICENSE.txt`](licenses/Lucide-LICENSE.txt) (verbatim copy of upstream `LICENSE`)
 
-Covers 57 files in `src/data/core/icons/`:
+Covers 58 files in `src/data/core/icons/`:
 
-- 55 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
+- 56 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
 - `read_only.svg` and `theme_switcher.svg` carry no class but are path-identical to
   upstream `lock` and `shirt`.
 

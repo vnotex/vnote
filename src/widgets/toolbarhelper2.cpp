@@ -138,10 +138,6 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
       emit m_mainWindow->importFolderRequested();
     });
 
-    auto exportAct = newMenu->addAction(MainWindow2::tr("Export"), newMenu,
-                                        [this]() { emit m_mainWindow->exportRequested(); });
-    WidgetUtils::addActionShortcut(exportAct, coreConfig.getShortcut(CoreConfig::Shortcut::Export));
-
     newMenu->addSeparator();
 
     // Open file.
@@ -218,6 +214,21 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
 
       activateQuickAccess(items[index]);
     });
+    tb->addWidget(toolBtn);
+  }
+  // Export.
+  {
+    auto toolBtn = WidgetsFactory::createToolButton(tb);
+    toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    const auto text = MainWindow2::tr("Export");
+    auto exportAct = new QAction(text, toolBtn);
+    setActionIcon(exportAct, QStringLiteral("export.svg"));
+    MainWindow2::connect(exportAct, &QAction::triggered, m_mainWindow,
+                         [this]() { emit m_mainWindow->exportRequested(); });
+    WidgetUtils::addActionShortcut(exportAct, coreConfig.getShortcut(CoreConfig::Shortcut::Export));
+    toolBtn->addAction(exportAct);
+    toolBtn->setDefaultAction(exportAct);
     tb->addWidget(toolBtn);
   }
 
