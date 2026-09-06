@@ -1,6 +1,5 @@
 #include "tableinsertpopup.h"
 
-#include <QAction>
 #include <QCursor>
 #include <QLabel>
 #include <QMouseEvent>
@@ -101,18 +100,10 @@ TableInsertPopup::TableInsertPopup(QToolButton *p_button, QWidget *p_parent)
 
   auto *dialogButton = new QToolButton(widget);
   dialogButton->setObjectName(QStringLiteral("tableInsertDialogButton"));
-  dialogButton->setText(tr("Insert Table..."));
-  dialogButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  dialogButton->setText(tr("Insert Table"));
+  dialogButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
   dialogButton->setAutoRaise(true);
   dialogButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  auto refreshIcon = [this, dialogButton]() {
-    if (m_button) {
-      auto *action = m_button->defaultAction();
-      dialogButton->setIcon(action ? action->icon() : m_button->icon());
-    }
-  };
-  refreshIcon();
-  connect(this, &QMenu::aboutToShow, this, refreshIcon);
   connect(dialogButton, &QToolButton::clicked, this, [this]() {
     hide();
     emit dialogRequested();
