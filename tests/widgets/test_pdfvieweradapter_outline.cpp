@@ -20,7 +20,10 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <controllers/outlinecontroller.h>
+#include <core/servicelocator.h>
 #include <models/outlinemodel.h>
+#include <views/outlineview.h>
 #include <widgets/outlineprovider.h>
 
 #include <widgets/editors/pdfvieweradapter.h>
@@ -58,6 +61,7 @@ private slots:
   void clearOutlineEmptiesAndNotifies();
   void outlineModelReorderDefaultsOff();
   void outlineModelExposesReorderEligibility();
+  void adjacentReparentRequestsConfirmation();
   void outlineModelReplacementDisablesReordering();
 };
 
@@ -453,6 +457,35 @@ void TestPdfViewerAdapterOutline::outlineModelReplacementDisablesReordering() {
   model.setOutline(QSharedPointer<vnotex::Outline>());
   QVERIFY(!model.isReorderSupported());
   QCOMPARE(model.flags(QModelIndex()), Qt::NoItemFlags);
+}
+
+void TestPdfViewerAdapterOutline::adjacentReparentRequestsConfirmation() {
+  vnotex::ServiceLocator services;
+  vnotex::OutlineController controller(services);
+  auto provider = QSharedPointer<vnotex::OutlineProvider>::create();
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  outline->m_reorderSupported = true;
+  outline->m_headings = {vnotex::Outline::Heading(QStringLiteral("A"), 1),
+                         vnotex::Outline::Heading(QStringLiteral("B"), 2),
+                         vnotex::Outline::Heading(QStringLiteral("C"), 1)};
+  for (auto &heading : outline->m_headings) {
+    heading.m_reorderable = true;
+  }
+  provider->setOutline(outline);
+  controller.setOutlineProvider(provider);
+
+  QSignalSpy confirmationSpy(&controller, &vnotex::OutlineController::reorderConfirmationRequested);
+  QSignalSpy moveSpy(provider.data(), &vnotex::OutlineProvider::moveRequested);
+
+  controller.requestItemMove(2, 1, vnotex::OutlineDropPosition::BelowItem);
+
+  QCOMPARE(confirmationSpy.count(), 1);
+  QCOMPARE(confirmationSpy.first().first().toString(), QStringLiteral("C"));
+  controller.confirmReorder(true);
+  QCOMPARE(moveSpy.count(), 1);
+  QCOMPARE(moveSpy.first().at(0).toInt(), 2);
+  QCOMPARE(moveSpy.first().at(1).toInt(), -1);
+  QCOMPARE(moveSpy.first().at(2).toInt(), 2);
 }
 
 } // namespace tests

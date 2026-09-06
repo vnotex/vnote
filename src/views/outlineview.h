@@ -11,7 +11,6 @@ class QDropEvent;
 namespace vnotex {
 
 enum class OutlineDropPosition { OnItem, AboveItem, BelowItem, OnViewport };
-
 // A QTreeView subclass for displaying the outline (table of contents) tree.
 // Display-only: reads heading data from OutlineModel and emits signals when
 // the user activates a heading. Does not contain business logic.

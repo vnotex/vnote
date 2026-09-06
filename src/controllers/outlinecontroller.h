@@ -55,6 +55,10 @@ public:
 
   void confirmReorder(bool p_confirmed);
 
+  // Accept a view move intent. Public so orchestration is testable without a QWidget.
+  void requestItemMove(int p_sourceHeadingIndex, int p_targetHeadingIndex,
+                       OutlineDropPosition p_position);
+
 signals:
   // Emitted when expand level changes (for UI to show tooltip).
   void expandLevelChanged(int p_level);
@@ -72,8 +76,6 @@ private:
   // Update the model with the current provider's outline data.
   void updateModelFromProvider();
 
-  void handleItemMoveRequested(int p_sourceHeadingIndex, int p_targetHeadingIndex,
-                               OutlineDropPosition p_position);
   void clearPendingReorder();
 
   struct PendingReorder {

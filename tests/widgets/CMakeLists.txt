@@ -1381,8 +1381,13 @@ add_qt_test(test_pdfvieweradapter_outline
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
     ${CMAKE_SOURCE_DIR}/src/models/outlinemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/outlinecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/outlineview.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
   LINKS
+    core_configs
+    Qt6::Widgets
     core_services
     vxcore
   GUILESS
