@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -23,6 +24,7 @@
 #include <widgets/propertydefs.h>
 #include <widgets/treewidget.h>
 #include <widgets/widgetsfactory.h>
+#include "viewwindowtoolbarhelper2.h"
 
 #include "dialogs/settings/appearancepage.h"
 #include "dialogs/settings/editorpage.h"
@@ -123,6 +125,10 @@ void SettingsWidget::setupToolBar(QToolBar *p_toolBar) {
                                 themeService->getIconFile(QStringLiteral("apply_editor.svg"))),
                             tr("Apply"));
   m_applyAction->setProperty("iconName", QStringLiteral("apply_editor.svg"));
+  ViewWindowToolBarHelper2::addActionShortcut(
+      m_applyAction,
+      m_services.get<ConfigMgr2>()->getEditorConfig().getShortcut(EditorConfig::Shortcut::Save),
+      p_toolBar->parentWidget());
   m_applyAction->setEnabled(false);
   connect(m_applyAction, &QAction::triggered, this, [this]() {
     if (savePages()) {
