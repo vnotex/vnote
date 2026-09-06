@@ -67,6 +67,7 @@ private slots:
   void testPdfToolOptions_normalization();
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
+  void testHeadingFolding_defaultsMergeAndRoundTrip();
 
   // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
   void testAbsentKeyKeepsTheCppDefaultForEveryField();
@@ -572,6 +573,28 @@ void TestConfigMgr2::testAlignTableSource_jsonRoundTripAndAbsentKeyDefault() {
   json.remove(QStringLiteral("alignTableSource"));
   reloadedMd.fromJson(json);
   QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), false);
+}
+
+void TestConfigMgr2::testHeadingFolding_defaultsMergeAndRoundTrip() {
+  MainConfig defaults(m_configMgr);
+  auto &defaultMd = defaults.getEditorConfig().getMarkdownEditorConfig();
+  QVERIFY(defaultMd.getHeadingFoldingEnabled());
+  QCOMPARE(defaultMd.toJson().value(QStringLiteral("headingFolding")).toBool(), true);
+
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                         QStringLiteral("headingFolding")};
+  const QJsonObject loaded = loadThroughMergePath(withoutKeyAt(defaults.toJson(), path));
+  QVERIFY(!loaded.isEmpty());
+  QCOMPARE(valueAt(loaded, path).toBool(), true);
+
+  defaultMd.setHeadingFoldingEnabled(false);
+  const QJsonObject json = defaultMd.toJson();
+  QCOMPARE(json.value(QStringLiteral("headingFolding")).toBool(), false);
+
+  MainConfig reloaded(m_configMgr);
+  auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
+  reloadedMd.fromJson(json);
+  QCOMPARE(reloadedMd.getHeadingFoldingEnabled(), false);
 }
 
 // ============ Absent-key safety (the defaults merge) ============

@@ -22,6 +22,8 @@ struct MarkdownWebGlobalOptions {
 
   bool m_imageAlignCenterEnabled = true;
 
+  bool m_headingFoldingEnabled = false;
+
   bool m_protectFromXss = false;
 
   bool m_htmlTagEnabled = true;

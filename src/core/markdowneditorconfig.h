@@ -76,6 +76,9 @@ public:
   bool getImageAlignCenterEnabled() const;
   void setImageAlignCenterEnabled(bool p_enabled);
 
+  bool getHeadingFoldingEnabled() const;
+  void setHeadingFoldingEnabled(bool p_enabled);
+
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
@@ -184,6 +187,8 @@ private:
   bool m_constrainImageWidthEnabled = true;
 
   bool m_imageAlignCenterEnabled = false;
+
+  bool m_headingFoldingEnabled = true;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

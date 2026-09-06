@@ -19,6 +19,8 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
              .arg(Utils::boolToString(m_constrainImageWidthEnabled)) +
          QStringLiteral("imageAlignCenterEnabled: %1,\n")
              .arg(Utils::boolToString(m_imageAlignCenterEnabled)) +
+         QStringLiteral("headingFoldingEnabled: %1,\n")
+             .arg(Utils::boolToString(m_headingFoldingEnabled)) +
          QStringLiteral("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss)) +
          QStringLiteral("htmlTagEnabled: %1,\n").arg(Utils::boolToString(m_htmlTagEnabled)) +
          QStringLiteral("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled)) +

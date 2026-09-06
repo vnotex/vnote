@@ -150,6 +150,9 @@ struct ExportOption {
   // Following fields are used in runtime only.
   ExportCustomOption *m_customOption = nullptr;
 
+  // Runtime-only: true when HTML is an internal input to another export format.
+  bool m_intermediateHtml = false;
+
   // Renders Graphviz/PlantUML to PNG instead of SVG in the page (a WEB option, forwarded to
   // vxOptions.transformSvgToPngEnabled). It says nothing about rasterizing the live DOM - see
   // m_rasterizeMathEnabled / m_rasterizeDiagramsEnabled for that.
@@ -170,6 +173,8 @@ struct ExportOption {
   // it true for non-HTML target formats (PDF/Custom), so those paths still drop the toolbar.
   bool m_removeCodeToolBarEnabled = false;
 };
+
+bool isHeadingFoldingEnabledForExport(const ExportOption &p_option, bool p_configEnabled);
 
 inline QString exportFormatString(ExportFormat p_format) {
   switch (p_format) {

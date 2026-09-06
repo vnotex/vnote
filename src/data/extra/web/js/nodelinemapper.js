@@ -1,3 +1,247 @@
+class HeadingFolding {
+    constructor(p_container, p_onVisibilityChanged) {
+        this.container = p_container;
+        this.onVisibilityChanged = p_onVisibilityChanged || function() {};
+        this.enabled = false;
+    }
+
+    setEnabled(p_enabled) {
+        this.enabled = !!p_enabled;
+    }
+
+    isEnabled() {
+        return this.enabled;
+    }
+
+    refresh() {
+        this.removeDecoration();
+        this.ensureDelegatedListener();
+
+        if (!this.enabled) {
+            return;
+        }
+
+        let headings = Array.from(this.container.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+        let parents = [];
+        let seenParents = new Set();
+        for (let heading of headings) {
+            if (!seenParents.has(heading.parentNode)) {
+                seenParents.add(heading.parentNode);
+                parents.push(heading.parentNode);
+            }
+        }
+
+        for (let parent of parents) {
+            this.decorateParent(parent);
+        }
+    }
+
+    decorateParent(p_parent) {
+        let nodes = Array.from(p_parent.childNodes);
+        let stack = [];
+        for (let node of nodes) {
+            if (!HeadingFolding.isHeading(node)) {
+                if (stack.length > 0) {
+                    stack[stack.length - 1].content.appendChild(node);
+                }
+                continue;
+            }
+
+            let level = parseInt(node.tagName.substr(1));
+            while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+                stack.pop();
+            }
+
+            let destination = stack.length > 0 ? stack[stack.length - 1].content : p_parent;
+            let section = document.createElement('section');
+            section.className = 'vx-heading-fold';
+            if (destination == p_parent) {
+                p_parent.insertBefore(section, node);
+            } else {
+                destination.appendChild(section);
+            }
+
+            node.__vxHeadingContent = node.textContent;
+            section.appendChild(node);
+
+            let content = document.createElement('div');
+            content.className = 'vx-heading-fold-content';
+            content.id = HeadingFolding.createContentId();
+            section.appendChild(content);
+
+            let button = document.createElement('button');
+            button.className = 'vx-heading-fold-toggle';
+            button.type = 'button';
+            button.setAttribute('aria-expanded', 'true');
+            button.setAttribute('aria-controls', content.id);
+            button.setAttribute('aria-label', 'Collapse section');
+            button.textContent = '▾';
+            node.insertBefore(button, node.firstChild);
+
+            stack.push({ level: level, content: content });
+        }
+    }
+
+    removeDecoration() {
+        let sections = Array.from(this.container.querySelectorAll('section.vx-heading-fold'));
+        for (let i = sections.length - 1; i >= 0; --i) {
+            let section = sections[i];
+            let heading = section.firstElementChild;
+            let content = heading ? heading.nextElementSibling : null;
+            let parent = section.parentNode;
+            if (!parent || !heading || !content) {
+                continue;
+            }
+
+            let button = heading.firstElementChild;
+            if (button && button.classList.contains('vx-heading-fold-toggle')) {
+                heading.removeChild(button);
+            }
+            delete heading.__vxHeadingContent;
+            content.hidden = false;
+            parent.insertBefore(heading, section);
+            while (content.firstChild) {
+                parent.insertBefore(content.firstChild, section);
+            }
+            parent.removeChild(section);
+        }
+
+        let buttons = Array.from(this.container.querySelectorAll('button.vx-heading-fold-toggle'));
+        for (let button of buttons) {
+            button.parentNode.removeChild(button);
+        }
+        let contents = Array.from(this.container.querySelectorAll('div.vx-heading-fold-content'));
+        for (let content of contents) {
+            content.hidden = false;
+        }
+    }
+
+    ensureDelegatedListener() {
+        let binding = this.container.__vxHeadingFoldingDelegation;
+        if (binding) {
+            binding.owner = this;
+            return;
+        }
+
+        binding = { owner: this, handler: null };
+        binding.handler = function(p_event) {
+            binding.owner.handleClick(p_event);
+        };
+        this.container.__vxHeadingFoldingDelegation = binding;
+        this.container.addEventListener('click', binding.handler);
+    }
+
+    handleClick(p_event) {
+        let button = p_event.target;
+        while (button && button != this.container) {
+            if (button.classList && button.classList.contains('vx-heading-fold-toggle')) {
+                break;
+            }
+            button = button.parentNode;
+        }
+        if (!button || button == this.container) {
+            return;
+        }
+
+        p_event.preventDefault();
+        this.toggleButton(button);
+    }
+
+    toggleButton(p_button) {
+        let contentId = p_button.getAttribute('aria-controls');
+        let content = contentId ? document.getElementById(contentId) : null;
+        if (!content || !this.container.contains(content)) {
+            return;
+        }
+
+        this.setExpanded(p_button, content, content.hidden);
+        this.onVisibilityChanged();
+    }
+
+    setExpanded(p_button, p_content, p_expanded) {
+        p_content.hidden = !p_expanded;
+        p_button.setAttribute('aria-expanded', p_expanded ? 'true' : 'false');
+        p_button.setAttribute('aria-label', p_expanded ? 'Collapse section' : 'Expand section');
+        p_button.textContent = p_expanded ? '▾' : '▸';
+    }
+
+    expandHiddenAncestors(p_node) {
+        let changed = false;
+        let node = p_node.parentNode;
+        while (node && node != this.container) {
+            if (node.classList && node.classList.contains('vx-heading-fold-content') && node.hidden) {
+                let section = node.parentNode;
+                let heading = section ? section.firstElementChild : null;
+                let button = heading ? heading.firstElementChild : null;
+                if (button && button.classList.contains('vx-heading-fold-toggle')) {
+                    this.setExpanded(button, node, true);
+                    changed = true;
+                }
+            }
+            node = node.parentNode;
+        }
+
+        if (changed) {
+            this.onVisibilityChanged();
+        }
+        return changed;
+    }
+
+    bindExisting() {
+        this.enabled = true;
+        this.ensureDelegatedListener();
+        let buttons = Array.from(this.container.querySelectorAll('button.vx-heading-fold-toggle'));
+        for (let button of buttons) {
+            let content = document.getElementById(button.getAttribute('aria-controls'));
+            if (content) {
+                this.setExpanded(button, content, !content.hidden);
+            }
+        }
+    }
+
+    static isHeading(p_node) {
+        return !!p_node.tagName && /^H[1-6]$/.test(p_node.tagName);
+    }
+
+    static createContentId() {
+        let id;
+        do {
+            id = 'vx-heading-fold-content-' + (++HeadingFolding.nextContentId);
+        } while (document.getElementById(id));
+        return id;
+    }
+}
+
+HeadingFolding.nextContentId = 0;
+
+HeadingFolding.bootstrapStaticPage = function() {
+    if (!document.querySelector) {
+        return null;
+    }
+
+    let container = document.querySelector('#post-content #vx-content');
+    if (!container) {
+        return null;
+    }
+
+    let folding = new HeadingFolding(container);
+    folding.bindExisting();
+    return folding;
+};
+
+if (typeof document !== 'undefined') {
+    if (document.readyState == 'loading' && document.addEventListener) {
+        if (!document.__vxHeadingFoldingStaticBootstrap) {
+            document.__vxHeadingFoldingStaticBootstrap = true;
+            document.addEventListener('DOMContentLoaded', function() {
+                HeadingFolding.bootstrapStaticPage();
+            });
+        }
+    } else {
+        HeadingFolding.bootstrapStaticPage();
+    }
+}
+
 // Manage nodes with line number and heading nodes.
 class NodeLineMapper {
     constructor(p_adapter, p_container) {
@@ -13,6 +257,15 @@ class NodeLineMapper {
         this.nodesWithSourceLine = null;
 
         this.headingNodes = [];
+
+        this.visibleHeadingNodes = [];
+
+        this.visibleHeadingIndices = [];
+
+        this.headingFolding = new HeadingFolding(this.container, () => {
+            this.updateVisibleHeadingNodes();
+            this.updateCurrentHeading();
+        });
 
         this.smoothAnchorScroll = false;
 
@@ -39,11 +292,44 @@ class NodeLineMapper {
     }
 
     getHeadingContent(p_node) {
-        return p_node.textContent;
+        return typeof p_node.__vxHeadingContent === 'string' ? p_node.__vxHeadingContent
+                                                             : p_node.textContent;
+    }
+
+    setHeadingFoldingEnabled(p_enabled) {
+        let enabled = !!p_enabled;
+        if (this.headingFolding.isEnabled() == enabled) {
+            return;
+        }
+
+        this.headingFolding.setEnabled(enabled);
+        this.updateHeadingNodes();
+    }
+
+    updateVisibleHeadingNodes() {
+        this.visibleHeadingNodes = [];
+        this.visibleHeadingIndices = [];
+        for (let i = 0; i < this.headingNodes.length; ++i) {
+            let node = this.headingNodes[i];
+            let visible = true;
+            let parent = node.parentNode;
+            while (parent && parent != this.container) {
+                if (parent.hidden) {
+                    visible = false;
+                    break;
+                }
+                parent = parent.parentNode;
+            }
+            if (visible) {
+                this.visibleHeadingNodes.push(node);
+                this.visibleHeadingIndices.push(i);
+            }
+        }
     }
 
     updateHeadingNodes() {
-        this.headingNodes = this.container.querySelectorAll("h1, h2, h3, h4, h5, h6");
+        this.headingFolding.refresh();
+        this.headingNodes = Array.from(this.container.querySelectorAll("h1, h2, h3, h4, h5, h6"));
         let headings = [];
         for (let i = 0; i < this.headingNodes.length; ++i) {
             let node = this.headingNodes[i];
@@ -54,6 +340,8 @@ class NodeLineMapper {
                 anchor: node.id
             });
         }
+
+        this.updateVisibleHeadingNodes();
 
         this.adapter.setHeadings(headings);
     }
@@ -122,6 +410,7 @@ class NodeLineMapper {
     }
 
     scrollToNode(p_node, p_smooth, p_deferred) {
+        this.headingFolding.expandHiddenAncestors(p_node);
         if (p_deferred) {
             window.setTimeout(() => {
                 this.scrollToNode(p_node, p_smooth, false);
@@ -212,7 +501,8 @@ class NodeLineMapper {
     }
 
     currentHeadingIndex() {
-        return this.binarySearchTopNode(this.headingNodes);
+        let visibleIndex = this.binarySearchTopNode(this.visibleHeadingNodes);
+        return visibleIndex > -1 ? this.visibleHeadingIndices[visibleIndex] : -1;
     }
 
     updateAfterScrollUnmuted() {

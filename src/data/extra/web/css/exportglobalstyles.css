@@ -2,3 +2,19 @@
 div.code-toolbar > .toolbar .vx-collapse-btn {
     display: none;
 }
+
+.vx-heading-fold-toggle {
+    color: currentColor;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    margin-right: 0.35em;
+    padding: 0 0.15em;
+}
+
+.vx-heading-fold-toggle:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 2px;
+}

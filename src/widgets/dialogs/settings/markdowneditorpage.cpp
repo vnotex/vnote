@@ -54,6 +54,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_imageAlignCenterCheckBox->setChecked(markdownConfig.getImageAlignCenterEnabled());
 
+  m_headingFoldingCheckBox->setChecked(markdownConfig.getHeadingFoldingEnabled());
+
   m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
 
   m_constrainInplacePreviewWidthCheckBox->setChecked(
@@ -119,6 +121,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setConstrainImageWidthEnabled(m_constrainImageWidthCheckBox->isChecked());
 
   markdownConfig.setImageAlignCenterEnabled(m_imageAlignCenterCheckBox->isChecked());
+
+  markdownConfig.setHeadingFoldingEnabled(m_headingFoldingCheckBox->isChecked());
 
   markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
 
@@ -212,6 +216,19 @@ void MarkdownEditorPage::setupReadGroup() {
         m_imageAlignCenterCheckBox, m_imageAlignCenterCheckBox->toolTip(), this));
     addSearchItem(label, m_imageAlignCenterCheckBox->toolTip(), m_imageAlignCenterCheckBox);
     connect(m_imageAlignCenterCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Heading folding"));
+    m_headingFoldingCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_headingFoldingCheckBox->setToolTip(
+        tr("Make every heading foldable in read mode and HTML export"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_headingFoldingCheckBox, m_headingFoldingCheckBox->toolTip(), this));
+    addSearchItem(label, m_headingFoldingCheckBox->toolTip(), m_headingFoldingCheckBox);
+    connect(m_headingFoldingCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 

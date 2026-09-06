@@ -293,6 +293,7 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
     opts.m_mathJaxScript = p_config.getMathJaxScript();
     opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
     opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
+    opts.m_headingFoldingEnabled = p_config.getHeadingFoldingEnabled();
     opts.m_protectFromXss = p_config.getProtectFromXss();
     opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
     opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();

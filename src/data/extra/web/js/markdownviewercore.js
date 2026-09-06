@@ -38,6 +38,7 @@ class MarkdownViewerCore extends VXCore {
         this.originalBodyPadding = bodyStyle.padding;
 
         this.nodeLineMapper = new NodeLineMapper(this, this.contentContainer);
+        this.setHeadingFoldingEnabled(window.vxOptions.headingFoldingEnabled);
 
         this.graphPreviewer = new GraphPreviewer(this, this.inplacePreviewContainer);
 
@@ -78,6 +79,11 @@ class MarkdownViewerCore extends VXCore {
         } else {
             document.body.classList.remove(p_class);
         }
+    }
+
+    setHeadingFoldingEnabled(p_enabled) {
+        window.vxOptions.headingFoldingEnabled = p_enabled;
+        this.nodeLineMapper.setHeadingFoldingEnabled(p_enabled);
     }
 
     registerWorker(p_worker) {

@@ -20,6 +20,8 @@ private slots:
   void testEquality();
   void testExportOptionStyleEquality();
   void testExportOptionStyleRoundTrip();
+  void testHeadingFoldingRouteMatrix();
+  void testIntermediateHtmlMarkerIsRuntimeOnly();
 };
 
 void TestExportData::testDefaultFooterRight() {
@@ -105,6 +107,38 @@ void TestExportData::testExportOptionStyleRoundTrip() {
   QCOMPARE(restored.m_renderingStyleFile, opt.m_renderingStyleFile);
   QCOMPARE(restored.m_syntaxHighlightStyleFile, opt.m_syntaxHighlightStyleFile);
   QVERIFY(restored == opt);
+}
+
+void TestExportData::testHeadingFoldingRouteMatrix() {
+  vnotex::ExportOption option;
+  option.m_targetFormat = vnotex::ExportFormat::HTML;
+  QVERIFY(vnotex::isHeadingFoldingEnabledForExport(option, true));
+  QVERIFY(!vnotex::isHeadingFoldingEnabledForExport(option, false));
+
+  option.m_targetFormat = vnotex::ExportFormat::PDF;
+  QVERIFY(!vnotex::isHeadingFoldingEnabledForExport(option, true));
+
+  option.m_targetFormat = vnotex::ExportFormat::Custom;
+  QVERIFY(!vnotex::isHeadingFoldingEnabledForExport(option, true));
+
+  option.m_targetFormat = vnotex::ExportFormat::Markdown;
+  QVERIFY(!vnotex::isHeadingFoldingEnabledForExport(option, true));
+
+  option.m_targetFormat = vnotex::ExportFormat::HTML;
+  option.m_intermediateHtml = true;
+  QVERIFY(!vnotex::isHeadingFoldingEnabledForExport(option, true));
+}
+
+void TestExportData::testIntermediateHtmlMarkerIsRuntimeOnly() {
+  vnotex::ExportOption marked;
+  marked.m_intermediateHtml = true;
+  const QJsonObject json = marked.toJson();
+  QVERIFY(!json.contains(QStringLiteral("intermediateHtml")));
+
+  vnotex::ExportOption restored;
+  restored.fromJson(json);
+  QVERIFY(!restored.m_intermediateHtml);
+  QVERIFY(marked == restored);
 }
 
 } // namespace tests

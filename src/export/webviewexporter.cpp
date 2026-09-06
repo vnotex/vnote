@@ -200,6 +200,7 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   opts.m_mathJaxScript = p_config.getMathJaxScript();
   opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
   opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
+  opts.m_headingFoldingEnabled = p_paras.m_headingFoldingEnabled;
   opts.m_protectFromXss = p_config.getProtectFromXss();
   opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
   opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
@@ -220,8 +221,8 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
 }
 
 QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
-                                       const MarkdownEditorConfig &p_config,
-                                       bool p_addOutlinePanel) {
+                                       const MarkdownEditorConfig &p_config, bool p_addOutlinePanel,
+                                       bool p_headingFoldingEnabled) {
   auto exportResource = p_config.getExportResource();
   const auto templateFile = resolveConfigFile(p_configMgr, exportResource.m_template);
   auto htmlTemplate =
@@ -252,6 +253,17 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
     if (!linkFallbackScript.isEmpty()) {
       htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
                            linkFallbackScript + QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
+    }
+
+    if (p_headingFoldingEnabled) {
+      const auto headingFoldingScript = readTemplateFile(
+          resolveConfigFile(p_configMgr, QStringLiteral("web/js/nodelinemapper.js")),
+          "failed to read heading folding script");
+      if (!headingFoldingScript.isEmpty()) {
+        htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
+                             headingFoldingScript +
+                                 QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
+      }
     }
 
     const auto copyStyle = readTemplateFile(
@@ -559,6 +571,8 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   m_syntaxHighlightStyleFile = highlightStyleFile;
   paras.m_transparentBackgroundEnabled = p_option.m_useTransparentBg;
   paras.m_scrollable = scrollable;
+  paras.m_headingFoldingEnabled =
+      isHeadingFoldingEnabledForExport(p_option, config.getHeadingFoldingEnabled());
   paras.m_bodyWidth = pageBodySize.width();
   paras.m_bodyHeight = pageBodySize.height();
   paras.m_transformSvgToPngEnabled = p_option.m_transformSvgToPngEnabled;
@@ -580,7 +594,8 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   {
     const bool addOutlinePanel =
         p_option.m_targetFormat == ExportFormat::HTML && p_option.m_htmlOption.m_addOutlinePanel;
-    m_exportHtmlTemplate = generateMarkdownExportTemplate(*configMgr, config, addOutlinePanel);
+    m_exportHtmlTemplate = generateMarkdownExportTemplate(*configMgr, config, addOutlinePanel,
+                                                          paras.m_headingFoldingEnabled);
   }
 
   if (useWkhtmltopdf) {

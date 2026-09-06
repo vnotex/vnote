@@ -512,6 +512,7 @@ ExportOption Exporter::getExportOptionForIntermediateHtml(const ExportOption &p_
   ExportOption tmpOption(p_option);
   tmpOption.m_exportAttachments = false;
   tmpOption.m_targetFormat = ExportFormat::HTML;
+  tmpOption.m_intermediateHtml = true;
   tmpOption.m_transformSvgToPngEnabled = true;
   // The intermediate HTML is consumed by Pandoc or wkhtmltopdf, neither of which renders MathJax
   // SVG faithfully.

@@ -22,6 +22,8 @@ struct MarkdownParas {
 
   bool m_scrollable = true;
 
+  bool m_headingFoldingEnabled = false;
+
   int m_bodyWidth = -1;
 
   int m_bodyHeight = -1;

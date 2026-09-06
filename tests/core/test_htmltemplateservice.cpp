@@ -4,6 +4,7 @@
 #include <QString>
 #include <QTemporaryFile>
 
+#include <core/markdownwebglobaloptions.h>
 #include <core/services/htmltemplateservice.h>
 #include <core/vxpdfscheme.h>
 #include <core/webresource.h>
@@ -22,6 +23,8 @@ private slots:
   void testFillPdfResources_emitsSameOriginVxPdfUrls();
   void testFillPdfResources_moduleTypeOnlyForMjs();
   void testFillPdfResources_skipsDisabledAndGlobal();
+
+  void testMarkdownWebGlobalOptions_headingFoldingBoolean();
 
 private:
   // Mirrors PdfViewerConfig::defaultViewerResource(), which is private to that
@@ -231,6 +234,14 @@ void TestHtmlTemplateService::testFillPdfResources_skipsDisabledAndGlobal() {
   QVERIFY(tmpl.contains(QStringLiteral("web/on.mjs")));
   QVERIFY(!tmpl.contains(QStringLiteral("web/off.mjs")));
   QVERIFY(!tmpl.contains(QStringLiteral("web/global.css")));
+}
+
+void TestHtmlTemplateService::testMarkdownWebGlobalOptions_headingFoldingBoolean() {
+  vnotex::MarkdownWebGlobalOptions options;
+  QVERIFY(options.toJavascriptObject().contains(QStringLiteral("headingFoldingEnabled: false,\n")));
+
+  options.m_headingFoldingEnabled = true;
+  QVERIFY(options.toJavascriptObject().contains(QStringLiteral("headingFoldingEnabled: true,\n")));
 }
 
 } // namespace tests

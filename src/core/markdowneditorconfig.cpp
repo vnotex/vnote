@@ -43,6 +43,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_constrainImageWidthEnabled = READBOOL(QStringLiteral("constrainImageWidth"));
   m_imageAlignCenterEnabled = READBOOL(QStringLiteral("imageAlignCenter"));
+  m_headingFoldingEnabled = READBOOL(QStringLiteral("headingFolding"));
   m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
   m_zoomFactorInReadMode = READREAL(QStringLiteral("zoomFactorInReadMode"));
   m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
@@ -91,6 +92,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
 
   obj[QStringLiteral("constrainImageWidth")] = m_constrainImageWidthEnabled;
   obj[QStringLiteral("imageAlignCenter")] = m_imageAlignCenterEnabled;
+  obj[QStringLiteral("headingFolding")] = m_headingFoldingEnabled;
   obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
   obj[QStringLiteral("zoomFactorInReadMode")] = m_zoomFactorInReadMode;
   obj[QStringLiteral("fetchImagesInParseAndPaste")] = m_fetchImagesInParseAndPaste;
@@ -217,6 +219,12 @@ bool MarkdownEditorConfig::getImageAlignCenterEnabled() const { return m_imageAl
 
 void MarkdownEditorConfig::setImageAlignCenterEnabled(bool p_enabled) {
   updateConfig(m_imageAlignCenterEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getHeadingFoldingEnabled() const { return m_headingFoldingEnabled; }
+
+void MarkdownEditorConfig::setHeadingFoldingEnabled(bool p_enabled) {
+  updateConfig(m_headingFoldingEnabled, p_enabled, this);
 }
 
 bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const {

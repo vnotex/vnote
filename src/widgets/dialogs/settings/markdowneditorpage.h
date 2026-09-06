@@ -38,6 +38,8 @@ private:
 
   QCheckBox *m_imageAlignCenterCheckBox = nullptr;
 
+  QCheckBox *m_headingFoldingCheckBox = nullptr;
+
   QCheckBox *m_constrainInplacePreviewWidthCheckBox = nullptr;
 
   QCheckBox *m_inplacePreviewSourceImageLinkCheckBox = nullptr;

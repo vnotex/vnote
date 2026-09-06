@@ -118,10 +118,10 @@ bool ExportPdfOption::operator==(const ExportPdfOption &p_other) const {
   return m_addTableOfContents == p_other.m_addTableOfContents &&
          m_useWkhtmltopdf == p_other.m_useWkhtmltopdf && m_allInOne == p_other.m_allInOne &&
          m_wkhtmltopdfExePath == p_other.m_wkhtmltopdfExePath &&
-         m_wkhtmltopdfArgs == p_other.m_wkhtmltopdfArgs &&
-         m_headerLeft == p_other.m_headerLeft && m_headerCenter == p_other.m_headerCenter &&
-         m_headerRight == p_other.m_headerRight && m_footerLeft == p_other.m_footerLeft &&
-         m_footerCenter == p_other.m_footerCenter && m_footerRight == p_other.m_footerRight;
+         m_wkhtmltopdfArgs == p_other.m_wkhtmltopdfArgs && m_headerLeft == p_other.m_headerLeft &&
+         m_headerCenter == p_other.m_headerCenter && m_headerRight == p_other.m_headerRight &&
+         m_footerLeft == p_other.m_footerLeft && m_footerCenter == p_other.m_footerCenter &&
+         m_footerRight == p_other.m_footerRight;
 }
 
 QJsonObject ExportCustomOption::toJson() const {
@@ -328,4 +328,9 @@ bool ExportOption::operator==(const ExportOption &p_other) const {
   }
 
   return true;
+}
+
+bool vnotex::isHeadingFoldingEnabledForExport(const ExportOption &p_option, bool p_configEnabled) {
+  return p_configEnabled && p_option.m_targetFormat == ExportFormat::HTML &&
+         !p_option.m_intermediateHtml;
 }

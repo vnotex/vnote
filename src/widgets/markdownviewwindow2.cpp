@@ -1305,6 +1305,10 @@ void MarkdownViewWindow2::updateWebViewerConfig() {
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
   m_viewer->setZoomFactor(mdConfig.getZoomFactorInReadMode());
+  m_viewer->page()->runJavaScript(
+      QStringLiteral("if (window.vxcore) { window.vxcore.setHeadingFoldingEnabled(%1); }")
+          .arg(mdConfig.getHeadingFoldingEnabled() ? QStringLiteral("true")
+                                                   : QStringLiteral("false")));
 }
 
 // ============ Edit View Mode ============
