@@ -76,7 +76,7 @@ class HeadingFolding {
             button.setAttribute('aria-expanded', 'true');
             button.setAttribute('aria-controls', content.id);
             button.setAttribute('aria-label', 'Collapse section');
-            button.textContent = '▾';
+            button.textContent = '▼';
             node.insertBefore(button, node.firstChild);
 
             stack.push({ level: level, content: content });
@@ -163,7 +163,7 @@ class HeadingFolding {
         p_content.hidden = !p_expanded;
         p_button.setAttribute('aria-expanded', p_expanded ? 'true' : 'false');
         p_button.setAttribute('aria-label', p_expanded ? 'Collapse section' : 'Expand section');
-        p_button.textContent = p_expanded ? '▾' : '▸';
+        p_button.textContent = p_expanded ? '▼' : '▶';
     }
 
     expandHiddenAncestors(p_node) {
