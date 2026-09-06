@@ -129,6 +129,7 @@ target_sources(vnote PRIVATE
     taskpanel2.cpp taskpanel2.h
     styleditemdelegate.cpp styleditemdelegate.h
     systemtrayhelper.cpp systemtrayhelper.h
+    tableinsertpopup.cpp tableinsertpopup.h
     tagexplorer2.cpp tagexplorer2.h
     tagpopup2.cpp tagpopup2.h
     tagviewer2.cpp tagviewer2.h

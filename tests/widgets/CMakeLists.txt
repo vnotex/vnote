@@ -1218,6 +1218,19 @@ add_custom_command(TARGET test_greetingsticker POST_BUILD
 )
 
 
+# TableInsertPopup: body-row/column hover selection and the retained dialog route.
+add_qt_test(test_tableinsertpopup
+  SOURCES
+    test_tableinsertpopup.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/tableinsertpopup.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp
+  LINKS
+    Qt6::Widgets
+)
+target_include_directories(test_tableinsertpopup PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
 # EncodingButton: reusable pure-view encoding picker (no services / no Buffer2).
 # NOT GUILESS — QToolButton/QMenu need QApplication. Only needs Qt6::Widgets
 # plus Qt6::Core5Compat (QTextCodec::availableCodecs); no VTextEdit runtime dep,

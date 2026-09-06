@@ -129,6 +129,9 @@ public:
 
   void typeTable();
 
+  // Unaligned quick insertion; body rows exclude the header and delimiter.
+  void typeTable(int p_bodyRows, int p_columns);
+
   const QVector<MarkdownEditor::Heading> &getHeadings() const;
   int getCurrentHeadingIndex() const;
 
@@ -256,6 +259,8 @@ private:
   void fetchImagesToLocalAndReplace(QString &p_text);
 
   void setupTableHelper();
+
+  void insertTable(int p_bodyRows, int p_columns, Alignment p_alignment);
 
   // Return the dest file path of the image on success.
   int saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName, int p_width = 0,

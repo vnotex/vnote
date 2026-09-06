@@ -64,6 +64,8 @@
 #include "messageboxhelper.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
+#include "propertydefs.h"
+#include "tableinsertpopup.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
 
@@ -181,7 +183,22 @@ void MarkdownViewWindow2::setupToolBar() {
   addAction(toolBar, ViewWindowToolBarHelper2::TypeQuote);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeLink);
   addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
-  addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
+  auto *tableAction = addAction(toolBar, ViewWindowToolBarHelper2::TypeTable);
+  auto *tableButton = qobject_cast<QToolButton *>(toolBar->widgetForAction(tableAction));
+  if (tableButton) {
+    tableButton->setPopupMode(QToolButton::InstantPopup);
+    tableButton->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+    auto *tablePopup = new TableInsertPopup(tableButton, toolBar);
+    tableAction->setMenu(tablePopup);
+    connect(tablePopup, &TableInsertPopup::tableSelected, this,
+            [this](int p_bodyRows, int p_columns) {
+              if (m_editor) {
+                m_editor->typeTable(p_bodyRows, p_columns);
+              }
+            });
+    connect(tablePopup, &TableInsertPopup::dialogRequested, this,
+            [this]() { handleTypeAction(TypeTable); });
+  }
 
   addRightCommonToolBarActions(toolBar);
 }

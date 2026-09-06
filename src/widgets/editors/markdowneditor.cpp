@@ -324,6 +324,14 @@ void MarkdownEditor::typeTable() {
     return;
   }
 
+  insertTable(dialog.getRowCount(), dialog.getColumnCount(), dialog.getAlignment());
+}
+
+void MarkdownEditor::typeTable(int p_bodyRows, int p_columns) {
+  insertTable(p_bodyRows, p_columns, Alignment::None);
+}
+
+void MarkdownEditor::insertTable(int p_bodyRows, int p_columns, Alignment p_alignment) {
   auto cursor = m_textEdit->textCursor();
   cursor.beginEditBlock();
   if (cursor.hasSelection()) {
@@ -349,7 +357,7 @@ void MarkdownEditor::typeTable() {
   m_textEdit->setTextCursor(cursor);
 
   // Insert table.
-  m_tableHelper->insertTable(dialog.getRowCount(), dialog.getColumnCount(), dialog.getAlignment());
+  m_tableHelper->insertTable(p_bodyRows, p_columns, p_alignment);
 }
 
 void MarkdownEditor::setBuffer2(Buffer2 *p_buffer) { m_buffer2 = p_buffer; }
