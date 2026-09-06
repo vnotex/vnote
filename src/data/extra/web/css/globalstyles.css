@@ -60,6 +60,17 @@ figcaption {
     line-height: 1;
     margin-right: 0.35em;
     padding: 0 0.15em;
+    opacity: 0;
+}
+
+.vx-heading-fold > h1:hover > .vx-heading-fold-toggle,
+.vx-heading-fold > h2:hover > .vx-heading-fold-toggle,
+.vx-heading-fold > h3:hover > .vx-heading-fold-toggle,
+.vx-heading-fold > h4:hover > .vx-heading-fold-toggle,
+.vx-heading-fold > h5:hover > .vx-heading-fold-toggle,
+.vx-heading-fold > h6:hover > .vx-heading-fold-toggle,
+.vx-heading-fold-toggle:focus-visible {
+    opacity: 1;
 }
 
 .vx-heading-fold-toggle:focus-visible {
