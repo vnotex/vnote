@@ -72,6 +72,7 @@ class HeadingFolding {
             let button = document.createElement('button');
             button.className = 'vx-heading-fold-toggle';
             button.type = 'button';
+            button.tabIndex = -1;
             button.setAttribute('aria-expanded', 'true');
             button.setAttribute('aria-controls', content.id);
             button.setAttribute('aria-label', 'Collapse section');

@@ -51,6 +51,15 @@ figcaption {
     vertical-align: middle;
 }
 
+.vx-heading-fold > h1,
+.vx-heading-fold > h2,
+.vx-heading-fold > h3,
+.vx-heading-fold > h4,
+.vx-heading-fold > h5,
+.vx-heading-fold > h6 {
+    position: relative;
+}
+
 .vx-heading-fold-toggle {
     color: currentColor;
     background: transparent;
@@ -58,9 +67,13 @@ figcaption {
     cursor: pointer;
     font: inherit;
     line-height: 1;
-    margin-right: 0.35em;
-    padding: 0 0.15em;
+    margin-right: 0.25em;
+    padding: 0;
     opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 100%;
+    top: 0;
 }
 
 .vx-heading-fold > h1:hover > .vx-heading-fold-toggle,
@@ -68,15 +81,11 @@ figcaption {
 .vx-heading-fold > h3:hover > .vx-heading-fold-toggle,
 .vx-heading-fold > h4:hover > .vx-heading-fold-toggle,
 .vx-heading-fold > h5:hover > .vx-heading-fold-toggle,
-.vx-heading-fold > h6:hover > .vx-heading-fold-toggle,
-.vx-heading-fold-toggle:focus-visible {
+.vx-heading-fold > h6:hover > .vx-heading-fold-toggle {
     opacity: 1;
+    pointer-events: auto;
 }
 
-.vx-heading-fold-toggle:focus-visible {
-    outline: 1px solid currentColor;
-    outline-offset: 2px;
-}
 
 #vx-content.vx-indent-first-line p {
     text-indent: 2em;
