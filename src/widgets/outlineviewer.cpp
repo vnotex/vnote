@@ -1,5 +1,6 @@
 #include "outlineviewer.h"
 
+#include <QMessageBox>
 #include <QShowEvent>
 #include <QToolButton>
 #include <QToolTip>
@@ -19,8 +20,7 @@
 
 using namespace vnotex;
 
-OutlineViewer::OutlineViewer(ServiceLocator &p_services, const QString &p_title,
-                             QWidget *p_parent)
+OutlineViewer::OutlineViewer(ServiceLocator &p_services, const QString &p_title, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
   setupUI(p_title);
 }
@@ -40,11 +40,25 @@ void OutlineViewer::setupUI(const QString &p_title) {
   m_outlineView->setModel(m_proxyModel);
   m_controller->setView(m_outlineView);
 
-  connect(m_proxyModel, &QAbstractItemModel::layoutChanged, this, [this]() {
-    m_controller->applyExpandLevel();
-  });
+  connect(m_controller, &OutlineController::reorderConfirmationRequested, this,
+          [this](const QString &p_headingName) {
+            QMessageBox dialog(QMessageBox::Question, tr("Reorder Outline"),
+                               tr("Move heading \"%1\" and its content block to the selected "
+                                  "outline position?")
+                                   .arg(p_headingName),
+                               QMessageBox::Yes | QMessageBox::No, window());
+            dialog.setInformativeText(
+                tr("Heading levels in the moved block will be adjusted to preserve the outline "
+                   "hierarchy."));
+            dialog.setDefaultButton(QMessageBox::No);
+            m_controller->confirmReorder(dialog.exec() == QMessageBox::Yes);
+          });
+
+  connect(m_proxyModel, &QAbstractItemModel::layoutChanged, this,
+          [this]() { m_controller->applyExpandLevel(); });
 
   connect(m_proxyModel, &TreeFilterProxyModel::filterActiveChanged, this, [this](bool p_active) {
+    m_outlineView->setFilterActive(p_active);
     if (p_active) {
       m_outlineView->expandAll();
     } else {
@@ -68,63 +82,57 @@ void OutlineViewer::setupUI(const QString &p_title) {
   m_outlineNavWrapper.reset(
       new NavigationModeViewWrapper<OutlineView>(m_outlineView, themeService));
 
-  connect(m_controller, &OutlineController::focusViewAreaRequested,
-          this, &OutlineViewer::focusViewArea);
+  connect(m_controller, &OutlineController::focusViewAreaRequested, this,
+          &OutlineViewer::focusViewArea);
 }
 
 TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent) {
   auto *themeService = m_services.get<ThemeService>();
-  auto titleBar =
-      new TitleBar(themeService, p_title, false, TitleBar::Action::Menu | TitleBar::Action::Search, p_parent);
+  auto titleBar = new TitleBar(themeService, p_title, false,
+                               TitleBar::Action::Menu | TitleBar::Action::Search, p_parent);
   titleBar->setActionButtonsAlwaysShown(true);
 
-  auto decreaseBtn = titleBar->addActionButton(
-      QStringLiteral("decrease_outline_level.svg"), tr("Decrease Expansion Level"));
+  auto decreaseBtn = titleBar->addActionButton(QStringLiteral("decrease_outline_level.svg"),
+                                               tr("Decrease Expansion Level"));
   connect(decreaseBtn, &QToolButton::clicked, this, [this]() {
     m_controller->decreaseExpandLevel();
     showLevel();
   });
 
-  auto increaseBtn = titleBar->addActionButton(
-      QStringLiteral("increase_outline_level.svg"), tr("Increase Expansion Level"));
+  auto increaseBtn = titleBar->addActionButton(QStringLiteral("increase_outline_level.svg"),
+                                               tr("Increase Expansion Level"));
   connect(increaseBtn, &QToolButton::clicked, this, [this]() {
     m_controller->increaseExpandLevel();
     showLevel();
   });
 
   {
-    auto act = titleBar->addMenuAction(
-        tr("Section Number"), titleBar, [this](bool p_checked) {
-          Q_UNUSED(p_checked);
-          m_controller->toggleSectionNumber();
-        });
+    auto act = titleBar->addMenuAction(tr("Section Number"), titleBar, [this](bool p_checked) {
+      Q_UNUSED(p_checked);
+      m_controller->toggleSectionNumber();
+    });
     act->setCheckable(true);
     act->setChecked(m_controller->isSectionNumberEnabled());
   }
 
-  connect(m_controller, &OutlineController::expandLevelChanged,
-          this, &OutlineViewer::showLevel);
+  connect(m_controller, &OutlineController::expandLevelChanged, this, &OutlineViewer::showLevel);
 
   titleBar->setSearchPlaceholder(tr("Search headings"));
-  connect(titleBar, &TitleBar::searchTextChanged,
-          m_proxyModel, &TreeFilterProxyModel::setFilterText);
+  connect(titleBar, &TitleBar::searchTextChanged, m_proxyModel,
+          &TreeFilterProxyModel::setFilterText);
 
   return titleBar;
 }
 
-void OutlineViewer::setOutlineProvider(
-    const QSharedPointer<OutlineProvider> &p_provider) {
+void OutlineViewer::setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider) {
   m_controller->setOutlineProvider(p_provider);
 }
 
-void OutlineViewer::showEvent(QShowEvent *p_event) {
-  QFrame::showEvent(p_event);
-}
+void OutlineViewer::showEvent(QShowEvent *p_event) { QFrame::showEvent(p_event); }
 
 void OutlineViewer::showLevel() {
   QToolTip::showText(mapToGlobal(QPoint(0, 0)),
-                     tr("Expansion level: %1").arg(m_controller->getExpandLevel()),
-                     this);
+                     tr("Expansion level: %1").arg(m_controller->getExpandLevel()), this);
 }
 
 NavigationMode *OutlineViewer::getOutlineNavigationWrapper() const {

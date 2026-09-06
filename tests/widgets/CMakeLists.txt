@@ -1380,6 +1380,7 @@ add_qt_test(test_pdfvieweradapter_outline
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/outlinemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
   LINKS
     core_services

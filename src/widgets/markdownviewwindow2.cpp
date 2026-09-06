@@ -566,6 +566,63 @@ void MarkdownViewWindow2::setupOutlineProvider() {
       break;
     }
   });
+
+  connect(m_outlineProvider.data(), &OutlineProvider::moveRequested, this,
+          [this](int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel) {
+            if (m_mode != ViewWindowMode::Edit || !m_editor || m_editor->isReadOnly()) {
+              return;
+            }
+
+            const auto &buffer = getBuffer();
+            if (!buffer.isValid() || buffer.isReadOnly()) {
+              return;
+            }
+
+            const auto &editorHeadings = m_editor->getHeadings();
+            if (p_sourceHeadingIndex < 0 || p_sourceHeadingIndex >= editorHeadings.size() ||
+                p_beforeHeadingIndex < -1 || p_beforeHeadingIndex >= editorHeadings.size()) {
+              return;
+            }
+
+            QVector<MarkdownEditorController::HeadingBlockInfo> headings;
+            headings.reserve(editorHeadings.size());
+            for (const auto &heading : editorHeadings) {
+              MarkdownEditorController::HeadingBlockInfo info;
+              info.level = heading.m_level;
+              info.startPos = heading.m_startPos;
+              info.endPos = heading.m_endPos;
+              headings.append(info);
+            }
+
+            auto *textEdit = m_editor->getTextEdit();
+            const QTextCursor cursor = textEdit->textCursor();
+            int selectionStart = -1;
+            int selectionEnd = -1;
+            const auto &selection = textEdit->getSelection();
+            if (selection.isValid() &&
+                (!cursor.hasSelection() || cursor.selectionStart() != selection.start() ||
+                 cursor.selectionEnd() != selection.end())) {
+              selectionStart = selection.start();
+              selectionEnd = selection.end();
+            }
+
+            const auto moveResult = MarkdownEditorController::reorderHeadingBlock(
+                textEdit->document(), headings, p_sourceHeadingIndex, p_beforeHeadingIndex,
+                p_targetLevel, cursor.position(), cursor.anchor(), selectionStart, selectionEnd);
+            if (!moveResult.moved) {
+              return;
+            }
+
+            QTextCursor restoredCursor(textEdit->document());
+            restoredCursor.setPosition(moveResult.cursorAnchor);
+            restoredCursor.setPosition(moveResult.cursorPosition, QTextCursor::KeepAnchor);
+            textEdit->setTextCursor(restoredCursor);
+            if (moveResult.selectionStart >= 0 &&
+                moveResult.selectionEnd > moveResult.selectionStart) {
+              textEdit->setOverriddenSelection(moveResult.selectionStart, moveResult.selectionEnd);
+            }
+            focusEditor();
+          });
 }
 
 QSharedPointer<OutlineProvider> MarkdownViewWindow2::getOutlineProvider() const {
@@ -598,12 +655,23 @@ void MarkdownViewWindow2::connectEditorSignals() {
     }
   });
 
-  // Outline pipeline: editor headings -> OutlineProvider.
   connect(m_editor, &MarkdownEditor::headingsChanged, this, [this]() {
-    if (!isReadMode()) {
-      auto outline = headingsToOutline(m_editor->getHeadings());
-      m_outlineProvider->setOutline(outline);
+    if (m_mode != ViewWindowMode::Edit) {
+      return;
     }
+
+    const auto &editorHeadings = m_editor->getHeadings();
+    auto outline = headingsToOutline(editorHeadings);
+    for (int i = 0; i < editorHeadings.size(); ++i) {
+      outline->m_headings[i].m_reorderable =
+          editorHeadings[i].m_startPos >= 0 &&
+          editorHeadings[i].m_endPos > editorHeadings[i].m_startPos;
+    }
+
+    const auto &buffer = getBuffer();
+    outline->m_reorderSupported =
+        !m_editor->isReadOnly() && buffer.isValid() && !buffer.isReadOnly();
+    m_outlineProvider->setOutline(outline);
   });
   connect(m_editor, &MarkdownEditor::currentHeadingChanged, this, [this]() {
     if (!isReadMode()) {
@@ -715,6 +783,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     return;
   }
   m_switchingMode = true;
+
+  m_outlineProvider->setReorderSupported(false);
 
   // When leaving Edit mode, sync editor content to buffer immediately
   // so the buffer has the latest content for the viewer to read.
@@ -880,6 +950,20 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // from the initial content load.
   if (m_mode == ViewWindowMode::Edit && m_editor) {
     m_propagateEditorToBuffer = true;
+
+    // Republish the existing editor snapshot when returning from Read mode;
+    // unchanged content does not necessarily emit headingsChanged again.
+    const auto &editorHeadings = m_editor->getHeadings();
+    auto outline = headingsToOutline(editorHeadings);
+    for (int i = 0; i < editorHeadings.size(); ++i) {
+      outline->m_headings[i].m_reorderable =
+          editorHeadings[i].m_startPos >= 0 &&
+          editorHeadings[i].m_endPos > editorHeadings[i].m_startPos;
+    }
+    const auto &buffer = getBuffer();
+    outline->m_reorderSupported =
+        !m_editor->isReadOnly() && buffer.isValid() && !buffer.isReadOnly();
+    m_outlineProvider->setOutline(outline);
   }
 
   emit modeChanged();

@@ -18,6 +18,7 @@
 #include <QFile>
 #include <QString>
 #include <QTemporaryDir>
+#include <QTextDocument>
 #include <QUrl>
 
 #include <controllers/markdowneditorcontroller.h>
@@ -26,6 +27,18 @@
 using namespace vnotex;
 
 namespace tests {
+
+namespace {
+using Heading = MarkdownEditorController::HeadingBlockInfo;
+
+Heading heading(const QString &p_text, const QString &p_source, int p_level) {
+  Heading result;
+  result.level = p_level;
+  result.startPos = p_text.indexOf(p_source);
+  result.endPos = result.startPos + p_source.size();
+  return result;
+}
+} // namespace
 
 class TestMarkdownHeadingLink : public QObject {
   Q_OBJECT
@@ -51,6 +64,15 @@ private slots:
   void composeEmptyAnchor();
   void composeNullAnchor();
   void anchorSurvivesClipboardReparse();
+
+  void reorderMovesNestedSectionAndRelevels();
+  void reorderPlacesSiblingBeforeTarget();
+  void reorderPreservesAtxAndSetextSyntax();
+  void reorderHandlesDocumentBoundaries_data();
+  void reorderHandlesDocumentBoundaries();
+  void reorderRejectsInvalidRequests();
+  void reorderMapsCursorAndOverriddenSelection();
+  void reorderUndoRedoIsSingleStep();
 
 private:
   // Create an existing file under the temp dir so that PathUtils::pathToUrl
@@ -235,6 +257,180 @@ void TestMarkdownHeadingLink::anchorSurvivesClipboardReparse() {
     QCOMPARE(reparsed.toLocalFile(), path);
     QCOMPARE(reparsed.fragment(QUrl::FullyDecoded), anchor);
   }
+}
+
+void TestMarkdownHeadingLink::reorderMovesNestedSectionAndRelevels() {
+  const QString original =
+      QStringLiteral("# A\nA body\n## Child\nC body\n### Grand\nG body\n# B\nB body");
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
+                                     heading(original, QStringLiteral("## Child"), 2),
+                                     heading(original, QStringLiteral("### Grand"), 3),
+                                     heading(original, QStringLiteral("# B"), 1)};
+
+  const auto result =
+      MarkdownEditorController::reorderHeadingBlock(&document, headings, 1, -1, 2, 0, 0, -1, -1);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(),
+           QStringLiteral("# A\nA body\n# B\nB body\n## Child\nC body\n### Grand\nG body"));
+}
+
+void TestMarkdownHeadingLink::reorderPlacesSiblingBeforeTarget() {
+  const QString original = QStringLiteral("# A\n## One\none\n## Two\ntwo\n# End");
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
+                                     heading(original, QStringLiteral("## One"), 2),
+                                     heading(original, QStringLiteral("## Two"), 2),
+                                     heading(original, QStringLiteral("# End"), 1)};
+
+  const auto result =
+      MarkdownEditorController::reorderHeadingBlock(&document, headings, 2, 1, 2, 0, 0, -1, -1);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), QStringLiteral("# A\n## Two\ntwo\n## One\none\n# End"));
+}
+
+void TestMarkdownHeadingLink::reorderPreservesAtxAndSetextSyntax() {
+  {
+    const QString original = QStringLiteral("  ## *Child* ###");
+    QTextDocument document(original);
+    const QVector<Heading> headings = {heading(original, QStringLiteral("  ## *Child* ###"), 2)};
+    const auto result =
+        MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, -1, 4, 0, 0, -1, -1);
+    QVERIFY(result.moved);
+    QCOMPARE(document.toPlainText(), QStringLiteral("  #### *Child* ###"));
+  }
+
+  {
+    const QString original = QStringLiteral("One\n===\nTwo\n---\n# End");
+    QTextDocument document(original);
+    const QVector<Heading> headings = {heading(original, QStringLiteral("One\n==="), 1),
+                                       heading(original, QStringLiteral("Two\n---"), 2),
+                                       heading(original, QStringLiteral("# End"), 1)};
+    const auto result =
+        MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, 2, 2, 0, 0, -1, -1);
+    QVERIFY(result.moved);
+    QCOMPARE(document.toPlainText(), QStringLiteral("One\n---\n### Two\n# End"));
+  }
+
+  {
+    const QString original = QStringLiteral("Title\n---");
+    QTextDocument document(original);
+    const QVector<Heading> headings = {heading(original, QStringLiteral("Title\n---"), 2)};
+    const auto result =
+        MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, -1, 1, 0, 0, -1, -1);
+    QVERIFY(result.moved);
+    QCOMPARE(document.toPlainText(), QStringLiteral("Title\n==="));
+  }
+}
+
+void TestMarkdownHeadingLink::reorderHandlesDocumentBoundaries_data() {
+  QTest::addColumn<QString>("original");
+  QTest::addColumn<int>("source");
+  QTest::addColumn<int>("before");
+  QTest::addColumn<QString>("expected");
+
+  QTest::newRow("first-to-last-unterminated")
+      << QStringLiteral("# A\na\n# B\nb") << 0 << -1 << QStringLiteral("# B\nb\n# A\na");
+  QTest::newRow("first-to-last-terminated")
+      << QStringLiteral("# A\na\n# B\nb\n") << 0 << -1 << QStringLiteral("# B\nb\n# A\na\n");
+  QTest::newRow("last-to-first-unterminated")
+      << QStringLiteral("# A\na\n# B\nb") << 1 << 0 << QStringLiteral("# B\nb\n# A\na");
+  QTest::newRow("last-to-first-terminated")
+      << QStringLiteral("# A\na\n# B\nb\n") << 1 << 0 << QStringLiteral("# B\nb\n# A\na\n");
+}
+
+void TestMarkdownHeadingLink::reorderHandlesDocumentBoundaries() {
+  QFETCH(QString, original);
+  QFETCH(int, source);
+  QFETCH(int, before);
+  QFETCH(QString, expected);
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
+                                     heading(original, QStringLiteral("# B"), 1)};
+
+  const auto result = MarkdownEditorController::reorderHeadingBlock(&document, headings, source,
+                                                                    before, 1, 0, 0, -1, -1);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), expected);
+}
+
+void TestMarkdownHeadingLink::reorderRejectsInvalidRequests() {
+  const QString original = QStringLiteral("# A\n## Child\n### Deep\n# B");
+  const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
+                                     heading(original, QStringLiteral("## Child"), 2),
+                                     heading(original, QStringLiteral("### Deep"), 3),
+                                     heading(original, QStringLiteral("# B"), 1)};
+
+  auto rejected = [&](const QVector<Heading> &p_headings, int p_source, int p_before, int p_level) {
+    QTextDocument document(original);
+    const auto result = MarkdownEditorController::reorderHeadingBlock(
+        &document, p_headings, p_source, p_before, p_level, 0, 0, -1, -1);
+    QVERIFY(!result.moved);
+    QCOMPARE(document.toPlainText(), original);
+  };
+
+  rejected(headings, -1, -1, 1);
+  rejected(headings, 0, 1, 1);
+  rejected(headings, 1, 1, 2);
+  rejected(headings, 1, 3, 2);
+
+  QVector<Heading> stale = headings;
+  stale[1].level = 3;
+  rejected(stale, 1, -1, 2);
+
+  const QString deepText = QStringLiteral("##### Five\n###### Six\n# End");
+  QTextDocument deepDocument(deepText);
+  const QVector<Heading> deepHeadings = {heading(deepText, QStringLiteral("##### Five"), 5),
+                                         heading(deepText, QStringLiteral("###### Six"), 6),
+                                         heading(deepText, QStringLiteral("# End"), 1)};
+  const auto overflow = MarkdownEditorController::reorderHeadingBlock(&deepDocument, deepHeadings,
+                                                                      0, -1, 6, 0, 0, -1, -1);
+  QVERIFY(!overflow.moved);
+  QCOMPARE(deepDocument.toPlainText(), deepText);
+}
+
+void TestMarkdownHeadingLink::reorderMapsCursorAndOverriddenSelection() {
+  const QString original = QStringLiteral("# A\nbody\n# B\nend");
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
+                                     heading(original, QStringLiteral("# B"), 1)};
+  const int bodyStart = original.indexOf(QStringLiteral("body"));
+  const int endPosition = original.indexOf(QStringLiteral("end")) + 1;
+
+  const auto result = MarkdownEditorController::reorderHeadingBlock(
+      &document, headings, 0, -1, 1, bodyStart + 1, endPosition, bodyStart, bodyStart + 4);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), QStringLiteral("# B\nend\n# A\nbody"));
+  QCOMPARE(document.toPlainText().at(result.cursorPosition), QLatin1Char('o'));
+  QCOMPARE(document.toPlainText().at(result.cursorAnchor), QLatin1Char('n'));
+  QCOMPARE(document.toPlainText().mid(result.selectionStart,
+                                      result.selectionEnd - result.selectionStart),
+           QStringLiteral("body"));
+}
+
+void TestMarkdownHeadingLink::reorderUndoRedoIsSingleStep() {
+  const QString original = QStringLiteral("# A\na\n# B\nb");
+  const QString reordered = QStringLiteral("# B\nb\n# A\na");
+  QTextDocument document(original);
+  document.clearUndoRedoStacks();
+  const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
+                                     heading(original, QStringLiteral("# B"), 1)};
+
+  const auto result =
+      MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, -1, 1, 0, 0, -1, -1);
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), reordered);
+  QVERIFY(document.isUndoAvailable());
+
+  document.undo();
+  QCOMPARE(document.toPlainText(), original);
+  QVERIFY(!document.isUndoAvailable());
+  document.redo();
+  QCOMPARE(document.toPlainText(), reordered);
 }
 
 } // namespace tests

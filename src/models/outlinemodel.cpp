@@ -1,5 +1,6 @@
 #include "outlinemodel.h"
 
+#include <QMimeData>
 #include <QStack>
 
 #include <widgets/outlineprovider.h>
@@ -8,18 +9,14 @@ using namespace vnotex;
 
 // OutlineNode
 
-OutlineNode::~OutlineNode() {
-  qDeleteAll(m_children);
-}
+OutlineNode::~OutlineNode() { qDeleteAll(m_children); }
 
 // OutlineModel
 
 OutlineModel::OutlineModel(QObject *p_parent)
     : QAbstractItemModel(p_parent), m_root(new OutlineNode()) {}
 
-OutlineModel::~OutlineModel() {
-  delete m_root;
-}
+OutlineModel::~OutlineModel() { delete m_root; }
 
 void OutlineModel::setOutline(const QSharedPointer<Outline> &p_outline) {
   beginResetModel();
@@ -32,13 +29,11 @@ void OutlineModel::setOutline(const QSharedPointer<Outline> &p_outline) {
   endResetModel();
 }
 
-void OutlineModel::setCurrentHeadingIndex(int p_idx) {
-  m_currentHeadingIndex = p_idx;
-}
+bool OutlineModel::isReorderSupported() const { return m_reorderSupported; }
 
-int OutlineModel::getCurrentHeadingIndex() const {
-  return m_currentHeadingIndex;
-}
+void OutlineModel::setCurrentHeadingIndex(int p_idx) { m_currentHeadingIndex = p_idx; }
+
+int OutlineModel::getCurrentHeadingIndex() const { return m_currentHeadingIndex; }
 
 void OutlineModel::setSectionNumberEnabled(bool p_enabled) {
   if (m_sectionNumberEnabled == p_enabled) {
@@ -87,16 +82,13 @@ QModelIndex OutlineModel::indexForHeadingIndex(int p_headingIndex) const {
   return findNodeByHeadingIndex(m_root, p_headingIndex);
 }
 
-QModelIndex OutlineModel::index(int p_row, int p_column,
-                                const QModelIndex &p_parent) const {
+QModelIndex OutlineModel::index(int p_row, int p_column, const QModelIndex &p_parent) const {
   if (!hasIndex(p_row, p_column, p_parent)) {
     return QModelIndex();
   }
 
   OutlineNode *parentNode =
-      p_parent.isValid()
-          ? static_cast<OutlineNode *>(p_parent.internalPointer())
-          : m_root;
+      p_parent.isValid() ? static_cast<OutlineNode *>(p_parent.internalPointer()) : m_root;
 
   if (p_row >= 0 && p_row < parentNode->m_children.size()) {
     return createIndex(p_row, p_column, parentNode->m_children[p_row]);
@@ -137,9 +129,7 @@ int OutlineModel::rowCount(const QModelIndex &p_parent) const {
   }
 
   const OutlineNode *parentNode =
-      p_parent.isValid()
-          ? static_cast<const OutlineNode *>(p_parent.internalPointer())
-          : m_root;
+      p_parent.isValid() ? static_cast<const OutlineNode *>(p_parent.internalPointer()) : m_root;
 
   return parentNode ? parentNode->m_children.size() : 0;
 }
@@ -173,6 +163,12 @@ QVariant OutlineModel::data(const QModelIndex &p_index, int p_role) const {
   case HeadingIndexRole:
     return node->m_headingIndex;
 
+  case HeadingLevelRole:
+    return node->m_level;
+
+  case ReorderableRole:
+    return node->m_reorderable;
+
   default:
     return QVariant();
   }
@@ -180,14 +176,45 @@ QVariant OutlineModel::data(const QModelIndex &p_index, int p_role) const {
 
 Qt::ItemFlags OutlineModel::flags(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
-    return Qt::NoItemFlags;
+    return m_reorderSupported ? Qt::ItemIsDropEnabled : Qt::NoItemFlags;
   }
 
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  Qt::ItemFlags itemFlags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  const auto *node = static_cast<const OutlineNode *>(p_index.internalPointer());
+  if (m_reorderSupported && node && node->m_reorderable) {
+    itemFlags |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
+  }
+  return itemFlags;
+}
+
+QStringList OutlineModel::mimeTypes() const {
+  return {QStringLiteral("application/x-vnote-outline-heading")};
+}
+
+Qt::DropActions OutlineModel::supportedDropActions() const { return Qt::MoveAction; }
+
+bool OutlineModel::canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                                   int p_column, const QModelIndex &p_parent) const {
+  Q_UNUSED(p_row);
+  Q_UNUSED(p_column);
+  Q_UNUSED(p_parent);
+  return m_reorderSupported && p_action == Qt::MoveAction && p_data &&
+         p_data->hasFormat(QStringLiteral("application/x-vnote-outline-heading"));
+}
+
+bool OutlineModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                                int p_column, const QModelIndex &p_parent) {
+  Q_UNUSED(p_data);
+  Q_UNUSED(p_action);
+  Q_UNUSED(p_row);
+  Q_UNUSED(p_column);
+  Q_UNUSED(p_parent);
+  return false;
 }
 
 void OutlineModel::buildTree() {
   clearChildren(m_root);
+  m_reorderSupported = m_outline && m_outline->m_reorderSupported;
 
   if (!m_outline || m_outline->m_headings.isEmpty()) {
     return;
@@ -237,8 +264,7 @@ void OutlineModel::buildTree() {
 
     // Compute section number for this heading.
     if (m_sectionNumberEnabled && m_sectionNumberBaseLevel > 0) {
-      OutlineProvider::increaseSectionNumber(
-          sectionNumber, level, m_sectionNumberBaseLevel);
+      OutlineProvider::increaseSectionNumber(sectionNumber, level, m_sectionNumberBaseLevel);
     }
 
     // Navigate to the correct parent based on level.
@@ -267,12 +293,13 @@ void OutlineModel::buildTree() {
     node->m_name = heading.m_name;
     node->m_level = level;
     node->m_headingIndex = perfectToOriginal[i];
+    node->m_reorderable = heading.m_reorderable;
     node->m_parent = currentParent;
 
     // Compute section number string.
     if (m_sectionNumberEnabled && m_sectionNumberBaseLevel > 0) {
-      node->m_sectionNumber = OutlineProvider::joinSectionNumber(
-          sectionNumber, m_sectionNumberEndingDot);
+      node->m_sectionNumber =
+          OutlineProvider::joinSectionNumber(sectionNumber, m_sectionNumberEndingDot);
     }
 
     currentParent->m_children.append(node);
@@ -292,8 +319,7 @@ void OutlineModel::clearChildren(OutlineNode *p_node) {
   p_node->m_children.clear();
 }
 
-QModelIndex OutlineModel::findNodeByHeadingIndex(OutlineNode *p_node,
-                                                 int p_headingIndex) const {
+QModelIndex OutlineModel::findNodeByHeadingIndex(OutlineNode *p_node, int p_headingIndex) const {
   if (!p_node) {
     return QModelIndex();
   }

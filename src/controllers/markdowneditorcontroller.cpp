@@ -1,6 +1,9 @@
 #include "markdowneditorcontroller.h"
 
 #include <QFileInfo>
+#include <QRegularExpression>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QUrl>
 
 #include <vtextedit/markdowneditorconfig.h>
@@ -55,6 +58,88 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
     }
     p_editorConfig->m_inplacePreviewSources = editorSrcs;
   }
+}
+
+struct HeadingMarkerReplacement {
+  int m_start = -1;
+  int m_end = -1;
+  QString m_text;
+};
+
+bool makeHeadingMarkerReplacement(const QString &p_text,
+                                  const MarkdownEditorController::HeadingBlockInfo &p_heading,
+                                  int p_newLevel, HeadingMarkerReplacement &p_replacement) {
+  const QString source = p_text.mid(p_heading.startPos, p_heading.endPos - p_heading.startPos);
+  static const QRegularExpression atxPattern(QStringLiteral("\\A( {0,3})(#{1,6})(?=[\\t ]|$)"));
+  const auto atxMatch = atxPattern.match(source);
+  if (atxMatch.hasMatch()) {
+    if (atxMatch.capturedLength(2) != p_heading.level) {
+      return false;
+    }
+    p_replacement.m_start = p_heading.startPos + atxMatch.capturedStart(2);
+    p_replacement.m_end = p_replacement.m_start + atxMatch.capturedLength(2);
+    p_replacement.m_text = QString(p_newLevel, QLatin1Char('#'));
+    return true;
+  }
+
+  const int underlineStart = source.lastIndexOf(QLatin1Char('\n'));
+  if (underlineStart <= 0) {
+    return false;
+  }
+
+  const QString underline = source.mid(underlineStart + 1);
+  static const QRegularExpression setextPattern(QStringLiteral("\\A( {0,3})(=+|-+)([\\t ]*)\\z"));
+  const auto setextMatch = setextPattern.match(underline);
+  if (!setextMatch.hasMatch()) {
+    return false;
+  }
+
+  const int parsedLevel = setextMatch.captured(2).startsWith(QLatin1Char('=')) ? 1 : 2;
+  if (parsedLevel != p_heading.level) {
+    return false;
+  }
+
+  if (p_newLevel <= 2) {
+    p_replacement.m_start = p_heading.startPos + underlineStart + 1 + setextMatch.capturedStart(2);
+    p_replacement.m_end = p_replacement.m_start + setextMatch.capturedLength(2);
+    p_replacement.m_text = QString(setextMatch.capturedLength(2),
+                                   p_newLevel == 1 ? QLatin1Char('=') : QLatin1Char('-'));
+    return true;
+  }
+
+  const QString titleLine = source.left(underlineStart);
+  int indentation = 0;
+  while (indentation < titleLine.size() && indentation < 3 &&
+         titleLine[indentation] == QLatin1Char(' ')) {
+    ++indentation;
+  }
+  if (titleLine.mid(indentation).isEmpty()) {
+    return false;
+  }
+
+  p_replacement.m_start = p_heading.startPos;
+  p_replacement.m_end = p_heading.endPos;
+  p_replacement.m_text = titleLine.left(indentation) + QString(p_newLevel, QLatin1Char('#')) +
+                         QLatin1Char(' ') + titleLine.mid(indentation);
+  return true;
+}
+
+int mapThroughHeadingReplacements(int p_position,
+                                  const QVector<HeadingMarkerReplacement> &p_replacements) {
+  int delta = 0;
+  for (const auto &replacement : p_replacements) {
+    if (p_position < replacement.m_start) {
+      break;
+    }
+
+    const int replacementLength = replacement.m_text.size();
+    if (p_position <= replacement.m_end) {
+      return replacement.m_start + delta +
+             qMin(p_position - replacement.m_start, replacementLength);
+    }
+    delta += replacementLength - (replacement.m_end - replacement.m_start);
+  }
+  return p_position + delta;
 }
 } // namespace
 
@@ -404,4 +489,213 @@ QString MarkdownEditorController::composeHeadingLink(const QString &p_resolvedNo
   // survive that round trip (covered by test_markdown_heading_link's
   // anchorSurvivesClipboardReparse).
   return url.toString();
+}
+
+MarkdownEditorController::HeadingBlockMoveResult MarkdownEditorController::reorderHeadingBlock(
+    QTextDocument *p_document, const QVector<HeadingBlockInfo> &p_headings,
+    int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel, int p_cursorPosition,
+    int p_cursorAnchor, int p_selectionStart, int p_selectionEnd) {
+  HeadingBlockMoveResult result;
+  result.cursorPosition = p_cursorPosition;
+  result.cursorAnchor = p_cursorAnchor;
+  result.selectionStart = p_selectionStart;
+  result.selectionEnd = p_selectionEnd;
+
+  if (!p_document || p_sourceHeadingIndex < 0 || p_sourceHeadingIndex >= p_headings.size() ||
+      p_targetLevel < 1 || p_targetLevel > 6) {
+    return result;
+  }
+
+  const QString text = p_document->toPlainText();
+  int previousEnd = -1;
+  for (const auto &heading : p_headings) {
+    if (heading.startPos < 0 || heading.endPos < 0) {
+      if (heading.startPos != -1 || heading.endPos != -1) {
+        return result;
+      }
+      continue;
+    }
+    if (heading.level < 1 || heading.level > 6 || heading.startPos < previousEnd ||
+        heading.endPos <= heading.startPos || heading.endPos > text.size()) {
+      return result;
+    }
+    HeadingMarkerReplacement validation;
+    if (!makeHeadingMarkerReplacement(text, heading, heading.level, validation)) {
+      return result;
+    }
+    previousEnd = heading.endPos;
+  }
+
+  const auto &source = p_headings[p_sourceHeadingIndex];
+  if (source.startPos < 0 || source.endPos < 0) {
+    return result;
+  }
+
+  int sourceEndHeadingIndex = p_sourceHeadingIndex + 1;
+  while (sourceEndHeadingIndex < p_headings.size()) {
+    const auto &heading = p_headings[sourceEndHeadingIndex];
+    if (heading.startPos >= 0 && heading.level <= source.level) {
+      break;
+    }
+    ++sourceEndHeadingIndex;
+  }
+
+  if (p_beforeHeadingIndex >= 0) {
+    if (p_beforeHeadingIndex >= p_headings.size() ||
+        p_headings[p_beforeHeadingIndex].startPos < 0 ||
+        (p_beforeHeadingIndex >= p_sourceHeadingIndex &&
+         p_beforeHeadingIndex < sourceEndHeadingIndex)) {
+      return result;
+    }
+  }
+
+  const int levelDelta = p_targetLevel - source.level;
+  QVector<HeadingMarkerReplacement> replacements;
+  for (int i = p_sourceHeadingIndex; i < sourceEndHeadingIndex; ++i) {
+    const auto &heading = p_headings[i];
+    if (heading.startPos < 0) {
+      continue;
+    }
+    const int newLevel = heading.level + levelDelta;
+    if (newLevel < 1 || newLevel > 6) {
+      return result;
+    }
+    HeadingMarkerReplacement replacement;
+    if (!makeHeadingMarkerReplacement(text, heading, newLevel, replacement)) {
+      return result;
+    }
+    replacements.append(replacement);
+  }
+
+  QVector<int> originalOrder;
+  QVector<int> movedOrder;
+  QVector<int> remainingOrder;
+  for (int i = 0; i < p_headings.size(); ++i) {
+    if (p_headings[i].startPos < 0) {
+      continue;
+    }
+    originalOrder.append(i);
+    if (i >= p_sourceHeadingIndex && i < sourceEndHeadingIndex) {
+      movedOrder.append(i);
+    } else {
+      remainingOrder.append(i);
+    }
+  }
+
+  int orderInsertion = remainingOrder.size();
+  if (p_beforeHeadingIndex >= 0) {
+    orderInsertion = remainingOrder.indexOf(p_beforeHeadingIndex);
+    if (orderInsertion < 0) {
+      return result;
+    }
+  }
+  QVector<int> reordered = remainingOrder;
+  for (int i = 0; i < movedOrder.size(); ++i) {
+    reordered.insert(orderInsertion + i, movedOrder[i]);
+  }
+  if (reordered == originalOrder && levelDelta == 0) {
+    return result;
+  }
+
+  int sourceStart = source.startPos;
+  const int sourceEnd = sourceEndHeadingIndex < p_headings.size()
+                            ? p_headings[sourceEndHeadingIndex].startPos
+                            : text.size();
+  const int destination =
+      p_beforeHeadingIndex >= 0 ? p_headings[p_beforeHeadingIndex].startPos : text.size();
+  bool carriedLeadingSeparator = false;
+  if (sourceEnd == text.size() && !text.endsWith(QLatin1Char('\n')) && sourceStart > 0 &&
+      text[sourceStart - 1] == QLatin1Char('\n')) {
+    --sourceStart;
+    carriedLeadingSeparator = true;
+  }
+  if (sourceEnd <= sourceStart || (destination > sourceStart && destination < sourceEnd)) {
+    return result;
+  }
+
+  for (auto &replacement : replacements) {
+    replacement.m_start -= sourceStart;
+    replacement.m_end -= sourceStart;
+  }
+
+  QString movedText = text.mid(sourceStart, sourceEnd - sourceStart);
+  for (int i = replacements.size() - 1; i >= 0; --i) {
+    const auto &replacement = replacements[i];
+    movedText.replace(replacement.m_start, replacement.m_end - replacement.m_start,
+                      replacement.m_text);
+  }
+
+  bool rotatedLeadingSeparator = false;
+  bool rotatedTrailingSeparator = false;
+  if (carriedLeadingSeparator && destination < sourceStart &&
+      movedText.startsWith(QLatin1Char('\n'))) {
+    movedText.remove(0, 1);
+    movedText.append(QLatin1Char('\n'));
+    rotatedLeadingSeparator = true;
+  } else if (destination == text.size() && !text.endsWith(QLatin1Char('\n')) &&
+             sourceEnd < text.size() && movedText.endsWith(QLatin1Char('\n'))) {
+    movedText.chop(1);
+    movedText.prepend(QLatin1Char('\n'));
+    rotatedTrailingSeparator = true;
+  }
+
+  QString remainingText = text;
+  remainingText.remove(sourceStart, sourceEnd - sourceStart);
+  const int insertionPosition =
+      destination >= sourceEnd ? destination - (sourceEnd - sourceStart) : destination;
+  const QString prefix = remainingText.left(insertionPosition);
+  const QString suffix = remainingText.mid(insertionPosition);
+  int addedLeadingSeparator = 0;
+  if (!prefix.isEmpty() && !movedText.isEmpty() && !prefix.endsWith(QLatin1Char('\n')) &&
+      !movedText.startsWith(QLatin1Char('\n'))) {
+    movedText.prepend(QLatin1Char('\n'));
+    addedLeadingSeparator = 1;
+  }
+  if (!suffix.isEmpty() && !movedText.isEmpty() && !movedText.endsWith(QLatin1Char('\n')) &&
+      !suffix.startsWith(QLatin1Char('\n'))) {
+    movedText.append(QLatin1Char('\n'));
+  }
+
+  auto mapPosition = [&](int p_position) {
+    if (p_position < 0) {
+      return -1;
+    }
+    const int boundedPosition = qBound(0, p_position, text.size());
+    if (boundedPosition >= sourceStart && boundedPosition < sourceEnd) {
+      int localPosition =
+          mapThroughHeadingReplacements(boundedPosition - sourceStart, replacements);
+      if (rotatedLeadingSeparator) {
+        localPosition = qMax(0, localPosition - 1);
+      } else if (rotatedTrailingSeparator) {
+        ++localPosition;
+      }
+      localPosition += addedLeadingSeparator;
+      return insertionPosition + localPosition;
+    }
+
+    int remainingPosition = boundedPosition;
+    if (boundedPosition >= sourceEnd) {
+      remainingPosition -= sourceEnd - sourceStart;
+    }
+    if (remainingPosition >= insertionPosition) {
+      remainingPosition += movedText.size();
+    }
+    return remainingPosition;
+  };
+
+  QTextCursor editCursor(p_document);
+  editCursor.beginEditBlock();
+  editCursor.setPosition(sourceStart);
+  editCursor.setPosition(sourceEnd, QTextCursor::KeepAnchor);
+  editCursor.removeSelectedText();
+  editCursor.setPosition(insertionPosition);
+  editCursor.insertText(movedText);
+  editCursor.endEditBlock();
+
+  result.moved = true;
+  result.cursorPosition = mapPosition(p_cursorPosition);
+  result.cursorAnchor = mapPosition(p_cursorAnchor);
+  result.selectionStart = mapPosition(p_selectionStart);
+  result.selectionEnd = mapPosition(p_selectionEnd);
+  return result;
 }

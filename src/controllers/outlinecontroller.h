@@ -8,7 +8,9 @@ class QTimer;
 
 namespace vnotex {
 
+struct Outline;
 class OutlineModel;
+enum class OutlineDropPosition;
 class OutlineView;
 class OutlineProvider;
 class ServiceLocator;
@@ -51,12 +53,16 @@ public:
   void toggleSectionNumber();
   bool isSectionNumberEnabled() const;
 
+  void confirmReorder(bool p_confirmed);
+
 signals:
   // Emitted when expand level changes (for UI to show tooltip).
   void expandLevelChanged(int p_level);
 
   // Emitted to request the view area to focus (when user clicks a heading).
   void focusViewAreaRequested();
+
+  void reorderConfirmationRequested(const QString &p_headingName);
 
 private:
   // Get the base heading level (level of the first heading in the current
@@ -66,13 +72,25 @@ private:
   // Update the model with the current provider's outline data.
   void updateModelFromProvider();
 
+  void handleItemMoveRequested(int p_sourceHeadingIndex, int p_targetHeadingIndex,
+                               OutlineDropPosition p_position);
+  void clearPendingReorder();
+
+  struct PendingReorder {
+    QSharedPointer<Outline> m_outline;
+    int m_sourceHeadingIndex = -1;
+    int m_beforeHeadingIndex = -1;
+    int m_targetLevel = -1;
+  };
+
   ServiceLocator &m_services;
-  OutlineModel *m_model = nullptr;       // Owned (child QObject)
-  OutlineView *m_view = nullptr;         // Not owned
+  OutlineModel *m_model = nullptr; // Owned (child QObject)
+  OutlineView *m_view = nullptr;   // Not owned
   QSharedPointer<OutlineProvider> m_provider;
-  QTimer *m_expandTimer = nullptr;       // Debounce timer for auto-expand
-  int m_autoExpandedLevel = 6;           // Cached from config
-  bool m_sectionNumberEnabled = false;   // Cached from config
+  PendingReorder m_pendingReorder;
+  QTimer *m_expandTimer = nullptr;     // Debounce timer for auto-expand
+  int m_autoExpandedLevel = 6;         // Cached from config
+  bool m_sectionNumberEnabled = false; // Cached from config
   int m_sectionNumberBaseLevel = 2;    // Cached from config
 };
 

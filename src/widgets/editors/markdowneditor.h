@@ -38,7 +38,7 @@ public:
     Heading() = default;
 
     Heading(const QString &p_name, int p_level, int p_blockNumber = -1,
-            const QString &p_anchor = QString());
+            const QString &p_anchor = QString(), int p_startPos = -1, int p_endPos = -1);
 
     QString m_name;
 
@@ -47,6 +47,10 @@ public:
     int m_blockNumber = -1;
 
     QString m_anchor;
+
+    int m_startPos = -1;
+
+    int m_endPos = -1;
   };
 
   struct PlaceholderInfo {

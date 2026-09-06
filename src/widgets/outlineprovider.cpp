@@ -26,6 +26,24 @@ void OutlineProvider::setOutline(const QSharedPointer<Outline> &p_outline) {
 
 const QSharedPointer<Outline> &OutlineProvider::getOutline() const { return m_outline; }
 
+void OutlineProvider::setReorderSupported(bool p_supported) {
+  if (!m_outline || m_outline->m_reorderSupported == p_supported) {
+    return;
+  }
+
+  m_outline->m_reorderSupported = p_supported;
+  emit outlineChanged();
+}
+
+void OutlineProvider::requestMove(int p_sourceHeadingIndex, int p_beforeHeadingIndex,
+                                  int p_targetLevel) {
+  if (!m_outline || !m_outline->m_reorderSupported) {
+    return;
+  }
+
+  emit moveRequested(p_sourceHeadingIndex, p_beforeHeadingIndex, p_targetLevel);
+}
+
 int OutlineProvider::getCurrentHeadingIndex() const { return m_currentHeadingIndex; }
 
 void OutlineProvider::setCurrentHeadingIndex(int p_idx) {

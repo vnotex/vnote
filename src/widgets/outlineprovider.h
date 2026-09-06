@@ -23,6 +23,9 @@ struct Outline {
 
     // Heading level, 1-based.
     int m_level = -1;
+
+    // Whether this concrete heading may participate in reordering.
+    bool m_reorderable = false;
   };
 
   void clear();
@@ -32,6 +35,9 @@ struct Outline {
   bool isEmpty() const;
 
   QVector<Heading> m_headings;
+
+  // Whether this outline currently supports reordering.
+  bool m_reorderSupported = false;
 };
 
 // Used to hold toc-related data of one ViewWindow.
@@ -45,6 +51,10 @@ public:
   // Get the outline.
   const QSharedPointer<Outline> &getOutline() const;
   void setOutline(const QSharedPointer<Outline> &p_outline);
+
+  void setReorderSupported(bool p_supported);
+
+  void requestMove(int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel);
 
   // Get current heading index in outline.
   int getCurrentHeadingIndex() const;
@@ -63,6 +73,8 @@ signals:
   void currentHeadingChanged();
 
   void headingClicked(int p_idx);
+
+  void moveRequested(int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel);
 
 private:
   QSharedPointer<Outline> m_outline;

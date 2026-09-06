@@ -346,6 +346,7 @@ add_qt_test(test_markdown_heading_link
     test_markdown_heading_link.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
   LINKS
+    Qt6::Gui
     core_configs
     core_services
     vxcore

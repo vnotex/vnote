@@ -81,8 +81,9 @@ QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services
 } // namespace
 
 MarkdownEditor::Heading::Heading(const QString &p_name, int p_level, int p_blockNumber,
-                                 const QString &p_anchor)
-    : m_name(p_name), m_level(p_level), m_blockNumber(p_blockNumber), m_anchor(p_anchor) {}
+                                 const QString &p_anchor, int p_startPos, int p_endPos)
+    : m_name(p_name), m_level(p_level), m_blockNumber(p_blockNumber), m_anchor(p_anchor),
+      m_startPos(p_startPos), m_endPos(p_endPos) {}
 
 MarkdownEditor::MarkdownEditor(ServiceLocator &p_services, const MarkdownEditorConfig &p_config,
                                const QSharedPointer<vte::MarkdownEditorConfig> &p_editorConfig,
@@ -1149,7 +1150,8 @@ void MarkdownEditor::updateHeadings(const QVector<vte::md::HeadingInfo> &p_headi
     }
 
     QString anchor = m_headingSlugger.slug(elem.m_anchorText);
-    headings.append(Heading(elem.m_title, elem.m_level, block.blockNumber(), anchor));
+    headings.append(Heading(elem.m_title, elem.m_level, block.blockNumber(), anchor,
+                            elem.m_startPos, elem.m_endPos));
   }
 
   OutlineProvider::makePerfectHeadings(headings, m_headings);

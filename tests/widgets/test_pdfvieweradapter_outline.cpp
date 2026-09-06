@@ -16,8 +16,12 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMimeData>
 #include <QSignalSpy>
 #include <QtTest>
+
+#include <models/outlinemodel.h>
+#include <widgets/outlineprovider.h>
 
 #include <widgets/editors/pdfvieweradapter.h>
 
@@ -52,6 +56,9 @@ private slots:
   void scrollEmitsDestinationIndexNotHeadingIndex();
   void outOfRangeScrollEmitsNothing();
   void clearOutlineEmptiesAndNotifies();
+  void outlineModelReorderDefaultsOff();
+  void outlineModelExposesReorderEligibility();
+  void outlineModelReplacementDisablesReordering();
 };
 
 void TestPdfViewerAdapterOutline::wellFormedNestedOutline() {
@@ -250,8 +257,10 @@ void TestPdfViewerAdapterOutline::hostileLevelIsClamped() {
   QCOMPARE(sane.m_index, 0);
 
   for (const auto &h : headings) {
-    QVERIFY2(h.m_level <= 64, qPrintable(QStringLiteral("level %1 escaped the clamp").arg(h.m_level)));
-    QVERIFY2(h.m_level >= -1, qPrintable(QStringLiteral("level %1 escaped the clamp").arg(h.m_level)));
+    QVERIFY2(h.m_level <= 64,
+             qPrintable(QStringLiteral("level %1 escaped the clamp").arg(h.m_level)));
+    QVERIFY2(h.m_level >= -1,
+             qPrintable(QStringLiteral("level %1 escaped the clamp").arg(h.m_level)));
   }
 
   // Every hostile level was neutralized to the invalid sentinel.
@@ -370,6 +379,80 @@ void TestPdfViewerAdapterOutline::clearOutlineEmptiesAndNotifies() {
 
   QCOMPARE(changedSpy.count(), 1);
   QVERIFY(adapter.getOutlineHeadings().isEmpty());
+}
+
+void TestPdfViewerAdapterOutline::outlineModelReorderDefaultsOff() {
+  vnotex::OutlineModel model;
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  outline->m_headings.append(vnotex::Outline::Heading(QStringLiteral("Heading"), 1));
+
+  model.setOutline(outline);
+
+  QVERIFY(!outline->m_reorderSupported);
+  QVERIFY(!model.isReorderSupported());
+  QCOMPARE(model.flags(QModelIndex()), Qt::NoItemFlags);
+  const QModelIndex heading = model.index(0, 0);
+  QVERIFY(!(model.flags(heading) & Qt::ItemIsDragEnabled));
+  QVERIFY(!(model.flags(heading) & Qt::ItemIsDropEnabled));
+}
+
+void TestPdfViewerAdapterOutline::outlineModelExposesReorderEligibility() {
+  vnotex::OutlineModel model;
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  outline->m_reorderSupported = true;
+  vnotex::Outline::Heading top(QStringLiteral("Top"), 1);
+  top.m_reorderable = true;
+  vnotex::Outline::Heading deep(QStringLiteral("Deep"), 3);
+  deep.m_reorderable = true;
+  outline->m_headings = {top, deep};
+
+  model.setOutline(outline);
+
+  QVERIFY(model.isReorderSupported());
+  QVERIFY(model.flags(QModelIndex()) & Qt::ItemIsDropEnabled);
+  QCOMPARE(model.supportedDropActions(), Qt::DropActions(Qt::MoveAction));
+  QVERIFY(model.mimeTypes().contains(QStringLiteral("application/x-vnote-outline-heading")));
+  QMimeData dragData;
+  dragData.setData(QStringLiteral("application/x-vnote-outline-heading"), QByteArrayLiteral("0"));
+  QVERIFY(model.canDropMimeData(&dragData, Qt::MoveAction, -1, -1, QModelIndex()));
+  QVERIFY(!model.canDropMimeData(&dragData, Qt::CopyAction, -1, -1, QModelIndex()));
+  QVERIFY(!model.dropMimeData(&dragData, Qt::MoveAction, -1, -1, QModelIndex()));
+  const QModelIndex topIndex = model.indexForHeadingIndex(0);
+  const QModelIndex deepIndex = model.indexForHeadingIndex(1);
+  QVERIFY(topIndex.isValid());
+  QVERIFY(deepIndex.isValid());
+  QCOMPARE(topIndex.data(vnotex::OutlineModel::HeadingLevelRole).toInt(), 1);
+  QCOMPARE(deepIndex.data(vnotex::OutlineModel::HeadingLevelRole).toInt(), 3);
+  QVERIFY(topIndex.data(vnotex::OutlineModel::ReorderableRole).toBool());
+  QVERIFY(model.flags(topIndex) & Qt::ItemIsDragEnabled);
+  QVERIFY(model.flags(topIndex) & Qt::ItemIsDropEnabled);
+
+  const QModelIndex filler = model.index(0, 0, topIndex);
+  QVERIFY(filler.isValid());
+  QCOMPARE(filler.data(vnotex::OutlineModel::HeadingIndexRole).toInt(), -1);
+  QVERIFY(!filler.data(vnotex::OutlineModel::ReorderableRole).toBool());
+  QVERIFY(!(model.flags(filler) & Qt::ItemIsDragEnabled));
+  QVERIFY(!(model.flags(filler) & Qt::ItemIsDropEnabled));
+}
+
+void TestPdfViewerAdapterOutline::outlineModelReplacementDisablesReordering() {
+  vnotex::OutlineModel model;
+  auto supported = QSharedPointer<vnotex::Outline>::create();
+  supported->m_reorderSupported = true;
+  supported->m_headings.append(vnotex::Outline::Heading(QStringLiteral("Heading"), 1));
+  supported->m_headings[0].m_reorderable = true;
+  model.setOutline(supported);
+  QVERIFY(model.isReorderSupported());
+
+  auto unsupported = QSharedPointer<vnotex::Outline>::create();
+  unsupported->m_headings.append(vnotex::Outline::Heading(QStringLiteral("Other"), 1));
+  model.setOutline(unsupported);
+  QVERIFY(!model.isReorderSupported());
+  QVERIFY(!(model.flags(model.index(0, 0)) & Qt::ItemIsDragEnabled));
+
+  model.setOutline(QSharedPointer<vnotex::Outline>());
+  QVERIFY(!model.isReorderSupported());
+  QCOMPARE(model.flags(QModelIndex()), Qt::NoItemFlags);
 }
 
 } // namespace tests
