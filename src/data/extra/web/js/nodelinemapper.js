@@ -77,7 +77,7 @@ class HeadingFolding {
             button.setAttribute('aria-controls', content.id);
             button.setAttribute('aria-label', 'Collapse section');
             button.textContent = '▼';
-            node.insertBefore(button, node.firstChild);
+            node.appendChild(button);
 
             stack.push({ level: level, content: content });
         }
@@ -94,7 +94,7 @@ class HeadingFolding {
                 continue;
             }
 
-            let button = heading.firstElementChild;
+            let button = heading.querySelector('button.vx-heading-fold-toggle');
             if (button && button.classList.contains('vx-heading-fold-toggle')) {
                 heading.removeChild(button);
             }
@@ -173,7 +173,9 @@ class HeadingFolding {
             if (node.classList && node.classList.contains('vx-heading-fold-content') && node.hidden) {
                 let section = node.parentNode;
                 let heading = section ? section.firstElementChild : null;
-                let button = heading ? heading.firstElementChild : null;
+                let button = heading
+                    ? heading.querySelector('button.vx-heading-fold-toggle')
+                    : null;
                 if (button && button.classList.contains('vx-heading-fold-toggle')) {
                     this.setExpanded(button, node, true);
                     changed = true;

@@ -348,7 +348,9 @@ window.__makeHeadingFixture = function() {
   window.__mapper = new window.__NodeLineMapper(adapter, container);
 };
 
-window.__buttonFor = function(heading) { return heading.firstElementChild; };
+window.__buttonFor = function(heading) {
+  return heading.querySelector('button.vx-heading-fold-toggle');
+};
 window.__contentFor = function(heading) {
   return document.getElementById(window.__buttonFor(heading).getAttribute('aria-controls'));
 };

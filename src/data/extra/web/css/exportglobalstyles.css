@@ -3,34 +3,21 @@ div.code-toolbar > .toolbar .vx-collapse-btn {
     display: none;
 }
 
-.vx-heading-fold > h1,
-.vx-heading-fold > h2,
-.vx-heading-fold > h3,
-.vx-heading-fold > h4,
-.vx-heading-fold > h5,
-.vx-heading-fold > h6 {
-    position: relative;
-}
-
 .vx-heading-fold-toggle {
     align-items: center;
     background: transparent;
     border: 0;
     color: currentColor;
     cursor: pointer;
-    display: flex;
+    display: none;
     font: inherit;
     font-size: 1.75rem;
     height: 2.5rem;
     justify-content: center;
     line-height: 1;
-    opacity: 0;
+    margin-left: 0.25rem;
     padding: 0;
-    pointer-events: none;
-    position: absolute;
-    right: calc(100% + 0.25rem);
-    top: 50%;
-    transform: translateY(-50%);
+    vertical-align: middle;
     width: 2.5rem;
 }
 
@@ -40,6 +27,5 @@ div.code-toolbar > .toolbar .vx-collapse-btn {
 .vx-heading-fold > h4:hover > .vx-heading-fold-toggle,
 .vx-heading-fold > h5:hover > .vx-heading-fold-toggle,
 .vx-heading-fold > h6:hover > .vx-heading-fold-toggle {
-    opacity: 1;
-    pointer-events: auto;
+    display: inline-flex;
 }
