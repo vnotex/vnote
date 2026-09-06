@@ -225,7 +225,10 @@ Element.prototype.removeChild = function(child) {
   if (idx >= 0) { this.childNodes.splice(idx, 1); child.parentNode = null; }
   return child;
 };
-Element.prototype.setAttribute = function(name, value) { this.attributes[name] = String(value); };
+Element.prototype.setAttribute = function(name, value) {
+  this.attributes[name] = String(value);
+  if (name === 'class') { this.className = String(value); }
+};
 Element.prototype.getAttribute = function(name) {
   return Object.prototype.hasOwnProperty.call(this.attributes, name) ? this.attributes[name] : null;
 };
@@ -289,6 +292,7 @@ var document = {
   documentElement: { scrollHeight: 1000, clientHeight: 500, scrollTop: 0 },
   readyState: 'complete',
   createElement: function(tag) { return new Element(tag); },
+  createElementNS: function(namespaceUri, tag) { return new Element(tag); },
   getElementById: function(id) { return this.body.querySelector('#' + id); },
   querySelector: function(selector) {
     var parts = selector.trim().split(/\s+/);
@@ -502,6 +506,11 @@ void TestMarkdownViewerJs::testHeadingFolding_enabledAndDisabledDecoration() {
                    "window.__buttonFor(window.__nodes.alpha).getAttribute('aria-label')"))
                .toString(),
            QStringLiteral("Collapse section"));
+  QCOMPARE(engine
+               .evaluate(QStringLiteral(
+                   "document.body.querySelectorAll('svg.vx-heading-fold-icon').length"))
+               .toInt(),
+           7);
 
   res = engine.evaluate(QStringLiteral("window.__mapper.setHeadingFoldingEnabled(false);"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));

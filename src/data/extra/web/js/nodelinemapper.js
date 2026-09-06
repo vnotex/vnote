@@ -76,7 +76,22 @@ class HeadingFolding {
             button.setAttribute('aria-expanded', 'true');
             button.setAttribute('aria-controls', content.id);
             button.setAttribute('aria-label', 'Collapse section');
-            button.textContent = '▼';
+            // Reuse the bundled arrow_dropdown.svg chevron geometry inline so the
+            // control stays theme-colored and self-contained in standalone exports.
+            let icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            icon.setAttribute('class', 'vx-heading-fold-icon');
+            icon.setAttribute('viewBox', '0 0 48 48');
+            icon.setAttribute('aria-hidden', 'true');
+            icon.setAttribute('focusable', 'false');
+            let iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            iconPath.setAttribute('d', 'M36 18L24 30L12 18');
+            iconPath.setAttribute('fill', 'none');
+            iconPath.setAttribute('stroke', 'currentColor');
+            iconPath.setAttribute('stroke-width', '4');
+            iconPath.setAttribute('stroke-linecap', 'round');
+            iconPath.setAttribute('stroke-linejoin', 'round');
+            icon.appendChild(iconPath);
+            button.appendChild(icon);
             node.appendChild(button);
 
             stack.push({ level: level, content: content });
@@ -163,7 +178,7 @@ class HeadingFolding {
         p_content.hidden = !p_expanded;
         p_button.setAttribute('aria-expanded', p_expanded ? 'true' : 'false');
         p_button.setAttribute('aria-label', p_expanded ? 'Collapse section' : 'Expand section');
-        p_button.textContent = p_expanded ? '▼' : '▶';
+        // The CSS rotates the single down-chevron SVG when aria-expanded is false.
     }
 
     expandHiddenAncestors(p_node) {

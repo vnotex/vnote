@@ -59,7 +59,6 @@ figcaption {
     cursor: pointer;
     display: none;
     font: inherit;
-    font-size: 1.75rem;
     height: 2.5rem;
     justify-content: center;
     line-height: 1;
@@ -67,6 +66,16 @@ figcaption {
     padding: 0;
     vertical-align: middle;
     width: 2.5rem;
+}
+
+.vx-heading-fold-icon {
+    height: 1.5rem;
+    transform-origin: center;
+    width: 1.5rem;
+}
+
+.vx-heading-fold-toggle[aria-expanded="false"] .vx-heading-fold-icon {
+    transform: rotate(-90deg);
 }
 
 .vx-heading-fold > h1:hover > .vx-heading-fold-toggle,
