@@ -152,71 +152,40 @@ void MarkdownEditor::setPreviewHelper(PreviewHelper *p_helper) {
 }
 
 void MarkdownEditor::typeHeading(int p_level) {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeHeading(m_textEdit, p_level);
+  handleTypeAction(vte::TypeAction::TypeHeading, p_level);
 }
 
-void MarkdownEditor::typeBold() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeBold(m_textEdit);
-}
+void MarkdownEditor::typeBold() { handleTypeAction(vte::TypeAction::TypeBold); }
 
-void MarkdownEditor::typeItalic() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeItalic(m_textEdit);
-}
+void MarkdownEditor::typeItalic() { handleTypeAction(vte::TypeAction::TypeItalic); }
 
-void MarkdownEditor::typeStrikethrough() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeStrikethrough(m_textEdit);
-}
+void MarkdownEditor::typeStrikethrough() { handleTypeAction(vte::TypeAction::TypeStrikethrough); }
 
-void MarkdownEditor::typeMark() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeMark(m_textEdit);
-}
+void MarkdownEditor::typeMark() { handleTypeAction(vte::TypeAction::TypeMark); }
 
-void MarkdownEditor::typeUnorderedList() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeUnorderedList(m_textEdit);
-}
+void MarkdownEditor::typeUnorderedList() { handleTypeAction(vte::TypeAction::TypeUnorderedList); }
 
-void MarkdownEditor::typeOrderedList() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeOrderedList(m_textEdit);
-}
+void MarkdownEditor::typeOrderedList() { handleTypeAction(vte::TypeAction::TypeOrderedList); }
 
 void MarkdownEditor::typeTodoList(bool p_checked) {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeTodoList(m_textEdit, p_checked);
+  handleTypeAction(vte::TypeAction::TypeTodoList, p_checked);
 }
 
-void MarkdownEditor::typeCode() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeCode(m_textEdit);
-}
+void MarkdownEditor::typeCode() { handleTypeAction(vte::TypeAction::TypeCode); }
 
-void MarkdownEditor::typeCodeBlock() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeCodeBlock(m_textEdit);
-}
+void MarkdownEditor::typeCodeBlock() { handleTypeAction(vte::TypeAction::TypeCodeBlock); }
 
-void MarkdownEditor::typeMath() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeMath(m_textEdit);
-}
+void MarkdownEditor::typeMath() { handleTypeAction(vte::TypeAction::TypeMath); }
 
-void MarkdownEditor::typeMathBlock() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeMathBlock(m_textEdit);
-}
+void MarkdownEditor::typeMathBlock() { handleTypeAction(vte::TypeAction::TypeMathBlock); }
 
-void MarkdownEditor::typeQuote() {
-  enterInsertModeIfApplicable();
-  vte::MarkdownUtils::typeQuote(m_textEdit);
-}
+void MarkdownEditor::typeQuote() { handleTypeAction(vte::TypeAction::TypeQuote); }
 
 void MarkdownEditor::typeLink() {
+  if (handleTypeAction(vte::TypeAction::TypeLink)) {
+    return;
+  }
+
   QString linkText;
   QString linkUrl;
 
@@ -259,12 +228,15 @@ void MarkdownEditor::typeLink() {
     linkText = dialog.getLinkText();
     linkUrl = dialog.getLinkUrl();
 
-    enterInsertModeIfApplicable();
-    vte::MarkdownUtils::typeLink(m_textEdit, linkText, linkUrl);
+    handleTypeAction(vte::TypeAction::TypeLink, QStringList{linkText, linkUrl});
   }
 }
 
 void MarkdownEditor::typeImage() {
+  if (handleTypeAction(vte::TypeAction::TypeImage)) {
+    return;
+  }
+
   ImageInsertDialog dialog(tr("Insert Image"), "", "", "", m_services.get<ConfigMgr2>(), true,
                            this);
 
@@ -319,6 +291,10 @@ void MarkdownEditor::typeImage() {
 }
 
 void MarkdownEditor::typeTable() {
+  if (handleTypeAction(vte::TypeAction::TypeTable)) {
+    return;
+  }
+
   TableInsertDialog dialog(tr("Insert Table"), this);
   if (dialog.exec() != QDialog::Accepted) {
     return;
@@ -328,6 +304,10 @@ void MarkdownEditor::typeTable() {
 }
 
 void MarkdownEditor::typeTable(int p_bodyRows, int p_columns) {
+  if (handleTypeAction(vte::TypeAction::TypeTable)) {
+    return;
+  }
+
   insertTable(p_bodyRows, p_columns, Alignment::None);
 }
 
