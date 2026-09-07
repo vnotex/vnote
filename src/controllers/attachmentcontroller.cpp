@@ -3,7 +3,8 @@
 #include <QDesktopServices>
 #include <QUrl>
 
-#include <core/services/buffer2.h>
+#include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <utils/clipboardutils.h>
 
 using namespace vnotex;
@@ -32,14 +33,25 @@ void AttachmentController::addAttachments(const QStringList &p_files) {
 }
 
 void AttachmentController::openAttachments(const QStringList &p_filenames) {
-  if (!m_buffer || !m_buffer->isValid()) {
+  if (!m_buffer || !m_buffer->isValid() || p_filenames.isEmpty()) {
+    return;
+  }
+
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (!bufferSvc) {
     return;
   }
 
   QString folder = m_buffer->getAttachmentsFolder();
+  if (folder.isEmpty()) {
+    return;
+  }
+
   for (const auto &name : p_filenames) {
     QString path = folder + QLatin1Char('/') + name;
-    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    NodeIdentifier nodeId;
+    nodeId.relativePath = path;
+    bufferSvc->openBuffer(nodeId, FileOpenSettings());
   }
 }
 

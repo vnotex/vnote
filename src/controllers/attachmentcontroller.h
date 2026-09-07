@@ -26,7 +26,7 @@ public:
   // The caller (view) owns the file dialog; this never shows UI.
   void addAttachments(const QStringList &p_files);
 
-  // Open attachments with the system default application.
+  // Open attachments through the standard buffer/view-window flow.
   void openAttachments(const QStringList &p_filenames);
 
   // Delete the given attachments.

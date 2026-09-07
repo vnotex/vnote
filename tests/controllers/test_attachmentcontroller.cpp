@@ -1,9 +1,12 @@
 #include <QtTest>
 
+#include <QDesktopServices>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QUrl>
 
 #include <vxcore/vxcore.h>
 
@@ -16,6 +19,17 @@
 
 namespace tests {
 
+// Intercepts desktop file opens so a regression never launches an external process.
+class UrlSink : public QObject {
+  Q_OBJECT
+
+public:
+  QList<QUrl> m_opened;
+
+public slots:
+  void onUrl(const QUrl &p_url) { m_opened.append(p_url); }
+};
+
 // Regression gate for the controller GUI cleanup: AttachmentController no longer
 // opens a QFileDialog / QMessageBox, so a GUILESS test can drive add + delete
 // straight through without blocking on a modal.
@@ -27,6 +41,7 @@ private slots:
   void cleanupTestCase();
   void cleanup();
 
+  void testOpenAttachmentsOpensReadableBuffer();
   void testAddAttachmentsCopiesFilesAndEmits();
   void testAddAttachmentsWithoutBufferIsNoOp();
   void testAddAttachmentsWithInvalidBufferIsNoOp();
@@ -41,6 +56,7 @@ private:
   QString writeSourceFile(const QString &p_fileName);
   QStringList currentAttachments();
 
+  UrlSink m_urlSink;
   QTemporaryDir m_tempDir;
   VxCoreContextHandle m_context = nullptr;
   vnotex::ServiceLocator m_services;
@@ -52,6 +68,7 @@ private:
 };
 
 void TestAttachmentController::initTestCase() {
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &m_urlSink, "onUrl");
   QVERIFY(m_tempDir.isValid());
 
   // CRITICAL: must run before vxcore_context_create().
@@ -82,10 +99,8 @@ void TestAttachmentController::initTestCase() {
 }
 
 void TestAttachmentController::cleanupTestCase() {
-  if (m_buffer.isValid()) {
-    m_bufferService->closeBuffer(m_buffer.id());
-    m_buffer = vnotex::Buffer2();
-  }
+  QDesktopServices::unsetUrlHandler(QStringLiteral("file"));
+  cleanup();
 
   delete m_bufferService;
   m_bufferService = nullptr;
@@ -101,10 +116,17 @@ void TestAttachmentController::cleanupTestCase() {
 }
 
 void TestAttachmentController::cleanup() {
-  if (m_buffer.isValid()) {
-    m_bufferService->closeBuffer(m_buffer.id());
-    m_buffer = vnotex::Buffer2();
+  if (m_bufferService) {
+    const QJsonArray buffers = m_bufferService->listBuffers();
+    for (const auto &bufVal : buffers) {
+      const QString id = bufVal.toObject()[QStringLiteral("id")].toString();
+      if (!id.isEmpty()) {
+        m_bufferService->closeBuffer(id);
+      }
+    }
   }
+  m_buffer = vnotex::Buffer2();
+  m_urlSink.m_opened.clear();
 }
 
 void TestAttachmentController::reopenCleanBuffer() {
@@ -145,6 +167,48 @@ QStringList TestAttachmentController::currentAttachments() {
     names.append(val.toString());
   }
   return names;
+}
+
+void TestAttachmentController::testOpenAttachmentsOpensReadableBuffer() {
+  reopenCleanBuffer();
+
+  const QString srcPath = writeSourceFile(QStringLiteral("open me-\u4e2d.txt"));
+  QVERIFY(!srcPath.isEmpty());
+  const QString name = m_buffer.insertAttachment(srcPath);
+  QVERIFY(!name.isEmpty());
+  const QString folder = m_buffer.getAttachmentsFolder();
+  QVERIFY(!folder.isEmpty());
+  const QString attachmentPath = QFileInfo(folder + QLatin1Char('/') + name).canonicalFilePath();
+  QVERIFY(!attachmentPath.isEmpty());
+
+  vnotex::AttachmentController controller(m_services);
+  controller.setBuffer(&m_buffer);
+  const auto matchingBufferIds = [this, &attachmentPath]() {
+    QStringList ids;
+    const QJsonArray buffers = m_bufferService->listBuffers();
+    for (const auto &bufVal : buffers) {
+      const QString id = bufVal.toObject()[QStringLiteral("id")].toString();
+      const auto buffer = m_bufferService->getBufferHandle(id);
+      if (QFileInfo(buffer.resolvedPath()).canonicalFilePath() == attachmentPath) {
+        ids.append(id);
+      }
+    }
+    return ids;
+  };
+
+  controller.openAttachments({name});
+
+  const QStringList openedIds = matchingBufferIds();
+  QCOMPARE(openedIds.size(), 1);
+  const auto attachmentBuffer = m_bufferService->getBufferHandle(openedIds.first());
+  QVERIFY(attachmentBuffer.isValid());
+  QCOMPARE(attachmentBuffer.getContentRaw(), QByteArray("payload"));
+  QVERIFY(m_urlSink.m_opened.isEmpty());
+
+  controller.openAttachments({name});
+
+  QCOMPARE(matchingBufferIds(), openedIds);
+  QVERIFY(m_urlSink.m_opened.isEmpty());
 }
 
 void TestAttachmentController::testAddAttachmentsCopiesFilesAndEmits() {

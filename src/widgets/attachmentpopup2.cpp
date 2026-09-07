@@ -203,6 +203,8 @@ void AttachmentPopup2::setupUI() {
   m_listView->installEventFilter(this);
   mainLayout->addWidget(m_listView);
 
+  connect(m_listView, &QListView::doubleClicked, m_openBtn, &QToolButton::click);
+
   // Connect selection changes to button enablement.
   connect(m_listView->selectionModel(), &QItemSelectionModel::selectionChanged,
           this, [this]() { updateButtonsState(); });
