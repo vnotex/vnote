@@ -224,9 +224,9 @@ private:
   // Interval time to do smart table format.
   int m_smartTableInterval = 1000;
 
-  // Whether write an edited table sheet back as a column-aligned pipe table.
-  // Opt-in; affects only subsequent commits (nothing is reformatted retroactively),
-  // and only pipe tables (an HTML-backed or merged table is never padded).
+  // Whether align pipe table source after direct edits and table sheet commits.
+  // Opt-in; loading documents or toggling the setting never reformats existing source.
+  // HTML-backed and merged tables are never padded.
   bool m_alignTableSourceEnabled = false;
 
   // Whether fold a foldable region as soon as it first gets an in-place preview.

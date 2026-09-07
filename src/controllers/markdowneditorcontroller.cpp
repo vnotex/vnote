@@ -35,7 +35,7 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
   p_editorConfig->m_constrainInplacePreviewWidthEnabled =
       p_mdConfig.getConstrainInplacePreviewWidthEnabled();
 
-  p_editorConfig->m_alignTableSourceEnabled = p_mdConfig.getAlignTableSourceEnabled();
+  p_editorConfig->m_autoFormatTableSourceEnabled = p_mdConfig.getAlignTableSourceEnabled();
 
   p_editorConfig->m_autoFoldPreviewedBlocksEnabled = p_mdConfig.getAutoFoldPreviewedBlocksEnabled();
 

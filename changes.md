@@ -10,6 +10,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Task-list checkboxes in the read-mode preview are clickable
     * The edit-mode outline shows rendered heading titles, and image sizes can be authored from the image context menu
     * New settings align Markdown table source and automatically fold previewed blocks
+    * Table-source alignment also formats directly edited Markdown tables, and folding ranges remain bound to their blocks after edits
     * Interactive table previews are built on demand, preserving space for off-screen tables while substantially reducing opening, editing and scrolling costs; syntax highlighting is capped at 5000 cells in extreme documents
     * Read-mode diagrams appear progressively, duplicate Mermaid renders share one result, and repeated PlantUML diagrams reuse their encoded server URL
     * In-place previews publish results in batches, prioritize visible graph previews and recover cleanly when a render pass stalls, is hidden or is replaced
