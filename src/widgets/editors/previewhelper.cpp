@@ -73,10 +73,10 @@ void PreviewHelper::MathBlockPreviewData::updateInplacePreview(QTextDocument *p_
     m_inplacePreview->m_name = p_data.m_name;
     m_inplacePreview->m_isBlockwise = m_previewedAsBlock;
     m_inplacePreview->m_image = p_data.m_image;
-    const auto logicalSize = p_data.getLogicalSize();
-    m_baseLogicalSize = (logicalSize.isEmpty() ? QSizeF(p_data.m_image.size()) / p_dpiFactor
-                                               : QSizeF(logicalSize)) /
-                        p_data.m_appliedZoomRatio;
+    m_baseLogicalSize =
+        p_data.m_baseLogicalSize.isEmpty()
+            ? QSizeF(p_data.m_image.size()) / (p_dpiFactor * p_data.m_appliedZoomRatio)
+            : p_data.m_baseLogicalSize;
     zoomInplacePreview(p_zoomRatio);
   } else {
     m_inplacePreview.clear();
