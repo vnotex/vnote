@@ -127,7 +127,6 @@ void AttachmentPopup2::setupUI() {
     auto *act = new QAction(IconUtils::fetchIconWithDisabledState(
                                 themeService->getIconFile(QStringLiteral("file_scan.svg"))),
                             tr("Scan"), m_scanBtn);
-    act->setToolTip(tr("Scan for unlisted attachments"));
     connect(act, &QAction::triggered, this, [this]() {
       if (!m_buffer || !m_buffer->isValid() || !m_buffer->isAttachmentSupported() ||
           m_buffer->isReadOnly() || !m_scanExclusionProvider) {
@@ -137,6 +136,7 @@ void AttachmentPopup2::setupUI() {
       m_controller->scanAttachments(paths);
     });
     m_scanBtn->setDefaultAction(act);
+    m_scanBtn->setToolTip(QString());
     buttonsLayout->addWidget(m_scanBtn);
   }
 
