@@ -110,6 +110,10 @@ void MarkdownEditorPage::loadInternal() {
 
   m_graphvizFileInput->setText(markdownConfig.getGraphvizExe());
 
+  const int rendererIndex = m_mathRendererComboBox->findData(markdownConfig.getMathRenderer());
+  m_mathRendererComboBox->setCurrentIndex(rendererIndex < 0 ? 0 : rendererIndex);
+  m_mathJaxScriptLineEdit->setEnabled(markdownConfig.getMathRenderer() ==
+                                      QStringLiteral("mathjax"));
   m_mathJaxScriptLineEdit->setText(markdownConfig.getMathJaxScript());
 
   m_richPasteByDefaultCheckBox->setChecked(markdownConfig.getRichPasteByDefaultEnabled());
@@ -179,6 +183,7 @@ bool MarkdownEditorPage::saveInternal() {
 
   markdownConfig.setGraphvizExe(m_graphvizFileInput->text());
 
+  markdownConfig.setMathRenderer(m_mathRendererComboBox->currentData().toString());
   markdownConfig.setMathJaxScript(m_mathJaxScriptLineEdit->text());
 
   markdownConfig.setRichPasteByDefaultEnabled(m_richPasteByDefaultCheckBox->isChecked());
@@ -631,6 +636,26 @@ void MarkdownEditorPage::setupGeneralGroup() {
     addSearchItem(label, m_graphvizFileInput->toolTip(), m_graphvizFileInput);
     connect(m_graphvizFileInput, &LocationInputWithBrowseButton::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    m_mathRendererComboBox = WidgetsFactory::createComboBox(this);
+    m_mathRendererComboBox->setToolTip(
+        tr("Choose how math formulas are rendered in reading mode and previews"));
+    m_mathRendererComboBox->addItem(tr("KaTeX"), QStringLiteral("katex"));
+    m_mathRendererComboBox->addItem(tr("MathJax"), QStringLiteral("mathjax"));
+    const QString label(tr("Math renderer"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_mathRendererComboBox->toolTip(), m_mathRendererComboBox, this));
+    addSearchItem(label, m_mathRendererComboBox->toolTip(), m_mathRendererComboBox);
+    connect(m_mathRendererComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &MarkdownEditorPage::pageIsChanged);
+    connect(m_mathRendererComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this]() {
+              m_mathJaxScriptLineEdit->setEnabled(
+                  m_mathRendererComboBox->currentData().toString() == QStringLiteral("mathjax"));
+            });
   }
 
   {

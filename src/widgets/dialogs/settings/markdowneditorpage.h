@@ -84,6 +84,8 @@ private:
 
   LocationInputWithBrowseButton *m_graphvizFileInput = nullptr;
 
+  QComboBox *m_mathRendererComboBox = nullptr;
+
   QLineEdit *m_mathJaxScriptLineEdit = nullptr;
 
   QCheckBox *m_richPasteByDefaultCheckBox = nullptr;

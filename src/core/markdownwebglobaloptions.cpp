@@ -14,6 +14,9 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
          QStringLiteral("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml)) +
          QStringLiteral("plantUmlWebService: '%1',\n").arg(m_plantUmlWebService) +
          QStringLiteral("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz)) +
+         (m_mathRenderer == QStringLiteral("mathjax")
+              ? QStringLiteral("mathRenderer: 'mathjax',\n")
+              : QStringLiteral("mathRenderer: 'katex',\n")) +
          QStringLiteral("mathJaxScript: '%1',\n").arg(m_mathJaxScript) +
          QStringLiteral("constrainImageWidthEnabled: %1,\n")
              .arg(Utils::boolToString(m_constrainImageWidthEnabled)) +

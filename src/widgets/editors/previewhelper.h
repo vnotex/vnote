@@ -59,6 +59,9 @@ public:
   // Notify that the editor zoom changed, to re-render the in-place previews.
   void editorZoomChanged();
 
+  // Retire renderer-dependent results before reloading the preview page.
+  void invalidatePreviews();
+
 public slots:
   void codeBlocksUpdated(vte::TimeStamp p_timeStamp,
                          const QVector<vte::md::FencedCodeBlock> &p_codeBlocks);

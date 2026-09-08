@@ -367,6 +367,8 @@ class TestMarkdownViewerJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testMathRenderer_initializationFanout();
+  void testMathRenderer_failedInitializationReleasesPass();
   void testInstall_loadBeforeChannel();
   void testInstall_channelBeforeLoad();
   void testInstall_onlyOnce();
@@ -383,6 +385,7 @@ private:
   // Evaluates the prelude plus the real markdownviewer.js.
   void setup(QJSEngine &p_engine, bool p_initializedAtChannel);
   void setupHeadingFolding(QJSEngine &p_engine);
+  void setupMath(QJSEngine &p_engine);
 };
 
 void TestMarkdownViewerJs::setup(QJSEngine &p_engine, bool p_initializedAtChannel) {
@@ -409,6 +412,110 @@ void TestMarkdownViewerJs::setupHeadingFolding(QJSEngine &p_engine) {
                                                "\nwindow.__HeadingFolding = HeadingFolding;"),
                           QStringLiteral("nodelinemapper.js"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
+}
+
+void TestMarkdownViewerJs::setupMath(QJSEngine &p_engine) {
+  auto res = p_engine.evaluate(QStringLiteral(R"JS(
+var window = this;
+var console = { log: function(){}, warn: function(){}, error: function(){} };
+var vxOptions = { mathRenderer: 'katex' };
+var scripts = [], styles = [], results = [], passes = 0;
+var reading = { textContent: '$a+b$' };
+function element() {
+  return { style: {}, querySelector: function() { return null; } };
+}
+var document = {
+  fonts: { ready: Promise.resolve() },
+  head: { appendChild: function() {} },
+  createElement: element
+};
+window.getComputedStyle = function() { return { color: 'black', font: '16px serif' }; };
+var container = {
+  getElementsByClassName: function() { return [reading]; },
+  appendChild: function(node) { node.parentNode = this; },
+  removeChild: function(node) { node.parentNode = null; }
+};
+var Utils = {
+  loadScript: function(url, cb) { scripts.push(cb); },
+  httpGet: function(url, type, cb) { styles.push(cb); }
+};
+var vxcore = {
+  contentContainer: container,
+  on: function() {},
+  getWorker: function() {
+    return { getCodeNodes: function() { return []; }, addLangsToSkipHighlight: function() {} };
+  },
+  registerWorker: function(worker) { window.worker = worker; worker.register(this); },
+  finishWorker: function() { ++passes; }
+};
+function startRequests() {
+  worker.render(container, 'tex-to-render');
+  worker.renderText(container, '$x$', function(node) { results.push({ id: 1, node: node }); });
+  worker.renderText(container, '$y$', function(node) { results.push({ id: 2, node: node }); });
+}
+function installLibrary() {
+  window.katex = { render: function(tex, node) { node.rendered = tex; } };
+}
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QString err;
+  QString source;
+  for (const auto &name : {QStringLiteral("vxworker.js"), QStringLiteral("mathjax.js")}) {
+    source += readFile(webDir() + QStringLiteral("/js/") + name, &err) + QLatin1Char('\n');
+    QVERIFY2(err.isEmpty(), qPrintable(err));
+  }
+  res = p_engine.evaluate(source, QStringLiteral("mathjax.js"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+}
+
+void TestMarkdownViewerJs::testMathRenderer_initializationFanout() {
+  QJSEngine engine;
+  setupMath(engine);
+  auto res = engine.evaluate(QStringLiteral("startRequests();"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
+  QCOMPARE(engine.evaluate(QStringLiteral("styles.length")).toInt(), 1);
+  QCOMPARE(engine.evaluate(QStringLiteral("passes + results.length")).toInt(), 0);
+
+  engine.evaluate(QStringLiteral("installLibrary(); scripts[0]();"));
+  QTest::qWait(1);
+  QCOMPARE(engine.evaluate(QStringLiteral("passes + results.length")).toInt(), 0);
+  engine.evaluate(QStringLiteral("styles[0]('.katex { display: inline; }');"));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 1);
+  QCOMPARE(engine.evaluate(QStringLiteral("reading.rendered")).toString(), QStringLiteral("a+b"));
+  QCOMPARE(engine
+               .evaluate(QStringLiteral(
+                   "results.map(function(r) { return r.id + ':' + r.node.rendered; }).join(',')"))
+               .toString(),
+           QStringLiteral("1:x,2:y"));
+  QVERIFY(engine.evaluate(QStringLiteral("results[0].node !== results[1].node")).toBool());
+}
+
+void TestMarkdownViewerJs::testMathRenderer_failedInitializationReleasesPass() {
+  for (const bool scriptFails : {true, false}) {
+    QJSEngine engine;
+    setupMath(engine);
+    engine.evaluate(QStringLiteral("startRequests();"));
+    QTRY_COMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
+    if (scriptFails) {
+      engine.evaluate(QStringLiteral("scripts[0](); styles[0]('.katex {}');"));
+    } else {
+      engine.evaluate(QStringLiteral("installLibrary(); scripts[0](); styles[0](null);"));
+    }
+    QTRY_COMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
+    QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 1);
+    QVERIFY(
+        engine.evaluate(QStringLiteral("results.every(function(r) { return r.node === null; })"))
+            .toBool());
+    QCOMPARE(engine.evaluate(QStringLiteral("reading.textContent")).toString(),
+             QStringLiteral("$a+b$"));
+
+    engine.evaluate(QStringLiteral("worker.render(container, 'tex-to-render');"));
+    QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 2);
+    QCOMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
+    QCOMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
+  }
 }
 
 void TestMarkdownViewerJs::testInstall_loadBeforeChannel() {

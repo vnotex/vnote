@@ -792,6 +792,32 @@ qreal PreviewHelper::editorZoomFactor() const {
   return editorZoomRatio(m_editor->editorFontPointSize(), m_editor->baseEditorFontPointSize());
 }
 
+void PreviewHelper::invalidatePreviews() {
+  m_codeBlockTimer->stop();
+  m_mathBlockTimer->stop();
+  m_codeBlockPublishTimer->stop();
+  m_mathBlockPublishTimer->stop();
+  ++m_codeBlockTimeStamp;
+  ++m_mathBlockTimeStamp;
+  m_codeBlockCache.clear();
+  m_mathBlockCache.clear();
+  m_pendingCodeBlocks.clear();
+  m_pendingMathBlocks.clear();
+  m_codeBlocksData.clear();
+  m_mathBlocksData.clear();
+  if (m_perfSummaryTimer) {
+    m_perfSummaryTimer->stop();
+  }
+  if (m_perfHeartbeatTimer) {
+    m_perfHeartbeatTimer->stop();
+  }
+  m_perfReported = true;
+  m_perfPendingRequestRestarts = 0;
+  m_perfRequestMs.clear();
+  updateEditorInplacePreviewCodeBlock();
+  updateEditorInplacePreviewMathBlock();
+}
+
 void PreviewHelper::editorZoomChanged() {
   const qreal ratio = editorZoomFactor();
   if (!PreviewScaleUtils::isZoomRatioStale(m_codeBlockRequestZoomRatio, ratio) &&

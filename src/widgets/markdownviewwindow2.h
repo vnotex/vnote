@@ -234,6 +234,9 @@ private:
   int m_viewerBufferRevision = 0;
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
   bool m_viewerReady = false;
+  QString m_viewerMathRenderer;
+  QString m_viewerMathJaxScript;
+  bool m_refreshMathPreviewsOnReady = false;
   QString m_pendingAnchor;
   MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
 

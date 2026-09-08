@@ -442,6 +442,8 @@ void MarkdownViewWindow2::setupViewer() {
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
 
+  m_viewerMathRenderer = mdConfig.getMathRenderer();
+  m_viewerMathJaxScript = mdConfig.getMathJaxScript();
   m_editorController->checkAndUpdateConfigRevision();
 
   // Update HTML template via HtmlTemplateService.
@@ -494,6 +496,12 @@ void MarkdownViewWindow2::setupViewer() {
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
     m_viewerReady = true;
+    if (m_refreshMathPreviewsOnReady) {
+      m_refreshMathPreviewsOnReady = false;
+      if (m_editor) {
+        m_editor->refreshPreviewHighlight();
+      }
+    }
     applyReadableWidth();
     if (m_mode == ViewWindowMode::Edit) {
       setEditViewMode(m_editViewMode);
@@ -1227,6 +1235,22 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
 
+  const bool reloadMath = m_viewer && (m_viewerMathRenderer != mdConfig.getMathRenderer() ||
+                                       (mdConfig.getMathRenderer() == QStringLiteral("mathjax") &&
+                                        m_viewerMathJaxScript != mdConfig.getMathJaxScript()));
+  if (reloadMath) {
+    if (m_syncPreviewTimer) {
+      m_syncPreviewTimer->stop();
+    }
+    if (m_previewHelper) {
+      m_previewHelper->invalidatePreviews();
+    }
+    m_viewerReady = false;
+    m_refreshMathPreviewsOnReady = true;
+  }
+  m_viewerMathRenderer = mdConfig.getMathRenderer();
+  m_viewerMathJaxScript = mdConfig.getMathJaxScript();
+
   updatePreviewHelperFromConfig(mdConfig);
 
   // Update HTML template.
@@ -1263,6 +1287,9 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   }
 
   updateWebViewerConfig();
+  if (reloadMath) {
+    syncViewerFromBuffer(m_mode == ViewWindowMode::Edit);
+  }
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {

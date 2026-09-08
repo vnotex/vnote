@@ -373,20 +373,36 @@ class GraphPreviewer {
     }
 
     renderMath(p_id, p_timeStamp, p_text, p_dataSetter, p_scale = 1) {
-        let func = function(p_previewer, p_id, p_timeStamp, p_scale) {
-            let previewer = p_previewer;
-            let id = p_id;
-            let timeStamp = p_timeStamp;
-            let scale = p_scale;
-            return function(p_svgNode) {
-                previewer.fixSvgCurrentColor(p_svgNode);
-                previewer.fixSvgRelativeWidth(p_svgNode);
-                previewer.processSvgAsPng(id, timeStamp, p_svgNode, p_dataSetter, scale);
-            };
-        };
-        this.vxcore.getWorker('mathjax').renderText(this.container,
-                                                    p_text,
-                                                    func(this, p_id, p_timeStamp, p_scale));
+        const worker = this.vxcore.getWorker('math');
+        const setter = p_dataSetter || this.setGraphPreviewData.bind(this);
+        worker.renderText(this.container, p_text, (node) => {
+            if (!node) {
+                setter(p_id, p_timeStamp);
+                return;
+            }
+            if (node.namespaceURI === 'http://www.w3.org/2000/svg') {
+                this.fixSvgCurrentColor(node);
+                this.fixSvgRelativeWidth(node);
+                this.processSvgAsPng(p_id, p_timeStamp, node, p_dataSetter, p_scale);
+                return;
+            }
+            if (!p_dataSetter) {
+                this.perfNoteRasterStart(p_timeStamp, p_id);
+            }
+            worker.rasterizeHtml(node, (window.devicePixelRatio || 1) * (p_scale || 1))
+                .then((raster) => {
+                    const png = raster.dataUrl.substring(raster.dataUrl.indexOf(',') + 1);
+                    setter(p_id, p_timeStamp, 'png', png, true, false);
+                }, (error) => {
+                    console.error('failed to rasterize KaTeX preview', error);
+                    setter(p_id, p_timeStamp);
+                }).then(() => {
+                    node.remove();
+                }).catch((error) => {
+                    node.remove();
+                    console.error('failed to deliver math raster', error);
+                });
+        });
     }
 
     processGraph(p_id, p_timeStamp, p_graphDiv, p_scale = 1) {

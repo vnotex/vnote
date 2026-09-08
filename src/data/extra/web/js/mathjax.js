@@ -1,147 +1,183 @@
-window.MathJax = {
-    tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        processEscapes: true,
-        tags: 'ams'
-    },
-    options: {
-        processHtmlClass: 'tex2jax_process|language-mathjax|lang-mathjax'
-    },
-    startup: {
-        typeset: false,
-        ready: function() {
-            MathJax.startup.defaultReady();
-            MathJax.startup.promise.then(() => {
-                window.vxcore.getWorker('mathjax').setMathJaxReady();
-            });
-        }
-    },
-    svg: {
-        // Make SVG self-contained.
-        fontCache: 'local',
-        scale: window.vxOptions.mathJaxScale > 0 ? window.vxOptions.mathJaxScale : 1
-    }
-};
-
-class MathJaxRenderer extends VxWorker {
+class MathRenderer extends VxWorker {
     constructor() {
         super();
-
-        this.name = 'mathjax';
-
-        this.initialized = false;
-
-        this.nodesToRender = [];
-
-        this.mathJaxScript = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
-
+        this.name = 'math';
+        this.renderer = window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
+        this.initialization = null;
+        this.rasterInitialization = null;
         this.langs = ['mathjax'];
-
-        // Will be called when MathJax is ready.
-        this.readyCallback = function() {};
     }
 
     registerInternal() {
         this.vxcore.on('basicMarkdownRendered', () => {
             this.render(this.vxcore.contentContainer, 'tex-to-render');
         });
-
         this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
     }
 
-    initialize(p_callback) {
-        if (this.initialized) {
-            return true;
-        }
+    initialize() {
+        if (!this.initialization) {
+            this.initialization = Promise.resolve().then(() => {
+                if (this.renderer === 'mathjax') {
+                    window.MathJax = {
+                        tex: {
+                            inlineMath: [['$', '$'], ['\\(', '\\)']],
+                            processEscapes: true,
+                            tags: 'ams'
+                        },
+                        options: {
+                            processHtmlClass: 'tex2jax_process|language-mathjax|lang-mathjax'
+                        },
+                        startup: { typeset: false },
+                        svg: {
+                            fontCache: 'local',
+                            scale: window.vxOptions.mathJaxScale > 0 ? window.vxOptions.mathJaxScale : 1
+                        }
+                    };
+                    const script = window.vxOptions.mathJaxScript
+                        || 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+                    return new Promise((resolve, reject) => {
+                        Utils.loadScript(script, () => {
+                            if (!window.MathJax || !window.MathJax.startup
+                                || !window.MathJax.startup.promise) {
+                                reject(new Error('MathJax startup unavailable'));
+                                return;
+                            }
+                            Promise.resolve(window.MathJax.startup.promise).then(() => {
+                                if (typeof window.MathJax.typesetPromise !== 'function'
+                                    || typeof window.MathJax.tex2svg !== 'function'
+                                    || typeof window.MathJax.texReset !== 'function'
+                                    || typeof window.MathJax.getMetricsFor !== 'function') {
+                                    throw new Error('MathJax API unavailable');
+                                }
+                            }).then(resolve, reject);
+                        });
+                    });
+                }
 
-        this.initialized = true;
-        this.readyCallback = p_callback;
-        if (!!window.vxOptions.mathJaxScript) {
-            this.mathJaxScript = window.vxOptions.mathJaxScript;
-            console.log('override MathJax script', this.mathJaxScript);
+                const base = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/';
+                const script = new Promise((resolve, reject) => {
+                    Utils.loadScript(base + 'katex.min.js', () => {
+                        if (window.katex && typeof window.katex.render === 'function') {
+                            resolve();
+                        } else {
+                            reject(new Error('KaTeX API unavailable'));
+                        }
+                    });
+                });
+                const stylesheet = new Promise((resolve, reject) => {
+                    const url = base + 'katex.min.css';
+                    Utils.httpGet(url, 'text', (css) => {
+                        try {
+                            if (!css || !css.trim()) {
+                                throw new Error('KaTeX stylesheet unavailable');
+                            }
+                            const style = document.createElement('style');
+                            style.textContent = css.replace(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*?))\s*\)/gi,
+                                (match, quoted, single, bare) => {
+                                    const target = quoted !== undefined ? quoted
+                                        : (single !== undefined ? single : bare.trim());
+                                    return 'url("' + new URL(target, url).href + '")';
+                                });
+                            document.head.appendChild(style);
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    });
+                });
+                return Promise.all([script, stylesheet]);
+            }).catch((error) => {
+                console.error('failed to initialize math renderer', this.renderer, error);
+                throw error;
+            });
         }
-        Utils.loadScript(this.mathJaxScript, null);
-        return false;
+        return this.initialization;
     }
 
-    setMathJaxReady() {
-        this.readyCallback();
-    }
-
-    // Fetch all nodes of @p_className to render.
-    // Will fetch extra code nodes, too.
+    // A reading pass owes one completion, independent of any simultaneous previews.
     render(p_node, p_className) {
-        this.nodesToRender = [];
-
-        // Transform extra class nodes.
-        let extraNodes = this.vxcore.getWorker('markdownit').getCodeNodes(this.langs);
-        this.transformExtraNodes(p_node, p_className, extraNodes);
-
-        // Collect nodes to render.
-        let nodes = p_node.getElementsByClassName(p_className);
-        if (nodes.length == 0) {
-            this.finishWork();
-            return;
-        }
-
-        this.nodesToRender = Array.from(nodes);
-
-        if (!this.initialize(() => {
-            this.renderNodes();
-            })) {
-            return;
-        }
-
-        this.renderNodes();
+        return Promise.resolve().then(() => {
+            const extraNodes = this.vxcore.getWorker('markdownit').getCodeNodes(this.langs);
+            this.transformExtraNodes(p_node, p_className, extraNodes);
+            const nodes = Array.from(p_node.getElementsByClassName(p_className));
+            if (!nodes.length) {
+                return;
+            }
+            return this.initialize().then(() => {
+                if (this.renderer === 'mathjax') {
+                    window.MathJax.texReset();
+                    return window.MathJax.typesetPromise(nodes);
+                }
+                const macros = {};
+                nodes.forEach((node) => {
+                    try {
+                        const check = this.removeTextGuard(node.textContent);
+                        if (check) {
+                            this.renderKatex(node, check, macros);
+                        }
+                    } catch (error) {
+                        console.error('failed to render KaTeX', error);
+                    }
+                });
+                return document.fonts.ready;
+            });
+        }).catch((error) => {
+            console.error('failed to render math', this.renderer, error);
+        }).then(() => this.finishWork());
     }
 
-    // p_callback(svgNode).
+    renderKatex(p_node, p_check, p_macros) {
+        window.katex.render(p_check.text, p_node, {
+            displayMode: p_check.display,
+            output: 'htmlAndMathml',
+            throwOnError: false,
+            trust: false,
+            macros: p_macros
+        });
+    }
+
+    // Returns MathJax's SVG or an attached KaTeX wrapper owned by the preview caller.
     renderText(p_container, p_text, p_callback) {
-        let func = () => {
-            // Check text and remove the guards.
-            let check = this.removeTextGuard(p_text);
+        let wrapper = null;
+        return this.initialize().then(() => {
+            const check = this.removeTextGuard(p_text);
             if (!check) {
-                p_callback(null);
-                return;
+                return null;
             }
-            let options = null;
-            try {
-                options = MathJax.getMetricsFor(p_container, check.display);
-            } catch (err) {
-                console.error('failed to render MathJax', err);
-                p_callback(null);
-                return;
+            if (this.renderer === 'mathjax') {
+                const options = window.MathJax.getMetricsFor(p_container, check.display);
+                window.MathJax.texReset();
+                return window.MathJax.tex2svg(check.text, options).firstElementChild;
             }
-
-            let mathNode = null;
-            try {
-                // Reset MathJax's persistent label/equation-number state before
-                // each preview render. Without this, an equation containing a
-                // \label registers that label permanently (tags: 'ams'), so any
-                // subsequent render of a labeled equation (a duplicate label, or
-                // just a re-render on keystroke) triggers a "Label ... multiply
-                // defined" error. MathJax renders that error as an <merror> box
-                // whose background <rect> has no fill attribute; when rasterized
-                // standalone (SvgToImage), the stylesheet is absent and the rect
-                // defaults to black, showing a solid black square in the editor.
-                MathJax.texReset();
-                mathNode = MathJax.tex2svg(check.text, options);
-            } catch (err) {
-                console.error('failed to render MathJax', err);
+            wrapper = document.createElement('span');
+            const style = window.getComputedStyle(this.vxcore.contentContainer);
+            wrapper.style.display = 'inline-block';
+            wrapper.style.color = style.color;
+            wrapper.style.font = style.font;
+            wrapper.style.background = 'transparent';
+            wrapper.style.padding = '2px';
+            p_container.appendChild(wrapper);
+            this.renderKatex(wrapper, check, {});
+            const display = wrapper.querySelector('.katex-display');
+            if (display) {
+                display.style.margin = '0';
             }
-            p_callback(mathNode ? mathNode.firstElementChild : null);
-        };
-
-        if (!this.initialize(func)) {
-            return;
-        }
-
-        func();
+            return wrapper;
+        }).catch((error) => {
+            if (wrapper && wrapper.parentNode) {
+                wrapper.parentNode.removeChild(wrapper);
+            }
+            console.error('failed to preview math', this.renderer, error);
+            return null;
+        }).then(p_callback).catch((error) => {
+            console.error('failed to deliver math preview', error);
+        });
     }
 
     transformExtraNodes(p_node, p_className, p_extraNodes) {
         p_extraNodes.forEach((node) => {
-            MathJaxRenderer.transformNode(node, p_className);
+            MathRenderer.transformNode(node, p_className);
         });
     }
 
@@ -157,50 +193,115 @@ class MathJaxRenderer extends VxWorker {
         Utils.replaceNodeWithPreCheck(p_node, section);
     }
 
-    renderNodes() {
-        if (this.nodesToRender.length > 0) {
-            try {
-                MathJax.texReset();
-            } catch (err) {
-                console.error('MathJax is not ready', err);
-                this.postProcessMathJax();
-                return;
-            }
-
-            MathJax.typesetPromise(this.nodesToRender)
-                .then(() => {
-                    this.postProcessMathJax();
-                })
-                .catch((err) => {
-                    console.error('failed to render MathJax', err);
-                    this.postProcessMathJax();
+    initializeRasterizer() {
+        if (!this.rasterInitialization) {
+            this.rasterInitialization = new Promise((resolve, reject) => {
+                Utils.loadScript('https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js', () => {
+                    if (window.htmlToImage && typeof window.htmlToImage.toSvg === 'function'
+                        && typeof window.htmlToImage.getFontEmbedCSS === 'function') {
+                        resolve();
+                    } else {
+                        reject(new Error('HTML rasterizer unavailable'));
+                    }
                 });
+            });
         }
+        return this.rasterInitialization;
     }
 
-    postProcessMathJax() {
-        this.finishWork();
+    rasterizeHtml(p_node, p_pixelRatio) {
+        let width, height;
+        return this.initializeRasterizer().then(() => document.fonts.ready).then(() => {
+            const rect = p_node.getBoundingClientRect();
+            width = Math.ceil(Math.max(rect.width, p_node.scrollWidth));
+            height = Math.ceil(Math.max(rect.height, p_node.scrollHeight));
+            if (!width || !height) {
+                throw new Error('Empty math raster bounds');
+            }
+            // In 1.11.13 preferredFontFormat's shared regex drops alternating font
+            // sources. Keep all formats so every used face is embedded reliably.
+            return window.htmlToImage.getFontEmbedCSS(p_node);
+        }).then((fontCSS) => {
+            // The dependency can resolve a failed fetch with url(""). Never emit a
+            // successful PNG with missing fonts, or leave external URLs in the SVG.
+            const urls = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*?))\s*\)/gi;
+            let match;
+            while ((match = urls.exec(fontCSS)) !== null) {
+                const url = match[1] !== undefined ? match[1]
+                    : (match[2] !== undefined ? match[2] : match[3].trim());
+                if (!/^data:[^,]+,.+/i.test(url)) {
+                    throw new Error('Unresolved math raster font');
+                }
+            }
+            return window.htmlToImage.toSvg(p_node, {
+                width: width,
+                height: height,
+                fontEmbedCSS: fontCSS,
+                style: { display: 'inline-block', margin: '0' },
+                filter: (node) => !node.classList || !node.classList.contains('katex-mathml')
+            });
+        }).then((uri) => new Promise((resolve, reject) => {
+            // toPng/toCanvas wait for requestAnimationFrame, which is suspended in
+            // hidden edit-only WebEngine pages. Load the self-contained SVG directly.
+            SvgToImage.loadImage(uri, { crossOrigin: 'Anonymous' }, (error, image) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.ceil(width * p_pixelRatio);
+                    canvas.height = Math.ceil(height * p_pixelRatio);
+                    const context = canvas.getContext('2d');
+                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    const dataUrl = canvas.toDataURL('image/png');
+                    if (!dataUrl.startsWith('data:image/png;base64,')) {
+                        throw new Error('Empty math raster image');
+                    }
+                    resolve({ dataUrl: dataUrl, width: width, height: height });
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }));
     }
 
-    // Rasterize MathJax's SVG output to PNG before PDF export.
-    //
-    // Qt WebEngine's printToPdf renders MathJax's <use>-referenced SVG glyphs
-    // with the wrong font, so each equation is flattened to a PNG first (issue
-    // #2681). The scope is deliberately limited to MathJax containers: other
-    // inline SVGs (Mermaid, Graphviz, Flowchart, WaveDrom, ...) must stay
-    // vector, and some of them (e.g. Mermaid's <foreignObject>) taint the
-    // canvas, which would make toDataURL() throw.
-    // vxcore.prepareForExport() hook: flatten the equations when the export target asks for it.
-    // Returns a Promise, or null when there is nothing to do.
+    // Renderer-neutral export hook; ordinary HTML retains accessible live math.
     prepareForExport(p_options) {
         if (!p_options || !p_options.rasterizeMath) {
             return null;
         }
-
-        let self = this;
-        return new Promise(function (p_resolve) {
-            self.convertAllSvgToPng(p_resolve);
-        });
+        if (this.renderer === 'mathjax') {
+            return new Promise((resolve) => this.convertAllSvgToPng(resolve));
+        }
+        const container = this.vxcore.contentContainer;
+        const roots = container ? Array.from(container.querySelectorAll('.tex-to-render .katex')) : [];
+        const scale = Math.max(2, window.devicePixelRatio || 1);
+        return Promise.all(roots.filter((root) => !root.parentElement.closest('.katex')).map((root) => {
+            let verticalAlign = null;
+            return Promise.resolve(document.fonts.ready).then(() => {
+                if (!root.closest('.katex-display')) {
+                    const marker = document.createElement('span');
+                    marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
+                    root.parentNode.insertBefore(marker, root.nextSibling);
+                    verticalAlign = marker.getBoundingClientRect().bottom - root.getBoundingClientRect().bottom;
+                    marker.parentNode.removeChild(marker);
+                }
+                return this.rasterizeHtml(root, scale);
+            }).then((raster) => {
+                const image = document.createElement('img');
+                image.src = raster.dataUrl;
+                image.setAttribute('data-math-png', 'true');
+                image.style.width = raster.width + 'px';
+                image.style.height = raster.height + 'px';
+                if (verticalAlign !== null) {
+                    image.style.verticalAlign = verticalAlign + 'px';
+                }
+                if (root.parentNode) {
+                    root.parentNode.replaceChild(image, root);
+                }
+            }).catch((error) => console.error('failed to rasterize KaTeX', error));
+        }));
     }
 
     // Rasterize MathJax's SVG output to PNG before PDF export, then call p_done exactly once.
@@ -329,4 +430,4 @@ class MathJaxRenderer extends VxWorker {
     }
 }
 
-window.vxcore.registerWorker(new MathJaxRenderer());
+window.vxcore.registerWorker(new MathRenderer());

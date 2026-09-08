@@ -16,6 +16,8 @@ struct MarkdownWebGlobalOptions {
 
   bool m_webGraphviz = true;
 
+  QString m_mathRenderer = QStringLiteral("katex");
+
   QString m_mathJaxScript;
 
   bool m_constrainImageWidthEnabled = true;

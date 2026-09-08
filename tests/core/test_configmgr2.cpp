@@ -68,6 +68,7 @@ private slots:
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
   void testHeadingFolding_defaultsMergeAndRoundTrip();
+  void testMathRenderer_mergeNormalizationAndPersistence();
 
   // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
   void testAbsentKeyKeepsTheCppDefaultForEveryField();
@@ -595,6 +596,46 @@ void TestConfigMgr2::testHeadingFolding_defaultsMergeAndRoundTrip() {
   auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
   reloadedMd.fromJson(json);
   QCOMPARE(reloadedMd.getHeadingFoldingEnabled(), false);
+}
+
+void TestConfigMgr2::testMathRenderer_mergeNormalizationAndPersistence() {
+  MainConfig config(m_configMgr);
+  auto &md = config.getEditorConfig().getMarkdownEditorConfig();
+  const QString overrideScript = QStringLiteral("https://example.test/tex-svg.js");
+  md.setMathJaxScript(overrideScript);
+  const QStringList section{QStringLiteral("editor"), QStringLiteral("markdown_editor")};
+  const QStringList rendererPath = section + QStringList{QStringLiteral("mathRenderer")};
+  const QStringList scriptPath = section + QStringList{QStringLiteral("mathJaxScript")};
+
+  const auto legacy = loadThroughMergePath(withoutKeyAt(config.toJson(), rendererPath));
+  QCOMPARE(valueAt(legacy, rendererPath).toString(), QStringLiteral("katex"));
+  QCOMPARE(valueAt(legacy, scriptPath).toString(), overrideScript);
+
+  md.setMathRenderer(QStringLiteral("MathJax"));
+  const auto saved = loadThroughMergePath(config.toJson());
+  const auto reloaded = loadThroughMergePath(saved);
+  QCOMPARE(valueAt(reloaded, rendererPath).toString(), QStringLiteral("mathjax"));
+  QCOMPARE(valueAt(reloaded, scriptPath).toString(), overrideScript);
+
+  const QVector<QJsonValue> inputs{QStringLiteral("MaThJaX"), QStringLiteral("untrusted'"),
+                                   QString(), QJsonValue(QJsonValue::Null), QJsonValue(42)};
+  for (const auto &input : inputs) {
+    auto onDisk = config.toJson();
+    auto editor = onDisk.value(section[0]).toObject();
+    auto markdown = editor.value(section[1]).toObject();
+    markdown[QStringLiteral("mathRenderer")] = input;
+    editor[section[1]] = markdown;
+    onDisk[section[0]] = editor;
+    const auto loaded = loadThroughMergePath(onDisk);
+    const auto expected = input.toString() == QStringLiteral("MaThJaX") ? QStringLiteral("mathjax")
+                                                                        : QStringLiteral("katex");
+    QCOMPARE(valueAt(loaded, rendererPath).toString(), expected);
+    QCOMPARE(valueAt(loaded, scriptPath).toString(), overrideScript);
+  }
+
+  md.setMathRenderer(QStringLiteral("invalid"));
+  QCOMPARE(md.getMathRenderer(), QStringLiteral("katex"));
+  QCOMPARE(md.getMathJaxScript(), overrideScript);
 }
 
 // ============ Absent-key safety (the defaults merge) ============

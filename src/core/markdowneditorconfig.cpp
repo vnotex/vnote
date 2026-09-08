@@ -36,6 +36,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_graphvizExe = READSTR(QStringLiteral("graphvizExe"));
 
+  m_mathRenderer = normalizeMathRenderer(READSTR(QStringLiteral("mathRenderer")));
   m_mathJaxScript = READSTR(QStringLiteral("mathJaxScript"));
 
   m_prependDotInRelativeLink = READBOOL(QStringLiteral("prependDotInRelativeLink"));
@@ -86,6 +87,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("plantUmlWebService")] = m_plantUmlWebService;
   obj[QStringLiteral("webGraphviz")] = m_webGraphviz;
   obj[QStringLiteral("graphvizExe")] = m_graphvizExe;
+  obj[QStringLiteral("mathRenderer")] = m_mathRenderer;
   obj[QStringLiteral("mathJaxScript")] = m_mathJaxScript;
   obj[QStringLiteral("prependDotInRelativeLink")] = m_prependDotInRelativeLink;
   obj[QStringLiteral("confirmBeforeClearObsoleteImages")] = m_confirmBeforeClearObsoleteImages;
@@ -187,6 +189,18 @@ const QString &MarkdownEditorConfig::getGraphvizExe() const { return m_graphvizE
 
 void MarkdownEditorConfig::setGraphvizExe(const QString &p_exe) {
   updateConfig(m_graphvizExe, p_exe, this);
+}
+
+QString MarkdownEditorConfig::normalizeMathRenderer(const QString &p_renderer) {
+  return p_renderer.compare(QStringLiteral("mathjax"), Qt::CaseInsensitive) == 0
+             ? QStringLiteral("mathjax")
+             : QStringLiteral("katex");
+}
+
+const QString &MarkdownEditorConfig::getMathRenderer() const { return m_mathRenderer; }
+
+void MarkdownEditorConfig::setMathRenderer(const QString &p_renderer) {
+  updateConfig(m_mathRenderer, normalizeMathRenderer(p_renderer), this);
 }
 
 const QString &MarkdownEditorConfig::getMathJaxScript() const { return m_mathJaxScript; }

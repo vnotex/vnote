@@ -197,6 +197,7 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   opts.m_webPlantUml = p_config.getWebPlantUml();
   opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
   opts.m_webGraphviz = p_config.getWebGraphviz();
+  opts.m_mathRenderer = p_config.getMathRenderer();
   opts.m_mathJaxScript = p_config.getMathJaxScript();
   opts.m_constrainImageWidthEnabled = p_config.getConstrainImageWidthEnabled();
   opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();

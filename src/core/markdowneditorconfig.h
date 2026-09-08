@@ -62,6 +62,9 @@ public:
   const QString &getGraphvizExe() const;
   void setGraphvizExe(const QString &p_exe);
 
+  const QString &getMathRenderer() const;
+  void setMathRenderer(const QString &p_renderer);
+
   const QString &getMathJaxScript() const;
   void setMathJaxScript(const QString &p_script);
 
@@ -146,6 +149,8 @@ private:
   QString editViewModeToString(EditViewMode p_mode) const;
   EditViewMode stringToEditViewMode(const QString &p_str) const;
 
+  static QString normalizeMathRenderer(const QString &p_renderer);
+
   void initDefaults();
   static WebResource defaultViewerResource();
   static WebResource defaultExportResource();
@@ -173,6 +178,8 @@ private:
 
   // Graphviz executable file.
   QString m_graphvizExe;
+
+  QString m_mathRenderer = QStringLiteral("katex");
 
   // MathJax script to override that in mathjax.js file.
   QString m_mathJaxScript;
