@@ -162,6 +162,21 @@ class MathRenderer extends VxWorker {
             const display = wrapper.querySelector('.katex-display');
             if (display) {
                 display.style.margin = '0';
+                // Absolute tags do not contribute to this shrink-to-fit wrapper's
+                // width. Keep their baseline, but reserve space beside the formula.
+                const tag = display.querySelector('.katex-html > .tag');
+                if (tag) {
+                    tag.style.position = 'static';
+                    tag.style.display = 'inline-block';
+                    tag.style.marginLeft = '1em';
+                    // SVG image clones cannot preserve cross-row CSS counters.
+                    // A standalone preview numbers its own automatic tags from one.
+                    tag.querySelectorAll('.eqn-num').forEach((number, index) => {
+                        number.classList.remove('eqn-num');
+                        number.style.display = 'inline-block';
+                        number.textContent = '(' + (index + 1) + ')';
+                    });
+                }
             }
             return wrapper;
         }).catch((error) => {
