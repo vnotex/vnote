@@ -1543,12 +1543,6 @@ void MarkdownEditor::setupTableHelper() {
           &MarkdownTableHelper::updateTableBlocks);
 }
 
-QRgb MarkdownEditor::getPreviewBackground() const {
-  auto th = theme();
-  const auto &fmt = th->editorStyle(vte::Theme::EditorStyle::Preview);
-  return fmt.m_backgroundColor;
-}
-
 void MarkdownEditor::setImageHostController(ImageHostController *p_controller) {
   if (m_imageHostController) {
     disconnect(m_imageHostController, &ImageHostController::uploadFinished, this,

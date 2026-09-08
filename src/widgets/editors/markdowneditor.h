@@ -139,8 +139,6 @@ public:
 
   void updateFromConfig(bool p_initialized = true);
 
-  QRgb getPreviewBackground() const;
-
   void setImageHostController(ImageHostController *p_controller);
 
   void setHeadingLinkResolver(HeadingLinkResolver p_resolver);

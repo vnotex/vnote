@@ -1295,6 +1295,11 @@ add_custom_command(TARGET test_editorstatusbarbinder POST_BUILD
 add_qt_test(test_markdownvieweradapter_anchor
   SOURCES
     test_markdownvieweradapter_anchor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/previewhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/previewdispatchplanner.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphpreviewdata.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/previewscaleutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/markdownvieweradapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/plantumlhelper.cpp
@@ -1306,6 +1311,7 @@ add_qt_test(test_markdownvieweradapter_anchor
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
   LINKS
     Qt6::Widgets
+    Qt6::Svg
     # graphhelper.h includes <vtextedit/lrucache.h>. This used to arrive
     # transitively through core_services; that link was severed.
     VTextEdit

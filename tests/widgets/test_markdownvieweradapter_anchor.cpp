@@ -29,6 +29,7 @@
 
 #include <core/servicelocator.h>
 #include <widgets/editors/markdownvieweradapter.h>
+#include <widgets/editors/previewhelper.h>
 
 using namespace vnotex;
 
@@ -46,6 +47,8 @@ private slots:
   void requestIsPendedUntilReady();
   void concurrentRequestsGetDistinctIds();
   void previewResultsKeepHighResolutionAtLogicalSize();
+  void mathPreviewZoomWhileRasterPending_data();
+  void mathPreviewZoomWhileRasterPending();
 
 private:
   // Drives one full round trip and returns the resolved result.
@@ -358,6 +361,137 @@ void TestMarkdownViewerAdapterAnchor::previewResultsKeepHighResolutionAtLogicalS
     QCOMPARE(blockRect(), intrinsicRect);
     QCOMPARE(followingY(), intrinsicY);
   }
+}
+
+void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending_data() {
+  QTest::addColumn<bool>("blockwise");
+  QTest::newRow("inline-math") << false;
+  QTest::newRow("display-math") << true;
+}
+
+void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
+  QFETCH(bool, blockwise);
+  ServiceLocator services;
+  MarkdownViewerAdapter adapter(services);
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  textConfig->m_scaleFactor = 1.25;
+  auto config = QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig);
+  vte::VMarkdownEditor editor(config, QSharedPointer<vte::TextEditorParameters>::create());
+  const int baseFontSize = editor.baseEditorFontPointSize();
+  // Integral geometry at every reachable point-size ratio, including odd base fonts.
+  const QSize baseSize(baseFontSize * 8, baseFontSize * 2);
+  PreviewHelper helper(&editor);
+  connect(editor.getHighlighter(), &vte::MarkdownHighlighter::mathBlocksUpdated, &helper,
+          &PreviewHelper::mathBlocksUpdated);
+  connect(&adapter, &MarkdownViewerAdapter::mathPreviewDataReady, &helper,
+          &PreviewHelper::handleMathPreviewData);
+  connect(&helper, &PreviewHelper::inplacePreviewMathBlockUpdated, editor.getPreviewMgr(),
+          &vte::PreviewMgr::updateMathBlocks);
+  connect(&helper, &PreviewHelper::potentialObsoletePreviewBlocksUpdated, editor.getPreviewMgr(),
+          &vte::PreviewMgr::checkBlocksForObsoletePreview);
+  QSignalSpy requests(&helper, &PreviewHelper::mathPreviewRequested);
+  QVector<vte::md::MathBlock> mathBlocks;
+  connect(editor.getHighlighter(), &vte::MarkdownHighlighter::mathBlocksUpdated, &editor,
+          [&](const QVector<vte::md::MathBlock> &p_blocks) { mathBlocks = p_blocks; });
+  editor.resize(1200, 700);
+  editor.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&editor));
+  const QString expression = QStringLiteral("x^2 + y^2 + z^2 = a^2 + b^2 + c^2");
+  editor.setText(QStringLiteral("Before\n\n%1\n\nFollowing")
+                     .arg(blockwise ? QStringLiteral("$$\n%1\n$$").arg(expression)
+                                    : QStringLiteral("$%1$").arg(expression)));
+  QTRY_COMPARE_WITH_TIMEOUT(requests.count(), 1, 60000);
+  QCOMPARE(mathBlocks.size(), 1);
+  const auto block = editor.document()->findBlockByNumber(mathBlocks.first().m_blockNumber);
+  auto previewImage = [&]() -> const vte::PreviewImageData * {
+    const auto data = vte::BlockPreviewData::get(block);
+    if (data) {
+      for (const auto preview : data->getPreviewData()) {
+        if (preview->source() == vte::PreviewData::Source::MathBlock) {
+          return preview->getImageData();
+        }
+      }
+    }
+    return nullptr;
+  };
+  auto previewSize = [&]() {
+    const auto image = previewImage();
+    return image ? image->m_imageSize : QSize();
+  };
+  auto rasterSize = [&]() {
+    const auto data = previewImage();
+    const auto image = data ? editor.findImageFromDocumentResourceMgr(data->m_imageName) : nullptr;
+    return image ? image->size() : QSize();
+  };
+  auto blockHeight = [&]() {
+    return editor.document()->documentLayout()->blockBoundingRect(block).height();
+  };
+  auto deliver = [&](const QList<QVariant> &p_request) {
+    const qreal zoom = p_request[3].toReal();
+    const QSize logicalSize(qRound(baseSize.width() * zoom), qRound(baseSize.height() * zoom));
+    QPixmap raster(logicalSize * (textConfig->m_scaleFactor * 2));
+    raster.fill(Qt::red);
+    QByteArray bytes;
+    QBuffer buffer(&bytes);
+    if (!buffer.open(QIODevice::WriteOnly) || !raster.save(&buffer, "PNG")) {
+      return false;
+    }
+    adapter.setMathPreviewData(p_request[0].toULongLong(), p_request[1].toULongLong(),
+                               QStringLiteral("png"), QString::fromLatin1(bytes.toBase64()), true,
+                               false, logicalSize.width(), logicalSize.height());
+    return true;
+  };
+  QVERIFY(deliver(requests.last()));
+  QTRY_COMPARE(previewSize(), baseSize);
+  const auto baseRasterSize = baseSize * (textConfig->m_scaleFactor * 2);
+  QCOMPARE(rasterSize(), baseRasterSize);
+
+  // Zoom the existing preview before the request debounce or a new raster can
+  // complete. This is the interval hidden by arithmetic/adapter-only tests.
+  editor.zoom(baseFontSize);
+  const auto heightBeforePreviewZoom = blockHeight();
+  helper.editorZoomChanged();
+  QCOMPARE(previewSize(), baseSize * 2);
+  QCOMPARE(blockHeight(), heightBeforePreviewZoom + baseSize.height());
+  QCOMPARE(rasterSize(), baseRasterSize);
+  // A reset before the debounce fires must not be mistaken for "no change"
+  // merely because the last raster request was also at 1x.
+  editor.zoom(0);
+  helper.editorZoomChanged();
+  QCOMPARE(previewSize(), baseSize);
+  editor.zoom(baseFontSize);
+  helper.editorZoomChanged();
+  QCOMPARE(previewSize(), baseSize * 2);
+  QTRY_COMPARE(requests.count(), 2);
+  const auto obsoleteRequest = requests.last();
+  QCOMPARE(obsoleteRequest[3].toReal(), 2.0);
+  QCOMPARE(previewSize(), baseSize * 2);
+
+  // Another zoom while that raster is still in flight must use the original
+  // logical geometry, and its late response must not undo the new zoom.
+  editor.zoom(-baseFontSize / 2);
+  helper.editorZoomChanged();
+  const qreal smallZoom = helper.editorZoomFactor();
+  const QSize smallSize(qRound(baseSize.width() * smallZoom),
+                        qRound(baseSize.height() * smallZoom));
+  QCOMPARE(previewSize(), smallSize);
+  QVERIFY(deliver(obsoleteRequest));
+  QCOMPARE(previewSize(), smallSize);
+  QCOMPARE(rasterSize(), baseRasterSize);
+  QTRY_COMPARE(requests.count(), 3);
+  QCOMPARE(previewSize(), smallSize);
+  QVERIFY(deliver(requests.last()));
+  QTRY_COMPARE(rasterSize(), smallSize * (textConfig->m_scaleFactor * 2));
+  QCOMPARE(previewSize(), smallSize);
+
+  // Reset immediately, including after replacing the high-density raster.
+  editor.zoom(0);
+  helper.editorZoomChanged();
+  QCOMPARE(previewSize(), baseSize);
+  QTRY_COMPARE(requests.count(), 4);
+  QVERIFY(deliver(requests.last()));
+  QTRY_COMPARE(rasterSize(), baseRasterSize);
+  QCOMPARE(previewSize(), baseSize);
 }
 
 } // namespace tests

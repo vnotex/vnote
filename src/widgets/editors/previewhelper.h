@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QPixmap>
 #include <QSize>
+#include <QSizeF>
 #include <QVector>
 
 #include <vtextedit/global.h>
@@ -19,8 +20,11 @@
 class QTimer;
 class QTextDocument;
 
+namespace vte {
+class VMarkdownEditor;
+}
+
 namespace vnotex {
-class MarkdownEditor;
 
 // Helper to manage in-place preview and focus preview.
 class PreviewHelper : public QObject {
@@ -36,9 +40,9 @@ public:
   };
   Q_DECLARE_FLAGS(SourceFlags, SourceFlag);
 
-  PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent = nullptr);
+  PreviewHelper(vte::VMarkdownEditor *p_editor, QObject *p_parent = nullptr);
 
-  void setMarkdownEditor(MarkdownEditor *p_editor);
+  void setMarkdownEditor(vte::VMarkdownEditor *p_editor);
 
   void setWebPlantUmlEnabled(bool p_enabled);
 
@@ -57,7 +61,7 @@ public:
   // Current editor zoom ratio. 1.0 when there is no editor.
   qreal editorZoomFactor() const;
 
-  // Notify that the editor zoom changed, to re-render the in-place previews.
+  // Resize math previews immediately and refresh their rasters asynchronously.
   void editorZoomChanged();
 
   // Retire renderer-dependent results before reloading the preview page.
@@ -125,9 +129,10 @@ private:
 
     MathBlockPreviewData(const vte::md::MathBlock &p_mathBlock);
 
-    void updateInplacePreview(QTextDocument *p_doc, const QPixmap &p_image,
-                              const QString &p_imageName, int p_tabStopWidth,
-                              const QSize &p_logicalSize);
+    void updateInplacePreview(QTextDocument *p_doc, const GraphPreviewData &p_data,
+                              int p_tabStopWidth, qreal p_dpiFactor, qreal p_zoomRatio);
+
+    void zoomInplacePreview(qreal p_zoomRatio);
 
     // Block number for in-place preview.
     int m_blockNumber = -1;
@@ -146,6 +151,9 @@ private:
     QString m_text;
 
     QSharedPointer<vte::PreviewItem> m_inplacePreview;
+
+    // Unrounded geometry, independent of the raster generation still in flight.
+    QSizeF m_baseLogicalSize;
   };
 
   // Return <InplacePreview, FocusPreview>.
@@ -186,7 +194,7 @@ private:
 
   void requestUpdateEditorInplacePreviewMathBlock();
 
-  MarkdownEditor *m_editor = nullptr;
+  vte::VMarkdownEditor *m_editor = nullptr;
 
   QTextDocument *m_document = nullptr;
 
@@ -205,6 +213,8 @@ private:
   qreal m_codeBlockRequestZoomRatio = 1;
 
   qreal m_mathBlockRequestZoomRatio = 1;
+
+  qreal m_displayZoomRatio = 1;
 
   // Sorted by startBlock in ascending order.
   QVector<CodeBlockPreviewData> m_codeBlocksData;

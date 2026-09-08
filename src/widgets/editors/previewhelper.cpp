@@ -11,13 +11,15 @@
 
 #include <algorithm>
 
+#include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/texteditutils.h>
 #include <vtextedit/textutils.h>
+#include <vtextedit/theme.h>
+#include <vtextedit/vmarkdowneditor.h>
 #include <vtextedit/vtextedit.h>
 
 #include "graphvizhelper.h"
-#include "markdowneditor.h"
 #include "plantumlhelper.h"
 #include "previewdispatchplanner.h"
 #include "previewscaleutils.h"
@@ -56,10 +58,10 @@ PreviewHelper::MathBlockPreviewData::MathBlockPreviewData(const vte::md::MathBlo
       m_index(p_mathBlock.m_index), m_length(p_mathBlock.m_length) {}
 
 void PreviewHelper::MathBlockPreviewData::updateInplacePreview(QTextDocument *p_doc,
-                                                               const QPixmap &p_image,
-                                                               const QString &p_imageName,
+                                                               const GraphPreviewData &p_data,
                                                                int p_tabStopWidth,
-                                                               const QSize &p_logicalSize) {
+                                                               qreal p_dpiFactor,
+                                                               qreal p_zoomRatio) {
   const auto block = p_doc->findBlockByNumber(m_blockNumber);
   if (block.isValid()) {
     m_inplacePreview.reset(new vte::PreviewItem());
@@ -68,16 +70,28 @@ void PreviewHelper::MathBlockPreviewData::updateInplacePreview(QTextDocument *p_
     m_inplacePreview->m_blockPos = block.position();
     m_inplacePreview->m_blockNumber = m_blockNumber;
     m_inplacePreview->m_padding = vte::PreviewMgr::calculateBlockMargin(block, p_tabStopWidth);
-    m_inplacePreview->m_name = p_imageName;
+    m_inplacePreview->m_name = p_data.m_name;
     m_inplacePreview->m_isBlockwise = m_previewedAsBlock;
-    m_inplacePreview->m_image = p_image;
-    m_inplacePreview->m_logicalSize = p_logicalSize;
+    m_inplacePreview->m_image = p_data.m_image;
+    const auto logicalSize = p_data.getLogicalSize();
+    m_baseLogicalSize = (logicalSize.isEmpty() ? QSizeF(p_data.m_image.size()) / p_dpiFactor
+                                               : QSizeF(logicalSize)) /
+                        p_data.m_appliedZoomRatio;
+    zoomInplacePreview(p_zoomRatio);
   } else {
     m_inplacePreview.clear();
   }
 }
 
-PreviewHelper::PreviewHelper(MarkdownEditor *p_editor, QObject *p_parent)
+void PreviewHelper::MathBlockPreviewData::zoomInplacePreview(qreal p_zoomRatio) {
+  if (m_inplacePreview && !m_baseLogicalSize.isEmpty()) {
+    const auto size = m_baseLogicalSize * p_zoomRatio;
+    m_inplacePreview->m_logicalSize =
+        QSize(qMax(1, qRound(size.width())), qMax(1, qRound(size.height())));
+  }
+}
+
+PreviewHelper::PreviewHelper(vte::VMarkdownEditor *p_editor, QObject *p_parent)
     : QObject(p_parent),
       m_inplacePreviewSources(SourceFlag::FlowChart | SourceFlag::Mermaid | SourceFlag::WaveDrom |
                               SourceFlag::PlantUml | SourceFlag::Graphviz | SourceFlag::Math),
@@ -548,7 +562,9 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
   const qint64 decodeStartMs = perf ? perfNowMs() : 0;
   auto previewData = QSharedPointer<GraphPreviewData>::create(
       p_data.m_timeStamp, p_data.m_format, p_data.m_data, p_data.m_needScale,
-      forcedBackground ? m_editor->getPreviewBackground() : 0,
+      forcedBackground
+          ? m_editor->theme()->editorStyle(vte::Theme::EditorStyle::Preview).m_backgroundColor
+          : 0,
       p_data.m_needScale ? getEditorScaleFactor(m_codeBlockRequestZoomRatio) : 1,
       m_codeBlockRequestZoomRatio, p_data.m_logicalSize);
   const qint64 decodeMs = perf ? perfNowMs() - decodeStartMs : 0;
@@ -647,7 +663,7 @@ void PreviewHelper::updateEditorInplacePreviewCodeBlock() {
   }
 }
 
-void PreviewHelper::setMarkdownEditor(MarkdownEditor *p_editor) {
+void PreviewHelper::setMarkdownEditor(vte::VMarkdownEditor *p_editor) {
   Q_ASSERT(!m_editor);
   m_editor = p_editor;
   if (m_editor) {
@@ -671,8 +687,6 @@ void PreviewHelper::handleMathBlocksUpdate() {
   m_mathBlocksData.clear();
   m_mathBlocksData.reserve(m_pendingMathBlocks.size());
 
-  bool needUpdateEditorInplacePreview = true;
-
   for (const auto &mb : m_pendingMathBlocks) {
     m_mathBlocksData.append(MathBlockPreviewData(mb));
     const int blockPreviewIdx = m_mathBlocksData.size() - 1;
@@ -689,25 +703,22 @@ void PreviewHelper::handleMathBlocksUpdate() {
         cachedData->m_appliedZoomRatio = m_mathBlockRequestZoomRatio;
       }
 
-      if (action != PreviewScaleUtils::CacheAction::Miss) {
-        cacheHit = true;
-        cachedData->m_timeStamp = m_mathBlockTimeStamp;
-        m_mathBlocksData[blockPreviewIdx].updateInplacePreview(m_document, cachedData->m_image,
-                                                               cachedData->m_name, m_tabStopWidth,
-                                                               cachedData->getLogicalSize());
-      }
+      cacheHit = action != PreviewScaleUtils::CacheAction::Miss;
+      // Reuse the pixels provisionally, but do not mark a stale raster as a
+      // cache hit: it still needs to be replaced at the requested resolution.
+      cachedData->m_timeStamp = m_mathBlockTimeStamp;
+      m_mathBlocksData[blockPreviewIdx].updateInplacePreview(
+          m_document, *cachedData, m_tabStopWidth, getEditorScaleFactor(1),
+          m_mathBlockRequestZoomRatio);
     }
 
     if (!cacheHit) {
-      needUpdateEditorInplacePreview = false;
       m_mathBlocksData[blockPreviewIdx].m_text = mb.m_text;
       inplacePreviewMathBlock(blockPreviewIdx);
     }
   }
 
-  if (needUpdateEditorInplacePreview) {
-    updateEditorInplacePreviewMathBlock();
-  }
+  updateEditorInplacePreviewMathBlock();
 
   m_pendingMathBlocks.clear();
 }
@@ -772,8 +783,8 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
   m_mathBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
-  blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
-                                 m_tabStopWidth, previewData->getLogicalSize());
+  blockData.updateInplacePreview(m_document, *previewData, m_tabStopWidth, getEditorScaleFactor(1),
+                                 m_mathBlockRequestZoomRatio);
 
   requestUpdateEditorInplacePreviewMathBlock();
 }
@@ -823,10 +834,10 @@ void PreviewHelper::invalidatePreviews() {
 
 void PreviewHelper::editorZoomChanged() {
   const qreal ratio = editorZoomFactor();
-  if (!PreviewScaleUtils::isZoomRatioStale(m_codeBlockRequestZoomRatio, ratio) &&
-      !PreviewScaleUtils::isZoomRatioStale(m_mathBlockRequestZoomRatio, ratio)) {
+  if (!PreviewScaleUtils::isZoomRatioStale(m_displayZoomRatio, ratio)) {
     return;
   }
+  m_displayZoomRatio = ratio;
 
   // Invalidate every in-flight response immediately, so a pre-zoom raster can
   // never be cached against the new ratio.
@@ -834,8 +845,8 @@ void PreviewHelper::editorZoomChanged() {
   // A publication that is only DEBOUNCED has already passed its timestamp
   // check and stored its raster, so bumping the generation cannot stop it: the
   // timer callback carries no generation of its own. Cancel it here instead.
-  // refreshPreviewHighlight() below starts a new generation, which publishes
-  // the correctly scaled set when it settles.
+  // updateHighlight() below starts a new generation, which replaces the
+  // provisionally scaled math pixels when it settles.
   m_codeBlockPublishTimer->stop();
   m_mathBlockPublishTimer->stop();
 
@@ -853,8 +864,15 @@ void PreviewHelper::editorZoomChanged() {
     m_perfHeartbeatTimer->stop();
   }
 
+  // Geometry follows the keypress immediately; raster quality catches up
+  // asynchronously. Keep each raster's applied zoom untouched for cache policy.
+  for (auto &blockData : m_mathBlocksData) {
+    blockData.zoomInplacePreview(ratio);
+  }
+  updateEditorInplacePreviewMathBlock();
+
   if (m_editor) {
-    m_editor->refreshPreviewHighlight();
+    m_editor->getHighlighter()->updateHighlight();
   }
 }
 
@@ -886,7 +904,9 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
   const qint64 decodeStartMs = perf ? perfNowMs() : 0;
   auto previewData = QSharedPointer<GraphPreviewData>::create(
       p_timeStamp, p_format, p_data.toUtf8(), true,
-      p_forcedBackground ? m_editor->getPreviewBackground() : 0,
+      p_forcedBackground
+          ? m_editor->theme()->editorStyle(vte::Theme::EditorStyle::Preview).m_backgroundColor
+          : 0,
       getEditorScaleFactor(m_codeBlockRequestZoomRatio), m_codeBlockRequestZoomRatio);
   const qint64 decodeMs = perf ? perfNowMs() - decodeStartMs : 0;
   m_codeBlockCache.set(blockData.m_text, previewData);
