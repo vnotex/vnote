@@ -12,6 +12,8 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include <utility>
+
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <gui/services/themeservice.h>
@@ -39,6 +41,7 @@ AttachmentPopup2::AttachmentPopup2(ServiceLocator &p_services, QToolButton *p_bt
       m_renameBtn->setEnabled(false);
       m_openFolderBtn->setEnabled(false);
       m_copyPathBtn->setEnabled(false);
+      m_scanBtn->setEnabled(false);
       return;
     }
 
@@ -59,6 +62,7 @@ AttachmentPopup2::AttachmentPopup2(ServiceLocator &p_services, QToolButton *p_bt
       m_renameBtn->setEnabled(false);
       m_openFolderBtn->setEnabled(false);
       m_copyPathBtn->setEnabled(false);
+      m_scanBtn->setEnabled(false);
     }
   });
 }
@@ -115,6 +119,25 @@ void AttachmentPopup2::setupUI() {
     });
     m_openFolderBtn->setDefaultAction(act);
     buttonsLayout->addWidget(m_openFolderBtn);
+  }
+
+  // Scan.
+  {
+    m_scanBtn = createButton();
+    auto *act = new QAction(IconUtils::fetchIconWithDisabledState(
+                                themeService->getIconFile(QStringLiteral("file_scan.svg"))),
+                            tr("Scan"), m_scanBtn);
+    act->setToolTip(tr("Scan for unlisted attachments"));
+    connect(act, &QAction::triggered, this, [this]() {
+      if (!m_buffer || !m_buffer->isValid() || !m_buffer->isAttachmentSupported() ||
+          m_buffer->isReadOnly() || !m_scanExclusionProvider) {
+        return;
+      }
+      const auto paths = m_scanExclusionProvider();
+      m_controller->scanAttachments(paths);
+    });
+    m_scanBtn->setDefaultAction(act);
+    buttonsLayout->addWidget(m_scanBtn);
   }
 
   buttonsLayout->addStretch();
@@ -254,6 +277,10 @@ void AttachmentPopup2::setBuffer(Buffer2 *p_buffer) {
   m_controller->setBuffer(p_buffer);
 }
 
+void AttachmentPopup2::setScanExclusionProvider(std::function<QStringList()> p_provider) {
+  m_scanExclusionProvider = std::move(p_provider);
+}
+
 void AttachmentPopup2::showEvent(QShowEvent *p_event) {
   ButtonPopup::showEvent(p_event);
 
@@ -283,6 +310,8 @@ void AttachmentPopup2::updateButtonsState() {
   int count = m_listView->selectionModel()->selectedIndexes().size();
   m_addBtn->setEnabled(true);
   m_openFolderBtn->setEnabled(true);
+  m_scanBtn->setEnabled(m_buffer && m_buffer->isValid() && m_buffer->isAttachmentSupported() &&
+                        m_scanExclusionProvider && !m_buffer->isReadOnly());
   m_openBtn->setEnabled(count > 0);
   m_deleteBtn->setEnabled(count > 0);
   m_copyPathBtn->setEnabled(count > 0);

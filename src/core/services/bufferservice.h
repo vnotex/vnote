@@ -195,6 +195,8 @@ public:
                            const QString &p_newFilename);
   using BufferCoreService::getAttachmentsFolder;
   using BufferCoreService::listAttachments;
+  using BufferCoreService::listUnindexedAttachments;
+  bool registerAttachment(const QString &p_bufferId, const QString &p_filename);
 
   // ============ Auto-Save & Dirty Tracking ============
 

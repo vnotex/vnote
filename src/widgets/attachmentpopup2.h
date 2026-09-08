@@ -3,6 +3,9 @@
 
 #include "buttonpopup.h"
 
+#include <QStringList>
+#include <functional>
+
 class QLabel;
 class QToolButton;
 class QListView;
@@ -23,6 +26,8 @@ public:
 
   void setBuffer(Buffer2 *p_buffer);
 
+  void setScanExclusionProvider(std::function<QStringList()> p_provider);
+
 protected:
   void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -41,6 +46,7 @@ private:
 
   ServiceLocator &m_services;
   Buffer2 *m_buffer = nullptr;
+  std::function<QStringList()> m_scanExclusionProvider;
 
   // Managed by QObject.
   AttachmentListModel *m_model = nullptr;
@@ -55,6 +61,7 @@ private:
   QToolButton *m_deleteBtn = nullptr;
   QToolButton *m_renameBtn = nullptr;
   QToolButton *m_openFolderBtn = nullptr;
+  QToolButton *m_scanBtn = nullptr;
   QToolButton *m_copyPathBtn = nullptr;
 };
 

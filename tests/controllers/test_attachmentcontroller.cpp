@@ -1,21 +1,29 @@
 #include <QtTest>
 
 #include <QDesktopServices>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QMap>
+#include <QScopeGuard>
+#include <QSemaphore>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QUrl>
 
+#include <thread>
+
 #include <vxcore/vxcore.h>
 
 #include <controllers/attachmentcontroller.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 
 namespace tests {
 
@@ -46,6 +54,9 @@ private slots:
   void testAddAttachmentsWithoutBufferIsNoOp();
   void testAddAttachmentsWithInvalidBufferIsNoOp();
   void testAddAttachmentsWithEmptyListIsNoOp();
+  void testScanRegistersOnlyEligibleFiles();
+  void testScanHonorsCancellationAndMissingFiles();
+  void testScanDoesNotWriteWhileNotebookBusy();
   void testDeleteAttachmentsRemovesFileAndEmits();
   void testDeleteAttachmentsWithoutBufferIsNoOp();
   void testDeleteAttachmentsWithInvalidBufferIsNoOp();
@@ -62,6 +73,7 @@ private:
   vnotex::ServiceLocator m_services;
   vnotex::NotebookCoreService *m_notebookService = nullptr;
   vnotex::HookManager *m_hookMgr = nullptr;
+  vnotex::NotebookIoGate m_ioGate;
   vnotex::BufferService *m_bufferService = nullptr;
   QString m_notebookId;
   vnotex::Buffer2 m_buffer;
@@ -79,8 +91,8 @@ void TestAttachmentController::initTestCase() {
 
   m_notebookService = new vnotex::NotebookCoreService(m_context, this);
   m_hookMgr = new vnotex::HookManager(this);
-  m_bufferService =
-      new vnotex::BufferService(m_context, m_hookMgr, vnotex::AutoSavePolicy::AutoSave, this);
+  m_bufferService = new vnotex::BufferService(m_context, m_hookMgr, &m_ioGate,
+                                              vnotex::AutoSavePolicy::AutoSave, this);
 
   m_services.registerService<vnotex::NotebookCoreService>(m_notebookService);
   m_services.registerService<vnotex::HookManager>(m_hookMgr);
@@ -273,6 +285,259 @@ void TestAttachmentController::testAddAttachmentsWithEmptyListIsNoOp() {
 
   QCOMPARE(addedSpy.count(), 0);
   QCOMPARE(currentAttachments().size(), 0);
+}
+
+void TestAttachmentController::testScanRegistersOnlyEligibleFiles() {
+  const QString notePath = QStringLiteral("scan_eligible.md");
+  QVERIFY(!m_notebookService->createFile(m_notebookId, QString(), notePath).isEmpty());
+  m_buffer = m_bufferService->openBuffer(vnotex::NodeIdentifier{m_notebookId, notePath});
+  QVERIFY(m_buffer.isValid());
+
+  const QByteArray savedContent("# Attachment scan\n");
+  QVERIFY(m_buffer.setContentRaw(savedContent));
+  QVERIFY(m_buffer.save());
+  const QString folder = m_notebookService->getAttachmentsFolder(m_notebookId, notePath);
+  QVERIFY(!folder.isEmpty());
+  const QDir attachmentDir(folder);
+  QVERIFY(QDir().mkpath(attachmentDir.filePath(QStringLiteral("nested"))));
+
+  const QMap<QString, QByteArray> files{
+      {QStringLiteral("indexed.txt"), QByteArray("already indexed\r\n")},
+      {QStringLiteral("loose.txt"), QByteArray("loose attachment\n")},
+      {QStringLiteral("unused.png"), QByteArray::fromHex("89504e470d0a1a0a00010203")},
+      {QStringLiteral("live.png"), QByteArray("currently referenced image")},
+      {QStringLiteral("removed.png"), QByteArray("tracked image with its link removed")},
+      {QStringLiteral("comments.json"), QByteArray(R"({"comments":[]})")},
+      {QStringLiteral(".gitkeep"), QByteArray()},
+      {QStringLiteral("nested/child.txt"), QByteArray("not a direct attachment")}};
+  for (auto it = files.cbegin(); it != files.cend(); ++it) {
+    QFile file(attachmentDir.filePath(it.key()));
+    QVERIFY2(file.open(QIODevice::WriteOnly), qPrintable(file.errorString()));
+    QCOMPARE(file.write(it.value()), static_cast<qint64>(it.value().size()));
+  }
+  QCOMPARE(vxcore_file_add_attachment(m_context, m_notebookId.toUtf8().constData(),
+                                      notePath.toUtf8().constData(), "indexed.txt"),
+           VXCORE_OK);
+
+  const QString livePath = attachmentDir.filePath(QStringLiteral("live.png"));
+  const QString removedPath = attachmentDir.filePath(QStringLiteral("removed.png"));
+  const QString removedAlias = attachmentDir.filePath(QStringLiteral("nested/../removed.png"));
+  QVERIFY(QFileInfo(livePath).isAbsolute());
+  QVERIFY(QFileInfo(removedAlias).isAbsolute());
+  QCOMPARE(QFileInfo(removedAlias).canonicalFilePath(), QFileInfo(removedPath).canonicalFilePath());
+  const QStringList exclusions{QFileInfo(livePath).canonicalFilePath(), removedAlias};
+
+  const QDir noteDir(QFileInfo(m_buffer.resolvedPath()).path());
+  const QByteArray unsavedContent =
+      savedContent + "[Loose](" +
+      noteDir.relativeFilePath(attachmentDir.filePath(QStringLiteral("loose.txt"))).toUtf8() +
+      ")\n![Live](" + noteDir.relativeFilePath(livePath).toUtf8() + ")\n";
+  QVERIFY(m_buffer.setContentRaw(unsavedContent));
+  QVERIFY(m_buffer.isModified());
+
+  const auto entryFilters = QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System;
+  const QStringList originalEntries = attachmentDir.entryList(entryFilters, QDir::Name);
+  const QStringList expectedNames{QStringLiteral("indexed.txt"), QStringLiteral("loose.txt"),
+                                  QStringLiteral("unused.png")};
+  vnotex::AttachmentController controller(m_services);
+  controller.setBuffer(&m_buffer);
+  QSignalSpy addedSpy(&controller, &vnotex::AttachmentController::attachmentAdded);
+
+  for (int scan = 0; scan < 2; ++scan) {
+    controller.scanAttachments(exclusions);
+
+    QStringList names = currentAttachments();
+    names.sort();
+    QCOMPARE(names, expectedNames);
+    QCOMPARE(addedSpy.count(), 1);
+    QCOMPARE(attachmentDir.entryList(entryFilters, QDir::Name), originalEntries);
+    QCOMPARE(
+        QDir(attachmentDir.filePath(QStringLiteral("nested"))).entryList(entryFilters, QDir::Name),
+        QStringList{QStringLiteral("child.txt")});
+    for (auto it = files.cbegin(); it != files.cend(); ++it) {
+      QFile file(attachmentDir.filePath(it.key()));
+      QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+      QCOMPARE(file.readAll(), it.value());
+    }
+    QFile note(m_buffer.resolvedPath());
+    QVERIFY(note.open(QIODevice::ReadOnly));
+    QCOMPARE(note.readAll(), savedContent);
+    QCOMPARE(m_buffer.getContentRaw(), unsavedContent);
+    QVERIFY(m_buffer.isModified());
+  }
+
+  // Attachment membership survives discarding the note's unrelated unsaved edits.
+  QVERIFY(m_bufferService->closeBuffer(m_buffer.id()));
+  m_buffer = m_bufferService->openBuffer(vnotex::NodeIdentifier{m_notebookId, notePath});
+  QVERIFY(m_buffer.isValid());
+  QStringList reopenedNames = currentAttachments();
+  reopenedNames.sort();
+  QCOMPARE(reopenedNames, expectedNames);
+  QCOMPARE(m_buffer.getContentRaw(), savedContent);
+  QVERIFY(!m_buffer.isModified());
+}
+
+void TestAttachmentController::testScanHonorsCancellationAndMissingFiles() {
+  const QString notePath = QStringLiteral("scan_hook_failures.md");
+  QVERIFY(!m_notebookService->createFile(m_notebookId, QString(), notePath).isEmpty());
+  m_buffer = m_bufferService->openBuffer(vnotex::NodeIdentifier{m_notebookId, notePath});
+  QVERIFY(m_buffer.isValid());
+  const QString folder = m_notebookService->getAttachmentsFolder(m_notebookId, notePath);
+  QVERIFY(!folder.isEmpty());
+  QVERIFY(QDir().mkpath(folder));
+  const QDir attachmentDir(folder);
+  const QMap<QString, QByteArray> files{
+      {QStringLiteral("a_cancel.txt"), QByteArray("cancelled attachment")},
+      {QStringLiteral("b_missing.txt"), QByteArray("removed by the before hook")},
+      {QStringLiteral("c_success.txt"), QByteArray("registered after both failures")}};
+  for (auto it = files.cbegin(); it != files.cend(); ++it) {
+    QFile file(attachmentDir.filePath(it.key()));
+    QVERIFY2(file.open(QIODevice::WriteOnly), qPrintable(file.errorString()));
+    QCOMPARE(file.write(it.value()), static_cast<qint64>(it.value().size()));
+  }
+
+  const QString cancelledPath = attachmentDir.filePath(QStringLiteral("a_cancel.txt"));
+  const QString missingPath = attachmentDir.filePath(QStringLiteral("b_missing.txt"));
+  bool removedByHook = false;
+  vnotex::AttachmentController controller(m_services);
+  controller.setBuffer(&m_buffer);
+  QSignalSpy addedSpy(&controller, &vnotex::AttachmentController::attachmentAdded);
+  {
+    const int hookId = m_hookMgr->addAction<vnotex::AttachmentAddEvent>(
+        vnotex::HookNames::AttachmentBeforeAdd,
+        [&](vnotex::HookContext &p_ctx, const vnotex::AttachmentAddEvent &p_event) {
+          if (p_event.bufferId != m_buffer.id()) {
+            return;
+          }
+          const QString sourcePath = QFileInfo(p_event.sourcePath).canonicalFilePath();
+          if (sourcePath == QFileInfo(cancelledPath).canonicalFilePath()) {
+            p_ctx.cancel();
+          } else if (sourcePath == QFileInfo(missingPath).canonicalFilePath()) {
+            removedByHook = QFile::remove(p_event.sourcePath);
+          }
+        });
+    const auto removeHook = qScopeGuard([this, hookId]() { m_hookMgr->removeAction(hookId); });
+    controller.scanAttachments({});
+  }
+
+  QVERIFY(removedByHook);
+  QVERIFY(!QFile::exists(missingPath));
+  QCOMPARE(currentAttachments(), QStringList{QStringLiteral("c_success.txt")});
+  QCOMPARE(addedSpy.count(), 1);
+  const QStringList remainingNames{QStringLiteral("a_cancel.txt"), QStringLiteral("c_success.txt")};
+  QCOMPARE(attachmentDir.entryList(
+               QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System, QDir::Name),
+           remainingNames);
+  for (const QString &name : remainingNames) {
+    QFile file(attachmentDir.filePath(name));
+    QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
+    QCOMPARE(file.readAll(), files.value(name));
+  }
+}
+
+void TestAttachmentController::testScanDoesNotWriteWhileNotebookBusy() {
+  const QString notePath = QStringLiteral("scan_busy.md");
+  QVERIFY(!m_notebookService->createFile(m_notebookId, QString(), notePath).isEmpty());
+  m_buffer = m_bufferService->openBuffer(vnotex::NodeIdentifier{m_notebookId, notePath});
+  QVERIFY(m_buffer.isValid());
+  const QString folder = m_notebookService->getAttachmentsFolder(m_notebookId, notePath);
+  QVERIFY(!folder.isEmpty());
+  QVERIFY(QDir().mkpath(folder));
+  const QDir attachmentDir(folder);
+  const QString candidatePath = attachmentDir.filePath(QStringLiteral("busy.txt"));
+  const QByteArray payload("leave these bytes in place");
+  {
+    QFile file(candidatePath);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    QCOMPARE(file.write(payload), static_cast<qint64>(payload.size()));
+  }
+
+  vnotex::AttachmentController controller(m_services);
+  controller.setBuffer(&m_buffer);
+  QSignalSpy addedSpy(&controller, &vnotex::AttachmentController::attachmentAdded);
+  {
+    QSemaphore acquired;
+    QSemaphore release;
+    std::thread holder([&]() {
+      vnotex::NotebookIoGate::ScopedLock lock(m_ioGate, m_notebookId);
+      acquired.release();
+      release.acquire();
+    });
+    const auto releaseHolder = qScopeGuard([&]() {
+      release.release();
+      holder.join();
+    });
+    acquired.acquire();
+
+    // Scan must return while the worker still owns the shared notebook gate.
+    controller.scanAttachments({});
+    QCOMPARE(currentAttachments(), QStringList());
+    QCOMPARE(addedSpy.count(), 0);
+    QFile file(candidatePath);
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    QCOMPARE(file.readAll(), payload);
+  }
+
+  controller.scanAttachments({});
+  QCOMPARE(currentAttachments(), QStringList{QStringLiteral("busy.txt")});
+  QCOMPARE(addedSpy.count(), 1);
+  QCOMPARE(attachmentDir.entryList(
+               QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System, QDir::Name),
+           QStringList{QStringLiteral("busy.txt")});
+  {
+    QFile file(candidatePath);
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    QCOMPARE(file.readAll(), payload);
+  }
+  QVERIFY(m_bufferService->closeBuffer(m_buffer.id()));
+  m_buffer = vnotex::Buffer2();
+
+  // Use a separately reopened read-only notebook, not a disabled UI control.
+  const QString readOnlyRoot = m_tempDir.filePath(QStringLiteral("scan_read_only_notebook"));
+  const QString readOnlyNotebookId = m_notebookService->createNotebook(
+      readOnlyRoot, QStringLiteral(R"({"name":"Read-only scan","version":"1"})"),
+      vnotex::NotebookType::Bundled);
+  QVERIFY(!readOnlyNotebookId.isEmpty());
+  const auto closeReadOnlyNotebook = qScopeGuard([&]() {
+    if (m_buffer.isValid()) {
+      m_bufferService->closeBuffer(m_buffer.id());
+      m_buffer = vnotex::Buffer2();
+    }
+    m_notebookService->closeNotebook(readOnlyNotebookId);
+  });
+  const QString readOnlyNotePath = QStringLiteral("scan.md");
+  QVERIFY(
+      !m_notebookService->createFile(readOnlyNotebookId, QString(), readOnlyNotePath).isEmpty());
+  const QString readOnlyFolder =
+      m_notebookService->getAttachmentsFolder(readOnlyNotebookId, readOnlyNotePath);
+  QVERIFY(!readOnlyFolder.isEmpty());
+  QVERIFY(QDir().mkpath(readOnlyFolder));
+  const QString blockedPath = QDir(readOnlyFolder).filePath(QStringLiteral("blocked.txt"));
+  {
+    QFile file(blockedPath);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    QCOMPARE(file.write(payload), static_cast<qint64>(payload.size()));
+  }
+  QVERIFY(m_notebookService->closeNotebook(readOnlyNotebookId));
+  QCOMPARE(m_notebookService->openNotebookEx(readOnlyRoot, QStringLiteral(R"({"readOnly":true})")),
+           readOnlyNotebookId);
+  m_buffer =
+      m_bufferService->openBuffer(vnotex::NodeIdentifier{readOnlyNotebookId, readOnlyNotePath});
+  QVERIFY(m_buffer.isValid());
+  QVERIFY(m_buffer.isReadOnly());
+  QCOMPARE(m_buffer.listUnindexedAttachments(), QJsonArray{QStringLiteral("blocked.txt")});
+
+  addedSpy.clear();
+  controller.scanAttachments({});
+  QCOMPARE(currentAttachments(), QStringList());
+  QCOMPARE(addedSpy.count(), 0);
+  QCOMPARE(QDir(readOnlyFolder)
+               .entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
+                          QDir::Name),
+           QStringList{QStringLiteral("blocked.txt")});
+  QFile blockedFile(blockedPath);
+  QVERIFY(blockedFile.open(QIODevice::ReadOnly));
+  QCOMPARE(blockedFile.readAll(), payload);
 }
 
 void TestAttachmentController::testDeleteAttachmentsRemovesFileAndEmits() {

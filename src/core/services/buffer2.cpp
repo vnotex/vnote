@@ -236,6 +236,20 @@ QJsonArray Buffer2::listAttachments() const {
   return m_bufferService->listAttachments(m_bufferId);
 }
 
+QJsonArray Buffer2::listUnindexedAttachments() const {
+  if (!isValid()) {
+    return QJsonArray();
+  }
+  return m_bufferService->listUnindexedAttachments(m_bufferId);
+}
+
+bool Buffer2::registerAttachment(const QString &p_filename) {
+  if (!isValid()) {
+    return false;
+  }
+  return m_bufferService->registerAttachment(m_bufferId, p_filename);
+}
+
 QString Buffer2::getAttachmentsFolder() const {
   if (!isValid()) {
     return QString();

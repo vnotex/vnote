@@ -134,8 +134,7 @@ public:
   // ============ Attachment Operations (Filesystem + Metadata) ============
 
   // Check if this buffer supports attachment operations.
-  // Both indexed notebook files and external files support attachments.
-  // Returns false only if the buffer handle is invalid.
+  // Requires a valid bundled-notebook buffer with an attachment index.
   bool isAttachmentSupported() const;
 
   // Check if this buffer supports tag operations.
@@ -155,6 +154,12 @@ public:
 
   // List all attachments as JSON array of filenames.
   QJsonArray listAttachments() const;
+
+  // Enumerate direct unindexed files without creating the attachment folder.
+  QJsonArray listUnindexedAttachments() const;
+
+  // Add metadata for an existing file, without copying it or changing note content.
+  bool registerAttachment(const QString &p_filename);
 
   // Get absolute path to the buffer's attachments folder.
   QString getAttachmentsFolder() const;

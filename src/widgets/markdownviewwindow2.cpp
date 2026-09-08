@@ -1847,6 +1847,36 @@ int MarkdownViewWindow2::getReadLineNumber() const {
 
 bool MarkdownViewWindow2::isReadMode() const { return m_mode == ViewWindowMode::Read; }
 
+QStringList MarkdownViewWindow2::getAttachmentScanExcludedPaths() const {
+  const auto &buffer = getBuffer();
+  const auto resolved = buffer.resolvedPath();
+  if (!buffer.isValid() || resolved.isEmpty()) {
+    return {};
+  }
+  const auto basePath = QFileInfo(resolved).path();
+  const int flags = vte::MarkdownLink::LocalRelativeInternal |
+                    vte::MarkdownLink::LocalRelativeExternal | vte::MarkdownLink::LocalAbsolute;
+  const auto images = vte::MarkdownUtils::fetchImageLinks(
+      getLatestContent(), basePath, static_cast<vte::MarkdownLink::TypeFlags>(flags));
+  QStringList paths;
+  paths.reserve(images.size() + m_initialImages.size() + m_insertedImages.size());
+  for (const auto &image : images) {
+    paths.append(image.m_path);
+  }
+  const auto appendTracked = [&paths, &basePath](const QSet<QString> &p_images) {
+    for (const auto &url : p_images) {
+      const auto path = vte::MarkdownUtils::linkUrlToPath(basePath, url);
+      const QFileInfo info(path);
+      if (!path.isEmpty() && info.isAbsolute() && info.isNativePath()) {
+        paths.append(path);
+      }
+    }
+  };
+  appendTracked(m_initialImages);
+  appendTracked(m_insertedImages);
+  return paths;
+}
+
 void MarkdownViewWindow2::snapshotInitialImages() {
   auto content = getBuffer().decode(getBuffer().getContentRaw());
   auto resolved = getBuffer().resolvedPath();

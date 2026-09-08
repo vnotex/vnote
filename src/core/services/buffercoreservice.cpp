@@ -1,7 +1,9 @@
 #include "buffercoreservice.h"
 
 #include <QDebug>
+#include <QDir>
 #include <QElapsedTimer>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QLoggingCategory>
@@ -539,6 +541,79 @@ QJsonArray BufferCoreService::listAttachments(const QString &p_bufferId) const {
     return QJsonArray();
   }
   return parseJsonArrayFromCStr(json);
+}
+
+QJsonArray BufferCoreService::listUnindexedAttachments(const QString &p_bufferId) const {
+  if (!checkContext()) {
+    return QJsonArray();
+  }
+
+  char *json = nullptr;
+  const auto err =
+      vxcore_buffer_list_unindexed_attachments(m_context, p_bufferId.toUtf8().constData(), &json);
+  if (err != VXCORE_OK) {
+    qWarning() << "listUnindexedAttachments failed:"
+               << QString::fromUtf8(vxcore_error_message(err));
+    return QJsonArray();
+  }
+  return parseJsonArrayFromCStr(json);
+}
+
+QString BufferCoreService::getExistingAttachmentPath(const QString &p_notebookId,
+                                                     const QString &p_filePath,
+                                                     const QString &p_filename) const {
+  if (!checkContext()) {
+    qWarning() << "registerAttachment failed: invalid context";
+    return QString();
+  }
+  if (p_filename.isEmpty() || p_filename == QLatin1String(".") ||
+      p_filename == QLatin1String("..") || p_filename.contains(QLatin1Char('/')) ||
+      p_filename.contains(QLatin1Char('\\')) || p_filename.contains(QLatin1Char(':')) ||
+      p_filename.contains(QChar::Null)) {
+    qWarning() << "registerAttachment failed: invalid filename" << p_filename;
+    return QString();
+  }
+
+  char *folder = nullptr;
+  const auto err = vxcore_node_get_attachments_folder(m_context, p_notebookId.toUtf8().constData(),
+                                                      p_filePath.toUtf8().constData(), &folder);
+  const auto folderPath = cstrToQString(folder);
+  if (err != VXCORE_OK || folderPath.isEmpty()) {
+    qWarning() << "registerAttachment failed:" << QString::fromUtf8(vxcore_error_message(err))
+               << "resolving attachment folder";
+    return QString();
+  }
+  const QFileInfo info(QDir(folderPath).filePath(p_filename));
+  if (!info.exists() || !info.isFile() || info.isSymLink()) {
+    qWarning() << "registerAttachment failed: not an existing regular file" << info.filePath();
+    return QString();
+  }
+  return info.absoluteFilePath();
+}
+
+bool BufferCoreService::registerAttachment(const QString &p_bufferId, const QString &p_filename) {
+  if (!checkContext()) {
+    qWarning() << "registerAttachment failed: invalid context";
+    return false;
+  }
+  const auto buffer = getBuffer(p_bufferId);
+  const auto notebookId = buffer.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+  const auto filePath = buffer.value(QStringLiteral("filePath")).toString();
+  if (notebookId.isEmpty() || filePath.isEmpty()) {
+    qWarning() << "registerAttachment failed: invalid buffer identity" << p_bufferId;
+    return false;
+  }
+  if (getExistingAttachmentPath(notebookId, filePath, p_filename).isEmpty()) {
+    return false;
+  }
+  const auto err =
+      vxcore_file_add_attachment(m_context, notebookId.toUtf8().constData(),
+                                 filePath.toUtf8().constData(), p_filename.toUtf8().constData());
+  if (err != VXCORE_OK) {
+    qWarning() << "registerAttachment failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
 }
 
 QString BufferCoreService::getAttachmentsFolder(const QString &p_bufferId) const {

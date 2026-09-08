@@ -307,6 +307,8 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
+  virtual QStringList getAttachmentScanExcludedPaths() const;
+
   // Apply readable-width constraints to the editor.
   // Subclasses override to use editor-native line width instead of content margins.
   virtual void applyReadableWidth();

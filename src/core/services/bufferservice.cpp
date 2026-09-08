@@ -547,6 +547,48 @@ QString BufferService::insertAttachment(const QString &p_bufferId, const QString
   return filename;
 }
 
+bool BufferService::registerAttachment(const QString &p_bufferId, const QString &p_filename) {
+  const auto buffer = getBufferHandle(p_bufferId);
+  if (!buffer.isValid() || !buffer.isAttachmentSupported() || buffer.isReadOnly()) {
+    qWarning() << "registerAttachment failed: invalid, unsupported or read-only buffer"
+               << p_bufferId;
+    return false;
+  }
+  const auto nodeId = buffer.nodeId();
+  const auto path = getExistingAttachmentPath(nodeId.notebookId, nodeId.relativePath, p_filename);
+  if (path.isEmpty()) {
+    return false;
+  }
+
+  AttachmentAddEvent event;
+  event.bufferId = p_bufferId;
+  event.sourcePath = path;
+  if (m_hookMgr->doAction(HookNames::AttachmentBeforeAdd, event)) {
+    return false; // Cancelled by plugin.
+  }
+
+  const auto current = getBufferHandle(p_bufferId);
+  if (!current.isValid() || current.isReadOnly() || current.nodeId() != nodeId) {
+    qWarning() << "registerAttachment failed: buffer changed during hook" << p_bufferId;
+    return false;
+  }
+  {
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, nodeId.notebookId, 0);
+    if (!lock.isLocked()) {
+      qWarning() << "registerAttachment: notebook is busy";
+      return false;
+    }
+    if (!BufferCoreService::registerAttachment(p_bufferId, p_filename)) {
+      return false;
+    }
+  }
+
+  event.filename = p_filename;
+  m_hookMgr->doAction(HookNames::AttachmentAfterAdd, event);
+  emit attachmentChanged(p_bufferId);
+  return true;
+}
+
 bool BufferService::deleteAttachment(const QString &p_bufferId, const QString &p_filename) {
   AttachmentDeleteEvent event;
   event.bufferId = p_bufferId;

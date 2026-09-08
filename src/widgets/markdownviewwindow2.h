@@ -92,6 +92,8 @@ protected slots:
   void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
 
 protected:
+  QStringList getAttachmentScanExcludedPaths() const override;
+
   void handleThemeChanged() override;
 
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;

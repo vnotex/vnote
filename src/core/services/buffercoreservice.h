@@ -189,10 +189,20 @@ public:
   // List all attachments as JSON array of filenames.
   QJsonArray listAttachments(const QString &p_bufferId) const;
 
+  // List unindexed files without creating the attachment folder.
+  QJsonArray listUnindexedAttachments(const QString &p_bufferId) const;
+
+  // Register an existing attachment in place, without modifying its bytes.
+  bool registerAttachment(const QString &p_bufferId, const QString &p_filename);
+
   // Get absolute path to the buffer's attachments folder.
   QString getAttachmentsFolder(const QString &p_bufferId) const;
 
 protected:
+  // Resolve and validate a regular, non-symlink attachment without creating folders.
+  QString getExistingAttachmentPath(const QString &p_notebookId, const QString &p_filePath,
+                                    const QString &p_filename) const;
+
   // Check context validity before operations.
   bool checkContext() const;
 

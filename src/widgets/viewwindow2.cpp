@@ -708,6 +708,8 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     auto *attachmentPopup = dynamic_cast<AttachmentPopup2 *>(toolBtn->menu());
     if (attachmentPopup) {
       attachmentPopup->setBuffer(&getBuffer());
+      attachmentPopup->setScanExclusionProvider(
+          [this]() { return getAttachmentScanExcludedPaths(); });
       m_attachmentPopup = attachmentPopup;
     }
     m_attachmentAction = act;
@@ -731,6 +733,8 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
 
   return act;
 }
+
+QStringList ViewWindow2::getAttachmentScanExcludedPaths() const { return {}; }
 
 void ViewWindow2::handleTypeAction(int p_action) { Q_UNUSED(p_action); }
 

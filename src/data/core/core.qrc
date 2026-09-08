@@ -66,6 +66,7 @@
         <file>icons/clear.svg</file>
         <file>icons/clear_selection.svg</file>
         <file>icons/open_folder.svg</file>
+        <file>icons/file_scan.svg</file>
         <file>icons/open_file.svg</file>
         <file>icons/copy_path.svg</file>
         <file>icons/decrease_outline_level.svg</file>

@@ -1,11 +1,18 @@
 #include "attachmentcontroller.h"
 
+#include <QDebug>
 #include <QDesktopServices>
+#include <QDir>
+#include <QFileInfo>
+#include <QSet>
 #include <QUrl>
 
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <utils/clipboardutils.h>
+#include <utils/pathutils.h>
 
 using namespace vnotex;
 
@@ -27,6 +34,64 @@ void AttachmentController::addAttachments(const QStringList &p_files) {
     }
   }
 
+  if (anyAdded) {
+    emit attachmentAdded();
+  }
+}
+
+void AttachmentController::scanAttachments(const QStringList &p_excludedPaths) {
+  if (!m_buffer || !m_buffer->isValid() || !m_buffer->isAttachmentSupported() ||
+      m_buffer->isReadOnly()) {
+    return;
+  }
+  auto *notebookService = m_services.get<NotebookCoreService>();
+  if (!notebookService) {
+    qWarning() << "scanAttachments: notebook service unavailable";
+    return;
+  }
+  const auto candidates = m_buffer->listUnindexedAttachments();
+  if (candidates.isEmpty()) {
+    return;
+  }
+  const auto nodeId = m_buffer->nodeId();
+  const auto folder = notebookService->getAttachmentsFolder(nodeId.notebookId, nodeId.relativePath);
+  if (folder.isEmpty()) {
+    return;
+  }
+  const QDir directory(folder);
+  const auto normalizedPath = [](const QString &p_path) {
+    const QFileInfo info(p_path);
+    if (p_path.isEmpty() || !info.isAbsolute() || !PathUtils::isLocalFile(p_path)) {
+      return QString();
+    }
+    const auto canonical = info.canonicalFilePath();
+    return PathUtils::normalizePath(canonical.isEmpty() ? info.absoluteFilePath() : canonical);
+  };
+  QSet<QString> excluded;
+  for (const auto &path : p_excludedPaths) {
+    const auto normalized = normalizedPath(path);
+    if (!normalized.isEmpty()) {
+      excluded.insert(normalized);
+    }
+  }
+  for (const auto &attachment : m_buffer->listAttachments()) {
+    excluded.insert(normalizedPath(directory.filePath(attachment.toString())));
+  }
+  excluded.insert(normalizedPath(directory.filePath(CommentService::storeFileName())));
+  const auto gitkeep = normalizedPath(directory.filePath(QStringLiteral(".gitkeep")));
+
+  bool anyAdded = false;
+  for (const auto &candidate : candidates) {
+    const auto name = candidate.toString();
+    const auto path = directory.filePath(name);
+    const auto normalized = normalizedPath(path);
+    if (excluded.contains(normalized) || (normalized == gitkeep && QFileInfo(path).size() == 0)) {
+      continue;
+    }
+    if (m_buffer->registerAttachment(name)) {
+      anyAdded = true;
+    }
+  }
   if (anyAdded) {
     emit attachmentAdded();
   }
