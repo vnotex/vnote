@@ -225,7 +225,7 @@ class MathRenderer extends VxWorker {
     }
 
     rasterizeHtml(p_node, p_pixelRatio) {
-        let width, height;
+        let width, height, pixelWidth, pixelHeight;
         return this.initializeRasterizer().then(() => document.fonts.ready).then(() => {
             const rect = p_node.getBoundingClientRect();
             width = Math.ceil(Math.max(rect.width, p_node.scrollWidth));
@@ -233,6 +233,8 @@ class MathRenderer extends VxWorker {
             if (!width || !height) {
                 throw new Error('Empty math raster bounds');
             }
+            pixelWidth = Math.ceil(width * p_pixelRatio);
+            pixelHeight = Math.ceil(height * p_pixelRatio);
             // In 1.11.13 preferredFontFormat's shared regex drops alternating font
             // sources. Keep all formats so every used face is embedded reliably.
             return window.htmlToImage.getFontEmbedCSS(p_node);
@@ -249,10 +251,19 @@ class MathRenderer extends VxWorker {
                 }
             }
             return window.htmlToImage.toSvg(p_node, {
-                width: width,
-                height: height,
+                // Render glyphs at twice the target resolution before filtering.
+                // The clone keeps its CSS layout size; only its raster is enlarged.
+                width: pixelWidth * 2,
+                height: pixelHeight * 2,
                 fontEmbedCSS: fontCSS,
-                style: { display: 'inline-block', margin: '0' },
+                style: {
+                    display: 'inline-block',
+                    margin: '0',
+                    width: width + 'px',
+                    height: height + 'px',
+                    transform: 'scale(' + (p_pixelRatio * 2) + ')',
+                    transformOrigin: 'top left'
+                },
                 filter: (node) => !node.classList || !node.classList.contains('katex-mathml')
             });
         }).then((uri) => new Promise((resolve, reject) => {
@@ -265,9 +276,11 @@ class MathRenderer extends VxWorker {
                 }
                 try {
                     const canvas = document.createElement('canvas');
-                    canvas.width = Math.ceil(width * p_pixelRatio);
-                    canvas.height = Math.ceil(height * p_pixelRatio);
+                    canvas.width = pixelWidth;
+                    canvas.height = pixelHeight;
                     const context = canvas.getContext('2d');
+                    context.imageSmoothingEnabled = true;
+                    context.imageSmoothingQuality = 'high';
                     context.drawImage(image, 0, 0, canvas.width, canvas.height);
                     const dataUrl = canvas.toDataURL('image/png');
                     if (!dataUrl.startsWith('data:image/png;base64,')) {
