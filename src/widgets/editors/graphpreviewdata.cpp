@@ -9,9 +9,14 @@ int GraphPreviewData::s_imageIndex = 0;
 
 GraphPreviewData::GraphPreviewData(TimeStamp p_timeStamp, const QString &p_format,
                                    const QByteArray &p_data, bool p_needScale, QRgb p_background,
-                                   qreal p_cppRasterFactor, qreal p_zoomRatio)
+                                   qreal p_cppRasterFactor, qreal p_zoomRatio,
+                                   const QSize &p_logicalSize)
     : m_timeStamp(p_timeStamp), m_background(p_background), m_format(p_format),
       m_needScale(p_needScale), m_data(p_data), m_appliedZoomRatio(p_zoomRatio) {
+  if (!p_logicalSize.isEmpty() && p_zoomRatio > 0) {
+    m_baseLogicalSize = QSizeF(p_logicalSize) / p_zoomRatio;
+  }
+
   if (m_data.isEmpty()) {
     return;
   }
@@ -45,6 +50,15 @@ void GraphPreviewData::rasterize(qreal p_cppRasterFactor) {
     const int width = qMax(1, static_cast<int>(tmpImg.width() * p_cppRasterFactor));
     m_image = tmpImg.scaledToWidth(width, Qt::SmoothTransformation);
   }
+}
+
+QSize GraphPreviewData::getLogicalSize() const {
+  if (m_baseLogicalSize.isEmpty()) {
+    return QSize();
+  }
+
+  const auto size = m_baseLogicalSize * m_appliedZoomRatio;
+  return QSize(qMax(1, qRound(size.width())), qMax(1, qRound(size.height())));
 }
 
 bool GraphPreviewData::isNull() const { return m_timeStamp == 0; }

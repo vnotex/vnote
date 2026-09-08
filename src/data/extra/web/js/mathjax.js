@@ -251,7 +251,7 @@ class MathRenderer extends VxWorker {
                 }
             }
             return window.htmlToImage.toSvg(p_node, {
-                // Render glyphs at twice the target resolution before filtering.
+                // Retain glyphs at twice the device resolution.
                 // The clone keeps its CSS layout size; only its raster is enlarged.
                 width: pixelWidth * 2,
                 height: pixelHeight * 2,
@@ -276,12 +276,10 @@ class MathRenderer extends VxWorker {
                 }
                 try {
                     const canvas = document.createElement('canvas');
-                    canvas.width = pixelWidth;
-                    canvas.height = pixelHeight;
+                    canvas.width = pixelWidth * 2;
+                    canvas.height = pixelHeight * 2;
                     const context = canvas.getContext('2d');
-                    context.imageSmoothingEnabled = true;
-                    context.imageSmoothingQuality = 'high';
-                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    context.drawImage(image, 0, 0);
                     const dataUrl = canvas.toDataURL('image/png');
                     if (!dataUrl.startsWith('data:image/png;base64,')) {
                         throw new Error('Empty math raster image');

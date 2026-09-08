@@ -30,11 +30,9 @@ PreviewHelper::CodeBlockPreviewData::CodeBlockPreviewData(
     : m_startBlock(p_codeBlock.m_startBlock), m_endBlock(p_codeBlock.m_endBlock),
       m_lang(p_codeBlock.m_lang) {}
 
-void PreviewHelper::CodeBlockPreviewData::updateInplacePreview(QTextDocument *p_doc,
-                                                               const QPixmap &p_image,
-                                                               const QString &p_imageName,
-                                                               QRgb p_background,
-                                                               int p_tabStopWidth) {
+void PreviewHelper::CodeBlockPreviewData::updateInplacePreview(
+    QTextDocument *p_doc, const QPixmap &p_image, const QString &p_imageName, QRgb p_background,
+    int p_tabStopWidth, const QSize &p_logicalSize) {
   const auto block = p_doc->findBlockByNumber(m_endBlock);
   if (block.isValid()) {
     m_inplacePreview.reset(new vte::PreviewItem());
@@ -47,6 +45,7 @@ void PreviewHelper::CodeBlockPreviewData::updateInplacePreview(QTextDocument *p_
     m_inplacePreview->m_backgroundColor = p_background;
     m_inplacePreview->m_isBlockwise = true;
     m_inplacePreview->m_image = p_image;
+    m_inplacePreview->m_logicalSize = p_logicalSize;
   } else {
     m_inplacePreview.clear();
   }
@@ -59,7 +58,8 @@ PreviewHelper::MathBlockPreviewData::MathBlockPreviewData(const vte::md::MathBlo
 void PreviewHelper::MathBlockPreviewData::updateInplacePreview(QTextDocument *p_doc,
                                                                const QPixmap &p_image,
                                                                const QString &p_imageName,
-                                                               int p_tabStopWidth) {
+                                                               int p_tabStopWidth,
+                                                               const QSize &p_logicalSize) {
   const auto block = p_doc->findBlockByNumber(m_blockNumber);
   if (block.isValid()) {
     m_inplacePreview.reset(new vte::PreviewItem());
@@ -71,6 +71,7 @@ void PreviewHelper::MathBlockPreviewData::updateInplacePreview(QTextDocument *p_
     m_inplacePreview->m_name = p_imageName;
     m_inplacePreview->m_isBlockwise = m_previewedAsBlock;
     m_inplacePreview->m_image = p_image;
+    m_inplacePreview->m_logicalSize = p_logicalSize;
   } else {
     m_inplacePreview.clear();
   }
@@ -368,7 +369,7 @@ void PreviewHelper::handleCodeBlocksUpdate() {
         cachedData->m_timeStamp = m_codeBlockTimeStamp;
         m_codeBlocksData[blockPreviewIdx].updateInplacePreview(
             m_document, cachedData->m_image, cachedData->m_name, cachedData->m_background,
-            m_tabStopWidth);
+            m_tabStopWidth, cachedData->getLogicalSize());
       }
     }
 
@@ -549,13 +550,14 @@ void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewD
       p_data.m_timeStamp, p_data.m_format, p_data.m_data, p_data.m_needScale,
       forcedBackground ? m_editor->getPreviewBackground() : 0,
       p_data.m_needScale ? getEditorScaleFactor(m_codeBlockRequestZoomRatio) : 1,
-      m_codeBlockRequestZoomRatio);
+      m_codeBlockRequestZoomRatio, p_data.m_logicalSize);
   const qint64 decodeMs = perf ? perfNowMs() - decodeStartMs : 0;
   m_codeBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
-                                 previewData->m_background, m_tabStopWidth);
+                                 previewData->m_background, m_tabStopWidth,
+                                 previewData->getLogicalSize());
 
   if (perf) {
     perfNoteResult(p_data.m_id, entryMs, decodeMs, p_data.m_data.size(), false);
@@ -691,7 +693,8 @@ void PreviewHelper::handleMathBlocksUpdate() {
         cacheHit = true;
         cachedData->m_timeStamp = m_mathBlockTimeStamp;
         m_mathBlocksData[blockPreviewIdx].updateInplacePreview(m_document, cachedData->m_image,
-                                                               cachedData->m_name, m_tabStopWidth);
+                                                               cachedData->m_name, m_tabStopWidth,
+                                                               cachedData->getLogicalSize());
       }
     }
 
@@ -765,12 +768,12 @@ void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewDa
   auto previewData = QSharedPointer<GraphPreviewData>::create(
       p_data.m_timeStamp, p_data.m_format, p_data.m_data, p_data.m_needScale, 0,
       p_data.m_needScale ? getEditorScaleFactor(m_mathBlockRequestZoomRatio) : 1,
-      m_mathBlockRequestZoomRatio);
+      m_mathBlockRequestZoomRatio, p_data.m_logicalSize);
   m_mathBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
-                                 m_tabStopWidth);
+                                 m_tabStopWidth, previewData->getLogicalSize());
 
   requestUpdateEditorInplacePreviewMathBlock();
 }
@@ -890,7 +893,8 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
   blockData.m_text.clear();
 
   blockData.updateInplacePreview(m_document, previewData->m_image, previewData->m_name,
-                                 previewData->m_background, m_tabStopWidth);
+                                 previewData->m_background, m_tabStopWidth,
+                                 previewData->getLogicalSize());
 
   if (perf) {
     // Locally served blocks are counted into m_dispatched exactly like the web

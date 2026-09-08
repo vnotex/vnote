@@ -392,7 +392,9 @@ class GraphPreviewer {
             worker.rasterizeHtml(node, (window.devicePixelRatio || 1) * (p_scale || 1))
                 .then((raster) => {
                     const png = raster.dataUrl.substring(raster.dataUrl.indexOf(',') + 1);
-                    setter(p_id, p_timeStamp, 'png', png, true, false);
+                    setter(p_id, p_timeStamp, 'png', png, true, false,
+                           Math.max(1, Math.round(raster.width * (p_scale || 1))),
+                           Math.max(1, Math.round(raster.height * (p_scale || 1))));
                 }, (error) => {
                     console.error('failed to rasterize KaTeX preview', error);
                     setter(p_id, p_timeStamp);
@@ -431,8 +433,6 @@ class GraphPreviewer {
             return;
         }
 
-        this.scaleSvg(p_svgNode, p_scale);
-
         if (isGraphPath) {
             this.perfNoteRasterStart(p_timeStamp, p_id);
         }
@@ -451,11 +451,16 @@ class GraphPreviewer {
                     return;
                 }
 
+                // Resolve source dimensions before applying zoom or raster density.
+                const scale = p_scale || 1;
+                const logicalWidth = Math.max(1, Math.round(p_image.width * scale));
+                const logicalHeight = Math.max(1, Math.round(p_image.height * scale));
+                const deviceScale = scale * (window.devicePixelRatio || 1);
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d');
-                canvas.height = p_image.height;
-                canvas.width = p_image.width;
-                ctx.drawImage(p_image, 0, 0);
+                canvas.height = Math.ceil(p_image.height * deviceScale) * 2;
+                canvas.width = Math.ceil(p_image.width * deviceScale) * 2;
+                ctx.drawImage(p_image, 0, 0, canvas.width, canvas.height);
                 let dataUrl = null;
                 try {
                     dataUrl = canvas.toDataURL();
@@ -464,12 +469,14 @@ class GraphPreviewer {
                     console.error('failed to draw image on canvas', err);
 
                     // Try simply using the SVG.
-                    p_dataSetter(p_id, p_timeStamp, 'svg', p_svgNode.outerHTML, false, false);
+                    p_dataSetter(p_id, p_timeStamp, 'svg', p_svgNode.outerHTML, false, true,
+                                 logicalWidth, logicalHeight);
                     return;
                 }
 
                 let png = dataUrl ? dataUrl.substring(dataUrl.indexOf(',') + 1) : '';
-                p_dataSetter(p_id, p_timeStamp, 'png', png, true, false);
+                p_dataSetter(p_id, p_timeStamp, 'png', png, true, false,
+                             logicalWidth, logicalHeight);
         });
     }
 
@@ -511,23 +518,8 @@ class GraphPreviewer {
         }
     }
 
-    scaleSvg(p_svgNode, p_scale = 1) {
-        let scaleFactor = window.devicePixelRatio * (p_scale || 1);
-        if (scaleFactor == 1 || !p_svgNode) {
-            return;
-        }
-
-        let width = p_svgNode.getAttribute('width')
-        if (width && width.indexOf('%') == -1) {
-            p_svgNode.width.baseVal.valueInSpecifiedUnits *= scaleFactor;
-        }
-        let height = p_svgNode.getAttribute('height')
-        if (height && height.indexOf('%') == -1) {
-            p_svgNode.height.baseVal.valueInSpecifiedUnits *= scaleFactor;
-        }
-    }
-
-    setGraphPreviewData(p_id, p_timeStamp, p_format = '', p_data = '', p_base64 = false, p_needScale = false) {
+    setGraphPreviewData(p_id, p_timeStamp, p_format = '', p_data = '', p_base64 = false, p_needScale = false,
+                        p_logicalWidth = 0, p_logicalHeight = 0) {
         this.perfNoteSend(p_timeStamp, p_id, p_data ? p_data.length : 0);
         let previewData = {
             id: p_id,
@@ -535,19 +527,24 @@ class GraphPreviewer {
             format: p_format,
             data: p_data,
             base64: p_base64,
-            needScale: p_needScale
+            needScale: p_needScale,
+            logicalWidth: p_logicalWidth,
+            logicalHeight: p_logicalHeight
         };
         this.vxcore.setGraphPreviewData(previewData);
     }
 
-    setMathPreviewData(p_id, p_timeStamp, p_format = '', p_data = '', p_base64 = false, p_needScale = false) {
+    setMathPreviewData(p_id, p_timeStamp, p_format = '', p_data = '', p_base64 = false, p_needScale = false,
+                        p_logicalWidth = 0, p_logicalHeight = 0) {
         let previewData = {
             id: p_id,
             timeStamp: p_timeStamp,
             format: p_format,
             data: p_data,
             base64: p_base64,
-            needScale: p_needScale
+            needScale: p_needScale,
+            logicalWidth: p_logicalWidth,
+            logicalHeight: p_logicalHeight
         };
         this.vxcore.setMathPreviewData(previewData);
     }

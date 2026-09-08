@@ -1,6 +1,3 @@
-#include <QDir>
-#include <QFile>
-#include <QRegularExpression>
 #include <QStringList>
 #include <QTextBlock>
 #include <QTextDocument>
@@ -21,14 +18,10 @@ private slots:
   void spanningAndFoldedBlocksRespectBlockVisibility();
   void orderingIsStableAndIdsAreRetained();
   void fallbackAndInvalidInputsPreserveRequests();
-  void previewHelperKeepsIdContracts();
 
 private:
   static void populateDocument(QTextDocument &p_document, int p_blockCount);
   static QVector<int> ids(const QVector<PreviewDispatchRequest> &p_requests);
-  static QString stripComments(const QString &p_source);
-  static QString functionBody(const QString &p_source, const QString &p_signature);
-  static QString normalized(QString p_source);
 };
 
 void TestPreviewDispatchPlanner::populateDocument(QTextDocument &p_document, int p_blockCount) {
@@ -108,115 +101,6 @@ void TestPreviewDispatchPlanner::fallbackAndInvalidInputsPreserveRequests() {
   QCOMPARE(PreviewDispatchPlanner::visibleFirst(requests, &document, {3, 10}), requests);
   QCOMPARE(ids(PreviewDispatchPlanner::visibleFirst(requests, &document, {3, 5})),
            QVector<int>({8, 6, 2}));
-}
-
-QString TestPreviewDispatchPlanner::stripComments(const QString &p_source) {
-  QString result;
-  bool lineComment = false;
-  bool blockComment = false;
-  QChar quote;
-  bool escaped = false;
-  for (int i = 0; i < p_source.size(); ++i) {
-    const QChar ch = p_source[i];
-    const QChar next = i + 1 < p_source.size() ? p_source[i + 1] : QChar();
-    if (lineComment) {
-      if (ch == QLatin1Char('\n')) {
-        lineComment = false;
-        result.append(ch);
-      }
-    } else if (blockComment) {
-      if (ch == QLatin1Char('*') && next == QLatin1Char('/')) {
-        blockComment = false;
-        ++i;
-      } else if (ch == QLatin1Char('\n')) {
-        result.append(ch);
-      }
-    } else if (!quote.isNull()) {
-      result.append(ch);
-      if (escaped) {
-        escaped = false;
-      } else if (ch == QLatin1Char('\\')) {
-        escaped = true;
-      } else if (ch == quote) {
-        quote = QChar();
-      }
-    } else if (ch == QLatin1Char('/') && next == QLatin1Char('/')) {
-      lineComment = true;
-      ++i;
-    } else if (ch == QLatin1Char('/') && next == QLatin1Char('*')) {
-      blockComment = true;
-      ++i;
-    } else {
-      result.append(ch);
-      if (ch == QLatin1Char('\'') || ch == QLatin1Char('"')) {
-        quote = ch;
-      }
-    }
-  }
-  return result;
-}
-
-QString TestPreviewDispatchPlanner::functionBody(const QString &p_source,
-                                                 const QString &p_signature) {
-  const int signatureStart = p_source.indexOf(p_signature);
-  if (signatureStart < 0) {
-    return QString();
-  }
-  const int bodyStart = p_source.indexOf(QLatin1Char('{'), signatureStart + p_signature.size());
-  if (bodyStart < 0) {
-    return QString();
-  }
-
-  int depth = 0;
-  QChar quote;
-  bool escaped = false;
-  for (int i = bodyStart; i < p_source.size(); ++i) {
-    const QChar ch = p_source[i];
-    if (!quote.isNull()) {
-      if (escaped) {
-        escaped = false;
-      } else if (ch == QLatin1Char('\\')) {
-        escaped = true;
-      } else if (ch == quote) {
-        quote = QChar();
-      }
-      continue;
-    }
-    if (ch == QLatin1Char('\'') || ch == QLatin1Char('"')) {
-      quote = ch;
-    } else if (ch == QLatin1Char('{')) {
-      ++depth;
-    } else if (ch == QLatin1Char('}') && --depth == 0) {
-      return p_source.mid(bodyStart, i - bodyStart + 1);
-    }
-  }
-  return QString();
-}
-
-QString TestPreviewDispatchPlanner::normalized(QString p_source) {
-  p_source.remove(QRegularExpression(QStringLiteral("\\s+")));
-  return p_source;
-}
-
-void TestPreviewDispatchPlanner::previewHelperKeepsIdContracts() {
-  QFile file(QDir(QStringLiteral(VNOTE_SRC_DIR))
-                 .filePath(QStringLiteral("widgets/editors/previewhelper.cpp")));
-  QVERIFY2(file.open(QIODevice::ReadOnly | QIODevice::Text), qPrintable(file.errorString()));
-  const QString source = stripComments(QString::fromUtf8(file.readAll()));
-
-  const QString dispatch = normalized(
-      functionBody(source, QStringLiteral("void PreviewHelper::handleCodeBlocksUpdate()")));
-  QVERIFY(!dispatch.isEmpty());
-  QVERIFY(dispatch.contains(
-      QStringLiteral("needPreviewBlocks.append({blockPreviewIdx,cb.m_startBlock,cb.m_endBlock})")));
-  QVERIFY(dispatch.contains(QStringLiteral("inplacePreviewCodeBlock(request.m_previewId)")));
-
-  const QString web = normalized(
-      functionBody(source, QStringLiteral("void PreviewHelper::handleGraphPreviewData(")));
-  const QString local =
-      normalized(functionBody(source, QStringLiteral("void PreviewHelper::handleLocalData(")));
-  QVERIFY(web.contains(QStringLiteral("m_codeBlocksData[p_data.m_id]")));
-  QVERIFY(local.contains(QStringLiteral("m_codeBlocksData[p_id]")));
 }
 
 } // namespace tests

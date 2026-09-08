@@ -3,6 +3,8 @@
 
 #include <QByteArray>
 #include <QPixmap>
+#include <QSize>
+#include <QSizeF>
 #include <QString>
 
 #include <core/global.h>
@@ -22,9 +24,10 @@ struct GraphPreviewData {
   //               scale and the raster factor is ignored.
   // @p_cppRasterFactor: DPI scale factor multiplied by the zoom ratio.
   // @p_zoomRatio: the zoom ratio this data corresponds to.
+  // @p_logicalSize: optional display size at that zoom, excluding DPI and raster density.
   GraphPreviewData(TimeStamp p_timeStamp, const QString &p_format, const QByteArray &p_data,
                    bool p_needScale = false, QRgb p_background = 0x0, qreal p_cppRasterFactor = 1,
-                   qreal p_zoomRatio = 1);
+                   qreal p_zoomRatio = 1, const QSize &p_logicalSize = QSize());
 
   // Re-render m_image from the retained payload, always from the ORIGINAL bytes
   // so repeated zooming never resamples an already resampled pixmap.
@@ -32,6 +35,8 @@ struct GraphPreviewData {
   // when the generated name already exists, so a mutated pixmap under the same
   // name would never be registered.
   void rasterize(qreal p_cppRasterFactor);
+
+  QSize getLogicalSize() const;
 
   bool isNull() const;
 
@@ -58,6 +63,9 @@ struct GraphPreviewData {
 
   // The zoom ratio m_image corresponds to.
   qreal m_appliedZoomRatio = 1;
+
+  // Unzoomed logical size, kept unrounded so local zoom changes do not accumulate error.
+  QSizeF m_baseLogicalSize;
 
   // An increasing index to used as the image name.
   static int s_imageIndex;

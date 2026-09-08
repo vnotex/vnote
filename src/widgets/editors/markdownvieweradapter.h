@@ -7,6 +7,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QScopedPointer>
+#include <QSize>
 #include <QString>
 #include <QTextCharFormat>
 
@@ -37,7 +38,7 @@ public:
     PreviewData() = default;
 
     PreviewData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
-                const QByteArray &p_data, bool p_needScale);
+                const QByteArray &p_data, bool p_needScale, const QSize &p_logicalSize = QSize());
 
     quint64 m_id = 0;
 
@@ -48,6 +49,9 @@ public:
     QByteArray m_data;
 
     bool m_needScale = false;
+
+    // Zoom-adjusted logical pixels; empty uses intrinsic image sizing.
+    QSize m_logicalSize;
   };
 
   struct Heading {
@@ -151,11 +155,13 @@ public slots:
 
   // Web sets back the preview result.
   void setGraphPreviewData(quint64 p_id, quint64 p_timeStamp, const QString &p_format,
-                           const QString &p_data, bool p_base64 = false, bool p_needScale = false);
+                           const QString &p_data, bool p_base64 = false, bool p_needScale = false,
+                           int p_logicalWidth = 0, int p_logicalHeight = 0);
 
   // Web sets back the preview result.
   void setMathPreviewData(quint64 p_id, quint64 p_timeStamp, const QString &p_format,
-                          const QString &p_data, bool p_base64 = false, bool p_needScale = false);
+                          const QString &p_data, bool p_base64 = false, bool p_needScale = false,
+                          int p_logicalWidth = 0, int p_logicalHeight = 0);
 
   // Set the headings.
   void setHeadings(const QJsonArray &p_headings);

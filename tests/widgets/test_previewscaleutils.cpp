@@ -22,9 +22,9 @@ QByteArray svgPayload() {
                            "<rect width=\"40\" height=\"20\" fill=\"#123456\"/></svg>");
 }
 
-// A 40x20 PNG, like a web PlantUML payload (resampled, decision 6).
-QByteArray pngPayload() {
-  QPixmap pm(40, 20);
+// A PNG payload with independently selectable raster dimensions.
+QByteArray pngPayload(const QSize &p_size = QSize(40, 20)) {
+  QPixmap pm(p_size);
   pm.fill(Qt::red);
   QByteArray data;
   QBuffer buffer(&data);
@@ -111,6 +111,60 @@ private slots:
     QCOMPARE(data.m_image.height(), 20);
     // No payload is retained for an entry that can only be refreshed by a request.
     QVERIFY(data.m_data.isEmpty());
+  }
+
+  void logicalSizeIsIndependentOfRasterDensity() {
+    GraphPreviewData data(1, QStringLiteral("png"), pngPayload(QSize(800, 240)), false, 0x0, 3.0,
+                          1.0, QSize(320, 96));
+    QCOMPARE(data.m_image.size(), QSize(800, 240));
+    QCOMPARE(data.getLogicalSize(), QSize(320, 96));
+
+    data.rasterize(0.5);
+    QCOMPARE(data.m_image.size(), QSize(800, 240));
+    QCOMPARE(data.getLogicalSize(), QSize(320, 96));
+
+    // A local source follows editor zoom, but changing only DPI affects raster pixels alone.
+    GraphPreviewData local(1, QStringLiteral("svg"), svgPayload(), true, 0x0, 1.25, 1.0,
+                           QSize(40, 20));
+    QCOMPARE(local.m_image.size(), QSize(50, 25));
+    QCOMPARE(local.getLogicalSize(), QSize(40, 20));
+    local.rasterize(2.5);
+    local.m_appliedZoomRatio = 2.0;
+    QCOMPARE(local.m_image.size(), QSize(100, 50));
+    QCOMPARE(local.getLogicalSize(), QSize(80, 40));
+    local.rasterize(3.0);
+    QCOMPARE(local.m_image.size(), QSize(120, 60));
+    QCOMPARE(local.getLogicalSize(), QSize(80, 40));
+  }
+
+  void logicalSizeTracksZoomWithoutRoundingDrift() {
+    const auto payload = pngPayload(QSize(800, 240));
+    GraphPreviewData data(1, QStringLiteral("png"), payload, false, 0x0, 1.0, 1.5, QSize(480, 144));
+    QCOMPARE(data.getLogicalSize(), QSize(480, 144));
+    data.m_appliedZoomRatio = 2.0;
+    QCOMPARE(data.getLogicalSize(), QSize(640, 192));
+    data.m_appliedZoomRatio = 1.5;
+    QCOMPARE(data.getLogicalSize(), QSize(480, 144));
+
+    GraphPreviewData fractional(1, QStringLiteral("png"), payload, false, 0x0, 1.0, 1.5,
+                                QSize(101, 37));
+    fractional.m_appliedZoomRatio = 2.0;
+    QCOMPARE(fractional.getLogicalSize(), QSize(135, 49));
+    fractional.m_appliedZoomRatio = 1.5;
+    QCOMPARE(fractional.getLogicalSize(), QSize(101, 37));
+
+    GraphPreviewData tiny(1, QStringLiteral("png"), payload, false, 0x0, 1.0, 4.0, QSize(1, 1));
+    tiny.m_appliedZoomRatio = 0.25;
+    QCOMPARE(tiny.getLogicalSize(), QSize(1, 1));
+
+    for (const auto &size : {QSize(), QSize(0, 0), QSize(101, 0), QSize(0, 37)}) {
+      GraphPreviewData unspecified(1, QStringLiteral("png"), payload, false, 0x0, 1.0, 1.5, size);
+      QCOMPARE(unspecified.getLogicalSize(), QSize());
+      unspecified.m_appliedZoomRatio = 2.0;
+      QCOMPARE(unspecified.getLogicalSize(), QSize());
+    }
+    GraphPreviewData noZoom(1, QStringLiteral("png"), payload, false, 0x0, 1.0, 0, QSize(101, 37));
+    QCOMPARE(noZoom.getLogicalSize(), QSize());
   }
 
   void rasterizeSvgUpAndDown() {

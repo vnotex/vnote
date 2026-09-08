@@ -26,9 +26,9 @@ QJsonObject MarkdownViewerAdapter::Position::toJson() const {
 
 MarkdownViewerAdapter::PreviewData::PreviewData(quint64 p_id, TimeStamp p_timeStamp,
                                                 const QString &p_format, const QByteArray &p_data,
-                                                bool p_needScale)
+                                                bool p_needScale, const QSize &p_logicalSize)
     : m_id(p_id), m_timeStamp(p_timeStamp), m_format(p_format), m_data(p_data),
-      m_needScale(p_needScale) {}
+      m_needScale(p_needScale), m_logicalSize(p_logicalSize) {}
 
 MarkdownViewerAdapter::Heading::Heading(const QString &p_name, int p_level, const QString &p_anchor)
     : m_name(p_name), m_level(p_level), m_anchor(p_anchor) {}
@@ -138,7 +138,8 @@ int MarkdownViewerAdapter::getTopLineNumber() const { return m_topLineNumber; }
 
 void MarkdownViewerAdapter::setGraphPreviewData(quint64 p_id, quint64 p_timeStamp,
                                                 const QString &p_format, const QString &p_data,
-                                                bool p_base64, bool p_needScale) {
+                                                bool p_base64, bool p_needScale, int p_logicalWidth,
+                                                int p_logicalHeight) {
   // Diagnostics: the UTF-8 + base64 decode is the first C++-side cost of a
   // preview result and is otherwise invisible between "JS finished" and
   // "PreviewHelper has a pixmap". Accumulated per generation and reported once
@@ -159,7 +160,10 @@ void MarkdownViewerAdapter::setGraphPreviewData(quint64 p_id, quint64 p_timeStam
     perfNoteDecode(p_timeStamp, timer.nsecsElapsed(), p_data.size(), ba.size());
   }
 
-  emit graphPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale));
+  const auto logicalSize =
+      p_logicalWidth > 0 && p_logicalHeight > 0 ? QSize(p_logicalWidth, p_logicalHeight) : QSize();
+  emit graphPreviewDataReady(
+      PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale, logicalSize));
 }
 
 void MarkdownViewerAdapter::perfNoteDecode(quint64 p_timeStamp, qint64 p_nsecs, int p_chars,
@@ -198,12 +202,15 @@ void MarkdownViewerAdapter::perfReportDecode() {
 
 void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id, quint64 p_timeStamp,
                                                const QString &p_format, const QString &p_data,
-                                               bool p_base64, bool p_needScale) {
+                                               bool p_base64, bool p_needScale, int p_logicalWidth,
+                                               int p_logicalHeight) {
   auto ba = p_data.toUtf8();
   if (p_base64 && !ba.isEmpty()) {
     ba = QByteArray::fromBase64(ba);
   }
-  emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale));
+  const auto logicalSize =
+      p_logicalWidth > 0 && p_logicalHeight > 0 ? QSize(p_logicalWidth, p_logicalHeight) : QSize();
+  emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale, logicalSize));
 }
 
 void MarkdownViewerAdapter::setHeadings(const QJsonArray &p_headings) {

@@ -241,7 +241,9 @@ class MarkdownViewerCore extends VXCore {
                                                      p_data.format,
                                                      p_data.data,
                                                      p_data.base64,
-                                                     p_data.needScale);
+                                                     p_data.needScale,
+                                                     p_data.logicalWidth || 0,
+                                                     p_data.logicalHeight || 0);
     }
 
     setMathPreviewData(p_data) {
@@ -250,7 +252,9 @@ class MarkdownViewerCore extends VXCore {
                                                     p_data.format,
                                                     p_data.data,
                                                     p_data.base64,
-                                                    p_data.needScale);
+                                                    p_data.needScale,
+                                                    p_data.logicalWidth || 0,
+                                                    p_data.logicalHeight || 0);
     }
 
     setHeadings(p_headings) {

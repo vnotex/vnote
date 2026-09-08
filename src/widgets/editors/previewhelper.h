@@ -4,6 +4,7 @@
 #include <QElapsedTimer>
 #include <QObject>
 #include <QPixmap>
+#include <QSize>
 #include <QVector>
 
 #include <vtextedit/global.h>
@@ -103,7 +104,8 @@ private:
     CodeBlockPreviewData(const vte::md::FencedCodeBlock &p_codeBlock);
 
     void updateInplacePreview(QTextDocument *p_doc, const QPixmap &p_image,
-                              const QString &p_imageName, QRgb p_background, int p_tabStopWidth);
+                              const QString &p_imageName, QRgb p_background, int p_tabStopWidth,
+                              const QSize &p_logicalSize);
 
     // Start and end block of the fenced code block.
     int m_startBlock = 0;
@@ -124,7 +126,8 @@ private:
     MathBlockPreviewData(const vte::md::MathBlock &p_mathBlock);
 
     void updateInplacePreview(QTextDocument *p_doc, const QPixmap &p_image,
-                              const QString &p_imageName, int p_tabStopWidth);
+                              const QString &p_imageName, int p_tabStopWidth,
+                              const QSize &p_logicalSize);
 
     // Block number for in-place preview.
     int m_blockNumber = -1;

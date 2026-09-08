@@ -1312,6 +1312,11 @@ add_qt_test(test_markdownvieweradapter_anchor
     core_services
     vxcore
 )
+add_custom_command(TARGET test_markdownvieweradapter_anchor POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_markdownvieweradapter_anchor>
+)
 
 # NotificationToast - the transient surface for Attention::Interrupt messages.
 # NOT GUILESS: constructs a real QFrame with child buttons and drives mouse
@@ -1503,9 +1508,6 @@ add_qt_test(test_previewdispatchplanner
   LINKS
     Qt6::Gui
   GUILESS
-)
-target_compile_definitions(test_previewdispatchplanner PRIVATE
-  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
 )
 
 # Pure sticker drag math (hit zones + raw candidate geometry). GUILESS: only
