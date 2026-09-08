@@ -307,7 +307,10 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
-  virtual QStringList getAttachmentScanExcludedPaths() const;
+  // Defined INLINE on purpose: several tests link a hand-written stub of
+  // viewwindow2.cpp rather than compiling it, so an out-of-line default would
+  // make every one of them fail to link on an unresolved symbol.
+  virtual QStringList getAttachmentScanExcludedPaths() const { return {}; }
 
   // Apply readable-width constraints to the editor.
   // Subclasses override to use editor-native line width instead of content margins.

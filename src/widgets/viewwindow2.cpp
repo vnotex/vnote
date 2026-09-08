@@ -734,8 +734,6 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
   return act;
 }
 
-QStringList ViewWindow2::getAttachmentScanExcludedPaths() const { return {}; }
-
 void ViewWindow2::handleTypeAction(int p_action) { Q_UNUSED(p_action); }
 
 void ViewWindow2::fetchWordCountInfo(
