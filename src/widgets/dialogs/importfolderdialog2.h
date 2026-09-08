@@ -3,7 +3,11 @@
 
 #include "scrolldialog.h"
 
+#include <QByteArray>
 #include <core/nodeinfo.h>
+#include <functional>
+#include <utility>
+#include <vxcore/vxcore_types.h>
 
 class QButtonGroup;
 class QLabel;
@@ -25,8 +29,8 @@ class ServiceLocator;
 //   External folder       copy an arbitrary directory in, filtered by suffix.
 //                         Ids and timestamps are generated fresh.
 //   Shared folder from    restore a "*-bundle" directory produced by Share
-//   VNote                 Folder, preserving ids, timestamps, tags and
-//                         attachments VERBATIM.
+//   VNote                 Folder. Ordinary bundles preserve identities;
+//                         protected bundles authenticate and copy/rekey in memory.
 //
 // Pure UI component - delegates business logic to ImportFolderController.
 class ImportFolderDialog2 : public ScrollDialog {
@@ -46,6 +50,10 @@ public:
 
   // Currently selected mode.
   Mode currentMode() const;
+  void
+  setDestinationUnlocker(std::function<VxCoreError(const QString &, QByteArray &)> p_unlocker) {
+    m_destinationUnlocker = std::move(p_unlocker);
+  }
 
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
@@ -72,6 +80,7 @@ private:
 
   ServiceLocator &m_services;
   NodeIdentifier m_parentId;
+  std::function<VxCoreError(const QString &, QByteArray &)> m_destinationUnlocker;
 
   // Controller handles validation and import logic.
   ImportFolderController *m_controller = nullptr;

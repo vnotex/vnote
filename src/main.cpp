@@ -367,9 +367,9 @@ int main(int argc, char *argv[]) {
     TagService tagService(context, &hookManager);
     SnippetCoreService snippetCoreService(context);
     NotificationService notificationService;
-    // Declared after NotebookIoGate/HookManager (captured by pointer) so it is
-    // destroyed first and its workers drain while both are still alive.
-    CommentService commentService(&notebookService, &notebookIoGate, &hookManager);
+    // Declared after its dependencies so workers drain before the buffer
+    // service, notebook service, IO gate, or hooks are destroyed.
+    CommentService commentService(&notebookService, &bufferService, &notebookIoGate, &hookManager);
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());
@@ -506,6 +506,8 @@ int main(int argc, char *argv[]) {
     qInfo() << "StickerFactory registered";
 
     setOpenGLOption(configMgr);
+
+    WebEngineProfileService::registerProtectedScheme();
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
     // MUST run before the QApplication is constructed: QtWebEngine snapshots the

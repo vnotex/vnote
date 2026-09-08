@@ -87,6 +87,12 @@ public:
   NodeTransferBatchResult transfer(const NodeTransferRequest &p_request,
                                    const NodeTransferCallbacks &p_callbacks = {});
 
+  // Consumes/wipes p_password, even on failure. The source remains an immutable
+  // bundle; preparation/KDF runs off the GUI thread and never holds an IO gate.
+  NodeTransferCoreResult
+  importEncryptedBundle(const QString &p_bundleRoot, const QString &p_folderName,
+                        const QString &p_destinationId, const QString &p_destinationFolder,
+                        QByteArray &p_password, const std::function<bool()> &p_isCancelled = {});
   // Retries source deletion from an existing durable destination. This route
   // invokes only vxcore finalization and can never import another destination.
   NodeTransferItemResult finalizeTransferredMove(const QJsonObject &p_resumeToken,

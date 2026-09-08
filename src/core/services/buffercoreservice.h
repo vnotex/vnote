@@ -78,26 +78,37 @@ public:
   // calls to this method are permitted ONLY from worker threads (e.g. the
   // BufferSaveQueue worker itself) or from test code.
   bool saveBuffer(const QString &p_bufferId) override;
+  bool saveBuffer(const QString &p_bufferId, VxCoreError *p_error);
 
   // Reload buffer content from disk.
-  bool reloadBuffer(const QString &p_bufferId);
+  bool reloadBuffer(const QString &p_bufferId, VxCoreError *p_error = nullptr);
 
   // Get buffer content as JSON (hex-encoded).
-  QJsonObject getContent(const QString &p_bufferId) const;
+  QJsonObject getContent(const QString &p_bufferId, VxCoreError *p_error = nullptr) const;
 
   // Set buffer content from JSON (hex-encoded).
   bool setContent(const QString &p_bufferId, const QString &p_contentJson);
 
   // Get buffer content as raw bytes.
-  QByteArray getContentRaw(const QString &p_bufferId) const;
+  QByteArray getContentRaw(const QString &p_bufferId, VxCoreError *p_error = nullptr) const;
 
   // Return a non-owning view over the buffer's raw content held by vxcore.
   // The view is only valid until the next buffer-mutating operation
   // (setContent, setContentRaw, save, reload, close).
-  QByteArrayViewCompat peekContentRaw(const QString &p_bufferId) const;
+  QByteArrayViewCompat peekContentRaw(const QString &p_bufferId,
+                                      VxCoreError *p_error = nullptr) const;
 
   // Set buffer content from raw bytes.
   bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data) override;
+  bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data, VxCoreError *p_error);
+
+  QByteArray readResource(const QString &p_bufferId, const QString &p_resourceUrl,
+                          VxCoreError *p_error = nullptr) const;
+  QJsonArray resources(const QString &p_bufferId, VxCoreError *p_error = nullptr) const;
+  VxCoreError exportResource(const QString &p_bufferId, const QString &p_resourceUrl,
+                             const QString &p_destination) const;
+  // Caller serializes writes with NotebookIoGate.
+  VxCoreError writeCommentResource(const QString &p_bufferId, const QByteArray &p_data);
 
   // ============ Buffer State ============
 
@@ -117,7 +128,8 @@ public:
   // value ORed with FileOpenSettings::m_readOnly) and every later query goes
   // through BufferService::isBufferReadOnly. Do NOT call this to decide
   // whether a buffer may be edited.
-  bool isNotebookReadOnlyForBuffer(const QString &p_bufferId) const;
+  bool isNotebookReadOnlyForBuffer(const QString &p_bufferId,
+                                   const QJsonObject *p_bufferInfo = nullptr) const;
 
   // Check if the buffer's file has been modified or deleted externally.
   // Updates the buffer's internal state (query with getState() afterwards).
@@ -131,7 +143,7 @@ public:
   // ============ Buffer Backup ============
 
   // Write buffer's in-memory content to a backup file (.vswp).
-  bool writeBackup(const QString &p_bufferId);
+  bool writeBackup(const QString &p_bufferId, VxCoreError *p_error = nullptr);
 
   // Get the backup file path for a buffer.
   // Returns empty string on failure.

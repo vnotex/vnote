@@ -104,6 +104,12 @@ class MathRenderer extends VxWorker {
             if (!nodes.length) {
                 return;
             }
+            if (window.vxOptions.protectedView) {
+                for (const node of nodes) {
+                    node.textContent = '[Math preview blocked in protected notes: no bundled renderer]';
+                }
+                return;
+            }
             return this.initialize().then(() => {
                 if (this.renderer === 'mathjax') {
                     window.MathJax.texReset();
@@ -139,6 +145,10 @@ class MathRenderer extends VxWorker {
 
     // Returns MathJax's SVG or an attached KaTeX wrapper owned by the preview caller.
     renderText(p_container, p_text, p_callback) {
+        if (window.vxOptions.protectedView) {
+            p_callback(null);
+            return;
+        }
         let wrapper = null;
         return this.initialize().then(() => {
             const check = this.removeTextGuard(p_text);

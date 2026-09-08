@@ -31,6 +31,7 @@
 #include <thread>
 
 #include <core/nodeidentifier.h>
+#include <core/services/bufferservice.h>
 #include <core/services/commentservice.h>
 #include <core/services/commenttypes.h>
 #include <core/services/hookmanager.h>
@@ -115,6 +116,7 @@ private:
   VxCoreContextHandle m_context = nullptr;
   NotebookCoreService *m_notebooks = nullptr;
   NotebookIoGate *m_gate = nullptr;
+  BufferService *m_buffers = nullptr;
   HookManager *m_hooks = nullptr;
   CommentService *m_service = nullptr;
   TempDirFixture *m_tmp = nullptr;
@@ -129,12 +131,15 @@ void TestCommentService::initTestCase() {
   m_notebooks = new NotebookCoreService(m_context);
   m_notebooks->setHookManager(m_hooks);
   m_gate = new NotebookIoGate();
-  m_service = new CommentService(m_notebooks, m_gate, m_hooks);
+  m_buffers = new BufferService(m_context, m_hooks, m_gate);
+  m_service = new CommentService(m_notebooks, m_buffers, m_gate, m_hooks);
 }
 
 void TestCommentService::cleanupTestCase() {
   delete m_service;
   m_service = nullptr;
+  delete m_buffers;
+  m_buffers = nullptr;
   delete m_gate;
   m_gate = nullptr;
   delete m_notebooks;
@@ -1167,7 +1172,7 @@ void TestCommentService::shutdownDrainsPendingWrites() {
   nodeId.relativePath = QDir(m_tmp->path()).filePath(QStringLiteral("closing.pdf"));
 
   // A local service, so shutting it down does not affect the shared fixture.
-  CommentService service(m_notebooks, m_gate, nullptr);
+  CommentService service(m_notebooks, m_buffers, m_gate, nullptr);
 
   CommentSet set;
   set.m_comments.append(makeComment(0, QStringLiteral("last words")));

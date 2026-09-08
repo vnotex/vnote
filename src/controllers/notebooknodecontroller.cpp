@@ -23,6 +23,7 @@
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/services/nodetransferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/tagservice.h>
@@ -414,6 +415,19 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
               [this, p_nodeId]() { deleteNodes(dedupeDescendants(resolveSelection(p_nodeId))); });
       deleteAction->setEnabled(!p_readOnly);
 
+      auto *fileTypes = m_services.get<FileTypeCoreService>();
+      const QString editor =
+          fileTypes ? fileTypes->getFileType(p_nodeId.relativePath).m_typeName.toLower()
+                    : QString();
+      if (!p_isFolder && (editor == QLatin1String("markdown") || editor == QLatin1String("text")) &&
+          !p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+        auto *encryptAction = p_menu->addAction(tr("Encrypt Note"));
+        encryptAction->setObjectName(QStringLiteral("encryptNote"));
+        connect(encryptAction, &QAction::triggered, this,
+                [this, p_nodeId]() { encryptNote(resolveSelection(p_nodeId)); });
+        encryptAction->setEnabled(!p_readOnly);
+      }
+
       auto *removeAction = p_menu->addAction(tr("Remove from Notebook"));
       removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
       connect(removeAction, &QAction::triggered, this, [this, p_nodeId]() {
@@ -602,6 +616,12 @@ void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_node
   }
 
   NodeInfo nodeInfo = getNodeInfo(p_nodeId);
+  if (nodeInfo.isEncrypted ||
+      p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+    emit errorOccurred(tr("Protected Note"),
+                       tr("Open the note in VNote and use Save Decrypted Copy."));
+    return;
+  }
   if (nodeInfo.isFolder) {
     return;
   }
@@ -1795,6 +1815,12 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
     if (path.isEmpty()) {
       continue;
     }
+    if (nodeInfo.isEncrypted ||
+        id.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+      emit errorOccurred(tr("Protected Note"),
+                         tr("Open the note in VNote and use Save Decrypted Copy."));
+      continue;
+    }
     SessionConfig::ExternalProgram tempProg;
     tempProg.m_command = p_commandTemplate;
     const QStringList argv = tempProg.fetchCommandArgs(path);
@@ -1973,4 +1999,25 @@ void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids) {
     return;
   }
   emit markRequested(p_ids);
+}
+
+void NotebookNodeController::encryptNote(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty() || isSelectionReadOnly(p_ids)) {
+    return;
+  }
+  auto *fileTypes = m_services.get<FileTypeCoreService>();
+  if (!fileTypes) {
+    return;
+  }
+  for (const auto &id : p_ids) {
+    const NodeInfo info = getNodeInfo(id);
+    const QString editor = fileTypes->getFileType(id.relativePath).m_typeName.toLower();
+    if (!info.isValid() || info.isFolder || info.isExternal || info.isMissing ||
+        !isNotebookBundled(id.notebookId) ||
+        id.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) ||
+        (editor != QLatin1String("markdown") && editor != QLatin1String("text"))) {
+      return;
+    }
+  }
+  emit encryptNoteRequested(p_ids);
 }

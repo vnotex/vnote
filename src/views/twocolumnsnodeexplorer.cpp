@@ -185,6 +185,8 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::shareFolderRequested);
   connect(p_controller, &NotebookNodeController::markRequested, this,
           &TwoColumnsNodeExplorer::markRequested);
+  connect(p_controller, &NotebookNodeController::encryptNoteRequested, this,
+          &TwoColumnsNodeExplorer::encryptNoteRequested);
   connect(p_controller, &NotebookNodeController::ignoreRequested, this,
           &TwoColumnsNodeExplorer::ignoreRequested);
   connect(p_controller, &NotebookNodeController::manageTagsRequested, this,

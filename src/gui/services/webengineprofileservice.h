@@ -1,9 +1,14 @@
 #ifndef WEBENGINEPROFILESERVICE_H
 #define WEBENGINEPROFILESERVICE_H
 
+#include <QByteArray>
+#include <QHash>
 #include <QObject>
 #include <QString>
+#include <QUrl>
 #include <QtGlobal>
+
+#include <memory>
 
 #include "core/noncopyable.h"
 
@@ -11,6 +16,7 @@ class QWebEngineProfile;
 
 namespace vnotex {
 
+class Buffer2;
 class ConfigMgr2;
 class HtmlTemplateService;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
@@ -34,6 +40,24 @@ public:
   WebEngineProfileService(const QString &p_cacheRoot, ConfigMgr2 *p_configMgr,
                           HtmlTemplateService *p_templateService, QObject *p_parent = nullptr);
 
+  ~WebEngineProfileService() override;
+
+  struct ProtectedPage {
+    QWebEngineProfile *profile = nullptr;
+    QString token;
+    QString nonce;
+    QUrl url;
+  };
+
+  // Register before QApplication on Qt 5.15 and Qt 6.
+  static void registerProtectedScheme();
+  // Default owner is this service. Revoke first, destroy every page, then
+  // destroy the profile. Each profile accepts one document generation only.
+  ProtectedPage createProtectedProfile(const Buffer2 &p_buffer, QObject *p_parent = nullptr);
+  bool setProtectedDocument(QWebEngineProfile *p_profile, const QString &p_html,
+                            const QHash<QString, QByteArray> &p_resources);
+  void revokeProtectedProfile(QWebEngineProfile *p_profile);
+
   QWebEngineProfile *profile() const;
 
   // Registers @p_absPath with the vxpdf handler and returns the token to embed in a
@@ -50,6 +74,9 @@ public:
   static QString webStoragePath(const QString &p_root);
 
 private:
+  struct ProtectedProfiles;
+  std::unique_ptr<ProtectedProfiles> m_protectedProfiles;
+
   QWebEngineProfile *m_profile = nullptr;
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)

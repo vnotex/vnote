@@ -185,6 +185,7 @@ add_qt_test(test_exportcontroller
     ${CMAKE_SOURCE_DIR}/src/controllers/exportcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/export/exportdata.cpp
   LINKS
+    VTextEdit
     core_services
     vxcore
     Qt6::Gui
@@ -327,9 +328,11 @@ target_include_directories(test_notebook_node_controller_reorder PRIVATE
 add_qt_test(test_controllers_readonly_state
   SOURCES
     test_controllers_readonly_state.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
   LINKS
+    Qt6::Svg
     core_configs
     core_services
     vxcore
@@ -345,7 +348,9 @@ add_qt_test(test_markdown_heading_link
   SOURCES
     test_markdown_heading_link.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
   LINKS
+    Qt6::Svg
     Qt6::Gui
     core_configs
     core_services

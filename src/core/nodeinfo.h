@@ -21,6 +21,8 @@ struct NodeInfo {
   bool isMissing = false;  // Transient: node is indexed but its content is missing on disk
                            // (bundled). Not persisted.
 
+  bool isEncrypted = false; // Cached public metadata, never a key-status query
+
   // --- Cached metadata (for display, avoid repeated service calls) ---
   QString name;              // Display name (last path component or notebook name for root)
   QDateTime createdTimeUtc;  // Creation timestamp

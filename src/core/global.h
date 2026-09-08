@@ -45,24 +45,6 @@ struct Info {
 
 enum { CONTENTS_MARGIN = 2, DIALOG_MIN_WIDTH = 480 };
 
-inline QString QJsonObjectToString(const QJsonObject &p_obj) {
-  QString str = "{";
-
-  auto keys = p_obj.keys();
-  for (auto &key : keys) {
-    str += "\"" + key + "\": \"" + p_obj.value(key).toString() + "\";";
-  }
-
-  str += "}";
-  return str;
-}
-
-inline QDebug operator<<(QDebug p_debug, const QJsonObject &p_obj) {
-  QDebugStateSaver saver(p_debug);
-  p_debug << QJsonObjectToString(p_obj);
-  return p_debug;
-}
-
 enum FindOption {
   FindNone = 0,
   FindBackward = 0x1U,

@@ -80,6 +80,13 @@ class PlantUml extends GraphRenderer {
 
     // Interface 2.
     renderCodeNodes(p_format) {
+        if (window.vxOptions.protectedView) {
+            for (const node of this.vxcore.getWorker('markdownit').getCodeNodes(this.langs)) {
+                node.textContent = '[PlantUML blocked in protected notes: no bundled renderer]';
+            }
+            this.finishWork();
+            return;
+        }
         this.format = p_format;
 
         super.renderCodeNodes();
@@ -113,6 +120,10 @@ class PlantUml extends GraphRenderer {
     // PlantUml emits for some labels (e.g. line breaks), leaving a blank popup.
     // p_callback(format, data).
     renderText(p_text, p_callback) {
+        if (window.vxOptions.protectedView) {
+            p_callback('svg', '');
+            return;
+        }
         console.assert(this.useWeb, "renderText() should be called only when web PlantUml is enabled");
 
         let func = () => {

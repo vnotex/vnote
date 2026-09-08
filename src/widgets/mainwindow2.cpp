@@ -9,10 +9,13 @@
 #include <QDropEvent>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QJsonDocument>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QProgressDialog>
+#include <QScopeGuard>
 #include <QShortcut>
 #include <QStyle>
 #include <QSystemTrayIcon>
@@ -90,7 +93,98 @@
 
 #include <core/services/taskservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
+
+struct MainWindow2::ProtectedOpens {
+  QList<QPair<NodeIdentifier, FileOpenSettings>> requests;
+  bool active = false;
+  bool retrying = false;
+};
+
+void MainWindow2::onProtectedOpenRequested(const NodeIdentifier &p_nodeId,
+                                           const FileOpenSettings &p_settings) {
+  auto *buffers = m_serviceLocator.get<BufferService>();
+  if (!buffers || buffers->isProtectedLocking())
+    return;
+  if (!m_protectedOpens)
+    m_protectedOpens.reset(new ProtectedOpens);
+  if (m_protectedOpens->retrying)
+    return;
+  m_protectedOpens->requests.append(qMakePair(p_nodeId, p_settings));
+  if (!m_protectedOpens->active) {
+    m_protectedOpens->active = true;
+    QTimer::singleShot(0, this, &MainWindow2::drainProtectedOpens);
+  }
+}
+
+void MainWindow2::drainProtectedOpens() {
+  auto *buffers = m_serviceLocator.get<BufferService>();
+  auto *notebooks = m_serviceLocator.get<NotebookCoreService>();
+  auto *controller = m_viewArea ? m_viewArea->getController() : nullptr;
+  if (!buffers || !notebooks || !controller || !buffers->beginProtectedOperation()) {
+    m_protectedOpens->requests.clear();
+    m_protectedOpens->active = false;
+    return;
+  }
+  const auto operation = qScopeGuard([&]() { buffers->endProtectedOperation(); });
+  QSet<QString> rejectedVaults;
+  while (!m_protectedOpens->requests.isEmpty()) {
+    const auto request = m_protectedOpens->requests.takeFirst();
+    VxCoreError error;
+    const auto status = notebooks->encryptionStatus(request.first.notebookId, QString(), &error);
+    const QString vault = status.value(QLatin1String(vxcore::kJsonKeyVaultId)).toString();
+    const QString rejectionKey = vault.isEmpty() ? request.first.notebookId : vault;
+    if (rejectedVaults.contains(rejectionKey))
+      continue;
+    if (error == VXCORE_OK && !status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()) {
+      bool accepted = false;
+      QString passwordText =
+          QInputDialog::getText(this, tr("Unlock Protected Notes"), tr("Master password"),
+                                QLineEdit::Password, QString(), &accepted);
+      if (!accepted) {
+        passwordText.fill(QChar());
+        rejectedVaults.insert(rejectionKey);
+        continue;
+      }
+      QByteArray password = passwordText.toUtf8();
+      passwordText.fill(QChar());
+      passwordText.clear();
+      QProgressDialog progress(tr("Unlocking protected notes..."), QString(), 0, 0, this);
+      progress.setWindowModality(Qt::ApplicationModal);
+      progress.setCancelButton(nullptr);
+      progress.setMinimumDuration(0);
+      progress.show();
+      error = controller->unlockNoteEncryption(request.first.notebookId, password);
+    }
+    if (error == VXCORE_OK) {
+      m_protectedOpens->retrying = true;
+      buffers->openBuffer(request.first, request.second, &error);
+      m_protectedOpens->retrying = false;
+    }
+    if (error != VXCORE_OK) {
+      rejectedVaults.insert(rejectionKey);
+      QMessageBox::warning(this, tr("Unlock Protected Notes"),
+                           error == VXCORE_ERR_ENCRYPTION_AUTH_FAILED
+                               ? tr("Unable to unlock: incorrect password or damaged key data")
+                               : QString::fromUtf8(vxcore_error_message(error)));
+    }
+  }
+  m_protectedOpens->active = false;
+}
+
+void MainWindow2::lockAllProtectedNotes() {
+  if (m_protectedOpens)
+    m_protectedOpens->requests.clear();
+  auto *controller = m_viewArea ? m_viewArea->getController() : nullptr;
+  if (!controller)
+    return;
+  QString error;
+  if (!controller->lockAllProtectedNotes(&error)) {
+    QMessageBox::warning(this, tr("Lock All"), error);
+  }
+}
 
 MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
     : QMainWindow(p_parent), m_serviceLocator(p_serviceLocator) {
@@ -645,6 +739,7 @@ void MainWindow2::saveStateAndGeometry() {
 void MainWindow2::setupNotebookExplorer() {
   m_notebookExplorer = new NotebookExplorer2(m_serviceLocator, this);
   m_notebookExplorer->setObjectName("NotebookExplorer2.vnotex");
+  m_notebookExplorer->setViewAreaController(m_viewArea->getController());
 
   // Connect MainWindow2 signals to NotebookExplorer2 slots
   connect(this, &MainWindow2::newNoteRequested, m_notebookExplorer, &NotebookExplorer2::newNote);
@@ -659,6 +754,11 @@ void MainWindow2::setupNotebookExplorer() {
 }
 
 void MainWindow2::exportNotes(ViewWindow2 *p_source) {
+  auto *source = p_source ? p_source : m_viewArea->getCurrentViewWindow();
+  if (source && source->getBuffer().isEncrypted()) {
+    source->saveDecryptedCopy();
+    return;
+  }
   // Single-instance enforcement.
   if (m_exportDialog) {
     m_exportDialog->activateWindow();
@@ -712,6 +812,12 @@ void MainWindow2::exportNotes(ViewWindow2 *p_source) {
 void MainWindow2::setupViewArea() {
   m_viewArea = new ViewArea2(m_serviceLocator, this);
   setCentralWidget(m_viewArea);
+  if (auto *buffers = m_serviceLocator.get<BufferService>()) {
+    connect(buffers->asQObject(), SIGNAL(protectedOpenRequested(NodeIdentifier, FileOpenSettings)),
+            this, SLOT(onProtectedOpenRequested(NodeIdentifier, FileOpenSettings)));
+  }
+  connect(m_viewArea->getController(), &ViewAreaController::protectedLockFailed, this,
+          [this](const QString &p_error) { QMessageBox::warning(this, tr("Lock All"), p_error); });
 
   // Once the view area has finished session restore and re-enabled core
   // propagation, mark post-init complete and open any files that were queued
@@ -723,6 +829,14 @@ void MainWindow2::setupViewArea() {
     // Drain queued opens in arrival order; detached batches each get a fresh
     // detached window.
     drainPendingOpenBatches();
+    auto *current = m_viewArea->getCurrentViewWindow();
+    if (current && current->getBuffer().isEncrypted() &&
+        current->getBuffer().editorType().isEmpty()) {
+      FileOpenSettings settings;
+      settings.m_mode = current->getMode();
+      settings.m_focus = true;
+      m_serviceLocator.get<BufferService>()->openBuffer(current->getNodeId(), settings);
+    }
 #if defined(Q_OS_WIN)
     if (m_dummyWebView) {
       // Defer teardown until after restored and command-line WebEngine pages finish construction.

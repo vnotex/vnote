@@ -23,7 +23,18 @@ bool Buffer2::isValid() const { return m_bufferService && !m_bufferId.isEmpty();
 
 QString Buffer2::id() const { return m_bufferId; }
 
+std::shared_ptr<ProtectedBufferLease> Buffer2::acquireProtectedLease() const {
+  return isEncrypted() && isValid() ? m_bufferService->acquireProtectedLease(*this) : nullptr;
+}
+
 const NodeIdentifier &Buffer2::nodeId() const { return m_nodeId; }
+
+void Buffer2::setNodeId(const NodeIdentifier &p_nodeId) {
+  if (isEncrypted()) {
+    m_bufferService->updateProtectedNodeId(*this, p_nodeId);
+  }
+  m_nodeId = p_nodeId;
+}
 
 // ============ Path Resolution ============
 
@@ -43,7 +54,10 @@ QString Buffer2::getResourceBasePath() const {
 
 // ============ Buffer Content ============
 
-bool Buffer2::save() {
+bool Buffer2::save(VxCoreError *p_error) {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
   if (!isValid()) {
     return false;
   }
@@ -51,10 +65,13 @@ bool Buffer2::save() {
   BufferEvent event;
   event.bufferId = m_bufferId;
   if (m_hookMgr->doAction(HookNames::FileBeforeSave, event)) {
+    if (p_error) {
+      *p_error = VXCORE_ERR_CANCELLED;
+    }
     return false; // Cancelled by plugin.
   }
 
-  bool ok = m_bufferService->saveBuffer(m_bufferId);
+  bool ok = m_bufferService->saveBuffer(*this, p_error);
 
   if (ok) {
     m_hookMgr->doAction(HookNames::FileAfterSave, event);
@@ -63,46 +80,58 @@ bool Buffer2::save() {
   return ok;
 }
 
-bool Buffer2::reload() {
+bool Buffer2::reload(VxCoreError *p_error) {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
   if (!isValid()) {
     return false;
   }
-  return m_bufferService->reloadBuffer(m_bufferId);
+  return m_bufferService->reloadBuffer(*this, p_error);
 }
 
-QJsonObject Buffer2::getContent() const {
+QJsonObject Buffer2::getContent(VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
   if (!isValid()) {
     return QJsonObject();
   }
-  return m_bufferService->getContent(m_bufferId);
+  return m_bufferService->getContent(*this, p_error);
 }
 
 bool Buffer2::setContent(const QString &p_contentJson) {
   if (!isValid()) {
     return false;
   }
-  return m_bufferService->setContent(m_bufferId, p_contentJson);
+  return m_bufferService->setContent(*this, p_contentJson);
 }
 
-QByteArray Buffer2::getContentRaw() const {
+QByteArray Buffer2::getContentRaw(VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
   if (!isValid()) {
     return QByteArray();
   }
-  return m_bufferService->getContentRaw(m_bufferId);
+  return m_bufferService->getContentRaw(*this, p_error);
 }
 
-QByteArrayViewCompat Buffer2::peekContentRaw() const {
+QByteArrayViewCompat Buffer2::peekContentRaw(VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
   if (!isValid()) {
     return QByteArrayViewCompat{};
   }
-  return m_bufferService->peekContentRaw(m_bufferId);
+  return m_bufferService->peekContentRaw(*this, p_error);
 }
 
 bool Buffer2::setContentRaw(const QByteArray &p_data) {
   if (!isValid()) {
     return false;
   }
-  return m_bufferService->setContentRaw(m_bufferId, p_data);
+  return m_bufferService->setContentRaw(*this, p_data);
 }
 
 // ============ Encoding ============
@@ -168,27 +197,47 @@ QJsonObject Buffer2::getBuffer() const {
   return m_bufferService->getBuffer(m_bufferId);
 }
 
+QByteArray Buffer2::readResource(const QString &p_resourceUrl, VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
+  return isValid() ? m_bufferService->readResource(*this, p_resourceUrl, p_error) : QByteArray();
+}
+
+QJsonArray Buffer2::resources(VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_INVALID_STATE;
+  }
+  return isValid() ? m_bufferService->resources(*this, p_error) : QJsonArray();
+}
+
+VxCoreError Buffer2::exportResource(const QString &p_resourceUrl,
+                                    const QString &p_destination) const {
+  return isValid() ? m_bufferService->exportResource(*this, p_resourceUrl, p_destination)
+                   : VXCORE_ERR_INVALID_STATE;
+}
+
 // ============ Asset Operations ============
 
 QString Buffer2::insertAssetRaw(const QString &p_assetName, const QByteArray &p_data) {
   if (!isValid()) {
     return QString();
   }
-  return m_bufferService->insertAssetRaw(m_bufferId, p_assetName, p_data);
+  return m_bufferService->insertAssetRaw(*this, p_assetName, p_data);
 }
 
 QString Buffer2::insertAsset(const QString &p_sourcePath) {
   if (!isValid()) {
     return QString();
   }
-  return m_bufferService->insertAsset(m_bufferId, p_sourcePath);
+  return m_bufferService->insertAsset(*this, p_sourcePath);
 }
 
 bool Buffer2::deleteAsset(const QString &p_relativePath) {
   if (!isValid()) {
     return false;
   }
-  return m_bufferService->deleteAsset(m_bufferId, p_relativePath);
+  return m_bufferService->deleteAsset(*this, p_relativePath);
 }
 
 QString Buffer2::getAssetsFolder() const {
@@ -212,28 +261,28 @@ QString Buffer2::insertAttachment(const QString &p_sourcePath) {
   if (!isValid()) {
     return QString();
   }
-  return m_bufferService->insertAttachment(m_bufferId, p_sourcePath);
+  return m_bufferService->insertAttachment(*this, p_sourcePath);
 }
 
 bool Buffer2::deleteAttachment(const QString &p_filename) {
   if (!isValid()) {
     return false;
   }
-  return m_bufferService->deleteAttachment(m_bufferId, p_filename);
+  return m_bufferService->deleteAttachment(*this, p_filename);
 }
 
 QString Buffer2::renameAttachment(const QString &p_oldFilename, const QString &p_newFilename) {
   if (!isValid()) {
     return QString();
   }
-  return m_bufferService->renameAttachment(m_bufferId, p_oldFilename, p_newFilename);
+  return m_bufferService->renameAttachment(*this, p_oldFilename, p_newFilename);
 }
 
 QJsonArray Buffer2::listAttachments() const {
   if (!isValid()) {
     return QJsonArray();
   }
-  return m_bufferService->listAttachments(m_bufferId);
+  return m_bufferService->listAttachments(*this);
 }
 
 QJsonArray Buffer2::listUnindexedAttachments() const {
@@ -262,5 +311,5 @@ bool Buffer2::hasAttachments() const {
     return false;
   }
 
-  return !m_bufferService->listAttachments(m_bufferId).isEmpty();
+  return !listAttachments().isEmpty();
 }

@@ -317,7 +317,7 @@ bool resolveBundleLayout(const QString &p_bundlePath, QString *p_outFolderName,
 // namespace, because a folder id colliding with an existing FILE id is just as
 // destructive as a same-kind collision (vxcore's `uuid UNIQUE` is per-table).
 bool collectBundleIds(const QString &p_metadataDir, QStringList *p_outIds, int *p_outFileCount,
-                      int *p_outFolderCount, QString *p_error) {
+                      int *p_outFolderCount, QString *p_error, bool *p_encrypted = nullptr) {
   QJsonObject config;
   if (!readJsonObject(p_metadataDir + QLatin1Char('/') +
                           FolderMetadataValidator::folderConfigFileName(),
@@ -328,6 +328,21 @@ bool collectBundleIds(const QString &p_metadataDir, QStringList *p_outIds, int *
   p_outIds->append(config.value(QLatin1String(vxcore::kJsonKeyId)).toString());
 
   for (const QJsonValue &value : config.value(QLatin1String(vxcore::kJsonKeyFiles)).toArray()) {
+    const auto record = value.toObject();
+    const auto metadata = record.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
+    const auto marker = metadata.value(QLatin1String(vxcore::kJsonKeyEncrypted));
+    const bool encrypted = marker.toBool();
+    const bool suffix = record.value(QLatin1String(vxcore::kJsonKeyName))
+                            .toString()
+                            .endsWith(QLatin1String(".vne"), Qt::CaseInsensitive);
+    const auto editor = metadata.value(QLatin1String(vxcore::kJsonKeyEditorType)).toString();
+    if ((!marker.isUndefined() && !marker.isBool()) || encrypted != suffix ||
+        (encrypted && editor != QLatin1String("markdown") && editor != QLatin1String("text"))) {
+      *p_error = QObject::tr("The protected note metadata is inconsistent.");
+      return false;
+    }
+    if (p_encrypted && encrypted)
+      *p_encrypted = true;
     p_outIds->append(value.toObject().value(QLatin1String(vxcore::kJsonKeyId)).toString());
     ++(*p_outFileCount);
   }
@@ -336,7 +351,7 @@ bool collectBundleIds(const QString &p_metadataDir, QStringList *p_outIds, int *
     const QString name = value.toString();
     ++(*p_outFolderCount);
     if (!collectBundleIds(p_metadataDir + QLatin1Char('/') + name, p_outIds, p_outFileCount,
-                          p_outFolderCount, p_error)) {
+                          p_outFolderCount, p_error, p_encrypted)) {
       return false;
     }
   }
@@ -613,9 +628,28 @@ FolderBundleImporter::Inspection FolderBundleImporter::inspect(const QString &p_
   QStringList ids;
   int fileCount = 0;
   int folderCount = 0;
-  if (!collectBundleIds(metadataRoot, &ids, &fileCount, &folderCount, &error)) {
+  bool protectedNotes = false;
+  if (!collectBundleIds(metadataRoot, &ids, &fileCount, &folderCount, &error, &protectedNotes)) {
     inspection.m_message = error;
     return inspection;
+  }
+  const QString envelope = p_bundlePath + QStringLiteral("/vx_notebook/encryption.vne");
+  inspection.m_encrypted = QFileInfo::exists(envelope);
+  if (protectedNotes && !inspection.m_encrypted) {
+    inspection.m_message =
+        QObject::tr("The protected bundle is missing its notebook key envelope.");
+    return inspection;
+  }
+  if (inspection.m_encrypted) {
+    QFile key(envelope);
+    if (FolderMetadataValidator::isLinkOrReparsePoint(envelope) || !key.open(QIODevice::ReadOnly) ||
+        key.size() < 12 || key.size() > 4096 || key.read(8) != QByteArray("VNEKEY1\0", 8) ||
+        !QFileInfo::exists(p_bundlePath + QStringLiteral("/vx_notebook/config.json")) ||
+        !QFileInfo::exists(p_bundlePath + QStringLiteral("/vx_notebook/contents/vx.json"))) {
+      inspection.m_message =
+          QObject::tr("The encrypted bundle's key envelope or metadata is incomplete.");
+      return inspection;
+    }
   }
 
   inspection.m_valid = true;
@@ -667,6 +701,9 @@ FolderBundleImporter::Result FolderBundleImporter::run(const Request &p_request,
                            &bundleMetadataRoot, &error)) {
     return fail(error);
   }
+  if (QFileInfo::exists(p_request.m_bundlePath + QStringLiteral("/vx_notebook/encryption.vne"))) {
+    return fail(QObject::tr("Encrypted bundles require the authenticated notebook transfer flow."));
+  }
 
   // Probe the DESTINATION rather than assuming a platform default: a
   // case-sensitive volume can be mounted on Windows and vice versa. Reuses the
@@ -678,6 +715,12 @@ FolderBundleImporter::Result FolderBundleImporter::run(const Request &p_request,
   QVector<TreeEntry> metadataEntries;
   if (!enumerateTree(bundleContentRoot, QString(), &contentEntries, isCancelled, &error)) {
     return cancelled(isCancelled) ? cancel() : fail(error);
+  }
+  for (const auto &entry : contentEntries) {
+    if (entry.rel.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+      return fail(
+          QObject::tr("This bundle contains protected content but has no usable key envelope."));
+    }
   }
   if (!enumerateTree(bundleMetadataRoot, QString(), &metadataEntries, isCancelled, &error)) {
     return cancelled(isCancelled) ? cancel() : fail(error);

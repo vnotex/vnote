@@ -147,6 +147,8 @@ if(APPLE)
     target_link_libraries(vnote PRIVATE ${VX_APPKIT_LIBRARY})
 endif()
 
+get_target_property(VX_SODIUM_SOURCE_DIR sodium SOURCE_DIR)
+
 # Copy the qt.conf on Windows
 if(WIN32)
     add_custom_command(TARGET vnote POST_BUILD
@@ -159,7 +161,13 @@ elseif(APPLE)
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:vnote>/../Resources
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VX_EXTRA_RESOURCE_FILES_RCC}" $<TARGET_FILE_DIR:vnote>/../Resources
-        COMMENT "Copying vnote_extra.rcc into app bundle Resources"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VX_SODIUM_SOURCE_DIR}/libsodium/LICENSE"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.libsodium"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VX_SODIUM_SOURCE_DIR}/LICENSE"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.libsodium-cmake"
+        COMMENT "Copying resources and crypto licenses into app bundle Resources"
     )
 endif()
 
@@ -168,6 +176,10 @@ if (WIN32)
     install(TARGETS vnote RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES "${PROJECT_SOURCE_DIR}/package/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES ${VX_EXTRA_RESOURCE_FILES_RCC} DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES "${VX_SODIUM_SOURCE_DIR}/libsodium/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.libsodium)
+    install(FILES "${VX_SODIUM_SOURCE_DIR}/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.libsodium-cmake)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}/translations" OPTIONAL)
 elseif(APPLE)
     set(CMAKE_MACOSX_RPATH ON)
@@ -197,6 +209,10 @@ else()
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
     install(FILES ${VX_EXTRA_RESOURCE_FILES_RCC} DESTINATION ${CMAKE_INSTALL_DATADIR})
+    install(FILES "${VX_SODIUM_SOURCE_DIR}/libsodium/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.libsodium)
+    install(FILES "${VX_SODIUM_SOURCE_DIR}/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.libsodium-cmake)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/translations" OPTIONAL)
 
     set(desktop.path applications)

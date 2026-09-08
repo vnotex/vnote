@@ -1,6 +1,7 @@
 #ifndef MARKDOWNEDITORCONTROLLER_H
 #define MARKDOWNEDITORCONTROLLER_H
 
+#include <QByteArray>
 #include <QObject>
 #include <QSharedPointer>
 #include <QString>
@@ -118,6 +119,11 @@ public:
   // Prepare buffer state for the view to apply to the editor.
   // Extracts content, basePath, modified flag, revision from Buffer2.
   static BufferState prepareBufferState(const Buffer2 &p_buffer);
+
+  // Explicit image import for a protected buffer: validate passive bytes and
+  // insert directly into encrypted storage. Returns a logical vxasset URL.
+  static QString importProtectedImage(Buffer2 &p_buffer, const QString &p_name,
+                                      const QByteArray &p_data);
 
   // ============ Zoom Persistence ============
 

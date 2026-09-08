@@ -6,6 +6,7 @@
 
 #include <core/servicelocator.h>
 #include <core/services/folderbundleimporter.h>
+#include <core/services/nodetransferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <utils/pathutils.h>
@@ -220,6 +221,7 @@ ImportFolderController::validateBundle(const ImportBundleInput &p_input) const {
   }
 
   result.message = inspection.m_message;
+  result.encrypted = inspection.m_encrypted;
   result.folderName = inspection.m_folderName;
   result.fileCount = inspection.m_fileCount;
   result.subfolderCount = inspection.m_subfolderCount;
@@ -263,6 +265,33 @@ ImportFolderResult ImportFolderController::importBundle(const ImportBundleInput 
     return makeFailure(paths.m_errorMessage.isEmpty()
                            ? tr("The destination folder could not be resolved.")
                            : paths.m_errorMessage);
+  }
+  if (validation.encrypted) {
+    auto *transfers = m_services.get<NodeTransferService>();
+    if (!transfers || !p_callbacks.m_unlockDestination || !p_callbacks.m_sourcePassword) {
+      return makeFailure(tr("The encrypted bundle requires source and destination unlocking."));
+    }
+    if (!p_callbacks.m_unlockDestination(p_input.notebookId)) {
+      return makeFailure(tr("The destination notebook must be initialized and unlocked."));
+    }
+    QByteArray password;
+    if (!p_callbacks.m_sourcePassword(&password)) {
+      volatile char *data = password.data();
+      for (int index = 0; index < password.size(); ++index)
+        data[index] = 0;
+      return makeFailure(tr("The import was cancelled and nothing was changed."));
+    }
+    if (p_callbacks.m_labelChanged) {
+      p_callbacks.m_labelChanged(tr("Authenticating and copying the encrypted bundle…"));
+    }
+    const auto imported = transfers->importEncryptedBundle(
+        p_input.bundlePath.trimmed(), validation.folderName, p_input.notebookId,
+        p_input.parentFolderPath, password, p_callbacks.m_isCancelled);
+    if (!imported.isSuccess())
+      return makeFailure(imported.m_errorMessage);
+    result.success = true;
+    result.nodeId = {imported.m_destinationNotebookId, imported.m_destinationRelativePath};
+    return result;
   }
 
   FolderBundleImporter::Request request;

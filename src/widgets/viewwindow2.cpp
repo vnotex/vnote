@@ -3,17 +3,26 @@
 #include <QAction>
 #include <QApplication>
 #include <QDebug>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDir>
 #include <QDragEnterEvent>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QLabel>
+#include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPointer>
 #include <QPolygonF>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QScopeGuard>
 #include <QScrollBar>
+#include <QSet>
 #include <QShortcut>
 #include <QTextEdit>
 #include <QToolBar>
@@ -23,12 +32,14 @@
 #include <QWidgetAction>
 #include <QtMath>
 
+#include <controllers/exportcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/widgetconfig.h>
+#include <vxcore/notebook_json_keys.h>
 
 #include <gui/services/themeservice.h>
 
@@ -40,6 +51,7 @@
 
 #include "attachmentdragdropareaindicator2.h"
 #include "attachmentpopup2.h"
+#include "commentprovider.h"
 #include "contentfullscreenhost.h"
 #include "editors/statusbar.h"
 #include "editors/statuswidget.h"
@@ -118,6 +130,11 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
 }
 
 ViewWindow2::~ViewWindow2() {
+  if (m_noteConversionFrozen) {
+    if (auto *buffers = m_services.get<BufferService>()) {
+      buffers->endNoteConversion(m_buffer.id(), true);
+    }
+  }
   // Before anything else: the central widget currently lives in a separate
   // top-level, and letting this window die around it would leave a visible,
   // un-closable fullscreen artefact on screen.
@@ -265,7 +282,37 @@ bool ViewWindow2::isModified() const {
 
 // ============ Lifecycle ============
 
+void ViewWindow2::setNoteConversionFrozen(bool p_frozen) {
+  if (m_noteConversionFrozen == p_frozen) {
+    return;
+  }
+  m_noteConversionFrozen = p_frozen;
+  const auto comments = getCommentProvider();
+  if (p_frozen) {
+    m_noteConversionWasEnabled = isEnabled();
+    m_noteConversionCommentsEditable = comments && comments->isEditable();
+    if (comments) {
+      comments->setEditable(false);
+    }
+    setContentFullScreen(false);
+    setEnabled(false);
+  } else {
+    if (m_editorDirty) {
+      // A previously queued save may have advanced the core revision while
+      // this newer writer was frozen. Never reload over its preserved edits.
+      m_lastKnownRevision = m_buffer.getRevision();
+    }
+    setEnabled(m_noteConversionWasEnabled);
+    if (comments) {
+      comments->setEditable(m_noteConversionCommentsEditable);
+    }
+  }
+}
+
 bool ViewWindow2::aboutToClose(bool p_force) {
+  if (m_noteConversionFrozen) {
+    return false;
+  }
   // A fullscreen container would otherwise sit in front of the Save/Discard
   // dialog below, which is modal to THIS window and would be invisible behind
   // it. Coming back also guarantees the central widget is owned by this window
@@ -330,7 +377,9 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   if (m_editorDirty && m_buffer.isValid()) {
     auto *bufferService = m_services.get<BufferService>();
     if (bufferService) {
-      bufferService->syncNow(m_buffer.id());
+      if (!m_buffer.isEncrypted() || !bufferService->isProtectedLocking()) {
+        bufferService->syncNow(m_buffer.id());
+      }
       m_editorDirty = false;
     }
   }
@@ -484,6 +533,10 @@ void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
   if (getBuffer().isAttachmentSupported()) {
     addAction(p_toolBar, ViewWindowToolBarHelper2::Attachment);
   }
+  if (getBuffer().isEncrypted()) {
+    auto *exportCopy = p_toolBar->addAction(tr("Save Decrypted Copy"));
+    connect(exportCopy, &QAction::triggered, this, [this]() { saveDecryptedCopy(); });
+  }
 }
 
 void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
@@ -504,6 +557,148 @@ void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
 
 void ViewWindow2::handlePrint() {}
+
+void ViewWindow2::saveDecryptedCopy(const QString &p_resourceUrl) {
+  saveDecryptedCopies(p_resourceUrl.isEmpty() ? QStringList() : QStringList{p_resourceUrl},
+                      p_resourceUrl.isEmpty());
+}
+
+void ViewWindow2::saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_exportNote) {
+  if (!m_buffer.isValid() || !m_buffer.isEncrypted() || isNoteConversionFrozen()) {
+    return;
+  }
+  // Do not hold an operation lease while a modal dialog is waiting for user input:
+  // Lock All rejects the dialogs, and the apply operation reacquires a lease.
+  const Buffer2 buffer = m_buffer;
+  QPointer<ViewWindow2> guard(this);
+  VxCoreError error;
+  const auto resources = buffer.resources(&error);
+  if (error != VXCORE_OK) {
+    QMessageBox::warning(this, tr("Save Decrypted Copy"),
+                         tr("Unable to read protected resources (%1).").arg(int(error)));
+    return;
+  }
+  if (p_exportNote && ExportController::decryptedNoteName(buffer).isEmpty()) {
+    QMessageBox::warning(this, tr("Save Decrypted Copy"), tr("Unsupported protected note format."));
+    return;
+  }
+  auto *buffers = m_services.get<BufferService>();
+  if (!buffers || buffers->isProtectedLocking()) {
+    return;
+  }
+  QPointer<QDialog> consent(new QDialog(this));
+  const auto clearConsent = qScopeGuard([&]() { delete consent.data(); });
+  consent->setWindowTitle(tr("Save Decrypted Copy"));
+  auto *layout = new QVBoxLayout(consent);
+  auto *warning =
+      new QLabel(tr("This creates an unencrypted copy outside the protected notebook"), consent);
+  warning->setWordWrap(true);
+  layout->addWidget(warning);
+  auto *explanation = new QLabel(
+      p_exportNote ? tr("The current note text will be exported. Select each resource to include. "
+                        "Unchecked resources remain unavailable logical links in the copy.")
+                   : tr("Select the resources to export. Originals remain encrypted."),
+      consent);
+  explanation->setWordWrap(true);
+  layout->addWidget(explanation);
+  auto *list = new QListWidget(consent);
+  QSet<QString> offered;
+  for (const auto &value : resources) {
+    const auto resource = value.toObject();
+    const auto url = QStringLiteral("vxasset:") +
+                     resource.value(QLatin1String(vxcore::kJsonKeyResourceId)).toString();
+    if (!p_exportNote && !p_resourceUrls.contains(url)) {
+      continue;
+    }
+    const auto name = resource.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+    auto *item = new QListWidgetItem(name, list);
+    item->setData(Qt::UserRole, url);
+    item->setData(Qt::UserRole + 1, name);
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(p_exportNote ? Qt::Unchecked : Qt::Checked);
+    offered.insert(url);
+  }
+  for (const auto &url : p_resourceUrls) {
+    if (!offered.contains(url)) {
+      QMessageBox::warning(this, tr("Save Decrypted Copy"),
+                           tr("The selected resource is no longer available."));
+      return;
+    }
+  }
+  list->setVisible(list->count() > 0);
+  layout->addWidget(list);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, consent);
+  buttons->button(QDialogButtonBox::Save)->setText(tr("Save Decrypted Copy"));
+  buttons->button(QDialogButtonBox::Save)->setAutoDefault(false);
+  buttons->button(QDialogButtonBox::Save)->setDefault(false);
+  buttons->button(QDialogButtonBox::Cancel)->setDefault(true);
+  layout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, consent, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, consent, &QDialog::reject);
+  connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), consent, SLOT(reject()));
+  consent->resize(520, list->count() > 0 ? 380 : 160);
+  if (consent->exec() != QDialog::Accepted || !guard || !consent || buffers->isProtectedLocking()) {
+    return;
+  }
+  QStringList selected;
+  QString selectedName;
+  for (int row = 0; row < list->count(); ++row) {
+    const auto *item = list->item(row);
+    if (item->checkState() == Qt::Checked) {
+      selected.append(item->data(Qt::UserRole).toString());
+      selectedName = item->data(Qt::UserRole + 1).toString();
+    }
+  }
+  delete consent.data();
+  if (!p_exportNote && selected.isEmpty()) {
+    return;
+  }
+
+  const bool directory = p_exportNote || selected.size() > 1;
+  QPointer<QFileDialog> destination(
+      new QFileDialog(this, tr("Save Decrypted Copy"), QDir::homePath()));
+  const auto clearDestination = qScopeGuard([&]() { delete destination.data(); });
+  // A Qt dialog can always be rejected by Lock All, including on platforms whose
+  // native picker runs a separate modal loop.
+  destination->setOption(QFileDialog::DontUseNativeDialog);
+  destination->setAcceptMode(directory ? QFileDialog::AcceptOpen : QFileDialog::AcceptSave);
+  destination->setFileMode(directory ? QFileDialog::Directory : QFileDialog::AnyFile);
+  destination->setOption(QFileDialog::ShowDirsOnly, directory);
+  if (!directory) {
+    destination->selectFile(selectedName);
+  }
+  connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), destination, SLOT(reject()));
+  if (destination->exec() != QDialog::Accepted || !guard || !destination ||
+      buffers->isProtectedLocking() || destination->selectedFiles().isEmpty()) {
+    return;
+  }
+  const auto path = destination->selectedFiles().first();
+  delete destination.data();
+  ExportController controller(m_services);
+  if (!controller.isDecryptedCopyDestinationAllowed(buffer, path)) {
+    QMessageBox::warning(this, tr("Save Decrypted Copy"),
+                         tr("Choose a destination outside the protected notebook. "
+                            "The destination's parent folder must already exist."));
+    return;
+  }
+  QString content = p_exportNote ? getLatestContent() : QString();
+  const auto clearContent = qScopeGuard([&]() { content.fill(QChar::Null); });
+  QStringList outputs;
+  error = controller.saveDecryptedCopy(buffer, path, p_exportNote, selected, content, outputs);
+  if (error != VXCORE_OK) {
+    const auto detail =
+        outputs.isEmpty()
+            ? tr("Unable to export the protected content (%1).").arg(int(error))
+            : tr("Export failed (%1). These unencrypted files could not be removed:\n%2")
+                  .arg(int(error))
+                  .arg(outputs.join(QLatin1Char('\n')));
+    QMessageBox::warning(this, tr("Save Decrypted Copy"), detail);
+    return;
+  }
+  QMessageBox::information(this, tr("Save Decrypted Copy"),
+                           tr("Created %n unencrypted file(s).\n%1", "", outputs.size())
+                               .arg(outputs.join(QLatin1Char('\n'))));
+}
 
 // Convert a ViewWindowToolBarHelper2::Action (TypeBold..TypeTable) to the
 // corresponding TypeAction ID used by handleTypeAction().
@@ -711,15 +906,16 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
       attachmentPopup->setScanExclusionProvider(
           [this]() { return getAttachmentScanExcludedPaths(); });
       m_attachmentPopup = attachmentPopup;
+      connect(attachmentPopup, &AttachmentPopup2::saveDecryptedCopyRequested, this,
+              [this](const QStringList &p_urls) { saveDecryptedCopies(p_urls, false); });
     }
     m_attachmentAction = act;
-    // Disable if buffer doesn't support attachments OR the owning notebook is
-    // read-only (adding/deleting attachments mutates the node). Re-query
-    // isReadOnly() per the "do not cache" rule.
+    // Protected read-only notes still permit explicit export; the popup gates
+    // mutating actions independently. Preserve the ordinary read-only behavior.
     const auto &attBuf = getBuffer();
     const bool attReadOnly = attBuf.isValid() && attBuf.isReadOnly();
-    act->setEnabled(attBuf.isAttachmentSupported() && !attReadOnly);
-    if (attReadOnly) {
+    act->setEnabled(attBuf.isAttachmentSupported() && (!attReadOnly || attBuf.isEncrypted()));
+    if (attReadOnly && !attBuf.isEncrypted()) {
       act->setToolTip(tr("Read-only \u2014 cannot edit"));
     }
     // Set initial icon state.
@@ -849,12 +1045,18 @@ void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
 }
 
 void ViewWindow2::onFocusGained() {
+  if (m_noteConversionFrozen) {
+    return;
+  }
   if (!m_buffer.isValid()) {
     return;
   }
 
-  // Register as active writer for this buffer.
+  // Locking owns the active writer until its durability barrier completes.
   auto *bufferService = m_services.get<BufferService>();
+  if (m_buffer.isEncrypted() && bufferService && bufferService->isProtectedLocking())
+    return;
+  // Register as active writer for this buffer.
   if (bufferService) {
     bufferService->registerActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this),
                                         [this]() { return getLatestContent(); });
@@ -872,6 +1074,9 @@ void ViewWindow2::onFocusGained() {
 }
 
 void ViewWindow2::onFocusLost() {
+  if (m_noteConversionFrozen) {
+    return;
+  }
   if (!m_buffer.isValid()) {
     return;
   }
@@ -879,6 +1084,8 @@ void ViewWindow2::onFocusLost() {
   // Immediately sync dirty content to buffer on focus loss.
   if (m_editorDirty) {
     auto *bufferService = m_services.get<BufferService>();
+    if (m_buffer.isEncrypted() && bufferService && bufferService->isProtectedLocking())
+      return;
     if (bufferService) {
       bufferService->syncNow(m_buffer.id());
       m_lastKnownRevision = m_buffer.getRevision();
@@ -888,6 +1095,9 @@ void ViewWindow2::onFocusLost() {
 }
 
 void ViewWindow2::onBufferAutoSaved(const QString &p_bufferId) {
+  if (m_noteConversionFrozen) {
+    return;
+  }
   if (p_bufferId != m_buffer.id()) {
     return;
   }
@@ -984,6 +1194,9 @@ bool ViewWindow2::reload() {
 }
 
 void ViewWindow2::onBufferExternallyChanged(const QString &p_bufferId, BufferState p_state) {
+  if (m_noteConversionFrozen) {
+    return;
+  }
   if (p_bufferId != m_buffer.id()) {
     return;
   }

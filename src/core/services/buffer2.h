@@ -6,6 +6,9 @@
 #include <QJsonObject>
 #include <QString>
 
+#include <memory>
+#include <vxcore/vxcore_types.h>
+
 #include <core/nodeidentifier.h>
 #include <utils/qtcompat.h>
 
@@ -14,6 +17,25 @@ namespace vnotex {
 class BufferService;
 class HookManager;
 enum class BufferState;
+struct ProtectedBufferState;
+
+// Keeps one authenticated core buffer alive for a bounded operation or queued
+// durability job. Contains no key bytes. Copies share the same operation.
+class ProtectedBufferLease {
+public:
+  ~ProtectedBufferLease();
+  ProtectedBufferLease(const ProtectedBufferLease &) = delete;
+  ProtectedBufferLease &operator=(const ProtectedBufferLease &) = delete;
+  bool isCurrent() const noexcept;
+  QString bufferId() const;
+  quint64 generation() const;
+
+private:
+  friend class BufferService;
+  ProtectedBufferLease(std::shared_ptr<ProtectedBufferState> p_state);
+  std::shared_ptr<ProtectedBufferState> m_state;
+  bool m_acquired = false;
+};
 
 // Lightweight copyable handle to an open buffer (like QModelIndex).
 // Stores pointers to services and a buffer ID. Does NOT own the buffer —
@@ -27,10 +49,6 @@ class Buffer2 {
 public:
   // Default constructor creates an invalid (null) buffer handle.
   Buffer2();
-
-  // Construct a valid buffer handle. Called by BufferService::openBuffer().
-  Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr, const QString &p_bufferId,
-          const NodeIdentifier &p_nodeId);
 
   // Check whether this handle refers to a valid open buffer.
   bool isValid() const;
@@ -57,24 +75,24 @@ public:
 
   // Save buffer content to disk.
   // Fires FileBeforeSave (cancellable) and FileAfterSave hooks.
-  bool save();
+  bool save(VxCoreError *p_error = nullptr);
 
   // Reload buffer content from disk.
-  bool reload();
+  bool reload(VxCoreError *p_error = nullptr);
 
   // Get buffer content as JSON (hex-encoded).
-  QJsonObject getContent() const;
+  QJsonObject getContent(VxCoreError *p_error = nullptr) const;
 
   // Set buffer content from JSON (hex-encoded).
   bool setContent(const QString &p_contentJson);
 
   // Get buffer content as raw bytes.
-  QByteArray getContentRaw() const;
+  QByteArray getContentRaw(VxCoreError *p_error = nullptr) const;
 
   // Return a non-owning view over the buffer's raw content held by vxcore.
   // The view is only valid until the next buffer-mutating operation
   // (setContent, setContentRaw, save, reload, close).
-  QByteArrayViewCompat peekContentRaw() const;
+  QByteArrayViewCompat peekContentRaw(VxCoreError *p_error = nullptr) const;
 
   // Set buffer content from raw bytes.
   bool setContentRaw(const QByteArray &p_data);
@@ -106,6 +124,18 @@ public:
   // read-only notebook and an explicitly read-only open.
   // Returns false for an invalid handle.
   bool isReadOnly() const noexcept;
+
+  // Cached classification; neither accessor probes storage or key status.
+  bool isEncrypted() const noexcept { return bool(m_protectedState); }
+  // Only an authenticated protected manifest supplies this value.
+  QString editorType() const;
+
+  // Keeps a protected operation alive; null while locking or after invalidation.
+  std::shared_ptr<ProtectedBufferLease> acquireProtectedLease() const;
+
+  QByteArray readResource(const QString &p_resourceUrl, VxCoreError *p_error = nullptr) const;
+  QJsonArray resources(VxCoreError *p_error = nullptr) const;
+  VxCoreError exportResource(const QString &p_resourceUrl, const QString &p_destination) const;
 
   // Get buffer content revision number.
   int getRevision() const;
@@ -170,14 +200,19 @@ public:
 private:
   friend class BufferService;
   friend class ViewWindow2;
+  // Construct a valid buffer handle. Called by BufferService::openBuffer().
+  Buffer2(BufferService *p_bufferService, HookManager *p_hookMgr, const QString &p_bufferId,
+          const NodeIdentifier &p_nodeId);
 
   // Update the node identifier after a rename operation.
-  void setNodeId(const NodeIdentifier &p_nodeId) { m_nodeId = p_nodeId; }
+  void setNodeId(const NodeIdentifier &p_nodeId);
 
   BufferService *m_bufferService = nullptr;
   HookManager *m_hookMgr = nullptr;
   QString m_bufferId;
   NodeIdentifier m_nodeId;
+  // Null for ordinary buffers. This is inert generation state, NOT a key lease.
+  std::shared_ptr<ProtectedBufferState> m_protectedState;
 };
 
 } // namespace vnotex

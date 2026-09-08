@@ -179,7 +179,7 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
     if (m_model) {
       m_model->setSearchResult(m_accumulatedResult);
     }
-    emit searchFinished(0, false);
+    emit searchFinished(0, false, 0);
     return;
   }
 
@@ -265,7 +265,8 @@ void SearchController::onSearchFinished(int p_token, const SearchResult &p_resul
       m_model->setSearchResult(m_accumulatedResult);
     }
 
-    emit searchFinished(m_accumulatedResult.m_matchCount, m_accumulatedResult.m_truncated);
+    emit searchFinished(m_accumulatedResult.m_matchCount, m_accumulatedResult.m_truncated,
+                        m_accumulatedResult.m_encryptedSkippedCount);
     resetSearchState();
   }
 }
@@ -478,6 +479,7 @@ void SearchController::mergeSearchResult(const SearchResult &p_result) {
   m_accumulatedResult.m_fileResults += p_result.m_fileResults;
   m_accumulatedResult.m_matchCount += p_result.m_matchCount;
   m_accumulatedResult.m_truncated = m_accumulatedResult.m_truncated || p_result.m_truncated;
+  m_accumulatedResult.m_encryptedSkippedCount += p_result.m_encryptedSkippedCount;
 
   qCDebug(lcUi) << "SearchController::mergeSearchResult: accumulated matchCount:"
                 << m_accumulatedResult.m_matchCount

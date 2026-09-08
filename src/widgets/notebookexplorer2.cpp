@@ -3,19 +3,24 @@
 #include <QActionGroup>
 #include <QCoreApplication>
 #include <QDataStream>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
+#include <QFormLayout>
 #include <QInputDialog>
 #include <QJsonDocument>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPointer>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QScopeGuard>
+#include <QScopedValueRollback>
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
@@ -29,6 +34,7 @@
 #include <controllers/notebooknodecontroller.h>
 #include <controllers/opennotebookcontroller.h>
 #include <controllers/recyclebincontroller.h>
+#include <controllers/viewareacontroller.h>
 #include <core/configmgr2.h>
 #include <core/exception.h>
 #include <core/fileopensettings.h>
@@ -103,6 +109,327 @@ NodeExplorerState mergeNodeExplorerStateForCache(const NodeExplorerState &p_capt
 }
 
 } // namespace
+
+void NotebookExplorer2::setViewAreaController(ViewAreaController *p_controller) {
+  m_viewAreaController = p_controller;
+}
+
+void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty() || m_noteEncryptionActive || m_nodeTransferActive || m_folderShareActive ||
+      !m_viewAreaController || !m_nodeExplorer) {
+    return;
+  }
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  if (!notebooks) {
+    return;
+  }
+  const QString notebookId = p_ids.first().notebookId;
+  for (const auto &id : p_ids) {
+    if (id.notebookId != notebookId) {
+      onErrorOccurred(tr("Encrypt Note"), tr("Select notes from one notebook at a time."));
+      return;
+    }
+  }
+  if (m_viewAreaController->isNoteConversionBlocked()) {
+    onErrorOccurred(tr("Encrypt Note"),
+                    tr("A note encryption transaction needs recovery. Restart VNote first."));
+    return;
+  }
+  auto *buffers = m_services.get<BufferService>();
+  if (!buffers || !buffers->beginProtectedOperation()) {
+    onErrorOccurred(tr("Encrypt Note"), tr("Note encryption is currently locking."));
+    return;
+  }
+  const auto operation = qScopeGuard([&]() { buffers->endProtectedOperation(); });
+  const QScopedValueRollback<bool> active(m_noteEncryptionActive, true);
+  QProgressDialog progress(tr("Preparing note encryption..."), QString(), 0, 0, nullptr);
+  progress.setWindowTitle(tr("Encrypt Note"));
+  progress.setObjectName(QStringLiteral("noteEncryptionProgress"));
+  progress.setWindowModality(Qt::ApplicationModal);
+  progress.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+  progress.setCancelButton(nullptr);
+  progress.setAutoClose(false);
+  progress.setAutoReset(false);
+  progress.setMinimumDuration(0);
+  progress.show();
+
+  const auto showError = [&](const QString &p_message) {
+    QMessageBox::warning(&progress, tr("Encrypt Note"), p_message);
+  };
+  PreparedNotebookEncryption setup;
+  QString errorMessage;
+  const auto preparationError =
+      prepareNotebookEncryption(notebookId, setup, progress, errorMessage);
+  if (preparationError != VXCORE_OK) {
+    if (preparationError != VXCORE_ERR_CANCELLED) {
+      showError(errorMessage);
+    }
+    return;
+  }
+
+  QVector<std::shared_ptr<NoteEncryptionConversion>> conversions;
+  QStringList retained;
+  QSet<NodeIdentifier> seen;
+  for (const auto &id : p_ids) {
+    if (seen.contains(id)) {
+      continue;
+    }
+    seen.insert(id);
+    progress.setLabelText(tr("Checking \"%1\" and all of its resources...").arg(id.relativePath));
+    auto conversion = m_viewAreaController->prepareNoteConversion(id);
+    conversions.append(conversion);
+    if (conversion->m_error != VXCORE_OK) {
+      for (const auto &pending : conversions) {
+        m_viewAreaController->cancelNoteConversion(pending);
+      }
+      showError(conversion->m_errorMessage);
+      return;
+    }
+    retained.append(conversion->m_plan.m_retainedOriginals);
+  }
+  retained.removeDuplicates();
+  retained.sort();
+  QMessageBox confirmation(
+      QMessageBox::Warning, tr("Encrypt Note"),
+      tr("Encrypt %n selected note(s), including their images, attachments and comments?", "",
+         conversions.size()),
+      QMessageBox::Ok | QMessageBox::Cancel, &progress);
+  confirmation.setObjectName(QStringLiteral("noteEncryptionConfirmation"));
+  QString warning =
+      tr("Prior Git history, cloud versions and backup copies are not erased. "
+         "Filenames, folders and tags remain visible. Encryption is not secure deletion.");
+  if (!retained.isEmpty()) {
+    warning += tr("\n\nThese existing unencrypted originals will remain because they are shared "
+                  "or outside the note's private assets folder:\n%1")
+                   .arg(retained.join(QLatin1Char('\n')));
+  }
+  confirmation.setInformativeText(warning);
+  confirmation.button(QMessageBox::Ok)->setText(tr("Encrypt"));
+  confirmation.setDefaultButton(QMessageBox::Cancel);
+  confirmation.setEscapeButton(QMessageBox::Cancel);
+  if (confirmation.exec() != QMessageBox::Ok) {
+    for (const auto &pending : conversions) {
+      m_viewAreaController->cancelNoteConversion(pending);
+    }
+    return;
+  }
+  QStringList errors;
+  for (const auto &conversion : conversions) {
+    progress.setLabelText(tr("Encrypting \"%1\"...").arg(conversion->m_nodeId.relativePath));
+    const auto error =
+        m_viewAreaController->applyNoteConversion(conversion, setup.isValid() ? &setup : nullptr);
+    if (error != VXCORE_OK) {
+      errors.append(
+          tr("%1: %2").arg(conversion->m_nodeId.relativePath, conversion->m_errorMessage));
+      break;
+    }
+    m_nodeExplorer->reloadNode({notebookId, conversion->m_nodeId.parentPath()});
+    m_nodeExplorer->selectNode({notebookId, conversion->m_encryptedPath});
+  }
+  for (const auto &pending : conversions) {
+    m_viewAreaController->cancelNoteConversion(pending);
+  }
+  if (!errors.isEmpty()) {
+    showError(errors.join(QLatin1Char('\n')));
+  }
+}
+
+VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebookId,
+                                                         PreparedNotebookEncryption &p_setup,
+                                                         QProgressDialog &p_progress,
+                                                         QString &p_errorMessage) {
+  p_errorMessage.clear();
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  if (!notebooks || !m_viewAreaController) {
+    p_errorMessage = tr("The note encryption services are unavailable.");
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const auto fail = [&](VxCoreError p_error, const QString &p_message = QString()) {
+    p_errorMessage = !p_message.isEmpty() ? p_message
+                     : p_error == VXCORE_ERR_ENCRYPTION_AUTH_FAILED
+                         ? tr("Unable to unlock: incorrect password or damaged key data")
+                         : QString::fromUtf8(vxcore_error_message(p_error));
+    return p_error;
+  };
+  const auto unlock = [&](const QString &p_id, const QString &p_name) {
+    bool accepted = false;
+    QString passwordText = QInputDialog::getText(
+        &p_progress, tr("Unlock Notebook"), tr("Enter the master password for \"%1\".").arg(p_name),
+        QLineEdit::Password, QString(), &accepted);
+    if (!accepted) {
+      passwordText.fill(QChar(0));
+      return VXCORE_ERR_CANCELLED;
+    }
+    QByteArray password = passwordText.toUtf8();
+    passwordText.fill(QChar(0));
+    passwordText.clear();
+    p_progress.setLabelText(tr("Unlocking notebook..."));
+    return m_viewAreaController->unlockNoteEncryption(p_id, password);
+  };
+
+  VxCoreError statusError = VXCORE_OK;
+  const auto status = notebooks->encryptionStatus(p_notebookId, QString(), &statusError);
+  if (statusError != VXCORE_OK) {
+    return fail(statusError);
+  }
+  if (status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
+    if (status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()) {
+      return VXCORE_OK;
+    }
+    const QString name = notebooks->getNotebookConfig(p_notebookId)
+                             .value(QLatin1String(vxcore::kJsonKeyName))
+                             .toString();
+    const auto error = unlock(p_notebookId, name);
+    return error == VXCORE_OK || error == VXCORE_ERR_CANCELLED ? error : fail(error);
+  }
+
+  struct Source {
+    QString id;
+    QString label;
+    bool unlocked;
+  };
+  QVector<Source> sources;
+  QSet<QString> vaults;
+  QStringList labels;
+  for (const auto &value : notebooks->listNotebooks()) {
+    const auto notebook = value.toObject();
+    const QString id = notebook.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+    if (id == p_notebookId || notebook.value(QLatin1String(vxcore::kJsonKeyType)).toString() !=
+                                  QLatin1String("bundled")) {
+      continue;
+    }
+    VxCoreError error = VXCORE_OK;
+    const auto sourceStatus = notebooks->encryptionStatus(id, QString(), &error);
+    const QString vault = sourceStatus.value(QLatin1String(vxcore::kJsonKeyVaultId)).toString();
+    if (error != VXCORE_OK ||
+        !sourceStatus.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool() ||
+        vaults.contains(vault)) {
+      continue;
+    }
+    vaults.insert(vault);
+    QString label = notebook.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+    label += QStringLiteral(" (%1)").arg(
+        notebook.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString());
+    sources.append(
+        {id, label, sourceStatus.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()});
+    labels.append(label);
+  }
+  QString sourceId;
+  QByteArray password;
+  if (!sources.isEmpty()) {
+    int index = 0;
+    if (sources.size() > 1) {
+      bool accepted = false;
+      const QString label = QInputDialog::getItem(
+          &p_progress, tr("Choose Master Password"),
+          tr("Use the master password of this initialized notebook:"), labels, 0, false, &accepted);
+      if (!accepted) {
+        return VXCORE_ERR_CANCELLED;
+      }
+      index = labels.indexOf(label);
+    }
+    const auto &source = sources.at(index);
+    sourceId = source.id;
+    if (!source.unlocked) {
+      const auto error = unlock(source.id, source.label);
+      if (error != VXCORE_OK) {
+        return error == VXCORE_ERR_CANCELLED ? error : fail(error);
+      }
+    }
+  } else {
+    QDialog dialog(&p_progress);
+    dialog.setWindowTitle(tr("Set Up Note Encryption"));
+    dialog.setObjectName(QStringLiteral("noteEncryptionSetup"));
+    auto *layout = new QFormLayout(&dialog);
+    auto *warning = new QLabel(
+        tr("Choose a master password. Forgotten passwords cannot be reset: "
+           "without this password, encrypted notes and their resources cannot be recovered."),
+        &dialog);
+    warning->setWordWrap(true);
+    layout->addRow(warning);
+    auto *first = new QLineEdit(&dialog);
+    first->setObjectName(QStringLiteral("masterPassword"));
+    first->setEchoMode(QLineEdit::Password);
+    auto *confirmation = new QLineEdit(&dialog);
+    confirmation->setObjectName(QStringLiteral("confirmMasterPassword"));
+    confirmation->setEchoMode(QLineEdit::Password);
+    layout->addRow(tr("Master password:"), first);
+    layout->addRow(tr("Confirm password:"), confirmation);
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    buttons->button(QDialogButtonBox::Ok)->setText(tr("Set Up Encryption"));
+    buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
+    buttons->button(QDialogButtonBox::Ok)->setAutoDefault(false);
+    buttons->button(QDialogButtonBox::Cancel)->setDefault(true);
+    layout->addRow(buttons);
+    const auto update = [=]() {
+      buttons->button(QDialogButtonBox::Ok)
+          ->setEnabled(!first->text().isEmpty() && first->text() == confirmation->text());
+    };
+    connect(first, &QLineEdit::textChanged, &dialog, update);
+    connect(confirmation, &QLineEdit::textChanged, &dialog, update);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    first->setFocus();
+    const bool accepted = dialog.exec() == QDialog::Accepted;
+    if (accepted) {
+      password = first->text().toUtf8();
+    }
+    first->clear();
+    confirmation->clear();
+    if (!accepted) {
+      return VXCORE_ERR_CANCELLED;
+    }
+  }
+  p_progress.setLabelText(tr("Preparing the notebook key..."));
+  p_setup = m_viewAreaController->prepareNoteEncryption(p_notebookId, sourceId, password);
+  return p_setup.isValid() ? VXCORE_OK : fail(p_setup.m_error, p_setup.m_errorMessage);
+}
+
+NewNoteResult NotebookExplorer2::createEncryptedNote(const NewNoteInput &p_input) {
+  NewNoteResult result;
+  if (!p_input.encrypted || m_noteEncryptionActive || m_nodeTransferActive || m_folderShareActive ||
+      !m_viewAreaController) {
+    result.errorMessage =
+        tr("Encrypted note creation is unavailable while another operation is active.");
+    return result;
+  }
+  if (m_viewAreaController->isNoteConversionBlocked()) {
+    result.errorMessage = tr("A note encryption transaction needs recovery. Restart VNote first.");
+    return result;
+  }
+  NewNoteController controller(m_services);
+  const auto validation = controller.validateAll(p_input);
+  if (!validation.valid) {
+    result.errorMessage = validation.message;
+    return result;
+  }
+  auto *buffers = m_services.get<BufferService>();
+  if (!buffers || !buffers->beginProtectedOperation()) {
+    result.errorMessage = tr("Note encryption is currently locking.");
+    return result;
+  }
+  const auto operation = qScopeGuard([&]() { buffers->endProtectedOperation(); });
+  const QScopedValueRollback<bool> active(m_noteEncryptionActive, true);
+  QProgressDialog progress(tr("Preparing note encryption..."), QString(), 0, 0, nullptr);
+  progress.setWindowTitle(tr("New Encrypted Note"));
+  progress.setObjectName(QStringLiteral("newNoteEncryptionProgress"));
+  progress.setWindowModality(Qt::ApplicationModal);
+  progress.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+  progress.setCancelButton(nullptr);
+  progress.setAutoClose(false);
+  progress.setAutoReset(false);
+  progress.setMinimumDuration(0);
+  progress.show();
+
+  PreparedNotebookEncryption setup;
+  const auto error =
+      prepareNotebookEncryption(p_input.notebookId, setup, progress, result.errorMessage);
+  if (error != VXCORE_OK) {
+    return result;
+  }
+  progress.setLabelText(tr("Creating encrypted note..."));
+  return controller.createNote(p_input, setup.isValid() ? &setup : nullptr);
+}
 
 NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services) {
@@ -796,6 +1123,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onShareFolderRequested);
   connect(explorer, &CombinedNodeExplorer::markRequested, this,
           &NotebookExplorer2::onMarkRequested);
+  connect(explorer, &CombinedNodeExplorer::encryptNoteRequested, this,
+          &NotebookExplorer2::encryptNote);
   connect(explorer, &CombinedNodeExplorer::ignoreRequested, this,
           &NotebookExplorer2::onIgnoreRequested);
   connect(explorer, &CombinedNodeExplorer::manageTagsRequested, this,
@@ -861,6 +1190,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onShareFolderRequested);
   connect(explorer, &TwoColumnsNodeExplorer::markRequested, this,
           &NotebookExplorer2::onMarkRequested);
+  connect(explorer, &TwoColumnsNodeExplorer::encryptNoteRequested, this,
+          &NotebookExplorer2::encryptNote);
   connect(explorer, &TwoColumnsNodeExplorer::ignoreRequested, this,
           &NotebookExplorer2::onIgnoreRequested);
   connect(explorer, &TwoColumnsNodeExplorer::manageTagsRequested, this,
@@ -1589,7 +1920,11 @@ void NotebookExplorer2::doNewNote(const NodeIdentifier &p_parentId,
     expectFsChange(parentAbsPath);
   }
 
-  NewNoteDialog2 dialog(m_services, p_parentId, p_options, window());
+  auto options = p_options;
+  options.m_createEncryptedNote = [this](const NewNoteInput &p_input) {
+    return createEncryptedNote(p_input);
+  };
+  NewNoteDialog2 dialog(m_services, p_parentId, options, window());
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
     if (newNodeId.isValid()) {
@@ -1744,6 +2079,10 @@ void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFo
   }
 
   ImportFolderDialog2 dialog(m_services, p_targetFolderId, window());
+  dialog.setDestinationUnlocker([this](const QString &id, QByteArray &password) {
+    return m_viewAreaController ? m_viewAreaController->unlockNoteEncryption(id, password)
+                                : VXCORE_ERR_NOT_INITIALIZED;
+  });
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();
     if (newNodeId.isValid()) {

@@ -48,6 +48,36 @@ PreparedNodeTransfer &PreparedNodeTransfer::operator=(PreparedNodeTransfer &&p_o
   return *this;
 }
 
+PreparedNotebookEncryption::~PreparedNotebookEncryption() {
+  if (m_context && m_handle) {
+    vxcore_encryption_free_setup(m_context, m_handle);
+  }
+}
+
+PreparedNotebookEncryption::PreparedNotebookEncryption(
+    PreparedNotebookEncryption &&p_other) noexcept
+    : m_error(p_other.m_error), m_errorMessage(std::move(p_other.m_errorMessage)),
+      m_context(p_other.m_context), m_handle(p_other.m_handle) {
+  p_other.m_context = nullptr;
+  p_other.m_handle = nullptr;
+}
+
+PreparedNotebookEncryption &
+PreparedNotebookEncryption::operator=(PreparedNotebookEncryption &&p_other) noexcept {
+  if (this != &p_other) {
+    if (m_context && m_handle) {
+      vxcore_encryption_free_setup(m_context, m_handle);
+    }
+    m_error = p_other.m_error;
+    m_errorMessage = std::move(p_other.m_errorMessage);
+    m_context = p_other.m_context;
+    m_handle = p_other.m_handle;
+    p_other.m_context = nullptr;
+    p_other.m_handle = nullptr;
+  }
+  return *this;
+}
+
 PreparedRecycleBinCleanup::~PreparedRecycleBinCleanup() {
   vxcore_recycle_bin_cleanup_free(m_handle);
 }
@@ -307,6 +337,144 @@ bool NotebookCoreService::rebuildNotebookCache(const QString &p_notebookId) {
   return true;
 }
 
+PreparedNotebookEncryption NotebookCoreService::prepareNotebookEncryption(
+    const QString &p_notebookId, const QString &p_sourceNotebookId, const QByteArray &p_password) {
+  PreparedNotebookEncryption prepared;
+  prepared.m_context = m_context;
+  if (!checkContext()) {
+    prepared.m_error = VXCORE_ERR_NOT_INITIALIZED;
+    prepared.m_errorMessage = QString::fromUtf8(vxcore_error_message(prepared.m_error));
+    return prepared;
+  }
+
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  const QByteArray sourceNotebookId = p_sourceNotebookId.toUtf8();
+  prepared.m_error = vxcore_encryption_prepare_notebook(
+      m_context, notebookId.constData(),
+      sourceNotebookId.isEmpty() ? nullptr : sourceNotebookId.constData(), p_password.constData(),
+      static_cast<size_t>(p_password.size()), &prepared.m_handle);
+  if (prepared.m_error != VXCORE_OK) {
+    prepared.m_errorMessage = QString::fromUtf8(vxcore_error_message(prepared.m_error));
+  }
+  return prepared;
+}
+
+VxCoreError NotebookCoreService::commitNotebookEncryption(PreparedNotebookEncryption &p_prepared) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  if (!p_prepared.m_handle || p_prepared.m_context != m_context) {
+    return VXCORE_ERR_INVALID_PARAM;
+  }
+
+  const VxCoreEncryptionSetupHandle handle = p_prepared.m_handle;
+  p_prepared.m_handle = nullptr;
+  p_prepared.m_context = nullptr;
+  const VxCoreError error = vxcore_encryption_commit_notebook(m_context, handle);
+  p_prepared.m_error = error;
+  p_prepared.m_errorMessage =
+      error == VXCORE_OK ? QString() : QString::fromUtf8(vxcore_error_message(error));
+  return error;
+}
+
+VxCoreError NotebookCoreService::unlockNotebookEncryption(const QString &p_notebookId,
+                                                          const QByteArray &p_password) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  return vxcore_encryption_unlock_notebook(m_context, notebookId.constData(),
+                                           p_password.constData(),
+                                           static_cast<size_t>(p_password.size()));
+}
+
+VxCoreError NotebookCoreService::lockAllEncryption() {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  return vxcore_encryption_lock_all(m_context);
+}
+
+QJsonObject NotebookCoreService::encryptionStatus(const QString &p_notebookId,
+                                                  const QString &p_filePath,
+                                                  VxCoreError *p_outError) const {
+  if (!checkContext()) {
+    if (p_outError) {
+      *p_outError = VXCORE_ERR_NOT_INITIALIZED;
+    }
+    return QJsonObject();
+  }
+
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  const QByteArray filePath = p_filePath.toUtf8();
+  char *json = nullptr;
+  const VxCoreError error =
+      vxcore_encryption_get_status(m_context, notebookId.constData(),
+                                   p_filePath.isNull() ? nullptr : filePath.constData(), &json);
+  if (p_outError) {
+    *p_outError = error;
+  }
+  if (error != VXCORE_OK) {
+    vxcore_string_free(json);
+    return QJsonObject();
+  }
+
+  const QJsonDocument document = QJsonDocument::fromJson(QByteArray(json));
+  vxcore_string_free(json);
+  if (!document.isObject()) {
+    if (p_outError) {
+      *p_outError = VXCORE_ERR_JSON_PARSE;
+    }
+    return QJsonObject();
+  }
+  return document.object();
+}
+
+VxCoreError NotebookCoreService::protectNote(const NodeIdentifier &p_nodeId,
+                                             const QByteArray &p_body,
+                                             const QJsonObject &p_resourcePlan,
+                                             QString *p_outPath) {
+  if (p_outPath) {
+    p_outPath->clear();
+  }
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray plan = QJsonDocument(p_resourcePlan).toJson(QJsonDocument::Compact);
+  char *path = nullptr;
+  const VxCoreError error =
+      vxcore_encryption_protect_note(m_context, p_nodeId.notebookId.toUtf8().constData(),
+                                     p_nodeId.relativePath.toUtf8().constData(), p_body.constData(),
+                                     static_cast<size_t>(p_body.size()), plan.constData(), &path);
+  if (error == VXCORE_OK && p_outPath) {
+    *p_outPath = QString::fromUtf8(path);
+  }
+  vxcore_string_free(path);
+  return error;
+}
+
+VxCoreError
+NotebookCoreService::createEncryptedNote(const QString &p_notebookId, const QString &p_parentPath,
+                                         const QString &p_name, const QString &p_editorType,
+                                         const QByteArray &p_body, QString *p_outFileId) {
+  if (p_outFileId) {
+    p_outFileId->clear();
+  }
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  char *fileId = nullptr;
+  const VxCoreError error = vxcore_encryption_create_note(
+      m_context, p_notebookId.toUtf8().constData(), p_parentPath.toUtf8().constData(),
+      p_name.toUtf8().constData(), p_editorType.toUtf8().constData(), p_body.constData(),
+      static_cast<size_t>(p_body.size()), &fileId);
+  if (error == VXCORE_OK && p_outFileId) {
+    *p_outFileId = QString::fromUtf8(fileId);
+  }
+  vxcore_string_free(fileId);
+  return error;
+}
+
 QJsonArray NotebookCoreService::getHistoryResolved(const QString &p_notebookId) const {
   if (!checkContext()) {
     return QJsonArray();
@@ -485,6 +653,28 @@ bool NotebookCoreService::isNotebookReadOnly(const QString &p_notebookId) const 
     return false;
   }
   return readOnly;
+}
+
+PreparedNodeTransfer NotebookCoreService::prepareEncryptedBundleTransfer(
+    const QString &p_bundleRoot, const QString &p_folderName, const QString &p_destinationId,
+    const QString &p_destinationFolder, const QByteArray &p_password) {
+  PreparedNodeTransfer prepared;
+  prepared.m_context = m_context;
+  if (!checkContext())
+    return prepared;
+  prepared.m_error = vxcore_node_transfer_prepare_encrypted_bundle(
+      m_context, p_bundleRoot.toUtf8().constData(), p_folderName.toUtf8().constData(),
+      p_destinationId.toUtf8().constData(),
+      (p_destinationFolder.isEmpty() ? QStringLiteral(".") : p_destinationFolder)
+          .toUtf8()
+          .constData(),
+      p_password.constData(), static_cast<size_t>(p_password.size()), &prepared.m_handle);
+  if (prepared.m_error != VXCORE_OK) {
+    prepared.m_errorMessage = prepared.m_error == VXCORE_ERR_ENCRYPTION_AUTH_FAILED
+                                  ? tr("Unable to unlock: incorrect password or damaged key data")
+                                  : contextErrorMessage(prepared.m_error);
+  }
+  return prepared;
 }
 
 PreparedNodeTransfer

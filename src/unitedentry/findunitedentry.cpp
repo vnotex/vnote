@@ -67,11 +67,18 @@ void FindUnitedEntry::initOnFirstProcess() {
 
   connect(m_searchController, &SearchController::searchStarted, this,
           [this]() { m_searchActive = true; });
-  connect(m_searchController, &SearchController::searchFinished, this, [this](int, bool) {
-    m_searchActive = false;
-    populateResultTree();
-    finish();
-  });
+  connect(m_searchController, &SearchController::searchFinished, this,
+          [this](int, bool, int p_encryptedSkippedCount) {
+            m_searchActive = false;
+            populateResultTree();
+            if (p_encryptedSkippedCount > 0) {
+              auto *item = new QTreeWidgetItem(m_resultTree.data());
+              item->setText(0, tr("%n protected note(s) excluded from content search", "",
+                                  p_encryptedSkippedCount));
+              item->setFlags(Qt::ItemIsEnabled);
+            }
+            finish();
+          });
   connect(m_searchController, &SearchController::searchFailed, this,
           [this](const QString &p_errorMessage) {
             m_searchActive = false;

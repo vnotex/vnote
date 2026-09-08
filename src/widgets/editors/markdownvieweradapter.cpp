@@ -4,6 +4,7 @@
 #include <QElapsedTimer>
 #include <QMap>
 #include <QTimer>
+#include <QUrl>
 
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
@@ -11,6 +12,7 @@
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <gui/utils/guiutils.h>
+#include <gui/utils/imageutils.h>
 #include <utils/sectionnumberutils.h>
 
 using namespace vnotex;
@@ -74,6 +76,42 @@ MarkdownViewerAdapter::MarkdownViewerAdapter(ServiceLocator &p_services, QObject
     : WebViewAdapter(p_parent), m_services(&p_services) {}
 
 MarkdownViewerAdapter::~MarkdownViewerAdapter() {}
+
+void MarkdownViewerAdapter::setProtectedView(bool p_protected) { m_protectedView = p_protected; }
+
+QString MarkdownViewerAdapter::protectedImageUrl(const QString &p_url) {
+  if (!m_protectedView || p_url.size() > 32 * 1024 * 1024 ||
+      !p_url.startsWith(QLatin1String("data:image/"), Qt::CaseInsensitive)) {
+    return QString();
+  }
+  const int comma = p_url.indexOf(QLatin1Char(','));
+  if (comma < 0) {
+    return QString();
+  }
+  const auto header = p_url.left(comma);
+  const auto encoded = p_url.mid(comma + 1).toLatin1();
+  auto input = header.endsWith(QLatin1String(";base64"), Qt::CaseInsensitive)
+                   ? QByteArray::fromBase64(encoded, QByteArray::AbortOnBase64DecodingErrors)
+                   : QByteArray::fromPercentEncoding(encoded);
+  QByteArray data;
+  QByteArray mime;
+  const bool valid = ImageUtils::protectedImageData(input, data, mime);
+  input.fill(0);
+  if (!valid) {
+    return QString();
+  }
+  const auto result = QStringLiteral("data:%1;base64,%2")
+                          .arg(QString::fromLatin1(mime), QString::fromLatin1(data.toBase64()));
+  data.fill(0);
+  return result;
+}
+
+void MarkdownViewerAdapter::activateProtectedLink(const QString &p_url) {
+  if (m_protectedView && QUrl(p_url).isRelative() && !p_url.startsWith(QLatin1Char('/')) &&
+      !p_url.startsWith(QLatin1Char('\\'))) {
+    emit protectedLinkRequested(p_url);
+  }
+}
 
 void MarkdownViewerAdapter::setText(int p_revision, const QString &p_text, int p_lineNumber) {
   if (p_revision == m_revision && p_revision != 0) {
@@ -163,6 +201,17 @@ void MarkdownViewerAdapter::setGraphPreviewData(quint64 p_id, quint64 p_timeStam
 
   const auto logicalSize =
       p_logicalWidth > 0 && p_logicalHeight > 0 ? QSize(p_logicalWidth, p_logicalHeight) : QSize();
+  if (m_protectedView) {
+    QByteArray image;
+    QByteArray mime;
+    const bool valid = ImageUtils::protectedImageData(ba, image, mime);
+    ba.fill(0);
+    const auto format = QString::fromLatin1(mime.mid(mime.indexOf('/') + 1));
+    emit graphPreviewDataReady(
+        PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(), p_needScale, logicalSize));
+    image.fill(0);
+    return;
+  }
   emit graphPreviewDataReady(
       PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale, logicalSize));
 }
@@ -211,6 +260,17 @@ void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id, quint64 p_timeStamp
   }
   const auto logicalSize =
       p_logicalWidth > 0 && p_logicalHeight > 0 ? QSize(p_logicalWidth, p_logicalHeight) : QSize();
+  if (m_protectedView) {
+    QByteArray image;
+    QByteArray mime;
+    const bool valid = ImageUtils::protectedImageData(ba, image, mime);
+    ba.fill(0);
+    const auto format = QString::fromLatin1(mime.mid(mime.indexOf('/') + 1));
+    emit mathPreviewDataReady(
+        PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(), p_needScale, logicalSize));
+    image.fill(0);
+    return;
+  }
   emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale, logicalSize));
 }
 
@@ -370,7 +430,7 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
   // synchronous formatted write for every diagram in a document.
   qCDebug(lcUi) << "MarkdownViewerAdapter::renderGraph id=" << p_id << "index=" << p_index
                 << "format=" << p_format << "lang=" << p_lang << "textLen=" << p_text.size();
-  if (p_text.isEmpty()) {
+  if (m_protectedView || p_text.isEmpty()) {
     emit graphRenderDataReady(p_id, p_index, p_format, QString());
     return;
   }

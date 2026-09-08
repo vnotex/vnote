@@ -108,6 +108,10 @@ public:
                          const QString &p_workspaceId) override;
   bool closeViewWindow(ID p_windowId, bool p_force) override;
   void applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) override;
+  bool setNoteConversionFrozen(const QVector<ID> &p_windowIds, bool p_frozen) override;
+  bool recreateNoteViews(const QVector<ID> &p_windowIds, const Buffer2 &p_buffer,
+                         const QString &p_editorType,
+                         const std::function<void(QObject *, QObject *)> &p_replaceHidden) override;
   void navigateWidgetContent(ID p_windowId, const QStringList &p_pathSegments,
                              const QString &p_fragment) override;
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) override;

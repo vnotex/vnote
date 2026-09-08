@@ -9,6 +9,11 @@ class ImageUtils {
 public:
   ImageUtils() = delete;
 
+  // Decode bounded passive image bytes only; SVG is validated then rasterized.
+  // Output is cleared on failure and never contains an executable SVG document.
+  static bool protectedImageData(const QByteArray &p_input, QByteArray &p_output,
+                                 QByteArray &p_mime);
+
   static QImage::Format guessImageFormat(const QByteArray &p_data);
 
   static QString guessImageSuffix(const QByteArray &p_data);

@@ -7,6 +7,7 @@
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QThread>
+#include <QtConcurrent>
 
 #include <algorithm>
 #include <memory>
@@ -367,6 +368,81 @@ NodeTransferBatchResult NodeTransferService::transfer(const NodeTransferRequest 
     appendResult(batch, std::move(itemResult));
   }
   return batch;
+}
+
+NodeTransferCoreResult NodeTransferService::importEncryptedBundle(
+    const QString &p_bundleRoot, const QString &p_folderName, const QString &p_destinationId,
+    const QString &p_destinationFolder, QByteArray &p_password,
+    const std::function<bool()> &p_isCancelled) {
+  struct Password {
+    QByteArray bytes;
+    ~Password() {
+      volatile char *data = bytes.data();
+      for (int index = 0; index < bytes.size(); ++index)
+        data[index] = 0;
+      bytes.clear();
+    }
+  };
+  auto password = std::make_shared<Password>();
+  password->bytes.swap(p_password);
+  NodeTransferCoreResult result;
+  if (!m_notebookService || !m_bufferService || !m_syncWorkQueueManager || !m_ioGate ||
+      !m_bufferService->beginProtectedOperation()) {
+    result.m_error = VXCORE_ERR_ENCRYPTION_LOCKED;
+    result.m_errorMessage = tr("Protected operations are unavailable while locking.");
+    return result;
+  }
+  struct Operation {
+    BufferService *service;
+    ~Operation() { service->endProtectedOperation(); }
+  } operation{m_bufferService};
+  auto maintenance = m_syncWorkQueueManager->tryAcquireMaintenance({p_destinationId});
+  if (!maintenance) {
+    result.m_error = VXCORE_ERR_SYNC_IN_PROGRESS;
+    result.m_errorMessage = tr("The destination notebook is busy syncing.");
+    return result;
+  }
+  auto *notebooks = m_notebookService;
+  auto future = QtConcurrent::run(
+      [notebooks, p_bundleRoot, p_folderName, p_destinationId, p_destinationFolder, password]() {
+        auto prepared =
+            std::make_shared<PreparedNodeTransfer>(notebooks->prepareEncryptedBundleTransfer(
+                p_bundleRoot, p_folderName, p_destinationId, p_destinationFolder, password->bytes));
+        volatile char *data = password->bytes.data();
+        for (int index = 0; index < password->bytes.size(); ++index)
+          data[index] = 0;
+        password->bytes.clear();
+        return prepared;
+      });
+  password.reset();
+  bool cancelled = false;
+  while (!future.isFinished()) {
+    QCoreApplication::processEvents(QEventLoop::AllEvents);
+    cancelled = cancelled || (p_isCancelled && p_isCancelled());
+    QThread::msleep(10);
+  }
+  auto prepared = future.result();
+  if (cancelled || (p_isCancelled && p_isCancelled())) {
+    result.m_error = VXCORE_ERR_CANCELLED;
+    result.m_errorMessage = tr("The import was cancelled and nothing was changed.");
+    return result;
+  }
+  if (!prepared->isValid()) {
+    result.m_error = prepared->m_error;
+    result.m_errorMessage = prepared->m_errorMessage;
+    return result;
+  }
+  {
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, p_destinationId, c_gateTimeoutMs);
+    if (!lock.isLocked()) {
+      result.m_error = VXCORE_ERR_SYNC_IN_PROGRESS;
+      result.m_errorMessage = tr("The destination notebook is busy.");
+      return result;
+    }
+    result = m_notebookService->commitNodeTransfer(*prepared);
+  }
+  m_notebookService->dispatchNodeTransferEvents(result);
+  return result;
 }
 
 NodeTransferItemResult

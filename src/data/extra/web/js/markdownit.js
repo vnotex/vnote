@@ -215,7 +215,7 @@ class MarkdownIt extends VxWorker {
 
         this.mdit.use(window.markdownitInjectLinenumbers);
 
-        if (window.vxOptions.protectFromXss) {
+        if (window.vxOptions.protectFromXss && !window.vxOptions.protectedView) {
             let scriptFolderPath = Utils.parentFolder(document.currentScript.src);
             Utils.loadScripts([scriptFolderPath + '/markdown-it/xss.min.js',
                                scriptFolderPath + '/markdown-it/markdown-it-xss.js'],
@@ -291,6 +291,10 @@ class MarkdownIt extends VxWorker {
         }
 
         let html = this.mdit.render(p_text);
+        if (window.vxOptions.protectedView) {
+            this.renderProtected(p_node, html);
+            return;
+        }
         p_node.innerHTML = html + this.loadedGuard(p_finishCbStr);
 
         if (this.preNodes == null) {
@@ -302,6 +306,162 @@ class MarkdownIt extends VxWorker {
         }
 
         this.finishWork();
+    }
+
+    // Parse into inert template contents. Nothing from a note enters the live DOM
+    // (including data images) until its element, attributes and bytes are accepted.
+    renderProtected(p_node, p_html) {
+        const template = document.createElement('template');
+        template.innerHTML = p_html;
+        const tags = new Set(['A', 'ABBR', 'B', 'BLOCKQUOTE', 'BR', 'CAPTION', 'CODE',
+            'COL', 'COLGROUP', 'DD', 'DEL', 'DETAILS', 'DIV', 'DL', 'DT', 'EM', 'EQ',
+            'EQN', 'FIGCAPTION', 'FIGURE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR',
+            'I', 'IMG', 'INPUT', 'KBD', 'LI', 'MARK', 'OL', 'P', 'PRE', 'S', 'SAMP',
+            'SECTION', 'SMALL', 'SPAN', 'STRONG', 'SUB', 'SUMMARY', 'SUP', 'TABLE',
+            'TBODY', 'TD', 'TH', 'THEAD', 'TR', 'UL']);
+        const attrs = new Set(['alt', 'title', 'class', 'id', 'width', 'height',
+            'colspan', 'rowspan', 'align', 'start', 'reversed', 'open', 'role',
+            'aria-label', 'aria-hidden', 'data-source-line', 'data-source-line-end',
+            'vx-data-anchor-icon']);
+        const asset = /^vxasset:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+        const origin = location.protocol + '//' + location.host;
+        const pending = [];
+        const blockedImage = (image) => {
+            const label = document.createElement('span');
+            label.className = 'vx-protected-blocked';
+            label.textContent = '[Image blocked in protected note — import it to view]';
+            image.replaceWith(label);
+        };
+        for (const node of Array.from(template.content.querySelectorAll('*'))) {
+            if (node.namespaceURI !== 'http://www.w3.org/1999/xhtml' || !tags.has(node.tagName)) {
+                node.remove();
+                continue;
+            }
+            const src = node.getAttribute('src') || '';
+            const href = node.getAttribute('href') || '';
+            const checkbox = node.tagName === 'INPUT' && node.getAttribute('type') === 'checkbox'
+                && node.classList.contains('task-list-item-checkbox');
+            const checked = checkbox && node.hasAttribute('checked');
+            for (const attr of Array.from(node.attributes)) {
+                if (!attrs.has(attr.name) || (attr.name === 'id' && /^vx-/i.test(attr.value))) {
+                    node.removeAttribute(attr.name);
+                }
+            }
+            if (node.tagName === 'INPUT') {
+                if (!checkbox) {
+                    node.remove();
+                    continue;
+                }
+                node.type = 'checkbox';
+                node.checked = checked;
+            } else if (node.tagName === 'IMG') {
+                const match = asset.exec(src);
+                if (match) {
+                    node.src = origin + '/assets/' + match[1];
+                } else if (/^data:image\//i.test(src)) {
+                    pending.push(new Promise((resolve) => {
+                        window.vxMarkdownAdapter.protectedImageUrl(src, (url) => {
+                            if (url) {
+                                node.src = url;
+                            } else {
+                                blockedImage(node);
+                            }
+                            resolve();
+                        });
+                    }));
+                } else {
+                    blockedImage(node);
+                }
+            } else if (node.tagName === 'A') {
+                const match = asset.exec(href);
+                if (match) {
+                    node.href = origin + '/assets/' + match[1];
+                } else if (href.startsWith('#')) {
+                    node.href = href;
+                    node.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (event.isTrusted) {
+                            let anchor = href.substring(1);
+                            try { anchor = decodeURIComponent(anchor); } catch (_) {}
+                            this.vxcore.scrollToAnchor(anchor);
+                        }
+                    }, true);
+                } else if (/^https?:\/\//i.test(href)) {
+                    node.href = href;
+                    node.rel = 'noreferrer noopener';
+                } else if (href && !/^[a-z][a-z0-9+.-]*:/i.test(href)
+                           && !/^[\\/]/.test(href) && !/[\u0000-\u001f]/.test(href)) {
+                    // Retain the source spelling for notebook navigation, not a
+                    // token-prefixed filesystem-looking URL. Never save it back.
+                    node.href = '#';
+                    node.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (event.isTrusted) {
+                            window.vxMarkdownAdapter.activateProtectedLink(href);
+                        }
+                    }, true);
+                }
+            }
+        }
+        Promise.all(pending).then(() => {
+            p_node.textContent = '';
+            p_node.appendChild(template.content);
+            this.preNodes = p_node.getElementsByTagName('pre');
+            if (this.frontMatterNode) {
+                p_node.insertAdjacentElement('afterbegin', this.frontMatterNode);
+            }
+            this.finishWork();
+            // CSP intentionally disallows the ordinary inline onload guard.
+            // Yield a layout turn without compiling an event-handler string.
+            setTimeout(() => this.markdownRenderFinished(), 0);
+        });
+    }
+
+    static sanitizeProtectedSvg(p_root) {
+        const tags = new Set(['svg', 'g', 'defs', 'path', 'rect', 'circle', 'ellipse',
+            'line', 'polyline', 'polygon', 'text', 'tspan', 'textPath', 'title', 'desc',
+            'marker', 'pattern', 'clipPath', 'mask', 'linearGradient', 'radialGradient',
+            'stop', 'symbol', 'use']);
+        const attrs = new Set(['id', 'class', 'viewBox', 'width', 'height', 'x', 'y',
+            'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'dx', 'dy', 'd',
+            'points', 'transform', 'preserveAspectRatio', 'fill', 'fill-opacity',
+            'fill-rule', 'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap',
+            'stroke-linejoin', 'stroke-dasharray', 'stroke-dashoffset', 'opacity',
+            'font-size', 'font-family', 'font-weight', 'font-style', 'text-anchor',
+            'dominant-baseline', 'clip-path', 'clip-rule', 'mask', 'marker-start',
+            'marker-mid', 'marker-end', 'markerWidth', 'markerHeight', 'markerUnits',
+            'orient', 'refX', 'refY', 'gradientUnits', 'gradientTransform', 'offset',
+            'stop-color', 'stop-opacity', 'patternUnits', 'patternContentUnits',
+            'patternTransform', 'textLength', 'lengthAdjust', 'href', 'xlink:href',
+            'xmlns', 'xmlns:xlink']);
+        for (const node of [p_root, ...Array.from(p_root.querySelectorAll('*'))]) {
+            if (node.namespaceURI !== 'http://www.w3.org/2000/svg' || !tags.has(node.localName)) {
+                node.remove();
+                continue;
+            }
+            // Preserve computed passive presentation before removing CSS. No
+            // stylesheet or CSS escape remains capable of introducing a URL.
+            const style = window.getComputedStyle(node);
+            for (const property of ['fill', 'stroke', 'font-size', 'font-family',
+                'font-weight', 'font-style', 'text-anchor', 'stroke-width']) {
+                const value = style.getPropertyValue(property);
+                if (value && !/[\\<>]/.test(value)
+                    && (!/url\s*\(/i.test(value) || /^url\(#[\w:.-]+\)$/.test(value))) {
+                    node.setAttribute(property, value);
+                }
+            }
+            for (const attr of Array.from(node.attributes)) {
+                const value = attr.value;
+                if (!attrs.has(attr.name) || /[\\<>]/.test(value)
+                    || ((attr.name === 'href' || attr.name === 'xlink:href')
+                        && !/^#[\w:.-]+$/.test(value))
+                    || (/url\s*\(/i.test(value) && !/^url\(#[\w:.-]+\)$/.test(value))) {
+                    node.removeAttribute(attr.name);
+                }
+            }
+        }
     }
 
     loadedGuard(p_cbStr) {

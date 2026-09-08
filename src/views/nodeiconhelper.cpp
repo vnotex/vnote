@@ -7,15 +7,17 @@
 
 using namespace vnotex;
 
-QIcon NodeIconHelper::getNodeIcon(ServiceLocator &p_services, const NodeInfo &p_nodeInfo)
-{
+QIcon NodeIconHelper::getNodeIcon(ServiceLocator &p_services, const NodeInfo &p_nodeInfo) {
   auto *themeService = p_services.get<ThemeService>();
   if (!themeService) {
     return QIcon();
   }
 
-  QString iconName = p_nodeInfo.isFolder ? QStringLiteral("folder_node.svg")
-                                         : QStringLiteral("file_node.svg");
+  QString iconName =
+      p_nodeInfo.isFolder ? QStringLiteral("folder_node.svg") : QStringLiteral("file_node.svg");
+  if (!p_nodeInfo.isFolder && p_nodeInfo.isEncrypted) {
+    iconName = QStringLiteral("lock.svg");
+  }
   QString iconFile = themeService->getIconFile(iconName);
 
   // External nodes use a different icon color from theme.

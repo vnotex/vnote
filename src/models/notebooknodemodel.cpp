@@ -269,6 +269,7 @@ NodeInfo NotebookNodeModel::parseNodeInfoFromJson(const QJsonObject &p_json,
   }
 
   QJsonObject metadata = p_json.value(QStringLiteral("metadata")).toObject();
+  info.isEncrypted = metadata.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool();
   if (!metadata.isEmpty()) {
     info.backgroundColor = metadata.value(QStringLiteral("backgroundColor")).toString();
     info.borderColor = metadata.value(QStringLiteral("borderColor")).toString();

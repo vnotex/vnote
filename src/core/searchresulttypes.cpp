@@ -4,14 +4,17 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 SearchResult SearchResult::fromContentSearchJson(const QJsonObject &p_json,
-                                                 const QString &p_notebookId)
-{
+                                                 const QString &p_notebookId) {
   SearchResult result;
   result.m_matchCount = p_json.value(QStringLiteral("matchCount")).toInt(0);
   result.m_truncated = p_json.value(QStringLiteral("truncated")).toBool(false);
+  result.m_encryptedSkippedCount =
+      p_json.value(QLatin1String(vxcore::kJsonKeyEncryptedSkippedCount)).toInt(0);
 
   const QJsonArray matches = p_json.value(QStringLiteral("matches")).toArray();
   result.m_fileResults.reserve(matches.size());
@@ -66,8 +69,7 @@ SearchResult SearchResult::fromContentSearchJson(const QJsonObject &p_json,
 }
 
 SearchResult SearchResult::fromFileSearchJson(const QJsonObject &p_json,
-                                              const QString &p_notebookId)
-{
+                                              const QString &p_notebookId) {
   SearchResult result;
   result.m_matchCount = p_json.value(QStringLiteral("matchCount")).toInt(0);
   result.m_truncated = p_json.value(QStringLiteral("truncated")).toBool(false);
@@ -81,9 +83,8 @@ SearchResult SearchResult::fromFileSearchJson(const QJsonObject &p_json,
     SearchFileResult fileResult;
 
     const QString typeStr = itemObj.value(QStringLiteral("type")).toString();
-    fileResult.m_type = (typeStr == QStringLiteral("folder"))
-                            ? SearchResultType::Folder
-                            : SearchResultType::File;
+    fileResult.m_type =
+        (typeStr == QStringLiteral("folder")) ? SearchResultType::Folder : SearchResultType::File;
 
     fileResult.m_path = itemObj.value(QStringLiteral("path")).toString();
     fileResult.m_absolutePath = itemObj.value(QStringLiteral("absolute_path")).toString();

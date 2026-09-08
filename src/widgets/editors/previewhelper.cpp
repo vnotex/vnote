@@ -501,7 +501,7 @@ bool PreviewHelper::isInplacePreviewSourceEnabled(SourceFlag p_flag) const {
 void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
   const auto &blockData = m_codeBlocksData[p_blockPreviewIdx];
   Q_ASSERT(!blockData.m_text.isEmpty());
-  if (checkPreviewSourceLang(SourceFlag::FlowChart, blockData.m_lang) ||
+  if (m_protectedView || checkPreviewSourceLang(SourceFlag::FlowChart, blockData.m_lang) ||
       checkPreviewSourceLang(SourceFlag::WaveDrom, blockData.m_lang) ||
       checkPreviewSourceLang(SourceFlag::Mermaid, blockData.m_lang) ||
       (checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang) && m_webPlantUmlEnabled) ||
@@ -874,6 +874,11 @@ void PreviewHelper::editorZoomChanged() {
   if (m_editor) {
     m_editor->getHighlighter()->updateHighlight();
   }
+}
+
+void PreviewHelper::setProtectedView(bool p_protected) {
+  Q_ASSERT(m_codeBlocksData.isEmpty() && m_mathBlocksData.isEmpty());
+  m_protectedView = p_protected;
 }
 
 void PreviewHelper::setWebPlantUmlEnabled(bool p_enabled) { m_webPlantUmlEnabled = p_enabled; }

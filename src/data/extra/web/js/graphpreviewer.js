@@ -259,6 +259,11 @@ class GraphPreviewer {
     // Interface 1.
     // @p_scale: the editor zoom ratio, without any DPI factor.
     previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
+        if (window.vxOptions.protectedView
+            && (p_lang === 'puml' || p_lang === 'plantuml' || p_lang === 'mathjax')) {
+            this.protectedBlockedPreview(p_id, p_timeStamp, false, p_lang, p_scale);
+            return;
+        }
         if (p_text.length == 0) {
             this.setGraphPreviewData(p_id, p_timeStamp);
             return;
@@ -332,6 +337,10 @@ class GraphPreviewer {
                         previewer.setGraphPreviewData(id, timeStamp);
                         return;
                     }
+                    if (window.vxOptions.protectedView) {
+                        previewer.processSvgAsPng(id, timeStamp, p_svgNode, null, p_scale);
+                        return;
+                    }
                     previewer.setGraphPreviewData(id, timeStamp, 'svg', p_svgNode.outerHTML, false, true);
                 };
             };
@@ -351,6 +360,10 @@ class GraphPreviewer {
     // Interface 2.
     // @p_scale: the editor zoom ratio, without any DPI factor.
     previewMath(p_id, p_timeStamp, p_text, p_scale = 1) {
+        if (window.vxOptions.protectedView) {
+            this.protectedBlockedPreview(p_id, p_timeStamp, true, 'Math', p_scale);
+            return;
+        }
         if (p_text.length == 0) {
             this.setMathPreviewData(p_id, p_timeStamp);
             return;
@@ -360,6 +373,21 @@ class GraphPreviewer {
 
         // Do we need to go through TexMath plugin? I don't think so.
         this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this), p_scale);
+    }
+
+    protectedBlockedPreview(p_id, p_timeStamp, p_math, p_name, p_scale = 1) {
+        const scale = p_scale || 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = 560;
+        canvas.height = 32;
+        const context = canvas.getContext('2d');
+        context.fillStyle = window.getComputedStyle(this.vxcore.contentContainer).color;
+        context.font = '14px sans-serif';
+        context.fillText(p_name + ' preview blocked in protected notes: no bundled renderer', 4, 21);
+        const data = canvas.toDataURL('image/png').split(',')[1];
+        const setter = p_math ? this.setMathPreviewData.bind(this) : this.setGraphPreviewData.bind(this);
+        setter(p_id, p_timeStamp, 'png', data, true, false,
+               Math.max(1, Math.round(560 * scale)), Math.max(1, Math.round(32 * scale)));
     }
 
     initOnFirstPreview() {
@@ -433,10 +461,37 @@ class GraphPreviewer {
             return;
         }
 
+        if (window.vxOptions.protectedView) {
+            MarkdownIt.sanitizeProtectedSvg(p_svgNode);
+        }
+
         if (isGraphPath) {
             this.perfNoteRasterStart(p_timeStamp, p_id);
         }
 
+        if (window.vxOptions.protectedView) {
+            const viewBox = p_svgNode.viewBox.baseVal;
+            const width = p_svgNode.width.baseVal.value || viewBox.width;
+            const height = p_svgNode.height.baseVal.value
+                || (viewBox.width > 0 ? width * viewBox.height / viewBox.width : viewBox.height);
+            if (!(width > 0 && height > 0)) {
+                p_dataSetter(p_id, p_timeStamp);
+                return;
+            }
+            const scale = p_scale || 1;
+            const logicalWidth = Math.max(1, Math.round(width * scale));
+            const logicalHeight = Math.max(1, Math.round(height * scale));
+            const deviceScale = scale * (window.devicePixelRatio || 1);
+            if (!(viewBox.width > 0 && viewBox.height > 0)) {
+                p_svgNode.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+            }
+            p_svgNode.setAttribute('width', Math.ceil(width * deviceScale));
+            p_svgNode.setAttribute('height', Math.ceil(height * deviceScale));
+            // Native validation/rasterization, never load an unchecked SVG data URI.
+            p_dataSetter(p_id, p_timeStamp, 'svg', new XMLSerializer().serializeToString(p_svgNode),
+                         false, false, logicalWidth, logicalHeight);
+            return;
+        }
         // Serialize as well-formed XML rather than using outerHTML. In an HTML
         // document, outerHTML emits void/empty elements without a self-closing
         // slash (e.g. Mermaid's <br> inside a <foreignObject> label), which is

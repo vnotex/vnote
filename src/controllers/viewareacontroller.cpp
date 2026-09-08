@@ -2,14 +2,22 @@
 
 #include <QDebug>
 #include <QDesktopServices>
+#include <QElapsedTimer>
+#include <QEvent>
+#include <QEventLoop>
+#include <QFile>
 #include <QFileInfo>
+#include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
 #include <QSet>
+#include <QThread>
 #include <QTimer>
 #include <QUrl>
 #include <QVariantMap>
 #include <QWidget>
+#include <QtConcurrent>
 #include <QtGlobal>
 
 #include <controllers/workspacewrapper.h>
@@ -24,8 +32,13 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/viewwindowfactory.h>
@@ -37,6 +50,611 @@
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
+
+namespace {
+VxCoreError runEncryptionWorker(const std::function<VxCoreError()> &p_work) {
+  QEventLoop loop;
+  QFutureWatcher<VxCoreError> watcher;
+  QObject::connect(&watcher, &QFutureWatcher<VxCoreError>::finished, &loop, &QEventLoop::quit);
+  watcher.setFuture(QtConcurrent::run(p_work));
+  if (!watcher.isFinished()) {
+    loop.exec();
+  }
+  watcher.waitForFinished();
+  return watcher.result();
+}
+
+void erasePassword(QByteArray &p_password) {
+  volatile char *bytes = p_password.data();
+  for (int index = 0; index < p_password.size(); ++index) {
+    bytes[index] = 0;
+  }
+  p_password.clear();
+}
+
+bool matchesConfirmedEncryptionPlan(const NoteEncryptionPlan &p_current,
+                                    const NoteEncryptionPlan &p_confirmed) {
+  if (!p_current.isValid() || p_current.m_body != p_confirmed.m_body) {
+    return false;
+  }
+  auto current = p_current.m_resourcePlan;
+  auto resources = current.value(QLatin1String(vxcore::kJsonKeyResources)).toArray();
+  const auto confirmed =
+      p_confirmed.m_resourcePlan.value(QLatin1String(vxcore::kJsonKeyResources)).toArray();
+  if (resources.size() != confirmed.size()) {
+    return false;
+  }
+  for (int index = 0; index < resources.size(); ++index) {
+    if (confirmed.at(index)
+            .toObject()
+            .value(QLatin1String(vxcore::kJsonKeyRetainOriginal))
+            .toBool()) {
+      // A converted sibling may stop referring to this original. Preserve the
+      // user's confirmed disclosure/retention decision, never delete more.
+      auto resource = resources.at(index).toObject();
+      resource.insert(QLatin1String(vxcore::kJsonKeyRetainOriginal), true);
+      resources[index] = resource;
+    }
+  }
+  current.insert(QLatin1String(vxcore::kJsonKeyResources), resources);
+  return current == p_confirmed.m_resourcePlan;
+}
+} // namespace
+
+struct NoteEncryptionConversion::State {
+  QString fileId;
+  QString encoding = QStringLiteral("UTF-8");
+  QByteArray capturedBody;
+  QStringList bufferIds;
+  QHash<QString, quint64> revisions;
+  QVector<ID> windowIds;
+  QString saveError;
+  CommentService::FlushCheckpoint comments;
+  SyncWorkQueueManager::MaintenanceLease maintenance;
+  bool active = false;
+  bool blocked = false;
+  bool refreshReferences = false;
+};
+
+NoteEncryptionConversion::NoteEncryptionConversion() : m_state(new State) {}
+NoteEncryptionConversion::~NoteEncryptionConversion() {
+  // Qt/editor allocations cannot be securely erased, but these byte arrays
+  // are our own transient captured/rewrite buffers.
+  m_state->capturedBody.fill('\0');
+  m_plan.m_body.fill('\0');
+}
+
+PreparedNotebookEncryption ViewAreaController::prepareNoteEncryption(
+    const QString &p_notebookId, const QString &p_sourceNotebookId, QByteArray &p_password) {
+  PreparedNotebookEncryption prepared;
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  if (notebooks) {
+    runEncryptionWorker([&]() {
+      prepared = notebooks->prepareNotebookEncryption(p_notebookId, p_sourceNotebookId, p_password);
+      return prepared.m_error;
+    });
+  }
+  erasePassword(p_password);
+  return prepared;
+}
+
+VxCoreError ViewAreaController::unlockNoteEncryption(const QString &p_notebookId,
+                                                     QByteArray &p_password) {
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  const VxCoreError error = notebooks ? runEncryptionWorker([&]() {
+    return notebooks->unlockNotebookEncryption(p_notebookId, p_password);
+  })
+                                      : VXCORE_ERR_NOT_INITIALIZED;
+  erasePassword(p_password);
+  return error;
+}
+
+std::shared_ptr<NoteEncryptionConversion>
+ViewAreaController::prepareNoteConversion(const NodeIdentifier &p_nodeId) {
+  auto conversion = std::make_shared<NoteEncryptionConversion>();
+  conversion->m_nodeId = p_nodeId;
+  auto &state = *conversion->m_state;
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  auto *buffers = m_services.get<BufferService>();
+  auto *comments = m_services.get<CommentService>();
+  if (!m_view || !notebooks || !buffers || !comments || !m_services.get<SyncWorkQueueManager>() ||
+      !m_services.get<NotebookIoGate>()) {
+    conversion->m_errorMessage = tr("The note encryption services are unavailable.");
+    return conversion;
+  }
+  if (!p_nodeId.isValid() || p_nodeId.isRoot() ||
+      !buffers->isNotebookBundled(p_nodeId.notebookId) ||
+      notebooks->isNotebookReadOnly(p_nodeId.notebookId) || isNoteConversionBlocked()) {
+    conversion->m_error = VXCORE_ERR_READ_ONLY;
+    conversion->m_errorMessage = tr("Encryption requires a writable managed note.");
+    return conversion;
+  }
+  for (const auto &pending : m_noteConversions) {
+    if (pending->m_nodeId == p_nodeId) {
+      conversion->m_errorMessage = tr("This note is already being converted.");
+      return conversion;
+    }
+  }
+  VxCoreError error = VXCORE_OK;
+  const auto metadata =
+      notebooks->getFolderConfig(p_nodeId.notebookId, p_nodeId.relativePath, &error);
+  state.fileId = metadata.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+  if (error != VXCORE_OK || state.fileId.isEmpty() ||
+      metadata.value(QLatin1String(vxcore::kJsonKeyType)).toString() == QLatin1String("folder") ||
+      metadata.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
+      p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+    conversion->m_error = error == VXCORE_OK ? VXCORE_ERR_INVALID_STATE : error;
+    conversion->m_errorMessage = tr("The selected item is no longer an unprotected note.");
+    return conversion;
+  }
+  state.windowIds = m_view->findWindowIdsByNode(p_nodeId, false);
+  if (!m_view->setNoteConversionFrozen(state.windowIds, true)) {
+    conversion->m_errorMessage = tr("The note's views changed. Retry encryption.");
+    return conversion;
+  }
+  if (m_noteConversions.isEmpty()) {
+    m_fileCheckInProgress = true;
+    connect(buffers->asQObject(), SIGNAL(saveError(QString, QString)), this,
+            SLOT(onNoteConversionSaveError(QString, QString)));
+  }
+  state.active = true;
+  m_noteConversions.append(conversion);
+  const auto fail = [&](VxCoreError p_error, const QString &p_message) {
+    conversion->m_error = p_error;
+    conversion->m_errorMessage = p_message;
+    cancelNoteConversion(conversion);
+    return conversion;
+  };
+  for (const auto &value : buffers->listBuffers()) {
+    const auto info = value.toObject();
+    if (info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() == p_nodeId.notebookId &&
+        info.value(QStringLiteral("filePath")).toString() == p_nodeId.relativePath) {
+      const QString id = info.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+      state.bufferIds.append(id);
+      state.revisions.insert(id, buffers->currentRevision(id));
+    }
+  }
+  // The core normally shares one handle across split views. Refuse ambiguous
+  // competing writers instead of silently choosing one document.
+  if (state.bufferIds.size() > 1) {
+    return fail(VXCORE_ERR_INVALID_STATE, tr("The note has conflicting open buffers."));
+  }
+  QElapsedTimer timer;
+  timer.start();
+  for (;;) {
+    bool busy = false;
+    for (const auto &id : state.bufferIds) {
+      busy = busy || buffers->isSaveQueueBusy(id);
+    }
+    if (!busy) {
+      break;
+    }
+    if (timer.elapsed() >= 10000) {
+      return fail(VXCORE_ERR_SYNC_IN_PROGRESS, tr("The note is still being saved. Retry later."));
+    }
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 10);
+    QThread::msleep(1);
+  }
+  QCoreApplication::sendPostedEvents(buffers->asQObject(), QEvent::MetaCall);
+  if (!state.saveError.isEmpty()) {
+    return fail(VXCORE_ERR_IO, state.saveError);
+  }
+  if (!state.bufferIds.isEmpty()) {
+    const QString id = state.bufferIds.first();
+    if (buffers->currentRevision(id) != state.revisions.value(id) ||
+        !buffers->beginNoteConversion(id, &state.capturedBody)) {
+      return fail(VXCORE_ERR_INVALID_STATE, tr("The editor changed while preparing encryption."));
+    }
+    state.encoding = buffers->bufferEncoding(id);
+  } else {
+    QFile source(notebooks->buildAbsolutePath(p_nodeId.notebookId, p_nodeId.relativePath));
+    if (!source.open(QIODevice::ReadOnly)) {
+      return fail(VXCORE_ERR_IO, tr("The note could not be read."));
+    }
+    state.capturedBody = source.readAll();
+    if (source.error() != QFileDevice::NoError) {
+      return fail(VXCORE_ERR_IO, tr("The note could not be read completely."));
+    }
+  }
+  const auto flushed =
+      comments->flushAndWaitForIdle(p_nodeId.notebookId, p_nodeId.relativePath, false, 10000);
+  if (flushed.m_status != CommentService::FlushResult::Status::Succeeded) {
+    return fail(VXCORE_ERR_IO, flushed.m_error.isEmpty()
+                                   ? tr("Pending comments could not be saved.")
+                                   : flushed.m_error);
+  }
+  state.comments = flushed.m_checkpoint;
+  LegacyImageMigrationController planner(m_services);
+  conversion->m_plan = planner.planNoteEncryption(p_nodeId, state.capturedBody, state.encoding);
+  if (!conversion->m_plan.isValid()) {
+    return fail(conversion->m_plan.m_error, conversion->m_plan.m_errorMessage);
+  }
+  conversion->m_error = VXCORE_OK;
+  return conversion;
+}
+
+void ViewAreaController::onNoteConversionSaveError(const QString &p_bufferId,
+                                                   const QString &p_error) {
+  for (const auto &conversion : m_noteConversions) {
+    if (conversion->m_state->bufferIds.contains(p_bufferId)) {
+      conversion->m_state->saveError = p_error;
+    }
+  }
+}
+
+bool ViewAreaController::isNoteConversionBlocked() const {
+  for (const auto &conversion : m_noteConversions) {
+    if (conversion->m_state->blocked) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void ViewAreaController::cancelNoteConversion(
+    const std::shared_ptr<NoteEncryptionConversion> &p_conversion) {
+  if (!p_conversion || !p_conversion->m_state->active || p_conversion->m_state->blocked) {
+    return;
+  }
+  auto &state = *p_conversion->m_state;
+  auto *buffers = m_services.get<BufferService>();
+  for (const auto &id : state.bufferIds) {
+    buffers->endNoteConversion(id, false);
+  }
+  if (m_view) {
+    m_view->setNoteConversionFrozen(state.windowIds, false);
+  }
+  state.active = false;
+  state.maintenance.release();
+  m_noteConversions.removeAll(p_conversion);
+  if (m_noteConversions.isEmpty()) {
+    disconnect(buffers->asQObject(), SIGNAL(saveError(QString, QString)), this,
+               SLOT(onNoteConversionSaveError(QString, QString)));
+    m_fileCheckInProgress = false;
+  }
+}
+
+VxCoreError ViewAreaController::applyNoteConversion(
+    const std::shared_ptr<NoteEncryptionConversion> &p_conversion,
+    PreparedNotebookEncryption *p_setup) {
+  if (!p_conversion || p_conversion->m_error != VXCORE_OK || !p_conversion->m_state->active ||
+      p_conversion->m_state->blocked) {
+    return VXCORE_ERR_INVALID_STATE;
+  }
+  auto &state = *p_conversion->m_state;
+  const NodeIdentifier nodeId = p_conversion->m_nodeId;
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  auto *buffers = m_services.get<BufferService>();
+  auto *comments = m_services.get<CommentService>();
+  auto *queues = m_services.get<SyncWorkQueueManager>();
+  auto *gate = m_services.get<NotebookIoGate>();
+  auto *workspaces = m_services.get<WorkspaceCoreService>();
+  const auto fail = [&](VxCoreError p_error, const QString &p_message, bool p_blocked) {
+    p_conversion->m_error = p_error;
+    p_conversion->m_errorMessage = p_message;
+    state.blocked = p_blocked;
+    if (!p_blocked) {
+      cancelNoteConversion(p_conversion);
+    }
+    return p_error;
+  };
+  if (!workspaces) {
+    return fail(VXCORE_ERR_INVALID_STATE, tr("The workspace service is unavailable."), false);
+  }
+  state.maintenance = queues->tryAcquireMaintenance({nodeId.notebookId});
+  if (!state.maintenance) {
+    return fail(VXCORE_ERR_SYNC_IN_PROGRESS,
+                tr("The notebook is busy syncing. Retry after sync finishes."), false);
+  }
+  if (state.refreshReferences) {
+    // Another item from this confirmed batch changed the notebook fingerprint.
+    // Refresh that checkpoint only if the actual conversion remains identical;
+    // newly shared originals or changed source bytes still require a new warning.
+    LegacyImageMigrationController planner(m_services);
+    const auto current = planner.planNoteEncryption(nodeId, state.capturedBody, state.encoding);
+    if (!matchesConfirmedEncryptionPlan(current, p_conversion->m_plan)) {
+      return fail(VXCORE_ERR_INVALID_STATE,
+                  tr("The note's resources changed after confirmation. Retry encryption."), false);
+    }
+    p_conversion->m_plan.m_referenceFingerprint = current.m_referenceFingerprint;
+    state.refreshReferences = false;
+  }
+  const auto checkpointCurrent = [&]() {
+    if (notebooks->getNodePathById(nodeId.notebookId, state.fileId) != nodeId.relativePath ||
+        notebooks->isNotebookReadOnly(nodeId.notebookId) ||
+        m_view->findWindowIdsByNode(nodeId, false) != state.windowIds ||
+        !comments->isFlushCheckpointCurrent(state.comments)) {
+      return false;
+    }
+    QStringList currentIds;
+    for (const auto &value : buffers->listBuffers()) {
+      const auto info = value.toObject();
+      if (info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() == nodeId.notebookId &&
+          info.value(QStringLiteral("filePath")).toString() == nodeId.relativePath) {
+        currentIds.append(info.value(QLatin1String(vxcore::kJsonKeyId)).toString());
+      }
+    }
+    if (currentIds != state.bufferIds) {
+      return false;
+    }
+    for (const auto &id : state.bufferIds) {
+      if (buffers->currentRevision(id) != state.revisions.value(id) ||
+          buffers->isSaveQueueBusy(id)) {
+        return false;
+      }
+    }
+    LegacyImageMigrationController planner(m_services);
+    const auto current = planner.planNoteEncryption(nodeId, state.capturedBody, state.encoding);
+    return matchesConfirmedEncryptionPlan(current, p_conversion->m_plan) &&
+           current.m_referenceFingerprint == p_conversion->m_plan.m_referenceFingerprint;
+  };
+  const VxCoreError error = runEncryptionWorker([&]() {
+    NotebookIoGate::ScopedTryLock lock(*gate, nodeId.notebookId, 5000);
+    if (!lock.isLocked()) {
+      return VXCORE_ERR_SYNC_IN_PROGRESS;
+    }
+    // Read the GUI-owned writer/revision/participant state on its own thread.
+    // No dialogs, nested event processing, or KDF occurs while this gate is held.
+    bool current = false;
+    QMetaObject::invokeMethod(
+        this, [&]() { current = checkpointCurrent(); }, Qt::BlockingQueuedConnection);
+    if (!current) {
+      return VXCORE_ERR_INVALID_STATE;
+    }
+    if (p_setup && p_setup->isValid()) {
+      const VxCoreError setupError = notebooks->commitNotebookEncryption(*p_setup);
+      if (setupError != VXCORE_OK) {
+        return setupError;
+      }
+    }
+    return notebooks->protectNote(nodeId, p_conversion->m_plan.m_body,
+                                  p_conversion->m_plan.m_resourcePlan,
+                                  &p_conversion->m_encryptedPath);
+  });
+  if (error != VXCORE_OK) {
+    return fail(
+        error,
+        error == VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED
+            ? tr("Encryption needs recovery. The note remains frozen to prevent a plaintext write. "
+                 "Restart VNote to recover the durable transaction before editing or syncing.")
+        : error == VXCORE_ERR_INVALID_STATE ? tr("The note or its resources changed after "
+                                                 "confirmation. Nothing was converted; retry.")
+                                            : QString::fromUtf8(vxcore_error_message(error)),
+        error == VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED);
+  }
+
+  // Protect succeeded only after authenticated ciphertext publication and
+  // cleanup. Closing now is safe; doing this before protect would discard .vswp.
+  const auto workspaceSnapshot = workspaces->listWorkspaces();
+  for (const auto &id : state.bufferIds) {
+    buffers->endNoteConversion(id, true);
+    if (!buffers->closeBuffer(id)) {
+      return fail(VXCORE_ERR_INVALID_STATE,
+                  tr("The encrypted note is durable, but its old buffer could not be released. "
+                     "Restart VNote before continuing."),
+                  true);
+    }
+  }
+  const QString encryptedPath = notebooks->getNodePathById(nodeId.notebookId, state.fileId);
+  if (encryptedPath != p_conversion->m_encryptedPath) {
+    return fail(VXCORE_ERR_INVALID_STATE,
+                tr("The encrypted note's identity changed. Restart VNote before continuing."),
+                true);
+  }
+  FileOpenSettings settings;
+  settings.m_focus = false;
+  Buffer2 reopened;
+  {
+    const QScopedValueRollback<bool> reopening(m_noteConversionReopen, true);
+    reopened = buffers->openBuffer({nodeId.notebookId, encryptedPath}, settings);
+  }
+  if (!reopened.isValid() || !reopened.isEncrypted()) {
+    return fail(VXCORE_ERR_INVALID_STATE,
+                tr("The encrypted note is durable, but could not be reopened. "
+                   "Restart VNote and unlock it before continuing."),
+                true);
+  }
+  buffers->setBufferEncoding(reopened.id(), state.encoding);
+  for (const auto &value : workspaceSnapshot) {
+    const auto object = value.toObject();
+    const QString workspaceId = object.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+    QStringList order;
+    bool affected = false;
+    for (const auto &bufferId : object.value(QStringLiteral("bufferIds")).toArray()) {
+      const QString oldId = bufferId.toString();
+      const bool replace = state.bufferIds.contains(oldId);
+      order.append(replace ? reopened.id() : oldId);
+      affected = affected || replace;
+    }
+    if (!affected) {
+      continue;
+    }
+    if (!workspaces->addBuffer(workspaceId, reopened.id())) {
+      return fail(VXCORE_ERR_INVALID_STATE,
+                  tr("The encrypted note is durable, but its workspace could not be restored."),
+                  true);
+    }
+    for (const auto &oldId : state.bufferIds) {
+      if (oldId != reopened.id()) {
+        if (!workspaces->removeBuffer(workspaceId, oldId)) {
+          return fail(VXCORE_ERR_INVALID_STATE,
+                      tr("The encrypted note is durable, but its old workspace entry remains."),
+                      true);
+        }
+      }
+    }
+    if (!workspaces->setBufferOrder(workspaceId, order)) {
+      return fail(VXCORE_ERR_INVALID_STATE,
+                  tr("The encrypted note is durable, but its tab order could not be restored."),
+                  true);
+    }
+    if (state.bufferIds.contains(object.value(QStringLiteral("currentBufferId")).toString())) {
+      if (!workspaces->setCurrentBuffer(workspaceId, reopened.id())) {
+        return fail(VXCORE_ERR_INVALID_STATE,
+                    tr("The encrypted note is durable, but its active tab could not be restored."),
+                    true);
+      }
+    }
+  }
+  const auto replaceHidden = [&](QObject *p_old, QObject *p_new) {
+    for (auto *wrapper : m_workspaces) {
+      if (wrapper->isVisible() || !wrapper->viewWindows().contains(p_old)) {
+        continue;
+      }
+      const int currentIndex = wrapper->currentIndex();
+      auto windows = wrapper->takeAllViewWindows();
+      windows[windows.indexOf(p_old)] = p_new;
+      wrapper->receiveViewWindows(windows, currentIndex);
+      break;
+    }
+  };
+  if (!m_view->recreateNoteViews(state.windowIds, reopened, reopened.editorType(), replaceHidden)) {
+    return fail(VXCORE_ERR_INVALID_STATE,
+                tr("The encrypted note is durable, but its views could not be recreated. "
+                   "Restart VNote before continuing."),
+                true);
+  }
+  if (state.windowIds.isEmpty()) {
+    settings.m_focus = true;
+    openBuffer(reopened, settings);
+    if (m_view->findWindowIdsByNode(reopened.nodeId(), false).isEmpty()) {
+      return fail(VXCORE_ERR_INVALID_STATE,
+                  tr("The encrypted note is durable, but its view could not be opened. "
+                     "Restart VNote before continuing."),
+                  true);
+    }
+  }
+  if (!state.windowIds.isEmpty()) {
+    if (!m_protectedWindows)
+      m_protectedWindows.reset(new QSet<ID>);
+    for (const ID id : state.windowIds)
+      m_protectedWindows->insert(id);
+  }
+  state.active = false;
+  state.maintenance.release();
+  m_noteConversions.removeAll(p_conversion);
+  for (const auto &pending : m_noteConversions) {
+    pending->m_state->refreshReferences = true;
+  }
+  if (m_noteConversions.isEmpty()) {
+    disconnect(buffers->asQObject(), SIGNAL(saveError(QString, QString)), this,
+               SLOT(onNoteConversionSaveError(QString, QString)));
+    m_fileCheckInProgress = false;
+  }
+  p_conversion->m_error = VXCORE_OK;
+  emit windowsChanged();
+  emit currentViewWindowChanged();
+  return VXCORE_OK;
+}
+
+bool ViewAreaController::lockAllProtectedNotes(QString *p_error) {
+  auto *buffers = m_services.get<BufferService>();
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  auto *comments = m_services.get<CommentService>();
+  const auto fail = [&](const QString &p_message) {
+    if (p_error)
+      *p_error = p_message;
+    return false;
+  };
+  if (!buffers || !notebooks || !m_view || !m_noteConversions.isEmpty() ||
+      !buffers->beginProtectedLocking()) {
+    return fail(tr("A protected operation is in progress. Finish it before locking."));
+  }
+  const auto protectedBuffers = buffers->protectedBuffers();
+  const QVector<ID> windowIds =
+      m_protectedWindows ? m_protectedWindows->values().toVector() : QVector<ID>();
+  const auto cancel = [&](const QString &p_message) {
+    m_view->setNoteConversionFrozen(windowIds, false);
+    buffers->cancelProtectedLocking();
+    return fail(p_message);
+  };
+  if (!m_view->setNoteConversionFrozen(windowIds, true)) {
+    return cancel(tr("Protected views changed while locking. Try again."));
+  }
+  QElapsedTimer timeout;
+  timeout.start();
+  while (!buffers->protectedOperationsIdle()) {
+    if (timeout.elapsed() >= 30000) {
+      return cancel(tr("Protected work did not finish. Notes remain unlocked."));
+    }
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 20);
+    QThread::msleep(1);
+  }
+  for (const auto &buffer : protectedBuffers) {
+    if (comments) {
+      const auto flush = comments->flushAndWaitForIdle(buffer.nodeId().notebookId,
+                                                       buffer.nodeId().relativePath, false, 30000);
+      if (flush.m_status != CommentService::FlushResult::Status::Succeeded) {
+        return cancel(flush.m_error.isEmpty() ? tr("Comments could not be saved.") : flush.m_error);
+      }
+    }
+    if (buffers->isDirty(buffer.id()) || buffer.isModified()) {
+      QString error;
+      if (!buffers->saveForSnapshot(buffer.id(), 1000, &error)) {
+        return cancel(error);
+      }
+    }
+  }
+  // No hook may refuse a later window after earlier documents were destroyed.
+  auto *workspaces = m_services.get<WorkspaceCoreService>();
+  for (const ID id : windowIds) {
+    ViewWindowCloseEvent event;
+    event.windowId = id;
+    event.force = true;
+    if (workspaces && workspaces->fireViewWindowBeforeClose(event)) {
+      return cancel(tr("Closing a protected note was cancelled."));
+    }
+  }
+  if (!buffers->protectedOperationsIdle()) {
+    return cancel(tr("Protected work changed while locking. Try again."));
+  }
+  const QScopedValueRollback<bool> suppress(m_suppressAutoRemove, true);
+  // Mutation is still refused by BufferService; lift the close-time freeze only.
+  m_view->setNoteConversionFrozen(windowIds, false);
+  for (const ID id : windowIds) {
+    if (!m_view->closeViewWindow(id, true)) {
+      buffers->cancelProtectedLocking();
+      return fail(tr("A protected view could not be closed. Keys remain available."));
+    }
+  }
+  // closeViewWindow uses deleteLater; the core close callback is deferred until
+  // QObject destruction, after documents, undo, comments and profiles are gone.
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  if (m_protectedWindows && !m_protectedWindows->isEmpty()) {
+    buffers->cancelProtectedLocking();
+    return fail(tr("A protected view is still closing. Keys remain available."));
+  }
+  for (const auto &buffer : buffers->protectedBuffers()) {
+    if (!buffers->closeBuffer(buffer.id())) {
+      buffers->cancelProtectedLocking();
+      return fail(tr("A protected buffer is busy. Keys remain available."));
+    }
+  }
+  const auto error = notebooks->lockAllEncryption();
+  buffers->cancelProtectedLocking();
+  if (error != VXCORE_OK) {
+    return fail(QString::fromUtf8(vxcore_error_message(error)));
+  }
+  return true;
+}
+
+QString ViewAreaController::releaseHiddenViewWindow(QObject *p_window) {
+  for (auto *wrapper : m_workspaces) {
+    if (wrapper->isVisible())
+      continue;
+    const int index = wrapper->viewWindows().indexOf(p_window);
+    if (index < 0)
+      continue;
+    int current = wrapper->currentIndex();
+    auto windows = wrapper->takeAllViewWindows();
+    windows.removeAt(index);
+    if (index < current)
+      --current;
+    wrapper->receiveViewWindows(windows, qBound(0, current, qMax(0, int(windows.size()) - 1)));
+    return wrapper->workspaceId();
+  }
+  return QString();
+}
 
 ViewAreaController::ViewAreaController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {
@@ -51,6 +669,15 @@ ViewAreaController::ViewAreaController(ServiceLocator &p_services, QObject *p_pa
 }
 
 ViewAreaController::~ViewAreaController() {
+  // Drop suspended callbacks before hidden view objects are destroyed. This
+  // does not close their core buffers or remove recovery backups.
+  if (auto *buffers = m_services.get<BufferService>()) {
+    for (const auto &conversion : m_noteConversions) {
+      for (const auto &id : conversion->m_state->bufferIds) {
+        buffers->endNoteConversion(id, true);
+      }
+    }
+  }
   // Clean up workspace wrappers. Hidden workspaces may still cache ViewWindows
   // (unparented QWidgets). Delete those before destroying the wrapper.
   for (auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it) {
@@ -71,17 +698,28 @@ void ViewAreaController::setView(ViewAreaView *p_view) { m_view = p_view; }
 
 void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings) {
   QString fileType;
-  auto *ftSvc = m_services.get<FileTypeCoreService>();
-  if (ftSvc) {
-    FileType ft = ftSvc->getFileType(p_buffer.nodeId().relativePath);
-    fileType = ft.m_typeName;
-  }
-  if (fileType.isEmpty()) {
-    fileType = QStringLiteral("Text");
+  if (p_buffer.isEncrypted()) {
+    const QString editor = p_buffer.editorType();
+    if (editor == QLatin1String("markdown")) {
+      fileType = QStringLiteral("Markdown");
+    } else if (editor == QLatin1String("text")) {
+      fileType = QStringLiteral("Text");
+    } else {
+      return;
+    }
+  } else {
+    auto *ftSvc = m_services.get<FileTypeCoreService>();
+    if (ftSvc) {
+      FileType ft = ftSvc->getFileType(p_buffer.nodeId().relativePath);
+      fileType = ft.m_typeName;
+    }
+    if (fileType.isEmpty()) {
+      fileType = QStringLiteral("Text");
+    }
   }
 
   // External program dispatch: check if this file suffix has a configured external program.
-  {
+  if (!p_buffer.isEncrypted()) {
     const QString suffix = QFileInfo(p_buffer.nodeId().relativePath).suffix().toLower();
     if (!suffix.isEmpty()) {
       auto *configMgr = m_services.get<ConfigMgr2>();
@@ -134,6 +772,9 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   // leave an empty DetachedWindow behind for a non-editable file type.
   auto *factory = m_services.get<ViewWindowFactory>();
   if (!factory || !factory->hasCreator(fileType)) {
+    if (p_buffer.isEncrypted()) {
+      return;
+    }
     const QString absolutePath = p_buffer.resolvedPath();
     qDebug() << "ViewAreaController::openBuffer: no built-in editor for type" << fileType
              << "- opening with system default:" << absolutePath;
@@ -183,6 +824,16 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   // Check if the buffer is already open in the target workspace.
   // If so, just activate the existing tab instead of creating a duplicate.
   ID existingWindowId = m_view->findWindowIdByBufferId(targetWs, p_buffer.id());
+  if (existingWindowId != InvalidViewWindowId && p_buffer.isEncrypted() && m_lockedWindows &&
+      m_lockedWindows->contains(existingWindowId)) {
+    const QVector<ID> ids{existingWindowId};
+    if (!m_view->setNoteConversionFrozen(ids, true) ||
+        !m_view->recreateNoteViews(ids, p_buffer, p_buffer.editorType(), {})) {
+      m_view->setNoteConversionFrozen(ids, false);
+      return;
+    }
+    m_lockedWindows->remove(existingWindowId);
+  }
   if (existingWindowId != InvalidViewWindowId) {
     qDebug() << "ViewAreaController::openBuffer: buffer already open in workspace,"
              << "activating existing window:" << existingWindowId;
@@ -366,6 +1017,16 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
   // workspace and leave the main window's current window/split untouched. This
   // is threaded in explicitly (no controller-global state mutation), so it is
   // safe even if a hook below reentrantly opens another buffer.
+  if (p_buffer.isEncrypted()) {
+    if (!m_protectedWindows)
+      m_protectedWindows.reset(new QSet<ID>);
+    m_protectedWindows->insert(p_windowId);
+    if (p_buffer.editorType().isEmpty()) {
+      if (!m_lockedWindows)
+        m_lockedWindows.reset(new QSet<ID>);
+      m_lockedWindows->insert(p_windowId);
+    }
+  }
   const bool detached = !p_detachedWorkspaceId.isEmpty();
   const QString registerWs = detached ? p_detachedWorkspaceId : m_currentWorkspaceId;
 
@@ -404,6 +1065,10 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
 void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
                                             const QString &p_workspaceId,
                                             const ClosedTabRecord &p_closedTab) {
+  if (m_protectedWindows)
+    m_protectedWindows->remove(p_windowId);
+  if (m_lockedWindows)
+    m_lockedWindows->remove(p_windowId);
   // Record closed tab for "Open Last Closed File" (skip during session restore/shutdown
   // and skip virtual buffers which have no valid NodeIdentifier).
   if (m_shouldPropagateToCore && p_closedTab.nodeId.isValid()) {
@@ -562,13 +1227,51 @@ bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p
 }
 
 bool ViewAreaController::closeAllBuffersForQuit() {
+  if (!isNoteConversionBlocked()) {
+    auto *buffers = m_services.get<BufferService>();
+    if (buffers && !buffers->protectedBuffers().isEmpty()) {
+      auto *config = m_services.get<ConfigCoreService>();
+      if (!config || !config->prepareShutdown())
+        return false;
+    }
+    QString error;
+    if (!lockAllProtectedNotes(&error)) {
+      emit protectedLockFailed(error);
+      return false;
+    }
+  }
+  // Prepared ciphertext is durable on a blocked conversion. Leave its old
+  // windows/core handles intact until process teardown: ordinary close would
+  // save plaintext or discard a backup still named by the recovery journal.
+  const auto recoveryWindow = [&](ID p_id) {
+    for (const auto &conversion : m_noteConversions) {
+      if (conversion->m_state->blocked && conversion->m_state->windowIds.contains(p_id)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  for (const auto &conversion : m_noteConversions) {
+    if (!conversion->m_state->blocked) {
+      return false;
+    }
+  }
   // Phase 1: Close all visible workspace windows with save prompts.
   QStringList visibleIds = m_view ? m_view->getVisibleWorkspaceIds() : QStringList();
   QVector<QString> visibleIdsVec;
   for (const auto &id : visibleIds) {
     visibleIdsVec.append(id);
   }
-  if (!closeAll(visibleIdsVec, false)) {
+  if (isNoteConversionBlocked()) {
+    const QScopedValueRollback<bool> suppress(m_suppressAutoRemove, true);
+    for (const auto &workspaceId : visibleIdsVec) {
+      for (const ID id : m_view->getViewWindowIdsForWorkspace(workspaceId)) {
+        if (!recoveryWindow(id) && !closeViewWindow(id, false)) {
+          return false;
+        }
+      }
+    }
+  } else if (!closeAll(visibleIdsVec, false)) {
     return false;
   }
 
@@ -583,7 +1286,7 @@ bool ViewAreaController::closeAllBuffersForQuit() {
     const auto &windows = wrapper->viewWindows();
     for (auto *obj : windows) {
       auto *win = qobject_cast<ViewWindow2 *>(obj);
-      if (win && !win->aboutToClose(false)) {
+      if (win && !recoveryWindow(win->getViewWindowId()) && !win->aboutToClose(false)) {
         qInfo() << "ViewAreaController::closeAllBuffersForQuit:"
                 << "hidden window cancel, aborting quit";
         return false;
@@ -1243,6 +1946,19 @@ void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bu
   qDebug() << "ViewAreaController::setCurrentViewWindow: windowId:" << p_windowId
            << "bufferId:" << p_bufferId << "workspace:" << m_currentWorkspaceId;
   m_currentWindowId = p_windowId;
+  if (m_shouldPropagateToCore && m_lockedWindows && m_lockedWindows->contains(p_windowId)) {
+    QTimer::singleShot(0, this, [this, p_windowId, p_bufferId]() {
+      if (m_currentWindowId != p_windowId || !m_lockedWindows ||
+          !m_lockedWindows->contains(p_windowId))
+        return;
+      auto *buffers = m_services.get<BufferService>();
+      if (!buffers || buffers->isProtectedLocking())
+        return;
+      const auto buffer = buffers->getBufferHandle(p_bufferId);
+      if (buffer.isValid())
+        buffers->openBuffer(buffer.nodeId());
+    });
+  }
 
   // Update vxcore's current buffer tracking for the active workspace.
   if (m_shouldPropagateToCore && !p_bufferId.isEmpty() && !m_currentWorkspaceId.isEmpty()) {
@@ -1774,6 +2490,16 @@ bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
     return false;
   }
 
+  if (buf.isEncrypted() && buf.editorType().isEmpty()) {
+    FileOpenSettings settings;
+    settings.m_focus = p_focus;
+    settings.m_mode = p_mode;
+    settings.m_lineNumber = p_lineNumber;
+    if (m_view)
+      m_view->openBuffer(buf, QString(), p_workspaceId, settings);
+    return m_view != nullptr;
+  }
+
   // Resolve file type.
   QString fileType;
   auto *ftSvc = m_services.get<FileTypeCoreService>();
@@ -1920,6 +2646,9 @@ void ViewAreaController::subscribeToHooks() {
 }
 
 void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
+  if (m_noteConversionReopen) {
+    return;
+  }
   const QString bufferId = p_event.bufferId;
   if (bufferId.isEmpty()) {
     qWarning() << "ViewAreaController::onFileAfterOpen: empty bufferId";
@@ -2260,6 +2989,12 @@ QString ViewAreaController::generateWorkspaceName() const {
 void ViewAreaController::onNotebookBeforeClose(HookContext &p_ctx,
                                                const NotebookCloseEvent &p_event) {
   m_pendingNotebookCloseBufferIds.clear();
+  for (const auto &conversion : m_noteConversions) {
+    if (conversion->m_nodeId.notebookId == p_event.notebookId) {
+      p_ctx.cancel();
+      return;
+    }
+  }
 
   auto *bufferSvc = m_services.get<BufferService>();
   if (!bufferSvc) {

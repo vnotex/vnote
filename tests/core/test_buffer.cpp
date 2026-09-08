@@ -1,15 +1,18 @@
-#include <QtTest>
 #include <QFile>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QtTest>
+#include <core/services/notebookiogate.h>
+#include <core/services/syncworkqueuemanager.h>
 
 #include <core/hookevents.h>
+#include <core/hooknames.h>
+#include <core/nodeidentifier.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
-#include <core/hooknames.h>
-#include <core/nodeidentifier.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
@@ -70,6 +73,7 @@ private slots:
 
   // Invalid buffer guard
   void testInvalidBufferOperations();
+  void testMixedNoteSaveWhileProtectedLocking();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -140,12 +144,14 @@ void TestBuffer::testDefaultConstructor() {
 }
 
 void TestBuffer::testIsValid() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 }
 
 void TestBuffer::testId() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(!buf.id().isEmpty());
 }
 
@@ -161,17 +167,19 @@ void TestBuffer::testNodeId() {
 // ============ Buffer via BufferService::openBuffer ============
 
 void TestBuffer::testOpenReturnsValidBuffer() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(!buf.id().isEmpty());
 }
 
 void TestBuffer::testOpenCancelledByHook() {
   int hookId = m_hookMgr->addAction(
-      HookNames::FileBeforeOpen,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::FileBeforeOpen, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(!buf.isValid());
 
   m_hookMgr->removeAction(hookId);
@@ -180,14 +188,16 @@ void TestBuffer::testOpenCancelledByHook() {
 // ============ Per-buffer content operations ============
 
 void TestBuffer::testGetContentRaw() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   // Just verify it doesn't crash. Content may be empty for a new file.
   buf.getContentRaw();
 }
 
 void TestBuffer::testSetContentRaw() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QByteArray expected("Hello Buffer");
@@ -196,20 +206,22 @@ void TestBuffer::testSetContentRaw() {
 }
 
 void TestBuffer::testSave() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(buf.setContentRaw(QByteArray("save me")));
   QVERIFY(buf.save());
 }
 
 void TestBuffer::testSaveCancelledByHook() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(buf.setContentRaw(QByteArray("should not save")));
 
   int hookId = m_hookMgr->addAction(
-      HookNames::FileBeforeSave,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::FileBeforeSave, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   QVERIFY(!buf.save());
 
@@ -217,7 +229,8 @@ void TestBuffer::testSaveCancelledByHook() {
 }
 
 void TestBuffer::testSaveFiresAfterHook() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(buf.setContentRaw(QByteArray("fire after")));
 
@@ -233,7 +246,8 @@ void TestBuffer::testSaveFiresAfterHook() {
 }
 
 void TestBuffer::testReload() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(buf.setContentRaw(QByteArray("reload content")));
   QVERIFY(buf.save());
@@ -241,7 +255,8 @@ void TestBuffer::testReload() {
 }
 
 void TestBuffer::testGetContent() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QJsonObject content = buf.getContent();
   // May be empty or contain "content" key — just verify no crash.
@@ -249,7 +264,8 @@ void TestBuffer::testGetContent() {
 }
 
 void TestBuffer::testSetContent() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   // Use setContentRaw + getContentRaw for reliable round-trip.
   QByteArray expected("JSON round-trip");
@@ -260,7 +276,8 @@ void TestBuffer::testSetContent() {
 // ============ Per-buffer state operations ============
 
 void TestBuffer::testIsModified() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QVERIFY(buf.setContentRaw(QByteArray("modified")));
@@ -271,13 +288,15 @@ void TestBuffer::testIsModified() {
 }
 
 void TestBuffer::testGetState() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QCOMPARE(buf.getState(), BufferState::Normal);
 }
 
 void TestBuffer::testGetBuffer() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QJsonObject bufInfo = buf.getBuffer();
   QVERIFY(!bufInfo.isEmpty());
@@ -286,7 +305,8 @@ void TestBuffer::testGetBuffer() {
 // ============ Per-buffer asset operations ============
 
 void TestBuffer::testInsertAssetRaw() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString relativePath =
@@ -295,7 +315,8 @@ void TestBuffer::testInsertAssetRaw() {
 }
 
 void TestBuffer::testInsertAsset() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("insert_asset_src.txt"));
@@ -309,17 +330,18 @@ void TestBuffer::testInsertAsset() {
 }
 
 void TestBuffer::testDeleteAsset() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
-  QString relativePath =
-      buf.insertAssetRaw(QStringLiteral("to_delete.bin"), QByteArray("abc"));
+  QString relativePath = buf.insertAssetRaw(QStringLiteral("to_delete.bin"), QByteArray("abc"));
   QVERIFY(!relativePath.isEmpty());
   QVERIFY(buf.deleteAsset(relativePath));
 }
 
 void TestBuffer::testGetAssetsFolder() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(!buf.getAssetsFolder().isEmpty());
 }
@@ -327,7 +349,8 @@ void TestBuffer::testGetAssetsFolder() {
 // ============ Per-buffer attachment operations ============
 
 void TestBuffer::testInsertAttachment() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_attach_src.txt"));
@@ -341,7 +364,8 @@ void TestBuffer::testInsertAttachment() {
 }
 
 void TestBuffer::testListAttachments() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_list_attach.txt"));
@@ -365,7 +389,8 @@ void TestBuffer::testListAttachments() {
 }
 
 void TestBuffer::testDeleteAttachment() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_del_attach.txt"));
@@ -390,7 +415,8 @@ void TestBuffer::testDeleteAttachment() {
 }
 
 void TestBuffer::testRenameAttachment() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_rename_attach.txt"));
@@ -422,13 +448,15 @@ void TestBuffer::testRenameAttachment() {
 }
 
 void TestBuffer::testGetAttachmentsFolder() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
   QVERIFY(!buf.getAttachmentsFolder().isEmpty());
 }
 
 void TestBuffer::testInsertAttachmentFiresHooks() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_hook_add_attach.txt"));
@@ -475,7 +503,8 @@ void TestBuffer::testInsertAttachmentFiresHooks() {
 }
 
 void TestBuffer::testDeleteAttachmentHookCancel() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_hook_del_attach.txt"));
@@ -507,7 +536,8 @@ void TestBuffer::testDeleteAttachmentHookCancel() {
 }
 
 void TestBuffer::testRenameAttachmentFiresHooks() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QString srcPath = m_tempDir.filePath(QStringLiteral("buf_hook_rename_attach.txt"));
@@ -558,7 +588,8 @@ void TestBuffer::testRenameAttachmentFiresHooks() {
 }
 
 void TestBuffer::testAttachmentChangedSignal() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   QSignalSpy spy(m_bufferService->asQObject(), SIGNAL(attachmentChanged(QString)));
@@ -579,7 +610,8 @@ void TestBuffer::testAttachmentChangedSignal() {
 }
 
 void TestBuffer::testHasAttachments() {
-  Buffer2 buf = m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
   QVERIFY(buf.isValid());
 
   const QJsonArray existing = buf.listAttachments();
@@ -631,6 +663,73 @@ void TestBuffer::testInvalidBufferOperations() {
   QVERIFY(buf.renameAttachment(QStringLiteral("a"), QStringLiteral("b")).isEmpty());
   QVERIFY(buf.listAttachments().isEmpty());
   QVERIFY(buf.getAttachmentsFolder().isEmpty());
+}
+
+void TestBuffer::testMixedNoteSaveWhileProtectedLocking() {
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  QString plainText = QStringLiteral("ordinary text while the vault locks");
+  QString privateText = QStringLiteral("protected unsaved edit survives the lock barrier");
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::AutoSave);
+  auto setup = m_notebookService->prepareNotebookEncryption(
+      m_notebookId, QString(), QByteArrayLiteral("mixed-note-regression-password"));
+  QVERIFY(setup.isValid());
+  QString protectedId;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({m_notebookId});
+    QVERIFY(maintenance.isValid());
+    NotebookIoGate::ScopedLock lock(gate, m_notebookId);
+    QCOMPARE(m_notebookService->commitNotebookEncryption(setup), VXCORE_OK);
+    QCOMPARE(m_notebookService->createEncryptedNote(
+                 m_notebookId, QString(), QStringLiteral("mixed-private.md"),
+                 QStringLiteral("markdown"), QByteArrayLiteral("original protected body"),
+                 &protectedId),
+             VXCORE_OK);
+  }
+  auto secret = buffers.openBufferByNodeId(protectedId);
+  auto plain = buffers.openBuffer({m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(secret.isValid());
+  QVERIFY(plain.isValid());
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.cancelProtectedLocking();
+    buffers.unregisterActiveWriter(secret.id(), 1);
+    buffers.unregisterActiveWriter(plain.id(), 2);
+    buffers.closeBuffer(secret.id());
+    buffers.closeBuffer(plain.id());
+    m_notebookService->lockAllEncryption();
+  });
+  buffers.registerActiveWriter(secret.id(), 1, [&]() { return privateText; });
+  buffers.registerActiveWriter(plain.id(), 2, [&]() { return plainText; });
+  buffers.markDirty(secret.id());
+  buffers.markDirty(plain.id());
+  QVERIFY(buffers.beginProtectedLocking());
+  buffers.registerActiveWriter(secret.id(), 3,
+                               []() { return QStringLiteral("stale sibling text"); });
+  QVERIFY(!secret.setContentRaw(QByteArrayLiteral("rejected mutation")));
+  buffers.syncNow(plain.id());
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(plain.id()), 10000);
+  QFile publicFile(plain.resolvedPath());
+  QVERIFY(publicFile.open(QIODevice::ReadOnly));
+  QCOMPARE(publicFile.readAll(), plainText.toUtf8());
+  publicFile.close();
+  QString error;
+  QVERIFY2(buffers.saveForSnapshot(secret.id(), 1000, &error), qPrintable(error));
+  buffers.cancelProtectedLocking();
+  QCOMPARE(secret.getContentRaw(), privateText.toUtf8());
+  QFile ciphertext(secret.resolvedPath());
+  QVERIFY(ciphertext.open(QIODevice::ReadOnly));
+  QVERIFY(!ciphertext.readAll().contains(privateText.toUtf8()));
+  ciphertext.close();
+  buffers.unregisterActiveWriter(secret.id(), 1);
+  QVERIFY(buffers.closeBuffer(secret.id()));
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+  plainText += QStringLiteral(" and after all keys are released");
+  buffers.markDirty(plain.id());
+  buffers.syncNow(plain.id());
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(plain.id()), 10000);
+  QVERIFY(publicFile.open(QIODevice::ReadOnly));
+  QCOMPARE(publicFile.readAll(), plainText.toUtf8());
 }
 
 } // namespace tests

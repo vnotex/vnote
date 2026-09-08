@@ -260,7 +260,8 @@ void SearchPanel2::onSearchStarted() {
   m_statusLabel->setText(tr("Searching..."));
 }
 
-void SearchPanel2::onSearchFinished(int p_totalMatches, bool p_truncated) {
+void SearchPanel2::onSearchFinished(int p_totalMatches, bool p_truncated,
+                                    int p_encryptedSkippedCount) {
   qDebug() << "SearchPanel2::onSearchFinished: totalMatches:" << p_totalMatches
            << "truncated:" << p_truncated;
 
@@ -271,6 +272,10 @@ void SearchPanel2::onSearchFinished(int p_totalMatches, bool p_truncated) {
   QString status = tr("%n result(s)", "", p_totalMatches);
   if (p_truncated) {
     status += tr(" (truncated)");
+  }
+  if (p_encryptedSkippedCount > 0) {
+    status +=
+        tr("; %n protected note(s) excluded from content search", "", p_encryptedSkippedCount);
   }
   m_statusLabel->setText(status);
 }

@@ -25,14 +25,11 @@ private slots:
   void testCloseBuffer();
   void testGetBuffer();
   void testListBuffers();
-  void testGetContentRaw();
   void testSetContentRaw();
   void testSaveBuffer();
   void testIsModified();
   void testGetState();
   void testReloadBuffer();
-  void testGetContent();
-  void testSetContent();
   void testInsertAssetRaw();
   void testGetAssetsFolder();
   void testDeleteAsset();
@@ -149,14 +146,6 @@ void TestBufferService::testListBuffers() {
   QVERIFY(found);
 }
 
-void TestBufferService::testGetContentRaw() {
-  QString bufferId = m_bufferService->openBuffer(m_notebookId, QStringLiteral("test.md"));
-  QVERIFY(!bufferId.isEmpty());
-
-  QByteArray data = m_bufferService->getContentRaw(bufferId);
-  QVERIFY(data.isEmpty() || !data.isEmpty());
-}
-
 void TestBufferService::testSetContentRaw() {
   QString bufferId = m_bufferService->openBuffer(m_notebookId, QStringLiteral("test.md"));
   QVERIFY(!bufferId.isEmpty());
@@ -198,27 +187,6 @@ void TestBufferService::testReloadBuffer() {
   QVERIFY(m_bufferService->setContentRaw(bufferId, QByteArray("reload content")));
   QVERIFY(m_bufferService->saveBuffer(bufferId));
   QVERIFY(m_bufferService->reloadBuffer(bufferId));
-}
-
-void TestBufferService::testGetContent() {
-  QString bufferId = m_bufferService->openBuffer(m_notebookId, QStringLiteral("test.md"));
-  QVERIFY(!bufferId.isEmpty());
-
-  QJsonObject content = m_bufferService->getContent(bufferId);
-  QVERIFY(content.contains(QStringLiteral("content")) || content.isEmpty());
-}
-
-void TestBufferService::testSetContent() {
-  QString bufferId = m_bufferService->openBuffer(m_notebookId, QStringLiteral("test.md"));
-  QVERIFY(!bufferId.isEmpty());
-
-  // setContent takes a JSON string that vxcore interprets internally.
-  // Use setContentRaw + getContentRaw for a reliable round-trip test.
-  QByteArray expected("Hello JSON round-trip");
-  QVERIFY(m_bufferService->setContentRaw(bufferId, expected));
-
-  QByteArray actual = m_bufferService->getContentRaw(bufferId);
-  QCOMPARE(actual, expected);
 }
 
 void TestBufferService::testInsertAssetRaw() {

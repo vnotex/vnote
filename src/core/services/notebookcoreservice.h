@@ -1,6 +1,7 @@
 #ifndef NOTEBOOKCORESERVICE_H
 #define NOTEBOOKCORESERVICE_H
 
+#include <QByteArray>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QObject>
@@ -10,6 +11,7 @@
 #include <functional>
 #include <string>
 
+#include <core/nodeidentifier.h>
 #include <core/noncopyable.h>
 #include <core/services/isyncnotebookservice.h>
 
@@ -119,6 +121,26 @@ private:
   VxCoreNodeTransferHandle m_handle = nullptr;
 };
 
+// Owns an uncommitted encryption setup; the vxcore context must outlive it.
+struct PreparedNotebookEncryption {
+  PreparedNotebookEncryption() = default;
+  ~PreparedNotebookEncryption();
+  PreparedNotebookEncryption(const PreparedNotebookEncryption &) = delete;
+  PreparedNotebookEncryption &operator=(const PreparedNotebookEncryption &) = delete;
+  PreparedNotebookEncryption(PreparedNotebookEncryption &&p_other) noexcept;
+  PreparedNotebookEncryption &operator=(PreparedNotebookEncryption &&p_other) noexcept;
+
+  bool isValid() const { return m_error == VXCORE_OK && m_handle != nullptr; }
+
+  VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
+  QString m_errorMessage;
+
+private:
+  friend class NotebookCoreService;
+  VxCoreContextHandle m_context = nullptr;
+  VxCoreEncryptionSetupHandle m_handle = nullptr;
+};
+
 struct RecycleBinCleanupResult {
   VxCoreError m_error = VXCORE_ERR_NOT_INITIALIZED;
   QString m_errorMessage;
@@ -215,6 +237,33 @@ public:
   bool updateNotebookConfig(const QString &p_notebookId, const QString &p_configJson);
   bool rebuildNotebookCache(const QString &p_notebookId);
 
+  // Encryption operations are synchronous and acquire no locks here. The caller
+  // must run prepare/unlock (KDF work) on a worker outside NotebookIoGate.
+  // Password bytes are borrowed unchanged for the call; the caller owns wiping them.
+  // An empty source notebook ID prepares a new vault instead of reusing a source.
+  PreparedNotebookEncryption prepareNotebookEncryption(const QString &p_notebookId,
+                                                       const QString &p_sourceNotebookId,
+                                                       const QByteArray &p_password);
+  // Caller must hold the notebook maintenance lease and NotebookIoGate. Commit
+  // performs no KDF and consumes a matching setup on both success and failure.
+  VxCoreError commitNotebookEncryption(PreparedNotebookEncryption &p_prepared);
+  VxCoreError unlockNotebookEncryption(const QString &p_notebookId, const QByteArray &p_password);
+  // Close protected buffers/read operations and discard prepared setups first.
+  VxCoreError lockAllEncryption();
+  // Explicit UI/protected-candidate query only, never an ordinary-operation preflight.
+  // A null/default file path requests notebook status with encrypted=false.
+  // On failure returns an empty object and writes the raw error when requested.
+  QJsonObject encryptionStatus(const QString &p_notebookId, const QString &p_filePath = QString(),
+                               VxCoreError *p_outError = nullptr) const;
+
+  // Worker-only conversion. The caller holds maintenance, then NotebookIoGate,
+  // and has quiesced every existing view/buffer without closing its backup.
+  VxCoreError protectNote(const NodeIdentifier &p_nodeId, const QByteArray &p_body,
+                          const QJsonObject &p_resourcePlan, QString *p_outPath);
+  VxCoreError createEncryptedNote(const QString &p_notebookId, const QString &p_parentPath,
+                                  const QString &p_name, const QString &p_editorType,
+                                  const QByteArray &p_body, QString *p_outFileId);
+
   // History operations.
   QJsonArray getHistoryResolved(const QString &p_notebookId) const;
 
@@ -260,6 +309,11 @@ public:
   VxCoreError dispatchNodeTransferEvents(NodeTransferCoreResult &p_result);
   void freePreparedNodeTransfer(PreparedNodeTransfer &p_prepared);
   NodeTransferCoreResult finalizeTransferredMove(const QJsonObject &p_resumeToken);
+  PreparedNodeTransfer prepareEncryptedBundleTransfer(const QString &p_bundleRoot,
+                                                      const QString &p_folderName,
+                                                      const QString &p_destinationId,
+                                                      const QString &p_destinationFolder,
+                                                      const QByteArray &p_password);
 
   // Sync operations (8 methods). Thin wrappers around vxcore C sync APIs.
   // All methods return VxCoreError directly so callers can react to specific

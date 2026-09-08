@@ -10,6 +10,7 @@
 #include <QWaitCondition>
 
 #include <functional>
+#include <memory>
 
 #include <core/nodeidentifier.h>
 
@@ -17,20 +18,23 @@
 
 namespace vnotex {
 
+class BufferService;
 class HookManager;
 class NotebookCoreService;
 class NotebookIoGate;
+class ProtectedBufferLease;
 
 // CommentService
 //
-// Owns the per-file `comments.json` sidecar store. Generic and
-// file-type-agnostic: nothing here knows what a PDF is.
+// Owns the per-file comment store: a sidecar for ordinary files and an
+// authenticated resource for protected notes. File-type-agnostic.
 //
 // === Where the store lives ===
 //
 //   bundled notebook  ->  <getAttachmentsFolder()>/comments.json
 //                         (getAttachmentsFolder ALREADY returns
 //                          <assets-root>/<file-uuid> and does NOT create it)
+//   protected note    ->  authenticated comments-role resource of its open buffer
 //   raw notebook      ->  <filename>.comments.json, beside the file
 //   external file     ->  <filename>.comments.json, beside the file
 //
@@ -123,13 +127,14 @@ public:
     enum class Kind {
       Invalid,     // could not be resolved (unknown notebook, empty path, ...)
       Attachments, // bundled notebook: inside the file's UUID assets folder
-      Sibling      // raw notebook or external file: <filename>.comments.json
+      Sibling,     // raw notebook or external file: <filename>.comments.json
+      Protected    // authenticated resource; no plaintext sidecar path
     };
 
     bool isValid() const { return m_kind != Kind::Invalid; }
 
     // True when the write must be serialized against sync staging.
-    bool needsIoGate() const { return m_kind == Kind::Attachments; }
+    bool needsIoGate() const { return m_kind == Kind::Attachments || m_kind == Kind::Protected; }
 
     Kind m_kind = Kind::Invalid;
 
@@ -159,14 +164,16 @@ public:
     QString m_error;
   };
 
-  CommentService(NotebookCoreService *p_notebookService, NotebookIoGate *p_ioGate,
-                 HookManager *p_hookMgr, QObject *p_parent = nullptr);
+  CommentService(NotebookCoreService *p_notebookService, BufferService *p_bufferService,
+                 NotebookIoGate *p_ioGate, HookManager *p_hookMgr, QObject *p_parent = nullptr);
 
   ~CommentService() override;
 
   // Resolves the sidecar location for @p_nodeId. Pure lookup: creates nothing.
   Location resolveLocation(const NodeIdentifier &p_nodeId) const;
 
+  // Explicit reload. Protected read failures stay latched until this succeeds;
+  // only an already-open authenticated buffer may supply protected comments.
   LoadResult load(const NodeIdentifier &p_nodeId) const;
 
   // Snapshots @p_comments and schedules an atomic write. Returns immediately.
@@ -221,6 +228,9 @@ signals:
   // scheduling - this is a fact, not a request to sync now.
   void storeDirty(const QString &p_notebookId);
 
+private slots:
+  void onProtectedLockingChanged(bool p_locking);
+
 private:
   struct Job {
     enum class Kind { Save, Move, Remove };
@@ -256,12 +266,40 @@ private:
     QString m_latestError;
   };
 
+  struct ProtectedJob {
+    std::shared_ptr<ProtectedBufferLease> m_lease;
+    quint64 m_generation = 0;
+  };
+
+  struct ProtectedStore {
+    QString m_bufferId;
+    quint64 m_generation = 0;
+    QString m_error;
+  };
+
+  // Allocated only for protected candidates. Ordinary Job payloads and queues
+  // carry neither a crypto lease nor an empty protected-state object.
+  struct ProtectedState {
+    QHash<QString, ProtectedStore> m_stores;
+    QHash<quint64, ProtectedJob> m_jobs;
+    QHash<QString, quint64> m_durabilityGenerations;
+    QHash<quint64, quint64> m_lockingGenerations;
+  };
+
+  LoadResult loadProtected(const NodeIdentifier &p_nodeId) const;
+  void scheduleProtectedSave(const NodeIdentifier &p_nodeId, const Location &p_location,
+                             const CommentSet &p_comments, quint64 p_generation);
+  QString writeProtectedStore(const QString &p_key, const Job &p_job);
+  void rejectProtectedSave(const NodeIdentifier &p_nodeId, quint64 p_generation,
+                           const QString &p_error);
+  void flushProtectedParticipant(const Participant &p_participant);
+
   static QString jobKey(const NodeIdentifier &p_nodeId);
 
   static QString jobKey(const QString &p_notebookId, const QString &p_relativePath);
 
   // Appends @p_job to its file's FIFO and dispatches a worker if idle.
-  void enqueue(const QString &p_key, Job p_job);
+  void enqueue(const QString &p_key, Job p_job, ProtectedJob *p_protectedJob = nullptr);
 
   void runWorker(const QString &p_key);
 
@@ -301,6 +339,8 @@ private:
 
   NotebookCoreService *m_notebookService = nullptr;
 
+  BufferService *m_bufferService = nullptr;
+
   NotebookIoGate *m_ioGate = nullptr;
 
   HookManager *m_hookMgr = nullptr;
@@ -314,6 +354,8 @@ private:
   QHash<QString, QQueue<Job>> m_queues;
   QHash<QString, bool> m_running;
   QHash<QString, JobState> m_jobStates;
+
+  mutable std::unique_ptr<ProtectedState> m_protectedState;
 
   QHash<quint64, Participant> m_participants;
   quint64 m_nextParticipantId = 1;

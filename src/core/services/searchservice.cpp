@@ -18,6 +18,8 @@
 
 #include <core/services/searchcoreservice.h>
 
+#include <vxcore/notebook_json_keys.h>
+
 using namespace vnotex;
 
 class vnotex::SearchWorker : public QObject {
@@ -93,14 +95,16 @@ public slots:
     std::mutex accMutex;
     QMap<int, QJsonArray> batchMatchesByIndex;
     std::atomic<int> completed{0};
+    int encryptedSkippedCount = 0;
 
-    const auto onBatch = [&](int p_batchIndex, int p_totalBatches,
-                             const QJsonObject &p_batchObj) {
+    const auto onBatch = [&](int p_batchIndex, int p_totalBatches, const QJsonObject &p_batchObj) {
       const QJsonArray batchMatches = p_batchObj.value(QStringLiteral("matches")).toArray();
 
       {
         std::lock_guard<std::mutex> guard(accMutex);
         batchMatchesByIndex.insert(p_batchIndex, batchMatches);
+        encryptedSkippedCount +=
+            p_batchObj.value(QLatin1String(vxcore::kJsonKeyEncryptedSkippedCount)).toInt(0);
       }
 
       const int done = completed.fetch_add(1, std::memory_order_relaxed) + 1;
@@ -124,8 +128,8 @@ public slots:
     Error error;
     {
       QMutexLocker locker(m_mutex);
-      error = m_coreService->searchContentStreaming(p_notebookId, p_queryJson, p_inputFilesJson,
-                                                    0, p_cancelFlag, onBatch);
+      error = m_coreService->searchContentStreaming(p_notebookId, p_queryJson, p_inputFilesJson, 0,
+                                                    p_cancelFlag, onBatch);
     }
 
     if (error) {
@@ -162,6 +166,9 @@ public slots:
     finalObj.insert(QStringLiteral("matchCount"), allFiles.size());
     finalObj.insert(QStringLiteral("truncated"), truncated);
     finalObj.insert(QStringLiteral("matches"), QJsonValue(allFiles));
+    if (encryptedSkippedCount != 0) {
+      finalObj.insert(QLatin1String(vxcore::kJsonKeyEncryptedSkippedCount), encryptedSkippedCount);
+    }
 
     SearchResult result = SearchResult::fromContentSearchJson(finalObj, p_notebookId);
 
@@ -233,9 +240,7 @@ private:
     }
     // QJsonValue::toInt(default) returns the default for an absent (Undefined) key and for a
     // non-numeric value, but the real integer (including 0 / negatives) when present.
-    return doc.object()
-        .value(QStringLiteral("maxResults"))
-        .toInt(kDefaultContentSearchMaxResults);
+    return doc.object().value(QStringLiteral("maxResults")).toInt(kDefaultContentSearchMaxResults);
   }
 
   // In-place file-boundary maxResults truncation over the raw reassembled matched-file array,

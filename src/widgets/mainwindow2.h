@@ -8,6 +8,7 @@
 #include <QVector>
 
 #include <functional>
+#include <memory>
 
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
@@ -28,6 +29,8 @@ class WidgetWindowAgent;
 namespace vnotex {
 
 class ServiceLocator;
+struct NodeIdentifier;
+struct FileOpenSettings;
 class NotebookExplorer2;
 class OutlineViewer;
 class CommentPanel;
@@ -187,6 +190,7 @@ public:
   void requestNoteCapture(const QString &p_text);
 
   void quitApp();
+  void lockAllProtectedNotes();
 
 signals:
   void windowStateChanged(Qt::WindowStates p_state);
@@ -201,6 +205,9 @@ signals:
   void importFileRequested();
   void importFolderRequested();
   void exportRequested();
+
+private slots:
+  void onProtectedOpenRequested(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
 
 protected:
   void closeEvent(QCloseEvent *p_event) override;
@@ -270,6 +277,7 @@ private:
   // after each batch, so every queued --detached-view invocation opens into its
   // own detached window without relying on timer-ordering.
   void drainPendingOpenBatches();
+  void drainProtectedOpens();
 
   // Handle one dequeued capture request: foreground the window and run the
   // explorer's capture flow (which is modal for the duration).
@@ -406,6 +414,8 @@ private:
     bool m_detached = false;
   };
   QVector<PendingOpenBatch> m_pendingOpenBatches;
+  struct ProtectedOpens;
+  std::unique_ptr<ProtectedOpens> m_protectedOpens;
 
   // macOS Service capture requests: queued until post-init completes, then
   // handled one at a time.

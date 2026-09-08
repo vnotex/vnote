@@ -2,6 +2,7 @@
 #define WEBPAGE_H
 
 #include <functional>
+#include <memory>
 
 #include <QWebEnginePage>
 #include <QWidget>
@@ -26,10 +27,15 @@ public:
   // viewer installs one, for its own `vxpdf://` viewer route.
   void setAllowedMainFrameUrlPredicate(std::function<bool(const QUrl &)> p_predicate);
 
+  // Protected pages permit one explicitly requested root load, never note navigation.
+  void setProtectedDocumentUrl(const QUrl &p_url);
+
 signals:
   void localFileOpenRequested(const QUrl &p_url);
 
   void externalLinkRequested(const QUrl &p_url);
+
+  void protectedResourceOpenRequested(const QUrl &p_url);
 
 protected:
   bool acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
@@ -40,6 +46,8 @@ protected:
 
 private:
   std::function<bool(const QUrl &)> m_allowedMainFrameUrlPredicate;
+  std::unique_ptr<QUrl> m_protectedRoot;
+  bool m_protectedRootPending = false;
 };
 } // namespace vnotex
 

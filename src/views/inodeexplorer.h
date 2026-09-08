@@ -151,6 +151,7 @@ signals:
   void crossNotebookPasteRequested(const NodeTransferRequest &p_request);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
   void markRequested(const QList<NodeIdentifier> &p_ids);
+  void encryptNoteRequested(const QList<NodeIdentifier> &p_ids);
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 
   void manageTagsRequested(const QList<NodeIdentifier> &p_ids);

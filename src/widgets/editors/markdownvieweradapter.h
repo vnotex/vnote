@@ -105,6 +105,8 @@ public:
 
   virtual ~MarkdownViewerAdapter();
 
+  void setProtectedView(bool p_protected);
+
   // @p_lineNumber: the line number needed to sync, -1 for invalid.
   void setText(int p_revision, const QString &p_text, int p_lineNumber);
 
@@ -156,6 +158,11 @@ public:
 
   // Functions to be called from web side.
 public slots:
+  // Returns only a validated passive image data URL, or an empty string.
+  QString protectedImageUrl(const QString &p_url);
+
+  void activateProtectedLink(const QString &p_url);
+
   void setWorkFinished();
 
   // The line number at the top.
@@ -289,10 +296,14 @@ signals:
   // Web side requested to toggle a task list item.
   void taskListItemToggleRequested(int p_lineNumber, bool p_checked);
 
+  void protectedLinkRequested(const QString &p_url);
+
 private:
   void scrollToLine(int p_lineNumber);
 
   void scrollToAnchor(const QString &p_anchor);
+
+  bool m_protectedView = false;
 
   int m_revision = 0;
 

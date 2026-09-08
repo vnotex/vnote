@@ -1,6 +1,8 @@
 #ifndef HTMLTEMPLATESERVICE_H
 #define HTMLTEMPLATESERVICE_H
 
+#include <QByteArray>
+#include <QHash>
 #include <QObject>
 #include <QString>
 
@@ -64,6 +66,12 @@ public:
 
   // Get the cached Markdown viewer template HTML.
   const QString &getMarkdownViewerTemplate() const;
+
+  // Per-view, bundled-only template and exact URL-to-byte execution allowlist.
+  // Empty on missing/invalid bundled resources; never falls back to config files.
+  QString protectedMarkdownViewerTemplate(const QString &p_token, const QString &p_nonce,
+                                          QHash<QString, QByteArray> &p_resources) const;
+  static QString protectedContentSecurityPolicy(const QString &p_nonce);
 
   // ============ MindMap Editor Template ============
 

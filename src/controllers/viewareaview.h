@@ -6,6 +6,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
+#include <functional>
 
 #include <core/fileopensettings.h>
 #include <core/global.h>
@@ -59,6 +60,16 @@ public:
   virtual bool closeViewWindow(ID p_windowId, bool p_force) = 0;
   // Apply file open settings (scroll, highlight) to an already-created window.
   virtual void applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) = 0;
+
+  // Conversion-only: freeze exact live IDs (including hidden/detached views).
+  // Freezing never saves, discards, or destroys their documents.
+  virtual bool setNoteConversionFrozen(const QVector<ID> &p_windowIds, bool p_frozen) = 0;
+  // Recreate documents/undo/preview owners only after ciphertext is durable.
+  // The callback replaces opaque objects held by hidden workspace wrappers.
+  virtual bool
+  recreateNoteViews(const QVector<ID> &p_windowIds, const Buffer2 &p_buffer,
+                    const QString &p_editorType,
+                    const std::function<void(QObject *, QObject *)> &p_replaceHidden) = 0;
 
   // Navigate a widget-based view window to a specific content location.
   virtual void navigateWidgetContent(ID p_windowId, const QStringList &p_pathSegments,
@@ -128,8 +139,7 @@ public:
 
   // Get display info (name/title/icon/bufferId) for every window in a visible
   // workspace's split, in tab order. Empty if the workspace has no split.
-  virtual QVector<ViewWindowNavInfo>
-  getViewWindowNavInfos(const QString &p_workspaceId) const = 0;
+  virtual QVector<ViewWindowNavInfo> getViewWindowNavInfos(const QString &p_workspaceId) const = 0;
 
   // Fills p_windowId and p_bufferId with the current ViewWindow's IDs in the
   // split owning p_workspaceId. Sets p_windowId to ViewAreaController::InvalidViewWindowId

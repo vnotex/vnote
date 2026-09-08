@@ -9,12 +9,14 @@
 
 #include <core/exportcontext.h>
 #include <export/exportdata.h>
+#include <vxcore/vxcore_types.h>
 
 class QWidget;
 
 namespace vnotex {
 
 class Exporter;
+class Buffer2;
 struct ExportFileInfo;
 class ServiceLocator;
 
@@ -29,6 +31,15 @@ public:
   void doExport(const ExportOption &p_option, const ExportContext &p_context);
   void stop();
   bool isExporting() const;
+
+  // Apply only after widget-owned plaintext consent. For a note or several resources,
+  // destination is an existing directory; for one resource it is the selected file.
+  VxCoreError saveDecryptedCopy(const Buffer2 &p_buffer, const QString &p_destination,
+                                bool p_exportNote, const QStringList &p_resourceUrls,
+                                const QString &p_content, QStringList &p_outputFiles);
+  bool isDecryptedCopyDestinationAllowed(const Buffer2 &p_buffer,
+                                         const QString &p_destination) const;
+  static QString decryptedNoteName(const Buffer2 &p_buffer);
 
   // Returns true if a resolved buffer node identifies a real, on-disk exportable
   // file (i.e. not a virtual/unsaved buffer such as vx://home). Shared by the
@@ -45,9 +56,11 @@ private:
   Exporter *ensureExporter();
   void collectExportFiles(const QString &p_notebookId, const QString &p_folderPath,
                           bool p_recursive, bool p_exportAttachments,
-                          QVector<ExportFileInfo> &p_files);
+                          QVector<ExportFileInfo> &p_files, QStringList &p_protectedFiles);
   void collectWorkspaceFiles(const QString &p_workspaceId, bool p_exportAttachments,
-                             QVector<ExportFileInfo> &p_files);
+                             QVector<ExportFileInfo> &p_files, QStringList &p_protectedFiles);
+  bool isProtectedExportSource(const NodeIdentifier &p_nodeId, const QString &p_path) const;
+  bool refuseProtectedBatch(const QStringList &p_protectedFiles);
   bool isMarkdownFile(const QString &p_filePath) const;
   QString normalizedRelativePath(const QString &p_relativePath) const;
   QString notebookBatchName(const QString &p_notebookId) const;

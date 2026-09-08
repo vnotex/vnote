@@ -26,7 +26,7 @@ public:
 
   MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow2 *p_viewWindow2,
                  ServiceLocator &p_services, const QColor &p_background, qreal p_zoomFactor,
-                 QWidget *p_parent = nullptr);
+                 QWidget *p_parent = nullptr, QWebEngineProfile *p_profile = nullptr);
 
   MarkdownViewerAdapter *adapter() const;
 
@@ -44,6 +44,8 @@ signals:
   void editRequested();
 
   void exportRequested();
+
+  void saveDecryptedCopyRequested(const QString &p_resourceUrl);
 
 protected:
   void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
@@ -80,6 +82,8 @@ private:
 
   // @p_baseUrl: if it is a folder, please end it with '/'. It is not used now in web side.
   void crossCopy(const QString &p_target, const QString &p_baseUrl, const QString &p_html);
+
+  bool m_protectedView = false;
 
   // Managed by QObject.
   MarkdownViewerAdapter *m_adapter = nullptr;

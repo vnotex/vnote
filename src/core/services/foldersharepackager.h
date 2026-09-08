@@ -21,9 +21,10 @@ namespace vnotex {
 //           `-- Alpha/               matching metadata directories + vx.json
 //
 // A nested source such as "Projects/Alpha" is FLATTENED to a top-level "Alpha";
-// the ancestors are not included. Nothing is regenerated: ids, timestamps,
-// metadata objects, tags, attachment lists and child order are copied
-// byte-for-byte. No manifest and no vx_notebook/config.json is written.
+// the ancestors are not included. Indexed ids, timestamps, tags and child order
+// are preserved. A protected bundle additionally carries the wrapped notebook
+// key and a sync-disabled portable config; owned assets are normalized in the
+// copy, rewriting only ordinary members through the core file-type parser.
 //
 // Design notes
 // ------------
@@ -93,6 +94,8 @@ public:
     // Polled between entries and file chunks. Returning true aborts the run and
     // removes the temporary tree. May be null (never cancelled).
     std::function<bool()> m_isCancelled;
+    // Protected-only durability/sync barrier; may pump before the fresh snapshot.
+    std::function<bool(QString * /*outError*/)> m_prepareProtected;
 
     // Last gate before the commit. Invoked ONCE, inside the final section where
     // nothing may pump the event loop, immediately before the atomic rename.

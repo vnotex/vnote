@@ -36,9 +36,9 @@ public:
   // A p_limit <= 0 means no cap.
   QVector<NodeInfo> getHistoryForDate(const QDate &p_date, int p_limit) const;
 
-  // Fetch a short preview for a history entry (delegates to
-  // NotebookCoreService::peekFile). Returns empty string if the service is
-  // unavailable or the file cannot be read.
+  // Fetch a short preview for an ordinary history entry via peekFile.
+  // Protected candidates return no preview and are never opened or unlocked.
+  // Returns empty if the service is unavailable or the file cannot be read.
   QString previewFor(const NodeIdentifier &p_id) const;
 
 signals:

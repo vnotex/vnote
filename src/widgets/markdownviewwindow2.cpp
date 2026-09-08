@@ -20,6 +20,8 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
+#include <QUuid>
+#include <QWebEngineProfile>
 
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/markdownutils.h>
@@ -41,6 +43,7 @@
 #include <core/theme.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/webengineprofileservice.h>
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
 #include <imagehost/iimagehostprovider.h>
@@ -69,8 +72,15 @@
 #include "tableinsertpopup.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
+#include "webpage.h"
 
 using namespace vnotex;
+
+struct MarkdownViewWindow2::ProtectedView {
+  WebEngineProfileService::ProtectedPage page;
+  bool documentPublished = false;
+  bool loaded = false;
+};
 
 // ============ Constructor ============
 
@@ -86,6 +96,10 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   setupOutlineProvider();
   setupUI();
   setupPreviewHelper();
+  if (getBuffer().isEncrypted()) {
+    connect(this, &MarkdownViewWindow2::saveDecryptedCopyRequested, this,
+            &ViewWindow2::saveDecryptedCopy);
+  }
 
   // Trigger initial mode setup directly to the requested mode.
   // Going straight to Edit (Invalid -> Edit) avoids a visible Read -> Edit
@@ -100,6 +114,7 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 // ============ Destructor ============
 
 MarkdownViewWindow2::~MarkdownViewWindow2() {
+  releaseProtectedView();
   // Disconnect controller signals to prevent delivery to a destroyed widget.
   if (m_imageHostController) {
     disconnect(m_imageHostController, nullptr, this, nullptr);
@@ -108,6 +123,38 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
   // The StatusBar is a QObject child of the window and the binder is parented to
   // this; both are cleaned up automatically. The encoding button is owned by the
   // bar's Widget-column mount (raw overload).
+}
+
+void MarkdownViewWindow2::releaseProtectedView() {
+  if (!m_protectedView) {
+    return;
+  }
+  auto *profiles = getServices().get<WebEngineProfileService>();
+  profiles->revokeProtectedProfile(m_protectedView->page.profile);
+  if (m_syncPreviewTimer) {
+    m_syncPreviewTimer->stop();
+  }
+  m_viewerReady = false;
+  m_pendingAnchor.clear();
+  setEnabled(false);
+  // Retire cached graph source/results and native resources before the page.
+  // The off-the-record profile must outlive every page that used it.
+  if (m_editor) {
+    m_editor->revokeProtectedResources();
+    disconnect(m_editor, nullptr, this, nullptr);
+  }
+  delete m_previewHelper;
+  m_previewHelper = nullptr;
+  setStatusBarDef(StatusBarDef());
+  delete m_statusBinder;
+  m_statusBinder = nullptr;
+  delete m_editor;
+  m_editor = nullptr;
+  m_outlineProvider->setOutline(QSharedPointer<Outline>());
+  delete m_viewer;
+  m_viewer = nullptr;
+  delete m_protectedView->page.profile;
+  m_protectedView.reset();
 }
 
 // ============ setupUI ============
@@ -205,8 +252,8 @@ void MarkdownViewWindow2::setupToolBar() {
 }
 
 void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
-  // Image host selection button.
-  {
+  // Image hosts are not an available storage destination for protected notes.
+  if (!getBuffer().isEncrypted()) {
     auto *act = addAction(p_toolBar, ViewWindowToolBarHelper2::ImageHost);
     auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(act));
     if (btn) {
@@ -268,6 +315,10 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
 }
 
 void MarkdownViewWindow2::handlePrint() {
+  if (getBuffer().isEncrypted()) {
+    showMessage(tr("Printing protected notes requires an explicit decrypted export"));
+    return;
+  }
   if (!m_viewer || !m_viewerReady) {
     return;
   }
@@ -293,6 +344,10 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
     return false;
   }
 
+  if (getBuffer().isEncrypted()) {
+    releaseProtectedView();
+    return true;
+  }
   if (isLast) {
     clearObsoleteImages();
 
@@ -382,8 +437,8 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Provide Buffer2 handle for asset/attachment operations.
   m_editor->setBuffer2(&getBuffer());
 
-  // Provide image host controller for remote image uploads.
-  if (m_imageHostController) {
+  // Protected images are inserted directly as encrypted assets, never uploaded.
+  if (!getBuffer().isEncrypted() && m_imageHostController) {
     m_editor->setImageHostController(m_imageHostController);
   }
 
@@ -439,7 +494,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   applyReadableWidth();
 }
 
-void MarkdownViewWindow2::setupViewer() {
+bool MarkdownViewWindow2::setupViewer() {
   Q_ASSERT(!m_viewer);
 
   auto *configMgr = getServices().get<ConfigMgr2>();
@@ -453,9 +508,34 @@ void MarkdownViewWindow2::setupViewer() {
   // Update HTML template via HtmlTemplateService.
   auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
   auto *themeService = getServices().get<ThemeService>();
-  htmlTemplateService->updateMarkdownViewerTemplate(
-      mdConfig, themeService->fetchWebStyleSheet(),
-      themeService->getFile(Theme::File::HighlightStyleSheet));
+  if (getBuffer().isEncrypted()) {
+    m_protectedView.reset(new ProtectedView());
+    auto *profiles = getServices().get<WebEngineProfileService>();
+    if (profiles && htmlTemplateService) {
+      m_protectedView->page = profiles->createProtectedProfile(getBuffer());
+    }
+    if (m_protectedView->page.profile) {
+      QHash<QString, QByteArray> resources;
+      const auto &page = m_protectedView->page;
+      const auto html =
+          htmlTemplateService->protectedMarkdownViewerTemplate(page.token, page.nonce, resources);
+      m_protectedView->documentPublished =
+          profiles->setProtectedDocument(page.profile, html, resources);
+    }
+    if (!m_protectedView->documentPublished) {
+      if (profiles) {
+        profiles->revokeProtectedProfile(m_protectedView->page.profile);
+      }
+      delete m_protectedView->page.profile;
+      m_protectedView.reset();
+      showMessage(tr("Unable to open protected preview"));
+      return false;
+    }
+  } else {
+    htmlTemplateService->updateMarkdownViewerTemplate(
+        mdConfig, themeService->fetchWebStyleSheet(),
+        themeService->getFile(Theme::File::HighlightStyleSheet));
+  }
 
   // Create adapter and viewer.
   auto *adapterObj = new MarkdownViewerAdapter(getServices(), this);
@@ -463,7 +543,8 @@ void MarkdownViewWindow2::setupViewer() {
   auto bgColor = getServices().get<ThemeService>()->getBaseBackground();
   auto zoomFactor = mdConfig.getZoomFactorInReadMode();
 
-  m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this);
+  m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this,
+                                m_protectedView ? m_protectedView->page.profile : nullptr);
   m_viewer->setController(m_windowController);
   updateSectionNumberOptions();
 
@@ -474,6 +555,15 @@ void MarkdownViewWindow2::setupViewer() {
   m_viewer->hide();
 
   m_viewer->setPreviewHelper(m_previewHelper);
+
+  if (m_protectedView) {
+    auto *webPage = qobject_cast<WebPage *>(m_viewer->page());
+    webPage->setProtectedDocumentUrl(m_protectedView->page.url);
+    connect(m_viewer, &MarkdownViewer::saveDecryptedCopyRequested, this,
+            &MarkdownViewWindow2::saveDecryptedCopyRequested);
+    connect(adapterObj, &MarkdownViewerAdapter::protectedLinkRequested, this,
+            &MarkdownViewWindow2::handleOpenFileRequest);
+  }
 
   // Zoom persistence.
   connect(m_viewer, &MarkdownViewer::zoomFactorChanged, this, [this](qreal p_factor) {
@@ -562,6 +652,7 @@ void MarkdownViewWindow2::setupViewer() {
   // edit mode so the security prompt lives in one place.
   connect(m_viewer, &WebViewer::externalLinkRequested, this,
           [this](const QUrl &p_url) { handleOpenFileRequest(p_url.toString()); });
+  return true;
 }
 
 // ============ setupPreviewHelper ============
@@ -569,6 +660,9 @@ void MarkdownViewWindow2::setupViewer() {
 void MarkdownViewWindow2::setupPreviewHelper() {
   Q_ASSERT(!m_previewHelper);
   m_previewHelper = new PreviewHelper(nullptr, this);
+  if (getBuffer().isEncrypted()) {
+    m_previewHelper->setProtectedView(true);
+  }
 
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
@@ -725,6 +819,11 @@ void MarkdownViewWindow2::connectEditorSignals() {
             }
           });
 
+  if (getBuffer().isEncrypted()) {
+    connect(m_editor, &MarkdownEditor::saveDecryptedCopyRequested, this,
+            &MarkdownViewWindow2::saveDecryptedCopyRequested);
+  }
+
   // Self-file anchor link resolution.
   connect(m_editor, &MarkdownEditor::openFileRequested, this,
           [this](const QString &p_filePath) { handleOpenFileRequest(p_filePath); });
@@ -741,6 +840,21 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   // and read-mode navigation, so the security prompt lives in one place.
   const QUrl url(p_filePath);
   const auto scheme = url.scheme();
+  if (getBuffer().isEncrypted()) {
+    if (scheme == QStringLiteral("vxasset")) {
+      const auto id = p_filePath.mid(8);
+      const QUuid uuid(id);
+      if (!uuid.isNull() && uuid.toString(QUuid::WithoutBraces) == id) {
+        emit saveDecryptedCopyRequested(p_filePath);
+      }
+      return;
+    }
+    if ((!scheme.isEmpty() && scheme != QStringLiteral("http") &&
+         scheme != QStringLiteral("https")) ||
+        p_filePath.startsWith(QLatin1Char('/')) || p_filePath.startsWith(QLatin1Char('\\'))) {
+      return;
+    }
+  }
   if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https") ||
       scheme == QStringLiteral("ftp") || scheme == QStringLiteral("mailto")) {
     int ret = MessageBoxHelper::questionYesNo(
@@ -770,6 +884,10 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   }
   QJsonObject resolved = nbSvc->resolvePathToNotebook(absPath);
   if (resolved.isEmpty()) {
+    if (getBuffer().isEncrypted()) {
+      showMessage(tr("Protected note links can open only indexed notebook notes"));
+      return;
+    }
     qWarning() << "File not in any notebook:" << absPath;
     WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(absPath));
     return;
@@ -779,6 +897,11 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   nodeId.notebookId = resolved[QLatin1String(vxcore::kJsonKeyNotebookId)].toString();
   nodeId.relativePath = resolved[QStringLiteral("relativePath")].toString();
 
+  if (getBuffer().isEncrypted() &&
+      nbSvc->getFileInfo(nodeId.notebookId, nodeId.relativePath).isEmpty()) {
+    showMessage(tr("Protected note links can open only indexed notebook notes"));
+    return;
+  }
   FileOpenSettings settings;
   settings.m_anchor = result.fragment;
   auto *bufSvc = getServices().get<BufferService>();
@@ -853,7 +976,11 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
 
   // Lazy init: create viewer if needed.
   if (transition.needSetupViewer) {
-    setupViewer();
+    if (!setupViewer()) {
+      m_mode = m_previousMode;
+      m_switchingMode = false;
+      return;
+    }
 
     if (transition.needSetupEditor) {
       // Going to Edit mode: briefly show the viewer so WebEngine can
@@ -1071,6 +1198,21 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
   qCDebug(lcPerfPreview) << "syncViewerFromBuffer mode=" << static_cast<int>(m_mode)
                          << "valid=" << state.valid << "chars=" << state.content.size()
                          << "atMs=" << QDateTime::currentMSecsSinceEpoch();
+  if (m_protectedView) {
+    if (!state.valid) {
+      showMessage(tr("Unable to load protected note content"));
+      return;
+    }
+    if (!m_protectedView->loaded) {
+      adapter()->reset();
+      m_protectedView->loaded = true;
+      m_viewer->load(m_protectedView->page.url);
+    }
+    adapter()->setText(state.revision, state.content,
+                       p_syncPositionFromEditMode ? getEditLineNumber() : -1);
+    m_viewerBufferRevision = state.revision;
+    return;
+  }
   if (state.valid) {
     // Diagnostics: a reload here tears the page down. If the adapter is already
     // ready, the page had finished loading and may be running a render pass that
@@ -1318,9 +1460,11 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   // Update HTML template.
   auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
   auto *themeService = getServices().get<ThemeService>();
-  htmlTemplateService->updateMarkdownViewerTemplate(
-      mdConfig, themeService->fetchWebStyleSheet(),
-      themeService->getFile(Theme::File::HighlightStyleSheet));
+  if (!getBuffer().isEncrypted()) {
+    htmlTemplateService->updateMarkdownViewerTemplate(
+        mdConfig, themeService->fetchWebStyleSheet(),
+        themeService->getFile(Theme::File::HighlightStyleSheet));
+  }
 
   if (m_editor) {
     auto themeContent = themeService->fetchTextEditorStyle();
@@ -1393,10 +1537,12 @@ void MarkdownViewWindow2::handleThemeChanged() {
   if (m_viewer) {
     // Force-regenerate HTML template with new theme CSS.
     auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
-    htmlTemplateService->updateMarkdownViewerTemplate(
-        mdConfig, themeService->fetchWebStyleSheet(),
-        themeService->getFile(Theme::File::HighlightStyleSheet),
-        /*p_force=*/true);
+    if (!getBuffer().isEncrypted()) {
+      htmlTemplateService->updateMarkdownViewerTemplate(
+          mdConfig, themeService->fetchWebStyleSheet(),
+          themeService->getFile(Theme::File::HighlightStyleSheet),
+          /*p_force=*/true);
+    }
 
     // Update WebEngine page background.
     m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());
@@ -1460,6 +1606,9 @@ void MarkdownViewWindow2::updatePreviewHelperFromConfig(const MarkdownEditorConf
   m_previewHelper->setWebGraphvizEnabled(phConfig.webGraphvizEnabled);
   m_previewHelper->setInplacePreviewCodeBlocksEnabled(phConfig.inplacePreviewCodeBlocksEnabled);
   m_previewHelper->setInplacePreviewMathBlocksEnabled(phConfig.inplacePreviewMathBlocksEnabled);
+  if (getBuffer().isEncrypted()) {
+    return;
+  }
 
   // Feed the local-render helpers from the new-architecture config (ConfigMgr2).
   // These are process-wide singletons used by both the in-place preview
@@ -1863,7 +2012,7 @@ void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 
 }
 
 void MarkdownViewWindow2::ensureExternalHighlightStyles() {
-  if (m_codeBlockStylesInitialized) {
+  if (getBuffer().isEncrypted() || m_codeBlockStylesInitialized) {
     return;
   }
   m_codeBlockStylesInitialized = true;
@@ -1970,6 +2119,9 @@ QStringList MarkdownViewWindow2::getAttachmentScanExcludedPaths() const {
 }
 
 void MarkdownViewWindow2::snapshotInitialImages() {
+  if (getBuffer().isEncrypted()) {
+    return;
+  }
   auto content = getBuffer().decode(getBuffer().getContentRaw());
   auto resolved = getBuffer().resolvedPath();
   if (content.isEmpty() || resolved.isEmpty()) {
@@ -2006,6 +2158,9 @@ bool MarkdownViewWindow2::isClearObsoleteImageAtImageHostEnabled() const {
 }
 
 void MarkdownViewWindow2::clearObsoleteImages() {
+  if (getBuffer().isEncrypted()) {
+    return;
+  }
   auto buffer = getBuffer();
   if (!buffer.isValid()) {
     return;
@@ -2112,7 +2267,7 @@ void MarkdownViewWindow2::clearObsoleteImages() {
 // ============ Legacy image folder migration ============
 
 void MarkdownViewWindow2::scheduleLegacyImageCheck() {
-  if (m_legacyImageCheckDone) {
+  if (getBuffer().isEncrypted() || m_legacyImageCheckDone) {
     return;
   }
 
@@ -2522,7 +2677,7 @@ void MarkdownViewWindow2::updateImageHostMenu() {
 }
 
 void MarkdownViewWindow2::handleImageHostChanged(const QString &p_providerName) {
-  if (!m_imageHostController) {
+  if (getBuffer().isEncrypted() || !m_imageHostController) {
     return;
   }
   if (p_providerName.isEmpty()) {

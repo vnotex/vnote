@@ -27,7 +27,7 @@ class Graphviz extends GraphRenderer {
         });
 
         this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
-        this.useWeb = window.vxOptions.webGraphviz;
+        this.useWeb = window.vxOptions.protectedView || window.vxOptions.webGraphviz;
         if (!this.useWeb) {
             this.extraScripts = [];
         }
@@ -87,6 +87,9 @@ class Graphviz extends GraphRenderer {
             let graphviz = p_graphviz;
             let node = p_renderNode;
             return function(p_element) {
+                if (window.vxOptions.protectedView) {
+                    MarkdownIt.sanitizeProtectedSvg(p_element);
+                }
                 if (node) {
                     let wrapperDiv = document.createElement('div');
                     wrapperDiv.classList.add(graphviz.graphDivClass);
@@ -184,7 +187,12 @@ class Graphviz extends GraphRenderer {
                 return;
             }
             this.viz.renderSVGElement(p_text)
-                .then(p_callback)
+                .then((node) => {
+                    if (window.vxOptions.protectedView) {
+                        MarkdownIt.sanitizeProtectedSvg(node);
+                    }
+                    p_callback(node);
+                })
                 .catch((err) => {
                     console.error('failed to render Graphviz', err);
                     // Recreate the poisoned WASM instance so later previews work.

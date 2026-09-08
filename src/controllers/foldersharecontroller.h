@@ -19,10 +19,10 @@ class ServiceLocator;
 // notes, and the packaging run.
 //
 // SYNCHRONOUS by design. shareFolder() returns only when the bundle has been
-// published (or the run failed / was cancelled). There is no worker thread, no
-// I/O gate, and no cancellation token plumbing — the caller drives a modal
-// progress dialog and supplies progress/cancel callbacks, which is what keeps
-// the whole feature free of cross-thread buffer-lifetime hazards.
+// published (or the run failed / was cancelled). The caller drives a modal
+// progress dialog and supplies progress/cancel callbacks. Protected shares also
+// flush comments and hold a sync-maintenance lease until publication; no keys
+// or protected bodies are released to plaintext staging.
 //
 // It shows NO dialogs (per src/controllers/AGENTS.md): the destination
 // QFileDialog and the QProgressDialog belong to NotebookExplorer2.

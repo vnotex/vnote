@@ -1,17 +1,23 @@
 #ifndef BUFFERSAVEQUEUE_H
 #define BUFFERSAVEQUEUE_H
 
+#include <QByteArray>
 #include <QHash>
 #include <QMutex>
 #include <QObject>
 #include <QQueue>
 #include <QString>
 #include <QWaitCondition>
+#include <functional>
+#include <memory>
 
 namespace vnotex {
 
 class IBufferCoreService;
 class NotebookIoGate;
+class BufferCoreService;
+class ProtectedBufferLease;
+class BufferService;
 
 // BufferSaveQueue
 //
@@ -51,6 +57,16 @@ public:
   void enqueue(const QString &p_notebookId, const QString &p_bufferId, const QString &p_content,
                quint64 p_revision, const QString &p_encoding = QString());
 
+  // Separate protected FIFO: no lease, generation, or backup flag is added
+  // to ordinary SaveJob. Every accepted revision reports its actual result.
+  bool enqueueProtected(BufferCoreService &p_coreService, const QString &p_notebookId,
+                        const std::shared_ptr<ProtectedBufferLease> &p_lease,
+                        const QString &p_content, quint64 p_revision, const QString &p_encoding,
+                        bool p_backup, QByteArray *p_rawContent = nullptr,
+                        std::function<void(int)> p_finished = {}, int p_gateTimeoutMs = -1);
+  bool isProtectedBusy(const QString &p_bufferId) const;
+  bool drainProtected(int p_timeoutMs);
+
   // Stop accepting new jobs and wait up to @p_timeoutMs for in-flight workers
   // to drain. Returns true if drained; false on timeout.
   bool shutdown(int p_timeoutMs = 5000);
@@ -64,6 +80,8 @@ public:
   bool isBusy(const QString &p_notebookId, const QString &p_bufferId) const;
 
 signals:
+  void protectedSaveFinished(const QString &p_bufferId, quint64 p_generation, quint64 p_revision,
+                             bool p_backup, int p_error);
   // Emitted on this object's owning thread (queued from worker).
   void saveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                     const QString &p_errorMsg);
@@ -77,6 +95,8 @@ signals:
   void saveRejectedReadOnly(const QString &p_bufferId);
 
 private:
+  friend class BufferService;
+  void prepareProtected();
   struct SaveJob {
     QString notebookId;
     QString bufferId;
@@ -97,6 +117,9 @@ private:
   void emitFinishedQueued(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                           const QString &p_errorMsg);
 
+  struct ProtectedQueue;
+  void runProtectedWorker(const QString &p_bufferId);
+  std::unique_ptr<ProtectedQueue> m_protectedQueue;
   IBufferCoreService &m_coreService;
   NotebookIoGate &m_gate;
 

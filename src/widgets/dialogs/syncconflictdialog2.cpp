@@ -109,6 +109,11 @@ void SyncConflictDialog2::setupUI() {
 
     auto *bothRb = new QRadioButton(tr("Keep both"), row);
     bothRb->setObjectName(radioObjectName(i, "both"));
+    if (filePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+      bothRb->setEnabled(false);
+      bothRb->setToolTip(tr("Protected files require one complete version; "
+                            "the other version remains in Git history"));
+    }
 
     rowLayout->addWidget(localRb);
     rowLayout->addWidget(remoteRb);

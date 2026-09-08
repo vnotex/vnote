@@ -759,3 +759,44 @@ These keys are Qt-only — vxcore never reads `comments.json` — so they stay *
 `<vxcore/notebook_json_keys.h>` and out of `test_json_key_drift`'s gated list.
 
 Coverage: `tests/core/test_commentservice.cpp`.
+
+
+## Per-note encryption
+
+Only bundled Markdown/text notes support protection. `NotebookCoreService` exposes the
+context-owned prepare/commit/free key setup protocol: prepare and unlock perform password
+hashing on a worker **outside** `NotebookIoGate`; commit consumes the prepared handle under
+the notebook maintenance lease and IO gate. Never replace an existing or corrupt key file
+as a recovery shortcut. Password bytes are not trimmed and must not enter logs or hooks.
+
+`BufferService` maintains a lazy, protected-only roster and operation leases. Ordinary
+open/save/resource paths use their cached mode and must not query encryption status, read
+key files, initialize sodium, or acquire crypto locks. A closed protected note is not
+opened by notebook unlock, search, history preview, or session restoration. Protected
+body search is excluded with a nonzero skipped count; filename/tag search remains usable.
+
+Lock All is a durability barrier, not just key erasure: refuse new protected mutations,
+freeze active writer identity, snapshot current edits, flush comments, and drain protected
+operations before closing every protected view (including splits and detached windows).
+Do not let focus changes or close callbacks issue stale saves after this barrier. Any
+failed save cancels locking and retains dirty text and usable keys. Release documents,
+undo history, comments, resource providers and buffer leases before locking core keys.
+Ordinary tabs and their save policy are unaffected. Last-view close releases that note's
+state; master/notebook keys remain until Lock All or application exit.
+
+Protected comments and assets use authenticated resource APIs, not filesystem paths.
+`WebEngineProfileService` creates an unnamed, off-the-record profile scoped to a fresh
+view token; revoke it before destroying pages and the profile. Native previews use the
+exclusive in-memory resource provider with no downloader or local-file fallback. Remote
+resources and active note HTML are forbidden in protected previews. Never materialize a
+plaintext temporary file for an external viewer, uploader, or legacy exporter: require an
+explicit decrypted export to a destination outside the notebook.
+
+Conversion runs through the existing maintenance/IO-gate ordering and includes the full
+resource closure. Shared or external originals are retained and disclosed. Protection is
+at rest, not a sandbox against in-process plugins or access control against someone who
+has unlocked the master key. Filenames/folders/tags stay visible. Existing Git history,
+cloud versions and OS backups can retain plaintext; conversion does not rewrite them or
+promise secure deletion. Backups and synced copies must retain the wrapped key file and
+all referenced encrypted objects. Authenticity does not prevent replay of an older valid
+revision; OS swap/crash dumps and allocator-level erasure of Qt objects are not guaranteed.

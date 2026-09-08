@@ -3,6 +3,7 @@
 
 #include "viewwindow2.h"
 
+#include <QScopedPointer>
 #include <QSet>
 #include <QSharedPointer>
 #include <QVector>
@@ -62,6 +63,10 @@ public:
   void restorePositionState(const ViewPositionState &p_state) override;
 
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
+
+signals:
+  // Widget owner chooses/consents to an outside-notebook plaintext destination.
+  void saveDecryptedCopyRequested(const QString &p_resourceUrl);
 
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
@@ -127,7 +132,9 @@ private:
 
   void setupTextEditor();
 
-  void setupViewer();
+  bool setupViewer();
+
+  void releaseProtectedView();
 
   void updateSectionNumberOptions();
   void updateEditSectionNumberOptions(bool p_activate);
@@ -223,6 +230,8 @@ private:
   QSplitter *m_splitter = nullptr;
   MarkdownEditor *m_editor = nullptr; // Lazily created.
   MarkdownViewer *m_viewer = nullptr; // Lazily created.
+  struct ProtectedView;
+  QScopedPointer<ProtectedView> m_protectedView;
   PreviewHelper *m_previewHelper = nullptr;
   QMenu *m_imageHostMenu = nullptr;
 

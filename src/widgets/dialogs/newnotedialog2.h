@@ -5,8 +5,11 @@
 
 #include <QHash>
 
+#include <functional>
+
 #include <core/nodeinfo.h>
 
+class QCheckBox;
 class QComboBox;
 class QPlainTextEdit;
 
@@ -14,6 +17,8 @@ namespace vnotex {
 
 class LineEditWithSnippet;
 class NewNoteController;
+struct NewNoteInput;
+struct NewNoteResult;
 class NodeInfoWidget2;
 class NoteTemplateSelector;
 class ServiceLocator;
@@ -43,6 +48,12 @@ public:
 
     // Only meaningful for BodyMode::LiteralContent.
     QString m_initialContent;
+
+    // Widget-owned setup/unlock/progress flow. Called only for encrypted input;
+    // it must delegate storage to NewNoteController with the prepared setup.
+    // A failed result with no errorMessage means the user canceled preparation.
+    // Without this callback the dialog cannot offer encrypted creation.
+    std::function<NewNoteResult(const NewNoteInput &)> m_createEncryptedNote;
   };
 
   // Create a note under the parent folder identified by p_parentId, using the
@@ -63,6 +74,9 @@ public:
   // Get the caret offset from a template "@@" mark (valid after accept()), or -1.
   // In literal-content mode this is the end of the captured content.
   int getNewCursorOffset() const;
+
+public slots:
+  void reject() Q_DECL_OVERRIDE;
 
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
@@ -86,6 +100,8 @@ private:
   // the configured default for the type, otherwise "None".
   void applyTemplateForFileType();
 
+  void updateEncryptionOption();
+
   // Get selected file type name and preferred suffix.
   QString getFileTypeName() const;
   QString getPreferredSuffix() const;
@@ -101,6 +117,9 @@ private:
   // UI widgets.
   LineEditWithSnippet *m_nameEdit = nullptr;
   QComboBox *m_fileTypeCombo = nullptr;
+  QCheckBox *m_encryptCheckBox = nullptr;
+  bool m_encryptionSupported = false;
+  bool m_creatingNote = false;
   // Only one of these exists, per m_options.m_bodyMode.
   NoteTemplateSelector *m_templateSelector = nullptr;
   QPlainTextEdit *m_contentEdit = nullptr;

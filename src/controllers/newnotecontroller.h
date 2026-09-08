@@ -9,6 +9,7 @@
 namespace vnotex {
 
 class ServiceLocator;
+struct PreparedNotebookEncryption;
 
 // Where a new note's body comes from.
 enum class NewNoteBodyMode {
@@ -30,6 +31,7 @@ struct NewNoteInput {
 
   NewNoteBodyMode bodyMode = NewNoteBodyMode::Template;
   QString literalContent; // Verbatim body (LiteralContent mode only)
+  bool encrypted = false;
 };
 
 // Result structure for note creation.
@@ -79,7 +81,12 @@ public:
 
   // Create a new note with the given input.
   // Returns result with success status and node identifier or error message.
-  NewNoteResult createNote(const NewNoteInput &p_input);
+  // Protected creation requires a prepared setup or an already unlocked notebook.
+  // The caller owns setup/unlock UI; this method commits and creates on a worker
+  // under the notebook maintenance lease, then NotebookIoGate. No plaintext note
+  // is created first. A supplied setup is consumed only when commit is reached.
+  NewNoteResult createNote(const NewNoteInput &p_input,
+                           PreparedNotebookEncryption *p_setup = nullptr);
 
   // Create a quick note from a scheme (filename expansion + folder creation +
   // template body expansion + write). Encapsulates the MVC-correct business logic
@@ -92,6 +99,9 @@ public:
                                             const QString &p_relativePath);
 
 private:
+  NewNoteResult createEncryptedNote(const NewNoteInput &p_input,
+                                    PreparedNotebookEncryption *p_setup);
+
   ServiceLocator &m_services;
 };
 

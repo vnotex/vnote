@@ -148,6 +148,30 @@ public:
   // Returns an invalid Buffer2 if the buffer ID is not valid.
   Buffer2 getBufferHandle(const QString &p_bufferId);
 
+  // Protected-only lifecycle roster. Does not implicitly open/decrypt a note.
+  Buffer2 findOpenProtectedBuffer(const NodeIdentifier &p_nodeId) const;
+  std::shared_ptr<ProtectedBufferLease>
+  acquireProtectedLease(const Buffer2 &p_buffer, bool p_durability = false,
+                        VxCoreError *p_outError = nullptr) const;
+  // Caller already holds NotebookIoGate; this method never reacquires it.
+  VxCoreError writeCommentResource(const std::shared_ptr<ProtectedBufferLease> &p_lease,
+                                   const QByteArray &p_data);
+  QList<Buffer2> protectedBuffers() const;
+  bool protectedOperationsIdle() const;
+  bool protectedBufferOperationsIdle(const QString &p_bufferId) const;
+  // GUI-thread scopes for KDF/setup/create/transfer operations without a buffer.
+  bool beginProtectedOperation();
+  void endProtectedOperation();
+  bool beginProtectedLocking();
+  void cancelProtectedLocking();
+  bool isProtectedLocking() const noexcept { return m_protectedLocking; }
+
+  QByteArray readResource(const Buffer2 &p_buffer, const QString &p_resourceUrl,
+                          VxCoreError *p_error = nullptr) const;
+  QJsonArray resources(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr) const;
+  VxCoreError exportResource(const Buffer2 &p_buffer, const QString &p_resourceUrl,
+                             const QString &p_destination) const;
+
   // ============ Buffer Queries (pass-through) ============
 
   // Check whether the notebook for this buffer is a bundled notebook.
@@ -167,36 +191,40 @@ public:
   // Wrap selected methods from privately-inherited BufferCoreService.
   // Buffer2 delegates to these; external code should use Buffer2 methods instead.
   // saveBuffer and reloadBuffer emit bufferModifiedChanged after the operation.
-  bool saveBuffer(const QString &p_bufferId);
-  bool reloadBuffer(const QString &p_bufferId);
-  using BufferCoreService::checkExternalChanges;
-  using BufferCoreService::deleteAsset;
+  bool saveBuffer(const QString &p_bufferId) override;
+  bool saveBuffer(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr);
+  bool reloadBuffer(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr);
+  bool checkExternalChanges(const Buffer2 &p_buffer);
+  bool deleteAsset(const Buffer2 &p_buffer, const QString &p_relativePath);
   using BufferCoreService::getAssetsFolder;
-  using BufferCoreService::getContent;
-  using BufferCoreService::getContentRaw;
+  QJsonObject getContent(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr) const;
+  QByteArray getContentRaw(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr) const;
   using BufferCoreService::getResolvedPath;
   using BufferCoreService::getResourceBasePath;
   using BufferCoreService::getRevision;
   using BufferCoreService::getState;
-  using BufferCoreService::insertAsset;
-  using BufferCoreService::insertAssetRaw;
+  QString insertAsset(const Buffer2 &p_buffer, const QString &p_sourcePath);
+  QString insertAssetRaw(const Buffer2 &p_buffer, const QString &p_assetName,
+                         const QByteArray &p_data);
   // A buffer's read-only state is resolved ONCE, at open time (see
   // openBuffer): FileOpenSettings::m_readOnly ORed with the owning notebook's
   // read-only flag. This query is a plain lookup of that resolved state, so
   // callers never learn (or need to care) WHY a buffer is read-only.
   bool isBufferReadOnly(const QString &p_bufferId) const override;
   using BufferCoreService::isModified;
-  using BufferCoreService::peekContentRaw;
-  using BufferCoreService::setContent;
-  using BufferCoreService::setContentRaw;
-  QString insertAttachment(const QString &p_bufferId, const QString &p_sourcePath);
-  bool deleteAttachment(const QString &p_bufferId, const QString &p_filename);
-  QString renameAttachment(const QString &p_bufferId, const QString &p_oldFilename,
+  QByteArrayViewCompat peekContentRaw(const Buffer2 &p_buffer,
+                                      VxCoreError *p_error = nullptr) const;
+  bool setContent(const Buffer2 &p_buffer, const QString &p_contentJson);
+  bool setContentRaw(const Buffer2 &p_buffer, const QByteArray &p_data);
+  using BufferCoreService::setContentRaw; // IBufferCoreService's ordinary worker boundary.
+  QString insertAttachment(const Buffer2 &p_buffer, const QString &p_sourcePath);
+  bool deleteAttachment(const Buffer2 &p_buffer, const QString &p_filename);
+  QString renameAttachment(const Buffer2 &p_buffer, const QString &p_oldFilename,
                            const QString &p_newFilename);
   using BufferCoreService::getAttachmentsFolder;
-  using BufferCoreService::listAttachments;
   using BufferCoreService::listUnindexedAttachments;
   bool registerAttachment(const QString &p_bufferId, const QString &p_filename);
+  QJsonArray listAttachments(const Buffer2 &p_buffer) const;
 
   // ============ Auto-Save & Dirty Tracking ============
 
@@ -289,6 +317,11 @@ public:
   // Only unregisters if @p_writerKey matches the current active writer.
   void unregisterActiveWriter(const QString &p_bufferId, quintptr p_writerKey);
 
+  // Conversion-only snapshot/suspension; never writes plaintext or closes a buffer.
+  bool captureActiveWriterContent(const QString &p_bufferId, QString *p_outText) const;
+  bool beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody);
+  void endNoteConversion(const QString &p_bufferId, bool p_committed);
+
   // ============ External Change Detection ============
 
   // Check all open non-virtual buffers for external file changes.
@@ -304,6 +337,10 @@ public:
   bool checkSingleExternalChange(const QString &p_bufferId);
 
 signals:
+  void protectedOpenRequested(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
+  void protectedLockingChanged(bool p_locking);
+  void protectedSaveFinished(const QString &p_bufferId, quint64 p_generation, quint64 p_revision,
+                             bool p_backup, int p_error);
   // Emitted after buffer content is synced from editor to vxcore buffer.
   void bufferContentSynced(const QString &p_bufferId);
 
@@ -349,23 +386,29 @@ signals:
   void saveRejectedReadOnly(const QString &p_bufferId);
 
 private:
+  friend class Buffer2;
+  void updateProtectedNodeId(const Buffer2 &p_buffer, const NodeIdentifier &p_nodeId);
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.
   void onAutoSaveTimerTick();
 
   // Sync content from active writer to vxcore buffer and execute auto-save policy.
-  void executeSyncForBuffer(const QString &p_bufferId);
+  bool executeSyncForBuffer(const QString &p_bufferId);
 
   // Async save-completion handler wired to BufferSaveQueue::saveFinished.
   void onSaveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                       const QString &p_errorMsg);
 
-  // Resolve a buffer's read-only state: p_forcedReadOnly (the per-open
-  // FileOpenSettings override) ORed with the owning notebook's read-only flag,
-  // the latter queried only the first time the buffer is seen. Called from
-  // openBuffer and from getBufferHandle (session restore adoption). Monotonic:
-  // a forced-read-only open always upgrades a deduplicated writable buffer,
-  // and read-only is never downgraded before the buffer is closed.
-  void resolveReadOnlyOnce(const QString &p_bufferId, bool p_forcedReadOnly);
+  // Reuse already-fetched buffer info for protection and read-only facts.
+  void resolveBufferFacts(const QString &p_bufferId, bool p_forcedReadOnly,
+                          const QJsonObject &p_bufferInfo);
+  Buffer2 protectedHandle(const QString &p_bufferId) const;
+  VxCoreError withProtectedBuffer(const Buffer2 &p_buffer, bool p_durability,
+                                  const std::function<VxCoreError()> &p_operation) const;
+  VxCoreError saveProtectedSnapshot(const Buffer2 &p_buffer, QByteArray p_content,
+                                    quint64 p_revision, int p_gateTimeoutMs);
+  void executeProtectedSync(const Buffer2 &p_buffer, const QString &p_content, quint64 p_revision);
+  void onProtectedSaveFinished(const QString &p_bufferId, quint64 p_generation, quint64 p_revision,
+                               bool p_backup, int p_error);
 
   // Drop every per-buffer map entry for this buffer. Shared by closeBuffer and
   // forgetBufferIfClosed.
@@ -374,6 +417,7 @@ private:
   struct ActiveWriter {
     quintptr key = 0;
     ContentFetchCallback callback;
+    bool encrypted = false;
   };
 
   static const int c_autoSaveIntervalMs = 3000;
@@ -399,16 +443,17 @@ private:
   // Used to skip auto-save/sync for virtual buffers.
   QSet<QString> m_virtualBufferIds;
 
-  // Buffers resolved as read-only (FileOpenSettings::m_readOnly OR the owning
-  // notebook's read-only flag). Single source of truth for isBufferReadOnly;
-  // cleared on closeBuffer. GUI-thread only (no mutex needed).
-  QSet<QString> m_readOnlyBuffers;
-
-  // Buffers whose read-only state has already been resolved. Distinguishes
-  // "resolved as writable" from "never resolved" so a session-restored buffer
-  // adopted via getBufferHandle is resolved exactly once, and a later open of
-  // the same (deduplicated) buffer cannot downgrade it to writable.
-  QSet<QString> m_readOnlyResolvedBuffers;
+  enum BufferFlag : quint8 { ReadOnly = 1, Encrypted = 2, Converting = 4 };
+  // Replaces the previous resolved/read-only sets; one cached lookup carries
+  // both facts. A plain buffer never participates in the protected roster.
+  QHash<QString, quint8> m_bufferFlags;
+  struct ProtectedBuffers;
+  std::unique_ptr<ProtectedBuffers> m_protectedBuffers;
+  struct NoteConversions;
+  std::unique_ptr<NoteConversions> m_noteConversions;
+  quint64 m_nextProtectedGeneration = 0;
+  bool m_protectedLocking = false;
+  unsigned int m_protectedOperations = 0;
 
   // Map from buffer ID to the active writer's content fetch callback.
   QHash<QString, ActiveWriter> m_activeWriters;

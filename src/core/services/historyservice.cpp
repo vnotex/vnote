@@ -10,12 +10,9 @@
 using namespace vnotex;
 
 HistoryService::HistoryService(NotebookCoreService *p_notebookService, QObject *p_parent)
-    : QObject(p_parent), m_notebookService(p_notebookService) {
-}
+    : QObject(p_parent), m_notebookService(p_notebookService) {}
 
-QVector<NodeInfo> HistoryService::getAllHistory() const {
-  return buildAllHistory();
-}
+QVector<NodeInfo> HistoryService::getAllHistory() const { return buildAllHistory(); }
 
 QVector<NodeInfo> HistoryService::getRecentHistory(int p_limit) const {
   QVector<NodeInfo> nodes = buildAllHistory();
@@ -72,26 +69,24 @@ QVector<NodeInfo> HistoryService::buildAllHistory() const {
       // vxcore history stores only an open/access time (openedUtc, epoch-ms UTC).
       // Keep it in the dedicated accessedTimeUtc field rather than overloading
       // modifiedTimeUtc (which means file-modification time to tree/sort/props).
-      info.accessedTimeUtc =
-          QDateTime::fromMSecsSinceEpoch(
-              static_cast<qint64>(entry.value(QStringLiteral("openedUtc")).toDouble()),
-              Qt::UTC);
+      info.accessedTimeUtc = QDateTime::fromMSecsSinceEpoch(
+          static_cast<qint64>(entry.value(QStringLiteral("openedUtc")).toDouble()), Qt::UTC);
 
       nodes.append(info);
     }
   }
 
   // Sort by openedUtc descending (most recent first).
-  std::sort(nodes.begin(), nodes.end(),
-            [](const NodeInfo &a, const NodeInfo &b) {
-              return a.accessedTimeUtc > b.accessedTimeUtc;
-            });
+  std::sort(nodes.begin(), nodes.end(), [](const NodeInfo &a, const NodeInfo &b) {
+    return a.accessedTimeUtc > b.accessedTimeUtc;
+  });
 
   return nodes;
 }
 
 QString HistoryService::previewFor(const NodeIdentifier &p_id) const {
-  if (!m_notebookService) {
+  if (!m_notebookService ||
+      p_id.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
     return QString();
   }
   return m_notebookService->peekFile(p_id.notebookId, p_id.relativePath);

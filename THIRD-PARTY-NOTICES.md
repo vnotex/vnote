@@ -6,7 +6,7 @@ VNote binaries, together with the notices those licenses require us to keep.
 
 ## Scope
 
-This file covers the bundled **icon sets**, which had no notice anywhere in the tree.
+This file covers the bundled **icon sets** and the **libsodium cryptography dependency**.
 
 It does **not** restate licenses that already ship next to the code they cover:
 
@@ -15,9 +15,27 @@ It does **not** restate licenses that already ship next to the code they cover:
 | pdf.js, and the CMaps / ICC profiles / standard fonts / WASM decoders it bundles | `src/data/extra/web/pdf.js/web/**/LICENSE*` |
 | `libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`, and the cmark fork they vendor | each submodule's own repository |
 
-Provenance below was established by comparing SVG path data against upstream, not
+Icon provenance below was established by comparing SVG path data against upstream, not
 by assuming from file names. Where that failed, the file says so — see
 [Unresolved](#unresolved) rather than treating this document as complete.
+
+---
+
+## libsodium
+
+Per-note encryption links the pinned libsodium library through the libsodium-cmake
+build adapter. Both use the ISC license:
+
+| Material | Pinned source | Copyright |
+|---|---|---|
+| libsodium | [93a7d0d41fe2e32409b5d00386946f491750b7de](https://github.com/jedisct1/libsodium/tree/93a7d0d41fe2e32409b5d00386946f491750b7de) | Copyright (c) 2013-2026, Frank Denis |
+| libsodium-cmake | [9b2848dfc1b917a9410f0de9d81059b26cbfaa8d](https://github.com/robinlinden/libsodium-cmake/tree/9b2848dfc1b917a9410f0de9d81059b26cbfaa8d) | Copyright (c) 2019, Robin Linden |
+
+The build copies the exact upstream `LICENSE` files as `LICENSE.libsodium` and
+`LICENSE.libsodium-cmake`, without rewriting their text. Windows packages carry them
+beside the executable; macOS bundles carry them in `Contents/Resources`; Linux
+installs them under `${datadir}/licenses/vnote`. Standalone vxcore installs include
+both under `${datadir}/licenses/vxcore`. These copies are required, not optional.
 
 ---
 

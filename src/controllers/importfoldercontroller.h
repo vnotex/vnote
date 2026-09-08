@@ -1,6 +1,7 @@
 #ifndef IMPORTFOLDERCONTROLLER_H
 #define IMPORTFOLDERCONTROLLER_H
 
+#include <QByteArray>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -49,6 +50,7 @@ struct ImportFolderValidationResult {
 // Validation result for a share bundle, carrying the preview the dialog shows.
 struct ImportBundleValidationResult {
   bool valid = true;
+  bool encrypted = false;
   QString message;
   QString folderName;
   int fileCount = 0;
@@ -88,6 +90,8 @@ public:
     std::function<void(qint64 /*done*/, qint64 /*total*/)> m_progress;
     // Polled frequently. Returning true aborts the run and imports nothing.
     std::function<bool()> m_isCancelled;
+    std::function<bool(const QString &)> m_unlockDestination;
+    std::function<bool(QByteArray *)> m_sourcePassword;
   };
 
   // Pre-flight for the bundle mode: the destination must be a writable bundled

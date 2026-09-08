@@ -21,6 +21,7 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/texteditorconfig.h>
+#include <gui/utils/imageutils.h>
 #include <utils/pathutils.h>
 #include <utils/sectionnumberutils.h>
 
@@ -454,9 +455,19 @@ MarkdownEditorController::prepareBufferState(const Buffer2 &p_buffer) {
   BufferState state;
 
   if (p_buffer.isValid()) {
-    state.content = p_buffer.decode(p_buffer.peekContentRaw());
-    auto resolved = p_buffer.resolvedPath();
-    state.basePath = resolved.isEmpty() ? QString() : QFileInfo(resolved).path();
+    if (p_buffer.isEncrypted()) {
+      VxCoreError error = VXCORE_OK;
+      const auto content = p_buffer.peekContentRaw(&error);
+      if (error != VXCORE_OK) {
+        return state;
+      }
+      state.content = p_buffer.decode(content);
+      // Protected previews have no filesystem base, even for relative links.
+    } else {
+      state.content = p_buffer.decode(p_buffer.peekContentRaw());
+      auto resolved = p_buffer.resolvedPath();
+      state.basePath = resolved.isEmpty() ? QString() : QFileInfo(resolved).path();
+    }
     state.readOnly = p_buffer.isReadOnly();
     state.modified = p_buffer.isModified();
     state.valid = true;
@@ -467,6 +478,28 @@ MarkdownEditorController::prepareBufferState(const Buffer2 &p_buffer) {
   }
 
   return state;
+}
+
+QString MarkdownEditorController::importProtectedImage(Buffer2 &p_buffer, const QString &p_name,
+                                                       const QByteArray &p_data) {
+  if (!p_buffer.isEncrypted() || !p_buffer.isValid() || p_buffer.isReadOnly()) {
+    return QString();
+  }
+  QByteArray bytes;
+  QByteArray mime;
+  if (!ImageUtils::protectedImageData(p_data, bytes, mime)) {
+    return QString();
+  }
+  // SVG input is rasterized by the validator; its stored name must describe
+  // the returned bytes so the authenticated manifest also has the right MIME.
+  const auto suffix = ImageUtils::guessImageSuffix(bytes);
+  QString result;
+  if (!suffix.isEmpty()) {
+    const auto name = QFileInfo(p_name).completeBaseName() + QLatin1Char('.') + suffix;
+    result = p_buffer.insertAssetRaw(name, bytes);
+  }
+  bytes.fill('\0');
+  return result;
 }
 
 int MarkdownEditorController::persistZoomDelta(int p_delta) {

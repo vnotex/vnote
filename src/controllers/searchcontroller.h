@@ -49,7 +49,7 @@ public:
 signals:
   void nodeActivated(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
   void searchStarted();
-  void searchFinished(int p_totalMatches, bool p_truncated);
+  void searchFinished(int p_totalMatches, bool p_truncated, int p_encryptedSkippedCount);
   void searchFailed(const QString &p_errorMessage);
   void searchCancelled();
   void progressUpdated(int p_percent);

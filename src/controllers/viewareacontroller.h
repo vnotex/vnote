@@ -10,7 +10,9 @@
 #include <QUrl>
 #include <QVariantMap>
 #include <QVector>
+#include <memory>
 
+#include <controllers/legacyimagemigrationcontroller.h>
 #include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
@@ -36,6 +38,25 @@ class BufferService;
 class HookContext;
 class IViewWindowContent;
 class WorkspaceWrapper;
+struct PreparedNotebookEncryption;
+struct NoteEncryptionConversion;
+
+// Transient preparation, never serialized. The body and resource plan stay in
+// memory through confirmation; cancellation restores the original live views.
+struct NoteEncryptionConversion {
+  NoteEncryptionConversion();
+  ~NoteEncryptionConversion();
+  VxCoreError m_error = VXCORE_ERR_INVALID_STATE;
+  QString m_errorMessage;
+  NoteEncryptionPlan m_plan;
+  NodeIdentifier m_nodeId;
+  QString m_encryptedPath;
+
+private:
+  friend class ViewAreaController;
+  struct State;
+  std::unique_ptr<State> m_state;
+};
 
 // Controller for the view area. Handles business logic and service interactions.
 // Does NOT know about ViewArea2 or any widget type -- communicates with the view
@@ -63,6 +84,20 @@ public:
 
   // Set the view interface. Called once by ViewArea2 during setup.
   void setView(ViewAreaView *p_view);
+
+  // Widget-owned dialogs call these synchronous orchestration entrypoints.
+  // KDF and storage application run on workers; waits keep modal UI responsive.
+  PreparedNotebookEncryption prepareNoteEncryption(const QString &p_notebookId,
+                                                   const QString &p_sourceNotebookId,
+                                                   QByteArray &p_password);
+  VxCoreError unlockNoteEncryption(const QString &p_notebookId, QByteArray &p_password);
+  std::shared_ptr<NoteEncryptionConversion> prepareNoteConversion(const NodeIdentifier &p_nodeId);
+  VxCoreError applyNoteConversion(const std::shared_ptr<NoteEncryptionConversion> &p_conversion,
+                                  PreparedNotebookEncryption *p_setup = nullptr);
+  void cancelNoteConversion(const std::shared_ptr<NoteEncryptionConversion> &p_conversion);
+  bool isNoteConversionBlocked() const;
+  bool lockAllProtectedNotes(QString *p_error = nullptr);
+  QString releaseHiddenViewWindow(QObject *p_window);
 
   // ============ Open/Close ============
 
@@ -276,6 +311,7 @@ public:
   void requestQuickNote();
 
 signals:
+  void protectedLockFailed(const QString &p_error);
   // ============ Notification Signals (external consumers) ============
 
   // Emitted when a quick note should be created (schemes are configured).
@@ -292,6 +328,9 @@ signals:
 
   // Emitted when a tab context menu requests to locate a node in the notebook explorer.
   void locateNodeRequested(const NodeIdentifier &p_nodeId);
+
+private slots:
+  void onNoteConversionSaveError(const QString &p_bufferId, const QString &p_error);
 
 private:
   // Move a buffer's vxcore workspace registration from source to destination.
@@ -346,6 +385,12 @@ private:
 
   // Buffer IDs collected during NotebookBeforeClose for use in NotebookAfterClose.
   QStringList m_pendingNotebookCloseBufferIds;
+
+  QVector<std::shared_ptr<NoteEncryptionConversion>> m_noteConversions;
+  bool m_noteConversionReopen = false;
+  // Allocated only for live protected windows, including hidden/detached ones.
+  std::unique_ptr<QSet<ID>> m_protectedWindows;
+  std::unique_ptr<QSet<ID>> m_lockedWindows;
 
   ServiceLocator &m_services;
   ViewAreaView *m_view = nullptr;

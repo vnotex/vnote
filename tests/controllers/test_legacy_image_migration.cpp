@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QProcess>
+#include <QScopeGuard>
 #include <QSet>
 #include <QString>
 #include <QStringList>
@@ -11,6 +12,12 @@
 #include <QTextDocument>
 #include <QUrl>
 #include <QVector>
+#include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
+#include <core/services/filetypecoreservice.h>
+#include <core/services/hookmanager.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 
 #include <controllers/legacyimagemigrationcontroller.h>
 
@@ -67,6 +74,7 @@ private slots:
 
   // The descending QTextCursor rewrite loop.
   void testDescendingRewriteLoopProducesExpectedText();
+  void testEncryptionPlansNotebookRelativeAttachmentMetadata();
 
 private:
   // Writes a 1x1-ish placeholder image file (content is irrelevant; only
@@ -708,6 +716,58 @@ void TestLegacyImageMigration::testDescendingRewriteLoopProducesExpectedText() {
   QVERIFY(doc.isUndoAvailable());
   doc.undo();
   QCOMPARE(doc.toPlainText(), text);
+}
+
+void TestLegacyImageMigration::testEncryptionPlansNotebookRelativeAttachmentMetadata() {
+  TempDirFixture temporary;
+  QVERIFY(temporary.isValid());
+  const auto oldTmp = qgetenv("TMP");
+  const auto oldTemp = qgetenv("TEMP");
+  const auto oldTmpDir = qgetenv("TMPDIR");
+  const auto restoreEnvironment = qScopeGuard([&]() {
+    qputenv("TMP", oldTmp);
+    qputenv("TEMP", oldTemp);
+    qputenv("TMPDIR", oldTmpDir);
+  });
+  const auto isolated = temporary.path().toLocal8Bit();
+  qputenv("TMP", isolated);
+  qputenv("TEMP", isolated);
+  qputenv("TMPDIR", isolated);
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  const auto closeContext = qScopeGuard([&]() { vxcore_context_destroy(context); });
+  vnotex::NotebookCoreService notebooks(context);
+  vnotex::HookManager hooks;
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferService buffers(context, &hooks, &gate, vnotex::AutoSavePolicy::None);
+  vnotex::FileTypeCoreService types(context, QStringLiteral("en_US"));
+  vnotex::ServiceLocator services;
+  services.registerService<vnotex::NotebookCoreService>(&notebooks);
+  services.registerService<vnotex::BufferService>(&buffers);
+  services.registerService<vnotex::FileTypeCoreService>(&types);
+  const auto notebook = notebooks.createNotebook(
+      temporary.filePath("book"), QStringLiteral("{\"name\":\"Attachment planning\"}"),
+      vnotex::NotebookType::Bundled);
+  QVERIFY(!notebook.isEmpty());
+  QVERIFY(!notebooks.createFile(notebook, QString(), "target.md").isEmpty());
+  QVERIFY(!notebooks.createFile(notebook, QString(), "other.md").isEmpty());
+  auto target = buffers.openBuffer({notebook, "target.md"});
+  auto other = buffers.openBuffer({notebook, "other.md"});
+  QVERIFY(target.isValid() && other.isValid());
+  const auto source = temporary.filePath("attachment.txt");
+  writeStub(source);
+  QVERIFY(!target.insertAttachment(source).isEmpty());
+  QVERIFY(!other.insertAttachment(source).isEmpty());
+  LegacyImageMigrationController controller(services);
+  const auto plan = controller.planNoteEncryption(target.nodeId(), QByteArrayLiteral("Body"),
+                                                  QStringLiteral("UTF-8"));
+  QVERIFY2(plan.isValid(), qPrintable(plan.m_errorMessage));
+  const auto resources = plan.m_resourcePlan.value("resources").toArray();
+  QCOMPARE(resources.size(), 1);
+  QCOMPARE(resources.first().toObject().value("name").toString(), QStringLiteral("attachment.txt"));
+  QVERIFY(!resources.first().toObject().value("retainOriginal").toBool());
+  QVERIFY(plan.m_retainedOriginals.isEmpty());
 }
 
 } // namespace tests

@@ -94,6 +94,10 @@ public:
   // Set Buffer2 handle for asset/attachment operations (new architecture).
   void setBuffer2(Buffer2 *p_buffer);
 
+  // Revoke before closing a protected view; the reader remains deny-all.
+  // Does not discard unsaved text when locking is subsequently cancelled.
+  void revokeProtectedResources();
+
   // Set content path for relative link resolution.
   // Used instead of Buffer's getContentPath().
   void setContentPath(const QString &p_contentPath);
@@ -179,6 +183,10 @@ signals:
   // Caller connects to file-open handling.
   void openFileRequested(const QString &p_filePath);
 
+  // Widget-owned explicit plaintext consent and destination selection.
+  // Only current-note logical resources are emitted; never a temporary path.
+  void saveDecryptedCopyRequested(const QString &p_resourceUrl);
+
   // Emitted when an image is inserted into the buffer (new architecture).
   // Allows view windows to track inserted images for cleanup.
   void imageInserted(const QString &p_imagePath, const QString &p_urlInLink);
@@ -198,6 +206,8 @@ private slots:
   void parseToMarkdownAndPaste();
 
   void onUploadFinished(int p_token, const ImageHostAsyncResult &p_result);
+
+  void onProtectedLockingChanged(bool p_locking);
 
 private:
   // @p_insertText: whether insert text into the buffer after inserting image file.
@@ -243,6 +253,11 @@ private:
   void insertImageFromMimeData(const QMimeData *p_source);
 
   void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
+
+  void installProtectedResourceReader();
+  bool readProtectedImage(const QString &p_url, QByteArray &p_data) const;
+  void insertProtectedImageFromUrl(const QString &p_url, bool p_quiet);
+  void openLink(const QString &p_url);
 
   // Update headings outline.
   void updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings, bool p_hasSectionNumber);
@@ -296,6 +311,10 @@ private:
   const MarkdownEditorConfig &m_config;
 
   Buffer2 *m_buffer2 = nullptr;
+  bool m_protectedBuffer = false;
+  bool m_protectedResourcesRevoked = false;
+  quint64 m_protectedResourceGeneration = 0;
+  QMetaObject::Connection m_protectedLockConnection;
 
   QVector<Heading> m_headings;
   bool m_headingsHaveSectionNumber = false;

@@ -9,6 +9,10 @@
 #include <QLoggingCategory>
 #include <QThread>
 
+#include <cstring>
+#include <limits>
+#include <new>
+
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
@@ -124,6 +128,13 @@ QJsonArray BufferCoreService::listBuffers() const {
 
 // Buffer content.
 bool BufferCoreService::saveBuffer(const QString &p_bufferId) {
+  return saveBuffer(p_bufferId, nullptr);
+}
+
+bool BufferCoreService::saveBuffer(const QString &p_bufferId, VxCoreError *p_error) {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return false;
   }
@@ -132,6 +143,9 @@ bool BufferCoreService::saveBuffer(const QString &p_bufferId) {
   timer.start();
 
   VxCoreError err = vxcore_buffer_save(m_context, p_bufferId.toUtf8().constData());
+  if (p_error) {
+    *p_error = err;
+  }
 
   qint64 elapsed = timer.elapsed();
   qCDebug(perfSave) << "[perf.save] vxcore_buffer_save_ms=" << elapsed
@@ -144,12 +158,18 @@ bool BufferCoreService::saveBuffer(const QString &p_bufferId) {
   return true;
 }
 
-bool BufferCoreService::reloadBuffer(const QString &p_bufferId) {
+bool BufferCoreService::reloadBuffer(const QString &p_bufferId, VxCoreError *p_error) {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return false;
   }
 
   VxCoreError err = vxcore_buffer_reload(m_context, p_bufferId.toUtf8().constData());
+  if (p_error) {
+    *p_error = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "reloadBuffer failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -171,13 +191,19 @@ bool BufferCoreService::checkExternalChanges(const QString &p_bufferId) {
   return true;
 }
 
-QJsonObject BufferCoreService::getContent(const QString &p_bufferId) const {
+QJsonObject BufferCoreService::getContent(const QString &p_bufferId, VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return QJsonObject();
   }
 
   char *json = nullptr;
   VxCoreError err = vxcore_buffer_get_content(m_context, p_bufferId.toUtf8().constData(), &json);
+  if (p_error) {
+    *p_error = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "getContent failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonObject();
@@ -199,7 +225,10 @@ bool BufferCoreService::setContent(const QString &p_bufferId, const QString &p_c
   return true;
 }
 
-QByteArray BufferCoreService::getContentRaw(const QString &p_bufferId) const {
+QByteArray BufferCoreService::getContentRaw(const QString &p_bufferId, VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return QByteArray();
   }
@@ -208,6 +237,9 @@ QByteArray BufferCoreService::getContentRaw(const QString &p_bufferId) const {
   size_t size = 0;
   VxCoreError err =
       vxcore_buffer_get_content_raw(m_context, p_bufferId.toUtf8().constData(), &data, &size);
+  if (p_error) {
+    *p_error = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "getContentRaw failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QByteArray();
@@ -216,7 +248,11 @@ QByteArray BufferCoreService::getContentRaw(const QString &p_bufferId) const {
   return QByteArray(static_cast<const char *>(data), static_cast<int>(size));
 }
 
-QByteArrayViewCompat BufferCoreService::peekContentRaw(const QString &p_bufferId) const {
+QByteArrayViewCompat BufferCoreService::peekContentRaw(const QString &p_bufferId,
+                                                       VxCoreError *p_error) const {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return QByteArrayViewCompat{};
   }
@@ -225,6 +261,9 @@ QByteArrayViewCompat BufferCoreService::peekContentRaw(const QString &p_bufferId
   size_t size = 0;
   VxCoreError err =
       vxcore_buffer_get_content_raw(m_context, p_bufferId.toUtf8().constData(), &data, &size);
+  if (p_error) {
+    *p_error = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "peekContentRaw failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QByteArrayViewCompat{};
@@ -238,6 +277,14 @@ QByteArrayViewCompat BufferCoreService::peekContentRaw(const QString &p_bufferId
 }
 
 bool BufferCoreService::setContentRaw(const QString &p_bufferId, const QByteArray &p_data) {
+  return setContentRaw(p_bufferId, p_data, nullptr);
+}
+
+bool BufferCoreService::setContentRaw(const QString &p_bufferId, const QByteArray &p_data,
+                                      VxCoreError *p_error) {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return false;
   }
@@ -245,6 +292,9 @@ bool BufferCoreService::setContentRaw(const QString &p_bufferId, const QByteArra
   VxCoreError err =
       vxcore_buffer_set_content_raw(m_context, p_bufferId.toUtf8().constData(), p_data.constData(),
                                     static_cast<size_t>(p_data.size()));
+  if (p_error) {
+    *p_error = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "setContentRaw failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -282,14 +332,15 @@ bool BufferCoreService::isModified(const QString &p_bufferId) const {
   return modified != 0;
 }
 
-bool BufferCoreService::isNotebookReadOnlyForBuffer(const QString &p_bufferId) const {
+bool BufferCoreService::isNotebookReadOnlyForBuffer(const QString &p_bufferId,
+                                                    const QJsonObject *p_bufferInfo) const {
   if (!checkContext()) {
     qWarning() << "isNotebookReadOnlyForBuffer: context invalid";
     return false;
   }
 
   // Get buffer info (contains notebook ID and path)
-  QJsonObject bufferJson = getBuffer(p_bufferId);
+  QJsonObject bufferJson = p_bufferInfo ? *p_bufferInfo : getBuffer(p_bufferId);
   if (bufferJson.isEmpty()) {
     qWarning() << "isNotebookReadOnlyForBuffer: failed to get buffer info for" << p_bufferId;
     return false;
@@ -331,12 +382,18 @@ int BufferCoreService::getRevision(const QString &p_bufferId) const {
   return revision;
 }
 
-bool BufferCoreService::writeBackup(const QString &p_bufferId) {
+bool BufferCoreService::writeBackup(const QString &p_bufferId, VxCoreError *p_error) {
+  if (p_error) {
+    *p_error = VXCORE_ERR_NOT_INITIALIZED;
+  }
   if (!checkContext()) {
     return false;
   }
 
   VxCoreError err = vxcore_buffer_write_backup(m_context, p_bufferId.toUtf8().constData());
+  if (p_error) {
+    *p_error = err;
+  }
   if (err != VXCORE_OK) {
     qWarning() << "writeBackup failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -629,6 +686,101 @@ QString BufferCoreService::getAttachmentsFolder(const QString &p_bufferId) const
     return QString();
   }
   return cstrToQString(path);
+}
+
+QByteArray BufferCoreService::readResource(const QString &p_bufferId, const QString &p_resourceUrl,
+                                           VxCoreError *p_error) const {
+  struct Result {
+    QByteArray bytes;
+    VxCoreError error = VXCORE_OK;
+  } result;
+  const auto callback = [](const void *p_data, size_t p_size, void *p_userdata) {
+    auto &out = *static_cast<Result *>(p_userdata);
+    if (p_size > static_cast<size_t>(std::numeric_limits<int>::max())) {
+      out.error = VXCORE_ERR_OUT_OF_MEMORY;
+      return;
+    }
+    try {
+      out.bytes = QByteArray(static_cast<const char *>(p_data), static_cast<int>(p_size));
+    } catch (const std::bad_alloc &) {
+      out.error = VXCORE_ERR_OUT_OF_MEMORY;
+    } catch (...) {
+      out.error = VXCORE_ERR_UNKNOWN;
+    }
+  };
+  VxCoreError error =
+      m_context ? vxcore_buffer_read_resource(m_context, p_bufferId.toUtf8().constData(),
+                                              p_resourceUrl.toUtf8().constData(), callback, &result)
+                : VXCORE_ERR_NOT_INITIALIZED;
+  if (error == VXCORE_OK) {
+    error = result.error;
+  }
+  if (p_error) {
+    *p_error = error;
+  }
+  return error == VXCORE_OK ? std::move(result.bytes) : QByteArray();
+}
+
+QJsonArray BufferCoreService::resources(const QString &p_bufferId, VxCoreError *p_error) const {
+  char *json = nullptr;
+  VxCoreError error =
+      m_context ? vxcore_buffer_list_resources(m_context, p_bufferId.toUtf8().constData(), &json)
+                : VXCORE_ERR_NOT_INITIALIZED;
+  // Manifest names are sensitive. Parse the borrowed C bytes without another
+  // QByteArray allocation, and wipe them on every exit (including exceptions).
+  struct ResourceJson {
+    char *bytes;
+    ~ResourceJson() {
+      if (bytes) {
+        const size_t size = std::strlen(bytes);
+        volatile char *cursor = bytes;
+        for (size_t i = 0; i < size; ++i) {
+          cursor[i] = 0;
+        }
+        vxcore_string_free(bytes);
+      }
+    }
+  } owned{json};
+  QJsonArray result;
+  const size_t size = json ? std::strlen(json) : 0;
+  if (error == VXCORE_OK && (!json || size > size_t(std::numeric_limits<int>::max()))) {
+    error = json ? VXCORE_ERR_OUT_OF_MEMORY : VXCORE_ERR_ENCRYPTION_FORMAT;
+  }
+  if (error == VXCORE_OK) {
+    try {
+      QJsonParseError parseError;
+      const QJsonDocument doc = QJsonDocument::fromJson(
+          QByteArray::fromRawData(json, static_cast<int>(size)), &parseError);
+      if (parseError.error != QJsonParseError::NoError || !doc.isArray()) {
+        error = VXCORE_ERR_ENCRYPTION_FORMAT;
+      } else {
+        result = doc.array();
+      }
+    } catch (const std::bad_alloc &) {
+      error = VXCORE_ERR_OUT_OF_MEMORY;
+    }
+  }
+  if (p_error) {
+    *p_error = error;
+  }
+  return result;
+}
+
+VxCoreError BufferCoreService::exportResource(const QString &p_bufferId,
+                                              const QString &p_resourceUrl,
+                                              const QString &p_destination) const {
+  return m_context ? vxcore_buffer_export_resource(m_context, p_bufferId.toUtf8().constData(),
+                                                   p_resourceUrl.toUtf8().constData(),
+                                                   p_destination.toUtf8().constData())
+                   : VXCORE_ERR_NOT_INITIALIZED;
+}
+
+VxCoreError BufferCoreService::writeCommentResource(const QString &p_bufferId,
+                                                    const QByteArray &p_data) {
+  return m_context
+             ? vxcore_buffer_write_comment_resource(m_context, p_bufferId.toUtf8().constData(),
+                                                    p_data.constData(), size_t(p_data.size()))
+             : VXCORE_ERR_NOT_INITIALIZED;
 }
 
 // Private methods.

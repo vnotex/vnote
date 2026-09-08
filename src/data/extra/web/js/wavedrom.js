@@ -39,8 +39,12 @@ class WaveDromRenderer extends GraphRenderer {
         try {
             // ATTENTION: p_idx should start from 0 or style will be missing.
             WaveDrom.RenderWaveForm(p_idx,
-                                    eval('(' + p_node.textContent + ')'),
+                                    window.vxOptions.protectedView ? JSON.parse(p_node.textContent)
+                                        : eval('(' + p_node.textContent + ')'),
                                     'vx-wavedrom-graph-');
+            if (window.vxOptions.protectedView) {
+                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+            }
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
         } catch (p_err) {
             console.error('failed to RenderWaveForm() for WaveDrom', p_err);
@@ -77,7 +81,8 @@ class WaveDromRenderer extends GraphRenderer {
         try {
             // Always use 0 as the index.
             WaveDrom.RenderWaveForm(0,
-                                    eval('(' + p_text + ')'),
+                                    window.vxOptions.protectedView ? JSON.parse(p_text)
+                                        : eval('(' + p_text + ')'),
                                     'vx-wavedrom-graph-stand-alone-' + p_idx);
         } catch (p_err) {
             console.error('failed to RenderWaveForm() for WaveDrom', p_err);
@@ -85,6 +90,9 @@ class WaveDromRenderer extends GraphRenderer {
             return null;
         }
 
+        if (window.vxOptions.protectedView) {
+            MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+        }
         return graphDiv;
     }
 }

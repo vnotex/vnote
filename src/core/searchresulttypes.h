@@ -1,8 +1,8 @@
 #ifndef SEARCHRESULTTYPES_H
 #define SEARCHRESULTTYPES_H
 
-#include <QString>
 #include <QMetaType>
+#include <QString>
 #include <QVector>
 
 class QJsonObject;
@@ -20,7 +20,7 @@ struct SearchMatchSegment {
 // SearchLineMatch carrying one segment per occurrence, so a line with N matches
 // renders as one row with N highlighted ranges (not N duplicated rows).
 struct SearchLineMatch {
-  int m_lineNumber = -1;  // 0-based line number
+  int m_lineNumber = -1; // 0-based line number
   QString m_lineText;
   QVector<SearchMatchSegment> m_segments;
 };
@@ -31,10 +31,10 @@ enum class SearchResultType { File, Folder };
 // A single file/folder result from search.
 struct SearchFileResult {
   SearchResultType m_type = SearchResultType::File;
-  QString m_path;          // Relative path within notebook
-  QString m_absolutePath;  // Absolute filesystem path (file search only)
-  QString m_id;            // Node ID (GUID)
-  QString m_notebookId;    // Notebook GUID (set by caller)
+  QString m_path;         // Relative path within notebook
+  QString m_absolutePath; // Absolute filesystem path (file search only)
+  QString m_id;           // Node ID (GUID)
+  QString m_notebookId;   // Notebook GUID (set by caller)
 
   // Total match occurrences in this file (content search only). Distinct from
   // m_lineMatches.size(), which counts matched LINES after same-line grouping.
@@ -49,18 +49,17 @@ struct SearchResult {
   QVector<SearchFileResult> m_fileResults;
   int m_matchCount = 0;
   bool m_truncated = false;
+  int m_encryptedSkippedCount = 0;
 
   // Build from vxcore content search JSON response.
   // @p_json: full vxcore response with matchCount, truncated, matches.
   // @p_notebookId: notebook GUID to stamp on each file result.
-  static SearchResult fromContentSearchJson(const QJsonObject &p_json,
-                                            const QString &p_notebookId);
+  static SearchResult fromContentSearchJson(const QJsonObject &p_json, const QString &p_notebookId);
 
   // Build from vxcore file/tag search JSON response.
   // @p_json: wrapped response with matchCount, truncated, matches.
   // @p_notebookId: notebook GUID to stamp on each file result.
-  static SearchResult fromFileSearchJson(const QJsonObject &p_json,
-                                         const QString &p_notebookId);
+  static SearchResult fromFileSearchJson(const QJsonObject &p_json, const QString &p_notebookId);
 };
 
 } // namespace vnotex

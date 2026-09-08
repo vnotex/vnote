@@ -45,12 +45,19 @@ public:
   // Copy full paths of attachments to the system clipboard.
   void copyAttachmentPaths(const QStringList &p_filenames);
 
+  // Display names stay in the UI; protected mutations resolve logical resource IDs.
+  QString renameAttachment(const QString &p_filename, const QString &p_newName);
+
 signals:
   void renameRequested(const QModelIndex &p_index);
   void attachmentAdded();
   void attachmentDeleted();
+  void saveDecryptedCopyRequested(const QStringList &p_resourceUrls);
+  void operationFailed(const QString &p_message);
 
 private:
+  QStringList protectedResourceUrls(const QStringList &p_filenames);
+
   ServiceLocator &m_services;
   Buffer2 *m_buffer = nullptr;
 };

@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QHash>
 #include <QJsonObject>
+#include <QPointer>
 #include <QSet>
 #include <QStringList>
 #include <QVBoxLayout>
@@ -23,6 +24,7 @@ class QActionGroup;
 class QLabel;
 class QTimer;
 class QToolButton;
+class QProgressDialog;
 
 namespace vnotex {
 
@@ -34,7 +36,11 @@ class TitleBar;
 class INodeExplorer;
 class TwoColumnsNodeExplorer;
 class ServiceLocator;
+class ViewAreaController;
 struct FileOpenSettings;
+struct NewNoteInput;
+struct NewNoteResult;
+struct PreparedNotebookEncryption;
 
 // NotebookExplorer2 is a container widget that displays notebook nodes
 // using proper MVC architecture.
@@ -66,6 +72,7 @@ public:
 
   NotebookSelector2 *getNotebookSelector() const;
   INodeExplorer *getNodeExplorer() const;
+  void setViewAreaController(ViewAreaController *p_controller);
 
   // Mode switching
   void setExploreMode(ExploreMode p_mode);
@@ -116,6 +123,9 @@ public slots:
   // notification action can open Sync Info for the notebook that actually
   // failed, which may not be the one currently on screen.
   void openSyncInfo(const QString &p_notebookId);
+
+  // The real dialog flow, also callable by isolated widget smoke harnesses.
+  void encryptNote(const QList<NodeIdentifier> &p_ids);
 
 #ifdef VNOTE_TESTING
   // Test-only seam (per ADR-6) that simulates the post-newNotebook() auto-open
@@ -241,6 +251,12 @@ private:
   // Ordinary New Note passes default options; Service capture passes
   // literal-content options.
   void doNewNote(const NodeIdentifier &p_parentId, const NewNoteDialog2::Options &p_options);
+  NewNoteResult createEncryptedNote(const NewNoteInput &p_input);
+  // Shared password/key-source UI for conversion and creation. Only prepares:
+  // callers commit under maintenance and the IO gate after all prompts finish.
+  VxCoreError prepareNotebookEncryption(const QString &p_notebookId,
+                                        PreparedNotebookEncryption &p_setup,
+                                        QProgressDialog &p_progress, QString &p_errorMessage);
   void setCurrentNotebookInternal(const QString &p_notebookId);
   // Functional read-only guard for toolbar-driven mutation slots. Resolves the
   // current notebook id the same way the read-only badge does and queries
@@ -309,6 +325,8 @@ private:
   // widget owns no share state that a nested destruction could tear down.
   bool m_folderShareActive = false;
   bool m_nodeTransferActive = false;
+  bool m_noteEncryptionActive = false;
+  QPointer<ViewAreaController> m_viewAreaController;
 
   // Auto-prompt-on-open set (sync-info-on-open). Populated in importNotebook's
   // notebookOpened lambda with the just-interactively-opened notebook id, then

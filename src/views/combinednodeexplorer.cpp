@@ -97,6 +97,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::shareFolderRequested);
   connect(m_controller, &NotebookNodeController::markRequested, this,
           &CombinedNodeExplorer::markRequested);
+  connect(m_controller, &NotebookNodeController::encryptNoteRequested, this,
+          &CombinedNodeExplorer::encryptNoteRequested);
   connect(m_controller, &NotebookNodeController::ignoreRequested, this,
           &CombinedNodeExplorer::ignoreRequested);
   connect(m_controller, &NotebookNodeController::manageTagsRequested, this,

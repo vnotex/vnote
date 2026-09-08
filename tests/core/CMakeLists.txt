@@ -421,6 +421,7 @@ add_qt_test(test_markdowneditorcontroller
   SOURCES
     test_markdowneditorcontroller.cpp
     stubs_textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
@@ -432,6 +433,7 @@ add_qt_test(test_markdowneditorcontroller
     core_services
     vxcore
     VTextEdit
+    Qt6::Svg
   GUILESS
 )
 

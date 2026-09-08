@@ -23,6 +23,7 @@
 #include <controllers/commentcontroller.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/commentservice.h>
 #include <core/services/commenttypes.h>
 #include <core/services/hookmanager.h>
@@ -76,6 +77,7 @@ private:
   VxCoreContextHandle m_context = nullptr;
   NotebookCoreService *m_notebooks = nullptr;
   NotebookIoGate *m_gate = nullptr;
+  BufferService *m_buffers = nullptr;
   HookManager *m_hooks = nullptr;
   CommentService *m_service = nullptr;
   ServiceLocator *m_services = nullptr;
@@ -90,10 +92,12 @@ void TestCommentController::initTestCase() {
   m_notebooks = new NotebookCoreService(m_context);
   m_notebooks->setHookManager(m_hooks);
   m_gate = new NotebookIoGate();
-  m_service = new CommentService(m_notebooks, m_gate, m_hooks);
+  m_buffers = new BufferService(m_context, m_hooks, m_gate);
+  m_service = new CommentService(m_notebooks, m_buffers, m_gate, m_hooks);
 
   m_services = new ServiceLocator();
   m_services->registerService<NotebookCoreService>(m_notebooks);
+  m_services->registerService<BufferService>(m_buffers);
   m_services->registerService<CommentService>(m_service);
 }
 
@@ -102,6 +106,8 @@ void TestCommentController::cleanupTestCase() {
   m_services = nullptr;
   delete m_service;
   m_service = nullptr;
+  delete m_buffers;
+  m_buffers = nullptr;
   delete m_gate;
   m_gate = nullptr;
   delete m_notebooks;

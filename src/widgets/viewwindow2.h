@@ -218,6 +218,11 @@ public:
   // Default implementation syncs dirty content and unregisters from BufferService.
   virtual bool aboutToClose(bool p_force);
 
+  // Stops focus-loss sync and user mutations without changing the buffer or
+  // destroying the writer. Conversion owns restoring this state on failure.
+  void setNoteConversionFrozen(bool p_frozen);
+  bool isNoteConversionFrozen() const { return m_noteConversionFrozen; }
+
   // Reload buffer content from disk, prompting Save/Discard/Cancel on unsaved
   // changes. Preserves current mode (does not switch Read<->Edit). Returns true
   // on successful reload, false on cancel/failure/missing-path.
@@ -228,6 +233,9 @@ public:
   bool autoReload() const;
 
 public slots:
+  // Explicit plaintext disclosure. Empty URL exports the note and only checked resources.
+  void saveDecryptedCopy(const QString &p_resourceUrl = QString());
+
   void findNext(const QString &p_text, FindOptions p_options);
 
   void replace(const QString &p_text, FindOptions p_options, const QString &p_replaceText);
@@ -639,6 +647,7 @@ private:
   };
 
   void setupUI();
+  void saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_exportNote);
 
   // Focus event handlers for auto-save integration.
   void onFocusGained();
@@ -661,6 +670,9 @@ private:
 
   // ViewArea2-assigned window ID. 0 = not assigned.
   ID m_viewWindowId = 0;
+  bool m_noteConversionFrozen = false;
+  bool m_noteConversionWasEnabled = true;
+  bool m_noteConversionCommentsEditable = false;
 
   Buffer2 m_buffer;
 

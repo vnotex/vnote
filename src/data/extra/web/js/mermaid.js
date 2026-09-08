@@ -25,10 +25,14 @@ class Mermaid extends GraphRenderer {
     }
 
     initializeRenderer() {
-        mermaid.initialize({
-            startOnLoad: false,
-            theme: this.theme
-        });
+        const options = { startOnLoad: false, theme: this.theme };
+        if (window.vxOptions.protectedView) {
+            options.securityLevel = 'strict';
+            options.htmlLabels = false;
+            options.flowchart = { htmlLabels: false };
+            options.secure = ['securityLevel', 'startOnLoad', 'htmlLabels', 'flowchart'];
+        }
+        mermaid.initialize(options);
         // The theme is baked into the rendered SVG but is fixed for the lifetime
         // of the page, so it is handled by clearing here rather than by widening
         // every cache key. In-source %%{init}%% directives ARE part of the source
@@ -86,6 +90,9 @@ class Mermaid extends GraphRenderer {
             // id plus url(#...) marker references, so a verbatim second insertion
             // would resolve both against the first copy.
             graphDiv.innerHTML = graphSvg;
+            if (window.vxOptions.protectedView) {
+                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+            }
             Utils.renamespaceSvgIds(graphDiv, '-vx' + p_idx);
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
         } catch (p_err) {
@@ -292,6 +299,9 @@ class Mermaid extends GraphRenderer {
         let graphDiv = document.createElement('div');
         try {
             graphDiv.innerHTML = graphSvg;
+            if (window.vxOptions.protectedView) {
+                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+            }
         } catch (p_err) {
             console.error('incorrect graph SVG definition', p_err);
             return null;

@@ -1,8 +1,10 @@
 #include "newnotedialog2.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QPlainTextEdit>
+#include <QScopedValueRollback>
 #include <QTextDocument>
 #include <QVBoxLayout>
 
@@ -19,6 +21,7 @@
 #include "../lineeditwithsnippet.h"
 #include "../widgetsfactory.h"
 #include "notetemplateselector.h"
+#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -27,6 +30,7 @@ namespace {
 const char *kContentEditName = "newNoteContentEdit";
 const char *kFileTypeComboName = "newNoteFileTypeCombo";
 const char *kNameEditName = "newNoteNameEdit";
+const char *kEncryptCheckBoxName = "newNoteEncryptCheckBox";
 
 // Extract literal capture text WITHOUT QPlainTextEdit::toPlainText().
 //
@@ -90,6 +94,7 @@ void NewNoteDialog2::setupUI() {
     // the type change came from the name field (where m_fileTypeComboMuted is
     // set to break the name<->type loop).
     applyTemplateForFileType();
+    updateEncryptionOption();
   });
   layout->addRow(tr("Type"), m_fileTypeCombo);
 
@@ -122,6 +127,21 @@ void NewNoteDialog2::setupUI() {
     layout->addRow(tr("Template"), m_templateSelector);
   }
 
+  m_encryptCheckBox = new QCheckBox(tr("Encrypt note"), mainWidget);
+  m_encryptCheckBox->setObjectName(QLatin1String(kEncryptCheckBoxName));
+  m_encryptCheckBox->setChecked(false);
+  if (m_options.m_createEncryptedNote) {
+    auto *notebooks = m_services.get<NotebookCoreService>();
+    if (notebooks) {
+      const auto config = notebooks->getNotebookConfig(m_parentId.notebookId);
+      m_encryptionSupported = config.value(QLatin1String(vxcore::kJsonKeyType)).toString() ==
+                                  QLatin1String("bundled") &&
+                              !notebooks->isNotebookReadOnly(m_parentId.notebookId);
+    }
+  }
+  layout->addRow(m_encryptCheckBox);
+  updateEncryptionOption();
+
   setCentralWidget(mainWidget);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -146,6 +166,7 @@ void NewNoteDialog2::initDefaultValues() {
   // Pick the template for that file type. Capture dialogs have no template
   // selector and must neither read nor write the shared session cache.
   applyTemplateForFileType();
+  updateEncryptionOption();
 }
 
 void NewNoteDialog2::applyTemplateForFileType() {
@@ -238,6 +259,21 @@ void NewNoteDialog2::updateFileTypeForName() {
   }
 }
 
+void NewNoteDialog2::updateEncryptionOption() {
+  if (!m_encryptCheckBox) {
+    return;
+  }
+  const QString type = getFileTypeName();
+  const bool supported =
+      m_encryptionSupported && (type.compare(QLatin1String("Markdown"), Qt::CaseInsensitive) == 0 ||
+                                type.compare(QLatin1String("Text"), Qt::CaseInsensitive) == 0);
+  m_encryptCheckBox->setVisible(supported);
+  m_encryptCheckBox->setEnabled(supported);
+  if (!m_encryptCheckBox->isEnabled()) {
+    m_encryptCheckBox->setChecked(false);
+  }
+}
+
 bool NewNoteDialog2::validateInputs() {
   NoteValidationResult result = m_controller->validateName(
       m_parentId.notebookId, m_parentId.relativePath, m_nameEdit->evaluatedText().trimmed());
@@ -263,6 +299,10 @@ QString NewNoteDialog2::getPreferredSuffix() const {
 }
 
 void NewNoteDialog2::acceptedButtonClicked() {
+  if (m_creatingNote) {
+    return;
+  }
+  const QScopedValueRollback<bool> creating(m_creatingNote, true);
   // Save default file type (as type name string).
   QString fileTypeName = m_fileTypeCombo->currentData().toString();
   m_services.get<ConfigMgr2>()->getWidgetConfig().setNewNoteDefaultFileTypeName(fileTypeName);
@@ -277,6 +317,7 @@ void NewNoteDialog2::acceptedButtonClicked() {
   input.parentFolderPath = m_parentId.relativePath;
   input.name = m_nameEdit->evaluatedText().trimmed();
   input.fileTypeName = fileTypeName;
+  input.encrypted = m_encryptCheckBox->isChecked();
 
   // The two body sources are never combined.
   if (m_options.m_bodyMode == BodyMode::LiteralContent) {
@@ -287,8 +328,19 @@ void NewNoteDialog2::acceptedButtonClicked() {
         m_templateSelector ? m_templateSelector->getTemplateContent() : QString();
   }
 
-  // Delegate to controller.
-  NewNoteResult result = m_controller->createNote(input);
+  // Protected creation never falls back to the ordinary write path. The caller
+  // owns password dialogs and a non-cancelable progress surface during commit.
+  NewNoteResult result;
+  if (input.encrypted) {
+    if (!m_encryptCheckBox->isEnabled() || !m_options.m_createEncryptedNote) {
+      setInformationText(tr("Encrypted note creation is unavailable."),
+                         ScrollDialog::InformationLevel::Error);
+      return;
+    }
+    result = m_options.m_createEncryptedNote(input);
+  } else {
+    result = m_controller->createNote(input);
+  }
 
   // Remember the template for this file type, for this run only (template mode
   // only). An empty value records an explicit "None" and is honored as such.
@@ -301,8 +353,16 @@ void NewNoteDialog2::acceptedButtonClicked() {
     m_newNodeId = result.nodeId;
     m_newCursorOffset = result.cursorOffset;
     accept();
-  } else {
+  } else if (!result.errorMessage.isEmpty()) {
     setInformationText(result.errorMessage, ScrollDialog::InformationLevel::Error);
+  }
+}
+
+void NewNoteDialog2::reject() {
+  // Setup dialogs can be canceled themselves. Once ciphertext publication
+  // starts, closing the owning dialog must not destroy its live worker state.
+  if (!m_creatingNote) {
+    ScrollDialog::reject();
   }
 }
 

@@ -16,8 +16,35 @@ void WebPage::setAllowedMainFrameUrlPredicate(std::function<bool(const QUrl &)> 
   m_allowedMainFrameUrlPredicate = std::move(p_predicate);
 }
 
+void WebPage::setProtectedDocumentUrl(const QUrl &p_url) {
+  m_protectedRoot.reset(new QUrl(p_url));
+  m_protectedRootPending = true;
+}
+
 bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
                                       bool p_isMainFrame) {
+  if (m_protectedRoot) {
+    if (!p_isMainFrame) {
+      return false;
+    }
+    if (m_protectedRootPending && p_url == *m_protectedRoot &&
+        p_type != QWebEnginePage::NavigationTypeLinkClicked) {
+      m_protectedRootPending = false;
+      return true;
+    }
+    if (p_type == QWebEnginePage::NavigationTypeLinkClicked) {
+      const auto scheme = p_url.scheme();
+      if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https")) {
+        emit externalLinkRequested(p_url);
+      } else if (scheme == m_protectedRoot->scheme() &&
+                 p_url.authority() == m_protectedRoot->authority() && !p_url.hasQuery() &&
+                 !p_url.hasFragment() &&
+                 p_url.path(QUrl::FullyEncoded).startsWith(QLatin1String("/assets/"))) {
+        emit protectedResourceOpenRequested(p_url);
+      }
+    }
+    return false;
+  }
   Q_UNUSED(p_type);
   // Checked before the isLocalFile() branch so a consumer-owned scheme can never
   // be mistaken for a user-authored link. No allowlisted scheme is a local file
@@ -47,6 +74,10 @@ bool WebPage::acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
 
 void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message,
                                        int lineNumber, const QString &sourceID) {
+  if (m_protectedRoot) {
+    // Renderer errors can quote note source. Do not forward even warnings to Qt.
+    return;
+  }
   if (level == QWebEnginePage::InfoMessageLevel) {
     qCDebug(lcWebJs) << "JS(" << sourceID << ":" << lineNumber << "):" << message;
   }

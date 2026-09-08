@@ -227,6 +227,14 @@ class ImageViewer {
         // '#', newlines and other characters that break a data: URI.
         var svg = new XMLSerializer().serializeToString(p_svgNode);
         var src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        if (window.vxOptions.protectedView) {
+            window.vxMarkdownAdapter.protectedImageUrl(src, (url) => {
+                if (url) {
+                    this.viewImage(url, p_background);
+                }
+            });
+            return;
+        }
         this.viewImage(src, p_background);
     };
 }

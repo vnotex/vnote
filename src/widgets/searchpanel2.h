@@ -39,7 +39,7 @@ private:
 
   void startSearch();
   void onSearchStarted();
-  void onSearchFinished(int p_totalMatches, bool p_truncated);
+  void onSearchFinished(int p_totalMatches, bool p_truncated, int p_encryptedSkippedCount);
   void onSearchFailed(const QString &p_errorMessage);
   void onSearchCancelled();
   void onProgressUpdated(int p_percent);

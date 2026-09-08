@@ -5,8 +5,12 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
+#include <QPointer>
+#include <QPushButton>
 #include <QShortcut>
+#include <QSignalBlocker>
 #include <QSplitter>
+#include <QTabBar>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -33,6 +37,51 @@
 #include "widgetviewwindow2.h"
 
 using namespace vnotex;
+
+namespace {
+// Session tabs retain visible metadata only until explicit authentication.
+class LockedNoteView final : public ViewWindow2 {
+public:
+  LockedNoteView(ServiceLocator &p_services, const Buffer2 &p_buffer,
+                 const FileOpenSettings &p_settings, QWidget *p_parent)
+      : ViewWindow2(p_services, p_buffer, p_parent), m_settings(p_settings) {
+    m_mode = p_settings.m_mode;
+    auto *body = new QWidget(this);
+    auto *layout = new QVBoxLayout(body);
+    layout->addStretch();
+    auto *label = new QLabel(tr("This note is locked. Unlock it to read its contents."), body);
+    label->setWordWrap(true);
+    label->setAlignment(Qt::AlignCenter);
+    layout->addWidget(label);
+    auto *unlock = new QPushButton(tr("Unlock Note"), body);
+    unlock->setObjectName(QStringLiteral("unlockProtectedNote"));
+    layout->addWidget(unlock, 0, Qt::AlignHCenter);
+    layout->addStretch();
+    connect(unlock, &QPushButton::clicked, this, [this]() {
+      auto settings = m_settings;
+      settings.m_focus = true;
+      getServices().get<BufferService>()->openBuffer(getNodeId(), settings);
+    });
+    setCentralWidget(body);
+  }
+  QString getLatestContent() const override { return QString(); }
+  QIcon getIcon() const override { return QIcon(QStringLiteral(":/core/icons/lock.svg")); }
+  bool isSaveSupported() const override { return false; }
+  void setMode(ViewWindowMode p_mode) override { m_mode = m_settings.m_mode = p_mode; }
+
+protected:
+  // No text document, undo stack, writer or preview exists in a locked tab.
+  void syncEditorFromBuffer() override {}
+  void setModified(bool) override {}
+  void scrollUp() override {}
+  void scrollDown() override {}
+  void zoom(bool) override {}
+  bool isPrintSupported() const override { return false; }
+
+private:
+  FileOpenSettings m_settings;
+};
+} // namespace
 
 ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
     : QWidget(p_parent),
@@ -891,13 +940,17 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
     qWarning() << "ViewArea2::openBuffer: workspace not found:" << p_workspaceId;
     return;
   }
+  const bool locked = p_buffer.isEncrypted() && p_buffer.editorType().isEmpty();
   auto *factory = m_services.get<ViewWindowFactory>();
-  if (!factory || !factory->hasCreator(p_fileType)) {
+  if (!locked && (!factory || !factory->hasCreator(p_fileType))) {
     qWarning() << "ViewArea2: no creator for file type" << p_fileType;
     emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
     return;
   }
-  auto *win = factory->create(p_fileType, m_services, p_buffer, split, p_settings.m_mode);
+  ViewWindow2 *win =
+      locked
+          ? static_cast<ViewWindow2 *>(new LockedNoteView(m_services, p_buffer, p_settings, split))
+          : factory->create(p_fileType, m_services, p_buffer, split, p_settings.m_mode);
   if (!win) {
     qWarning() << "ViewArea2: failed creating view window for type" << p_fileType;
     emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
@@ -971,6 +1024,103 @@ void ViewArea2::applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_s
   }
 }
 
+bool ViewArea2::setNoteConversionFrozen(const QVector<ID> &p_windowIds, bool p_frozen) {
+  for (const ID id : p_windowIds) {
+    if (!windowForId(id)) {
+      return false;
+    }
+  }
+  for (const ID id : p_windowIds) {
+    windowForId(id)->setNoteConversionFrozen(p_frozen);
+  }
+  return true;
+}
+
+bool ViewArea2::recreateNoteViews(
+    const QVector<ID> &p_windowIds, const Buffer2 &p_buffer, const QString &p_editorType,
+    const std::function<void(QObject *, QObject *)> &p_replaceHidden) {
+  auto *factory = m_services.get<ViewWindowFactory>();
+  const QString fileType = p_editorType == QLatin1String("markdown") ? QStringLiteral("Markdown")
+                           : p_editorType == QLatin1String("text")   ? QStringLiteral("Text")
+                                                                     : QString();
+  if (!factory || fileType.isEmpty() || !factory->hasCreator(fileType)) {
+    return false;
+  }
+  struct Replacement {
+    ID id;
+    ViewWindow2 *oldWindow;
+    ViewWindow2 *newWindow;
+    ViewSplit2 *split;
+    ViewWindow2::ViewPositionState position;
+  };
+  QVector<Replacement> replacements;
+  for (const ID id : p_windowIds) {
+    auto *oldWindow = windowForId(id);
+    if (!oldWindow || !oldWindow->isNoteConversionFrozen()) {
+      for (const auto &item : replacements) {
+        delete item.newWindow;
+      }
+      return false;
+    }
+    ViewSplit2 *owner = nullptr;
+    for (auto *split : m_splits) {
+      if (split->indexOf(oldWindow) >= 0) {
+        owner = split;
+        break;
+      }
+    }
+    if (!owner) {
+      for (auto *detached : m_detachedWindows) {
+        auto *split = detached->getViewSplit();
+        if (split && split->indexOf(oldWindow) >= 0) {
+          owner = split;
+          break;
+        }
+      }
+    }
+    auto *newWindow =
+        factory->create(fileType, m_services, p_buffer, nullptr, oldWindow->getMode());
+    if (!newWindow) {
+      for (const auto &item : replacements) {
+        delete item.newWindow;
+      }
+      return false;
+    }
+    newWindow->setNoteConversionFrozen(true);
+    newWindow->setAutoReload(oldWindow->autoReload());
+    replacements.append({id, oldWindow, newWindow, owner, oldWindow->capturePositionState()});
+  }
+
+  // All replacement owners exist before any old document is released. Do not
+  // call aboutToClose(): it saves dirty plaintext and runs legacy-asset cleanup.
+  for (const auto &item : replacements) {
+    item.newWindow->setViewWindowId(item.id);
+    m_windows[item.id] = item.newWindow;
+    if (item.split) {
+      const QSignalBlocker blocker(item.split);
+      const int index = item.split->indexOf(item.oldWindow);
+      const bool current = item.split->getCurrentViewWindow() == item.oldWindow;
+      item.split->takeViewWindow(item.oldWindow);
+      item.split->addViewWindow(item.newWindow);
+      item.split->tabBar()->moveTab(item.split->indexOf(item.newWindow), index);
+      if (current) {
+        item.split->setCurrentViewWindow(item.newWindow);
+      }
+    } else {
+      p_replaceHidden(item.oldWindow, item.newWindow);
+    }
+    connect(item.newWindow, &ViewWindow2::closeRequested, this,
+            [this, id = item.id]() { m_controller->closeViewWindow(id, true); });
+    connect(item.newWindow, &ViewWindow2::exportRequested, this,
+            [this, win = item.newWindow]() { emit exportRequested(win); });
+    delete item.oldWindow;
+    item.newWindow->restorePositionState(item.position);
+    item.newWindow->setNoteConversionFrozen(false);
+  }
+  updateScreenVisibility();
+  return true;
+}
+
 void ViewArea2::navigateWidgetContent(ID p_windowId, const QStringList &p_pathSegments,
                                       const QString &p_fragment) {
   auto *win = windowForId(p_windowId);
@@ -1024,6 +1174,9 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
     Buffer2 buf = win->getBuffer();
     bufferId = buf.id();
     ownerSplit->takeViewWindow(win);
+  } else if (win->getBuffer().isEncrypted()) {
+    bufferId = win->getBuffer().id();
+    workspaceId = m_controller->releaseHiddenViewWindow(win);
   }
 
   // Capture state for "Open Last Closed File" before the window is destroyed.
@@ -1038,19 +1191,23 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
   // emitting closeRequested). deleteLater defers destruction until the event
   // loop is idle, after any in-flight signals targeting `win` have drained,
   // making the close primitive safe regardless of caller stack.
-  win->deleteLater();
-
-  m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, closedTab);
-
-  // If the closed window was the last tab of a detached window, tear it down.
-  if (ownerDetached && ownerDetached->getViewSplit() &&
-      ownerDetached->getViewSplit()->getViewWindowCount() == 0) {
-    m_detachedWindows.removeAll(ownerDetached);
-    ownerDetached->setReattaching(true);
-    // No target: buffers were already removed from the detached workspace by
-    // onViewWindowClosed; just drop the now-empty workspace.
-    m_controller->reattachDetachedWorkspace(workspaceId, QString(), {});
-    ownerDetached->deleteLater();
+  const auto finishClose = [this, p_windowId, bufferId, workspaceId, closedTab,
+                            detached = QPointer<DetachedWindow>(ownerDetached)]() {
+    m_controller->onViewWindowClosed(p_windowId, bufferId, workspaceId, closedTab);
+    if (detached && detached->getViewSplit() &&
+        detached->getViewSplit()->getViewWindowCount() == 0) {
+      m_detachedWindows.removeAll(detached.data());
+      detached->setReattaching(true);
+      m_controller->reattachDetachedWorkspace(workspaceId, QString(), {});
+      detached->deleteLater();
+    }
+  };
+  if (win->getBuffer().isEncrypted()) {
+    connect(win, &QObject::destroyed, this, finishClose);
+    win->deleteLater();
+  } else {
+    win->deleteLater();
+    finishClose();
   }
 
   updateScreenVisibility();

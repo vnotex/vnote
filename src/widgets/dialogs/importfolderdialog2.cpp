@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPointer>
@@ -16,6 +17,7 @@
 
 #include <controllers/importfoldercontroller.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <utils/pathutils.h>
 #include <vxcore/notebook_json_keys.h>
@@ -37,6 +39,7 @@ const char *const kBundlePreviewName = "bundlePreviewLabel";
 const char *const kParentPathLabelName = "parentPathLabel";
 const char *const kOkButtonName = "importOkButton";
 const char *const kCancelButtonName = "importCancelButton";
+const char *const kBundlePasswordDialogName = "encryptedBundlePasswordDialog";
 
 } // namespace
 
@@ -371,6 +374,68 @@ void ImportFolderDialog2::importBundle() {
   callbacks.m_isCancelled = [&progress, selfGuard]() {
     return !selfGuard || progress.wasCanceled();
   };
+  const auto passwordPrompt = [&progress](const QString &title, const QString &label,
+                                          QByteArray *out) {
+    QInputDialog dialog;
+    dialog.setObjectName(QLatin1String(kBundlePasswordDialogName));
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(label);
+    dialog.setTextEchoMode(QLineEdit::Password);
+    dialog.setWindowModality(Qt::ApplicationModal);
+    progress.hide();
+    const bool accepted = dialog.exec() == QDialog::Accepted;
+    QString text = dialog.textValue();
+    dialog.setTextValue(QString());
+    if (accepted)
+      *out = text.toUtf8();
+    text.fill(QChar(0));
+    progress.show();
+    return accepted;
+  };
+  callbacks.m_sourcePassword = [passwordPrompt](QByteArray *out) {
+    return passwordPrompt(tr("Unlock Encrypted Bundle"), tr("Source master password:"), out);
+  };
+  callbacks.m_unlockDestination = [this, selfGuard, passwordPrompt](const QString &id) {
+    if (!selfGuard)
+      return false;
+    auto *notebooks = m_services.get<NotebookCoreService>();
+    if (!notebooks)
+      return false;
+    VxCoreError error = VXCORE_OK;
+    const auto status = notebooks->encryptionStatus(id, QString(), &error);
+    if (error != VXCORE_OK || !status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool())
+      return false;
+    if (status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool())
+      return true;
+    if (!m_destinationUnlocker)
+      return false;
+    QByteArray password;
+    if (!passwordPrompt(tr("Unlock Destination Notebook"), tr("Destination master password:"),
+                        &password)) {
+      return false;
+    }
+    error = m_destinationUnlocker(id, password);
+    volatile char *data = password.data();
+    for (int index = 0; index < password.size(); ++index)
+      data[index] = 0;
+    password.clear();
+    return error == VXCORE_OK;
+  };
+  auto *buffers = m_services.get<BufferService>();
+  const auto validation = m_controller->validateBundle(input);
+  const bool protectedOperation = validation.valid && validation.encrypted;
+  if (protectedOperation && (!buffers || !buffers->beginProtectedOperation())) {
+    setInformationText(tr("Protected operations are unavailable while locking."),
+                       ScrollDialog::InformationLevel::Error);
+    return;
+  }
+  struct ProtectedOperation {
+    BufferService *buffers;
+    ~ProtectedOperation() {
+      if (buffers)
+        buffers->endProtectedOperation();
+    }
+  } protectedGuard{protectedOperation ? buffers : nullptr};
 
   const ImportFolderResult result = m_controller->importBundle(input, callbacks);
   progress.reset();

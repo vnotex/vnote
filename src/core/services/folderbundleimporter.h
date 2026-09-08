@@ -133,6 +133,7 @@ public:
   // Performs layout + metadata validation but copies nothing.
   struct Inspection {
     bool m_valid = false;
+    bool m_encrypted = false;
     QString m_folderName;
     int m_fileCount = 0;
     int m_subfolderCount = 0;

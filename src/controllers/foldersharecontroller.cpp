@@ -12,7 +12,9 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
@@ -198,6 +200,10 @@ FolderSharePackager::Result FolderShareController::shareFolder(const NodeIdentif
   request.m_folderName = folderName;
   request.m_failureInjection = m_failureInjection;
 
+  SyncWorkQueueManager::MaintenanceLease protectedMaintenance;
+  CommentService::FlushCheckpoint protectedComments;
+  bool protectedPrepared = false;
+  auto *comments = m_services.get<CommentService>();
   FolderSharePackager::Callbacks packagerCallbacks;
   packagerCallbacks.m_progress = p_callbacks.m_progress;
   packagerCallbacks.m_isCancelled = p_callbacks.m_isCancelled;
@@ -207,10 +213,38 @@ FolderSharePackager::Result FolderShareController::shareFolder(const NodeIdentif
       labelChanged(phaseLabel(p_phase));
     };
   }
+  packagerCallbacks.m_prepareProtected = [&](QString *outError) {
+    auto *sync = m_services.get<SyncWorkQueueManager>();
+    if (!sync || !comments) {
+      *outError = tr("The encrypted share services are unavailable.");
+      return false;
+    }
+    const auto flushed =
+        comments->flushAndWaitForIdle(p_nodeId.notebookId, p_nodeId.relativePath, true,
+                                      c_saveQueueDrainTimeoutMs, p_callbacks.m_isCancelled);
+    if (flushed.m_status != CommentService::FlushResult::Status::Succeeded) {
+      *outError = flushed.m_error;
+      return false;
+    }
+    protectedComments = flushed.m_checkpoint;
+    protectedMaintenance = sync->tryAcquireMaintenance({p_nodeId.notebookId});
+    if (!protectedMaintenance) {
+      *outError = tr("The notebook is busy syncing.");
+      return false;
+    }
+    protectedPrepared = true;
+    return true;
+  };
   // Runs in the packager's no-event-pumping section, right before the rename.
   const QString notebookId = p_nodeId.notebookId;
   const QString folderPath = p_nodeId.relativePath;
-  packagerCallbacks.m_finalPrecondition = [this, notebookId, folderPath](QString *p_outError) {
+  packagerCallbacks.m_finalPrecondition = [this, notebookId, folderPath, comments,
+                                           &protectedPrepared,
+                                           &protectedComments](QString *p_outError) {
+    if (protectedPrepared && !comments->isFlushCheckpointCurrent(protectedComments)) {
+      *p_outError = tr("Comments changed while the encrypted folder was being shared.");
+      return false;
+    }
     return openNotesAreStillDurable(notebookId, folderPath, p_outError);
   };
 

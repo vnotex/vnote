@@ -7,6 +7,7 @@
 #include <QMimeData>
 #include <QScopedPointer>
 #include <QUrl>
+#include <QUuid>
 #include <QWebChannel>
 #include <QWebEngineSettings>
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
@@ -18,6 +19,7 @@
 #include <controllers/markdownviewwindowcontroller.h>
 
 #include "../viewwindow2.h"
+#include "../webpage.h"
 #include "../widgetsfactory.h"
 #include "markdownvieweradapter.h"
 #include "previewhelper.h"
@@ -44,7 +46,14 @@ static const char *c_propertyCrossCopy = "CrossCopy";
 
 namespace {
 // Resolve the shared web engine profile, if the service is registered.
-QWebEngineProfile *resolveProfile(ServiceLocator &p_services) {
+QWebEngineProfile *resolveProfile(ServiceLocator &p_services, const ViewWindow2 *p_window,
+                                  QWebEngineProfile *p_protectedProfile) {
+  if (p_window && p_window->getBuffer().isEncrypted()) {
+    if (!p_protectedProfile) {
+      qFatal("A protected Markdown viewer requires its isolated profile");
+    }
+    return p_protectedProfile;
+  }
   auto *svc = p_services.get<WebEngineProfileService>();
   return svc ? svc->profile() : nullptr;
 }
@@ -57,11 +66,18 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator 
 
 MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow2 *p_viewWindow2,
                                ServiceLocator &p_services, const QColor &p_background,
-                               qreal p_zoomFactor, QWidget *p_parent)
-    : WebViewer(p_background, p_zoomFactor, p_parent, resolveProfile(p_services)),
+                               qreal p_zoomFactor, QWidget *p_parent, QWebEngineProfile *p_profile)
+    : WebViewer(p_background, p_zoomFactor, p_parent,
+                resolveProfile(p_services, p_viewWindow2, p_profile)),
+      m_protectedView(p_viewWindow2 && p_viewWindow2->getBuffer().isEncrypted()),
       m_adapter(p_adapter), m_viewWindow2(p_viewWindow2), m_services(p_services) {
 
   m_adapter->setParent(this);
+  if (m_protectedView) {
+    m_adapter->setProtectedView(true);
+    connect(qobject_cast<WebPage *>(page()), &WebPage::protectedResourceOpenRequested, this,
+            &MarkdownViewer::openImageExternally);
+  }
 
   auto channel = new QWebChannel(this);
   channel->registerObject(QStringLiteral("vxAdapter"), m_adapter);
@@ -90,7 +106,12 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
     // File open handling is done by the owning MarkdownViewWindow2.
   });
 
-  settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+  settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, !m_protectedView);
+  if (m_protectedView) {
+    settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, false);
+    settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
+    settings()->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
+  }
 }
 
 MarkdownViewerAdapter *MarkdownViewer::adapter() const { return m_adapter; }
@@ -180,6 +201,17 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   if (m_controller) {
     auto info = populateContextInfo();
     const QUrl imageUrl = info.imageUrl;
+    if (m_protectedView) {
+      // Inline data images remain explicitly copyable, but have no manifest
+      // object to export. Scoped assets use the consent-owned export action.
+      info.imageUrl = QUrl();
+      if (imageUrl.scheme() == QStringLiteral("vxnote") &&
+          imageUrl.path(QUrl::FullyEncoded).startsWith(QLatin1String("/assets/"))) {
+        auto *saveCopy = menu->addAction(tr("Save Decrypted Copy..."));
+        connect(saveCopy, &QAction::triggered, this,
+                [this, imageUrl]() { openImageExternally(imageUrl); });
+      }
+    }
     m_controller->createContextMenu(
         info, menu, [this]() { copyImage(); }, [this]() { emit editRequested(); },
         [this](const QString &target) {
@@ -291,6 +323,18 @@ void MarkdownViewer::handleCopyImageUrlAction() {
 }
 
 void MarkdownViewer::openImageExternally(const QUrl &p_url) {
+  if (m_protectedView) {
+    const auto path = p_url.path(QUrl::FullyEncoded);
+    if (p_url.scheme() == QStringLiteral("vxnote") && p_url.authority() == url().authority() &&
+        !p_url.hasQuery() && !p_url.hasFragment() && path.startsWith(QLatin1String("/assets/"))) {
+      const auto id = path.mid(8);
+      const QUuid uuid(id);
+      if (!uuid.isNull() && uuid.toString(QUuid::WithoutBraces) == id) {
+        emit saveDecryptedCopyRequested(QStringLiteral("vxasset:") + id);
+      }
+    }
+    return;
+  }
   if (!p_url.isValid()) {
     return;
   }
@@ -313,6 +357,11 @@ void MarkdownViewer::openImageExternally(const QUrl &p_url) {
 }
 
 void MarkdownViewer::copyImage() {
+  if (m_protectedView) {
+    m_copyImageTriggered = true;
+    triggerPageAction(QWebEnginePage::CopyImageToClipboard);
+    return;
+  }
 #if defined(Q_OS_WIN)
   Q_ASSERT(m_copyImageUrlActionHooked);
   // triggerPageAction(QWebEnginePage::CopyImageUrlToClipboard) will not really
@@ -381,7 +430,9 @@ void MarkdownViewer::removeHtmlFromImageData(QClipboard *p_clipboard, const QMim
   }
 
   if (p_mimeData->hasHtml()) {
-    qDebug() << "remove HTML from image QMimeData" << p_mimeData->html();
+    if (!m_protectedView) {
+      qDebug() << "remove HTML from image QMimeData" << p_mimeData->html();
+    }
     QMimeData *data = new QMimeData();
     data->setImageData(p_mimeData->imageData());
     ClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
@@ -423,6 +474,10 @@ void MarkdownViewer::hideUnusedActions(QMenu *p_menu) {
 #endif
   };
 
+  if (m_protectedView) {
+    pageActions.append(QWebEnginePage::CopyImageUrlToClipboard);
+    pageActions.append(QWebEnginePage::InspectElement);
+  }
   for (auto pageAct : pageActions) {
     auto act = pageAction(pageAct);
     unusedActions.append(act);

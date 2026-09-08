@@ -241,11 +241,7 @@ void TestBufferReadOnlyGuard::testMarkDirtyRejectedOnReadOnlyNotebook() {
   QVERIFY(!m_bufferService->isModified(buf.id()));
   const quint64 revBefore = m_bufferService->currentRevision(buf.id());
 
-  // Trigger the guard. The guarded branch returns BEFORE the dirty set / revision
-  // mutation / autosave timer start. We expect a warning log on stderr — suppress
-  // it so a clean test run is visually unambiguous.
-  QTest::ignoreMessage(QtWarningMsg,
-                       QRegularExpression("markDirty rejected: buffer is read-only.*"));
+  // Trigger the guard before dirty state, revision or autosave work can change.
   m_bufferService->markDirty(buf.id());
 
   QCOMPARE(rejectSpy.count(), 1);
@@ -303,8 +299,6 @@ void TestBufferReadOnlyGuard::testEnqueueRejectedOnReadOnlyNotebook() {
 
   m_bufferCoreService->resetCallCounters();
 
-  // Expect (and suppress) the qCWarning emitted by the guard.
-  QTest::ignoreMessage(QtWarningMsg, QRegularExpression("enqueue rejected: buffer is read-only.*"));
   m_saveQueue->enqueue(m_notebookId, bufferId, QString::fromUtf8(attempted), /*revision=*/1);
 
   // Synchronous proof that the guard returned before dispatch: no write path
@@ -355,16 +349,12 @@ void TestBufferReadOnlyGuard::testSaveBufferRejectedOnReadOnlyNotebook() {
   QVERIFY(spy.isValid());
 
   // The guard returns false and emits saveRejectedReadOnly BEFORE vxcore_buffer_save.
-  QTest::ignoreMessage(QtWarningMsg,
-                       QRegularExpression("saveBuffer rejected: buffer is read-only.*"));
   QCOMPARE(m_bufferService->saveBuffer(buf.id()), false);
   QCOMPARE(spy.count(), 1);
   QCOMPARE(spy.at(0).at(0).toString(), buf.id());
 
   // Buffer2::save() routes through the same guarded BufferService::saveBuffer,
   // so the interactive handle also reports failure (and emits again).
-  QTest::ignoreMessage(QtWarningMsg,
-                       QRegularExpression("saveBuffer rejected: buffer is read-only.*"));
   QCOMPARE(buf.save(), false);
   QCOMPARE(spy.count(), 2);
 }

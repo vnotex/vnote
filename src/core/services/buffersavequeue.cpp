@@ -20,9 +20,13 @@
 
 #include <QLoggingCategory>
 #include <QMutexLocker>
+#include <QSet>
 #include <QTextCodec>
 #include <QThread>
 #include <QThreadPool>
+
+#include "buffer2.h"
+#include "buffercoreservice.h"
 
 #include "ibuffercoreservice.h"
 #include "notebookiogate.h"
@@ -45,11 +49,35 @@ QByteArray encodeWith(const QString &p_encoding, const QString &p_text) {
 }
 } // namespace
 
+struct BufferSaveQueue::ProtectedQueue {
+  struct Job {
+    BufferCoreService *coreService = nullptr;
+    QString notebookId;
+    std::shared_ptr<ProtectedBufferLease> lease;
+    QString content;
+    quint64 revision = 0;
+    QString encoding;
+    bool backup = false;
+    QByteArray rawContent;
+    bool raw = false;
+    std::function<void(int)> finished;
+    int gateTimeoutMs = -1;
+  };
+  mutable QMutex mutex;
+  QWaitCondition drained;
+  QHash<QString, QQueue<Job>> pending;
+  QSet<QString> running;
+};
+
 BufferSaveQueue::BufferSaveQueue(IBufferCoreService &p_coreService, NotebookIoGate &p_gate,
                                  QObject *p_parent)
     : QObject(p_parent), m_coreService(p_coreService), m_gate(p_gate) {}
 
-BufferSaveQueue::~BufferSaveQueue() { shutdown(5000); }
+BufferSaveQueue::~BufferSaveQueue() {
+  shutdown(5000);
+  // A protected worker must not outlive its queue or its core/context.
+  drainProtected(-1);
+}
 
 QString BufferSaveQueue::compositeKey(const QString &p_notebookId, const QString &p_bufferId) {
   return p_notebookId + QStringLiteral("::") + p_bufferId;
@@ -176,6 +204,153 @@ void BufferSaveQueue::emitFinishedQueued(const QString &p_bufferId, quint64 p_re
       Qt::QueuedConnection);
 }
 
+void BufferSaveQueue::prepareProtected() {
+  if (!m_protectedQueue) {
+    m_protectedQueue.reset(new ProtectedQueue);
+  }
+}
+
+bool BufferSaveQueue::enqueueProtected(BufferCoreService &p_coreService,
+                                       const QString &p_notebookId,
+                                       const std::shared_ptr<ProtectedBufferLease> &p_lease,
+                                       const QString &p_content, quint64 p_revision,
+                                       const QString &p_encoding, bool p_backup,
+                                       QByteArray *p_rawContent,
+                                       std::function<void(int)> p_finished, int p_gateTimeoutMs) {
+  if (!p_lease || !p_lease->isCurrent()) {
+    return false;
+  }
+  {
+    QMutexLocker lock(&m_mutex);
+    if (m_stopping) {
+      return false;
+    }
+  }
+  // BufferService publishes this before any protected handle escapes.
+  prepareProtected();
+  const QString bufferId = p_lease->bufferId();
+  bool launch = false;
+  {
+    QMutexLocker lock(&m_protectedQueue->mutex);
+    ProtectedQueue::Job job;
+    job.coreService = &p_coreService;
+    job.notebookId = p_notebookId;
+    job.lease = p_lease;
+    job.content = p_content;
+    job.revision = p_revision;
+    job.encoding = p_encoding;
+    job.backup = p_backup;
+    if (p_rawContent) {
+      job.rawContent = std::move(*p_rawContent);
+      job.raw = true;
+    }
+    job.finished = std::move(p_finished);
+    job.gateTimeoutMs = p_gateTimeoutMs;
+    m_protectedQueue->pending[bufferId].enqueue(std::move(job));
+    if (!m_protectedQueue->running.contains(bufferId)) {
+      m_protectedQueue->running.insert(bufferId);
+      launch = true;
+    }
+  }
+  if (launch) {
+    QThreadPool::globalInstance()->start([this, bufferId]() { runProtectedWorker(bufferId); });
+  }
+  return true;
+}
+
+void BufferSaveQueue::runProtectedWorker(const QString &p_bufferId) {
+  for (;;) {
+    ProtectedQueue::Job job;
+    {
+      QMutexLocker lock(&m_protectedQueue->mutex);
+      auto it = m_protectedQueue->pending.find(p_bufferId);
+      if (it == m_protectedQueue->pending.end() || it->isEmpty()) {
+        if (it != m_protectedQueue->pending.end()) {
+          m_protectedQueue->pending.erase(it);
+        }
+        m_protectedQueue->running.remove(p_bufferId);
+        m_protectedQueue->drained.wakeAll();
+        return;
+      }
+      job = it->dequeue();
+    }
+    VxCoreError error = VXCORE_ERR_INVALID_STATE;
+    QByteArray bytes = std::move(job.rawContent);
+    struct WipeBytes {
+      QByteArray &bytes;
+      ~WipeBytes() {
+        volatile char *data = bytes.data();
+        for (int i = 0; i < bytes.size(); ++i)
+          data[i] = 0;
+      }
+    } wipe{bytes};
+    try {
+      auto persist = [&]() {
+        if (!job.lease->isCurrent())
+          return;
+        if (!job.raw)
+          bytes = encodeWith(job.encoding, job.content);
+        if (job.coreService->setContentRaw(p_bufferId, bytes, &error)) {
+          if (job.backup) {
+            job.coreService->writeBackup(p_bufferId, &error);
+          } else {
+            job.coreService->saveBuffer(p_bufferId, &error);
+          }
+        }
+      };
+      if (job.gateTimeoutMs >= 0) {
+        NotebookIoGate::ScopedTryLock gate(m_gate, job.notebookId, job.gateTimeoutMs);
+        if (gate.isLocked())
+          persist();
+        else
+          error = VXCORE_ERR_SYNC_IN_PROGRESS;
+      } else {
+        NotebookIoGate::ScopedLock gate(m_gate, job.notebookId);
+        persist();
+      }
+    } catch (const std::bad_alloc &) {
+      error = VXCORE_ERR_OUT_OF_MEMORY;
+    } catch (...) {
+      error = VXCORE_ERR_UNKNOWN;
+    }
+    // The lease covers delivery too: close/Lock All cannot discard this
+    // generation before its actual persistence result has been accounted for.
+    QMetaObject::invokeMethod(
+        this,
+        [this, lease = std::move(job.lease), revision = job.revision, backup = job.backup,
+         finished = std::move(job.finished), error]() {
+          const auto result = lease->isCurrent() ? error : VXCORE_ERR_INVALID_STATE;
+          emit protectedSaveFinished(lease->bufferId(), lease->generation(), revision, backup,
+                                     static_cast<int>(result));
+          if (finished)
+            finished(static_cast<int>(result));
+        },
+        Qt::QueuedConnection);
+  }
+}
+
+bool BufferSaveQueue::isProtectedBusy(const QString &p_bufferId) const {
+  if (!m_protectedQueue) {
+    return false;
+  }
+  QMutexLocker lock(&m_protectedQueue->mutex);
+  return m_protectedQueue->running.contains(p_bufferId);
+}
+
+bool BufferSaveQueue::drainProtected(int p_timeoutMs) {
+  if (!m_protectedQueue) {
+    return true;
+  }
+  QDeadlineTimer deadline(p_timeoutMs);
+  QMutexLocker lock(&m_protectedQueue->mutex);
+  while (!m_protectedQueue->running.isEmpty()) {
+    if (!m_protectedQueue->drained.wait(&m_protectedQueue->mutex, deadline)) {
+      return m_protectedQueue->running.isEmpty();
+    }
+  }
+  return true;
+}
+
 bool BufferSaveQueue::isBusy(const QString &p_notebookId, const QString &p_bufferId) const {
   const QString key = compositeKey(p_notebookId, p_bufferId);
   QMutexLocker locker(&m_mutex);
@@ -183,6 +358,9 @@ bool BufferSaveQueue::isBusy(const QString &p_notebookId, const QString &p_buffe
 }
 
 bool BufferSaveQueue::shutdown(int p_timeoutMs) {
+  if (!drainProtected(p_timeoutMs)) {
+    return false;
+  }
   QMutexLocker locker(&m_mutex);
   if (m_stopping && m_inFlightCount == 0) {
     return true;
