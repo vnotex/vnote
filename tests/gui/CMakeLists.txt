@@ -206,10 +206,10 @@ if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.
     SOURCES
       test_vxpdfschemehandler.cpp
       ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
-      ${CMAKE_SOURCE_DIR}/src/gui/services/webengineprofileservice.cpp
     LINKS
       Qt6::WebEngineCore
       core_configs
+    GUILESS
   )
   target_include_directories(test_vxpdfschemehandler PRIVATE
     ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
