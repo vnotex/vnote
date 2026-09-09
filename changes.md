@@ -55,6 +55,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Unlock on demand; Lock All saves protected edits and closes protected views while leaving ordinary tabs open
     * Protected previews use isolated, memory-only resources; external use requires an explicit decrypted export outside the notebook
     * Filenames, folders and tags remain visible; conversion does not erase plaintext in existing Git history, backups, shared resources or external source files
+    * Conversion warnings explain when exclusive use of an original cannot be verified; privacy-safe diagnostics report why originals are retained
 * **Tags**: tags can be added to or removed from multiple selected files in one operation
 * **Interface**
     * The right dock tabs now use the same compact sidebar treatment as the left dock, with consistent indentation and theme-owned row spacing

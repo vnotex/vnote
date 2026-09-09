@@ -199,8 +199,9 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
       tr("Prior Git history, cloud versions and backup copies are not erased. "
          "Filenames, folders and tags remain visible. Encryption is not secure deletion.");
   if (!retained.isEmpty()) {
-    warning += tr("\n\nThese existing unencrypted originals will remain because they are shared "
-                  "or outside the note's private assets folder:\n%1")
+    warning += tr("\n\nThese original files will remain unencrypted. They are shared, outside "
+                  "the note's private assets folder, or could not be verified as exclusive to "
+                  "this note:\n%1")
                    .arg(retained.join(QLatin1Char('\n')));
   }
   confirmation.setInformativeText(warning);

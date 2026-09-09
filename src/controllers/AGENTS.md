@@ -188,3 +188,21 @@ Rules that are load-bearing:
 
 Store contract, path resolution and the sync-dirty notification:
 [`../core/services/AGENTS.md` § Comment store](../core/services/AGENTS.md#comment-store-commentsjson).
+
+
+## Encryption conversion diagnostics
+
+`LegacyImageMigrationController::planNoteEncryption` logs only explicit conversion
+planning under `vnote.encryption`; ordinary note open/save paths do not use it.
+Info-level `plan_begin`, `reference_scan_incomplete`, and `plan_complete` entries
+identify the note by UUID, explain incomplete scans by reason and subject UUID,
+and summarize owned, outside-owned, hard-link-unverified, shared, uncertain and
+retained resource counts. `owned_resources` means containment, not exclusive use.
+A failed or unsupported reference scan conservatively retains originals even
+inside the selected note's own assets folder; never describe that as proof that
+the files live outside it or remove the safety fallback to silence a warning.
+
+Enable `QT_LOGGING_RULES="vnote.encryption.debug=true"` for `resource_decision`
+entries with ordinal, role, containment, link-check and reference flags. These
+logs must not include source paths, attachment names, body/resource bytes or
+hashes, passwords, or keys. The full resource plan is never a log payload.

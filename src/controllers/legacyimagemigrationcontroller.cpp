@@ -9,6 +9,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLoggingCategory>
 #include <QMap>
 #include <QMimeDatabase>
 #include <QRegularExpression>
@@ -40,6 +41,8 @@
 using namespace vnotex;
 
 namespace {
+
+Q_LOGGING_CATEGORY(lcNoteEncryption, "vnote.encryption", QtInfoMsg)
 
 const QString c_legacyImageFolderVx = QStringLiteral("vx_images");
 const QString c_legacyImageFolderV = QStringLiteral("_v_images");
@@ -301,6 +304,9 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
                                                    const QString &p_encoding) const {
   NoteEncryptionPlan plan;
   const auto fail = [&](VxCoreError p_error, const QString &p_message) {
+    qCWarning(lcNoteEncryption).noquote().nospace()
+        << "phase=plan_failed notebook_id="
+        << QUuid(p_nodeId.notebookId).toString(QUuid::WithoutBraces) << " error=" << int(p_error);
     plan.m_error = p_error;
     plan.m_errorMessage = p_message;
     plan.m_body.clear();
@@ -356,6 +362,10 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
   if (!encryptionPathIsDirect(owned)) {
     return fail(VXCORE_ERR_UNSUPPORTED, tr("Encryption cannot follow symbolic links or junctions"));
   }
+  qCInfo(lcNoteEncryption).noquote().nospace()
+      << "phase=plan_begin notebook_id="
+      << QUuid(p_nodeId.notebookId).toString(QUuid::WithoutBraces)
+      << " note_id=" << fileId.toString(QUuid::WithoutBraces);
   QByteArray sourceHash;
   if (!hashEncryptionSource(source, sourceHash)) {
     return fail(VXCORE_ERR_IO, tr("The note could not be read"));
@@ -379,6 +389,13 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
   QMap<QString, KnownNote> knownNotes;
   QCryptographicHash checkpoint(QCryptographicHash::Sha256);
   bool retainAll = false;
+  const auto retainUnverified = [&](const char *p_reason, const QString &p_subjectId) {
+    retainAll = true;
+    qCInfo(lcNoteEncryption).noquote().nospace()
+        << "phase=reference_scan_incomplete note_id=" << fileId.toString(QUuid::WithoutBraces)
+        << " reason=" << p_reason
+        << " subject_id=" << QUuid(p_subjectId).toString(QUuid::WithoutBraces);
+  };
   // Enumerate the already-open notebook registry, not arbitrary filesystem
   // trees. Protected entries contribute visible identity only, never content.
   for (auto notebook = notebookRecords.constBegin(); notebook != notebookRecords.constEnd();
@@ -398,7 +415,7 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
         if (notebookId == p_nodeId.notebookId) {
           return fail(VXCORE_ERR_UNSUPPORTED, tr("The notebook index cannot be verified safely"));
         }
-        retainAll = true;
+        retainUnverified("notebook_path_unverifiable", notebookId);
         continue;
       }
       visited.insert(key);
@@ -409,7 +426,7 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
           return fail(error == VXCORE_OK ? VXCORE_ERR_INVALID_STATE : error,
                       tr("The notebook index could not be read"));
         }
-        retainAll = true;
+        retainUnverified("notebook_index_unreadable", notebookId);
         continue;
       }
       fingerprintPart(checkpoint, notebookId.toUtf8());
@@ -454,6 +471,8 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
     QString mediaType;
     QString role;
     QByteArray hash;
+    bool insideOwned = false;
+    bool singleLink = false;
     bool retain = true;
   };
   QMap<QString, Resource> resources;
@@ -503,7 +522,9 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
         p_role == QLatin1String("comments")
             ? QStringLiteral("application/json")
             : mimeDatabase.mimeTypeForFile(info, QMimeDatabase::MatchExtension).name();
-    resource.retain = !isPathContained(owned, p_path) || !encryptionSourceHasOneLink(p_path);
+    resource.insideOwned = isPathContained(owned, p_path);
+    resource.singleLink = resource.insideOwned && encryptionSourceHasOneLink(p_path);
+    resource.retain = !resource.insideOwned || !resource.singleLink;
     resources.insert(key, resource);
     return true;
   };
@@ -618,11 +639,14 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
   }
 
   QSet<QString> shared;
-  const auto scanReferences = [&](const QString &p_text, const QString &p_basePath) {
+  const auto scanReferences = [&](const QString &p_text, const QString &p_basePath,
+                                  const QString &p_subjectId) {
+    bool reportedUnsupported = false;
     for (const auto &link :
          vte::MarkdownUtils::fetchResourceLinks(p_text, p_basePath, allLinkFlags)) {
-      if (!link.m_rewriteSupported) {
-        retainAll = true;
+      if (!link.m_rewriteSupported && !reportedUnsupported) {
+        retainUnverified("unsupported_reference", p_subjectId);
+        reportedUnsupported = true;
       }
       if (!(link.m_type & (vte::MarkdownLink::Remote | vte::MarkdownLink::QtResource)) &&
           !link.m_path.isEmpty()) {
@@ -646,22 +670,23 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
     if (note->id == p_nodeId || note->encrypted) {
       continue;
     }
+    const QString subjectId = note->metadata.value(QLatin1String(vxcore::kJsonKeyId)).toString();
     // Metadata attachment references matter even for non-Markdown viewers.
     const auto attachments = note->metadata.value(QLatin1String(vxcore::kJsonKeyAttachments));
     if (!attachments.isUndefined() && !attachments.isArray()) {
-      retainAll = true;
+      retainUnverified("attachment_metadata_invalid", subjectId);
     }
     if (!attachments.toArray().isEmpty()) {
       const QString assets =
           notebooks->getAttachmentsFolder(note->id.notebookId, note->id.relativePath);
       const QString notebookRoot = notebooks->buildAbsolutePath(note->id.notebookId, QString());
       if (assets.isEmpty() || notebookRoot.isEmpty()) {
-        retainAll = true;
+        retainUnverified("attachment_location_unavailable", subjectId);
       } else {
         for (const auto &attachment : attachments.toArray()) {
           const QString attachmentPath = encryptionAttachmentPath(notebookRoot, assets, attachment);
           if (attachmentPath.isEmpty()) {
-            retainAll = true;
+            retainUnverified("attachment_path_unverifiable", subjectId);
           } else {
             shared.insert(normalizeForCompare(attachmentPath));
           }
@@ -674,11 +699,11 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
     QByteArray bytes;
     QFile disk(note->path);
     if (!encryptionPathIsDirect(note->path) || !disk.open(QIODevice::ReadOnly)) {
-      retainAll = true;
+      retainUnverified("note_unreadable_or_indirect", subjectId);
     } else {
       bytes = disk.readAll();
       if (disk.error() != QFileDevice::NoError || bytes.startsWith(QByteArray("VNOTEE1\0", 8))) {
-        retainAll = true;
+        retainUnverified("note_content_unverifiable", subjectId);
       } else {
         fingerprintPart(checkpoint, note.key().toUtf8());
         fingerprintPart(checkpoint, QCryptographicHash::hash(bytes, QCryptographicHash::Sha256));
@@ -687,9 +712,9 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
         EncryptionText text;
         if (!text.decode(bytes, bufferId.isEmpty() ? QStringLiteral("UTF-8")
                                                    : buffers->bufferEncoding(bufferId))) {
-          retainAll = true;
+          retainUnverified("note_encoding_unverifiable", subjectId);
         } else {
-          scanReferences(text.text, QFileInfo(note->path).absolutePath());
+          scanReferences(text.text, QFileInfo(note->path).absolutePath(), subjectId);
         }
       }
     }
@@ -711,15 +736,15 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
     // A queued older snapshot can still introduce a reference absent from
     // both disk and the newest writer. Do not guess at queue internals.
     if (buffers->isSaveQueueBusy(bufferId)) {
-      retainAll = true;
+      retainUnverified("pending_save", bufferId);
     }
     QString snapshot;
     if (buffers->captureActiveWriterContent(bufferId, &snapshot)) {
       fingerprintPart(checkpoint,
                       QCryptographicHash::hash(snapshot.toUtf8(), QCryptographicHash::Sha256));
-      scanReferences(snapshot, QFileInfo(live.key()).absolutePath());
+      scanReferences(snapshot, QFileInfo(live.key()).absolutePath(), bufferId);
     } else if (buffers->isDirty(bufferId) || buffers->isSaveQueueBusy(bufferId)) {
-      retainAll = true;
+      retainUnverified("dirty_note_without_snapshot", bufferId);
     } else {
       VxCoreError readError = VXCORE_OK;
       const auto buffer = buffers->getBufferHandle(bufferId);
@@ -729,10 +754,10 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
       EncryptionText text;
       if (!buffer.isValid() || buffer.isEncrypted() || readError != VXCORE_OK ||
           !text.decode(bytes, buffers->bufferEncoding(bufferId))) {
-        retainAll = true;
+        retainUnverified("live_note_content_unverifiable", bufferId);
       } else {
         fingerprintPart(checkpoint, QCryptographicHash::hash(bytes, QCryptographicHash::Sha256));
-        scanReferences(text.text, QFileInfo(live.key()).absolutePath());
+        scanReferences(text.text, QFileInfo(live.key()).absolutePath(), bufferId);
       }
     }
   }
@@ -746,6 +771,12 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
       reservedNames.insert(resource.name);
     }
   }
+  int ownedCount = 0;
+  int outsideCount = 0;
+  int linkUnverifiedCount = 0;
+  int sharedCount = 0;
+  int uncertainCount = 0;
+  int resourceIndex = 0;
   for (auto resource = resources.begin(); resource != resources.end(); ++resource) {
     if (resource->role == QLatin1String("attachment")) {
       if (attachmentNames.contains(resource->name)) {
@@ -764,7 +795,21 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
       }
       attachmentNames.insert(resource->name);
     }
-    resource->retain = resource->retain || retainAll || shared.contains(resource.key());
+    const bool referencedElsewhere = shared.contains(resource.key());
+    ownedCount += resource->insideOwned ? 1 : 0;
+    outsideCount += resource->insideOwned ? 0 : 1;
+    linkUnverifiedCount += resource->insideOwned && !resource->singleLink ? 1 : 0;
+    sharedCount += referencedElsewhere ? 1 : 0;
+    uncertainCount += !resource->retain && !referencedElsewhere && retainAll ? 1 : 0;
+    resource->retain = resource->retain || retainAll || referencedElsewhere;
+    qCDebug(lcNoteEncryption).noquote().nospace()
+        << "phase=resource_decision note_id=" << fileId.toString(QUuid::WithoutBraces)
+        << " resource_index=" << resourceIndex++ << " role=" << resource->role
+        << " inside_owned_assets=" << resource->insideOwned
+        << " single_link_checked=" << resource->insideOwned
+        << " single_link=" << resource->singleLink
+        << " referenced_elsewhere=" << referencedElsewhere
+        << " reference_scan_complete=" << !retainAll << " retain_original=" << resource->retain;
     if (resource->retain) {
       plan.m_retainedOriginals.append(resource->path);
     }
@@ -821,6 +866,13 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
                              QString::fromLatin1(sourceHash));
   plan.m_resourcePlan.insert(QLatin1String(vxcore::kJsonKeyResources), resourceJson);
   plan.m_error = VXCORE_OK;
+  qCInfo(lcNoteEncryption).noquote().nospace()
+      << "phase=plan_complete note_id=" << fileId.toString(QUuid::WithoutBraces)
+      << " resources=" << resources.size() << " owned_resources=" << ownedCount
+      << " outside_owned_resources=" << outsideCount
+      << " link_unverified_resources=" << linkUnverifiedCount << " shared_resources=" << sharedCount
+      << " uncertain_resources=" << uncertainCount << " reference_scan_complete=" << !retainAll
+      << " retained_originals=" << plan.m_retainedOriginals.size();
   return plan;
 }
 
