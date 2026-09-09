@@ -421,7 +421,7 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
                     : QString();
       if (!p_isFolder && (editor == QLatin1String("markdown") || editor == QLatin1String("text")) &&
           !p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
-        auto *encryptAction = p_menu->addAction(tr("Encrypt Note"));
+        auto *encryptAction = p_menu->addAction(tr("Encrypt"));
         encryptAction->setObjectName(QStringLiteral("encryptNote"));
         connect(encryptAction, &QAction::triggered, this,
                 [this, p_nodeId]() { encryptNote(resolveSelection(p_nodeId)); });
