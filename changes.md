@@ -1,4 +1,37 @@
 # Changes
+## v4.6.1
+A maintenance release with cross-notebook transfers, more flexible Markdown editing and preview fixes on top of VNote 4.6.0:
+
+* **Notebooks and attachments**
+    * Copy and move notes and folders between bundled notebooks, with progress and per-item results; pending note edits and comments are saved before copying, while moves require the affected notes to be closed
+    * Attachments remain usable after cross-notebook transfers, including notebooks with existing attachment metadata
+    * The attachment popup can scan for unlisted attachments and register them in place, and opening an attachment now follows the standard file viewer flow
+    * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
+    * Optional automatic recycle bin cleanup permanently removes entries older than a configurable retention period
+* **Editor and Markdown**
+    * Headings can be folded in read mode and HTML exports, with fold controls shown beside the heading on hover
+    * Drag headings in the outline to reorder whole sections, adjusting heading levels to preserve the hierarchy, including moves under an adjacent heading
+    * A table-size picker was added to the Markdown toolbar
+    * Table-source alignment also formats directly edited Markdown tables; interactive table previews support Markdown type actions, highlight edited cells and write changes back after one second
+    * Choose KaTeX or MathJax for formulas in read mode and previews, with room reserved for numbered KaTeX equations
+    * KaTeX, MathJax and SVG-based graph previews retain higher-resolution pixels without enlarging their display size; KaTeX raster exports retain the same extra detail
+    * Inline and display math previews resize immediately with editor zoom while sharper rasters refresh asynchronously, preserving unrounded layout geometry
+    * Folding ranges track surviving source anchors after edits; bulk deletion no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
+    * The `%folder%` magic word expands to the current note's notebook-relative folder in snippets and note templates
+* **Export and interface**
+    * Export is available directly from the main file toolbar
+    * Exported HTML offers the corresponding HTML target when following a relative Markdown link
+    * The Save shortcut applies changes in Settings
+    * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
+    * No-match find feedback, panel close buttons and notification close icons follow the active theme
+* **Fixes**
+    * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
+    * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights
+    * Qt 6.9+ builds no longer create an empty WebEngine directory under Roaming AppData/VNoteX on Windows
+    * Cloning notebooks and enabling Git sync no longer crash on Linux due to unintended libgit2 Iconv configuration
+    * Hovering Markdown links no longer resizes the editor, and creating a Markdown style file no longer produces a spurious warning
+* **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
+
 ## v4.6.0
 A feature release that adds PDF comments, batch tag editing and substantial Markdown preview improvements on top of VNote 4.5.0:
 
@@ -10,12 +43,9 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Task-list checkboxes in the read-mode preview are clickable
     * The edit-mode outline shows rendered heading titles, and image sizes can be authored from the image context menu
     * New settings align Markdown table source and automatically fold previewed blocks
-    * Table-source alignment also formats directly edited Markdown tables, and folding ranges track surviving source anchors after edits
     * Interactive table previews are built on demand, preserving space for off-screen tables while substantially reducing opening, editing and scrolling costs; syntax highlighting is capped at 5000 cells in extreme documents
     * Read-mode diagrams appear progressively, duplicate Mermaid renders share one result, and repeated PlantUML diagrams reuse their encoded server URL
     * In-place previews publish results in batches, prioritize visible graph previews and recover cleanly when a render pass stalls, is hidden or is replaced
-    * KaTeX, MathJax and SVG-based graph previews retain higher-resolution pixels without enlarging their display size; KaTeX raster exports retain the same extra detail
-    * Inline and display math previews resize immediately with editor zoom while sharper rasters refresh asynchronously
     * Notes with more than 100 math blocks are no longer silently truncated, image-host images are not downloaded again for each preview, and multiline inline highlights render correctly
     * Prism was upgraded to 1.30.0 with every bundled language
 * **Tags**: tags can be added to or removed from multiple selected files in one operation
@@ -24,15 +54,8 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * The sort dialog shows Name, Created and Modified columns and compares wide digit runs as fields
     * VNote can start automatically when signing in to Windows
     * The application display name used in window titles, the system tray and About can be customized
-    * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
     * Windows spanning screens expand on the correct display, notification popups no longer truncate horizontally, and the notebook context menu places **Close** at the end
 * **Fixes**
-    * Bulk deletion in folded Markdown no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
-    * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
-    * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights
-    * Qt 6.9+ builds no longer create an empty WebEngine directory under Roaming AppData/VNoteX on Windows
-    * Attachments remain usable after cross-notebook transfers, with compatibility for existing notebook attachment metadata
-    * Cloning notebooks and enabling Git sync no longer crash on Linux due to unintended libgit2 Iconv configuration
     * Opening a file through Windows **Open with** no longer crashes when the WebEngine process inherits an incompatible command line
     * Read-only state is resolved when a buffer opens, preventing stale permissions from leaking into later operations
     * Context menus use the correct Qt API on each supported major version
