@@ -10,7 +10,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Task-list checkboxes in the read-mode preview are clickable
     * The edit-mode outline shows rendered heading titles, and image sizes can be authored from the image context menu
     * New settings align Markdown table source and automatically fold previewed blocks
-    * Table-source alignment also formats directly edited Markdown tables, and folding ranges remain bound to their blocks after edits
+    * Table-source alignment also formats directly edited Markdown tables, and folding ranges track surviving source anchors after edits
     * Interactive table previews are built on demand, preserving space for off-screen tables while substantially reducing opening, editing and scrolling costs; syntax highlighting is capped at 5000 cells in extreme documents
     * Read-mode diagrams appear progressively, duplicate Mermaid renders share one result, and repeated PlantUML diagrams reuse their encoded server URL
     * In-place previews publish results in batches, prioritize visible graph previews and recover cleanly when a render pass stalls, is hidden or is replaced
@@ -27,6 +27,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
     * Windows spanning screens expand on the correct display, notification popups no longer truncate horizontally, and the notebook context menu places **Close** at the end
 * **Fixes**
+    * Bulk deletion in folded Markdown no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
     * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
     * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights
     * Qt 6.9+ builds no longer create an empty WebEngine directory under Roaming AppData/VNoteX on Windows
