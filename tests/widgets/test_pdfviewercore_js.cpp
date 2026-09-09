@@ -365,6 +365,8 @@ private slots:
   void projectionRoundTripsThroughAScaledViewport();
   void degenerateQuadsProduceNoBox();
   void selectionCaptureExcludesPageBorders();
+  void highlightFragmentsRenderAsOneRegion();
+  void highlightMergingPreservesLinesAndGaps();
   void selectionRectsGroupPerPage();
   void selectionRectsAreCappedAndDegenerateOnesDropped();
 
@@ -1305,6 +1307,69 @@ void TestPdfViewerCoreJs::selectionCaptureExcludesPageBorders() {
   // Selection (150,100)-(250,120), with a 2x viewport and an 800-unit PDF page.
   QCOMPARE(json(engine, QStringLiteral("window.__added[0].anchor.quads")),
            QStringLiteral("[[20.5,781.5,70.5,781.5,70.5,771.5,20.5,771.5]]"));
+}
+
+void TestPdfViewerCoreJs::highlightFragmentsRenderAsOneRegion() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  // A persisted selection: out-of-order font runs, a duplicate parent/text-node
+  // rectangle, and a subpixel gap before the parenthesis. None is a new comment.
+  const auto rendered = eval(engine, QStringLiteral(R"JS(
+    window.__comment = { id: 'highlight', color: 'yellow', anchor: { quads: [
+      [88,100,125,100,125,110,88,110],
+      [10,100,80,100,80,110,10,110],
+      [10,99.5,80,99.5,80,110.5,10,110.5],
+      [85.2,100,88,100,88,110,85.2,110],
+      [80,100,85,100,85,110,80,110]
+    ] } };
+    window.__stored = JSON.stringify(window.__comment.anchor);
+    window.__layer = window.__mkEl();
+    window.vxcore.renderQuads(window.__layer, window.__comment, window.__mkViewport(2, 800));
+  )JS"));
+  QVERIFY2(!rendered.isError(), qPrintable(rendered.toString()));
+  QCOMPARE(eval(engine, QStringLiteral("window.__layer.children.length")).toInt(), 1);
+  QCOMPARE(json(engine, QStringLiteral("window.__layer.children[0].style")),
+           QStringLiteral(
+               "{\"left\":\"20px\",\"top\":\"1379px\",\"width\":\"230px\",\"height\":\"22px\"}"));
+
+  // Coalescing happens before projection, so rotating and zooming cannot split
+  // the same highlight back into individual frames.
+  const auto rotated = eval(engine, QStringLiteral(R"JS(
+    window.__layer = window.__mkEl();
+    window.vxcore.renderQuads(window.__layer, window.__comment, {
+      convertToViewportPoint: function(x, y) { return [y * 3, x * 3]; }
+    });
+  )JS"));
+  QVERIFY2(!rotated.isError(), qPrintable(rotated.toString()));
+  QCOMPARE(eval(engine, QStringLiteral("window.__layer.children.length")).toInt(), 1);
+  QCOMPARE(json(engine, QStringLiteral("window.__layer.children[0].style")),
+           QStringLiteral(
+               "{\"left\":\"298.5px\",\"top\":\"30px\",\"width\":\"33px\",\"height\":\"345px\"}"));
+  QCOMPARE(json(engine, QStringLiteral("window.__comment.anchor")),
+           eval(engine, QStringLiteral("window.__stored")).toString());
+}
+
+void TestPdfViewerCoreJs::highlightMergingPreservesLinesAndGaps() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  const auto rendered = eval(engine, QStringLiteral(R"JS(
+    window.__layer = window.__mkEl();
+    window.vxcore.renderQuads(window.__layer, { id: 'highlight', anchor: { quads: [
+      [10,100,30,100,30,110,10,110],
+      [30,100,50,100,50,110,30,110],
+      [80,100,100,100,100,110,80,110],
+      [10,120,50,120,50,130,10,130]
+    ] } }, window.__mkViewport(2, 800));
+    window.__regions = window.__layer.children.map(function(el) {
+      return [parseFloat(el.style.left), parseFloat(el.style.top),
+              parseFloat(el.style.width), parseFloat(el.style.height)];
+    }).sort(function(a, b) { return a[1] - b[1] || a[0] - b[0]; });
+  )JS"));
+  QVERIFY2(!rendered.isError(), qPrintable(rendered.toString()));
+  QCOMPARE(json(engine, QStringLiteral("window.__regions")),
+           QStringLiteral("[[20,1340,80,20],[20,1380,80,20],[160,1380,40,20]]"));
 }
 
 void TestPdfViewerCoreJs::toolIsAModeAndEscLeavesIt() {

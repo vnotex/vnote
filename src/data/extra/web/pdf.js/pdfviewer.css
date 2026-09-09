@@ -97,9 +97,9 @@ div.visibleMediumView:has(> button#secondaryPrint) {
 /* ============ Comment / highlight overlay (VNote-owned) ============
  *
  * One absolutely-positioned layer per rendered page, sized to the page and
- * holding one <div> per quad. Coordinates are stored in PDF page space in
- * comments.json, so a zoom / rotate / resize only re-projects; nothing is
- * recomputed from the DOM.
+ * holding one <div> per coalesced highlight region. Raw quads stay in PDF page
+ * space in comments.json; font-run fragments are joined before projection, so
+ * zoom / rotate / resize needs no DOM selection and preserves the same regions.
  *
  * Colors come EXCLUSIVELY from the --vx-comment-* custom properties that
  * HtmlTemplateService injects from ThemeService::commentHighlightCssVariables().

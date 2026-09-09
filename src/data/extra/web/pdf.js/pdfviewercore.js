@@ -2477,15 +2477,84 @@ class PdfViewerCore extends VXCore {
         return el;
     }
 
-    renderQuads(p_layer, p_comment, p_viewport) {
-        var quads = p_comment.anchor.quads || [];
-        var self = this;
-
-        for (var q = 0; q < quads.length; ++q) {
-            var box = PdfViewerCore.pdfQuadToPageBox(quads[q], p_viewport);
-            if (!box) {
+    // A selection contains font-run boxes and often BOTH a span and its text
+    // node. Merge connected runs on each line before painting, including for
+    // already-saved comments. Work in PDF space so zoom/rotation cannot change
+    // which runs belong together; never mutate the persisted quads.
+    static highlightQuadsToPageBoxes(p_quads, p_viewport) {
+        var boxes = [];
+        for (var q = 0; q < p_quads.length; ++q) {
+            var quad = p_quads[q];
+            if (!quad || quad.length !== 8) {
                 continue;
             }
+            var left = Math.min(quad[0], quad[2], quad[4], quad[6]);
+            var right = Math.max(quad[0], quad[2], quad[4], quad[6]);
+            var top = Math.min(quad[1], quad[3], quad[5], quad[7]);
+            var bottom = Math.max(quad[1], quad[3], quad[5], quad[7]);
+            if (!isFinite(left) || !isFinite(right) || !isFinite(top) || !isFinite(bottom) ||
+                right <= left || bottom <= top) {
+                continue;
+            }
+            boxes.push({ left: left, right: right, top: top, bottom: bottom });
+        }
+        boxes.sort(function(a, b) { return a.top - b.top || a.left - b.left; });
+
+        var merged = [];
+        for (var start = 0; start < boxes.length;) {
+            var first = boxes[start];
+            var end = start + 1;
+            // Font changes can alter the line box's height. Require overlap of
+            // at least half the taller box, relative to a fixed line reference,
+            // so joining fragments cannot gradually absorb the following line.
+            while (end < boxes.length) {
+                var next = boxes[end];
+                var overlap = Math.min(first.bottom, next.bottom) - Math.max(first.top, next.top);
+                if (overlap < Math.max(first.bottom - first.top, next.bottom - next.top) / 2) {
+                    break;
+                }
+                ++end;
+            }
+            var line = boxes.slice(start, end);
+            line.sort(function(a, b) { return a.left - b.left; });
+            var current = line[0];
+            merged.push(current);
+            for (var i = 1; i < line.length; ++i) {
+                var fragment = line[i];
+                // Bridge rounding gaps between runs, not whitespace/columns.
+                var gap = Math.min(current.bottom - current.top,
+                                   fragment.bottom - fragment.top) / 10;
+                if (fragment.left > current.right + gap) {
+                    current = fragment;
+                    merged.push(current);
+                    continue;
+                }
+                current.right = Math.max(current.right, fragment.right);
+                current.top = Math.min(current.top, fragment.top);
+                current.bottom = Math.max(current.bottom, fragment.bottom);
+            }
+            start = end;
+        }
+
+        var projected = [];
+        for (var j = 0; j < merged.length; ++j) {
+            var box = merged[j];
+            var pageBox = PdfViewerCore.pdfQuadToPageBox(
+                [box.left, box.top, box.right, box.top,
+                 box.right, box.bottom, box.left, box.bottom], p_viewport);
+            if (pageBox) {
+                projected.push(pageBox);
+            }
+        }
+        return projected;
+    }
+
+    renderQuads(p_layer, p_comment, p_viewport) {
+        var boxes = PdfViewerCore.highlightQuadsToPageBoxes(p_comment.anchor.quads || [], p_viewport);
+        var self = this;
+
+        for (var q = 0; q < boxes.length; ++q) {
+            var box = boxes[q];
 
             var el = document.createElement('div');
             el.className = 'vx-comment-quad';

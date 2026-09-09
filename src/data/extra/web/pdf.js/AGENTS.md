@@ -522,6 +522,12 @@ Using the outer rect adds the border (currently 9 CSS pixels) to stored anchors.
 Old anchors are not shifted on load: they record no capture zoom, so that CSS
 error cannot be reversed reliably in PDF units.
 
+`highlightQuadsToPageBoxes()` coalesces overlapping/adjacent font-run rectangles
+on the same PDF-space line before projection. Rendering each raw DOM rectangle
+separately duplicates translucent fills and puts an outline around every glyph
+fragment. Coalescing is per comment, preserves gaps and separate lines, and never
+rewrites stored quads, so existing highlights benefit without a migration.
+
 ### The three tools
 
 Three authoring modes, mirroring pdf.js's own toolbar layout, on the VNote
