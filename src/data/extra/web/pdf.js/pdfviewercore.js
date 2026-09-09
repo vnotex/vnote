@@ -791,8 +791,8 @@ class PdfViewerCore extends VXCore {
     // into a PDF-page-space quad: [x0,y0, x1,y1, x2,y2, x3,y3] for the four
     // corners TL, TR, BR, BL.
     //
-    // @p_pageRect is the page element's own client rect, so the subtraction
-    // yields viewport coordinates, which is what convertToPdfPoint expects.
+    // @p_pageRect is the page's inner client rect, excluding its CSS border,
+    // so subtraction uses the same origin as the canvas and comment overlay.
     static clientRectToPdfQuad(p_rect, p_pageRect, p_viewport) {
         var left = p_rect.left - p_pageRect.left;
         var top = p_rect.top - p_pageRect.top;
@@ -953,7 +953,17 @@ class PdfViewerCore extends VXCore {
         return out.join(' ');
     }
 
-    // Page element + viewport for a client-space POINT, or null.
+    // Canvas and overlay coordinates start INSIDE the page border. Using the
+    // outer bounding rect shifts every captured annotation by that border.
+    static pageContentRect(p_div) {
+        var rect = p_div.getBoundingClientRect();
+        var left = rect.left + p_div.clientLeft;
+        var top = rect.top + p_div.clientTop;
+        return { left: left, top: top,
+                 right: left + p_div.clientWidth, bottom: top + p_div.clientHeight };
+    }
+
+    // Page content rect + viewport for a client-space POINT, or null.
     pageInfoForPoint(p_x, p_y) {
         var app = this.commentApp;
         if (!app || !app.pdfViewer) {
@@ -964,7 +974,7 @@ class PdfViewerCore extends VXCore {
             if (!view || !view.div || !view.viewport) {
                 continue;
             }
-            var pageRect = view.div.getBoundingClientRect();
+            var pageRect = PdfViewerCore.pageContentRect(view.div);
             if (p_x >= pageRect.left && p_x <= pageRect.right && p_y >= pageRect.top &&
                 p_y <= pageRect.bottom) {
                 return { pageNumber: i, pageRect: pageRect, viewport: view.viewport };
@@ -1019,7 +1029,7 @@ class PdfViewerCore extends VXCore {
         if (this.inkDraft.points.length >= VX_MAX_INK_POINTS * 2) {
             return;
         }
-        var rect = view.div.getBoundingClientRect();
+        var rect = PdfViewerCore.pageContentRect(view.div);
         var pt = PdfViewerCore.clientPointToPdfPoint(p_clientX, p_clientY, rect, view.viewport);
         this.inkDraft.points.push(pt[0], pt[1]);
         // Only the draft polyline is touched. Calling renderAllComments() here
@@ -1349,7 +1359,7 @@ class PdfViewerCore extends VXCore {
         if (!view || !view.div || !view.viewport) {
             return null;
         }
-        var rect = view.div.getBoundingClientRect();
+        var rect = PdfViewerCore.pageContentRect(view.div);
         var x = Math.min(Math.max(p_clientX, rect.left), rect.right);
         var y = Math.min(Math.max(p_clientY, rect.top), rect.bottom);
         var pt = PdfViewerCore.clientPointToPdfPoint(x, y, rect, view.viewport);
@@ -2093,28 +2103,11 @@ class PdfViewerCore extends VXCore {
         }
     }
 
-    // Page element + viewport for a client-space rect, or null.
+    // Resolve a selection rectangle through the same content-space lookup as
+    // pointer-authored annotations.
     pageInfoForClientRect(p_rect) {
-        var app = this.commentApp;
-        if (!app || !app.pdfViewer) {
-            return null;
-        }
-
-        var x = p_rect.left + p_rect.width / 2;
-        var y = p_rect.top + p_rect.height / 2;
-
-        for (var i = 0; i < app.pagesCount; ++i) {
-            var view = app.pdfViewer.getPageView(i);
-            if (!view || !view.div || !view.viewport) {
-                continue;
-            }
-            var pageRect = view.div.getBoundingClientRect();
-            if (x >= pageRect.left && x <= pageRect.right && y >= pageRect.top &&
-                y <= pageRect.bottom) {
-                return { pageNumber: i, pageRect: pageRect, viewport: view.viewport };
-            }
-        }
-        return null;
+        return this.pageInfoForPoint(p_rect.left + p_rect.width / 2,
+                                     p_rect.top + p_rect.height / 2);
     }
 
     // Turn the current text selection into add-comment intents. One intent per

@@ -515,6 +515,13 @@ count is capped.
 > `PdfViewerCore`. A top-level `class` is a lexical binding: it does not land on the global object
 > and is invisible to a later, separate `QJSEngine::evaluate()` call.
 
+`pageContentRect()` excludes the page div's CSS border: the canvas and comment
+layer both start at that inner origin. Selection capture, ink samples, text-box
+placement and drag clamping must all use it, never the outer bounding rect.
+Using the outer rect adds the border (currently 9 CSS pixels) to stored anchors.
+Old anchors are not shifted on load: they record no capture zoom, so that CSS
+error cannot be reversed reliably in PDF units.
+
 ### The three tools
 
 Three authoring modes, mirroring pdf.js's own toolbar layout, on the VNote

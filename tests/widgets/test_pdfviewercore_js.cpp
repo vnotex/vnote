@@ -364,6 +364,7 @@ private slots:
   void pdfQuadProjectsBackToACssBox();
   void projectionRoundTripsThroughAScaledViewport();
   void degenerateQuadsProduceNoBox();
+  void selectionCaptureExcludesPageBorders();
   void selectionRectsGroupPerPage();
   void selectionRectsAreCappedAndDegenerateOnesDropped();
 
@@ -1176,6 +1177,7 @@ window.__pageDiv = {
     // the next renderAllComments() clear a layer that still holds the editor,
     // and therefore fire the blur the guard has to ignore.
     __layer: null,
+    clientLeft: 0, clientTop: 0, clientWidth: 600, clientHeight: 800,
     getBoundingClientRect: function() {
         return { left: 100, top: 50, right: 700, bottom: 850, width: 600, height: 800 };
     },
@@ -1188,6 +1190,7 @@ window.__pageDiv = {
 // It sits directly below the first one, with the same width.
 window.__pageDiv2 = {
     __layer: null,
+    clientLeft: 0, clientTop: 0, clientWidth: 600, clientHeight: 800,
     getBoundingClientRect: function() {
         return { left: 100, top: 900, right: 700, bottom: 1700, width: 600, height: 800 };
     },
@@ -1283,6 +1286,26 @@ window.getSelection = function() {
 };
 )JS";
 } // namespace
+
+void TestPdfViewerCoreJs::selectionCaptureExcludesPageBorders() {
+  QJSEngine engine;
+  loadCore(engine);
+  QVERIFY(!eval(engine, QString::fromUtf8(c_toolHarness)).isError());
+  QVERIFY(!eval(engine, QString::fromUtf8(c_selectionHarness)).isError());
+
+  // The canvas/overlay starts at (109, 63), not the outer page's (100, 50).
+  // Unequal borders ensure neither axis relies on pdf.js's current 9px style.
+  const auto captured = eval(engine, QStringLiteral("window.__pageDiv.clientLeft = 9;"
+                                                    "window.__pageDiv.clientTop = 13;"
+                                                    "window.__pageDiv.clientWidth = 582;"
+                                                    "window.__pageDiv.clientHeight = 774;"
+                                                    "window.vxcore.captureSelection();"));
+  QVERIFY2(!captured.isError(), qPrintable(captured.toString()));
+  QCOMPARE(captured.toInt(), 1);
+  // Selection (150,100)-(250,120), with a 2x viewport and an 800-unit PDF page.
+  QCOMPARE(json(engine, QStringLiteral("window.__added[0].anchor.quads")),
+           QStringLiteral("[[20.5,781.5,70.5,781.5,70.5,771.5,20.5,771.5]]"));
+}
 
 void TestPdfViewerCoreJs::toolIsAModeAndEscLeavesIt() {
   QJSEngine engine;
