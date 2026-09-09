@@ -27,6 +27,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
     * Windows spanning screens expand on the correct display, notification popups no longer truncate horizontally, and the notebook context menu places **Close** at the end
 * **Fixes**
+    * Qt 6.9+ builds no longer create an empty WebEngine directory under Roaming AppData/VNoteX on Windows
     * Attachments remain usable after cross-notebook transfers, with compatibility for existing notebook attachment metadata
     * Cloning notebooks and enabling Git sync no longer crash on Linux due to unintended libgit2 Iconv configuration
     * Opening a file through Windows **Open with** no longer crashes when the WebEngine process inherits an incompatible command line

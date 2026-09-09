@@ -11,6 +11,14 @@
 | `WebEngineProfileService` | Owns the shared named `QWebEngineProfile` **and** the `vxpdf://` scheme handler (`VxPdfSchemeHandler`), plus the PDF document token registry (`registerPdfDocument` / `unregisterPdfDocument`) |
 | `NavigationModeService` | Keyboard navigation mode service |
 
+## WebEngine profile storage
+
+`WebEngineProfileService` uses VNote's injected Local data root for `webcache` and
+`webstorage`. On Qt 6.9+, supply both paths through `QWebEngineProfileBuilder` before
+creating the named profile: assigning them afterward still lets Qt create its default
+Roaming AppData directory on Windows. Keep the older-Qt constructor/setter branch
+for compatibility; do not change application identity or move caches to the App root.
+
 ## utils/
 
 | Class | Purpose |
