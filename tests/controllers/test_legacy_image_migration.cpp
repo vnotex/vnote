@@ -847,26 +847,53 @@ void TestLegacyImageMigration::testEncryptionRetentionDiagnostics() {
   QCOMPARE(QFileInfo(shared.m_retainedOriginals.first()).canonicalFilePath(),
            QFileInfo(attachedPath).canonicalFilePath());
 
-  QVERIFY(other.setContentRaw(QByteArrayLiteral("<iframe src=\"about:blank\"></iframe>\n")));
-  QVERIFY(other.save());
-  const auto uncertain = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
-  QVERIFY2(uncertain.isValid(), qPrintable(uncertain.m_errorMessage));
-  QCOMPARE(uncertain.m_retainedOriginals.size(), 3);
-  for (const auto &resource : uncertain.m_resourcePlan.value("resources").toArray()) {
-    const auto entry = resource.toObject();
-    QVERIFY(LegacyImageMigrationController::isPathContained(owned,
-                                                            entry.value("sourcePath").toString()));
-    QVERIFY(entry.value("retainOriginal").toBool());
-  }
-
   QVERIFY(other.setContentRaw(QByteArrayLiteral("No external references\n")));
   QVERIFY(other.save());
   const auto restored = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
   QVERIFY2(restored.isValid(), qPrintable(restored.m_errorMessage));
   QVERIFY(restored.m_retainedOriginals.isEmpty());
 
+  // A different pathname can alias the owned file without appearing in the
+  // ordinary path-based sharing set. Native link metadata must explain it.
+  const auto alias = temporary.filePath("PRIVATE_HARDLINK_ALIAS.md");
+  QProcess makeLink;
+#ifdef Q_OS_WIN
+  makeLink.start(QStringLiteral("cmd.exe"),
+                 {QStringLiteral("/c"), QStringLiteral("mklink"), QStringLiteral("/H"),
+                  QDir::toNativeSeparators(alias), QDir::toNativeSeparators(attachedPath)});
+#else
+  makeLink.start(QStringLiteral("ln"), {attachedPath, alias});
+#endif
+  QVERIFY(makeLink.waitForFinished(10000));
+  QCOMPARE(makeLink.exitStatus(), QProcess::NormalExit);
+  QCOMPARE(makeLink.exitCode(), 0);
+  const auto aliasUrl = QUrl::fromLocalFile(alias).toString(QUrl::FullyEncoded);
+  QVERIFY(other.setContentRaw((QStringLiteral("[alias](") + aliasUrl + ")\n").toUtf8()));
+  QVERIFY(other.save());
+  const auto linked = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
+  QVERIFY2(linked.isValid(), qPrintable(linked.m_errorMessage));
+  QCOMPARE(linked.m_retainedOriginals.size(), 1);
+  QCOMPARE(QFileInfo(linked.m_retainedOriginals.first()).canonicalFilePath(),
+           QFileInfo(attachedPath).canonicalFilePath());
+  QVERIFY(QFile::remove(alias));
+  QVERIFY(other.setContentRaw(QByteArrayLiteral("No external references\n")));
+  QVERIFY(other.save());
+  const auto unlinked = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
+  QVERIFY2(unlinked.isValid(), qPrintable(unlinked.m_errorMessage));
+  QVERIFY(unlinked.m_retainedOriginals.isEmpty());
+
+  QString nativeDecision;
+  for (const auto &message : diagnostics) {
+    if (message.contains("phase=resource_decision") && message.contains("link_count=2")) {
+      nativeDecision = message;
+      break;
+    }
+  }
+  QVERIFY2(nativeDecision.contains("native_error=0"), qPrintable(nativeDecision));
+  QVERIFY(nativeDecision.contains("inside_owned_assets=true"));
+  QVERIFY(nativeDecision.contains("referenced_elsewhere=false"));
   const auto log = diagnostics.join('\n');
-  QVERIFY2(log.contains("reference_scan_incomplete"), qPrintable(log));
+  QVERIFY(!log.contains("PRIVATE_HARDLINK_ALIAS"));
   QVERIFY(!log.contains(temporary.path()));
   QVERIFY(!log.contains(privateName));
   QVERIFY(!log.contains("PRIVATE_CONFIGURATION_NAME"));

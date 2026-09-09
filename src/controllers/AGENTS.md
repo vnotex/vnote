@@ -198,11 +198,18 @@ Info-level `plan_begin`, `reference_scan_incomplete`, and `plan_complete` entrie
 identify the note by UUID, explain incomplete scans by reason and subject UUID,
 and summarize owned, outside-owned, hard-link-unverified, shared, uncertain and
 retained resource counts. `owned_resources` means containment, not exclusive use.
-A failed or unsupported reference scan conservatively retains originals even
-inside the selected note's own assets folder; never describe that as proof that
-the files live outside it or remove the safety fallback to silence a warning.
+The current incomplete-scan fallback can retain originals inside the selected
+note's own assets folder. That is uncertainty, not proof of sharing or an
+outside-folder location; inspect the logged reason before changing policy.
 
-Enable `QT_LOGGING_RULES="vnote.encryption.debug=true"` for `resource_decision`
-entries with ordinal, role, containment, link-check and reference flags. These
-logs must not include source paths, attachment names, body/resource bytes or
-hashes, passwords, or keys. The full resource plan is never a log payload.
+`resource_decision` also logs at Info, so normal `--log-stderr` diagnostics need
+no debug rule. It includes ordinal, role, containment, `link_count`,
+`native_error`, sharing, `retain_all`, and the final retention decision.
+`link_count=-1` means no count was obtained; `single_link_checked` distinguishes
+an attempted query from an outside-owned resource that needs no query.
+`native_error` is Windows `GetLastError()` or POSIX `errno`, captured before
+cleanup; zero means no query error was recorded. A hard-link alias need not be
+found by the path-based sharing scan. Core independently requires exactly one
+hard link for `retainOriginal=false`; do not remove only the Qt check.
+These logs must not include source paths, attachment names, body/resource bytes
+or hashes, passwords, or keys. The full resource plan is never a log payload.

@@ -22,6 +22,7 @@
 #include <QVarLengthArray>
 
 #include <algorithm>
+#include <cerrno>
 
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
@@ -171,23 +172,35 @@ bool encryptionPathIsDirect(const QString &p_path) {
   return true;
 }
 
-bool encryptionSourceHasOneLink(const QString &p_path) {
+bool encryptionSourceHasOneLink(const QString &p_path, qint64 &p_linkCount,
+                                quint32 &p_nativeError) {
+  p_linkCount = -1;
+  p_nativeError = 0;
 #if defined(Q_OS_WIN)
   const QString native = QDir::toNativeSeparators(p_path);
   HANDLE file = ::CreateFileW(reinterpret_cast<const wchar_t *>(native.utf16()), 0,
                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (file == INVALID_HANDLE_VALUE) {
+    p_nativeError = ::GetLastError();
     return false;
   }
   BY_HANDLE_FILE_INFORMATION info;
-  const bool one = ::GetFileInformationByHandle(file, &info) && info.nNumberOfLinks == 1;
+  if (::GetFileInformationByHandle(file, &info)) {
+    p_linkCount = info.nNumberOfLinks;
+  } else {
+    p_nativeError = ::GetLastError();
+  }
   ::CloseHandle(file);
-  return one;
 #else
   struct stat info;
-  return ::stat(QFile::encodeName(p_path).constData(), &info) == 0 && info.st_nlink == 1;
+  if (::stat(QFile::encodeName(p_path).constData(), &info) == 0) {
+    p_linkCount = static_cast<qint64>(info.st_nlink);
+  } else {
+    p_nativeError = static_cast<quint32>(errno);
+  }
 #endif
+  return p_linkCount == 1;
 }
 
 bool hashEncryptionSource(const QString &p_path, QByteArray &p_hash) {
@@ -473,6 +486,8 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
     QByteArray hash;
     bool insideOwned = false;
     bool singleLink = false;
+    qint64 linkCount = -1;
+    quint32 nativeError = 0;
     bool retain = true;
   };
   QMap<QString, Resource> resources;
@@ -523,7 +538,9 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
             ? QStringLiteral("application/json")
             : mimeDatabase.mimeTypeForFile(info, QMimeDatabase::MatchExtension).name();
     resource.insideOwned = isPathContained(owned, p_path);
-    resource.singleLink = resource.insideOwned && encryptionSourceHasOneLink(p_path);
+    resource.singleLink =
+        resource.insideOwned &&
+        encryptionSourceHasOneLink(p_path, resource.linkCount, resource.nativeError);
     resource.retain = !resource.insideOwned || !resource.singleLink;
     resources.insert(key, resource);
     return true;
@@ -802,14 +819,16 @@ LegacyImageMigrationController::planNoteEncryption(const NodeIdentifier &p_nodeI
     sharedCount += referencedElsewhere ? 1 : 0;
     uncertainCount += !resource->retain && !referencedElsewhere && retainAll ? 1 : 0;
     resource->retain = resource->retain || retainAll || referencedElsewhere;
-    qCDebug(lcNoteEncryption).noquote().nospace()
+    qCInfo(lcNoteEncryption).noquote().nospace()
         << "phase=resource_decision note_id=" << fileId.toString(QUuid::WithoutBraces)
         << " resource_index=" << resourceIndex++ << " role=" << resource->role
         << " inside_owned_assets=" << resource->insideOwned
         << " single_link_checked=" << resource->insideOwned
-        << " single_link=" << resource->singleLink
+        << " single_link=" << resource->singleLink << " link_count=" << resource->linkCount
+        << " native_error=" << resource->nativeError
         << " referenced_elsewhere=" << referencedElsewhere
-        << " reference_scan_complete=" << !retainAll << " retain_original=" << resource->retain;
+        << " reference_scan_complete=" << !retainAll << " retain_all=" << retainAll
+        << " retain_original=" << resource->retain;
     if (resource->retain) {
       plan.m_retainedOriginals.append(resource->path);
     }
