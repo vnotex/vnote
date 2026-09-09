@@ -19,6 +19,10 @@ creating the named profile: assigning them afterward still lets Qt create its de
 Roaming AppData directory on Windows. Keep the older-Qt constructor/setter branch
 for compatibility; do not change application identity or move caches to the App root.
 
+`tests/gui/test_webengineprofileservice.cpp` guards construction-time directory isolation
+and persistent browser storage in its own Qt 6.9+ target with a CTest-owned runtime
+environment. Keep `test_vxpdfschemehandler` GUILESS; it must not initialize Chromium.
+
 ## utils/
 
 | Class | Purpose |

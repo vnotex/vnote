@@ -219,4 +219,43 @@ if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.
       $<TARGET_FILE:VTextEdit>
       $<TARGET_FILE_DIR:test_vxpdfschemehandler>
   )
+
+  # A separate Chromium process/runtime boundary from the GUILESS MIME/token suite.
+  add_qt_test(test_webengineprofileservice
+    SOURCES
+      test_webengineprofileservice.cpp
+      ${CMAKE_SOURCE_DIR}/src/gui/services/webengineprofileservice.cpp
+      ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
+    LINKS
+      Qt6::WebEngineCore
+      core_configs
+  )
+  target_include_directories(test_webengineprofileservice PRIVATE
+    ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+  )
+  add_custom_command(TARGET test_webengineprofileservice POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:VTextEdit>
+      $<TARGET_FILE_DIR:test_webengineprofileservice>
+  )
+  # Let Qt locate its matching renderer/resources through QLibraryInfo (or its
+  # framework on macOS), rather than inheriting overrides for a deployed app.
+  set_property(TEST test_webengineprofileservice PROPERTY ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen"
+    "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+    "QTWEBENGINEPROCESS_PATH="
+    "QTWEBENGINE_RESOURCES_PATH="
+    "QTWEBENGINE_LOCALES_PATH="
+    "QTWEBENGINE_CHROMIUM_FLAGS="
+  )
+  if(WIN32)
+    # Escape the path separators because ENVIRONMENT is itself a CMake list.
+    set(_webengine_test_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$ENV{PATH}")
+    string(REPLACE ";" "\;" _webengine_test_path "${_webengine_test_path}")
+    set_property(TEST test_webengineprofileservice APPEND PROPERTY
+      ENVIRONMENT "PATH=${_webengine_test_path}")
+  elseif(UNIX AND NOT APPLE)
+    set_property(TEST test_webengineprofileservice APPEND PROPERTY ENVIRONMENT
+      "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:Qt6::Core>:$<TARGET_FILE_DIR:VTextEdit>:$ENV{LD_LIBRARY_PATH}")
+  endif()
 endif()
