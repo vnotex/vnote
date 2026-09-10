@@ -74,7 +74,7 @@ void EditorPage::setupUI() {
   {
     m_sectionNumberPatternComboBox = WidgetsFactory::createComboBox(this);
     m_sectionNumberPatternComboBox->setToolTip(
-        tr("Pattern used for automatic section numbers in Markdown read mode and the outline"));
+        tr("Pattern used for automatic section numbers in outline"));
 
     for (const auto &pattern : SectionNumberUtils::getSupportedPatterns()) {
       m_sectionNumberPatternComboBox->addItem(pattern, pattern);
