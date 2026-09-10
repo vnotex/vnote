@@ -3,6 +3,7 @@
 #include <QMimeData>
 #include <QStack>
 
+#include <utils/sectionnumberutils.h>
 #include <widgets/outlineprovider.h>
 
 using namespace vnotex;
@@ -35,12 +36,12 @@ void OutlineModel::setCurrentHeadingIndex(int p_idx) { m_currentHeadingIndex = p
 
 int OutlineModel::getCurrentHeadingIndex() const { return m_currentHeadingIndex; }
 
-void OutlineModel::setSectionNumberEnabled(bool p_enabled) {
-  if (m_sectionNumberEnabled == p_enabled) {
+void OutlineModel::setAutoSectionNumberEnabled(bool p_enabled) {
+  if (m_autoSectionNumberEnabled == p_enabled) {
     return;
   }
 
-  m_sectionNumberEnabled = p_enabled;
+  m_autoSectionNumberEnabled = p_enabled;
 
   // Rebuild tree to recompute display strings.
   beginResetModel();
@@ -48,27 +49,13 @@ void OutlineModel::setSectionNumberEnabled(bool p_enabled) {
   endResetModel();
 }
 
-void OutlineModel::setSectionNumberBaseLevel(int p_level) {
-  if (m_sectionNumberBaseLevel == p_level) {
+void OutlineModel::setSectionNumberPattern(const QString &p_pattern) {
+  const auto pattern = SectionNumberUtils::normalizePattern(p_pattern);
+  if (m_sectionNumberPattern == pattern) {
     return;
   }
 
-  m_sectionNumberBaseLevel = p_level;
-
-  // Rebuild tree to recompute section numbers.
-  beginResetModel();
-  buildTree();
-  endResetModel();
-}
-
-void OutlineModel::setSectionNumberEndingDot(bool p_endingDot) {
-  if (m_sectionNumberEndingDot == p_endingDot) {
-    return;
-  }
-
-  m_sectionNumberEndingDot = p_endingDot;
-
-  // Rebuild tree to recompute section numbers.
+  m_sectionNumberPattern = pattern;
   beginResetModel();
   buildTree();
   endResetModel();
@@ -151,7 +138,7 @@ QVariant OutlineModel::data(const QModelIndex &p_index, int p_role) const {
 
   switch (p_role) {
   case Qt::DisplayRole: {
-    if (m_sectionNumberEnabled && !node->m_sectionNumber.isEmpty()) {
+    if (m_autoSectionNumberEnabled && !node->m_sectionNumber.isEmpty()) {
       return node->m_sectionNumber + QLatin1Char(' ') + node->m_name;
     }
     return node->m_name;
@@ -220,12 +207,17 @@ void OutlineModel::buildTree() {
     return;
   }
 
+  SectionNumberUtils::Analysis analysis;
+  if (m_autoSectionNumberEnabled && !m_outline->m_hasSectionNumber) {
+    analysis = SectionNumberUtils::analyze(m_outline->m_headings);
+  }
+
   // Fill gaps for skipped heading levels (e.g., H1 -> H3 inserts [EMPTY] H2).
   QVector<Outline::Heading> perfectHeadings;
   OutlineProvider::makePerfectHeadings(m_outline->m_headings, perfectHeadings);
 
   // Build a mapping from perfect-heading index to original heading index.
-  // Perfect headings include gap-fillers; originals don't.
+  // Preserve producer indices, including any upstream gap-fillers.
   // We walk both vectors in sync to find matches.
   QVector<int> perfectToOriginal(perfectHeadings.size(), -1);
   {
@@ -240,17 +232,18 @@ void OutlineModel::buildTree() {
     }
   }
 
-  // Initialize section number vector.
-  // Levels are 1-based; the vector is indexed by level.
-  // Allocate enough slots for the maximum level encountered.
-  int maxLevel = 0;
-  for (const auto &h : perfectHeadings) {
-    if (h.m_level > maxLevel) {
-      maxLevel = h.m_level;
+  // Levels are 1-based. Only allocate counters when generating prefixes.
+  QVector<int> sectionNumber;
+  if (!analysis.m_skip) {
+    int maxLevel = 0;
+    for (int i = analysis.m_firstNumberedHeading; i < m_outline->m_headings.size(); ++i) {
+      const auto &heading = m_outline->m_headings[i];
+      if (!heading.m_isPlaceholder && heading.m_level > maxLevel) {
+        maxLevel = heading.m_level;
+      }
     }
+    sectionNumber.fill(0, maxLevel + 1);
   }
-
-  SectionNumber sectionNumber(maxLevel + 1, 0);
 
   // Build tree nodes.
   // Maintain a stack of (level, node) to track current nesting position.
@@ -262,9 +255,10 @@ void OutlineModel::buildTree() {
     const auto &heading = perfectHeadings[i];
     int level = heading.m_level;
 
-    // Compute section number for this heading.
-    if (m_sectionNumberEnabled && m_sectionNumberBaseLevel > 0) {
-      OutlineProvider::increaseSectionNumber(sectionNumber, level, m_sectionNumberBaseLevel);
+    const bool numberHeading = !analysis.m_skip && !heading.m_isPlaceholder && level > 0 &&
+                               perfectToOriginal[i] >= analysis.m_firstNumberedHeading;
+    if (numberHeading) {
+      SectionNumberUtils::increaseSectionNumber(sectionNumber, level, analysis.m_baseLevel);
     }
 
     // Navigate to the correct parent based on level.
@@ -297,9 +291,9 @@ void OutlineModel::buildTree() {
     node->m_parent = currentParent;
 
     // Compute section number string.
-    if (m_sectionNumberEnabled && m_sectionNumberBaseLevel > 0) {
+    if (numberHeading) {
       node->m_sectionNumber =
-          OutlineProvider::joinSectionNumber(sectionNumber, m_sectionNumberEndingDot);
+          SectionNumberUtils::joinSectionNumber(sectionNumber, m_sectionNumberPattern);
     }
 
     currentParent->m_children.append(node);

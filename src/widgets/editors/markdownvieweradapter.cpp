@@ -11,6 +11,7 @@
 #include <core/logging.h>
 #include <core/servicelocator.h>
 #include <gui/utils/guiutils.h>
+#include <utils/sectionnumberutils.h>
 
 using namespace vnotex;
 
@@ -213,7 +214,7 @@ void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id, quint64 p_timeStamp
   emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale, logicalSize));
 }
 
-void MarkdownViewerAdapter::setHeadings(const QJsonArray &p_headings) {
+void MarkdownViewerAdapter::setHeadings(const QJsonArray &p_headings, bool p_hasSectionNumber) {
   QVector<Heading> headings;
   headings.reserve(p_headings.size());
   for (auto const &arr : p_headings) {
@@ -221,6 +222,7 @@ void MarkdownViewerAdapter::setHeadings(const QJsonArray &p_headings) {
   }
 
   OutlineProvider::makePerfectHeadings(headings, m_headings);
+  m_headingsHaveSectionNumber = !m_headings.isEmpty() && p_hasSectionNumber;
   m_currentHeadingIndex = -1;
 
   emit headingsChanged();
@@ -245,6 +247,25 @@ const QVector<MarkdownViewerAdapter::Heading> &MarkdownViewerAdapter::getHeading
 }
 
 int MarkdownViewerAdapter::getCurrentHeadingIndex() const { return m_currentHeadingIndex; }
+
+QJsonObject MarkdownViewerAdapter::getSectionNumberOptions() const {
+  return {{QStringLiteral("enabled"), m_autoSectionNumberEnabled},
+          {QStringLiteral("pattern"), m_sectionNumberPattern}};
+}
+
+void MarkdownViewerAdapter::setSectionNumberOptions(bool p_enabled, const QString &p_pattern) {
+  const auto pattern = SectionNumberUtils::normalizePattern(p_pattern);
+  if (m_autoSectionNumberEnabled == p_enabled && m_sectionNumberPattern == pattern) {
+    return;
+  }
+  m_autoSectionNumberEnabled = p_enabled;
+  m_sectionNumberPattern = pattern;
+  emit sectionNumberOptionsChanged();
+}
+
+bool MarkdownViewerAdapter::getHeadingsHaveSectionNumber() const {
+  return m_headingsHaveSectionNumber;
+}
 
 void MarkdownViewerAdapter::scrollToHeading(int p_idx) {
   if (p_idx < 0 || p_idx >= m_headings.size()) {
@@ -338,6 +359,7 @@ void MarkdownViewerAdapter::reset() {
   setReady(false);
   m_topLineNumber = -1;
   m_headings.clear();
+  m_headingsHaveSectionNumber = false;
   m_currentHeadingIndex = -1;
   m_crossCopyTargets.clear();
 }

@@ -40,6 +40,8 @@ private:
 
   QCheckBox *m_headingFoldingCheckBox = nullptr;
 
+  QCheckBox *m_autoSectionNumberCheckBox = nullptr;
+
   QCheckBox *m_constrainInplacePreviewWidthCheckBox = nullptr;
 
   QCheckBox *m_inplacePreviewSourceImageLinkCheckBox = nullptr;

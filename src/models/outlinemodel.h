@@ -68,9 +68,8 @@ public:
   int getCurrentHeadingIndex() const;
 
   // Section number display configuration.
-  void setSectionNumberEnabled(bool p_enabled);
-  void setSectionNumberBaseLevel(int p_level);
-  void setSectionNumberEndingDot(bool p_endingDot);
+  void setAutoSectionNumberEnabled(bool p_enabled);
+  void setSectionNumberPattern(const QString &p_pattern);
 
   // Get the QModelIndex for a given heading index (for the view to highlight).
   QModelIndex indexForHeadingIndex(int p_headingIndex) const;
@@ -112,9 +111,8 @@ private:
   bool m_reorderSupported = false;
 
   // Section number configuration.
-  bool m_sectionNumberEnabled = true;
-  int m_sectionNumberBaseLevel = 1; // 1-based. -1 to disable.
-  bool m_sectionNumberEndingDot = true;
+  bool m_autoSectionNumberEnabled = true;
+  QString m_sectionNumberPattern = QStringLiteral("1.1.");
 };
 
 } // namespace vnotex

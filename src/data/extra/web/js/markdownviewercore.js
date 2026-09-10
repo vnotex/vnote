@@ -257,8 +257,8 @@ class MarkdownViewerCore extends VXCore {
                                                     p_data.logicalHeight || 0);
     }
 
-    setHeadings(p_headings) {
-        window.vxMarkdownAdapter.setHeadings(p_headings);
+    setHeadings(p_headings, p_hasSectionNumber) {
+        window.vxMarkdownAdapter.setHeadings(p_headings, p_hasSectionNumber);
     }
 
     setCurrentHeadingAnchor(p_idx, p_anchor) {

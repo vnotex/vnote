@@ -50,8 +50,8 @@ public:
   void applyExpandLevel();
 
   // Section number toggle.
-  void toggleSectionNumber();
-  bool isSectionNumberEnabled() const;
+  void toggleAutoSectionNumber();
+  bool isAutoSectionNumberEnabled() const;
 
   void confirmReorder(bool p_confirmed);
 
@@ -78,6 +78,8 @@ private:
 
   void clearPendingReorder();
 
+  void updateSectionNumberPattern();
+
   struct PendingReorder {
     QSharedPointer<Outline> m_outline;
     int m_sourceHeadingIndex = -1;
@@ -90,10 +92,10 @@ private:
   OutlineView *m_view = nullptr;   // Not owned
   QSharedPointer<OutlineProvider> m_provider;
   PendingReorder m_pendingReorder;
-  QTimer *m_expandTimer = nullptr;     // Debounce timer for auto-expand
-  int m_autoExpandedLevel = 6;         // Cached from config
-  bool m_sectionNumberEnabled = false; // Cached from config
-  int m_sectionNumberBaseLevel = 2;    // Cached from config
+  QTimer *m_expandTimer = nullptr;         // Debounce timer for auto-expand
+  int m_autoExpandedLevel = 6;             // Cached from config
+  bool m_autoSectionNumberEnabled = false; // Cached from config
+  int m_editorConfigHookId = -1;
 };
 
 } // namespace vnotex

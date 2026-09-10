@@ -17,16 +17,25 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMimeData>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QtTest>
 
 #include <controllers/outlinecontroller.h>
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
+#include <core/services/hookmanager.h>
+#include <core/widgetconfig.h>
 #include <models/outlinemodel.h>
 #include <views/outlineview.h>
 #include <widgets/outlineprovider.h>
 
 #include <widgets/editors/pdfvieweradapter.h>
+
+#include <vxcore/vxcore.h>
 
 namespace tests {
 
@@ -63,6 +72,14 @@ private slots:
   void outlineModelExposesReorderEligibility();
   void adjacentReparentRequestsConfirmation();
   void outlineModelReplacementDisablesReordering();
+  void producerNumberingGuaranteeSurvivesPanelToggles();
+  void automaticPolicyDisplaysExpectedNames_data();
+  void automaticPolicyDisplaysExpectedNames();
+  void authoredNumbersIgnoreFillersButInspectRealEmptyHeading();
+  void fillersDoNotConsumeAuthoredNumberSample();
+  void numberedPdfRetainsDestinationlessAndDeepHeadings();
+  void numberedGapOutlinePreservesMoveIndices();
+  void sharedPatternUpdatesBothViewsWithoutLosingState();
 };
 
 void TestPdfViewerAdapterOutline::wellFormedNestedOutline() {
@@ -488,7 +505,323 @@ void TestPdfViewerAdapterOutline::adjacentReparentRequestsConfirmation() {
   QCOMPARE(moveSpy.first().at(2).toInt(), 2);
 }
 
+void TestPdfViewerAdapterOutline::producerNumberingGuaranteeSurvivesPanelToggles() {
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  outline->m_headings = {vnotex::Outline::Heading(QStringLiteral("A"), 1),
+                         vnotex::Outline::Heading(QStringLiteral("B"), 1)};
+  outline->m_hasSectionNumber = true;
+  vnotex::OutlineModel model;
+  model.setAutoSectionNumberEnabled(true);
+  model.setOutline(outline);
+  QCOMPARE(model.data(model.indexForHeadingIndex(0)).toString(), QStringLiteral("A"));
+  QCOMPARE(model.data(model.indexForHeadingIndex(1)).toString(), QStringLiteral("B"));
+  model.setAutoSectionNumberEnabled(false);
+  QCOMPARE(model.data(model.indexForHeadingIndex(0)).toString(), QStringLiteral("A"));
+  model.setAutoSectionNumberEnabled(true);
+  auto raw = QSharedPointer<vnotex::Outline>::create(*outline);
+  raw->m_hasSectionNumber = false;
+  QVERIFY(!(*raw == *outline));
+  model.setOutline(raw);
+  QCOMPARE(model.data(model.indexForHeadingIndex(0)).toString(), QStringLiteral("1. A"));
+  QCOMPARE(model.data(model.indexForHeadingIndex(1)).toString(), QStringLiteral("2. B"));
+  model.setSectionNumberPattern(QStringLiteral("1.1)"));
+  QCOMPARE(model.data(model.indexForHeadingIndex(1)).toString(), QStringLiteral("2) B"));
+  outline->clear();
+  QVERIFY(!outline->m_hasSectionNumber);
+}
+
+void TestPdfViewerAdapterOutline::automaticPolicyDisplaysExpectedNames_data() {
+  QTest::addColumn<QVector<int>>("levels");
+  QTest::addColumn<QStringList>("names");
+  QTest::addColumn<QString>("pattern");
+  QTest::addColumn<QStringList>("expected");
+
+  const QString dot = QStringLiteral("1.1.");
+  QTest::newRow("exempt-title") << QVector<int>{1, 2, 3, 2} << QStringList{"Title", "A", "B", "C"}
+                                << dot << QStringList{"Title", "1. A", "1.1. B", "2. C"};
+  QTest::newRow("multiple-h1") << QVector<int>{1, 2, 1} << QStringList{"A", "B", "C"} << dot
+                               << QStringList{"1. A", "1.1. B", "2. C"};
+  QTest::newRow("h1-after-first-heading")
+      << QVector<int>{2, 1} << QStringList{"A", "B"} << dot << QStringList{"1.1. A", "2. B"};
+  QTest::newRow("base-after-title") << QVector<int>{1, 3, 3} << QStringList{"Title", "A", "B"}
+                                    << dot << QStringList{"Title", "1. A", "2. B"};
+  QTest::newRow("skipped-levels") << QVector<int>{1, 2, 4, 2} << QStringList{"Title", "A", "B", "C"}
+                                  << dot << QStringList{"Title", "1. A", "1.1.1. B", "2. C"};
+  QTest::newRow("no-final-suffix") << QVector<int>{1, 2, 3} << QStringList{"Title", "A", "B"}
+                                   << QStringLiteral("1.1") << QStringList{"Title", "1 A", "1.1 B"};
+  QTest::newRow("closing-parenthesis")
+      << QVector<int>{1, 2, 3} << QStringList{"Title", "A", "B"} << QStringLiteral("1.1)")
+      << QStringList{"Title", "1) A", "1.1) B"};
+  QTest::newRow("title-only") << QVector<int>{1} << QStringList{"Title"} << dot
+                              << QStringList{"Title"};
+}
+
+void TestPdfViewerAdapterOutline::automaticPolicyDisplaysExpectedNames() {
+  QFETCH(QVector<int>, levels);
+  QFETCH(QStringList, names);
+  QFETCH(QString, pattern);
+  QFETCH(QStringList, expected);
+
+  QVector<vnotex::Outline::Heading> raw;
+  for (int i = 0; i < names.size(); ++i) {
+    vnotex::Outline::Heading heading(names[i], levels[i]);
+    heading.m_reorderable = true;
+    raw.append(heading);
+  }
+
+  // Exercise both editor-style raw input and producers that already filled gaps.
+  for (bool prefilled : {false, true}) {
+    auto outline = QSharedPointer<vnotex::Outline>::create();
+    outline->m_reorderSupported = true;
+    if (prefilled) {
+      vnotex::OutlineProvider::makePerfectHeadings(raw, outline->m_headings);
+    } else {
+      outline->m_headings = raw;
+    }
+    const auto supplied = outline->m_headings;
+    vnotex::OutlineModel model;
+    model.setAutoSectionNumberEnabled(true);
+    model.setSectionNumberPattern(pattern);
+    model.setOutline(outline);
+
+    QStringList displayed;
+    for (int i = 0; i < supplied.size(); ++i) {
+      const auto index = model.indexForHeadingIndex(i);
+      QVERIFY(index.isValid());
+      QCOMPARE(index.data(vnotex::OutlineModel::HeadingIndexRole).toInt(), i);
+      QCOMPARE(index.data(vnotex::OutlineModel::HeadingLevelRole).toInt(), supplied[i].m_level);
+      QCOMPARE(index.data(vnotex::OutlineModel::ReorderableRole).toBool(),
+               !supplied[i].m_isPlaceholder);
+      QCOMPARE(bool(model.flags(index) & Qt::ItemIsDragEnabled), !supplied[i].m_isPlaceholder);
+      if (supplied[i].m_isPlaceholder) {
+        QCOMPARE(index.data(Qt::DisplayRole).toString(), supplied[i].m_name);
+      } else {
+        displayed.append(index.data(Qt::DisplayRole).toString());
+      }
+    }
+    QCOMPARE(displayed, expected);
+    QVERIFY(outline->m_headings == supplied);
+    QVERIFY(!outline->m_hasSectionNumber);
+  }
+}
+
+void TestPdfViewerAdapterOutline::authoredNumbersIgnoreFillersButInspectRealEmptyHeading() {
+  QVector<vnotex::Outline::Heading> raw{vnotex::Outline::Heading(QStringLiteral("Title"), 1),
+                                        vnotex::Outline::Heading(QStringLiteral("1. A"), 2),
+                                        vnotex::Outline::Heading(QStringLiteral("1.1.1. B"), 4)};
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  vnotex::OutlineProvider::makePerfectHeadings(raw, outline->m_headings);
+  QCOMPARE(outline->m_headings.size(), 4);
+  QVERIFY(outline->m_headings[2].m_isPlaceholder);
+
+  vnotex::OutlineModel model;
+  model.setAutoSectionNumberEnabled(true);
+  model.setOutline(outline);
+  QCOMPARE(model.indexForHeadingIndex(0).data().toString(), QStringLiteral("Title"));
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1. A"));
+  QCOMPARE(model.indexForHeadingIndex(2).data().toString(), QStringLiteral("[EMPTY]"));
+  QCOMPARE(model.indexForHeadingIndex(3).data().toString(), QStringLiteral("1.1.1. B"));
+
+  // Same spelling and level as the gap-filler, but this is authored content.
+  const vnotex::Outline::Heading realEmpty(QStringLiteral("[EMPTY]"), 3);
+  QVERIFY(!(realEmpty == outline->m_headings[2]));
+  auto changed = QSharedPointer<vnotex::Outline>::create(*outline);
+  changed->m_headings[2].m_isPlaceholder = false;
+  QVERIFY(!(*changed == *outline));
+
+  raw.append(realEmpty);
+  auto withRealEmpty = QSharedPointer<vnotex::Outline>::create();
+  vnotex::OutlineProvider::makePerfectHeadings(raw, withRealEmpty->m_headings);
+  model.setOutline(withRealEmpty);
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1. 1. A"));
+  QCOMPARE(model.indexForHeadingIndex(2).data().toString(), QStringLiteral("[EMPTY]"));
+  QCOMPARE(model.indexForHeadingIndex(3).data().toString(), QStringLiteral("1.1.1. 1.1.1. B"));
+  QCOMPARE(model.indexForHeadingIndex(4).data().toString(), QStringLiteral("1.2. [EMPTY]"));
+  QCOMPARE(model.indexForHeadingIndex(4).data(vnotex::OutlineModel::HeadingIndexRole).toInt(), 4);
+}
+
+void TestPdfViewerAdapterOutline::fillersDoNotConsumeAuthoredNumberSample() {
+  const QVector<vnotex::Outline::Heading> raw{
+      vnotex::Outline::Heading(QStringLiteral("Title"), 1),
+      vnotex::Outline::Heading(QStringLiteral("1 A"), 2),
+      vnotex::Outline::Heading(QStringLiteral("1.1.1.1.1) B"), 6),
+      vnotex::Outline::Heading(QStringLiteral("2. C"), 2),
+      vnotex::Outline::Heading(QStringLiteral("3 D"), 2),
+      vnotex::Outline::Heading(QStringLiteral("Mismatch"), 2)};
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  vnotex::OutlineProvider::makePerfectHeadings(raw, outline->m_headings);
+  vnotex::OutlineModel model;
+  model.setAutoSectionNumberEnabled(true);
+  model.setOutline(outline);
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1. 1 A"));
+  QCOMPARE(model.indexForHeadingIndex(5).data().toString(),
+           QStringLiteral("1.1.1.1.1. 1.1.1.1.1) B"));
+  QCOMPARE(model.indexForHeadingIndex(8).data().toString(), QStringLiteral("4. Mismatch"));
+
+  // Five actual matches suppress numbering even if the sixth actual heading does not match.
+  outline = QSharedPointer<vnotex::Outline>::create(*outline);
+  outline->m_headings.last().m_name = QStringLiteral("4) D");
+  outline->m_headings.append(vnotex::Outline::Heading(QStringLiteral("Unnumbered sixth"), 2));
+  model.setOutline(outline);
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1 A"));
+  QCOMPARE(model.indexForHeadingIndex(5).data().toString(), QStringLiteral("1.1.1.1.1) B"));
+  QCOMPARE(model.indexForHeadingIndex(9).data().toString(), QStringLiteral("Unnumbered sixth"));
+}
+
+void TestPdfViewerAdapterOutline::numberedPdfRetainsDestinationlessAndDeepHeadings() {
+  PdfViewerAdapter adapter;
+  adapter.setReady(true);
+  adapter.setOutline(QJsonArray{entry(QStringLiteral("Group"), 62, -1),
+                                entry(QStringLiteral("Leaf"), 64, 7),
+                                entry(QStringLiteral("Next"), 62, 8)});
+  const auto &headings = adapter.getOutlineHeadings();
+  QCOMPARE(headings.size(), 4);
+  QVERIFY(!headings[0].m_isPlaceholder);
+  QVERIFY(headings[1].m_isPlaceholder);
+  QVERIFY(!headings[2].m_isPlaceholder);
+
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  for (const auto &heading : headings) {
+    vnotex::Outline::Heading converted(heading.m_name, heading.m_level);
+    converted.m_isPlaceholder = heading.m_isPlaceholder;
+    outline->m_headings.append(converted);
+  }
+  vnotex::OutlineModel model;
+  model.setAutoSectionNumberEnabled(true);
+  model.setOutline(outline);
+  const QStringList expected{"1. Group", "[EMPTY]", "1.1.1. Leaf", "2. Next"};
+  for (int i = 0; i < expected.size(); ++i) {
+    const auto index = model.indexForHeadingIndex(i);
+    QCOMPARE(index.data(Qt::DisplayRole).toString(), expected[i]);
+    QCOMPARE(index.data(vnotex::OutlineModel::HeadingIndexRole).toInt(), i);
+    QVERIFY(!(model.flags(index) & Qt::ItemIsDragEnabled));
+  }
+
+  QSignalSpy scrollSpy(&adapter, &PdfViewerAdapter::outlineItemScrollRequested);
+  adapter.scrollToOutlineItem(
+      model.indexForHeadingIndex(0).data(vnotex::OutlineModel::HeadingIndexRole).toInt());
+  adapter.scrollToOutlineItem(
+      model.indexForHeadingIndex(1).data(vnotex::OutlineModel::HeadingIndexRole).toInt());
+  QCOMPARE(scrollSpy.count(), 0);
+  adapter.scrollToOutlineItem(
+      model.indexForHeadingIndex(2).data(vnotex::OutlineModel::HeadingIndexRole).toInt());
+  adapter.scrollToOutlineItem(
+      model.indexForHeadingIndex(3).data(vnotex::OutlineModel::HeadingIndexRole).toInt());
+  QCOMPARE(scrollSpy.count(), 2);
+  QCOMPARE(scrollSpy.at(0).at(0).toInt(), 7);
+  QCOMPARE(scrollSpy.at(1).at(0).toInt(), 8);
+}
+
+void TestPdfViewerAdapterOutline::numberedGapOutlinePreservesMoveIndices() {
+  for (bool prefilled : {false, true}) {
+    QVector<vnotex::Outline::Heading> raw{vnotex::Outline::Heading(QStringLiteral("Title"), 1),
+                                          vnotex::Outline::Heading(QStringLiteral("A"), 2),
+                                          vnotex::Outline::Heading(QStringLiteral("Deep"), 4),
+                                          vnotex::Outline::Heading(QStringLiteral("B"), 2)};
+    for (auto &heading : raw) {
+      heading.m_reorderable = true;
+    }
+    auto outline = QSharedPointer<vnotex::Outline>::create();
+    outline->m_reorderSupported = true;
+    if (prefilled) {
+      vnotex::OutlineProvider::makePerfectHeadings(raw, outline->m_headings);
+    } else {
+      outline->m_headings = raw;
+    }
+    auto provider = QSharedPointer<vnotex::OutlineProvider>::create();
+    provider->setOutline(outline);
+    vnotex::ServiceLocator services;
+    vnotex::OutlineController controller(services);
+    controller.setOutlineProvider(provider);
+    controller.toggleAutoSectionNumber();
+    auto *model = controller.model();
+    const int deepHeadingIndex = prefilled ? 3 : 2;
+    const int lastHeadingIndex = prefilled ? 4 : 3;
+    const auto deep = model->indexForHeadingIndex(deepHeadingIndex);
+    const auto last = model->indexForHeadingIndex(lastHeadingIndex);
+    QCOMPARE(deep.data(Qt::DisplayRole).toString(), QStringLiteral("1.1.1. Deep"));
+    QCOMPARE(last.data(Qt::DisplayRole).toString(), QStringLiteral("2. B"));
+    QCOMPARE(deep.parent().data(Qt::DisplayRole).toString(), QStringLiteral("[EMPTY]"));
+    QCOMPARE(deep.parent().data(vnotex::OutlineModel::HeadingIndexRole).toInt(),
+             prefilled ? 2 : -1);
+    QVERIFY(!(model->flags(deep.parent()) & Qt::ItemIsDragEnabled));
+
+    QSignalSpy confirmationSpy(&controller,
+                               &vnotex::OutlineController::reorderConfirmationRequested);
+    QSignalSpy moveSpy(provider.data(), &vnotex::OutlineProvider::moveRequested);
+    controller.requestItemMove(last.data(vnotex::OutlineModel::HeadingIndexRole).toInt(),
+                               deep.data(vnotex::OutlineModel::HeadingIndexRole).toInt(),
+                               vnotex::OutlineDropPosition::AboveItem);
+    QCOMPARE(confirmationSpy.count(), 1);
+    controller.confirmReorder(true);
+    QCOMPARE(moveSpy.count(), 1);
+    QCOMPARE(moveSpy.at(0).at(0).toInt(), lastHeadingIndex);
+    QCOMPARE(moveSpy.at(0).at(1).toInt(), deepHeadingIndex);
+    QCOMPARE(moveSpy.at(0).at(2).toInt(), 4);
+  }
+}
+
+void TestPdfViewerAdapterOutline::sharedPatternUpdatesBothViewsWithoutLosingState() {
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  QVERIFY(context != nullptr);
+  const auto destroyContext = qScopeGuard([&]() { vxcore_context_destroy(context); });
+  vnotex::ConfigCoreService configService(context);
+  vnotex::ConfigMgr2 config(&configService);
+  config.getWidgetConfig().setOutlineAutoSectionNumberEnabled(true);
+  config.getEditorConfig().setSectionNumberPattern(QStringLiteral("1.1"));
+  vnotex::HookManager hooks;
+  vnotex::ServiceLocator services;
+  services.registerService<vnotex::ConfigMgr2>(&config);
+  services.registerService<vnotex::HookManager>(&hooks);
+  vnotex::OutlineController dock(services);
+  vnotex::OutlineController popup(services);
+  vnotex::OutlineView dockView;
+  vnotex::OutlineView popupView;
+  dockView.setModel(dock.model());
+  popupView.setModel(popup.model());
+  dock.setView(&dockView);
+  popup.setView(&popupView);
+  auto outline = QSharedPointer<vnotex::Outline>::create();
+  outline->m_headings = {vnotex::Outline::Heading(QStringLiteral("Title"), 1),
+                         vnotex::Outline::Heading(QStringLiteral("A"), 2),
+                         vnotex::Outline::Heading(QStringLiteral("Detail"), 3),
+                         vnotex::Outline::Heading(QStringLiteral("B"), 2),
+                         vnotex::Outline::Heading(QStringLiteral("More"), 3)};
+  auto provider = QSharedPointer<vnotex::OutlineProvider>::create();
+  provider->setOutline(outline);
+  dock.setOutlineProvider(provider);
+  popup.setOutlineProvider(provider);
+  provider->setCurrentHeadingIndex(1);
+  const QSet<int> dockExpanded{0, 1};
+  const QSet<int> popupExpanded{0, 3};
+  dockView.collapseAll();
+  dockView.restoreExpansionState(dockExpanded);
+  popupView.collapseAll();
+  popupView.restoreExpansionState(popupExpanded);
+  QCOMPARE(dockView.saveExpansionState(), dockExpanded);
+  QCOMPARE(popupView.saveExpansionState(), popupExpanded);
+  QCOMPARE(dockView.currentIndex().data().toString(), QStringLiteral("1 A"));
+  QCOMPARE(popupView.currentIndex().data().toString(), QStringLiteral("1 A"));
+
+  QSignalSpy clickedSpy(provider.data(), &vnotex::OutlineProvider::headingClicked);
+  config.getEditorConfig().setSectionNumberPattern(QStringLiteral("1.1)"));
+  hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
+  for (auto *controller : {&dock, &popup}) {
+    QCOMPARE(controller->model()->indexForHeadingIndex(2).data().toString(),
+             QStringLiteral("1.1) Detail"));
+    QCOMPARE(controller->model()->getCurrentHeadingIndex(), 1);
+    QCOMPARE(controller->view()->currentIndex().data().toString(), QStringLiteral("1) A"));
+    QCOMPARE(
+        controller->view()->currentIndex().data(vnotex::OutlineModel::HeadingIndexRole).toInt(), 1);
+  }
+  QCOMPARE(dockView.saveExpansionState(), dockExpanded);
+  QCOMPARE(popupView.saveExpansionState(), popupExpanded);
+  QCOMPARE(clickedSpy.count(), 0);
+}
+
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestPdfViewerAdapterOutline)
+QTEST_MAIN(tests::TestPdfViewerAdapterOutline)
 #include "test_pdfvieweradapter_outline.moc"

@@ -129,6 +129,8 @@ private:
 
   void setupViewer();
 
+  void updateSectionNumberOptions();
+
   void setupPreviewHelper();
 
   void setupOutlineProvider();

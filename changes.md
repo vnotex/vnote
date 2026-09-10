@@ -9,6 +9,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
     * Optional automatic recycle bin cleanup permanently removes entries older than a configurable retention period
 * **Editor and Markdown**
+    * Markdown read mode automatically numbers unnumbered headings; choose a shared number pattern in Editor settings, with independent read-mode and outline toggles
     * Headings can be folded in read mode and HTML exports, with fold controls shown beside the heading on hover
     * Drag headings in the outline to reorder whole sections, adjusting heading levels to preserve the hierarchy, including moves under an adjacent heading
     * A table-size picker was added to the Markdown toolbar

@@ -44,6 +44,8 @@ public:
 
     int m_level = -1;
 
+    bool m_isPlaceholder = false;
+
     int m_blockNumber = -1;
 
     QString m_anchor;

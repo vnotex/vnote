@@ -56,6 +56,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_headingFoldingCheckBox->setChecked(markdownConfig.getHeadingFoldingEnabled());
 
+  m_autoSectionNumberCheckBox->setChecked(markdownConfig.getAutoSectionNumberEnabled());
+
   m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
 
   m_constrainInplacePreviewWidthCheckBox->setChecked(
@@ -127,6 +129,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setImageAlignCenterEnabled(m_imageAlignCenterCheckBox->isChecked());
 
   markdownConfig.setHeadingFoldingEnabled(m_headingFoldingCheckBox->isChecked());
+
+  markdownConfig.setAutoSectionNumberEnabled(m_autoSectionNumberCheckBox->isChecked());
 
   markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
 
@@ -234,6 +238,19 @@ void MarkdownEditorPage::setupReadGroup() {
         m_headingFoldingCheckBox, m_headingFoldingCheckBox->toolTip(), this));
     addSearchItem(label, m_headingFoldingCheckBox->toolTip(), m_headingFoldingCheckBox);
     connect(m_headingFoldingCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Auto Section Number"));
+    m_autoSectionNumberCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_autoSectionNumberCheckBox->setToolTip(
+        tr("Automatically number headings in read mode unless the document is already numbered"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_autoSectionNumberCheckBox, m_autoSectionNumberCheckBox->toolTip(), this));
+    addSearchItem(label, m_autoSectionNumberCheckBox->toolTip(), m_autoSectionNumberCheckBox);
+    connect(m_autoSectionNumberCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 

@@ -32,7 +32,7 @@ void OutlineViewer::setupUI(const QString &p_title) {
   WidgetUtils::setContentsMargins(mainLayout);
 
   // Controller and view must be created before setupTitleBar(),
-  // because setupTitleBar() reads m_controller->isSectionNumberEnabled().
+  // because setupTitleBar() reads m_controller->isAutoSectionNumberEnabled().
   m_outlineView = new OutlineView(this);
   m_controller = new OutlineController(m_services, this);
   m_proxyModel = new TreeFilterProxyModel(this);
@@ -107,12 +107,12 @@ TitleBar *OutlineViewer::setupTitleBar(const QString &p_title, QWidget *p_parent
   });
 
   {
-    auto act = titleBar->addMenuAction(tr("Section Number"), titleBar, [this](bool p_checked) {
+    auto act = titleBar->addMenuAction(tr("Auto Section Number"), titleBar, [this](bool p_checked) {
       Q_UNUSED(p_checked);
-      m_controller->toggleSectionNumber();
+      m_controller->toggleAutoSectionNumber();
     });
     act->setCheckable(true);
-    act->setChecked(m_controller->isSectionNumberEnabled());
+    act->setChecked(m_controller->isAutoSectionNumberEnabled());
   }
 
   connect(m_controller, &OutlineController::expandLevelChanged, this, &OutlineViewer::showLevel);

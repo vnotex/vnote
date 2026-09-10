@@ -31,12 +31,7 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
       m_outlineAutoExpandedLevel = 6;
     }
 
-    m_outlineSectionNumberEnabled = READBOOL(QStringLiteral("outlineSectionNumberEnabled"));
-
-    m_outlineSectionNumberBaseLevel = READINT(QStringLiteral("outlineSectionNumberBaseLevel"));
-    if (m_outlineSectionNumberBaseLevel < 1 || m_outlineSectionNumberBaseLevel > 6) {
-      m_outlineSectionNumberBaseLevel = 2;
-    }
+    m_outlineAutoSectionNumberEnabled = READBOOL(QStringLiteral("outlineAutoSectionNumberEnabled"));
   }
 
   m_findAndReplaceOptions =
@@ -115,8 +110,7 @@ void WidgetConfig::fromJson(const QJsonObject &p_jobj) {
 QJsonObject WidgetConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("outlineAutoExpandedLevel")] = m_outlineAutoExpandedLevel;
-  obj[QStringLiteral("outlineSectionNumberEnabled")] = m_outlineSectionNumberEnabled;
-  obj[QStringLiteral("outlineSectionNumberBaseLevel")] = m_outlineSectionNumberBaseLevel;
+  obj[QStringLiteral("outlineAutoSectionNumberEnabled")] = m_outlineAutoSectionNumberEnabled;
 
   obj[QStringLiteral("findAndReplaceOptions")] = static_cast<int>(m_findAndReplaceOptions);
 
@@ -159,18 +153,12 @@ void WidgetConfig::setOutlineAutoExpandedLevel(int p_level) {
   updateConfig(m_outlineAutoExpandedLevel, p_level, this);
 }
 
-bool WidgetConfig::getOutlineSectionNumberEnabled() const { return m_outlineSectionNumberEnabled; }
-
-void WidgetConfig::setOutlineSectionNumberEnabled(bool p_enabled) {
-  updateConfig(m_outlineSectionNumberEnabled, p_enabled, this);
+bool WidgetConfig::getOutlineAutoSectionNumberEnabled() const {
+  return m_outlineAutoSectionNumberEnabled;
 }
 
-int WidgetConfig::getOutlineSectionNumberBaseLevel() const {
-  return m_outlineSectionNumberBaseLevel;
-}
-
-void WidgetConfig::setOutlineSectionNumberBaseLevel(int p_level) {
-  updateConfig(m_outlineSectionNumberBaseLevel, p_level, this);
+void WidgetConfig::setOutlineAutoSectionNumberEnabled(bool p_enabled) {
+  updateConfig(m_outlineAutoSectionNumberEnabled, p_enabled, this);
 }
 
 FindOptions WidgetConfig::getFindAndReplaceOptions() const { return m_findAndReplaceOptions; }

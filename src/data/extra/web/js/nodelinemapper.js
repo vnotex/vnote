@@ -361,7 +361,7 @@ class NodeLineMapper {
 
         this.updateVisibleHeadingNodes();
 
-        this.adapter.setHeadings(headings);
+        this.adapter.setHeadings(headings, this.container.__vxHasSectionNumber === true);
     }
 
     getViewYOfLine(p_lineNumber) {

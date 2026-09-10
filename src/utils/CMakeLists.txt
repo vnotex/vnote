@@ -14,6 +14,7 @@ target_sources(vnote PRIVATE
     pathutils.cpp pathutils.h
     qtcompat.h
     scrollpreservationpolicy.cpp scrollpreservationpolicy.h
+    sectionnumberutils.h
     stringutils.cpp stringutils.h
     strnatcmp.c strnatcmp.h
     processutils.cpp processutils.h

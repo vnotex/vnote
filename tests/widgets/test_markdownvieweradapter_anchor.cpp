@@ -49,6 +49,7 @@ private slots:
   void previewResultsKeepHighResolutionAtLogicalSize();
   void mathPreviewZoomWhileRasterPending_data();
   void mathPreviewZoomWhileRasterPending();
+  void numberingStatusTracksDocumentReplacement();
 
 private:
   // Drives one full round trip and returns the resolved result.
@@ -492,6 +493,32 @@ void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
   QVERIFY(deliver(requests.last()));
   QTRY_COMPARE(rasterSize(), baseRasterSize);
   QCOMPARE(previewSize(), baseSize);
+}
+
+void TestMarkdownViewerAdapterAnchor::numberingStatusTracksDocumentReplacement() {
+  MarkdownViewerAdapter adapter;
+  adapter.setReady(true);
+  adapter.setSectionNumberOptions(true, QStringLiteral("1.1)"));
+  const QJsonArray headings{QJsonObject{{"name", "Title"}, {"level", 1}, {"anchor", "title"}},
+                            QJsonObject{{"name", "1) Detail"}, {"level", 3}, {"anchor", "detail"}}};
+  adapter.setHeadings(headings, true);
+  QVERIFY(adapter.getHeadingsHaveSectionNumber());
+  QVERIFY(adapter.getHeadings()[1].m_isPlaceholder);
+  QSignalSpy scrollSpy(&adapter, &MarkdownViewerAdapter::anchorScrollRequested);
+  adapter.scrollToHeading(2);
+  QCOMPARE(scrollSpy.count(), 1);
+  QCOMPARE(scrollSpy.first().first().toString(), QStringLiteral("detail"));
+  adapter.setHeadings(headings, false);
+  QVERIFY(!adapter.getHeadingsHaveSectionNumber());
+  adapter.setHeadings(headings, true);
+  adapter.setHeadings(QJsonArray(), true);
+  QVERIFY(!adapter.getHeadingsHaveSectionNumber());
+  adapter.setHeadings(headings, true);
+  adapter.reset();
+  QVERIFY(!adapter.getHeadingsHaveSectionNumber());
+  QVERIFY(adapter.getHeadings().isEmpty());
+  QVERIFY(adapter.property("sectionNumberOptions").toJsonObject() ==
+          (QJsonObject{{"enabled", true}, {"pattern", "1.1)"}}));
 }
 
 } // namespace tests

@@ -18,6 +18,7 @@
 #include <core/services/commenttypes.h>
 #include <core/services/configcoreservice.h>
 #include <core/webresource.h>
+#include <core/widgetconfig.h>
 #include <utils/fileutils2.h>
 
 #include <temp_dir_fixture.h>
@@ -68,6 +69,11 @@ private slots:
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
   void testHeadingFolding_defaultsMergeAndRoundTrip();
+  void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
+  void testSectionNumberPattern_mergeNormalizationAndPersistence_data();
+  void testSectionNumberPattern_mergeNormalizationAndPersistence();
+  void testOutlineAutoSectionNumber_migrationAndPersistence_data();
+  void testOutlineAutoSectionNumber_migrationAndPersistence();
   void testMathRenderer_mergeNormalizationAndPersistence();
 
   // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
@@ -596,6 +602,129 @@ void TestConfigMgr2::testHeadingFolding_defaultsMergeAndRoundTrip() {
   auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
   reloadedMd.fromJson(json);
   QCOMPARE(reloadedMd.getHeadingFoldingEnabled(), false);
+}
+
+void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptOut() {
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                         QStringLiteral("autoSectionNumber")};
+  MainConfig defaults(m_configMgr);
+  const auto defaultsJson = defaults.toJson();
+  QCOMPARE(valueAt(defaultsJson, path), QJsonValue(true));
+  const auto loaded = loadThroughMergePath(withoutKeyAt(defaultsJson, path));
+  QCOMPARE(valueAt(loaded, path), QJsonValue(true));
+
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    auto &editor = mgr.getConfig().getEditorConfig();
+    auto &markdown = editor.getMarkdownEditorConfig();
+    QVERIFY(markdown.getAutoSectionNumberEnabled());
+    QCOMPARE(editor.getSectionNumberPattern(), QStringLiteral("1.1."));
+    QVERIFY(!mgr.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled());
+    markdown.setAutoSectionNumberEnabled(false);
+    // Destruction flushes the normal pending config write, as at application shutdown.
+  }
+
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  QCOMPARE(valueAt(persisted, path), QJsonValue(false));
+  const auto merged = loadThroughMergePath(persisted);
+  QCOMPARE(valueAt(merged, path), QJsonValue(false));
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  QVERIFY(!restarted.getConfig()
+               .getEditorConfig()
+               .getMarkdownEditorConfig()
+               .getAutoSectionNumberEnabled());
+}
+
+void TestConfigMgr2::testSectionNumberPattern_mergeNormalizationAndPersistence_data() {
+  QTest::addColumn<QString>("input");
+  QTest::addColumn<QString>("expected");
+  QTest::newRow("no-suffix") << QStringLiteral("1.1") << QStringLiteral("1.1");
+  QTest::newRow("dot-suffix") << QStringLiteral("1.1.") << QStringLiteral("1.1.");
+  QTest::newRow("parenthesis-suffix") << QStringLiteral("1.1)") << QStringLiteral("1.1)");
+  QTest::newRow("unknown") << QStringLiteral("I.II") << QStringLiteral("1.1.");
+  QTest::newRow("empty") << QString() << QStringLiteral("1.1.");
+}
+
+void TestConfigMgr2::testSectionNumberPattern_mergeNormalizationAndPersistence() {
+  QFETCH(QString, input);
+  QFETCH(QString, expected);
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("core"),
+                         QStringLiteral("sectionNumberPattern")};
+  const QJsonObject onDisk{
+      {QStringLiteral("editor"),
+       QJsonObject{{QStringLiteral("core"),
+                    QJsonObject{{QStringLiteral("sectionNumberPattern"), input}}}}}};
+  const auto loaded = loadThroughMergePath(onDisk);
+  QCOMPARE(valueAt(loaded, path).toString(), expected);
+
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    auto &editor = mgr.getConfig().getEditorConfig();
+    QCOMPARE(editor.getSectionNumberPattern(), expected);
+    // Start from another valid pattern so normalization in the setter is also observable.
+    editor.setSectionNumberPattern(expected == QStringLiteral("1.1") ? QStringLiteral("1.1)")
+                                                                     : QStringLiteral("1.1"));
+    editor.setSectionNumberPattern(input);
+    QCOMPARE(editor.getSectionNumberPattern(), expected);
+  }
+
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  QCOMPARE(valueAt(persisted, path).toString(), expected);
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  QCOMPARE(restarted.getConfig().getEditorConfig().getSectionNumberPattern(), expected);
+}
+
+void TestConfigMgr2::testOutlineAutoSectionNumber_migrationAndPersistence_data() {
+  QTest::addColumn<QJsonObject>("widget");
+  QTest::addColumn<bool>("expected");
+  QTest::newRow("legacy-enabled") << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"),
+                                                  true}}
+                                  << true;
+  QTest::newRow("legacy-disabled")
+      << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), false}} << false;
+  QTest::newRow("nonboolean-legacy-ignored")
+      << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), 1}} << false;
+  QTest::newRow("new-false-wins")
+      << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), true},
+                     {QStringLiteral("outlineAutoSectionNumberEnabled"), false}}
+      << false;
+}
+
+void TestConfigMgr2::testOutlineAutoSectionNumber_migrationAndPersistence() {
+  QFETCH(QJsonObject, widget);
+  QFETCH(bool, expected);
+  widget[QStringLiteral("outlineSectionNumberBaseLevel")] = 4;
+  const auto loaded = loadThroughMergePath(QJsonObject{{QStringLiteral("widget"), widget}});
+  const auto loadedWidget = loaded.value(QStringLiteral("widget")).toObject();
+  QCOMPARE(loadedWidget.value(QStringLiteral("outlineAutoSectionNumberEnabled")),
+           QJsonValue(expected));
+  QVERIFY(!loadedWidget.contains(QStringLiteral("outlineSectionNumberEnabled")));
+  QVERIFY(!loadedWidget.contains(QStringLiteral("outlineSectionNumberBaseLevel")));
+
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    QCOMPARE(mgr.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled(), expected);
+    // Migration is saved with the next normal config update, not by init() alone.
+    mgr.getConfig().update();
+  }
+
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto persistedWidget = persisted.value(QStringLiteral("widget")).toObject();
+  QCOMPARE(persistedWidget.value(QStringLiteral("outlineAutoSectionNumberEnabled")),
+           QJsonValue(expected));
+  QVERIFY(!persistedWidget.contains(QStringLiteral("outlineSectionNumberEnabled")));
+  QVERIFY(!persistedWidget.contains(QStringLiteral("outlineSectionNumberBaseLevel")));
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  QCOMPARE(restarted.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled(), expected);
 }
 
 void TestConfigMgr2::testMathRenderer_mergeNormalizationAndPersistence() {

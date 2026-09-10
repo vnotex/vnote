@@ -8,8 +8,6 @@
 #include <limits.h>
 
 namespace vnotex {
-typedef QVector<int> SectionNumber;
-
 // Toc content.
 struct Outline {
   struct Heading {
@@ -24,6 +22,8 @@ struct Outline {
     // Heading level, 1-based.
     int m_level = -1;
 
+    bool m_isPlaceholder = false;
+
     // Whether this concrete heading may participate in reordering.
     bool m_reorderable = false;
   };
@@ -35,6 +35,9 @@ struct Outline {
   bool isEmpty() const;
 
   QVector<Heading> m_headings;
+
+  // Producer guarantee: names already contain the intended section numbers.
+  bool m_hasSectionNumber = false;
 
   // Whether this outline currently supports reordering.
   bool m_reorderSupported = false;
@@ -62,10 +65,6 @@ public:
 
   template <class T>
   static void makePerfectHeadings(const QVector<T> &p_headings, QVector<T> &p_perfectHeadings);
-
-  static void increaseSectionNumber(SectionNumber &p_sectionNumber, int p_level, int p_baseLevel);
-
-  static QString joinSectionNumber(const SectionNumber &p_sectionNumber, bool p_endingDot);
 
 signals:
   void outlineChanged();
@@ -105,6 +104,7 @@ void OutlineProvider::makePerfectHeadings(const QVector<T> &p_headings,
 
       // Insert empty level which is an invalid header.
       p_perfectHeadings.append(T(tr("[EMPTY]"), curLevel));
+      p_perfectHeadings.last().m_isPlaceholder = true;
     }
 
     p_perfectHeadings.append(heading);

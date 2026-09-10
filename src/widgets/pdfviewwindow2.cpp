@@ -34,13 +34,13 @@
 using namespace vnotex;
 
 namespace {
-// The PDF twin of MarkdownViewWindow2::headingsToOutline(): publish only name +
-// level upward; the destination index stays private to PdfViewerAdapter.
+// Publish names, levels and placeholder metadata; destinations stay in the adapter.
 QSharedPointer<Outline> outlineFromHeadings(const QVector<PdfViewerAdapter::Heading> &p_headings) {
   auto outline = QSharedPointer<Outline>::create();
   outline->m_headings.reserve(p_headings.size());
   for (const auto &heading : p_headings) {
     outline->m_headings.push_back(Outline::Heading(heading.m_name, heading.m_level));
+    outline->m_headings.last().m_isPlaceholder = heading.m_isPlaceholder;
   }
 
   return outline;

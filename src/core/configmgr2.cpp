@@ -140,7 +140,7 @@ void ConfigMgr2::init() {
     // ONE read, used both as the merge patch and as the presence oracle for the user-owned
     // objects restored afterwards.
     bool readOk = true;
-    const auto rawJson =
+    auto rawJson =
         m_configService->getConfigByName(DataLocation::App, kMainConfigFileBaseName, &readOk);
 
     if (!readOk) {
@@ -150,6 +150,19 @@ void ConfigMgr2::init() {
       m_mainConfigReadFailed = true;
       qWarning() << "Failed to read main config; running on defaults and suppressing writes";
     } else {
+      // Migrate before merging so the new default cannot mask a saved legacy preference.
+      const auto widgetKey = QStringLiteral("widget");
+      const auto autoSectionNumberKey = QStringLiteral("outlineAutoSectionNumberEnabled");
+      auto widgetJson = rawJson.value(widgetKey).toObject();
+      const auto legacySectionNumber =
+          widgetJson.take(QStringLiteral("outlineSectionNumberEnabled"));
+      if (!legacySectionNumber.isUndefined()) {
+        if (!widgetJson.contains(autoSectionNumberKey) && legacySectionNumber.isBool()) {
+          widgetJson[autoSectionNumberKey] = legacySectionNumber;
+        }
+        rawJson[widgetKey] = widgetJson;
+      }
+
       auto mainConfigJson = applyMergePatch(m_mainConfig->toJson(), rawJson).toObject();
       restoreUserOwnedObjects(mainConfigJson, rawJson);
       m_versionChanged = MainConfig::peekVersion(mainConfigJson) != c_version.toString();

@@ -82,6 +82,9 @@ public:
   bool getHeadingFoldingEnabled() const;
   void setHeadingFoldingEnabled(bool p_enabled);
 
+  bool getAutoSectionNumberEnabled() const;
+  void setAutoSectionNumberEnabled(bool p_enabled);
+
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
@@ -196,6 +199,8 @@ private:
   bool m_imageAlignCenterEnabled = false;
 
   bool m_headingFoldingEnabled = true;
+
+  bool m_autoSectionNumberEnabled = true;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

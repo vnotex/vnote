@@ -21,6 +21,8 @@ class ServiceLocator;
 // Adapter and interface between CPP and JS.
 class MarkdownViewerAdapter : public WebViewAdapter {
   Q_OBJECT
+  Q_PROPERTY(QJsonObject sectionNumberOptions READ getSectionNumberOptions NOTIFY
+                 sectionNumberOptionsChanged)
 public:
   struct Position {
     Position() = default;
@@ -64,6 +66,8 @@ public:
     QString m_name;
 
     int m_level = -1;
+
+    bool m_isPlaceholder = false;
 
     QString m_anchor;
   };
@@ -113,6 +117,10 @@ public:
 
   const QVector<MarkdownViewerAdapter::Heading> &getHeadings() const;
   int getCurrentHeadingIndex() const;
+
+  QJsonObject getSectionNumberOptions() const;
+  void setSectionNumberOptions(bool p_enabled, const QString &p_pattern);
+  bool getHeadingsHaveSectionNumber() const;
 
   void scrollToHeading(int p_idx);
 
@@ -164,7 +172,7 @@ public slots:
                           int p_logicalWidth = 0, int p_logicalHeight = 0);
 
   // Set the headings.
-  void setHeadings(const QJsonArray &p_headings);
+  void setHeadings(const QJsonArray &p_headings, bool p_hasSectionNumber);
 
   // Set current heading anchor.
   void setCurrentHeadingAnchor(int p_index, const QString &p_anchor);
@@ -203,6 +211,8 @@ public slots:
 
   // Signals to be connected at web side.
 signals:
+  void sectionNumberOptionsChanged();
+
   // Current Markdown text is updated.
   void textUpdated(const QString &p_text);
 
@@ -291,6 +301,11 @@ private:
 
   // Headings from web side.
   QVector<Heading> m_headings;
+  bool m_headingsHaveSectionNumber = false;
+
+  // Per-view options survive document resets and page reloads.
+  bool m_autoSectionNumberEnabled = false;
+  QString m_sectionNumberPattern = QStringLiteral("1.1.");
 
   int m_currentHeadingIndex = -1;
 

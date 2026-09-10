@@ -17,8 +17,8 @@ public:
   // One entry of the PDF's embedded outline (bookmark tree), flattened by a
   // pre-order DFS at the web side.
   //
-  // Only @m_name and @m_level are published upward into the generic outline
-  // stack (Outline::Heading carries nothing else). @m_index is the private
+  // Names, levels and placeholder metadata are published into the generic outline
+  // stack. @m_index is the private
   // handle back to a position in the document, mirroring how
   // MarkdownViewerAdapter::Heading keeps @m_anchor to itself.
   struct Heading {
@@ -38,6 +38,8 @@ public:
     // Heading level, 1-based. -1 means "invalid" — either absent/garbage in the
     // payload, or outside the accepted range (see the clamp in fromJson()).
     int m_level = -1;
+
+    bool m_isPlaceholder = false;
 
     // Index into the web side's destination array; -1 means "not jumpable"
     // (a filler heading, or a bookmark carrying url/action/attachment/

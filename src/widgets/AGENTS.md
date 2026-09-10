@@ -181,6 +181,26 @@ for why neither print route works there.
 - `MindMapViewWindow2` — mind map viewer
 - `WidgetViewWindow2` — generic widget-hosting window
 
+### Automatic section numbers
+
+Markdown read-mode numbering lives in `src/data/extra/web/js/sectionnumber.js`, not the parser.
+`MarkdownViewerAdapter::sectionNumberOptions` retains per-view enablement and the shared
+`EditorConfig::sectionNumberPattern` across page resets. Edit previews disable decoration;
+mode and settings changes update the property even when the content revision is unchanged.
+The worker runs before heading extraction and defers completion until the mapper has published.
+It owns only its prefix spans, preserving source text, inline nodes and heading anchors.
+The required script is appended after configured viewer dependencies by `HtmlTemplateService`;
+older custom resource arrays must not omit it. Export resources do not include it.
+
+The outline's independent Auto Section Number toggle uses `SectionNumberUtils` with the same
+policy: exempt a sole leading H1, inspect up to five remaining actual headings for numeric
+prefixes, and otherwise number from the minimum eligible level. `Outline::m_hasSectionNumber`
+is an authoritative producer guarantee, not a preference; true bypasses panel detection and
+numbering. `Heading::m_isPlaceholder` marks only synthesized level gaps: never infer it from
+`[EMPTY]`, an empty anchor, or a missing PDF destination. Preserve both flags across snapshots.
+The outline controller refreshes the shared pattern on `ConfigEditorChanged`, including open
+popup outlines, without mutating producer names.
+
 ### Toolbar
 
 - `ToolbarHelper2` — main window toolbar construction

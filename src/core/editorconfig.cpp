@@ -8,6 +8,7 @@
 #include "pdfviewerconfig.h"
 #include "texteditorconfig.h"
 
+#include <utils/sectionnumberutils.h>
 #include <vtextedit/viconfig.h>
 
 using namespace vnotex;
@@ -70,14 +71,11 @@ void EditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_viConfig = QSharedPointer<vte::ViConfig>::create();
   m_viConfig->fromJson(p_jobj.value(QStringLiteral("vi")).toObject());
 
-  m_textEditorConfig->fromJson(
-      p_jobj.value(m_textEditorConfig->getSectionName()).toObject());
+  m_textEditorConfig->fromJson(p_jobj.value(m_textEditorConfig->getSectionName()).toObject());
   m_markdownEditorConfig->fromJson(
       p_jobj.value(m_markdownEditorConfig->getSectionName()).toObject());
-  m_pdfViewerConfig->fromJson(
-      p_jobj.value(m_pdfViewerConfig->getSectionName()).toObject());
-  m_mindMapEditorConfig->fromJson(
-      p_jobj.value(m_mindMapEditorConfig->getSectionName()).toObject());
+  m_pdfViewerConfig->fromJson(p_jobj.value(m_pdfViewerConfig->getSectionName()).toObject());
+  m_mindMapEditorConfig->fromJson(p_jobj.value(m_mindMapEditorConfig->getSectionName()).toObject());
 }
 
 void EditorConfig::loadCore(const QJsonObject &p_jobj) {
@@ -99,8 +97,7 @@ void EditorConfig::loadCore(const QJsonObject &p_jobj) {
 
   loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
-  m_spellCheckAutoDetectLanguageEnabled =
-      READBOOL(QStringLiteral("spellCheckAutoDetectLanguage"));
+  m_spellCheckAutoDetectLanguageEnabled = READBOOL(QStringLiteral("spellCheckAutoDetectLanguage"));
   m_spellCheckDefaultDictionary = READSTR(QStringLiteral("spellCheckDefaultDictionary"));
   if (m_spellCheckDefaultDictionary.isEmpty()) {
     m_spellCheckDefaultDictionary = QStringLiteral("en_US");
@@ -110,6 +107,9 @@ void EditorConfig::loadCore(const QJsonObject &p_jobj) {
     auto lineEnding = READSTR(QStringLiteral("lineEnding"));
     m_lineEnding = stringToLineEndingPolicy(lineEnding);
   }
+
+  m_sectionNumberPattern =
+      SectionNumberUtils::normalizePattern(READSTR(QStringLiteral("sectionNumberPattern")));
 }
 
 QJsonObject EditorConfig::saveCore() const {
@@ -122,6 +122,7 @@ QJsonObject EditorConfig::saveCore() const {
   obj[QStringLiteral("spellCheckAutoDetectLanguage")] = m_spellCheckAutoDetectLanguageEnabled;
   obj[QStringLiteral("spellCheckDefaultDictionary")] = m_spellCheckDefaultDictionary;
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
+  obj[QStringLiteral("sectionNumberPattern")] = m_sectionNumberPattern;
   return obj;
 }
 
@@ -231,6 +232,12 @@ LineEndingPolicy EditorConfig::getLineEndingPolicy() const { return m_lineEnding
 
 void EditorConfig::setLineEndingPolicy(LineEndingPolicy p_ending) {
   updateConfig(m_lineEnding, p_ending, this);
+}
+
+const QString &EditorConfig::getSectionNumberPattern() const { return m_sectionNumberPattern; }
+
+void EditorConfig::setSectionNumberPattern(const QString &p_pattern) {
+  updateConfig(m_sectionNumberPattern, SectionNumberUtils::normalizePattern(p_pattern), this);
 }
 
 const QString &EditorConfig::getBackupFileDirectory() const { return m_backupFileDirectory; }

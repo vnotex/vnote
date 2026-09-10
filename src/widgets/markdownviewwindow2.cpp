@@ -461,6 +461,7 @@ void MarkdownViewWindow2::setupViewer() {
 
   m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this);
   m_viewer->setController(m_windowController);
+  updateSectionNumberOptions();
 
   m_splitter->addWidget(m_viewer);
   // Start hidden. The viewer will be shown explicitly when entering
@@ -529,6 +530,7 @@ void MarkdownViewWindow2::setupViewer() {
   connect(adapterObj, &MarkdownViewerAdapter::headingsChanged, this, [this]() {
     if (isReadMode()) {
       auto outline = headingsToOutline(adapter()->getHeadings());
+      outline->m_hasSectionNumber = adapter()->getHeadingsHaveSectionNumber();
       m_outlineProvider->setOutline(outline);
     }
   });
@@ -661,6 +663,7 @@ QSharedPointer<Outline> MarkdownViewWindow2::headingsToOutline(const QVector<T> 
     outline->m_headings.reserve(p_headings.size());
     for (const auto &heading : p_headings) {
       outline->m_headings.push_back(Outline::Heading(heading.m_name, heading.m_level));
+      outline->m_headings.last().m_isPlaceholder = heading.m_isPlaceholder;
     }
   }
 
@@ -864,6 +867,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     // In Edit mode, we need the viewer for preview pipeline.
     setupTextEditor();
   }
+
+  updateSectionNumberOptions();
 
   // Sync content from buffer to the target view.
   if (transition.syncEditorFromBuffer) {
@@ -1223,7 +1228,19 @@ QString MarkdownViewWindow2::selectedText() const {
 
 // ============ Editor Config Change ============
 
+void MarkdownViewWindow2::updateSectionNumberOptions() {
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!m_viewer || !configMgr) {
+    return;
+  }
+  const auto &editorConfig = configMgr->getEditorConfig();
+  const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
+  adapter()->setSectionNumberOptions(isReadMode() && mdConfig.getAutoSectionNumberEnabled(),
+                                     editorConfig.getSectionNumberPattern());
+}
+
 void MarkdownViewWindow2::handleEditorConfigChange() {
+  updateSectionNumberOptions();
   // Always update layout mode (WidgetConfig changes don't affect editor config revision).
   ViewWindow2::handleEditorConfigChange();
 

@@ -140,6 +140,9 @@ public:
   LineEndingPolicy getLineEndingPolicy() const;
   void setLineEndingPolicy(LineEndingPolicy p_ending);
 
+  const QString &getSectionNumberPattern() const;
+  void setSectionNumberPattern(const QString &p_pattern);
+
 private:
   friend class MainConfig;
 
@@ -195,6 +198,8 @@ private:
   QSharedPointer<vte::ViConfig> m_viConfig;
 
   LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
+
+  QString m_sectionNumberPattern = QStringLiteral("1.1.");
 };
 } // namespace vnotex
 

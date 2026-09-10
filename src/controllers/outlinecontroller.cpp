@@ -4,7 +4,10 @@
 #include <QTimer>
 
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <core/widgetconfig.h>
 #include <models/outlinemodel.h>
 #include <views/outlineview.h>
@@ -138,11 +141,16 @@ OutlineController::OutlineController(ServiceLocator &p_services, QObject *p_pare
   auto *configMgr = m_services.get<ConfigMgr2>();
   if (configMgr) {
     m_autoExpandedLevel = configMgr->getWidgetConfig().getOutlineAutoExpandedLevel();
-    m_sectionNumberEnabled = configMgr->getWidgetConfig().getOutlineSectionNumberEnabled();
-    m_sectionNumberBaseLevel = configMgr->getWidgetConfig().getOutlineSectionNumberBaseLevel();
+    m_autoSectionNumberEnabled = configMgr->getWidgetConfig().getOutlineAutoSectionNumberEnabled();
+    m_model->setSectionNumberPattern(configMgr->getEditorConfig().getSectionNumberPattern());
+    auto *hookMgr = m_services.get<HookManager>();
+    if (hookMgr) {
+      m_editorConfigHookId = hookMgr->addAction(
+          HookNames::ConfigEditorChanged,
+          [this](HookContext &, const QVariantMap &) { updateSectionNumberPattern(); });
+    }
   }
-  m_model->setSectionNumberEnabled(m_sectionNumberEnabled);
-  m_model->setSectionNumberBaseLevel(m_sectionNumberBaseLevel);
+  m_model->setAutoSectionNumberEnabled(m_autoSectionNumberEnabled);
 
   // Setup debounce timer for auto-expand after heading changes.
   m_expandTimer = new QTimer(this);
@@ -161,7 +169,14 @@ OutlineController::OutlineController(ServiceLocator &p_services, QObject *p_pare
   });
 }
 
-OutlineController::~OutlineController() {}
+OutlineController::~OutlineController() {
+  if (m_editorConfigHookId != -1) {
+    auto *hookMgr = m_services.get<HookManager>();
+    if (hookMgr) {
+      hookMgr->removeAction(m_editorConfigHookId);
+    }
+  }
+}
 
 void OutlineController::setView(OutlineView *p_view) {
   // Disconnect from previous view.
@@ -260,13 +275,13 @@ void OutlineController::decreaseExpandLevel() {
 
 int OutlineController::getExpandLevel() const { return m_autoExpandedLevel; }
 
-void OutlineController::toggleSectionNumber() {
-  m_sectionNumberEnabled = !m_sectionNumberEnabled;
+void OutlineController::toggleAutoSectionNumber() {
+  m_autoSectionNumberEnabled = !m_autoSectionNumberEnabled;
 
   // Persist to config.
   auto *configMgr = m_services.get<ConfigMgr2>();
   if (configMgr) {
-    configMgr->getWidgetConfig().setOutlineSectionNumberEnabled(m_sectionNumberEnabled);
+    configMgr->getWidgetConfig().setOutlineAutoSectionNumberEnabled(m_autoSectionNumberEnabled);
   }
 
   // Save expansion state before model reset, then restore after.
@@ -275,14 +290,31 @@ void OutlineController::toggleSectionNumber() {
     expanded = m_view->saveExpansionState();
   }
 
-  m_model->setSectionNumberEnabled(m_sectionNumberEnabled);
+  m_model->setAutoSectionNumberEnabled(m_autoSectionNumberEnabled);
 
-  if (m_view && !expanded.isEmpty()) {
+  if (m_view) {
     m_view->restoreExpansionState(expanded);
+    m_view->highlightHeading(m_model->getCurrentHeadingIndex());
   }
 }
 
-bool OutlineController::isSectionNumberEnabled() const { return m_sectionNumberEnabled; }
+void OutlineController::updateSectionNumberPattern() {
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (!configMgr) {
+    return;
+  }
+  QSet<int> expanded;
+  if (m_view) {
+    expanded = m_view->saveExpansionState();
+  }
+  m_model->setSectionNumberPattern(configMgr->getEditorConfig().getSectionNumberPattern());
+  if (m_view) {
+    m_view->restoreExpansionState(expanded);
+    m_view->highlightHeading(m_model->getCurrentHeadingIndex());
+  }
+}
+
+bool OutlineController::isAutoSectionNumberEnabled() const { return m_autoSectionNumberEnabled; }
 
 int OutlineController::getBaseLevel() const {
   if (!m_provider) {

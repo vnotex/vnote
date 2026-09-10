@@ -306,6 +306,11 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
         QStringLiteral("/* VX_GLOBAL_OPTIONS_PLACEHOLDER */"), opts.toJavascriptObject());
   }
 
+  // Required viewer feature, after configured dependencies even for older resource lists.
+  const auto scriptPlaceholder = QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->");
+  m_markdownViewerTemplate.m_template.replace(
+      scriptPlaceholder, scriptPlaceholder + fillScriptTag(resolveConfigFile(
+                                                 QStringLiteral("web/js/sectionnumber.js"))));
   fillResources(m_markdownViewerTemplate.m_template, viewerResource);
 }
 

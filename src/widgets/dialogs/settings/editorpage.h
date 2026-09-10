@@ -37,6 +37,8 @@ private:
 
   QComboBox *m_lineEndingComboBox = nullptr;
 
+  QComboBox *m_sectionNumberPatternComboBox = nullptr;
+
   QComboBox *m_layoutModeComboBox = nullptr;
 
   QSpinBox *m_readableWidthSpinBox = nullptr;

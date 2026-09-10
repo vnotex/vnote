@@ -13,6 +13,7 @@
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/hookmanager.h>
+#include <utils/sectionnumberutils.h>
 #include <utils/widgetutils.h>
 #include <vtextedit/spellchecker.h>
 #include <widgets/messageboxhelper.h>
@@ -68,6 +69,24 @@ void EditorPage::setupUI() {
     addSearchItem(label, m_lineEndingComboBox->toolTip(), m_lineEndingComboBox);
     connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &EditorPage::pageIsChanged);
+  }
+
+  {
+    m_sectionNumberPatternComboBox = WidgetsFactory::createComboBox(this);
+    m_sectionNumberPatternComboBox->setToolTip(
+        tr("Pattern used for automatic section numbers in Markdown read mode and the outline"));
+
+    for (const auto &pattern : SectionNumberUtils::getSupportedPatterns()) {
+      m_sectionNumberPatternComboBox->addItem(pattern, pattern);
+    }
+
+    const QString label(tr("Section Number Pattern"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_sectionNumberPatternComboBox->toolTip(), m_sectionNumberPatternComboBox, this));
+    addSearchItem(label, m_sectionNumberPatternComboBox->toolTip(), m_sectionNumberPatternComboBox);
+    connect(m_sectionNumberPatternComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &EditorPage::pageIsChanged);
   }
 
   {
@@ -181,6 +200,12 @@ void EditorPage::loadInternal() {
     m_lineEndingComboBox->setCurrentIndex(idx);
   }
 
+  {
+    int idx = m_sectionNumberPatternComboBox->findData(editorConfig.getSectionNumberPattern());
+    Q_ASSERT(idx != -1);
+    m_sectionNumberPatternComboBox->setCurrentIndex(idx);
+  }
+
   m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
 
   {
@@ -209,6 +234,8 @@ bool EditorPage::saveInternal() {
     auto ending = m_lineEndingComboBox->currentData().toInt();
     editorConfig.setLineEndingPolicy(static_cast<LineEndingPolicy>(ending));
   }
+
+  editorConfig.setSectionNumberPattern(m_sectionNumberPatternComboBox->currentData().toString());
 
   editorConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());
 

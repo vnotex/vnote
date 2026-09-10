@@ -18,8 +18,12 @@
 #include <QFile>
 #include <QJSEngine>
 #include <QJSValue>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QString>
 #include <QtTest>
+
+#include <utils/sectionnumberutils.h>
 
 namespace tests {
 
@@ -158,6 +162,12 @@ ClassList.prototype.remove = function(name) {
   }).join(' ');
 };
 
+function TextNode(text) {
+  this.parentNode = null;
+  this.childNodes = [];
+  this.textContent = String(text);
+}
+
 function Element(tagName) {
   this.tagName = tagName.toUpperCase();
   this.parentNode = null;
@@ -166,7 +176,6 @@ function Element(tagName) {
   this.className = '';
   this.classList = new ClassList(this);
   this.hidden = false;
-  this._text = '';
   this._listeners = {};
   this._rect = { y: 100, top: 100, bottom: 120 };
 }
@@ -176,17 +185,17 @@ Object.defineProperty(Element.prototype, 'id', {
 });
 Object.defineProperty(Element.prototype, 'textContent', {
   get: function() {
-    var text = this._text;
+    var text = '';
     for (var i = 0; i < this.childNodes.length; ++i) {
       text += this.childNodes[i].textContent;
     }
     return text;
   },
   set: function(value) {
-    this._text = String(value);
     while (this.childNodes.length) {
       this.removeChild(this.childNodes[0]);
     }
+    if (String(value)) { this.appendChild(new TextNode(value)); }
   }
 });
 Object.defineProperty(Element.prototype, 'firstChild', {
@@ -292,6 +301,7 @@ var document = {
   documentElement: { scrollHeight: 1000, clientHeight: 500, scrollTop: 0 },
   readyState: 'complete',
   createElement: function(tag) { return new Element(tag); },
+  createTextNode: function(text) { return new TextNode(text); },
   createElementNS: function(namespaceUri, tag) { return new Element(tag); },
   getElementById: function(id) { return this.body.querySelector('#' + id); },
   querySelector: function(selector) {
@@ -339,7 +349,9 @@ window.__makeHeadingFixture = function() {
     on: function(name, callback) { handlers[name] = callback; },
     isScrollMuted: function() { return false; },
     muteScroll: function() {}, unmuteScroll: function() {},
-    setHeadings: function(headings) { this.headings = headings; },
+    setHeadings: function(headings, hasSectionNumber) {
+      this.headings = headings; this.hasSectionNumber = hasSectionNumber;
+    },
     setCurrentHeadingAnchor: function(index, anchorId) {
       this.currentHeadingIndex = index; this.currentHeadingAnchor = anchorId;
     },
@@ -380,11 +392,16 @@ private slots:
   void testHeadingFolding_buttonOnlyAndNestedState();
   void testHeadingFolding_refreshAndStaticBootstrapAreIdempotent();
   void testHeadingFolding_navigationExpandsAncestors();
+  void testSectionNumber_policyParity_data();
+  void testSectionNumber_policyParity();
+  void testSectionNumber_reapplicationPreservesDom();
+  void testSectionNumber_renderLifecycleAndFolding();
 
 private:
   // Evaluates the prelude plus the real markdownviewer.js.
   void setup(QJSEngine &p_engine, bool p_initializedAtChannel);
   void setupHeadingFolding(QJSEngine &p_engine);
+  void setupSectionNumber(QJSEngine &p_engine);
   void setupMath(QJSEngine &p_engine);
 };
 
@@ -411,6 +428,74 @@ void TestMarkdownViewerJs::setupHeadingFolding(QJSEngine &p_engine) {
   res = p_engine.evaluate(src + QStringLiteral("\nwindow.__NodeLineMapper = NodeLineMapper;"
                                                "\nwindow.__HeadingFolding = HeadingFolding;"),
                           QStringLiteral("nodelinemapper.js"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+}
+
+void TestMarkdownViewerJs::setupSectionNumber(QJSEngine &p_engine) {
+  setupHeadingFolding(p_engine);
+  auto res = p_engine.evaluate(
+      QStringLiteral("var navigator = { appVersion: 'Win' }; var vxOptions = {};"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+
+  QString err;
+  QString source;
+  for (const auto &name : {QStringLiteral("eventemitter.js"), QStringLiteral("vxcore.js"),
+                           QStringLiteral("markdownviewercore.js"), QStringLiteral("vxworker.js"),
+                           QStringLiteral("sectionnumber.js")}) {
+    source += readFile(webDir() + QStringLiteral("/js/") + name, &err) + QLatin1Char('\n');
+    QVERIFY2(err.isEmpty(), qPrintable(err));
+  }
+  res = p_engine.evaluate(source, QStringLiteral("sectionnumber.js"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+
+  res = p_engine.evaluate(QStringLiteral(R"JS(
+var __sectionNumber = vxcore.getWorker('sectionnumber');
+var __container, __sectionHeadings;
+var __optionHandlers = [], __publications = [], __finishSnapshots = [], __trace = [];
+window.vxMarkdownAdapter = {
+  sectionNumberOptions: { enabled: false, pattern: '1.1.' },
+  sectionNumberOptionsChanged: {
+    connect: function(callback) { __optionHandlers.push(callback); },
+    emit: function() { __optionHandlers.slice().forEach(function(callback) { callback(); }); }
+  },
+  setHeadings: function(headings, hasSectionNumber) {
+    this.headings = headings;
+    this.hasSectionNumber = hasSectionNumber;
+    __publications.push({ names: headings.map(function(heading) { return heading.name; }),
+                          hasSectionNumber: hasSectionNumber });
+    __trace.push('headings');
+  },
+  setWorkFinished: function() {
+    __finishSnapshots.push({
+      names: (this.headings || []).map(function(heading) { return heading.name; }),
+      hasSectionNumber: this.hasSectionNumber
+    });
+    __trace.push('finished');
+  },
+  setCurrentHeadingAnchor: function() {},
+  setTopLineNumber: function() {}
+};
+function __setSectionOptions(enabled, pattern) {
+  vxMarkdownAdapter.sectionNumberOptions = { enabled: enabled, pattern: pattern };
+  vxMarkdownAdapter.sectionNumberOptionsChanged.emit();
+}
+function __makeSectionFixture(rows) {
+  document.body = new Element('body');
+  __container = add(document.body, 'div', 'vx-content');
+  add(__container, 'p', '', 'Prose before the first heading');
+  __sectionHeadings = [];
+  rows.forEach(function(row) {
+    // Gap-fillers and invalid levels are C++ records, not DOM headings.
+    if (row[2] || row[0] <= 0) { return; }
+    __sectionHeadings.push(add(__container, 'h' + row[0],
+                              'heading-' + __sectionHeadings.length, row[1]));
+  });
+  vxcore.contentContainer = __container;
+}
+function __sectionNames() {
+  return __sectionHeadings.map(function(heading) { return heading.textContent; });
+}
+)JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 }
 
@@ -765,6 +850,439 @@ window.__mapper.scrollToNode(window.__nodes.grandchild, false, false);
       false);
   QCOMPARE(engine.evaluate(QStringLiteral("window.__nodes.grandchild._scrolledIntoView")).toBool(),
            true);
+}
+
+void TestMarkdownViewerJs::testSectionNumber_policyParity_data() {
+  QTest::addColumn<QJsonArray>("headings");
+  QTest::addColumn<QStringList>("expected");
+  QTest::addColumn<int>("generated");
+  QTest::addColumn<bool>("hasSectionNumber");
+  QTest::addColumn<QString>("pattern");
+  const auto row = [](const char *name, const char *json, const QStringList &expected,
+                      int generated, bool numbered = true,
+                      const QString &pattern = QStringLiteral("1.1.")) {
+    QTest::newRow(name) << QJsonDocument::fromJson(json).array() << expected << generated
+                        << numbered << pattern;
+  };
+
+  row("title-after-prose", R"JSON([[1,"Title"],[2,"A"],[3,"B"],[2,"C"]])JSON",
+      {"Title", "1. A", "1.1. B", "2. C"}, 3);
+  row("two-h1s", R"JSON([[1,"A"],[2,"B"],[1,"C"]])JSON", {"1. A", "1.1. B", "2. C"}, 3);
+  row("sole-nonfirst-h1", R"JSON([[2,"A"],[1,"B"]])JSON", {"1.1. A", "2. B"}, 2);
+  row("base-h3", R"JSON([[1,"Title"],[3,"A"],[3,"B"]])JSON", {"Title", "1. A", "2. B"}, 2);
+  row("skipped-level", R"JSON([[1,"Title"],[2,"A"],[4,"B"],[2,"C"]])JSON",
+      {"Title", "1. A", "1.1.1. B", "2. C"}, 3);
+  row("no-headings", "[]", {}, 0, false);
+  row("title-only", R"JSON([[1,"Title"]])JSON", {"Title"}, 0, false);
+  row("no-suffix", R"JSON([[1,"Title"],[2,"A"],[3,"B"]])JSON", {"Title", "1 A", "1.1 B"}, 2, true,
+      QStringLiteral("1.1"));
+  row("parenthesis-suffix", R"JSON([[1,"Title"],[2,"A"],[3,"B"]])JSON", {"Title", "1) A", "1.1) B"},
+      2, true, QStringLiteral("1.1)"));
+  row("unknown-pattern", R"JSON([[2,"A"],[3,"B"]])JSON", {"1. A", "1.1. B"}, 2, true,
+      QStringLiteral("unknown"));
+  row("empty-pattern", R"JSON([[2,"A"],[3,"B"]])JSON", {"1. A", "1.1. B"}, 2, true, QString());
+
+  for (int count = 1; count <= 4; ++count) {
+    QJsonArray headings;
+    headings.append(QJsonArray{1, QStringLiteral("Title")});
+    QStringList names{QStringLiteral("Title")};
+    for (int i = 1; i <= count; ++i) {
+      const QString name = QStringLiteral("%1. Authored").arg(i);
+      headings.append(QJsonArray{2, name});
+      names.append(name);
+    }
+    QTest::newRow(qPrintable(QStringLiteral("short-authored-%1").arg(count)))
+        << headings << names << 0 << true << QStringLiteral("1.1.");
+  }
+  row("five-match-sixth-mismatch",
+      R"JSON([[1,"Title"],[2,"1. A"],[2,"2. B"],[2,"3. C"],[2,"4. D"],[2,"5. E"],[2,"F"]])JSON",
+      {"Title", "1. A", "2. B", "3. C", "4. D", "5. E", "F"}, 0);
+  row("fourth-mismatch-keeps-authored-prefixes",
+      R"JSON([[1,"Title"],[2,"1. A"],[2,"2. B"],[2,"3. C"],[2,"D"],[2,"5. E"],[2,"6. F"]])JSON",
+      {"Title", "1. 1. A", "2. 2. B", "3. 3. C", "4. D", "5. 5. E", "6. 6. F"}, 6);
+  row("mixed-authored-styles",
+      R"JSON([[2,"1 Intro"],[2,"1. Intro"],[2,"1) Intro"],[2,"1.2. Intro"],[2,"1.2) Intro"]])JSON",
+      {"1 Intro", "1. Intro", "1) Intro", "1.2. Intro", "1.2) Intro"}, 0, true,
+      QStringLiteral("1.1)"));
+  row("numeric-only", R"JSON([[2,"0"],[2,"1."],[2,"1)"],[2,"1.2"],[2,"1.2)"]])JSON",
+      {"0", "1.", "1)", "1.2", "1.2)"}, 0);
+  row("leading-unicode-space", R"JSON([[2,"\u20030 Intro"],[3,"\t1.2 Detail"]])JSON",
+      {QString(QChar(0x2003)) + QStringLiteral("0 Intro"), QStringLiteral("\t1.2 Detail")}, 0);
+  row("nonleading-numeric-prefix", R"JSON([[2,"v1.2 Intro"]])JSON", {"1. v1.2 Intro"}, 1);
+  row("missing-prefix-separator", R"JSON([[2,"1.2Intro"]])JSON", {"1. 1.2Intro"}, 1);
+  row("empty-prefix-component", R"JSON([[2,"1.. Intro"]])JSON", {"1. 1.. Intro"}, 1);
+  row("placeholders-before-title-and-base",
+      R"JSON([[1,"[EMPTY]",true],[1,"Title"],[2,"[EMPTY]",true],[3,"A"]])JSON", {"Title", "1. A"},
+      1);
+  row("placeholders-do-not-break-authored-sample",
+      R"JSON([[1,"Title"],[2,"1. A"],[3,"[EMPTY]",true],[4,"1.1.1. B"]])JSON",
+      {"Title", "1. A", "1.1.1. B"}, 0);
+  row("placeholders-do-not-advance-counters",
+      R"JSON([[1,"Title"],[2,"A"],[3,"[EMPTY]",true],[4,"B"],[2,"C"]])JSON",
+      {"Title", "1. A", "1.1.1. B", "2. C"}, 3);
+  row("real-empty-name-participates",
+      R"JSON([[1,"Title"],[2,"1. A"],[3,"[EMPTY]",true],[4,"[EMPTY]"]])JSON",
+      {"Title", "1. 1. A", "1.1.1. [EMPTY]"}, 2);
+  row("only-placeholders", R"JSON([[1,"[EMPTY]",true],[2,"[EMPTY]",true]])JSON", {}, 0, false);
+  row("invalid-levels-are-not-headings",
+      R"JSON([[0,"Invalid"],[1,"Title"],[-1,"Invalid"],[2,"A"]])JSON", {"Title", "1. A"}, 1);
+}
+
+void TestMarkdownViewerJs::testSectionNumber_policyParity() {
+  QFETCH(QJsonArray, headings);
+  QFETCH(QStringList, expected);
+  QFETCH(int, generated);
+  QFETCH(bool, hasSectionNumber);
+  QFETCH(QString, pattern);
+
+  struct Heading {
+    int m_level;
+    QString m_name;
+    bool m_isPlaceholder;
+  };
+  QVector<Heading> cppHeadings;
+  int maximumLevel = 0;
+  for (const auto &value : headings) {
+    const auto heading = value.toArray();
+    cppHeadings.append({heading[0].toInt(), heading[1].toString(), heading[2].toBool()});
+    if (!cppHeadings.last().m_isPlaceholder) {
+      maximumLevel = qMax(maximumLevel, cppHeadings.last().m_level);
+    }
+  }
+  const auto analysis = vnotex::SectionNumberUtils::analyze(cppHeadings);
+  QVector<int> numbers(maximumLevel + 1, 0);
+  QStringList cppNames;
+  int cppGenerated = 0;
+  for (int i = 0; i < cppHeadings.size(); ++i) {
+    const auto &heading = cppHeadings[i];
+    if (heading.m_isPlaceholder || heading.m_level <= 0) {
+      continue;
+    }
+    QString name = heading.m_name;
+    if (!analysis.m_skip && i >= analysis.m_firstNumberedHeading) {
+      vnotex::SectionNumberUtils::increaseSectionNumber(numbers, heading.m_level,
+                                                        analysis.m_baseLevel);
+      name.prepend(vnotex::SectionNumberUtils::joinSectionNumber(numbers, pattern) +
+                   QLatin1Char(' '));
+      ++cppGenerated;
+    }
+    cppNames.append(name);
+  }
+  QCOMPARE(cppNames, expected);
+  QCOMPARE(cppGenerated, generated);
+
+  QJSEngine engine;
+  setupSectionNumber(engine);
+  auto res = engine.evaluate(
+      QStringLiteral("__makeSectionFixture(%1);")
+          .arg(QString::fromUtf8(QJsonDocument(headings).toJson(QJsonDocument::Compact))));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  engine.globalObject().setProperty(QStringLiteral("__pattern"), pattern);
+  res = engine.evaluate(
+      QStringLiteral("__sectionNumber.apply(__container, { enabled: true, pattern: __pattern });"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QCOMPARE(res.toBool(), hasSectionNumber);
+  QCOMPARE(engine.evaluate(QStringLiteral("__container.__vxHasSectionNumber")).toBool(),
+           hasSectionNumber);
+  const auto jsNames =
+      engine.evaluate(QStringLiteral("__sectionNames()")).toVariant().toStringList();
+  QCOMPARE(jsNames, expected);
+  QCOMPARE(jsNames, cppNames);
+  QCOMPARE(
+      engine
+          .evaluate(QStringLiteral("__container.querySelectorAll('span.vx-section-number').length"))
+          .toInt(),
+      generated);
+}
+
+void TestMarkdownViewerJs::testSectionNumber_reapplicationPreservesDom() {
+  QJSEngine engine;
+  setupSectionNumber(engine);
+  auto res = engine.evaluate(QStringLiteral(R"JS(
+__makeSectionFixture([[1, 'Title'], [2, 'Alpha']]);
+var heading = __sectionHeadings[1];
+heading.setAttribute('data-source-line', '9');
+heading.textContent = '';
+var text = document.createTextNode('Alpha ');
+heading.appendChild(text);
+var link = add(heading, 'a', '', 'Link');
+link.setAttribute('href', '#heading-0');
+heading.appendChild(document.createTextNode(' '));
+var emphasis = add(heading, 'em', '', 'Detail');
+var authored = add(heading, 'span', '', ' authored', 'vx-section-number');
+var originalChildren = heading.childNodes.slice();
+var linkClicks = 0;
+link.addEventListener('click', function() { ++linkClicks; });
+__sectionHeadings.push(add(add(__container, 'blockquote'), 'h3', 'nested', 'Nested'));
+__sectionHeadings.push(add(add(__container, 'div'), 'h2', 'peer', 'Peer'));
+var outside = add(document.body, 'h1', 'outside', 'Outside');
+var code = add(add(__container, 'pre'), 'code', '', '# Not a heading');
+var toc = add(add(__container, 'nav'), 'a', '', 'Title');
+toc.setAttribute('href', '#heading-0');
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+
+  const QStringList originalNames{"Title", "Alpha Link Detail authored", "Nested", "Peer"};
+  const QStringList dottedNames{"Title", "1. Alpha Link Detail authored", "1.1. Nested", "2. Peer"};
+  const auto check = [&](const QStringList &names, bool numbered, int spanCount) {
+    QCOMPARE(engine.evaluate(QStringLiteral("__sectionNames()")).toVariant().toStringList(), names);
+    QCOMPARE(engine.evaluate(QStringLiteral("__container.__vxHasSectionNumber")).toBool(),
+             numbered);
+    // Count authored and generated spans together: class collisions must survive restoration.
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "__container.querySelectorAll('span.vx-section-number').length"))
+                 .toInt(),
+             spanCount);
+  };
+  check(dottedNames, true, 4);
+  res = engine.evaluate(QStringLiteral(R"JS(
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  check(dottedNames, true, 4);
+
+  res = engine.evaluate(
+      QStringLiteral("__sectionNumber.apply(__container, { enabled: true, pattern: '1.1)' });"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  check({"Title", "1) Alpha Link Detail authored", "1.1) Nested", "2) Peer"}, true, 4);
+  QVERIFY(engine
+              .evaluate(QStringLiteral("originalChildren.every(function(node, index) { "
+                                       "return heading.childNodes[index + 1] === node; })"))
+              .toBool());
+  res = engine.evaluate(QStringLiteral(R"JS(
+var ownedSpans = __sectionHeadings.map(function(node) { return node.__vxSectionNumberSpan; })
+                                .filter(function(node) { return !!node; });
+__sectionNumber.apply(__container, { enabled: false, pattern: '1.1)' });
+link.click();
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  check(originalNames, false, 1);
+  QVERIFY(engine
+              .evaluate(QStringLiteral(
+                  "ownedSpans.every(function(node) { return node.parentNode === null; })"))
+              .toBool());
+  QVERIFY(engine
+              .evaluate(QStringLiteral("heading.childNodes.length === originalChildren.length && "
+                                       "originalChildren.every(function(node, index) { return "
+                                       "heading.childNodes[index] === node; })"))
+              .toBool());
+
+  res = engine.evaluate(QStringLiteral(R"JS(
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+link.click();
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  check(dottedNames, true, 4);
+  QCOMPARE(engine.evaluate(QStringLiteral("linkClicks")).toInt(), 2);
+  QCOMPARE(engine.evaluate(QStringLiteral("heading.id")).toString(), QStringLiteral("heading-1"));
+  QCOMPARE(engine.evaluate(QStringLiteral("heading.getAttribute('data-source-line')")).toString(),
+           QStringLiteral("9"));
+  QCOMPARE(engine.evaluate(QStringLiteral("link.getAttribute('href')")).toString(),
+           QStringLiteral("#heading-0"));
+  QVERIFY(engine
+              .evaluate(QStringLiteral(
+                  "text.parentNode === heading && link.parentNode === heading && "
+                  "emphasis.parentNode === heading && authored.parentNode === heading"))
+              .toBool());
+  QCOMPARE(engine.evaluate(QStringLiteral("outside.textContent")).toString(),
+           QStringLiteral("Outside"));
+  QCOMPARE(engine.evaluate(QStringLiteral("code.textContent")).toString(),
+           QStringLiteral("# Not a heading"));
+  QCOMPARE(engine.evaluate(QStringLiteral("toc.textContent")).toString(), QStringLiteral("Title"));
+
+  res = engine.evaluate(QStringLiteral("__sectionNumber.apply(__container);"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QCOMPARE(res.toBool(), false);
+  check(originalNames, false, 1);
+  res = engine.evaluate(QStringLiteral("__sectionNumber.apply(null, { enabled: true });"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QCOMPARE(res.toBool(), false);
+}
+
+void TestMarkdownViewerJs::testSectionNumber_renderLifecycleAndFolding() {
+  QJSEngine engine;
+  setupSectionNumber(engine);
+  auto res = engine.evaluate(QStringLiteral(R"JS(
+// The retained property changes before the worker can subscribe on its first render.
+__setSectionOptions(true, '1.1)');
+__makeSectionFixture([[1, 'Title'], [2, 'Alpha'], [3, 'Detail'], [2, 'Beta']]);
+vxcore.nodeLineMapper = new __NodeLineMapper(vxcore, __container);
+vxcore.setHeadingFoldingEnabled(true);
+// Supply rendered child nodes at the renderer boundary; dispatch, worker accounting,
+// folding, heading extraction and the outgoing adapter bridge remain production code.
+vxcore.on('markdownTextUpdated', function() { vxcore.setBasicMarkdownRendered(); });
+vxcore.on('basicMarkdownRendered', function() { __trace.push('basic-listeners-done'); });
+__trace = [];
+vxcore.setMarkdownText('first fixture');
+__trace.push('render-return');
+var synchronousTrace = __trace.join('|');
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QCOMPARE(engine.evaluate(QStringLiteral("synchronousTrace")).toString(),
+           QStringLiteral("headings|basic-listeners-done|render-return"));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 1);
+  QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
+           QStringLiteral("headings|basic-listeners-done|render-return|finished"));
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[0].names")).toVariant().toStringList(),
+           (QStringList{"Title", "1) Alpha", "1.1) Detail", "2) Beta"}));
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[0].hasSectionNumber")).toBool(), true);
+  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+  QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);
+  QCOMPARE(engine
+               .evaluate(QStringLiteral(
+                   "vxMarkdownAdapter.headings.map(function(heading) { return heading.anchor; })"))
+               .toVariant()
+               .toStringList(),
+           (QStringList{"heading-0", "heading-1", "heading-2", "heading-3"}));
+
+  res = engine.evaluate(QStringLiteral(R"JS(
+__buttonFor(__sectionHeadings[1]).click();
+var foldedBeforeNavigation = __contentFor(__sectionHeadings[1]).hidden;
+vxcore.scrollToAnchor('heading-2');
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QVERIFY(engine.evaluate(QStringLiteral("foldedBeforeNavigation")).toBool());
+  QVERIFY(!engine.evaluate(QStringLiteral("__contentFor(__sectionHeadings[1]).hidden")).toBool());
+  QVERIFY(engine.evaluate(QStringLiteral("__sectionHeadings[2]._scrolledIntoView")).toBool());
+
+  struct Transition {
+    bool enabled;
+    QString pattern;
+    QStringList names;
+  };
+  const QVector<Transition> transitions{
+      {true, QStringLiteral("1.1"), {"Title", "1 Alpha", "1.1 Detail", "2 Beta"}},
+      {false, QStringLiteral("1.1"), {"Title", "Alpha", "Detail", "Beta"}},
+      {true, QStringLiteral("1.1."), {"Title", "1. Alpha", "1.1. Detail", "2. Beta"}}};
+  for (const auto &transition : transitions) {
+    engine.globalObject().setProperty(QStringLiteral("nextEnabled"), transition.enabled);
+    engine.globalObject().setProperty(QStringLiteral("nextPattern"), transition.pattern);
+    res = engine.evaluate(
+        QStringLiteral("__trace = []; __setSectionOptions(nextEnabled, nextPattern);"));
+    QVERIFY2(!res.isError(), qPrintable(res.toString()));
+    QCOMPARE(engine.evaluate(QStringLiteral("__sectionNames()")).toVariant().toStringList(),
+             transition.names);
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "vxMarkdownAdapter.headings.map(function(heading) { return heading.name; })"))
+                 .toVariant()
+                 .toStringList(),
+             transition.names);
+    QCOMPARE(engine.evaluate(QStringLiteral("vxMarkdownAdapter.hasSectionNumber")).toBool(),
+             transition.enabled);
+    QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
+             QStringLiteral("headings"));
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "__container.querySelectorAll('button.vx-heading-fold-toggle').length"))
+                 .toInt(),
+             4);
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "__container.querySelectorAll('span.vx-section-number').length"))
+                 .toInt(),
+             transition.enabled ? 3 : 0);
+    QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 1);
+    QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+  }
+
+  const QStringList dottedNames{"Title", "1. Alpha", "1.1. Detail", "2. Beta"};
+  for (const bool foldingEnabled : {false, true}) {
+    engine.globalObject().setProperty(QStringLiteral("nextFolding"), foldingEnabled);
+    res = engine.evaluate(QStringLiteral("vxcore.setHeadingFoldingEnabled(nextFolding);"));
+    QVERIFY2(!res.isError(), qPrintable(res.toString()));
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "vxMarkdownAdapter.headings.map(function(heading) { return heading.name; })"))
+                 .toVariant()
+                 .toStringList(),
+             dottedNames);
+    QCOMPARE(engine.evaluate(QStringLiteral("vxMarkdownAdapter.hasSectionNumber")).toBool(), true);
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "__container.querySelectorAll('button.vx-heading-fold-toggle').length"))
+                 .toInt(),
+             foldingEnabled ? 4 : 0);
+  }
+
+  for (int round = 2; round <= 3; ++round) {
+    res = engine.evaluate(QStringLiteral(R"JS(
+__trace = [];
+vxcore.setMarkdownText('same rendered fixture');
+__trace.push('render-return');
+synchronousTrace = __trace.join('|');
+)JS"));
+    QVERIFY2(!res.isError(), qPrintable(res.toString()));
+    QCOMPARE(engine.evaluate(QStringLiteral("synchronousTrace")).toString(),
+             QStringLiteral("headings|basic-listeners-done|render-return"));
+    QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), round);
+    QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
+             QStringLiteral("headings|basic-listeners-done|render-return|finished"));
+    QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[%1].names").arg(round - 1))
+                 .toVariant()
+                 .toStringList(),
+             dottedNames);
+    QCOMPARE(
+        engine.evaluate(QStringLiteral("__finishSnapshots[%1].hasSectionNumber").arg(round - 1))
+            .toBool(),
+        true);
+    QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+    QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);
+  }
+
+  // A later option update must still publish exactly once and never finish a render unit.
+  res = engine.evaluate(QStringLiteral("__trace = []; __setSectionOptions(false, '1.1.');"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
+           QStringLiteral("headings"));
+  QCOMPARE(engine
+               .evaluate(QStringLiteral(
+                   "vxMarkdownAdapter.headings.map(function(heading) { return heading.name; })"))
+               .toVariant()
+               .toStringList(),
+           (QStringList{"Title", "Alpha", "Detail", "Beta"}));
+  QCOMPARE(engine.evaluate(QStringLiteral("vxMarkdownAdapter.hasSectionNumber")).toBool(), false);
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 3);
+
+  res = engine.evaluate(QStringLiteral("vxcore.setMarkdownText('disabled existing fixture');"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 4);
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[3].names")).toVariant().toStringList(),
+           (QStringList{"Title", "Alpha", "Detail", "Beta"}));
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[3].hasSectionNumber")).toBool(),
+           false);
+  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+
+  res = engine.evaluate(QStringLiteral(R"JS(
+__container.textContent = '';
+__sectionHeadings = [add(__container, 'h1', 'new-title', 'Replacement title')];
+__setSectionOptions(true, '1.1.');
+vxcore.setMarkdownText('title-only replacement');
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 5);
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[4].names")).toVariant().toStringList(),
+           (QStringList{"Replacement title"}));
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[4].hasSectionNumber")).toBool(),
+           false);
+  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+
+  res = engine.evaluate(QStringLiteral(R"JS(
+__container.textContent = '';
+__sectionHeadings = [];
+vxcore.setMarkdownText('empty replacement');
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 6);
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[5].names")).toVariant().toStringList(),
+           QStringList());
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[5].hasSectionNumber")).toBool(),
+           false);
+  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+  QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);
 }
 
 } // namespace tests
