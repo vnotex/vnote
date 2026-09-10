@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include <vtextedit/markdowneditorconfig.h>
+#include <vtextedit/markdownhighlighterdata.h>
 #include <vtextedit/texteditorconfig.h>
 
 #include <controllers/markdowneditorcontroller.h>
@@ -32,6 +33,9 @@ class TestMarkdownEditorController : public QObject {
   Q_OBJECT
 
 private slots:
+  void testSourceSectionNumbers_data();
+  void testSourceSectionNumbers();
+
   // ============ Group 2: getPreviewHelperConfig (static) ============
 
   void testPreviewHelper_allDefaults();
@@ -79,6 +83,51 @@ private:
   TempDirFixture m_tempDir;
   QString m_notebookId;
 };
+
+void TestMarkdownEditorController::testSourceSectionNumbers_data() {
+  QTest::addColumn<QVector<int>>("levels");
+  QTest::addColumn<QString>("pattern");
+  QTest::addColumn<QVector<QString>>("expected");
+  QTest::newRow("title") << QVector<int>{1, 2, 3, 2} << QStringLiteral("1.1.")
+                         << QVector<QString>{"", "1.", "1.1.", "2."};
+  QTest::newRow("multiple-h1") << QVector<int>{1, 2, 1} << QStringLiteral("1.1.")
+                               << QVector<QString>{"1.", "1.1.", "2."};
+  QTest::newRow("nonfirst-h1") << QVector<int>{2, 1} << QStringLiteral("1.1.")
+                               << QVector<QString>{"1.1.", "2."};
+  QTest::newRow("base-h3") << QVector<int>{1, 3, 3} << QStringLiteral("1.1.")
+                           << QVector<QString>{"", "1.", "2."};
+  QTest::newRow("skipped-level") << QVector<int>{1, 2, 4, 2} << QStringLiteral("1.1.")
+                                 << QVector<QString>{"", "1.", "1.1.1.", "2."};
+  QTest::newRow("parenthesis") << QVector<int>{1, 2, 3, 2} << QStringLiteral("1.1)")
+                               << QVector<QString>{"", "1)", "1.1)", "2)"};
+  QTest::newRow("no-suffix") << QVector<int>{1, 2, 3, 2} << QStringLiteral("1.1")
+                             << QVector<QString>{"", "1", "1.1", "2"};
+  QTest::newRow("invalid-pattern")
+      << QVector<int>{2, 3, 2} << QStringLiteral("invalid") << QVector<QString>{"1.", "1.1.", "2."};
+  QTest::newRow("empty") << QVector<int>{} << QStringLiteral("1.1.") << QVector<QString>{};
+  QTest::newRow("title-only") << QVector<int>{1} << QStringLiteral("1.1.") << QVector<QString>{""};
+  QTest::newRow("invalid-levels") << QVector<int>{0, 1, -1, 2, 0, 3} << QStringLiteral("1.1.")
+                                  << QVector<QString>{"", "", "", "1.", "", "1.1."};
+}
+
+void TestMarkdownEditorController::testSourceSectionNumbers() {
+  QFETCH(QVector<int>, levels);
+  QFETCH(QString, pattern);
+  QFETCH(QVector<QString>, expected);
+  QVector<vte::md::HeadingInfo> headings;
+  for (int i = 0; i < levels.size(); ++i) {
+    vte::md::HeadingInfo heading;
+    heading.m_level = levels[i];
+    heading.m_title = QStringLiteral("Topic %1").arg(i);
+    headings.append(heading);
+  }
+  QCOMPARE(MarkdownEditorController::generateSectionNumbers(headings, pattern), expected);
+  // Authored numbers, including out-of-order ones, never suppress maintenance.
+  for (int i = 0; i < headings.size(); ++i) {
+    headings[i].m_title.prepend(QStringLiteral("%1) ").arg(42 - i));
+  }
+  QCOMPARE(MarkdownEditorController::generateSectionNumbers(headings, pattern), expected);
+}
 
 // ============ Group 2: getPreviewHelperConfig ============
 

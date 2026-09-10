@@ -46,6 +46,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_imageAlignCenterEnabled = READBOOL(QStringLiteral("imageAlignCenter"));
   m_headingFoldingEnabled = READBOOL(QStringLiteral("headingFolding"));
   m_autoSectionNumberEnabled = READBOOL(QStringLiteral("autoSectionNumber"));
+  m_autoSectionNumberInEditModeEnabled = READBOOL(QStringLiteral("autoSectionNumberInEditMode"));
   m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
   m_zoomFactorInReadMode = READREAL(QStringLiteral("zoomFactorInReadMode"));
   m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
@@ -97,6 +98,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("imageAlignCenter")] = m_imageAlignCenterEnabled;
   obj[QStringLiteral("headingFolding")] = m_headingFoldingEnabled;
   obj[QStringLiteral("autoSectionNumber")] = m_autoSectionNumberEnabled;
+  obj[QStringLiteral("autoSectionNumberInEditMode")] = m_autoSectionNumberInEditModeEnabled;
   obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
   obj[QStringLiteral("zoomFactorInReadMode")] = m_zoomFactorInReadMode;
   obj[QStringLiteral("fetchImagesInParseAndPaste")] = m_fetchImagesInParseAndPaste;
@@ -249,6 +251,14 @@ bool MarkdownEditorConfig::getAutoSectionNumberEnabled() const {
 
 void MarkdownEditorConfig::setAutoSectionNumberEnabled(bool p_enabled) {
   updateConfig(m_autoSectionNumberEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getAutoSectionNumberInEditModeEnabled() const {
+  return m_autoSectionNumberInEditModeEnabled;
+}
+
+void MarkdownEditorConfig::setAutoSectionNumberInEditModeEnabled(bool p_enabled) {
+  updateConfig(m_autoSectionNumberInEditModeEnabled, p_enabled, this);
 }
 
 bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const {

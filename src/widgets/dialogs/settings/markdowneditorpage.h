@@ -42,6 +42,8 @@ private:
 
   QCheckBox *m_autoSectionNumberCheckBox = nullptr;
 
+  QCheckBox *m_autoSectionNumberInEditModeCheckBox = nullptr;
+
   QCheckBox *m_constrainInplacePreviewWidthCheckBox = nullptr;
 
   QCheckBox *m_inplacePreviewSourceImageLinkCheckBox = nullptr;

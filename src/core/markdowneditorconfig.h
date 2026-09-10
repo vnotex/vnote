@@ -85,6 +85,9 @@ public:
   bool getAutoSectionNumberEnabled() const;
   void setAutoSectionNumberEnabled(bool p_enabled);
 
+  bool getAutoSectionNumberInEditModeEnabled() const;
+  void setAutoSectionNumberInEditModeEnabled(bool p_enabled);
+
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
@@ -201,6 +204,7 @@ private:
   bool m_headingFoldingEnabled = true;
 
   bool m_autoSectionNumberEnabled = true;
+  bool m_autoSectionNumberInEditModeEnabled = false;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

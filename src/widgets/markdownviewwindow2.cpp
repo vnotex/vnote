@@ -47,6 +47,7 @@
 #include <imagehost/imagehostpath.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
+#include <utils/sectionnumberutils.h>
 #include <utils/urlutils.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -284,9 +285,11 @@ void MarkdownViewWindow2::handlePrint() {
 }
 
 bool MarkdownViewWindow2::aboutToClose(bool p_force) {
+  updateEditSectionNumberOptions(false);
   const bool isLast = isLastWindowForBuffer();
   const bool result = ViewWindow2::aboutToClose(p_force);
   if (!result) {
+    updateEditSectionNumberOptions(true);
     return false;
   }
 
@@ -346,6 +349,7 @@ void MarkdownViewWindow2::setupTextEditor() {
       MarkdownEditorController::buildMarkdownEditorConfigFromContent(
           editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth),
       MarkdownEditorController::buildMarkdownEditorParameters(editorConfig, mdConfig), this);
+  updateEditSectionNumberOptions(false);
 
   // Insert at index 0 in splitter (editor always first).
   m_splitter->insertWidget(0, m_editor);
@@ -690,6 +694,7 @@ void MarkdownViewWindow2::connectEditorSignals() {
 
     const auto &editorHeadings = m_editor->getHeadings();
     auto outline = headingsToOutline(editorHeadings);
+    outline->m_hasSectionNumber = m_editor->getHeadingsHaveSectionNumber();
     for (int i = 0; i < editorHeadings.size(); ++i) {
       outline->m_headings[i].m_reorderable =
           editorHeadings[i].m_startPos >= 0 &&
@@ -811,6 +816,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     return;
   }
   m_switchingMode = true;
+  updateEditSectionNumberOptions(false);
 
   m_outlineProvider->setReorderSupported(false);
 
@@ -985,6 +991,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     // unchanged content does not necessarily emit headingsChanged again.
     const auto &editorHeadings = m_editor->getHeadings();
     auto outline = headingsToOutline(editorHeadings);
+    outline->m_hasSectionNumber = m_editor->getHeadingsHaveSectionNumber();
     for (int i = 0; i < editorHeadings.size(); ++i) {
       outline->m_headings[i].m_reorderable =
           editorHeadings[i].m_startPos >= 0 &&
@@ -996,6 +1003,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     m_outlineProvider->setOutline(outline);
   }
 
+  updateEditSectionNumberOptions(true);
   emit modeChanged();
 
   // Legacy image-folder check: deferred off this call stack, at most once per
@@ -1019,6 +1027,7 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
     return;
   }
 
+  updateEditSectionNumberOptions(false);
   const bool old = m_propagateEditorToBuffer;
   m_propagateEditorToBuffer = false;
 
@@ -1045,6 +1054,7 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
 
   m_textEditorBufferRevision = state.revision;
   m_propagateEditorToBuffer = old;
+  updateEditSectionNumberOptions(true);
 }
 
 // Path 2: Buffer -> Viewer.
@@ -1239,12 +1249,47 @@ void MarkdownViewWindow2::updateSectionNumberOptions() {
                                      editorConfig.getSectionNumberPattern());
 }
 
+void MarkdownViewWindow2::updateEditSectionNumberOptions(bool p_activate) {
+  if (!m_editor) {
+    return;
+  }
+  m_editor->setHeadingSectionNumberingActive(false);
+  auto *configMgr = getServices().get<ConfigMgr2>();
+  if (!configMgr) {
+    m_editor->setHeadingSectionNumberProvider({});
+    m_editSectionNumberEnabled = false;
+    return;
+  }
+  const auto &editorConfig = configMgr->getEditorConfig();
+  const bool enabled =
+      editorConfig.getMarkdownEditorConfig().getAutoSectionNumberInEditModeEnabled();
+  const auto pattern = SectionNumberUtils::normalizePattern(editorConfig.getSectionNumberPattern());
+  if (enabled != m_editSectionNumberEnabled || pattern != m_editSectionNumberPattern) {
+    m_editSectionNumberEnabled = enabled;
+    m_editSectionNumberPattern = pattern;
+    if (enabled) {
+      m_editor->setHeadingSectionNumberProvider(
+          [pattern](const QVector<vte::md::HeadingInfo> &p_headings) {
+            return MarkdownEditorController::generateSectionNumbers(p_headings, pattern);
+          });
+    } else {
+      m_editor->setHeadingSectionNumberProvider({});
+    }
+  }
+  const auto &buffer = getBuffer();
+  m_editor->setHeadingSectionNumberingActive(
+      p_activate && m_mode == ViewWindowMode::Edit && m_propagateEditorToBuffer &&
+      !m_switchingMode && buffer.isValid() && !buffer.isReadOnly() && !m_editor->isReadOnly());
+}
+
 void MarkdownViewWindow2::handleEditorConfigChange() {
+  updateEditSectionNumberOptions(false);
   updateSectionNumberOptions();
   // Always update layout mode (WidgetConfig changes don't affect editor config revision).
   ViewWindow2::handleEditorConfigChange();
 
   if (!m_editorController->checkAndUpdateConfigRevision()) {
+    updateEditSectionNumberOptions(true);
     return;
   }
 
@@ -1307,9 +1352,11 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   if (reloadMath) {
     syncViewerFromBuffer(m_mode == ViewWindowMode::Edit);
   }
+  updateEditSectionNumberOptions(true);
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {
+  updateEditSectionNumberOptions(false);
   ViewWindow2::handleThemeChanged(); // base: refreshes toolbar icons
 
   auto *configMgr = getServices().get<ConfigMgr2>();
@@ -1364,6 +1411,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
   // Reset external code block highlight styles so they are re-initialized
   // from the new theme's HighlightStyleSheet on next highlight request.
   m_codeBlockStylesInitialized = false;
+  updateEditSectionNumberOptions(true);
 }
 
 void MarkdownViewWindow2::applyReadableWidth() {

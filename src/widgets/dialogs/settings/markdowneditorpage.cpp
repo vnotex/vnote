@@ -57,6 +57,8 @@ void MarkdownEditorPage::loadInternal() {
   m_headingFoldingCheckBox->setChecked(markdownConfig.getHeadingFoldingEnabled());
 
   m_autoSectionNumberCheckBox->setChecked(markdownConfig.getAutoSectionNumberEnabled());
+  m_autoSectionNumberInEditModeCheckBox->setChecked(
+      markdownConfig.getAutoSectionNumberInEditModeEnabled());
 
   m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
 
@@ -131,6 +133,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setHeadingFoldingEnabled(m_headingFoldingCheckBox->isChecked());
 
   markdownConfig.setAutoSectionNumberEnabled(m_autoSectionNumberCheckBox->isChecked());
+  markdownConfig.setAutoSectionNumberInEditModeEnabled(
+      m_autoSectionNumberInEditModeCheckBox->isChecked());
 
   markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
 
@@ -397,6 +401,22 @@ void MarkdownEditorPage::setupEditGroup() {
   auto *mainLayout = qobject_cast<QVBoxLayout *>(layout());
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Edit"), QString(), this);
 
+  {
+    const QString label(tr("Auto Section Number"));
+    m_autoSectionNumberInEditModeCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_autoSectionNumberInEditModeCheckBox->setToolTip(
+        tr("Write and maintain section numbers in Markdown headings, replacing existing numeric "
+           "prefixes"));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_autoSectionNumberInEditModeCheckBox, m_autoSectionNumberInEditModeCheckBox->toolTip(),
+        this));
+    addSearchItem(label, m_autoSectionNumberInEditModeCheckBox->toolTip(),
+                  m_autoSectionNumberInEditModeCheckBox);
+    connect(m_autoSectionNumberInEditModeCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
   {
     const QString label(tr("Constrain in-place preview width"));
     m_constrainInplacePreviewWidthCheckBox = WidgetsFactory::createCheckBox(label, this);

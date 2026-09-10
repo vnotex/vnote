@@ -14,43 +14,60 @@ public:
     bool m_skip = true;
   };
 
-  template <class T> static Analysis analyze(const QVector<T> &p_headings) {
+  template <class T, class LevelFor>
+  static Analysis analyzeStructure(const QVector<T> &p_headings, LevelFor p_levelFor) {
     Analysis result;
     int first = -1;
     int h1Count = 0;
     for (int i = 0; i < p_headings.size(); ++i) {
-      const auto &heading = p_headings[i];
-      if (heading.m_isPlaceholder || heading.m_level <= 0) {
+      const int level = p_levelFor(p_headings[i]);
+      if (level <= 0) {
         continue;
       }
       if (first < 0) {
         first = i;
       }
-      if (heading.m_level == 1) {
+      if (level == 1) {
         ++h1Count;
       }
     }
     if (first < 0) {
       return result;
     }
-    const bool exemptTitle = p_headings[first].m_level == 1 && h1Count == 1;
-    int sampled = 0;
+    const bool exemptTitle = p_levelFor(p_headings[first]) == 1 && h1Count == 1;
     for (int i = first + (exemptTitle ? 1 : 0); i < p_headings.size(); ++i) {
-      const auto &heading = p_headings[i];
-      if (heading.m_isPlaceholder || heading.m_level <= 0) {
+      const int level = p_levelFor(p_headings[i]);
+      if (level <= 0) {
         continue;
       }
       if (result.m_firstNumberedHeading < 0) {
         result.m_firstNumberedHeading = i;
-        result.m_baseLevel = heading.m_level;
+        result.m_baseLevel = level;
       } else {
-        result.m_baseLevel = qMin(result.m_baseLevel, heading.m_level);
+        result.m_baseLevel = qMin(result.m_baseLevel, level);
       }
-      if (sampled < 5) {
-        ++sampled;
-        if (!hasSectionNumberPrefix(heading.m_name)) {
-          result.m_skip = false;
-        }
+      result.m_skip = false;
+    }
+    return result;
+  }
+
+  template <class T> static Analysis analyze(const QVector<T> &p_headings) {
+    auto result = analyzeStructure(p_headings, [](const T &p_heading) {
+      return p_heading.m_isPlaceholder ? 0 : p_heading.m_level;
+    });
+    if (result.m_skip) {
+      return result;
+    }
+    result.m_skip = true;
+    int sampled = 0;
+    for (int i = result.m_firstNumberedHeading; i < p_headings.size() && sampled < 5; ++i) {
+      const auto &heading = p_headings[i];
+      if (heading.m_isPlaceholder || heading.m_level <= 0) {
+        continue;
+      }
+      ++sampled;
+      if (!hasSectionNumberPrefix(heading.m_name)) {
+        result.m_skip = false;
       }
     }
     return result;

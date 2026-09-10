@@ -13,6 +13,9 @@ class QTextDocument;
 namespace vte {
 class MarkdownEditorConfig;
 struct TextEditorParameters;
+namespace md {
+struct HeadingInfo;
+}
 } // namespace vte
 
 namespace vnotex {
@@ -129,6 +132,10 @@ public:
   // Extract preview helper configuration from MarkdownEditorConfig.
   // Used by MarkdownViewWindow2 to configure PreviewHelper.
   static PreviewHelperConfig getPreviewHelperConfig(const MarkdownEditorConfig &p_mdConfig);
+
+  // Empty entries leave exempt titles and invalid heading levels untouched.
+  static QVector<QString> generateSectionNumbers(const QVector<vte::md::HeadingInfo> &p_headings,
+                                                 const QString &p_pattern);
 
   // ============ Heading Link ============
 

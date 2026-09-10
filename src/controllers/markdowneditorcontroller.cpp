@@ -7,6 +7,7 @@
 #include <QUrl>
 
 #include <vtextedit/markdowneditorconfig.h>
+#include <vtextedit/markdownhighlighterdata.h>
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/theme.h>
@@ -21,8 +22,35 @@
 #include <core/services/buffer2.h>
 #include <core/texteditorconfig.h>
 #include <utils/pathutils.h>
+#include <utils/sectionnumberutils.h>
 
 using namespace vnotex;
+
+QVector<QString>
+MarkdownEditorController::generateSectionNumbers(const QVector<vte::md::HeadingInfo> &p_headings,
+                                                 const QString &p_pattern) {
+  QVector<QString> result(p_headings.size());
+  const auto analysis = SectionNumberUtils::analyzeStructure(
+      p_headings, [](const vte::md::HeadingInfo &p_heading) { return p_heading.m_level; });
+  if (analysis.m_skip) {
+    return result;
+  }
+  const auto pattern = SectionNumberUtils::normalizePattern(p_pattern);
+  int maximumLevel = analysis.m_baseLevel;
+  for (int i = analysis.m_firstNumberedHeading; i < p_headings.size(); ++i) {
+    maximumLevel = qMax(maximumLevel, p_headings[i].m_level);
+  }
+  QVector<int> numbers(maximumLevel + 1, 0);
+  for (int i = analysis.m_firstNumberedHeading; i < p_headings.size(); ++i) {
+    const int level = p_headings[i].m_level;
+    if (level <= 0) {
+      continue;
+    }
+    SectionNumberUtils::increaseSectionNumber(numbers, level, analysis.m_baseLevel);
+    result[i] = SectionNumberUtils::joinSectionNumber(numbers, pattern);
+  }
+  return result;
+}
 
 namespace {
 // The Markdown-specific vnotex -> vte field mapping shared by both builders. The two builders

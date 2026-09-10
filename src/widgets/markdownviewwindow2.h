@@ -130,6 +130,7 @@ private:
   void setupViewer();
 
   void updateSectionNumberOptions();
+  void updateEditSectionNumberOptions(bool p_activate);
 
   void setupPreviewHelper();
 
@@ -231,6 +232,8 @@ private:
 
   // State.
   bool m_propagateEditorToBuffer = false;
+  bool m_editSectionNumberEnabled = false;
+  QString m_editSectionNumberPattern = QStringLiteral("1.1.");
   bool m_switchingMode = false; // Reentrancy guard.
   int m_textEditorBufferRevision = 0;
   int m_viewerBufferRevision = 0;

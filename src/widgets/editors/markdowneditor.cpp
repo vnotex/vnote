@@ -112,8 +112,7 @@ void MarkdownEditor::init() {
 
   connect(m_textEdit, &vte::VTextEdit::mouseReleased, this, &MarkdownEditor::handleMouseReleased);
 
-  connect(getHighlighter(), &vte::MarkdownHighlighter::headingsUpdated, this,
-          &MarkdownEditor::updateHeadings);
+  connect(this, &vte::VMarkdownEditor::headingsUpdated, this, &MarkdownEditor::updateHeadings);
 
   setupTableHelper();
 
@@ -1113,12 +1112,15 @@ bool MarkdownEditor::isCurrentFile(const QString &p_filePath) const {
 
 const QVector<MarkdownEditor::Heading> &MarkdownEditor::getHeadings() const { return m_headings; }
 
+bool MarkdownEditor::getHeadingsHaveSectionNumber() const { return m_headingsHaveSectionNumber; }
+
 int MarkdownEditor::getCurrentHeadingIndex() const {
   int blockNumber = m_textEdit->textCursor().blockNumber();
   return getHeadingIndexByBlockNumber(blockNumber);
 }
 
-void MarkdownEditor::updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings) {
+void MarkdownEditor::updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings,
+                                    bool p_hasSectionNumber) {
   m_headingSlugger.reset();
 
   QVector<Heading> headings;
@@ -1143,6 +1145,7 @@ void MarkdownEditor::updateHeadings(const QVector<vte::md::HeadingInfo> &p_headi
   }
 
   OutlineProvider::makePerfectHeadings(headings, m_headings);
+  m_headingsHaveSectionNumber = p_hasSectionNumber && !m_headings.isEmpty();
 
   emit headingsChanged();
 

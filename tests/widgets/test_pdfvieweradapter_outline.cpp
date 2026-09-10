@@ -21,6 +21,14 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <QTextBlock>
+#include <QTextDocument>
+
+#include <vtextedit/markdowneditorconfig.h>
+#include <vtextedit/texteditorconfig.h>
+#include <vtextedit/vmarkdowneditor.h>
+
+#include <controllers/markdowneditorcontroller.h>
 #include <controllers/outlinecontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
@@ -80,6 +88,7 @@ private slots:
   void numberedPdfRetainsDestinationlessAndDeepHeadings();
   void numberedGapOutlinePreservesMoveIndices();
   void sharedPatternUpdatesBothViewsWithoutLosingState();
+  void sourceNumberingFeedsAuthoritativeOutline();
 };
 
 void TestPdfViewerAdapterOutline::wellFormedNestedOutline() {
@@ -818,6 +827,95 @@ void TestPdfViewerAdapterOutline::sharedPatternUpdatesBothViewsWithoutLosingStat
   QCOMPARE(dockView.saveExpansionState(), dockExpanded);
   QCOMPARE(popupView.saveExpansionState(), popupExpanded);
   QCOMPARE(clickedSpy.count(), 0);
+}
+
+void TestPdfViewerAdapterOutline::sourceNumberingFeedsAuthoritativeOutline() {
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  textConfig->m_inputMode = vte::InputMode::NormalMode;
+  vte::VMarkdownEditor editor(QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig),
+                              QSharedPointer<vte::TextEditorParameters>::create());
+  vnotex::OutlineModel model;
+  QSharedPointer<vnotex::Outline> outline;
+  QVector<vte::md::HeadingInfo> parsed;
+  connect(&editor, &vte::VMarkdownEditor::headingsUpdated, &model,
+          [&](const QVector<vte::md::HeadingInfo> &p_headings, bool p_numbered) {
+            parsed = p_headings;
+            QVector<vnotex::Outline::Heading> raw;
+            for (const auto &heading : p_headings) {
+              raw.append(vnotex::Outline::Heading(heading.m_title, heading.m_level));
+              raw.last().m_reorderable =
+                  heading.m_startPos >= 0 && heading.m_endPos > heading.m_startPos;
+            }
+            outline = QSharedPointer<vnotex::Outline>::create();
+            vnotex::OutlineProvider::makePerfectHeadings(raw, outline->m_headings);
+            outline->m_hasSectionNumber = p_numbered && !p_headings.isEmpty();
+            outline->m_reorderSupported = !editor.isReadOnly();
+            model.setOutline(outline);
+          });
+  const auto installPattern = [&](const QString &p_pattern) {
+    editor.setHeadingSectionNumberProvider(
+        [p_pattern](const QVector<vte::md::HeadingInfo> &p_headings) {
+          return vnotex::MarkdownEditorController::generateSectionNumbers(p_headings, p_pattern);
+        });
+  };
+  const QString source = QStringLiteral("# Title\n## Alpha\n#### Detail\n## Beta\n");
+  const QString numbered = QStringLiteral("# Title\n## 1. Alpha\n#### 1.1.1. Detail\n## 2. Beta\n");
+  installPattern(QStringLiteral("1.1."));
+  editor.setText(source);
+  QTRY_VERIFY_WITH_TIMEOUT(outline && outline->m_headings.size() == 5, 5000);
+  QCOMPARE(editor.document()->toPlainText(), source);
+  QVERIFY(!outline->m_hasSectionNumber);
+  editor.setHeadingSectionNumberingActive(true);
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(), numbered, 5000);
+  QTRY_VERIFY_WITH_TIMEOUT(outline->m_hasSectionNumber, 5000);
+  const QStringList expected{QStringLiteral("Title"), QStringLiteral("1. Alpha"),
+                             QStringLiteral("[EMPTY]"), QStringLiteral("1.1.1. Detail"),
+                             QStringLiteral("2. Beta")};
+  for (bool panelNumbering : {false, true}) {
+    model.setAutoSectionNumberEnabled(panelNumbering);
+    for (int i = 0; i < expected.size(); ++i) {
+      const auto index = model.indexForHeadingIndex(i);
+      QCOMPARE(index.data(Qt::DisplayRole).toString(), expected[i]);
+      QCOMPARE(index.data(vnotex::OutlineModel::HeadingIndexRole).toInt(), i);
+      QCOMPARE(index.data(vnotex::OutlineModel::ReorderableRole).toBool(), i != 2);
+    }
+  }
+  QCOMPARE(parsed.size(), 4);
+  QCOMPARE(parsed[2].m_level, 4);
+  QCOMPARE(editor.document()->findBlock(parsed[2].m_startPos).blockNumber(), 2);
+  QCOMPARE(parsed[2].m_anchorText, QStringLiteral("1.1.1. Detail"));
+  const auto deep = model.indexForHeadingIndex(3);
+  QCOMPARE(deep.parent(), model.indexForHeadingIndex(2));
+  QVERIFY(!(model.flags(deep.parent()) & Qt::ItemIsDragEnabled));
+
+  installPattern(QStringLiteral("1.1)"));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      editor.document()->toPlainText(),
+      QStringLiteral("# Title\n## 1) Alpha\n#### 1.1.1) Detail\n## 2) Beta\n"), 5000);
+  QTRY_VERIFY_WITH_TIMEOUT(outline->m_hasSectionNumber, 5000);
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1) Alpha"));
+  installPattern(QStringLiteral("1.1"));
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(),
+                            QStringLiteral("# Title\n## 1 Alpha\n#### 1.1.1 Detail\n## 2 Beta\n"),
+                            5000);
+  QTRY_VERIFY_WITH_TIMEOUT(outline->m_hasSectionNumber, 5000);
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1 Alpha"));
+
+  const QString retained = editor.document()->toPlainText();
+  editor.setHeadingSectionNumberProvider({});
+  QVERIFY(!outline->m_hasSectionNumber);
+  QCOMPARE(editor.document()->toPlainText(), retained);
+  editor.setText(source);
+  QTRY_COMPARE_WITH_TIMEOUT(model.indexForHeadingIndex(1).data().toString(),
+                            QStringLiteral("1. Alpha"), 5000);
+  QVERIFY(!outline->m_hasSectionNumber);
+  model.setAutoSectionNumberEnabled(false);
+  QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("Alpha"));
+  QCOMPARE(editor.document()->toPlainText(), source);
+  editor.setText(QString());
+  QTRY_VERIFY_WITH_TIMEOUT(outline->isEmpty(), 5000);
+  QVERIFY(!outline->m_hasSectionNumber);
+  QCOMPARE(model.rowCount(), 0);
 }
 
 } // namespace tests

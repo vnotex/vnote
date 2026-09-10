@@ -135,6 +135,7 @@ public:
   void typeTable(int p_bodyRows, int p_columns);
 
   const QVector<MarkdownEditor::Heading> &getHeadings() const;
+  bool getHeadingsHaveSectionNumber() const;
   int getCurrentHeadingIndex() const;
 
   void scrollToHeading(int p_idx);
@@ -244,7 +245,7 @@ private:
   void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
 
   // Update headings outline.
-  void updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings);
+  void updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings, bool p_hasSectionNumber);
 
   int getHeadingIndexByBlockNumber(int p_blockNumber) const;
 
@@ -297,6 +298,7 @@ private:
   Buffer2 *m_buffer2 = nullptr;
 
   QVector<Heading> m_headings;
+  bool m_headingsHaveSectionNumber = false;
 
   HeadingSlugger m_headingSlugger;
 

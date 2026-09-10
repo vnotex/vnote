@@ -70,6 +70,7 @@ private slots:
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
   void testHeadingFolding_defaultsMergeAndRoundTrip();
   void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
+  void testEditSectionNumber_mergeAndIndependentPersistence();
   void testSectionNumberPattern_mergeNormalizationAndPersistence_data();
   void testSectionNumberPattern_mergeNormalizationAndPersistence();
   void testOutlineAutoSectionNumber_migrationAndPersistence_data();
@@ -636,6 +637,46 @@ void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptOut() {
                .getEditorConfig()
                .getMarkdownEditorConfig()
                .getAutoSectionNumberEnabled());
+}
+
+void TestConfigMgr2::testEditSectionNumber_mergeAndIndependentPersistence() {
+  const QStringList editPath{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                             QStringLiteral("autoSectionNumberInEditMode")};
+  const QStringList readPath{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                             QStringLiteral("autoSectionNumber")};
+  MainConfig defaults(m_configMgr);
+  const auto loaded = loadThroughMergePath(withoutKeyAt(defaults.toJson(), editPath));
+  QCOMPARE(valueAt(loaded, editPath), QJsonValue(false));
+
+  struct State {
+    bool m_edit;
+    bool m_read;
+  };
+  const State states[]{{true, false}, {false, true}, {true, true}, {false, false}};
+  for (const auto &state : states) {
+    {
+      ConfigMgr2 mgr(m_configService);
+      mgr.init();
+      auto &markdown = mgr.getConfig().getEditorConfig().getMarkdownEditorConfig();
+      const bool readBefore = markdown.getAutoSectionNumberEnabled();
+      markdown.setAutoSectionNumberInEditModeEnabled(state.m_edit);
+      QCOMPARE(markdown.getAutoSectionNumberEnabled(), readBefore);
+      markdown.setAutoSectionNumberEnabled(state.m_read);
+      QCOMPARE(markdown.getAutoSectionNumberInEditModeEnabled(), state.m_edit);
+    }
+    const auto persisted =
+        m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+    QCOMPARE(valueAt(persisted, editPath), QJsonValue(state.m_edit));
+    QCOMPARE(valueAt(persisted, readPath), QJsonValue(state.m_read));
+    const auto merged = loadThroughMergePath(persisted);
+    QCOMPARE(valueAt(merged, editPath), QJsonValue(state.m_edit));
+    QCOMPARE(valueAt(merged, readPath), QJsonValue(state.m_read));
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    const auto &markdown = restarted.getConfig().getEditorConfig().getMarkdownEditorConfig();
+    QCOMPARE(markdown.getAutoSectionNumberInEditModeEnabled(), state.m_edit);
+    QCOMPARE(markdown.getAutoSectionNumberEnabled(), state.m_read);
+  }
 }
 
 void TestConfigMgr2::testSectionNumberPattern_mergeNormalizationAndPersistence_data() {

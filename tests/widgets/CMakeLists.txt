@@ -1401,6 +1401,7 @@ target_include_directories(test_notificationpopup2 PRIVATE
 add_qt_test(test_pdfvieweradapter_outline
   SOURCES
     test_pdfvieweradapter_outline.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
