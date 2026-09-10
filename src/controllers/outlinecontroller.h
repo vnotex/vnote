@@ -92,9 +92,9 @@ private:
   OutlineView *m_view = nullptr;   // Not owned
   QSharedPointer<OutlineProvider> m_provider;
   PendingReorder m_pendingReorder;
-  QTimer *m_expandTimer = nullptr;         // Debounce timer for auto-expand
-  int m_autoExpandedLevel = 6;             // Cached from config
-  bool m_autoSectionNumberEnabled = false; // Cached from config
+  QTimer *m_expandTimer = nullptr;        // Debounce timer for auto-expand
+  int m_autoExpandedLevel = 6;            // Cached from config
+  bool m_autoSectionNumberEnabled = true; // Cached from config
   int m_editorConfigHookId = -1;
 };
 

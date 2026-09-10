@@ -733,7 +733,6 @@ void TestPdfViewerAdapterOutline::numberedGapOutlinePreservesMoveIndices() {
     vnotex::ServiceLocator services;
     vnotex::OutlineController controller(services);
     controller.setOutlineProvider(provider);
-    controller.toggleAutoSectionNumber();
     auto *model = controller.model();
     const int deepHeadingIndex = prefilled ? 3 : 2;
     const int lastHeadingIndex = prefilled ? 4 : 3;

@@ -620,7 +620,7 @@ void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptOut() {
     auto &markdown = editor.getMarkdownEditorConfig();
     QVERIFY(markdown.getAutoSectionNumberEnabled());
     QCOMPARE(editor.getSectionNumberPattern(), QStringLiteral("1.1."));
-    QVERIFY(!mgr.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled());
+    QVERIFY(mgr.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled());
     markdown.setAutoSectionNumberEnabled(false);
     // Destruction flushes the normal pending config write, as at application shutdown.
   }
@@ -683,13 +683,14 @@ void TestConfigMgr2::testSectionNumberPattern_mergeNormalizationAndPersistence()
 void TestConfigMgr2::testOutlineAutoSectionNumber_migrationAndPersistence_data() {
   QTest::addColumn<QJsonObject>("widget");
   QTest::addColumn<bool>("expected");
+  QTest::newRow("missing-default") << QJsonObject() << true;
   QTest::newRow("legacy-enabled") << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"),
                                                   true}}
                                   << true;
   QTest::newRow("legacy-disabled")
       << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), false}} << false;
   QTest::newRow("nonboolean-legacy-ignored")
-      << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), 1}} << false;
+      << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), 1}} << true;
   QTest::newRow("new-false-wins")
       << QJsonObject{{QStringLiteral("outlineSectionNumberEnabled"), true},
                      {QStringLiteral("outlineAutoSectionNumberEnabled"), false}}

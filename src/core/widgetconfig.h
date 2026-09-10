@@ -115,7 +115,7 @@ public:
 private:
   int m_outlineAutoExpandedLevel = 6;
 
-  bool m_outlineAutoSectionNumberEnabled = false;
+  bool m_outlineAutoSectionNumberEnabled = true;
 
   FindOptions m_findAndReplaceOptions = FindOption::IncrementalSearch;
 
