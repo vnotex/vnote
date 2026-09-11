@@ -233,9 +233,6 @@ public:
   bool autoReload() const;
 
 public slots:
-  // Explicit plaintext disclosure of the encrypted note body only.
-  void saveDecryptedCopy();
-
   void findNext(const QString &p_text, FindOptions p_options);
 
   void replace(const QString &p_text, FindOptions p_options, const QString &p_replaceText);

@@ -6,12 +6,8 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
-#include <QSaveFile>
-#include <QScopeGuard>
-#include <QTextCodec>
 #include <QWidget>
 #include <exception>
-#include <utility>
 
 #include <core/exception.h>
 #include <core/servicelocator.h>
@@ -27,24 +23,6 @@
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
-
-namespace {
-
-// Resolve the existing parent as well as an existing destination. QFileInfo alone
-// cannot canonicalize a not-yet-created file, and a lexical prefix misses junctions.
-QString canonicalExportDestination(const QString &p_path) {
-  const QFileInfo info(p_path);
-  if (!info.isAbsolute() || info.isSymLink()) {
-    return {};
-  }
-  if (info.exists()) {
-    return info.canonicalFilePath();
-  }
-  const auto parent = info.dir().canonicalPath();
-  return parent.isEmpty() ? QString() : QDir(parent).filePath(info.fileName());
-}
-
-} // namespace
 
 ExportController::ExportController(ServiceLocator &p_services, QObject *p_parent)
     : ExportController(p_services, nullptr, p_parent) {}
@@ -80,8 +58,7 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
       switch (p_option.m_source) {
       case ExportSource::CurrentBuffer: {
         if (isProtectedExportSource(p_context.currentNodeId, p_context.bufferPath)) {
-          emit logRequested(tr("Protected content cannot use ordinary Export. Open the note and "
-                               "choose Save Decrypted Copy."));
+          emit logRequested(tr("Exporting encrypted notes is not supported."));
           break;
         }
         QString filePath;
@@ -125,8 +102,7 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
         }
 
         if (isProtectedExportSource(p_context.currentNodeId, QString())) {
-          emit logRequested(tr("Protected content cannot use ordinary Export. Open the note and "
-                               "choose Save Decrypted Copy."));
+          emit logRequested(tr("Exporting encrypted notes is not supported."));
           break;
         }
 
@@ -427,94 +403,10 @@ bool ExportController::refuseProtectedBatch(const QStringList &p_protectedFiles)
   if (p_protectedFiles.isEmpty()) {
     return false;
   }
-  emit logRequested(tr("Export refused: this selection contains protected notes. "
-                       "Use Save Decrypted Copy on each note; no files were exported.\n%1")
+  emit logRequested(tr("Export refused: this selection contains encrypted notes. "
+                       "No files were exported.\n%1")
                         .arg(p_protectedFiles.join(QLatin1Char('\n'))));
   return true;
-}
-
-QString ExportController::decryptedNoteName(const Buffer2 &p_buffer) {
-  const auto editor = p_buffer.editorType();
-  if (editor != QLatin1String("markdown") && editor != QLatin1String("text") &&
-      editor != QLatin1String("mindmap")) {
-    return {};
-  }
-  auto name = QFileInfo(p_buffer.nodeId().relativePath).fileName();
-  if (name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
-    name.chop(4);
-  }
-  return PathUtils::isLegalFileName(name) ? name : QString();
-}
-
-bool ExportController::isDecryptedCopyDestinationAllowed(const Buffer2 &p_buffer,
-                                                         const QString &p_destination) const {
-  auto *notebooks = m_services.get<NotebookCoreService>();
-  if (!notebooks || !p_buffer.isValid() || !p_buffer.isEncrypted() ||
-      p_buffer.nodeId().notebookId.isEmpty()) {
-    return false;
-  }
-  const auto root = QFileInfo(notebooks->buildAbsolutePath(p_buffer.nodeId().notebookId, QString()))
-                        .canonicalFilePath();
-  const auto destination = canonicalExportDestination(p_destination);
-  return !root.isEmpty() && !destination.isEmpty() && !PathUtils::pathContains(root, destination);
-}
-
-VxCoreError ExportController::saveDecryptedCopy(const Buffer2 &p_buffer,
-                                                const QString &p_destination,
-                                                const QString &p_content) {
-  if (!p_buffer.isValid() || !p_buffer.isEncrypted()) {
-    return VXCORE_ERR_INVALID_STATE;
-  }
-  const auto lease = p_buffer.acquireProtectedLease();
-  if (!lease) {
-    return VXCORE_ERR_ENCRYPTION_LOCKED;
-  }
-  // A read-only source may be deliberately exported; it is never mutated.
-  if (!isDecryptedCopyDestinationAllowed(p_buffer, p_destination) ||
-      QFileInfo(p_destination).isDir()) {
-    return VXCORE_ERR_INVALID_PARAM;
-  }
-  if (decryptedNoteName(p_buffer).isEmpty()) {
-    return VXCORE_ERR_UNSUPPORTED;
-  }
-  // Authenticate the source even when exporting a live editor snapshot. Never
-  // read the encrypted path as text or turn an authentication error into an empty note.
-  VxCoreError error;
-  auto body = p_buffer.getContentRaw(&error);
-  const auto clearBody = qScopeGuard([&]() { body.fill('\0'); });
-  if (error != VXCORE_OK) {
-    return error;
-  }
-  auto originalText = p_buffer.decode(QByteArrayViewCompat(body));
-  const auto clearOriginalText = qScopeGuard([&]() { originalText.fill(QChar::Null); });
-  // An unchanged snapshot retains its exact original encoding, BOM and line endings.
-  if (p_content != originalText) {
-    auto *codec = QTextCodec::codecForName(p_buffer.encoding().toUtf8());
-    if (!codec) {
-      return VXCORE_ERR_UNSUPPORTED;
-    }
-    QTextCodec::ConverterState state;
-    auto encoded = codec->fromUnicode(p_content.constData(), p_content.size(), &state);
-    if (state.invalidChars || state.remainingChars) {
-      encoded.fill('\0');
-      return VXCORE_ERR_UNSUPPORTED;
-    }
-    body.fill('\0');
-    body = std::move(encoded);
-  }
-  if (!lease->isCurrent()) {
-    return VXCORE_ERR_ENCRYPTION_LOCKED;
-  }
-  const auto path = canonicalExportDestination(p_destination);
-  if (!isDecryptedCopyDestinationAllowed(p_buffer, path)) {
-    return VXCORE_ERR_INVALID_PARAM;
-  }
-  QSaveFile file(path);
-  file.setDirectWriteFallback(false);
-  if (!file.open(QIODevice::WriteOnly) || file.write(body) != body.size() || !file.commit()) {
-    return VXCORE_ERR_IO;
-  }
-  return VXCORE_OK;
 }
 
 bool ExportController::isMarkdownFile(const QString &p_filePath) const {

@@ -53,7 +53,7 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
 * **Encrypted notes**
     * Protect the contents of individual Markdown, plain-text and mind-map notes in bundled notebooks with a password-protected portable key hierarchy
     * Unlock on demand; Lock All saves protected edits and closes protected views while leaving ordinary tabs open
-    * Protected note previews use memory-only profiles; external use of the note body requires an explicit decrypted export outside the notebook
+    * Protected note previews use memory-only profiles; exporting and printing encrypted note bodies are not supported
     * Filenames, folders and tags remain visible; conversion does not erase plaintext in existing Git history, backups, shared resources or external source files
     * Images, attachments and comments stored as separate files remain unencrypted; conversion warns about this and never scans or changes assets
     * Markdown image insertion adds Insert as Base64 using reference links and an embedded data URI; this option is first and default for encrypted Markdown notes

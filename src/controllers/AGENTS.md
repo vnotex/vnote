@@ -201,8 +201,8 @@ legacy image migration; it must not contain encryption planning or retention cod
 
 Dialogs must disclose that separate image/attachment files and comment sidecars
 stay unencrypted. Attachments keep normal Open/Open Folder/Copy Path operations.
-`Save Decrypted Copy` exports the note body with explicit consent; no resource
-manifest/checklist or temporary plaintext body file is used.
+Encrypted note bodies cannot be exported or printed. Do not add a plaintext-copy
+action or write temporary decrypted note files; ordinary exports remain unchanged.
 
 `MarkdownEditorController::insertImageAsBase64` inserts a reference-style image
 and a data-URI definition as one undoable edit. Image insertion lists Base64 first

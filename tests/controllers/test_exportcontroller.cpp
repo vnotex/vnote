@@ -865,11 +865,9 @@ void TestExportController::testEncryptedNoteExport() {
   auto note = fixture.bufferService->openBufferByNodeId(noteId);
   QVERIFY(note.isValid());
   const auto cleanup = qScopeGuard([&]() {
-    fixture.bufferService->cancelProtectedLocking();
     fixture.bufferService->closeBuffer(note.id());
     fixture.notebookService->lockAllEncryption();
   });
-  QCOMPARE(vnotex::ExportController::decryptedNoteName(note), name);
   const auto text = note.decode(vnotex::QByteArrayViewCompat(body));
   TempDirFixture output;
   QVERIFY(output.isValid());
@@ -891,42 +889,7 @@ void TestExportController::testEncryptedNoteExport() {
   QVERIFY(finished.takeFirst().at(0).toStringList().isEmpty());
   QVERIFY(!QFileInfo::exists(destination));
 
-  QFile ciphertext(note.resolvedPath());
-  QVERIFY(ciphertext.open(QIODevice::ReadOnly));
-  const auto originalCiphertext = ciphertext.readAll();
-  ciphertext.close();
-  const auto forbidden =
-      fixture.notebookService->buildAbsolutePath(notebook, QStringLiteral("plain-copy.txt"));
-  QCOMPARE(fixture.controller->saveDecryptedCopy(note, forbidden, text), VXCORE_ERR_INVALID_PARAM);
-  QVERIFY(!QFileInfo::exists(forbidden));
-  QCOMPARE(fixture.controller->saveDecryptedCopy(note, destination, text), VXCORE_OK);
-  QFile exported(destination);
-  QVERIFY(exported.open(QIODevice::ReadOnly));
-  QCOMPARE(exported.readAll(), body);
-  exported.close();
-  QCOMPARE(QDir(output.path()).entryList(QDir::Files | QDir::NoDotAndDotDot), QStringList{name});
-
-  // Explicit disclosure works from a read-only body and preserves the source.
-  const auto node = note.nodeId();
-  QVERIFY(fixture.bufferService->closeBuffer(note.id()));
-  vnotex::FileOpenSettings settings;
-  settings.m_readOnly = true;
-  note = fixture.bufferService->openBuffer(node, settings);
-  QVERIFY(note.isValid());
-  const auto edited = text + QLatin1Char('\n');
-  QCOMPARE(fixture.controller->saveDecryptedCopy(note, destination, edited), VXCORE_OK);
-  QVERIFY(exported.open(QIODevice::ReadOnly));
-  QCOMPARE(note.decode(vnotex::QByteArrayViewCompat(exported.readAll())), edited);
-  exported.close();
-  QVERIFY(ciphertext.open(QIODevice::ReadOnly));
-  QCOMPARE(ciphertext.readAll(), originalCiphertext);
-  ciphertext.close();
-
-  QVERIFY(fixture.bufferService->beginProtectedLocking());
-  const auto lockedDestination = output.filePath(QStringLiteral("locked-copy.txt"));
-  QCOMPARE(fixture.controller->saveDecryptedCopy(note, lockedDestination, text),
-           VXCORE_ERR_ENCRYPTION_LOCKED);
-  QVERIFY(!QFileInfo::exists(lockedDestination));
+  QVERIFY(QDir(output.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty());
 }
 
 } // namespace tests

@@ -620,8 +620,9 @@ void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_node
   NodeInfo nodeInfo = getNodeInfo(p_nodeId);
   if (nodeInfo.isEncrypted ||
       p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
-    emit errorOccurred(tr("Protected Note"),
-                       tr("Open the note in VNote and use Save Decrypted Copy."));
+    emit errorOccurred(
+        tr("Protected Note"),
+        tr("Encrypted notes cannot be opened in external applications. Open the note in VNote."));
     return;
   }
   if (nodeInfo.isFolder) {
@@ -1819,8 +1820,9 @@ void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &p
     }
     if (nodeInfo.isEncrypted ||
         id.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
-      emit errorOccurred(tr("Protected Note"),
-                         tr("Open the note in VNote and use Save Decrypted Copy."));
+      emit errorOccurred(
+          tr("Protected Note"),
+          tr("Encrypted notes cannot be opened in external applications. Open the note in VNote."));
       continue;
     }
     SessionConfig::ExternalProgram tempProg;

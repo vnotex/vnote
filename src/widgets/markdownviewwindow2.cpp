@@ -312,7 +312,7 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
 
 void MarkdownViewWindow2::handlePrint() {
   if (getBuffer().isEncrypted()) {
-    showMessage(tr("Printing protected notes requires an explicit decrypted export"));
+    showMessage(tr("Printing encrypted notes is not supported"));
     return;
   }
   if (!m_viewer || !m_viewerReady) {

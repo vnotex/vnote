@@ -115,8 +115,7 @@ void TextViewWindow2::setupToolBar() {
 void TextViewWindow2::handlePrint() {
   if (getBuffer().isEncrypted()) {
     QMessageBox::information(this, tr("Protected Note"),
-                             tr("Printing protected notes is unavailable. "
-                                "Use Save Decrypted Copy to explicitly export plaintext first."));
+                             tr("Printing encrypted notes is not supported."));
     return;
   }
   auto printer = PrintUtils::promptForPrint(m_editor->getTextEdit()->hasSelection(), this);

@@ -109,7 +109,6 @@ void ViewWindow2::fetchWordCountInfo(const std::function<void(const WordCountInf
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *) {}
 
 void ViewWindow2::handlePrint() {}
-void ViewWindow2::saveDecryptedCopy() {}
 
 void ViewWindow2::showFindAndReplaceWidget() {}
 

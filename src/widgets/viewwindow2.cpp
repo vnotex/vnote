@@ -3,15 +3,10 @@
 #include <QAction>
 #include <QApplication>
 #include <QDebug>
-#include <QDialog>
-#include <QDialogButtonBox>
-#include <QDir>
 #include <QDragEnterEvent>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QKeyEvent>
-#include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
@@ -19,7 +14,6 @@
 #include <QPolygonF>
 #include <QPushButton>
 #include <QResizeEvent>
-#include <QScopeGuard>
 #include <QScrollBar>
 #include <QShortcut>
 #include <QTextEdit>
@@ -30,7 +24,6 @@
 #include <QWidgetAction>
 #include <QtMath>
 
-#include <controllers/exportcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/nodeidentifier.h>
@@ -530,10 +523,6 @@ void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
   if (getBuffer().isAttachmentSupported()) {
     addAction(p_toolBar, ViewWindowToolBarHelper2::Attachment);
   }
-  if (getBuffer().isEncrypted()) {
-    auto *exportCopy = p_toolBar->addAction(tr("Save Decrypted Copy"));
-    connect(exportCopy, &QAction::triggered, this, [this]() { saveDecryptedCopy(); });
-  }
 }
 
 void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
@@ -554,85 +543,6 @@ void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
 
 void ViewWindow2::handlePrint() {}
-
-void ViewWindow2::saveDecryptedCopy() {
-  if (!m_buffer.isValid() || !m_buffer.isEncrypted() || isNoteConversionFrozen()) {
-    return;
-  }
-  // Do not hold an operation lease while a modal dialog is waiting for user input:
-  // Lock All rejects the dialogs, and the apply operation reacquires a lease.
-  const Buffer2 buffer = m_buffer;
-  QPointer<ViewWindow2> guard(this);
-  if (ExportController::decryptedNoteName(buffer).isEmpty()) {
-    QMessageBox::warning(this, tr("Save Decrypted Copy"), tr("Unsupported protected note format."));
-    return;
-  }
-  auto *buffers = m_services.get<BufferService>();
-  if (!buffers || buffers->isProtectedLocking()) {
-    return;
-  }
-  QPointer<QDialog> consent(new QDialog(this));
-  const auto clearConsent = qScopeGuard([&]() { delete consent.data(); });
-  consent->setWindowTitle(tr("Save Decrypted Copy"));
-  auto *layout = new QVBoxLayout(consent);
-  auto *warning =
-      new QLabel(tr("This creates an unencrypted copy outside the protected notebook"), consent);
-  warning->setWordWrap(true);
-  layout->addWidget(warning);
-  auto *explanation = new QLabel(
-      tr("Only the current note body will be exported. Images and attachments are not encrypted "
-         "and will not be copied. Relative links are preserved and may need updating in the copy."),
-      consent);
-  explanation->setWordWrap(true);
-  layout->addWidget(explanation);
-  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, consent);
-  buttons->button(QDialogButtonBox::Save)->setText(tr("Save Decrypted Copy"));
-  buttons->button(QDialogButtonBox::Save)->setAutoDefault(false);
-  buttons->button(QDialogButtonBox::Save)->setDefault(false);
-  buttons->button(QDialogButtonBox::Cancel)->setDefault(true);
-  layout->addWidget(buttons);
-  connect(buttons, &QDialogButtonBox::accepted, consent, &QDialog::accept);
-  connect(buttons, &QDialogButtonBox::rejected, consent, &QDialog::reject);
-  connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), consent, SLOT(reject()));
-  consent->resize(520, 180);
-  if (consent->exec() != QDialog::Accepted || !guard || !consent || buffers->isProtectedLocking()) {
-    return;
-  }
-  delete consent.data();
-  QPointer<QFileDialog> destination(
-      new QFileDialog(this, tr("Save Decrypted Copy"), QDir::homePath()));
-  const auto clearDestination = qScopeGuard([&]() { delete destination.data(); });
-  // A Qt dialog can always be rejected by Lock All, including on platforms whose
-  // native picker runs a separate modal loop.
-  destination->setOption(QFileDialog::DontUseNativeDialog);
-  destination->setAcceptMode(QFileDialog::AcceptSave);
-  destination->setFileMode(QFileDialog::AnyFile);
-  destination->selectFile(ExportController::decryptedNoteName(buffer));
-  connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), destination, SLOT(reject()));
-  if (destination->exec() != QDialog::Accepted || !guard || !destination ||
-      buffers->isProtectedLocking() || destination->selectedFiles().isEmpty()) {
-    return;
-  }
-  const auto path = destination->selectedFiles().first();
-  delete destination.data();
-  ExportController controller(m_services);
-  if (!controller.isDecryptedCopyDestinationAllowed(buffer, path)) {
-    QMessageBox::warning(this, tr("Save Decrypted Copy"),
-                         tr("Choose a destination outside the protected notebook. "
-                            "The destination's parent folder must already exist."));
-    return;
-  }
-  QString content = getLatestContent();
-  const auto clearContent = qScopeGuard([&]() { content.fill(QChar::Null); });
-  const auto error = controller.saveDecryptedCopy(buffer, path, content);
-  if (error != VXCORE_OK) {
-    QMessageBox::warning(this, tr("Save Decrypted Copy"),
-                         tr("Unable to export the protected note body (%1).").arg(int(error)));
-    return;
-  }
-  QMessageBox::information(this, tr("Save Decrypted Copy"),
-                           tr("Created an unencrypted note copy.\n%1").arg(path));
-}
 
 // Convert a ViewWindowToolBarHelper2::Action (TypeBold..TypeTable) to the
 // corresponding TypeAction ID used by handleTypeAction().

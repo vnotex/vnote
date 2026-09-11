@@ -791,8 +791,8 @@ view token; revoke it before destroying pages and the profile. Base64 image byte
 validated in memory; relative plaintext image files use a contained read path. Active
 HTML and automatic network loads remain blocked in protected Markdown previews. Mind-map
 editors use an unnamed memory-only profile with local storage disabled. Never materialize
-a plaintext temporary note body for an external viewer or legacy exporter: require an
-explicit decrypted export to a destination outside the notebook.
+a plaintext temporary note body for an external viewer or exporter. Exporting and
+printing encrypted note bodies are unsupported.
 
 Conversion runs through the existing maintenance/IO-gate ordering and changes only the
 note and its encrypted backup. It leaves all asset bytes and metadata unchanged. Protection is

@@ -9,14 +9,12 @@
 
 #include <core/exportcontext.h>
 #include <export/exportdata.h>
-#include <vxcore/vxcore_types.h>
 
 class QWidget;
 
 namespace vnotex {
 
 class Exporter;
-class Buffer2;
 struct ExportFileInfo;
 class ServiceLocator;
 
@@ -31,14 +29,6 @@ public:
   void doExport(const ExportOption &p_option, const ExportContext &p_context);
   void stop();
   bool isExporting() const;
-
-  // Apply only after widget-owned plaintext consent. Writes only the note body
-  // to the selected file; image and attachment files are already plaintext.
-  VxCoreError saveDecryptedCopy(const Buffer2 &p_buffer, const QString &p_destination,
-                                const QString &p_content);
-  bool isDecryptedCopyDestinationAllowed(const Buffer2 &p_buffer,
-                                         const QString &p_destination) const;
-  static QString decryptedNoteName(const Buffer2 &p_buffer);
 
   // Returns true if a resolved buffer node identifies a real, on-disk exportable
   // file (i.e. not a virtual/unsaved buffer such as vx://home). Shared by the
