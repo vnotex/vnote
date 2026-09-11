@@ -1,10 +1,10 @@
 #include <QtTest>
 
 #include <QBuffer>
-#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSet>
 #include <QTextCursor>
 #include <QTextDocument>
@@ -548,10 +548,9 @@ void TestMarkdownEditorController::imageInsertionChoice() {
   dialog.setEncryptedNote(encrypted);
   dialog.setImagePath(imagePath);
   QTRY_VERIFY(!dialog.getImage().isNull());
-  auto *choice = dialog.findChild<QComboBox *>(QStringLiteral("imageInsertMode"));
-  QVERIFY(choice);
-  QCOMPARE(choice->itemData(0).toBool(), encrypted);
-  QCOMPARE(choice->currentIndex(), 0);
+  auto *fileChoice = dialog.findChild<QRadioButton *>(QStringLiteral("imageInsertFile"));
+  auto *base64Choice = dialog.findChild<QRadioButton *>(QStringLiteral("imageInsertBase64"));
+  QVERIFY(fileChoice && base64Choice);
   QCOMPARE(dialog.insertAsBase64(), encrypted);
   auto *width = dialog.findChild<QLineEdit *>(QStringLiteral("imageWidthEdit"));
   auto *height = dialog.findChild<QLineEdit *>(QStringLiteral("imageHeightEdit"));
@@ -559,13 +558,12 @@ void TestMarkdownEditorController::imageInsertionChoice() {
   width->setText(QStringLiteral("42"));
   height->setText(QStringLiteral("17"));
   QCOMPARE(width->isEnabled(), !encrypted);
-  choice->setFocus();
-  QTest::keyClick(choice, encrypted ? Qt::Key_Down : Qt::Key_Up);
+  QTest::keyClick(fileChoice, Qt::Key_Space);
   QVERIFY(!dialog.insertAsBase64());
   QVERIFY(width->isEnabled());
   QCOMPARE(dialog.getImageWidth(), 42);
   QCOMPARE(dialog.getImageHeight(), 17);
-  QTest::keyClick(choice, encrypted ? Qt::Key_Up : Qt::Key_Down);
+  QTest::keyClick(base64Choice, Qt::Key_Space);
   QVERIFY(dialog.insertAsBase64());
   QVERIFY(!width->isEnabled());
   QTextDocument document;

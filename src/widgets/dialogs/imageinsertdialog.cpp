@@ -1,13 +1,15 @@
 #include "imageinsertdialog.h"
 
 #include <QBuffer>
-#include <QComboBox>
+#include <QButtonGroup>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 #include <QScrollArea>
@@ -117,20 +119,31 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   gridLayout->addWidget(new QLabel(tr("Height (px)"), mainWidget), 3, 2, 1, 1);
   gridLayout->addWidget(m_imageHeightEdit, 3, 3, 1, 1);
 
-  m_insertMode = WidgetsFactory::createComboBox(mainWidget);
-  m_insertMode->setObjectName(QStringLiteral("imageInsertMode"));
+  m_imageFileRadio = new QRadioButton(mainWidget);
+  m_imageFileRadio->setObjectName(QStringLiteral("imageInsertFile"));
+  m_base64Radio = new QRadioButton(tr("Insert as Base64"), mainWidget);
+  m_base64Radio->setObjectName(QStringLiteral("imageInsertBase64"));
+  auto *insertGroup = new QButtonGroup(mainWidget);
+  insertGroup->addButton(m_imageFileRadio);
+  insertGroup->addButton(m_base64Radio);
+  auto *insertLayout = new QHBoxLayout();
+  insertLayout->addWidget(m_imageFileRadio);
+  insertLayout->addWidget(m_base64Radio);
+  insertLayout->addStretch();
   gridLayout->addWidget(new QLabel(tr("Insert"), mainWidget), 4, 0, 1, 1);
-  gridLayout->addWidget(m_insertMode, 4, 1, 1, 3);
-  connect(m_insertMode, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+  gridLayout->addLayout(insertLayout, 4, 1, 1, 3);
+  connect(m_base64Radio, &QRadioButton::toggled, this, [this](bool p_base64) {
     // Reference-style Markdown has no portable width/height syntax. The file
     // choice retains the existing HTML size controls and their entered values.
-    const bool sized = !insertAsBase64();
+    const bool sized = !p_base64;
     m_imageWidthEdit->setEnabled(sized);
     m_imageHeightEdit->setEnabled(sized);
   });
-  m_insertMode->setToolTip(
+  const auto insertToolTip =
       tr("Base64 keeps the image inside the note body. "
-         "Image files are not encrypted. Reference images use their natural size."));
+         "Image files are not encrypted. Reference images use their natural size");
+  m_imageFileRadio->setToolTip(insertToolTip);
+  m_base64Radio->setToolTip(insertToolTip);
   setEncryptedNote(false);
 
   // Preview area.
@@ -263,22 +276,15 @@ QByteArray ImageInsertDialog::getImageData() const {
 
 void ImageInsertDialog::setEncryptedNote(bool p_encrypted) {
   m_encryptedNote = p_encrypted;
-  m_insertMode->clear();
-  if (p_encrypted) {
-    m_insertMode->addItem(tr("Insert as Base64"), true);
-  }
-  m_insertMode->addItem(p_encrypted ? tr("Insert as Image File") : tr("Insert as Image"), false);
-  if (!p_encrypted) {
-    m_insertMode->addItem(tr("Insert as Base64"), true);
-  }
-  m_insertMode->setCurrentIndex(0);
+  m_imageFileRadio->setText(p_encrypted ? tr("Insert as Image File") : tr("Insert as Image"));
+  setInsertAsBase64(p_encrypted);
 }
 
 void ImageInsertDialog::setInsertAsBase64(bool p_base64) {
-  m_insertMode->setCurrentIndex(m_insertMode->findData(p_base64));
+  (p_base64 ? m_base64Radio : m_imageFileRadio)->setChecked(true);
 }
 
-bool ImageInsertDialog::insertAsBase64() const { return m_insertMode->currentData().toBool(); }
+bool ImageInsertDialog::insertAsBase64() const { return m_base64Radio->isChecked(); }
 
 void ImageInsertDialog::setImage(const QImage &p_image) {
   m_imageData.clear();

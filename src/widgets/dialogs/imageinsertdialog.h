@@ -6,9 +6,9 @@
 #include <QByteArray>
 #include <QImage>
 
-class QComboBox;
 class QLineEdit;
 class QPushButton;
+class QRadioButton;
 class QLabel;
 class QTimer;
 class QScrollArea;
@@ -94,7 +94,8 @@ private:
 
   QLineEdit *m_imageHeightEdit = nullptr;
 
-  QComboBox *m_insertMode = nullptr;
+  QRadioButton *m_imageFileRadio = nullptr;
+  QRadioButton *m_base64Radio = nullptr;
   QLabel *m_imageLabel = nullptr;
 
   QScrollArea *m_previewArea = nullptr;
