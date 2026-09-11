@@ -119,9 +119,9 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   gridLayout->addWidget(new QLabel(tr("Height (px)"), mainWidget), 3, 2, 1, 1);
   gridLayout->addWidget(m_imageHeightEdit, 3, 3, 1, 1);
 
-  m_imageFileRadio = new QRadioButton(mainWidget);
+  m_imageFileRadio = new QRadioButton(tr("Image file"), mainWidget);
   m_imageFileRadio->setObjectName(QStringLiteral("imageInsertFile"));
-  m_base64Radio = new QRadioButton(tr("Insert as Base64"), mainWidget);
+  m_base64Radio = new QRadioButton(tr("Base64"), mainWidget);
   m_base64Radio->setObjectName(QStringLiteral("imageInsertBase64"));
   auto *insertGroup = new QButtonGroup(mainWidget);
   insertGroup->addButton(m_imageFileRadio);
@@ -141,7 +141,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   });
   const auto insertToolTip =
       tr("Base64 keeps the image inside the note body. "
-         "Image files are not encrypted. Reference images use their natural size");
+         "Image files are not encrypted. Referenced images ignore the customized size.");
   m_imageFileRadio->setToolTip(insertToolTip);
   m_base64Radio->setToolTip(insertToolTip);
   setEncryptedNote(false);
@@ -276,7 +276,6 @@ QByteArray ImageInsertDialog::getImageData() const {
 
 void ImageInsertDialog::setEncryptedNote(bool p_encrypted) {
   m_encryptedNote = p_encrypted;
-  m_imageFileRadio->setText(p_encrypted ? tr("Insert as Image File") : tr("Insert as Image"));
   setInsertAsBase64(p_encrypted);
 }
 
