@@ -153,9 +153,6 @@ public:
   std::shared_ptr<ProtectedBufferLease>
   acquireProtectedLease(const Buffer2 &p_buffer, bool p_durability = false,
                         VxCoreError *p_outError = nullptr) const;
-  // Caller already holds NotebookIoGate; this method never reacquires it.
-  VxCoreError writeCommentResource(const std::shared_ptr<ProtectedBufferLease> &p_lease,
-                                   const QByteArray &p_data);
   QList<Buffer2> protectedBuffers() const;
   bool protectedOperationsIdle() const;
   bool protectedBufferOperationsIdle(const QString &p_bufferId) const;
@@ -168,7 +165,6 @@ public:
 
   QByteArray readResource(const Buffer2 &p_buffer, const QString &p_resourceUrl,
                           VxCoreError *p_error = nullptr) const;
-  QJsonArray resources(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr) const;
   VxCoreError exportResource(const Buffer2 &p_buffer, const QString &p_resourceUrl,
                              const QString &p_destination) const;
 

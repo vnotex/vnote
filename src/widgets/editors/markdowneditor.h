@@ -28,6 +28,7 @@ class PreviewHelper;
 class Buffer2;
 class MarkdownEditorConfig;
 class MarkdownTableHelper;
+class ImageInsertDialog;
 class ImageHostController;
 class ServiceLocator;
 
@@ -183,10 +184,6 @@ signals:
   // Caller connects to file-open handling.
   void openFileRequested(const QString &p_filePath);
 
-  // Widget-owned explicit plaintext consent and destination selection.
-  // Only current-note logical resources are emitted; never a temporary path.
-  void saveDecryptedCopyRequested(const QString &p_resourceUrl);
-
   // Emitted when an image is inserted into the buffer (new architecture).
   // Allows view windows to track inserted images for cleanup.
   void imageInserted(const QString &p_imagePath, const QString &p_urlInLink);
@@ -221,7 +218,11 @@ private:
                                         int p_height = 0);
 
   bool insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                   const QImage &p_image, int p_width = 0, int p_height = 0);
+                                   const QByteArray &p_data, int p_width = 0, int p_height = 0);
+
+  void insertImageFromDialog(const ImageInsertDialog &p_dialog);
+  bool insertImageAsBase64(const QString &p_title, const QString &p_altText,
+                           const QByteArray &p_data);
 
   void insertImageLink(const QString &p_title, const QString &p_altText,
                        const QString &p_destImagePath, bool p_insertText = true,
@@ -250,13 +251,12 @@ private:
   // Return true if it is processed.
   bool processRelativeImagesFromMimeData(const QMimeData *p_source);
 
-  void insertImageFromMimeData(const QMimeData *p_source);
+  void insertImageFromMimeData(const QMimeData *p_source, bool p_base64);
 
-  void insertImageFromUrl(const QString &p_url, bool p_quiet = false);
+  void insertImageFromUrl(const QString &p_url, bool p_quiet, bool p_base64);
 
   void installProtectedResourceReader();
   bool readProtectedImage(const QString &p_url, QByteArray &p_data) const;
-  void insertProtectedImageFromUrl(const QString &p_url, bool p_quiet);
   void openLink(const QString &p_url);
 
   // Update headings outline.

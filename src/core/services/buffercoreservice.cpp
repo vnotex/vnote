@@ -9,7 +9,6 @@
 #include <QLoggingCategory>
 #include <QThread>
 
-#include <cstring>
 #include <limits>
 #include <new>
 
@@ -721,51 +720,6 @@ QByteArray BufferCoreService::readResource(const QString &p_bufferId, const QStr
   return error == VXCORE_OK ? std::move(result.bytes) : QByteArray();
 }
 
-QJsonArray BufferCoreService::resources(const QString &p_bufferId, VxCoreError *p_error) const {
-  char *json = nullptr;
-  VxCoreError error =
-      m_context ? vxcore_buffer_list_resources(m_context, p_bufferId.toUtf8().constData(), &json)
-                : VXCORE_ERR_NOT_INITIALIZED;
-  // Manifest names are sensitive. Parse the borrowed C bytes without another
-  // QByteArray allocation, and wipe them on every exit (including exceptions).
-  struct ResourceJson {
-    char *bytes;
-    ~ResourceJson() {
-      if (bytes) {
-        const size_t size = std::strlen(bytes);
-        volatile char *cursor = bytes;
-        for (size_t i = 0; i < size; ++i) {
-          cursor[i] = 0;
-        }
-        vxcore_string_free(bytes);
-      }
-    }
-  } owned{json};
-  QJsonArray result;
-  const size_t size = json ? std::strlen(json) : 0;
-  if (error == VXCORE_OK && (!json || size > size_t(std::numeric_limits<int>::max()))) {
-    error = json ? VXCORE_ERR_OUT_OF_MEMORY : VXCORE_ERR_ENCRYPTION_FORMAT;
-  }
-  if (error == VXCORE_OK) {
-    try {
-      QJsonParseError parseError;
-      const QJsonDocument doc = QJsonDocument::fromJson(
-          QByteArray::fromRawData(json, static_cast<int>(size)), &parseError);
-      if (parseError.error != QJsonParseError::NoError || !doc.isArray()) {
-        error = VXCORE_ERR_ENCRYPTION_FORMAT;
-      } else {
-        result = doc.array();
-      }
-    } catch (const std::bad_alloc &) {
-      error = VXCORE_ERR_OUT_OF_MEMORY;
-    }
-  }
-  if (p_error) {
-    *p_error = error;
-  }
-  return result;
-}
-
 VxCoreError BufferCoreService::exportResource(const QString &p_bufferId,
                                               const QString &p_resourceUrl,
                                               const QString &p_destination) const {
@@ -773,14 +727,6 @@ VxCoreError BufferCoreService::exportResource(const QString &p_bufferId,
                                                    p_resourceUrl.toUtf8().constData(),
                                                    p_destination.toUtf8().constData())
                    : VXCORE_ERR_NOT_INITIALIZED;
-}
-
-VxCoreError BufferCoreService::writeCommentResource(const QString &p_bufferId,
-                                                    const QByteArray &p_data) {
-  return m_context
-             ? vxcore_buffer_write_comment_resource(m_context, p_bufferId.toUtf8().constData(),
-                                                    p_data.constData(), size_t(p_data.size()))
-             : VXCORE_ERR_NOT_INITIALIZED;
 }
 
 // Private methods.

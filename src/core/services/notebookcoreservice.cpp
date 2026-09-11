@@ -432,20 +432,18 @@ QJsonObject NotebookCoreService::encryptionStatus(const QString &p_notebookId,
 
 VxCoreError NotebookCoreService::protectNote(const NodeIdentifier &p_nodeId,
                                              const QByteArray &p_body,
-                                             const QJsonObject &p_resourcePlan,
-                                             QString *p_outPath) {
+                                             const QByteArray &p_sourceSha256, QString *p_outPath) {
   if (p_outPath) {
     p_outPath->clear();
   }
   if (!checkContext()) {
     return VXCORE_ERR_NOT_INITIALIZED;
   }
-  const QByteArray plan = QJsonDocument(p_resourcePlan).toJson(QJsonDocument::Compact);
   char *path = nullptr;
-  const VxCoreError error =
-      vxcore_encryption_protect_note(m_context, p_nodeId.notebookId.toUtf8().constData(),
-                                     p_nodeId.relativePath.toUtf8().constData(), p_body.constData(),
-                                     static_cast<size_t>(p_body.size()), plan.constData(), &path);
+  const VxCoreError error = vxcore_encryption_protect_note(
+      m_context, p_nodeId.notebookId.toUtf8().constData(),
+      p_nodeId.relativePath.toUtf8().constData(), p_body.constData(),
+      static_cast<size_t>(p_body.size()), p_sourceSha256.constData(), &path);
   if (error == VXCORE_OK && p_outPath) {
     *p_outPath = QString::fromUtf8(path);
   }

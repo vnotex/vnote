@@ -43,6 +43,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
@@ -89,6 +90,9 @@ private slots:
   void testNoManifestOrNotebookConfig();
   void testUnicodeNamesAndCollisionNaming();
   void testCustomAssetsAndTaggedFolderProceed();
+  void testProtectedBundlePreservesRelativeAssets_data();
+  void testProtectedBundlePreservesRelativeAssets();
+  void testProtectedBundleRejectsEscapingAssets();
   void testEmptyAttachmentsOmittedIsValid();
   void testNonStringAttachmentEntryRejected();
   void testRejectsRawNotebook();
@@ -496,6 +500,114 @@ void TestFolderShareController::testCustomAssetsAndTaggedFolderProceed() {
   // tag hierarchy is deliberately not carried.
   QVERIFY(readAll(result.m_bundlePath + QStringLiteral("/vx_notebook/contents/Alpha/vx.json"))
               .contains("important"));
+}
+
+void TestFolderShareController::testProtectedBundlePreservesRelativeAssets_data() {
+  QTest::addColumn<QString>("assetsFolder");
+  QTest::newRow("default") << QStringLiteral("vx_assets");
+  QTest::newRow("custom-nested") << QStringLiteral("media/images");
+}
+
+void TestFolderShareController::testProtectedBundlePreservesRelativeAssets() {
+  QFETCH(QString, assetsFolder);
+  QVERIFY(m_notebooks->updateNotebookConfig(
+      m_notebookId,
+      QString::fromUtf8(
+          QJsonDocument(QJsonObject{{QStringLiteral("assetsFolder"), assetsFolder}}).toJson())));
+  makeFolder(QStringLiteral("Projects/Alpha"));
+  auto setup = m_notebooks->prepareNotebookEncryption(
+      m_notebookId, QString(), QByteArrayLiteral("body-only-share-password"));
+  QVERIFY(setup.isValid());
+  SyncWorkQueueManager queues;
+  QString noteId;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({m_notebookId});
+    QVERIFY(maintenance.isValid());
+    NotebookIoGate::ScopedLock lock(*m_gate, m_notebookId);
+    QCOMPARE(m_notebooks->commitNotebookEncryption(setup), VXCORE_OK);
+    QCOMPARE(m_notebooks->createEncryptedNote(m_notebookId, QStringLiteral("Projects/Alpha"),
+                                              QStringLiteral("private.md"),
+                                              QStringLiteral("markdown"), QByteArray(), &noteId),
+             VXCORE_OK);
+  }
+  auto note = m_buffers->openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  const QByteArray imageBytes("ordinary shared image");
+  const auto imagePath = note.insertAssetRaw(QStringLiteral("image.png"), imageBytes);
+  QVERIFY(!imagePath.isEmpty());
+  const auto imageLink =
+      QDir(note.getResourceBasePath())
+          .relativeFilePath(m_notebooks->buildAbsolutePath(m_notebookId, imagePath));
+  QCOMPARE(readAll(QDir(note.getResourceBasePath()).filePath(imageLink)), imageBytes);
+  const QByteArray body = "![image](" + imageLink.toUtf8() + ")\n";
+  QVERIFY(note.setContentRaw(body));
+  QVERIFY(note.save());
+  const auto sourceCiphertext = readAll(note.resolvedPath());
+  QVERIFY(m_buffers->closeBuffer(note.id()));
+  QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
+  makeFile(QStringLiteral("Projects/Alpha"), QStringLiteral("ordinary.md"), body);
+
+  FolderSharePackager::Request request;
+  request.m_notebookRoot = m_notebookPath;
+  request.m_contentRoot = m_notebookPath + QStringLiteral("/Projects/Alpha");
+  request.m_metadataRoot = QFileInfo(configPath(QStringLiteral("Projects/Alpha"))).path();
+  request.m_destinationParent = destination();
+  request.m_folderName = QStringLiteral("Alpha");
+  const auto result = FolderSharePackager::run(request, {});
+  QVERIFY2(result.succeeded(), qPrintable(result.m_errorMessage));
+  QCOMPARE(readAll(result.m_bundlePath + QStringLiteral("/Alpha/private.md.vne")),
+           sourceCiphertext);
+  QCOMPARE(readAll(result.m_bundlePath + QStringLiteral("/Alpha/ordinary.md")), body);
+  QCOMPARE(readAll(QDir(result.m_bundlePath + QStringLiteral("/Alpha")).filePath(imageLink)),
+           imageBytes);
+  const auto config = QJsonDocument::fromJson(
+                          readAll(result.m_bundlePath + QStringLiteral("/vx_notebook/config.json")))
+                          .object();
+  QCOMPARE(config.value(QStringLiteral("assetsFolder")).toString(), assetsFolder);
+  QCOMPARE(leftoverEntries(destination(), result.m_bundlePath), QStringList());
+}
+
+void TestFolderShareController::testProtectedBundleRejectsEscapingAssets() {
+  makeFolder(QStringLiteral("Alpha"));
+  auto setup = m_notebooks->prepareNotebookEncryption(m_notebookId, QString(),
+                                                      QByteArrayLiteral("unsafe-share-password"));
+  QVERIFY(setup.isValid());
+  SyncWorkQueueManager queues;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({m_notebookId});
+    QVERIFY(maintenance.isValid());
+    NotebookIoGate::ScopedLock lock(*m_gate, m_notebookId);
+    QCOMPARE(m_notebooks->commitNotebookEncryption(setup), VXCORE_OK);
+    QString noteId;
+    QCOMPARE(m_notebooks->createEncryptedNote(
+                 m_notebookId, QStringLiteral("Alpha"), QStringLiteral("private.md"),
+                 QStringLiteral("markdown"), QByteArrayLiteral("secret"), &noteId),
+             VXCORE_OK);
+  }
+  QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
+  const auto notebookConfigPath = m_notebookPath + QStringLiteral("/vx_notebook/config.json");
+  auto config = QJsonDocument::fromJson(readAll(notebookConfigPath)).object();
+  const QStringList unsafeFolders{QStringLiteral("../shared"), QStringLiteral("media/../../shared"),
+                                  m_tempDir->filePath(QStringLiteral("absolute-assets"))};
+  for (const auto &assetsFolder : unsafeFolders) {
+    config.insert(QStringLiteral("assetsFolder"), assetsFolder);
+    QFile configFile(notebookConfigPath);
+    QVERIFY(configFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    const auto bytes = QJsonDocument(config).toJson();
+    QCOMPARE(configFile.write(bytes), qint64(bytes.size()));
+    configFile.close();
+
+    FolderSharePackager::Request request;
+    request.m_notebookRoot = m_notebookPath;
+    request.m_contentRoot = m_notebookPath + QStringLiteral("/Alpha");
+    request.m_metadataRoot = QFileInfo(configPath(QStringLiteral("Alpha"))).path();
+    request.m_destinationParent = destination();
+    request.m_folderName = QStringLiteral("Alpha");
+    const auto result = FolderSharePackager::run(request, {});
+    QCOMPARE(result.m_status, FolderSharePackager::Status::Failed);
+    QVERIFY(!result.m_errorMessage.isEmpty());
+    QCOMPARE(leftoverEntries(destination(), QString()), QStringList());
+  }
 }
 
 void TestFolderShareController::testEmptyAttachmentsOmittedIsValid() {

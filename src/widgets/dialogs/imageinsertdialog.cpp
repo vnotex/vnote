@@ -1,5 +1,7 @@
 #include "imageinsertdialog.h"
 
+#include <QBuffer>
+#include <QComboBox>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -9,7 +11,6 @@
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 #include <QScrollArea>
-#include <QTemporaryFile>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -71,8 +72,10 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   m_imagePathEdit->setReadOnly(!m_browserEnabled);
   gridLayout->addWidget(new QLabel(tr("From"), mainWidget), 0, 0, 1, 1);
   gridLayout->addWidget(m_imagePathEdit, 0, 1, 1, 3);
-  connect(m_imagePathEdit, &QLineEdit::textChanged, this,
-          [this]() { m_imagePathCheckTimer->start(); });
+  connect(m_imagePathEdit, &QLineEdit::textChanged, this, [this]() {
+    setImage(QImage());
+    m_imagePathCheckTimer->start();
+  });
 
   m_browseBtn = new QPushButton(tr("&Browse"), mainWidget);
   m_browseBtn->setEnabled(m_browserEnabled);
@@ -114,6 +117,22 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   gridLayout->addWidget(new QLabel(tr("Height (px)"), mainWidget), 3, 2, 1, 1);
   gridLayout->addWidget(m_imageHeightEdit, 3, 3, 1, 1);
 
+  m_insertMode = WidgetsFactory::createComboBox(mainWidget);
+  m_insertMode->setObjectName(QStringLiteral("imageInsertMode"));
+  gridLayout->addWidget(new QLabel(tr("Insert"), mainWidget), 4, 0, 1, 1);
+  gridLayout->addWidget(m_insertMode, 4, 1, 1, 3);
+  connect(m_insertMode, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+    // Reference-style Markdown has no portable width/height syntax. The file
+    // choice retains the existing HTML size controls and their entered values.
+    const bool sized = !insertAsBase64();
+    m_imageWidthEdit->setEnabled(sized);
+    m_imageHeightEdit->setEnabled(sized);
+  });
+  m_insertMode->setToolTip(
+      tr("Base64 keeps the image inside the note body. "
+         "Image files are not encrypted. Reference images use their natural size."));
+  setEncryptedNote(false);
+
   // Preview area.
   m_imageLabel = new QLabel(mainWidget);
   m_imageLabel->setScaledContents(true);
@@ -121,7 +140,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   m_previewArea->setBackgroundRole(QPalette::Dark);
   m_previewArea->setWidget(m_imageLabel);
   m_previewArea->setMinimumSize(256, 256);
-  gridLayout->addWidget(m_previewArea, 4, 0, 1, 5);
+  gridLayout->addWidget(m_previewArea, 5, 0, 1, 5);
 
   setImageControlsVisible(false);
 
@@ -158,7 +177,12 @@ void ImageInsertDialog::checkImagePathInput() {
   if (url.isLocalFile()) {
     const auto localFile = url.toLocalFile();
     if (QFileInfo::exists(localFile)) {
-      setImage(ImageUtils::imageFromFile(localFile));
+      QByteArray data;
+      if (FileUtils2::readFile(localFile, &data)) {
+        setImage(QImage());
+      } else {
+        setSourceImageData(data);
+      }
     } else {
       setImage(QImage());
     }
@@ -215,11 +239,8 @@ int ImageInsertDialog::getImageWidth() const { return positiveIntOrZero(m_imageW
 int ImageInsertDialog::getImageHeight() const { return positiveIntOrZero(m_imageHeightEdit); }
 
 QString ImageInsertDialog::getImagePath() const {
-  if (m_tempFile.isNull()) {
-    return m_imagePathEdit->text();
-  } else {
-    return m_tempFile->fileName();
-  }
+  const auto url = QUrl::fromUserInput(m_imagePathEdit->text());
+  return url.isLocalFile() ? url.toLocalFile() : m_imagePathEdit->text();
 }
 
 ImageInsertDialog::Source ImageInsertDialog::getImageSource() const { return m_source; }
@@ -228,7 +249,39 @@ void ImageInsertDialog::setImageSource(ImageInsertDialog::Source p_source) { m_s
 
 const QImage &ImageInsertDialog::getImage() const { return m_image; }
 
+QByteArray ImageInsertDialog::getImageData() const {
+  if (!m_imageData.isEmpty()) {
+    return m_imageData;
+  }
+  QByteArray data;
+  QBuffer output(&data);
+  if (!output.open(QIODevice::WriteOnly) || !m_image.save(&output, "PNG")) {
+    return QByteArray();
+  }
+  return data;
+}
+
+void ImageInsertDialog::setEncryptedNote(bool p_encrypted) {
+  m_encryptedNote = p_encrypted;
+  m_insertMode->clear();
+  if (p_encrypted) {
+    m_insertMode->addItem(tr("Insert as Base64"), true);
+  }
+  m_insertMode->addItem(p_encrypted ? tr("Insert as Image File") : tr("Insert as Image"), false);
+  if (!p_encrypted) {
+    m_insertMode->addItem(tr("Insert as Base64"), true);
+  }
+  m_insertMode->setCurrentIndex(0);
+}
+
+void ImageInsertDialog::setInsertAsBase64(bool p_base64) {
+  m_insertMode->setCurrentIndex(m_insertMode->findData(p_base64));
+}
+
+bool ImageInsertDialog::insertAsBase64() const { return m_insertMode->currentData().toBool(); }
+
 void ImageInsertDialog::setImage(const QImage &p_image) {
+  m_imageData.clear();
   m_image = p_image;
   if (m_image.isNull()) {
     m_imageLabel->clear();
@@ -247,27 +300,30 @@ void ImageInsertDialog::setImage(const QImage &p_image) {
   checkInput();
 }
 
+void ImageInsertDialog::setSourceImageData(const QByteArray &p_data) {
+  QByteArray preview;
+  if (m_encryptedNote) {
+    QByteArray mime;
+    if (!ImageUtils::protectedImageData(p_data, preview, mime)) {
+      setImage(QImage());
+      return;
+    }
+  } else {
+    preview = p_data;
+  }
+  setImage(QImage::fromData(preview));
+  m_imageData = p_data;
+}
+
 void ImageInsertDialog::setImagePath(const QString &p_path) {
-  m_tempFile.reset();
+  setImage(QImage());
   m_imagePathEdit->setText(p_path);
 }
 
 void ImageInsertDialog::handleImageDownloaded(const NetworkReply &p_data, const QString &p_url) {
-  setImage(QImage::fromData(p_data.m_data));
-
-  // Save it to a temp file to avoid potential data loss via QImage.
-  bool savedToFile = false;
-  if (!p_data.m_data.isEmpty()) {
-    auto format = QFileInfo(PathUtils::removeUrlParameters(p_url)).suffix();
-    m_tempFile.reset(FileUtils2::createTemporaryFile(format));
-    if (m_tempFile->open()) {
-      savedToFile = -1 != m_tempFile->write(p_data.m_data);
-      m_tempFile->close();
-    }
+  if (QUrl(p_url) != QUrl::fromUserInput(m_imagePathEdit->text())) {
+    return;
   }
-
-  m_source = savedToFile ? Source::LocalFile : Source::ImageData;
-  if (!savedToFile) {
-    m_tempFile.reset();
-  }
+  setSourceImageData(p_data.m_data);
+  m_source = Source::ImageData;
 }

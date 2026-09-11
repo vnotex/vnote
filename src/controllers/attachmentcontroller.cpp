@@ -4,9 +4,8 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
-#include <QSet>
 #include <QJsonArray>
-#include <QJsonObject>
+#include <QSet>
 #include <QUrl>
 
 #include <core/servicelocator.h>
@@ -15,7 +14,6 @@
 #include <core/services/notebookcoreservice.h>
 #include <utils/clipboardutils.h>
 #include <utils/pathutils.h>
-#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -28,12 +26,6 @@ void AttachmentController::addAttachments(const QStringList &p_files) {
   if (!m_buffer || !m_buffer->isValid() || m_buffer->isReadOnly() || p_files.isEmpty()) {
     return;
   }
-  const auto lease = m_buffer->isEncrypted() ? m_buffer->acquireProtectedLease() : nullptr;
-  if (m_buffer->isEncrypted() && !lease) {
-    emit operationFailed(tr("The protected note is locking or closed."));
-    return;
-  }
-
   bool anyAdded = false;
   for (const auto &file : p_files) {
     QString result = m_buffer->insertAttachment(file);
@@ -115,14 +107,6 @@ void AttachmentController::openAttachments(const QStringList &p_filenames) {
     return;
   }
 
-  if (m_buffer->isEncrypted()) {
-    const auto urls = protectedResourceUrls(p_filenames);
-    if (!urls.isEmpty()) {
-      emit saveDecryptedCopyRequested(urls);
-    }
-    return;
-  }
-
   QString folder = m_buffer->getAttachmentsFolder();
   if (folder.isEmpty()) {
     return;
@@ -141,14 +125,8 @@ void AttachmentController::deleteAttachments(const QStringList &p_filenames) {
     return;
   }
 
-  const auto lease = m_buffer->isEncrypted() ? m_buffer->acquireProtectedLease() : nullptr;
-  if (m_buffer->isEncrypted() && !lease) {
-    emit operationFailed(tr("The protected note is locking or closed."));
-    return;
-  }
-  const auto names = m_buffer->isEncrypted() ? protectedResourceUrls(p_filenames) : p_filenames;
   bool anyDeleted = false;
-  for (const auto &name : names) {
+  for (const auto &name : p_filenames) {
     if (m_buffer->deleteAttachment(name)) {
       anyDeleted = true;
     }
@@ -160,36 +138,13 @@ void AttachmentController::deleteAttachments(const QStringList &p_filenames) {
 }
 
 void AttachmentController::startRename(const QModelIndex &p_index) {
-  if (m_buffer && m_buffer->isValid() && !m_buffer->isReadOnly() && p_index.isValid() &&
-      (!m_buffer->isEncrypted() || m_buffer->acquireProtectedLease())) {
+  if (m_buffer && m_buffer->isValid() && !m_buffer->isReadOnly() && p_index.isValid()) {
     emit renameRequested(p_index);
   }
 }
 
 void AttachmentController::openAttachmentsFolder() {
   if (!m_buffer || !m_buffer->isValid()) {
-    return;
-  }
-
-  if (m_buffer->isEncrypted()) {
-    VxCoreError error;
-    const auto resources = m_buffer->resources(&error);
-    if (error != VXCORE_OK) {
-      emit operationFailed(tr("Unable to read protected attachments (%1).").arg(int(error)));
-      return;
-    }
-    QStringList urls;
-    for (const auto &value : resources) {
-      const auto resource = value.toObject();
-      if (resource.value(QLatin1String(vxcore::kJsonKeyRole)).toString() ==
-          QLatin1String("attachment")) {
-        urls.append(QStringLiteral("vxasset:") +
-                    resource.value(QLatin1String(vxcore::kJsonKeyResourceId)).toString());
-      }
-    }
-    if (!urls.isEmpty()) {
-      emit saveDecryptedCopyRequested(urls);
-    }
     return;
   }
 
@@ -204,14 +159,6 @@ void AttachmentController::copyAttachmentPaths(const QStringList &p_filenames) {
     return;
   }
 
-  if (m_buffer->isEncrypted()) {
-    const auto urls = protectedResourceUrls(p_filenames);
-    if (!urls.isEmpty()) {
-      emit saveDecryptedCopyRequested(urls);
-    }
-    return;
-  }
-
   QString folder = m_buffer->getAttachmentsFolder();
   QStringList paths;
   paths.reserve(p_filenames.size());
@@ -220,52 +167,4 @@ void AttachmentController::copyAttachmentPaths(const QStringList &p_filenames) {
   }
 
   ClipboardUtils::setTextToClipboard(paths.join(QLatin1Char('\n')));
-}
-
-QStringList AttachmentController::protectedResourceUrls(const QStringList &p_filenames) {
-  VxCoreError error;
-  const auto resources = m_buffer->resources(&error);
-  if (error != VXCORE_OK) {
-    emit operationFailed(tr("Unable to read protected attachments (%1).").arg(int(error)));
-    return {};
-  }
-  QStringList urls;
-  for (const auto &name : p_filenames) {
-    QString url;
-    for (const auto &value : resources) {
-      const auto resource = value.toObject();
-      if (resource.value(QLatin1String(vxcore::kJsonKeyRole)).toString() ==
-              QLatin1String("attachment") &&
-          resource.value(QLatin1String(vxcore::kJsonKeyName)).toString() == name) {
-        url = QStringLiteral("vxasset:") +
-              resource.value(QLatin1String(vxcore::kJsonKeyResourceId)).toString();
-        break;
-      }
-    }
-    if (url.isEmpty()) {
-      emit operationFailed(tr("The selected attachment no longer exists."));
-      return {};
-    }
-    if (!urls.contains(url)) {
-      urls.append(url);
-    }
-  }
-  return urls;
-}
-
-QString AttachmentController::renameAttachment(const QString &p_filename,
-                                               const QString &p_newName) {
-  if (!m_buffer || !m_buffer->isValid() || m_buffer->isReadOnly() || p_newName.isEmpty()) {
-    return {};
-  }
-  if (!m_buffer->isEncrypted()) {
-    return m_buffer->renameAttachment(p_filename, p_newName);
-  }
-  const auto lease = m_buffer->acquireProtectedLease();
-  if (!lease) {
-    emit operationFailed(tr("The protected note is locking or closed."));
-    return {};
-  }
-  const auto urls = protectedResourceUrls({p_filename});
-  return urls.size() == 1 ? m_buffer->renameAttachment(urls.first(), p_newName) : QString();
 }

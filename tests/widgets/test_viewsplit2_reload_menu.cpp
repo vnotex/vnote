@@ -212,7 +212,7 @@ void ViewWindow2::handleTypeAction(int) {}
 void ViewWindow2::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &) const {}
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *) {}
 void ViewWindow2::handlePrint() {}
-void ViewWindow2::saveDecryptedCopy(const QString &) {}
+void ViewWindow2::saveDecryptedCopy() {}
 void ViewWindow2::showFindAndReplaceWidget() {}
 QString ViewWindow2::selectedText() const { return {}; }
 QPoint ViewWindow2::getFloatingWidgetPosition() { return {}; }

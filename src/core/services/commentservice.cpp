@@ -10,8 +10,10 @@
 #include <QLoggingCategory>
 #include <QMutexLocker>
 #include <QSaveFile>
+#include <QScopedPointer>
 #include <QThreadPool>
 
+#include <exception>
 #include <utility>
 
 #include <vxcore/notebook_json_keys.h>
@@ -19,7 +21,6 @@
 #include <core/hookevents.h>
 #include <core/hooknames.h>
 
-#include "bufferservice.h"
 #include "hookmanager.h"
 #include "notebookcoreservice.h"
 #include "notebookiogate.h"
@@ -86,33 +87,11 @@ void CommentService::FlushParticipantLease::reset() {
   m_id = 0;
 }
 
-CommentService::CommentService(NotebookCoreService *p_notebookService,
-                               BufferService *p_bufferService, NotebookIoGate *p_ioGate,
+CommentService::CommentService(NotebookCoreService *p_notebookService, NotebookIoGate *p_ioGate,
                                HookManager *p_hookMgr, QObject *p_parent)
-    : QObject(p_parent), m_notebookService(p_notebookService), m_bufferService(p_bufferService),
-      m_ioGate(p_ioGate), m_hookMgr(p_hookMgr) {
-  Q_ASSERT(m_bufferService);
-  connect(m_bufferService->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
-          SLOT(onProtectedLockingChanged(bool)));
+    : QObject(p_parent), m_notebookService(p_notebookService), m_ioGate(p_ioGate),
+      m_hookMgr(p_hookMgr) {
   installLifecycleHooks();
-}
-
-void CommentService::onProtectedLockingChanged(bool p_locking) {
-  QMutexLocker locker(&m_mutex);
-  if (!m_protectedState) {
-    return;
-  }
-  m_protectedState->m_lockingGenerations.clear();
-  if (!p_locking) {
-    return;
-  }
-  for (auto it = m_participants.constBegin(); it != m_participants.constEnd(); ++it) {
-    if (!it->m_nodeId.notebookId.isEmpty() &&
-        it->m_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) &&
-        m_protectedState->m_stores.contains(jobKey(it->m_nodeId))) {
-      m_protectedState->m_lockingGenerations.insert(it.key(), it->m_generation);
-    }
-  }
 }
 
 CommentService::~CommentService() {
@@ -239,14 +218,6 @@ CommentService::Location CommentService::resolveLocation(const NodeIdentifier &p
     return location;
   }
 
-  // Classification uses the path already supplied by the caller. The ordinary
-  // attachment-folder lookup also rejects metadata-only protected candidates.
-  if (p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
-    location.m_kind = Location::Kind::Protected;
-    location.m_notebookId = p_nodeId.notebookId;
-    return location;
-  }
-
   // Bundled. getAttachmentsFolder ALREADY appends the file record's id, so this
   // is <assets-root>/<file-uuid> - do NOT reconstruct it from getFileInfo()'s
   // id, and do not expect it to exist yet (it is created under the gate at
@@ -275,9 +246,6 @@ CommentService::LoadResult CommentService::load(const NodeIdentifier &p_nodeId) 
     result.m_status = LoadResult::Status::Error;
     result.m_error = tr("Cannot locate the comment store for this file.");
     return result;
-  }
-  if (location.m_kind == Location::Kind::Protected) {
-    return loadProtected(p_nodeId);
   }
 
   QFile file(location.m_storePath);
@@ -312,89 +280,6 @@ CommentService::LoadResult CommentService::load(const NodeIdentifier &p_nodeId) 
   return result;
 }
 
-CommentService::LoadResult CommentService::loadProtected(const NodeIdentifier &p_nodeId) const {
-  LoadResult result;
-  ProtectedStore store;
-  {
-    QMutexLocker locker(&m_mutex);
-    if (!m_protectedState) {
-      m_protectedState.reset(new ProtectedState());
-    }
-    auto &current = m_protectedState->m_stores[jobKey(p_nodeId)];
-    current.m_generation = 0;
-    current.m_error = tr("Protected comments are being read.");
-  }
-  const auto buffer = m_bufferService->findOpenProtectedBuffer(p_nodeId);
-  VxCoreError error = VXCORE_ERR_ENCRYPTION_LOCKED;
-  const auto lease = buffer.isValid()
-                         ? m_bufferService->acquireProtectedLease(buffer, false, &error)
-                         : std::shared_ptr<ProtectedBufferLease>();
-  if (!lease) {
-    result.m_status = LoadResult::Status::Error;
-    result.m_error = QString::fromUtf8(vxcore_error_message(error));
-  } else {
-    store.m_bufferId = lease->bufferId();
-    store.m_generation = lease->generation();
-    const auto resources = buffer.resources(&error);
-    QString commentsUrl;
-    if (error == VXCORE_OK) {
-      for (const auto &value : resources) {
-        const auto resource = value.toObject();
-        if (resource.value(QLatin1String(vxcore::kJsonKeyRole)).toString() !=
-            QLatin1String("comments")) {
-          continue;
-        }
-        const auto resourceId =
-            resource.value(QLatin1String(vxcore::kJsonKeyResourceId)).toString();
-        if (!commentsUrl.isEmpty() || resourceId.isEmpty()) {
-          error = VXCORE_ERR_ENCRYPTION_FORMAT;
-          break;
-        }
-        commentsUrl = QStringLiteral("vxasset:") + resourceId;
-      }
-    }
-    if (error == VXCORE_OK && !commentsUrl.isEmpty()) {
-      auto bytes = buffer.readResource(commentsUrl, &error);
-      if (error == VXCORE_OK) {
-        QJsonParseError parseError{};
-        const auto document = QJsonDocument::fromJson(bytes, &parseError);
-        const auto object = document.object();
-        const auto comments = object.value(QStringLiteral("comments"));
-        if (parseError.error != QJsonParseError::NoError || !document.isObject() ||
-            !comments.isArray() ||
-            object.value(QLatin1String(vxcore::kJsonKeyVersion)).toInt(-1) <= 0) {
-          error = VXCORE_ERR_ENCRYPTION_FORMAT;
-        } else {
-          result.m_comments = CommentSet::fromJson(object);
-          // Do not turn a structurally damaged authenticated set into a smaller
-          // or empty set which an autosave could overwrite.
-          if (result.m_comments.m_comments.size() != comments.toArray().size()) {
-            result.m_comments = CommentSet();
-            error = VXCORE_ERR_ENCRYPTION_FORMAT;
-          } else {
-            result.m_status = LoadResult::Status::Loaded;
-          }
-        }
-      }
-      bytes.fill('\0');
-    }
-    if (error == VXCORE_OK && !lease->isCurrent()) {
-      error = VXCORE_ERR_ENCRYPTION_LOCKED;
-    }
-    if (error != VXCORE_OK) {
-      result.m_comments = CommentSet();
-      result.m_status = LoadResult::Status::Error;
-      result.m_error = QString::fromUtf8(vxcore_error_message(error));
-    }
-    // Only an authenticated manifest with no comments role yields Missing.
-  }
-
-  store.m_error = result.m_error;
-  QMutexLocker locker(&m_mutex);
-  m_protectedState->m_stores.insert(jobKey(p_nodeId), std::move(store));
-  return result;
-}
-
 // ============ Queue ============
 
 QString CommentService::jobKey(const QString &p_notebookId, const QString &p_relativePath) {
@@ -405,19 +290,12 @@ QString CommentService::jobKey(const NodeIdentifier &p_nodeId) {
   return jobKey(p_nodeId.notebookId, p_nodeId.relativePath);
 }
 
-void CommentService::enqueue(const QString &p_key, Job p_job, ProtectedJob *p_protectedJob) {
+void CommentService::enqueue(const QString &p_key, Job p_job) {
   bool needLaunch = false;
 
   {
     QMutexLocker locker(&m_mutex);
     if (m_stopping) {
-      if (p_protectedJob) {
-        p_job.m_payload.fill('\0');
-        locker.unlock();
-        rejectProtectedSave(p_job.m_nodeId, p_job.m_generation,
-                            tr("The comment service is shutting down."));
-        return;
-      }
       qCWarning(commentServiceLog) << "job after shutdown ignored for" << p_key;
       return;
     }
@@ -428,10 +306,6 @@ void CommentService::enqueue(const QString &p_key, Job p_job, ProtectedJob *p_pr
       p_job.m_sequence = m_nextJobSequence++;
       state.m_latestScheduledSequence = p_job.m_sequence;
     }
-    if (p_protectedJob) {
-      m_protectedState->m_jobs.insert(p_job.m_sequence, std::move(*p_protectedJob));
-    }
-
     auto &queue = m_queues[p_key];
 
     // Coalesce a Save with the tail ONLY when the tail is itself a Save. A
@@ -440,10 +314,6 @@ void CommentService::enqueue(const QString &p_key, Job p_job, ProtectedJob *p_pr
     // to remove.
     if (p_job.m_kind == Job::Kind::Save && !queue.isEmpty() &&
         queue.back().m_kind == Job::Kind::Save) {
-      if (queue.back().m_location.m_kind == Location::Kind::Protected) {
-        m_protectedState->m_jobs.remove(queue.back().m_sequence);
-        queue.back().m_payload.fill('\0');
-      }
       queue.back() = p_job;
     } else {
       queue.enqueue(p_job);
@@ -504,11 +374,6 @@ void CommentService::scheduleSave(const NodeIdentifier &p_nodeId, const CommentS
     return;
   }
 
-  if (location.m_kind == Location::Kind::Protected) {
-    scheduleProtectedSave(p_nodeId, location, p_comments, p_generation);
-    return;
-  }
-
   Job job;
   job.m_kind = Job::Kind::Save;
   job.m_nodeId = p_nodeId;
@@ -519,101 +384,6 @@ void CommentService::scheduleSave(const NodeIdentifier &p_nodeId, const CommentS
   job.m_payload = QJsonDocument(p_comments.toJson()).toJson(QJsonDocument::Indented);
 
   enqueue(jobKey(p_nodeId), job);
-}
-
-void CommentService::rejectProtectedSave(const NodeIdentifier &p_nodeId, quint64 p_generation,
-                                         const QString &p_error) {
-  {
-    QMutexLocker locker(&m_mutex);
-    auto &state = m_jobStates[jobKey(p_nodeId)];
-    state.m_nodeId = p_nodeId;
-    state.m_latestScheduledSequence = m_nextJobSequence++;
-    state.m_latestCompletedSequence = state.m_latestScheduledSequence;
-    state.m_latestCompletedGeneration = p_generation;
-    state.m_latestCompletedOk = false;
-    state.m_latestError = p_error;
-    m_stateChanged.wakeAll();
-  }
-  emit saveFinished(p_nodeId, p_generation, false, p_error);
-}
-
-void CommentService::scheduleProtectedSave(const NodeIdentifier &p_nodeId,
-                                           const Location &p_location, const CommentSet &p_comments,
-                                           quint64 p_generation) {
-  const auto key = jobKey(p_nodeId);
-  ProtectedStore store;
-  bool durability = false;
-  {
-    QMutexLocker locker(&m_mutex);
-    if (m_protectedState) {
-      store = m_protectedState->m_stores.value(key);
-      const auto it = m_protectedState->m_durabilityGenerations.constFind(key);
-      durability =
-          it != m_protectedState->m_durabilityGenerations.constEnd() && it.value() == p_generation;
-    }
-  }
-  if (!store.m_error.isEmpty() || store.m_generation == 0) {
-    rejectProtectedSave(p_nodeId, p_generation,
-                        store.m_error.isEmpty()
-                            ? tr("Reload protected comments before editing them.")
-                            : store.m_error);
-    return;
-  }
-
-  const auto buffer = m_bufferService->findOpenProtectedBuffer(p_nodeId);
-  VxCoreError error = VXCORE_ERR_ENCRYPTION_LOCKED;
-  ProtectedJob protectedJob;
-  if (buffer.isValid()) {
-    protectedJob.m_lease = m_bufferService->acquireProtectedLease(buffer, durability, &error);
-  }
-  if (!protectedJob.m_lease) {
-    rejectProtectedSave(p_nodeId, p_generation, QString::fromUtf8(vxcore_error_message(error)));
-    return;
-  }
-  protectedJob.m_generation = protectedJob.m_lease->generation();
-  if (protectedJob.m_lease->bufferId() != store.m_bufferId ||
-      protectedJob.m_generation != store.m_generation) {
-    rejectProtectedSave(p_nodeId, p_generation,
-                        tr("Reload protected comments before editing them."));
-    return;
-  }
-  if (!m_ioGate) {
-    rejectProtectedSave(p_nodeId, p_generation,
-                        QString::fromUtf8(vxcore_error_message(VXCORE_ERR_INVALID_STATE)));
-    return;
-  }
-
-  Job job;
-  job.m_nodeId = p_nodeId;
-  job.m_location = p_location;
-  job.m_generation = p_generation;
-  // Empty sets are real authenticated JSON resources, never removal requests.
-  job.m_payload = QJsonDocument(p_comments.toJson()).toJson(QJsonDocument::Indented);
-  enqueue(key, std::move(job), &protectedJob);
-}
-
-QString CommentService::writeProtectedStore(const QString &p_key, const Job &p_job) {
-  std::shared_ptr<ProtectedBufferLease> lease;
-  {
-    QMutexLocker locker(&m_mutex);
-    const auto held = m_protectedState->m_jobs.constFind(p_job.m_sequence);
-    const auto store = m_protectedState->m_stores.constFind(p_key);
-    if (held == m_protectedState->m_jobs.constEnd() ||
-        store == m_protectedState->m_stores.constEnd() || !held->m_lease ||
-        !held->m_lease->isCurrent() || held->m_generation != held->m_lease->generation() ||
-        store->m_bufferId != held->m_lease->bufferId() ||
-        store->m_generation != held->m_generation) {
-      return QString::fromUtf8(vxcore_error_message(VXCORE_ERR_ENCRYPTION_LOCKED));
-    }
-    if (!store->m_error.isEmpty()) {
-      return store->m_error;
-    }
-    lease = held->m_lease;
-  }
-  // The caller already holds NotebookIoGate. BufferService validates the
-  // retained generation without acquiring that gate again.
-  const auto error = m_bufferService->writeCommentResource(lease, p_job.m_payload);
-  return error == VXCORE_OK ? QString() : QString::fromUtf8(vxcore_error_message(error));
 }
 
 void CommentService::runWorker(const QString &p_key) {
@@ -662,9 +432,7 @@ void CommentService::runWorker(const QString &p_key) {
 
       switch (job.m_kind) {
       case Job::Kind::Save:
-        error = job.m_location.m_kind == Location::Kind::Protected
-                    ? writeProtectedStore(p_key, job)
-                    : writeStore(job.m_location, job.m_payload);
+        error = writeStore(job.m_location, job.m_payload);
         break;
 
       case Job::Kind::Move:
@@ -679,17 +447,9 @@ void CommentService::runWorker(const QString &p_key) {
         break;
       }
     } catch (const std::exception &e) {
-      error = job.m_location.m_kind == Location::Kind::Protected
-                  ? QString::fromUtf8(vxcore_error_message(VXCORE_ERR_IO))
-                  : QStringLiteral("exception: ") + QString::fromUtf8(e.what());
+      error = QStringLiteral("exception: ") + QString::fromUtf8(e.what());
     } catch (...) {
       error = QStringLiteral("unknown exception");
-    }
-
-    if (job.m_location.m_kind == Location::Kind::Protected) {
-      job.m_payload.fill('\0');
-      QMutexLocker locker(&m_mutex);
-      m_protectedState->m_jobs.remove(job.m_sequence);
     }
 
     const bool ok = error.isEmpty();
@@ -856,52 +616,6 @@ bool CommentService::hasMatchingJobsLocked(const QString &p_notebookId,
   return false;
 }
 
-void CommentService::flushProtectedParticipant(const Participant &p_participant) {
-  const auto key = jobKey(p_participant.m_nodeId);
-  bool authorized = false;
-  bool hadAuthorization = false;
-  quint64 previousGeneration = 0;
-  {
-    QMutexLocker locker(&m_mutex);
-    if (m_protectedState && m_protectedState->m_stores.contains(key)) {
-      const auto locked = m_protectedState->m_lockingGenerations.constFind(p_participant.m_id);
-      authorized = !m_bufferService->isProtectedLocking() ||
-                   (locked != m_protectedState->m_lockingGenerations.constEnd() &&
-                    locked.value() == p_participant.m_generation);
-      if (authorized) {
-        const auto previous = m_protectedState->m_durabilityGenerations.constFind(key);
-        hadAuthorization = previous != m_protectedState->m_durabilityGenerations.constEnd();
-        if (hadAuthorization) {
-          previousGeneration = previous.value();
-        }
-        m_protectedState->m_durabilityGenerations.insert(key, p_participant.m_generation);
-      }
-    }
-  }
-  if (!authorized) {
-    p_participant.m_flushCallback();
-    return;
-  }
-
-  // Only this synchronous callback's snapshotted generation can acquire a
-  // durability lease. Timer saves and edits after lock began get no exemption.
-  const auto releaseAuthorization = [&]() {
-    QMutexLocker locker(&m_mutex);
-    if (hadAuthorization) {
-      m_protectedState->m_durabilityGenerations.insert(key, previousGeneration);
-    } else {
-      m_protectedState->m_durabilityGenerations.remove(key);
-    }
-  };
-  try {
-    p_participant.m_flushCallback();
-  } catch (...) {
-    releaseAuthorization();
-    throw;
-  }
-  releaseAuthorization();
-}
-
 CommentService::FlushResult
 CommentService::flushAndWaitForIdle(const QString &p_notebookId, const QString &p_relativePath,
                                     bool p_isFolder, int p_timeoutMs,
@@ -932,24 +646,13 @@ CommentService::flushAndWaitForIdle(const QString &p_notebookId, const QString &
       }
     }
 
-    bool protectedCallback = false;
     try {
       for (const auto &participant : participants) {
-        protectedCallback =
-            !participant.m_nodeId.notebookId.isEmpty() &&
-            participant.m_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive);
-        if (protectedCallback) {
-          flushProtectedParticipant(participant);
-        } else {
-          participant.m_flushCallback();
-        }
+        participant.m_flushCallback();
       }
     } catch (const std::exception &e) {
       result.m_status = FlushResult::Status::WriteFailed;
-      result.m_error =
-          protectedCallback
-              ? QStringLiteral("protected comment flush callback failed")
-              : QStringLiteral("flush callback failed: %1").arg(QString::fromUtf8(e.what()));
+      result.m_error = QStringLiteral("flush callback failed: %1").arg(QString::fromUtf8(e.what()));
       return result;
     } catch (...) {
       result.m_status = FlushResult::Status::WriteFailed;

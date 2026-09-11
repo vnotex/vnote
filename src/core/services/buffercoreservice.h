@@ -104,11 +104,8 @@ public:
 
   QByteArray readResource(const QString &p_bufferId, const QString &p_resourceUrl,
                           VxCoreError *p_error = nullptr) const;
-  QJsonArray resources(const QString &p_bufferId, VxCoreError *p_error = nullptr) const;
   VxCoreError exportResource(const QString &p_bufferId, const QString &p_resourceUrl,
                              const QString &p_destination) const;
-  // Caller serializes writes with NotebookIoGate.
-  VxCoreError writeCommentResource(const QString &p_bufferId, const QByteArray &p_data);
 
   // ============ Buffer State ============
 

@@ -10,6 +10,7 @@
 #include <core/markdowneditorconfig.h>
 
 class QTextDocument;
+class QTextCursor;
 
 namespace vte {
 class MarkdownEditorConfig;
@@ -120,10 +121,11 @@ public:
   // Extracts content, basePath, modified flag, revision from Buffer2.
   static BufferState prepareBufferState(const Buffer2 &p_buffer);
 
-  // Explicit image import for a protected buffer: validate passive bytes and
-  // insert directly into encrypted storage. Returns a logical vxasset URL.
-  static QString importProtectedImage(Buffer2 &p_buffer, const QString &p_name,
-                                      const QByteArray &p_data);
+  // Insert a validated image as a reference/data URI in one undo command.
+  // Replaces the cursor selection and leaves it just after the image reference.
+  // Does not access a buffer, write an asset, or upload any image bytes.
+  static bool insertImageAsBase64(QTextCursor &p_cursor, const QString &p_title,
+                                  const QString &p_altText, const QByteArray &p_data);
 
   // ============ Zoom Persistence ============
 

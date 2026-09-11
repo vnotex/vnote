@@ -259,7 +259,7 @@ public:
   // Worker-only conversion. The caller holds maintenance, then NotebookIoGate,
   // and has quiesced every existing view/buffer without closing its backup.
   VxCoreError protectNote(const NodeIdentifier &p_nodeId, const QByteArray &p_body,
-                          const QJsonObject &p_resourcePlan, QString *p_outPath);
+                          const QByteArray &p_sourceSha256, QString *p_outPath);
   VxCoreError createEncryptedNote(const QString &p_notebookId, const QString &p_parentPath,
                                   const QString &p_name, const QString &p_editorType,
                                   const QByteArray &p_body, QString *p_outFileId);

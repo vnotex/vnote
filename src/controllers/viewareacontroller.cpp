@@ -1,5 +1,6 @@
 #include "viewareacontroller.h"
 
+#include <QCryptographicHash>
 #include <QDebug>
 #include <QDesktopServices>
 #include <QElapsedTimer>
@@ -72,33 +73,6 @@ void erasePassword(QByteArray &p_password) {
   p_password.clear();
 }
 
-bool matchesConfirmedEncryptionPlan(const NoteEncryptionPlan &p_current,
-                                    const NoteEncryptionPlan &p_confirmed) {
-  if (!p_current.isValid() || p_current.m_body != p_confirmed.m_body) {
-    return false;
-  }
-  auto current = p_current.m_resourcePlan;
-  auto resources = current.value(QLatin1String(vxcore::kJsonKeyResources)).toArray();
-  const auto confirmed =
-      p_confirmed.m_resourcePlan.value(QLatin1String(vxcore::kJsonKeyResources)).toArray();
-  if (resources.size() != confirmed.size()) {
-    return false;
-  }
-  for (int index = 0; index < resources.size(); ++index) {
-    if (confirmed.at(index)
-            .toObject()
-            .value(QLatin1String(vxcore::kJsonKeyRetainOriginal))
-            .toBool()) {
-      // A converted sibling may stop referring to this original. Preserve the
-      // user's confirmed disclosure/retention decision, never delete more.
-      auto resource = resources.at(index).toObject();
-      resource.insert(QLatin1String(vxcore::kJsonKeyRetainOriginal), true);
-      resources[index] = resource;
-    }
-  }
-  current.insert(QLatin1String(vxcore::kJsonKeyResources), resources);
-  return current == p_confirmed.m_resourcePlan;
-}
 } // namespace
 
 struct NoteEncryptionConversion::State {
@@ -113,15 +87,13 @@ struct NoteEncryptionConversion::State {
   SyncWorkQueueManager::MaintenanceLease maintenance;
   bool active = false;
   bool blocked = false;
-  bool refreshReferences = false;
+  QByteArray sourceSha256;
 };
 
 NoteEncryptionConversion::NoteEncryptionConversion() : m_state(new State) {}
 NoteEncryptionConversion::~NoteEncryptionConversion() {
-  // Qt/editor allocations cannot be securely erased, but these byte arrays
-  // are our own transient captured/rewrite buffers.
+  // Qt/editor allocations cannot be securely erased; wipe our captured bytes.
   m_state->capturedBody.fill('\0');
-  m_plan.m_body.fill('\0');
 }
 
 PreparedNotebookEncryption ViewAreaController::prepareNoteEncryption(
@@ -246,15 +218,6 @@ ViewAreaController::prepareNoteConversion(const NodeIdentifier &p_nodeId) {
       return fail(VXCORE_ERR_INVALID_STATE, tr("The editor changed while preparing encryption."));
     }
     state.encoding = buffers->bufferEncoding(id);
-  } else {
-    QFile source(notebooks->buildAbsolutePath(p_nodeId.notebookId, p_nodeId.relativePath));
-    if (!source.open(QIODevice::ReadOnly)) {
-      return fail(VXCORE_ERR_IO, tr("The note could not be read."));
-    }
-    state.capturedBody = source.readAll();
-    if (source.error() != QFileDevice::NoError) {
-      return fail(VXCORE_ERR_IO, tr("The note could not be read completely."));
-    }
   }
   const auto flushed =
       comments->flushAndWaitForIdle(p_nodeId.notebookId, p_nodeId.relativePath, false, 10000);
@@ -264,10 +227,28 @@ ViewAreaController::prepareNoteConversion(const NodeIdentifier &p_nodeId) {
                                    : flushed.m_error);
   }
   state.comments = flushed.m_checkpoint;
-  LegacyImageMigrationController planner(m_services);
-  conversion->m_plan = planner.planNoteEncryption(p_nodeId, state.capturedBody, state.encoding);
-  if (!conversion->m_plan.isValid()) {
-    return fail(conversion->m_plan.m_error, conversion->m_plan.m_errorMessage);
+  const auto sourcePath = notebooks->buildAbsolutePath(p_nodeId.notebookId, p_nodeId.relativePath);
+  const auto readError = runEncryptionWorker([&]() {
+    NotebookIoGate::ScopedTryLock lock(*m_services.get<NotebookIoGate>(), p_nodeId.notebookId,
+                                       5000);
+    if (!lock.isLocked())
+      return VXCORE_ERR_SYNC_IN_PROGRESS;
+    QFile source(sourcePath);
+    if (!source.open(QIODevice::ReadOnly))
+      return VXCORE_ERR_IO;
+    QByteArray bytes = source.readAll();
+    if (source.error() != QFileDevice::NoError) {
+      bytes.fill('\0');
+      return VXCORE_ERR_IO;
+    }
+    state.sourceSha256 = QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex();
+    if (state.bufferIds.isEmpty())
+      state.capturedBody.swap(bytes);
+    bytes.fill('\0');
+    return VXCORE_OK;
+  });
+  if (readError != VXCORE_OK) {
+    return fail(readError, tr("The note could not be read for encryption."));
   }
   conversion->m_error = VXCORE_OK;
   return conversion;
@@ -346,19 +327,6 @@ VxCoreError ViewAreaController::applyNoteConversion(
     return fail(VXCORE_ERR_SYNC_IN_PROGRESS,
                 tr("The notebook is busy syncing. Retry after sync finishes."), false);
   }
-  if (state.refreshReferences) {
-    // Another item from this confirmed batch changed the notebook fingerprint.
-    // Refresh that checkpoint only if the actual conversion remains identical;
-    // newly shared originals or changed source bytes still require a new warning.
-    LegacyImageMigrationController planner(m_services);
-    const auto current = planner.planNoteEncryption(nodeId, state.capturedBody, state.encoding);
-    if (!matchesConfirmedEncryptionPlan(current, p_conversion->m_plan)) {
-      return fail(VXCORE_ERR_INVALID_STATE,
-                  tr("The note's resources changed after confirmation. Retry encryption."), false);
-    }
-    p_conversion->m_plan.m_referenceFingerprint = current.m_referenceFingerprint;
-    state.refreshReferences = false;
-  }
   const auto checkpointCurrent = [&]() {
     if (notebooks->getNodePathById(nodeId.notebookId, state.fileId) != nodeId.relativePath ||
         notebooks->isNotebookReadOnly(nodeId.notebookId) ||
@@ -383,10 +351,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
         return false;
       }
     }
-    LegacyImageMigrationController planner(m_services);
-    const auto current = planner.planNoteEncryption(nodeId, state.capturedBody, state.encoding);
-    return matchesConfirmedEncryptionPlan(current, p_conversion->m_plan) &&
-           current.m_referenceFingerprint == p_conversion->m_plan.m_referenceFingerprint;
+    return true;
   };
   const VxCoreError error = runEncryptionWorker([&]() {
     NotebookIoGate::ScopedTryLock lock(*gate, nodeId.notebookId, 5000);
@@ -407,8 +372,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
         return setupError;
       }
     }
-    return notebooks->protectNote(nodeId, p_conversion->m_plan.m_body,
-                                  p_conversion->m_plan.m_resourcePlan,
+    return notebooks->protectNote(nodeId, state.capturedBody, state.sourceSha256,
                                   &p_conversion->m_encryptedPath);
   });
   if (error != VXCORE_OK) {
@@ -417,7 +381,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
         error == VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED
             ? tr("Encryption needs recovery. The note remains frozen to prevent a plaintext write. "
                  "Restart VNote to recover the durable transaction before editing or syncing.")
-        : error == VXCORE_ERR_INVALID_STATE ? tr("The note or its resources changed after "
+        : error == VXCORE_ERR_INVALID_STATE ? tr("The note changed after "
                                                  "confirmation. Nothing was converted; retry.")
                                             : QString::fromUtf8(vxcore_error_message(error)),
         error == VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED);
@@ -533,9 +497,6 @@ VxCoreError ViewAreaController::applyNoteConversion(
   state.active = false;
   state.maintenance.release();
   m_noteConversions.removeAll(p_conversion);
-  for (const auto &pending : m_noteConversions) {
-    pending->m_state->refreshReferences = true;
-  }
   if (m_noteConversions.isEmpty()) {
     disconnect(buffers->asQObject(), SIGNAL(saveError(QString, QString)), this,
                SLOT(onNoteConversionSaveError(QString, QString)));
@@ -704,6 +665,8 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
       fileType = QStringLiteral("Markdown");
     } else if (editor == QLatin1String("text")) {
       fileType = QStringLiteral("Text");
+    } else if (editor == QLatin1String("mindmap")) {
+      fileType = QStringLiteral("MindMap");
     } else {
       return;
     }

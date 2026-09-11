@@ -64,10 +64,6 @@ public:
 
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
 
-signals:
-  // Widget owner chooses/consents to an outside-notebook plaintext destination.
-  void saveDecryptedCopyRequested(const QString &p_resourceUrl);
-
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 

@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
     NotificationService notificationService;
     // Declared after its dependencies so workers drain before the buffer
     // service, notebook service, IO gate, or hooks are destroyed.
-    CommentService commentService(&notebookService, &bufferService, &notebookIoGate, &hookManager);
+    CommentService commentService(&notebookService, &notebookIoGate, &hookManager);
 
     serviceLocator.registerService<ConfigService>(&configService);
     serviceLocator.registerService<ConfigCoreService>(configService.coreService());

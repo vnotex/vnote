@@ -1,4 +1,5 @@
 #include <QFile>
+#include <QFileInfo>
 #include <QScopeGuard>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -74,6 +75,7 @@ private slots:
   // Invalid buffer guard
   void testInvalidBufferOperations();
   void testMixedNoteSaveWhileProtectedLocking();
+  void testEncryptedBodyKeepsAssetsPlaintext();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -730,6 +732,97 @@ void TestBuffer::testMixedNoteSaveWhileProtectedLocking() {
   QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(plain.id()), 10000);
   QVERIFY(publicFile.open(QIODevice::ReadOnly));
   QCOMPARE(publicFile.readAll(), plainText.toUtf8());
+}
+
+void TestBuffer::testEncryptedBodyKeepsAssetsPlaintext() {
+  const auto notebookId = m_notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("body-only-assets")),
+      QStringLiteral("{\"name\":\"Body-only assets\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::None);
+  auto setup = m_notebookService->prepareNotebookEncryption(
+      notebookId, QString(), QByteArrayLiteral("body-only-asset-password"));
+  QVERIFY(setup.isValid());
+  QString noteId;
+  const QByteArray body("the note body alone is secret");
+  {
+    auto maintenance = queues.tryAcquireMaintenance({notebookId});
+    QVERIFY(maintenance.isValid());
+    NotebookIoGate::ScopedLock lock(gate, notebookId);
+    QCOMPARE(m_notebookService->commitNotebookEncryption(setup), VXCORE_OK);
+    QCOMPARE(m_notebookService->createEncryptedNote(notebookId, QString(),
+                                                    QStringLiteral("assets.md"),
+                                                    QStringLiteral("markdown"), body, &noteId),
+             VXCORE_OK);
+  }
+  auto note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.cancelProtectedLocking();
+    buffers.closeBuffer(note.id());
+    m_notebookService->lockAllEncryption();
+  });
+  const QByteArray imageBytes("ordinary image asset bytes");
+  const auto image = note.insertAssetRaw(QStringLiteral("image.png"), imageBytes);
+  QVERIFY(!image.isEmpty());
+  QVERIFY(!image.startsWith(QLatin1String("vxasset:")));
+  const auto imagePath = QDir(note.getResourceBasePath()).filePath(image);
+  QFile imageFile(imagePath);
+  QVERIFY(imageFile.open(QIODevice::ReadOnly));
+  QCOMPARE(imageFile.readAll(), imageBytes);
+  imageFile.close();
+
+  const auto sourcePath = m_tempDir.filePath(QStringLiteral("receipt.txt"));
+  QFile source(sourcePath);
+  QVERIFY(source.open(QIODevice::WriteOnly));
+  const QByteArray attachmentBytes("ordinary attachment bytes");
+  QCOMPARE(source.write(attachmentBytes), qint64(attachmentBytes.size()));
+  source.close();
+  const auto filename = note.insertAttachment(sourcePath);
+  QCOMPARE(filename, QStringLiteral("receipt.txt"));
+  QCOMPARE(note.listAttachments(), QJsonArray{filename});
+  const auto renamed = note.renameAttachment(filename, QStringLiteral("renamed.txt"));
+  QCOMPARE(renamed, QStringLiteral("renamed.txt"));
+  const auto attachmentPath = QDir(note.getAttachmentsFolder()).filePath(renamed);
+  QFile attachment(attachmentPath);
+  QVERIFY(attachment.open(QIODevice::ReadOnly));
+  QCOMPARE(attachment.readAll(), attachmentBytes);
+  attachment.close();
+  QCOMPARE(note.getContentRaw(), body);
+
+  // The body lock barrier does not turn existing plaintext assets into encrypted resources.
+  QVERIFY(buffers.beginProtectedLocking());
+  VxCoreError error;
+  QCOMPARE(note.readResource(image, &error), imageBytes);
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(note.listAttachments(), QJsonArray{renamed});
+  buffers.cancelProtectedLocking();
+
+  const auto node = note.nodeId();
+  QVERIFY(buffers.closeBuffer(note.id()));
+  FileOpenSettings settings;
+  settings.m_readOnly = true;
+  note = buffers.openBuffer(node, settings);
+  QVERIFY(note.isValid());
+  QVERIFY(note.isReadOnly());
+  QVERIFY(note.insertAssetRaw(QStringLiteral("blocked.png"), imageBytes).isEmpty());
+  QVERIFY(note.insertAttachment(sourcePath).isEmpty());
+  QVERIFY(!note.deleteAsset(image));
+  QVERIFY(!note.deleteAttachment(renamed));
+  QVERIFY(note.renameAttachment(renamed, QStringLiteral("blocked.txt")).isEmpty());
+  QCOMPARE(note.readResource(image), imageBytes);
+  QVERIFY(QFileInfo::exists(attachmentPath));
+
+  QVERIFY(buffers.closeBuffer(note.id()));
+  note = buffers.openBuffer(node);
+  QVERIFY(note.isValid());
+  QVERIFY(note.deleteAttachment(renamed));
+  QVERIFY(!QFileInfo::exists(attachmentPath));
+  QVERIFY(note.deleteAsset(image));
+  QVERIFY(!QFileInfo::exists(imagePath));
 }
 
 } // namespace tests

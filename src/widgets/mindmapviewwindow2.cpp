@@ -1,5 +1,8 @@
 #include "mindmapviewwindow2.h"
 
+#include <QWebEngineProfile>
+#include <QWebEngineSettings>
+
 #include <QDesktopServices>
 #include <QToolBar>
 #include <QUrl>
@@ -19,6 +22,7 @@
 #include "editors/mindmapeditoradapter.h"
 #include "findandreplacewidget2.h"
 #include "viewwindowtoolbarhelper2.h"
+#include "webpage.h"
 
 using namespace vnotex;
 
@@ -28,6 +32,16 @@ MindMapViewWindow2::MindMapViewWindow2(ServiceLocator &p_services, const Buffer2
   m_controller = new MindMapViewWindowController(p_services, this);
   m_mode = ViewWindowMode::Edit;
   setupUI();
+}
+
+MindMapViewWindow2::~MindMapViewWindow2() {
+  if (m_protectedProfile) {
+    // Pages and adapters must die before the memory-only profile.
+    delete m_editor;
+    m_editor = nullptr;
+    delete m_protectedProfile;
+    m_protectedProfile = nullptr;
+  }
 }
 
 void MindMapViewWindow2::setupUI() {
@@ -58,8 +72,19 @@ void MindMapViewWindow2::setupEditor() {
   auto *adapterObj = new MindMapEditorAdapter(nullptr);
 
   auto *profileService = getServices().get<WebEngineProfileService>();
-  m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this,
-                               profileService ? profileService->profile() : nullptr);
+  QWebEngineProfile *profile = profileService ? profileService->profile() : nullptr;
+  if (getBuffer().isEncrypted()) {
+    m_protectedProfile = new QWebEngineProfile(this);
+    m_protectedProfile->setHttpCacheType(QWebEngineProfile::NoCache);
+    m_protectedProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
+    profile = m_protectedProfile;
+  }
+  m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this, profile);
+  if (m_protectedProfile) {
+    qobject_cast<WebPage *>(m_editor->page())->setSensitiveContent(true);
+    m_editor->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, false);
+    m_editor->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
+  }
   connect(m_editor, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
@@ -122,7 +147,8 @@ void MindMapViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_
 
 void MindMapViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_UNUSED(p_mode);
-  Q_ASSERT(false);
+  // Mind maps have a single edit surface, including after protected-note reopen.
+  m_mode = ViewWindowMode::Edit;
 }
 
 void MindMapViewWindow2::handleEditorConfigChange() {

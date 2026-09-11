@@ -171,6 +171,7 @@ bool ImageUtils::protectedImageData(const QByteArray &p_input, QByteArray &p_out
       {QByteArrayLiteral("jpg"), QByteArrayLiteral("image/jpeg")},
       {QByteArrayLiteral("gif"), QByteArrayLiteral("image/gif")},
       {QByteArrayLiteral("webp"), QByteArrayLiteral("image/webp")},
+      {QByteArrayLiteral("xpm"), QByteArrayLiteral("image/png")},
       {QByteArrayLiteral("bmp"), QByteArrayLiteral("image/bmp")}};
   const auto mime = c_passiveTypes.constFind(format);
   if (mime == c_passiveTypes.cend() || !protectedImageSize(reader.size())) {
@@ -180,6 +181,21 @@ bool ImageUtils::protectedImageData(const QByteArray &p_input, QByteArray &p_out
   if (image.isNull() || !protectedImageSize(image.size())) {
     wipeImage(image);
     return false;
+  }
+  if (format == QByteArrayLiteral("xpm")) {
+    // XPM is supported by the image picker but not by browsers. Preserve its
+    // pixels in a lossless, passive format using the same bounds as other images.
+    QBuffer output(&p_output);
+    const bool ok = output.open(QIODevice::WriteOnly) && image.save(&output, "PNG") &&
+                    p_output.size() <= c_protectedImageByteLimit;
+    wipeImage(image);
+    if (!ok) {
+      p_output.fill('\0');
+      p_output.clear();
+      return false;
+    }
+    p_mime = mime.value();
+    return true;
   }
   wipeImage(image);
   // Preserve passive raster bytes (including GIF/WebP animation), but give the

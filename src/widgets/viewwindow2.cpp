@@ -12,7 +12,6 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
-#include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
@@ -22,7 +21,6 @@
 #include <QResizeEvent>
 #include <QScopeGuard>
 #include <QScrollBar>
-#include <QSet>
 #include <QShortcut>
 #include <QTextEdit>
 #include <QToolBar>
@@ -39,7 +37,6 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/widgetconfig.h>
-#include <vxcore/notebook_json_keys.h>
 
 #include <gui/services/themeservice.h>
 
@@ -558,12 +555,7 @@ void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) { Q_UNUS
 
 void ViewWindow2::handlePrint() {}
 
-void ViewWindow2::saveDecryptedCopy(const QString &p_resourceUrl) {
-  saveDecryptedCopies(p_resourceUrl.isEmpty() ? QStringList() : QStringList{p_resourceUrl},
-                      p_resourceUrl.isEmpty());
-}
-
-void ViewWindow2::saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_exportNote) {
+void ViewWindow2::saveDecryptedCopy() {
   if (!m_buffer.isValid() || !m_buffer.isEncrypted() || isNoteConversionFrozen()) {
     return;
   }
@@ -571,14 +563,7 @@ void ViewWindow2::saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_
   // Lock All rejects the dialogs, and the apply operation reacquires a lease.
   const Buffer2 buffer = m_buffer;
   QPointer<ViewWindow2> guard(this);
-  VxCoreError error;
-  const auto resources = buffer.resources(&error);
-  if (error != VXCORE_OK) {
-    QMessageBox::warning(this, tr("Save Decrypted Copy"),
-                         tr("Unable to read protected resources (%1).").arg(int(error)));
-    return;
-  }
-  if (p_exportNote && ExportController::decryptedNoteName(buffer).isEmpty()) {
+  if (ExportController::decryptedNoteName(buffer).isEmpty()) {
     QMessageBox::warning(this, tr("Save Decrypted Copy"), tr("Unsupported protected note format."));
     return;
   }
@@ -595,38 +580,11 @@ void ViewWindow2::saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_
   warning->setWordWrap(true);
   layout->addWidget(warning);
   auto *explanation = new QLabel(
-      p_exportNote ? tr("The current note text will be exported. Select each resource to include. "
-                        "Unchecked resources remain unavailable logical links in the copy.")
-                   : tr("Select the resources to export. Originals remain encrypted."),
+      tr("Only the current note body will be exported. Images and attachments are not encrypted "
+         "and will not be copied. Relative links are preserved and may need updating in the copy."),
       consent);
   explanation->setWordWrap(true);
   layout->addWidget(explanation);
-  auto *list = new QListWidget(consent);
-  QSet<QString> offered;
-  for (const auto &value : resources) {
-    const auto resource = value.toObject();
-    const auto url = QStringLiteral("vxasset:") +
-                     resource.value(QLatin1String(vxcore::kJsonKeyResourceId)).toString();
-    if (!p_exportNote && !p_resourceUrls.contains(url)) {
-      continue;
-    }
-    const auto name = resource.value(QLatin1String(vxcore::kJsonKeyName)).toString();
-    auto *item = new QListWidgetItem(name, list);
-    item->setData(Qt::UserRole, url);
-    item->setData(Qt::UserRole + 1, name);
-    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-    item->setCheckState(p_exportNote ? Qt::Unchecked : Qt::Checked);
-    offered.insert(url);
-  }
-  for (const auto &url : p_resourceUrls) {
-    if (!offered.contains(url)) {
-      QMessageBox::warning(this, tr("Save Decrypted Copy"),
-                           tr("The selected resource is no longer available."));
-      return;
-    }
-  }
-  list->setVisible(list->count() > 0);
-  layout->addWidget(list);
   auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, consent);
   buttons->button(QDialogButtonBox::Save)->setText(tr("Save Decrypted Copy"));
   buttons->button(QDialogButtonBox::Save)->setAutoDefault(false);
@@ -636,37 +594,20 @@ void ViewWindow2::saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_
   connect(buttons, &QDialogButtonBox::accepted, consent, &QDialog::accept);
   connect(buttons, &QDialogButtonBox::rejected, consent, &QDialog::reject);
   connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), consent, SLOT(reject()));
-  consent->resize(520, list->count() > 0 ? 380 : 160);
+  consent->resize(520, 180);
   if (consent->exec() != QDialog::Accepted || !guard || !consent || buffers->isProtectedLocking()) {
     return;
   }
-  QStringList selected;
-  QString selectedName;
-  for (int row = 0; row < list->count(); ++row) {
-    const auto *item = list->item(row);
-    if (item->checkState() == Qt::Checked) {
-      selected.append(item->data(Qt::UserRole).toString());
-      selectedName = item->data(Qt::UserRole + 1).toString();
-    }
-  }
   delete consent.data();
-  if (!p_exportNote && selected.isEmpty()) {
-    return;
-  }
-
-  const bool directory = p_exportNote || selected.size() > 1;
   QPointer<QFileDialog> destination(
       new QFileDialog(this, tr("Save Decrypted Copy"), QDir::homePath()));
   const auto clearDestination = qScopeGuard([&]() { delete destination.data(); });
   // A Qt dialog can always be rejected by Lock All, including on platforms whose
   // native picker runs a separate modal loop.
   destination->setOption(QFileDialog::DontUseNativeDialog);
-  destination->setAcceptMode(directory ? QFileDialog::AcceptOpen : QFileDialog::AcceptSave);
-  destination->setFileMode(directory ? QFileDialog::Directory : QFileDialog::AnyFile);
-  destination->setOption(QFileDialog::ShowDirsOnly, directory);
-  if (!directory) {
-    destination->selectFile(selectedName);
-  }
+  destination->setAcceptMode(QFileDialog::AcceptSave);
+  destination->setFileMode(QFileDialog::AnyFile);
+  destination->selectFile(ExportController::decryptedNoteName(buffer));
   connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), destination, SLOT(reject()));
   if (destination->exec() != QDialog::Accepted || !guard || !destination ||
       buffers->isProtectedLocking() || destination->selectedFiles().isEmpty()) {
@@ -681,23 +622,16 @@ void ViewWindow2::saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_
                             "The destination's parent folder must already exist."));
     return;
   }
-  QString content = p_exportNote ? getLatestContent() : QString();
+  QString content = getLatestContent();
   const auto clearContent = qScopeGuard([&]() { content.fill(QChar::Null); });
-  QStringList outputs;
-  error = controller.saveDecryptedCopy(buffer, path, p_exportNote, selected, content, outputs);
+  const auto error = controller.saveDecryptedCopy(buffer, path, content);
   if (error != VXCORE_OK) {
-    const auto detail =
-        outputs.isEmpty()
-            ? tr("Unable to export the protected content (%1).").arg(int(error))
-            : tr("Export failed (%1). These unencrypted files could not be removed:\n%2")
-                  .arg(int(error))
-                  .arg(outputs.join(QLatin1Char('\n')));
-    QMessageBox::warning(this, tr("Save Decrypted Copy"), detail);
+    QMessageBox::warning(this, tr("Save Decrypted Copy"),
+                         tr("Unable to export the protected note body (%1).").arg(int(error)));
     return;
   }
   QMessageBox::information(this, tr("Save Decrypted Copy"),
-                           tr("Created %n unencrypted file(s).\n%1", "", outputs.size())
-                               .arg(outputs.join(QLatin1Char('\n'))));
+                           tr("Created an unencrypted note copy.\n%1").arg(path));
 }
 
 // Convert a ViewWindowToolBarHelper2::Action (TypeBold..TypeTable) to the
@@ -906,8 +840,6 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
       attachmentPopup->setScanExclusionProvider(
           [this]() { return getAttachmentScanExcludedPaths(); });
       m_attachmentPopup = attachmentPopup;
-      connect(attachmentPopup, &AttachmentPopup2::saveDecryptedCopyRequested, this,
-              [this](const QStringList &p_urls) { saveDecryptedCopies(p_urls, false); });
     }
     m_attachmentAction = act;
     // Protected read-only notes still permit explicit export; the popup gates

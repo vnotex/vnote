@@ -94,8 +94,7 @@ void TestNodeTransferService::initTestCase() {
   m_notebookService = new NotebookCoreService(m_context, this);
   m_bufferService =
       new BufferService(m_context, m_hookManager, m_ioGate, AutoSavePolicy::AutoSave, this);
-  m_commentService =
-      new CommentService(m_notebookService, m_bufferService, m_ioGate, m_hookManager, this);
+  m_commentService = new CommentService(m_notebookService, m_ioGate, m_hookManager, this);
   m_syncQueue = new SyncWorkQueueManager(this);
   m_transferService = new NodeTransferService(m_notebookService, m_bufferService, m_commentService,
                                               m_syncQueue, m_ioGate, m_hookManager, this);

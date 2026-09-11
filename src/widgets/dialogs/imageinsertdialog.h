@@ -3,14 +3,14 @@
 
 #include "dialog.h"
 
+#include <QByteArray>
 #include <QImage>
-#include <QSharedPointer>
 
+class QComboBox;
 class QLineEdit;
 class QPushButton;
 class QLabel;
 class QTimer;
-class QTemporaryFile;
 class QScrollArea;
 
 namespace vnotex {
@@ -47,6 +47,14 @@ public:
   const QImage &getImage() const;
   void setImage(const QImage &p_image);
 
+  // Original source bytes, or lossless PNG for a clipboard QImage. Never staged on disk.
+  QByteArray getImageData() const;
+
+  // Encrypted notes default to Base64 and only preview validated passive bytes.
+  void setEncryptedNote(bool p_encrypted);
+  void setInsertAsBase64(bool p_base64);
+  bool insertAsBase64() const;
+
 protected:
   void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -64,8 +72,10 @@ private:
                const QString &p_imagePath);
 
   void setImageControlsVisible(bool p_visible);
+  void setSourceImageData(const QByteArray &p_data);
 
   bool m_browserEnabled = true;
+  bool m_encryptedNote = false;
 
   // ConfigMgr2 (owner-supplied) for the session-scoped default media path.
   ConfigMgr2 *m_configMgr = nullptr;
@@ -84,20 +94,19 @@ private:
 
   QLineEdit *m_imageHeightEdit = nullptr;
 
+  QComboBox *m_insertMode = nullptr;
   QLabel *m_imageLabel = nullptr;
 
   QScrollArea *m_previewArea = nullptr;
 
   QImage m_image;
+  QByteArray m_imageData;
 
   // Managed by QObject.
   vnotex::NetworkAccess *m_downloader = nullptr;
 
   // Managed by QObject.
   QTimer *m_imagePathCheckTimer = nullptr;
-
-  // Used to hold downloaded image, to avoid data loss via QImage.
-  QSharedPointer<QTemporaryFile> m_tempFile;
 };
 } // namespace vnotex
 

@@ -134,7 +134,6 @@ public:
   std::shared_ptr<ProtectedBufferLease> acquireProtectedLease() const;
 
   QByteArray readResource(const QString &p_resourceUrl, VxCoreError *p_error = nullptr) const;
-  QJsonArray resources(VxCoreError *p_error = nullptr) const;
   VxCoreError exportResource(const QString &p_resourceUrl, const QString &p_destination) const;
 
   // Get buffer content revision number.

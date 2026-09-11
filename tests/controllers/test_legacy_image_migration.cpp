@@ -4,7 +4,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QProcess>
-#include <QScopeGuard>
 #include <QSet>
 #include <QString>
 #include <QStringList>
@@ -12,12 +11,6 @@
 #include <QTextDocument>
 #include <QUrl>
 #include <QVector>
-#include <core/servicelocator.h>
-#include <core/services/bufferservice.h>
-#include <core/services/filetypecoreservice.h>
-#include <core/services/hookmanager.h>
-#include <core/services/notebookcoreservice.h>
-#include <core/services/notebookiogate.h>
 
 #include <controllers/legacyimagemigrationcontroller.h>
 
@@ -74,8 +67,6 @@ private slots:
 
   // The descending QTextCursor rewrite loop.
   void testDescendingRewriteLoopProducesExpectedText();
-  void testEncryptionPlansNotebookRelativeAttachmentMetadata();
-  void testEncryptionRetentionDiagnostics();
 
 private:
   // Writes a 1x1-ish placeholder image file (content is irrelevant; only
@@ -717,188 +708,6 @@ void TestLegacyImageMigration::testDescendingRewriteLoopProducesExpectedText() {
   QVERIFY(doc.isUndoAvailable());
   doc.undo();
   QCOMPARE(doc.toPlainText(), text);
-}
-
-void TestLegacyImageMigration::testEncryptionPlansNotebookRelativeAttachmentMetadata() {
-  TempDirFixture temporary;
-  QVERIFY(temporary.isValid());
-  const auto oldTmp = qgetenv("TMP");
-  const auto oldTemp = qgetenv("TEMP");
-  const auto oldTmpDir = qgetenv("TMPDIR");
-  const auto restoreEnvironment = qScopeGuard([&]() {
-    qputenv("TMP", oldTmp);
-    qputenv("TEMP", oldTemp);
-    qputenv("TMPDIR", oldTmpDir);
-  });
-  const auto isolated = temporary.path().toLocal8Bit();
-  qputenv("TMP", isolated);
-  qputenv("TEMP", isolated);
-  qputenv("TMPDIR", isolated);
-  vxcore_set_test_mode(1);
-  VxCoreContextHandle context = nullptr;
-  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
-  const auto closeContext = qScopeGuard([&]() { vxcore_context_destroy(context); });
-  vnotex::NotebookCoreService notebooks(context);
-  vnotex::HookManager hooks;
-  vnotex::NotebookIoGate gate;
-  vnotex::BufferService buffers(context, &hooks, &gate, vnotex::AutoSavePolicy::None);
-  vnotex::FileTypeCoreService types(context, QStringLiteral("en_US"));
-  vnotex::ServiceLocator services;
-  services.registerService<vnotex::NotebookCoreService>(&notebooks);
-  services.registerService<vnotex::BufferService>(&buffers);
-  services.registerService<vnotex::FileTypeCoreService>(&types);
-  const auto notebook = notebooks.createNotebook(
-      temporary.filePath("book"), QStringLiteral("{\"name\":\"Attachment planning\"}"),
-      vnotex::NotebookType::Bundled);
-  QVERIFY(!notebook.isEmpty());
-  QVERIFY(!notebooks.createFile(notebook, QString(), "target.md").isEmpty());
-  QVERIFY(!notebooks.createFile(notebook, QString(), "other.md").isEmpty());
-  auto target = buffers.openBuffer({notebook, "target.md"});
-  auto other = buffers.openBuffer({notebook, "other.md"});
-  QVERIFY(target.isValid() && other.isValid());
-  const auto source = temporary.filePath("attachment.txt");
-  writeStub(source);
-  QVERIFY(!target.insertAttachment(source).isEmpty());
-  QVERIFY(!other.insertAttachment(source).isEmpty());
-  LegacyImageMigrationController controller(services);
-  const auto plan = controller.planNoteEncryption(target.nodeId(), QByteArrayLiteral("Body"),
-                                                  QStringLiteral("UTF-8"));
-  QVERIFY2(plan.isValid(), qPrintable(plan.m_errorMessage));
-  const auto resources = plan.m_resourcePlan.value("resources").toArray();
-  QCOMPARE(resources.size(), 1);
-  QCOMPARE(resources.first().toObject().value("name").toString(), QStringLiteral("attachment.txt"));
-  QVERIFY(!resources.first().toObject().value("retainOriginal").toBool());
-  QVERIFY(plan.m_retainedOriginals.isEmpty());
-}
-
-void TestLegacyImageMigration::testEncryptionRetentionDiagnostics() {
-  TempDirFixture temporary;
-  QVERIFY(temporary.isValid());
-  const auto oldTmp = qgetenv("TMP");
-  const auto oldTemp = qgetenv("TEMP");
-  const auto oldTmpDir = qgetenv("TMPDIR");
-  const auto restoreEnvironment = qScopeGuard([&]() {
-    qputenv("TMP", oldTmp);
-    qputenv("TEMP", oldTemp);
-    qputenv("TMPDIR", oldTmpDir);
-  });
-  const auto isolated = temporary.path().toLocal8Bit();
-  qputenv("TMP", isolated);
-  qputenv("TEMP", isolated);
-  qputenv("TMPDIR", isolated);
-  vxcore_set_test_mode(1);
-  VxCoreContextHandle context = nullptr;
-  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
-  const auto closeContext = qScopeGuard([&]() { vxcore_context_destroy(context); });
-  vnotex::NotebookCoreService notebooks(context);
-  vnotex::HookManager hooks;
-  vnotex::NotebookIoGate gate;
-  vnotex::BufferService buffers(context, &hooks, &gate, vnotex::AutoSavePolicy::None);
-  vnotex::FileTypeCoreService types(context, QStringLiteral("en_US"));
-  vnotex::ServiceLocator services;
-  services.registerService<vnotex::NotebookCoreService>(&notebooks);
-  services.registerService<vnotex::BufferService>(&buffers);
-  services.registerService<vnotex::FileTypeCoreService>(&types);
-  const auto notebook = notebooks.createNotebook(
-      temporary.filePath("book"), QStringLiteral("{\"name\":\"Retention diagnostics\"}"),
-      vnotex::NotebookType::Bundled);
-  QVERIFY(!notebook.isEmpty());
-  QVERIFY(!notebooks.createFile(notebook, QString(), "target.md").isEmpty());
-  QVERIFY(!notebooks.createFile(notebook, QString(), "other.md").isEmpty());
-  auto target = buffers.openBuffer({notebook, "target.md"});
-  auto other = buffers.openBuffer({notebook, "other.md"});
-  QVERIFY(target.isValid() && other.isValid());
-  const QString privateName = QStringLiteral("PRIVATE_ATTACHMENT_NAME.md");
-  const auto source = temporary.filePath(privateName);
-  writeStub(source);
-  QVERIFY(!target.insertAttachment(source).isEmpty());
-  const auto owned = target.getAttachmentsFolder();
-  QVERIFY(!owned.isEmpty());
-  writeStub(QDir(owned).filePath("second/.npmrc"));
-  writeStub(QDir(owned).filePath("PRIVATE_CONFIGURATION_NAME.ts"));
-  const QByteArray body("PRIVATE_BODY_NOT_FOR_LOGS");
-  LegacyImageMigrationController controller(services);
-
-  static QStringList diagnostics;
-  static QtMessageHandler previousHandler = nullptr;
-  diagnostics.clear();
-  previousHandler = qInstallMessageHandler(
-      [](QtMsgType p_type, const QMessageLogContext &p_context, const QString &p_message) {
-        if (qstrcmp(p_context.category, "vnote.encryption") == 0) {
-          diagnostics.append(p_message);
-        } else if (previousHandler) {
-          previousHandler(p_type, p_context, p_message);
-        }
-      });
-  const auto restoreHandler = qScopeGuard([&]() { qInstallMessageHandler(previousHandler); });
-
-  const auto exclusive = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
-  QVERIFY2(exclusive.isValid(), qPrintable(exclusive.m_errorMessage));
-  QCOMPARE(exclusive.m_resourcePlan.value("resources").toArray().size(), 3);
-  QVERIFY(exclusive.m_retainedOriginals.isEmpty());
-
-  const auto attachedPath = QDir(owned).filePath(privateName);
-  const auto link = QUrl::fromLocalFile(attachedPath).toString(QUrl::FullyEncoded);
-  QVERIFY(other.setContentRaw((QStringLiteral("[shared](") + link + ")\n").toUtf8()));
-  QVERIFY(other.save());
-  const auto shared = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
-  QVERIFY2(shared.isValid(), qPrintable(shared.m_errorMessage));
-  QCOMPARE(shared.m_retainedOriginals.size(), 1);
-  QCOMPARE(QFileInfo(shared.m_retainedOriginals.first()).canonicalFilePath(),
-           QFileInfo(attachedPath).canonicalFilePath());
-
-  QVERIFY(other.setContentRaw(QByteArrayLiteral("No external references\n")));
-  QVERIFY(other.save());
-  const auto restored = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
-  QVERIFY2(restored.isValid(), qPrintable(restored.m_errorMessage));
-  QVERIFY(restored.m_retainedOriginals.isEmpty());
-
-  // A different pathname can alias the owned file without appearing in the
-  // ordinary path-based sharing set. Native link metadata must explain it.
-  const auto alias = temporary.filePath("PRIVATE_HARDLINK_ALIAS.md");
-  QProcess makeLink;
-#ifdef Q_OS_WIN
-  makeLink.start(QStringLiteral("cmd.exe"),
-                 {QStringLiteral("/c"), QStringLiteral("mklink"), QStringLiteral("/H"),
-                  QDir::toNativeSeparators(alias), QDir::toNativeSeparators(attachedPath)});
-#else
-  makeLink.start(QStringLiteral("ln"), {attachedPath, alias});
-#endif
-  QVERIFY(makeLink.waitForFinished(10000));
-  QCOMPARE(makeLink.exitStatus(), QProcess::NormalExit);
-  QCOMPARE(makeLink.exitCode(), 0);
-  const auto aliasUrl = QUrl::fromLocalFile(alias).toString(QUrl::FullyEncoded);
-  QVERIFY(other.setContentRaw((QStringLiteral("[alias](") + aliasUrl + ")\n").toUtf8()));
-  QVERIFY(other.save());
-  const auto linked = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
-  QVERIFY2(linked.isValid(), qPrintable(linked.m_errorMessage));
-  QCOMPARE(linked.m_retainedOriginals.size(), 1);
-  QCOMPARE(QFileInfo(linked.m_retainedOriginals.first()).canonicalFilePath(),
-           QFileInfo(attachedPath).canonicalFilePath());
-  QVERIFY(QFile::remove(alias));
-  QVERIFY(other.setContentRaw(QByteArrayLiteral("No external references\n")));
-  QVERIFY(other.save());
-  const auto unlinked = controller.planNoteEncryption(target.nodeId(), body, "UTF-8");
-  QVERIFY2(unlinked.isValid(), qPrintable(unlinked.m_errorMessage));
-  QVERIFY(unlinked.m_retainedOriginals.isEmpty());
-
-  QString nativeDecision;
-  for (const auto &message : diagnostics) {
-    if (message.contains("phase=resource_decision") && message.contains("link_count=2")) {
-      nativeDecision = message;
-      break;
-    }
-  }
-  QVERIFY2(nativeDecision.contains("native_error=0"), qPrintable(nativeDecision));
-  QVERIFY(nativeDecision.contains("inside_owned_assets=true"));
-  QVERIFY(nativeDecision.contains("referenced_elsewhere=false"));
-  const auto log = diagnostics.join('\n');
-  QVERIFY(!log.contains("PRIVATE_HARDLINK_ALIAS"));
-  QVERIFY(!log.contains(temporary.path()));
-  QVERIFY(!log.contains(privateName));
-  QVERIFY(!log.contains("PRIVATE_CONFIGURATION_NAME"));
-  QVERIFY(!log.contains(".npmrc"));
-  QVERIFY(!log.contains(QString::fromUtf8(body)));
 }
 
 } // namespace tests

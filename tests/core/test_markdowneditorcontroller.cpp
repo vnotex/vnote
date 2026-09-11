@@ -1,7 +1,17 @@
 #include <QtTest>
 
+#include <QBuffer>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QSet>
+#include <QTextCursor>
+#include <QTextDocument>
+
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/markdownhighlighterdata.h>
+#include <vtextedit/markdownutils.h>
 #include <vtextedit/texteditorconfig.h>
 
 #include <controllers/markdowneditorcontroller.h>
@@ -15,6 +25,7 @@
 #include <core/texteditorconfig.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
+#include <widgets/dialogs/imageinsertdialog.h>
 
 using namespace vnotex;
 
@@ -71,6 +82,12 @@ private slots:
   void testPrepareBufferState_invalidBuffer();
   void testPrepareBufferState_validBuffer();
   void testPrepareBufferState_modifiedBuffer();
+
+  void base64ReferencePreservesPixelsAndUndo();
+  void base64ReferenceAvoidsCaseInsensitiveLabels();
+  void imageInsertionChoice_data();
+  void imageInsertionChoice();
+  void invalidBase64ImageLeavesDocumentUntouched();
 
 private:
   EditorConfig makeEditorConfig() { return EditorConfig(nullptr, nullptr); }
@@ -423,7 +440,170 @@ void TestMarkdownEditorController::testPrepareBufferState_modifiedBuffer() {
   QCOMPARE(state.content, QStringLiteral("# Modified Markdown\n\nHello world."));
 }
 
+void TestMarkdownEditorController::base64ReferencePreservesPixelsAndUndo() {
+  QImage image(3, 2, QImage::Format_ARGB32);
+  image.fill(Qt::transparent);
+  image.setPixelColor(0, 0, QColor(17, 91, 203, 255));
+  image.setPixelColor(1, 0, QColor(241, 7, 63, 127));
+  image.setPixelColor(2, 1, QColor(0, 255, 0, 255));
+  ImageInsertDialog dialog(QStringLiteral("Image"), QStringLiteral("a [pixel]"),
+                           QStringLiteral("caption \"quoted\""), QString(), nullptr, false);
+  dialog.setImage(image);
+  dialog.setImageSource(ImageInsertDialog::ImageData);
+  dialog.setEncryptedNote(true);
+
+  QTextDocument document;
+  const QString original = QStringLiteral("before selection after");
+  document.setPlainText(original);
+  QTextCursor cursor(&document);
+  cursor.setPosition(7);
+  cursor.setPosition(16, QTextCursor::KeepAnchor);
+  bool inserted = false;
+  connect(&dialog, &QDialog::accepted, &document, [&]() {
+    inserted = MarkdownEditorController::insertImageAsBase64(
+        cursor, dialog.getImageTitle(), dialog.getImageAltText(), dialog.getImageData());
+  });
+  dialog.getDialogButtonBox()->button(QDialogButtonBox::Ok)->click();
+  QVERIFY(inserted);
+  const auto content = document.toPlainText();
+  const auto images =
+      vte::MarkdownUtils::fetchImageLinks(content, QString(), vte::MarkdownLink::TypeFlag::Remote);
+  QCOMPARE(images.size(), 1);
+  const auto &link = images.first();
+  QVERIFY(!link.hasUrlSpan());
+  QCOMPARE(link.m_alt, QStringLiteral("a [pixel]"));
+  QCOMPARE(link.m_title, QStringLiteral("caption \"quoted\""));
+  QVERIFY(link.m_urlInLink.startsWith(QStringLiteral("data:image/png;base64,")));
+  const auto encoded = link.m_urlInLink.mid(link.m_urlInLink.indexOf(QLatin1Char(',')) + 1);
+  const auto decoded =
+      QByteArray::fromBase64Encoding(encoded.toLatin1(), QByteArray::AbortOnBase64DecodingErrors);
+  QVERIFY(decoded);
+  QCOMPARE(QImage::fromData(decoded.decoded).convertToFormat(QImage::Format_ARGB32), image);
+  QCOMPARE(cursor.position(), link.m_regionEnd);
+  QVERIFY(!cursor.hasSelection());
+  QCOMPARE(content.left(link.m_regionStart), QStringLiteral("before "));
+  QVERIFY(content.mid(link.m_regionEnd).startsWith(QStringLiteral(" after")));
+  document.undo();
+  QCOMPARE(document.toPlainText(), original);
+  QVERIFY(!document.isUndoAvailable());
+  document.redo();
+  QCOMPARE(document.toPlainText(), content);
+}
+
+void TestMarkdownEditorController::base64ReferenceAvoidsCaseInsensitiveLabels() {
+  QImage image(1, 1, QImage::Format_RGB32);
+  image.fill(Qt::red);
+  QByteArray bytes;
+  QBuffer output(&bytes);
+  QVERIFY(output.open(QIODevice::WriteOnly));
+  QVERIFY(image.save(&output, "PNG"));
+  QTextDocument document;
+  document.setPlainText(QStringLiteral("![existing][image-1] and [IMAGE-2]\n\n"
+                                       "[  ImAgE-1  ]: https://example.org/existing.png\n"));
+  QTextCursor cursor(&document);
+  cursor.movePosition(QTextCursor::End);
+  QVERIFY(MarkdownEditorController::insertImageAsBase64(cursor, QStringLiteral("first"), QString(),
+                                                        bytes));
+  QVERIFY(MarkdownEditorController::insertImageAsBase64(cursor, QStringLiteral("second"), QString(),
+                                                        bytes));
+  const auto images = vte::MarkdownUtils::fetchImageLinks(document.toPlainText(), QString(),
+                                                          vte::MarkdownLink::TypeFlag::Remote);
+  QCOMPARE(images.size(), 3);
+  QSet<QString> references;
+  for (const auto &link : images) {
+    if (link.m_alt == QStringLiteral("existing")) {
+      QCOMPARE(link.m_urlInLink, QStringLiteral("https://example.org/existing.png"));
+    } else {
+      QVERIFY(link.m_urlInLink.startsWith(QStringLiteral("data:image/png;base64,")));
+      const auto source =
+          document.toPlainText().mid(link.m_regionStart, link.m_regionEnd - link.m_regionStart);
+      references.insert(source.mid(source.lastIndexOf(QLatin1Char('['))).toCaseFolded());
+    }
+  }
+  QCOMPARE(references.size(), 2);
+  QVERIFY(!references.contains(QStringLiteral("[image-1]")));
+  QVERIFY(!references.contains(QStringLiteral("[image-2]")));
+}
+
+void TestMarkdownEditorController::imageInsertionChoice_data() {
+  QTest::addColumn<bool>("encrypted");
+  QTest::addColumn<QByteArray>("format");
+  QTest::newRow("plaintext-png") << false << QByteArrayLiteral("PNG");
+  QTest::newRow("encrypted-xpm") << true << QByteArrayLiteral("XPM");
+}
+
+void TestMarkdownEditorController::imageInsertionChoice() {
+  QFETCH(bool, encrypted);
+  QFETCH(QByteArray, format);
+  QTemporaryDir sourceDir;
+  QVERIFY(sourceDir.isValid());
+  const auto imagePath =
+      sourceDir.filePath(QStringLiteral("source.") + QString::fromLatin1(format).toLower());
+  QImage image(2, 2, QImage::Format_RGB32);
+  image.fill(Qt::blue);
+  QVERIFY(image.save(imagePath, format.constData()));
+  const auto originalFiles =
+      QDir(sourceDir.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+  ImageInsertDialog dialog(QStringLiteral("Image"), QString(), QString(), QString(), nullptr);
+  dialog.setEncryptedNote(encrypted);
+  dialog.setImagePath(imagePath);
+  QTRY_VERIFY(!dialog.getImage().isNull());
+  auto *choice = dialog.findChild<QComboBox *>(QStringLiteral("imageInsertMode"));
+  QVERIFY(choice);
+  QCOMPARE(choice->itemData(0).toBool(), encrypted);
+  QCOMPARE(choice->currentIndex(), 0);
+  QCOMPARE(dialog.insertAsBase64(), encrypted);
+  auto *width = dialog.findChild<QLineEdit *>(QStringLiteral("imageWidthEdit"));
+  auto *height = dialog.findChild<QLineEdit *>(QStringLiteral("imageHeightEdit"));
+  QVERIFY(width && height);
+  width->setText(QStringLiteral("42"));
+  height->setText(QStringLiteral("17"));
+  QCOMPARE(width->isEnabled(), !encrypted);
+  choice->setFocus();
+  QTest::keyClick(choice, encrypted ? Qt::Key_Down : Qt::Key_Up);
+  QVERIFY(!dialog.insertAsBase64());
+  QVERIFY(width->isEnabled());
+  QCOMPARE(dialog.getImageWidth(), 42);
+  QCOMPARE(dialog.getImageHeight(), 17);
+  QTest::keyClick(choice, encrypted ? Qt::Key_Up : Qt::Key_Down);
+  QVERIFY(dialog.insertAsBase64());
+  QVERIFY(!width->isEnabled());
+  QTextDocument document;
+  QTextCursor cursor(&document);
+  bool inserted = false;
+  connect(&dialog, &QDialog::accepted, &document, [&]() {
+    inserted = MarkdownEditorController::insertImageAsBase64(
+        cursor, dialog.getImageTitle(), dialog.getImageAltText(), dialog.getImageData());
+  });
+  dialog.getDialogButtonBox()->button(QDialogButtonBox::Ok)->click();
+  QVERIFY(inserted);
+  const auto links = vte::MarkdownUtils::fetchImageLinks(document.toPlainText(), QString(),
+                                                         vte::MarkdownLink::TypeFlag::Remote);
+  QCOMPARE(links.size(), 1);
+  QVERIFY(links.first().m_urlInLink.startsWith(QStringLiteral("data:image/png;base64,")));
+  const auto encoded =
+      links.first().m_urlInLink.mid(links.first().m_urlInLink.indexOf(QLatin1Char(',')) + 1);
+  QCOMPARE(QImage::fromData(QByteArray::fromBase64(encoded.toLatin1()))
+               .convertToFormat(QImage::Format_RGB32),
+           image);
+  QCOMPARE(QDir(sourceDir.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot),
+           originalFiles);
+  QCOMPARE(QImage(imagePath).convertToFormat(QImage::Format_RGB32), image);
+}
+
+void TestMarkdownEditorController::invalidBase64ImageLeavesDocumentUntouched() {
+  QTextDocument document;
+  document.setPlainText(QStringLiteral("selected text"));
+  QTextCursor cursor(&document);
+  cursor.select(QTextCursor::Document);
+  QVERIFY(!MarkdownEditorController::insertImageAsBase64(cursor, QString(), QString(),
+                                                         QByteArrayLiteral("not an image")));
+  QCOMPARE(document.toPlainText(), QStringLiteral("selected text"));
+  QCOMPARE(cursor.selectedText(), QStringLiteral("selected text"));
+  QVERIFY(!document.isUndoAvailable());
+}
+
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestMarkdownEditorController)
+QTEST_MAIN(tests::TestMarkdownEditorController)
 #include "test_markdowneditorcontroller.moc"

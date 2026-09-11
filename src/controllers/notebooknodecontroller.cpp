@@ -419,7 +419,9 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
       const QString editor =
           fileTypes ? fileTypes->getFileType(p_nodeId.relativePath).m_typeName.toLower()
                     : QString();
-      if (!p_isFolder && (editor == QLatin1String("markdown") || editor == QLatin1String("text")) &&
+      if (!p_isFolder &&
+          (editor == QLatin1String("markdown") || editor == QLatin1String("text") ||
+           editor == QLatin1String("mindmap")) &&
           !p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
         auto *encryptAction = p_menu->addAction(tr("Encrypt"));
         encryptAction->setObjectName(QStringLiteral("encryptNote"));

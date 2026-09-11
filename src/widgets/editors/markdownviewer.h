@@ -45,8 +45,6 @@ signals:
 
   void exportRequested();
 
-  void saveDecryptedCopyRequested(const QString &p_resourceUrl);
-
 protected:
   void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 

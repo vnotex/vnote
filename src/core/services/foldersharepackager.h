@@ -23,8 +23,9 @@ namespace vnotex {
 // A nested source such as "Projects/Alpha" is FLATTENED to a top-level "Alpha";
 // the ancestors are not included. Indexed ids, timestamps, tags and child order
 // are preserved. A protected bundle additionally carries the wrapped notebook
-// key and a sync-disabled portable config; owned assets are normalized in the
-// copy, rewriting only ordinary members through the core file-type parser.
+// key and a sync-disabled portable config. Plaintext assets and the original
+// relative assets-folder setting are preserved without body rewrites; absolute
+// or parent-escaping assets-folder layouts are refused before publication.
 //
 // Design notes
 // ------------

@@ -30,12 +30,13 @@ public:
   // Protected pages permit one explicitly requested root load, never note navigation.
   void setProtectedDocumentUrl(const QUrl &p_url);
 
+  // Renderer diagnostics may quote decrypted note contents.
+  void setSensitiveContent(bool p_sensitive) { m_sensitiveContent = p_sensitive; }
+
 signals:
   void localFileOpenRequested(const QUrl &p_url);
 
   void externalLinkRequested(const QUrl &p_url);
-
-  void protectedResourceOpenRequested(const QUrl &p_url);
 
 protected:
   bool acceptNavigationRequest(const QUrl &p_url, NavigationType p_type,
@@ -48,6 +49,7 @@ private:
   std::function<bool(const QUrl &)> m_allowedMainFrameUrlPredicate;
   std::unique_ptr<QUrl> m_protectedRoot;
   bool m_protectedRootPending = false;
+  bool m_sensitiveContent = false;
 };
 } // namespace vnotex
 

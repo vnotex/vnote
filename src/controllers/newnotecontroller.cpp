@@ -96,10 +96,12 @@ NoteValidationResult NewNoteController::validateAll(const NewNoteInput &p_input)
     return result;
   }
   const QString editorType = p_input.fileTypeName.toLower();
-  if ((editorType != QLatin1String("markdown") && editorType != QLatin1String("text")) ||
+  if ((editorType != QLatin1String("markdown") && editorType != QLatin1String("text") &&
+       editorType != QLatin1String("mindmap")) ||
       p_input.name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
     result.valid = false;
-    result.message = tr("Encryption is available only for new Markdown or text notes.");
+    result.message =
+        tr("Encryption is available only for Markdown, plain-text, or mind-map notes.");
     return result;
   }
   auto *notebooks = m_services.get<NotebookCoreService>();

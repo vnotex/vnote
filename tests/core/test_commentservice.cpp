@@ -31,12 +31,12 @@
 #include <thread>
 
 #include <core/nodeidentifier.h>
-#include <core/services/bufferservice.h>
 #include <core/services/commentservice.h>
 #include <core/services/commenttypes.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/syncworkqueuemanager.h>
 
 #include <temp_dir_fixture.h>
 
@@ -87,6 +87,7 @@ private slots:
   void lifecycleOpsAreOrderedBehindPendingSaves();
   void rapidSavesCoalesceToTheNewestSnapshot();
   void savingEmitsStoreDirtyForANotebookOnly();
+  void encryptedBodyUsesPlaintextCommentSidecar();
 
   // ---- scoped flush ----
   void flushMatchesExactFileAndFolderDescendants();
@@ -116,7 +117,6 @@ private:
   VxCoreContextHandle m_context = nullptr;
   NotebookCoreService *m_notebooks = nullptr;
   NotebookIoGate *m_gate = nullptr;
-  BufferService *m_buffers = nullptr;
   HookManager *m_hooks = nullptr;
   CommentService *m_service = nullptr;
   TempDirFixture *m_tmp = nullptr;
@@ -131,15 +131,12 @@ void TestCommentService::initTestCase() {
   m_notebooks = new NotebookCoreService(m_context);
   m_notebooks->setHookManager(m_hooks);
   m_gate = new NotebookIoGate();
-  m_buffers = new BufferService(m_context, m_hooks, m_gate);
-  m_service = new CommentService(m_notebooks, m_buffers, m_gate, m_hooks);
+  m_service = new CommentService(m_notebooks, m_gate, m_hooks);
 }
 
 void TestCommentService::cleanupTestCase() {
   delete m_service;
   m_service = nullptr;
-  delete m_buffers;
-  m_buffers = nullptr;
   delete m_gate;
   m_gate = nullptr;
   delete m_notebooks;
@@ -1165,6 +1162,53 @@ void TestCommentService::readOnlyNotebookWritesAreRejectedBeforeTouchingDisk() {
   QVERIFY(QFile::exists(file + CommentService::siblingSuffix()));
 }
 
+void TestCommentService::encryptedBodyUsesPlaintextCommentSidecar() {
+  const auto notebookId = m_notebooks->createNotebook(
+      m_tmp->filePath(QStringLiteral("body-only-comments")),
+      QStringLiteral("{\"name\":\"Body-only comments\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  auto setup = m_notebooks->prepareNotebookEncryption(
+      notebookId, QString(), QByteArrayLiteral("body-only-comment-password"));
+  QVERIFY(setup.isValid());
+  SyncWorkQueueManager queues;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({notebookId});
+    QVERIFY(maintenance.isValid());
+    NotebookIoGate::ScopedLock lock(*m_gate, notebookId);
+    QCOMPARE(m_notebooks->commitNotebookEncryption(setup), VXCORE_OK);
+    QString noteId;
+    QCOMPARE(m_notebooks->createEncryptedNote(notebookId, QString(), QStringLiteral("comments.md"),
+                                              QStringLiteral("markdown"),
+                                              QByteArrayLiteral("encrypted note body"), &noteId),
+             VXCORE_OK);
+  }
+  // Comment storage does not need an open body buffer or an unlocked vault.
+  QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
+  const NodeIdentifier node{notebookId, QStringLiteral("comments.md.vne")};
+  const auto location = m_service->resolveLocation(node);
+  QCOMPARE(location.m_kind, CommentService::Location::Kind::Attachments);
+  QCOMPARE(location.m_storePath,
+           QDir(m_notebooks->getAttachmentsFolder(notebookId, node.relativePath))
+               .filePath(CommentService::storeFileName()));
+
+  CommentSet comments;
+  comments.m_comments.append(makeComment(0, QStringLiteral("ordinary plaintext comment")));
+  const auto commentId = comments.m_comments.first().m_id;
+  auto participant = m_service->registerFlushParticipant(
+      node, [&]() { m_service->scheduleSave(node, comments, 1); }, 1);
+  const auto result = m_service->flushAndWaitForIdle(notebookId, node.relativePath, false, 5000);
+  QCOMPARE(result.m_status, CommentService::FlushResult::Status::Succeeded);
+  QVERIFY(m_service->isFlushCheckpointCurrent(result.m_checkpoint));
+  QFile sidecar(location.m_storePath);
+  QVERIFY(sidecar.open(QIODevice::ReadOnly));
+  const auto bytes = sidecar.readAll();
+  QVERIFY(bytes.contains("ordinary plaintext comment"));
+  const auto loaded = m_service->load(node);
+  QCOMPARE(loaded.m_status, CommentService::LoadResult::Status::Loaded);
+  QCOMPARE(loaded.m_comments.m_comments.first().m_id, commentId);
+  QCOMPARE(loaded.m_comments.m_comments.first().m_text, comments.m_comments.first().m_text);
+}
+
 // A dispatched worker must still commit its newest snapshot, or the user's last
 // edit is lost at shutdown.
 void TestCommentService::shutdownDrainsPendingWrites() {
@@ -1172,7 +1216,7 @@ void TestCommentService::shutdownDrainsPendingWrites() {
   nodeId.relativePath = QDir(m_tmp->path()).filePath(QStringLiteral("closing.pdf"));
 
   // A local service, so shutting it down does not affect the shared fixture.
-  CommentService service(m_notebooks, m_buffers, m_gate, nullptr);
+  CommentService service(m_notebooks, m_gate, nullptr);
 
   CommentSet set;
   set.m_comments.append(makeComment(0, QStringLiteral("last words")));

@@ -763,7 +763,7 @@ Coverage: `tests/core/test_commentservice.cpp`.
 
 ## Per-note encryption
 
-Only bundled Markdown/text notes support protection. `NotebookCoreService` exposes the
+Only bundled Markdown/text/mind-map note bodies support protection. `NotebookCoreService` exposes the
 context-owned prepare/commit/free key setup protocol: prepare and unlock perform password
 hashing on a worker **outside** `NotebookIoGate`; commit consumes the prepared handle under
 the notebook maintenance lease and IO gate. Never replace an existing or corrupt key file
@@ -784,19 +784,21 @@ undo history, comments, resource providers and buffer leases before locking core
 Ordinary tabs and their save policy are unaffected. Last-view close releases that note's
 state; master/notebook keys remain until Lock All or application exit.
 
-Protected comments and assets use authenticated resource APIs, not filesystem paths.
+Image/attachment files and comments remain ordinary plaintext assets. CommentService
+uses its normal sidecar persistence even when the note body is encrypted.
 `WebEngineProfileService` creates an unnamed, off-the-record profile scoped to a fresh
-view token; revoke it before destroying pages and the profile. Native previews use the
-exclusive in-memory resource provider with no downloader or local-file fallback. Remote
-resources and active note HTML are forbidden in protected previews. Never materialize a
-plaintext temporary file for an external viewer, uploader, or legacy exporter: require an
+view token; revoke it before destroying pages and the profile. Base64 image bytes are
+validated in memory; relative plaintext image files use a contained read path. Active
+HTML and automatic network loads remain blocked in protected Markdown previews. Mind-map
+editors use an unnamed memory-only profile with local storage disabled. Never materialize
+a plaintext temporary note body for an external viewer or legacy exporter: require an
 explicit decrypted export to a destination outside the notebook.
 
-Conversion runs through the existing maintenance/IO-gate ordering and includes the full
-resource closure. Shared or external originals are retained and disclosed. Protection is
+Conversion runs through the existing maintenance/IO-gate ordering and changes only the
+note and its encrypted backup. It leaves all asset bytes and metadata unchanged. Protection is
 at rest, not a sandbox against in-process plugins or access control against someone who
 has unlocked the master key. Filenames/folders/tags stay visible. Existing Git history,
 cloud versions and OS backups can retain plaintext; conversion does not rewrite them or
 promise secure deletion. Backups and synced copies must retain the wrapped key file and
-all referenced encrypted objects. Authenticity does not prevent replay of an older valid
+encrypted notes/backups. Authenticity does not prevent replay of an older valid
 revision; OS swap/crash dumps and allocator-level erasure of Qt objects are not guaranteed.

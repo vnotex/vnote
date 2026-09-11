@@ -2,17 +2,13 @@
 
 #include <QDebug>
 #include <QDir>
-#include <QFile>
 #include <QFileInfo>
-#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QScopeGuard>
-#include <QSet>
 #include <QTextCodec>
-#include <QUrl>
 #include <QWidget>
 #include <exception>
 #include <utility>
@@ -27,7 +23,6 @@
 #include <export/exporter.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
-#include <vtextedit/markdownutils.h>
 
 #include <vxcore/notebook_json_keys.h>
 
@@ -47,43 +42,6 @@ QString canonicalExportDestination(const QString &p_path) {
   }
   const auto parent = info.dir().canonicalPath();
   return parent.isEmpty() ? QString() : QDir(parent).filePath(info.fileName());
-}
-
-bool rewriteDecryptedLinks(QString &p_text, const QHash<QString, QString> &p_names) {
-  const auto flags = vte::MarkdownLink::LocalRelativeInternal |
-                     vte::MarkdownLink::LocalRelativeExternal | vte::MarkdownLink::LocalAbsolute |
-                     vte::MarkdownLink::QtResource | vte::MarkdownLink::Remote;
-  const auto links = vte::MarkdownUtils::fetchResourceLinks(p_text, QString(), flags, false);
-  // fetchResourceLinks returns descending destination/reference-suffix spans.
-  for (const auto &link : links) {
-    const auto found = p_names.constFind(link.m_urlInLink);
-    if (found == p_names.cend()) {
-      continue; // Unselected resources deliberately remain logical, unresolved links.
-    }
-    if (!link.m_rewriteSupported) {
-      return false;
-    }
-    const auto relativeUrl = QString::fromLatin1(QUrl::toPercentEncoding(found.value(), "/"));
-    if (link.hasUrlSpan()) {
-      p_text.replace(link.m_urlStart, link.m_urlEnd - link.m_urlStart, relativeUrl);
-    } else if (link.m_labelEnd >= 0 && link.m_regionEnd >= link.m_labelEnd) {
-      QString suffix = QLatin1Char('(') + relativeUrl;
-      if (!link.m_title.isEmpty()) {
-        auto title = link.m_title;
-        title.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
-        title.replace(QLatin1Char('"'), QStringLiteral("\\\""));
-        suffix += QStringLiteral(" \"") + title + QLatin1Char('"');
-      }
-      if (link.m_width > 0 || link.m_height > 0) {
-        suffix += QStringLiteral(" =%1x%2").arg(link.m_width).arg(link.m_height);
-      }
-      suffix += QLatin1Char(')');
-      p_text.replace(link.m_labelEnd, link.m_regionEnd - link.m_labelEnd, suffix);
-    } else {
-      return false;
-    }
-  }
-  return true;
 }
 
 } // namespace
@@ -477,17 +435,13 @@ bool ExportController::refuseProtectedBatch(const QStringList &p_protectedFiles)
 
 QString ExportController::decryptedNoteName(const Buffer2 &p_buffer) {
   const auto editor = p_buffer.editorType();
-  if (editor != QLatin1String("markdown") && editor != QLatin1String("text")) {
+  if (editor != QLatin1String("markdown") && editor != QLatin1String("text") &&
+      editor != QLatin1String("mindmap")) {
     return {};
   }
   auto name = QFileInfo(p_buffer.nodeId().relativePath).fileName();
   if (name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
     name.chop(4);
-  }
-  const auto suffix =
-      editor == QLatin1String("markdown") ? QStringLiteral(".md") : QStringLiteral(".txt");
-  if (!name.endsWith(suffix, Qt::CaseInsensitive)) {
-    name += suffix;
   }
   return PathUtils::isLegalFileName(name) ? name : QString();
 }
@@ -506,11 +460,8 @@ bool ExportController::isDecryptedCopyDestinationAllowed(const Buffer2 &p_buffer
 }
 
 VxCoreError ExportController::saveDecryptedCopy(const Buffer2 &p_buffer,
-                                                const QString &p_destination, bool p_exportNote,
-                                                const QStringList &p_resourceUrls,
-                                                const QString &p_content,
-                                                QStringList &p_outputFiles) {
-  p_outputFiles.clear();
+                                                const QString &p_destination,
+                                                const QString &p_content) {
   if (!p_buffer.isValid() || !p_buffer.isEncrypted()) {
     return VXCORE_ERR_INVALID_STATE;
   }
@@ -520,153 +471,49 @@ VxCoreError ExportController::saveDecryptedCopy(const Buffer2 &p_buffer,
   }
   // A read-only source may be deliberately exported; it is never mutated.
   if (!isDecryptedCopyDestinationAllowed(p_buffer, p_destination) ||
-      (!p_exportNote && p_resourceUrls.isEmpty())) {
+      QFileInfo(p_destination).isDir()) {
     return VXCORE_ERR_INVALID_PARAM;
   }
+  if (decryptedNoteName(p_buffer).isEmpty()) {
+    return VXCORE_ERR_UNSUPPORTED;
+  }
+  // Authenticate the source even when exporting a live editor snapshot. Never
+  // read the encrypted path as text or turn an authentication error into an empty note.
   VxCoreError error;
-  const auto resources = p_buffer.resources(&error);
+  auto body = p_buffer.getContentRaw(&error);
+  const auto clearBody = qScopeGuard([&]() { body.fill('\0'); });
   if (error != VXCORE_OK) {
     return error;
   }
-  QHash<QString, QString> resourceNames;
-  for (const auto &value : resources) {
-    const auto resource = value.toObject();
-    resourceNames.insert(QStringLiteral("vxasset:") +
-                             resource.value(QLatin1String(vxcore::kJsonKeyResourceId)).toString(),
-                         resource.value(QLatin1String(vxcore::kJsonKeyName)).toString());
-  }
-  QSet<QString> selected;
-  for (const auto &url : p_resourceUrls) {
-    if (!resourceNames.contains(url) || selected.contains(url)) {
-      return VXCORE_ERR_INVALID_PARAM;
-    }
-    const auto name = resourceNames.value(url);
-    if ((p_exportNote || p_resourceUrls.size() != 1) &&
-        (name == QLatin1String(".") || name == QLatin1String("..") ||
-         !PathUtils::isLegalFileName(name))) {
-      return VXCORE_ERR_INVALID_PARAM;
-    }
-    selected.insert(url);
-  }
-
-  QByteArray body;
-  const auto clearBody = qScopeGuard([&]() { body.fill('\0'); });
-  QString noteName;
-  if (p_exportNote) {
-    // Never read the encrypted path as text or treat a failed authenticated load
-    // as an empty document. This also gates export of a live editor snapshot.
-    body = p_buffer.getContentRaw(&error);
-    if (error != VXCORE_OK) {
-      return error;
-    }
-    noteName = decryptedNoteName(p_buffer);
-    if (noteName.isEmpty()) {
+  auto originalText = p_buffer.decode(QByteArrayViewCompat(body));
+  const auto clearOriginalText = qScopeGuard([&]() { originalText.fill(QChar::Null); });
+  // An unchanged snapshot retains its exact original encoding, BOM and line endings.
+  if (p_content != originalText) {
+    auto *codec = QTextCodec::codecForName(p_buffer.encoding().toUtf8());
+    if (!codec) {
       return VXCORE_ERR_UNSUPPORTED;
     }
-  }
-
-  const auto destination = canonicalExportDestination(p_destination);
-  const bool package = p_exportNote || p_resourceUrls.size() > 1;
-  QString packagePath;
-  QString resourceFolder;
-  QStringList created;
-  bool succeeded = false;
-  const auto cleanup = qScopeGuard([&]() {
-    if (succeeded || packagePath.isEmpty()) {
-      return;
-    }
-    // Only remove paths created by this invocation, never a pre-existing directory.
-    for (const auto &path : created) {
-      if (!QFile::remove(path) && QFileInfo::exists(path)) {
-        p_outputFiles.append(path);
-      }
-    }
-    if (resourceFolder != packagePath) {
-      QDir().rmdir(resourceFolder);
-    }
-    QDir().rmdir(packagePath);
-  });
-  if (package) {
-    if (!QFileInfo(destination).isDir()) {
-      return VXCORE_ERR_INVALID_PARAM;
-    }
-    const auto folderName = FileUtils2::generateFileNameWithSequence(
-        destination, p_exportNote ? noteName : tr("Attachments"), QString());
-    packagePath = QDir(destination).filePath(folderName);
-    if (!isDecryptedCopyDestinationAllowed(p_buffer, packagePath) ||
-        !QDir(destination).mkdir(folderName)) {
-      packagePath.clear(); // Creation did not succeed: do not remove somebody else's folder.
-      return VXCORE_ERR_IO;
-    }
-    resourceFolder = packagePath;
-    if (p_exportNote && !p_resourceUrls.isEmpty()) {
-      resourceFolder = QDir(packagePath).filePath(QStringLiteral("assets"));
-      if (!QDir(packagePath).mkdir(QStringLiteral("assets"))) {
-        return VXCORE_ERR_IO;
-      }
-    }
-  }
-
-  QHash<QString, QString> exportedNames;
-  for (const auto &url : p_resourceUrls) {
-    const auto path = package ? FileUtils2::renameIfExistsCaseInsensitive(
-                                    QDir(resourceFolder).filePath(resourceNames.value(url)))
-                              : destination;
-    if (!lease->isCurrent() || !isDecryptedCopyDestinationAllowed(p_buffer, path)) {
-      return VXCORE_ERR_ENCRYPTION_LOCKED;
-    }
-    // The core streams to a destination-side atomic writer and publishes only
-    // after FINAL authentication. No readResource/QByteArray attachment copy.
-    error = p_buffer.exportResource(url, path);
-    if (error != VXCORE_OK) {
-      return error;
-    }
-    created.append(path);
-    if (p_exportNote) {
-      exportedNames.insert(url, QDir(packagePath).relativeFilePath(path));
-    }
-  }
-  if (p_exportNote) {
-    auto text = p_content;
-    const auto clearText = qScopeGuard([&]() { text.fill(QChar::Null); });
-    if (p_buffer.editorType() == QLatin1String("markdown") &&
-        !rewriteDecryptedLinks(text, exportedNames)) {
+    QTextCodec::ConverterState state;
+    auto encoded = codec->fromUnicode(p_content.constData(), p_content.size(), &state);
+    if (state.invalidChars || state.remainingChars) {
+      encoded.fill('\0');
       return VXCORE_ERR_UNSUPPORTED;
     }
-    if (p_buffer.editorType() == QLatin1String("text")) {
-      for (auto it = exportedNames.cbegin(); it != exportedNames.cend(); ++it) {
-        text.replace(it.key(), QString::fromLatin1(QUrl::toPercentEncoding(it.value(), "/")));
-      }
-    }
-    // Retain exact original encoding/BOM/EOL bytes when the exported snapshot is
-    // unchanged. A rewritten/edited snapshot uses the buffer's selected codec.
-    if (text != p_buffer.decode(QByteArrayViewCompat(body))) {
-      auto *codec = QTextCodec::codecForName(p_buffer.encoding().toUtf8());
-      if (!codec) {
-        return VXCORE_ERR_UNSUPPORTED;
-      }
-      QTextCodec::ConverterState state;
-      auto encoded = codec->fromUnicode(text.constData(), text.size(), &state);
-      if (state.invalidChars || state.remainingChars) {
-        encoded.fill('\0');
-        return VXCORE_ERR_UNSUPPORTED;
-      }
-      body.fill('\0');
-      body = std::move(encoded);
-    }
-    const auto path = QDir(packagePath).filePath(noteName);
-    if (!lease->isCurrent() || !isDecryptedCopyDestinationAllowed(p_buffer, path)) {
-      return VXCORE_ERR_ENCRYPTION_LOCKED;
-    }
-    QSaveFile file(path);
-    file.setDirectWriteFallback(false);
-    if (!file.open(QIODevice::WriteOnly) || file.write(body) != body.size() || !file.commit()) {
-      return VXCORE_ERR_IO;
-    }
-    created.prepend(path);
+    body.fill('\0');
+    body = std::move(encoded);
   }
-  p_outputFiles = created;
-  succeeded = true;
+  if (!lease->isCurrent()) {
+    return VXCORE_ERR_ENCRYPTION_LOCKED;
+  }
+  const auto path = canonicalExportDestination(p_destination);
+  if (!isDecryptedCopyDestinationAllowed(p_buffer, path)) {
+    return VXCORE_ERR_INVALID_PARAM;
+  }
+  QSaveFile file(path);
+  file.setDirectWriteFallback(false);
+  if (!file.open(QIODevice::WriteOnly) || file.write(body) != body.size() || !file.commit()) {
+    return VXCORE_ERR_IO;
+  }
   return VXCORE_OK;
 }
 

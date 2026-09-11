@@ -233,8 +233,8 @@ public:
   bool autoReload() const;
 
 public slots:
-  // Explicit plaintext disclosure. Empty URL exports the note and only checked resources.
-  void saveDecryptedCopy(const QString &p_resourceUrl = QString());
+  // Explicit plaintext disclosure of the encrypted note body only.
+  void saveDecryptedCopy();
 
   void findNext(const QString &p_text, FindOptions p_options);
 
@@ -647,7 +647,6 @@ private:
   };
 
   void setupUI();
-  void saveDecryptedCopies(const QStringList &p_resourceUrls, bool p_exportNote);
 
   // Focus event handlers for auto-save integration.
   void onFocusGained();

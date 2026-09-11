@@ -12,7 +12,6 @@
 #include <QVector>
 #include <memory>
 
-#include <controllers/legacyimagemigrationcontroller.h>
 #include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
 #include <core/global.h>
@@ -20,6 +19,7 @@
 #include <core/hookevents.h>
 #include <core/nodeidentifier.h>
 #include <unitedentry/iviewwindownavigator.h>
+#include <vxcore/vxcore_types.h>
 
 class QTimer;
 
@@ -41,14 +41,13 @@ class WorkspaceWrapper;
 struct PreparedNotebookEncryption;
 struct NoteEncryptionConversion;
 
-// Transient preparation, never serialized. The body and resource plan stay in
-// memory through confirmation; cancellation restores the original live views.
+// Transient preparation, never serialized. Captured body bytes stay in memory
+// through confirmation; cancellation restores the original live views.
 struct NoteEncryptionConversion {
   NoteEncryptionConversion();
   ~NoteEncryptionConversion();
   VxCoreError m_error = VXCORE_ERR_INVALID_STATE;
   QString m_errorMessage;
-  NoteEncryptionPlan m_plan;
   NodeIdentifier m_nodeId;
   QString m_encryptedPath;
 

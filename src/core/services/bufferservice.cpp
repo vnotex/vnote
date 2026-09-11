@@ -639,18 +639,6 @@ BufferService::acquireProtectedLease(const Buffer2 &p_buffer, bool p_durability,
   }
 }
 
-VxCoreError
-BufferService::writeCommentResource(const std::shared_ptr<ProtectedBufferLease> &p_lease,
-                                    const QByteArray &p_data) {
-  if (!p_lease || p_lease->m_state->owner != this || !p_lease->isCurrent()) {
-    return VXCORE_ERR_INVALID_STATE;
-  }
-  if (p_lease->m_state->readOnly.load(std::memory_order_acquire)) {
-    return VXCORE_ERR_READ_ONLY;
-  }
-  return BufferCoreService::writeCommentResource(p_lease->bufferId(), p_data);
-}
-
 QList<Buffer2> BufferService::protectedBuffers() const {
   QList<Buffer2> buffers;
   if (m_protectedBuffers) {
@@ -805,45 +793,12 @@ VxCoreError BufferService::saveProtectedSnapshot(const Buffer2 &p_buffer, QByteA
 
 QByteArray BufferService::readResource(const Buffer2 &p_buffer, const QString &p_resourceUrl,
                                        VxCoreError *p_error) const {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::readResource(p_buffer.m_bufferId, p_resourceUrl, p_error);
-  }
-  QByteArray result;
-  const auto error = withProtectedBuffer(p_buffer, false, [&]() {
-    VxCoreError status;
-    result = BufferCoreService::readResource(p_buffer.m_bufferId, p_resourceUrl, &status);
-    return status;
-  });
-  if (p_error) {
-    *p_error = error;
-  }
-  return result;
-}
-
-QJsonArray BufferService::resources(const Buffer2 &p_buffer, VxCoreError *p_error) const {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::resources(p_buffer.m_bufferId, p_error);
-  }
-  QJsonArray result;
-  const auto error = withProtectedBuffer(p_buffer, false, [&]() {
-    VxCoreError status;
-    result = BufferCoreService::resources(p_buffer.m_bufferId, &status);
-    return status;
-  });
-  if (p_error) {
-    *p_error = error;
-  }
-  return result;
+  return BufferCoreService::readResource(p_buffer.m_bufferId, p_resourceUrl, p_error);
 }
 
 VxCoreError BufferService::exportResource(const Buffer2 &p_buffer, const QString &p_resourceUrl,
                                           const QString &p_destination) const {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::exportResource(p_buffer.m_bufferId, p_resourceUrl, p_destination);
-  }
-  return withProtectedBuffer(p_buffer, false, [&]() {
-    return BufferCoreService::exportResource(p_buffer.m_bufferId, p_resourceUrl, p_destination);
-  });
+  return BufferCoreService::exportResource(p_buffer.m_bufferId, p_resourceUrl, p_destination);
 }
 
 QJsonObject BufferService::getContent(const Buffer2 &p_buffer, VxCoreError *p_error) const {
@@ -929,60 +884,29 @@ bool BufferService::setContentRaw(const Buffer2 &p_buffer, const QByteArray &p_d
 }
 
 QString BufferService::insertAsset(const Buffer2 &p_buffer, const QString &p_sourcePath) {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::insertAsset(p_buffer.m_bufferId, p_sourcePath);
-  }
-  if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
+  if (p_buffer.isReadOnly()) {
     return QString();
   }
-  QString result;
-  withProtectedBuffer(p_buffer, false, [&]() {
-    result = BufferCoreService::insertAsset(p_buffer.m_bufferId, p_sourcePath);
-    return result.isEmpty() ? VXCORE_ERR_IO : VXCORE_OK;
-  });
-  return result;
+  return BufferCoreService::insertAsset(p_buffer.m_bufferId, p_sourcePath);
 }
 
 QString BufferService::insertAssetRaw(const Buffer2 &p_buffer, const QString &p_assetName,
                                       const QByteArray &p_data) {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::insertAssetRaw(p_buffer.m_bufferId, p_assetName, p_data);
-  }
-  if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
+  if (p_buffer.isReadOnly()) {
     return QString();
   }
-  QString result;
-  withProtectedBuffer(p_buffer, false, [&]() {
-    result = BufferCoreService::insertAssetRaw(p_buffer.m_bufferId, p_assetName, p_data);
-    return result.isEmpty() ? VXCORE_ERR_IO : VXCORE_OK;
-  });
-  return result;
+  return BufferCoreService::insertAssetRaw(p_buffer.m_bufferId, p_assetName, p_data);
 }
 
 bool BufferService::deleteAsset(const Buffer2 &p_buffer, const QString &p_relativePath) {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::deleteAsset(p_buffer.m_bufferId, p_relativePath);
-  }
-  if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
+  if (p_buffer.isReadOnly()) {
     return false;
   }
-  return withProtectedBuffer(p_buffer, false, [&]() {
-           return BufferCoreService::deleteAsset(p_buffer.m_bufferId, p_relativePath)
-                      ? VXCORE_OK
-                      : VXCORE_ERR_IO;
-         }) == VXCORE_OK;
+  return BufferCoreService::deleteAsset(p_buffer.m_bufferId, p_relativePath);
 }
 
 QJsonArray BufferService::listAttachments(const Buffer2 &p_buffer) const {
-  if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::listAttachments(p_buffer.m_bufferId);
-  }
-  QJsonArray result;
-  withProtectedBuffer(p_buffer, false, [&]() {
-    result = BufferCoreService::listAttachments(p_buffer.m_bufferId);
-    return VXCORE_OK;
-  });
-  return result;
+  return BufferCoreService::listAttachments(p_buffer.m_bufferId);
 }
 
 bool BufferService::checkExternalChanges(const Buffer2 &p_buffer) {
@@ -1239,6 +1163,9 @@ bool BufferService::checkSingleExternalChange(const QString &p_bufferId) {
 }
 
 QString BufferService::insertAttachment(const Buffer2 &p_buffer, const QString &p_sourcePath) {
+  if (p_buffer.isReadOnly()) {
+    return QString();
+  }
   const QString &p_bufferId = p_buffer.m_bufferId;
   AttachmentAddEvent event;
   event.bufferId = p_bufferId;
@@ -1247,18 +1174,7 @@ QString BufferService::insertAttachment(const Buffer2 &p_buffer, const QString &
     return QString(); // Cancelled by plugin.
   }
 
-  QString filename;
-  if (p_buffer.isEncrypted()) {
-    if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
-      return QString();
-    }
-    withProtectedBuffer(p_buffer, false, [&]() {
-      filename = BufferCoreService::insertAttachment(p_bufferId, p_sourcePath);
-      return filename.isEmpty() ? VXCORE_ERR_IO : VXCORE_OK;
-    });
-  } else {
-    filename = BufferCoreService::insertAttachment(p_bufferId, p_sourcePath);
-  }
+  const auto filename = BufferCoreService::insertAttachment(p_bufferId, p_sourcePath);
 
   if (!filename.isEmpty()) {
     event.filename = filename;
@@ -1313,6 +1229,9 @@ bool BufferService::registerAttachment(const QString &p_bufferId, const QString 
 
 bool BufferService::deleteAttachment(const Buffer2 &p_buffer, const QString &p_filename) {
   const QString &p_bufferId = p_buffer.m_bufferId;
+  if (p_buffer.isReadOnly()) {
+    return false;
+  }
   AttachmentDeleteEvent event;
   event.bufferId = p_bufferId;
   event.filename = p_filename;
@@ -1320,18 +1239,7 @@ bool BufferService::deleteAttachment(const Buffer2 &p_buffer, const QString &p_f
     return false; // Cancelled by plugin.
   }
 
-  bool ok;
-  if (p_buffer.isEncrypted()) {
-    if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
-      return false;
-    }
-    ok = withProtectedBuffer(p_buffer, false, [&]() {
-           return BufferCoreService::deleteAttachment(p_bufferId, p_filename) ? VXCORE_OK
-                                                                              : VXCORE_ERR_IO;
-         }) == VXCORE_OK;
-  } else {
-    ok = BufferCoreService::deleteAttachment(p_bufferId, p_filename);
-  }
+  const bool ok = BufferCoreService::deleteAttachment(p_bufferId, p_filename);
 
   if (ok) {
     m_hookMgr->doAction(HookNames::AttachmentAfterDelete, event);
@@ -1343,6 +1251,9 @@ bool BufferService::deleteAttachment(const Buffer2 &p_buffer, const QString &p_f
 
 QString BufferService::renameAttachment(const Buffer2 &p_buffer, const QString &p_oldFilename,
                                         const QString &p_newFilename) {
+  if (p_buffer.isReadOnly()) {
+    return QString();
+  }
   const QString &p_bufferId = p_buffer.m_bufferId;
   AttachmentRenameEvent event;
   event.bufferId = p_bufferId;
@@ -1352,18 +1263,8 @@ QString BufferService::renameAttachment(const Buffer2 &p_buffer, const QString &
     return QString(); // Cancelled by plugin.
   }
 
-  QString actualName;
-  if (p_buffer.isEncrypted()) {
-    if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
-      return QString();
-    }
-    withProtectedBuffer(p_buffer, false, [&]() {
-      actualName = BufferCoreService::renameAttachment(p_bufferId, p_oldFilename, p_newFilename);
-      return actualName.isEmpty() ? VXCORE_ERR_IO : VXCORE_OK;
-    });
-  } else {
-    actualName = BufferCoreService::renameAttachment(p_bufferId, p_oldFilename, p_newFilename);
-  }
+  const auto actualName =
+      BufferCoreService::renameAttachment(p_bufferId, p_oldFilename, p_newFilename);
 
   if (!actualName.isEmpty()) {
     event.newFilename = actualName;
@@ -1551,7 +1452,7 @@ bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeout
   const QString notebookId = bufJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
   if (bufJson.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool()) {
     // A protected snapshot must retain the generation across callbacks and the
-    // full durability barrier. Core owns committed-body/manifest merging.
+    // full durability barrier. Core authenticates and publishes the body snapshot.
     const auto buffer = protectedHandle(p_bufferId);
     VxCoreError error;
     auto lease = acquireProtectedLease(buffer, true, &error);

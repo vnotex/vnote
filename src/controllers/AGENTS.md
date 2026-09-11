@@ -190,26 +190,22 @@ Store contract, path resolution and the sync-dirty notification:
 [`../core/services/AGENTS.md` § Comment store](../core/services/AGENTS.md#comment-store-commentsjson).
 
 
-## Encryption conversion diagnostics
+## Note-body encryption
 
-`LegacyImageMigrationController::planNoteEncryption` logs only explicit conversion
-planning under `vnote.encryption`; ordinary note open/save paths do not use it.
-Info-level `plan_begin`, `reference_scan_incomplete`, and `plan_complete` entries
-identify the note by UUID, explain incomplete scans by reason and subject UUID,
-and summarize owned, outside-owned, hard-link-unverified, shared, uncertain and
-retained resource counts. `owned_resources` means containment, not exclusive use.
-The current incomplete-scan fallback can retain originals inside the selected
-note's own assets folder. That is uncertainty, not proof of sharing or an
-outside-folder location; inspect the logged reason before changing policy.
+Encryption is limited to managed Markdown, plain-text and mind-map note bodies.
+`ViewAreaController` freezes only the selected note's views, captures its writer,
+drains saves/comments and passes the body plus expected source SHA-256 through
+`NotebookCoreService` to vxcore. Conversion does not enumerate assets, scan any
+note references, or rewrite content. `LegacyImageMigrationController` is only for
+legacy image migration; it must not contain encryption planning or retention code.
 
-`resource_decision` also logs at Info, so normal `--log-stderr` diagnostics need
-no debug rule. It includes ordinal, role, containment, `link_count`,
-`native_error`, sharing, `retain_all`, and the final retention decision.
-`link_count=-1` means no count was obtained; `single_link_checked` distinguishes
-an attempted query from an outside-owned resource that needs no query.
-`native_error` is Windows `GetLastError()` or POSIX `errno`, captured before
-cleanup; zero means no query error was recorded. A hard-link alias need not be
-found by the path-based sharing scan. Core independently requires exactly one
-hard link for `retainOriginal=false`; do not remove only the Qt check.
-These logs must not include source paths, attachment names, body/resource bytes
-or hashes, passwords, or keys. The full resource plan is never a log payload.
+Dialogs must disclose that separate image/attachment files and comment sidecars
+stay unencrypted. Attachments keep normal Open/Open Folder/Copy Path operations.
+`Save Decrypted Copy` exports the note body with explicit consent; no resource
+manifest/checklist or temporary plaintext body file is used.
+
+`MarkdownEditorController::insertImageAsBase64` inserts a reference-style image
+and a data-URI definition as one undoable edit. Image insertion lists Base64 first
+and selects it by default only for encrypted Markdown. Ordinary notes retain
+normal defaults. Base64 is encoding, not encryption: the embedded bytes receive
+protection only when saved as part of an encrypted note body.

@@ -93,7 +93,7 @@ void TestCommentController::initTestCase() {
   m_notebooks->setHookManager(m_hooks);
   m_gate = new NotebookIoGate();
   m_buffers = new BufferService(m_context, m_hooks, m_gate);
-  m_service = new CommentService(m_notebooks, m_buffers, m_gate, m_hooks);
+  m_service = new CommentService(m_notebooks, m_gate, m_hooks);
 
   m_services = new ServiceLocator();
   m_services->registerService<NotebookCoreService>(m_notebooks);

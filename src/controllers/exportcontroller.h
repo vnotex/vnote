@@ -32,11 +32,10 @@ public:
   void stop();
   bool isExporting() const;
 
-  // Apply only after widget-owned plaintext consent. For a note or several resources,
-  // destination is an existing directory; for one resource it is the selected file.
+  // Apply only after widget-owned plaintext consent. Writes only the note body
+  // to the selected file; image and attachment files are already plaintext.
   VxCoreError saveDecryptedCopy(const Buffer2 &p_buffer, const QString &p_destination,
-                                bool p_exportNote, const QStringList &p_resourceUrls,
-                                const QString &p_content, QStringList &p_outputFiles);
+                                const QString &p_content);
   bool isDecryptedCopyDestinationAllowed(const Buffer2 &p_buffer,
                                          const QString &p_destination) const;
   static QString decryptedNoteName(const Buffer2 &p_buffer);

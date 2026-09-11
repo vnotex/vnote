@@ -323,13 +323,12 @@ class MarkdownIt extends VxWorker {
             'colspan', 'rowspan', 'align', 'start', 'reversed', 'open', 'role',
             'aria-label', 'aria-hidden', 'data-source-line', 'data-source-line-end',
             'vx-data-anchor-icon']);
-        const asset = /^vxasset:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
         const origin = location.protocol + '//' + location.host;
         const pending = [];
         const blockedImage = (image) => {
             const label = document.createElement('span');
             label.className = 'vx-protected-blocked';
-            label.textContent = '[Image blocked in protected note — import it to view]';
+            label.textContent = '[Image blocked — use Insert as Base64 to embed it]';
             image.replaceWith(label);
         };
         for (const node of Array.from(template.content.querySelectorAll('*'))) {
@@ -355,10 +354,7 @@ class MarkdownIt extends VxWorker {
                 node.type = 'checkbox';
                 node.checked = checked;
             } else if (node.tagName === 'IMG') {
-                const match = asset.exec(src);
-                if (match) {
-                    node.src = origin + '/assets/' + match[1];
-                } else if (/^data:image\//i.test(src)) {
+                if (/^data:image\//i.test(src)) {
                     pending.push(new Promise((resolve) => {
                         window.vxMarkdownAdapter.protectedImageUrl(src, (url) => {
                             if (url) {
@@ -369,14 +365,20 @@ class MarkdownIt extends VxWorker {
                             resolve();
                         });
                     }));
+                } else if (src && !/^[a-z][a-z0-9+.-]*:/i.test(src)
+                           && src[0] !== '/' && !src.includes(String.fromCharCode(92))
+                           && !src.includes('?') && !src.includes('#')
+                           && Array.from(src).every(ch => ch.charCodeAt(0) >= 32)) {
+                    const bytes = new TextEncoder().encode(src);
+                    let raw = '';
+                    for (const byte of bytes) raw += String.fromCharCode(byte);
+                    const token = btoa(raw).split('+').join('-').split('/').join('_').replace(/=+$/, '');
+                    node.src = origin + '/files/' + token;
                 } else {
                     blockedImage(node);
                 }
             } else if (node.tagName === 'A') {
-                const match = asset.exec(href);
-                if (match) {
-                    node.href = origin + '/assets/' + match[1];
-                } else if (href.startsWith('#')) {
+                if (href.startsWith('#')) {
                     node.href = href;
                     node.addEventListener('click', (event) => {
                         event.preventDefault();

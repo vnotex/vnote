@@ -75,8 +75,6 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
   m_adapter->setParent(this);
   if (m_protectedView) {
     m_adapter->setProtectedView(true);
-    connect(qobject_cast<WebPage *>(page()), &WebPage::protectedResourceOpenRequested, this,
-            &MarkdownViewer::openImageExternally);
   }
 
   auto channel = new QWebChannel(this);
@@ -202,15 +200,8 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     auto info = populateContextInfo();
     const QUrl imageUrl = info.imageUrl;
     if (m_protectedView) {
-      // Inline data images remain explicitly copyable, but have no manifest
-      // object to export. Scoped assets use the consent-owned export action.
+      // Embedded data stays copyable; do not hand data/scoped URLs to external apps.
       info.imageUrl = QUrl();
-      if (imageUrl.scheme() == QStringLiteral("vxnote") &&
-          imageUrl.path(QUrl::FullyEncoded).startsWith(QLatin1String("/assets/"))) {
-        auto *saveCopy = menu->addAction(tr("Save Decrypted Copy..."));
-        connect(saveCopy, &QAction::triggered, this,
-                [this, imageUrl]() { openImageExternally(imageUrl); });
-      }
     }
     m_controller->createContextMenu(
         info, menu, [this]() { copyImage(); }, [this]() { emit editRequested(); },
@@ -324,15 +315,6 @@ void MarkdownViewer::handleCopyImageUrlAction() {
 
 void MarkdownViewer::openImageExternally(const QUrl &p_url) {
   if (m_protectedView) {
-    const auto path = p_url.path(QUrl::FullyEncoded);
-    if (p_url.scheme() == QStringLiteral("vxnote") && p_url.authority() == url().authority() &&
-        !p_url.hasQuery() && !p_url.hasFragment() && path.startsWith(QLatin1String("/assets/"))) {
-      const auto id = path.mid(8);
-      const QUuid uuid(id);
-      if (!uuid.isNull() && uuid.toString(QUuid::WithoutBraces) == id) {
-        emit saveDecryptedCopyRequested(QStringLiteral("vxasset:") + id);
-      }
-    }
     return;
   }
   if (!p_url.isValid()) {

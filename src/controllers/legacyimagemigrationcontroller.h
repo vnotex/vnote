@@ -1,8 +1,6 @@
 #ifndef LEGACYIMAGEMIGRATIONCONTROLLER_H
 #define LEGACYIMAGEMIGRATIONCONTROLLER_H
 
-#include <QByteArray>
-#include <QJsonObject>
 #include <QObject>
 #include <QSet>
 #include <QString>
@@ -10,28 +8,12 @@
 #include <QVector>
 
 #include <functional>
-#include <vxcore/vxcore_types.h>
 
 namespace vnotex {
 
 class ServiceLocator;
 class Buffer2;
 struct NodeIdentifier;
-
-// Transient conversion input, never persisted or logged. Source paths belong
-// only to the strict C request; the encrypted manifest is built by vxcore.
-struct NoteEncryptionPlan {
-  VxCoreError m_error = VXCORE_ERR_INVALID_STATE;
-  QString m_errorMessage;
-  QByteArray m_body;
-  QJsonObject m_resourcePlan;
-  QStringList m_retainedOriginals;
-  // Replan on the GUI thread under maintenance + IO exclusion immediately
-  // before apply, with the SAME selected body/encoding. Compare this and the
-  // body/resourcePlan exactly; IDs and ordering are deterministic.
-  QByteArray m_referenceFingerprint;
-  bool isValid() const { return m_error == VXCORE_OK; }
-};
 
 // One markdown image OCCURRENCE that points into a pre-v4 legacy image folder
 // (vx_images / _v_images). Two occurrences of the same file share a
@@ -91,13 +73,6 @@ public:
 
   explicit LegacyImageMigrationController(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
-  // Explicit conversion only, GUI thread: snapshots other live writers without
-  // saving them. The selected writer must already be frozen and its comment /
-  // save participants drained. p_currentBody may contain unsaved edits; the
-  // physical source is independently read/hash-checked for sourceSha256.
-  NoteEncryptionPlan planNoteEncryption(const NodeIdentifier &p_nodeId,
-                                        const QByteArray &p_currentBody,
-                                        const QString &p_encoding) const;
   // ============ Pure helpers ============
 
   // Case-insensitive match against the deprecated folder names ONLY.

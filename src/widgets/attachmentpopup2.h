@@ -14,7 +14,7 @@ namespace vnotex {
 
 class ServiceLocator;
 class Buffer2;
-class AttachmentPopupListModel;
+class AttachmentListModel;
 class AttachmentController;
 
 class AttachmentPopup2 : public ButtonPopup {
@@ -26,9 +26,6 @@ public:
   void setBuffer(Buffer2 *p_buffer);
 
   void setScanExclusionProvider(std::function<QStringList()> p_provider);
-
-signals:
-  void saveDecryptedCopyRequested(const QStringList &p_resourceUrls);
 
 private slots:
   void onProtectedLockingChanged(bool p_locking);
@@ -54,7 +51,7 @@ private:
   std::function<QStringList()> m_scanExclusionProvider;
 
   // Managed by QObject.
-  AttachmentPopupListModel *m_model = nullptr;
+  AttachmentListModel *m_model = nullptr;
   AttachmentController *m_controller = nullptr;
   QListView *m_listView = nullptr;
   QLabel *m_unsupportedLabel = nullptr;

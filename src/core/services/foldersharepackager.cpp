@@ -35,7 +35,6 @@
 #endif
 
 #include <vxcore/notebook_json_keys.h>
-#include <vxcore/vxcore.h>
 
 using namespace vnotex;
 
@@ -631,13 +630,6 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
   QByteArray sourceNotebookConfig;
   QByteArray portableNotebookConfig;
   QByteArray portableRootConfig;
-  QString originalAssetsFolder;
-  struct ExtraAssets {
-    QString source;
-    QVector<TreeEntry> entries;
-    QHash<QString, QByteArray> hashes;
-  };
-  QVector<ExtraAssets> extraAssets;
   const QString keyRelative = QStringLiteral("vx_notebook/encryption.vne");
   const QString configRelative = QStringLiteral("vx_notebook/config.json");
   if (encryptedBundle) {
@@ -664,9 +656,18 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
       return fail(QObject::tr("The encrypted notebook key envelope is damaged."));
     }
     const QJsonObject original = QJsonDocument::fromJson(sourceNotebookConfig).object();
-    originalAssetsFolder = original.value(QLatin1String(vxcore::kJsonKeyAssetsFolder)).toString();
-    if (originalAssetsFolder.isEmpty()) {
-      return fail(QObject::tr("The shared folder's assets configuration is invalid."));
+    const QString assetsFolder = QDir::fromNativeSeparators(
+        original.value(QLatin1String(vxcore::kJsonKeyAssetsFolder)).toString());
+    const QString cleanedAssetsFolder = QDir::cleanPath(assetsFolder);
+    // Assets remain ordinary files, including those referenced by encrypted
+    // bodies. Preserve their original relative layout: ciphertext cannot be
+    // rewritten, and the selected subtree is the only content being packaged.
+    if (assetsFolder.isEmpty() || QDir::isAbsolutePath(assetsFolder) ||
+        assetsFolder.contains(QLatin1Char(':')) || cleanedAssetsFolder == QLatin1String("..") ||
+        cleanedAssetsFolder.startsWith(QLatin1String("../"))) {
+      return fail(QObject::tr("Cannot share protected notes with an absolute or parent-escaping "
+                              "assets folder. The assets folder must stay within each note's "
+                              "folder so its image and attachment links remain valid."));
     }
     QJsonObject portable;
     for (const auto *field :
@@ -674,7 +675,6 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
           vxcore::kJsonKeyTags, vxcore::kJsonKeyTagsModifiedUtc}) {
       portable.insert(QLatin1String(field), original.value(QLatin1String(field)));
     }
-    portable.insert(QLatin1String(vxcore::kJsonKeyAssetsFolder), QStringLiteral("vx_assets"));
     portableNotebookConfig = QJsonDocument(portable).toJson(QJsonDocument::Compact);
     QJsonObject rootConfig;
     rootConfig.insert(QLatin1String(vxcore::kJsonKeyId),
@@ -817,83 +817,6 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
                                &error)) {
     return failAndClean(error);
   }
-  if (encryptedBundle && originalAssetsFolder != QLatin1String("vx_assets")) {
-    // Normalize the portable copy, never the live notebook. Logical encrypted
-    // links need no rewrite; ordinary members use the same core parser as node
-    // transfer. Moving an already-copied owned directory avoids rereading assets.
-    const QString canonicalRoot = QFileInfo(p_request.m_notebookRoot).canonicalFilePath();
-    for (const auto &entry : metadataEntries) {
-      if (entry.isDir || QFileInfo(entry.rel).fileName() != QLatin1String(kFolderConfigFile))
-        continue;
-      QFile metadataFile(p_request.m_metadataRoot + QLatin1Char('/') + entry.rel);
-      if (!metadataFile.open(QIODevice::ReadOnly))
-        return failAndClean(QObject::tr("Could not read note metadata."));
-      const auto folder = QJsonDocument::fromJson(metadataFile.readAll()).object();
-      const QString relativeFolder = QFileInfo(entry.rel).path();
-      const QString sourceFolder = QDir(p_request.m_contentRoot).filePath(relativeFolder);
-      const QString stagedFolder = QDir(stagedContent).filePath(relativeFolder);
-      for (const auto &value : folder.value(QLatin1String(vxcore::kJsonKeyFiles)).toArray()) {
-        const auto note = value.toObject();
-        const QString id = note.value(QLatin1String(vxcore::kJsonKeyId)).toString();
-        const QString name = note.value(QLatin1String(vxcore::kJsonKeyName)).toString();
-        const bool encrypted = note.value(QLatin1String(vxcore::kJsonKeyMetadata))
-                                   .toObject()
-                                   .value(QLatin1String(vxcore::kJsonKeyEncrypted))
-                                   .toBool();
-        if (encrypted != name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
-          return failAndClean(QObject::tr("The protected note metadata is inconsistent."));
-        }
-        const QString sourceAssets =
-            QDir::cleanPath(QDir(QDir(sourceFolder).filePath(originalAssetsFolder)).filePath(id));
-        const QString sourceRelative =
-            QDir(p_request.m_notebookRoot).relativeFilePath(sourceAssets);
-        if (!ancestorChainIsSafe(p_request.m_notebookRoot, sourceRelative, &error))
-          return failAndClean(error);
-        const QString canonicalAssets = QFileInfo(sourceAssets).canonicalFilePath();
-        if (!canonicalAssets.isEmpty()) {
-          const QString contained = QDir(canonicalRoot).relativeFilePath(canonicalAssets);
-          if (contained == QLatin1String("..") || contained.startsWith(QLatin1String("../")) ||
-              QDir::isAbsolutePath(contained))
-            return failAndClean(QObject::tr("Encrypted assets must remain inside the notebook."));
-          const QString insideContent =
-              QDir(p_request.m_contentRoot).relativeFilePath(sourceAssets);
-          const QString destinationAssets =
-              QDir(stagedFolder).filePath(QStringLiteral("vx_assets/") + id);
-          if (!QDir().mkpath(QFileInfo(destinationAssets).path()))
-            return failAndClean(QObject::tr("Could not create the bundle assets folder."));
-          if (insideContent != QLatin1String("..") &&
-              !insideContent.startsWith(QLatin1String("../")) &&
-              !QDir::isAbsolutePath(insideContent)) {
-            const QString copiedAssets = QDir(stagedContent).filePath(insideContent);
-            if (QDir::cleanPath(copiedAssets) != QDir::cleanPath(destinationAssets) &&
-                !QDir().rename(copiedAssets, destinationAssets)) {
-              return failAndClean(QObject::tr("Could not relocate the bundle assets."));
-            }
-          } else {
-            ExtraAssets extra;
-            extra.source = sourceAssets;
-            if (!enumerateTree(sourceAssets, QString(), &extra.entries, isCancelled, &error) ||
-                !copyTree(sourceAssets, destinationAssets, extra.entries, &extra.hashes,
-                          isCancelled, progress, &error) ||
-                !verifyStagedTree(destinationAssets, extra.entries, extra.hashes, isCancelled,
-                                  progress, &error)) {
-              return cancelled(isCancelled) ? cancelAndClean() : failAndClean(error);
-            }
-            extraAssets.push_back(std::move(extra));
-          }
-        }
-        if (!encrypted) {
-          const QByteArray filePath = QDir(stagedFolder).filePath(name).toUtf8();
-          const QByteArray oldPrefix = QDir(sourceFolder).relativeFilePath(sourceAssets).toUtf8();
-          const QByteArray newPrefix = (QStringLiteral("vx_assets/") + id).toUtf8();
-          const auto rewritten = vxcore_rewrite_plaintext_asset_links(
-              filePath.constData(), oldPrefix.constData(), newPrefix.constData());
-          if (rewritten != VXCORE_OK)
-            return failAndClean(QObject::tr("Could not normalize the bundle's asset links."));
-        }
-      }
-    }
-  }
 
   // Announce the publish phase HERE, while a callback is still allowed to pump
   // the event loop. Everything after this point must be callback-free.
@@ -921,14 +844,6 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
   if (!revalidateSource(p_request.m_metadataRoot, metadataEntries, metadataHashes, CancelFn(),
                         ProgressFn(), &error)) {
     return failAndClean(error);
-  }
-  for (const auto &extra : extraAssets) {
-    const QString relative = QDir(p_request.m_notebookRoot).relativeFilePath(extra.source);
-    if (!ancestorChainIsSafe(p_request.m_notebookRoot, relative, &error) ||
-        !revalidateSource(extra.source, extra.entries, extra.hashes, CancelFn(), ProgressFn(),
-                          &error)) {
-      return failAndClean(error);
-    }
   }
   if (encryptedBundle) {
     QFile key(p_request.m_notebookRoot + QLatin1Char('/') + keyRelative);

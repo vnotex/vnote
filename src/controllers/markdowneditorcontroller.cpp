@@ -2,6 +2,7 @@
 
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QSet>
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QUrl>
@@ -480,26 +481,67 @@ MarkdownEditorController::prepareBufferState(const Buffer2 &p_buffer) {
   return state;
 }
 
-QString MarkdownEditorController::importProtectedImage(Buffer2 &p_buffer, const QString &p_name,
-                                                       const QByteArray &p_data) {
-  if (!p_buffer.isEncrypted() || !p_buffer.isValid() || p_buffer.isReadOnly()) {
-    return QString();
+bool MarkdownEditorController::insertImageAsBase64(QTextCursor &p_cursor, const QString &p_title,
+                                                   const QString &p_altText,
+                                                   const QByteArray &p_data) {
+  if (p_cursor.isNull()) {
+    return false;
   }
   QByteArray bytes;
   QByteArray mime;
   if (!ImageUtils::protectedImageData(p_data, bytes, mime)) {
-    return QString();
+    return false;
   }
-  // SVG input is rasterized by the validator; its stored name must describe
-  // the returned bytes so the authenticated manifest also has the right MIME.
-  const auto suffix = ImageUtils::guessImageSuffix(bytes);
-  QString result;
-  if (!suffix.isEmpty()) {
-    const auto name = QFileInfo(p_name).completeBaseName() + QLatin1Char('.') + suffix;
-    result = p_buffer.insertAssetRaw(name, bytes);
+
+  const auto content = p_cursor.document()->toPlainText();
+  // Reserve every occurrence, not only parsed definitions: this also avoids
+  // capturing an unresolved reference. Generated labels have no whitespace;
+  // case folding is therefore the only Markdown label normalization needed.
+  static const QRegularExpression labelToken(QStringLiteral("image-[0-9]+"),
+                                             QRegularExpression::CaseInsensitiveOption);
+  QSet<QString> labels;
+  auto matches = labelToken.globalMatch(content);
+  while (matches.hasNext()) {
+    labels.insert(matches.next().captured().toCaseFolded());
   }
+  int suffix = 1;
+  QString label;
+  do {
+    label = QStringLiteral("image-%1").arg(suffix++);
+  } while (labels.contains(label));
+
+  QString description;
+  description.reserve(p_title.size());
+  const auto punctuation = QStringLiteral("\\[]*_`<>&!");
+  for (const auto ch : p_title) {
+    if (punctuation.contains(ch)) {
+      description += QLatin1Char('\\');
+    }
+    description += ch == QLatin1Char('\n') || ch == QLatin1Char('\r') ? QLatin1Char(' ') : ch;
+  }
+  auto title = p_altText;
+  title.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
+  title.replace(QLatin1Char('"'), QStringLiteral("\\\""));
+  title.replace(QLatin1Char('\n'), QLatin1Char(' '));
+  const auto reference = QStringLiteral("![%1][%2]").arg(description, label);
+  auto definition =
+      QStringLiteral("[%1]: data:%2;base64,%3")
+          .arg(label, QString::fromLatin1(mime), QString::fromLatin1(bytes.toBase64()));
   bytes.fill('\0');
-  return result;
+  if (!title.isEmpty()) {
+    definition += QStringLiteral(" \"%1\"").arg(title);
+  }
+
+  p_cursor.beginEditBlock();
+  p_cursor.insertText(reference);
+  const int position = p_cursor.position();
+  QTextCursor end(p_cursor.document());
+  end.movePosition(QTextCursor::End);
+  // A blank line makes the definition independent of the preceding paragraph.
+  end.insertText(QStringLiteral("\n\n") + definition + QLatin1Char('\n'));
+  p_cursor.setPosition(position);
+  p_cursor.endEditBlock();
+  return true;
 }
 
 int MarkdownEditorController::persistZoomDelta(int p_delta) {

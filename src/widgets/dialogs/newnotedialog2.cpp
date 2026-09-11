@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QLabel>
 #include <QPlainTextEdit>
 #include <QScopedValueRollback>
 #include <QTextDocument>
@@ -140,6 +141,15 @@ void NewNoteDialog2::setupUI() {
     }
   }
   layout->addRow(m_encryptCheckBox);
+  auto *encryptionWarning = new QLabel(
+      tr("Only note content is encrypted. Image files, attachments, and comments "
+         "remain unencrypted. Use Insert as Base64 to embed an image in a Markdown note."),
+      mainWidget);
+  encryptionWarning->setObjectName(QStringLiteral("noteEncryptionWarning"));
+  encryptionWarning->setWordWrap(true);
+  encryptionWarning->hide();
+  layout->addRow(encryptionWarning);
+  connect(m_encryptCheckBox, &QCheckBox::toggled, encryptionWarning, &QWidget::setVisible);
   updateEncryptionOption();
 
   setCentralWidget(mainWidget);
@@ -266,7 +276,8 @@ void NewNoteDialog2::updateEncryptionOption() {
   const QString type = getFileTypeName();
   const bool supported =
       m_encryptionSupported && (type.compare(QLatin1String("Markdown"), Qt::CaseInsensitive) == 0 ||
-                                type.compare(QLatin1String("Text"), Qt::CaseInsensitive) == 0);
+                                type.compare(QLatin1String("Text"), Qt::CaseInsensitive) == 0 ||
+                                type.compare(QLatin1String("MindMap"), Qt::CaseInsensitive) == 0);
   m_encryptCheckBox->setVisible(supported);
   m_encryptCheckBox->setEnabled(supported);
   if (!m_encryptCheckBox->isEnabled()) {

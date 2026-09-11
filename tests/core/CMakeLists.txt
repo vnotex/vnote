@@ -420,22 +420,25 @@ add_custom_command(TARGET test_markdownviewwindowcontroller POST_BUILD
 add_qt_test(test_markdowneditorcontroller
   SOURCES
     test_markdowneditorcontroller.cpp
-    stubs_textviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
-    ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/imageinsertdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
   LINKS
     core_services
+    core_configs
     vxcore
     VTextEdit
     Qt6::Svg
-  GUILESS
 )
+target_include_directories(test_markdowneditorcontroller PRIVATE ${CMAKE_SOURCE_DIR}/src/gui)
 
 add_custom_command(TARGET test_markdowneditorcontroller POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different

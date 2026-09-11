@@ -3,15 +3,11 @@
 #include <QAction>
 #include <QFileDialog>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QKeyEvent>
 #include <QLabel>
-#include <QLineEdit>
 #include <QListView>
 #include <QMessageBox>
 #include <QPointer>
-#include <QScopeGuard>
-#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -28,36 +24,6 @@
 #include "propertydefs.h"
 
 using namespace vnotex;
-
-namespace vnotex {
-
-// The ordinary model asks the OS icon provider about each filename. Protected
-// manifest names are display-only, never filesystem/icon-cache lookup keys.
-class AttachmentPopupListModel final : public AttachmentListModel {
-public:
-  explicit AttachmentPopupListModel(QObject *p_parent) : AttachmentListModel(p_parent) {}
-
-  void setBuffer(Buffer2 *p_buffer) {
-    m_encrypted = p_buffer && p_buffer->isEncrypted();
-    AttachmentListModel::setBuffer(p_buffer);
-  }
-
-  QVariant data(const QModelIndex &p_index, int p_role) const override {
-    return m_encrypted && p_role == Qt::DecorationRole ? QVariant()
-                                                       : AttachmentListModel::data(p_index, p_role);
-  }
-
-  bool setData(const QModelIndex &p_index, const QVariant &p_value, int p_role) override {
-    // Protected rename is a widget-owned dialog followed by the controller's
-    // display-name -> logical-ID translation, not the plain model's path mutation.
-    return !m_encrypted && AttachmentListModel::setData(p_index, p_value, p_role);
-  }
-
-private:
-  bool m_encrypted = false;
-};
-
-} // namespace vnotex
 
 AttachmentPopup2::AttachmentPopup2(ServiceLocator &p_services, QToolButton *p_btn,
                                    QWidget *p_parent)
@@ -82,16 +48,6 @@ AttachmentPopup2::AttachmentPopup2(ServiceLocator &p_services, QToolButton *p_bt
 
     bool supported = m_buffer->isAttachmentSupported();
     m_unsupportedLabel->setText(tr("Attachments not supported for this notebook type"));
-    if (m_buffer->isEncrypted()) {
-      VxCoreError error;
-      m_buffer->resources(&error);
-      if (error != VXCORE_OK) {
-        supported = false;
-        m_model->setBuffer(nullptr);
-        m_unsupportedLabel->setText(
-            tr("Protected attachments are unavailable (%1).").arg(int(error)));
-      }
-    }
     m_listView->setVisible(supported);
     m_unsupportedLabel->setVisible(!supported);
     m_countLabel->setVisible(supported);
@@ -138,8 +94,7 @@ void AttachmentPopup2::setupUI() {
     connect(act, &QAction::triggered, this, [this]() {
       // The view owns the dialog (controllers must not show UI). Mirror the
       // controller's guard so no dialog is shown whose result would be discarded.
-      if (!m_buffer || !m_buffer->isValid() || m_buffer->isReadOnly() ||
-          (m_buffer->isEncrypted() && !m_buffer->acquireProtectedLease())) {
+      if (!m_buffer || !m_buffer->isValid() || m_buffer->isReadOnly()) {
         return;
       }
       QPointer<AttachmentPopup2> guard(this);
@@ -207,8 +162,7 @@ void AttachmentPopup2::setupUI() {
     connect(act, &QAction::triggered, this, [this]() {
       // The view owns the confirmation dialog (controllers must not show UI).
       const QStringList files = getSelectedFilenames();
-      if (!m_buffer || !m_buffer->isValid() || m_buffer->isReadOnly() || files.isEmpty() ||
-          (m_buffer->isEncrypted() && !m_buffer->acquireProtectedLease())) {
+      if (!m_buffer || !m_buffer->isValid() || m_buffer->isReadOnly() || files.isEmpty()) {
         return;
       }
       QPointer<AttachmentPopup2> guard(this);
@@ -255,15 +209,9 @@ void AttachmentPopup2::setupUI() {
   mainLayout->addLayout(buttonsLayout);
 
   // -- List view --
-  m_model = new AttachmentPopupListModel(this);
+  m_model = new AttachmentListModel(this);
   m_controller = new AttachmentController(m_services, this);
 
-  connect(m_controller, &AttachmentController::saveDecryptedCopyRequested, this,
-          &AttachmentPopup2::saveDecryptedCopyRequested);
-  connect(m_controller, &AttachmentController::operationFailed, this,
-          [this](const QString &p_message) {
-            QMessageBox::warning(dialogParent(), tr("Attachments"), p_message);
-          });
   if (auto *buffers = m_services.get<BufferService>()) {
     connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
             SLOT(onProtectedLockingChanged(bool)));
@@ -302,32 +250,6 @@ void AttachmentPopup2::setupUI() {
   // Connect rename request to inline editing.
   connect(m_controller, &AttachmentController::renameRequested, this,
           [this](const QModelIndex &p_index) {
-            if (m_buffer && m_buffer->isEncrypted()) {
-              const auto oldName = p_index.data(Qt::DisplayRole).toString();
-              QPointer<AttachmentPopup2> guard(this);
-              QPointer<QInputDialog> dialog(new QInputDialog(dialogParent()));
-              const auto clearDialog = qScopeGuard([&]() { delete dialog.data(); });
-              dialog->setWindowTitle(tr("Rename Attachment"));
-              dialog->setLabelText(tr("Name"));
-              dialog->setTextValue(oldName);
-              if (auto *buffers = m_services.get<BufferService>()) {
-                connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), dialog,
-                        SLOT(reject()));
-              }
-              if (dialog->exec() != QDialog::Accepted || !guard || !dialog) {
-                return;
-              }
-              const auto newName = dialog->textValue();
-              if (!newName.trimmed().isEmpty()) {
-                const auto result = m_controller->renameAttachment(oldName, newName.trimmed());
-                if (result.isEmpty()) {
-                  QMessageBox::warning(dialogParent(), tr("Attachments"),
-                                       tr("Unable to rename attachment."));
-                }
-                m_model->refresh();
-              }
-              return;
-            }
             m_listView->setEditTriggers(QAbstractItemView::AllEditTriggers);
             m_listView->edit(p_index);
             m_listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -385,9 +307,9 @@ bool AttachmentPopup2::eventFilter(QObject *p_obj, QEvent *p_event) {
 
 void AttachmentPopup2::updateButtonsState() {
   const int count = m_listView->selectionModel()->selectedIndexes().size();
-  const bool protectedNote = m_buffer && m_buffer->isEncrypted();
-  const bool available =
-      m_buffer && m_buffer->isValid() && (!protectedNote || m_buffer->acquireProtectedLease());
+  const auto *buffers = m_services.get<BufferService>();
+  const bool available = m_buffer && m_buffer->isValid() &&
+                         (!m_buffer->isEncrypted() || !buffers || !buffers->isProtectedLocking());
   const bool writable = available && !m_buffer->isReadOnly();
   m_addBtn->setEnabled(writable);
   m_openFolderBtn->setEnabled(available);
@@ -397,11 +319,6 @@ void AttachmentPopup2::updateButtonsState() {
   m_deleteBtn->setEnabled(writable && count > 0);
   m_copyPathBtn->setEnabled(available && count > 0);
   m_renameBtn->setEnabled(writable && count == 1);
-  m_openBtn->defaultAction()->setText(protectedNote ? tr("Save Decrypted Copy") : tr("Open"));
-  m_openFolderBtn->defaultAction()->setText(protectedNote ? tr("Save Decrypted Copies")
-                                                          : tr("Open Folder"));
-  m_copyPathBtn->defaultAction()->setText(protectedNote ? tr("Save Decrypted Copy")
-                                                        : tr("Copy Path"));
 }
 
 QStringList AttachmentPopup2::getSelectedFilenames() const {

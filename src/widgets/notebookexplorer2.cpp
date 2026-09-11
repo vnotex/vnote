@@ -168,14 +168,13 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
   }
 
   QVector<std::shared_ptr<NoteEncryptionConversion>> conversions;
-  QStringList retained;
   QSet<NodeIdentifier> seen;
   for (const auto &id : p_ids) {
     if (seen.contains(id)) {
       continue;
     }
     seen.insert(id);
-    progress.setLabelText(tr("Checking \"%1\" and all of its resources...").arg(id.relativePath));
+    progress.setLabelText(tr("Preparing \"%1\"...").arg(id.relativePath));
     auto conversion = m_viewAreaController->prepareNoteConversion(id);
     conversions.append(conversion);
     if (conversion->m_error != VXCORE_OK) {
@@ -185,25 +184,18 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
       showError(conversion->m_errorMessage);
       return;
     }
-    retained.append(conversion->m_plan.m_retainedOriginals);
   }
-  retained.removeDuplicates();
-  retained.sort();
   QMessageBox confirmation(
       QMessageBox::Warning, tr("Encrypt Note"),
-      tr("Encrypt %n selected note(s), including their images, attachments and comments?", "",
-         conversions.size()),
+      tr("Encrypt the contents of %n selected note(s)?", "", conversions.size()),
       QMessageBox::Ok | QMessageBox::Cancel, &progress);
   confirmation.setObjectName(QStringLiteral("noteEncryptionConfirmation"));
   QString warning =
       tr("Prior Git history, cloud versions and backup copies are not erased. "
          "Filenames, folders and tags remain visible. Encryption is not secure deletion.");
-  if (!retained.isEmpty()) {
-    warning += tr("\n\nThese original files will remain unencrypted. They are shared, outside "
-                  "the note's private assets folder, or could not be verified as exclusive to "
-                  "this note:\n%1")
-                   .arg(retained.join(QLatin1Char('\n')));
-  }
+  warning += tr("\n\nImages and attachments stored as separate files are NOT encrypted. "
+                "Comments also remain unencrypted. To include an image in an encrypted "
+                "Markdown note, use Insert as Base64.");
   confirmation.setInformativeText(warning);
   confirmation.button(QMessageBox::Ok)->setText(tr("Encrypt"));
   confirmation.setDefaultButton(QMessageBox::Cancel);
@@ -342,10 +334,10 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     dialog.setWindowTitle(tr("Set Up Note Encryption"));
     dialog.setObjectName(QStringLiteral("noteEncryptionSetup"));
     auto *layout = new QFormLayout(&dialog);
-    auto *warning = new QLabel(
-        tr("Choose a master password. Forgotten passwords cannot be reset: "
-           "without this password, encrypted notes and their resources cannot be recovered."),
-        &dialog);
+    auto *warning =
+        new QLabel(tr("Choose a master password. Forgotten passwords cannot be reset: "
+                      "without this password, encrypted note contents cannot be recovered."),
+                   &dialog);
     warning->setWordWrap(true);
     layout->addRow(warning);
     auto *first = new QLineEdit(&dialog);

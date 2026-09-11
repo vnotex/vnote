@@ -204,13 +204,6 @@ QByteArray Buffer2::readResource(const QString &p_resourceUrl, VxCoreError *p_er
   return isValid() ? m_bufferService->readResource(*this, p_resourceUrl, p_error) : QByteArray();
 }
 
-QJsonArray Buffer2::resources(VxCoreError *p_error) const {
-  if (p_error) {
-    *p_error = VXCORE_ERR_INVALID_STATE;
-  }
-  return isValid() ? m_bufferService->resources(*this, p_error) : QJsonArray();
-}
-
 VxCoreError Buffer2::exportResource(const QString &p_resourceUrl,
                                     const QString &p_destination) const {
   return isValid() ? m_bufferService->exportResource(*this, p_resourceUrl, p_destination)

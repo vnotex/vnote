@@ -96,10 +96,6 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   setupOutlineProvider();
   setupUI();
   setupPreviewHelper();
-  if (getBuffer().isEncrypted()) {
-    connect(this, &MarkdownViewWindow2::saveDecryptedCopyRequested, this,
-            &ViewWindow2::saveDecryptedCopy);
-  }
 
   // Trigger initial mode setup directly to the requested mode.
   // Going straight to Edit (Invalid -> Edit) avoids a visible Read -> Edit
@@ -437,7 +433,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Provide Buffer2 handle for asset/attachment operations.
   m_editor->setBuffer2(&getBuffer());
 
-  // Protected images are inserted directly as encrypted assets, never uploaded.
+  // Encrypted notes default to embedded Base64, not implicit image-host uploads.
   if (!getBuffer().isEncrypted() && m_imageHostController) {
     m_editor->setImageHostController(m_imageHostController);
   }
@@ -559,8 +555,6 @@ bool MarkdownViewWindow2::setupViewer() {
   if (m_protectedView) {
     auto *webPage = qobject_cast<WebPage *>(m_viewer->page());
     webPage->setProtectedDocumentUrl(m_protectedView->page.url);
-    connect(m_viewer, &MarkdownViewer::saveDecryptedCopyRequested, this,
-            &MarkdownViewWindow2::saveDecryptedCopyRequested);
     connect(adapterObj, &MarkdownViewerAdapter::protectedLinkRequested, this,
             &MarkdownViewWindow2::handleOpenFileRequest);
   }
@@ -819,11 +813,6 @@ void MarkdownViewWindow2::connectEditorSignals() {
             }
           });
 
-  if (getBuffer().isEncrypted()) {
-    connect(m_editor, &MarkdownEditor::saveDecryptedCopyRequested, this,
-            &MarkdownViewWindow2::saveDecryptedCopyRequested);
-  }
-
   // Self-file anchor link resolution.
   connect(m_editor, &MarkdownEditor::openFileRequested, this,
           [this](const QString &p_filePath) { handleOpenFileRequest(p_filePath); });
@@ -841,14 +830,6 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   const QUrl url(p_filePath);
   const auto scheme = url.scheme();
   if (getBuffer().isEncrypted()) {
-    if (scheme == QStringLiteral("vxasset")) {
-      const auto id = p_filePath.mid(8);
-      const QUuid uuid(id);
-      if (!uuid.isNull() && uuid.toString(QUuid::WithoutBraces) == id) {
-        emit saveDecryptedCopyRequested(p_filePath);
-      }
-      return;
-    }
     if ((!scheme.isEmpty() && scheme != QStringLiteral("http") &&
          scheme != QStringLiteral("https")) ||
         p_filePath.startsWith(QLatin1Char('/')) || p_filePath.startsWith(QLatin1Char('\\'))) {

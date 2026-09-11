@@ -51,11 +51,12 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * Notes with more than 100 math blocks are no longer silently truncated, image-host images are not downloaded again for each preview, and multiline inline highlights render correctly
     * Prism was upgraded to 1.30.0 with every bundled language
 * **Encrypted notes**
-    * Protect individual Markdown and plain-text notes in bundled notebooks, including their images, attachments and comments, with a password-protected portable key hierarchy
+    * Protect the contents of individual Markdown, plain-text and mind-map notes in bundled notebooks with a password-protected portable key hierarchy
     * Unlock on demand; Lock All saves protected edits and closes protected views while leaving ordinary tabs open
-    * Protected previews use isolated, memory-only resources; external use requires an explicit decrypted export outside the notebook
+    * Protected note previews use memory-only profiles; external use of the note body requires an explicit decrypted export outside the notebook
     * Filenames, folders and tags remain visible; conversion does not erase plaintext in existing Git history, backups, shared resources or external source files
-    * Conversion warnings explain when exclusive use of an original cannot be verified; privacy-safe Info diagnostics report retention decisions, native hard-link counts and query errors
+    * Images, attachments and comments stored as separate files remain unencrypted; conversion warns about this and never scans or changes assets
+    * Markdown image insertion adds Insert as Base64 using reference links and an embedded data URI; this option is first and default for encrypted Markdown notes
 * **Tags**: tags can be added to or removed from multiple selected files in one operation
 * **Interface**
     * The right dock tabs now use the same compact sidebar treatment as the left dock, with consistent indentation and theme-owned row spacing

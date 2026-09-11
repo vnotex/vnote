@@ -3,6 +3,8 @@
 
 #include "viewwindow2.h"
 
+class QWebEngineProfile;
+
 namespace vnotex {
 
 class MindMapEditor;
@@ -26,6 +28,7 @@ class MindMapViewWindow2 : public ViewWindow2 {
 public:
   explicit MindMapViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                               QWidget *p_parent = nullptr);
+  ~MindMapViewWindow2() override;
 
   QString getLatestContent() const Q_DECL_OVERRIDE;
 
@@ -80,6 +83,7 @@ private:
 
   // Managed by QObject.
   MindMapEditor *m_editor = nullptr;
+  QWebEngineProfile *m_protectedProfile = nullptr;
 
   // Whether the find widget has been configured (replace disabled, options limited).
   bool m_findConfigured = false;

@@ -2,10 +2,8 @@
 
 #include <QAction>
 #include <QApplication>
-#include <QBuffer>
 #include <QClipboard>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QMenu>
 #include <QMessageBox>
@@ -19,7 +17,6 @@
 #include <QShortcut>
 #include <QTemporaryFile>
 #include <QTimer>
-#include <QUuid>
 
 #include <vtextedit/htmlimgscanner.h>
 #include <vtextedit/markdowneditorconfig.h>
@@ -74,15 +71,6 @@
 using namespace vnotex;
 
 namespace {
-bool isProtectedAssetUrl(const QString &p_url) {
-  if (!p_url.startsWith(QStringLiteral("vxasset:"))) {
-    return false;
-  }
-  const auto id = p_url.mid(8);
-  const QUuid uuid(id);
-  return !uuid.isNull() && uuid.toString(QUuid::WithoutBraces) == id;
-}
-
 QPair<QString, QString> getSelectDialogShortcutColors(ServiceLocator &p_services) {
   auto *themeService = p_services.get<ThemeService>();
   return qMakePair(
@@ -256,23 +244,7 @@ void MarkdownEditor::typeLink() {
 }
 
 void MarkdownEditor::typeImage() {
-  if (m_protectedBuffer) {
-    if (m_protectedResourcesRevoked || isReadOnly()) {
-      return;
-    }
-    const auto *mime = QApplication::clipboard()->mimeData();
-    if (mime->hasImage()) {
-      insertImageFromMimeData(mime);
-    } else {
-      // The normal image dialog fetches URLs and stages downloaded plaintext.
-      // Protected imports select an existing local file, then preview safe bytes.
-      const auto path = QFileDialog::getOpenFileName(
-          this, tr("Import Image"), QString(),
-          tr("Images (*.png *.jpg *.jpeg *.gif *.webp *.bmp *.svg);;All Files (*)"));
-      if (!path.isEmpty()) {
-        insertProtectedImageFromUrl(QUrl::fromLocalFile(path).toString(), false);
-      }
-    }
+  if (isReadOnly() || (m_protectedBuffer && m_protectedResourcesRevoked)) {
     return;
   }
 
@@ -282,6 +254,11 @@ void MarkdownEditor::typeImage() {
 
   ImageInsertDialog dialog(tr("Insert Image"), "", "", "", m_services.get<ConfigMgr2>(), true,
                            this);
+  dialog.setEncryptedNote(m_protectedBuffer);
+  if (m_protectedBuffer) {
+    connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
+            &dialog, SLOT(reject()));
+  }
 
   // Try fetch image from clipboard.
   {
@@ -319,18 +296,7 @@ void MarkdownEditor::typeImage() {
     return;
   }
 
-  enterInsertModeIfApplicable();
-  if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
-    insertImageToBufferFromLocalFile(dialog.getImageTitle(), dialog.getImageAltText(),
-                                     dialog.getImagePath(), true, nullptr, dialog.getImageWidth(),
-                                     dialog.getImageHeight());
-  } else {
-    auto image = dialog.getImage();
-    if (!image.isNull()) {
-      insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
-                                  dialog.getImageWidth(), dialog.getImageHeight());
-    }
-  }
+  insertImageFromDialog(dialog);
 }
 
 void MarkdownEditor::typeTable() {
@@ -459,14 +425,7 @@ bool MarkdownEditor::readProtectedImage(const QString &p_url, QByteArray &p_data
     return false;
   }
   QByteArray input;
-  if (isProtectedAssetUrl(p_url)) {
-    VxCoreError error = VXCORE_OK;
-    input = m_buffer2->readResource(p_url, &error);
-    if (error != VXCORE_OK) {
-      input.fill('\0');
-      return false;
-    }
-  } else if (p_url.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
+  if (p_url.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
     // Data URLs also belong to this live note generation; a closed/locking
     // buffer must not keep rendering them merely because no asset IO is needed.
     const auto lease = m_services.get<BufferService>()->acquireProtectedLease(*m_buffer2);
@@ -499,7 +458,18 @@ bool MarkdownEditor::readProtectedImage(const QString &p_url, QByteArray &p_data
       input = std::move(payload);
     }
   } else {
-    return false;
+    const QUrl url(p_url);
+    if (!url.isRelative() || !url.host().isEmpty()) {
+      return false;
+    }
+    const auto parent = m_buffer2->nodeId().parentPath();
+    const auto path = QDir::cleanPath(QDir(parent).filePath(url.path(QUrl::FullyDecoded)));
+    VxCoreError error = VXCORE_OK;
+    input = m_buffer2->readResource(path, &error);
+    if (error != VXCORE_OK) {
+      input.fill('\0');
+      return false;
+    }
   }
   QByteArray mime;
   const bool ok = ImageUtils::protectedImageData(input, p_data, mime);
@@ -518,39 +488,14 @@ bool MarkdownEditor::insertImageToBufferFromLocalFile(const QString &p_title,
                                                       const QString &p_srcImagePath,
                                                       bool p_insertText, QString *p_urlInLink,
                                                       int p_width, int p_height) {
-  if (m_protectedBuffer) {
-    if (m_protectedResourcesRevoked || !m_buffer2 || isReadOnly()) {
-      return false;
-    }
-    const auto source = QUrl::fromUserInput(p_srcImagePath);
-    if (!source.isLocalFile() || !source.host().isEmpty() ||
-        source.toLocalFile().startsWith(QStringLiteral("//"))) {
-      emit statusMessageRequested(tr("Remote images are blocked; import a local image instead"));
-      return false;
-    }
-    QByteArray bytes;
-    if (FileUtils2::readFile(source.toLocalFile(), &bytes)) {
-      bytes.fill('\0');
-      emit statusMessageRequested(tr("Unable to read the image selected for import"));
-      return false;
-    }
-    const auto resource = MarkdownEditorController::importProtectedImage(
-        *m_buffer2, generateImageFileNameToInsertAs(p_title, QFileInfo(p_srcImagePath).suffix()),
-        bytes);
-    bytes.fill('\0');
-    if (resource.isEmpty()) {
-      emit statusMessageRequested(
-          tr("Unable to import image: unsupported, active, or unavailable data"));
-      return false;
-    }
-    insertImageLink(p_title, p_altText, resource, p_insertText, p_urlInLink, p_width, p_height);
-    return true;
+  if (isReadOnly() || (m_protectedBuffer && m_protectedResourcesRevoked)) {
+    return false;
   }
   auto destFileName = generateImageFileNameToInsertAs(p_title, QFileInfo(p_srcImagePath).suffix());
 
   QString destFilePath;
 
-  if (m_imageHostController && m_imageHostController->getDefaultProvider()) {
+  if (!m_protectedBuffer && m_imageHostController && m_imageHostController->getDefaultProvider()) {
     // Save to image host.
     QByteArray ba;
     Error err = FileUtils2::readFile(p_srcImagePath, &ba);
@@ -599,92 +544,92 @@ QString MarkdownEditor::generateImageFileNameToInsertAs(const QString &p_title,
 }
 
 bool MarkdownEditor::insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                                 const QImage &p_image, int p_width, int p_height) {
-  if (m_protectedBuffer) {
-    if (m_protectedResourcesRevoked || !m_buffer2 || isReadOnly()) {
-      return false;
-    }
-    QByteArray bytes;
-    QBuffer output(&bytes);
-    if (!output.open(QIODevice::WriteOnly) || !p_image.save(&output, "PNG")) {
-      bytes.fill('\0');
-      return false;
-    }
-    const auto resource = MarkdownEditorController::importProtectedImage(
-        *m_buffer2, generateImageFileNameToInsertAs(p_title, QStringLiteral("png")), bytes);
-    bytes.fill('\0');
-    if (resource.isEmpty()) {
-      emit statusMessageRequested(
-          tr("Unable to import image: unsupported, active, or unavailable data"));
-      return false;
-    }
-    insertImageLink(p_title, p_altText, resource, true, nullptr, p_width, p_height);
-    return true;
+                                                 const QByteArray &p_data, int p_width,
+                                                 int p_height) {
+  if (p_data.isEmpty() || isReadOnly() || (m_protectedBuffer && m_protectedResourcesRevoked)) {
+    return false;
   }
-  // Save as PNG by default.
-  const QString format("png");
-  const auto destFileName = generateImageFileNameToInsertAs(p_title, format);
-
-  QString destFilePath;
-
-  if (m_imageHostController && m_imageHostController->getDefaultProvider()) {
-    // Save to image host.
-    QByteArray ba;
-    QBuffer buffer(&ba);
-    buffer.open(QIODevice::WriteOnly);
-    p_image.save(&buffer, format.toStdString().c_str());
-
-    int token = saveToImageHost(ba, destFileName, p_width, p_height);
-    if (token < 0) {
-      return false;
-    }
-    // Placeholder already inserted by saveToImageHost; imageInserted emitted on completion.
-    return true;
-  } else {
-    if (!m_buffer2 || !m_buffer2->isValid()) {
-      MessageBoxHelper::notify(MessageBoxHelper::Warning,
-                               tr("Image insertion from data is not supported without a buffer."),
-                               this);
-      return false;
-    }
-    // Serialize QImage to PNG bytes.
-    QByteArray ba;
-    QBuffer buffer(&ba);
-    buffer.open(QIODevice::WriteOnly);
-    p_image.save(&buffer, format.toStdString().c_str());
-    destFilePath = m_buffer2->insertAssetRaw(destFileName, ba);
-    // Convert relative asset path to absolute for getRelativeLink().
-    if (!destFilePath.isEmpty() && QDir::isRelativePath(destFilePath)) {
-      const auto assetsFolder = m_buffer2->getAssetsFolder();
-      if (!assetsFolder.isEmpty()) {
-        destFilePath = QDir(assetsFolder).filePath(QFileInfo(destFilePath).fileName());
-      }
-    }
-    if (destFilePath.isEmpty()) {
-      MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to insert image from data."),
-                               this);
-      return false;
+  const auto suffix = ImageUtils::guessImageSuffix(p_data);
+  const auto destFileName = generateImageFileNameToInsertAs(p_title, suffix);
+  if (!m_protectedBuffer && m_imageHostController && m_imageHostController->getDefaultProvider()) {
+    // Ordinary notes retain their configured image-host workflow. Protected
+    // notes never upload implicitly when the user chooses a plaintext file.
+    return saveToImageHost(p_data, destFileName, p_width, p_height) >= 0;
+  }
+  if (!m_buffer2 || !m_buffer2->isValid()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning,
+                             tr("Image insertion from data is not supported without a buffer."),
+                             this);
+    return false;
+  }
+  auto destFilePath = m_buffer2->insertAssetRaw(destFileName, p_data);
+  if (!destFilePath.isEmpty() && QDir::isRelativePath(destFilePath)) {
+    const auto assetsFolder = m_buffer2->getAssetsFolder();
+    if (!assetsFolder.isEmpty()) {
+      destFilePath = QDir(assetsFolder).filePath(QFileInfo(destFilePath).fileName());
     }
   }
-
+  if (destFilePath.isEmpty()) {
+    MessageBoxHelper::notify(MessageBoxHelper::Warning, tr("Failed to insert image from data."),
+                             this);
+    return false;
+  }
   insertImageLink(p_title, p_altText, destFilePath, true, nullptr, p_width, p_height);
+  return true;
+}
+
+void MarkdownEditor::insertImageFromDialog(const ImageInsertDialog &p_dialog) {
+  if (isReadOnly() || (m_protectedBuffer && m_protectedResourcesRevoked)) {
+    return;
+  }
+  if (p_dialog.insertAsBase64()) {
+    insertImageAsBase64(p_dialog.getImageTitle(), p_dialog.getImageAltText(),
+                        p_dialog.getImageData());
+    return;
+  }
+  enterInsertModeIfApplicable();
+  if (p_dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
+    insertImageToBufferFromLocalFile(p_dialog.getImageTitle(), p_dialog.getImageAltText(),
+                                     p_dialog.getImagePath(), true, nullptr,
+                                     p_dialog.getImageWidth(), p_dialog.getImageHeight());
+  } else {
+    insertImageToBufferFromData(p_dialog.getImageTitle(), p_dialog.getImageAltText(),
+                                p_dialog.getImageData(), p_dialog.getImageWidth(),
+                                p_dialog.getImageHeight());
+  }
+}
+
+bool MarkdownEditor::insertImageAsBase64(const QString &p_title, const QString &p_altText,
+                                         const QByteArray &p_data) {
+  if (isReadOnly() || (m_protectedBuffer && m_protectedResourcesRevoked)) {
+    return false;
+  }
+  auto cursor = m_textEdit->textCursor();
+  const auto &selection = m_textEdit->getSelection();
+  if (selection.isValid()) {
+    cursor.setPosition(selection.start());
+    cursor.setPosition(selection.end(), QTextCursor::KeepAnchor);
+  }
+  if (!MarkdownEditorController::insertImageAsBase64(cursor, p_title, p_altText, p_data)) {
+    emit statusMessageRequested(tr("Unable to embed image: unsupported or invalid image data"));
+    return false;
+  }
+  enterInsertModeIfApplicable();
+  m_textEdit->setTextCursor(cursor);
   return true;
 }
 
 void MarkdownEditor::insertImageLink(const QString &p_title, const QString &p_altText,
                                      const QString &p_destImagePath, bool p_insertText,
                                      QString *p_urlInLink, int p_width, int p_height) {
-  const auto urlInLink = m_protectedBuffer ? p_destImagePath : getRelativeLink(p_destImagePath);
-  if (m_protectedBuffer && (m_protectedResourcesRevoked || !isProtectedAssetUrl(urlInLink))) {
+  const auto urlInLink = getRelativeLink(p_destImagePath);
+  if (m_protectedBuffer && m_protectedResourcesRevoked) {
     return;
   }
   if (p_urlInLink) {
     *p_urlInLink = urlInLink;
   }
-  if (!m_protectedBuffer) {
-    // Legacy plaintext cleanup must never receive a protected logical resource.
-    emit imageInserted(p_destImagePath, urlInLink);
-  }
+  emit imageInserted(p_destImagePath, urlInLink);
   if (p_insertText) {
     const auto imageLink =
         vte::MarkdownUtils::generateImageLink(p_title, urlInLink, p_altText, p_width, p_height);
@@ -953,20 +898,30 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source) {
       // Both image data and URL are embedded.
       const auto colors = getSelectDialogShortcutColors(m_services);
       SelectDialog dialog(tr("Insert From Clipboard"), colors.first, colors.second, this);
+      if (m_protectedBuffer) {
+        dialog.addSelection(tr("Insert as Base64"), 3);
+        connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
+                &dialog, SLOT(reject()));
+      }
       dialog.addSelection(tr("Insert From URL"), 0);
       dialog.addSelection(tr("Insert From Image Data"), 1);
       dialog.addSelection(tr("Insert As Image Link"), 2);
+      if (!m_protectedBuffer) {
+        dialog.addSelection(tr("Insert as Base64"), 3);
+      }
 
       if (dialog.exec() == QDialog::Accepted) {
         int selection = dialog.getSelection();
-        if (selection == 1) {
-          // Insert from image data.
-          insertImageFromMimeData(p_source);
+        if (selection == 1 || selection == 3) {
+          insertImageFromMimeData(p_source, selection == 3);
           return true;
         } else if (selection == 2) {
           // Insert as link.
           auto imageLink = vte::MarkdownUtils::generateImageLink("", match.captured(2), "");
           m_textEdit->insertPlainText(imageLink);
+          return true;
+        } else {
+          insertImageFromUrl(match.captured(2), false, false);
           return true;
         }
       } else {
@@ -974,7 +929,7 @@ bool MarkdownEditor::processHtmlFromMimeData(const QMimeData *p_source) {
       }
     }
 
-    insertImageFromUrl(match.captured(2));
+    insertImageFromUrl(match.captured(2), false, m_protectedBuffer);
     return true;
   }
 
@@ -990,9 +945,17 @@ bool MarkdownEditor::processImageFromMimeData(const QMimeData *p_source) {
   if (p_source->hasText()) {
     const auto colors = getSelectDialogShortcutColors(m_services);
     SelectDialog dialog(tr("Insert From Clipboard"), colors.first, colors.second, this);
+    if (m_protectedBuffer) {
+      dialog.addSelection(tr("Insert as Base64"), 3);
+      connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
+              &dialog, SLOT(reject()));
+    }
     dialog.addSelection(tr("Insert As Image"), 0);
     dialog.addSelection(tr("Insert As Text"), 1);
     dialog.addSelection(tr("Insert As Image Link"), 2);
+    if (!m_protectedBuffer) {
+      dialog.addSelection(tr("Insert as Base64"), 3);
+    }
 
     if (dialog.exec() == QDialog::Accepted) {
       int selection = dialog.getSelection();
@@ -1006,13 +969,16 @@ bool MarkdownEditor::processImageFromMimeData(const QMimeData *p_source) {
         auto imageLink = vte::MarkdownUtils::generateImageLink("", p_source->text(), "");
         m_textEdit->insertPlainText(imageLink);
         return true;
+      } else {
+        insertImageFromMimeData(p_source, selection == 3);
+        return true;
       }
     } else {
       return true;
     }
   }
 
-  insertImageFromMimeData(p_source);
+  insertImageFromMimeData(p_source, m_protectedBuffer);
   return true;
 }
 
@@ -1063,11 +1029,21 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
 
   const auto colors = getSelectDialogShortcutColors(m_services);
   SelectDialog dialog(tr("Insert From Clipboard"), colors.first, colors.second, this);
+  if (m_protectedBuffer) {
+    connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
+            &dialog, SLOT(reject()));
+  }
   if (isImage) {
+    if (m_protectedBuffer) {
+      dialog.addSelection(tr("Insert as Base64"), 8);
+    }
     dialog.addSelection(tr("Insert As Image"), 0);
     dialog.addSelection(tr("Insert As Image Link"), 1);
     if (!localFile.isEmpty()) {
       dialog.addSelection(tr("Insert As Relative Image Link"), 7);
+    }
+    if (!m_protectedBuffer) {
+      dialog.addSelection(tr("Insert as Base64"), 8);
     }
   }
 
@@ -1076,8 +1052,7 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
     dialog.addSelection(tr("Insert As Relative Link"), 3);
 
     if (m_buffer2 && m_buffer2->isAttachmentSupported() &&
-        (m_protectedBuffer ||
-         !PathUtils::pathContains(m_buffer2->getAttachmentsFolder(), localFile)) &&
+        !PathUtils::pathContains(m_buffer2->getAttachmentsFolder(), localFile) &&
         !PathUtils::isDir(localFile)) {
       dialog.addSelection(tr("Attach And Insert Link"), 6);
     }
@@ -1092,9 +1067,9 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
   if (dialog.exec() == QDialog::Accepted) {
     bool relativeLink = false;
     switch (dialog.getSelection()) {
+    case 8:
     case 0: {
-      // Insert As Image.
-      insertImageFromUrl(PathUtils::urlToPath(url));
+      insertImageFromUrl(PathUtils::urlToPath(url), false, dialog.getSelection() == 8);
       return true;
     }
 
@@ -1120,16 +1095,6 @@ bool MarkdownEditor::processUrlFromMimeData(const QMimeData *p_source) {
 
     case 6: {
       // Attach And Insert Link.
-      if (m_protectedBuffer) {
-        if (!m_protectedResourcesRevoked) {
-          const auto resource = m_buffer2->insertAttachment(localFile);
-          if (isProtectedAssetUrl(resource)) {
-            enterInsertModeIfApplicable();
-            vte::MarkdownUtils::typeLink(m_textEdit, QFileInfo(localFile).fileName(), resource);
-          }
-        }
-        return true;
-      }
       QString filename = m_buffer2->insertAttachment(localFile);
       if (!filename.isEmpty()) {
         localFile = QDir(m_buffer2->getAttachmentsFolder()).filePath(filename);
@@ -1235,8 +1200,18 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
   const auto colors = getSelectDialogShortcutColors(m_services);
   SelectDialog dialog(tr("Insert From Clipboard (%n items)", "", urls.size()), colors.first,
                       colors.second, this);
+  if (m_protectedBuffer) {
+    connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
+            &dialog, SLOT(reject()));
+  }
   if (isAllImage) {
+    if (m_protectedBuffer) {
+      dialog.addSelection(tr("Insert as Base64"), 2);
+    }
     dialog.addSelection(tr("Insert As Image"), 0);
+    if (!m_protectedBuffer) {
+      dialog.addSelection(tr("Insert as Base64"), 2);
+    }
   }
   bool attachmentSupported = m_buffer2 && m_buffer2->isAttachmentSupported();
   if (attachmentSupported) {
@@ -1246,38 +1221,23 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
 
   if (dialog.exec() == QDialog::Accepted) {
     switch (dialog.getSelection()) {
+    case 2:
     case 0: {
       // Insert As Image.
       for (const QUrl &url : urls) {
-        insertImageFromUrl(PathUtils::urlToPath(url), true);
-        m_textEdit->insertPlainText("\n\n");
+        if (m_protectedBuffer && m_protectedResourcesRevoked) {
+          break;
+        }
+        insertImageFromUrl(PathUtils::urlToPath(url), true, dialog.getSelection() == 2);
+        if (!m_protectedBuffer || !m_protectedResourcesRevoked) {
+          m_textEdit->insertPlainText("\n\n");
+        }
       }
       isProcessed = true;
       break;
     }
     case 1: {
       // Attach And Insert Link.
-      if (m_protectedBuffer) {
-        for (const auto &url : urls) {
-          if (m_protectedResourcesRevoked) {
-            break;
-          }
-          if (!url.isLocalFile() || !url.host().isEmpty()) {
-            emit statusMessageRequested(
-                tr("Remote attachments are blocked; import a local file instead"));
-            continue;
-          }
-          const auto resource = m_buffer2->insertAttachment(url.toLocalFile());
-          if (isProtectedAssetUrl(resource)) {
-            enterInsertModeIfApplicable();
-            vte::MarkdownUtils::typeLink(m_textEdit, QFileInfo(url.toLocalFile()).fileName(),
-                                         resource);
-            m_textEdit->insertPlainText("\n\n");
-          }
-        }
-        isProcessed = true;
-        break;
-      }
       QStringList resultFiles;
       for (const QUrl &url : urls) {
         QString filename = m_buffer2->insertAttachment(url.toLocalFile());
@@ -1300,8 +1260,8 @@ bool MarkdownEditor::processMultipleUrlsFromMimeData(const QMimeData *p_source) 
   return isProcessed;
 }
 
-void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source) {
-  QImage image = qvariant_cast<QImage>(p_source->imageData());
+void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source, bool p_base64) {
+  const QImage image = qvariant_cast<QImage>(p_source->imageData());
   if (image.isNull()) {
     return;
   }
@@ -1309,118 +1269,80 @@ void MarkdownEditor::insertImageFromMimeData(const QMimeData *p_source) {
   ImageInsertDialog dialog(tr("Insert Image From Clipboard"), "", "", "",
                            m_services.get<ConfigMgr2>(), false, this);
   dialog.setImage(image);
+  dialog.setImageSource(ImageInsertDialog::Source::ImageData);
+  dialog.setEncryptedNote(m_protectedBuffer);
+  dialog.setInsertAsBase64(p_base64);
   if (m_protectedBuffer) {
     connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
             &dialog, SLOT(reject()));
   }
   if (dialog.exec() == QDialog::Accepted) {
-    enterInsertModeIfApplicable();
-    insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
-                                dialog.getImageWidth(), dialog.getImageHeight());
+    insertImageFromDialog(dialog);
   }
 }
 
-void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet) {
-  if (m_protectedBuffer) {
-    insertProtectedImageFromUrl(p_url, p_quiet);
+void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet, bool p_base64) {
+  if (isReadOnly() || (m_protectedBuffer && m_protectedResourcesRevoked)) {
     return;
   }
   if (p_quiet) {
-    insertImageToBufferFromLocalFile("", "", p_url);
-  } else {
-    ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", m_services.get<ConfigMgr2>(),
-                             false, this);
-    dialog.setImagePath(p_url);
-    if (dialog.exec() == QDialog::Accepted) {
+    const auto generation = m_protectedResourceGeneration;
+    const auto url = QUrl::fromUserInput(p_url);
+    QByteArray data;
+    if (url.isLocalFile()) {
+      if (FileUtils2::readFile(url.toLocalFile(), &data)) {
+        emit statusMessageRequested(tr("Unable to read the selected image"));
+        return;
+      }
+    } else {
+      data = NetworkAccess::request(url).m_data;
+    }
+    if (m_protectedBuffer &&
+        (m_protectedResourcesRevoked || generation != m_protectedResourceGeneration)) {
+      data.fill('\0');
+      return;
+    }
+    if (p_base64) {
+      insertImageAsBase64(QString(), QString(), data);
+    } else {
+      QByteArray preview;
+      QByteArray mime;
+      const bool valid = m_protectedBuffer ? ImageUtils::protectedImageData(data, preview, mime)
+                                           : !QImage::fromData(data).isNull();
+      if (!valid) {
+        emit statusMessageRequested(
+            tr("Unable to insert image: unsupported or invalid image data"));
+        return;
+      }
       enterInsertModeIfApplicable();
-      if (dialog.getImageSource() == ImageInsertDialog::Source::LocalFile) {
-        insertImageToBufferFromLocalFile(dialog.getImageTitle(), dialog.getImageAltText(),
-                                         dialog.getImagePath(), true, nullptr,
-                                         dialog.getImageWidth(), dialog.getImageHeight());
+      if (url.isLocalFile()) {
+        insertImageToBufferFromLocalFile(QString(), QString(), url.toLocalFile());
       } else {
-        auto image = dialog.getImage();
-        if (!image.isNull()) {
-          insertImageToBufferFromData(dialog.getImageTitle(), dialog.getImageAltText(), image,
-                                      dialog.getImageWidth(), dialog.getImageHeight());
-        }
+        insertImageToBufferFromData(QString(), QString(), data);
       }
     }
-  }
-}
-
-void MarkdownEditor::insertProtectedImageFromUrl(const QString &p_url, bool p_quiet) {
-  if (m_protectedResourcesRevoked || !m_buffer2 || isReadOnly()) {
     return;
   }
-  const auto generation = m_protectedResourceGeneration;
-  QByteArray bytes;
-  if (isProtectedAssetUrl(p_url) ||
-      p_url.startsWith(QStringLiteral("data:"), Qt::CaseInsensitive)) {
-    if (!readProtectedImage(p_url, bytes)) {
-      emit statusMessageRequested(tr("This image is blocked or unavailable"));
-      return;
-    }
-  } else {
-    const auto source = QUrl::fromUserInput(p_url);
-    if (!source.isLocalFile() || !source.host().isEmpty() ||
-        source.toLocalFile().startsWith(QStringLiteral("//"))) {
-      emit statusMessageRequested(tr("Remote images are blocked; import a local image instead"));
-      return;
-    }
-    QByteArray input;
-    QByteArray mime;
-    const auto error = FileUtils2::readFile(source.toLocalFile(), &input);
-    const bool safe = (!error && ImageUtils::protectedImageData(input, bytes, mime));
-    input.fill('\0');
-    if (!safe) {
-      emit statusMessageRequested(
-          tr("Unable to import image: unsupported, active, or unavailable data"));
-      return;
-    }
-  }
-
-  QString title;
-  QString alt;
-  int width = 0;
-  int height = 0;
-  if (!p_quiet) {
-    // Data-only dialog: no editable source URL, downloader, or temporary file.
-    ImageInsertDialog dialog(tr("Import Image"), QString(), QString(), QString(),
-                             m_services.get<ConfigMgr2>(), false, this);
-    dialog.setImage(QImage::fromData(bytes));
+  ImageInsertDialog dialog(tr("Insert Image From URL"), "", "", "", m_services.get<ConfigMgr2>(),
+                           false, this);
+  dialog.setEncryptedNote(m_protectedBuffer);
+  dialog.setInsertAsBase64(p_base64);
+  dialog.setImagePath(p_url);
+  if (m_protectedBuffer) {
     connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
             &dialog, SLOT(reject()));
-    if (dialog.exec() != QDialog::Accepted) {
-      bytes.fill('\0');
-      return;
-    }
-    title = dialog.getImageTitle();
-    alt = dialog.getImageAltText();
-    width = dialog.getImageWidth();
-    height = dialog.getImageHeight();
   }
-  if (m_protectedResourcesRevoked || generation != m_protectedResourceGeneration) {
-    bytes.fill('\0');
-    return;
+  if (dialog.exec() == QDialog::Accepted) {
+    insertImageFromDialog(dialog);
   }
-  const auto resource = MarkdownEditorController::importProtectedImage(
-      *m_buffer2, generateImageFileNameToInsertAs(title, ImageUtils::guessImageSuffix(bytes)),
-      bytes);
-  bytes.fill('\0');
-  if (resource.isEmpty()) {
-    emit statusMessageRequested(tr("Unable to insert the protected image"));
-    return;
-  }
-  enterInsertModeIfApplicable();
-  insertImageLink(title, alt, resource, true, nullptr, width, height);
 }
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path) {
-  if (m_protectedBuffer && isProtectedAssetUrl(p_path)) {
-    return p_path;
-  }
   if (PathUtils::isLocalFile(p_path)) {
-    auto relativePath = PathUtils::relativePath(m_contentPath, p_path);
+    const auto base = m_contentPath.isEmpty() && m_buffer2
+                          ? QFileInfo(m_buffer2->resolvedPath()).path()
+                          : m_contentPath;
+    auto relativePath = PathUtils::relativePath(base, p_path);
     auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
     if (m_config.getPrependDotInRelativeLink()) {
       PathUtils::prependDotIfRelative(link);
@@ -2036,16 +1958,7 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
     const auto generation = m_protectedResourceGeneration;
     auto *menu = new QMenu(tr("Image"), p_menu);
     p_menu->insertMenu(p_before, menu);
-    if (isProtectedAssetUrl(resource)) {
-      auto *exportAction = menu->addAction(tr("Save Decrypted Copy..."));
-      connect(exportAction, &QAction::triggered, this, [this, resource, generation]() {
-        if (!m_protectedResourcesRevoked && generation == m_protectedResourceGeneration) {
-          emit saveDecryptedCopyRequested(resource);
-        }
-      });
-    }
-    if (isProtectedAssetUrl(resource) ||
-        resource.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
+    {
       auto *copyAction = menu->addAction(tr("Copy"));
       connect(copyAction, &QAction::triggered, this, [this, resource, generation]() {
         if (m_protectedResourcesRevoked || generation != m_protectedResourceGeneration) {
@@ -2062,9 +1975,6 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
           ClipboardUtils::setImageToClipboard(QApplication::clipboard(), image);
         }
       });
-    } else {
-      auto *blocked = menu->addAction(tr("Image blocked"));
-      blocked->setEnabled(false);
     }
     auto *importAction = menu->addAction(tr("Import Image..."));
     connect(importAction, &QAction::triggered, this, &MarkdownEditor::typeImage);
@@ -2447,20 +2357,12 @@ QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_bl
 }
 
 void MarkdownEditor::openLink(const QString &p_url) {
-  if (m_protectedBuffer) {
-    if (m_protectedResourcesRevoked) {
-      return;
-    }
-    if (isProtectedAssetUrl(p_url)) {
-      emit saveDecryptedCopyRequested(p_url);
-      return;
-    }
-    const QUrl url(p_url);
-    if (url.scheme() == QStringLiteral("vxasset") || url.scheme() == QStringLiteral("data") ||
-        url.scheme() == QStringLiteral("file") || url.scheme() == QStringLiteral("qrc")) {
-      emit statusMessageRequested(tr("Use Save Decrypted Copy for protected attachments"));
-      return;
-    }
+  if (m_protectedBuffer && m_protectedResourcesRevoked) {
+    return;
+  }
+  if (p_url.startsWith(QStringLiteral("data:"), Qt::CaseInsensitive)) {
+    emit statusMessageRequested(tr("Use the image menu to copy an embedded image"));
+    return;
   }
   emit openFileRequested(p_url);
 }

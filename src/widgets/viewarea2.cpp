@@ -1040,9 +1040,10 @@ bool ViewArea2::recreateNoteViews(
     const QVector<ID> &p_windowIds, const Buffer2 &p_buffer, const QString &p_editorType,
     const std::function<void(QObject *, QObject *)> &p_replaceHidden) {
   auto *factory = m_services.get<ViewWindowFactory>();
-  const QString fileType = p_editorType == QLatin1String("markdown") ? QStringLiteral("Markdown")
-                           : p_editorType == QLatin1String("text")   ? QStringLiteral("Text")
-                                                                     : QString();
+  const QString fileType = p_editorType == QLatin1String("markdown")  ? QStringLiteral("Markdown")
+                           : p_editorType == QLatin1String("text")    ? QStringLiteral("Text")
+                           : p_editorType == QLatin1String("mindmap") ? QStringLiteral("MindMap")
+                                                                      : QString();
   if (!factory || fileType.isEmpty() || !factory->hasCreator(fileType)) {
     return false;
   }

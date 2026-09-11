@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
 #include <QIODevice>
 #include <QMutex>
 #include <QMutexLocker>
@@ -81,13 +82,8 @@ bool scopedProtectedUrl(const QUrl &p_url, const QString &p_token) {
 }
 
 bool protectedAssetPath(const QString &p_path) {
-  const auto prefix = QStringLiteral("/assets/");
-  if (!p_path.startsWith(prefix)) {
-    return false;
-  }
-  const auto id = p_path.mid(prefix.size());
-  const QUuid uuid(id);
-  return !uuid.isNull() && uuid.toString(QUuid::WithoutBraces).toLower() == id;
+  static const QRegularExpression pattern(QStringLiteral("^/files/[A-Za-z0-9_-]{1,8192}$"));
+  return pattern.match(p_path).hasMatch();
 }
 
 QByteArray protectedResourceMime(const QString &p_path) {
@@ -247,7 +243,30 @@ public:
     const bool asset = protectedAssetPath(path);
     if (asset) {
       VxCoreError error = VXCORE_OK;
-      auto input = m_state->buffer.readResource(QStringLiteral("vxasset:") + path.mid(8), &error);
+      // Image files remain plaintext. Serve only passive image bytes through
+      // the note-scoped profile; the core reader enforces notebook containment.
+      const QByteArray decoded = QByteArray::fromBase64(
+          path.mid(7).toLatin1(),
+          QByteArray::Base64UrlEncoding | QByteArray::AbortOnBase64DecodingErrors);
+      const QString source = QString::fromUtf8(decoded);
+      const QUrl relative(source, QUrl::StrictMode);
+      if (decoded.isEmpty() || source.toUtf8() != decoded || !relative.isValid() ||
+          relative.isRelative() == false || relative.hasQuery() || relative.hasFragment() ||
+          relative.authority().isEmpty() == false || relative.path().startsWith(QLatin1Char('/')) ||
+          relative.path().contains(QChar(92)) || relative.path().contains(QChar::Null)) {
+        p_job->fail(QWebEngineUrlRequestJob::RequestDenied);
+        return;
+      }
+      const QString local = QDir::cleanPath(relative.path(QUrl::FullyDecoded));
+      if (local.isEmpty() || QDir::isAbsolutePath(local) || local == QLatin1String("..") ||
+          local.startsWith(QLatin1String("../")) || local.contains(QLatin1Char(':')) ||
+          local.contains(QChar(92)) || local.contains(QChar::Null)) {
+        p_job->fail(QWebEngineUrlRequestJob::RequestDenied);
+        return;
+      }
+      const QString base = QFileInfo(m_state->buffer.nodeId().relativePath).path();
+      const QString resource = QDir::cleanPath(QDir(base).filePath(local));
+      auto input = m_state->buffer.readResource(resource, &error);
       const bool passive = error == VXCORE_OK && ImageUtils::protectedImageData(input, bytes, mime);
       wipeBytes(input);
       if (!passive || !lease->isCurrent() || !m_state->active.load(std::memory_order_acquire)) {
@@ -272,7 +291,7 @@ public:
       p_job->fail(QWebEngineUrlRequestJob::UrlNotFound);
       return;
     }
-    // Only an authenticated asset reply retains a key lease. Page/application
+    // Image replies retain the protected note lifetime lease. Page/application
     // resources keep no key alive after this synchronous dispatch returns.
     auto *device = new ProtectedReplyBuffer(m_state, std::move(bytes),
                                             asset ? std::move(lease) : nullptr, p_job);

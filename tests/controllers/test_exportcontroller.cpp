@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMetaObject>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QWidget>
 
@@ -18,6 +19,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <core/services/workspacecoreservice.h>
 #include <export/exportdata.h>
 #include <export/exporter.h>
@@ -220,6 +222,8 @@ private slots:
   void testWorkspaceBatchNameSanitized();
   void testWorkspaceExportSkipsInvalidBuffers();
   void testWorkspaceExportEmptyYieldsNoOutput();
+  void testEncryptedNoteExport_data();
+  void testEncryptedNoteExport();
 
 private:
   struct ControllerFixture {
@@ -820,6 +824,109 @@ void TestExportController::testWorkspaceExportEmptyYieldsNoOutput() {
   const QStringList outputFiles = finishedSpy.takeFirst().at(0).toStringList();
   QVERIFY(outputFiles.isEmpty());
   QVERIFY(logSpy.count() > 0);
+}
+
+void TestExportController::testEncryptedNoteExport_data() {
+  QTest::addColumn<QString>("name");
+  QTest::addColumn<QString>("editor");
+  QTest::addColumn<QByteArray>("body");
+  QTest::newRow("markdown") << QStringLiteral("private.markdown") << QStringLiteral("markdown")
+                            << QByteArray("![outside](assets/image.png)\n\n![embedded][pic]\n\n"
+                                          "[pic]: data:image/png;base64,aW1hZ2U=\n");
+  QTest::newRow("text") << QStringLiteral("private.log") << QStringLiteral("text")
+                        << QByteArray("\xEF\xBB\xBFprivate text\r\n");
+  QTest::newRow("mindmap") << QStringLiteral("private.emind") << QStringLiteral("mindmap")
+                           << QByteArray("{\"nodeData\":{\"id\":\"root\",\"topic\":\"private\"}}");
+}
+
+void TestExportController::testEncryptedNoteExport() {
+  QFETCH(QString, name);
+  QFETCH(QString, editor);
+  QFETCH(QByteArray, body);
+  ControllerFixture fixture(m_ctx);
+  const auto notebook = fixture.notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("export-") + editor),
+      QStringLiteral("{\"name\":\"Private exports\"}"), vnotex::NotebookType::Bundled);
+  QVERIFY(!notebook.isEmpty());
+  auto setup = fixture.notebookService->prepareNotebookEncryption(
+      notebook, QString(), QByteArrayLiteral("note-export-password"));
+  QVERIFY(setup.isValid());
+  vnotex::SyncWorkQueueManager queues;
+  QString noteId;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({notebook});
+    QVERIFY(maintenance.isValid());
+    vnotex::NotebookIoGate::ScopedLock lock(*fixture.ioGate, notebook);
+    QCOMPARE(fixture.notebookService->commitNotebookEncryption(setup), VXCORE_OK);
+    QCOMPARE(fixture.notebookService->createEncryptedNote(notebook, QString(), name, editor, body,
+                                                          &noteId),
+             VXCORE_OK);
+  }
+  auto note = fixture.bufferService->openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  const auto cleanup = qScopeGuard([&]() {
+    fixture.bufferService->cancelProtectedLocking();
+    fixture.bufferService->closeBuffer(note.id());
+    fixture.notebookService->lockAllEncryption();
+  });
+  QCOMPARE(vnotex::ExportController::decryptedNoteName(note), name);
+  const auto text = note.decode(vnotex::QByteArrayViewCompat(body));
+  TempDirFixture output;
+  QVERIFY(output.isValid());
+  const auto destination = output.filePath(name);
+
+  // Ordinary Export must not disclose even an already-decrypted live editor snapshot.
+  vnotex::ExportContext context;
+  context.currentNodeId = note.nodeId();
+  context.bufferPath = note.resolvedPath();
+  context.bufferName = name;
+  context.bufferContent = text;
+  vnotex::ExportOption option;
+  option.m_source = vnotex::ExportSource::CurrentBuffer;
+  option.m_targetFormat = vnotex::ExportFormat::Markdown;
+  option.m_outputDir = output.path();
+  QSignalSpy finished(fixture.controller, &vnotex::ExportController::exportFinished);
+  fixture.controller->doExport(option, context);
+  QCOMPARE(finished.count(), 1);
+  QVERIFY(finished.takeFirst().at(0).toStringList().isEmpty());
+  QVERIFY(!QFileInfo::exists(destination));
+
+  QFile ciphertext(note.resolvedPath());
+  QVERIFY(ciphertext.open(QIODevice::ReadOnly));
+  const auto originalCiphertext = ciphertext.readAll();
+  ciphertext.close();
+  const auto forbidden =
+      fixture.notebookService->buildAbsolutePath(notebook, QStringLiteral("plain-copy.txt"));
+  QCOMPARE(fixture.controller->saveDecryptedCopy(note, forbidden, text), VXCORE_ERR_INVALID_PARAM);
+  QVERIFY(!QFileInfo::exists(forbidden));
+  QCOMPARE(fixture.controller->saveDecryptedCopy(note, destination, text), VXCORE_OK);
+  QFile exported(destination);
+  QVERIFY(exported.open(QIODevice::ReadOnly));
+  QCOMPARE(exported.readAll(), body);
+  exported.close();
+  QCOMPARE(QDir(output.path()).entryList(QDir::Files | QDir::NoDotAndDotDot), QStringList{name});
+
+  // Explicit disclosure works from a read-only body and preserves the source.
+  const auto node = note.nodeId();
+  QVERIFY(fixture.bufferService->closeBuffer(note.id()));
+  vnotex::FileOpenSettings settings;
+  settings.m_readOnly = true;
+  note = fixture.bufferService->openBuffer(node, settings);
+  QVERIFY(note.isValid());
+  const auto edited = text + QLatin1Char('\n');
+  QCOMPARE(fixture.controller->saveDecryptedCopy(note, destination, edited), VXCORE_OK);
+  QVERIFY(exported.open(QIODevice::ReadOnly));
+  QCOMPARE(note.decode(vnotex::QByteArrayViewCompat(exported.readAll())), edited);
+  exported.close();
+  QVERIFY(ciphertext.open(QIODevice::ReadOnly));
+  QCOMPARE(ciphertext.readAll(), originalCiphertext);
+  ciphertext.close();
+
+  QVERIFY(fixture.bufferService->beginProtectedLocking());
+  const auto lockedDestination = output.filePath(QStringLiteral("locked-copy.txt"));
+  QCOMPARE(fixture.controller->saveDecryptedCopy(note, lockedDestination, text),
+           VXCORE_ERR_ENCRYPTION_LOCKED);
+  QVERIFY(!QFileInfo::exists(lockedDestination));
 }
 
 } // namespace tests
