@@ -42,7 +42,8 @@ QString HeadingSlugger::slugify(const QString &p_text) {
   QString text = p_text;
 
   // Step 1: Strip all supported section-number patterns followed by a space.
-  static const QRegularExpression headingNumRe(QStringLiteral("^[0-9]+(?:\\.[0-9]+)*[.)]? "));
+  // Limit the first component to three digits so dates remain title text.
+  static const QRegularExpression headingNumRe(QStringLiteral("^[0-9]{1,3}(?:\\.[0-9]+)*[.)]? "));
   auto match = headingNumRe.match(text);
   if (match.hasMatch()) {
     text = text.mid(match.capturedLength());

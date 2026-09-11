@@ -235,7 +235,8 @@ class Utils {
 
     static headingSequenceRegExp() {
         // Match every supported section-number pattern, retaining the space boundary.
-        return /^[0-9]+(?:\.[0-9]+)*[.)]? /;
+        // Limit the first component to three digits so dates remain title text.
+        return /^[0-9]{1,3}(?:\.[0-9]+)*[.)]? /;
     }
 
     static fetchStyleContent() {
