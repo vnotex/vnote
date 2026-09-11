@@ -6,8 +6,7 @@
 
 using namespace vnotex;
 
-HeadingSlugger::HeadingSlugger() {
-}
+HeadingSlugger::HeadingSlugger() {}
 
 QString HeadingSlugger::slug(const QString &p_heading) {
   QString base = slugify(p_heading);
@@ -17,9 +16,7 @@ QString HeadingSlugger::slug(const QString &p_heading) {
   return result;
 }
 
-void HeadingSlugger::reset() {
-  m_occurrences.clear();
-}
+void HeadingSlugger::reset() { m_occurrences.clear(); }
 
 static bool isInKeepSet(int p_category) {
   switch (p_category) {
@@ -44,9 +41,8 @@ static bool isInKeepSet(int p_category) {
 QString HeadingSlugger::slugify(const QString &p_text) {
   QString text = p_text;
 
-  // Step 1: Strip VNote heading sequence numbers.
-  static const QRegularExpression headingNumRe(
-      QStringLiteral("^\\d{1,3}(?:\\.\\d+)*\\. "));
+  // Step 1: Strip all supported section-number patterns followed by a space.
+  static const QRegularExpression headingNumRe(QStringLiteral("^[0-9]+(?:\\.[0-9]+)*[.)]? "));
   auto match = headingNumRe.match(text);
   if (match.hasMatch()) {
     text = text.mid(match.capturedLength());

@@ -234,7 +234,8 @@ class Utils {
     }
 
     static headingSequenceRegExp() {
-        return /^\d{1,3}(?:\.\d+)*\. /;
+        // Match every supported section-number pattern, retaining the space boundary.
+        return /^[0-9]+(?:\.[0-9]+)*[.)]? /;
     }
 
     static fetchStyleContent() {
