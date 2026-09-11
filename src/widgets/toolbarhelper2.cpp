@@ -235,10 +235,6 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     tb->addWidget(toolBtn);
   }
 
-  auto *lockAll = tb->addAction(MainWindow2::tr("Lock All"));
-  lockAll->setObjectName(QStringLiteral("lockAllProtectedNotes"));
-  connect(lockAll, &QAction::triggered, m_mainWindow, &MainWindow2::lockAllProtectedNotes);
-
   // Home dashboard.
   {
     auto toolBtn = WidgetsFactory::createToolButton(tb);
@@ -545,6 +541,11 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
 
   auto menu = WidgetsFactory::createMenu(p_toolBar);
   btn->setMenu(menu);
+
+  auto *lockAll = menu->addAction(MainWindow2::tr("Lock All"));
+  lockAll->setObjectName(QStringLiteral("lockAllProtectedNotes"));
+  connect(lockAll, &QAction::triggered, m_mainWindow, &MainWindow2::lockAllProtectedNotes);
+  menu->addSeparator();
 
   menu->addAction(MainWindow2::tr("Open Configuration Folder"), menu, [this]() {
     auto folderPath =
