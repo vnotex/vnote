@@ -34,6 +34,9 @@ constexpr double c_maxHeightRatio = 0.6;
 // character widths so it follows the UI font / DPI instead of being a fixed
 // pixel count.
 constexpr int c_minWidthChars = 44;
+
+// Leave room for message text and actions even when the list is nearly empty.
+constexpr int c_minHeightLines = 12;
 } // namespace
 
 NotificationPopup2::NotificationPopup2(ServiceLocator &p_services, QToolButton *p_btn,
@@ -145,6 +148,8 @@ void NotificationPopup2::setupUI() {
   scroll->setWidget(bodyWidget);
   scroll->setMaximumHeight(qMax(
       120, static_cast<int>(WidgetUtils::availableScreenSize(this).height() * c_maxHeightRatio)));
+  scroll->setMinimumHeight(
+      qMin(scroll->fontMetrics().lineSpacing() * c_minHeightLines, scroll->maximumHeight()));
 
   mainLayout->addWidget(scroll);
 

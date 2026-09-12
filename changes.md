@@ -20,6 +20,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Folding ranges track surviving source anchors after edits; bulk deletion no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
     * The `%folder%` magic word expands to the current note's notebook-relative folder in snippets and note templates
 * **Export and interface**
+    * The notification popup has a taller, font-scaled minimum height so messages and actions have more room
     * Export is available directly from the main file toolbar
     * Exported HTML offers the corresponding HTML target when following a relative Markdown link
     * The Save shortcut applies changes in Settings

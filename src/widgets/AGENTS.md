@@ -306,6 +306,9 @@ Three surfaces, one rule each:
 - `NotificationButton2` (`QToolButton`) lives on the settings toolbar immediately after the Theme button. It paints a red badge with `NotificationService::activeCount()` and refreshes its bell icon on `ThemeService::themeChanged`. It **does not auto-show the popup** — `showPopup()` is called on click, or by `MainWindow2` forwarding `NotificationToast::popupRequested`.
 - `NotificationPopup2` (extends `ButtonPopup`) is the click-to-open **notification centre**: messages newest-first with severity icon + title + text + optional collapsible "Details" + optional progress bar + per-message action buttons + Dismiss, in a height-capped `QScrollArea`, under the shared `TitleBar` holding "Notifications" and Clear All. Do NOT hand-roll a titlebar.
 
+The popup list has a minimum height of 12 font line spacings, clamped to its screen-height cap.
+Keep this floor on the scroll area so the `QWidgetAction` size hint reserves usable list space.
+
 ### Attention → surface routing (owned by `NotificationToast`)
 
 The routing table lives INSIDE the toast rather than in `MainWindow2`, so it is unit-testable against the real widget instead of a duplicated copy. `MainWindow2` injects the two window-policy inputs:

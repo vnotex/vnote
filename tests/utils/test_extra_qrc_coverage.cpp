@@ -31,7 +31,7 @@
 //     The expected set is derived from the directory listing, never a count,
 //     so adding an asset to the folder is what makes the gate demand an entry.
 //
-// The rest of extra.qrc (the older themes, docs, syntax highlighting, the
+// The rest of extra.qrc (the older themes, syntax highlighting, the
 // default notebook) is hand-curated and long-stable, so the same risk does not
 // apply.
 //
