@@ -224,10 +224,12 @@ if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.
   add_qt_test(test_webengineprofileservice
     SOURCES
       test_webengineprofileservice.cpp
+      ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
       ${CMAKE_SOURCE_DIR}/src/gui/services/webengineprofileservice.cpp
       ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
     LINKS
       Qt6::WebEngineCore
+      Qt6::Svg
       core_configs
   )
   target_include_directories(test_webengineprofileservice PRIVATE
