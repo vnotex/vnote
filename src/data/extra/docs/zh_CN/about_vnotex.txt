@@ -1,7 +1,0 @@
-<p>
-VNoteX致力于成为一个舒适的笔记平台。VNoteX重构自VNote，后者是一个始于2016年的专注于Markdown的开源笔记软件。VNote在版本3之后会和VNoteX共享大部分源代码，并继续开源。
-<br/><br/>
-VNote源代码可以在<a href="https://github.com/vnotex/vnote">GitHub</a>获取。
-<br/><br/>
-详情请访问<a href="https://vnotex.github.io/vnote">主页</a>。
-</p>

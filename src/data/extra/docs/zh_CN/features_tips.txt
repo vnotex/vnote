@@ -1,7 +1,0 @@
-<p>VNote中一些不容错过的特性：</p>
-<h3 id="markdown-">Markdown编辑器</h3>
-<ul>
-<li>上下文菜单中的<strong>解析为Markdown并粘贴</strong>：解析富文本为Markdown文本，并按需获取图片到本地。</li>
-<li>上下文菜单中的<strong>多功能粘贴</strong>：粘贴为图片、附件或者连接。</li>
-<li>上下文菜单中的<strong>交叉复制</strong>：将所选文本复制为富文本。</li>
-</ul>

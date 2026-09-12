@@ -1,7 +1,0 @@
-<p>Some features not to be missed in VNote:</p>
-<h3>Markdown Editor</h3>
-<ul>
-<li><strong>Parse to Markdown and Paste</strong> on the context menu: parse rich format text to Markdown text and fetch images to local if necessary.</li>
-<li><strong>Rich Paste</strong> on the context menu: paste as image, attachment, or link.</li>
-<li><strong>Cross Copy</strong> on the context menu: copy selected text as rich format text.</li>
-</ul>
