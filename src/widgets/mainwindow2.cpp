@@ -62,6 +62,7 @@
 #include <core/sessionconfig.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/tooltipservice.h>
 #include <gui/services/webengineprofileservice.h>
 #include <gui/utils/widgetutils.h>
 
@@ -472,6 +473,9 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detac
       QVariantMap args;
       hookMgr->doAction(HookNames::MainWindowAfterStart, args);
     }
+
+    ToolTipService toolTipService(m_serviceLocator);
+    toolTipService.showTipIfDue();
   });
 
   // Queue the initial command-line paths so they are opened by the

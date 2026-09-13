@@ -1364,6 +1364,8 @@ target_include_directories(test_notificationtoast PRIVATE
 add_qt_test(test_notificationpopup2
   SOURCES
     test_notificationpopup2.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.h
     ${CMAKE_SOURCE_DIR}/src/widgets/notificationpopup2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/notificationbutton2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp

@@ -10,15 +10,19 @@
 #include <QScopeGuard>
 
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/error.h>
 #include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/pdfviewerconfig.h>
+#include <core/servicelocator.h>
 #include <core/services/commenttypes.h>
 #include <core/services/configcoreservice.h>
+#include <core/services/notificationservice.h>
 #include <core/webresource.h>
 #include <core/widgetconfig.h>
+#include <gui/services/tooltipservice.h>
 #include <utils/fileutils2.h>
 
 #include <temp_dir_fixture.h>
@@ -85,6 +89,8 @@ private slots:
   void testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected();
   void testAnExplicitNullDeletesTheKey();
   void testAnUnreadableConfigIsNeverOverwritten();
+  void testToolTips_dailyRotationSurvivesReload();
+  void testToolTips_localeFallbackAndInvalidCatalog();
 
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
@@ -1610,6 +1616,199 @@ void TestConfigMgr2::testPdfToolOptions_normalization() {
                          .toObject()
                          .value(key)),
            canonical(expected));
+}
+
+void TestConfigMgr2::testToolTips_dailyRotationSurvivesReload() {
+  const auto healthy = m_configMgr->getConfig().toJson();
+  QTest::qWait(700);
+  const QLocale previousLocale;
+  const auto restore = qScopeGuard([&] {
+    QLocale::setDefault(previousLocale);
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+  });
+  QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+  QVERIFY(!m_configService->updateConfigByName(
+      DataLocation::App, QStringLiteral("vnotex"),
+      QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
+                  {"core", QJsonObject{{"toolTipsEnabled", true},
+                                       {"lastToolTipDate", ""},
+                                       {"nextToolTipIndex", 0}}}}));
+
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto path =
+      tmp.createFile(QStringLiteral("tips.json"), R"([{"en_US":"Tip A"},{"en_US":"Tip B"}])");
+  const QDate today(2026, 9, 12);
+  NotificationService notifications;
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    ServiceLocator services;
+    services.registerService(&mgr);
+    services.registerService(&notifications);
+    // A synchronous observer must not be able to post a second tip for this day.
+    bool nestedPosted = true;
+    const auto connection = connect(&notifications, &NotificationService::messageAdded, &mgr,
+                                    [&](const NotificationMessage &) {
+                                      ToolTipService nested(services);
+                                      nested.setCatalogPathOverrideForTesting(path);
+                                      nestedPosted = nested.showTipIfDue(today);
+                                    });
+    {
+      ToolTipService producer(services);
+      producer.setCatalogPathOverrideForTesting(path);
+      QVERIFY(producer.showTipIfDue(today));
+    }
+    disconnect(connection);
+    QVERIFY(!nestedPosted);
+    QCOMPARE(notifications.messages().size(), 1);
+    QCOMPARE(notifications.messages().last().m_text, QStringLiteral("Tip A"));
+    ToolTipService sameDay(services);
+    sameDay.setCatalogPathOverrideForTesting(path);
+    QVERIFY(!sameDay.showTipIfDue(today));
+    QCOMPARE(notifications.messages().size(), 1);
+  }
+
+  // Each iteration reloads from disk; the destructor flushes the pending write.
+  for (int day = 0; day < 3; ++day) {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    ServiceLocator services;
+    services.registerService(&mgr);
+    services.registerService(&notifications);
+    ToolTipService producer(services);
+    producer.setCatalogPathOverrideForTesting(path);
+    QCOMPARE(producer.showTipIfDue(today.addDays(day)), day != 0);
+    QCOMPARE(notifications.messages().size(), day + 1);
+    QCOMPARE(notifications.messages().last().m_text,
+             day == 1 ? QStringLiteral("Tip B") : QStringLiteral("Tip A"));
+    if (day == 2) {
+      mgr.getCoreConfig().setLastToolTipDate(today.addDays(10).toString(Qt::ISODate));
+    }
+  }
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    ServiceLocator services;
+    services.registerService(&mgr);
+    services.registerService(&notifications);
+    ToolTipService producer(services);
+    producer.setCatalogPathOverrideForTesting(path);
+    QVERIFY(!producer.showTipIfDue(today.addDays(3)));
+    QVERIFY(!producer.showTipIfDue(today.addDays(10)));
+    QCOMPARE(notifications.messages().size(), 3);
+    QVERIFY(producer.showTipIfDue(today.addDays(11)));
+    QCOMPARE(notifications.messages().last().m_text, QStringLiteral("Tip B"));
+  }
+}
+
+void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
+  const auto healthy = m_configMgr->getConfig().toJson();
+  QTest::qWait(700);
+  const QLocale previousLocale;
+  const auto restore = qScopeGuard([&] {
+    QLocale::setDefault(previousLocale);
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+  });
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const QDate today(2026, 9, 12);
+  const auto seed = [&](int p_index) {
+    return m_configService->updateConfigByName(
+        DataLocation::App, QStringLiteral("vnotex"),
+        QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
+                    {"core", QJsonObject{{"toolTipsEnabled", true},
+                                         {"lastToolTipDate", "invalid-date"},
+                                         {"nextToolTipIndex", p_index}}}});
+  };
+
+  struct SelectionCase {
+    const char *locale;
+    QByteArray catalog;
+    int index;
+    QString expected;
+    QString next;
+  };
+  const QByteArray bilingual(R"([{"en_US":"English","zh_CN":"中文"},{"en_US":"Next"}])");
+  const SelectionCase cases[] = {
+      {"zh_CN", bilingual, 0, QStringLiteral("中文"), QStringLiteral("Next")},
+      {"ja_JP", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
+      {"zh_CN", R"([{"en_US":"Fallback"},{"en_US":"Next"}])", 0, QStringLiteral("Fallback"),
+       QStringLiteral("Next")},
+      {"zh_CN", R"([{"zh_CN":" \t ","en_US":" Fallback "},{"en_US":"Next"}])", 0,
+       QStringLiteral("Fallback"), QStringLiteral("Next")},
+      {"zh_CN", R"([null,17,{}, {"zh_CN":false,"en_US":5},{"en_US":"Selected"},
+                     {"en_US":"Next"}])",
+       2, QStringLiteral("Selected"), QStringLiteral("Next")},
+      {"en_US", bilingual, -9, QStringLiteral("English"), QStringLiteral("Next")},
+      {"en_US", bilingual, 5, QStringLiteral("Next"), QStringLiteral("English")},
+      {"en_US", R"([{"en_US":"First"},null,{"en_US":"Last"},false])", 3, QStringLiteral("First"),
+       QStringLiteral("Last")},
+  };
+  for (const auto &test : cases) {
+    const auto restoreLocale = qScopeGuard([&] { QLocale::setDefault(previousLocale); });
+    QLocale::setDefault(QLocale(QString::fromLatin1(test.locale)));
+    QVERIFY(!seed(test.index));
+    const auto path = tmp.createFile(QStringLiteral("selection.json"), test.catalog);
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    NotificationService notifications;
+    ServiceLocator services;
+    services.registerService(&mgr);
+    services.registerService(&notifications);
+    ToolTipService producer(services);
+    producer.setCatalogPathOverrideForTesting(path);
+    QVERIFY(producer.showTipIfDue(today));
+    QCOMPARE(notifications.messages().size(), 1);
+    QCOMPARE(notifications.messages().last().m_text, test.expected);
+    QVERIFY(producer.showTipIfDue(today.addDays(1)));
+    QCOMPARE(notifications.messages().size(), 2);
+    QCOMPARE(notifications.messages().last().m_text, test.next);
+  }
+
+  QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+  // A missing file, syntax error, wrong root, empty array, and wholly unusable array.
+  const QByteArray failures[] = {QByteArray(), "{", "{}", "[]",
+                                 R"([null,{}, {"en_US":"  ","zh_CN":true}])"};
+  for (int i = 0; i < 5; ++i) {
+    QVERIFY(!seed(7));
+    const auto name = QStringLiteral("failure-%1.json").arg(i);
+    const auto path = i == 0 ? tmp.filePath(name) : tmp.createFile(name, failures[i]);
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    NotificationService notifications;
+    ServiceLocator services;
+    services.registerService(&mgr);
+    services.registerService(&notifications);
+    ToolTipService producer(services);
+    producer.setCatalogPathOverrideForTesting(path);
+    QVERIFY(!producer.showTipIfDue(today));
+    QVERIFY(notifications.messages().isEmpty());
+    QCOMPARE(mgr.getCoreConfig().getLastToolTipDate(), QStringLiteral("invalid-date"));
+    QCOMPARE(mgr.getCoreConfig().getNextToolTipIndex(), 7);
+    tmp.createFile(name, R"([{"en_US":"Other"},{"en_US":"Repaired"}])");
+    QVERIFY(producer.showTipIfDue(today));
+    QCOMPARE(notifications.messages().size(), 1);
+    QCOMPARE(notifications.messages().last().m_text, QStringLiteral("Repaired"));
+  }
+
+  QVERIFY(!seed(0));
+  ConfigMgr2 mgr(m_configService);
+  mgr.init();
+  NotificationService notifications;
+  ServiceLocator services;
+  ToolTipService producer(services);
+  producer.setCatalogPathOverrideForTesting(
+      tmp.createFile(QStringLiteral("valid.json"), R"([{"en_US":"After prerequisites"}])"));
+  QVERIFY(!producer.showTipIfDue(today));
+  services.registerService(&mgr);
+  QVERIFY(!producer.showTipIfDue(today));
+  services.registerService(&notifications);
+  QVERIFY(!producer.showTipIfDue(QDate()));
+  QVERIFY(notifications.messages().isEmpty());
+  QVERIFY(producer.showTipIfDue(today));
+  QCOMPARE(notifications.messages().size(), 1);
+  QCOMPARE(notifications.messages().last().m_text, QStringLiteral("After prerequisites"));
 }
 
 } // namespace tests

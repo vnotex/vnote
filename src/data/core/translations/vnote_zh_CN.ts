@@ -9124,4 +9124,17 @@ Continue?</source>
         <translation>字(有空格)</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::ToolTipService</name>
+    <message>
+        <location filename="../../../gui/services/tooltipservice.cpp" line="112"/>
+        <source>VNote Tip</source>
+        <translation>VNote 使用技巧</translation>
+    </message>
+    <message>
+        <location filename="../../../gui/services/tooltipservice.cpp" line="119"/>
+        <source>Never show again</source>
+        <translation>不再显示</translation>
+    </message>
+</context>
 </TS>

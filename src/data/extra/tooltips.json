@@ -1,0 +1,14 @@
+[
+  {
+    "en_US": "Use Add Sticker on the dashboard to add the tools you need",
+    "zh_CN": "使用仪表盘上的“添加挂件”，添加你需要的工具"
+  },
+  {
+    "en_US": "Use Lock Dashboard to keep stickers from being moved or removed accidentally",
+    "zh_CN": "使用“锁定仪表盘”，防止意外移动或移除挂件"
+  },
+  {
+    "en_US": "When importing a folder shared from VNote, choose Shared folder from VNote to keep note IDs, dates, tags and attachments",
+    "zh_CN": "导入从 VNote 分享的文件夹时，选择“来自 VNote 的分享文件夹”，保留笔记的 ID、日期、标签和附件"
+  }
+]

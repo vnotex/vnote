@@ -116,6 +116,15 @@ public:
   bool isCheckForUpdatesOnStartEnabled() const;
   void setCheckForUpdatesOnStartEnabled(bool p_enabled);
 
+  bool isToolTipsEnabled() const;
+  void setToolTipsEnabled(bool p_enabled);
+
+  const QString &getLastToolTipDate() const;
+  void setLastToolTipDate(const QString &p_date);
+
+  int getNextToolTipIndex() const;
+  void setNextToolTipIndex(int p_index);
+
   bool isRecycleBinAutoCleanupEnabled() const;
   void setRecycleBinAutoCleanupEnabled(bool p_enabled, qint64 p_nowUtcMs);
 
@@ -218,6 +227,12 @@ private:
   QStringList m_externalNodeExcludePatterns;
 
   bool m_checkForUpdatesOnStartEnabled = true;
+
+  bool m_toolTipsEnabled = true;
+
+  QString m_lastToolTipDate;
+
+  int m_nextToolTipIndex = 0;
 
   // Release source used by the update checker. Defaults live in C++; there is
   // no bundled vnotex.json entry for any of the update keys. Gitee is the

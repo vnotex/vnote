@@ -7,14 +7,24 @@
 
 #include <QtTest>
 
-#include <QLabel>
-#include <QPushButton>
 #include <QFileInfo>
+#include <QJsonObject>
+#include <QLabel>
+#include <QLocale>
+#include <QPointer>
+#include <QPushButton>
+#include <QScopeGuard>
 #include <QToolButton>
 
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/notificationservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/services/tooltipservice.h>
+#include <temp_dir_fixture.h>
+#include <vxcore/vxcore.h>
 #include <widgets/notificationbutton2.h>
 #include <widgets/notificationpopup2.h>
 
@@ -34,6 +44,7 @@ private slots:
   void test_dismissedMessagesAreNotRendered();
   void test_detailsAreRenderedCollapsed();
   void test_badgeTracksActiveCountAcrossEviction();
+  void testToolTips_optOutOutlivesProducer();
 
 private:
   // Rows are QFrames holding the message text; count the rendered texts.
@@ -239,6 +250,91 @@ void TestNotificationPopup2::test_badgeTracksActiveCountAcrossEviction() {
   QVERIFY2(button.testBadgeCount() == m_notifications->activeCount(),
            "the badge did not follow the active count across an eviction");
   QCOMPARE(button.testBadgeCount(), beforeEviction + 1);
+}
+
+void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  QVERIFY(context);
+  const auto destroyContext = qScopeGuard([&] { vxcore_context_destroy(context); });
+  ConfigCoreService configService(context);
+  const auto healthy = configService.getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const QLocale previousLocale;
+  const auto restore = qScopeGuard([&] {
+    m_services->registerService<ConfigMgr2>(nullptr);
+    QLocale::setDefault(previousLocale);
+    configService.updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+  });
+  QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+  QVERIFY(!configService.updateConfigByName(
+      DataLocation::App, QStringLiteral("vnotex"),
+      QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
+                  {"core", QJsonObject{{"toolTipsEnabled", true},
+                                       {"lastToolTipDate", ""},
+                                       {"nextToolTipIndex", 0}}}}));
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto path =
+      tmp.createFile(QStringLiteral("tips.json"), R"([{"en_US":"Tip A"},{"en_US":"Tip B"}])");
+  const QDate today(2026, 9, 12);
+  std::function<void()> retainedAction;
+  QPointer<ConfigMgr2> originalManager;
+  {
+    ConfigMgr2 mgr(&configService);
+    mgr.init();
+    originalManager = &mgr;
+    m_services->registerService(&mgr);
+    QPointer<ToolTipService> producerGuard;
+    {
+      ToolTipService producer(*m_services);
+      producerGuard = &producer;
+      producer.setCatalogPathOverrideForTesting(path);
+      QVERIFY(producer.showTipIfDue(today));
+    }
+    QVERIFY(producerGuard.isNull());
+    QCOMPARE(m_notifications->messages().size(), 1);
+    const auto message = m_notifications->messages().first();
+    QCOMPARE(message.m_text, QStringLiteral("Tip A"));
+    QCOMPARE(message.m_actions.size(), 1);
+    retainedAction = message.m_actions.first().m_callback;
+
+    openPopup();
+    QVERIFY(m_popup->isVisible());
+    QVERIFY(renderedTexts().contains(QStringLiteral("Tip A")));
+    QPushButton *optOut = nullptr;
+    for (auto *button : m_popup->findChildren<QPushButton *>()) {
+      if (button->text() == QStringLiteral("Never show again")) {
+        optOut = button;
+        break;
+      }
+    }
+    QVERIFY(optOut);
+    QTest::mouseClick(optOut, Qt::LeftButton);
+    QVERIFY(!m_notifications->isActive(message.m_id));
+    QVERIFY(!renderedTexts().contains(QStringLiteral("Tip A")));
+    m_popup->hide();
+  }
+  QVERIFY(originalManager.isNull());
+  QVERIFY(retainedAction);
+  {
+    ConfigMgr2 replacement(&configService);
+    replacement.init();
+    m_services->registerService(&replacement);
+    ToolTipService producer(*m_services);
+    producer.setCatalogPathOverrideForTesting(path);
+    QVERIFY(!producer.showTipIfDue(today.addDays(1)));
+    QCOMPARE(m_notifications->messages().size(), 1);
+    QCOMPARE(m_notifications->activeCount(), 0);
+
+    // A callback belonging to the dead manager must not disable its replacement.
+    replacement.getCoreConfig().setToolTipsEnabled(true);
+    retainedAction();
+    QVERIFY(replacement.getCoreConfig().isToolTipsEnabled());
+    QVERIFY(producer.showTipIfDue(today.addDays(1)));
+    QCOMPARE(m_notifications->messages().size(), 2);
+    QCOMPARE(m_notifications->messages().last().m_text, QStringLiteral("Tip B"));
+  }
 }
 
 } // namespace tests

@@ -449,6 +449,8 @@ add_custom_command(TARGET test_markdowneditorcontroller POST_BUILD
 add_qt_test(test_configmgr2
   SOURCES
     test_configmgr2.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.h
   LINKS
     core_services
     core_configs
