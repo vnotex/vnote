@@ -648,12 +648,6 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
   QMenu menu(this);
 
-  if (!m_detached) {
-    auto *saveAllAct = menu.addAction(tr("Save All"), this, &ViewSplit2::saveAllRequested);
-    saveAllAct->setToolTip(tr("Save all modified tabs in all workspaces"));
-    menu.addSeparator();
-  }
-
   // ---- File Actions ----
   // Resolve the absolute path (notebook file or external file).
   const auto &nodeId = win->getNodeId();
@@ -736,10 +730,13 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   connect(autoReloadAct, &QAction::toggled, this,
           [win](bool p_checked) { win->setAutoReload(p_checked); });
 
-  // ---- Close Actions ----
+  // ---- Save/Close Actions ----
   // A detached window hosts a single tab and exposes only file/reload actions.
   if (!m_detached) {
     menu.addSeparator();
+
+    auto *saveAllAct = menu.addAction(tr("Save All"), this, &ViewSplit2::saveAllRequested);
+    saveAllAct->setToolTip(tr("Save all modified tabs in all workspaces"));
 
     auto *closeTabAct =
         menu.addAction(tr("Close Tab"), [this, p_tabIndex]() { closeTab(p_tabIndex); });
