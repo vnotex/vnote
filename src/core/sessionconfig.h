@@ -171,6 +171,12 @@ public:
   const QString &getCurrentNotebook() const;
   void setCurrentNotebook(const QString &p_guid);
 
+  const QString &getLastToolTipDate() const;
+  void setLastToolTipDate(const QString &p_date);
+
+  int getNextToolTipIndex() const;
+  void setNextToolTipIndex(int p_index);
+
   const QStringList &getSearchHistory() const;
   void addSearchHistory(const QString &p_keyword);
   void setSearchHistory(const QStringList &p_history);
@@ -250,6 +256,11 @@ private:
 
   // GUID of the currently active notebook.
   QString m_currentNotebook;
+
+  // Local daily-tip progress. Permanent opt-out lives in CoreConfig.
+  QString m_lastToolTipDate;
+
+  int m_nextToolTipIndex = 0;
 
   // Keyword search history (most recent first, capped at 20).
   QStringList m_searchHistory;

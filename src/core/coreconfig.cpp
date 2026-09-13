@@ -74,8 +74,6 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
   m_checkForUpdatesOnStartEnabled = READBOOL(QStringLiteral("checkForUpdatesOnStart"));
 
   m_toolTipsEnabled = READBOOL(QStringLiteral("toolTipsEnabled"));
-  m_lastToolTipDate = READSTR(QStringLiteral("lastToolTipDate"));
-  m_nextToolTipIndex = qMax(0, READINT(QStringLiteral("nextToolTipIndex")));
 
   m_updateSource = normalizeUpdateSource(READSTR(QStringLiteral("updateSource")));
 
@@ -131,8 +129,6 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
   obj[QStringLiteral("toolTipsEnabled")] = m_toolTipsEnabled;
-  obj[QStringLiteral("lastToolTipDate")] = m_lastToolTipDate;
-  obj[QStringLiteral("nextToolTipIndex")] = m_nextToolTipIndex;
   obj[QStringLiteral("updateSource")] = m_updateSource;
   obj[QStringLiteral("skippedUpdateVersion")] = m_skippedUpdateVersion;
   // Decimal string: IConfig::readInt is 32-bit and QJsonValue::toInt() would
@@ -237,18 +233,6 @@ bool CoreConfig::isToolTipsEnabled() const { return m_toolTipsEnabled; }
 
 void CoreConfig::setToolTipsEnabled(bool p_enabled) {
   updateConfig(m_toolTipsEnabled, p_enabled, this);
-}
-
-const QString &CoreConfig::getLastToolTipDate() const { return m_lastToolTipDate; }
-
-void CoreConfig::setLastToolTipDate(const QString &p_date) {
-  updateConfig(m_lastToolTipDate, p_date, this);
-}
-
-int CoreConfig::getNextToolTipIndex() const { return m_nextToolTipIndex; }
-
-void CoreConfig::setNextToolTipIndex(int p_index) {
-  updateConfig(m_nextToolTipIndex, qMax(0, p_index), this);
 }
 
 bool CoreConfig::isRecycleBinAutoCleanupEnabled() const { return m_recycleBinAutoCleanupEnabled; }

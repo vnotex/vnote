@@ -128,6 +128,8 @@ void ConfigMgr2::init() {
   qCDebug(lcConfig) << "ConfigMgr2 initializing with paths:"
                     << "app=" << m_appDataPath << "user=" << m_localDataPath;
 
+  QJsonObject legacyTipProgress;
+
   // Load and initialize main config.
   //
   // The user's document is MERGED on top of the defaults: m_mainConfig is default-constructed
@@ -163,6 +165,14 @@ void ConfigMgr2::init() {
         rawJson[widgetKey] = widgetJson;
       }
 
+      const auto coreJson = rawJson.value(QStringLiteral("core")).toObject();
+      for (const auto &key :
+           {QStringLiteral("lastToolTipDate"), QStringLiteral("nextToolTipIndex")}) {
+        if (coreJson.contains(key)) {
+          legacyTipProgress.insert(key, coreJson.value(key));
+        }
+      }
+
       auto mainConfigJson = applyMergePatch(m_mainConfig->toJson(), rawJson).toObject();
       restoreUserOwnedObjects(mainConfigJson, rawJson);
       m_versionChanged = MainConfig::peekVersion(mainConfigJson) != c_version.toString();
@@ -176,11 +186,31 @@ void ConfigMgr2::init() {
   // minimizeToSystemTray, i.e. it distinguishes "absent" from "present and false". Merging
   // defaults in would make absent impossible and silently change that behavior.
   {
+    bool readOk = true;
     auto sessionConfigJson =
-        m_configService->getConfigByName(DataLocation::Local, kSessionFileBaseName);
+        m_configService->getConfigByName(DataLocation::Local, kSessionFileBaseName, &readOk);
+    bool migratedTipProgress = false;
+    if (readOk && !legacyTipProgress.isEmpty()) {
+      // Import only absent fields; an explicit session reset must beat stale main-config state.
+      auto coreJson = sessionConfigJson.value(QStringLiteral("core")).toObject();
+      for (auto it = legacyTipProgress.constBegin(); it != legacyTipProgress.constEnd(); ++it) {
+        if (!coreJson.contains(it.key())) {
+          coreJson.insert(it.key(), it.value());
+          migratedTipProgress = true;
+        }
+      }
+      sessionConfigJson.insert(QStringLiteral("core"), coreJson);
+    }
     if (!sessionConfigJson.isEmpty()) {
       m_sessionConfig->fromJson(sessionConfigJson);
       m_sessionConfigLoaded = true;
+    }
+    if (migratedTipProgress) {
+      m_sessionConfig->update();
+    }
+    if (readOk && !legacyTipProgress.isEmpty()) {
+      // CoreConfig no longer serializes progress. Retire its old keys on the normal write path.
+      m_mainConfig->update();
     }
   }
 

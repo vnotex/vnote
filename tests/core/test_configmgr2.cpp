@@ -20,6 +20,7 @@
 #include <core/services/commenttypes.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/notificationservice.h>
+#include <core/sessionconfig.h>
 #include <core/webresource.h>
 #include <core/widgetconfig.h>
 #include <gui/services/tooltipservice.h>
@@ -91,6 +92,7 @@ private slots:
   void testAnUnreadableConfigIsNeverOverwritten();
   void testToolTips_dailyRotationSurvivesReload();
   void testToolTips_localeFallbackAndInvalidCatalog();
+  void testToolTips_progressMigratesToSession();
 
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
@@ -1621,18 +1623,24 @@ void TestConfigMgr2::testPdfToolOptions_normalization() {
 void TestConfigMgr2::testToolTips_dailyRotationSurvivesReload() {
   const auto healthy = m_configMgr->getConfig().toJson();
   QTest::qWait(700);
+  const auto healthySession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
   const QLocale previousLocale;
   const auto restore = qScopeGuard([&] {
     QLocale::setDefault(previousLocale);
     m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        healthySession);
   });
   QLocale::setDefault(QLocale(QStringLiteral("en_US")));
   QVERIFY(!m_configService->updateConfigByName(
       DataLocation::App, QStringLiteral("vnotex"),
       QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
-                  {"core", QJsonObject{{"toolTipsEnabled", true},
-                                       {"lastToolTipDate", ""},
-                                       {"nextToolTipIndex", 0}}}}));
+                  {"core", QJsonObject{{"toolTipsEnabled", true}}}}));
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                               QJsonObject()));
+  const auto mainBefore =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
 
   TempDirFixture tmp;
   QVERIFY(tmp.isValid());
@@ -1683,7 +1691,7 @@ void TestConfigMgr2::testToolTips_dailyRotationSurvivesReload() {
     QCOMPARE(notifications.messages().last().m_text,
              day == 1 ? QStringLiteral("Tip B") : QStringLiteral("Tip A"));
     if (day == 2) {
-      mgr.getCoreConfig().setLastToolTipDate(today.addDays(10).toString(Qt::ISODate));
+      mgr.getSessionConfig().setLastToolTipDate(today.addDays(10).toString(Qt::ISODate));
     }
   }
   {
@@ -1700,25 +1708,40 @@ void TestConfigMgr2::testToolTips_dailyRotationSurvivesReload() {
     QVERIFY(producer.showTipIfDue(today.addDays(11)));
     QCOMPARE(notifications.messages().last().m_text, QStringLiteral("Tip B"));
   }
+  // Daily progress must not churn the user's preferences file.
+  QVERIFY(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")) ==
+          mainBefore);
+  const auto sessionCore =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"))
+          .value(QStringLiteral("core"))
+          .toObject();
+  QCOMPARE(sessionCore.value(QStringLiteral("lastToolTipDate")).toString(),
+           today.addDays(11).toString(Qt::ISODate));
 }
 
 void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
   const auto healthy = m_configMgr->getConfig().toJson();
   QTest::qWait(700);
+  const auto healthySession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
   const QLocale previousLocale;
   const auto restore = qScopeGuard([&] {
     QLocale::setDefault(previousLocale);
     m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        healthySession);
   });
   TempDirFixture tmp;
   QVERIFY(tmp.isValid());
   const QDate today(2026, 9, 12);
+  QVERIFY(!m_configService->updateConfigByName(
+      DataLocation::App, QStringLiteral("vnotex"),
+      QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
+                  {"core", QJsonObject{{"toolTipsEnabled", true}}}}));
   const auto seed = [&](int p_index) {
     return m_configService->updateConfigByName(
-        DataLocation::App, QStringLiteral("vnotex"),
-        QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
-                    {"core", QJsonObject{{"toolTipsEnabled", true},
-                                         {"lastToolTipDate", "invalid-date"},
+        DataLocation::Local, QStringLiteral("session"),
+        QJsonObject{{"core", QJsonObject{{"lastToolTipDate", "invalid-date"},
                                          {"nextToolTipIndex", p_index}}}});
   };
 
@@ -1784,8 +1807,8 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
     producer.setCatalogPathOverrideForTesting(path);
     QVERIFY(!producer.showTipIfDue(today));
     QVERIFY(notifications.messages().isEmpty());
-    QCOMPARE(mgr.getCoreConfig().getLastToolTipDate(), QStringLiteral("invalid-date"));
-    QCOMPARE(mgr.getCoreConfig().getNextToolTipIndex(), 7);
+    QCOMPARE(mgr.getSessionConfig().getLastToolTipDate(), QStringLiteral("invalid-date"));
+    QCOMPARE(mgr.getSessionConfig().getNextToolTipIndex(), 7);
     tmp.createFile(name, R"([{"en_US":"Other"},{"en_US":"Repaired"}])");
     QVERIFY(producer.showTipIfDue(today));
     QCOMPARE(notifications.messages().size(), 1);
@@ -1809,6 +1832,93 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
   QVERIFY(producer.showTipIfDue(today));
   QCOMPARE(notifications.messages().size(), 1);
   QCOMPARE(notifications.messages().last().m_text, QStringLiteral("After prerequisites"));
+}
+
+void TestConfigMgr2::testToolTips_progressMigratesToSession() {
+  const auto healthy = m_configMgr->getConfig().toJson();
+  QTest::qWait(700);
+  const auto healthySession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
+  const QLocale previousLocale;
+  const auto restore = qScopeGuard([&] {
+    QLocale::setDefault(previousLocale);
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        healthySession);
+  });
+  QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto path =
+      tmp.createFile(QStringLiteral("tips.json"), R"([{"en_US":"Tip A"},{"en_US":"Tip B"}])");
+  const QDate today(2026, 9, 12);
+
+  for (bool sessionHasProgress : {false, true}) {
+    QVERIFY(!m_configService->updateConfigByName(
+        DataLocation::App, QStringLiteral("vnotex"),
+        QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
+                    {"core", QJsonObject{{"toolTipsEnabled", true},
+                                         {"lastToolTipDate", today.toString(Qt::ISODate)},
+                                         {"nextToolTipIndex", 1}}}}));
+    QJsonObject sessionCore;
+    if (sessionHasProgress) {
+      // Explicit empty/zero session values must win over stale main-config progress.
+      sessionCore.insert(QStringLiteral("lastToolTipDate"), QString());
+      sessionCore.insert(QStringLiteral("nextToolTipIndex"), 0);
+    }
+    QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                                 QJsonObject{{"core", sessionCore}}));
+    NotificationService notifications;
+    {
+      ConfigMgr2 mgr(m_configService);
+      mgr.init();
+      ServiceLocator services;
+      services.registerService(&mgr);
+      services.registerService(&notifications);
+      ToolTipService producer(services);
+      producer.setCatalogPathOverrideForTesting(path);
+      QCOMPARE(producer.showTipIfDue(today), sessionHasProgress);
+      if (!sessionHasProgress) {
+        QVERIFY(notifications.messages().isEmpty());
+        QVERIFY(producer.showTipIfDue(today.addDays(1)));
+      }
+      QCOMPARE(notifications.messages().size(), 1);
+      QCOMPARE(notifications.messages().last().m_text,
+               sessionHasProgress ? QStringLiteral("Tip A") : QStringLiteral("Tip B"));
+    }
+    const auto mainCore =
+        m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"))
+            .value(QStringLiteral("core"))
+            .toObject();
+    QVERIFY(!mainCore.contains(QStringLiteral("lastToolTipDate")));
+    QVERIFY(!mainCore.contains(QStringLiteral("nextToolTipIndex")));
+    {
+      ConfigMgr2 mgr(m_configService);
+      mgr.init();
+      ServiceLocator services;
+      services.registerService(&mgr);
+      services.registerService(&notifications);
+      ToolTipService producer(services);
+      producer.setCatalogPathOverrideForTesting(path);
+      QVERIFY(!producer.showTipIfDue(sessionHasProgress ? today : today.addDays(1)));
+      QCOMPARE(notifications.messages().size(), 1);
+    }
+  }
+
+  // After migration, clearing session state must not re-import an old consumed day.
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                               QJsonObject()));
+  ConfigMgr2 mgr(m_configService);
+  mgr.init();
+  NotificationService notifications;
+  ServiceLocator services;
+  services.registerService(&mgr);
+  services.registerService(&notifications);
+  ToolTipService producer(services);
+  producer.setCatalogPathOverrideForTesting(path);
+  QVERIFY(producer.showTipIfDue(today));
+  QCOMPARE(notifications.messages().size(), 1);
+  QCOMPARE(notifications.messages().last().m_text, QStringLiteral("Tip A"));
 }
 
 } // namespace tests

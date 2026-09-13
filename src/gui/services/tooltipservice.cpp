@@ -14,6 +14,7 @@
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/notificationservice.h>
+#include <core/sessionconfig.h>
 
 #include <utility>
 
@@ -42,7 +43,8 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
   if (!coreConfig.isToolTipsEnabled()) {
     return false;
   }
-  const auto lastDate = QDate::fromString(coreConfig.getLastToolTipDate(), Qt::ISODate);
+  auto &sessionConfig = configMgr->getSessionConfig();
+  const auto lastDate = QDate::fromString(sessionConfig.getLastToolTipDate(), Qt::ISODate);
   if (lastDate.isValid() && lastDate >= p_today) {
     return false;
   }
@@ -88,7 +90,7 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
 
   const auto locale = coreConfig.getLocaleToUse();
   const int count = tips.size();
-  int position = coreConfig.getNextToolTipIndex() % count;
+  int position = sessionConfig.getNextToolTipIndex() % count;
   QString text;
   for (int scanned = 0; scanned < count; ++scanned) {
     const auto item = tips.at(position).toObject();
@@ -125,8 +127,8 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
                                true});
 
   // Consume before notify(): synchronous observers must see the day as already used.
-  coreConfig.setLastToolTipDate(p_today.toString(Qt::ISODate));
-  coreConfig.setNextToolTipIndex(position);
+  sessionConfig.setLastToolTipDate(p_today.toString(Qt::ISODate));
+  sessionConfig.setNextToolTipIndex(position);
   notifications->notify(std::move(message));
   return true;
 }

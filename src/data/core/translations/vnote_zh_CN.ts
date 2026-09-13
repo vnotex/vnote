@@ -9127,12 +9127,12 @@ Continue?</source>
 <context>
     <name>vnotex::ToolTipService</name>
     <message>
-        <location filename="../../../gui/services/tooltipservice.cpp" line="112"/>
+        <location filename="../../../gui/services/tooltipservice.cpp" line="114"/>
         <source>VNote Tip</source>
         <translation>VNote 使用技巧</translation>
     </message>
     <message>
-        <location filename="../../../gui/services/tooltipservice.cpp" line="119"/>
+        <location filename="../../../gui/services/tooltipservice.cpp" line="121"/>
         <source>Never show again</source>
         <translation>不再显示</translation>
     </message>

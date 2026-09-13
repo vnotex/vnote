@@ -115,7 +115,6 @@ SessionConfig::SessionConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {}
 SessionConfig::~SessionConfig() {}
 
 void SessionConfig::fromJson(const QJsonObject &p_jobj) {
-  // p_jobj is already merged (defaults + user overrides)
   loadCore(p_jobj);
 
   loadStateAndGeometry(p_jobj);
@@ -182,6 +181,8 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
   }
 
   m_currentNotebook = readString(coreObj, QStringLiteral("currentNotebook"));
+  m_lastToolTipDate = readString(coreObj, QStringLiteral("lastToolTipDate"));
+  m_nextToolTipIndex = qMax(0, readInt(coreObj, QStringLiteral("nextToolTipIndex")));
 }
 
 QJsonObject SessionConfig::saveCore() const {
@@ -196,6 +197,8 @@ QJsonObject SessionConfig::saveCore() const {
   coreObj[QStringLiteral("quickAccess")] = saveQuickAccessItems();
   coreObj[QStringLiteral("externalMediaDefaultPath")] = m_externalMediaDefaultPath;
   coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
+  coreObj[QStringLiteral("lastToolTipDate")] = m_lastToolTipDate;
+  coreObj[QStringLiteral("nextToolTipIndex")] = m_nextToolTipIndex;
   return coreObj;
 }
 
@@ -219,6 +222,18 @@ const QString &SessionConfig::getCurrentNotebook() const { return m_currentNoteb
 
 void SessionConfig::setCurrentNotebook(const QString &p_guid) {
   updateConfig(m_currentNotebook, p_guid, this);
+}
+
+const QString &SessionConfig::getLastToolTipDate() const { return m_lastToolTipDate; }
+
+void SessionConfig::setLastToolTipDate(const QString &p_date) {
+  updateConfig(m_lastToolTipDate, p_date, this);
+}
+
+int SessionConfig::getNextToolTipIndex() const { return m_nextToolTipIndex; }
+
+void SessionConfig::setNextToolTipIndex(int p_index) {
+  updateConfig(m_nextToolTipIndex, qMax(0, p_index), this);
 }
 
 void SessionConfig::update() { getMgr()->updateSessionConfig(toJson()); }

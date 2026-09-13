@@ -260,19 +260,23 @@ void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
   const auto destroyContext = qScopeGuard([&] { vxcore_context_destroy(context); });
   ConfigCoreService configService(context);
   const auto healthy = configService.getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto healthySession =
+      configService.getConfigByName(DataLocation::Local, QStringLiteral("session"));
   const QLocale previousLocale;
   const auto restore = qScopeGuard([&] {
     m_services->registerService<ConfigMgr2>(nullptr);
     QLocale::setDefault(previousLocale);
     configService.updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
+    configService.updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                     healthySession);
   });
   QLocale::setDefault(QLocale(QStringLiteral("en_US")));
   QVERIFY(!configService.updateConfigByName(
       DataLocation::App, QStringLiteral("vnotex"),
       QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
-                  {"core", QJsonObject{{"toolTipsEnabled", true},
-                                       {"lastToolTipDate", ""},
-                                       {"nextToolTipIndex", 0}}}}));
+                  {"core", QJsonObject{{"toolTipsEnabled", true}}}}));
+  QVERIFY(!configService.updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                            QJsonObject()));
   TempDirFixture tmp;
   QVERIFY(tmp.isValid());
   const auto path =
@@ -317,6 +321,9 @@ void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
   }
   QVERIFY(originalManager.isNull());
   QVERIFY(retainedAction);
+  // Resetting session progress must not undo the permanent preference.
+  QVERIFY(!configService.updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                            QJsonObject()));
   {
     ConfigMgr2 replacement(&configService);
     replacement.init();
@@ -333,7 +340,7 @@ void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
     QVERIFY(replacement.getCoreConfig().isToolTipsEnabled());
     QVERIFY(producer.showTipIfDue(today.addDays(1)));
     QCOMPARE(m_notifications->messages().size(), 2);
-    QCOMPARE(m_notifications->messages().last().m_text, QStringLiteral("Tip B"));
+    QCOMPARE(m_notifications->messages().last().m_text, QStringLiteral("Tip A"));
   }
 }
 

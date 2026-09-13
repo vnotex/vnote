@@ -10,6 +10,21 @@
 | `ViewWindowFactory` | Registry pattern mapping file types to `ViewWindow2` creators; plugins register new viewers here. The built-in `"Pdf"` creator is **build-conditional**: it is registered only on **Qt 6.9+**, because the vendored pdf.js v6 bundle is ESM-only, needs Chromium 125+, and is served over the `vxpdf://` `QWebEngineUrlScheme` — see [`../data/extra/web/pdf.js/AGENTS.md`](../data/extra/web/pdf.js/AGENTS.md) |
 | `WebEngineProfileService` | Owns the shared named `QWebEngineProfile` **and** the `vxpdf://` scheme handler (`VxPdfSchemeHandler`), plus the PDF document token registry (`registerPdfDocument` / `unregisterPdfDocument`) |
 | `NavigationModeService` | Keyboard navigation mode service |
+| `ToolTipService` | One scoped startup attempt to post a localized daily usage tip |
+
+## Daily usage tip state
+
+`ToolTipService` uses `ConfigMgr2` for both stores: the permanent `toolTipsEnabled`
+preference stays in `CoreConfig` (`vnotex.json` → `core`), while `lastToolTipDate`
+and `nextToolTipIndex` live in `SessionConfig` (`session.json` → `core`). Session
+reset therefore restarts daily eligibility and rotation without undoing opt-out.
+`ConfigMgr2::init()` imports legacy main-config progress only for absent session
+keys, then retires the old main-config keys through normal persistence. Explicit
+session values, including an empty date and index zero, take precedence.
+
+Keep the producer stack-scoped after the main-window startup hook. Its retained
+opt-out action captures only a `QPointer<ConfigMgr2>`; no producer or config-field
+reference may outlive that scope.
 
 ## WebEngine profile storage
 
