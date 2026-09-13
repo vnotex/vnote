@@ -161,6 +161,9 @@ signals:
   // Emitted when tabs are reordered via drag. Carries the new buffer ID order.
   void bufferOrderChanged(ViewSplit2 *p_split, const QStringList &p_bufferIds);
 
+  // Tab context menu: save all modified tabs across workspaces.
+  void saveAllRequested();
+
   // Tab context menu: close multiple tabs relative to a reference tab.
   void closeTabsRequested(ViewSplit2 *p_split, int p_tabIndex, CloseTabMode p_mode);
 

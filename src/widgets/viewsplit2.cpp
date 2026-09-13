@@ -648,6 +648,12 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
   QMenu menu(this);
 
+  if (!m_detached) {
+    auto *saveAllAct = menu.addAction(tr("Save All"), this, &ViewSplit2::saveAllRequested);
+    saveAllAct->setToolTip(tr("Save all modified tabs in all workspaces"));
+    menu.addSeparator();
+  }
+
   // ---- File Actions ----
   // Resolve the absolute path (notebook file or external file).
   const auto &nodeId = win->getNodeId();

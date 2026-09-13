@@ -223,6 +223,11 @@ public:
   void setNoteConversionFrozen(bool p_frozen);
   bool isNoteConversionFrozen() const { return m_noteConversionFrozen; }
 
+  // Trigger a manual save of the buffer content to disk.
+  // Syncs editor content to vxcore buffer, then saves to disk.
+  // Returns true on success.
+  bool save();
+
   // Reload buffer content from disk, prompting Save/Discard/Cancel on unsaved
   // changes. Preserves current mode (does not switch Read<->Edit). Returns true
   // on successful reload, false on cancel/failure/missing-path.
@@ -600,11 +605,6 @@ protected:
   // Sets dirty flag and notifies BufferService.
   // Subclasses should connect their editor's contentsChanged/textChanged signal to this.
   void onEditorContentsChanged();
-
-  // Trigger a manual save of the buffer content to disk.
-  // Syncs editor content to vxcore buffer, then saves to disk.
-  // Returns true on success.
-  bool save();
 
   // Current view mode (Read or Edit).
   ViewWindowMode m_mode = ViewWindowMode::Read;

@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QPointer>
 #include <QPushButton>
+#include <QSet>
 #include <QShortcut>
 #include <QSignalBlocker>
 #include <QSplitter>
@@ -855,6 +856,27 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
           [this](ViewSplit2 *s, const QStringList &ids) {
             m_controller->setBufferOrder(s->getWorkspaceId(), ids);
           });
+
+  connect(p_split, &ViewSplit2::saveAllRequested, this, [this]() {
+    // Include hidden workspaces and detached tabs. Save hooks may close windows.
+    QVector<QPointer<ViewWindow2>> windows;
+    windows.reserve(m_windows.size());
+    for (auto *win : m_windows) {
+      windows.append(QPointer<ViewWindow2>(win));
+    }
+    QSet<QString> savedBuffers;
+    for (const auto &win : windows) {
+      if (!win || !win->isSaveSupported() || win->isNoteConversionFrozen() || !win->isModified()) {
+        continue;
+      }
+      const auto &buffer = win->getBuffer();
+      if (!buffer.isValid() || buffer.isReadOnly() || savedBuffers.contains(buffer.id())) {
+        continue;
+      }
+      savedBuffers.insert(buffer.id());
+      win->save();
+    }
+  });
 
   // Tab context menu: close multiple tabs.
   connect(p_split, &ViewSplit2::closeTabsRequested, this,
