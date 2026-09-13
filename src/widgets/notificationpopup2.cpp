@@ -307,15 +307,18 @@ void NotificationPopup2::rebuild() {
       rowLayout->addWidget(progress);
     }
 
-    // Actions + Dismiss.
+    // Actions, plus a generic Dismiss unless an explicit action already does only that.
     auto *actionLayout = new QHBoxLayout();
     actionLayout->setContentsMargins(0, 0, 0, 0);
     actionLayout->setSpacing(4);
     actionLayout->addStretch();
 
     const quint64 id = msg.m_id;
+    bool hasDismissOnlyAction = false;
     for (int ai = 0; ai < msg.m_actions.size(); ++ai) {
-      auto *actBtn = new QPushButton(msg.m_actions.at(ai).m_label, row);
+      const auto &action = msg.m_actions.at(ai);
+      hasDismissOnlyAction |= action.m_dismissOnTrigger && !action.m_callback;
+      auto *actBtn = new QPushButton(action.m_label, row);
       const int actionIndex = ai;
       connect(actBtn, &QPushButton::clicked, this, [this, id, actionIndex]() {
         auto *service = m_services.get<NotificationService>();
@@ -369,15 +372,17 @@ void NotificationPopup2::rebuild() {
       actionLayout->addWidget(actBtn);
     }
 
-    auto *dismissBtn = new QPushButton(tr("Dismiss"), row);
-    connect(dismissBtn, &QPushButton::clicked, this, [this, id]() {
-      auto *service = m_services.get<NotificationService>();
-      if (service) {
-        service->dismiss(id);
-      }
-      rebuild();
-    });
-    actionLayout->addWidget(dismissBtn);
+    if (!hasDismissOnlyAction) {
+      auto *dismissBtn = new QPushButton(tr("Dismiss"), row);
+      connect(dismissBtn, &QPushButton::clicked, this, [this, id]() {
+        auto *service = m_services.get<NotificationService>();
+        if (service) {
+          service->dismiss(id);
+        }
+        rebuild();
+      });
+      actionLayout->addWidget(dismissBtn);
+    }
 
     rowLayout->addLayout(actionLayout);
 

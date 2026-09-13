@@ -24,7 +24,8 @@ session values, including an empty date and index zero, take precedence.
 
 Keep the producer stack-scoped after the main-window startup hook. Its retained
 opt-out action captures only a `QPointer<ConfigMgr2>`; no producer or config-field
-reference may outlive that scope.
+reference may outlive that scope. `OK` dismisses only the current message;
+acknowledgement never disables future tips or resets the consumed day/index.
 
 ## WebEngine profile storage
 

@@ -6300,7 +6300,7 @@ Continue?</source>
 <context>
     <name>vnotex::NotificationPopup2</name>
     <message>
-        <location filename="../../../widgets/notificationpopup2.cpp" line="+112"/>
+        <location filename="../../../widgets/notificationpopup2.cpp" line="+115"/>
         <source>Notifications</source>
         <translation>通知</translation>
     </message>
@@ -6315,12 +6315,12 @@ Continue?</source>
         <translation>无通知</translation>
     </message>
     <message>
-        <location line="+145"/>
+        <location line="+147"/>
         <source>Details</source>
         <translation>详情</translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+94"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
@@ -9135,6 +9135,11 @@ Continue?</source>
         <location filename="../../../gui/services/tooltipservice.cpp" line="121"/>
         <source>Never show again</source>
         <translation>不再显示</translation>
+    </message>
+    <message>
+        <location filename="../../../gui/services/tooltipservice.cpp" line="128"/>
+        <source>OK</source>
+        <translation>确定</translation>
     </message>
 </context>
 </TS>

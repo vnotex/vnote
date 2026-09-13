@@ -125,6 +125,7 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
                                  }
                                },
                                true});
+  message.m_actions.push_back({tr("OK"), {}, true});
 
   // Consume before notify(): synchronous observers must see the day as already used.
   sessionConfig.setLastToolTipDate(p_today.toString(Qt::ISODate));

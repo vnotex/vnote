@@ -10,5 +10,17 @@
   {
     "en_US": "When importing a folder shared from VNote, choose Shared folder from VNote to keep note IDs, dates, tags and attachments",
     "zh_CN": "导入从 VNote 分享的文件夹时，选择“来自 VNote 的分享文件夹”，保留笔记的 ID、日期、标签和附件"
+  },
+  {
+    "en_US": "In edit mode, drag and drop headings in the Outline panel to reorder sections of a Markdown note",
+    "zh_CN": "在编辑模式下，在大纲面板中拖放标题，可调整 Markdown 笔记中章节的顺序"
+  },
+  {
+    "en_US": "VNote's first commit was on October 1, 2016",
+    "zh_CN": "VNote 的首次代码提交是在 2016 年 10 月 1 日"
+  },
+  {
+    "en_US": "Press Ctrl+G, then W to enter Navigation Mode and use the displayed hints to navigate without the mouse",
+    "zh_CN": "按 Ctrl+G，再按 W 进入导航模式，使用显示的提示键，无需鼠标即可导航"
   }
 ]

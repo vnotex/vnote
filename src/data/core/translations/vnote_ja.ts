@@ -6302,7 +6302,7 @@ Continue?</source>
 <context>
     <name>vnotex::NotificationPopup2</name>
     <message>
-        <location filename="../../../widgets/notificationpopup2.cpp" line="+112"/>
+        <location filename="../../../widgets/notificationpopup2.cpp" line="+115"/>
         <source>Notifications</source>
         <translation>通知</translation>
     </message>
@@ -6317,12 +6317,12 @@ Continue?</source>
         <translation>通知なし</translation>
     </message>
     <message>
-        <location line="+145"/>
+        <location line="+147"/>
         <source>Details</source>
         <translation>詳細</translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+94"/>
         <source>Dismiss</source>
         <translation>閉じる</translation>
     </message>

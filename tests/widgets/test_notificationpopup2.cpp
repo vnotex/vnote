@@ -184,7 +184,16 @@ void TestNotificationPopup2::test_dismissedMessagesAreNotRendered() {
   openPopup();
   QVERIFY(renderedTexts().contains(QStringLiteral("gone")));
 
-  m_notifications->dismiss(id);
+  QPushButton *dismiss = nullptr;
+  for (auto *button : m_popup->findChildren<QPushButton *>()) {
+    if (button->text() == QStringLiteral("Dismiss")) {
+      dismiss = button;
+      break;
+    }
+  }
+  QVERIFY(dismiss);
+  QTest::mouseClick(dismiss, Qt::LeftButton);
+  QVERIFY(!m_notifications->isActive(id));
   QVERIFY(!renderedTexts().contains(QStringLiteral("gone")));
 
   m_popup->hide();
@@ -300,12 +309,39 @@ void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
     QCOMPARE(m_notifications->messages().size(), 1);
     const auto message = m_notifications->messages().first();
     QCOMPARE(message.m_text, QStringLiteral("Tip A"));
-    QCOMPARE(message.m_actions.size(), 1);
-    retainedAction = message.m_actions.first().m_callback;
+    for (const auto &action : message.m_actions) {
+      if (action.m_label == QStringLiteral("Never show again")) {
+        retainedAction = action.m_callback;
+        break;
+      }
+    }
 
     openPopup();
     QVERIFY(m_popup->isVisible());
     QVERIFY(renderedTexts().contains(QStringLiteral("Tip A")));
+    QPushButton *ok = nullptr;
+    for (auto *button : m_popup->findChildren<QPushButton *>()) {
+      QVERIFY(button->text() != QStringLiteral("Dismiss"));
+      if (button->text() == QStringLiteral("OK")) {
+        ok = button;
+      }
+    }
+    QVERIFY(ok);
+    QTest::mouseClick(ok, Qt::LeftButton);
+    QVERIFY(!m_notifications->isActive(message.m_id));
+    QVERIFY(!renderedTexts().contains(QStringLiteral("Tip A")));
+    {
+      ToolTipService nextTip(*m_services);
+      nextTip.setCatalogPathOverrideForTesting(path);
+      // Acknowledging neither resets today's gate nor disables tomorrow's tip.
+      QVERIFY(!nextTip.showTipIfDue(today));
+      QCOMPARE(m_notifications->messages().size(), 1);
+      QVERIFY(nextTip.showTipIfDue(today.addDays(1)));
+    }
+    QCOMPARE(m_notifications->messages().size(), 2);
+    const auto nextId = m_notifications->messages().last().m_id;
+    openPopup();
+    QVERIFY(renderedTexts().contains(QStringLiteral("Tip B")));
     QPushButton *optOut = nullptr;
     for (auto *button : m_popup->findChildren<QPushButton *>()) {
       if (button->text() == QStringLiteral("Never show again")) {
@@ -315,8 +351,8 @@ void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
     }
     QVERIFY(optOut);
     QTest::mouseClick(optOut, Qt::LeftButton);
-    QVERIFY(!m_notifications->isActive(message.m_id));
-    QVERIFY(!renderedTexts().contains(QStringLiteral("Tip A")));
+    QVERIFY(!m_notifications->isActive(nextId));
+    QVERIFY(!renderedTexts().contains(QStringLiteral("Tip B")));
     m_popup->hide();
   }
   QVERIFY(originalManager.isNull());
@@ -330,16 +366,16 @@ void TestNotificationPopup2::testToolTips_optOutOutlivesProducer() {
     m_services->registerService(&replacement);
     ToolTipService producer(*m_services);
     producer.setCatalogPathOverrideForTesting(path);
-    QVERIFY(!producer.showTipIfDue(today.addDays(1)));
-    QCOMPARE(m_notifications->messages().size(), 1);
+    QVERIFY(!producer.showTipIfDue(today.addDays(2)));
+    QCOMPARE(m_notifications->messages().size(), 2);
     QCOMPARE(m_notifications->activeCount(), 0);
 
     // A callback belonging to the dead manager must not disable its replacement.
     replacement.getCoreConfig().setToolTipsEnabled(true);
     retainedAction();
     QVERIFY(replacement.getCoreConfig().isToolTipsEnabled());
-    QVERIFY(producer.showTipIfDue(today.addDays(1)));
-    QCOMPARE(m_notifications->messages().size(), 2);
+    QVERIFY(producer.showTipIfDue(today.addDays(2)));
+    QCOMPARE(m_notifications->messages().size(), 3);
     QCOMPARE(m_notifications->messages().last().m_text, QStringLiteral("Tip A"));
   }
 }
