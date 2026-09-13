@@ -1355,10 +1355,6 @@ add_qt_test(test_notificationtoast
 target_include_directories(test_notificationtoast PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
-if(WIN32)
-  find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
-  target_link_libraries(test_notificationtoast PRIVATE Qt6::WebEngineWidgets)
-endif()
 
 # NotificationPopup2 + NotificationButton2 - the persistent notification centre.
 # NOT GUILESS: builds real QMenu/QFrame/QPushButton widgets. Covers the

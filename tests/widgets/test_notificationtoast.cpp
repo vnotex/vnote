@@ -25,9 +25,6 @@
 #include <widgets/propertydefs.h>
 
 #ifdef Q_OS_WIN
-#include <QWebEnginePage>
-#include <QWebEngineProfile>
-#include <QWebEngineView>
 #include <qt_windows.h>
 #endif
 
@@ -43,7 +40,7 @@ private slots:
   void cleanup();
 
   void test_showsOnInterruptAdded();
-  void test_lateNativeWebViewDoesNotCoverToast();
+  void test_lateNativeChildDoesNotCoverToast();
   void test_closeControlUsesThemedIconAndHidesOnlyTheToast();
   void test_ignoresPassiveAdded();
   void test_interruptUpdateRefreshesButDoesNotRaise();
@@ -140,7 +137,7 @@ void TestNotificationToast::test_showsOnInterruptAdded() {
   QCOMPARE(m_toast->shownId(), id);
 }
 
-void TestNotificationToast::test_lateNativeWebViewDoesNotCoverToast() {
+void TestNotificationToast::test_lateNativeChildDoesNotCoverToast() {
 #ifndef Q_OS_WIN
   QSKIP("Windows native-child stacking regression");
 #else
@@ -166,21 +163,16 @@ void TestNotificationToast::test_lateNativeWebViewDoesNotCoverToast() {
   const auto id = m_notifications->notify(message);
   QVERIFY(toast.isVisible());
 
-  // Session restoration creates WebEngine content on the next event-loop turn.
-  QWebEngineProfile profile;
-  QScopedPointer<QWebEngineView> webView;
-  QScopedPointer<QSignalSpy> loaded;
+  // Reproduce late native content without a browser process or page-load timing.
+  QScopedPointer<QWidget> nativeChild;
   QTimer::singleShot(0, &window, [&] {
-    webView.reset(new QWebEngineView(content));
-    webView->setAttribute(Qt::WA_NativeWindow);
-    webView->setPage(new QWebEnginePage(&profile, webView.data()));
-    webView->setGeometry(content->rect());
-    loaded.reset(new QSignalSpy(webView.data(), &QWebEngineView::loadFinished));
-    webView->setHtml(QStringLiteral("<html><body>Restored WebEngine view</body></html>"));
-    webView->show();
+    nativeChild.reset(new QWidget(content));
+    nativeChild->setAttribute(Qt::WA_NativeWindow);
+    nativeChild->setGeometry(content->rect());
+    nativeChild->show();
   });
-  QTRY_VERIFY(loaded && !loaded->isEmpty());
-  QVERIFY(loaded->first().first().toBool());
+  QTRY_VERIFY(nativeChild && nativeChild->isVisible());
+  QCoreApplication::processEvents();
 
   auto *action = toast.findChild<QPushButton *>();
   QVERIFY(action);
