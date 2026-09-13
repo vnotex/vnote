@@ -430,6 +430,10 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
         encryptAction->setEnabled(!p_readOnly);
       }
 
+      auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
+      connect(pinAction, &QAction::triggered, this,
+              [this, p_nodeId]() { pinNodesToQuickAccess(resolveSelection(p_nodeId)); });
+
       auto *removeAction = p_menu->addAction(tr("Remove from Notebook"));
       removeAction->setToolTip(tr("Remove from notebook but keep files on disk"));
       connect(removeAction, &QAction::triggered, this, [this, p_nodeId]() {
@@ -517,11 +521,6 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
           [this, p_nodeId]() { locateNodeInFileManager(p_nodeId); });
   locateAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 
-  auto *propertiesAction = p_menu->addAction(tr("P&roperties"));
-  connect(propertiesAction, &QAction::triggered, this,
-          [this, p_nodeId]() { showNodeProperties(p_nodeId); });
-  propertiesAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
-
   {
     auto *notebookService = m_services.get<NotebookCoreService>();
     QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
@@ -532,8 +531,18 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
       connect(tagAction, &QAction::triggered, this,
               [this, p_nodeId]() { manageNodeTags(p_nodeId); });
       tagAction->setEnabled(!p_readOnly && !resolveTagTargets(p_nodeId).isEmpty());
+
+      auto *markAction = p_menu->addAction(tr("&Mark"));
+      connect(markAction, &QAction::triggered, this,
+              [this, p_nodeId]() { markNodes(resolveSelection(p_nodeId)); });
+      markAction->setEnabled(!p_readOnly);
     }
   }
+
+  auto *propertiesAction = p_menu->addAction(tr("P&roperties"));
+  connect(propertiesAction, &QAction::triggered, this,
+          [this, p_nodeId]() { showNodeProperties(p_nodeId); });
+  propertiesAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
 }
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
@@ -552,23 +561,6 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
   auto *sortAction = p_menu->addAction(tr("&Sort"));
   sortAction->setEnabled(!p_readOnly);
   connect(sortAction, &QAction::triggered, this, [this, sortTarget]() { sortNodes(sortTarget); });
-
-  if (p_nodeId.isValid()) {
-    auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
-    connect(pinAction, &QAction::triggered, this,
-            [this, p_nodeId]() { pinNodesToQuickAccess(resolveSelection(p_nodeId)); });
-
-    auto *notebookService = m_services.get<NotebookCoreService>();
-    QJsonObject nbConfig = notebookService->getNotebookConfig(p_nodeId.notebookId);
-    QString nbType = nbConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString();
-    bool isBundled = (nbType == QStringLiteral("bundled"));
-    if (!p_nodeId.isRoot() && isBundled) {
-      auto *markAction = p_menu->addAction(tr("&Mark"));
-      connect(markAction, &QAction::triggered, this,
-              [this, p_nodeId]() { markNodes(resolveSelection(p_nodeId)); });
-      markAction->setEnabled(!p_readOnly);
-    }
-  }
 }
 
 void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {
