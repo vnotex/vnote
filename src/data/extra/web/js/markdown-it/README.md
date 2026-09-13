@@ -38,9 +38,12 @@ Modified by Le Tan
 
 # [markdonw-it-anchor](https://github.com/valeriangalliat/markdown-it-anchor)
 v6.0.1
+Local patch: include inline math token content when generating heading anchors.
 
 # [markdonw-it-toc-done-right](https://github.com/nagaozen/markdown-it-toc-done-right)
 v4.2.0
+Local patch: include the same inline math token content in TOC titles and anchor targets.
+Keep both patches together; `testMathHeadings_linkTargets` guards their agreement.
 
 # [markdown-it-implicit-figures](https://github.com/arve0/markdown-it-implicit-figures)
 v0.10.0

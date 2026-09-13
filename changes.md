@@ -27,6 +27,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
 * **Fixes**
+    * Headings containing math formulas now retain formula text in their anchors, fixing navigation to math-only headings and keeping TOC links consistent
     * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
     * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights
     * Qt 6.9+ builds no longer create an empty WebEngine directory under Roaming AppData/VNoteX on Windows

@@ -379,6 +379,7 @@ class TestMarkdownViewerJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testMathHeadings_linkTargets();
   void testMathRenderer_initializationFanout();
   void testMathRenderer_failedInitializationReleasesPass();
   void testInstall_loadBeforeChannel();
@@ -551,6 +552,49 @@ function installLibrary() {
   }
   res = p_engine.evaluate(source, QStringLiteral("mathjax.js"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
+}
+
+void TestMarkdownViewerJs::testMathHeadings_linkTargets() {
+  QJSEngine engine;
+  QString err;
+  QString source = QStringLiteral("var window = this;\n");
+  for (const auto *name : {"markdown-it.min.js", "markdown-it-texmath.js",
+                           "markdownItAnchor.umd.js", "markdownItTocDoneRight.umd.js"}) {
+    source += readFile(webDir() + QStringLiteral("/js/markdown-it/") + QLatin1String(name), &err) +
+              QLatin1Char('\n');
+    QVERIFY2(err.isEmpty(), qPrintable(err));
+  }
+  auto res = engine.evaluate(source, QStringLiteral("heading-plugins.js"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+
+  res = engine.evaluate(QStringLiteral(R"JS(
+var parser = markdownit().use(texmath, { delimitersList: ['dollars', 'raw'] })
+    .use(markdownItAnchor, { permalink: true, permalinkClass: 'vx-header-anchor',
+                             permalinkSymbol: '', permalinkSpace: false })
+    .use(markdownItTocDoneRight);
+var text = ['[toc]', '', '```cpp', 'struct CacheEntry {};', '```', '',
+            '## $a*b=c$', '', '## $a*b=c$', '', '## 1. $a*b=c$', '', '## Sum $$a+b$$', '',
+            '## Plain `code` and **bold** [link][ref]', '', '[ref]: https://example.com'].join('\n');
+var html = parser.render(text);
+var renderedIds = [], tocTargets = [], permalinkTargets = [], match;
+var headingPattern = /<h2\b[^>]*\bid="([^"]*)"/g;
+while ((match = headingPattern.exec(html))) { renderedIds.push(match[1]); }
+var tocHtml = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/)[0];
+var linkPattern = /href="#([^"]*)"/g;
+while ((match = linkPattern.exec(tocHtml))) { tocTargets.push(match[1]); }
+var permalinkPattern = /class="vx-header-anchor" href="#([^"]*)"/g;
+while ((match = permalinkPattern.exec(html))) { permalinkTargets.push(match[1]); }
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString() + QLatin1Char('\n') +
+                                      res.property(QStringLiteral("stack")).toString()));
+  const QStringList expected{"a*b%3Dc", "a*b%3Dc-1", "1.-a*b%3Dc", "sum-a%2Bb",
+                             "plain-code-and-bold-link"};
+  for (const auto *name : {"renderedIds", "tocTargets", "permalinkTargets"}) {
+    QCOMPARE(engine.evaluate(QLatin1String(name)).toVariant().toStringList(), expected);
+  }
+  // Extracting anchor text must not change the tokens used to render the formulas.
+  QVERIFY(engine.evaluate(QStringLiteral("html.indexOf('>$a*b=c$</eq>') >= 0")).toBool());
+  QVERIFY(engine.evaluate(QStringLiteral("html.indexOf('>$$a+b$$</eqn>') >= 0")).toBool());
 }
 
 void TestMarkdownViewerJs::testMathRenderer_initializationFanout() {
