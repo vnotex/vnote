@@ -74,6 +74,8 @@ void FindAndReplaceWidget2::setupUI() {
 
     m_findLineEdit = WidgetsFactory::createLineEdit(this);
     m_findLineEdit->setPlaceholderText(tr("Search"));
+    m_findLineEdit->setToolTip(
+        tr("Regular expression: \\n matches a line break; (?s) lets . match line breaks"));
     m_findLineEdit->setClearButtonEnabled(true);
     connect(m_findLineEdit, &QLineEdit::textChanged, this, [this]() {
       setFindTextNoMatch(false);
@@ -107,7 +109,9 @@ void FindAndReplaceWidget2::setupUI() {
     auto label = new QLabel(tr("Replace with"), this);
 
     m_replaceLineEdit = WidgetsFactory::createLineEdit(this);
-    m_replaceLineEdit->setPlaceholderText(tr("\\1, \\2 for back reference in regular expression"));
+    m_replaceLineEdit->setPlaceholderText(tr("Replacement text"));
+    m_replaceLineEdit->setToolTip(tr("Regular expression: \\1, \\2 for captures; \\n for newline; "
+                                     "\\t for tab; \\\\ for a literal backslash"));
     m_replaceRelatedWidgets.push_back(m_replaceLineEdit);
 
     auto replaceBtn = new QPushButton(tr("Replace"), this);
