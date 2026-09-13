@@ -6398,7 +6398,7 @@ Continue?</source>
 <context>
     <name>vnotex::NotificationToast</name>
     <message>
-        <location filename="../../../widgets/notificationtoast.cpp" line="+103"/>
+        <location filename="../../../widgets/notificationtoast.cpp" line="+109"/>
         <source>Close</source>
         <translation>閉じる</translation>
     </message>

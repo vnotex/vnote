@@ -33,6 +33,11 @@ class ServiceLocator;
 // is that it is invisible when the main window is minimized or hidden -- which
 // is exactly what the fallback sink (the tray balloon) is for.
 //
+// On Windows this remains a CHILD, but owns a native HWND: the application
+// disables automatic native siblings, so WebEngine would otherwise cover it.
+// Native stacking is refreshed after the anchor gains/recreates its HWND;
+// QWidget's already-top sibling bookkeeping alone cannot repair native order.
+//
 // ROUTING LIVES HERE, not in MainWindow2, so it is unit-testable: the window
 // policy arrives through two injected seams instead.
 class NotificationToast : public QFrame {
@@ -101,6 +106,8 @@ private:
   void hideToast();
 
   void reposition();
+
+  void raiseAboveContent();
 
   void refreshCloseIcon();
 

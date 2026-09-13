@@ -9,8 +9,12 @@
 
 #include <QFileInfo>
 #include <QLabel>
+#include <QMainWindow>
 #include <QPushButton>
+#include <QScopeGuard>
+#include <QScopedPointer>
 #include <QSignalSpy>
+#include <QTimer>
 #include <QToolButton>
 #include <QWidget>
 
@@ -19,6 +23,13 @@
 #include <gui/services/themeservice.h>
 #include <widgets/notificationtoast.h>
 #include <widgets/propertydefs.h>
+
+#ifdef Q_OS_WIN
+#include <QWebEnginePage>
+#include <QWebEngineProfile>
+#include <QWebEngineView>
+#include <qt_windows.h>
+#endif
 
 using namespace vnotex;
 
@@ -32,6 +43,7 @@ private slots:
   void cleanup();
 
   void test_showsOnInterruptAdded();
+  void test_lateNativeWebViewDoesNotCoverToast();
   void test_closeControlUsesThemedIconAndHidesOnlyTheToast();
   void test_ignoresPassiveAdded();
   void test_interruptUpdateRefreshesButDoesNotRaise();
@@ -126,6 +138,71 @@ void TestNotificationToast::test_showsOnInterruptAdded() {
 
   QVERIFY(toastShown());
   QCOMPARE(m_toast->shownId(), id);
+}
+
+void TestNotificationToast::test_lateNativeWebViewDoesNotCoverToast() {
+#ifndef Q_OS_WIN
+  QSKIP("Windows native-child stacking regression");
+#else
+  const bool nativeSiblingsDisabled =
+      QCoreApplication::testAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+  QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+  const auto restoreAttribute = qScopeGuard([&] {
+    QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings, nativeSiblingsDisabled);
+  });
+  QMainWindow window;
+  window.setAttribute(Qt::WA_DontCreateNativeAncestors);
+  window.resize(1000, 700);
+  auto *content = new QWidget(&window);
+  window.setCentralWidget(content);
+  NotificationToast toast(*m_services, &window);
+  toast.setAnchorWidget(content);
+  window.show();
+  QCoreApplication::processEvents();
+
+  bool triggered = false;
+  auto message = interrupt(QStringLiteral("Daily tip"));
+  message.m_actions.append({QStringLiteral("Never show again"), [&] { triggered = true; }, true});
+  const auto id = m_notifications->notify(message);
+  QVERIFY(toast.isVisible());
+
+  // Session restoration creates WebEngine content on the next event-loop turn.
+  QWebEngineProfile profile;
+  QScopedPointer<QWebEngineView> webView;
+  QScopedPointer<QSignalSpy> loaded;
+  QTimer::singleShot(0, &window, [&] {
+    webView.reset(new QWebEngineView(content));
+    webView->setAttribute(Qt::WA_NativeWindow);
+    webView->setPage(new QWebEnginePage(&profile, webView.data()));
+    webView->setGeometry(content->rect());
+    loaded.reset(new QSignalSpy(webView.data(), &QWebEngineView::loadFinished));
+    webView->setHtml(QStringLiteral("<html><body>Restored WebEngine view</body></html>"));
+    webView->show();
+  });
+  QTRY_VERIFY(loaded && !loaded->isEmpty());
+  QVERIFY(loaded->first().first().toBool());
+
+  auto *action = toast.findChild<QPushButton *>();
+  QVERIFY(action);
+  const QPoint logical = action->mapTo(&window, action->rect().center());
+  const auto ratio = window.devicePixelRatioF();
+  POINT point{qRound(logical.x() * ratio), qRound(logical.y() * ratio)};
+  HWND target = reinterpret_cast<HWND>(window.winId());
+  // Hit-test below this window without depending on foreground/desktop activation.
+  while (true) {
+    HWND child = ChildWindowFromPointEx(target, point, CWP_SKIPINVISIBLE | CWP_SKIPDISABLED);
+    if (!child || child == target) {
+      break;
+    }
+    MapWindowPoints(target, child, &point, 1);
+    target = child;
+  }
+  const auto position = MAKELPARAM(point.x, point.y);
+  PostMessage(target, WM_LBUTTONDOWN, MK_LBUTTON, position);
+  PostMessage(target, WM_LBUTTONUP, 0, position);
+  QTRY_VERIFY_WITH_TIMEOUT(triggered, 1000);
+  QVERIFY(!m_notifications->isActive(id));
+#endif
 }
 
 void TestNotificationToast::test_closeControlUsesThemedIconAndHidesOnlyTheToast() {

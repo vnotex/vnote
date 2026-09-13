@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QWindow>
 
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
@@ -45,6 +46,11 @@ NotificationToast::NotificationToast(ServiceLocator &p_services, QWidget *p_pare
   // point: an arriving toast must not interrupt typing.
   setFocusPolicy(Qt::NoFocus);
   setAttribute(Qt::WA_ShowWithoutActivating);
+#ifdef Q_OS_WIN
+  // The app disables automatic native siblings. An alien toast is covered by
+  // WebEngine's native children even after raise(), so it needs its own HWND.
+  setAttribute(Qt::WA_NativeWindow);
+#endif
   setCursor(Qt::PointingHandCursor);
   setMaximumWidth(c_maxWidth);
 
@@ -386,11 +392,22 @@ void NotificationToast::present(const NotificationMessage &p_msg, bool p_restart
   // rendered. Keep these plain visibility changes: adding a fade or a deferred
   // teardown here would turn that into a visible flicker.
   show();
-  raise();
+  raiseAboveContent();
 
   if (p_restartTimer) {
     startAutoHideTimer(p_msg.m_duration);
   }
+}
+
+void NotificationToast::raiseAboveContent() {
+  raise();
+#ifdef Q_OS_WIN
+  // QWidget may already consider us the top sibling and skip the native restack.
+  // A late-created HWND can disagree with that bookkeeping; raise it explicitly.
+  if (auto *handle = windowHandle()) {
+    handle->raise();
+  }
+#endif
 }
 
 void NotificationToast::startAutoHideTimer(NotificationMessage::Duration p_duration) {
@@ -433,6 +450,17 @@ void NotificationToast::reposition() {
 }
 
 bool NotificationToast::eventFilter(QObject *p_watched, QEvent *p_event) {
+#ifdef Q_OS_WIN
+  if (p_watched == m_anchor && p_event->type() == QEvent::WinIdChange) {
+    // Late WebEngine construction can promote the central widget to a native
+    // sibling above us. Restack after that native subtree finishes creation.
+    QTimer::singleShot(0, this, [this] {
+      if (isVisible()) {
+        raiseAboveContent();
+      }
+    });
+  }
+#endif
   if (p_event->type() == QEvent::Resize || p_event->type() == QEvent::Move) {
     if (isVisible()) {
       reposition();
