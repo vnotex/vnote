@@ -16,11 +16,16 @@
 
 #include <QDir>
 #include <QFile>
+#include <QGuiApplication>
 #include <QJSEngine>
 #include <QJSValue>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QStandardPaths>
 #include <QString>
+#include <QWebEnginePage>
+#include <QWebEngineProfile>
 #include <QtTest>
 
 #include <utils/sectionnumberutils.h>
@@ -555,46 +560,82 @@ function installLibrary() {
 }
 
 void TestMarkdownViewerJs::testMathHeadings_linkTargets() {
-  QJSEngine engine;
   QString err;
-  QString source = QStringLiteral("var window = this;\n");
-  for (const auto *name : {"markdown-it.min.js", "markdown-it-texmath.js",
-                           "markdownItAnchor.umd.js", "markdownItTocDoneRight.umd.js"}) {
-    source += readFile(webDir() + QStringLiteral("/js/markdown-it/") + QLatin1String(name), &err) +
-              QLatin1Char('\n');
+  QString source = QStringLiteral(R"JS(
+(function() {
+try {
+window.vxOptions = {};
+var worker;
+window.vxcore = { registerWorker: function(value) { worker = value; } };
+)JS");
+  for (const auto *name :
+       {"vxworker.js", "utils.js", "markdown-it/markdown-it.min.js",
+        "markdown-it/markdown-it-container.min.js", "markdown-it/markdown-it-emoji.min.js",
+        "markdown-it/markdown-it-footnote.min.js", "markdown-it/markdown-it-front-matter.js",
+        "markdown-it/markdown-it-imsize.min.js", "markdown-it/markdown-it-sub.min.js",
+        "markdown-it/markdown-it-sup.min.js", "markdown-it/markdown-it-task-lists.js",
+        "markdown-it/markdown-it-texmath.js", "markdown-it/markdown-it-inject-linenumbers.js",
+        "markdown-it/markdownItAnchor.umd.js", "markdown-it/markdownItTocDoneRight.umd.js",
+        "markdown-it/markdown-it-implicit-figure.js", "markdown-it/markdown-it-mark.min.js",
+        "markdownit.js"}) {
+    source +=
+        readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &err) + QLatin1Char('\n');
     QVERIFY2(err.isEmpty(), qPrintable(err));
   }
-  auto res = engine.evaluate(source, QStringLiteral("heading-plugins.js"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
 
-  res = engine.evaluate(QStringLiteral(R"JS(
-var parser = markdownit().use(texmath, { delimitersList: ['dollars', 'raw'] })
-    .use(markdownItAnchor, { permalink: true, permalinkClass: 'vx-header-anchor',
-                             permalinkSymbol: '', permalinkSpace: false })
-    .use(markdownItTocDoneRight);
+  source += QStringLiteral(R"JS(
 var text = ['[toc]', '', '```cpp', 'struct CacheEntry {};', '```', '',
-            '## $a*b=c$', '', '## $a*b=c$', '', '## 1. $a*b=c$', '', '## Sum $$a+b$$', '',
+            '## 1. $a*b=c$', '', '## 2. $a*b=c$', '', '## $a*b=c$', '', '## Sum $$a+b$$', '',
             '## Plain `code` and **bold** [link][ref]', '', '[ref]: https://example.com'].join('\n');
-var html = parser.render(text);
-var renderedIds = [], tocTargets = [], permalinkTargets = [], match;
-var headingPattern = /<h2\b[^>]*\bid="([^"]*)"/g;
-while ((match = headingPattern.exec(html))) { renderedIds.push(match[1]); }
-var tocHtml = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/)[0];
-var linkPattern = /href="#([^"]*)"/g;
-while ((match = linkPattern.exec(tocHtml))) { tocTargets.push(match[1]); }
-var permalinkPattern = /class="vx-header-anchor" href="#([^"]*)"/g;
-while ((match = permalinkPattern.exec(html))) { permalinkTargets.push(match[1]); }
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString() + QLatin1Char('\n') +
-                                      res.property(QStringLiteral("stack")).toString()));
-  const QStringList expected{"a*b%3Dc", "a*b%3Dc-1", "1.-a*b%3Dc", "sum-a%2Bb",
-                             "plain-code-and-bold-link"};
-  for (const auto *name : {"renderedIds", "tocTargets", "permalinkTargets"}) {
-    QCOMPARE(engine.evaluate(QLatin1String(name)).toVariant().toStringList(), expected);
+document.body.innerHTML = worker.mdit.render(text);
+var copiedAnchors = [6, 8, 10, 12, 14].map(function(line) {
+  var result = worker.getHeadingAnchor(text, line);
+  if (!result.found) { throw new Error('heading not found at line ' + line); }
+  return result.anchor;
+});
+function targets(selector) {
+  return Array.from(document.querySelectorAll(selector), function(link) {
+    return link.getAttribute('href').substring(1);
+  });
+}
+return JSON.stringify({
+  renderedIds: Array.from(document.querySelectorAll('h2'), function(node) { return node.id; }),
+  tocTargets: targets('nav a'),
+  permalinkTargets: targets('.vx-header-anchor'),
+  copiedAnchors: copiedAnchors,
+  inlineMath: document.querySelector('h2 eq').textContent,
+  displayMath: document.querySelector('h2 eqn').textContent
+});
+} catch (error) { return JSON.stringify({ error: String(error) + '\n' + error.stack }); }
+})()
+)JS");
+  // Use the viewer's JavaScript engine: QJSEngine does not implement the Unicode
+  // property escapes used by generateHeaderId. No renderer or network is needed.
+  QVariant result;
+  bool finished = false;
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
+  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+  page.runJavaScript(source, [&result, &finished](const QVariant &p_result) {
+    result = p_result;
+    finished = true;
+  });
+  QTRY_VERIFY_WITH_TIMEOUT(finished, 10000);
+  const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
+  QVERIFY2(document.isObject(), qPrintable(result.toString()));
+  const auto values = document.object();
+  QVERIFY2(!values.contains(QStringLiteral("error")),
+           qPrintable(values.value(QStringLiteral("error")).toString()));
+  const auto expected =
+      QJsonArray::fromStringList({"abc", "abc-1", "abc-2", "sum-ab", "plain-code-and-bold-link"});
+  for (const auto *name : {"renderedIds", "tocTargets", "permalinkTargets", "copiedAnchors"}) {
+    QCOMPARE(values.value(QLatin1String(name)).toArray(), expected);
   }
-  // Extracting anchor text must not change the tokens used to render the formulas.
-  QVERIFY(engine.evaluate(QStringLiteral("html.indexOf('>$a*b=c$</eq>') >= 0")).toBool());
-  QVERIFY(engine.evaluate(QStringLiteral("html.indexOf('>$$a+b$$</eqn>') >= 0")).toBool());
+  QCOMPARE(values.value(QStringLiteral("inlineMath")).toString(), QStringLiteral("$a*b=c$"));
+  QCOMPARE(values.value(QStringLiteral("displayMath")).toString(), QStringLiteral("$$a+b$$"));
 }
 
 void TestMarkdownViewerJs::testMathRenderer_initializationFanout() {
@@ -1331,5 +1372,11 @@ vxcore.setMarkdownText('empty replacement');
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestMarkdownViewerJs)
+int main(int argc, char **argv) {
+  QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  QStandardPaths::setTestModeEnabled(true);
+  QGuiApplication app(argc, argv);
+  tests::TestMarkdownViewerJs test;
+  return QTest::qExec(&test, argc, argv);
+}
 #include "test_markdownviewer_js.moc"

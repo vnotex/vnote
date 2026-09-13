@@ -1466,16 +1466,29 @@ if(TARGET Qt6::Qml)
   # Task list checkbox click glue in markdownviewer.js. The defect it gates is
   # an install-ordering one: the QWebChannel callback and the window 'load'
   # handler race, and only one of them can be the installer.
+  find_package(Qt6 REQUIRED COMPONENTS WebEngineCore)
   add_qt_test(test_markdownviewer_js
     SOURCES
       test_markdownviewer_js.cpp
     LINKS
       # Guarding on the target does NOT link QJSEngine; this does.
       Qt6::Qml
+      # Exercise production Unicode slug generation in the viewer's actual engine.
+      Qt6::WebEngineCore
     GUILESS
   )
   target_compile_definitions(test_markdownviewer_js PRIVATE
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  )
+
+  # Match the isolated headless Chromium environment used by the profile tests.
+  set_property(TEST test_markdownviewer_js PROPERTY ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen"
+    "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+    "QTWEBENGINEPROCESS_PATH="
+    "QTWEBENGINE_RESOURCES_PATH="
+    "QTWEBENGINE_LOCALES_PATH="
+    "QTWEBENGINE_CHROMIUM_FLAGS="
   )
 
   # Read-mode graph render pass: finishWork() exactly-once, the concurrency bound,
