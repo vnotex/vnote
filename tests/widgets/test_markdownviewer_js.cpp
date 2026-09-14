@@ -28,6 +28,10 @@
 #include <QWebEngineProfile>
 #include <QtTest>
 
+#include <cmark.h>
+#include <cstdlib>
+#include <memory>
+
 #include <utils/sectionnumberutils.h>
 
 namespace tests {
@@ -385,6 +389,8 @@ class TestMarkdownViewerJs : public QObject {
 
 private slots:
   void testMathHeadings_linkTargets();
+  void testCmarkMathTableDom_data();
+  void testCmarkMathTableDom();
   void testMathRenderer_initializationFanout();
   void testMathRenderer_failedInitializationReleasesPass();
   void testInstall_loadBeforeChannel();
@@ -636,6 +642,169 @@ return JSON.stringify({
   }
   QCOMPARE(values.value(QStringLiteral("inlineMath")).toString(), QStringLiteral("$a*b=c$"));
   QCOMPARE(values.value(QStringLiteral("displayMath")).toString(), QStringLiteral("$$a+b$$"));
+}
+
+void TestMarkdownViewerJs::testCmarkMathTableDom_data() {
+  QTest::addColumn<bool>("sanitize");
+  QTest::newRow("sanitize-off") << false;
+  QTest::newRow("sanitize-on") << true;
+}
+
+void TestMarkdownViewerJs::testCmarkMathTableDom() {
+  QFETCH(bool, sanitize);
+
+  struct Formula {
+    QByteArray markdown;
+    int options;
+  };
+  const Formula formulas[] = {
+      {"$p_1$", CMARK_OPT_DEFAULT},
+      {"$a\\$b$", CMARK_OPT_DEFAULT},
+      {"$\\text{</eq><img>}$", CMARK_OPT_DEFAULT},
+      {"$$\np_1\n$$", CMARK_OPT_DEFAULT},
+      {"$$\np_1\n$$", CMARK_OPT_SOURCEPOS},
+  };
+  QStringList fragments;
+  for (const auto &formula : formulas) {
+    const std::unique_ptr<char, decltype(&std::free)> html(
+        cmark_markdown_to_html(formula.markdown.constData(),
+                               static_cast<size_t>(formula.markdown.size()), formula.options),
+        &std::free);
+    QVERIFY2(html != nullptr, "cmark_markdown_to_html failed");
+    fragments.append(QString::fromUtf8(html.get()));
+  }
+  const auto tableHtml =
+      QStringLiteral("<table><tbody><tr><td colspan=\"2\"><!--vte-md:$p_1$-->%1</td></tr>"
+                     "<tr><td>%2</td><td>%3</td></tr>"
+                     "<tr><td>%4</td><td>%5</td></tr>"
+                     "<tr><td>$literal$</td><td><code>$code$</code></td></tr></tbody></table>")
+          .arg(fragments[0], fragments[1], fragments[2], fragments[3], fragments[4]);
+  const QJsonObject fixture{{QStringLiteral("sanitize"), sanitize},
+                            {QStringLiteral("html"), tableHtml}};
+  QString err;
+  QString source =
+      QStringLiteral(R"JS(
+(function() {
+try {
+var fixture = %1;
+window.vxOptions = {
+  htmlTagEnabled: true, protectFromXss: fixture.sanitize, protectedView: false
+};
+var worker;
+window.vxcore = { registerWorker: function(value) { worker = value; } };
+)JS")
+          .arg(QString::fromUtf8(QJsonDocument(fixture).toJson(QJsonDocument::Compact)));
+  for (const auto *name :
+       {"vxworker.js", "utils.js", "markdown-it/markdown-it.min.js",
+        "markdown-it/markdown-it-container.min.js", "markdown-it/markdown-it-emoji.min.js",
+        "markdown-it/markdown-it-footnote.min.js", "markdown-it/markdown-it-front-matter.js",
+        "markdown-it/markdown-it-imsize.min.js", "markdown-it/markdown-it-sub.min.js",
+        "markdown-it/markdown-it-sup.min.js", "markdown-it/markdown-it-task-lists.js",
+        "markdown-it/markdown-it-texmath.js", "markdown-it/markdown-it-inject-linenumbers.js",
+        "markdown-it/markdownItAnchor.umd.js", "markdown-it/markdownItTocDoneRight.umd.js",
+        "markdown-it/markdown-it-implicit-figure.js", "markdown-it/markdown-it-mark.min.js",
+        "markdown-it/xss.min.js", "markdown-it/markdown-it-xss.js"}) {
+    source +=
+        readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &err) + QLatin1Char('\n');
+    QVERIFY2(err.isEmpty(), qPrintable(err));
+  }
+  // The real XSS scripts are already loaded; bypass only their asynchronous transport.
+  source += QStringLiteral("\nUtils.loadScripts = function(urls, callback) { callback(); };\n");
+  source += readFile(webDir() + QStringLiteral("/js/markdownit.js"), &err) + QLatin1Char('\n');
+  QVERIFY2(err.isEmpty(), qPrintable(err));
+  source += QStringLiteral(R"JS(
+var input = document.createElement('template');
+input.innerHTML = fixture.html;
+if (fixture.sanitize) {
+  input.content.querySelector('eq.tex-to-render').setAttribute('onclick', 'void 0');
+}
+document.body.innerHTML = worker.mdit.render(input.innerHTML);
+var table = document.querySelector('table');
+var merged = table.rows[0].cells[0];
+var mergedMath = merged.querySelector('eq.tex-to-render');
+var escapedDollarMath = table.rows[1].cells[0].querySelector('eq.tex-to-render');
+var tagMath = table.rows[1].cells[1].querySelector('eq.tex-to-render');
+var blockMath = table.rows[2].cells[0].querySelector('section > eqn.tex-to-render');
+var sourceposMath = table.rows[2].cells[1].querySelector('section > eqn.tex-to-render');
+window.__cmarkMathTableResult = JSON.stringify({
+  tableCount: document.querySelectorAll('table').length,
+  rowCellCounts: Array.from(table.rows, function(row) { return row.cells.length; }),
+  colSpan: merged.colSpan,
+  mergedText: mergedMath.textContent,
+  mergedClass: mergedMath.getAttribute('class'),
+  mergedOnclick: mergedMath.hasAttribute('onclick'),
+  escapedDollarText: escapedDollarMath.textContent,
+  tagText: tagMath.textContent,
+  tagNodeTypes: Array.from(tagMath.childNodes, function(node) { return node.nodeType; }),
+  imageCount: document.querySelectorAll('img').length,
+  inlineCount: document.querySelectorAll('eq').length,
+  displayCount: document.querySelectorAll('eqn').length,
+  markedMathCount: document.querySelectorAll('.tex-to-render').length,
+  blockText: blockMath.textContent,
+  sourceposText: sourceposMath.textContent,
+  sourcepos: sourceposMath.getAttribute('data-sourcepos'),
+  literalHtml: table.rows[3].cells[0].innerHTML,
+  codeHtml: table.rows[3].cells[1].innerHTML
+});
+} catch (error) {
+  window.__cmarkMathTableResult = JSON.stringify({ error: String(error) + '\n' + error.stack });
+}
+})();
+)JS");
+
+  // A real script element supplies document.currentScript during worker construction.
+  const QJsonObject scriptData{{QStringLiteral("source"), source}};
+  const auto execute =
+      QStringLiteral(R"JS(
+(function() {
+var script = document.createElement('script');
+script.textContent = %1.source;
+document.head.appendChild(script);
+script.remove();
+return window.__cmarkMathTableResult;
+})()
+)JS")
+          .arg(QString::fromUtf8(QJsonDocument(scriptData).toJson(QJsonDocument::Compact)));
+  QVariant result;
+  bool finished = false;
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
+  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+  page.runJavaScript(execute, [&result, &finished](const QVariant &p_result) {
+    result = p_result;
+    finished = true;
+  });
+  QTRY_VERIFY_WITH_TIMEOUT(finished, 10000);
+  const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
+  QVERIFY2(document.isObject(), qPrintable(result.toString()));
+  const auto values = document.object();
+  QVERIFY2(!values.contains(QStringLiteral("error")),
+           qPrintable(values.value(QStringLiteral("error")).toString()));
+  QCOMPARE(values.value(QStringLiteral("tableCount")).toInt(), 1);
+  QCOMPARE(values.value(QStringLiteral("rowCellCounts")).toArray(), QJsonArray({1, 2, 2, 2}));
+  QCOMPARE(values.value(QStringLiteral("colSpan")).toInt(), 2);
+  QCOMPARE(values.value(QStringLiteral("mergedText")).toString(), QStringLiteral("$p_1$"));
+  QCOMPARE(values.value(QStringLiteral("mergedClass")).toString(), QStringLiteral("tex-to-render"));
+  QCOMPARE(values.value(QStringLiteral("escapedDollarText")).toString(), QStringLiteral("$a\\$b$"));
+  QCOMPARE(values.value(QStringLiteral("tagText")).toString(),
+           QStringLiteral("$\\text{</eq><img>}$"));
+  QCOMPARE(values.value(QStringLiteral("tagNodeTypes")).toArray(), QJsonArray({3}));
+  QCOMPARE(values.value(QStringLiteral("imageCount")).toInt(), 0);
+  QCOMPARE(values.value(QStringLiteral("inlineCount")).toInt(), 3);
+  QCOMPARE(values.value(QStringLiteral("displayCount")).toInt(), 2);
+  QCOMPARE(values.value(QStringLiteral("markedMathCount")).toInt(), 5);
+  QCOMPARE(values.value(QStringLiteral("blockText")).toString(), QStringLiteral("$$p_1\n$$"));
+  QCOMPARE(values.value(QStringLiteral("sourceposText")).toString(), QStringLiteral("$$p_1\n$$"));
+  QCOMPARE(values.value(QStringLiteral("sourcepos")).toString(), QStringLiteral("1:1-3:2"));
+  QCOMPARE(values.value(QStringLiteral("literalHtml")).toString(), QStringLiteral("$literal$"));
+  QCOMPARE(values.value(QStringLiteral("codeHtml")).toString(),
+           QStringLiteral("<code>$code$</code>"));
+  if (sanitize) {
+    QVERIFY(!values.value(QStringLiteral("mergedOnclick")).toBool());
+  }
 }
 
 void TestMarkdownViewerJs::testMathRenderer_initializationFanout() {

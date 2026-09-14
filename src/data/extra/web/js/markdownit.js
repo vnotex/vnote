@@ -224,6 +224,8 @@ class MarkdownIt extends VxWorker {
                                       whiteList: {
                                           input: ["style", "class", "disabled", "type", "checked"],
                                           span: ["style", "class"],
+                                          eq: ["class"],
+                                          eqn: ["class", "data-sourcepos"],
                                       }
                                   });
                               });

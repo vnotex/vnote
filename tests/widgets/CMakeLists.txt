@@ -1477,6 +1477,7 @@ if(TARGET Qt6::Qml)
       Qt6::Qml
       # Exercise production Unicode slug generation in the viewer's actual engine.
       Qt6::WebEngineCore
+      cmark
     GUILESS
   )
   target_compile_definitions(test_markdownviewer_js PRIVATE
