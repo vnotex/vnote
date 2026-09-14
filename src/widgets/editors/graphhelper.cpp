@@ -35,13 +35,14 @@ QStringList GraphHelper::getArgsToUse(const QStringList &p_args) {
 }
 
 void GraphHelper::process(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
-                          const QString &p_text, QObject *p_owner,
-                          const ResultCallback &p_callback) {
+                          const QString &p_text, QObject *p_owner, const ResultCallback &p_callback,
+                          int p_imageIndex) {
   Task task;
   task.m_id = p_id;
   task.m_timeStamp = p_timeStamp;
   task.m_format = p_format;
   task.m_text = p_text;
+  task.m_imageIndex = p_imageIndex;
   task.m_owner = p_owner;
   task.m_callback = p_callback;
 
@@ -59,7 +60,7 @@ void GraphHelper::processOneTask() {
 
   const auto &task = m_tasks.head();
 
-  const auto &cachedData = m_cache.get(task.m_text);
+  const auto &cachedData = m_cache.get(qMakePair(task.m_text, task.m_imageIndex));
   if (!cachedData.isNull() && cachedData.m_format == task.m_format) {
     finishOneTask(cachedData.m_data);
     return;
@@ -69,7 +70,11 @@ void GraphHelper::processOneTask() {
     qWarning() << "GraphHelper: program to execute for rendering is not valid. program="
                << m_program << "overriddenCommand=" << m_overriddenCommand
                << "task id=" << task.m_id << "format=" << task.m_format;
-    finishOneTask(QString());
+    const auto failedTask = m_tasks.dequeue();
+    callbackOneTask(failedTask, failedTask.m_id, failedTask.m_timeStamp, failedTask.m_format,
+                    QString(), false);
+    m_taskOngoing = false;
+    processOneTask();
     return;
   }
 
@@ -82,26 +87,38 @@ void GraphHelper::processOneTask() {
                      finishOneTask(process, exitCode, exitStatus);
                    });
 
+  QObject::connect(process, &QProcess::errorOccurred,
+                   [this, process](QProcess::ProcessError error) {
+                     if (error == QProcess::FailedToStart) {
+                       finishOneTask(process, -1, QProcess::CrashExit);
+                     }
+                   });
+
+  const auto imageArgs = getImageArgs(task.m_imageIndex);
+  const auto input = task.m_text.toUtf8();
+  const auto taskId = task.m_id;
   if (m_overriddenCommand.isEmpty()) {
     Q_ASSERT(!m_program.isEmpty());
     QStringList args(m_args);
-    args << getFormatArgs(task.m_format);
+    args << getFormatArgs(task.m_format) << imageArgs;
     const auto argsToUse = getArgsToUse(args);
     qInfo() << "GraphHelper: starting render task id=" << task.m_id
             << "timeStamp=" << task.m_timeStamp << "format=" << task.m_format
-            << "textLen=" << task.m_text.size() << "program=" << m_program
-            << "args=" << argsToUse;
+            << "textLen=" << task.m_text.size() << "program=" << m_program << "args=" << argsToUse;
     process->start(m_program, argsToUse);
   } else {
     auto cmd = getCommandToUse(m_overriddenCommand, task.m_format);
+    if (!imageArgs.isEmpty()) {
+      cmd += QLatin1Char(' ') + imageArgs.join(QLatin1Char(' '));
+    }
     qInfo() << "GraphHelper: starting render task id=" << task.m_id
             << "timeStamp=" << task.m_timeStamp << "format=" << task.m_format
             << "textLen=" << task.m_text.size() << "overriddenCommand=" << cmd;
     process->start(cmd);
   }
 
-  if (process->write(task.m_text.toUtf8()) == -1) {
-    qWarning() << "Graph task" << task.m_id
+  if (process->write(input) == -1) {
+    qWarning() << "Graph task" << taskId
                << "failed to write to process stdin:" << process->errorString();
   }
 
@@ -120,28 +137,17 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
 
   qDebug() << "Graph task" << id << timeStamp << "finished";
 
-  bool failed = true;
+  const bool success = p_exitStatus == QProcess::NormalExit && p_exitCode == 0;
+  QString data;
   if (p_exitStatus == QProcess::NormalExit) {
-    if (p_exitCode < 0) {
-      qWarning() << "Graph task" << id << "failed: negative exitCode" << p_exitCode;
-    } else {
-      failed = false;
-      const auto outBa = p_process->readAllStandardOutput();
-      qInfo() << "Graph task" << id << "normal exit, exitCode=" << p_exitCode
-              << "outputBytes=" << outBa.size() << "format=" << task.m_format;
-      QString data;
-      if (task.m_format == QStringLiteral("svg")) {
-        data = QString::fromUtf8(outBa);
-        callbackOneTask(task, id, timeStamp, task.m_format, data);
-      } else {
-        data = QString::fromLocal8Bit(outBa.toBase64());
-        callbackOneTask(task, id, timeStamp, task.m_format, data);
-      }
-
+    const auto outBa = p_process->readAllStandardOutput();
+    data = task.m_format == QStringLiteral("svg") ? QString::fromUtf8(outBa)
+                                                  : QString::fromLatin1(outBa.toBase64());
+    if (success) {
       CacheItem item;
       item.m_format = task.m_format;
       item.m_data = data;
-      m_cache.set(task.m_text, item);
+      m_cache.set(qMakePair(task.m_text, task.m_imageIndex), item);
     }
   } else {
     qWarning() << "Graph task" << id << "failed to start / crashed. exitCode=" << p_exitCode
@@ -152,17 +158,14 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
   const QByteArray errBa = p_process->readAllStandardError();
   if (!errBa.isEmpty()) {
     QString errStr(QString::fromUtf8(errBa));
-    if (failed) {
+    if (!success) {
       qWarning() << "Graph task" << id << "stderr:" << errStr;
     } else {
       qDebug() << "Graph task" << id << "stderr:" << errStr;
     }
   }
 
-  if (failed) {
-    qWarning() << "Graph task" << id << "produced no data; delivering empty result";
-    callbackOneTask(task, id, task.m_timeStamp, task.m_format, QString());
-  }
+  callbackOneTask(task, id, task.m_timeStamp, task.m_format, data, success);
 
   p_process->deleteLater();
 
@@ -177,7 +180,7 @@ void GraphHelper::finishOneTask(const QString &p_data) {
 
   qDebug() << "Graph task" << task.m_id << task.m_timeStamp << "finished by cache" << p_data.size();
 
-  callbackOneTask(task, task.m_id, task.m_timeStamp, task.m_format, p_data);
+  callbackOneTask(task, task.m_id, task.m_timeStamp, task.m_format, p_data, true);
 
   m_taskOngoing = false;
   processOneTask();
@@ -187,6 +190,11 @@ QString GraphHelper::getCommandToUse(const QString &p_command, const QString &p_
   auto cmd(p_command);
   cmd.replace("%1", p_format);
   return cmd;
+}
+
+QStringList GraphHelper::getImageArgs(int p_imageIndex) const {
+  Q_UNUSED(p_imageIndex);
+  return {};
 }
 
 void GraphHelper::clearCache() { m_cache.clear(); }
@@ -206,8 +214,9 @@ void GraphHelper::checkValidProgram() {
 }
 
 void GraphHelper::callbackOneTask(const Task &p_task, quint64 p_id, TimeStamp p_timeStamp,
-                                  const QString &p_format, const QString &p_data) const {
+                                  const QString &p_format, const QString &p_data,
+                                  bool p_success) const {
   if (p_task.m_owner) {
-    p_task.m_callback(p_id, p_timeStamp, p_format, p_data);
+    p_task.m_callback(p_id, p_timeStamp, p_format, p_data, p_success);
   }
 }

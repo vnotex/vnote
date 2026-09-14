@@ -1583,7 +1583,6 @@ void MarkdownViewWindow2::updateEditorFromConfig() {
 
 void MarkdownViewWindow2::updatePreviewHelperFromConfig(const MarkdownEditorConfig &p_mdConfig) {
   auto phConfig = MarkdownEditorController::getPreviewHelperConfig(p_mdConfig);
-  m_previewHelper->setWebPlantUmlEnabled(phConfig.webPlantUmlEnabled);
   m_previewHelper->setWebGraphvizEnabled(phConfig.webGraphvizEnabled);
   m_previewHelper->setInplacePreviewCodeBlocksEnabled(phConfig.inplacePreviewCodeBlocksEnabled);
   m_previewHelper->setInplacePreviewMathBlocksEnabled(phConfig.inplacePreviewMathBlocksEnabled);

@@ -201,6 +201,26 @@ numbering. `Heading::m_isPlaceholder` marks only synthesized level gaps: never i
 The outline controller refreshes the shared pattern on `ConfigEditorChanged`, including open
 popup outlines, without mutating producer names.
 
+### PlantUML pagination
+
+`src/data/extra/web/js/plantuml.js` owns page enumeration for both read mode and editor previews.
+Read mode keeps separate, individually viewable images; previews stack PNG pages vertically into
+one image, preserving page titles and pixels. Do not inject `ignore newpage`: it is invalid for
+non-sequence diagrams. The note source is never rewritten.
+
+Web sequence diagrams use indexed SVG/PNG requests. Other identified diagram types retain
+single-image web rendering because some servers ignore their index. HTTP 400 without an image
+marks the end; the legacy HTTP 509 sequence-title index exception is matched narrowly, not as a
+generic server-error fallback. Local rendering uses `-pipeimageindex N` and successful empty
+stdout as the end marker; custom PlantUML commands must accept the appended index argument.
+`GraphHelper` carries success separately from image data and includes the image index in its
+cache key, including cached empty end markers.
+
+Enumeration is bounded to 256 pages. Failures or the cap retain available read-mode pages with
+an incomplete-render warning; editor previews do not silently publish partial results. Protected
+notes remain blocked. `test_graphrenderer_js.cpp` covers web termination, error retention, the cap,
+and preview pixels in QtWebEngine, since QJSEngine does not support async/await.
+
 ### Toolbar
 
 - `ToolbarHelper2` — main window toolbar construction

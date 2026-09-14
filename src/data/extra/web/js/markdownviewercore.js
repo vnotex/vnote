@@ -432,18 +432,18 @@ class MarkdownViewerCore extends VXCore {
         }
     }
 
-    renderGraph(p_id, p_index, p_format, p_lang, p_text, p_callback) {
+    renderGraph(p_id, p_index, p_format, p_lang, p_text, p_callback, p_imageIndex = 0) {
         this.renderGraphCallbacks[p_id + '_' + p_index] = p_callback;
-        window.vxMarkdownAdapter.renderGraph(p_id, p_index, p_format, p_lang, p_text);
+        window.vxMarkdownAdapter.renderGraph(p_id, p_index, p_format, p_lang, p_text, p_imageIndex);
     }
 
-    graphRenderDataReady(p_id, p_index, p_format, p_data) {
+    graphRenderDataReady(p_id, p_index, p_format, p_data, p_success) {
         let key = p_id + '_' + p_index;
         let found = key in this.renderGraphCallbacks;
         console.log('markdownviewercore graphRenderDataReady: key=', key, 'format=', p_format,
                     'dataLen=', p_data ? p_data.length : 0, 'callbackFound=', found);
         if (found) {
-            this.renderGraphCallbacks[key](p_id, p_index, p_format, p_data);
+            this.renderGraphCallbacks[key](p_id, p_index, p_format, p_data, p_success);
             delete this.renderGraphCallbacks[key];
         }
     }

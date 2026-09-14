@@ -7,14 +7,15 @@ class Utils {
     }
 
     // @p_type: 'blob'/'text'.
-    // p_callback(response). On a transport failure the callback is still invoked,
+    // p_callback(response, request). On a transport failure the callback is still invoked,
     // with null: a caller that never hears back would otherwise leave its render
     // pass permanently unfinished, which deadlocks the whole viewer (see
     // GraphRenderer.completePass). Callers must therefore handle a null response.
-    static httpGet(p_url, p_type, p_callback) {
+    static httpGet(p_url, p_type, p_callback, p_timeout = 0) {
         let xmlHttp = new XMLHttpRequest();
         xmlHttp.open("GET", p_url);
         xmlHttp.responseType = p_type;
+        xmlHttp.timeout = p_timeout;
 
         let done = false;
         const finish = function(p_resp) {
@@ -22,7 +23,7 @@ class Utils {
                 return;
             }
             done = true;
-            p_callback(p_resp);
+            p_callback(p_resp, xmlHttp);
         };
 
         xmlHttp.onload = function() { finish(xmlHttp.response); };

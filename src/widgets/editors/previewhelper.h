@@ -47,8 +47,6 @@ public:
   // Set before the helper is attached to an editor or receives preview work.
   void setProtectedView(bool p_protected);
 
-  void setWebPlantUmlEnabled(bool p_enabled);
-
   void setWebGraphvizEnabled(bool p_enabled);
 
   void setInplacePreviewSources(SourceFlags p_srcs);
@@ -239,8 +237,6 @@ private:
   vte::LruCache<QString, QSharedPointer<GraphPreviewData>> m_mathBlockCache;
 
   bool m_protectedView = false;
-
-  bool m_webPlantUmlEnabled = true;
 
   bool m_webGraphvizEnabled = true;
 

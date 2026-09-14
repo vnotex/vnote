@@ -18,6 +18,8 @@ private:
 
   QStringList getFormatArgs(const QString &p_format) Q_DECL_OVERRIDE;
 
+  QStringList getImageArgs(int p_imageIndex) const Q_DECL_OVERRIDE;
+
   static void prepareProgramAndArgs(const QString &p_plantUmlJarFile, const QString &p_graphvizFile,
                                     QString &p_program, QStringList &p_args);
 };

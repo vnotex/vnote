@@ -22,8 +22,8 @@ PlantUmlHelper &PlantUmlHelper::getInst() {
 
 void PlantUmlHelper::update(const QString &p_plantUmlJarFile, const QString &p_graphvizFile,
                             const QString &p_overriddenCommand) {
-  qInfo() << "PlantUmlHelper::update jar=" << p_plantUmlJarFile
-          << "graphviz=" << p_graphvizFile << "overriddenCommand=" << p_overriddenCommand;
+  qInfo() << "PlantUmlHelper::update jar=" << p_plantUmlJarFile << "graphviz=" << p_graphvizFile
+          << "overriddenCommand=" << p_overriddenCommand;
   m_overriddenCommand = p_overriddenCommand;
   if (m_overriddenCommand.isEmpty()) {
     prepareProgramAndArgs(p_plantUmlJarFile, p_graphvizFile, m_program, m_args);
@@ -97,4 +97,10 @@ QStringList PlantUmlHelper::getFormatArgs(const QString &p_format) {
   QStringList args;
   args << ("-t" + p_format);
   return args;
+}
+
+QStringList PlantUmlHelper::getImageArgs(int p_imageIndex) const {
+  return p_imageIndex > 0
+             ? QStringList{QStringLiteral("-pipeimageindex"), QString::number(p_imageIndex)}
+             : QStringList();
 }

@@ -17,6 +17,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Table-source alignment also formats directly edited Markdown tables; interactive table previews support Markdown type actions, highlight edited cells and write changes back after one second
     * Markdown pipe-table preview cells now display inline images and math; Insert Image targets the selected cell, including embedded images and image-host uploads
     * Choose KaTeX or MathJax for formulas in read mode and previews, with room reserved for numbered KaTeX equations
+    * PlantUML sequence diagrams show each `newpage` page in read mode and stack all pages into one editor-preview image, without changing the note source
     * KaTeX, MathJax and SVG-based graph previews retain higher-resolution pixels without enlarging their display size; KaTeX raster exports retain the same extra detail
     * Inline and display math previews resize immediately with editor zoom while sharper rasters refresh asynchronously, preserving unrounded layout geometry
     * Folding ranges track surviving source anchors after edits; bulk deletion no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text

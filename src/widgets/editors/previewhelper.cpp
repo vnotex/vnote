@@ -20,7 +20,6 @@
 #include <vtextedit/vtextedit.h>
 
 #include "graphvizhelper.h"
-#include "plantumlhelper.h"
 #include "previewdispatchplanner.h"
 #include "previewscaleutils.h"
 #include <core/logging.h>
@@ -504,7 +503,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
   if (m_protectedView || checkPreviewSourceLang(SourceFlag::FlowChart, blockData.m_lang) ||
       checkPreviewSourceLang(SourceFlag::WaveDrom, blockData.m_lang) ||
       checkPreviewSourceLang(SourceFlag::Mermaid, blockData.m_lang) ||
-      (checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang) && m_webPlantUmlEnabled) ||
+      checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang) ||
       (checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang) && m_webGraphvizEnabled) ||
       checkPreviewSourceLang(SourceFlag::Math, blockData.m_lang)) {
     emit graphPreviewRequested(p_blockPreviewIdx, m_codeBlockTimeStamp, blockData.m_lang,
@@ -513,26 +512,12 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
     return;
   }
 
-  if (!m_webPlantUmlEnabled && checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang)) {
-    // Local PlantUml.
-    // Per-preview: gated, so it costs nothing unless the category is enabled.
-    qCDebug(lcUi) << "PreviewHelper: local PlantUml in-place preview idx=" << p_blockPreviewIdx
-                  << "lang=" << blockData.m_lang;
-    PlantUmlHelper::getInst().process(
-        static_cast<quint64>(p_blockPreviewIdx), m_codeBlockTimeStamp, QStringLiteral("svg"),
-        vte::TextUtils::removeCodeBlockFence(blockData.m_text), this,
-        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
-          handleLocalData(id, timeStamp, format, data, true);
-        });
-    return;
-  }
-
   if (!m_webGraphvizEnabled && checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang)) {
-    // Local PlantUml.
+    // Local Graphviz.
     GraphvizHelper::getInst().process(
         static_cast<quint64>(p_blockPreviewIdx), m_codeBlockTimeStamp, QStringLiteral("svg"),
         vte::TextUtils::removeCodeBlockFence(blockData.m_text), this,
-        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
+        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data, bool) {
           handleLocalData(id, timeStamp, format, data, false);
         });
     return;
@@ -880,8 +865,6 @@ void PreviewHelper::setProtectedView(bool p_protected) {
   Q_ASSERT(m_codeBlocksData.isEmpty() && m_mathBlocksData.isEmpty());
   m_protectedView = p_protected;
 }
-
-void PreviewHelper::setWebPlantUmlEnabled(bool p_enabled) { m_webPlantUmlEnabled = p_enabled; }
 
 void PreviewHelper::setWebGraphvizEnabled(bool p_enabled) { m_webGraphvizEnabled = p_enabled; }
 

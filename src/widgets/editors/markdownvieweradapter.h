@@ -206,7 +206,7 @@ public slots:
 
   // Call local CPP code to render graph.
   void renderGraph(quint64 p_id, quint64 p_index, const QString &p_format, const QString &p_lang,
-                   const QString &p_text);
+                   const QString &p_text, int p_imageIndex);
 
   void setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles);
 
@@ -249,7 +249,7 @@ signals:
   void contentRequested();
 
   void graphRenderDataReady(quint64 p_id, quint64 p_index, const QString &p_format,
-                            const QString &p_data);
+                            const QString &p_data, bool p_success);
 
   void highlightCodeBlockRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
 

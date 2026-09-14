@@ -207,8 +207,8 @@ void MarkdownViewerAdapter::setGraphPreviewData(quint64 p_id, quint64 p_timeStam
     const bool valid = ImageUtils::protectedImageData(ba, image, mime);
     ba.fill(0);
     const auto format = QString::fromLatin1(mime.mid(mime.indexOf('/') + 1));
-    emit graphPreviewDataReady(
-        PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(), p_needScale, logicalSize));
+    emit graphPreviewDataReady(PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(),
+                                           p_needScale, logicalSize));
     image.fill(0);
     return;
   }
@@ -266,8 +266,8 @@ void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id, quint64 p_timeStamp
     const bool valid = ImageUtils::protectedImageData(ba, image, mime);
     ba.fill(0);
     const auto format = QString::fromLatin1(mime.mid(mime.indexOf('/') + 1));
-    emit mathPreviewDataReady(
-        PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(), p_needScale, logicalSize));
+    emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(),
+                                          p_needScale, logicalSize));
     image.fill(0);
     return;
   }
@@ -425,13 +425,14 @@ void MarkdownViewerAdapter::reset() {
 }
 
 void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QString &p_format,
-                                        const QString &p_lang, const QString &p_text) {
+                                        const QString &p_lang, const QString &p_text,
+                                        int p_imageIndex) {
   // Per-diagram: keep this behind a logging category. An ungated qInfo() here costs a
   // synchronous formatted write for every diagram in a document.
   qCDebug(lcUi) << "MarkdownViewerAdapter::renderGraph id=" << p_id << "index=" << p_index
                 << "format=" << p_format << "lang=" << p_lang << "textLen=" << p_text.size();
-  if (m_protectedView || p_text.isEmpty()) {
-    emit graphRenderDataReady(p_id, p_index, p_format, QString());
+  if (m_protectedView || p_text.isEmpty() || p_imageIndex < 0) {
+    emit graphRenderDataReady(p_id, p_index, p_format, QString(), false);
     return;
   }
 
@@ -441,15 +442,14 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
   if (p_lang == QStringLiteral("puml")) {
     PlantUmlHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
-        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
-          emit graphRenderDataReady(id, timeStamp, format, data);
-        });
+        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data,
+               bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); },
+        p_imageIndex);
   } else if (p_lang == QStringLiteral("dot")) {
     GraphvizHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
-        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data) {
-          emit graphRenderDataReady(id, timeStamp, format, data);
-        });
+        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data,
+               bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); });
   } else {
     qWarning() << "MarkdownViewerAdapter::renderGraph unhandled lang=" << p_lang << "id=" << p_id
                << "index=" << p_index;

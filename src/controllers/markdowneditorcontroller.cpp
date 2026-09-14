@@ -561,7 +561,6 @@ qreal MarkdownEditorController::persistViewerZoomFactor(qreal p_factor) {
 MarkdownEditorController::PreviewHelperConfig
 MarkdownEditorController::getPreviewHelperConfig(const MarkdownEditorConfig &p_mdConfig) {
   PreviewHelperConfig config;
-  config.webPlantUmlEnabled = p_mdConfig.getWebPlantUml();
   config.webGraphvizEnabled = p_mdConfig.getWebGraphviz();
 
   const auto srcs = p_mdConfig.getInplacePreviewSources();

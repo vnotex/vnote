@@ -50,7 +50,6 @@ public:
 
   // Preview helper configuration extracted from MarkdownEditorConfig.
   struct PreviewHelperConfig {
-    bool webPlantUmlEnabled = false;
     bool webGraphvizEnabled = false;
     bool inplacePreviewCodeBlocksEnabled = false;
     bool inplacePreviewMathBlocksEnabled = false;

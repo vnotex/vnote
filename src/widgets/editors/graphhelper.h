@@ -14,15 +14,18 @@
 namespace vnotex {
 class GraphHelper : private Noncopyable {
 public:
-  typedef std::function<void(quint64, TimeStamp, const QString &, const QString &)> ResultCallback;
+  typedef std::function<void(quint64, TimeStamp, const QString &, const QString &, bool)>
+      ResultCallback;
 
   GraphHelper();
 
   void process(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_text,
-               QObject *p_owner, const ResultCallback &p_callback);
+               QObject *p_owner, const ResultCallback &p_callback, int p_imageIndex = 0);
 
 protected:
   virtual QStringList getFormatArgs(const QString &p_format) = 0;
+
+  virtual QStringList getImageArgs(int p_imageIndex) const;
 
   void clearCache();
 
@@ -49,13 +52,15 @@ private:
 
     QString m_text;
 
+    int m_imageIndex = 0;
+
     QPointer<QObject> m_owner;
 
     ResultCallback m_callback;
   };
 
   struct CacheItem {
-    bool isNull() const { return m_data.isNull(); }
+    bool isNull() const { return m_format.isEmpty(); }
 
     QString m_format;
 
@@ -69,14 +74,14 @@ private:
   void finishOneTask(const QString &p_data);
 
   void callbackOneTask(const Task &p_task, quint64 p_id, TimeStamp p_timeStamp,
-                       const QString &p_format, const QString &p_data) const;
+                       const QString &p_format, const QString &p_data, bool p_success) const;
 
   QQueue<Task> m_tasks;
 
   bool m_taskOngoing = false;
 
-  // {text} -> CacheItem.
-  vte::LruCache<QString, CacheItem> m_cache;
+  // {text, image index} -> CacheItem.
+  vte::LruCache<QPair<QString, int>, CacheItem> m_cache;
 
   // Whether @m_program is valid.
   bool m_programValid = false;

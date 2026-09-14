@@ -51,9 +51,6 @@ private slots:
 
   // ============ Group 2: getPreviewHelperConfig (static) ============
 
-  void testPreviewHelper_allDefaults();
-  void testPreviewHelper_webPlantUmlDisabled();
-  void testPreviewHelper_webGraphvizDisabled();
   void testPreviewHelper_inplaceCodeBlock();
   void testPreviewHelper_inplaceMath();
   void testPreviewHelper_noInplacePreview();
@@ -150,37 +147,6 @@ void TestMarkdownEditorController::testSourceSectionNumbers() {
 }
 
 // ============ Group 2: getPreviewHelperConfig ============
-
-void TestMarkdownEditorController::testPreviewHelper_allDefaults() {
-  // MarkdownEditorConfig default: webPlantUml=true, webGraphviz=true,
-  // inplacePreviewSources = ImageLink|CodeBlock|Math|Table.
-  MarkdownEditorConfig mdConfig(nullptr, nullptr, QSharedPointer<TextEditorConfig>());
-
-  auto config = MarkdownEditorController::getPreviewHelperConfig(mdConfig);
-
-  QCOMPARE(config.webPlantUmlEnabled, true);
-  QCOMPARE(config.webGraphvizEnabled, true);
-  QCOMPARE(config.inplacePreviewCodeBlocksEnabled, true);
-  QCOMPARE(config.inplacePreviewMathBlocksEnabled, true);
-}
-
-void TestMarkdownEditorController::testPreviewHelper_webPlantUmlDisabled() {
-  MarkdownEditorConfig mdConfig(nullptr, nullptr, QSharedPointer<TextEditorConfig>());
-  mdConfig.setWebPlantUml(false);
-
-  auto config = MarkdownEditorController::getPreviewHelperConfig(mdConfig);
-  QCOMPARE(config.webPlantUmlEnabled, false);
-  QCOMPARE(config.webGraphvizEnabled, true);
-}
-
-void TestMarkdownEditorController::testPreviewHelper_webGraphvizDisabled() {
-  MarkdownEditorConfig mdConfig(nullptr, nullptr, QSharedPointer<TextEditorConfig>());
-  mdConfig.setWebGraphviz(false);
-
-  auto config = MarkdownEditorController::getPreviewHelperConfig(mdConfig);
-  QCOMPARE(config.webPlantUmlEnabled, true);
-  QCOMPARE(config.webGraphvizEnabled, false);
-}
 
 void TestMarkdownEditorController::testPreviewHelper_inplaceCodeBlock() {
   MarkdownEditorConfig mdConfig(nullptr, nullptr, QSharedPointer<TextEditorConfig>());

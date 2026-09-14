@@ -108,8 +108,8 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.saveContent();
         });
 
-        adapter.graphRenderDataReady.connect(function(p_id, p_index, p_format, p_data) {
-            window.vxcore.graphRenderDataReady(p_id, p_index, p_format, p_data);
+        adapter.graphRenderDataReady.connect(function(p_id, p_index, p_format, p_data, p_success) {
+            window.vxcore.graphRenderDataReady(p_id, p_index, p_format, p_data, p_success);
         });
 
         adapter.taskListToggleRejected.connect(function(p_lineNumber) {
