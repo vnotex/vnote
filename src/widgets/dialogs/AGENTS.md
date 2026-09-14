@@ -63,6 +63,10 @@ source of truth, so load/reset/cancel flows also restore the username and existi
 controllers persist it without a second config key. The token is still separate,
 password-masked, never prefilled, and stored only through the credentials store.
 The username input is disabled for local-file remotes and during remote opening.
+Changing only the HTTPS username re-enables authentication in place and preserves
+local Git history; it does not use the destructive repository-change flow.
+OK and Apply wait for `applyComplete` before clearing edits, and OK closes only
+on success, so saved-token retrieval cannot be cancelled by dialog destruction.
 
 ## New Note Template Resolution
 

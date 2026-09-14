@@ -128,7 +128,13 @@ Implementation patterns:
 
 ## URL Change on S5: confirmUrlChangeRequested
 
-Changing the remote URL on a registered notebook is destructive (drops the existing git remote linkage). `NotebookSyncInfoController::applyChanges` detects URL change on a registered notebook and gates it behind a confirmation flow:
+Changing only the HTTPS username is non-destructive: `applyPendingUrlChange`
+retrieves the saved PAT if necessary, then `performAtomicUrlReChange` delegates
+to `bootstrapApply` without disabling sync or deleting the gitdir. vxcore
+re-enables the backend and `OpenExistingRepo` updates origin's username in place.
+The dialog waits for `applyComplete` before closing or clearing its edits.
+
+Changing the repository location on a registered notebook is destructive (drops the existing git remote linkage). `NotebookSyncInfoController::applyChanges` detects URL change on a registered notebook and gates it behind a confirmation flow:
 
 1. **Detect**: `urlChanged && isSyncRegistered(id) && !newUrl.isEmpty()` → cache new URL + PAT in member state, emit `confirmUrlChangeRequested(oldUrl, newUrl)`, return without further work.
 2. **Dialog catches signal**: shows a `QMessageBox` with the URL change warning. On confirm calls `controller->confirmUrlChange(true)`; on cancel calls `controller->confirmUrlChange(false)` (which clears pending state, no-op).

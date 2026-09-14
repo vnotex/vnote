@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLocale>
+#include <QUrl>
 
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
@@ -19,6 +20,18 @@
 #include <vxcore/vxcore_types.h>
 
 using namespace vnotex;
+
+namespace {
+
+bool isUsernameOnlyUrlChange(const QString &p_oldUrl, const QString &p_newUrl) {
+  const QUrl oldUrl(p_oldUrl);
+  const QUrl newUrl(p_newUrl);
+  return oldUrl.isValid() && newUrl.isValid() && oldUrl.scheme() == QLatin1String("https") &&
+         oldUrl.password().isEmpty() && newUrl.password().isEmpty() &&
+         oldUrl.adjusted(QUrl::RemoveUserInfo) == newUrl.adjusted(QUrl::RemoveUserInfo);
+}
+
+} // namespace
 
 NotebookSyncInfoController::NotebookSyncInfoController(ServiceLocator &p_services,
                                                        const QString &p_notebookId,
@@ -137,12 +150,18 @@ void NotebookSyncInfoController::applyChanges(const QString &p_newRemoteUrl,
     // any) is cached here so confirmUrlChange() can use it without a second
     // round-trip through the dialog. NEVER logged.
     qCDebug(syncCategory) << "NotebookSyncInfoController::applyChanges: URL change on "
-                             "registered notebook detected; deferring to confirmUrlChange. id="
+                             "registered notebook detected. id="
                           << m_notebookId;
     m_pendingUrlChange = true;
     m_pendingUrlChangeNewUrl = p_newRemoteUrl;
     m_pendingUrlChangeProvidedPat = p_newPat;
-    emit confirmUrlChangeRequested(m_currentRemoteUrl, p_newRemoteUrl);
+    if (isUsernameOnlyUrlChange(m_currentRemoteUrl, p_newRemoteUrl)) {
+      // Reuse the saved-PAT retrieval path without invoking the destructive
+      // repository-change confirmation flow.
+      applyPendingUrlChange();
+    } else {
+      emit confirmUrlChangeRequested(m_currentRemoteUrl, p_newRemoteUrl);
+    }
     return;
   }
 
@@ -279,15 +298,10 @@ void NotebookSyncInfoController::confirmUrlChange(bool p_confirmed) {
     return;
   }
 
-  // Snapshot + clear pending state immediately so a reentrant call from a
-  // slot does not double-execute.
-  const QString newUrl = m_pendingUrlChangeNewUrl;
-  const QString providedPat = m_pendingUrlChangeProvidedPat;
-  m_pendingUrlChange = false;
-  m_pendingUrlChangeNewUrl.clear();
-  m_pendingUrlChangeProvidedPat.clear();
-
   if (!p_confirmed) {
+    m_pendingUrlChange = false;
+    m_pendingUrlChangeNewUrl.clear();
+    m_pendingUrlChangeProvidedPat.clear();
     // User cancelled. Per spec: no-op (the dialog is responsible for
     // resetting its URL field). Do NOT emit applyComplete — the dialog did
     // not actually call applyChanges in the destructive sense.
@@ -300,6 +314,17 @@ void NotebookSyncInfoController::confirmUrlChange(bool p_confirmed) {
   qCDebug(syncCategory)
       << "NotebookSyncInfoController::confirmUrlChange: user confirmed URL change. id="
       << m_notebookId;
+  applyPendingUrlChange();
+}
+
+void NotebookSyncInfoController::applyPendingUrlChange() {
+  // Snapshot + clear pending state immediately so a reentrant call from a
+  // slot does not double-execute.
+  const QString newUrl = m_pendingUrlChangeNewUrl;
+  const QString providedPat = m_pendingUrlChangeProvidedPat;
+  m_pendingUrlChange = false;
+  m_pendingUrlChangeNewUrl.clear();
+  m_pendingUrlChangeProvidedPat.clear();
 
   if (!providedPat.isEmpty()) {
     // User provided a new PAT in the dialog; use it directly without going
@@ -357,6 +382,14 @@ void NotebookSyncInfoController::confirmUrlChange(bool p_confirmed) {
 
 void NotebookSyncInfoController::performAtomicUrlReChange(const QString &p_newUrl,
                                                           const QString &p_pat) {
+  if (isUsernameOnlyUrlChange(m_currentRemoteUrl, p_newUrl)) {
+    // Enable replaces the runtime backend on the notebook's serialized queue.
+    // OpenExistingRepo updates the login in place: no disable, credential
+    // deletion, or local-history wipe is needed.
+    bootstrapApply(p_newUrl, p_pat);
+    return;
+  }
+
   // W3.T3 — Atomic disable+re-enable for the URL-change-on-S5 flow.
   //
   // Sequence:

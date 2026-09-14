@@ -217,7 +217,7 @@ void NotebookSyncInfoDialog2::setupUI() {
   usernameEdit->setPlaceholderText(tr("Required by Gitee; optional for GitHub"));
   usernameEdit->setToolTip(
       tr("Login of the Personal Access Token owner, not necessarily the repository owner"));
-  formLayout->addRow(tr("Git username"), usernameEdit);
+  formLayout->addRow(tr("Git user name"), usernameEdit);
 
   // 3. PAT (editable, password-masked, NEVER prefilled).
   m_patEdit = WidgetsFactory::createLineEdit(centralWidget);
@@ -488,15 +488,22 @@ void NotebookSyncInfoDialog2::acceptedButtonClicked() {
   }
 
   if (m_controller) {
+    // Username changes may first retrieve the saved PAT asynchronously. Keep
+    // the dialog/controller alive until that reconfiguration has completed.
+    auto conn = std::make_shared<QMetaObject::Connection>();
+    *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                    [this, conn](bool p_success) {
+                      QObject::disconnect(*conn);
+                      if (p_success) {
+                        m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
+                        m_patEdit->clear();
+                        refreshDirtyButtons();
+                        accept();
+                      }
+                    });
     m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
+    return;
   }
-
-  // Snapshot the current URL as the new "last applied" baseline so a
-  // re-opened dialog reports no pending changes for an unchanged URL. PAT
-  // field is cleared to enforce the leave-blank-to-keep semantics.
-  m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-  m_patEdit->clear();
-  refreshDirtyButtons();
 
   accept();
 }
@@ -558,12 +565,18 @@ void NotebookSyncInfoDialog2::appliedButtonClicked() {
                       });
     }
 
+    auto conn = std::make_shared<QMetaObject::Connection>();
+    *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                    [this, conn](bool p_success) {
+                      QObject::disconnect(*conn);
+                      if (p_success) {
+                        m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
+                        m_patEdit->clear();
+                      }
+                      refreshDirtyButtons();
+                    });
     m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
   }
-
-  m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-  m_patEdit->clear();
-  refreshDirtyButtons();
 }
 
 void NotebookSyncInfoDialog2::resetButtonClicked() {

@@ -31,6 +31,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QTimer>
 #include <QtTest>
 
 #include <controllers/notebooksyncinfocontroller.h>
@@ -54,6 +55,7 @@ class TestNotebookSyncInfoDialog2 : public QObject {
 private slots:
   void initTestCase();
   void testGitUsernameEditsRemoteWithoutExposingToken();
+  void testGitUsernameChangePreservesLocalHistory();
 
   // W3.T2 routing tests
   void testAcceptedRoutesToBootstrapApplyWhenBootstrapMode();
@@ -101,6 +103,135 @@ void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken
   QCOMPARE(dialog.enteredRemoteUrl(), QStringLiteral("https://gitee.com/team/notes.git"));
   urlEdit->setText(QStringLiteral("file:///repo.git"));
   QVERIFY(!usernameEdit->isEnabled());
+}
+
+void TestNotebookSyncInfoDialog2::testGitUsernameChangePreservesLocalHistory() {
+  class MemoryCredentialsStore : public SyncCredentialsStore {
+  public:
+    explicit MemoryCredentialsStore(ServiceLocator &p_services)
+        : SyncCredentialsStore(p_services) {}
+    void storeCredentials(const QString &p_id, const QString &p_pat) override {
+      QTimer::singleShot(0, this, [this, p_id, p_pat]() {
+        m_pat = p_pat;
+        emit credentialsStored(p_id);
+      });
+    }
+    void retrieveCredentials(const QString &p_id) override {
+      QTimer::singleShot(0, this, [this, p_id]() { emit credentialsRetrieved(p_id, m_pat); });
+    }
+    void deleteCredentials(const QString &p_id) override {
+      QTimer::singleShot(0, this, [this, p_id]() {
+        m_pat.clear();
+        emit credentialsDeleted(p_id);
+      });
+    }
+    QString m_pat;
+  };
+
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  {
+    ServiceLocator services;
+    NotebookCoreService notebookService(ctx);
+    services.registerService<NotebookCoreService>(&notebookService);
+    MemoryCredentialsStore credentials(services);
+    services.registerService<SyncCredentialsStore>(&credentials);
+    SyncService syncService(services);
+    services.registerService<SyncService>(&syncService);
+    TempDirFixture temp;
+    QVERIFY(temp.isValid());
+    const QString root = temp.filePath(QStringLiteral("username-history"));
+    QVERIFY(QDir().mkpath(root));
+    // The initial sync after re-enable may try this loopback URL. No external
+    // network or real token is used; the re-enable itself must stay local.
+    const QString oldUrl = QStringLiteral("https://127.0.0.1:1/team/notes.git");
+    const QString newUrl = QStringLiteral("https://contributor@127.0.0.1:1/team/notes.git");
+    QJsonObject config{{QStringLiteral("name"), QStringLiteral("Username history")},
+                       {QStringLiteral("syncEnabled"), true},
+                       {QStringLiteral("syncBackend"), QStringLiteral("git")},
+                       {QStringLiteral("syncRemoteUrl"), oldUrl}};
+    const QString id = notebookService.createNotebook(
+        root, QString::fromUtf8(QJsonDocument(config).toJson()), NotebookType::Bundled);
+    QVERIFY(!id.isEmpty());
+    const QString gitDir = root + QStringLiteral("/vx_notebook/vx_sync");
+    QCOMPARE(QProcess::execute(QStringLiteral("git"),
+                               {QStringLiteral("init"), QStringLiteral("--initial-branch=main"),
+                                QStringLiteral("--separate-git-dir"), gitDir, root}),
+             0);
+    const auto runGit = [&](QStringList p_args, QByteArray *p_output = nullptr) {
+      QProcess process;
+      process.start(QStringLiteral("git"), QStringList{QStringLiteral("--git-dir=") + gitDir,
+                                                       QStringLiteral("--work-tree=") + root} +
+                                               p_args);
+      if (!process.waitForFinished(10000))
+        return -1;
+      if (p_output)
+        *p_output = process.readAllStandardOutput().trimmed();
+      return process.exitCode();
+    };
+    QCOMPARE(
+        runGit({QStringLiteral("remote"), QStringLiteral("add"), QStringLiteral("origin"), oldUrl}),
+        0);
+    QFile note(root + QStringLiteral("/local.md"));
+    QVERIFY(note.open(QIODevice::WriteOnly));
+    note.write("local content not pushed anywhere\n");
+    note.close();
+    QCOMPARE(runGit({QStringLiteral("add"), QStringLiteral("local.md")}), 0);
+    QCOMPARE(runGit({QStringLiteral("-c"), QStringLiteral("user.name=Test"), QStringLiteral("-c"),
+                     QStringLiteral("user.email=test@example.com"), QStringLiteral("commit"),
+                     QStringLiteral("-m"), QStringLiteral("local only")}),
+             0);
+    QCOMPARE(runGit({QStringLiteral("branch"), QStringLiteral("keep-local")}), 0);
+    QByteArray originalCommit;
+    QCOMPARE(runGit({QStringLiteral("rev-parse"), QStringLiteral("keep-local")}, &originalCommit),
+             0);
+    const QByteArray syncConfig =
+        QJsonDocument(QJsonObject{{QStringLiteral("backend"), QStringLiteral("git")},
+                                  {QStringLiteral("remoteUrl"), oldUrl},
+                                  {QStringLiteral("autoSyncEnabled"), false}})
+            .toJson();
+    QCOMPARE(vxcore_sync_enable(ctx, id.toUtf8().constData(), syncConfig.constData(),
+                                R"({"pat":"test-token"})"),
+             VXCORE_OK);
+    credentials.storeCredentials(id, QStringLiteral("test-token"));
+    QTRY_VERIFY(credentials.hasCredentials(id));
+
+    NotebookSyncInfoDialog2 dialog(services, id);
+    auto *controller = dialog.findChild<NotebookSyncInfoController *>();
+    auto *username = dialog.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"));
+    auto *ok = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
+    QVERIFY(controller);
+    QVERIFY(username);
+    QVERIFY(ok);
+    QSignalSpy confirmation(controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+    QSignalSpy accepted(&dialog, &QDialog::accepted);
+    dialog.show();
+    QTest::keyClicks(username, "contributor");
+    ok->click();
+    QVERIFY(dialog.isVisible()); // Saved-token retrieval has not finished yet.
+    QCOMPARE(confirmation.count(), 0);
+    QTRY_COMPARE_WITH_TIMEOUT(accepted.count(), 1, 10000);
+    QVERIFY(syncService.isSyncRegistered(id));
+    QCOMPARE(
+        notebookService.getNotebookConfig(id).value(QStringLiteral("syncRemoteUrl")).toString(),
+        newUrl);
+    QByteArray remoteUrl;
+    QCOMPARE(runGit({QStringLiteral("config"), QStringLiteral("--get"),
+                     QStringLiteral("remote.origin.url")},
+                    &remoteUrl),
+             0);
+    QCOMPARE(remoteUrl, newUrl.toUtf8());
+    QByteArray retainedCommit;
+    QCOMPARE(runGit({QStringLiteral("rev-parse"), QStringLiteral("keep-local")}, &retainedCommit),
+             0);
+    QCOMPARE(retainedCommit, originalCommit);
+    QVERIFY(note.open(QIODevice::ReadOnly));
+    QCOMPARE(note.readAll(), QByteArray("local content not pushed anywhere\n"));
+    QCOMPARE(credentials.m_pat, QStringLiteral("test-token"));
+    syncService.shutdown();
+    QVERIFY(notebookService.closeNotebook(id));
+  }
+  vxcore_context_destroy(ctx);
 }
 
 QString TestNotebookSyncInfoDialog2::seedBareRepo(const QString &p_bareRepoPath,

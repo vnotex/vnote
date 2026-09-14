@@ -138,10 +138,11 @@ private:
   // flat ADR-8 key, and writing it back. Returns true on success.
   bool persistRemoteUrl(const QString &p_newRemoteUrl);
 
-  // W3.T3 — Internal helper for the URL-change-on-S5 atomic flow. Chains
-  // disableSyncForNotebook -> re-enable with new URL/PAT. Called after the
-  // user confirms via confirmUrlChange(true) and (if needed) after the
-  // existing PAT has been fetched from the keychain.
+  // Consume pending URL/PAT edits and retrieve the saved PAT if needed.
+  void applyPendingUrlChange();
+
+  // Re-enable username-only changes in place. Repository changes instead
+  // disable, wipe and re-enable after explicit user confirmation.
   void performAtomicUrlReChange(const QString &p_newUrl, const QString &p_pat);
 
   ServiceLocator &m_services;
@@ -160,11 +161,9 @@ private:
   // with the PAT result when both finish to emit applyComplete(success).
   bool m_pendingUrlWriteOk = true;
 
-  // W3.T3 — Pending URL-change-confirmation state. Set by applyChanges()
-  // when it detects a URL change on a sync-registered notebook; consumed by
-  // confirmUrlChange(). The PAT field stores the user-provided NEW PAT (if
-  // any); when empty, confirmUrlChange() will fetch the existing PAT from
-  // the keychain BEFORE disable (since disable+W2.T5 wipes the keychain).
+  // Pending URL/PAT edits, consumed by applyPendingUrlChange(). Repository
+  // changes first await confirmUrlChange(); username-only changes do not.
+  // An empty PAT means retrieve the existing keychain token before proceeding.
   bool m_pendingUrlChange = false;
   QString m_pendingUrlChangeNewUrl;
   QString m_pendingUrlChangeProvidedPat;
