@@ -1602,11 +1602,6 @@ void NotebookExplorer2::newNote() {
 }
 
 void NotebookExplorer2::newQuickNote() {
-  // Functional read-only guard: silently no-op for read-only notebooks.
-  if (isCurrentNotebookReadOnly()) {
-    return;
-  }
-
   // Get quick note schemes from session config.
   auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
   const auto &schemes = sessionConfig.getQuickNoteSchemes();
@@ -1635,7 +1630,7 @@ void NotebookExplorer2::newQuickNote() {
   int selection = dialog.getSelection();
   const auto &scheme = schemes[selection];
 
-  // Resolve target folder.
+  // Supply the current folder for an empty scheme; the controller resolves explicit paths.
   QString notebookId = m_currentNotebookId;
   QString folderPath;
 
@@ -1645,26 +1640,7 @@ void NotebookExplorer2::newQuickNote() {
       m_services.get<SnippetCoreService>()->applySnippetBySymbol(scheme.m_folderPath);
 
   if (!expandedFolder.isEmpty()) {
-    // Try to resolve the scheme folder path to a notebook.
-    auto &notebookService = *m_services.get<NotebookCoreService>();
-    QJsonObject resolved = notebookService.resolvePathToNotebook(expandedFolder);
-    if (!resolved.isEmpty()) {
-      notebookId = resolved[QLatin1String(vxcore::kJsonKeyNotebookId)].toString();
-      folderPath = resolved[QStringLiteral("relativePath")].toString();
-    } else {
-      // Path not found in any notebook - use expandedFolder as-is if current notebook is
-      // valid.
-      if (notebookId.isEmpty()) {
-        MessageBoxHelper::notify(
-            MessageBoxHelper::Information,
-            tr("The quick note folder path (%1) is not within any open notebook.")
-                .arg(expandedFolder),
-            window());
-        return;
-      }
-      // Assume relative path within current notebook.
-      folderPath = expandedFolder;
-    }
+    folderPath = expandedFolder;
   } else {
     // Use current explored folder.
     NodeIdentifier parentId = currentExploredFolderId();
@@ -1672,12 +1648,6 @@ void NotebookExplorer2::newQuickNote() {
       notebookId = parentId.notebookId;
       folderPath = parentId.relativePath;
     }
-  }
-
-  if (notebookId.isEmpty()) {
-    MessageBoxHelper::notify(MessageBoxHelper::Information,
-                             tr("The quick note should be created within a notebook."), window());
-    return;
   }
 
   // Get template content if specified.
@@ -1705,7 +1675,7 @@ void NotebookExplorer2::newQuickNote() {
   // Only refresh the explorer selection when the new note lives in the notebook
   // currently displayed; a scheme may resolve into a different open notebook, whose
   // nodes are not in the current model (the buffer still opens via the identifier).
-  if (newNodeId.notebookId == m_currentNotebookId) {
+  if (!newNodeId.notebookId.isEmpty() && newNodeId.notebookId == m_currentNotebookId) {
     m_nodeExplorer->reloadNode(currentExploredFolderId());
     setCurrentNode(newNodeId);
   }

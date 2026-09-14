@@ -5447,17 +5447,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>新しいクイックノート</translation>
     </message>
     <message>
-        <location line="+37"/>
-        <source>The quick note folder path (%1) is not within any open notebook.</source>
-        <translation>クイックノートのフォルダーパス (%1) は、開いているどのノートブックにも含まれていません。</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>The quick note should be created within a notebook.</source>
-        <translation>クイックノートはノートブック内に作成する必要があります。</translation>
-    </message>
-    <message>
-        <location line="+215"/>
+        <location line="+271"/>
         <source>The current notebook is read-only, so the note was not created.</source>
         <translation>現在のノートブックは読み取り専用のため、ノートは作成されませんでした。</translation>
     </message>

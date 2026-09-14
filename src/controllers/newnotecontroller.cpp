@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QEventLoop>
+#include <QFile>
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QJsonObject>
@@ -309,62 +310,82 @@ NewNoteResult NewNoteController::createEncryptedNote(const NewNoteInput &p_input
 NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) {
   NewNoteResult result;
 
-  if (p_input.notebookId.isEmpty()) {
-    result.success = false;
-    result.errorMessage = tr("No notebook specified.");
-    return result;
-  }
-
   auto *notebookService = m_services.get<NotebookCoreService>();
   auto *snippetService = m_services.get<SnippetCoreService>();
   if (!notebookService || !snippetService) {
-    result.success = false;
     result.errorMessage = tr("NotebookService not available.");
     return result;
   }
 
+  QString notebookId = p_input.notebookId;
+  QString folderPath = QDir::fromNativeSeparators(p_input.parentFolderPath);
+  if (QDir::isAbsolutePath(folderPath)) {
+    const QJsonObject resolved = notebookService->resolvePathToNotebook(folderPath);
+    notebookId = resolved.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+    if (!notebookId.isEmpty()) {
+      folderPath = resolved.value(QStringLiteral("relativePath")).toString();
+    }
+    // Unresolved absolute folders are external files, never paths in the current notebook.
+  } else if (notebookId.isEmpty()) {
+    result.errorMessage = tr("No notebook specified.");
+    return result;
+  }
+  const bool external = notebookId.isEmpty();
+
   // Expand the filename scheme (e.g. "%date%.md").
   QString expandedName = snippetService->applySnippetBySymbol(p_input.noteNameScheme);
   QFileInfo finfo(expandedName);
+  if (!external && notebookService->isNotebookReadOnly(notebookId)) {
+    result.errorMessage = tr("Failed to create quick note (%1).").arg(expandedName);
+    return result;
+  }
 
-  // Ensure the (possibly newly expanded/date-based) target folder exists before
-  // creating the file: vxcore createFile requires the parent folder node to exist.
-  const QString folderPath = p_input.parentFolderPath;
+  // Managed folders require notebook metadata; external folders only need to exist on disk.
   if (!folderPath.isEmpty()) {
-    QString folderId = notebookService->createFolderPath(p_input.notebookId, folderPath);
-    if (folderId.isEmpty()) {
-      result.success = false;
+    const bool folderCreated =
+        external ? QDir().mkpath(folderPath)
+                 : !notebookService->createFolderPath(notebookId, folderPath).isEmpty();
+    if (!folderCreated) {
       result.errorMessage = tr("Failed to create the quick note folder (%1).").arg(folderPath);
       return result;
     }
   }
 
-  QJsonObject notebookConfig = notebookService->getNotebookConfig(p_input.notebookId);
-  QString rootFolder = notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
-  QString parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
+  QString parentAbsPath = folderPath;
+  if (!external) {
+    const QJsonObject notebookConfig = notebookService->getNotebookConfig(notebookId);
+    const QString rootFolder =
+        notebookConfig.value(QLatin1String(vxcore::kJsonKeyRootFolder)).toString();
+    parentAbsPath = folderPath.isEmpty() ? rootFolder : QDir(rootFolder).filePath(folderPath);
+  }
 
   QString newFileName = FileUtils2::generateFileNameWithSequence(
       parentAbsPath, finfo.completeBaseName(), finfo.suffix());
-
-  QString fileId = notebookService->createFile(p_input.notebookId, folderPath, newFileName);
-  if (fileId.isEmpty()) {
-    result.success = false;
+  const QString fullPath = QDir(parentAbsPath).filePath(newFileName);
+  bool fileCreated;
+  if (external) {
+    QFile file(fullPath);
+    fileCreated = file.open(QIODevice::WriteOnly | QIODevice::NewOnly);
+  } else {
+    fileCreated = !notebookService->createFile(notebookId, folderPath, newFileName).isEmpty();
+  }
+  if (!fileCreated) {
     result.errorMessage = tr("Failed to create quick note (%1).").arg(newFileName);
     return result;
   }
 
-  const QString relativePath =
-      folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName;
+  const QString filePath =
+      external
+          ? fullPath
+          : (folderPath.isEmpty() ? newFileName : folderPath + QStringLiteral("/") + newFileName);
 
   if (!p_input.templateContent.isEmpty()) {
     // note/no overrides derive from the FINAL sequenced filename; folder derives from its path.
     EvaluatedTemplate evaluated =
-        evaluateTemplateContent(p_input.templateContent, newFileName, relativePath);
-    QString fullPath = QDir(parentAbsPath).filePath(newFileName);
+        evaluateTemplateContent(p_input.templateContent, newFileName, filePath);
     Error err = FileUtils2::writeFile(fullPath, evaluated.content.toUtf8());
     if (err) {
       qWarning() << err.what();
-      result.success = false;
       result.errorMessage = tr("Failed to write note content.");
       return result;
     }
@@ -372,8 +393,8 @@ NewNoteResult NewNoteController::createQuickNote(const QuickNoteInput &p_input) 
   }
 
   result.success = true;
-  result.nodeId.notebookId = p_input.notebookId;
-  result.nodeId.relativePath = relativePath;
+  result.nodeId.notebookId = notebookId;
+  result.nodeId.relativePath = filePath;
   return result;
 }
 

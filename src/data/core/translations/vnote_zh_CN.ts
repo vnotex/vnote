@@ -5447,17 +5447,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>新建快速笔记</translation>
     </message>
     <message>
-        <location line="+37"/>
-        <source>The quick note folder path (%1) is not within any open notebook.</source>
-        <translation>快速笔记文件夹路径 (%1) 不在任何已打开的笔记本中。</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>The quick note should be created within a notebook.</source>
-        <translation>快速笔记应该在一个笔记本内进行创建。</translation>
-    </message>
-    <message>
-        <location line="+215"/>
+        <location line="+271"/>
         <source>The current notebook is read-only, so the note was not created.</source>
         <translation>当前笔记本为只读，未创建该笔记。</translation>
     </message>

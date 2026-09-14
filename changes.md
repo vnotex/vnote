@@ -32,6 +32,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
 * **Fixes**
+    * Quick notes in folders outside notebooks now open at their actual path, without incorrectly prepending the current notebook root
     * Headings containing math formulas now retain formula text in their anchors, fixing navigation to math-only headings and keeping TOC links consistent
     * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
     * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights

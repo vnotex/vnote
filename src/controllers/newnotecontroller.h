@@ -44,8 +44,8 @@ struct NewNoteResult {
 
 // Input data structure for the quick-note-scheme flow.
 struct QuickNoteInput {
-  QString notebookId;
-  QString parentFolderPath; // Relative path within notebook (may be empty = root)
+  QString notebookId;       // Current notebook for relative folders; optional for absolute folders
+  QString parentFolderPath; // Expanded folder: absolute, or notebook-relative (empty = root)
   QString noteNameScheme;   // Filename scheme, may contain %name% symbols (e.g. "%date%.md")
   QString templateContent;  // Optional raw template body
 };
@@ -90,7 +90,8 @@ public:
 
   // Create a quick note from a scheme (filename expansion + folder creation +
   // template body expansion + write). Encapsulates the MVC-correct business logic
-  // formerly inlined in NotebookExplorer2.
+  // formerly inlined in NotebookExplorer2. Absolute folders outside open notebooks
+  // produce external files (empty result notebookId + absolute result path).
   NewNoteResult createQuickNote(const QuickNoteInput &p_input);
 
   // Evaluate template content with %note%, %folder%, and %no% overrides. Returns expanded content

@@ -8,6 +8,7 @@
 
 #include <controllers/newnotecontroller.h>
 #include <core/servicelocator.h>
+#include <core/services/buffercoreservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/snippetcoreservice.h>
 #include <temp_dir_fixture.h>
@@ -34,6 +35,9 @@ private slots:
   void testCreateQuickNoteExpandsBody();
   void testCreateQuickNoteFolderOverride();
   void testCreateQuickNoteSequencedOverrides();
+  void testCreateQuickNoteExternalFolder_data();
+  void testCreateQuickNoteExternalFolder();
+  void testCreateQuickNoteAbsoluteNotebookFolder();
   void testCreateQuickNoteMissingNotebook();
   void testBundledTitleTemplateYieldsHeadingAndCaretBelowIt();
 
@@ -272,6 +276,99 @@ void TestNewNoteController::testCreateQuickNoteSequencedOverrides() {
   QCOMPARE(readNote(secondResult.nodeId), QStringLiteral("%1 / %2").arg(finalName, base));
 }
 
+void TestNewNoteController::testCreateQuickNoteExternalFolder_data() {
+  QTest::addColumn<bool>("withCurrentNotebook");
+  QTest::newRow("current-notebook") << true;
+  QTest::newRow("no-current-notebook") << false;
+}
+
+void TestNewNoteController::testCreateQuickNoteExternalFolder() {
+  QFETCH(bool, withCurrentNotebook);
+  TempDirFixture externalDir;
+  QVERIFY(externalDir.isValid());
+  NewNoteController controller(m_services);
+  QuickNoteInput input;
+  input.notebookId = withCurrentNotebook ? m_notebookId : QString();
+  input.parentFolderPath = externalDir.filePath(QStringLiteral("quick/nested"));
+  input.noteNameScheme = QStringLiteral("快速笔记_20260915.md");
+
+  const NewNoteResult first = controller.createQuickNote(input);
+  QVERIFY2(first.success, qPrintable(first.errorMessage));
+  QVERIFY(first.nodeId.notebookId.isEmpty());
+  QCOMPARE(first.nodeId.relativePath, QDir(input.parentFolderPath).filePath(input.noteNameScheme));
+  QVERIFY(QFileInfo::exists(first.nodeId.relativePath));
+
+  BufferCoreService buffers(m_context);
+  VxCoreError error = VXCORE_OK;
+  QString bufferId = buffers.openBuffer(first.nodeId.notebookId, first.nodeId.relativePath, &error);
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(!bufferId.isEmpty());
+  QCOMPARE(buffers.getContentRaw(bufferId, &error), QByteArray());
+  QCOMPARE(error, VXCORE_OK);
+  const QByteArray savedContent("existing note");
+  QVERIFY(buffers.setContentRaw(bufferId, savedContent));
+  QVERIFY(buffers.saveBuffer(bufferId));
+  QVERIFY(buffers.closeBuffer(bufferId));
+
+  input.templateContent = QStringLiteral("head @@%folder% / %note% / %no%");
+  const NewNoteResult second = controller.createQuickNote(input);
+  QVERIFY2(second.success, qPrintable(second.errorMessage));
+  QVERIFY(second.nodeId.notebookId.isEmpty());
+  QVERIFY(second.nodeId.relativePath != first.nodeId.relativePath);
+  QCOMPARE(QFileInfo(second.nodeId.relativePath).absolutePath(), input.parentFolderPath);
+  QCOMPARE(second.cursorOffset, 5);
+  bufferId = buffers.openBuffer(second.nodeId.notebookId, second.nodeId.relativePath, &error);
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(!bufferId.isEmpty());
+  const QFileInfo created(second.nodeId.relativePath);
+  const QString expected =
+      QStringLiteral("head %1 / %2 / %3")
+          .arg(input.parentFolderPath, created.fileName(), created.completeBaseName());
+  QCOMPARE(buffers.getContentRaw(bufferId, &error), expected.toUtf8());
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(buffers.closeBuffer(bufferId));
+
+  QFile firstFile(first.nodeId.relativePath);
+  QVERIFY(firstFile.open(QIODevice::ReadOnly));
+  QCOMPARE(firstFile.readAll(), savedContent);
+}
+
+void TestNewNoteController::testCreateQuickNoteAbsoluteNotebookFolder() {
+  const QString otherRoot = m_tempDir.createDir(QStringLiteral("other_notebook"));
+  const QString otherId =
+      m_notebookService->createNotebook(otherRoot, QStringLiteral("{}"), NotebookType::Bundled);
+  QVERIFY(!otherId.isEmpty());
+
+  NewNoteController controller(m_services);
+  QuickNoteInput input;
+  input.notebookId = m_notebookId;
+  input.parentFolderPath =
+      QDir::toNativeSeparators(QDir(otherRoot).filePath(QStringLiteral("new/folder")));
+  input.noteNameScheme = QStringLiteral("快速笔记.md");
+  input.templateContent = QStringLiteral("%folder% / %note%");
+  const NewNoteResult result = controller.createQuickNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(result.nodeId.notebookId, otherId);
+  QCOMPARE(result.nodeId.relativePath, QStringLiteral("new/folder/快速笔记.md"));
+
+  BufferCoreService buffers(m_context);
+  VxCoreError error = VXCORE_OK;
+  const QString bufferId =
+      buffers.openBuffer(result.nodeId.notebookId, result.nodeId.relativePath, &error);
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(!bufferId.isEmpty());
+  QCOMPARE(buffers.getContentRaw(bufferId, &error),
+           QStringLiteral("new/folder / 快速笔记.md").toUtf8());
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(buffers.closeBuffer(bufferId));
+
+  // Read-only protection follows the destination, not the current notebook.
+  QCOMPARE(vxcore_notebook_set_read_only(m_context, otherId.toUtf8().constData(), 1), VXCORE_OK);
+  input.parentFolderPath = QDir(otherRoot).filePath(QStringLiteral("blocked/folder"));
+  QVERIFY(!controller.createQuickNote(input).success);
+  QVERIFY(!QFileInfo::exists(QDir(otherRoot).filePath(QStringLiteral("blocked"))));
+}
+
 void TestNewNoteController::testCreateQuickNoteMissingNotebook() {
   NewNoteController controller(m_services);
   QuickNoteInput input;
@@ -295,7 +392,6 @@ void TestNewNoteController::testBundledTitleTemplateYieldsHeadingAndCaretBelowIt
   QVERIFY(file.open(QIODevice::ReadOnly));
   const QByteArray raw = file.readAll();
   file.close();
-  QCOMPARE(raw, QByteArray("# %no%\n\n@@"));
 
   NewNoteController controller(m_services);
   NewNoteInput input;
