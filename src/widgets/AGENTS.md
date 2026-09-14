@@ -387,7 +387,7 @@ icon with `@base#<state>#fg`. When adding a theme, carry all four states plus a
 - The callback AND its `m_dismissOnTrigger` flag are snapshotted in that **same** lookup, before the callback runs. Do NOT re-resolve the action index afterwards: a callback may synchronously replace the action vector, so a second lookup would read a different action's flag.
 - Because a callback may synchronously destroy the widget, every post-callback access to `this`/`m_services` is guarded with a `QPointer`. The callback may also have already triggered a rebuild via `messageUpdated`, so nothing after it may touch the row widgets that existed when the lambda started.
 
-`Duration` controls only auto-hide (`Short` 3 s, `Long` 60 s, `Persist` = capped at 15 s **on the toast only**, so a toast is never permanently stuck); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed, cleared, or evicted by the retention cap.
+`Duration` controls only auto-hide (`Short` 3 s, `Long` 60 s, `Persist` = capped at 30 s **on the toast only**, so a toast is never permanently stuck); it does NOT affect memory retention. Messages stay in the in-memory list until dismissed, cleared, or evicted by the retention cap.
 
 
 

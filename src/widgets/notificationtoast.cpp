@@ -31,7 +31,7 @@ constexpr int c_longMs = 60000;
 // Persist means "stays in the LIST until dismissed", not "stays on screen
 // forever". A toast that never leaves would be a permanent obstruction, so it
 // still retires after this cap; the message itself remains in the popup.
-constexpr int c_persistToastCapMs = 15000;
+constexpr int c_persistToastCapMs = 30000;
 
 constexpr int c_margin = 16;
 constexpr int c_maxWidth = 420;
