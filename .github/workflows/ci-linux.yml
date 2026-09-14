@@ -21,8 +21,9 @@ env:
 
 jobs:
   build-linux:
-    name: Build On Ubuntu
-    runs-on: ubuntu-latest
+    name: Build On Ubuntu 22.04
+    # Build on the oldest supported Ubuntu so the AppImage works with glibc 2.35 (#2748).
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
 
     steps:
@@ -67,7 +68,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{runner.workspace}}/Qt
-          key: ${{ runner.os }}-QtCache-6.10
+          # The Qt tree also contains OpenSSL compiled on the runner.
+          key: ${{ runner.os }}-ubuntu-22.04-QtCache-6.10.3
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
@@ -85,6 +87,7 @@ jobs:
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
           tools: 'tools_opensslv3_src'
           cache: 'true'
+          cache-key-prefix: install-qt-action-ubuntu-22.04
 
       - name: Compile OpenSSLV3
         run: |
@@ -146,14 +149,6 @@ jobs:
         run: |
           # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
           rm -f ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/sqldrivers/libqsqlmimer.so
-          # Remove libqtiff.so: Qt's prebuilt binaries are linked against
-          # libtiff.so.5 (Ubuntu 22.04), but the ubuntu-latest runner is 24.04
-          # and ships only libtiff.so.6. linuxdeploy-plugin-qt deploys every
-          # plugin in imageformats/, cannot resolve that dependency, and aborts
-          # with "Could not find dependency: libtiff.so.5" -- which CPack does
-          # not propagate, so the build "succeeds" and the next step fails on a
-          # missing AppImage instead. VNote does not use TIFF.
-          rm -f ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/imageformats/libqtiff.so
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 

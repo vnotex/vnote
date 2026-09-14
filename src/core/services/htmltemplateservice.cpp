@@ -342,7 +342,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   // Mount only the shipped RCC, under a private root. Never consult the editable
   // config copy, custom templates, user.css, or a URL-derived filesystem path.
   struct Bundle {
-    QString file = QStringLiteral("app:vnote_extra.rcc");
+    QString file;
     QString root;
     bool registered = false;
     ~Bundle() {
@@ -351,6 +351,8 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
       }
     }
   } bundle;
+  // Qt 5's QStringLiteral lambda in a local member initializer crashes MSVC 2019.
+  bundle.file = QStringLiteral("app:vnote_extra.rcc");
   bundle.root = QStringLiteral("/vxnote-template-") + p_token;
   bundle.registered = QResource::registerResource(bundle.file, bundle.root);
   if (!bundle.registered) {
