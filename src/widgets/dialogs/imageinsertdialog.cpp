@@ -8,6 +8,7 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QRegularExpression>
@@ -266,9 +267,18 @@ QByteArray ImageInsertDialog::getImageData() const {
   if (!m_imageData.isEmpty()) {
     return m_imageData;
   }
+  const bool base64 = insertAsBase64();
+  QImage image = m_image;
+  if (!base64 && image.hasAlphaChannel()) {
+    // JPEG has no alpha channel. Composite onto white rather than discarding alpha.
+    image = QImage(m_image.size(), QImage::Format_RGB32);
+    image.fill(Qt::white);
+    QPainter painter(&image);
+    painter.drawImage(image.rect(), m_image);
+  }
   QByteArray data;
   QBuffer output(&data);
-  if (!output.open(QIODevice::WriteOnly) || !m_image.save(&output, "PNG")) {
+  if (!output.open(QIODevice::WriteOnly) || !image.save(&output, base64 ? "PNG" : "JPEG")) {
     return QByteArray();
   }
   return data;

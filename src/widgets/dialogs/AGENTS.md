@@ -95,6 +95,14 @@ the session cache. The quick-note path is unrelated: its template name is persis
 | `ImageInsertDialog` | (inline, `MarkdownEditor`) | Insert an image; also the size-authoring surface (see below) |
 | `ImageSizeDialog` | (inline, `MarkdownEditor`) | `Image > Set Size…` on an existing image |
 
+## Inserted Image Encoding
+
+`ImageInsertDialog::getImageData()` preserves original bytes from files and URLs. For a
+clipboard `QImage`, image-file insertion encodes JPEG using Qt's default quality, compositing
+alpha onto white at the original pixel dimensions (independent of device pixel ratio).
+Base64 insertion keeps lossless PNG with alpha; choosing an image file must not mutate that
+source. `MarkdownEditor` derives the saved/uploaded filename suffix from the encoded bytes.
+
 ## Image Size Authoring
 
 Two surfaces, both legacy-style dialogs (no `2` suffix, no `ServiceLocator`, driven directly by

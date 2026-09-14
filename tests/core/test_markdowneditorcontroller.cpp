@@ -2,6 +2,7 @@
 
 #include <QBuffer>
 #include <QDialogButtonBox>
+#include <QImageReader>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
@@ -23,6 +24,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/texteditorconfig.h>
+#include <gui/utils/imageutils.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 #include <widgets/dialogs/imageinsertdialog.h>
@@ -83,6 +85,7 @@ private slots:
   void testPrepareBufferState_validBuffer();
   void testPrepareBufferState_modifiedBuffer();
 
+  void clipboardImageFileFlattensAlphaWithoutChangingBase64();
   void base64ReferencePreservesPixelsAndUndo();
   void base64ReferenceAvoidsCaseInsensitiveLabels();
   void imageInsertionChoice_data();
@@ -440,6 +443,54 @@ void TestMarkdownEditorController::testPrepareBufferState_modifiedBuffer() {
   QCOMPARE(state.content, QStringLiteral("# Modified Markdown\n\nHello world."));
 }
 
+void TestMarkdownEditorController::clipboardImageFileFlattensAlphaWithoutChangingBase64() {
+  QImage image(64, 32, QImage::Format_ARGB32);
+  image.setDevicePixelRatio(2.0);
+  image.fill(QColor(255, 0, 0, 128));
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width() / 2; ++x) {
+      image.setPixelColor(x, y, Qt::transparent);
+    }
+  }
+  ImageInsertDialog dialog(QStringLiteral("Image"), QString(), QString(), QString(), nullptr,
+                           false);
+  dialog.setImage(image);
+  dialog.setImageSource(ImageInsertDialog::ImageData);
+  const auto bytes = dialog.getImageData();
+  const auto suffix = ImageUtils::guessImageSuffix(bytes);
+  QVERIFY(suffix == QLatin1String("jpg") || suffix == QLatin1String("jpeg"));
+
+  auto buffer =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buffer.isValid());
+  const auto asset = buffer.insertAssetRaw(QStringLiteral("clipboard.") + suffix, bytes);
+  QVERIFY(!asset.isEmpty());
+  QCOMPARE(QFileInfo(asset).suffix(), suffix);
+  QFile saved(QDir(buffer.getResourceBasePath()).filePath(asset));
+  QVERIFY(saved.open(QIODevice::ReadOnly));
+  const auto savedBytes = saved.readAll();
+  QCOMPARE(savedBytes, bytes);
+  QBuffer input;
+  input.setData(savedBytes);
+  QVERIFY(input.open(QIODevice::ReadOnly));
+  QImageReader reader(&input);
+  QCOMPARE(reader.format(), QByteArrayLiteral("jpeg"));
+  const auto decoded = reader.read();
+  QCOMPARE(decoded.size(), image.size());
+  QVERIFY(!decoded.hasAlphaChannel());
+  QCOMPARE(decoded.pixelColor(16, 16), QColor(Qt::white));
+  const auto blended = decoded.pixelColor(48, 16);
+  QVERIFY(qAbs(blended.red() - 255) <= 2);
+  QVERIFY(qAbs(blended.green() - 127) <= 2);
+  QVERIFY(qAbs(blended.blue() - 127) <= 2);
+
+  // Choosing a file must not destroy the source alpha used by Base64 insertion.
+  // PNG preserves pixels, not Qt's in-memory device pixel ratio.
+  image.setDevicePixelRatio(1.0);
+  dialog.setInsertAsBase64(true);
+  QCOMPARE(QImage::fromData(dialog.getImageData()).convertToFormat(QImage::Format_ARGB32), image);
+}
+
 void TestMarkdownEditorController::base64ReferencePreservesPixelsAndUndo() {
   QImage image(3, 2, QImage::Format_ARGB32);
   image.fill(Qt::transparent);
@@ -548,6 +599,9 @@ void TestMarkdownEditorController::imageInsertionChoice() {
   dialog.setEncryptedNote(encrypted);
   dialog.setImagePath(imagePath);
   QTRY_VERIFY(!dialog.getImage().isNull());
+  QFile source(imagePath);
+  QVERIFY(source.open(QIODevice::ReadOnly));
+  QCOMPARE(dialog.getImageData(), source.readAll());
   auto *fileChoice = dialog.findChild<QRadioButton *>(QStringLiteral("imageInsertFile"));
   auto *base64Choice = dialog.findChild<QRadioButton *>(QStringLiteral("imageInsertBase64"));
   QVERIFY(fileChoice && base64Choice);

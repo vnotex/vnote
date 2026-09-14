@@ -47,7 +47,8 @@ public:
   const QImage &getImage() const;
   void setImage(const QImage &p_image);
 
-  // Original source bytes, or lossless PNG for a clipboard QImage. Never staged on disk.
+  // Original source bytes, or JPEG for a clipboard QImage saved as a file (white background).
+  // Base64 keeps lossless PNG and alpha. Never staged on disk.
   QByteArray getImageData() const;
 
   // Encrypted notes default to Base64 and only preview validated passive bytes.

@@ -13,6 +13,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Headings can be folded in read mode and HTML exports, with fold controls shown beside the heading on hover
     * Drag headings in the outline to reorder whole sections, adjusting heading levels to preserve the hierarchy, including moves under an adjacent heading
     * A table-size picker was added to the Markdown toolbar
+    * Clipboard images inserted as files now use JPEG with a white background for transparency; original file/URL formats and lossless Base64 insertion are unchanged
     * Table-source alignment also formats directly edited Markdown tables; interactive table previews support Markdown type actions, highlight edited cells and write changes back after one second
     * Markdown pipe-table preview cells now display inline images and math; Insert Image targets the selected cell, including embedded images and image-host uploads
     * Choose KaTeX or MathJax for formulas in read mode and previews, with room reserved for numbered KaTeX equations
