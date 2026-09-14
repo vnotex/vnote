@@ -61,6 +61,7 @@ public:
     QString destFileName;
     QString title;
     QString altText;
+    quint64 requestId = 0;
 
     // Declared size to spell once the real URL arrives. The PLACEHOLDER itself
     // is always Markdown, whatever the final form is.
@@ -207,6 +208,9 @@ private slots:
   void onProtectedLockingChanged(bool p_locking);
 
 private:
+  void showImageInsertDialog(quint64 p_requestId = 0, const QString &p_selectedText = QString());
+
+  // @p_requestId: captured table target, or zero for ordinary source insertion.
   // @p_insertText: whether insert text into the buffer after inserting image file.
   // @p_urlInLink: store the url in link if not null.
   // @p_width/@p_height: optional declared size in pixels. 0 means unspecified;
@@ -215,18 +219,21 @@ private:
   bool insertImageToBufferFromLocalFile(const QString &p_title, const QString &p_altText,
                                         const QString &p_srcImagePath, bool p_insertText = true,
                                         QString *p_urlInLink = nullptr, int p_width = 0,
-                                        int p_height = 0);
+                                        int p_height = 0, quint64 p_requestId = 0);
 
   bool insertImageToBufferFromData(const QString &p_title, const QString &p_altText,
-                                   const QByteArray &p_data, int p_width = 0, int p_height = 0);
+                                   const QByteArray &p_data, int p_width = 0, int p_height = 0,
+                                   quint64 p_requestId = 0);
 
-  void insertImageFromDialog(const ImageInsertDialog &p_dialog);
+  void insertImageFromDialog(const ImageInsertDialog &p_dialog, quint64 p_requestId = 0);
   bool insertImageAsBase64(const QString &p_title, const QString &p_altText,
-                           const QByteArray &p_data);
+                           const QByteArray &p_data, int p_width = 0, int p_height = 0,
+                           quint64 p_requestId = 0);
 
-  void insertImageLink(const QString &p_title, const QString &p_altText,
+  bool insertImageLink(const QString &p_title, const QString &p_altText,
                        const QString &p_destImagePath, bool p_insertText = true,
-                       QString *p_urlInLink = nullptr, int p_width = 0, int p_height = 0);
+                       QString *p_urlInLink = nullptr, int p_width = 0, int p_height = 0,
+                       quint64 p_requestId = 0);
 
   // Ask for a new declared size for the image reference @p_link and apply it.
   //
@@ -278,9 +285,12 @@ private:
 
   void insertTable(int p_bodyRows, int p_columns, Alignment p_alignment);
 
-  // Return the dest file path of the image on success.
-  int saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName, int p_width = 0,
-                      int p_height = 0);
+  // Return the asynchronous upload token, or -1 on failure.
+  int saveToImageHost(const QByteArray &p_imageData, const QString &p_destFileName,
+                      const QString &p_title, const QString &p_altText, int p_width = 0,
+                      int p_height = 0, quint64 p_requestId = 0);
+
+  void clearPendingImageUploads(bool p_tableOnly = false);
 
   void insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_pos, QAction *p_before);
 
@@ -334,6 +344,8 @@ private:
   HeadingLinkResolver m_headingLinkResolver;
 
   QHash<int, PlaceholderInfo> m_pendingUploads;
+  // Invalidates modal workflows across buffer detach/rebind and protected locking.
+  quint64 m_imageInsertionGeneration = 0;
 
   ServiceLocator &m_services;
   QString m_contentPath;
