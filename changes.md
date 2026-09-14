@@ -32,6 +32,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
 * **Fixes**
+    * Gitee notebook sync accepts the token owner's Git username instead of sending the GitHub-specific login; Configure Sync and Open Notebook expose a Git username field
     * Quick notes in folders outside notebooks now open at their actual path, without incorrectly prepending the current notebook root
     * Headings containing math formulas now retain formula text in their anchors, fixing navigation to math-only headings and keeping TOC links consistent
     * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations

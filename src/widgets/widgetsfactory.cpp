@@ -7,9 +7,11 @@
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QRadioButton>
+#include <QSignalBlocker>
 #include <QSpinBox>
 #include <QStyledItemDelegate>
 #include <QToolButton>
+#include <QUrl>
 
 #include <core/services/snippetcoreservice.h>
 
@@ -35,6 +37,28 @@ QLineEdit *WidgetsFactory::createLineEdit(QWidget *p_parent) { return new LineEd
 
 QLineEdit *WidgetsFactory::createLineEdit(const QString &p_contents, QWidget *p_parent) {
   return new LineEdit(p_contents, p_parent);
+}
+
+QLineEdit *WidgetsFactory::createUrlUserNameEdit(QLineEdit *p_urlEdit, QWidget *p_parent) {
+  auto *edit = createLineEdit(p_parent);
+  const auto loadUsername = [edit](const QString &p_text) {
+    const QUrl url(p_text.trimmed());
+    const QSignalBlocker blocker(edit);
+    edit->setText(url.userName());
+    edit->setEnabled(url.scheme() == QLatin1String("https"));
+  };
+  QObject::connect(p_urlEdit, &QLineEdit::textChanged, edit, loadUsername);
+  QObject::connect(edit, &QLineEdit::textEdited, p_urlEdit, [p_urlEdit](const QString &p_username) {
+    QUrl url(p_urlEdit->text().trimmed());
+    if (url.scheme() != QLatin1String("https")) {
+      return;
+    }
+    const QString username = p_username.trimmed();
+    url.setUserName(username.isEmpty() ? QString() : username);
+    p_urlEdit->setText(url.toString(QUrl::FullyEncoded));
+  });
+  loadUsername(p_urlEdit->text());
+  return edit;
 }
 
 LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(

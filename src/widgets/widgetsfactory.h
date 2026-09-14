@@ -30,6 +30,10 @@ public:
 
   static QLineEdit *createLineEdit(const QString &p_contents, QWidget *p_parent = nullptr);
 
+  // Two-way editor for an HTTPS URL's non-secret username component. The URL
+  // remains the source of truth, including programmatic load/reset changes.
+  static QLineEdit *createUrlUserNameEdit(QLineEdit *p_urlEdit, QWidget *p_parent = nullptr);
+
   static LineEditWithSnippet *createLineEditWithSnippet(
       SnippetCoreService *p_snippetService, QWidget *p_parent = nullptr);
 

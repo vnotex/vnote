@@ -53,6 +53,7 @@ class TestNotebookSyncInfoDialog2 : public QObject {
 
 private slots:
   void initTestCase();
+  void testGitUsernameEditsRemoteWithoutExposingToken();
 
   // W3.T2 routing tests
   void testAcceptedRoutesToBootstrapApplyWhenBootstrapMode();
@@ -73,6 +74,33 @@ void TestNotebookSyncInfoDialog2::initTestCase() {
   // CRITICAL: enable test mode BEFORE any vxcore_context_create. Mirrors
   // tests/AGENTS.md guidance.
   vxcore_set_test_mode(1);
+}
+
+void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken() {
+  ServiceLocator services;
+  NotebookSyncInfoDialog2 dialog(services);
+  auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+  auto *usernameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"));
+  auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
+  QVERIFY(urlEdit);
+  QVERIFY(usernameEdit);
+  QVERIFY(patEdit);
+  urlEdit->setText(QStringLiteral("https://gitee.com/team/notes.git"));
+  patEdit->setText(QStringLiteral("test-token"));
+  QTest::keyClicks(usernameEdit, "contributor");
+  QCOMPARE(dialog.enteredRemoteUrl(),
+           QStringLiteral("https://contributor@gitee.com/team/notes.git"));
+  QCOMPARE(dialog.enteredPat(), QStringLiteral("test-token"));
+  QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
+
+  // Loading/resetting the authoritative URL must not retain the previous login.
+  urlEdit->setText(QStringLiteral("https://other%40mail.test@gitee.com/team/notes.git"));
+  QCOMPARE(usernameEdit->text(), QStringLiteral("other@mail.test"));
+  usernameEdit->selectAll();
+  QTest::keyClick(usernameEdit, Qt::Key_Backspace);
+  QCOMPARE(dialog.enteredRemoteUrl(), QStringLiteral("https://gitee.com/team/notes.git"));
+  urlEdit->setText(QStringLiteral("file:///repo.git"));
+  QVERIFY(!usernameEdit->isEnabled());
 }
 
 QString TestNotebookSyncInfoDialog2::seedBareRepo(const QString &p_bareRepoPath,

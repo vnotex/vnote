@@ -36,6 +36,7 @@ namespace {
 const char *const kRemoteUrlEditName = "remoteUrlEdit";
 const char *const kRemoteUrlHintLabelName = "remoteUrlHintLabel";
 const char *const kPatEditName = "patEdit";
+const char *const kGitUsernameEditName = "gitUsernameEdit";
 const char *const kLastSyncLabelName = "lastSyncLabel";
 const char *const kCurrentStateLabelName = "currentStateLabel";
 const char *const kDisableSyncButtonName = "disableSyncButton";
@@ -210,6 +211,13 @@ void NotebookSyncInfoDialog2::setupUI() {
     m_remoteUrlHintLabel->setFont(hintFont);
   }
   formLayout->addRow(QString(), m_remoteUrlHintLabel);
+
+  auto *usernameEdit = WidgetsFactory::createUrlUserNameEdit(m_remoteUrlEdit, centralWidget);
+  usernameEdit->setObjectName(QLatin1String(kGitUsernameEditName));
+  usernameEdit->setPlaceholderText(tr("Required by Gitee; optional for GitHub"));
+  usernameEdit->setToolTip(
+      tr("Login of the Personal Access Token owner, not necessarily the repository owner"));
+  formLayout->addRow(tr("Git username"), usernameEdit);
 
   // 3. PAT (editable, password-masked, NEVER prefilled).
   m_patEdit = WidgetsFactory::createLineEdit(centralWidget);

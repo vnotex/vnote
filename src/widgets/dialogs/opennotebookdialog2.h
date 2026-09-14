@@ -158,6 +158,7 @@ private:
   QWidget *m_remotePage = nullptr;
   QLineEdit *m_remoteUrlEdit = nullptr;
   QLineEdit *m_remotePatEdit = nullptr;
+  QLineEdit *m_remoteUsernameEdit = nullptr;
   LocationInputWithBrowseButton *m_remoteDestInput = nullptr;
 
   // Bottom progress (hidden by default; shown during a remote clone).

@@ -51,6 +51,19 @@ Pattern:
 
 Use this pattern when the dialog has both keystroke-driven validation (noisy) and discrete-action validation (e.g., folder selection). Do NOT use it when every validation message is equally actionable — the regular `setInformationText` flow is simpler.
 
+## Git Sync Username
+
+**Configure Sync / Sync Info** and **Open Notebook (Remote URL)** expose a
+`gitUsernameEdit` field. Gitee requires the PAT owner's account login, which may
+be different from the repository owner. Do not infer it from the URL path.
+
+`WidgetsFactory::createUrlUserNameEdit` binds the field to the HTTPS URL's
+non-secret username component, using `QUrl` for encoding. The URL remains the
+source of truth, so load/reset/cancel flows also restore the username and existing
+controllers persist it without a second config key. The token is still separate,
+password-masked, never prefilled, and stored only through the credentials store.
+The username input is disabled for local-file remotes and during remote opening.
+
 ## New Note Template Resolution
 
 `NewNoteDialog2` picks the initial template from two sources, in this order:

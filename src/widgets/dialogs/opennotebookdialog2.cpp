@@ -19,6 +19,7 @@
 #include <utils/pathutils.h>
 
 #include "../locationinputwithbrowsebutton.h"
+#include "../widgetsfactory.h"
 
 using namespace vnotex;
 
@@ -31,6 +32,7 @@ const char *const kModeStackName = "modeStack";
 const char *const kLocalRootInputName = "localRootInput";
 const char *const kRemoteUrlEditName = "remoteUrlEdit";
 const char *const kRemotePatEditName = "remotePatEdit";
+const char *const kGitUsernameEditName = "gitUsernameEdit";
 const char *const kRemoteDestInputName = "remoteDestInput";
 const char *const kProgressBarName = "openNotebookProgressBar";
 const char *const kOpenButtonName = "openButton";
@@ -194,6 +196,13 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
       tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
   m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
   layout->addRow(tr("Remote URL"), m_remoteUrlEdit);
+
+  m_remoteUsernameEdit = WidgetsFactory::createUrlUserNameEdit(m_remoteUrlEdit, p_page);
+  m_remoteUsernameEdit->setObjectName(QLatin1String(kGitUsernameEditName));
+  m_remoteUsernameEdit->setPlaceholderText(tr("Required by Gitee; optional for GitHub"));
+  m_remoteUsernameEdit->setToolTip(
+      tr("Login of the Personal Access Token owner, not necessarily the repository owner"));
+  layout->addRow(tr("Git username"), m_remoteUsernameEdit);
 
   // PAT field (password echo). "(optional)" hint lives in the placeholder so
   // the label stays compact; see plan refine-open-notebook-dialog.
@@ -458,6 +467,9 @@ void OpenNotebookDialog2::setRemoteInputsEnabled(bool p_enabled) {
     m_remoteUrlEdit->setEnabled(p_enabled);
   if (m_remotePatEdit)
     m_remotePatEdit->setEnabled(p_enabled);
+  if (m_remoteUsernameEdit)
+    m_remoteUsernameEdit->setEnabled(p_enabled &&
+                                     m_remoteUrlEdit->text().startsWith(QLatin1String("https://")));
   if (m_remoteDestInput)
     m_remoteDestInput->setEnabled(p_enabled);
 }
