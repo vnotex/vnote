@@ -24,9 +24,9 @@ using namespace vnotex;
 
 namespace {
 
-// Same auto-hide budgets the popup used before it stopped auto-showing.
+// Toast auto-hide durations.
 constexpr int c_shortMs = 3000;
-constexpr int c_longMs = 7000;
+constexpr int c_longMs = 60000;
 
 // Persist means "stays in the LIST until dismissed", not "stays on screen
 // forever". A toast that never leaves would be a permanent obstruction, so it

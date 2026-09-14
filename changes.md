@@ -25,6 +25,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * The `%folder%` magic word expands to the current note's notebook-relative folder in snippets and note templates
 * **Export and interface**
     * The notification popup has a taller, font-scaled minimum height so messages and actions have more room
+    * Long notification toasts stay visible for 60 seconds instead of 7 seconds
     * Export is available directly from the main file toolbar
     * Exported HTML offers the corresponding HTML target when following a relative Markdown link
     * The Save shortcut applies changes in Settings
