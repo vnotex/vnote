@@ -413,6 +413,14 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
   }
 
+  case Action::Debug:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("console_dock.svg")),
+                          QObject::tr("Debug"));
+    act->setProperty("iconName", QStringLiteral("console_dock.svg"));
+    act->setCheckable(true);
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::Debug), p_shortcutWidget);
+    break;
+
   default:
     Q_ASSERT(false);
     break;

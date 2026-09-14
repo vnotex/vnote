@@ -67,7 +67,9 @@ public:
     Attachment,
 
     // Image host selection.
-    ImageHost
+    ImageHost,
+
+    Debug
   };
 
   ViewWindowToolBarHelper2() = delete;

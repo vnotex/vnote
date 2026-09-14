@@ -22,6 +22,7 @@ class QMenu;
 namespace vnotex {
 class MarkdownEditor;
 class MarkdownViewer;
+class WebViewer;
 class MarkdownViewerAdapter;
 class OutlineProvider;
 class PreviewHelper;
@@ -130,6 +131,8 @@ private:
 
   bool setupViewer();
 
+  void setDebugVisible(bool p_visible);
+
   void releaseProtectedView();
 
   void updateSectionNumberOptions();
@@ -223,9 +226,12 @@ private:
   ImageHostController *m_imageHostController = nullptr;
 
   // Widgets (managed by QObject/layout).
+  QSplitter *m_mainSplitter = nullptr;
   QSplitter *m_splitter = nullptr;
   MarkdownEditor *m_editor = nullptr; // Lazily created.
   MarkdownViewer *m_viewer = nullptr; // Lazily created.
+  WebViewer *m_debugViewer = nullptr; // Lazily created.
+  QAction *m_debugAction = nullptr;
   struct ProtectedView;
   QScopedPointer<ProtectedView> m_protectedView;
   PreviewHelper *m_previewHelper = nullptr;

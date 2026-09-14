@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDesktopServices>
@@ -12,6 +13,7 @@
 #include <QMenu>
 #include <QPrinter>
 #include <QScrollBar>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QTextBlock>
 #include <QTextCursor>
@@ -73,6 +75,7 @@
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "webpage.h"
+#include "webviewer.h"
 
 using namespace vnotex;
 
@@ -110,6 +113,11 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 // ============ Destructor ============
 
 MarkdownViewWindow2::~MarkdownViewWindow2() {
+  if (m_viewer && m_debugViewer) {
+    m_viewer->page()->setDevToolsPage(nullptr);
+  }
+  delete m_debugViewer;
+  m_debugViewer = nullptr;
   releaseProtectedView();
   // Disconnect controller signals to prevent delivery to a destroyed widget.
   if (m_imageHostController) {
@@ -156,10 +164,17 @@ void MarkdownViewWindow2::releaseProtectedView() {
 // ============ setupUI ============
 
 void MarkdownViewWindow2::setupUI() {
-  // Central widget: splitter to hold editor (index 0) and viewer (index 1).
-  m_splitter = new QSplitter(this);
+  // Keep the inspector outside the editor/preview splitter.
+  m_mainSplitter = new QSplitter(Qt::Vertical, this);
+  m_mainSplitter->setContentsMargins(0, 0, 0, 0);
+  m_mainSplitter->setChildrenCollapsible(false);
+
+  // Inner splitter holds editor (index 0) and viewer (index 1).
+  m_splitter = new QSplitter(m_mainSplitter);
   m_splitter->setContentsMargins(0, 0, 0, 0);
-  setCentralWidget(m_splitter);
+  m_mainSplitter->addWidget(m_splitter);
+  m_mainSplitter->setFocusProxy(m_splitter);
+  setCentralWidget(m_mainSplitter);
   // Get the focus event from splitter.
   m_splitter->installEventFilter(this);
 
@@ -194,6 +209,44 @@ void MarkdownViewWindow2::setupUI() {
   }
 
   setupToolBar();
+}
+
+void MarkdownViewWindow2::setDebugVisible(bool p_visible) {
+  p_visible = p_visible && isReadMode() && m_viewer && !getBuffer().isEncrypted();
+  if (m_debugAction) {
+    const QSignalBlocker blocker(m_debugAction);
+    m_debugAction->setChecked(p_visible);
+  }
+
+  if (!p_visible) {
+    auto *focused = QApplication::focusWidget();
+    const bool restoreFocus = m_debugViewer && focused &&
+                              (focused == m_debugViewer || m_debugViewer->isAncestorOf(focused));
+    if (m_viewer) {
+      m_viewer->page()->setDevToolsPage(nullptr);
+    }
+    if (m_debugViewer) {
+      m_debugViewer->hide();
+    }
+    if (restoreFocus && m_viewer && m_viewer->isVisible()) {
+      m_viewer->setFocus();
+    }
+    return;
+  }
+
+  const bool firstOpen = (m_debugViewer == nullptr);
+  if (firstOpen) {
+    m_debugViewer =
+        new WebViewer(getServices().get<ThemeService>()->getBaseBackground(), m_mainSplitter);
+    m_mainSplitter->addWidget(m_debugViewer);
+    connect(m_debugViewer->page(), &QWebEnginePage::windowCloseRequested, this,
+            [this]() { setDebugVisible(false); });
+  }
+  m_debugViewer->show();
+  m_viewer->page()->setDevToolsPage(m_debugViewer->page());
+  if (firstOpen) {
+    WidgetUtils::distributeWidgetsOfSplitter(m_mainSplitter);
+  }
 }
 
 // ============ setupToolBar ============
@@ -245,6 +298,17 @@ void MarkdownViewWindow2::setupToolBar() {
   }
 
   addRightCommonToolBarActions(toolBar);
+
+  if (!getBuffer().isEncrypted()) {
+    m_debugAction = addAction(toolBar, ViewWindowToolBarHelper2::Debug);
+    connect(m_debugAction, &QAction::toggled, this, &MarkdownViewWindow2::setDebugVisible);
+    m_debugAction->setEnabled(isReadMode());
+    m_debugAction->setVisible(isReadMode());
+    connect(this, &ViewWindow2::modeChanged, this, [this]() {
+      m_debugAction->setEnabled(isReadMode());
+      m_debugAction->setVisible(isReadMode());
+    });
+  }
 }
 
 void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
@@ -920,6 +984,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     return;
   }
   m_switchingMode = true;
+  if (isReadMode()) {
+    setDebugVisible(false);
+  }
   updateEditSectionNumberOptions(false);
 
   m_outlineProvider->setReorderSupported(false);
@@ -1533,6 +1600,10 @@ void MarkdownViewWindow2::handleThemeChanged() {
 
     // Re-apply readable width colors if in readable-width mode.
     applyReadableWidth();
+  }
+
+  if (m_debugViewer) {
+    m_debugViewer->page()->setBackgroundColor(themeService->getBaseBackground());
   }
 
   // Reset external code block highlight styles so they are re-initialized
