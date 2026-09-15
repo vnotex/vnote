@@ -2418,6 +2418,39 @@ void NotebookExplorer2::setupFileWatcher() {
   connect(m_fsWatcher, &QFileSystemWatcher::directoryChanged, this,
           &NotebookExplorer2::onFileSystemChanged);
   connect(m_fsReloadTimer, &QTimer::timeout, this, &NotebookExplorer2::onFsReloadTimeout);
+
+  if (auto *notebookService = m_services.get<NotebookCoreService>()) {
+    // Windows directory watches on descendants prevent renaming their parent.
+    // Pause only for the synchronous disk operation, not the inline-edit session
+    // or cancellable hooks, which can run nested event loops.
+    connect(notebookService, &NotebookCoreService::folderRenameStarted, this,
+            [this](const QString &p_notebookId) {
+              if (p_notebookId == m_currentNotebookId) {
+                m_renameWatchPaths = m_fsWatcher->directories();
+                teardownFileWatcher();
+              }
+            });
+    connect(notebookService, &NotebookCoreService::folderRenameFinished, this,
+            [this, notebookService](const QString &p_notebookId, const QString &p_folderPath,
+                                    const QString &p_newName, bool p_success) {
+              if (p_notebookId != m_currentNotebookId) {
+                return;
+              }
+              const QString oldPath =
+                  notebookService->buildAbsolutePath(p_notebookId, p_folderPath);
+              const QDir oldDir(oldPath);
+              const QDir newDir(QFileInfo(oldPath).dir().filePath(p_newName));
+              for (const auto &path : m_renameWatchPaths) {
+                const QString relativePath = oldDir.relativeFilePath(path);
+                const bool inRenamedFolder = relativePath == QLatin1String(".") ||
+                                             (relativePath != QLatin1String("..") &&
+                                              !relativePath.startsWith(QLatin1String("../")) &&
+                                              !QDir::isAbsolutePath(relativePath));
+                addWatchPath(p_success && inRenamedFolder ? newDir.filePath(relativePath) : path);
+              }
+              m_renameWatchPaths.clear();
+            });
+  }
 }
 
 void NotebookExplorer2::teardownFileWatcher() {

@@ -72,6 +72,12 @@ text-only status-bar look.
 - `NotebookExplorer2` — sidebar explorer for notebook nodes; wires together the MVC triad (model, view, controller)
 - `NotebookSelector2` — notebook dropdown selector
 
+Windows directory watches on expanded descendants can block a parent folder rename.
+`NotebookExplorer2` pauses its watches at `NotebookCoreService::folderRenameStarted`
+and restores them at `folderRenameFinished`, rebasing descendants only on success.
+These signals bracket the synchronous backend call after cancellable hooks; do not
+pause for the inline-edit session or restore through the success-only rename hook.
+
 ### ViewArea Framework
 
 The split-pane editor area, designed around vxcore workspaces:

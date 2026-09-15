@@ -570,6 +570,12 @@ public:
   QJsonArray listAttachments(const QString &p_notebookId, const QString &p_filePath) const;
 
 signals:
+  // Synchronous folder-rename boundary, after cancellable hooks. Every started
+  // operation finishes, including failures; observers may release OS handles.
+  void folderRenameStarted(const QString &p_notebookId);
+  void folderRenameFinished(const QString &p_notebookId, const QString &p_folderPath,
+                            const QString &p_newName, bool p_success);
+
   // T6 (notebook-explorer-drag-reorder): emitted from this service's owning
   // thread when reorderFolderChildren() finishes (success OR failure path).
   // success=true with empty errorMessage signals OK; success=false carries a

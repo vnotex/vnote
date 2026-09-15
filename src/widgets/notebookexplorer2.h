@@ -373,6 +373,7 @@ private:
   QFileSystemWatcher *m_fsWatcher = nullptr;
   QTimer *m_fsReloadTimer = nullptr;
   QString m_lastChangedDir;
+  QStringList m_renameWatchPaths;
 
   // Map of absolute filesystem paths the explorer expects to receive a
   // directoryChanged() event for, with an epoch-ms deadline after which the

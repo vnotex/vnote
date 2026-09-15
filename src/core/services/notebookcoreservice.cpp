@@ -1143,9 +1143,11 @@ bool NotebookCoreService::renameFolder(const QString &p_notebookId, const QStrin
     }
   }
 
+  emit folderRenameStarted(p_notebookId);
   VxCoreError err =
       vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
                          p_folderPath.toUtf8().constData(), p_newName.toUtf8().constData());
+  emit folderRenameFinished(p_notebookId, p_folderPath, p_newName, err == VXCORE_OK);
   if (err != VXCORE_OK) {
     qWarning() << "renameFolder failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
