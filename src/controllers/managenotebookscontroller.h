@@ -16,6 +16,7 @@ struct NotebookUpdateInput {
   QString name;
   QString description;
   QString recycleBinFolder;
+  QString lineEnding; // Empty means inherit the global editor setting.
 };
 
 // Result structure for notebook operations.
@@ -39,6 +40,8 @@ struct NotebookInfo {
   QString recycleBinFolder;
   QString type;
   QString typeDisplayName;
+  QString lineEnding; // Empty means inherit the global editor setting.
+  bool readOnly = false;
 };
 
 // Controller for notebook management operations.

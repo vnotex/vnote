@@ -1,5 +1,6 @@
 #include "managenotebooksdialog2.h"
 
+#include <QComboBox>
 #include <QDesktopServices>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -106,6 +107,21 @@ void ManageNotebooksDialog2::setupUI() {
   connect(m_recycleBinFolderInput, &LocationInputWithBrowseButton::textChanged, this,
           [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
 
+  // Line ending override (bundled notebooks only).
+  m_lineEndingLabel = new QLabel(tr("Line ending"), infoWidget);
+  m_lineEndingComboBox = WidgetsFactory::createComboBox(infoWidget);
+  m_lineEndingComboBox->setObjectName(QStringLiteral("lineEndingComboBox"));
+  m_lineEndingComboBox->addItem(tr("Use global editor setting"), QString());
+  m_lineEndingComboBox->addItem(tr("LF (Linux/macOS)"), QStringLiteral("lf"));
+  m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), QStringLiteral("crlf"));
+  m_lineEndingComboBox->addItem(tr("CR"), QStringLiteral("cr"));
+  m_lineEndingComboBox->setToolTip(
+      tr("Used when saving note content with built-in editors; existing notes are not converted "
+         "until edited and saved"));
+  formLayout->addRow(m_lineEndingLabel, m_lineEndingComboBox);
+  connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
+
   // Notebook type (read-only label).
   m_typeLabel = new QLabel(infoWidget);
   formLayout->addRow(tr("Type"), m_typeLabel);
@@ -185,6 +201,7 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
   m_nameEdit->blockSignals(true);
   m_descriptionEdit->blockSignals(true);
   m_recycleBinFolderInput->blockSignals(true);
+  m_lineEndingComboBox->blockSignals(true);
 
   if (p_notebookId.isEmpty()) {
     m_nameEdit->clear();
@@ -192,6 +209,10 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
     m_rootFolderEdit->clear();
     m_recycleBinFolderInput->setText(QString());
     m_recycleBinFolderInput->setEnabled(false);
+    m_lineEndingComboBox->setCurrentIndex(0);
+    m_lineEndingComboBox->setVisible(false);
+    m_lineEndingComboBox->setEnabled(false);
+    m_lineEndingLabel->setVisible(false);
     m_typeLabel->clear();
     m_closeBtn->setEnabled(false);
   } else {
@@ -201,7 +222,13 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
     m_descriptionEdit->setPlainText(info.description);
     m_rootFolderEdit->setText(info.rootFolder);
     m_recycleBinFolderInput->setText(info.recycleBinFolder);
-    m_recycleBinFolderInput->setEnabled(info.type == QStringLiteral("bundled"));
+    const bool bundled = info.type == QStringLiteral("bundled");
+    m_recycleBinFolderInput->setEnabled(bundled);
+    m_lineEndingComboBox->setCurrentIndex(bundled ? m_lineEndingComboBox->findData(info.lineEnding)
+                                                  : 0);
+    m_lineEndingComboBox->setVisible(bundled);
+    m_lineEndingComboBox->setEnabled(bundled && !info.readOnly);
+    m_lineEndingLabel->setVisible(bundled);
     m_typeLabel->setText(info.typeDisplayName);
 
     m_closeBtn->setEnabled(true);
@@ -210,6 +237,7 @@ void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
   m_nameEdit->blockSignals(false);
   m_descriptionEdit->blockSignals(false);
   m_recycleBinFolderInput->blockSignals(false);
+  m_lineEndingComboBox->blockSignals(false);
 
   setChangesUnsaved(false);
 }
@@ -230,6 +258,7 @@ bool ManageNotebooksDialog2::saveChangesToNotebook() {
   input.name = m_nameEdit->text();
   input.description = m_descriptionEdit->toPlainText();
   input.recycleBinFolder = m_recycleBinFolderInput->text();
+  input.lineEnding = m_lineEndingComboBox->currentData().toString();
 
   NotebookOperationResult result = m_controller->updateNotebook(input);
 

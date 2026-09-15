@@ -9,6 +9,13 @@
 
 using namespace vnotex;
 
+namespace {
+bool isRecognizedLineEnding(const QString &p_lineEnding) {
+  return p_lineEnding == QStringLiteral("lf") || p_lineEnding == QStringLiteral("crlf") ||
+         p_lineEnding == QStringLiteral("cr");
+}
+} // namespace
+
 ManageNotebooksController::ManageNotebooksController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
@@ -33,10 +40,16 @@ NotebookInfo ManageNotebooksController::getNotebookInfo(const QString &p_noteboo
   info.rootFolder = config[QLatin1String(vxcore::kJsonKeyRootFolder)].toString();
   info.recycleBinFolder = config[QLatin1String(vxcore::kJsonKeyRecycleBinFolder)].toString();
   info.type = config[QLatin1String(vxcore::kJsonKeyType)].toString();
+  info.readOnly = notebookService->isNotebookReadOnly(p_notebookId);
 
   // Map type to user-friendly display name.
   if (info.type == QStringLiteral("bundled")) {
     info.typeDisplayName = tr("Bundled Notebook");
+    const auto metadata = config.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
+    const auto lineEnding = metadata.value(QLatin1String(vxcore::kJsonKeyLineEnding)).toString();
+    if (isRecognizedLineEnding(lineEnding)) {
+      info.lineEnding = lineEnding;
+    }
   } else if (info.type == QStringLiteral("raw")) {
     info.typeDisplayName = tr("Raw Notebook");
   } else {
@@ -83,6 +96,35 @@ ManageNotebooksController::updateNotebook(const NotebookUpdateInput &p_input) {
   // vxcore does NOT support partial updates - missing fields get default values.
   // Note: rootFolder and type in the JSON are ignored by vxcore (not part of NotebookConfig).
   QJsonObject config = notebookService->getNotebookConfig(p_input.notebookId);
+  if (config.isEmpty()) {
+    result.success = false;
+    result.errorMessage = tr("Failed to read notebook configuration.");
+    return result;
+  }
+
+  if (config.value(QLatin1String(vxcore::kJsonKeyType)).toString() == QStringLiteral("bundled")) {
+    if (!p_input.lineEnding.isEmpty() && !isRecognizedLineEnding(p_input.lineEnding)) {
+      result.success = false;
+      result.errorMessage = tr("Invalid line ending format.");
+      return result;
+    }
+
+    auto metadata = config.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
+    auto currentLineEnding = metadata.value(QLatin1String(vxcore::kJsonKeyLineEnding)).toString();
+    if (!isRecognizedLineEnding(currentLineEnding)) {
+      currentLineEnding.clear();
+    }
+    // Leave all metadata untouched when only unrelated notebook properties change.
+    if (p_input.lineEnding != currentLineEnding) {
+      if (p_input.lineEnding.isEmpty()) {
+        metadata.remove(QLatin1String(vxcore::kJsonKeyLineEnding));
+      } else {
+        metadata[QLatin1String(vxcore::kJsonKeyLineEnding)] = p_input.lineEnding;
+      }
+      config[QLatin1String(vxcore::kJsonKeyMetadata)] = metadata;
+    }
+  }
+
   config[QLatin1String(vxcore::kJsonKeyName)] = p_input.name.trimmed();
   config[QLatin1String(vxcore::kJsonKeyDescription)] = p_input.description;
   config[QLatin1String(vxcore::kJsonKeyRecycleBinFolder)] = p_input.recycleBinFolder.trimmed();

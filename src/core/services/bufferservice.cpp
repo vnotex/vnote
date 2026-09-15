@@ -11,6 +11,8 @@
 #include <QTimer>
 #include <QtGlobal>
 #include <atomic>
+#include <limits>
+#include <new>
 
 #include <core/fileopensettings.h>
 #include <core/hookevents.h>
@@ -482,14 +484,65 @@ void BufferService::setBufferEncoding(const QString &p_bufferId, const QString &
   }
 }
 
+QString BufferService::prepareTextForSave(const QString &p_bufferId, const QString &p_text) const {
+  if (p_text.isEmpty() ||
+      (!p_text.contains(QLatin1Char('\r')) && !p_text.contains(QLatin1Char('\n')))) {
+    return p_text;
+  }
+  const auto ending = BufferCoreService::getLineEndingOverride(p_bufferId);
+  if (ending == VXCORE_LINE_ENDING_UNSPECIFIED)
+    return p_text;
+
+  const bool crlf = ending == VXCORE_LINE_ENDING_CRLF;
+  const QChar first = ending == VXCORE_LINE_ENDING_LF ? QLatin1Char('\n') : QLatin1Char('\r');
+  using Size = decltype(p_text.size());
+  const Size size = p_text.size();
+  const QChar *source = p_text.constData();
+  quint64 outputSize = static_cast<quint64>(size);
+  bool changed = false;
+  for (Size i = 0; i < size; ++i) {
+    const QChar ch = source[i];
+    if (ch != QLatin1Char('\r') && ch != QLatin1Char('\n'))
+      continue;
+    const bool pair = ch == QLatin1Char('\r') && i + 1 < size && source[i + 1] == QLatin1Char('\n');
+    changed = changed || ch != first || pair != crlf;
+    if (crlf && !pair)
+      ++outputSize;
+    else if (!crlf && pair)
+      --outputSize;
+    if (pair)
+      ++i;
+  }
+  if (!changed)
+    return p_text;
+  if (outputSize > static_cast<quint64>(std::numeric_limits<Size>::max()))
+    throw std::bad_alloc();
+
+  QString result(static_cast<Size>(outputSize), Qt::Uninitialized);
+  QChar *destination = result.data();
+  for (Size i = 0; i < size; ++i) {
+    const QChar ch = source[i];
+    if (ch == QLatin1Char('\r') || ch == QLatin1Char('\n')) {
+      if (ch == QLatin1Char('\r') && i + 1 < size && source[i + 1] == QLatin1Char('\n'))
+        ++i;
+      *destination++ = first;
+      if (crlf)
+        *destination++ = QLatin1Char('\n');
+    } else {
+      *destination++ = ch;
+    }
+  }
+  return result;
+}
+
 QByteArray BufferService::encodeContent(const QString &p_bufferId, const QString &p_text) const {
-  // Fast path: no override → plain UTF-8, identical to the pre-encoding code
-  // path (no codec-registry lookup, no virtual dispatch).
+  const QString text = prepareTextForSave(p_bufferId, p_text);
+  // No encoding override: retain the UTF-8 fast path without a codec lookup.
   auto it = m_bufferEncodings.constFind(p_bufferId);
   if (it == m_bufferEncodings.constEnd()) {
-    return p_text.toUtf8();
+    return text.toUtf8();
   }
-  return resolveCodec(it.value())->fromUnicode(p_text);
+  return resolveCodec(it.value())->fromUnicode(text);
 }
 
 QString BufferService::decodeContent(const QString &p_bufferId,
@@ -1767,8 +1820,8 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     emit bufferContentSynced(p_bufferId);
     // Pass the raw override (empty when none) so the worker's UTF-8 fast path
     // is used for buffers without an encoding override.
-    m_saveQueue->enqueue(notebookId, p_bufferId, content, capturedRev,
-                         m_bufferEncodings.value(p_bufferId));
+    m_saveQueue->enqueue(notebookId, p_bufferId, prepareTextForSave(p_bufferId, content),
+                         capturedRev, m_bufferEncodings.value(p_bufferId));
     break;
   }
 
@@ -1879,10 +1932,10 @@ void BufferService::executeProtectedSync(const Buffer2 &p_buffer, const QString 
     }
   } else {
     auto lease = acquireProtectedLease(p_buffer, true, &error);
-    if (lease &&
-        m_saveQueue->enqueueProtected(*this, p_buffer.nodeId().notebookId, lease, p_content,
-                                      p_revision, m_bufferEncodings.value(bufferId),
-                                      m_autoSavePolicy == AutoSavePolicy::BackupFile)) {
+    if (lease && m_saveQueue->enqueueProtected(*this, p_buffer.nodeId().notebookId, lease,
+                                               prepareTextForSave(bufferId, p_content), p_revision,
+                                               m_bufferEncodings.value(bufferId),
+                                               m_autoSavePolicy == AutoSavePolicy::BackupFile)) {
       p_buffer.m_protectedState->lastQueuedRevision = p_revision;
       emit bufferContentSynced(bufferId);
       return;

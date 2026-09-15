@@ -241,6 +241,7 @@ add_qt_test(test_buffer_revision
 add_qt_test(test_buffer_encoding
   SOURCES
     test_buffer_encoding.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/managenotebookscontroller.cpp
   LINKS
     core_services
     vxcore

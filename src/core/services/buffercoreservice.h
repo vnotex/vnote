@@ -109,6 +109,9 @@ public:
 
   // ============ Buffer State ============
 
+  // Source-specified text override; errors preserve the editor's ordinary output.
+  VxCoreLineEnding getLineEndingOverride(const QString &p_bufferId) const;
+
   // Get buffer state.
   BufferState getState(const QString &p_bufferId) const;
 

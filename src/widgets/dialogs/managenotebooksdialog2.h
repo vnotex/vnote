@@ -3,6 +3,7 @@
 
 #include "dialog.h"
 
+class QComboBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
@@ -17,7 +18,7 @@ class LocationInputWithBrowseButton;
 class ServiceLocator;
 
 // ManageNotebooksDialog2 - Dialog for managing notebooks using DI architecture.
-// Allows viewing, editing (name/description), closing, and deleting notebooks.
+// Allows viewing and editing notebook settings, and closing notebooks.
 // Uses ManageNotebooksController for business logic.
 class ManageNotebooksDialog2 : public Dialog {
   Q_OBJECT
@@ -75,6 +76,8 @@ private:
   QPlainTextEdit *m_descriptionEdit = nullptr;
   QLineEdit *m_rootFolderEdit = nullptr;
   LocationInputWithBrowseButton *m_recycleBinFolderInput = nullptr;
+  QComboBox *m_lineEndingComboBox = nullptr;
+  QLabel *m_lineEndingLabel = nullptr;
   QLabel *m_typeLabel = nullptr;
   QPushButton *m_closeBtn = nullptr;
 

@@ -31,7 +31,7 @@ enum class AutoSavePolicy {
 };
 
 // Callback type for fetching latest content from an active writer (ViewWindow2).
-// Returns the latest editor content as a UTF-8 encoded string.
+// Returns Unicode editor text; shared save-time overrides apply when capturing a snapshot.
 using ContentFetchCallback = std::function<QString()>;
 
 // Hook-aware wrapper around BufferCoreService.
@@ -132,7 +132,7 @@ public:
   // back to the UTF-8 default.
   void setBufferEncoding(const QString &p_bufferId, const QString &p_codecName);
 
-  // Encode editor text to raw bytes using the buffer's current encoding.
+  // Apply shared save-time line-ending overrides, then encode Unicode editor text.
   // Falls back to UTF-8 when the codec name is empty or unknown.
   QByteArray encodeContent(const QString &p_bufferId, const QString &p_text) const;
 
@@ -383,6 +383,7 @@ signals:
 
 private:
   friend class Buffer2;
+  QString prepareTextForSave(const QString &p_bufferId, const QString &p_text) const;
   void updateProtectedNodeId(const Buffer2 &p_buffer, const NodeIdentifier &p_nodeId);
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.
   void onAutoSaveTimerTick();

@@ -301,6 +301,17 @@ bool BufferCoreService::setContentRaw(const QString &p_bufferId, const QByteArra
   return true;
 }
 
+VxCoreLineEnding BufferCoreService::getLineEndingOverride(const QString &p_bufferId) const {
+  VxCoreLineEnding ending = VXCORE_LINE_ENDING_UNSPECIFIED;
+  const auto err =
+      vxcore_buffer_get_line_ending_override(m_context, p_bufferId.toUtf8().constData(), &ending);
+  if (err != VXCORE_OK) {
+    qWarning() << "getLineEndingOverride failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return VXCORE_LINE_ENDING_UNSPECIFIED;
+  }
+  return ending;
+}
+
 // Buffer state.
 BufferState BufferCoreService::getState(const QString &p_bufferId) const {
   if (!checkContext()) {
