@@ -1,7 +1,7 @@
 # Welcome to VNote
 A pleasant note-taking platform.
 
-For more information, please visit [**VNote's Home Page**](https://vnotex.github.io/vnote).
+For more information, please visit [**VNote's Home Page**](https://docs.vnote.fun).
 
 ## VNote 4
 VNote 4 is a brand-new refactor of VNote 3, with a polished interface and more powerful features, including:
