@@ -252,6 +252,7 @@ private:
   bool m_viewerReady = false;
   QString m_viewerMathRenderer;
   QString m_viewerMathJaxScript;
+  QString m_viewerPlantUmlFormat;
   bool m_refreshMathPreviewsOnReady = false;
   QString m_pendingAnchor;
   MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;

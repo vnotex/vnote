@@ -26,6 +26,8 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_webPlantUml = READBOOL(QStringLiteral("webPlantUml"));
 
+  m_plantUmlFormat = normalizePlantUmlFormat(READSTR(QStringLiteral("plantUmlFormat")));
+
   m_plantUmlJar = READSTR(QStringLiteral("plantUmlJar"));
 
   m_plantUmlCommand = READSTR(QStringLiteral("plantUmlCommand"));
@@ -85,6 +87,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("viewerResource")] = saveViewerResource();
   obj[QStringLiteral("exportResource")] = saveExportResource();
   obj[QStringLiteral("webPlantUml")] = m_webPlantUml;
+  obj[QStringLiteral("plantUmlFormat")] = m_plantUmlFormat;
   obj[QStringLiteral("plantUmlJar")] = m_plantUmlJar;
   obj[QStringLiteral("plantUmlCommand")] = m_plantUmlCommand;
   obj[QStringLiteral("plantUmlWebService")] = m_plantUmlWebService;
@@ -169,6 +172,17 @@ bool MarkdownEditorConfig::getWebPlantUml() const { return m_webPlantUml; }
 
 void MarkdownEditorConfig::setWebPlantUml(bool p_enabled) {
   updateConfig(m_webPlantUml, p_enabled, this);
+}
+
+QString MarkdownEditorConfig::normalizePlantUmlFormat(const QString &p_format) {
+  return p_format.compare(QStringLiteral("png"), Qt::CaseInsensitive) == 0 ? QStringLiteral("png")
+                                                                           : QStringLiteral("svg");
+}
+
+const QString &MarkdownEditorConfig::getPlantUmlFormat() const { return m_plantUmlFormat; }
+
+void MarkdownEditorConfig::setPlantUmlFormat(const QString &p_format) {
+  updateConfig(m_plantUmlFormat, normalizePlantUmlFormat(p_format), this);
 }
 
 const QString &MarkdownEditorConfig::getPlantUmlJar() const { return m_plantUmlJar; }

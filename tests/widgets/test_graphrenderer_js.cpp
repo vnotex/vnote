@@ -972,33 +972,74 @@ void TestGraphRendererJs::testPlantUmlPages_data() {
   QTest::addColumn<QString>("scenario");
   QTest::addColumn<int>("pages");
   QTest::addColumn<bool>("incomplete");
-  QTest::newRow("empty-400-end") << QStringLiteral("400") << 2 << false;
-  QTest::newRow("legacy-index-crash-end") << QStringLiteral("509-index") << 2 << false;
-  QTest::newRow("unrelated-crash-retains-pages") << QStringLiteral("509-other") << 2 << true;
-  QTest::newRow("non-sequence-remains-single-page") << QStringLiteral("class") << 1 << false;
+  QTest::addColumn<QString>("configuredFormat");
+  QTest::addColumn<bool>("useWeb");
+  QTest::addColumn<bool>("forcePng");
+  QTest::newRow("empty-400-end") << QStringLiteral("400") << 2 << false << QString() << true
+                                 << false;
+  QTest::newRow("legacy-index-crash-end")
+      << QStringLiteral("509-index") << 2 << false << QString() << true << false;
+  QTest::newRow("unrelated-crash-retains-pages")
+      << QStringLiteral("509-other") << 2 << true << QString() << true << false;
+  QTest::newRow("non-sequence-remains-single-page")
+      << QStringLiteral("class") << 1 << false << QString() << true << false;
   QTest::newRow("identical-sequence-pages-are-not-end")
-      << QStringLiteral("identical") << 2 << false;
-  QTest::newRow("ignored-index-is-bounded") << QStringLiteral("cap") << 256 << true;
-  QTest::newRow("preview-combines-page-pixels") << QStringLiteral("preview") << 2 << false;
-  QTest::newRow("protected-preview-never-renders") << QStringLiteral("protected") << 0 << false;
+      << QStringLiteral("identical") << 2 << false << QString() << true << false;
+  QTest::newRow("ignored-index-is-bounded")
+      << QStringLiteral("cap") << 256 << true << QString() << true << false;
+  QTest::newRow("preview-combines-page-pixels")
+      << QStringLiteral("preview") << 2 << false << QStringLiteral("svg") << true << false;
+  QTest::newRow("protected-preview-never-renders")
+      << QStringLiteral("protected") << 0 << false << QString() << true << false;
+  QTest::newRow("web-selected-png")
+      << QStringLiteral("400") << 2 << false << QStringLiteral("png") << true << false;
+  QTest::newRow("local-selected-png")
+      << QStringLiteral("400") << 2 << false << QStringLiteral("png") << false << false;
+  QTest::newRow("local-default-svg")
+      << QStringLiteral("400") << 2 << false << QString() << false << false;
+  QTest::newRow("web-export-forces-png")
+      << QStringLiteral("400") << 2 << false << QStringLiteral("svg") << true << true;
+  QTest::newRow("local-export-forces-png")
+      << QStringLiteral("400") << 2 << false << QStringLiteral("svg") << false << true;
+  QTest::newRow("invalid-format-keeps-svg")
+      << QStringLiteral("400") << 2 << false << QStringLiteral("unsupported") << true << false;
 }
 
 void TestGraphRendererJs::testPlantUmlPages() {
   QFETCH(QString, scenario);
   QFETCH(int, pages);
   QFETCH(bool, incomplete);
+  QFETCH(QString, configuredFormat);
+  QFETCH(bool, useWeb);
+  QFETCH(bool, forcePng);
   // QJSEngine rejects async/await. Use the viewer's actual Chromium engine,
   // with only the external renderer response boundary replaced by fixtures.
-  QString source = QStringLiteral(R"JS(
+  QJsonObject vxOptions{{QStringLiteral("protectedView"), false},
+                        {QStringLiteral("webPlantUml"), useWeb},
+                        {QStringLiteral("transformSvgToPngEnabled"), forcePng}};
+  if (!configuredFormat.isEmpty()) {
+    vxOptions.insert(QStringLiteral("plantUmlFormat"), configuredFormat);
+  }
+  QString source = QStringLiteral("window.vxOptions = ") +
+                   QString::fromUtf8(QJsonDocument(vxOptions).toJson(QJsonDocument::Compact)) +
+                   QStringLiteral(";\n") + QStringLiteral(R"JS(
 (async function() {
 try {
-window.vxOptions = { protectedView: false };
 let completed = 0;
 let onFinished = null;
 let renderer;
+let basicMarkdownRendered;
+const codeNodes = [];
+const markdownit = {
+  addLangsToSkipHighlight() {},
+  getCodeNodes() { return codeNodes; }
+};
 window.vxcore = {
-  registerWorker(worker) { renderer = worker; worker.vxcore = this; },
-  on() {},
+  registerWorker(worker) { renderer = worker; },
+  on(event, callback) {
+    if (event === 'basicMarkdownRendered') basicMarkdownRendered = callback;
+  },
+  getWorker(name) { return name === 'markdownit' ? markdownit : null; },
   finishWorker() { ++completed; if (onFinished) onFinished(); }
 };
 )JS");
@@ -1012,16 +1053,19 @@ window.vxcore = {
   source += QStringLiteral("const scenario = %1.scenario;\n")
                 .arg(QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact)));
   source += QStringLiteral(R"JS(
+renderer.register(window.vxcore);
 renderer.initialized = true;
 renderer.getPlantUMLOnlineUrl = (server, format, text, index) => format + '/' + index;
 const svg = (text) => '<svg xmlns="http://www.w3.org/2000/svg" data-diagram-type="'
   + (scenario === 'class' ? 'CLASS' : 'SEQUENCE') + '"><text>' + text + '</text></svg>';
+const pngData = [];
 const pngs = [[2, 2, 'red'], [3, 1, 'blue']].map(([width, height, color]) => {
   const canvas = document.createElement('canvas');
   canvas.width = width; canvas.height = height;
   const context = canvas.getContext('2d');
   context.fillStyle = color; context.fillRect(0, 0, width, height);
-  const bytes = atob(canvas.toDataURL('image/png').split(',')[1]);
+  pngData.push(canvas.toDataURL('image/png').split(',')[1]);
+  const bytes = atob(pngData[pngData.length - 1]);
   return new Blob([Uint8Array.from(bytes, c => c.charCodeAt(0))], {type: 'image/png'});
 });
 let requests = 0;
@@ -1045,6 +1089,12 @@ Utils.httpGet = (url, type, callback) => {
       : 'java.lang.OutOfMemoryError');
   }
   callback(data, {status, getResponseHeader: () => mime});
+};
+vxcore.renderGraph = (id, index, format, lang, text, callback, imageIndex) => {
+  ++requests;
+  const data = imageIndex >= 2 ? '' : format === 'svg'
+    ? svg(imageIndex === 0 ? 'FIRST' : 'SECOND') : pngData[imageIndex];
+  callback(id, index, format, data, true);
 };
 if (scenario === 'preview' || scenario === 'protected') {
   vxOptions.protectedView = scenario === 'protected';
@@ -1070,10 +1120,26 @@ if (scenario === 'preview' || scenario === 'protected') {
   document.body.appendChild(node);
   await new Promise(resolve => {
     onFinished = resolve;
-    renderer.nodesToRender = [node]; renderer.renderNodes();
+    codeNodes.push(node);
+    basicMarkdownRendered();
   });
   await new Promise(resolve => setTimeout(resolve, 0));
-  window.__plantResult = JSON.stringify({completed, active: renderer.passActive,
+  const images = await Promise.all(Array.from(
+    document.querySelectorAll('.vx-plantuml-page img'), async image => {
+      await new Promise((resolve, reject) => {
+        if (image.complete && image.naturalWidth > 0) { resolve(); return; }
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('PNG could not be decoded'));
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+      return {png: image.src.startsWith('data:image/png;base64,'),
+        width: canvas.width, height: canvas.height,
+        pixel: Array.from(context.getImageData(0, 0, 1, 1).data).join(',')};
+    }));
+  window.__plantResult = JSON.stringify({completed, active: renderer.passActive, images,
+    svgs: document.querySelectorAll('.vx-plantuml-page svg').length,
     pages: document.querySelectorAll('.vx-plantuml-page').length,
     labels: Array.from(document.querySelectorAll('.vx-plantuml-page text'), n => n.textContent),
     incomplete: !!document.querySelector('[role=alert]')});
@@ -1127,12 +1193,30 @@ script.remove();
     QCOMPARE(values.value(QStringLiteral("incomplete")).toBool(), incomplete);
     QCOMPARE(values.value(QStringLiteral("completed")).toInt(), 1);
     QVERIFY(!values.value(QStringLiteral("active")).toBool());
-    const auto labels = values.value(QStringLiteral("labels")).toArray();
-    QCOMPARE(labels.first().toString(), QStringLiteral("FIRST"));
-    if (pages > 1) {
-      QCOMPARE(labels.at(1).toString(), scenario == QStringLiteral("identical")
-                                            ? QStringLiteral("FIRST")
-                                            : QStringLiteral("SECOND"));
+    const auto images = values.value(QStringLiteral("images")).toArray();
+    if (forcePng || configuredFormat == QStringLiteral("png")) {
+      QCOMPARE(values.value(QStringLiteral("svgs")).toInt(), 0);
+      QCOMPARE(images.size(), 2);
+      const auto first = images.at(0).toObject();
+      const auto second = images.at(1).toObject();
+      QVERIFY(first.value(QStringLiteral("png")).toBool());
+      QVERIFY(second.value(QStringLiteral("png")).toBool());
+      QCOMPARE(first.value(QStringLiteral("width")).toInt(), 2);
+      QCOMPARE(first.value(QStringLiteral("height")).toInt(), 2);
+      QCOMPARE(first.value(QStringLiteral("pixel")).toString(), QStringLiteral("255,0,0,255"));
+      QCOMPARE(second.value(QStringLiteral("width")).toInt(), 3);
+      QCOMPARE(second.value(QStringLiteral("height")).toInt(), 1);
+      QCOMPARE(second.value(QStringLiteral("pixel")).toString(), QStringLiteral("0,0,255,255"));
+    } else {
+      QCOMPARE(values.value(QStringLiteral("svgs")).toInt(), pages);
+      QVERIFY(images.isEmpty());
+      const auto labels = values.value(QStringLiteral("labels")).toArray();
+      QCOMPARE(labels.first().toString(), QStringLiteral("FIRST"));
+      if (pages > 1) {
+        QCOMPARE(labels.at(1).toString(), scenario == QStringLiteral("identical")
+                                              ? QStringLiteral("FIRST")
+                                              : QStringLiteral("SECOND"));
+      }
     }
   }
 }

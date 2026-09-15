@@ -195,6 +195,7 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
 
   MarkdownWebGlobalOptions opts;
   opts.m_webPlantUml = p_config.getWebPlantUml();
+  opts.m_plantUmlFormat = p_config.getPlantUmlFormat();
   opts.m_plantUmlWebService = p_config.getPlantUmlWebService();
   opts.m_webGraphviz = p_config.getWebGraphviz();
   opts.m_mathRenderer = p_config.getMathRenderer();

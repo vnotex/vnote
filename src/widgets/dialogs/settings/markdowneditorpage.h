@@ -82,6 +82,8 @@ private:
 
   QComboBox *m_plantUmlModeComboBox = nullptr;
 
+  QComboBox *m_plantUmlFormatComboBox = nullptr;
+
   LocationInputWithBrowseButton *m_plantUmlJarFileInput = nullptr;
 
   QLineEdit *m_plantUmlWebServiceLineEdit = nullptr;

@@ -105,6 +105,9 @@ void MarkdownEditorPage::loadInternal() {
     m_plantUmlModeComboBox->setCurrentIndex(idx);
   }
 
+  const int formatIndex = m_plantUmlFormatComboBox->findData(markdownConfig.getPlantUmlFormat());
+  m_plantUmlFormatComboBox->setCurrentIndex(formatIndex < 0 ? 0 : formatIndex);
+
   m_plantUmlJarFileInput->setText(markdownConfig.getPlantUmlJar());
 
   m_plantUmlWebServiceLineEdit->setText(markdownConfig.getPlantUmlWebService());
@@ -186,6 +189,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 
   markdownConfig.setWebPlantUml(m_plantUmlModeComboBox->currentData().toInt() == 0);
+
+  markdownConfig.setPlantUmlFormat(m_plantUmlFormatComboBox->currentData().toString());
 
   markdownConfig.setPlantUmlJar(m_plantUmlJarFileInput->text());
 
@@ -585,6 +590,22 @@ void MarkdownEditorPage::setupGeneralGroup() {
         label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox, this));
     addSearchItem(label, m_plantUmlModeComboBox->toolTip(), m_plantUmlModeComboBox);
     connect(m_plantUmlModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    m_plantUmlFormatComboBox = WidgetsFactory::createComboBox(this);
+    m_plantUmlFormatComboBox->setToolTip(tr("Image format for PlantUml graphs in read mode and "
+                                            "exports; editor previews always use PNG"));
+    m_plantUmlFormatComboBox->addItem(tr("SVG"), QStringLiteral("svg"));
+    m_plantUmlFormatComboBox->addItem(tr("PNG"), QStringLiteral("png"));
+
+    const QString label(tr("PlantUml format"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_plantUmlFormatComboBox->toolTip(), m_plantUmlFormatComboBox, this));
+    addSearchItem(label, m_plantUmlFormatComboBox->toolTip(), m_plantUmlFormatComboBox);
+    connect(m_plantUmlFormatComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MarkdownEditorPage::pageIsChanged);
   }
 

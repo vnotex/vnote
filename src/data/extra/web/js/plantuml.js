@@ -29,7 +29,9 @@ class PlantUml extends GraphRenderer {
     registerInternal() {
         this.vxcore.on('basicMarkdownRendered', () => {
             this.reset();
-            this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
+            this.renderCodeNodes(
+                window.vxOptions.transformSvgToPngEnabled
+                    || window.vxOptions.plantUmlFormat === 'png' ? 'png' : 'svg');
         });
 
         this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
