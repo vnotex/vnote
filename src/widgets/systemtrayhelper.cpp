@@ -2,7 +2,10 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDebug>
+#include <QHotkey>
 #include <QIcon>
+#include <QKeySequence>
 #include <QMenu>
 #include <QPointer>
 #include <QSystemTrayIcon>
@@ -59,6 +62,9 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win,
     MainWindow2::connect(p_win->getViewArea(), &ViewArea2::corePropagationReady, act,
                          [act]() { act->setEnabled(true); });
     MainWindow2::connect(act, &QAction::triggered, p_win, [p_win, p_configMgr, act]() {
+      if (QApplication::activeModalWidget()) {
+        return;
+      }
       QPointer<QAction> actionGuard(act);
       act->setEnabled(false);
       if (p_configMgr->getSessionConfig().getQuickNoteSchemes().isEmpty()) {
@@ -69,6 +75,16 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win,
         actionGuard->setEnabled(true);
       }
     });
+
+    const auto keySeq = QKeySequence(coreConfig.getShortcut(CoreConfig::NewQuickNote));
+    if (!keySeq.isEmpty()) {
+      auto *hotkey = new QHotkey(keySeq, true, p_win);
+      if (!hotkey->isRegistered()) {
+        qWarning() << "failed to register global quick-note hotkey" << keySeq.toString();
+      } else {
+        MainWindow2::connect(hotkey, &QHotkey::activated, act, &QAction::trigger);
+      }
+    }
   }
 
   menu->addSeparator();

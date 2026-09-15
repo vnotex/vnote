@@ -116,8 +116,8 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
         viewArea->getController()->requestQuickNote();
       }
     });
-    WidgetUtils::addActionShortcut(newQuickNoteAct,
-                                   coreConfig.getShortcut(CoreConfig::Shortcut::NewQuickNote));
+    WidgetUtils::addActionShortcutText(newQuickNoteAct,
+                                       coreConfig.getShortcut(CoreConfig::Shortcut::NewQuickNote));
     m_newQuickNoteAct = newQuickNoteAct;
 
     // New folder.

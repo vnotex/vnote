@@ -378,7 +378,9 @@ QString ConfigMgr2::getDocumentOrHomePath() {
 
 QString ConfigMgr2::getDefaultNotebookPath(const QString &p_parentDir) {
   return PathUtils::concatenateFilePath(
-      p_parentDir.isEmpty() ? getDocumentOrHomePath() : p_parentDir, QStringLiteral("my_notebook"));
+      p_parentDir.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+                            : p_parentDir,
+      QStringLiteral("my_notebook"));
 }
 
 void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) {
