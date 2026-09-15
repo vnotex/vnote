@@ -1,6 +1,7 @@
 #include "messageboxhelper.h"
 
 #include <QObject>
+#include <QTimer>
 
 using namespace vnotex;
 
@@ -71,6 +72,15 @@ int MessageBoxHelper::showMessageBox(QMessageBox::Icon p_icon, const QString &p_
   msgBox.setInformativeText(p_informationText);
   msgBox.setDetailedText(p_detailedText);
   msgBox.setDefaultButton(p_defaultButton);
+  if (!p_parent) {
+    // Parentless prompts may originate from a global hotkey while the application is hidden.
+    QTimer::singleShot(0, &msgBox, [&msgBox]() {
+      if (msgBox.isVisible()) {
+        msgBox.raise();
+        msgBox.activateWindow();
+      }
+    });
+  }
   return msgBox.exec();
 }
 

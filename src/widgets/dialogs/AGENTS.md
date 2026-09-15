@@ -138,6 +138,8 @@ A parentless picker queues `raise()` and `activateWindow()` after `exec()` shows
 a global hotkey alone does not give the dialog foreground focus. The callback is scoped
 to the picker and skips a picker that has already closed; never activate the hidden
 main window or make the picker permanently stay on top to work around focus.
+`MessageBoxHelper` uses the same deferred activation for parentless messages, including
+quick-note creation errors. Parented message boxes retain their existing behavior.
 
 ## Dialog Inventory
 
