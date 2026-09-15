@@ -54,6 +54,7 @@ QSystemTrayIcon *SystemTrayHelper::setupSystemTray(MainWindow2 *p_win,
 
   {
     auto *act = menu->addAction(MainWindow2::tr("Quick Note"));
+    WidgetUtils::addActionShortcutText(act, coreConfig.getShortcut(CoreConfig::NewQuickNote));
     act->setEnabled(false);
     MainWindow2::connect(p_win->getViewArea(), &ViewArea2::corePropagationReady, act,
                          [act]() { act->setEnabled(true); });

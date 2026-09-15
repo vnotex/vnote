@@ -119,6 +119,13 @@ older schemes. Include this flag in scheme equality: a toggle-only edit must per
 Tray, toolbar, keyboard and tab-bar requests share the picker and honor the selected
 scheme; they do not override its destination. Quick notes still open in Edit mode.
 
+New schemes use `ConfigMgr2::getDefaultNotebookPath()`, shared with `FirstRunController`:
+`my_notebook` under Documents, falling back to home when no Documents location exists.
+The helper only calculates the path; startup creation still requires a version change
+and zero open notebooks. Existing schemes, including an explicitly empty Folder, are
+not migrated. The tray shortcut hint uses the configured `NewQuickNote` binding as
+text only; it does not register another shortcut or make that shortcut global.
+
 The tray item stays disabled until `ViewArea2::corePropagationReady` and during its
 synchronous request. Hidden/minimized-main pickers and errors are parentless; cancellation
 and creation failure never open a buffer. Empty schemes reveal the existing settings

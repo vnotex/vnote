@@ -15,7 +15,6 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <utils/fileutils2.h>
-#include <utils/pathutils.h>
 
 using namespace vnotex;
 
@@ -46,10 +45,6 @@ void FirstRunController::setParentDirOverrideForTesting(const QString &p_dir) {
 
 void FirstRunController::setSourceDirOverrideForTesting(const QString &p_dir) {
   m_sourceDirOverride = p_dir;
-}
-
-QString FirstRunController::resolveParentDir() const {
-  return m_parentDirOverride.isEmpty() ? ConfigMgr2::getDocumentOrHomePath() : m_parentDirOverride;
 }
 
 bool FirstRunController::shouldCreateDefaultNotebook(bool p_versionChanged) const {
@@ -84,8 +79,7 @@ void FirstRunController::clearReadOnlyRecursively(const QString &p_dirPath) {
 }
 
 bool FirstRunController::createDefaultNotebook() {
-  const QString parent = resolveParentDir();
-  const QString root = PathUtils::concatenateFilePath(parent, QStringLiteral("my_notebook"));
+  const QString root = ConfigMgr2::getDefaultNotebookPath(m_parentDirOverride);
 
   // Collision guard: skip when the target path is an existing file or a
   // non-empty directory. An empty existing dir (or a non-existent path) is

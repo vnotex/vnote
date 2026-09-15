@@ -140,6 +140,9 @@ public:
   // Get document or home path.
   static QString getDocumentOrHomePath();
 
+  // Default notebook root. An empty parent uses the document or home path.
+  static QString getDefaultNotebookPath(const QString &p_parentDir = QString());
+
   // Organization name.
   static const QString c_orgName;
 

@@ -20,6 +20,7 @@
 #include "widgetconfig.h"
 
 #include <utils/fileutils2.h>
+#include <utils/pathutils.h>
 #include <utils/utils.h>
 
 using namespace vnotex;
@@ -373,6 +374,11 @@ QString ConfigMgr2::getDocumentOrHomePath() {
   }
 
   return docHomePath;
+}
+
+QString ConfigMgr2::getDefaultNotebookPath(const QString &p_parentDir) {
+  return PathUtils::concatenateFilePath(
+      p_parentDir.isEmpty() ? getDocumentOrHomePath() : p_parentDir, QStringLiteral("my_notebook"));
 }
 
 void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) {

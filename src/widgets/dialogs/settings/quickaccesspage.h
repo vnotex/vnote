@@ -52,8 +52,6 @@ private:
   static QVector<SessionConfig::QuickAccessItem> parseQuickAccessText(const QString &p_text);
   static QString formatQuickAccessItems(const QVector<SessionConfig::QuickAccessItem> &p_items);
 
-  static QString getDefaultQuickNoteFolderPath();
-
   QPlainTextEdit *m_quickAccessTextEdit = nullptr;
 
   QComboBox *m_quickNoteSchemeComboBox = nullptr;

@@ -3,7 +3,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
-#include <QDir>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -253,11 +252,6 @@ QString QuickAccessPage::title() const { return tr("Quick Access"); }
 
 QString QuickAccessPage::slug() const { return QStringLiteral("quickaccess"); }
 
-QString QuickAccessPage::getDefaultQuickNoteFolderPath() {
-  // LEGACY: NotebookMgr not yet in ServiceLocator - cannot get current notebook path
-  return QDir::homePath();
-}
-
 void QuickAccessPage::newQuickAccessItem() {
   NewQuickAccessItemDialog dialog(m_services, this);
   if (dialog.exec() == QDialog::Accepted) {
@@ -347,7 +341,7 @@ void QuickAccessPage::newQuickNoteScheme() {
 
   SessionConfig::QuickNoteScheme scheme;
   scheme.m_name = schemeName;
-  scheme.m_folderPath = getDefaultQuickNoteFolderPath();
+  scheme.m_folderPath = ConfigMgr2::getDefaultNotebookPath();
   scheme.m_noteName = tr("quick_note_%da%.md");
   m_quickNoteSchemes.push_back(scheme);
 

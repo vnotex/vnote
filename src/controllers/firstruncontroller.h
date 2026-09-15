@@ -33,7 +33,7 @@ public:
   // non-empty directory, or when the copy/open fails.
   bool createDefaultNotebook();
 
-  // Override the parent directory used by resolveParentDir(). For testing only,
+  // Override the default notebook parent directory. For testing only,
   // so scenarios run against isolated temp dirs instead of the real Documents.
   void setParentDirOverrideForTesting(const QString &p_dir);
 
@@ -49,8 +49,6 @@ signals:
 
 private:
   void onMainWindowAfterStart();
-
-  QString resolveParentDir() const;
 
   // Recursively clear the read-only bit on every file under p_dirPath, adding
   // owner/user write permission. Files copied out of a Qt .rcc inherit the
