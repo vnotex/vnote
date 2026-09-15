@@ -7589,12 +7589,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+0"/>
         <source>Created</source>
-        <translation>创建时间</translation>
+        <translation>创建日期</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Modified</source>
-        <translation>修改时间</translation>
+        <translation>修改日期</translation>
     </message>
     <message>
         <location line="+31"/>
