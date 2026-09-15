@@ -8,6 +8,7 @@
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSizePolicy>
 #include <QVBoxLayout>
 
 #include <controllers/searchcontroller.h>
@@ -114,6 +115,8 @@ void SearchPanel2::setupUI() {
   mainLayout->addWidget(m_progressBar);
 
   m_statusLabel = new QLabel(this);
+  m_statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  m_statusLabel->setWordWrap(true);
   mainLayout->addWidget(m_statusLabel);
 
   mainLayout->addStretch();
