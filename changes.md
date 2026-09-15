@@ -12,6 +12,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Markdown read mode automatically numbers unnumbered headings; choose a shared number pattern in Editor settings, with independent read-mode and outline toggles enabled by default
     * Headings can be folded in read mode and HTML exports, with fold controls shown beside the heading on hover
     * Drag headings in the outline to reorder whole sections, adjusting heading levels to preserve the hierarchy, including moves under an adjacent heading
+    * The editor includes upstream AST-aware list editing, Vi open-line continuation, list-item guides and active-item highlighting while retaining VNote's heading numbering and protected preview resources
     * A table-size picker was added to the Markdown toolbar
     * Clipboard images inserted as files now use JPEG with a white background for transparency; original file/URL formats and lossless Base64 insertion are unchanged
     * Table-source alignment also formats directly edited Markdown tables; interactive table previews support Markdown type actions, highlight edited cells and write changes back after one second
