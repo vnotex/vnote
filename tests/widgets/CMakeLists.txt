@@ -1499,16 +1499,28 @@ if(TARGET Qt6::Qml)
   add_qt_test(test_graphrenderer_js
     SOURCES
       test_graphrenderer_js.cpp
+      ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphhelper.cpp
+      ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphvizhelper.cpp
+      ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
     LINKS
       Qt6::Qml
       Qt6::WebEngineCore
+      VTextEdit
+      core_services
     GUILESS
+  )
+  add_custom_command(TARGET test_graphrenderer_js POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:VTextEdit>
+      $<TARGET_FILE_DIR:test_graphrenderer_js>
   )
   target_compile_definitions(test_graphrenderer_js PRIVATE
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
   )
   get_property(_graph_js_environment TEST test_markdownviewer_js PROPERTY ENVIRONMENT)
   set_property(TEST test_graphrenderer_js PROPERTY ENVIRONMENT "${_graph_js_environment}")
+  # Each isolated browser page compiles the real asm.js renderer in a Debug runtime.
+  set_property(TEST test_graphrenderer_js PROPERTY TIMEOUT 180)
 endif()
 
 # In-place preview zoom: the pure scale arithmetic (zoom ratio vs. C++ raster factor).

@@ -29,17 +29,32 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMap>
+#include <QPointF>
+#include <QProcess>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QString>
 #include <QTimer>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
+#include <QXmlStreamReader>
 #include <QtTest>
+
+#include <widgets/editors/graphvizhelper.h>
 
 namespace tests {
 
 namespace {
+
+const char *c_graphvizSource = R"DOT(graph G {
+  a -- b;
+  b -- c;
+  c -- a;
+  a -- d;
+  d -- e;
+  e -- b;
+})DOT";
 
 QString webJsDir() {
 #ifdef VNOTE_SRC_DIR
@@ -407,6 +422,10 @@ class TestGraphRendererJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testGraphvizEngines_data();
+  void testGraphvizEngines();
+  void testGraphvizNativeEngineCache();
+
   void testPlantUmlPages_data();
   void testPlantUmlPages();
 
@@ -1115,6 +1134,269 @@ script.remove();
                                             ? QStringLiteral("FIRST")
                                             : QStringLiteral("SECOND"));
     }
+  }
+}
+
+void TestGraphRendererJs::testGraphvizEngines_data() {
+  QTest::addColumn<QString>("scenario");
+  for (const auto *scenario :
+       {"mixed", "preview", "svg-recovery", "png-recovery", "preview-recovery"}) {
+    QTest::newRow(scenario) << QString::fromLatin1(scenario);
+  }
+}
+
+void TestGraphRendererJs::testGraphvizEngines() {
+  QFETCH(QString, scenario);
+  // File-backed scripts exercise document.currentScript and the production lazy
+  // loader. In particular, concurrent previews must not bypass initialization.
+  QString html = QStringLiteral(R"HTML(<!doctype html><html><body>
+<main id="content"></main><div id="preview"></div><script>
+window.vxOptions = {protectedView: false, webGraphviz: true};
+window.completed = 0;
+window.onFinished = null;
+window.workers = {markdownit: {addLangsToSkipHighlight() {}}};
+window.previewResults = [];
+window.previewWaiters = new Map();
+window.vxcore = {
+  contentContainer: document.getElementById('content'),
+  on() {},
+  registerWorker(worker) { workers[worker.name] = worker; worker.register(this); },
+  getWorker(name) { return workers[name]; },
+  finishWorker() { ++completed; if (onFinished) onFinished(); },
+  renderGraph() { throw new Error('Browser rendering must not dispatch a native process'); },
+  setGraphPreviewData(data) {
+    previewResults.push(data);
+    const waiter = previewWaiters.get(data.id);
+    if (waiter) { previewWaiters.delete(data.id); waiter(data); }
+  }
+};
+</script>)HTML");
+  for (const auto *name : {"utils.js", "vxworker.js", "graphrenderer.js", "imageviewer.js",
+                           "graphpreviewer.js", "markdown-it/markdown-it.min.js", "graphviz.js"}) {
+    QVERIFY(QFile::exists(webJsDir() + QLatin1Char('/') + QLatin1String(name)));
+    html += QStringLiteral("<script src=\"%1\"></script>").arg(QLatin1String(name));
+  }
+  const QJsonObject options{{QStringLiteral("scenario"), scenario},
+                            {QStringLiteral("source"), QString::fromLatin1(c_graphvizSource)}};
+  html += QStringLiteral("<script>const options = %1;\n")
+              .arg(QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact)));
+  html += QStringLiteral(R"JS(
+(async function() {
+try {
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const fixture = options.source;
+  const renderer = workers.graphviz;
+  const container = vxcore.contentContainer;
+  const previewer = new GraphPreviewer(vxcore, document.getElementById('preview'));
+  const geometry = svg => Object.fromEntries(Array.from(svg.querySelectorAll('g.node')).map(n => {
+    const ellipse = n.querySelector('ellipse');
+    return [n.querySelector('title').textContent,
+            ['cx', 'cy'].map(a => ellipse.getAttribute(a))];
+  }).sort((a, b) => a[0].localeCompare(b[0])));
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const labels = svg => Array.from(svg.querySelectorAll('g.node title'), n => n.textContent).sort();
+  const fence = (lang, text = fixture) => '```' + lang + '\n' + text + '\n```';
+  const render = (markdown, format = 'svg') => new Promise(resolve => {
+    renderer.reset();
+    container.innerHTML = markdownit({langPrefix: 'lang-'}).render(markdown);
+    onFinished = resolve;
+    renderer.render(container, renderer.langs.map(lang => 'lang-' + lang), format);
+  });
+  const preview = (id, lang, text = fixture) => new Promise(resolve => {
+    previewWaiters.set(id, resolve);
+    previewer.previewGraph(id, 1, lang, text);
+  });
+  const previewGeometry = data => geometry(new DOMParser().parseFromString(data.data, 'image/svg+xml'));
+  const reference = async engine => geometry(await new Viz().renderSVGElement(fixture, {engine}));
+  const imageLoaded = image => new Promise((resolve, reject) => {
+    if (image.complete && image.naturalWidth > 0) { resolve(); return; }
+    image.onload = resolve;
+    image.onerror = () => reject(new Error('PNG could not be decoded'));
+  });
+  let result = {};
+  if (options.scenario === 'mixed') {
+    const languages = ['dot', 'graphviz', 'neato', 'twopi', 'circo', 'fdp', 'patchwork', 'osage'];
+    await render(languages.concat(['sfdp', 'unknown-graph-engine']).map(lang => fence(lang)).join('\n\n'));
+    const diagrams = Array.from(container.querySelectorAll('svg'));
+    check(diagrams.length === 8, 'All seven browser engines and graphviz alias must render');
+    check(diagrams.every(svg => same(labels(svg), ['a', 'b', 'c', 'd', 'e'])), 'Missing named nodes');
+    const dot = await reference('dot');
+    const circo = await reference('circo');
+    check(!same(dot, circo), 'Fixture must distinguish engine geometry');
+    check(same(geometry(diagrams[0]), dot), 'dot fence geometry differs from dot reference');
+    check(same(geometry(diagrams[1]), dot), 'graphviz alias is not dot');
+    check(same(geometry(diagrams[4]), circo), 'circo fence geometry differs from circo reference');
+    const retained = Array.from(container.querySelectorAll('code'));
+    check(same(retained.map(n => n.className), ['lang-sfdp', 'lang-unknown-graph-engine']),
+          'Unsupported languages must remain source');
+    check(retained.every(n => n.textContent.trim() === fixture.trim()), 'Source was rewritten');
+    check(completed === 1 && !renderer.passActive, 'Mixed pass did not finish exactly once');
+    // Same body, only the fence changes, then changes back.
+    for (const engine of ['dot', 'circo', 'dot']) {
+      await render(fence(engine));
+      check(same(geometry(container.querySelector('svg')), engine === 'dot' ? dot : circo),
+            'Engine-only fence edit retained the previous layout');
+    }
+    // DOT's graph-level layout attribute keeps its own precedence.
+    await render(fence('dot', fixture.replace('graph G {', 'graph G { layout=circo;')));
+    check(same(geometry(container.querySelector('svg')), circo), 'DOT layout precedence changed');
+    result = {diagrams: diagrams.length, completed};
+  } else if (options.scenario === 'preview') {
+    // Both requests are issued while the actual scripts are still loading.
+    const pair = await Promise.all([preview(1, 'dot'), preview(2, 'circo')]);
+    const dot = await reference('dot');
+    const circo = await reference('circo');
+    check(!same(dot, circo), 'Fixture must distinguish preview layouts');
+    check(pair.every(p => p.format === 'svg'), 'Preview did not deliver SVG');
+    check(same(previewGeometry(pair[0]), dot), 'dot preview has wrong layout');
+    check(same(previewGeometry(pair[1]), circo), 'circo preview has wrong layout');
+    const unsupported = await preview(3, 'sfdp');
+    check(unsupported.data === '', 'Browser sfdp preview must be empty');
+    const valid = await preview(4, 'circo');
+    check(same(previewGeometry(valid), circo), 'sfdp poisoned subsequent preview');
+    check(same(previewResults.map(p => p.id).sort(), [1, 2, 3, 4]), 'Preview completion count');
+    result = {previews: previewResults.length};
+  } else if (options.scenario === 'preview-recovery') {
+    const pair = await Promise.all([preview(1, 'dot', 'graph {'), preview(2, 'circo')]);
+    check(pair[0].data === '', 'Malformed preview must fail');
+    check(pair[1].format === 'svg' && same(previewGeometry(pair[1]), await reference('circo')),
+          'Malformed input poisoned the concurrently queued preview');
+    check(previewResults.length === 2, 'Each queued preview must complete once');
+    result = {previews: previewResults.length};
+  } else {
+    const format = options.scenario === 'png-recovery' ? 'png' : 'svg';
+    await render(fence('circo', 'graph {') + '\n\n' + fence('circo'), format);
+    check(completed === 1 && !renderer.passActive, 'Malformed input stalled or doubled completion');
+    const retained = Array.from(container.querySelectorAll('code'));
+    check(retained.length === 1 && retained[0].textContent.trim() === 'graph {',
+          'Only the invalid source should remain');
+    if (format === 'svg') {
+      check(same(geometry(container.querySelector('svg')), await reference('circo')),
+            'Valid graph after malformed source has wrong layout');
+    } else {
+      const image = container.querySelector('img');
+      check(!!image, 'Missing PNG result');
+      const blob = await (await fetch(image.src)).blob();
+      check(blob.type === 'image/png', 'Rendered image is not PNG');
+      await imageLoaded(image);
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+      check(canvas.width > 0 && canvas.height > 0, 'PNG dimensions are empty');
+      const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let ink = false;
+      for (let i = 4; i < pixels.length; i += 4) {
+        if (pixels[i + 3] && [0, 1, 2, 3].some(c => pixels[i + c] !== pixels[c])) {
+          ink = true; break;
+        }
+      }
+      check(ink, 'PNG contains only background pixels');
+      const direct = await new Viz().renderImageElement(fixture, {engine: 'circo'});
+      await imageLoaded(direct);
+      check(image.naturalWidth === direct.naturalWidth && image.naturalHeight === direct.naturalHeight,
+            'PNG dimensions do not match the selected circo layout');
+    }
+    result = {format, completed};
+  }
+  window.__graphResult = JSON.stringify(result);
+} catch (error) {
+  window.__graphResult = JSON.stringify({error: String(error) + '\n' + error.stack});
+}
+})();
+</script></body></html>)JS");
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
+  page.setHtml(html, QUrl::fromLocalFile(webJsDir() + QLatin1Char('/')));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 30000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+  QVariant result;
+  bool finished = false;
+  QTimer poll;
+  connect(&poll, &QTimer::timeout, &page, [&]() {
+    page.runJavaScript(QStringLiteral("window.__graphResult"), [&](const QVariant &p_result) {
+      if (p_result.isValid()) {
+        result = p_result;
+        finished = true;
+        poll.stop();
+      }
+    });
+  });
+  poll.start(10);
+  QTRY_VERIFY_WITH_TIMEOUT(finished, 30000);
+  const auto values = QJsonDocument::fromJson(result.toString().toUtf8()).object();
+  QVERIFY2(!values.contains(QStringLiteral("error")), qPrintable(result.toString()));
+  qInfo().noquote() << scenario << result.toString();
+}
+
+void TestGraphRendererJs::testGraphvizNativeEngineCache() {
+  const auto dot = QStandardPaths::findExecutable(QStringLiteral("dot"));
+  if (dot.isEmpty()) {
+    QSKIP("Native Graphviz integration requires dot on PATH");
+  }
+  const auto geometry = [](const QString &p_svg) {
+    QMap<QString, QPointF> nodes;
+    QXmlStreamReader xml(p_svg);
+    while (!xml.atEnd()) {
+      xml.readNext();
+      if (!xml.isStartElement() || xml.name() != QLatin1String("g") ||
+          xml.attributes().value(QLatin1String("class")) != QLatin1String("node")) {
+        continue;
+      }
+      QString name;
+      while (xml.readNextStartElement()) {
+        if (xml.name() == QLatin1String("title")) {
+          name = xml.readElementText();
+        } else if (xml.name() == QLatin1String("ellipse")) {
+          const auto attrs = xml.attributes();
+          nodes.insert(name, QPointF(attrs.value(QLatin1String("cx")).toDouble(),
+                                     attrs.value(QLatin1String("cy")).toDouble()));
+          xml.skipCurrentElement();
+        } else {
+          xml.skipCurrentElement();
+        }
+      }
+    }
+    return nodes;
+  };
+  QMap<QString, QMap<QString, QPointF>> references;
+  for (const auto &engine : {QStringLiteral("dot"), QStringLiteral("circo")}) {
+    QProcess process;
+    process.start(dot, {QStringLiteral("-K") + engine, QStringLiteral("-Tsvg")});
+    QVERIFY(process.waitForStarted());
+    process.write(c_graphvizSource);
+    process.closeWriteChannel();
+    QVERIFY(process.waitForFinished());
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+    references.insert(engine, geometry(QString::fromUtf8(process.readAllStandardOutput())));
+    QCOMPARE(references[engine].keys(),
+             QStringList({QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("c"),
+                          QStringLiteral("d"), QStringLiteral("e")}));
+  }
+  QVERIFY(references[QStringLiteral("dot")] != references[QStringLiteral("circo")]);
+  auto &helper = vnotex::GraphvizHelper::getInst();
+  struct ResetHelper {
+    ~ResetHelper() { vnotex::GraphvizHelper::getInst().update(QString()); }
+  } resetHelper;
+  helper.update(dot);
+  const QStringList engines{QStringLiteral("dot"), QStringLiteral("circo"), QStringLiteral("dot")};
+  QStringList results;
+  QList<bool> successes;
+  QObject owner;
+  for (int i = 0; i < engines.size(); ++i) {
+    helper.process(
+        i, 1, QStringLiteral("svg"), QString::fromLatin1(c_graphvizSource), &owner,
+        [&](quint64, vnotex::TimeStamp, const QString &, const QString &p_data, bool p_success) {
+          results.append(p_data);
+          successes.append(p_success);
+        },
+        0, engines[i]);
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(results.size(), 3, 30000);
+  for (int i = 0; i < engines.size(); ++i) {
+    QVERIFY(successes[i]);
+    QCOMPARE(geometry(results[i]), references[engines[i]]);
   }
 }
 

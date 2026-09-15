@@ -20,6 +20,21 @@ GraphvizHelper &GraphvizHelper::getInst() {
   return inst;
 }
 
+QString GraphvizHelper::getEngineForLanguage(const QString &p_lang) {
+  if (p_lang == QStringLiteral("graphviz")) {
+    return QStringLiteral("dot");
+  }
+  static const QStringList engines = {QStringLiteral("dot"),       QStringLiteral("neato"),
+                                      QStringLiteral("twopi"),     QStringLiteral("circo"),
+                                      QStringLiteral("fdp"),       QStringLiteral("sfdp"),
+                                      QStringLiteral("patchwork"), QStringLiteral("osage")};
+  return engines.contains(p_lang) ? p_lang : QString();
+}
+
+QStringList GraphvizHelper::getEngineArgs(const QString &p_engine) const {
+  return p_engine.isEmpty() ? QStringList() : QStringList{QStringLiteral("-K") + p_engine};
+}
+
 void GraphvizHelper::update(const QString &p_graphvizFile) {
   prepareProgramAndArgs(p_graphvizFile, m_program, m_args);
 

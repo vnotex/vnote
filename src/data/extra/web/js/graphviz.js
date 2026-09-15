@@ -7,13 +7,15 @@ class Graphviz extends GraphRenderer {
         this.graphDivClass = 'vx-graphviz-graph';
 
         this.extraScripts = [this.scriptFolderPath + '/viz.js/viz.js',
-                             this.scriptFolderPath + '/viz.js/lite.render.js'];
+                             this.scriptFolderPath + '/viz.js/full.render.js'];
 
         this.viz = null;
+        this.pendingRender = Promise.resolve();
 
         this.format = 'svg';
 
-        this.langs = ['dot', 'graphviz'];
+        this.langs = ['dot', 'graphviz', 'neato', 'twopi', 'circo', 'fdp', 'sfdp',
+                      'patchwork', 'osage'];
 
         this.useWeb = true;
 
@@ -32,7 +34,7 @@ class Graphviz extends GraphRenderer {
             this.extraScripts = [];
         }
 
-        // The web path runs viz.js (WASM) in-page and is CPU-bound, like Mermaid.
+        // The web path runs viz.js (asm.js) in-page and is CPU-bound, like Mermaid.
         // The local path is a process round trip per diagram and must stay
         // unbounded, or a document full of diagrams gets dramatically slower.
         // See GraphRenderer.concurrencyLimit.
@@ -45,7 +47,7 @@ class Graphviz extends GraphRenderer {
         }
     }
 
-    // viz.js corrupts its underlying WASM instance once a render throws, so any
+    // viz.js corrupts its underlying renderer instance once a render throws, so any
     // later render reads garbage from the poisoned heap (bogus "syntax error"
     // messages). Discard the poisoned instance and build a fresh one.
     recreateViz() {
@@ -57,6 +59,34 @@ class Graphviz extends GraphRenderer {
                 this.viz = null;
             }
         }
+    }
+
+    // Serialize access to Viz's shared heap. Its promise rejects after the
+    // synchronous render returns, so another caller must wait for recovery.
+    renderWithViz(p_text, p_engine, p_format) {
+        const result = this.pendingRender.then(() => {
+            return p_format === 'svg'
+                ? this.viz.renderSVGElement(p_text, {engine: p_engine})
+                : this.viz.renderImageElement(p_text, {engine: p_engine});
+        });
+        this.pendingRender = result.catch(() => this.recreateViz());
+        return result;
+    }
+
+    getEngineForLanguage(p_lang) {
+        if (p_lang === 'graphviz') {
+            return 'dot';
+        }
+        return this.langs.includes(p_lang) ? p_lang : null;
+    }
+
+    getEngineForNode(p_node) {
+        for (const name of p_node.classList) {
+            if (name.startsWith('lang-')) {
+                return this.getEngineForLanguage(name.substring(5));
+            }
+        }
+        return 'dot';
     }
 
     // Interface 1.
@@ -82,6 +112,14 @@ class Graphviz extends GraphRenderer {
     }
 
     renderOnline(p_node, p_idx) {
+        const engine = this.getEngineForNode(p_node);
+        if (engine === null || engine === 'sfdp') {
+            if (engine === 'sfdp') {
+                this.reportProblem('Graphviz engine sfdp requires local Graphviz');
+            }
+            this.finishRenderingOne();
+            return true;
+        }
         console.assert(this.viz);
         let func = function(p_graphviz, p_renderNode) {
             let graphviz = p_graphviz;
@@ -109,32 +147,22 @@ class Graphviz extends GraphRenderer {
             };
         };
 
-        if (this.format === 'svg') {
-            this.viz.renderSVGElement(p_node.textContent)
-                .then(func(this, p_node))
-                .catch((p_err) => {
-                    console.error('failed to render Graphviz', p_err);
-                    // viz.js leaves its WASM instance in a corrupted state after
-                    // a failed render; recreate it so a single bad graph does not
-                    // poison every subsequent render.
-                    this.recreateViz();
-                    this.finishRenderingOne();
-                });
-        } else {
-            this.viz.renderImageElement(p_node.textContent)
-                .then(func(this, p_node))
-                .catch((p_err) => {
-                    console.error('failed to render Graphviz', p_err);
-                    this.recreateViz();
-                    this.finishRenderingOne();
-                });
-
-        }
+        this.renderWithViz(p_node.textContent, engine, this.format)
+            .then(func(this, p_node))
+            .catch((p_err) => {
+                console.error('failed to render Graphviz', p_err);
+                this.finishRenderingOne();
+            });
 
         return true;
     }
 
     renderLocal(p_node) {
+        const engine = this.getEngineForNode(p_node);
+        if (engine === null) {
+            this.finishRenderingOne();
+            return;
+        }
         let func = function(p_graphviz, p_renderNode) {
             let graphviz = p_graphviz;
             let node = p_renderNode;
@@ -168,7 +196,7 @@ class Graphviz extends GraphRenderer {
         this.vxcore.renderGraph(this.id,
             this.nextLocalGraphIndex++,
             this.format,
-            'dot',
+            engine,
             p_node.textContent,
             function(id, index, format, data) {
                 callback(format, data);
@@ -177,8 +205,14 @@ class Graphviz extends GraphRenderer {
 
     // Render a graph from @p_text in SVG format.
     // p_callback(svgNode).
-    renderText(p_text, p_callback) {
+    renderText(p_text, p_engine, p_callback) {
         console.assert(this.useWeb, "renderText() should be called only when web Graphviz is enabled");
+
+        if (p_engine === 'sfdp') {
+            this.reportProblem('Graphviz engine sfdp requires local Graphviz');
+            p_callback(null);
+            return;
+        }
 
         let func = () => {
             if (!this.viz) {
@@ -186,7 +220,7 @@ class Graphviz extends GraphRenderer {
                 p_callback(null);
                 return;
             }
-            this.viz.renderSVGElement(p_text)
+            this.renderWithViz(p_text, p_engine, 'svg')
                 .then((node) => {
                     if (window.vxOptions.protectedView) {
                         MarkdownIt.sanitizeProtectedSvg(node);
@@ -195,8 +229,6 @@ class Graphviz extends GraphRenderer {
                 })
                 .catch((err) => {
                     console.error('failed to render Graphviz', err);
-                    // Recreate the poisoned WASM instance so later previews work.
-                    this.recreateViz();
                     p_callback(null);
                 });
         };

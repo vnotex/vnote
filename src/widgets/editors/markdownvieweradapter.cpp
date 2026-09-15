@@ -439,17 +439,19 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
   // TODO(deferred): PlantUmlHelper/GraphvizHelper singletons will be replaced
   // by services passed through PreviewHelper pipeline in a future migration.
   // For now, both legacy and new-architecture paths use the singleton directly.
+  const auto graphvizEngine = GraphvizHelper::getEngineForLanguage(p_lang);
   if (p_lang == QStringLiteral("puml")) {
     PlantUmlHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
         [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data,
                bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); },
         p_imageIndex);
-  } else if (p_lang == QStringLiteral("dot")) {
+  } else if (!graphvizEngine.isEmpty()) {
     GraphvizHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
         [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data,
-               bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); });
+               bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); },
+        0, graphvizEngine);
   } else {
     qWarning() << "MarkdownViewerAdapter::renderGraph unhandled lang=" << p_lang << "id=" << p_id
                << "index=" << p_index;

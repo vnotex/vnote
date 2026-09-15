@@ -325,7 +325,7 @@ class GraphPreviewer {
             };
             this.vxcore.getWorker('plantuml').renderText(p_text, func(this, p_id, p_timeStamp));
             return;
-        } else if (p_lang === 'dot' || p_lang === 'graphviz') {
+        } else if (this.vxcore.getWorker('graphviz').getEngineForLanguage(p_lang) !== null) {
             this.perfNoteRequest(p_timeStamp, p_id, false);
             let func = function(p_previewer, p_id, p_timeStamp) {
                 let previewer = p_previewer;
@@ -344,7 +344,9 @@ class GraphPreviewer {
                     previewer.setGraphPreviewData(id, timeStamp, 'svg', p_svgNode.outerHTML, false, true);
                 };
             };
-            this.vxcore.getWorker('graphviz').renderText(p_text, func(this, p_id, p_timeStamp));
+            const graphviz = this.vxcore.getWorker('graphviz');
+            graphviz.renderText(p_text, graphviz.getEngineForLanguage(p_lang),
+                                func(this, p_id, p_timeStamp));
             return;
         } else if (p_lang === 'mathjax') {
             // Completes through setGraphPreviewData (processSvgAsPng's default

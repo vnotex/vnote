@@ -465,7 +465,7 @@ bool PreviewHelper::checkPreviewSourceLang(SourceFlag p_flag, const QString &p_l
     return p_lang == QStringLiteral("puml") || p_lang == QStringLiteral("plantuml");
 
   case SourceFlag::Graphviz:
-    return p_lang == QStringLiteral("dot") || p_lang == QStringLiteral("graphviz");
+    return !GraphvizHelper::getEngineForLanguage(p_lang).isEmpty();
 
   case SourceFlag::Math:
     return p_lang == QStringLiteral("mathjax");
@@ -519,7 +519,8 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
         vte::TextUtils::removeCodeBlockFence(blockData.m_text), this,
         [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data, bool) {
           handleLocalData(id, timeStamp, format, data, false);
-        });
+        },
+        0, GraphvizHelper::getEngineForLanguage(blockData.m_lang));
     return;
   }
 }

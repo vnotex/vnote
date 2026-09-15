@@ -56,7 +56,7 @@
         <file>web/js/plantuml/synchro2.js</file>
         <file>web/js/plantuml/zopfli.raw.min.js</file>
         <file>web/js/plantuml.js</file>
-        <file>web/js/viz.js/lite.render.js</file>
+        <file>web/js/viz.js/full.render.js</file>
         <file>web/js/viz.js/viz.js</file>
         <file>web/js/graphviz.js</file>
         <file>web/js/prism/prism.min.js</file>

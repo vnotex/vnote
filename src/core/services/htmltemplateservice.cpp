@@ -424,7 +424,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                                    QStringLiteral("web/js/wavedrom/theme-default.js"),
                                    QStringLiteral("web/js/wavedrom/wavedrom.min.js"),
                                    QStringLiteral("web/js/viz.js/viz.js"),
-                                   QStringLiteral("web/js/viz.js/lite.render.js")};
+                                   QStringLiteral("web/js/viz.js/full.render.js")};
   const QStringList styles = {
       QStringLiteral("web/css/globalstyles.css"),  QStringLiteral("themes/pure/web.css"),
       QStringLiteral("themes/pure/highlight.css"), QStringLiteral("web/css/imageviewer.css"),

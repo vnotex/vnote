@@ -20,12 +20,15 @@ public:
   GraphHelper();
 
   void process(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_text,
-               QObject *p_owner, const ResultCallback &p_callback, int p_imageIndex = 0);
+               QObject *p_owner, const ResultCallback &p_callback, int p_imageIndex = 0,
+               const QString &p_engine = QString());
 
 protected:
   virtual QStringList getFormatArgs(const QString &p_format) = 0;
 
   virtual QStringList getImageArgs(int p_imageIndex) const;
+
+  virtual QStringList getEngineArgs(const QString &p_engine) const;
 
   void clearCache();
 
@@ -54,6 +57,8 @@ private:
 
     int m_imageIndex = 0;
 
+    QString m_engine;
+
     QPointer<QObject> m_owner;
 
     ResultCallback m_callback;
@@ -80,8 +85,8 @@ private:
 
   bool m_taskOngoing = false;
 
-  // {text, image index} -> CacheItem.
-  vte::LruCache<QPair<QString, int>, CacheItem> m_cache;
+  // {text, {image index, engine}} -> CacheItem.
+  vte::LruCache<QPair<QString, QPair<int, QString>>, CacheItem> m_cache;
 
   // Whether @m_program is valid.
   bool m_programValid = false;

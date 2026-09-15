@@ -36,13 +36,14 @@ QStringList GraphHelper::getArgsToUse(const QStringList &p_args) {
 
 void GraphHelper::process(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
                           const QString &p_text, QObject *p_owner, const ResultCallback &p_callback,
-                          int p_imageIndex) {
+                          int p_imageIndex, const QString &p_engine) {
   Task task;
   task.m_id = p_id;
   task.m_timeStamp = p_timeStamp;
   task.m_format = p_format;
   task.m_text = p_text;
   task.m_imageIndex = p_imageIndex;
+  task.m_engine = p_engine;
   task.m_owner = p_owner;
   task.m_callback = p_callback;
 
@@ -60,7 +61,8 @@ void GraphHelper::processOneTask() {
 
   const auto &task = m_tasks.head();
 
-  const auto &cachedData = m_cache.get(qMakePair(task.m_text, task.m_imageIndex));
+  const auto &cachedData =
+      m_cache.get(qMakePair(task.m_text, qMakePair(task.m_imageIndex, task.m_engine)));
   if (!cachedData.isNull() && cachedData.m_format == task.m_format) {
     finishOneTask(cachedData.m_data);
     return;
@@ -100,7 +102,7 @@ void GraphHelper::processOneTask() {
   if (m_overriddenCommand.isEmpty()) {
     Q_ASSERT(!m_program.isEmpty());
     QStringList args(m_args);
-    args << getFormatArgs(task.m_format) << imageArgs;
+    args << getFormatArgs(task.m_format) << imageArgs << getEngineArgs(task.m_engine);
     const auto argsToUse = getArgsToUse(args);
     qInfo() << "GraphHelper: starting render task id=" << task.m_id
             << "timeStamp=" << task.m_timeStamp << "format=" << task.m_format
@@ -147,7 +149,7 @@ void GraphHelper::finishOneTask(QProcess *p_process, int p_exitCode,
       CacheItem item;
       item.m_format = task.m_format;
       item.m_data = data;
-      m_cache.set(qMakePair(task.m_text, task.m_imageIndex), item);
+      m_cache.set(qMakePair(task.m_text, qMakePair(task.m_imageIndex, task.m_engine)), item);
     }
   } else {
     qWarning() << "Graph task" << id << "failed to start / crashed. exitCode=" << p_exitCode
@@ -194,6 +196,11 @@ QString GraphHelper::getCommandToUse(const QString &p_command, const QString &p_
 
 QStringList GraphHelper::getImageArgs(int p_imageIndex) const {
   Q_UNUSED(p_imageIndex);
+  return {};
+}
+
+QStringList GraphHelper::getEngineArgs(const QString &p_engine) const {
+  Q_UNUSED(p_engine);
   return {};
 }
 
