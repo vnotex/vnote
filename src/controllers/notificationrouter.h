@@ -11,7 +11,7 @@ namespace vnotex {
 class ImageHostAsyncResult;
 class ServiceLocator;
 
-// Translates subsystem failure signals into NotificationMessages.
+// Translates subsystem results into NotificationMessages.
 //
 // This owns attention/dedup POLICY ONLY -- never recovery logic. NotebookExplorer2
 // keeps its sync filtering, state refresh and credential-retry arming; it merely
@@ -20,7 +20,7 @@ class ServiceLocator;
 // The constructor deliberately takes ONLY ServiceLocator and holds no widget
 // pointers, so the header stays widget-free and the unit test can drive the
 // widget-owned sources through the public slots without constructing any widget.
-// MainWindow2 owns the three connections from its private members into those
+// MainWindow2 owns the connections from its private members into those
 // slots, plus the one connection out of openSyncInfoRequested.
 //
 // WHY A ROUTER AND NOT notify() CALLS IN EACH SERVICE: most of these failures
@@ -44,6 +44,8 @@ signals:
 
 public slots:
   // --- Widget-owned sources; connected by MainWindow2. ---
+
+  void onFileImportFinished(int p_importedCount, int p_failedCount);
 
   // From NotebookExplorer2::syncUserMessageRequested.
   void onSyncUserMessageRequested(const QString &p_notebookId, VxCoreError p_code,

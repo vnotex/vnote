@@ -1505,6 +1505,8 @@ void MainWindow2::setupNotifications() {
   m_notificationRouter = new NotificationRouter(m_serviceLocator, this);
 
   if (m_notebookExplorer) {
+    connect(m_notebookExplorer, &NotebookExplorer2::fileImportFinished, m_notificationRouter,
+            &NotificationRouter::onFileImportFinished);
     connect(m_notebookExplorer, &NotebookExplorer2::syncUserMessageRequested, m_notificationRouter,
             &NotificationRouter::onSyncUserMessageRequested);
     connect(m_notebookExplorer, &NotebookExplorer2::syncIncidentRetryRequested,

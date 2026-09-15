@@ -12,7 +12,9 @@
 #include <QtTest>
 
 #include <QApplication>
+#include <QFile>
 #include <QList>
+#include <QScopedPointer>
 #include <QString>
 
 #include <core/configmgr2.h>
@@ -48,6 +50,8 @@ private slots:
   void testTwoColumnsFolderReloadPreservesExpansion();       // (e)
   void testTwoColumnsFileReloadLeavesFolderExpansionAlone(); // (f)
   void testExpansionSurvivesRowSortOrderChange();            // (g)
+  void testImportedCollisionCanBeSelectedAfterReload_data();
+  void testImportedCollisionCanBeSelectedAfterReload();
 
 private:
   // Build a NodeIdentifier for the current test notebook at @p_relPath.
@@ -331,6 +335,58 @@ void TestNodeExplorerReloadExpansion::testExpansionSurvivesRowSortOrderChange() 
            "B expansion must survive insertion of a sibling that re-orders the row layout");
   QVERIFY2(post.contains(idFor(QStringLiteral("C"))),
            "C expansion must survive insertion of a sibling that re-orders the row layout");
+}
+
+void TestNodeExplorerReloadExpansion::testImportedCollisionCanBeSelectedAfterReload_data() {
+  QTest::addColumn<bool>("twoColumns");
+  QTest::addColumn<QString>("folderPath");
+  QTest::newRow("combined-root") << false << QString();
+  QTest::newRow("combined-subfolder") << false << QStringLiteral("B");
+  QTest::newRow("two-columns-root") << true << QString();
+  QTest::newRow("two-columns-subfolder") << true << QStringLiteral("B");
+}
+
+void TestNodeExplorerReloadExpansion::testImportedCollisionCanBeSelectedAfterReload() {
+  QFETCH(bool, twoColumns);
+  QFETCH(QString, folderPath);
+  if (folderPath.isEmpty()) {
+    QVERIFY(!m_notebookSvc->createFile(m_nbId, folderPath, QStringLiteral("note1.md")).isEmpty());
+  }
+  const auto existingId =
+      idFor(folderPath.isEmpty() ? QStringLiteral("note1.md") : folderPath + "/note1.md");
+  QScopedPointer<INodeExplorer> explorer;
+  if (twoColumns) {
+    explorer.reset(new TwoColumnsNodeExplorer(*m_services));
+  } else {
+    explorer.reset(new CombinedNodeExplorer(*m_services));
+  }
+  explorer->setNotebookId(m_nbId);
+  explorer->setExternalNodesVisible(true);
+  explorer->selectNode(existingId);
+  QCOMPARE(explorer->currentNodeId(), existingId);
+
+  QFile source(m_tempDir->filePath("note1.md"));
+  QVERIFY(source.open(QIODevice::WriteOnly));
+  const QByteArray content("# Imported note\n");
+  QCOMPARE(source.write(content), qint64(content.size()));
+  source.close();
+  const QString importedUuid = m_notebookSvc->importFile(m_nbId, folderPath, source.fileName());
+  QVERIFY(!importedUuid.isEmpty());
+  const QString importedPath = m_notebookSvc->getNodePathById(m_nbId, importedUuid);
+  QVERIFY(!importedPath.isEmpty());
+  const auto importedId = idFor(importedPath);
+  QVERIFY(importedId != existingId);
+
+  explorer->reloadNode(idFor(folderPath));
+  explorer->expandToNode(importedId);
+  explorer->selectNode(importedId);
+  explorer->scrollToNode(importedId);
+  QCOMPARE(explorer->currentNodeId(), importedId);
+  QVERIFY(!explorer->getNodeInfo(importedId).isExternal);
+  QCOMPARE(m_notebookSvc->getFileInfo(m_nbId, importedPath)["id"].toString(), importedUuid);
+  QFile imported(m_notebookSvc->buildAbsolutePath(m_nbId, importedPath));
+  QVERIFY(imported.open(QIODevice::ReadOnly));
+  QCOMPARE(imported.readAll(), content);
 }
 
 } // namespace tests

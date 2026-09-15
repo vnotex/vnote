@@ -2037,14 +2037,30 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
     expectFsChange(parentAbsPath);
   }
 
-  // Use NotebookService to perform the import, then reload
   auto &notebookService = *m_services.get<NotebookCoreService>();
+  int importedCount = 0;
+  int failedCount = 0;
+  QString lastImportedId;
   for (const QString &filePath : files) {
-    notebookService.importFile(p_targetFolderId.notebookId, p_targetFolderId.relativePath,
-                               filePath);
+    const QString importedId = notebookService.importFile(p_targetFolderId.notebookId,
+                                                          p_targetFolderId.relativePath, filePath);
+    if (importedId.isEmpty()) {
+      ++failedCount;
+    } else {
+      ++importedCount;
+      lastImportedId = importedId;
+    }
   }
-  // Reload the folder to show imported files
-  m_nodeExplorer->reloadNode(p_targetFolderId);
+  if (importedCount > 0) {
+    m_nodeExplorer->reloadNode(p_targetFolderId);
+    // Import may rename a conflicting file; resolve the actual destination by UUID.
+    const QString importedPath =
+        notebookService.getNodePathById(p_targetFolderId.notebookId, lastImportedId);
+    if (!importedPath.isEmpty()) {
+      setCurrentNode({p_targetFolderId.notebookId, importedPath});
+    }
+  }
+  emit fileImportFinished(importedCount, failedCount);
 }
 
 void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFolderId) {

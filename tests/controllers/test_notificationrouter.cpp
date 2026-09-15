@@ -55,6 +55,9 @@ private slots:
   void test_bufferSavedRetiresBufferIncidents();
   void test_extraDataFailuresAreRaisedOncePerFolderAtAfterStart();
   void test_noExtraDataFailureRaisesNothing();
+  void test_importBatchNotification_data();
+  void test_importBatchNotification();
+  void test_emptyImportDoesNotNotify();
 
 private:
   const NotificationMessage *activeWithKey(const QString &p_key) const;
@@ -154,6 +157,42 @@ void TestNotificationRouter::cleanup() {
   m_notifications = nullptr;
   delete m_services;
   m_services = nullptr;
+}
+
+void TestNotificationRouter::test_importBatchNotification_data() {
+  QTest::addColumn<int>("importedCount");
+  QTest::addColumn<int>("failedCount");
+  QTest::addColumn<NotificationMessage::Severity>("severity");
+  QTest::newRow("success") << 2 << 0 << NotificationMessage::Severity::Success;
+  QTest::newRow("partial") << 2 << 1 << NotificationMessage::Severity::Warning;
+  QTest::newRow("failure") << 0 << 2 << NotificationMessage::Severity::Error;
+}
+
+void TestNotificationRouter::test_importBatchNotification() {
+  QFETCH(int, importedCount);
+  QFETCH(int, failedCount);
+  QFETCH(NotificationMessage::Severity, severity);
+  m_router->onFileImportFinished(importedCount, failedCount);
+  QCOMPARE(addedCount(), 1);
+  QCOMPARE(m_notifications->messages().size(), 1);
+  const auto &message = m_notifications->messages().first();
+  QCOMPARE(message.m_severity, severity);
+  QCOMPARE(message.m_attention, NotificationMessage::Attention::Interrupt);
+  QVERIFY(message.m_text.contains(QString::number(importedCount)));
+  if (failedCount > 0) {
+    QVERIFY(message.m_text.contains(QString::number(failedCount)));
+  }
+
+  // Another explicit import is a new result, not an update to an old toast.
+  m_router->onFileImportFinished(importedCount, failedCount);
+  QCOMPARE(addedCount(), 2);
+  QCOMPARE(m_notifications->activeCount(), 2);
+}
+
+void TestNotificationRouter::test_emptyImportDoesNotNotify() {
+  m_router->onFileImportFinished(0, 0);
+  QCOMPARE(addedCount(), 0);
+  QVERIFY(m_notifications->messages().isEmpty());
 }
 
 void TestNotificationRouter::test_syncAuthFailureIsInterruptingAndKeyed() {

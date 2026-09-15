@@ -502,6 +502,9 @@ void TwoColumnsNodeExplorer::reloadNode(const NodeIdentifier &p_nodeId, bool p_i
     if (m_folderModel) {
       m_folderModel->reloadNode(p_nodeId);
     }
+    if (m_fileModel && m_fileModel->getDisplayRoot() == p_nodeId) {
+      m_fileModel->reloadNode(p_nodeId);
+    }
   } else {
     if (m_fileModel) {
       m_fileModel->reloadNode(p_nodeId);

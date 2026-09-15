@@ -23,6 +23,7 @@ const QString c_categorySync = QStringLiteral("sync");
 const QString c_categoryImageHost = QStringLiteral("imagehost");
 const QString c_categoryViewArea = QStringLiteral("viewarea");
 const QString c_categoryConfig = QStringLiteral("config");
+const QString c_categoryImport = QStringLiteral("import");
 
 QString bufferAutoSaveKey(const QString &p_bufferId) {
   return QStringLiteral("buffer.autosave.%1").arg(p_bufferId);
@@ -260,6 +261,30 @@ void NotificationRouter::onSyncUserMessageRequested(const QString &p_notebookId,
   // Plain notify(): a repeat failure of the SAME incident folds into the live
   // message and stays quiet. It only interrupts again after a retirement
   // boundary (or a manual retry) has retired the key.
+  notifications->notify(msg);
+}
+
+void NotificationRouter::onFileImportFinished(int p_importedCount, int p_failedCount) {
+  auto *notifications = m_services.get<NotificationService>();
+  if (!notifications || (p_importedCount == 0 && p_failedCount == 0)) {
+    return;
+  }
+
+  NotificationMessage msg;
+  msg.m_category = c_categoryImport;
+  msg.m_attention = NotificationMessage::Attention::Interrupt;
+  if (p_failedCount == 0) {
+    msg.m_title = tr("Files imported");
+    msg.m_text = tr("Successfully imported %1 file(s).").arg(p_importedCount);
+    msg.m_severity = NotificationMessage::Severity::Success;
+  } else {
+    msg.m_title =
+        p_importedCount > 0 ? tr("Some files could not be imported") : tr("File import failed");
+    msg.m_text = tr("Imported %1 file(s), %2 failed.").arg(p_importedCount).arg(p_failedCount);
+    msg.m_severity = p_importedCount > 0 ? NotificationMessage::Severity::Warning
+                                         : NotificationMessage::Severity::Error;
+    msg.m_duration = NotificationMessage::Duration::Long;
+  }
   notifications->notify(msg);
 }
 

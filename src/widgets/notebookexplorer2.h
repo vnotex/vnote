@@ -208,6 +208,7 @@ signals:
   void currentNotebookChanged(const QString &p_notebookId);
   void currentExploredFolderChanged(const NodeIdentifier &p_folderId);
   void exportNodeRequested(const NodeIdentifier &p_nodeId);
+  void fileImportFinished(int p_importedCount, int p_failedCount);
 
   // Emitted from setCurrentNotebookInternal() whenever the active notebook's
   // read-only state is (re)computed. MainWindow2 wires this to the File-toolbar

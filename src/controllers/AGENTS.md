@@ -97,6 +97,13 @@ Rules:
 - It passes the existing `VxCoreError` through rather than inventing a "kind" enum;
   `SyncService::syncFailed` already supplies exactly that code.
 
+`NotebookExplorer2::fileImportFinished` reports one batch's imported/failed counts via
+`MainWindow2`. The explorer reloads and selects the last successful import by its returned
+UUID (including conflict-renamed files); the router posts one keyless, interrupting toast:
+success for a complete batch, warning for partial success, error for total failure. Cancelled
+imports emit nothing. Do not replace this with a modal message box that takes focus away
+from the imported item.
+
 **Incident retirement is not optional.** Because the toast is raised only by
 `messageAdded`, a repeat failure within a live incident is silent by design. Every boundary
 where an incident genuinely ends must call `dismissByDedupKey`, or that failure becomes
