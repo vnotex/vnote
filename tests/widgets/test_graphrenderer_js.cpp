@@ -1001,6 +1001,12 @@ void TestGraphRendererJs::testPlantUmlPages_data() {
       << QStringLiteral("400") << 2 << false << QStringLiteral("svg") << true << true;
   QTest::newRow("local-export-forces-png")
       << QStringLiteral("400") << 2 << false << QStringLiteral("svg") << false << true;
+  QTest::newRow("raster-only-web-png")
+      << QStringLiteral("raster-only") << 1 << false << QStringLiteral("png") << true << false;
+  QTest::newRow("raster-only-preview")
+      << QStringLiteral("raster-preview") << 1 << false << QStringLiteral("svg") << true << false;
+  QTest::newRow("legacy-svg-without-type")
+      << QStringLiteral("untyped") << 2 << false << QString() << true << false;
   QTest::newRow("invalid-format-keeps-svg")
       << QStringLiteral("400") << 2 << false << QStringLiteral("unsupported") << true << false;
 }
@@ -1056,8 +1062,10 @@ window.vxcore = {
 renderer.register(window.vxcore);
 renderer.initialized = true;
 renderer.getPlantUMLOnlineUrl = (server, format, text, index) => format + '/' + index;
-const svg = (text) => '<svg xmlns="http://www.w3.org/2000/svg" data-diagram-type="'
-  + (scenario === 'class' ? 'CLASS' : 'SEQUENCE') + '"><text>' + text + '</text></svg>';
+const svg = (text) => '<svg xmlns="http://www.w3.org/2000/svg"'
+  + (scenario === 'untyped' ? '' : ' data-diagram-type="'
+    + (scenario === 'class' ? 'CLASS' : 'SEQUENCE') + '"')
+  + '><text>' + text + '</text></svg>';
 const pngData = [];
 const pngs = [[2, 2, 'red'], [3, 1, 'blue']].map(([width, height, color]) => {
   const canvas = document.createElement('canvas');
@@ -1068,6 +1076,8 @@ const pngs = [[2, 2, 'red'], [3, 1, 'blue']].map(([width, height, color]) => {
   const bytes = atob(pngData[pngData.length - 1]);
   return new Blob([Uint8Array.from(bytes, c => c.charCodeAt(0))], {type: 'image/png'});
 });
+// Ditaa's SVG endpoint labels PNG bytes as image/svg+xml; XHR decodes them as text.
+const rasterSvg = new TextDecoder().decode(await pngs[0].arrayBuffer());
 let requests = 0;
 Utils.httpGet = (url, type, callback) => {
   ++requests;
@@ -1080,7 +1090,10 @@ Utils.httpGet = (url, type, callback) => {
   if (scenario === 'class' && index > 0) {
     throw new Error('Non-sequence diagram must not enumerate a broken server');
   }
-  if (index >= 2 && scenario !== 'cap') {
+  if (scenario.startsWith('raster')) {
+    // This raster-only backend ignores every page index, including on the SVG endpoint.
+    data = format === 'svg' ? rasterSvg : pngs[0];
+  } else if (index >= 2 && scenario !== 'cap') {
     status = scenario.startsWith('509') ? 509 : 400;
     mime = status === 400 ? 'text/html' : 'image/svg+xml';
     data = status === 400 ? '' : svg(scenario === '509-index'
@@ -1096,7 +1109,7 @@ vxcore.renderGraph = (id, index, format, lang, text, callback, imageIndex) => {
     ? svg(imageIndex === 0 ? 'FIRST' : 'SECOND') : pngData[imageIndex];
   callback(id, index, format, data, true);
 };
-if (scenario === 'preview' || scenario === 'protected') {
+if (scenario === 'preview' || scenario === 'protected' || scenario === 'raster-preview') {
   vxOptions.protectedView = scenario === 'protected';
   const result = await new Promise(resolve => renderer.renderText('source', (format, data) => resolve({format, data})));
   if (scenario === 'protected') {
@@ -1182,12 +1195,15 @@ script.remove();
   if (scenario == QStringLiteral("protected")) {
     QCOMPARE(values.value(QStringLiteral("requests")).toInt(), 0);
     QVERIFY(values.value(QStringLiteral("empty")).toBool());
-  } else if (scenario == QStringLiteral("preview")) {
+  } else if (scenario == QStringLiteral("preview") ||
+             scenario == QStringLiteral("raster-preview")) {
     QCOMPARE(values.value(QStringLiteral("format")).toString(), QStringLiteral("png"));
-    QCOMPARE(values.value(QStringLiteral("width")).toInt(), 3);
-    QCOMPARE(values.value(QStringLiteral("height")).toInt(), 3);
+    QCOMPARE(values.value(QStringLiteral("width")).toInt(), pages == 1 ? 2 : 3);
+    QCOMPARE(values.value(QStringLiteral("height")).toInt(), pages == 1 ? 2 : 3);
     QCOMPARE(values.value(QStringLiteral("first")).toString(), QStringLiteral("255,0,0,255"));
-    QCOMPARE(values.value(QStringLiteral("second")).toString(), QStringLiteral("0,0,255,255"));
+    if (pages > 1) {
+      QCOMPARE(values.value(QStringLiteral("second")).toString(), QStringLiteral("0,0,255,255"));
+    }
   } else {
     QCOMPARE(values.value(QStringLiteral("pages")).toInt(), pages);
     QCOMPARE(values.value(QStringLiteral("incomplete")).toBool(), incomplete);
@@ -1196,17 +1212,19 @@ script.remove();
     const auto images = values.value(QStringLiteral("images")).toArray();
     if (forcePng || configuredFormat == QStringLiteral("png")) {
       QCOMPARE(values.value(QStringLiteral("svgs")).toInt(), 0);
-      QCOMPARE(images.size(), 2);
+      QCOMPARE(images.size(), pages);
       const auto first = images.at(0).toObject();
-      const auto second = images.at(1).toObject();
       QVERIFY(first.value(QStringLiteral("png")).toBool());
-      QVERIFY(second.value(QStringLiteral("png")).toBool());
       QCOMPARE(first.value(QStringLiteral("width")).toInt(), 2);
       QCOMPARE(first.value(QStringLiteral("height")).toInt(), 2);
       QCOMPARE(first.value(QStringLiteral("pixel")).toString(), QStringLiteral("255,0,0,255"));
-      QCOMPARE(second.value(QStringLiteral("width")).toInt(), 3);
-      QCOMPARE(second.value(QStringLiteral("height")).toInt(), 1);
-      QCOMPARE(second.value(QStringLiteral("pixel")).toString(), QStringLiteral("0,0,255,255"));
+      if (pages > 1) {
+        const auto second = images.at(1).toObject();
+        QVERIFY(second.value(QStringLiteral("png")).toBool());
+        QCOMPARE(second.value(QStringLiteral("width")).toInt(), 3);
+        QCOMPARE(second.value(QStringLiteral("height")).toInt(), 1);
+        QCOMPARE(second.value(QStringLiteral("pixel")).toString(), QStringLiteral("0,0,255,255"));
+      }
     } else {
       QCOMPARE(values.value(QStringLiteral("svgs")).toInt(), pages);
       QVERIFY(images.isEmpty());
