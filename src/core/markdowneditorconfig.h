@@ -122,6 +122,9 @@ public:
 
   int getSmartTableInterval() const;
 
+  bool getAutoNumberOrderedListsEnabled() const;
+  void setAutoNumberOrderedListsEnabled(bool p_enabled);
+
   bool getAlignTableSourceEnabled() const;
   void setAlignTableSourceEnabled(bool p_enabled);
 
@@ -239,6 +242,9 @@ private:
 
   // Interval time to do smart table format.
   int m_smartTableInterval = 1000;
+
+  // Maintain ordered-list numbering after edits, not when loading a note.
+  bool m_autoNumberOrderedListsEnabled = true;
 
   // Whether align pipe table source after direct edits and table sheet commits.
   // Opt-in; loading documents or toggling the setting never reformats existing source.

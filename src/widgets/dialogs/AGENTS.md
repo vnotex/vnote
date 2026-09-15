@@ -51,6 +51,23 @@ Pattern:
 
 Use this pattern when the dialog has both keystroke-driven validation (noisy) and discrete-action validation (e.g., folder selection). Do NOT use it when every validation message is equally actionable — the regular `setInformationText` flow is simpler.
 
+## Markdown List Settings
+
+Settings → Markdown Editor → Edit exposes **Automatically renumber ordered lists**.
+`MarkdownEditorConfig` persists it as `editor.markdown_editor.autoNumberOrderedLists`
+with a C++ default of `true`. The normal `ConfigMgr2` defaults merge gives older
+configs that default while preserving an explicit `false`. Both editor builders
+consume it through the shared `applyMarkdownConfigFields()` mapping. Loading a
+note or toggling the option does not renumber unchanged source; later structural
+list edits do.
+
+List decorations are independent of numbering. Every bundled
+`src/data/extra/themes/*/text-editor.theme` supplies `ListItemGuide.text-color`
+and `ActiveListItem.background-color` in `markdown-editor-styles`. Keep the guide
+visible and the active fill subtler than the cursor-line fill in each palette.
+Colors belong in theme assets, not C++ stylesheet literals. A custom theme that
+omits a style leaves that decoration disabled; do not inject light-theme defaults.
+
 ## Git Sync Username
 
 **Configure Sync / Sync Info** and **Open Notebook (Remote URL)** expose a

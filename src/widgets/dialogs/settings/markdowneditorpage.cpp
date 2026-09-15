@@ -92,6 +92,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
+  m_autoNumberOrderedListsCheckBox->setChecked(markdownConfig.getAutoNumberOrderedListsEnabled());
+
   m_alignTableSourceCheckBox->setChecked(markdownConfig.getAlignTableSourceEnabled());
 
   m_autoFoldPreviewedBlocksCheckBox->setChecked(markdownConfig.getAutoFoldPreviewedBlocksEnabled());
@@ -174,6 +176,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setCodeBlockLineWrapEnabled(m_codeBlockLineWrapCheckBox->isChecked());
 
   markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
+
+  markdownConfig.setAutoNumberOrderedListsEnabled(m_autoNumberOrderedListsCheckBox->isChecked());
 
   markdownConfig.setAlignTableSourceEnabled(m_alignTableSourceCheckBox->isChecked());
 
@@ -466,6 +470,23 @@ void MarkdownEditorPage::setupEditGroup() {
 
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(srcRow);
+  }
+
+  {
+    const QString label(tr("Automatically renumber ordered lists"));
+    m_autoNumberOrderedListsCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_autoNumberOrderedListsCheckBox->setObjectName(
+        QStringLiteral("autoNumberOrderedListsCheckBox"));
+    m_autoNumberOrderedListsCheckBox->setToolTip(
+        tr("Keep ordered-list numbering consistent after edits while preserving each list's "
+           "starting number. Loading a note does not renumber it"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_autoNumberOrderedListsCheckBox, m_autoNumberOrderedListsCheckBox->toolTip(), this));
+    addSearchItem(label, m_autoNumberOrderedListsCheckBox->toolTip(),
+                  m_autoNumberOrderedListsCheckBox);
+    connect(m_autoNumberOrderedListsCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
   }
 
   {

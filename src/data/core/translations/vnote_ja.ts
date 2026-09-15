@@ -4101,6 +4101,14 @@
         <translation>テーブルを編集可能なシートとして表示し、編集内容を Markdown のソースに書き戻します</translation>
     </message>
     <message>
+        <source>Automatically renumber ordered lists</source>
+        <translation>番号付きリストを自動的に振り直す</translation>
+    </message>
+    <message>
+        <source>Keep ordered-list numbering consistent after edits while preserving each list's starting number. Loading a note does not renumber it</source>
+        <translation>編集後に番号付きリストの連番を整え、各リストの開始番号を維持します。ノートを開くだけでは番号を振り直しません</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Align table source</source>
         <translation>テーブルのソースを整列</translation>

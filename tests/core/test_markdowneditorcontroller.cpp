@@ -7,13 +7,17 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSet>
+#include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
 
 #include <vtextedit/markdowneditorconfig.h>
+#include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/markdownhighlighterdata.h>
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/texteditorconfig.h>
+#include <vtextedit/vmarkdowneditor.h>
+#include <vtextedit/vtextedit.h>
 
 #include <controllers/markdowneditorcontroller.h>
 #include <core/editorconfig.h>
@@ -71,6 +75,7 @@ private slots:
   void testBuildMarkdownEditorConfigFromContent_tableSourceOnByDefault();
   void testBuildMarkdownEditorConfigFromContent_tableSourceOff();
   void testBuildMarkdownEditorConfig_autoFoldPreviewedBlocks();
+  void testOrderedListsFollowPersistedSetting();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -319,6 +324,42 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfig_autoFoldPreview
   QVERIFY2(!fileBased->m_autoFoldPreviewedBlocksEnabled, "the flag must follow the user setting");
 
   mdConfig.setAutoFoldPreviewedBlocksEnabled(true);
+}
+
+void TestMarkdownEditorController::testOrderedListsFollowPersistedSetting() {
+  const QString source = QStringLiteral("1. First\n2. Second\n3. Third");
+  for (bool enabled : {true, false}) {
+    auto ec = makeEditorConfig();
+    auto &mdConfig = ec.getMarkdownEditorConfig();
+    if (!enabled) {
+      auto saved = makeEditorConfig();
+      saved.getMarkdownEditorConfig().setAutoNumberOrderedListsEnabled(false);
+      mdConfig.fromJson(saved.getMarkdownEditorConfig().toJson());
+    }
+    auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+        ec, mdConfig, QString::fromUtf8(kValidMarkdownThemeJson), QStringLiteral("default"), 1.0,
+        0);
+    vte::VMarkdownEditor editor(config, QSharedPointer<vte::TextEditorParameters>::create());
+    editor.setText(source);
+    auto *doc = editor.document();
+    QTRY_VERIFY_WITH_TIMEOUT(editor.getHighlighter()->getBlockContext(2).m_fresh, 5000);
+    QCOMPARE(doc->toPlainText(), source);
+
+    // Deleting an item is a structural edit, unlike loading or changing only
+    // its text. The remaining item should renumber unless the user opted out.
+    QTextCursor cursor(doc);
+    cursor.setPosition(doc->findBlockByNumber(1).position());
+    cursor.setPosition(doc->findBlockByNumber(2).position(), QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+    editor.getTextEdit()->setTextCursor(cursor);
+    if (enabled) {
+      QTRY_COMPARE_WITH_TIMEOUT(doc->toPlainText(), QStringLiteral("1. First\n2. Third"), 5000);
+    } else {
+      QTRY_VERIFY_WITH_TIMEOUT(editor.getHighlighter()->getBlockContext(1).m_fresh, 5000);
+      QTest::qWait(800);
+      QCOMPARE(doc->toPlainText(), QStringLiteral("1. First\n3. Third"));
+    }
+  }
 }
 
 // ============ Group 4: prepareBufferState ============

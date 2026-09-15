@@ -65,6 +65,8 @@
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
+        "ListItemGuide" : {"text-color" : "#aaa697"},
+        "ActiveListItem" : {"background-color" : "#f8f1df"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",

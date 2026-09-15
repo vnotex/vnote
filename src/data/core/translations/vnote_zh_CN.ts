@@ -4096,6 +4096,14 @@
         <translation>将表格渲染为可编辑的表格控件，编辑结果会写回 Markdown 源文本</translation>
     </message>
     <message>
+        <source>Automatically renumber ordered lists</source>
+        <translation>自动调整有序列表编号</translation>
+    </message>
+    <message>
+        <source>Keep ordered-list numbering consistent after edits while preserving each list's starting number. Loading a note does not renumber it</source>
+        <translation>编辑后保持有序列表编号连续，并保留各列表的起始编号。加载笔记时不会重新编号</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Align table source</source>
         <translation>对齐表格源文本</translation>

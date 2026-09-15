@@ -61,6 +61,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
   m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
+  m_autoNumberOrderedListsEnabled = READBOOL(QStringLiteral("autoNumberOrderedLists"));
   m_alignTableSourceEnabled = READBOOL(QStringLiteral("alignTableSource"));
   m_autoFoldPreviewedBlocksEnabled = READBOOL(QStringLiteral("autoFoldPreviewedBlocks"));
 
@@ -111,6 +112,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("codeBlockLineWrap")] = m_codeBlockLineWrapEnabled;
   obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
   obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
+  obj[QStringLiteral("autoNumberOrderedLists")] = m_autoNumberOrderedListsEnabled;
   obj[QStringLiteral("alignTableSource")] = m_alignTableSourceEnabled;
   obj[QStringLiteral("autoFoldPreviewedBlocks")] = m_autoFoldPreviewedBlocksEnabled;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
@@ -367,6 +369,14 @@ void MarkdownEditorConfig::setSmartTableEnabled(bool p_enabled) {
 }
 
 int MarkdownEditorConfig::getSmartTableInterval() const { return m_smartTableInterval; }
+
+bool MarkdownEditorConfig::getAutoNumberOrderedListsEnabled() const {
+  return m_autoNumberOrderedListsEnabled;
+}
+
+void MarkdownEditorConfig::setAutoNumberOrderedListsEnabled(bool p_enabled) {
+  updateConfig(m_autoNumberOrderedListsEnabled, p_enabled, this);
+}
 
 bool MarkdownEditorConfig::getAlignTableSourceEnabled() const { return m_alignTableSourceEnabled; }
 

@@ -72,6 +72,8 @@ private:
 
   QCheckBox *m_smartTableCheckBox = nullptr;
 
+  QCheckBox *m_autoNumberOrderedListsCheckBox = nullptr;
+
   QCheckBox *m_alignTableSourceCheckBox = nullptr;
 
   QCheckBox *m_autoFoldPreviewedBlocksCheckBox = nullptr;
