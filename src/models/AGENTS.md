@@ -19,6 +19,15 @@ See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for models: 
 | `TreeFilterProxyModel` | `QSortFilterProxyModel` | Generic tree filtering proxy |
 | `INodeListModel` | — | Interface for node list models |
 
+## Folder Rename Invariant
+
+`NotebookNodeModel::setData()` must rekey the entire loaded subtree: node data,
+child lists, fetched markers and both index-ID maps. Preserve internal index IDs
+and row relationships; a rename is not a model reset or row insertion/removal.
+Notify changed roles only after every cache is consistent. The real proxy/tree
+regression in `tests/models/test_notebooknodemodel.cpp` covers expanded descendants,
+later fetching, persistent selection and repeated collapse/expand without Reload.
+
 ## Related Modules
 
 - [`../controllers/AGENTS.md`](../controllers/AGENTS.md) — Controllers that manipulate models

@@ -37,6 +37,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
 * **Fixes**
     * Folder rename releases Windows explorer watches before changing the directory and preserves all descendant metadata in bundled notebooks
+    * Renaming an expanded explorer folder preserves its child rows, expansion and selection without leaving blank areas or requiring Reload
     * Selected Location List results retain readable dark text on the VX Idea theme's light selection background
     * Gitee notebook sync accepts the token owner's Git username instead of sending the GitHub-specific login; Configure Sync and Open Notebook expose a Git username field, and username-only changes preserve local Git history
     * Quick notes in folders outside notebooks now open at their actual path, without incorrectly prepending the current notebook root

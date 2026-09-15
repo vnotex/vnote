@@ -56,12 +56,12 @@ add_qt_test(test_notebooknodemodel
   SOURCES
     test_notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/notebooknodeproxymodel.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
   LINKS
     core_services
     vxcore
-  GUILESS
 )
 
 # No VTextEdit.dll copy here: no target in tests/models links VTextEdit any more

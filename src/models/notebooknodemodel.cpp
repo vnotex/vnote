@@ -470,31 +470,49 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
   }
 
   if (success) {
-    // Update cache with new name and path
-    NodeInfo &mutableInfo = nodeIt.value();
-    mutableInfo.name = newName;
+    const QString parentPath = nodeId.parentPath();
+    const NodeIdentifier newNodeId{nodeId.notebookId,
+                                   parentPath.isEmpty() ? newName
+                                                        : parentPath + QLatin1Char('/') + newName};
+    const auto renamedId = [&](const NodeIdentifier &p_id) {
+      return NodeIdentifier{p_id.notebookId, newNodeId.relativePath +
+                                                 p_id.relativePath.mid(nodeId.relativePath.size())};
+    };
 
-    // Update the relativePath in the node identifier
-    QString parentPath = nodeId.parentPath();
-    QString newRelativePath =
-        parentPath.isEmpty() ? newName : parentPath + QLatin1Char('/') + newName;
+    // Rename changes paths, not rows. Rekey every loaded descendant and keep
+    // its internal index ID so expanded views and persistent selections remain
+    // valid. Finish all caches before dataChanged lets a view query them.
+    QVector<NodeIdentifier> subtree{nodeId};
+    for (int i = 0; i < subtree.size(); ++i) {
+      const NodeIdentifier oldId = subtree.at(i);
+      const NodeIdentifier newId = renamedId(oldId);
+      NodeInfo updatedInfo = m_nodeCache.take(oldId);
+      updatedInfo.id = newId;
+      if (oldId == nodeId) {
+        updatedInfo.name = newName;
+      }
+      m_nodeCache.insert(newId, updatedInfo);
 
-    // Remove old cache entries
-    NodeIdentifier newNodeId;
-    newNodeId.notebookId = nodeId.notebookId;
-    newNodeId.relativePath = newRelativePath;
-
-    // Move cache entry to new key
-    NodeInfo updatedInfo = mutableInfo;
-    updatedInfo.id = newNodeId;
-    m_nodeCache.remove(nodeId);
-    m_nodeCache.insert(newNodeId, updatedInfo);
-
-    // Update index ID caches
-    quintptr indexId = m_indexIdCache.value(nodeId);
-    m_indexIdCache.remove(nodeId);
-    m_indexIdCache.insert(newNodeId, indexId);
-    m_indexIdLookup.insert(indexId, newNodeId);
+      if (m_childrenCache.contains(oldId)) {
+        auto children = m_childrenCache.take(oldId);
+        for (auto &childId : children) {
+          subtree.append(childId);
+          childId = renamedId(childId);
+        }
+        m_childrenCache.insert(newId, children);
+      }
+      if (m_fetchedNodes.remove(oldId)) {
+        m_fetchedNodes.insert(newId);
+      }
+      auto indexIt = m_indexIdCache.find(oldId);
+      if (indexIt != m_indexIdCache.end()) {
+        const quintptr indexId = indexIt.value();
+        m_indexIdCache.erase(indexIt);
+        m_indexIdCache.insert(newId, indexId);
+        m_indexIdLookup.insert(indexId, newId);
+      }
+      subtree[i] = newId;
+    }
 
     // Update parent's children cache
     NodeIdentifier parentId;
@@ -510,7 +528,12 @@ bool NotebookNodeModel::setData(const QModelIndex &p_index, const QVariant &p_va
       }
     }
 
-    emit dataChanged(p_index, p_index, {Qt::DisplayRole, Qt::EditRole});
+    for (const auto &newId : subtree) {
+      if (m_indexIdCache.contains(newId)) {
+        const QModelIndex changedIndex = indexFromNodeId(newId);
+        emit dataChanged(changedIndex, changedIndex);
+      }
+    }
 
     // NodeAfterRename hook is fired by NotebookCoreService::renameFile/renameFolder.
 
