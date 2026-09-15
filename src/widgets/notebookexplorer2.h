@@ -203,6 +203,8 @@ private slots:
   void maybePromptSyncInfoForMissingPat(const QString &p_notebookId);
 
 signals:
+  void showMainWindowRequested();
+
   void currentNotebookChanged(const QString &p_notebookId);
   void currentExploredFolderChanged(const NodeIdentifier &p_folderId);
   void exportNodeRequested(const NodeIdentifier &p_nodeId);

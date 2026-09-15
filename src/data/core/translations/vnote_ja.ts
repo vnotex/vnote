@@ -7156,6 +7156,10 @@ The legacy notebook would be kept for data backup.</source>
         <source>Delete quick note scheme (%1)?</source>
         <translation>クイックノートのスキーム (%1) を削除しますか?</translation>
     </message>
+    <message>
+        <source>Open in detached window</source>
+        <translation>独立したウィンドウで開く</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::RecycleBinController</name>

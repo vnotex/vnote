@@ -26,6 +26,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Folding ranges track surviving source anchors after edits; bulk deletion no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
     * The `%folder%` magic word expands to the current note's notebook-relative folder in snippets and note templates
 * **Export and interface**
+    * Quick Note is available from the system tray; each scheme can choose to open its notes in a detached window from any quick-note entry point
     * The notification popup has a taller, font-scaled minimum height so messages and actions have more room
     * Long notification toasts stay visible for 60 seconds instead of 7 seconds; persistent toasts auto-hide after 30 seconds instead of 15 seconds
     * Export is available directly from the main file toolbar

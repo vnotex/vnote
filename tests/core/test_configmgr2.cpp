@@ -47,6 +47,7 @@ private slots:
   void testConfigDataFolders();
   void testUpdateMainConfig();
   void testUpdateSessionConfig();
+  void testQuickNoteDetachedSettingPersistsWithoutOtherChanges();
   void testDebouncing();
 
   // Extra-data install / recovery.
@@ -210,6 +211,39 @@ void TestConfigMgr2::testUpdateSessionConfig() {
   QJsonObject loaded = m_configService->getConfigByName(DataLocation::Local, "session");
   QVERIFY(!loaded.isEmpty());
   QCOMPARE(loaded["session_key"].toString(), QString("session_value"));
+}
+
+void TestConfigMgr2::testQuickNoteDetachedSettingPersistsWithoutOtherChanges() {
+  auto &session = m_configMgr->getSessionConfig();
+  const QJsonObject legacyScheme{{QStringLiteral("name"), QStringLiteral("tray")},
+                                 {QStringLiteral("noteName"), QStringLiteral("tray.md")}};
+  session.fromJson({{QStringLiteral("quickNoteSchemes"), QJsonArray{legacyScheme}}});
+  auto schemes = session.getQuickNoteSchemes();
+  QVERIFY(!schemes.first().m_detachedView);
+
+  // Only the window preference changes. Scheme equality must not discard this edit.
+  schemes.first().m_detachedView = true;
+  session.setQuickNoteSchemes(schemes);
+  const auto persistedDetached = [this]() {
+    return m_configService->getConfigByName(DataLocation::Local, "session")
+        .value(QStringLiteral("quickNoteSchemes"))
+        .toArray()
+        .first()
+        .toObject()
+        .value(QStringLiteral("detachedView"));
+  };
+  QTRY_COMPARE(persistedDetached(), QJsonValue(true));
+
+  ConfigMgr2 reloaded(m_configService);
+  reloaded.init();
+  QVERIFY(reloaded.getSessionConfig().getQuickNoteSchemes().first().m_detachedView);
+
+  schemes.first().m_detachedView = false;
+  session.setQuickNoteSchemes(schemes);
+  QTRY_COMPARE(persistedDetached(), QJsonValue(false));
+  ConfigMgr2 reloadedAgain(m_configService);
+  reloadedAgain.init();
+  QVERIFY(!reloadedAgain.getSessionConfig().getQuickNoteSchemes().first().m_detachedView);
 }
 
 void TestConfigMgr2::testDebouncing() {

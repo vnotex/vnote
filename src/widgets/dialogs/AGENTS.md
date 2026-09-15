@@ -111,6 +111,20 @@ Capture dialogs (`BodyMode::LiteralContent`) have no selector and therefore neit
 the session cache. The quick-note path is unrelated: its template name is persisted per scheme in
 `SessionConfig::QuickNoteScheme::m_template`.
 
+## Quick Note Window Preference
+
+Settings → Quick Access → Quick Note persists **Open in detached window** per scheme
+as `quickNoteSchemes[].detachedView` in `session.json`. Missing means `false`, preserving
+older schemes. Include this flag in scheme equality: a toggle-only edit must persist.
+Tray, toolbar, keyboard and tab-bar requests share the picker and honor the selected
+scheme; they do not override its destination. Quick notes still open in Edit mode.
+
+The tray item stays disabled until `ViewArea2::corePropagationReady` and during its
+synchronous request. Hidden/minimized-main pickers and errors are parentless; cancellation
+and creation failure never open a buffer. Empty schemes reveal the existing settings
+route. Detached schemes leave the main window alone; successful non-detached captures
+request the normal `MainWindow2::showMainWindow()` path when it is hidden/minimized.
+
 ## Dialog Inventory
 
 | Dialog | Controller | Purpose |

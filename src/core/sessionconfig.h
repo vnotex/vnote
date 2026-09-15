@@ -45,6 +45,8 @@ public:
     QString m_noteName;
 
     QString m_template;
+
+    bool m_detachedView = false;
   };
 
   struct QuickAccessItem {

@@ -153,6 +153,16 @@ void QuickAccessPage::setupUI() {
                 &QuickAccessPage::pageIsChanged);
       }
 
+      {
+        const QString label(tr("Open in detached window"));
+        m_quickNoteDetachedViewCheckBox =
+            WidgetsFactory::createCheckBox(label, m_quickNoteInfoGroupBox);
+        infoLayout->addRow(QString(), m_quickNoteDetachedViewCheckBox);
+        addSearchItem(label, m_quickNoteDetachedViewCheckBox);
+        connect(m_quickNoteDetachedViewCheckBox, &QCheckBox::toggled, this,
+                &QuickAccessPage::pageIsChanged);
+      }
+
       m_quickNoteInfoGroupBox->setVisible(false);
       cardLayout->addWidget(m_quickNoteInfoGroupBox);
 
@@ -374,6 +384,7 @@ void QuickAccessPage::saveCurrentQuickNote() {
   // No need to apply the snippet for now.
   scheme.m_noteName = m_quickNoteNoteNameLineEdit->text();
   scheme.m_template = m_quickNoteTemplateSelector->getCurrentTemplate();
+  scheme.m_detachedView = m_quickNoteDetachedViewCheckBox->isChecked();
 }
 
 void QuickAccessPage::loadCurrentQuickNote() {
@@ -381,6 +392,7 @@ void QuickAccessPage::loadCurrentQuickNote() {
     m_quickNoteFolderPathInput->setText(QString());
     m_quickNoteNoteNameLineEdit->setText(QString());
     m_quickNoteTemplateSelector->setCurrentTemplate(QString());
+    m_quickNoteDetachedViewCheckBox->setChecked(false);
     return;
   }
 
@@ -388,6 +400,7 @@ void QuickAccessPage::loadCurrentQuickNote() {
   const auto &scheme = m_quickNoteSchemes[m_quickNoteCurrentIndex];
   m_quickNoteFolderPathInput->setText(scheme.m_folderPath);
   m_quickNoteNoteNameLineEdit->setText(scheme.m_noteName);
+  m_quickNoteDetachedViewCheckBox->setChecked(scheme.m_detachedView);
   if (!m_quickNoteTemplateSelector->setCurrentTemplate(scheme.m_template)) {
     // The template no longer exists on disk. Fall back to "None" instead of leaking the
     // previously selected scheme's template.

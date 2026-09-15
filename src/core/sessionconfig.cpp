@@ -15,7 +15,8 @@ using namespace vnotex;
 
 bool SessionConfig::QuickNoteScheme::operator==(const QuickNoteScheme &p_other) const {
   return m_name == p_other.m_name && m_folderPath == p_other.m_folderPath &&
-         m_noteName == p_other.m_noteName && m_template == p_other.m_template;
+         m_noteName == p_other.m_noteName && m_template == p_other.m_template &&
+         m_detachedView == p_other.m_detachedView;
 }
 
 void SessionConfig::QuickNoteScheme::fromJson(const QJsonObject &p_jobj) {
@@ -23,6 +24,7 @@ void SessionConfig::QuickNoteScheme::fromJson(const QJsonObject &p_jobj) {
   m_folderPath = p_jobj[QStringLiteral("folderPath")].toString();
   m_noteName = p_jobj[QStringLiteral("noteName")].toString();
   m_template = p_jobj[QStringLiteral("template")].toString();
+  m_detachedView = p_jobj[QStringLiteral("detachedView")].toBool(false);
 }
 
 QJsonObject SessionConfig::QuickNoteScheme::toJson() const {
@@ -32,6 +34,7 @@ QJsonObject SessionConfig::QuickNoteScheme::toJson() const {
   jobj[QStringLiteral("folderPath")] = m_folderPath;
   jobj[QStringLiteral("noteName")] = m_noteName;
   jobj[QStringLiteral("template")] = m_template;
+  jobj[QStringLiteral("detachedView")] = m_detachedView;
 
   return jobj;
 }

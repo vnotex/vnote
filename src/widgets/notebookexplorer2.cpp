@@ -1602,13 +1602,17 @@ void NotebookExplorer2::newNote() {
 }
 
 void NotebookExplorer2::newQuickNote() {
+  QWidget *dialogParent = window();
+  if (!dialogParent->isVisible() || dialogParent->isMinimized()) {
+    dialogParent = nullptr;
+  }
   // Get quick note schemes from session config.
   auto &sessionConfig = m_services.get<ConfigMgr2>()->getSessionConfig();
   const auto &schemes = sessionConfig.getQuickNoteSchemes();
   if (schemes.isEmpty()) {
     MessageBoxHelper::notify(MessageBoxHelper::Information,
                              tr("Please set up quick note schemes in the Settings dialog first."),
-                             window());
+                             dialogParent);
     return;
   }
 
@@ -1618,7 +1622,10 @@ void NotebookExplorer2::newQuickNote() {
       tr("New Quick Note"),
       themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
       themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")),
-      window());
+      dialogParent);
+  if (!dialogParent) {
+    dialog.setWindowModality(Qt::ApplicationModal);
+  }
   for (int i = 0; i < schemes.size(); ++i) {
     dialog.addSelection(schemes[i].m_name, i);
   }
@@ -1667,7 +1674,7 @@ void NotebookExplorer2::newQuickNote() {
   NewNoteController controller(m_services);
   NewNoteResult result = controller.createQuickNote(input);
   if (!result.success) {
-    MessageBoxHelper::notify(MessageBoxHelper::Information, result.errorMessage, window());
+    MessageBoxHelper::notify(MessageBoxHelper::Information, result.errorMessage, dialogParent);
     return;
   }
 
@@ -1687,7 +1694,12 @@ void NotebookExplorer2::newQuickNote() {
     settings.m_forceMode = true;
     settings.m_newFile = true;
     settings.m_cursorOffset = result.cursorOffset;
-    bufferSvc->openBuffer(newNodeId, settings);
+    settings.m_detachedView = scheme.m_detachedView;
+    const auto buffer = bufferSvc->openBuffer(newNodeId, settings);
+    if (buffer.isValid() && !settings.m_detachedView &&
+        (!window()->isVisible() || window()->isMinimized())) {
+      emit showMainWindowRequested();
+    }
   }
 }
 

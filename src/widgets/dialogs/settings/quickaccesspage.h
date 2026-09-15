@@ -9,6 +9,7 @@
 class QGroupBox;
 class QPlainTextEdit;
 class QComboBox;
+class QCheckBox;
 
 namespace vnotex {
 class LocationInputWithBrowseButton;
@@ -62,6 +63,8 @@ private:
   LineEditWithSnippet *m_quickNoteNoteNameLineEdit = nullptr;
 
   NoteTemplateSelector *m_quickNoteTemplateSelector = nullptr;
+
+  QCheckBox *m_quickNoteDetachedViewCheckBox = nullptr;
 
   QGroupBox *m_quickNoteInfoGroupBox = nullptr;
 

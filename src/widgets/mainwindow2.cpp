@@ -1016,6 +1016,8 @@ void MainWindow2::setupDocks() {
   // bar area). Same destination as the toolbar's New -> Quick Note action.
   connect(m_viewArea->getController(), &ViewAreaController::quickNoteRequested, m_notebookExplorer,
           &NotebookExplorer2::newQuickNote);
+  connect(m_notebookExplorer, &NotebookExplorer2::showMainWindowRequested, this,
+          &MainWindow2::showMainWindow);
 
   // Wire ViewAreaController's locateNodeRequested to NotebookExplorer2.
   // Activate the navigation dock first so the notebook explorer is visible.
