@@ -139,7 +139,8 @@ void GeneralPage::setupUI() {
 
   {
     m_updateSourceComboBox = WidgetsFactory::createComboBox(this);
-    m_updateSourceComboBox->setToolTip(tr("Where VNote checks for new releases"));
+    m_updateSourceComboBox->setToolTip(
+        tr("Where VNote checks for new releases, and other online resources"));
 
     // Gitee first: it is the default source (see
     // CoreConfig::normalizeUpdateSource), so index 0 is also the no-match

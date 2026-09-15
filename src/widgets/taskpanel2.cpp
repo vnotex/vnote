@@ -1,5 +1,8 @@
 #include "taskpanel2.h"
 
+#include <functional>
+
+#include <QFileInfo>
 #include <QHeaderView>
 #include <QMenu>
 #include <QMessageBox>
@@ -12,6 +15,7 @@
 #include <core/services/task.h>
 #include <core/services/taskservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 #include <gui/utils/treeviewutils.h>
 #include <models/tasktreemodel.h>
 #include <models/treefilterproxymodel.h>
@@ -70,6 +74,12 @@ void TaskPanel2::setupUI() {
     });
   }
 
+  connect(m_model, &QAbstractItemModel::modelReset, this, &TaskPanel2::refreshIcons);
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    connect(themeService, &ThemeService::themeChanged, this, &TaskPanel2::refreshIcons);
+  }
+  refreshIcons();
+
   setFocusProxy(m_treeView);
 }
 
@@ -93,6 +103,22 @@ void TaskPanel2::setupTitleBar() {
 
   auto *refreshBtn = m_titleBar->addActionButton(QStringLiteral("reload.svg"), tr("Reload"));
   connect(refreshBtn, &QToolButton::clicked, this, [this]() { m_controller->refreshTasks(); });
+}
+
+void TaskPanel2::refreshIcons() {
+  std::function<void(const QModelIndex &)> refresh = [this, &refresh](const QModelIndex &p_parent) {
+    for (int row = 0; row < m_model->rowCount(p_parent); ++row) {
+      const auto index = m_model->index(row, 0, p_parent);
+      if (auto *task = m_model->taskForIndex(index)) {
+        const auto &path = task->getIcon();
+        const auto icon =
+            !path.isEmpty() && QFileInfo::exists(path) ? IconUtils::fetchIcon(path) : QIcon();
+        m_model->setData(index, icon, Qt::DecorationRole);
+      }
+      refresh(index);
+    }
+  };
+  refresh(QModelIndex());
 }
 
 void TaskPanel2::initialize() {

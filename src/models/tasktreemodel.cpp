@@ -2,9 +2,6 @@
 
 #include <functional>
 
-#include <QFileInfo>
-#include <QIcon>
-
 #include <core/services/task.h>
 #include <core/services/taskservice.h>
 
@@ -136,13 +133,7 @@ QVariant TaskTreeModel::data(const QModelIndex &p_index, int p_role) const {
     }
     return item->m_task ? item->m_task->getLabel() : QString();
   case Qt::DecorationRole:
-    if (item->m_kind == Item::TaskItem && item->m_task) {
-      const auto &iconPath = item->m_task->getIcon();
-      if (!iconPath.isEmpty() && QFileInfo::exists(iconPath)) {
-        return QIcon(iconPath);
-      }
-    }
-    return QVariant();
+    return item->m_icon.isNull() ? QVariant() : QVariant::fromValue(item->m_icon);
   case Qt::ToolTipRole:
     if (item->m_kind == Item::TaskItem && item->m_task) {
       return item->m_task->getFile();
@@ -151,6 +142,16 @@ QVariant TaskTreeModel::data(const QModelIndex &p_index, int p_role) const {
   default:
     return QVariant();
   }
+}
+
+bool TaskTreeModel::setData(const QModelIndex &p_index, const QVariant &p_value, int p_role) {
+  auto *item = itemForIndex(p_index);
+  if (!item || item->m_kind != Item::TaskItem || p_role != Qt::DecorationRole) {
+    return false;
+  }
+  item->m_icon = p_value.value<QIcon>();
+  emit dataChanged(p_index, p_index, {Qt::DecorationRole});
+  return true;
 }
 
 Task *TaskTreeModel::taskForIndex(const QModelIndex &p_index) const {

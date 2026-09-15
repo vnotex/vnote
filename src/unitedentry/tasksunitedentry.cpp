@@ -1,6 +1,5 @@
 #include "tasksunitedentry.h"
 
-#include <QIcon>
 #include <QLabel>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -10,6 +9,8 @@
 #include <core/servicelocator.h>
 #include <core/services/task.h>
 #include <core/services/taskservice.h>
+#include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 
@@ -73,7 +74,21 @@ void collectLeaves(Task *p_task, const QStringList &p_prefix, const QString &p_f
 
 TasksUnitedEntry::TasksUnitedEntry(ServiceLocator &p_services, UnitedEntryMgr *p_mgr,
                                    QObject *p_parent)
-    : IUnitedEntry("task", tr("Run a task"), p_mgr, p_parent), m_services(p_services) {}
+    : IUnitedEntry("task", tr("Run a task"), p_mgr, p_parent), m_services(p_services) {
+  if (auto *themeService = m_services.get<ThemeService>()) {
+    connect(themeService, &ThemeService::themeChanged, this, [this]() {
+      if (!m_tree) {
+        return;
+      }
+      for (int row = 0; row < m_tree->topLevelItemCount(); ++row) {
+        auto *item = m_tree->topLevelItem(row);
+        const auto task = m_rows.value(item->data(0, Qt::UserRole).toInt());
+        const auto path = task ? task->getIcon() : QString();
+        item->setIcon(0, path.isEmpty() ? QIcon() : IconUtils::fetchIcon(path));
+      }
+    });
+  }
+}
 
 QVector<TasksUnitedEntry::TaskLeaf>
 TasksUnitedEntry::collectRunnableLeaves(const QVector<QSharedPointer<Task>> &p_roots,
@@ -96,8 +111,7 @@ void TasksUnitedEntry::initOnFirstProcess() {
   m_tree->setEditTriggers(QAbstractItemView::NoEditTriggers);
   // Two-line rows: task label, then its dimmed scope path.
   m_tree->setItemDelegate(new TaskEntryDelegate(m_services, m_tree.data()));
-  connect(m_tree.data(), &QTreeWidget::itemActivated, this,
-          &TasksUnitedEntry::handleItemActivated);
+  connect(m_tree.data(), &QTreeWidget::itemActivated, this, &TasksUnitedEntry::handleItemActivated);
 }
 
 void TasksUnitedEntry::addLeafItems(const QVector<TaskLeaf> &p_leaves,
@@ -110,7 +124,7 @@ void TasksUnitedEntry::addLeafItems(const QVector<TaskLeaf> &p_leaves,
 
     const QString iconPath = leaf.task->getIcon();
     if (!iconPath.isEmpty()) {
-      item->setIcon(0, QIcon(iconPath));
+      item->setIcon(0, IconUtils::fetchIcon(iconPath));
     }
 
     const int index = m_rows.size();
@@ -146,8 +160,7 @@ void TasksUnitedEntry::processInternal(
 
   const QString filter = p_args.trimmed();
 
-  const auto appLeaves =
-      collectRunnableLeaves(ts->getAppTasks(), QStringLiteral("app"), filter);
+  const auto appLeaves = collectRunnableLeaves(ts->getAppTasks(), QStringLiteral("app"), filter);
   const auto notebookLeaves =
       collectRunnableLeaves(ts->getNotebookTasks(), QStringLiteral("notebook"), filter);
 

@@ -38,6 +38,7 @@ private slots:
 private:
   void setupUI();
   void setupTitleBar();
+  void refreshIcons();
 
   ServiceLocator &m_services;
 

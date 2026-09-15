@@ -2,6 +2,7 @@
 #define TASKTREEMODEL_H
 
 #include <QAbstractItemModel>
+#include <QIcon>
 #include <QVector>
 
 namespace vnotex {
@@ -25,6 +26,8 @@ public:
   int rowCount(const QModelIndex &p_parent = QModelIndex()) const override;
   int columnCount(const QModelIndex &p_parent = QModelIndex()) const override;
   QVariant data(const QModelIndex &p_index, int p_role = Qt::DisplayRole) const override;
+  bool setData(const QModelIndex &p_index, const QVariant &p_value,
+               int p_role = Qt::EditRole) override;
 
   // Returns the Task* for a task/sub-task row, or nullptr for group rows and
   // invalid indexes.
@@ -42,8 +45,9 @@ private:
     ~Item() { qDeleteAll(m_children); }
 
     enum Kind { Group, TaskItem } m_kind = Group;
-    QString m_label;         // Group label (unused for tasks).
-    Task *m_task = nullptr;  // Non-null for task/sub-task rows.
+    QIcon m_icon;           // Supplied by the view; no theme dependency in the model.
+    QString m_label;        // Group label (unused for tasks).
+    Task *m_task = nullptr; // Non-null for task/sub-task rows.
     Item *m_parent = nullptr;
     QVector<Item *> m_children;
   };

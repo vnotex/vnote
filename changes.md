@@ -35,6 +35,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * The Save shortcut applies changes in Settings
     * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
+    * Built-in Git task icons follow the active theme in the Tasks dock and task launcher, including live theme switches
 * **Fixes**
     * Folder rename releases Windows explorer watches before changing the directory and preserves all descendant metadata in bundled notebooks
     * Renaming an expanded explorer folder preserves its child rows, expansion and selection without leaving blank areas or requiring Reload

@@ -75,6 +75,7 @@ target_include_directories(test_windowsunitedentry PRIVATE
 add_qt_test(test_tasksunitedentry
   SOURCES
     test_tasksunitedentry.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/tasksunitedentry.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/taskentrydelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/iunitedentry.cpp
