@@ -214,7 +214,15 @@ void TestConfigMgr2::testUpdateSessionConfig() {
 }
 
 void TestConfigMgr2::testQuickNoteDetachedSettingPersistsWithoutOtherChanges() {
-  auto &session = m_configMgr->getSessionConfig();
+  const auto savedSession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        savedSession);
+  });
+  ConfigMgr2 configMgr(m_configService);
+  configMgr.init();
+  auto &session = configMgr.getSessionConfig();
   const QJsonObject legacyScheme{{QStringLiteral("name"), QStringLiteral("tray")},
                                  {QStringLiteral("noteName"), QStringLiteral("tray.md")}};
   session.fromJson({{QStringLiteral("quickNoteSchemes"), QJsonArray{legacyScheme}}});
