@@ -27,6 +27,7 @@
 #include <QHeaderView>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLabel>
 #include <QList>
 #include <QMenu>
 #include <QPointer>
@@ -225,8 +226,9 @@ private slots:
   void testZeroAndMissingTimestampsAreBlank(); // (10)
 
   // CombinedNodeExplorer chain.
-  void testCombinedExplorerForwardsSortRequested_data();
   void testCombinedExplorerForwardsSortRequested();
+  void testContextMenuSortTargetsParent_data();
+  void testContextMenuSortTargetsParent();
   void testCombinedExplorerRequestReorderNodesBuildsIds();
 
 private:
@@ -358,10 +360,14 @@ void TestNotebookExplorer2Sort::testFoldersAndFilesShowTwoDialogs() {
 
   QStringList firstTitle;
   QStringList secondTitle;
+  QString folderSubtitle;
 
   DialogDriver driver({
       [&](SortDialog2 *p_dlg) {
         firstTitle << p_dlg->windowTitle();
+        if (auto *label = p_dlg->findChild<QLabel *>()) {
+          folderSubtitle = label->text();
+        }
         mutateDialogOrder(p_dlg, {QStringLiteral("beta"), QStringLiteral("alpha")});
         p_dlg->accept();
       },
@@ -376,6 +382,7 @@ void TestNotebookExplorer2Sort::testFoldersAndFilesShowTwoDialogs() {
   const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
 
   QCOMPARE(driver.modalsObserved(), 2);
+  QVERIFY2(folderSubtitle.contains(QStringLiteral("(docs)")), qPrintable(folderSubtitle));
   QCOMPARE(firstTitle.size(), 1);
   QVERIFY2(firstTitle.first().contains(QStringLiteral("Folder")),
            qPrintable(QStringLiteral("First dialog title was: %1").arg(firstTitle.first())));
@@ -642,9 +649,29 @@ void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
 // CombinedNodeExplorer chain
 // ============================================================================
 
+// Forwarding test: NotebookNodeController::sortRequested is re-emitted by
+// CombinedNodeExplorer with the same NodeIdentifier argument.
+void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested() {
+  bringUpExplorerHarness();
+
+  QScopedPointer<CombinedNodeExplorer> explorer(new CombinedNodeExplorer(*m_services));
+  explorer->setNotebookId(m_nbId);
+  auto *controller = explorer->findChild<NotebookNodeController *>();
+  QVERIFY(controller != nullptr);
+
+  QSignalSpy spy(explorer.data(), &CombinedNodeExplorer::sortRequested);
+  QVERIFY(spy.isValid());
+  controller->sortNodes(idFor(QString()));
+
+  QCOMPARE(spy.count(), 1);
+  const auto forwarded = spy.takeFirst().at(0).value<NodeIdentifier>();
+  QCOMPARE(forwarded.notebookId, m_nbId);
+  QVERIFY(forwarded.relativePath.isEmpty());
+}
+
 // Context-menu Sort targets siblings for both folders and notes, including
 // top-level nodes whose parent is the notebook root.
-void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested_data() {
+void TestNotebookExplorer2Sort::testContextMenuSortTargetsParent_data() {
   QTest::addColumn<QString>("clickedPath");
   QTest::addColumn<QString>("parentPath");
   QTest::newRow("top-level-folder") << QStringLiteral("alpha") << QString();
@@ -654,7 +681,7 @@ void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested_data()
   QTest::newRow("notebook-root") << QString() << QString();
 }
 
-void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested() {
+void TestNotebookExplorer2Sort::testContextMenuSortTargetsParent() {
   bringUpExplorerHarness();
   QVERIFY(!m_notebookSvc->createFolder(m_nbId, QStringLiteral("alpha"), QStringLiteral("child"))
                .isEmpty());
