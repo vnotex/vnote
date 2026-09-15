@@ -80,6 +80,7 @@ private slots:
   void testDeleteFile();
   void testRenameFileAndMove();
   void testCopyFile();
+  void testImportFile_data();
   void testImportFile();
   void testGetFileInfo();
 
@@ -408,8 +409,16 @@ void TestNotebookService::testCopyFile() {
   QVERIFY(!copiedInfo.isEmpty());
 }
 
+void TestNotebookService::testImportFile_data() {
+  QTest::addColumn<QString>("folderPath");
+  QTest::newRow("root") << QString();
+  QTest::newRow("subfolder") << QStringLiteral("ImportDest");
+}
+
 void TestNotebookService::testImportFile() {
-  QString nbPath = m_tempDir.filePath("import_file_notebook");
+  QFETCH(QString, folderPath);
+  QString nbPath = m_tempDir.filePath(
+      QStringLiteral("import_file_notebook_%1").arg(QLatin1String(QTest::currentDataTag())));
   QString nbId = createTestNotebook(nbPath);
   QVERIFY(!nbId.isEmpty());
 
@@ -420,21 +429,28 @@ void TestNotebookService::testImportFile() {
   externalFile.write("# External File Content\n\nThis is test content.");
   externalFile.close();
 
-  // Create a destination folder.
-  m_service->createFolder(nbId, "", "ImportDest");
+  if (!folderPath.isEmpty()) {
+    QVERIFY(!m_service->createFolder(nbId, "", folderPath).isEmpty());
+  }
+  // Load the explorer's listing before import, then reload without reopening.
+  QVERIFY(m_service->listFolderChildren(nbId, folderPath)["files"].toArray().isEmpty());
 
-  // Import the external file.
-  QString importedId = m_service->importFile(nbId, "ImportDest", externalFilePath);
+  QString importedId = m_service->importFile(nbId, folderPath, externalFilePath);
   QVERIFY(!importedId.isEmpty());
 
-  // Verify imported file exists.
-  QJsonObject fileInfo = m_service->getFileInfo(nbId, "ImportDest/external_file.md");
-  QVERIFY(!fileInfo.isEmpty());
+  QVERIFY(m_service->listFolderExternal(nbId, folderPath)["files"].toArray().isEmpty());
+  const auto files = m_service->listFolderChildren(nbId, folderPath)["files"].toArray();
+  QCOMPARE(files.size(), 1);
+  QCOMPARE(files.first().toObject()["name"].toString(), QStringLiteral("external_file.md"));
+  QCOMPARE(files.first().toObject()["id"].toString(), importedId);
 
-  // Verify file content was copied.
-  QJsonObject nbConfig = m_service->getNotebookConfig(nbId);
-  QString rootFolder = nbConfig["rootFolder"].toString();
-  QString importedFilePath = rootFolder + "/ImportDest/external_file.md";
+  const QString relativePath =
+      folderPath.isEmpty() ? QStringLiteral("external_file.md") : folderPath + "/external_file.md";
+  QJsonObject fileInfo = m_service->getFileInfo(nbId, relativePath);
+  QCOMPARE(fileInfo["id"].toString(), importedId);
+
+  // Verify file content was copied to the requested folder.
+  QString importedFilePath = m_service->buildAbsolutePath(nbId, relativePath);
   QFile importedFile(importedFilePath);
   QVERIFY(importedFile.open(QIODevice::ReadOnly));
   QString content = QString::fromUtf8(importedFile.readAll());

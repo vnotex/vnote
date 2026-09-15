@@ -2040,11 +2040,8 @@ void NotebookExplorer2::onImportFilesRequested(const NodeIdentifier &p_targetFol
   // Use NotebookService to perform the import, then reload
   auto &notebookService = *m_services.get<NotebookCoreService>();
   for (const QString &filePath : files) {
-    QFileInfo fileInfo(filePath);
-    QString destPath = p_targetFolderId.relativePath.isEmpty()
-                           ? fileInfo.fileName()
-                           : p_targetFolderId.relativePath + "/" + fileInfo.fileName();
-    notebookService.importFile(p_targetFolderId.notebookId, filePath, destPath);
+    notebookService.importFile(p_targetFolderId.notebookId, p_targetFolderId.relativePath,
+                               filePath);
   }
   // Reload the folder to show imported files
   m_nodeExplorer->reloadNode(p_targetFolderId);
