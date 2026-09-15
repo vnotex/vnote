@@ -12,6 +12,8 @@ namespace vnotex {
 struct MarkdownWebGlobalOptions {
   bool m_webPlantUml = true;
 
+  QString m_plantUmlFormat = QStringLiteral("svg");
+
   QString m_plantUmlWebService;
 
   bool m_webGraphviz = true;

@@ -12,6 +12,8 @@ using namespace vnotex;
 QString MarkdownWebGlobalOptions::toJavascriptObject() const {
   return QStringLiteral("window.vxOptions = {\n") +
          QStringLiteral("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml)) +
+         (m_plantUmlFormat == QStringLiteral("png") ? QStringLiteral("plantUmlFormat: 'png',\n")
+                                                    : QStringLiteral("plantUmlFormat: 'svg',\n")) +
          QStringLiteral("plantUmlWebService: '%1',\n").arg(m_plantUmlWebService) +
          QStringLiteral("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz)) +
          (m_mathRenderer == QStringLiteral("mathjax")

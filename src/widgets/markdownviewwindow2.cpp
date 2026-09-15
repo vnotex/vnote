@@ -563,6 +563,7 @@ bool MarkdownViewWindow2::setupViewer() {
 
   m_viewerMathRenderer = mdConfig.getMathRenderer();
   m_viewerMathJaxScript = mdConfig.getMathJaxScript();
+  m_viewerPlantUmlFormat = mdConfig.getPlantUmlFormat();
   m_editorController->checkAndUpdateConfigRevision();
 
   // Update HTML template via HtmlTemplateService.
@@ -1490,7 +1491,10 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   const bool reloadMath = m_viewer && (m_viewerMathRenderer != mdConfig.getMathRenderer() ||
                                        (mdConfig.getMathRenderer() == QStringLiteral("mathjax") &&
                                         m_viewerMathJaxScript != mdConfig.getMathJaxScript()));
-  if (reloadMath) {
+  const bool reloadViewer = reloadMath || (m_viewer && !m_protectedView &&
+                                           m_viewerPlantUmlFormat != mdConfig.getPlantUmlFormat());
+  if (reloadViewer) {
+    // Retire previews when another render option also reloads the page.
     if (m_syncPreviewTimer) {
       m_syncPreviewTimer->stop();
     }
@@ -1502,6 +1506,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   }
   m_viewerMathRenderer = mdConfig.getMathRenderer();
   m_viewerMathJaxScript = mdConfig.getMathJaxScript();
+  m_viewerPlantUmlFormat = mdConfig.getPlantUmlFormat();
 
   updatePreviewHelperFromConfig(mdConfig);
 
@@ -1541,7 +1546,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   }
 
   updateWebViewerConfig();
-  if (reloadMath) {
+  if (reloadViewer) {
     syncViewerFromBuffer(m_mode == ViewWindowMode::Edit);
   }
   updateEditSectionNumberOptions(true);

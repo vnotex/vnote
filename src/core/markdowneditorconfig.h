@@ -48,6 +48,9 @@ public:
   bool getWebPlantUml() const;
   void setWebPlantUml(bool p_enabled);
 
+  const QString &getPlantUmlFormat() const;
+  void setPlantUmlFormat(const QString &p_format);
+
   const QString &getPlantUmlJar() const;
   void setPlantUmlJar(const QString &p_jar);
 
@@ -158,6 +161,8 @@ private:
   QString editViewModeToString(EditViewMode p_mode) const;
   EditViewMode stringToEditViewMode(const QString &p_str) const;
 
+  static QString normalizePlantUmlFormat(const QString &p_format);
+
   static QString normalizeMathRenderer(const QString &p_renderer);
 
   void initDefaults();
@@ -172,6 +177,8 @@ private:
 
   // Whether use javascript or external program to render PlantUML.
   bool m_webPlantUml = true;
+
+  QString m_plantUmlFormat = QStringLiteral("svg");
 
   // File path of the JAR to render PlantUmL.
   QString m_plantUmlJar;

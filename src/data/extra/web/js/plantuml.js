@@ -29,7 +29,9 @@ class PlantUml extends GraphRenderer {
     registerInternal() {
         this.vxcore.on('basicMarkdownRendered', () => {
             this.reset();
-            this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
+            this.renderCodeNodes(
+                window.vxOptions.transformSvgToPngEnabled
+                    || window.vxOptions.plantUmlFormat === 'png' ? 'png' : 'svg');
         });
 
         this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
@@ -150,7 +152,11 @@ class PlantUml extends GraphRenderer {
             // Preserve their single-image behavior; older SVGs without a type
             // continue through the indexed protocol and its bounded error path.
             const type = /data-diagram-type="([^"]+)"/.exec(firstSvg.data);
-            singlePage = type && type[1] !== 'SEQUENCE';
+            // Raster-only renderers can return PNG bytes from the SVG endpoint
+            // while still labeling them image/svg+xml and ignoring page indices.
+            // XHR's text decoder replaces the PNG signature's leading byte with U+FFFD.
+            const rasterOnly = /^[\u0089\uFFFD]PNG\r\n\x1a\n/.test(firstSvg.data);
+            singlePage = rasterOnly || (type && type[1] !== 'SEQUENCE');
         }
         for (let imageIndex = 0; imageIndex < maxPages && p_isCurrent(); ++imageIndex) {
             const result = imageIndex === 0 && p_format === 'svg' && firstSvg
