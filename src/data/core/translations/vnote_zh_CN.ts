@@ -4926,12 +4926,12 @@ Relative paths resolve against each note file&apos;s parent directory</source>
     <message>
         <location line="+5"/>
         <source>Created</source>
-        <translation>已创建</translation>
+        <translation>创建时间</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Modified</source>
-        <translation>已修改</translation>
+        <translation>修改时间</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -7589,12 +7589,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+0"/>
         <source>Created</source>
-        <translation>创建日期</translation>
+        <translation>创建时间</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Modified</source>
-        <translation>修改日期</translation>
+        <translation>修改时间</translation>
     </message>
     <message>
         <location line="+31"/>
