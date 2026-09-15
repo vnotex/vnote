@@ -251,7 +251,7 @@ QMenu *NotebookNodeController::createContextMenu(const NodeIdentifier &p_nodeId,
   menu->addSeparator();
   addInfoActions(menu, p_nodeId, readOnly);
   menu->addSeparator();
-  addMiscActions(menu, p_nodeId, isFolder, readOnly);
+  addMiscActions(menu, p_nodeId, readOnly);
 
   return menu;
 }
@@ -546,18 +546,13 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
 }
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
-                                            bool p_isFolder, bool p_readOnly) {
+                                            bool p_readOnly) {
   auto *reloadAction = p_menu->addAction(tr("Re&load"));
   connect(reloadAction, &QAction::triggered, this,
           [this, p_nodeId]() { reloadNodes(resolveSelection(p_nodeId)); });
 
-  // T8 (notebook-explorer-drag-reorder): Sort... action. Always enabled per
-  // locked plan decision (the dialog sets canonical ByConfig order regardless
-  // of current view-order). Target is the folder itself (for folder clicks)
-  // or the clicked file's parent folder — same derivation as newNote /
-  // newFolder above. The action triggers sortNodes() which emits
-  // sortRequested; NotebookExplorer2 owns the dialog.
-  NodeIdentifier sortTarget = p_isFolder ? p_nodeId : getParentFolder(p_nodeId);
+  // Sort siblings of either a folder or a file. NotebookExplorer2 owns the dialog.
+  const NodeIdentifier sortTarget = getParentFolder(p_nodeId);
   auto *sortAction = p_menu->addAction(tr("&Sort"));
   sortAction->setEnabled(!p_readOnly);
   connect(sortAction, &QAction::triggered, this, [this, sortTarget]() { sortNodes(sortTarget); });

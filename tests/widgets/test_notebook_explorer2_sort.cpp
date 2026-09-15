@@ -6,8 +6,8 @@
 //      orchestration semantics (two dialogs in sequence, cancel handling,
 //      no-op detection, empty-side skipping).
 //
-//   2. CombinedNodeExplorer::sortRequested forwarding — emits from the inner
-//      NotebookNodeController are re-emitted from the explorer wrapper.
+//   2. Context-menu Sort resolves the parent of folders and notes through
+//      the CombinedNodeExplorer controller, preserving notebook-root sorting.
 //
 //   3. CombinedNodeExplorer::requestReorderNodes — translates flat name lists
 //      into NodeIdentifier lists and dispatches to the controller.
@@ -28,6 +28,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
+#include <QMenu>
 #include <QPointer>
 #include <QSignalSpy>
 #include <QString>
@@ -224,6 +225,7 @@ private slots:
   void testZeroAndMissingTimestampsAreBlank(); // (10)
 
   // CombinedNodeExplorer chain.
+  void testCombinedExplorerForwardsSortRequested_data();
   void testCombinedExplorerForwardsSortRequested();
   void testCombinedExplorerRequestReorderNodesBuildsIds();
 
@@ -640,10 +642,24 @@ void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
 // CombinedNodeExplorer chain
 // ============================================================================
 
-// Forwarding test: NotebookNodeController::sortRequested is re-emitted by
-// CombinedNodeExplorer with the same NodeIdentifier argument.
+// Context-menu Sort targets siblings for both folders and notes, including
+// top-level nodes whose parent is the notebook root.
+void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested_data() {
+  QTest::addColumn<QString>("clickedPath");
+  QTest::addColumn<QString>("parentPath");
+  QTest::newRow("top-level-folder") << QStringLiteral("alpha") << QString();
+  QTest::newRow("nested-folder") << QStringLiteral("alpha/child") << QStringLiteral("alpha");
+  QTest::newRow("top-level-note") << QStringLiteral("one.md") << QString();
+  QTest::newRow("nested-note") << QStringLiteral("alpha/note.md") << QStringLiteral("alpha");
+  QTest::newRow("notebook-root") << QString() << QString();
+}
+
 void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested() {
   bringUpExplorerHarness();
+  QVERIFY(!m_notebookSvc->createFolder(m_nbId, QStringLiteral("alpha"), QStringLiteral("child"))
+               .isEmpty());
+  QVERIFY(!m_notebookSvc->createFile(m_nbId, QStringLiteral("alpha"), QStringLiteral("note.md"))
+               .isEmpty());
 
   auto *explorer = new CombinedNodeExplorer(*m_services);
   explorer->setNotebookId(m_nbId);
@@ -656,17 +672,25 @@ void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested() {
   QSignalSpy spy(explorer, &CombinedNodeExplorer::sortRequested);
   QVERIFY(spy.isValid());
 
-  // Trigger the controller's sortRequested via its public sortNodes() entry
-  // point. sortNodes is the controller's "user invoked Sort" surface; it
-  // emits sortRequested for callers to react to (per T8 contract).
-  NodeIdentifier rootId = idFor(QString());
-  controller->sortNodes(rootId);
+  QFETCH(QString, clickedPath);
+  QFETCH(QString, parentPath);
+  QScopedPointer<QMenu> menu(controller->createContextMenu(idFor(clickedPath)));
+  QAction *sortAction = nullptr;
+  for (auto *action : menu->actions()) {
+    if (action->text() == NotebookNodeController::tr("&Sort")) {
+      sortAction = action;
+      break;
+    }
+  }
+  QVERIFY(sortAction != nullptr);
+  QVERIFY(sortAction->isEnabled());
+  sortAction->trigger();
 
   QCOMPARE(spy.count(), 1);
   const QList<QVariant> args = spy.takeFirst();
   const auto forwarded = args.at(0).value<NodeIdentifier>();
   QCOMPARE(forwarded.notebookId, m_nbId);
-  QVERIFY(forwarded.relativePath.isEmpty());
+  QCOMPARE(forwarded.relativePath, parentPath);
 
   delete explorer;
 }

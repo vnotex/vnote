@@ -467,8 +467,7 @@ private:
                           bool p_readOnly);
   void addImportExportActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder);
   void addInfoActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_readOnly);
-  void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_isFolder,
-                      bool p_readOnly);
+  void addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_readOnly);
   void addOpenWithSubmenu(QMenu *p_parentMenu, const NodeIdentifier &p_nodeId);
   void closeOrphanedBuffer(const NodeIdentifier &p_nodeId);
 

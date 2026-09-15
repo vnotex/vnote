@@ -89,9 +89,10 @@ SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
   const QStringList currentFolders = namesOf(folderEntries);
   const QStringList currentFiles = namesOf(fileEntries);
 
-  const QString parentName = p_parentId.relativePath.isEmpty()
-                                 ? trCtx("(notebook root)")
-                                 : QFileInfo(p_parentId.relativePath).fileName();
+  const QString parentName =
+      p_parentId.relativePath.isEmpty()
+          ? trCtx("(notebook root)")
+          : QStringLiteral("(%1)").arg(QFileInfo(p_parentId.relativePath).fileName());
   const QString subtitle =
       trCtx("Reorder children of %1. Order is saved to the configuration file.").arg(parentName);
 
