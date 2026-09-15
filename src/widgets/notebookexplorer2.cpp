@@ -1625,6 +1625,13 @@ void NotebookExplorer2::newQuickNote() {
       dialogParent);
   if (!dialogParent) {
     dialog.setWindowModality(Qt::ApplicationModal);
+    // A global hotkey does not activate the application. Wait until exec() shows the picker.
+    QTimer::singleShot(0, &dialog, [&dialog]() {
+      if (dialog.isVisible()) {
+        dialog.raise();
+        dialog.activateWindow();
+      }
+    });
   }
   for (int i = 0; i < schemes.size(); ++i) {
     dialog.addSelection(schemes[i].m_name, i);

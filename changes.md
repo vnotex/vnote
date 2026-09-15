@@ -38,6 +38,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
 * **Fixes**
     * Gitee notebook sync accepts the token owner's Git username instead of sending the GitHub-specific login; Configure Sync and Open Notebook expose a Git username field, and username-only changes preserve local Git history
     * Quick notes in folders outside notebooks now open at their actual path, without incorrectly prepending the current notebook root
+    * Quick Note explicitly raises and activates its picker when the main window is hidden or minimized, without revealing the main window
     * Headings containing math formulas now retain formula text in their anchors, fixing navigation to math-only headings and keeping TOC links consistent
     * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
     * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights

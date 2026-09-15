@@ -134,6 +134,10 @@ synchronous request. Hidden/minimized-main pickers and errors are parentless; ca
 and creation failure never open a buffer. Empty schemes reveal the existing settings
 route. Detached schemes leave the main window alone; successful non-detached captures
 request the normal `MainWindow2::showMainWindow()` path when it is hidden/minimized.
+A parentless picker queues `raise()` and `activateWindow()` after `exec()` shows it:
+a global hotkey alone does not give the dialog foreground focus. The callback is scoped
+to the picker and skips a picker that has already closed; never activate the hidden
+main window or make the picker permanently stay on top to work around focus.
 
 ## Dialog Inventory
 
