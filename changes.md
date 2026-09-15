@@ -36,6 +36,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
 * **Fixes**
+    * Selected Location List results retain readable dark text on the VX Idea theme's light selection background
     * Gitee notebook sync accepts the token owner's Git username instead of sending the GitHub-specific login; Configure Sync and Open Notebook expose a Git username field, and username-only changes preserve local Git history
     * Quick notes in folders outside notebooks now open at their actual path, without incorrectly prepending the current notebook root
     * Quick Note explicitly raises and activates its picker and parentless error dialogs when the main window is hidden or minimized, without revealing the main window

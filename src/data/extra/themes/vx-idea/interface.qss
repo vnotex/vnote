@@ -723,6 +723,7 @@ QTreeView {
     background-color: @widgets#qtreeview#bg;
     show-decoration-selected: 1;
     border: none;
+    selection-color: @widgets#qtreeview#item#selected#fg;
     selection-background-color: transparent;
     outline: none;
 }
