@@ -309,6 +309,9 @@ private:
 
   void saveStateAndGeometry();
 
+  // Initial right-dock height ratio; only for fresh/reset layouts, never restored sessions.
+  void resizeDefaultRightDocks();
+
   // Clamp dock widths/heights that fall outside acceptable bounds after state restore.
   void validateDockProportions();
 

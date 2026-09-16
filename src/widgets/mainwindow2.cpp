@@ -595,12 +595,14 @@ void MainWindow2::restoreWindowGeometry() {
     restoreGeometry(sg.m_mainGeometry);
   }
 
-  if (!sg.m_mainState.isEmpty()) {
-    // Will also restore the state of dock widgets.
-    if (restoreState(sg.m_mainState)) {
-      m_dockWidgetHelper.updateDockWidgetTabBar();
-    }
+  if (!sg.m_mainState.isEmpty() && restoreState(sg.m_mainState)) {
+    m_dockWidgetHelper.updateDockWidgetTabBar();
+    return;
   }
+
+  // Fresh (or invalid) dock state: size after the window's first layout pass.
+  // Never override a successfully restored user split.
+  QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
 }
 
 void MainWindow2::loadStateAndGeometry() {
@@ -1290,9 +1292,27 @@ void MainWindow2::resetStateAndGeometry() {
 
   // Reset to default size.
   resize(1200, 800);
-  QTimer::singleShot(0, this, [this]() { validateDockProportions(); });
+  QTimer::singleShot(0, this, [this]() {
+    validateDockProportions();
+    resizeDefaultRightDocks();
+  });
 
   emit layoutChanged();
+}
+
+void MainWindow2::resizeDefaultRightDocks() {
+  auto *outline = m_dockWidgetHelper.getDock(DockWidgetHelper::OutlineDock);
+  auto *comments = m_dockWidgetHelper.getDock(DockWidgetHelper::CommentDock);
+  if (!outline || !comments || outline->isFloating() || comments->isFloating() ||
+      outline->isHidden() || comments->isHidden() ||
+      dockWidgetArea(outline) != Qt::RightDockWidgetArea ||
+      dockWidgetArea(comments) != Qt::RightDockWidgetArea ||
+      tabifiedDockWidgets(outline).contains(comments)) {
+    return;
+  }
+
+  // Initial 2:1 height split, adjusted by Qt for available space and minimum sizes.
+  resizeDocks({outline, comments}, {600, 300}, Qt::Vertical);
 }
 
 void MainWindow2::validateDockProportions() {

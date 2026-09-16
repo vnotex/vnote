@@ -67,6 +67,13 @@ text-only status-bar look.
 
 - `MainWindow2` — new main window shell with ServiceLocator DI; owns the top-level layout, toolbar, sidebar, and view area
 
+Outline and Comments request a 2:1 height split on fresh layouts (missing or invalid
+saved dock state) and explicit **Reset Main Window Layout**. `MainWindow2::
+resizeDefaultRightDocks()` runs after a layout pass, only for separate, visible,
+docked panels in the right area; Qt respects their minimum sizes. A successful
+`restoreState()` keeps the user's split. Never enforce this default in
+`validateDockProportions()`, which also runs after saved-state restoration.
+
 ### Notebook Explorer
 
 - `NotebookExplorer2` — sidebar explorer for notebook nodes; wires together the MVC triad (model, view, controller)
