@@ -3,25 +3,28 @@ div.code-toolbar > .toolbar .vx-collapse-btn {
     display: none;
 }
 
+/* Reserve width to prevent hover wrapping; font-relative height keeps short headings compact. */
 .vx-heading-fold-toggle {
     align-items: center;
     background: transparent;
     border: 0;
     color: currentColor;
     cursor: pointer;
-    display: none;
+    display: inline-flex;
     font: inherit;
-    height: 2.5rem;
+    height: 1em;
     justify-content: center;
     line-height: 1;
     margin-left: 0.25rem;
     padding: 0;
     vertical-align: middle;
+    visibility: hidden;
     width: 2.5rem;
 }
 
 .vx-heading-fold-icon {
     height: 1.5rem;
+    max-height: 100%;
     transform-origin: center;
     width: 1.5rem;
 }
@@ -36,5 +39,5 @@ div.code-toolbar > .toolbar .vx-collapse-btn {
 .vx-heading-fold > h4:hover > .vx-heading-fold-toggle,
 .vx-heading-fold > h5:hover > .vx-heading-fold-toggle,
 .vx-heading-fold > h6:hover > .vx-heading-fold-toggle {
-    display: inline-flex;
+    visibility: visible;
 }
