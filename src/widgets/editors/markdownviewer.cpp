@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QContextMenuEvent>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -11,6 +12,8 @@
 #include <QUrl>
 #include <QUuid>
 #include <QWebChannel>
+#include <QWebEngineScript>
+#include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 #include <QWebEngineContextMenuData>
@@ -32,6 +35,7 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
+#include <core/logging.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <gui/services/webengineprofileservice.h>
@@ -77,6 +81,34 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
                 resolveProfile(p_services, p_viewWindow2, p_profile)),
       m_protectedView(p_viewWindow2 && p_viewWindow2->getBuffer().isEncrypted()),
       m_adapter(p_adapter), m_viewWindow2(p_viewWindow2), m_services(p_services) {
+
+  if (lcPerfPreview().isDebugEnabled()) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-constructed"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "adapter=" << static_cast<const void *>(m_adapter)
+                           << "viewer=" << static_cast<const void *>(this)
+                           << "visible=" << isVisible() << "ready=" << m_adapter->isReady();
+    QWebEngineScript traceScript;
+    traceScript.setName(QStringLiteral("vx-math-trace"));
+    traceScript.setInjectionPoint(QWebEngineScript::DocumentCreation);
+    traceScript.setWorldId(QWebEngineScript::MainWorld);
+    traceScript.setRunsOnSubFrames(false);
+    traceScript.setSourceCode(QStringLiteral("window.vxMathTraceId = '0x%1';")
+                                  .arg(reinterpret_cast<quintptr>(m_adapter), 0, 16));
+    page()->scripts().insert(traceScript);
+    connect(page(), &QWebEnginePage::loadStarted, this, [this]() {
+      qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-load-started"
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                             << "adapter=" << static_cast<const void *>(m_adapter)
+                             << "visible=" << isVisible() << "ready=" << m_adapter->isReady();
+    });
+    connect(m_adapter, &MarkdownViewerAdapter::ready, this, [this]() {
+      qCDebug(lcPerfPreview) << "[math-trace] phase=adapter-ready"
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                             << "adapter=" << static_cast<const void *>(m_adapter)
+                             << "visible=" << isVisible() << "ready=" << m_adapter->isReady();
+    });
+  }
 
   m_adapter->setParent(this);
   if (m_protectedView) {
@@ -158,6 +190,10 @@ MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
 }
 
 void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper) {
+  qCDebug(lcPerfPreview) << "[math-trace] phase=preview-helper-mapped"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "adapter=" << static_cast<const void *>(m_adapter)
+                         << "helper=" << static_cast<const void *>(p_previewHelper);
   connect(p_previewHelper, &PreviewHelper::graphPreviewRequested, this,
           [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_lang,
                                   const QString &p_text, qreal p_scale) {
@@ -170,7 +206,16 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper) {
   connect(p_previewHelper, &PreviewHelper::mathPreviewRequested, this,
           [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_text,
                                   qreal p_scale) {
-            if (m_adapter->isReady()) {
+            const bool ready = m_adapter->isReady();
+            qCDebug(lcPerfPreview)
+                << "[math-trace] phase="
+                << (ready ? "request-forwarded" : "request-dropped-not-ready")
+                << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                << "adapter=" << static_cast<const void *>(m_adapter)
+                << "helper=" << static_cast<const void *>(p_previewHelper) << "ts=" << p_timeStamp
+                << "id=" << p_id << "chars=" << p_text.size() << "scale=" << p_scale
+                << "visible=" << isVisible();
+            if (ready) {
               m_adapter->mathPreviewRequested(p_id, p_timeStamp, p_text, p_scale);
             } else {
               p_previewHelper->handleMathPreviewData(MarkdownViewerAdapter::PreviewData());

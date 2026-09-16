@@ -25,6 +25,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * PlantUML sequence diagrams show each `newpage` page in read mode and stack all pages into one editor-preview image, without changing the note source
     * KaTeX, MathJax and SVG-based graph previews retain higher-resolution pixels without enlarging their display size; KaTeX raster exports retain the same extra detail
     * Inline and display math previews resize immediately with editor zoom while sharper rasters refresh asynchronously, preserving unrounded layout geometry
+    * Verbose logging includes opt-in math preview lifecycle timings for startup, font readiness, rasterization and editor publication
     * Folding ranges track surviving source anchors after edits; bulk deletion no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
     * The `%folder%` magic word expands to the current note's notebook-relative folder in snippets and note templates
 * **Export and interface**

@@ -317,6 +317,12 @@ void PreviewHelper::requestUpdateEditorInplacePreviewCodeBlock() {
 }
 
 void PreviewHelper::requestUpdateEditorInplacePreviewMathBlock() {
+  qCDebug(lcPerfPreview) << "[math-trace] phase=publication-scheduled"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp
+                         << "restart=" << m_mathBlockPublishTimer->isActive()
+                         << "intervalMs=" << m_mathBlockPublishTimer->interval();
   m_mathBlockPublishTimer->start();
 }
 
@@ -659,16 +665,35 @@ void PreviewHelper::setMarkdownEditor(vte::VMarkdownEditor *p_editor) {
 }
 
 void PreviewHelper::mathBlocksUpdated(const QVector<vte::md::MathBlock> &p_mathBlocks) {
-  if (!m_inplacePreviewMathBlocksEnabled || !isInplacePreviewSourceEnabled(SourceFlag::Math)) {
+  const bool enabled =
+      m_inplacePreviewMathBlocksEnabled && isInplacePreviewSourceEnabled(SourceFlag::Math);
+  qCDebug(lcPerfPreview) << "[math-trace] phase=math-blocks-updated"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "count=" << p_mathBlocks.size()
+                         << "enabled=" << enabled << "ignored=" << !enabled;
+  if (!enabled) {
     return;
   }
 
   m_pendingMathBlocks = p_mathBlocks;
+  qCDebug(lcPerfPreview) << "[math-trace] phase=generation-scheduled"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "nextTs=" << m_mathBlockTimeStamp + 1
+                         << "restart=" << m_mathBlockTimer->isActive()
+                         << "intervalMs=" << m_mathBlockTimer->interval();
   m_mathBlockTimer->start();
 }
 
 void PreviewHelper::handleMathBlocksUpdate() {
+  const bool perf = perfEnabled();
+  const qint64 entryMs = perf ? perfNowMs() : 0;
   ++m_mathBlockTimeStamp;
+  qCDebug(lcPerfPreview) << "[math-trace] phase=generation-start"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "count=" << m_pendingMathBlocks.size();
   m_mathBlockRequestZoomRatio = editorZoomFactor();
   m_mathBlocksData.clear();
   m_mathBlocksData.reserve(m_pendingMathBlocks.size());
@@ -680,10 +705,20 @@ void PreviewHelper::handleMathBlocksUpdate() {
     bool cacheHit = false;
     // Take a copy of the shared pointer: mutating through it updates the cached
     // entry in place, since LruCache stores the same shared pointer.
+    qCDebug(lcPerfPreview) << "[math-trace] phase=cache-lookup-start"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << m_mathBlockTimeStamp << "id=" << blockPreviewIdx;
     auto cachedData = m_mathBlockCache.get(mb.m_text);
     if (cachedData) {
       const auto action = PreviewScaleUtils::cacheAction(
           cachedData->m_needScale, cachedData->m_appliedZoomRatio, m_mathBlockRequestZoomRatio);
+      qCDebug(lcPerfPreview) << "[math-trace] phase="
+                             << (action == PreviewScaleUtils::CacheAction::Miss ? "cache-miss"
+                                                                                : "cache-hit")
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                             << "helper=" << static_cast<const void *>(this)
+                             << "ts=" << m_mathBlockTimeStamp << "id=" << blockPreviewIdx;
       if (action == PreviewScaleUtils::CacheAction::Rerasterize) {
         cachedData->rasterize(getEditorScaleFactor(m_mathBlockRequestZoomRatio));
         cachedData->m_appliedZoomRatio = m_mathBlockRequestZoomRatio;
@@ -696,6 +731,11 @@ void PreviewHelper::handleMathBlocksUpdate() {
       m_mathBlocksData[blockPreviewIdx].updateInplacePreview(
           m_document, *cachedData, m_tabStopWidth, getEditorScaleFactor(1),
           m_mathBlockRequestZoomRatio);
+    } else {
+      qCDebug(lcPerfPreview) << "[math-trace] phase=cache-miss"
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                             << "helper=" << static_cast<const void *>(this)
+                             << "ts=" << m_mathBlockTimeStamp << "id=" << blockPreviewIdx;
     }
 
     if (!cacheHit) {
@@ -707,16 +747,35 @@ void PreviewHelper::handleMathBlocksUpdate() {
   updateEditorInplacePreviewMathBlock();
 
   m_pendingMathBlocks.clear();
+  if (perf) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=generation-end"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << m_mathBlockTimeStamp << "count=" << m_mathBlocksData.size()
+                           << "durationMs=" << perfNowMs() - entryMs;
+  }
 }
 
 void PreviewHelper::inplacePreviewMathBlock(int p_blockPreviewIdx) {
   const auto &blockData = m_mathBlocksData[p_blockPreviewIdx];
   Q_ASSERT(!blockData.m_text.isEmpty());
+  qCDebug(lcPerfPreview) << "[math-trace] phase=request-dispatched"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "id=" << p_blockPreviewIdx
+                         << "chars=" << blockData.m_text.size()
+                         << "scale=" << m_mathBlockRequestZoomRatio;
   emit mathPreviewRequested(p_blockPreviewIdx, m_mathBlockTimeStamp, blockData.m_text,
                             m_mathBlockRequestZoomRatio);
 }
 
 void PreviewHelper::updateEditorInplacePreviewMathBlock() {
+  const bool perf = perfEnabled();
+  const qint64 entryMs = perf ? perfNowMs() : 0;
+  qCDebug(lcPerfPreview) << "[math-trace] phase=publication-start"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "count=" << m_mathBlocksData.size();
   // See updateEditorInplacePreviewCodeBlock().
   m_mathBlockPublishTimer->stop();
 
@@ -740,6 +799,14 @@ void PreviewHelper::updateEditorInplacePreviewMathBlock() {
   m_mathBlockCache.setCapacityHint(m_mathBlocksData.size());
 
   if (previewItems.isEmpty() && m_previousInplacePreviewMathBlockSize == 0) {
+    if (perf) {
+      qCDebug(lcPerfPreview) << "[math-trace] phase=publication-end"
+                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                             << "helper=" << static_cast<const void *>(this)
+                             << "ts=" << m_mathBlockTimeStamp << "count=" << previewItems.size()
+                             << "obsolete=" << obsoleteBlocks.size() << "published=" << false
+                             << "durationMs=" << perfNowMs() - entryMs;
+    }
     return;
   }
 
@@ -750,27 +817,81 @@ void PreviewHelper::updateEditorInplacePreviewMathBlock() {
   if (!obsoleteBlocks.isEmpty()) {
     emit potentialObsoletePreviewBlocksUpdated(obsoleteBlocks.values());
   }
+  if (perf) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=publication-end"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << m_mathBlockTimeStamp << "count=" << previewItems.size()
+                           << "obsolete=" << obsoleteBlocks.size() << "published=" << true
+                           << "durationMs=" << perfNowMs() - entryMs;
+  }
 }
 
 void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewData &p_data) {
+  qCDebug(lcPerfPreview) << "[math-trace] phase=helper-result-arrival"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << p_data.m_timeStamp << "id=" << p_data.m_id
+                         << "currentTs=" << m_mathBlockTimeStamp << "bytes=" << p_data.m_data.size()
+                         << "defaultResult="
+                         << (p_data.m_timeStamp == 0 && p_data.m_id == 0 &&
+                             p_data.m_data.isEmpty());
   if (p_data.m_timeStamp != m_mathBlockTimeStamp) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=result-discarded reason=stale"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << p_data.m_timeStamp << "id=" << p_data.m_id
+                           << "currentTs=" << m_mathBlockTimeStamp;
     return;
   }
   if (p_data.m_id >= static_cast<quint64>(m_mathBlocksData.size()) || p_data.m_data.isEmpty()) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=result-discarded reason="
+                           << (p_data.m_data.isEmpty() ? "empty" : "id-out-of-range")
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << p_data.m_timeStamp << "id=" << p_data.m_id
+                           << "count=" << m_mathBlocksData.size();
     requestUpdateEditorInplacePreviewMathBlock();
     return;
   }
 
+  const bool perf = perfEnabled();
+  QElapsedTimer timer;
+  if (perf) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=native-decode-start"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << p_data.m_timeStamp << "id=" << p_data.m_id
+                           << "bytes=" << p_data.m_data.size()
+                           << "needScale=" << p_data.m_needScale;
+    timer.start();
+  }
   auto &blockData = m_mathBlocksData[p_data.m_id];
   auto previewData = QSharedPointer<GraphPreviewData>::create(
       p_data.m_timeStamp, p_data.m_format, p_data.m_data, p_data.m_needScale, 0,
       p_data.m_needScale ? getEditorScaleFactor(m_mathBlockRequestZoomRatio) : 1,
       m_mathBlockRequestZoomRatio, p_data.m_logicalSize);
+  if (perf) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=native-decode-end"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << p_data.m_timeStamp << "id=" << p_data.m_id
+                           << "imageNull=" << previewData->m_image.isNull()
+                           << "decodeUs=" << timer.nsecsElapsed() / 1000;
+  }
   m_mathBlockCache.set(blockData.m_text, previewData);
   blockData.m_text.clear();
 
   blockData.updateInplacePreview(m_document, *previewData, m_tabStopWidth, getEditorScaleFactor(1),
                                  m_mathBlockRequestZoomRatio);
+  if (perf) {
+    qCDebug(lcPerfPreview) << "[math-trace] phase=result-updated"
+                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                           << "helper=" << static_cast<const void *>(this)
+                           << "ts=" << p_data.m_timeStamp << "id=" << p_data.m_id
+                           << "hasPreview=" << !blockData.m_inplacePreview.isNull()
+                           << "durationUs=" << timer.nsecsElapsed() / 1000;
+  }
 
   requestUpdateEditorInplacePreviewMathBlock();
 }
@@ -793,12 +914,20 @@ qreal PreviewHelper::editorZoomFactor() const {
 }
 
 void PreviewHelper::invalidatePreviews() {
+  qCDebug(lcPerfPreview) << "[math-trace] phase=invalidation-start"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "nextTs=" << m_mathBlockTimeStamp + 1;
   m_codeBlockTimer->stop();
   m_mathBlockTimer->stop();
   m_codeBlockPublishTimer->stop();
   m_mathBlockPublishTimer->stop();
   ++m_codeBlockTimeStamp;
   ++m_mathBlockTimeStamp;
+  qCDebug(lcPerfPreview) << "[math-trace] phase=invalidated"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp;
   m_codeBlockCache.clear();
   m_mathBlockCache.clear();
   m_pendingCodeBlocks.clear();
@@ -823,6 +952,11 @@ void PreviewHelper::editorZoomChanged() {
   if (!PreviewScaleUtils::isZoomRatioStale(m_displayZoomRatio, ratio)) {
     return;
   }
+  qCDebug(lcPerfPreview) << "[math-trace] phase=zoom-change"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "nextTs=" << m_mathBlockTimeStamp + 1
+                         << "previousScale=" << m_displayZoomRatio << "scale=" << ratio;
   m_displayZoomRatio = ratio;
 
   // Invalidate every in-flight response immediately, so a pre-zoom raster can
@@ -838,6 +972,10 @@ void PreviewHelper::editorZoomChanged() {
 
   ++m_codeBlockTimeStamp;
   ++m_mathBlockTimeStamp;
+  qCDebug(lcPerfPreview) << "[math-trace] phase=zoom-invalidated"
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
+                         << "helper=" << static_cast<const void *>(this)
+                         << "ts=" << m_mathBlockTimeStamp << "scale=" << ratio;
 
   // The generation is retired here, so retire its diagnostics with it: a
   // pending summary would otherwise keep accumulating heartbeat ticks and then

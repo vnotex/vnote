@@ -102,6 +102,44 @@ vnote
 
 This enables debug output for all categories except web.js and vim, keeping the logs manageable.
 
+### 6. Trace math preview startup
+
+Launch with `--verbose --log-stderr` (in Qt Creator, put these in the run arguments).
+This enables both `vnote.perf.preview` and `vnote.web.js`; output goes to stderr / Qt
+Creator's Application Output, not `vnote.log`. If `VNOTE_LOG_RULES` is already set,
+`--verbose` preserves it: enable both categories explicitly, separated by newlines.
+
+Entries beginning with `[math-trace]` cover:
+- Viewer construction, loading, readiness, hide/show, and ready-triggered rehighlight
+- Math generations, debounce restarts, cache hits, pre-ready request drops, and replay
+- Renderer script/CSS initialization, typesetting, and `document.fonts.ready` wait/settlement
+- Bounds, font embedding, SVG conversion, image loading, PNG encoding, and raster concurrency
+- Bridge delivery, native decoding, stale/empty results, and editor publication
+
+C++ `adapter` matches JavaScript `page`; the helper-mapping entry joins C++ helper events.
+Preview contexts are `math:<generation>:<id>` or `fenced:<generation>:<id>`. Read passes
+use `read:<sequence>`; a new `created` event starts a new page lifetime after reload.
+Compare C++ `atMs` with JavaScript `epochMs`; JavaScript `ms` is monotonic within its page.
+A `fonts-wait` without its matching `fonts-ready`/`fonts-error` identifies an unfinished
+font/layout wait. Tracing does not inspect font status or force layout to observe it.
+New trace entries contain IDs, counts and sizes, not formulas or image payloads; other
+verbose messages can still contain filenames and paths.
+
+**Development builds need the updated scripts installed too.** Web assets are copied
+from `vnote_extra.rcc` to the app-data directory and refreshed by version, not by source
+mtime. After rebuilding and closing VNote, refresh only the two changed scripts on Windows:
+
+```powershell
+Copy-Item -Path src/data/extra/web/js/mathjax.js,src/data/extra/web/js/graphpreviewer.js -Destination "$env:APPDATA/VNote/web/js/"
+```
+
+For a cold-start capture, close VNote with the affected note in Edit Only, clear the
+previous output, then restart with the flags above. Leave the window visible and active;
+do not type, scroll, resize, switch modes/themes, or open DevTools. If previews are still
+missing after 90 seconds, switch to Read once and wait another 10 seconds. Save the full
+output from launch onward and note when previews appeared or the mode was switched.
+Normal launches without the preview debug category do not enable math tracing.
+
 ## Using Logging in Code
 
 Use Qt's logging macros with VNote categories:
@@ -126,7 +164,7 @@ Each category is a `QLoggingCategory` constant that can be passed to Qt's loggin
 
 By default, VNote writes logs to:
 - **Linux/macOS**: `~/.local/share/VNote/vnote.log`
-- **Windows**: `%APPDATA%/VNote/vnote.log`
+- **Windows**: `%LOCALAPPDATA%/VNote/vnote.log`
 
 View logs with a text editor or command line:
 
@@ -135,7 +173,7 @@ View logs with a text editor or command line:
 tail -f ~/.local/share/VNote/vnote.log
 
 # On Windows
-Get-Content "$env:APPDATA/VNote/vnote.log" -Wait
+Get-Content "$env:LOCALAPPDATA/VNote/vnote.log" -Wait
 ```
 
 ## Trade-offs and Caveats
