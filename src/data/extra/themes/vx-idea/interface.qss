@@ -721,6 +721,7 @@ QTabWidget::tab-bar {
 QTreeView {
     color: @widgets#qtreeview#fg;
     background-color: @widgets#qtreeview#bg;
+    alternate-background-color: @base#normal#bg;
     show-decoration-selected: 1;
     border: none;
     selection-color: @widgets#qtreeview#item#selected#fg;
@@ -790,6 +791,7 @@ QTreeView::branch:open:has-children:has-siblings  {
 QListView {
     color: @widgets#qlistview#fg;
     background-color: @widgets#qlistview#bg;
+    alternate-background-color: @base#normal#bg;
     show-decoration-selected: 0;
     border: none;
     selection-background-color: transparent;

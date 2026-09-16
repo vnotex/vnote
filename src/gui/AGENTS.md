@@ -88,6 +88,15 @@ never a stylesheet — colour as **data**, the sanctioned exception to
 
 Coverage: `tests/gui/test_commentcolorswatch.cpp`.
 
+## Alternating item-view rows
+
+Every non-native theme sets `alternate-background-color: @base#normal#bg` on both
+`QTreeView` and `QListView`. Setting only `background-color` leaves Qt's
+`QPalette::AlternateBase` inherited from the desktop, causing light stripes in dark
+Location List and Comment views. Keep Native on the system palette and retain the
+widgets' alternating-row behavior. `tests/gui/test_themeservice.cpp` renders both
+view types across live theme switches, including restoration of Native colors.
+
 ## Core vs GUI Distinction
 
 Core services (`src/core/services/`) wrap the vxcore C API and have minimal Qt dependencies. GUI services (`src/gui/services/`) require Qt Widgets and handle presentation concerns.

@@ -4,11 +4,14 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QListWidget>
 #include <QScopedPointer>
 #include <QSet>
 #include <QStandardPaths>
 #include <QStringList>
 #include <QTemporaryDir>
+#include <QTreeWidget>
+#include <QVBoxLayout>
 
 #include <algorithm>
 #include <cmath>
@@ -42,6 +45,8 @@ private slots:
 
   void interfaceQssFullyResolved_data();
   void interfaceQssFullyResolved();
+  void alternatingRowsFollowThemeChanges_data();
+  void alternatingRowsFollowThemeChanges();
   void interfaceQssStylesErrorLineEdit_data();
   void interfaceQssStylesErrorLineEdit();
   void interfaceQssStylesInlineBanner_data();
@@ -387,10 +392,71 @@ qreal TestThemeService::contrastRatio(const QColor &p_a, const QColor &p_b) {
   return (la + 0.05) / (lb + 0.05);
 }
 
-// A missing palette key does NOT fail loudly: Theme::translateStyleByPalette
-// logs a qWarning and leaves the literal "@base#..." in the stylesheet, after
-// which Qt's CSS parser silently drops the whole declaration. This test is the
-// only thing standing between a typo and a theme quietly losing a property.
+void TestThemeService::alternatingRowsFollowThemeChanges_data() { addBundledThemeRows(); }
+
+void TestThemeService::alternatingRowsFollowThemeChanges() {
+  QFETCH(QString, themeName);
+
+  // Reproduce a light desktop palette underneath VNote's custom dark styles.
+  QPalette desktopPalette = qApp->palette();
+  desktopPalette.setColor(QPalette::Base, Qt::white);
+  desktopPalette.setColor(QPalette::AlternateBase, QColor(247, 247, 247));
+  QWidget host;
+  host.setPalette(desktopPalette);
+  QVBoxLayout layout(&host);
+  QTreeWidget tree;
+  tree.setHeaderHidden(true);
+  tree.setAlternatingRowColors(true);
+  QListWidget list;
+  list.setAlternatingRowColors(true);
+  layout.addWidget(&tree);
+  layout.addWidget(&list);
+  for (int i = 0; i < 4; ++i) {
+    new QTreeWidgetItem(&tree, {QStringLiteral("Search result %1").arg(i)});
+    list.addItem(QStringLiteral("Comment %1").arg(i));
+  }
+  host.resize(480, 400);
+  host.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&host));
+  tree.setCurrentIndex(QModelIndex());
+  list.setCurrentIndex(QModelIndex());
+
+  vnotex::ThemeService svc(makeConfig());
+  // Keep the same views alive: the report includes a light-to-dark switch.
+  for (const auto &name : {QStringLiteral("pure"), themeName, QStringLiteral("native")}) {
+    svc.switchTheme(name);
+    host.setStyleSheet(svc.fetchQtStyleSheet());
+    QCoreApplication::processEvents();
+    for (QAbstractItemView *view :
+         {static_cast<QAbstractItemView *>(&tree), static_cast<QAbstractItemView *>(&list)}) {
+      const bool native = name == QStringLiteral("native");
+      const QString widget =
+          view == &tree ? QStringLiteral("qtreeview") : QStringLiteral("qlistview");
+      const QColor base = native ? desktopPalette.color(QPalette::Base)
+                                 : QColor(svc.paletteColor("widgets#" + widget + "#bg"));
+      const QColor alternate = native ? desktopPalette.color(QPalette::AlternateBase)
+                                      : QColor(svc.paletteColor("base#normal#bg"));
+      // Native styles also paint hover/focus; sample unselected, unhovered rows.
+      QTest::mouseMove(view->viewport(), view->viewport()->rect().bottomRight());
+      QCoreApplication::processEvents();
+      const auto image = view->viewport()->grab().toImage();
+      for (int row = 0; row < 2; ++row) {
+        const QRect rect = view->visualRect(view->model()->index(row, 0));
+        QVERIFY(rect.isValid());
+        const QPoint sample(view->viewport()->width() - 10, rect.center().y());
+        const QColor painted = image.pixelColor(sample * view->devicePixelRatioF());
+        const QColor expected = row % 2 ? alternate : base;
+        QVERIFY2(painted == expected,
+                 qPrintable(QStringLiteral("%1 %2 row %3: painted %4, expected %5")
+                                .arg(name, widget)
+                                .arg(row)
+                                .arg(painted.name(), expected.name())));
+      }
+    }
+  }
+}
+
+// A missing palette key leaves its token in the stylesheet and Qt drops the declaration.
 void TestThemeService::interfaceQssFullyResolved_data() { addBundledThemeRows(); }
 
 void TestThemeService::interfaceQssFullyResolved() {
