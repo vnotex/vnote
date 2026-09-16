@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QAbstractTextDocumentLayout>
 #include <QBuffer>
 #include <QDialogButtonBox>
 #include <QImageReader>
@@ -10,6 +11,7 @@
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTextLayout>
 
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/markdownhighlighter.h>
@@ -76,6 +78,8 @@ private slots:
   void testBuildMarkdownEditorConfigFromContent_tableSourceOff();
   void testBuildMarkdownEditorConfig_autoFoldPreviewedBlocks();
   void testOrderedListsFollowPersistedSetting();
+  void testConcealmentControlsRenderedDestinations_data();
+  void testConcealmentControlsRenderedDestinations();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -324,6 +328,106 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfig_autoFoldPreview
   QVERIFY2(!fileBased->m_autoFoldPreviewedBlocksEnabled, "the flag must follow the user setting");
 
   mdConfig.setAutoFoldPreviewedBlocksEnabled(true);
+}
+
+void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations_data() {
+  QTest::addColumn<bool>("fromContent");
+  QTest::newRow("content-theme") << true;
+  QTest::newRow("file-theme") << false;
+}
+
+void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations() {
+  QFETCH(bool, fromContent);
+  auto ec = makeEditorConfig();
+  auto &mdConfig = ec.getMarkdownEditorConfig();
+  mdConfig.setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
+  QTemporaryDir themeDir;
+  QVERIFY(themeDir.isValid());
+  const auto themePath = themeDir.filePath(QStringLiteral("markdown.theme"));
+  QFile themeFile(themePath);
+  QVERIFY(themeFile.open(QIODevice::WriteOnly));
+  QCOMPARE(themeFile.write(kValidMarkdownThemeJson), qint64(qstrlen(kValidMarkdownThemeJson)));
+  themeFile.close();
+  const auto buildConfig = [&] {
+    return fromContent
+               ? MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+                     ec, mdConfig, QString::fromUtf8(kValidMarkdownThemeJson), QString(), 1.0)
+               : MarkdownEditorController::buildMarkdownEditorConfig(ec, mdConfig, themePath,
+                                                                     QString(), 1.0);
+  };
+  // A raw display reference independent of the controller's opt-out mapping.
+  auto rawConfig = buildConfig();
+  rawConfig->m_concealElements = {};
+  vte::VMarkdownEditor editor(rawConfig, QSharedPointer<vte::TextEditorParameters>::create());
+  editor.resize(1000, 400);
+  editor.show();
+  auto *document = editor.document();
+  const auto settle = [&] {
+    QObject receiver;
+    bool published = false;
+    connect(editor.getHighlighter(), &vte::MarkdownHighlighter::concealRangesUpdated, &receiver,
+            [&](vte::TimeStamp, const QVector<vte::md::ConcealRange> &) { published = true; });
+    editor.getHighlighter()->updateHighlight();
+    const bool ready = QTest::qWaitFor([&] { return published; }, 5000);
+    QTest::qWait(50);
+    return ready;
+  };
+  const auto widths = [&](const QString &payload) {
+    QVector<qreal> result;
+    int position = 0;
+    const auto text = document->toPlainText();
+    while ((position = text.indexOf(payload, position)) >= 0) {
+      const auto block = document->findBlock(position);
+      document->documentLayout()->blockBoundingRect(block);
+      const auto line = block.layout()->lineForTextPosition(position - block.position());
+      if (!line.isValid())
+        return QVector<qreal>();
+      result.append(line.cursorToX(position + payload.size() - block.position()) -
+                    line.cursorToX(position - block.position()));
+      position += payload.size();
+    }
+    return result;
+  };
+  const auto payload = QStringLiteral("abcdefghijklmnopqrstuvwxyz");
+  const auto source =
+      QStringLiteral("[link](%1)\n\n![image](%1)\n\n[ref]: %1\n\n[reference][ref]\n\noutside")
+          .arg(payload);
+  editor.setText(source);
+  QTextCursor cursor(document);
+  cursor.movePosition(QTextCursor::End);
+  editor.getTextEdit()->setTextCursor(cursor);
+  QVERIFY(settle());
+  const auto fullWidths = widths(payload);
+  QCOMPARE(fullWidths.size(), 3);
+
+  editor.setConfig(buildConfig());
+  QVERIFY(settle());
+  const auto concealed = widths(payload);
+  QCOMPARE(concealed.size(), 3);
+  for (int i = 0; i < concealed.size(); ++i) {
+    QVERIFY(concealed[i] + 1.0 < fullWidths[i]);
+  }
+  QCOMPARE(document->toPlainText(), source);
+
+  mdConfig.setConcealmentEnabled(false);
+  editor.setConfig(buildConfig());
+  QVERIFY(settle());
+  const auto revealed = widths(payload);
+  QCOMPARE(revealed.size(), 3);
+  for (int i = 0; i < revealed.size(); ++i) {
+    QVERIFY(qAbs(revealed[i] - fullWidths[i]) < 1.0);
+  }
+  QCOMPARE(document->toPlainText(), source);
+
+  mdConfig.setConcealmentEnabled(true);
+  editor.setConfig(buildConfig());
+  QVERIFY(settle());
+  const auto restored = widths(payload);
+  QCOMPARE(restored.size(), 3);
+  for (int i = 0; i < restored.size(); ++i) {
+    QVERIFY(qAbs(restored[i] - concealed[i]) < 1.0);
+  }
+  QCOMPARE(document->toPlainText(), source);
 }
 
 void TestMarkdownEditorController::testOrderedListsFollowPersistedSetting() {

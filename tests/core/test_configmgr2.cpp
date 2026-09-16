@@ -75,6 +75,7 @@ private slots:
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
   void testHeadingFolding_defaultsMergeAndRoundTrip();
+  void testConcealment_defaultsMergeAndPersistedOptOut();
   void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
   void testEditSectionNumber_mergeAndIndependentPersistence();
   void testSectionNumberPattern_mergeNormalizationAndPersistence_data();
@@ -653,6 +654,29 @@ void TestConfigMgr2::testHeadingFolding_defaultsMergeAndRoundTrip() {
   auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
   reloadedMd.fromJson(json);
   QCOMPARE(reloadedMd.getHeadingFoldingEnabled(), false);
+}
+
+void TestConfigMgr2::testConcealment_defaultsMergeAndPersistedOptOut() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                         QStringLiteral("concealment")};
+  MainConfig defaults(m_configMgr);
+  const auto loaded = loadThroughMergePath(withoutKeyAt(defaults.toJson(), path));
+  QCOMPARE(valueAt(loaded, path), QJsonValue(true));
+
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    settings.getEditorConfig().getMarkdownEditorConfig().setConcealmentEnabled(false);
+    // Destruction flushes the normal pending write, as at application shutdown.
+  }
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  QVERIFY(!restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentEnabled());
 }
 
 void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptOut() {
