@@ -94,7 +94,7 @@ void CommentPanel::setupUI() {
   layout->setContentsMargins(0, 0, 0, 0);
 
   m_list = new QListWidget(this);
-  m_list->setAlternatingRowColors(true);
+  m_list->setAlternatingRowColors(false);
   m_list->setSelectionMode(QAbstractItemView::SingleSelection);
   layout->addWidget(m_list, 3);
 

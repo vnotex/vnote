@@ -93,9 +93,10 @@ Coverage: `tests/gui/test_commentcolorswatch.cpp`.
 Every non-native theme sets `alternate-background-color: @base#normal#bg` on both
 `QTreeView` and `QListView`. Setting only `background-color` leaves Qt's
 `QPalette::AlternateBase` inherited from the desktop, causing light stripes in dark
-Location List and Comment views. Keep Native on the system palette and retain the
-widgets' alternating-row behavior. `tests/gui/test_themeservice.cpp` renders both
-view types across live theme switches, including restoration of Native colors.
+views that opt into alternating rows. Native stays on the system palette.
+Location List and Comments explicitly disable alternating rows; no application view
+currently enables them. `tests/gui/test_themeservice.cpp` deliberately opts in to
+verify theme colors and Native restoration independently of application row policy.
 
 ## Core vs GUI Distinction
 
