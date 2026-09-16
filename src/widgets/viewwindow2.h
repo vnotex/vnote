@@ -18,6 +18,7 @@
 #include <core/services/buffercoreservice.h>
 
 #include "editors/statusbar.h"
+#include "navigationmode.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
 
@@ -124,6 +125,13 @@ public:
   // MainWindow2 can re-point the dock on currentViewWindowChanged with the same
   // three lines, and a future Markdown implementation needs no dock rework.
   virtual QSharedPointer<CommentProvider> getCommentProvider() const;
+
+  // Deliver one complete snapshot on the GUI thread, inline or asynchronously.
+  virtual void fetchNavigationTargets(NavigationTargetsCallback p_callback) {
+    if (p_callback) {
+      p_callback({});
+    }
+  }
 
   // ============ Mode ============
 

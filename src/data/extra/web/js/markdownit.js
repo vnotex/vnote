@@ -274,6 +274,9 @@ class MarkdownIt extends VxWorker {
     // @p_finishCbStr will be called after finishing loading new content nodes.
     // This could prevent Mermaid Gantt from negative width error.
     render(p_node, p_text, p_finishCbStr) {
+        if (window.vxOptions.protectedView) {
+            this.vxcore.navigationLinkDestinations = new WeakMap();
+        }
         this.frontMatterNode = null;
         this.codeNodesStore.clearNodes();
         this.codeNodesCollected = false;
@@ -381,6 +384,7 @@ class MarkdownIt extends VxWorker {
                 }
             } else if (node.tagName === 'A') {
                 if (href.startsWith('#')) {
+                    this.vxcore.navigationLinkDestinations.set(node, href);
                     node.href = href;
                     node.addEventListener('click', (event) => {
                         event.preventDefault();
@@ -392,12 +396,14 @@ class MarkdownIt extends VxWorker {
                         }
                     }, true);
                 } else if (/^https?:\/\//i.test(href)) {
+                    this.vxcore.navigationLinkDestinations.set(node, href);
                     node.href = href;
                     node.rel = 'noreferrer noopener';
                 } else if (href && !/^[a-z][a-z0-9+.-]*:/i.test(href)
                            && !/^[\\/]/.test(href) && !/[\u0000-\u001f]/.test(href)) {
                     // Retain the source spelling for notebook navigation, not a
                     // token-prefixed filesystem-looking URL. Never save it back.
+                    this.vxcore.navigationLinkDestinations.set(node, href);
                     node.href = '#';
                     node.addEventListener('click', (event) => {
                         event.preventDefault();

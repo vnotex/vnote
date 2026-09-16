@@ -27,7 +27,7 @@ void NavigationMode::hideNavigation() { clearNavigation(); }
 void NavigationMode::clearNavigation() {
   m_secondKeyMap.clear();
   for (auto label : m_navigationLabels) {
-    delete label;
+    delete label.data();
   }
   m_navigationLabels.clear();
 
@@ -102,6 +102,7 @@ QString NavigationMode::generateNavigationLabelStyle(const QString &p_str, bool 
 QLabel *NavigationMode::createNavigationLabel(QChar p_secondKey, QWidget *p_parent) {
   QString labelStr = generateLabelString(p_secondKey);
   QLabel *label = new QLabel(labelStr, p_parent);
+  label->setAttribute(Qt::WA_TransparentForMouseEvents);
   label->setStyleSheet(this->generateNavigationLabelStyle(labelStr, false));
   return label;
 }
@@ -180,18 +181,25 @@ QVector<void *> NavigationMode::getVisibleNavigationItems() { return QVector<voi
 void NavigationMode::showNavigationWithDoubleKeys() {
   // Generate labels for visible items.
   auto items = getVisibleNavigationItems();
-  for (int i = 0; i < items.size(); ++i) {
-    const auto key = generateSecondKey(i);
-    if (key.isNull()) {
+  for (auto item : items) {
+    if (!appendNavigationItem(item)) {
       break;
     }
-
-    m_secondKeyMap[key] = items[i];
-
-    auto label = createNavigationLabel(key, m_widget);
-    placeNavigationLabel(i, items[i], label);
-    label->show();
-
-    m_navigationLabels.append(label);
   }
+}
+
+bool NavigationMode::appendNavigationItem(void *p_item) {
+  const int index = m_secondKeyMap.size();
+  const auto key = generateSecondKey(index);
+  if (key.isNull()) {
+    return false;
+  }
+
+  auto label = createNavigationLabel(key, m_widget);
+  placeNavigationLabel(index, p_item, label);
+  m_secondKeyMap[key] = p_item;
+  m_navigationLabels.append(label);
+  label->show();
+  label->raise();
+  return true;
 }

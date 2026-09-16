@@ -31,6 +31,7 @@
 #include <cmark.h>
 #include <cstdlib>
 #include <memory>
+#include <utility>
 
 #include <utils/sectionnumberutils.h>
 
@@ -388,6 +389,10 @@ class TestMarkdownViewerJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testNavigation_visibleRectangles_data();
+  void testNavigation_visibleRectangles();
+  void testNavigation_staleSnapshots();
+  void testNavigation_protectedDestinations();
   void testMathHeadings_linkTargets();
   void testCmarkMathTableDom_data();
   void testCmarkMathTableDom();
@@ -415,6 +420,8 @@ private:
   void setupHeadingFolding(QJSEngine &p_engine);
   void setupSectionNumber(QJSEngine &p_engine);
   void setupMath(QJSEngine &p_engine);
+  void setupNavigationPage(QWebEnginePage &p_page, bool p_protected = false);
+  void evaluateNavigation(QWebEnginePage &p_page, const QString &p_script, QJsonObject &p_result);
 };
 
 void TestMarkdownViewerJs::setup(QJSEngine &p_engine, bool p_initializedAtChannel) {
@@ -563,6 +570,350 @@ function installLibrary() {
   }
   res = p_engine.evaluate(source, QStringLiteral("mathjax.js"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
+}
+
+void TestMarkdownViewerJs::evaluateNavigation(QWebEnginePage &p_page, const QString &p_script,
+                                              QJsonObject &p_result) {
+  const auto script = QStringLiteral("(function() { try {\n%1\n"
+                                     "} catch (error) { return {error: String(error) + '\\n' + "
+                                     "error.stack}; } })()")
+                          .arg(p_script);
+  const QJsonObject source{
+      {QStringLiteral("source"), QStringLiteral("JSON.stringify(%1)").arg(script)}};
+  const auto state = std::make_shared<std::pair<bool, QVariant>>(false, QVariant());
+  p_page.runJavaScript(
+      QStringLiteral("document.querySelector('iframe').contentWindow.eval(%1.source)")
+          .arg(QString::fromUtf8(QJsonDocument(source).toJson(QJsonDocument::Compact))),
+      [state](const QVariant &p_value) {
+        state->second = p_value;
+        state->first = true;
+      });
+  QTRY_VERIFY_WITH_TIMEOUT(state->first, 10000);
+  const auto result = QJsonDocument::fromJson(state->second.toString().toUtf8());
+  QVERIFY2(result.isObject(), qPrintable(state->second.toString()));
+  p_result = result.object();
+  QVERIFY2(!p_result.contains(QStringLiteral("error")),
+           qPrintable(p_result.value(QStringLiteral("error")).toString()));
+}
+
+void TestMarkdownViewerJs::setupNavigationPage(QWebEnginePage &p_page, bool p_protected) {
+  // QWebEnginePage has no QWidget viewport. A same-origin fixed-size frame supplies a
+  // real, deterministic CSS viewport without replacing DOM layout or Utils.viewPortRect().
+  QSignalSpy loaded(&p_page, &QWebEnginePage::loadFinished);
+  p_page.setHtml(QStringLiteral(
+      "<!doctype html><html><body><iframe width='640' height='480' style='border:0' "
+      "srcdoc=\"<!doctype html><html><head><base href='file:///navigation/current.md'>"
+      "<style>html,body{margin:0}#vx-content{position:relative;min-height:1600px}</style>"
+      "</head><body><div id='vx-content'></div></body></html>\"></iframe></body></html>"));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+
+  QString error;
+  QString script = QStringLiteral("window.vxOptions = {htmlTagEnabled:true, protectedView:%1};\n")
+                       .arg(p_protected ? QStringLiteral("true") : QStringLiteral("false"));
+  for (const auto *name : {"eventemitter.js",
+                           "vxcore.js",
+                           "vxworker.js",
+                           "utils.js",
+                           "markdownviewercore.js",
+                           "markdown-it/markdown-it.min.js",
+                           "markdown-it/markdown-it-container.min.js",
+                           "markdown-it/markdown-it-emoji.min.js",
+                           "markdown-it/markdown-it-footnote.min.js",
+                           "markdown-it/markdown-it-front-matter.js",
+                           "markdown-it/markdown-it-imsize.min.js",
+                           "markdown-it/markdown-it-sub.min.js",
+                           "markdown-it/markdown-it-sup.min.js",
+                           "markdown-it/markdown-it-task-lists.js",
+                           "markdown-it/markdown-it-texmath.js",
+                           "markdown-it/markdown-it-inject-linenumbers.js",
+                           "markdown-it/markdownItAnchor.umd.js",
+                           "markdown-it/markdownItTocDoneRight.umd.js",
+                           "markdown-it/markdown-it-implicit-figure.js",
+                           "markdown-it/markdown-it-mark.min.js",
+                           "markdownit.js"}) {
+    script += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &error) +
+              QLatin1Char('\n');
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+  }
+  // Scripts are installed after load, so select the container without unrelated preview workers.
+  script += QStringLiteral(R"JS(
+window.vxcore.contentContainer = document.getElementById('vx-content');
+window.vxcore.initialized = true;
+window.__protectedLinks = [];
+window.__anchors = [];
+window.vxcore.nodeLineMapper = {scrollToAnchor: function(anchor) { __anchors.push(anchor); }};
+window.vxMarkdownAdapter = {
+  setWorkFinished: function() {},
+  activateProtectedLink: function(href) { __protectedLinks.push(href); },
+  protectedImageUrl: function(src, callback) { window.__finishImage = callback; }
+};
+return {ready: true};
+)JS");
+  QJsonObject result;
+  evaluateNavigation(p_page, script, result);
+  QVERIFY(result.value(QStringLiteral("ready")).toBool());
+}
+
+void TestMarkdownViewerJs::testNavigation_visibleRectangles_data() {
+  QTest::addColumn<qreal>("zoom");
+  QTest::newRow("normal") << qreal(1);
+  QTest::newRow("125-percent") << qreal(1.25);
+  QTest::newRow("150-percent") << qreal(1.5);
+}
+
+void TestMarkdownViewerJs::testNavigation_visibleRectangles() {
+  QFETCH(qreal, zoom);
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  page.setZoomFactor(zoom);
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const content = vxcore.contentContainer;
+content.innerHTML = `
+<a href="duplicate.md" style="position:absolute;left:20px;top:60px;width:100px;height:20px">Later</a>
+<a href="duplicate.md" style="position:absolute;left:20px;top:20px;width:100px;height:20px">Earlier</a>
+<a href="#destination" style="position:absolute;left:150px;top:20px;width:100px;height:20px">Anchor</a>
+<a href="partial.md" style="position:absolute;left:-10px;top:130px;width:50px;height:20px">Partial</a>
+<div style="position:absolute;left:40px;top:170px;width:80px;height:20px;overflow:hidden">
+  <a href="clipped.md" style="position:absolute;left:-10px;top:10px;width:120px;height:30px">Clipped</a>
+  <a href="fully-clipped.md" style="position:absolute;left:0;top:40px">Clipped out</a>
+</div>
+<div id="wrap-box" style="position:absolute;left:20px;top:230px;width:80px;height:28px;overflow:hidden">
+  <div style="position:relative;top:-20px;font:14px/20px monospace">
+    <a id="wrapped" href="wrapped.md">one two three four five six seven eight nine ten</a>
+  </div>
+</div>
+<a href="display-hidden.md" style="display:none">Hidden</a>
+<div style="visibility:hidden"><a href="visibility-hidden.md">Hidden</a></div>
+<div style="opacity:0"><a href="transparent.md">Transparent</a></div>
+<details><summary>Folded</summary><a href="folded.md">Folded content</a></details>
+<a href="zero.md" style="position:absolute;width:0;height:0">Zero area</a>
+<a href="offscreen.md" style="position:absolute;top:1200px">Offscreen</a>
+<a href="">Empty</a><a href="#">Empty fragment</a><a href="http://[invalid">Invalid</a>`;
+const snapshot = vxcore.getNavigationTargets();
+const wrapped = document.getElementById('wrapped');
+const clip = document.getElementById('wrap-box').getBoundingClientRect();
+const fragments = Array.from(wrapped.getClientRects());
+const firstVisible = fragments.find(rect => rect.bottom > clip.top && rect.top < clip.bottom);
+return {
+  targets: snapshot.targets,
+  destinations: snapshot.targets.map(target => vxcore.resolveNavigationTarget(snapshot.snapshot, target.index).href),
+  duplicateUrls: [snapshot.targets[0], snapshot.targets[2]].map(target =>
+    vxcore.resolveNavigationTarget(snapshot.snapshot, target.index).url),
+  firstWrappedFragmentHidden: fragments[0].bottom <= clip.top,
+  wrappedRect: {x: Math.max(clip.left, firstVisible.left), y: Math.max(clip.top, firstVisible.top),
+                width: Math.min(clip.right, firstVisible.right) - Math.max(clip.left, firstVisible.left),
+                height: Math.min(clip.bottom, firstVisible.bottom) - Math.max(clip.top, firstVisible.top)}
+};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("destinations")).toArray(),
+           QJsonArray::fromStringList({"duplicate.md", "#destination", "duplicate.md", "partial.md",
+                                       "clipped.md", "wrapped.md"}));
+  QCOMPARE(result.value(QStringLiteral("duplicateUrls")).toArray(),
+           QJsonArray::fromStringList(
+               {"file:///navigation/duplicate.md", "file:///navigation/duplicate.md"}));
+  const auto targets = result.value(QStringLiteral("targets")).toArray();
+  QCOMPARE(targets.size(), 6);
+  QVERIFY(targets[0].toObject().value(QStringLiteral("index")) !=
+          targets[2].toObject().value(QStringLiteral("index")));
+  const auto checkRect = [&targets](int p_index, qreal p_x, qreal p_y, qreal p_width,
+                                    qreal p_height) {
+    const auto target = targets[p_index].toObject();
+    QCOMPARE(target.value(QStringLiteral("x")).toDouble(), p_x);
+    QCOMPARE(target.value(QStringLiteral("y")).toDouble(), p_y);
+    QCOMPARE(target.value(QStringLiteral("width")).toDouble(), p_width);
+    QCOMPARE(target.value(QStringLiteral("height")).toDouble(), p_height);
+  };
+  // CSS coordinates remain unscaled at all web zooms; C++ applies the zoom once.
+  checkRect(0, 20, 20, 100, 20);
+  checkRect(1, 150, 20, 100, 20);
+  checkRect(2, 20, 60, 100, 20);
+  checkRect(3, 0, 130, 40, 20);
+  checkRect(4, 40, 180, 80, 10);
+  QVERIFY(result.value(QStringLiteral("firstWrappedFragmentHidden")).toBool());
+  const auto wrapped = result.value(QStringLiteral("wrappedRect")).toObject();
+  checkRect(5, wrapped.value(QStringLiteral("x")).toDouble(),
+            wrapped.value(QStringLiteral("y")).toDouble(),
+            wrapped.value(QStringLiteral("width")).toDouble(),
+            wrapped.value(QStringLiteral("height")).toDouble());
+}
+
+void TestMarkdownViewerJs::testNavigation_staleSnapshots() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.setMarkdownText('[Original](sibling.md#first) [Second](#second)');
+let snapshot = vxcore.getNavigationTargets();
+const initial = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index);
+const first = document.querySelector('#vx-content a');
+first.setAttribute('href', 'changed.md');
+const changedHrefRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+first.setAttribute('href', 'sibling.md#first');
+const old = snapshot;
+snapshot = vxcore.getNavigationTargets();
+const supersededRejected = vxcore.resolveNavigationTarget(old.snapshot, old.targets[0].index) === null;
+window.scrollTo(0, 10);
+const actualScroll = window.scrollY;
+const scrolledRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+window.scrollTo(0, 0);
+snapshot = vxcore.getNavigationTargets();
+first.replaceWith(first.cloneNode(true));
+const replacementRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+snapshot = vxcore.getNavigationTargets();
+document.querySelector('#vx-content a').remove();
+const removedRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+snapshot = vxcore.getNavigationTargets();
+document.querySelector('#vx-content a').style.visibility = 'hidden';
+const hiddenRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+vxcore.setMarkdownText('[Fresh](replacement.md#target)');
+snapshot = vxcore.getNavigationTargets();
+document.querySelector('base').href = 'file:///another/current.md';
+const baseChangedRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+document.querySelector('base').href = 'file:///navigation/current.md';
+snapshot = vxcore.getNavigationTargets();
+vxcore.setMarkdownText('[Newest](newest.md)');
+const rerenderRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+const fresh = vxcore.getNavigationTargets();
+const freshDestination = vxcore.resolveNavigationTarget(fresh.snapshot, fresh.targets[0].index);
+return { initial, changedHrefRejected, supersededRejected, actualScroll, scrolledRejected,
+         replacementRejected, removedRejected, hiddenRejected, baseChangedRejected,
+         rerenderRejected, freshDestination,
+         invalidIndexRejected: vxcore.resolveNavigationTarget(fresh.snapshot, -1) === null
+           && vxcore.resolveNavigationTarget(fresh.snapshot, 0.5) === null
+           && vxcore.resolveNavigationTarget(fresh.snapshot, fresh.targets.length) === null };
+)JS"),
+                     result);
+  QCOMPARE(
+      result.value(QStringLiteral("initial")).toObject().value(QStringLiteral("url")).toString(),
+      QStringLiteral("file:///navigation/sibling.md#first"));
+  QCOMPARE(result.value(QStringLiteral("actualScroll")).toDouble(), 10.0);
+  for (const auto *key : {"changedHrefRejected", "supersededRejected", "scrolledRejected",
+                          "replacementRejected", "removedRejected", "hiddenRejected",
+                          "baseChangedRejected", "rerenderRejected", "invalidIndexRejected"}) {
+    QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
+  }
+  QCOMPARE(result.value(QStringLiteral("freshDestination"))
+               .toObject()
+               .value(QStringLiteral("href"))
+               .toString(),
+           QStringLiteral("newest.md"));
+}
+
+void TestMarkdownViewerJs::testNavigation_protectedDestinations() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page, true);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.setMarkdownText(`[Fragment](#target%20name) [Relative](sibling.md#target)
+[HTTP](http://example.com/path) [HTTPS](https://example.com/path)
+<a href="javascript:alert(1)">Javascript</a>
+<a href="data:text/html,blocked">Data</a>
+<a href="file:///private/note.md">File</a>
+<a href="//example.com/path">Network path</a>
+<a href="/absolute.md">Absolute</a>
+<a href="mailto:user@example.com">Mail</a>`);
+return {started: true};
+)JS"),
+                     result);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const snapshot = vxcore.getNavigationTargets();
+window.__protectedSnapshot = snapshot;
+const destinations = snapshot.targets.map(target => vxcore.resolveNavigationTarget(snapshot.snapshot, target.index));
+const links = Array.from(vxcore.contentContainer.querySelectorAll('a'));
+const fragment = links.find(link => link.textContent === 'Fragment');
+const relative = links.find(link => link.textContent === 'Relative');
+const relativeDomHref = relative.getAttribute('href');
+window.__savedProtectedLink = relative;
+const syntheticTrust = [];
+relative.addEventListener('click', event => syntheticTrust.push(event.isTrusted), true);
+fragment.click();
+const syntheticCancelled = !relative.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true}));
+const relativeTarget = snapshot.targets.find(target =>
+  vxcore.resolveNavigationTarget(snapshot.snapshot, target.index).href === 'sibling.md#target');
+relative.setAttribute('href', '#changed');
+const tamperedRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, relativeTarget.index) === null;
+relative.setAttribute('href', '#');
+return {destinations, relativeDomHref, syntheticCancelled, syntheticTrust,
+        protectedActivations: __protectedLinks, anchorActivations: __anchors, tamperedRejected,
+        forbidden: links.filter(link => !link.hasAttribute('href')).map(link => link.textContent)};
+)JS"),
+                     result);
+  const auto destinations = result.value(QStringLiteral("destinations")).toArray();
+  QCOMPARE(destinations.size(), 4);
+  QStringList hrefs;
+  for (const auto &destination : destinations) {
+    hrefs.append(destination.toObject().value(QStringLiteral("href")).toString());
+  }
+  QCOMPARE(hrefs, (QStringList{"#target%20name", "sibling.md#target", "http://example.com/path",
+                               "https://example.com/path"}));
+  QCOMPARE(destinations[1].toObject().value(QStringLiteral("url")).toString(),
+           QStringLiteral("file:///navigation/sibling.md#target"));
+  QCOMPARE(result.value(QStringLiteral("relativeDomHref")).toString(), QStringLiteral("#"));
+  QCOMPARE(result.value(QStringLiteral("forbidden")).toArray(),
+           QJsonArray::fromStringList(
+               {"Javascript", "Data", "File", "Network path", "Absolute", "Mail"}));
+  QVERIFY(result.value(QStringLiteral("syntheticCancelled")).toBool());
+  QCOMPARE(result.value(QStringLiteral("syntheticTrust")).toArray(), QJsonArray({false}));
+  QCOMPARE(result.value(QStringLiteral("protectedActivations")).toArray(), QJsonArray());
+  QCOMPARE(result.value(QStringLiteral("anchorActivations")).toArray(), QJsonArray());
+  QVERIFY(result.value(QStringLiteral("tamperedRejected")).toBool());
+
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.setMarkdownText('[New document](new.md)');
+return {started: true};
+)JS"),
+                     result);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+// Even if an old sanitized element is reattached, its original href belongs to the old document.
+vxcore.contentContainer.appendChild(__savedProtectedLink);
+const snapshot = vxcore.getNavigationTargets();
+window.__beforePendingSnapshot = snapshot;
+return {
+  oldRejected: vxcore.resolveNavigationTarget(__protectedSnapshot.snapshot,
+    __protectedSnapshot.targets[0].index) === null,
+  hrefs: snapshot.targets.map(target => vxcore.resolveNavigationTarget(snapshot.snapshot, target.index).href)
+};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("oldRejected")).toBool());
+  QCOMPARE(result.value(QStringLiteral("hrefs")).toArray(), QJsonArray::fromStringList({"new.md"}));
+
+  evaluateNavigation(page, QStringLiteral(R"JS(
+// Hold the actual protected renderer's image transport, then replace text while it is busy.
+vxcore.setMarkdownText('[Pending](pending.md) ![Held](data:image/png;base64,AAAA)');
+const rendering = vxcore.getNavigationTargets();
+const oldRejected = vxcore.resolveNavigationTarget(__beforePendingSnapshot.snapshot,
+  __beforePendingSnapshot.targets[0].index) === null;
+vxcore.setMarkdownText('[Replacement](replacement.md)');
+const pending = vxcore.getNavigationTargets();
+window.__pendingSnapshot = pending;
+const result = {oldRejected, renderingTargets: rendering.targets, pendingTargets: pending.targets,
+                transportHeld: typeof __finishImage === 'function'};
+__finishImage('');
+return result;
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("oldRejected")).toBool());
+  QVERIFY(result.value(QStringLiteral("transportHeld")).toBool());
+  QCOMPARE(result.value(QStringLiteral("renderingTargets")).toArray(), QJsonArray());
+  QCOMPARE(result.value(QStringLiteral("pendingTargets")).toArray(), QJsonArray());
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const snapshot = vxcore.getNavigationTargets();
+return {
+  pendingRejected: vxcore.resolveNavigationTarget(__pendingSnapshot.snapshot, 0) === null,
+  hrefs: snapshot.targets.map(target => vxcore.resolveNavigationTarget(snapshot.snapshot, target.index).href)
+};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("pendingRejected")).toBool());
+  QCOMPARE(result.value(QStringLiteral("hrefs")).toArray(),
+           QJsonArray::fromStringList({"replacement.md"}));
 }
 
 void TestMarkdownViewerJs::testMathHeadings_linkTargets() {

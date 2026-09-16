@@ -3,7 +3,11 @@
 
 #include <QChar>
 #include <QMap>
+#include <QPointer>
+#include <QRect>
 #include <QVector>
+
+#include <functional>
 
 #include <utils/utils.h>
 
@@ -16,6 +20,16 @@ class QWidget;
 
 namespace vnotex {
 class ThemeService;
+
+// One visible occurrence, in m_widget's local Qt logical coordinates.
+// The widget is the label parent, not necessarily the focus receiver.
+// Activation must guard QObject lifetime and revalidate the source snapshot.
+struct NavigationTarget {
+  QPointer<QWidget> m_widget;
+  QRect m_rect;
+  std::function<void()> m_activate;
+};
+using NavigationTargetsCallback = std::function<void(QVector<NavigationTarget>)>;
 
 // Interface for Navigation Mode.
 // Need to inherit this class if one widget wants to support Navigation mode.
@@ -57,6 +71,8 @@ protected:
 
   virtual void clearNavigation();
 
+  bool appendNavigationItem(void *p_item);
+
   // a-z and 0-9 are allowed for second key.
   static const int c_maxNumOfNavigationItems = 36;
 
@@ -81,7 +97,7 @@ private:
 
   bool m_isMajorKeyConsumed = false;
 
-  QVector<QLabel *> m_navigationLabels;
+  QVector<QPointer<QLabel>> m_navigationLabels;
 };
 } // namespace vnotex
 

@@ -109,6 +109,7 @@ ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
 }
 
 ViewArea2::~ViewArea2() {
+  clearNavigation();
   // Detached windows are parent-less top-level widgets; delete them explicitly so
   // they don't leak (or keep the app alive) if the view area is torn down while
   // any remain open.
@@ -559,49 +560,166 @@ ViewSplit2 *ViewArea2::getCurrentViewSplit() const {
 
 int ViewArea2::getViewSplitCount() const { return getAllViewSplits().size(); }
 
+void ViewArea2::showNavigation() {
+  NavigationMode::showNavigation();
+  m_navigationActive = true;
+  const auto generation = m_navigationGeneration;
+  if (!isVisible() || m_navigationItems.size() >= c_maxNumOfNavigationItems) {
+    return;
+  }
+
+  // Prepare every slot before a producer can deliver an inline completion.
+  for (auto *split : getAllViewSplits()) {
+    auto *window = split->getCurrentViewWindow();
+    if (split->isVisible() && window && window->isVisible()) {
+      NavigationRequest request;
+      request.m_split = split;
+      request.m_window = window;
+      request.m_mode = window->getMode();
+      m_navigationRequests.append(std::move(request));
+    }
+  }
+  const QPointer<ViewArea2> self(this);
+  const int count = m_navigationRequests.size();
+  for (int index = 0; index < count; ++index) {
+    if (!self || !self->m_navigationActive || self->m_navigationGeneration != generation) {
+      return;
+    }
+    const auto owner = self->m_navigationRequests[index].m_window;
+    auto complete = [self, generation, index](QVector<NavigationTarget> p_targets) {
+      if (!self || !self->m_navigationActive || self->m_navigationGeneration != generation) {
+        return;
+      }
+      auto &request = self->m_navigationRequests[index];
+      if (request.m_completed) {
+        return;
+      }
+      if (request.m_window && request.m_split && request.m_window->isVisible() &&
+          request.m_split->isVisible() && request.m_window->getMode() == request.m_mode &&
+          self->getAllViewSplits().contains(request.m_split) &&
+          request.m_split->getCurrentViewWindow() == request.m_window) {
+        request.m_targets = std::move(p_targets);
+      }
+      request.m_completed = true;
+      self->appendReadyNavigationTargets();
+    };
+    if (owner) {
+      owner->fetchNavigationTargets(std::move(complete));
+    } else {
+      complete({});
+    }
+  }
+}
+
 QVector<void *> ViewArea2::getVisibleNavigationItems() {
   QVector<void *> items;
-  m_navigationItems.clear();
-
-  int idx = 0;
+  m_navigationItems.reserve(c_maxNumOfNavigationItems);
+  items.reserve(c_maxNumOfNavigationItems);
   for (auto *split : getAllViewSplits()) {
     if (split->getViewWindowCount() == 0) {
       continue;
     }
-    if (idx >= NavigationMode::c_maxNumOfNavigationItems) {
-      break;
-    }
-    auto info = split->getNavigationModeInfo();
-    for (int i = 0; i < info.size() && idx < NavigationMode::c_maxNumOfNavigationItems;
-         ++i, ++idx) {
-      items.push_back(info[i].m_viewWindow);
-      m_navigationItems.push_back(info[i]);
+    const auto info = split->getNavigationModeInfo();
+    for (const auto &tab : info) {
+      if (m_navigationItems.size() >= c_maxNumOfNavigationItems) {
+        return items;
+      }
+      NavigationItem item;
+      item.m_window = tab.m_viewWindow;
+      item.m_target.m_widget = split;
+      item.m_target.m_rect = QRect(tab.m_topLeft, QSize(1, 1));
+      m_navigationItems.append(std::move(item));
+      items.append(&m_navigationItems.last());
     }
   }
   return items;
 }
 
+void ViewArea2::appendReadyNavigationTargets() {
+  while (m_nextNavigationRequest < m_navigationRequests.size() &&
+         m_navigationRequests[m_nextNavigationRequest].m_completed) {
+    auto request = std::move(m_navigationRequests[m_nextNavigationRequest++]);
+    if (!request.m_window || !request.m_split || !request.m_window->isVisible() ||
+        !request.m_split->isVisible() || request.m_window->getMode() != request.m_mode ||
+        !getAllViewSplits().contains(request.m_split) ||
+        request.m_split->getCurrentViewWindow() != request.m_window) {
+      continue;
+    }
+    for (auto &target : request.m_targets) {
+      if (m_navigationItems.size() >= c_maxNumOfNavigationItems) {
+        break;
+      }
+      if (!target.m_widget || !target.m_widget->isVisible() || !target.m_activate) {
+        continue;
+      }
+      target.m_rect = target.m_rect.intersected(target.m_widget->rect());
+      if (target.m_rect.isEmpty()) {
+        continue;
+      }
+      NavigationItem item;
+      item.m_window = request.m_window;
+      item.m_target = std::move(target);
+      item.m_content = true;
+      m_navigationItems.append(std::move(item));
+      appendNavigationItem(&m_navigationItems.last());
+    }
+  }
+}
+
 void ViewArea2::placeNavigationLabel(int p_idx, void *p_item, QLabel *p_label) {
-  Q_UNUSED(p_item);
-  Q_ASSERT(p_idx > -1);
-  p_label->setParent(static_cast<QWidget *>(m_navigationItems[p_idx].m_viewWindow)->parentWidget());
-  p_label->move(m_navigationItems[p_idx].m_topLeft);
+  Q_UNUSED(p_idx);
+  const auto &item = *static_cast<NavigationItem *>(p_item);
+  auto *widget = item.m_target.m_widget.data();
+  p_label->setParent(widget);
+  p_label->adjustSize();
+  const auto topLeft = item.m_target.m_rect.intersected(widget->rect()).topLeft();
+  p_label->move(qBound(0, topLeft.x(), qMax(0, widget->width() - p_label->width())),
+                qBound(0, topLeft.y(), qMax(0, widget->height() - p_label->height())));
 }
 
 void ViewArea2::handleTargetHit(void *p_item) {
-  if (p_item) {
-    auto *win = static_cast<ViewWindow2 *>(p_item);
-    for (auto *split : getAllViewSplits()) {
-      if (split->indexOf(win) != -1) {
-        split->setCurrentViewWindow(win);
-        split->focus();
-        break;
+  if (!p_item) {
+    return;
+  }
+  // Selection exits NavigationModeService only after this call returns. Copy
+  // before any focus/callback can clear the pointer-backed item storage.
+  const auto item = *static_cast<NavigationItem *>(p_item);
+  if (!item.m_window) {
+    return;
+  }
+  if (item.m_content) {
+    QTimer::singleShot(0, this, [this, item]() {
+      if (!isVisible() || !item.m_window || !item.m_window->isVisible() ||
+          !item.m_target.m_widget || !item.m_target.m_widget->isVisible() ||
+          !item.m_target.m_activate) {
+        return;
       }
+      for (auto *split : getAllViewSplits()) {
+        if (split->isVisible() && split->getCurrentViewWindow() == item.m_window) {
+          item.m_target.m_activate();
+          return;
+        }
+      }
+    });
+    return;
+  }
+  for (auto *split : getAllViewSplits()) {
+    if (split->indexOf(item.m_window) != -1) {
+      const QPointer<ViewSplit2> guardedSplit(split);
+      split->setCurrentViewWindow(item.m_window);
+      if (guardedSplit) {
+        guardedSplit->focus();
+      }
+      return;
     }
   }
 }
 
 void ViewArea2::clearNavigation() {
+  ++m_navigationGeneration;
+  m_navigationActive = false;
+  m_navigationRequests.clear();
+  m_nextNavigationRequest = 0;
   NavigationMode::clearNavigation();
   m_navigationItems.clear();
 }

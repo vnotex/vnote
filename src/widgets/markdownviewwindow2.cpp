@@ -25,6 +25,8 @@
 #include <QUuid>
 #include <QWebEngineProfile>
 
+#include <algorithm>
+
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/vtextedit.h>
@@ -130,6 +132,10 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
 }
 
 void MarkdownViewWindow2::releaseProtectedView() {
+  ++m_navigationGeneration;
+  if (m_viewer) {
+    m_viewer->invalidateNavigationTargets();
+  }
   if (!m_protectedView) {
     return;
   }
@@ -974,6 +980,76 @@ void MarkdownViewWindow2::handleAnchorJump(const QString &p_anchor) {
 
 void MarkdownViewWindow2::setMode(ViewWindowMode p_mode) { setModeInternal(p_mode, true); }
 
+void MarkdownViewWindow2::fetchNavigationTargets(NavigationTargetsCallback p_callback) {
+  const auto generation = ++m_navigationGeneration;
+  if (!p_callback) {
+    return;
+  }
+  const QPointer<MarkdownViewWindow2> self(this);
+  const QPointer<MarkdownEditor> editor(m_editor);
+  const QPointer<MarkdownViewer> viewer(m_viewer);
+  const auto mode = m_mode;
+  const auto editMode = m_editViewMode;
+  const auto current = [self, editor, viewer, generation, mode, editMode]() {
+    return self && self->isVisible() && self->isEnabled() && !self->m_switchingMode &&
+           self->m_navigationGeneration == generation && self->m_mode == mode &&
+           self->m_editViewMode == editMode && self->m_editor == editor.data() &&
+           self->m_viewer == viewer.data();
+  };
+  if (!current()) {
+    p_callback({});
+    return;
+  }
+
+  QVector<NavigationTarget> editorTargets;
+  if (mode == ViewWindowMode::Edit && editor && editor->isVisible()) {
+    editorTargets = editor->getNavigationTargets();
+  }
+  auto complete = [self, current, editorTargets = std::move(editorTargets),
+                   p_callback =
+                       std::move(p_callback)](QVector<NavigationTarget> p_targets) mutable {
+    if (!current()) {
+      p_callback({});
+      return;
+    }
+    editorTargets.reserve(editorTargets.size() + p_targets.size());
+    for (auto &target : p_targets) {
+      editorTargets.append(std::move(target));
+    }
+    editorTargets.erase(std::remove_if(editorTargets.begin(), editorTargets.end(),
+                                       [self](const NavigationTarget &p_target) {
+                                         return !p_target.m_widget ||
+                                                !p_target.m_widget->isVisible() ||
+                                                !self->isAncestorOf(p_target.m_widget) ||
+                                                p_target.m_rect.isEmpty() || !p_target.m_activate;
+                                       }),
+                        editorTargets.end());
+    std::stable_sort(editorTargets.begin(), editorTargets.end(),
+                     [self](const NavigationTarget &p_left, const NavigationTarget &p_right) {
+                       const auto left = p_left.m_widget->mapTo(self, p_left.m_rect.topLeft());
+                       const auto right = p_right.m_widget->mapTo(self, p_right.m_rect.topLeft());
+                       return left.y() == right.y() ? left.x() < right.x() : left.y() < right.y();
+                     });
+    for (auto &target : editorTargets) {
+      auto activate = std::move(target.m_activate);
+      target.m_activate = [current, activate = std::move(activate)]() {
+        if (current()) {
+          activate();
+        }
+      };
+    }
+    p_callback(std::move(editorTargets));
+  };
+  if (viewer && viewer->isVisible() && m_viewerReady &&
+      (mode == ViewWindowMode::Read ||
+       (mode == ViewWindowMode::Edit &&
+        editMode == MarkdownEditorConfig::EditViewMode::EditPreview))) {
+    viewer->fetchNavigationTargets(std::move(complete));
+  } else {
+    complete({});
+  }
+}
+
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
   if (p_mode == m_mode) {
     return;
@@ -983,6 +1059,10 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // re-enter this method. Skip if already switching.
   if (m_switchingMode) {
     return;
+  }
+  ++m_navigationGeneration;
+  if (m_viewer) {
+    m_viewer->invalidateNavigationTargets();
   }
   m_switchingMode = true;
   if (isReadMode()) {
@@ -1713,6 +1793,10 @@ void MarkdownViewWindow2::updateWebViewerConfig() {
 
 void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode) {
   Q_ASSERT(m_mode == ViewWindowMode::Edit);
+  ++m_navigationGeneration;
+  if (m_viewer) {
+    m_viewer->invalidateNavigationTargets();
+  }
   bool modeChanged = false;
   if (m_editViewMode != p_mode) {
     m_editViewMode = p_mode;

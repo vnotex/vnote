@@ -55,6 +55,8 @@ public:
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
+  void fetchNavigationTargets(NavigationTargetsCallback p_callback) override;
+
   int getCursorPosition() const Q_DECL_OVERRIDE;
 
   int getScrollPosition() const Q_DECL_OVERRIDE;
@@ -246,6 +248,7 @@ private:
   bool m_editSectionNumberEnabled = false;
   QString m_editSectionNumberPattern = QStringLiteral("1.1.");
   bool m_switchingMode = false; // Reentrancy guard.
+  quint64 m_navigationGeneration = 0;
   int m_textEditorBufferRevision = 0;
   int m_viewerBufferRevision = 0;
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;

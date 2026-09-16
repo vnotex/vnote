@@ -13,6 +13,7 @@
 #include <core/global.h>
 #include <imagehost/imagehosttypes.h>
 #include <utils/headingslugger.h>
+#include <widgets/navigationmode.h>
 
 class QMimeData;
 class QMenu;
@@ -151,6 +152,9 @@ public:
   void setImageHostController(ImageHostController *p_controller);
 
   void setHeadingLinkResolver(HeadingLinkResolver p_resolver);
+
+  // Visible source-link occurrences and realized preview widgets, in visual order.
+  QVector<NavigationTarget> getNavigationTargets();
 
   // Static helpers for placeholder generation and replacement (testable).
   static QString generatePlaceholder(int p_token, const QString &p_fileName);
@@ -311,6 +315,8 @@ private:
   // Resolve the markdown link URL at the given cursor position within p_block.
   // Returns an empty string when there is no link at the position.
   QString resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_block) const;
+  QString resolveLinkUrl(const QString &p_linkText) const;
+  QRect visibleLinkRect(const QTextBlock &p_block, int p_start, int p_end) const;
 
   // Whether @p_filePath is the file this editor is currently editing.
   // Returns false when the editor has no buffer or @p_filePath is empty.

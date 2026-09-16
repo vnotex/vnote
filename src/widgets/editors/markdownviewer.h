@@ -1,6 +1,7 @@
 #ifndef MARKDOWNVIEWER_H
 #define MARKDOWNVIEWER_H
 
+#include "../navigationmode.h"
 #include "../webviewer.h"
 
 #include <QClipboard>
@@ -38,6 +39,12 @@ public:
 
   void saveContent(const std::function<void(const QString &p_content)> &p_callback);
 
+  // Asynchronous GUI-thread snapshot; superseded or unavailable requests deliver empty.
+  void fetchNavigationTargets(NavigationTargetsCallback p_callback);
+
+  // Revoke pending collections and activations without executing JavaScript.
+  void invalidateNavigationTargets();
+
 signals:
   void zoomFactorChanged(qreal p_factor);
 
@@ -61,6 +68,8 @@ public:
   void restoreZoom();
 
 private:
+  void activateNavigationTarget(quint64 p_snapshot, int p_index);
+
   void handleCopyImageUrlAction();
 
   // Open the image under the cursor in an external application (read mode).
@@ -80,6 +89,8 @@ private:
 
   // @p_baseUrl: if it is a folder, please end it with '/'. It is not used now in web side.
   void crossCopy(const QString &p_target, const QString &p_baseUrl, const QString &p_html);
+
+  quint64 m_navigationGeneration = 0;
 
   bool m_protectedView = false;
 

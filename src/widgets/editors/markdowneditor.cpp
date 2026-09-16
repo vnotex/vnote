@@ -16,7 +16,10 @@
 #include <QRegularExpression>
 #include <QShortcut>
 #include <QTemporaryFile>
+#include <QTextLayout>
 #include <QTimer>
+
+#include <algorithm>
 
 #include <vtextedit/htmlimgscanner.h>
 #include <vtextedit/markdowneditorconfig.h>
@@ -2449,31 +2452,33 @@ QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_bl
   const auto text = p_block.text();
 
   QRegularExpression regExp(vte::MarkdownUtils::c_linkRegExp);
-  QString linkText;
   const int pib = p_cursorPos - p_block.position();
   auto matchIter = regExp.globalMatch(text);
   while (matchIter.hasNext()) {
     auto match = matchIter.next();
     if (pib >= match.capturedStart() && pib < match.capturedEnd()) {
-      linkText = match.captured(2);
-      break;
+      return resolveLinkUrl(match.captured(2));
     }
   }
 
-  if (linkText.isEmpty()) {
+  return QString();
+}
+
+QString MarkdownEditor::resolveLinkUrl(const QString &p_linkText) const {
+  if (p_linkText.isEmpty()) {
     return QString();
   }
   if (m_protectedBuffer) {
     // Logical resources and user-activated note/web links are resolved by the
     // owning view, not by probing a native path during a context-menu query.
-    return linkText;
+    return p_linkText;
   }
 
   QString linkUrl;
-  if (linkText.startsWith(QLatin1Char('#'))) {
-    linkUrl = linkText;
+  if (p_linkText.startsWith(QLatin1Char('#'))) {
+    linkUrl = p_linkText;
   } else {
-    auto fragResult = vnotex::splitUrlFragment(linkText);
+    auto fragResult = vnotex::splitUrlFragment(p_linkText);
     QString resolvedPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), fragResult.path);
     if (!fragResult.fragment.isEmpty()) {
       linkUrl = resolvedPath + QLatin1Char('#') + fragResult.fragment;
@@ -2483,6 +2488,124 @@ QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_bl
   }
 
   return linkUrl;
+}
+
+QRect MarkdownEditor::visibleLinkRect(const QTextBlock &p_block, int p_start, int p_end) const {
+  if (!p_block.isValid() || !p_block.isVisible() || p_start < 0 || p_end <= p_start ||
+      p_end > p_block.text().size()) {
+    return {};
+  }
+  const auto *layout = p_block.layout();
+  if (!layout) {
+    return {};
+  }
+  const auto viewportRect = m_textEdit->viewport()->rect();
+  for (int index = 0; index < layout->lineCount(); ++index) {
+    const auto line = layout->lineAt(index);
+    const int start = qMax(p_start, line.textStart());
+    const int end = qMin(p_end, line.textStart() + line.textLength());
+    if (end <= start) {
+      continue;
+    }
+    QTextCursor cursor(p_block);
+    cursor.setPosition(p_block.position() + line.textStart());
+    const auto caret = m_textEdit->cursorRect(cursor);
+    const qreal originX = caret.left() - line.cursorToX(line.textStart());
+    const qreal x1 = originX + line.cursorToX(start);
+    const qreal x2 = originX + line.cursorToX(end);
+    const QRectF fragment(qMin(x1, x2), caret.top(), qAbs(x2 - x1), line.height());
+    if (fragment.isEmpty()) {
+      continue;
+    }
+    const auto clipped = fragment.toAlignedRect().intersected(viewportRect);
+    if (!clipped.isEmpty()) {
+      return clipped;
+    }
+  }
+  return {};
+}
+
+QVector<NavigationTarget> MarkdownEditor::getNavigationTargets() {
+  QVector<NavigationTarget> targets;
+  auto *viewport = m_textEdit->viewport();
+  if (!isVisible() || !viewport->isVisible() || viewport->rect().isEmpty() ||
+      (m_protectedBuffer && m_protectedResourcesRevoked)) {
+    return targets;
+  }
+
+  const QPointer<MarkdownEditor> self(this);
+  const auto sequence = document()->revision();
+  const QRegularExpression expression(vte::MarkdownUtils::c_linkRegExp);
+  const auto last = vte::TextEditUtils::lastVisibleBlock(m_textEdit);
+  for (auto block = vte::TextEditUtils::firstVisibleBlock(m_textEdit);
+       block.isValid() && last.isValid() && block.blockNumber() <= last.blockNumber();
+       block = block.next()) {
+    if (!block.isVisible()) {
+      continue;
+    }
+    auto matches = expression.globalMatch(block.text());
+    while (matches.hasNext()) {
+      const auto match = matches.next();
+      const auto url = resolveLinkUrl(match.captured(2));
+      const auto rect = visibleLinkRect(block, match.capturedStart(), match.capturedEnd());
+      if (url.isEmpty() || rect.isEmpty()) {
+        continue;
+      }
+      const int start = block.position() + match.capturedStart();
+      const int end = block.position() + match.capturedEnd();
+      auto valid = [self, sequence, start, end, url, rect]() {
+        if (!self || !self->isVisible() || !self->m_textEdit->viewport()->isVisible() ||
+            self->document()->revision() != sequence ||
+            (self->m_protectedBuffer && self->m_protectedResourcesRevoked)) {
+          return false;
+        }
+        const auto currentBlock = self->document()->findBlock(start);
+        if (!currentBlock.isValid()) {
+          return false;
+        }
+        const int offset = start - currentBlock.position();
+        const auto currentMatch =
+            QRegularExpression(vte::MarkdownUtils::c_linkRegExp).match(currentBlock.text(), offset);
+        return currentMatch.hasMatch() && currentMatch.capturedStart() == offset &&
+               currentBlock.position() + currentMatch.capturedEnd() == end &&
+               self->resolveLinkUrl(currentMatch.captured(2)) == url &&
+               self->visibleLinkRect(currentBlock, offset, end - currentBlock.position()) == rect;
+      };
+      targets.append({viewport, rect, [self, url, valid]() {
+                        if (!valid()) {
+                          return;
+                        }
+                        self->m_textEdit->setFocus(Qt::ShortcutFocusReason);
+                        if (valid()) {
+                          self->openLink(url);
+                        }
+                      }});
+    }
+  }
+
+  for (const auto &location : getVisiblePreviewWidgetLocations()) {
+    const auto identity = location.m_identity;
+    const auto rect = location.m_rect;
+    targets.append({viewport, rect, [self, identity, rect]() {
+                      if (!self || !self->isVisible() ||
+                          (self->m_protectedBuffer && self->m_protectedResourcesRevoked)) {
+                        return;
+                      }
+                      for (const auto &current : self->getVisiblePreviewWidgetLocations()) {
+                        if (current.m_identity == identity && current.m_rect == rect) {
+                          self->focusPreviewWidget(identity);
+                          return;
+                        }
+                      }
+                    }});
+  }
+  std::stable_sort(targets.begin(), targets.end(),
+                   [](const NavigationTarget &p_left, const NavigationTarget &p_right) {
+                     return p_left.m_rect.y() == p_right.m_rect.y()
+                                ? p_left.m_rect.x() < p_right.m_rect.x()
+                                : p_left.m_rect.y() < p_right.m_rect.y();
+                   });
+  return targets;
 }
 
 void MarkdownEditor::openLink(const QString &p_url) {

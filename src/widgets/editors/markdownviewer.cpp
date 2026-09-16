@@ -3,6 +3,8 @@
 #include <QApplication>
 #include <QContextMenuEvent>
 #include <QDesktopServices>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QMenu>
 #include <QMimeData>
 #include <QScopedPointer>
@@ -15,6 +17,10 @@
 #else
 #include <QWebEngineContextMenuRequest>
 #endif
+
+#include <cmath>
+#include <limits>
+#include <utility>
 
 #include <controllers/markdownviewwindowcontroller.h>
 
@@ -81,6 +87,10 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
   channel->registerObject(QStringLiteral("vxAdapter"), m_adapter);
 
   page()->setWebChannel(channel);
+
+  connect(page(), &QWebEnginePage::loadStarted, this, &MarkdownViewer::invalidateNavigationTargets);
+  connect(m_adapter, &MarkdownViewerAdapter::textUpdated, this,
+          &MarkdownViewer::invalidateNavigationTargets);
 
   connect(QApplication::clipboard(), &QClipboard::changed, this,
           &MarkdownViewer::handleClipboardChanged);
@@ -170,6 +180,143 @@ void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper) {
           &PreviewHelper::handleGraphPreviewData);
   connect(m_adapter, &MarkdownViewerAdapter::mathPreviewDataReady, p_previewHelper,
           &PreviewHelper::handleMathPreviewData);
+}
+
+void MarkdownViewer::invalidateNavigationTargets() { ++m_navigationGeneration; }
+
+void MarkdownViewer::fetchNavigationTargets(NavigationTargetsCallback p_callback) {
+  invalidateNavigationTargets();
+  if (!p_callback) {
+    return;
+  }
+  const QPointer<MarkdownViewer> viewer(this);
+  const QPointer<QWebEnginePage> viewerPage(page());
+  const auto generation = m_navigationGeneration;
+  const auto viewerSize = size();
+  const auto zoom = zoomFactor();
+  const auto current = [viewer, viewerPage, generation, viewerSize, zoom]() {
+    return viewer && viewerPage && viewer->m_navigationGeneration == generation &&
+           viewer->page() == viewerPage.data() && viewer->isVisible() &&
+           viewer->m_adapter->isReady() && viewer->size() == viewerSize && !viewerSize.isEmpty() &&
+           std::isfinite(zoom) && zoom > 0 && viewer->zoomFactor() == zoom;
+  };
+  if (!current()) {
+    p_callback({});
+    return;
+  }
+  viewerPage->runJavaScript(
+      QStringLiteral("window.vxcore && typeof window.vxcore.getNavigationTargets === 'function'"
+                     " ? window.vxcore.getNavigationTargets() : null"),
+      [viewer, current, zoom, p_callback = std::move(p_callback)](const QVariant &p_result) {
+        if (!current()) {
+          p_callback({});
+          return;
+        }
+        const auto result = QJsonValue::fromVariant(p_result);
+        const auto object = result.toObject();
+        const auto snapshotValue = object.value(QStringLiteral("snapshot"));
+        const auto snapshotNumber = snapshotValue.toDouble();
+        // JavaScript's exact integer range, not the larger quint64 range.
+        if (!result.isObject() || !snapshotValue.isDouble() || !std::isfinite(snapshotNumber) ||
+            snapshotNumber <= 0 || snapshotNumber > 9007199254740991.0 ||
+            std::floor(snapshotNumber) != snapshotNumber ||
+            !object.value(QStringLiteral("targets")).isArray()) {
+          p_callback({});
+          return;
+        }
+        const auto snapshot = static_cast<quint64>(snapshotNumber);
+        const auto entries = object.value(QStringLiteral("targets")).toArray();
+        QVector<NavigationTarget> targets;
+        targets.reserve(entries.size());
+        for (const auto &entry : entries) {
+          const auto target = entry.toObject();
+          bool valid = entry.isObject();
+          for (const auto *key : {"index", "x", "y", "width", "height"}) {
+            const auto value = target.value(QLatin1String(key));
+            valid = valid && value.isDouble() && std::isfinite(value.toDouble());
+          }
+          if (!valid) {
+            continue;
+          }
+          const auto indexNumber = target.value(QStringLiteral("index")).toDouble();
+          const auto x = target.value(QStringLiteral("x")).toDouble() * zoom;
+          const auto y = target.value(QStringLiteral("y")).toDouble() * zoom;
+          const auto width = target.value(QStringLiteral("width")).toDouble() * zoom;
+          const auto height = target.value(QStringLiteral("height")).toDouble() * zoom;
+          if (indexNumber < 0 || indexNumber > std::numeric_limits<int>::max() ||
+              std::floor(indexNumber) != indexNumber || width <= 0 || height <= 0 ||
+              !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(width) ||
+              !std::isfinite(height) || !std::isfinite(x + width) || !std::isfinite(y + height)) {
+            continue;
+          }
+          // Clip in floating point before integer conversion to avoid overflow on invalid input.
+          const auto rect = QRectF(x, y, width, height)
+                                .intersected(QRectF(viewer->rect()))
+                                .toAlignedRect()
+                                .intersected(viewer->rect());
+          if (rect.isEmpty()) {
+            continue;
+          }
+          const auto index = static_cast<int>(indexNumber);
+          targets.append({viewer.data(), rect, [viewer, current, snapshot, index]() {
+                            if (current()) {
+                              viewer->activateNavigationTarget(snapshot, index);
+                            }
+                          }});
+        }
+        p_callback(std::move(targets));
+      });
+}
+
+void MarkdownViewer::activateNavigationTarget(quint64 p_snapshot, int p_index) {
+  const QPointer<MarkdownViewer> viewer(this);
+  const QPointer<QWebEnginePage> viewerPage(page());
+  const auto generation = m_navigationGeneration;
+  const auto viewerSize = size();
+  const auto zoom = zoomFactor();
+  const auto current = [viewer, viewerPage, generation, viewerSize, zoom]() {
+    return viewer && viewerPage && viewer->m_navigationGeneration == generation &&
+           viewer->page() == viewerPage.data() && viewer->isVisible() &&
+           viewer->m_adapter->isReady() && viewer->size() == viewerSize && !viewerSize.isEmpty() &&
+           std::isfinite(zoom) && zoom > 0 && viewer->zoomFactor() == zoom;
+  };
+  if (!current()) {
+    return;
+  }
+  viewerPage->runJavaScript(
+      QStringLiteral("window.vxcore && typeof window.vxcore.resolveNavigationTarget === 'function'"
+                     " ? window.vxcore.resolveNavigationTarget(%1, %2) : null")
+          .arg(p_snapshot)
+          .arg(p_index),
+      [viewer, current](const QVariant &p_result) {
+        // The mode/page may change while the resolver is in flight, after the outer callback.
+        if (!current()) {
+          return;
+        }
+        const auto result = QJsonValue::fromVariant(p_result);
+        const auto object = result.toObject();
+        const auto hrefValue = object.value(QStringLiteral("href"));
+        const auto urlValue = object.value(QStringLiteral("url"));
+        if (!result.isObject() || !hrefValue.isString() || !urlValue.isString()) {
+          return;
+        }
+        const auto href = hrefValue.toString();
+        const QUrl url(urlValue.toString());
+        if (href.isEmpty() || url.isEmpty() || !url.isValid()) {
+          return;
+        }
+        if (href.startsWith(QLatin1Char('#'))) {
+          viewer->adapter()->scrollToPosition(
+              MarkdownViewerAdapter::Position(-1, QUrl(href).fragment(QUrl::FullyDecoded)));
+        } else if (viewer->m_protectedView && QUrl(href).isRelative()) {
+          viewer->adapter()->activateProtectedLink(href);
+        } else if (!viewer->m_protectedView && url.isLocalFile()) {
+          emit viewer->localFileOpenRequested(url);
+        } else if (!viewer->m_protectedView || url.scheme() == QStringLiteral("http") ||
+                   url.scheme() == QStringLiteral("https")) {
+          emit viewer->externalLinkRequested(url);
+        }
+      });
 }
 
 void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {

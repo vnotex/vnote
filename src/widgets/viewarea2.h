@@ -43,6 +43,8 @@ public:
 
   ViewAreaController *getController() const;
 
+  void showNavigation() override;
+
   // ============ Split Factory ============
   ViewSplit2 *createViewSplit(const QString &p_workspaceId);
   QSplitter *createSplitter(Qt::Orientation p_orientation);
@@ -162,6 +164,8 @@ private slots:
   void onReattachDetachedWindow(DetachedWindow *p_window);
 
 private:
+  void appendReadyNavigationTargets();
+
   void setupController();
   void setupShortcuts();
   void wireSplitSignals(ViewSplit2 *p_split);
@@ -227,7 +231,24 @@ private:
   // Top-level detached windows (kept OUT of m_splits / the main splitter tree so
   // they are excluded from layout serialization and main-tree navigation).
   QVector<DetachedWindow *> m_detachedWindows;
-  QVector<ViewSplit2::TabNavigationInfo> m_navigationItems;
+  struct NavigationItem {
+    QPointer<ViewWindow2> m_window;
+    NavigationTarget m_target;
+    bool m_content = false;
+  };
+  struct NavigationRequest {
+    QPointer<ViewSplit2> m_split;
+    QPointer<ViewWindow2> m_window;
+    ViewWindowMode m_mode = ViewWindowMode::Invalid;
+    QVector<NavigationTarget> m_targets;
+    bool m_completed = false;
+  };
+  // Reserved once to the hint cap: live key handles point into this storage.
+  QVector<NavigationItem> m_navigationItems;
+  QVector<NavigationRequest> m_navigationRequests;
+  int m_nextNavigationRequest = 0;
+  quint64 m_navigationGeneration = 0;
+  bool m_navigationActive = false;
   ID m_nextWindowId = 1;
 
   // Reentrancy guard for maybeOpenHome().

@@ -21,6 +21,10 @@ class MarkdownViewerCore extends VXCore {
 
         this.numOfMuteScroll = 0;
 
+        this.navigationSnapshot = 0;
+        this.navigationTargets = [];
+        this.navigationLinkDestinations = new WeakMap();
+
         this.turndown = null;
 
         // Dict mapping from {id, index} to callback for renderGraph().
@@ -158,6 +162,8 @@ class MarkdownViewerCore extends VXCore {
     }
 
     setMarkdownText(p_text) {
+        ++this.navigationSnapshot;
+        this.navigationTargets = [];
         if (this.numOfOngoingWorkers > 0) {
             this.pendingData.text = p_text;
             console.info('wait for last render finish with remaing workers',
@@ -168,6 +174,117 @@ class MarkdownViewerCore extends VXCore {
             console.log('start new round with ' + this.numOfOngoingWorkers + ' workers');
             this.emit('markdownTextUpdated', p_text);
         }
+    }
+
+    // CSS client coordinates, shared by snapshot collection and activation revalidation.
+    visibleNavigationRect(p_element) {
+        if (!this.contentContainer || !p_element || !p_element.isConnected
+            || !this.contentContainer.contains(p_element)) {
+            return null;
+        }
+        const viewport = Utils.viewPortRect();
+        let left = 0;
+        let top = 0;
+        let right = viewport.width;
+        let bottom = viewport.height;
+        for (let node = p_element; node; node = node.parentElement) {
+            const style = window.getComputedStyle(node);
+            if (style.display === 'none' || style.visibility !== 'visible'
+                || style.contentVisibility === 'hidden' || Number(style.opacity) === 0) {
+                return null;
+            }
+            // Chromium can retain client rects for closed details contents.
+            if (node.tagName === 'DETAILS' && !node.open) {
+                const summary = node.querySelector(':scope > summary');
+                if (!summary || !summary.contains(p_element)) {
+                    return null;
+                }
+            }
+            if (node === p_element) {
+                continue;
+            }
+            const clipsX = /^(hidden|clip|scroll|auto)$/.test(style.overflowX);
+            const clipsY = /^(hidden|clip|scroll|auto)$/.test(style.overflowY);
+            if (clipsX || clipsY) {
+                const rect = node.getBoundingClientRect();
+                if (clipsX) {
+                    left = Math.max(left, rect.left + node.clientLeft);
+                    right = Math.min(right, rect.left + node.clientLeft + node.clientWidth);
+                }
+                if (clipsY) {
+                    top = Math.max(top, rect.top + node.clientTop);
+                    bottom = Math.min(bottom, rect.top + node.clientTop + node.clientHeight);
+                }
+            }
+        }
+        for (const fragment of p_element.getClientRects()) {
+            const x = Math.max(left, fragment.left);
+            const y = Math.max(top, fragment.top);
+            const width = Math.min(right, fragment.right) - x;
+            const height = Math.min(bottom, fragment.bottom) - y;
+            if ([x, y, width, height].every(Number.isFinite) && width > 0 && height > 0) {
+                return { x, y, width, height };
+            }
+        }
+        return null;
+    }
+
+    getNavigationTargets() {
+        ++this.navigationSnapshot;
+        this.navigationTargets = [];
+        const result = { snapshot: this.navigationSnapshot, targets: [] };
+        if (!this.initialized || !this.contentContainer || this.numOfOngoingWorkers > 0
+            || this.pendingData.text !== null) {
+            return result;
+        }
+        for (const element of this.contentContainer.querySelectorAll('a[href]')) {
+            const domHref = element.getAttribute('href');
+            const href = window.vxOptions.protectedView
+                ? this.navigationLinkDestinations.get(element) : domHref;
+            if (!href || !href.trim() || href === '#') {
+                continue;
+            }
+            let url;
+            try { url = new URL(href, document.baseURI).href; } catch (_) { continue; }
+            const rect = this.visibleNavigationRect(element);
+            if (!rect) {
+                continue;
+            }
+            const index = this.navigationTargets.length;
+            this.navigationTargets.push({ element, domHref, href, url, rect });
+            result.targets.push({ index, x: rect.x, y: rect.y,
+                                  width: rect.width, height: rect.height });
+        }
+        // Snapshot indices keep DOM identity even when hints are assigned in visual order.
+        result.targets.sort((a, b) => a.y - b.y || a.x - b.x || a.index - b.index);
+        return result;
+    }
+
+    resolveNavigationTarget(p_snapshot, p_index) {
+        if (p_snapshot !== this.navigationSnapshot || !Number.isInteger(p_index) || p_index < 0
+            || !this.initialized || this.numOfOngoingWorkers > 0 || this.pendingData.text !== null) {
+            return null;
+        }
+        const target = this.navigationTargets[p_index];
+        if (!target || target.element.getAttribute('href') !== target.domHref) {
+            return null;
+        }
+        const href = window.vxOptions.protectedView
+            ? this.navigationLinkDestinations.get(target.element) : target.domHref;
+        if (href !== target.href) {
+            return null;
+        }
+        try {
+            if (new URL(href, document.baseURI).href !== target.url) {
+                return null;
+            }
+        } catch (_) { return null; }
+        const rect = this.visibleNavigationRect(target.element);
+        if (!rect || rect.x !== target.rect.x || rect.y !== target.rect.y
+            || rect.width !== target.rect.width || rect.height !== target.rect.height) {
+            return null;
+        }
+        return { href: target.href, url: target.url };
     }
 
     scrollToLine(p_lineNumber) {
