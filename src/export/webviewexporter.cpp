@@ -8,6 +8,7 @@
 
 #include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QFileInfo>
 #include <QProcess>
 #include <QRegularExpression>
@@ -691,7 +692,8 @@ void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOp
 
 bool WebViewExporter::embedStyleResources(QString &p_html) const {
   bool altered = false;
-  QRegularExpression reg("\\burl\\(\"((file|qrc):[^\"\\)]+)\"\\);");
+  // Font sources may continue with format(...) or another source before the semicolon.
+  QRegularExpression reg("\\burl\\(\"((file|qrc):[^\"\\)]+)\"\\)");
 
   int pos = 0;
   while (pos < p_html.size()) {
@@ -701,12 +703,28 @@ bool WebViewExporter::embedStyleResources(QString &p_html) const {
       break;
     }
 
-    QString dataURI = WebUtils::toDataUri(QUrl(match.captured(1)), false);
+    const QUrl url(match.captured(1));
+    const auto suffix = QFileInfo(url.path()).suffix().toLower();
+    QString dataURI;
+    if (suffix == QStringLiteral("woff2") || suffix == QStringLiteral("woff") ||
+        suffix == QStringLiteral("ttf")) {
+      const auto path = url.isLocalFile() ? url.toLocalFile() : QLatin1Char(':') + url.path();
+      QFile font(path);
+      if (font.open(QIODevice::ReadOnly)) {
+        const auto data = font.readAll();
+        if (!data.isEmpty()) {
+          dataURI = QStringLiteral("data:font/%1;base64,%2")
+                        .arg(suffix, QString::fromLatin1(data.toBase64()));
+        }
+      }
+    } else {
+      dataURI = WebUtils::toDataUri(url, false);
+    }
     if (dataURI.isEmpty()) {
       pos = idx + match.capturedLength();
     } else {
       // Replace the url string in html.
-      QString newUrl = QStringLiteral("url('%1');").arg(dataURI);
+      QString newUrl = QStringLiteral("url('%1')").arg(dataURI);
       p_html.replace(idx, match.capturedLength(), newUrl);
       pos = idx + newUrl.size();
       altered = true;

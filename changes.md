@@ -21,6 +21,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Markdown pipe-table preview cells now display inline images and math; Insert Image targets the selected cell, including embedded images and image-host uploads
     * Single-line `$$...$$` formulas now preview in table cells, paragraphs and lists, using inline preview placement with display-style math typesetting
     * Choose KaTeX or MathJax for formulas in read mode and previews, with room reserved for numbered KaTeX equations
+    * KaTeX, its fonts and the preview rasterizer are bundled for offline reading, editor previews and exports; standalone HTML embeds the math fonts, while protected-note math restrictions remain unchanged
     * PlantUML sequence diagrams show each `newpage` page in read mode and stack all pages into one editor-preview image, without changing the note source
     * KaTeX, MathJax and SVG-based graph previews retain higher-resolution pixels without enlarging their display size; KaTeX raster exports retain the same extra detail
     * Inline and display math previews resize immediately with editor zoom while sharper rasters refresh asynchronously, preserving unrounded layout geometry

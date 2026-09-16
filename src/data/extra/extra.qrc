@@ -53,6 +53,72 @@
         <file>web/js/wavedrom/wavedrom.min.js</file>
         <file>web/js/wavedrom.js</file>
         <file>web/js/mathjax.js</file>
+        <!-- KaTeX 0.16.22 and html-to-image 1.11.13; upstream runtime files and licenses -->
+        <file>web/js/katex/fonts/KaTeX_AMS-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_AMS-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_AMS-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Caligraphic-Bold.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Caligraphic-Bold.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Caligraphic-Bold.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Caligraphic-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Caligraphic-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Caligraphic-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Fraktur-Bold.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Fraktur-Bold.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Fraktur-Bold.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Fraktur-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Fraktur-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Fraktur-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Bold.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Bold.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Bold.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Main-BoldItalic.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Main-BoldItalic.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Main-BoldItalic.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Italic.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Italic.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Italic.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Main-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Math-BoldItalic.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Math-BoldItalic.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Math-BoldItalic.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Math-Italic.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Math-Italic.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Math-Italic.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Bold.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Bold.woff</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Bold.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Italic.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Italic.woff</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Italic.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_SansSerif-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Script-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Script-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Script-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Size1-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Size1-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Size1-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Size2-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Size2-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Size2-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Size3-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Size3-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Size3-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Size4-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Size4-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Size4-Regular.woff2</file>
+        <file>web/js/katex/fonts/KaTeX_Typewriter-Regular.ttf</file>
+        <file>web/js/katex/fonts/KaTeX_Typewriter-Regular.woff</file>
+        <file>web/js/katex/fonts/KaTeX_Typewriter-Regular.woff2</file>
+        <file>web/js/katex/katex.min.css</file>
+        <file>web/js/katex/katex.min.js</file>
+        <file>web/js/katex/LICENSE</file>
+        <file>web/js/html-to-image/html-to-image.js</file>
+        <file>web/js/html-to-image/LICENSE</file>
         <file>web/js/plantuml/synchro2.js</file>
         <file>web/js/plantuml/zopfli.raw.min.js</file>
         <file>web/js/plantuml.js</file>

@@ -2,6 +2,7 @@ class MathRenderer extends VxWorker {
     constructor() {
         super();
         this.name = 'math';
+        this.scriptFolderPath = Utils.parentFolder(document.currentScript.src);
         this.renderer = window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
         this.initialization = null;
         this.rasterInitialization = null;
@@ -55,7 +56,7 @@ class MathRenderer extends VxWorker {
                     });
                 }
 
-                const base = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/';
+                const base = this.scriptFolderPath + '/katex/';
                 const script = new Promise((resolve, reject) => {
                     Utils.loadScript(base + 'katex.min.js', () => {
                         if (window.katex && typeof window.katex.render === 'function') {
@@ -106,7 +107,7 @@ class MathRenderer extends VxWorker {
             }
             if (window.vxOptions.protectedView) {
                 for (const node of nodes) {
-                    node.textContent = '[Math preview blocked in protected notes: no bundled renderer]';
+                    node.textContent = '[Math preview blocked in protected notes]';
                 }
                 return;
             }
@@ -221,7 +222,7 @@ class MathRenderer extends VxWorker {
     initializeRasterizer() {
         if (!this.rasterInitialization) {
             this.rasterInitialization = new Promise((resolve, reject) => {
-                Utils.loadScript('https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js', () => {
+                Utils.loadScript(this.scriptFolderPath + '/html-to-image/html-to-image.js', () => {
                     if (window.htmlToImage && typeof window.htmlToImage.toSvg === 'function'
                         && typeof window.htmlToImage.getFontEmbedCSS === 'function') {
                         resolve();

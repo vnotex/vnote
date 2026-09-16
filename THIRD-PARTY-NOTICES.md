@@ -13,7 +13,13 @@ It does **not** restate licenses that already ship next to the code they cover:
 | Material | Where its license lives |
 |---|---|
 | pdf.js, and the CMaps / ICC profiles / standard fonts / WASM decoders it bundles | `src/data/extra/web/pdf.js/web/**/LICENSE*` |
+| [KaTeX 0.16.22](https://github.com/KaTeX/KaTeX/releases/tag/v0.16.22), including its WOFF2 / WOFF / TTF fonts (MIT) | `src/data/extra/web/js/katex/LICENSE` |
+| [html-to-image 1.11.13](https://github.com/bubkoo/html-to-image/tree/v1.11.13), used for KaTeX previews and raster exports (MIT) | `src/data/extra/web/js/html-to-image/LICENSE` |
 | `libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`, and the cmark fork they vendor | each submodule's own repository |
+
+The KaTeX and html-to-image runtime files are unmodified upstream distribution files.
+Their licenses are included in `vnote_extra.rcc` and installed alongside the extracted
+web assets. KaTeX loads these local assets; MathJax retains its configurable script URL.
 
 Icon provenance below was established by comparing SVG path data against upstream, not
 by assuming from file names. Where that failed, the file says so — see

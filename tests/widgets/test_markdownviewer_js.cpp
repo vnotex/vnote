@@ -529,6 +529,7 @@ function element() {
   return { style: {}, querySelector: function() { return null; } };
 }
 var document = {
+  currentScript: { src: 'qrc:/vnotex/data/extra/web/js/mathjax.js' },
   fonts: { ready: Promise.resolve() },
   head: { appendChild: function() {} },
   createElement: element
@@ -540,6 +541,7 @@ var container = {
   removeChild: function(node) { node.parentNode = null; }
 };
 var Utils = {
+  parentFolder: function(path) { return path.substring(0, path.lastIndexOf('/')); },
   loadScript: function(url, cb) { scripts.push(cb); },
   httpGet: function(url, type, cb) { styles.push(cb); }
 };

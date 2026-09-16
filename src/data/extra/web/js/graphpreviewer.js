@@ -385,7 +385,7 @@ class GraphPreviewer {
         const context = canvas.getContext('2d');
         context.fillStyle = window.getComputedStyle(this.vxcore.contentContainer).color;
         context.font = '14px sans-serif';
-        context.fillText(p_name + ' preview blocked in protected notes: no bundled renderer', 4, 21);
+        context.fillText(p_name + ' preview blocked in protected notes', 4, 21);
         const data = canvas.toDataURL('image/png').split(',')[1];
         const setter = p_math ? this.setMathPreviewData.bind(this) : this.setGraphPreviewData.bind(this);
         setter(p_id, p_timeStamp, 'png', data, true, false,
