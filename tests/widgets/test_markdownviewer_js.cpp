@@ -398,6 +398,7 @@ private slots:
   void testCmarkMathTableDom();
   void testMathRenderer_initializationFanout();
   void testMathRenderer_failedInitializationReleasesPass();
+  void testMathRenderer_ignoresUnrelatedFontReadiness();
   void testInstall_loadBeforeChannel();
   void testInstall_channelBeforeLoad();
   void testInstall_onlyOnce();
@@ -530,12 +531,13 @@ function element() {
 }
 var document = {
   currentScript: { src: 'qrc:/vnotex/data/extra/web/js/mathjax.js' },
-  fonts: { ready: Promise.resolve() },
+  fonts: [],
   head: { appendChild: function() {} },
   createElement: element
 };
 window.getComputedStyle = function() { return { color: 'black', font: '16px serif' }; };
 var container = {
+  getBoundingClientRect: function() { return { width: 100, height: 20 }; },
   getElementsByClassName: function() { return [reading]; },
   appendChild: function(node) { node.parentNode = this; },
   removeChild: function(node) { node.parentNode = null; }
@@ -1208,6 +1210,111 @@ void TestMarkdownViewerJs::testMathRenderer_failedInitializationReleasesPass() {
     QCOMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
     QCOMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
   }
+}
+
+void TestMarkdownViewerJs::testMathRenderer_ignoresUnrelatedFontReadiness() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  page.setVisible(false);
+  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
+  page.setHtml(QStringLiteral("<!doctype html><html><body><iframe width='640' height='480' "
+                              "srcdoc=\"<!doctype html><html><body><div id='content'></div>"
+                              "<div id='preview'></div></body></html>\"></iframe></body></html>"),
+               QUrl::fromLocalFile(webDir() + QLatin1Char('/')));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+
+  QString source = QStringLiteral(R"JS(
+window.vxOptions = {mathRenderer: 'katex'};
+window.__mathFontsTest = {started: false, readDone: 0, previewDone: false, exportDone: false};
+window.vxcore = {
+  contentContainer: document.getElementById('content'),
+  registerWorker(worker) { window.mathWorker = worker; worker.vxcore = this; },
+  getWorker() { return {getCodeNodes() { return []; }}; },
+  finishWorker() { ++__mathFontsTest.readDone; }
+};
+)JS");
+  QString error;
+  for (const auto *file : {"utils.js", "vxworker.js", "svg-to-image.js", "mathjax.js"}) {
+    source += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(file), &error) +
+              QLatin1Char('\n');
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+  }
+  const QJsonObject assets{
+      {QStringLiteral("path"), QUrl::fromLocalFile(webDir() + QStringLiteral("/js")).toString()}};
+  source += QStringLiteral("mathWorker.scriptFolderPath = %1.path;\n")
+                .arg(QString::fromUtf8(QJsonDocument(assets).toJson(QJsonDocument::Compact)));
+  source += QStringLiteral(R"JS(
+(async function() {
+  try {
+    const forever = new Promise(() => {});
+    let release;
+    const ownFont = {family: '"KaTeX_Main"', status: 'loading',
+                     loaded: new Promise(resolve => { release = resolve; })};
+    const unrelatedFont = {family: 'OtherDiagram', status: 'loading', loaded: forever};
+    const fonts = document.fonts;
+    // Keep native font loading intact; expose controlled waits only at the renderer's API boundary.
+    Object.defineProperty(document, 'fonts', {value: {
+      ready: forever,
+      [Symbol.iterator]() { return [ownFont, unrelatedFont, ...fonts][Symbol.iterator](); }
+    }});
+    window.releaseMathFont = () => { ownFont.status = 'loaded'; release(); };
+    await Promise.all([mathWorker.initialize(), mathWorker.initializeRasterizer()]);
+    const equation = document.createElement('eq');
+    equation.className = 'tex-to-render'; equation.textContent = '$x^2$';
+    vxcore.contentContainer.appendChild(equation);
+    mathWorker.render(vxcore.contentContainer, 'tex-to-render');
+    new Promise(resolve => mathWorker.renderText(document.getElementById('preview'), '$x^2$', resolve))
+      .then(node => mathWorker.rasterizeHtml(node, 1))
+      .then(raster => new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+          const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+          __mathFontsTest.previewHasInk = pixels.some((value, index) => index % 4 === 3 && value > 0);
+          __mathFontsTest.previewDone = true;
+          resolve();
+        };
+        image.onerror = () => reject(new Error('Math preview is not a decodable image'));
+        image.src = raster.dataUrl;
+      })).catch(error => { __mathFontsTest.error = String(error); });
+    __mathFontsTest.started = true;
+  } catch (error) { __mathFontsTest.error = String(error); }
+})();
+)JS");
+  const QJsonObject scriptData{{QStringLiteral("source"), source}};
+  QJsonObject result;
+  evaluateNavigation(
+      page,
+      QStringLiteral("const script = document.createElement('script');"
+                     "script.textContent = %1.source; document.head.appendChild(script);"
+                     "script.remove(); return {installed: true};")
+          .arg(QString::fromUtf8(QJsonDocument(scriptData).toJson(QJsonDocument::Compact))),
+      result);
+  auto update = [&]() {
+    evaluateNavigation(page, QStringLiteral("return __mathFontsTest;"), result);
+    return !result.contains(QStringLiteral("error"));
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(update() && result.value(QStringLiteral("started")).toBool(), 10000);
+  QCOMPARE(result.value(QStringLiteral("readDone")).toInt(), 0);
+  QVERIFY(!result.value(QStringLiteral("previewDone")).toBool());
+  evaluateNavigation(page, QStringLiteral("releaseMathFont(); return {released: true};"), result);
+  QTRY_VERIFY_WITH_TIMEOUT(update() && result.value(QStringLiteral("readDone")).toInt() == 1 &&
+                               result.value(QStringLiteral("previewDone")).toBool(),
+                           10000);
+  QVERIFY(result.value(QStringLiteral("previewHasInk")).toBool());
+  evaluateNavigation(page, QStringLiteral(R"JS(
+mathWorker.prepareForExport({rasterizeMath: true}).then(() => {
+  __mathFontsTest.exportDone = true;
+  __mathFontsTest.exported = Boolean(document.querySelector('.tex-to-render img[data-math-png]'));
+});
+return {exportStarted: true};
+)JS"),
+                     result);
+  QTRY_VERIFY_WITH_TIMEOUT(update() && result.value(QStringLiteral("exportDone")).toBool(), 10000);
+  QVERIFY(result.value(QStringLiteral("exported")).toBool());
 }
 
 void TestMarkdownViewerJs::testInstall_loadBeforeChannel() {

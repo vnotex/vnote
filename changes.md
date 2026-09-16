@@ -39,7 +39,8 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
     * Built-in Git task icons follow the active theme in the Tasks dock and task launcher, including live theme switches
 * **Fixes**
-    * Invalid PlantUML SVG responses fail locally without replacing the failed block's source; valid partial pages and unrelated previews remain usable
+    * Invalid PlantUML SVG responses fail locally without replacing the failed block's source, and valid partial pages remain usable
+    * Math rendering, in-place previews and raster exports wait for KaTeX fonts instead of document-wide font/layout readiness, avoiding hidden-viewer stalls
     * The Image Host toolbar icon follows live theme switches, and existing math and diagram previews are regenerated with the new theme
     * Folder rename releases Windows explorer watches before changing the directory and preserves all descendant metadata in bundled notebooks
     * Renaming an expanded explorer folder preserves its child rows, expansion and selection without leaving blank areas or requiring Reload

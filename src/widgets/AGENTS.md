@@ -246,14 +246,25 @@ contains SVG elements, while PNG lists contain base64 strings. Never parse rende
 HTML: a failed HTML response can execute image handlers even in a detached fragment. Raster-only
 backends such as Ditaa may label PNG bytes as SVG; reject that mismatch locally and recommend PNG.
 On failure without valid pages, preserve the original code subtree and annotate it with an error
-tooltip. Do not rewrite its text: renderers share the hidden
-viewer document, and unrelated math can be waiting for its font/layout readiness. Failure to
-display partial results must also remain local and settle the node exactly once.
+tooltip. Do not rewrite its text or discard its highlighting. Failure to display partial results
+must also remain local and settle the node exactly once.
 
 Enumeration is bounded to 256 pages. Failures or the cap retain available read-mode pages with
 an incomplete-render warning; editor previews do not silently publish partial results. Protected
 notes remain blocked. `test_graphrenderer_js.cpp` covers web termination, error retention, the cap,
 and preview pixels in QtWebEngine, since QJSEngine does not support async/await.
+
+### Math font readiness
+
+`MathRenderer.waitForMathFonts()` first measures the math node so its used web fonts begin loading,
+then waits only for loading `KaTeX_*` faces through their `FontFace.loaded` promises. The raster
+path measures again after those fonts settle. Read rendering, in-place rasterization and raster
+export all use this boundary; they must not await `document.fonts.ready`. That document-wide
+promise includes unrelated fonts and post-layout work, which can remain pending indefinitely in
+the hidden Edit Only viewer. Do not replace this with a delay, a visibility toggle, or a blanket
+prefetch of unused fonts. The native hidden-page regression in `test_markdownviewer_js.cpp` holds
+global readiness and an unrelated font pending while requiring math to wait for its own font and
+then finish reading, PNG preview and export.
 
 ### Toolbar
 

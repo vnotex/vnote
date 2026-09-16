@@ -9,6 +9,23 @@ class MathRenderer extends VxWorker {
         this.langs = ['mathjax'];
     }
 
+    // A hidden viewer may never finish the document-wide font/layout barrier.
+    // Start the fonts needed by this math layout, then wait for the bundled
+    // KaTeX faces themselves, not unrelated SVG fonts or the next paint frame.
+    waitForMathFonts(p_node) {
+        p_node.getBoundingClientRect();
+        const pending = [];
+        for (const font of document.fonts) {
+            const family = font.family;
+            if (font.status === 'loading'
+                && (family.startsWith('KaTeX_') || family.startsWith('"KaTeX_')
+                    || family.startsWith("'KaTeX_"))) {
+                pending.push(font.loaded);
+            }
+        }
+        return Promise.all(pending);
+    }
+
     registerInternal() {
         this.vxcore.on('basicMarkdownRendered', () => {
             this.render(this.vxcore.contentContainer, 'tex-to-render');
@@ -127,7 +144,7 @@ class MathRenderer extends VxWorker {
                         console.error('failed to render KaTeX', error);
                     }
                 });
-                return document.fonts.ready;
+                return this.waitForMathFonts(p_node);
             });
         }).catch((error) => {
             console.error('failed to render math', this.renderer, error);
@@ -237,7 +254,7 @@ class MathRenderer extends VxWorker {
 
     rasterizeHtml(p_node, p_pixelRatio) {
         let width, height, pixelWidth, pixelHeight;
-        return this.initializeRasterizer().then(() => document.fonts.ready).then(() => {
+        return this.initializeRasterizer().then(() => this.waitForMathFonts(p_node)).then(() => {
             const rect = p_node.getBoundingClientRect();
             width = Math.ceil(Math.max(rect.width, p_node.scrollWidth));
             height = Math.ceil(Math.max(rect.height, p_node.scrollHeight));
@@ -316,7 +333,7 @@ class MathRenderer extends VxWorker {
         const scale = Math.max(2, window.devicePixelRatio || 1);
         return Promise.all(roots.filter((root) => !root.parentElement.closest('.katex')).map((root) => {
             let verticalAlign = null;
-            return Promise.resolve(document.fonts.ready).then(() => {
+            return this.waitForMathFonts(root).then(() => {
                 if (!root.closest('.katex-display')) {
                     const marker = document.createElement('span');
                     marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
