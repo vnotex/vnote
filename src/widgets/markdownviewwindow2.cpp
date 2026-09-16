@@ -512,8 +512,9 @@ void MarkdownViewWindow2::setupTextEditor() {
   m_previewHelper->editorZoomChanged();
 
   // Connect viewer <-> editor web channel signals.
-  connect(adapter(), &MarkdownViewerAdapter::ready, m_editor->getHighlighter(),
-          &vte::MarkdownHighlighter::updateHighlight);
+  auto *highlighter = m_editor->getHighlighter();
+  connect(adapter(), &MarkdownViewerAdapter::ready, highlighter,
+          [highlighter]() { highlighter->updateHighlight(); });
   connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, adapter(),
           &MarkdownViewerAdapter::htmlToMarkdownRequested);
   connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady, m_editor,
