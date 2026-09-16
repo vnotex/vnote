@@ -39,6 +39,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
     * Built-in Git task icons follow the active theme in the Tasks dock and task launcher, including live theme switches
 * **Fixes**
+    * The Image Host toolbar icon follows live theme switches, and existing math and diagram previews are regenerated with the new theme
     * Folder rename releases Windows explorer watches before changing the directory and preserves all descendant metadata in bundled notebooks
     * Renaming an expanded explorer folder preserves its child rows, expansion and selection without leaving blank areas or requiring Reload
     * Selected Location List results retain readable dark text on the VX Idea theme's light selection background

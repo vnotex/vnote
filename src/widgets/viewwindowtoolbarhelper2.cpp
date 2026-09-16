@@ -400,16 +400,15 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   }
 
   case Action::ImageHost: {
-    auto *btn = new QToolButton(p_tb);
-    btn->setPopupMode(QToolButton::InstantPopup);
-    btn->setIcon(generateIcon(p_services, QStringLiteral("image_host_editor.svg")));
-    btn->setProperty("iconName", QStringLiteral("image_host_editor.svg"));
-    btn->setToolTip(QObject::tr("Image Host"));
-    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
-    auto *menu = new QMenu(btn);
-    btn->setMenu(menu);
-    act = p_tb->addWidget(btn);
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("image_host_editor.svg")),
+                          QObject::tr("Image Host"));
     act->setProperty("iconName", QStringLiteral("image_host_editor.svg"));
+    auto *btn = qobject_cast<QToolButton *>(p_tb->widgetForAction(act));
+    Q_ASSERT(btn);
+    btn->setPopupMode(QToolButton::InstantPopup);
+    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+    auto *menu = new QMenu(p_tb);
+    act->setMenu(menu);
     break;
   }
 

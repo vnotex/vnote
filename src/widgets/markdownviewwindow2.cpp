@@ -321,13 +321,10 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
   // Image hosts are not an available storage destination for protected notes.
   if (!getBuffer().isEncrypted()) {
     auto *act = addAction(p_toolBar, ViewWindowToolBarHelper2::ImageHost);
-    auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(act));
-    if (btn) {
-      m_imageHostMenu = btn->menu();
-      updateImageHostMenu();
-      connect(m_imageHostMenu, &QMenu::triggered, this,
-              [this](QAction *p_act) { handleImageHostChanged(p_act->data().toString()); });
-    }
+    m_imageHostMenu = act->menu();
+    updateImageHostMenu();
+    connect(m_imageHostMenu, &QMenu::triggered, this,
+            [this](QAction *p_act) { handleImageHostChanged(p_act->data().toString()); });
     if (m_imageHostController) {
       connect(m_imageHostController, &ImageHostController::providerChanged, this,
               &MarkdownViewWindow2::updateImageHostMenu);
@@ -1635,6 +1632,19 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
 void MarkdownViewWindow2::handleThemeChanged() {
   updateEditSectionNumberOptions(false);
   ViewWindow2::handleThemeChanged(); // base: refreshes toolbar icons
+
+  // Cached preview rasters contain the old theme's colors. Retire them before
+  // applying editor styles, then request fresh previews when the new page is ready.
+  if (m_viewer) {
+    if (m_syncPreviewTimer) {
+      m_syncPreviewTimer->stop();
+    }
+    if (m_previewHelper) {
+      m_previewHelper->invalidatePreviews();
+    }
+    m_viewerReady = false;
+    m_refreshMathPreviewsOnReady = true;
+  }
 
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &editorConfig = configMgr->getEditorConfig();

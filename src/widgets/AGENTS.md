@@ -251,6 +251,11 @@ and preview pixels in QtWebEngine, since QJSEngine does not support async/await.
 - `ToolbarHelper2` — main window toolbar construction
 - `ViewWindowToolbarHelper2` — per-view-window toolbar construction
 
+Theme changes must retire `PreviewHelper`'s cached math/diagram rasters before applying editor
+styles and reloading the viewer. Re-request previews through `MarkdownEditor::refreshPreviewHighlight()`
+when the new viewer reports ready, as for renderer-setting changes. `PreviewMgr::refreshPreview()`
+alone does not invalidate `PreviewHelper`'s renderer-dependent cache.
+
 ### Dialogs (`dialogs/`)
 
 - `NewNoteDialog2`, `NewFolderDialog2`, `NewNotebookDialog2`
