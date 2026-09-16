@@ -512,16 +512,8 @@ void MarkdownViewWindow2::setupTextEditor() {
   m_previewHelper->editorZoomChanged();
 
   // Connect viewer <-> editor web channel signals.
-  auto *highlighter = m_editor->getHighlighter();
-  connect(adapter(), &MarkdownViewerAdapter::ready, highlighter, [this, highlighter]() {
-    qCDebug(lcPerfPreview) << "[math-trace] phase=ready-rehighlight"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "helper=" << static_cast<const void *>(m_previewHelper)
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
-    highlighter->updateHighlight();
-  });
+  connect(adapter(), &MarkdownViewerAdapter::ready, m_editor->getHighlighter(),
+          &vte::MarkdownHighlighter::updateHighlight);
   connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, adapter(),
           &MarkdownViewerAdapter::htmlToMarkdownRequested);
   connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady, m_editor,
@@ -624,15 +616,7 @@ bool MarkdownViewWindow2::setupViewer() {
   // Start hidden. The viewer will be shown explicitly when entering
   // Read mode or EditPreview mode. This avoids a visible blank pane
   // in the QSplitter while WebEngine loads the HTML template.
-  qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-hide-start reason=initial"
-                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                         << "adapter=" << static_cast<const void *>(adapterObj)
-                         << "visible=" << m_viewer->isVisible() << "viewerReady=" << m_viewerReady;
   m_viewer->hide();
-  qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-hide-end reason=initial"
-                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                         << "adapter=" << static_cast<const void *>(adapterObj)
-                         << "visible=" << m_viewer->isVisible() << "viewerReady=" << m_viewerReady;
 
   m_viewer->setPreviewHelper(m_previewHelper);
 
@@ -670,13 +654,6 @@ bool MarkdownViewWindow2::setupViewer() {
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
     m_viewerReady = true;
     if (m_refreshMathPreviewsOnReady) {
-      qCDebug(lcPerfPreview) << "[math-trace] phase=ready-forced-refresh"
-                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                             << "adapter=" << static_cast<const void *>(adapter())
-                             << "helper=" << static_cast<const void *>(m_previewHelper)
-                             << "hasEditor=" << (m_editor != nullptr)
-                             << "visible=" << m_viewer->isVisible()
-                             << "viewerReady=" << m_viewerReady;
       m_refreshMathPreviewsOnReady = false;
       if (m_editor) {
         m_editor->refreshPreviewHighlight();
@@ -1140,17 +1117,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       // completes.  The viewer will be hidden by setEditViewMode()
       // or explicitly below once the editor is shown.
       // (Matches legacy MarkdownViewWindow behavior.)
-      qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-show-start reason=initial-edit"
-                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                             << "adapter=" << static_cast<const void *>(adapter())
-                             << "visible=" << m_viewer->isVisible()
-                             << "viewerReady=" << m_viewerReady;
       m_viewer->show();
-      qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-show-end reason=initial-edit"
-                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                             << "adapter=" << static_cast<const void *>(adapter())
-                             << "visible=" << m_viewer->isVisible()
-                             << "viewerReady=" << m_viewerReady;
     }
   }
 
@@ -1183,17 +1150,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // Show/hide widgets and set focus.
   switch (m_mode) {
   case ViewWindowMode::Read:
-    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-show-start reason=read-mode"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
     m_viewer->show();
-    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-show-end reason=read-mode"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
     m_viewer->setFocus();
     if (m_editor) {
       m_editor->hide();
@@ -1846,13 +1803,6 @@ void MarkdownViewWindow2::updateWebViewerConfig() {
 
 void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode) {
   Q_ASSERT(m_mode == ViewWindowMode::Edit);
-  qCDebug(lcPerfPreview) << "[math-trace] phase=edit-view-mode-decision"
-                         << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                         << "adapter=" << static_cast<const void *>(adapter())
-                         << "requestedMode=" << static_cast<int>(p_mode)
-                         << "previousMode=" << static_cast<int>(m_editViewMode)
-                         << "visible=" << (m_viewer && m_viewer->isVisible())
-                         << "viewerReady=" << m_viewerReady;
   ++m_navigationGeneration;
   if (m_viewer) {
     m_viewer->invalidateNavigationTargets();
@@ -1872,17 +1822,7 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     // Always hide viewer in EditOnly mode. Even if the viewer is still
     // loading (m_viewerReady == false), hide it immediately to avoid a
     // visible blank pane in the QSplitter while the WebEngine initializes.
-    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-hide-start reason=edit-only"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
     m_viewer->hide();
-    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-hide-end reason=edit-only"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
     if (modeChanged) {
       if (m_syncPreviewTimer) {
         disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, m_syncPreviewTimer,
@@ -1898,17 +1838,7 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     if (m_splitter->count() > 1) {
       m_splitter->handle(1)->setVisible(true);
     }
-    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-show-start reason=edit-preview"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
     m_viewer->show();
-    qCDebug(lcPerfPreview) << "[math-trace] phase=viewer-show-end reason=edit-preview"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(adapter())
-                           << "visible=" << m_viewer->isVisible()
-                           << "viewerReady=" << m_viewerReady;
     WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
     if (modeChanged) {
       if (!m_syncPreviewTimer) {

@@ -34,30 +34,6 @@ class GraphPreviewer {
             { passive: true });
     }
 
-    mathTrace(p_phase, p_trace, p_sizes) {
-        if (!p_trace) {
-            return;
-        }
-        try {
-            this.vxcore.getWorker('math').trace(p_phase, p_trace, p_sizes);
-        } catch (error) {
-        }
-    }
-
-    // Keep the graph aggregate's setter classification separate from opt-in math tracing.
-    tracedMathSetter(p_setter, p_trace) {
-        if (!p_trace) {
-            return p_setter;
-        }
-        return (...args) => {
-            this.mathTrace('bridge-send', p_trace, { chars: args[3] ? args[3].length : 0,
-                                                   width: args[6] || 0, height: args[7] || 0 });
-            const result = p_setter(...args);
-            this.mathTrace('bridge-complete', p_trace);
-            return result;
-        };
-    }
-
     // performance.now(), not Date.now(): Chromium clamps wall-clock timer
     // resolution in some configurations.
     perfNow() {
@@ -283,24 +259,13 @@ class GraphPreviewer {
     // Interface 1.
     // @p_scale: the editor zoom ratio, without any DPI factor.
     previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
-        const trace = window.vxMathTraceId && p_lang === 'mathjax'
-            ? 'fenced:' + p_timeStamp + ':' + p_id : undefined;
-        if (trace) {
-            this.mathTrace('request-receive', trace, { chars: p_text.length });
-        }
         if (window.vxOptions.protectedView
             && (p_lang === 'puml' || p_lang === 'plantuml' || p_lang === 'mathjax')) {
-            this.mathTrace('request-protected', trace);
-            this.protectedBlockedPreview(p_id, p_timeStamp, false, p_lang, p_scale, trace);
+            this.protectedBlockedPreview(p_id, p_timeStamp, false, p_lang, p_scale);
             return;
         }
         if (p_text.length == 0) {
-            if (trace) {
-                this.mathTrace('request-empty', trace);
-                this.mathTrace('bridge-send', trace, { chars: 0 });
-            }
             this.setGraphPreviewData(p_id, p_timeStamp);
-            this.mathTrace('bridge-complete', trace);
             return;
         }
 
@@ -387,7 +352,7 @@ class GraphPreviewer {
             // Completes through setGraphPreviewData (processSvgAsPng's default
             // setter), so it is counted as a request with a raster phase only.
             this.perfNoteRequest(p_timeStamp, p_id, false);
-            this.renderMath(p_id, p_timeStamp, p_text, null, p_scale, trace);
+            this.renderMath(p_id, p_timeStamp, p_text, null, p_scale);
             return;
         } else {
             this.setGraphPreviewData(p_id, p_timeStamp);
@@ -397,17 +362,11 @@ class GraphPreviewer {
     // Interface 2.
     // @p_scale: the editor zoom ratio, without any DPI factor.
     previewMath(p_id, p_timeStamp, p_text, p_scale = 1) {
-        const trace = window.vxMathTraceId ? 'math:' + p_timeStamp + ':' + p_id : undefined;
-        if (trace) {
-            this.mathTrace('request-receive', trace, { chars: p_text.length });
-        }
         if (window.vxOptions.protectedView) {
-            this.mathTrace('request-protected', trace);
-            this.protectedBlockedPreview(p_id, p_timeStamp, true, 'Math', p_scale, trace);
+            this.protectedBlockedPreview(p_id, p_timeStamp, true, 'Math', p_scale);
             return;
         }
         if (p_text.length == 0) {
-            this.mathTrace('request-empty', trace);
             this.setMathPreviewData(p_id, p_timeStamp);
             return;
         }
@@ -415,10 +374,10 @@ class GraphPreviewer {
         this.initOnFirstPreview();
 
         // Do we need to go through TexMath plugin? I don't think so.
-        this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this), p_scale, trace);
+        this.renderMath(p_id, p_timeStamp, p_text, this.setMathPreviewData.bind(this), p_scale);
     }
 
-    protectedBlockedPreview(p_id, p_timeStamp, p_math, p_name, p_scale = 1, p_trace) {
+    protectedBlockedPreview(p_id, p_timeStamp, p_math, p_name, p_scale = 1) {
         const scale = p_scale || 1;
         const canvas = document.createElement('canvas');
         canvas.width = 560;
@@ -428,8 +387,7 @@ class GraphPreviewer {
         context.font = '14px sans-serif';
         context.fillText(p_name + ' preview blocked in protected notes', 4, 21);
         const data = canvas.toDataURL('image/png').split(',')[1];
-        const setter = p_math ? this.setMathPreviewData.bind(this)
-            : this.tracedMathSetter(this.setGraphPreviewData.bind(this), p_trace);
+        const setter = p_math ? this.setMathPreviewData.bind(this) : this.setGraphPreviewData.bind(this);
         setter(p_id, p_timeStamp, 'png', data, true, false,
                Math.max(1, Math.round(560 * scale)), Math.max(1, Math.round(32 * scale)));
     }
@@ -444,9 +402,9 @@ class GraphPreviewer {
         }
     }
 
-    renderMath(p_id, p_timeStamp, p_text, p_dataSetter, p_scale = 1, p_trace) {
+    renderMath(p_id, p_timeStamp, p_text, p_dataSetter, p_scale = 1) {
         const worker = this.vxcore.getWorker('math');
-        const setter = p_dataSetter || this.tracedMathSetter(this.setGraphPreviewData.bind(this), p_trace);
+        const setter = p_dataSetter || this.setGraphPreviewData.bind(this);
         worker.renderText(this.container, p_text, (node) => {
             if (!node) {
                 setter(p_id, p_timeStamp);
@@ -455,14 +413,13 @@ class GraphPreviewer {
             if (node.namespaceURI === 'http://www.w3.org/2000/svg') {
                 this.fixSvgCurrentColor(node);
                 this.fixSvgRelativeWidth(node);
-                this.mathTrace('svg-raster-dispatch', p_trace);
-                this.processSvgAsPng(p_id, p_timeStamp, node, p_dataSetter, p_scale, p_trace);
+                this.processSvgAsPng(p_id, p_timeStamp, node, p_dataSetter, p_scale);
                 return;
             }
             if (!p_dataSetter) {
                 this.perfNoteRasterStart(p_timeStamp, p_id);
             }
-            worker.rasterizeHtml(node, (window.devicePixelRatio || 1) * (p_scale || 1), p_trace)
+            worker.rasterizeHtml(node, (window.devicePixelRatio || 1) * (p_scale || 1))
                 .then((raster) => {
                     const png = raster.dataUrl.substring(raster.dataUrl.indexOf(',') + 1);
                     setter(p_id, p_timeStamp, 'png', png, true, false,
@@ -477,7 +434,7 @@ class GraphPreviewer {
                     node.remove();
                     console.error('failed to deliver math raster', error);
                 });
-        }, p_trace);
+        });
     }
 
     processGraph(p_id, p_timeStamp, p_graphDiv, p_scale = 1) {
@@ -492,13 +449,13 @@ class GraphPreviewer {
         this.processSvgAsPng(p_id, p_timeStamp, p_graphDiv.firstElementChild, null, p_scale);
     }
 
-    processSvgAsPng(p_id, p_timeStamp, p_svgNode, p_dataSetter = null, p_scale = 1, p_trace) {
-        // Direct math previews use setMathPreviewData and a separate id/timestamp
-        // namespace. Only the graph path participates in aggregate raster accounting;
-        // opt-in math trace events cover both paths independently.
+    processSvgAsPng(p_id, p_timeStamp, p_svgNode, p_dataSetter = null, p_scale = 1) {
+        // Math previews carry their own id/timestamp namespace and complete via
+        // setMathPreviewData, which is not instrumented; only the graph path
+        // (no explicit setter) participates in the raster accounting.
         const isGraphPath = !p_dataSetter;
         if (!p_dataSetter) {
-            p_dataSetter = this.tracedMathSetter(this.setGraphPreviewData.bind(this), p_trace);
+            p_dataSetter = this.setGraphPreviewData.bind(this);
         }
         if (!p_svgNode) {
             console.warn('failed to preview graph', p_id, p_timeStamp);
@@ -646,12 +603,6 @@ class GraphPreviewer {
             logicalWidth: p_logicalWidth,
             logicalHeight: p_logicalHeight
         };
-        const trace = window.vxMathTraceId ? 'math:' + p_timeStamp + ':' + p_id : undefined;
-        if (trace) {
-            this.mathTrace('bridge-send', trace, { chars: p_data ? p_data.length : 0,
-                                                 width: p_logicalWidth, height: p_logicalHeight });
-        }
         this.vxcore.setMathPreviewData(previewData);
-        this.mathTrace('bridge-complete', trace);
     }
 }

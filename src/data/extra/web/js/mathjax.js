@@ -7,43 +7,6 @@ class MathRenderer extends VxWorker {
         this.initialization = null;
         this.rasterInitialization = null;
         this.langs = ['mathjax'];
-        this.traceId = window.vxMathTraceId;
-        if (this.traceId) {
-            this.traceReadSequence = 0;
-            this.traceRasters = 0;
-            this.trace('created');
-            document.addEventListener('visibilitychange', () => this.trace('visibility-change'));
-        }
-    }
-
-    trace(p_phase, p_context, p_sizes) {
-        if (!this.traceId) {
-            return;
-        }
-        try {
-            console.log('[math-trace] ' + JSON.stringify(Object.assign({
-                page: this.traceId,
-                phase: p_phase,
-                context: p_context || 'renderer',
-                epochMs: Date.now(),
-                ms: performance.now(),
-                visibility: document.visibilityState,
-                renderer: this.renderer,
-                inFlight: this.traceRasters
-            }, p_sizes)));
-        } catch (error) {
-        }
-    }
-
-    // Observe a sibling only; the caller still receives the original font promise.
-    waitForFonts(p_trace) {
-        this.trace('fonts-wait', p_trace);
-        const ready = document.fonts.ready;
-        if (this.traceId) {
-            ready.then(() => this.trace('fonts-ready', p_trace),
-                       () => this.trace('fonts-error', p_trace));
-        }
-        return ready;
     }
 
     registerInternal() {
@@ -53,10 +16,8 @@ class MathRenderer extends VxWorker {
         this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
     }
 
-    initialize(p_trace) {
-        this.trace('initialize-wait', p_trace);
+    initialize() {
         if (!this.initialization) {
-            this.trace('initialize-start', p_trace);
             this.initialization = Promise.resolve().then(() => {
                 if (this.renderer === 'mathjax') {
                     window.MathJax = {
@@ -77,18 +38,13 @@ class MathRenderer extends VxWorker {
                     const script = window.vxOptions.mathJaxScript
                         || 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
                     return new Promise((resolve, reject) => {
-                        this.trace('initialize-script-start', p_trace);
                         Utils.loadScript(script, () => {
-                            this.trace('initialize-script-callback', p_trace);
                             if (!window.MathJax || !window.MathJax.startup
                                 || !window.MathJax.startup.promise) {
-                                this.trace('initialize-script-error', p_trace);
                                 reject(new Error('MathJax startup unavailable'));
                                 return;
                             }
-                            this.trace('initialize-startup-wait', p_trace);
                             Promise.resolve(window.MathJax.startup.promise).then(() => {
-                                this.trace('initialize-startup-ready', p_trace);
                                 if (typeof window.MathJax.typesetPromise !== 'function'
                                     || typeof window.MathJax.tex2svg !== 'function'
                                     || typeof window.MathJax.texReset !== 'function'
@@ -102,25 +58,17 @@ class MathRenderer extends VxWorker {
 
                 const base = this.scriptFolderPath + '/katex/';
                 const script = new Promise((resolve, reject) => {
-                    this.trace('initialize-script-start', p_trace);
                     Utils.loadScript(base + 'katex.min.js', () => {
-                        this.trace('initialize-script-callback', p_trace);
                         if (window.katex && typeof window.katex.render === 'function') {
-                            this.trace('initialize-script-ready', p_trace);
                             resolve();
                         } else {
-                            this.trace('initialize-script-error', p_trace);
                             reject(new Error('KaTeX API unavailable'));
                         }
                     });
                 });
                 const stylesheet = new Promise((resolve, reject) => {
                     const url = base + 'katex.min.css';
-                    this.trace('initialize-css-start', p_trace);
                     Utils.httpGet(url, 'text', (css) => {
-                        if (this.traceId) {
-                            this.trace('initialize-css-callback', p_trace, { chars: css ? css.length : 0 });
-                        }
                         try {
                             if (!css || !css.trim()) {
                                 throw new Error('KaTeX stylesheet unavailable');
@@ -133,10 +81,8 @@ class MathRenderer extends VxWorker {
                                     return 'url("' + new URL(target, url).href + '")';
                                 });
                             document.head.appendChild(style);
-                            this.trace('initialize-css-ready', p_trace);
                             resolve();
                         } catch (error) {
-                            this.trace('initialize-css-error', p_trace);
                             reject(error);
                         }
                     });
@@ -147,45 +93,28 @@ class MathRenderer extends VxWorker {
                 throw error;
             });
         }
-        if (this.traceId) {
-            this.initialization.then(() => this.trace('initialize-ready', p_trace),
-                                     () => this.trace('initialize-error', p_trace));
-        }
         return this.initialization;
     }
 
     // A reading pass owes one completion, independent of any simultaneous previews.
     render(p_node, p_className) {
-        const trace = this.traceId ? 'read:' + (++this.traceReadSequence) : undefined;
-        this.trace('read-start', trace);
         return Promise.resolve().then(() => {
             const extraNodes = this.vxcore.getWorker('markdownit').getCodeNodes(this.langs);
             this.transformExtraNodes(p_node, p_className, extraNodes);
             const nodes = Array.from(p_node.getElementsByClassName(p_className));
-            if (this.traceId) {
-                this.trace('read-nodes', trace, { nodes: nodes.length, extraNodes: extraNodes.length });
-            }
             if (!nodes.length) {
-                this.trace('read-no-math', trace);
                 return;
             }
             if (window.vxOptions.protectedView) {
-                this.trace('read-blocked', trace);
                 for (const node of nodes) {
                     node.textContent = '[Math preview blocked in protected notes]';
                 }
                 return;
             }
-            return this.initialize(trace).then(() => {
-                this.trace('typeset-begin', trace);
+            return this.initialize().then(() => {
                 if (this.renderer === 'mathjax') {
                     window.MathJax.texReset();
-                    const typeset = window.MathJax.typesetPromise(nodes);
-                    if (this.traceId) {
-                        typeset.then(() => this.trace('typeset-end', trace),
-                                     () => this.trace('typeset-error', trace));
-                    }
-                    return typeset;
+                    return window.MathJax.typesetPromise(nodes);
                 }
                 const macros = {};
                 nodes.forEach((node) => {
@@ -195,21 +124,14 @@ class MathRenderer extends VxWorker {
                             this.renderKatex(node, check, macros);
                         }
                     } catch (error) {
-                        this.trace('typeset-node-error', trace);
                         console.error('failed to render KaTeX', error);
                     }
                 });
-                this.trace('typeset-end', trace);
-                return this.waitForFonts(trace);
+                return document.fonts.ready;
             });
         }).catch((error) => {
-            this.trace('read-error', trace);
             console.error('failed to render math', this.renderer, error);
-        }).then(() => {
-            const result = this.finishWork();
-            this.trace('read-complete', trace);
-            return result;
-        });
+        }).then(() => this.finishWork());
     }
 
     renderKatex(p_node, p_check, p_macros) {
@@ -223,35 +145,21 @@ class MathRenderer extends VxWorker {
     }
 
     // Returns MathJax's SVG or an attached KaTeX wrapper owned by the preview caller.
-    renderText(p_container, p_text, p_callback, p_trace) {
-        this.trace('render-text-start', p_trace);
-        const callback = this.traceId ? (node) => {
-            this.trace('render-callback-begin', p_trace, { nodes: node ? 1 : 0 });
-            try {
-                return p_callback(node);
-            } finally {
-                this.trace('render-callback-end', p_trace);
-            }
-        } : p_callback;
+    renderText(p_container, p_text, p_callback) {
         if (window.vxOptions.protectedView) {
-            this.trace('render-text-blocked', p_trace);
-            callback(null);
+            p_callback(null);
             return;
         }
         let wrapper = null;
-        return this.initialize(p_trace).then(() => {
+        return this.initialize().then(() => {
             const check = this.removeTextGuard(p_text);
             if (!check) {
-                this.trace('render-text-empty', p_trace);
                 return null;
             }
-            this.trace('typeset-begin', p_trace);
             if (this.renderer === 'mathjax') {
                 const options = window.MathJax.getMetricsFor(p_container, check.display);
                 window.MathJax.texReset();
-                const svg = window.MathJax.tex2svg(check.text, options).firstElementChild;
-                this.trace('typeset-end', p_trace);
-                return svg;
+                return window.MathJax.tex2svg(check.text, options).firstElementChild;
             }
             wrapper = document.createElement('span');
             const style = window.getComputedStyle(this.vxcore.contentContainer);
@@ -281,17 +189,14 @@ class MathRenderer extends VxWorker {
                     });
                 }
             }
-            this.trace('typeset-end', p_trace);
             return wrapper;
         }).catch((error) => {
-            this.trace('render-text-error', p_trace);
             if (wrapper && wrapper.parentNode) {
                 wrapper.parentNode.removeChild(wrapper);
             }
             console.error('failed to preview math', this.renderer, error);
             return null;
-        }).then(callback).catch((error) => {
-            this.trace('render-callback-error', p_trace);
+        }).then(p_callback).catch((error) => {
             console.error('failed to deliver math preview', error);
         });
     }
@@ -314,14 +219,10 @@ class MathRenderer extends VxWorker {
         Utils.replaceNodeWithPreCheck(p_node, section);
     }
 
-    initializeRasterizer(p_trace) {
-        this.trace('raster-initialize-wait', p_trace);
+    initializeRasterizer() {
         if (!this.rasterInitialization) {
-            this.trace('raster-initialize-start', p_trace);
             this.rasterInitialization = new Promise((resolve, reject) => {
-                this.trace('raster-script-start', p_trace);
                 Utils.loadScript(this.scriptFolderPath + '/html-to-image/html-to-image.js', () => {
-                    this.trace('raster-script-callback', p_trace);
                     if (window.htmlToImage && typeof window.htmlToImage.toSvg === 'function'
                         && typeof window.htmlToImage.getFontEmbedCSS === 'function') {
                         resolve();
@@ -331,21 +232,12 @@ class MathRenderer extends VxWorker {
                 });
             });
         }
-        if (this.traceId) {
-            this.rasterInitialization.then(() => this.trace('raster-initialize-ready', p_trace),
-                                           () => this.trace('raster-initialize-error', p_trace));
-        }
         return this.rasterInitialization;
     }
 
-    rasterizeHtml(p_node, p_pixelRatio, p_trace) {
-        if (this.traceId) {
-            ++this.traceRasters;
-            this.trace('raster-start', p_trace, { pixelRatio: p_pixelRatio });
-        }
+    rasterizeHtml(p_node, p_pixelRatio) {
         let width, height, pixelWidth, pixelHeight;
-        const raster = this.initializeRasterizer(p_trace).then(() => this.waitForFonts(p_trace)).then(() => {
-            this.trace('bounds-begin', p_trace);
+        return this.initializeRasterizer().then(() => document.fonts.ready).then(() => {
             const rect = p_node.getBoundingClientRect();
             width = Math.ceil(Math.max(rect.width, p_node.scrollWidth));
             height = Math.ceil(Math.max(rect.height, p_node.scrollHeight));
@@ -354,18 +246,10 @@ class MathRenderer extends VxWorker {
             }
             pixelWidth = Math.ceil(width * p_pixelRatio);
             pixelHeight = Math.ceil(height * p_pixelRatio);
-            if (this.traceId) {
-                this.trace('bounds-end', p_trace, { width: width, height: height,
-                                                 pixelWidth: pixelWidth, pixelHeight: pixelHeight });
-            }
             // In 1.11.13 preferredFontFormat's shared regex drops alternating font
             // sources. Keep all formats so every used face is embedded reliably.
-            this.trace('get-font-embed-css-begin', p_trace);
             return window.htmlToImage.getFontEmbedCSS(p_node);
         }).then((fontCSS) => {
-            if (this.traceId) {
-                this.trace('get-font-embed-css-end', p_trace, { chars: fontCSS.length });
-            }
             // The dependency can resolve a failed fetch with url(""). Never emit a
             // successful PNG with missing fonts, or leave external URLs in the SVG.
             const urls = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*?))\s*\)/gi;
@@ -377,7 +261,6 @@ class MathRenderer extends VxWorker {
                     throw new Error('Unresolved math raster font');
                 }
             }
-            this.trace('to-svg-begin', p_trace);
             return window.htmlToImage.toSvg(p_node, {
                 // Retain glyphs at twice the device resolution.
                 // The clone keeps its CSS layout size; only its raster is enlarged.
@@ -395,35 +278,20 @@ class MathRenderer extends VxWorker {
                 filter: (node) => !node.classList || !node.classList.contains('katex-mathml')
             });
         }).then((uri) => new Promise((resolve, reject) => {
-            if (this.traceId) {
-                this.trace('to-svg-end', p_trace, { chars: uri.length });
-            }
             // toPng/toCanvas wait for requestAnimationFrame, which is suspended in
             // hidden edit-only WebEngine pages. Load the self-contained SVG directly.
-            this.trace('svg-image-load-begin', p_trace);
             SvgToImage.loadImage(uri, { crossOrigin: 'Anonymous' }, (error, image) => {
                 if (error) {
-                    this.trace('svg-image-load-error', p_trace);
                     reject(error);
                     return;
                 }
-                this.trace('svg-image-load-end', p_trace);
                 try {
-                    if (this.traceId) {
-                        this.trace('canvas-draw-begin', p_trace,
-                                   { width: pixelWidth * 2, height: pixelHeight * 2 });
-                    }
                     const canvas = document.createElement('canvas');
                     canvas.width = pixelWidth * 2;
                     canvas.height = pixelHeight * 2;
                     const context = canvas.getContext('2d');
                     context.drawImage(image, 0, 0);
-                    this.trace('canvas-draw-end', p_trace);
-                    this.trace('png-encode-begin', p_trace);
                     const dataUrl = canvas.toDataURL('image/png');
-                    if (this.traceId) {
-                        this.trace('png-encode-end', p_trace, { chars: dataUrl.length });
-                    }
                     if (!dataUrl.startsWith('data:image/png;base64,')) {
                         throw new Error('Empty math raster image');
                     }
@@ -433,17 +301,6 @@ class MathRenderer extends VxWorker {
                 }
             });
         }));
-        if (this.traceId) {
-            raster.then((result) => {
-                --this.traceRasters;
-                this.trace('raster-end', p_trace, { width: result.width, height: result.height,
-                                                   chars: result.dataUrl.length });
-            }, () => {
-                --this.traceRasters;
-                this.trace('raster-error', p_trace);
-            });
-        }
-        return raster;
     }
 
     // Renderer-neutral export hook; ordinary HTML retains accessible live math.

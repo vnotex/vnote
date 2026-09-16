@@ -254,63 +254,24 @@ void MarkdownViewerAdapter::setMathPreviewData(quint64 p_id, quint64 p_timeStamp
                                                const QString &p_format, const QString &p_data,
                                                bool p_base64, bool p_needScale, int p_logicalWidth,
                                                int p_logicalHeight) {
-  const bool perf = lcPerfPreview().isDebugEnabled();
-  QElapsedTimer timer;
-  if (perf) {
-    qCDebug(lcPerfPreview) << "[math-trace] phase=adapter-result-arrival"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(this) << "ts=" << p_timeStamp
-                           << "id=" << p_id << "chars=" << p_data.size() << "base64=" << p_base64
-                           << "needScale=" << p_needScale << "protected=" << m_protectedView;
-    timer.start();
-  }
   auto ba = p_data.toUtf8();
   if (p_base64 && !ba.isEmpty()) {
     ba = QByteArray::fromBase64(ba);
   }
-  if (perf) {
-    qCDebug(lcPerfPreview) << "[math-trace] phase=adapter-decode-end"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(this) << "ts=" << p_timeStamp
-                           << "id=" << p_id << "bytes=" << ba.size()
-                           << "decodeUs=" << timer.nsecsElapsed() / 1000;
-  }
   const auto logicalSize =
       p_logicalWidth > 0 && p_logicalHeight > 0 ? QSize(p_logicalWidth, p_logicalHeight) : QSize();
   if (m_protectedView) {
-    qCDebug(lcPerfPreview) << "[math-trace] phase=protected-image-start"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(this) << "ts=" << p_timeStamp
-                           << "id=" << p_id << "bytes=" << ba.size();
     QByteArray image;
     QByteArray mime;
     const bool valid = ImageUtils::protectedImageData(ba, image, mime);
     ba.fill(0);
     const auto format = QString::fromLatin1(mime.mid(mime.indexOf('/') + 1));
-    qCDebug(lcPerfPreview) << "[math-trace] phase=protected-image-end"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(this) << "ts=" << p_timeStamp
-                           << "id=" << p_id << "valid=" << valid << "bytes=" << image.size();
     emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, format, valid ? image : QByteArray(),
                                           p_needScale, logicalSize));
     image.fill(0);
-    if (perf) {
-      qCDebug(lcPerfPreview) << "[math-trace] phase=adapter-emission-end"
-                             << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                             << "adapter=" << static_cast<const void *>(this)
-                             << "ts=" << p_timeStamp << "id=" << p_id << "protected=" << true
-                             << "valid=" << valid << "durationUs=" << timer.nsecsElapsed() / 1000;
-    }
     return;
   }
   emit mathPreviewDataReady(PreviewData(p_id, p_timeStamp, p_format, ba, p_needScale, logicalSize));
-  if (perf) {
-    qCDebug(lcPerfPreview) << "[math-trace] phase=adapter-emission-end"
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch()
-                           << "adapter=" << static_cast<const void *>(this) << "ts=" << p_timeStamp
-                           << "id=" << p_id << "protected=" << false
-                           << "durationUs=" << timer.nsecsElapsed() / 1000;
-  }
 }
 
 void MarkdownViewerAdapter::setHeadings(const QJsonArray &p_headings, bool p_hasSectionNumber) {
