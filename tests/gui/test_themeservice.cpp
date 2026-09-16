@@ -5,8 +5,10 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QListWidget>
+#include <QPainter>
 #include <QScopedPointer>
 #include <QSet>
+#include <QStandardItemModel>
 #include <QStandardPaths>
 #include <QStringList>
 #include <QTemporaryDir>
@@ -20,6 +22,8 @@
 #include <core/theme.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/themeutils.h>
+#include <models/searchresultmodel.h>
+#include <views/searchresultdelegate.h>
 
 namespace tests {
 
@@ -47,6 +51,8 @@ private slots:
   void interfaceQssFullyResolved();
   void alternatingRowsFollowThemeChanges_data();
   void alternatingRowsFollowThemeChanges();
+  void selectedSearchResultsKeepThemeText_data();
+  void selectedSearchResultsKeepThemeText();
   void interfaceQssStylesErrorLineEdit_data();
   void interfaceQssStylesErrorLineEdit();
   void interfaceQssStylesInlineBanner_data();
@@ -452,6 +458,77 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
                                 .arg(row)
                                 .arg(painted.name(), expected.name())));
       }
+    }
+  }
+}
+
+void TestThemeService::selectedSearchResultsKeepThemeText_data() { addBundledThemeRows(); }
+
+void TestThemeService::selectedSearchResultsKeepThemeText() {
+  QFETCH(QString, themeName);
+  auto config = makeConfig();
+  config.themeName = themeName;
+  vnotex::ThemeService service(config);
+  QTreeView view;
+  view.setStyleSheet(service.fetchQtStyleSheet());
+  view.ensurePolished();
+  vnotex::SearchResultDelegate delegate(&view);
+  QStandardItemModel model(1, 1);
+  const auto index = model.index(0, 0);
+  model.setData(index, QStringLiteral("Readable selected search result"));
+  model.setData(index, 58, vnotex::SearchResultModel::LineNumberRole);
+  model.setData(index, 3, vnotex::SearchResultModel::MatchCountRole);
+
+  for (bool active : {false, true}) {
+    QStyleOptionViewItem option;
+    option.initFrom(&view);
+    option.widget = &view;
+    option.showDecorationSelected = true;
+    option.rect = QRect(0, 0, 600, 40);
+    option.state = QStyle::State_Enabled | QStyle::State_Selected;
+    if (active) {
+      option.state |= QStyle::State_Active;
+    }
+    option.palette.setCurrentColorGroup(active ? QPalette::Active : QPalette::Inactive);
+    // Deliberately unlike the theme's text: a desktop highlight foreground
+    // must not leak into a custom-painted result over VNote's themed selection.
+    const QColor desktopHighlightText(255, 0, 255);
+    option.palette.setColor(QPalette::HighlightedText, desktopHighlightText);
+    const QColor text = option.palette.color(QPalette::Text);
+    const QColor base = option.palette.color(QPalette::Base);
+
+    // Both painter branches, including the matched and plain line-text paths.
+    for (int kind = 0; kind < 3; ++kind) {
+      model.setData(index, kind == 0, vnotex::SearchResultModel::IsFileResultRole);
+      QVector<vnotex::SearchMatchSegment> matches;
+      if (kind == 2) {
+        vnotex::SearchMatchSegment match;
+        match.m_columnStart = 9;
+        match.m_columnEnd = 17;
+        matches.append(match);
+      }
+      model.setData(index, QVariant::fromValue(matches), vnotex::SearchResultModel::SegmentsRole);
+      QImage image(option.rect.size(), QImage::Format_RGB32);
+      image.fill(base);
+      QPainter painter(&image);
+      delegate.paint(&painter, option, index);
+      painter.end();
+
+      bool hasThemeText = false;
+      bool hasDesktopHighlightText = false;
+      for (int y = 0; y < image.height(); ++y) {
+        for (int x = 0; x < image.width(); ++x) {
+          const QColor pixel = image.pixelColor(x, y);
+          hasThemeText |= pixel == text;
+          hasDesktopHighlightText |= pixel == desktopHighlightText;
+        }
+      }
+      const auto context =
+          QStringLiteral("%1 active=%2 rowKind=%3").arg(themeName).arg(active).arg(kind);
+      QVERIFY2(hasThemeText, qPrintable(context));
+      QVERIFY2(!hasDesktopHighlightText, qPrintable(context));
+      // Selection remains visible; only its foreground-color reversal is removed.
+      QVERIFY2(image.pixelColor(1, image.height() / 2) != base, qPrintable(context));
     }
   }
 }

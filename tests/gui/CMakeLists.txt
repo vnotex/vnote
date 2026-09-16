@@ -46,6 +46,7 @@ add_qt_test(test_themeservice
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/searchresultdelegate.cpp
   LINKS
     Qt6::Gui
     Qt6::Widgets

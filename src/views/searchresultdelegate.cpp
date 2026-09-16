@@ -86,9 +86,8 @@ void SearchResultDelegate::paintFileResult(QPainter *p_painter,
   nameRect.setRight(nameRect.right() - badgeWidth);
   QString elidedName = fm.elidedText(displayText, Qt::ElideMiddle, nameRect.width());
 
-  QColor textColor = (p_option.state & QStyle::State_Selected)
-                         ? p_option.palette.highlightedText().color()
-                         : p_option.palette.text().color();
+  // Keep the normal foreground over the themed selection background.
+  const QColor textColor = p_option.palette.text().color();
 
   p_painter->setPen(textColor);
   p_painter->setFont(boldFont);
@@ -134,9 +133,8 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
       p_index.data(SearchResultModel::SegmentsRole).value<QVector<SearchMatchSegment>>();
   QString lineText = p_index.data(Qt::DisplayRole).toString();
 
-  QColor textColor = (p_option.state & QStyle::State_Selected)
-                         ? p_option.palette.highlightedText().color()
-                         : p_option.palette.text().color();
+  // Keep the normal foreground over the themed selection background.
+  const QColor textColor = p_option.palette.text().color();
 
   QFontMetrics fm(p_option.font);
   QRect contentRect = p_option.rect;

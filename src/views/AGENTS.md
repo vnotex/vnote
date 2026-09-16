@@ -63,6 +63,14 @@ overriding delegates), `tests/gui/test_itemviewutils.cpp` (behavioural),
 row heights on `QEvent::StyleChange`, which is why the views need no
 `changeEvent` override).
 
+## Search result selection colors
+
+`SearchResultDelegate` keeps `QPalette::Text` for file names and result text when
+selected. Selection/hover backgrounds and keyboard focus still come from the style.
+Do not switch to the desktop's `HighlightedText`: it can be white over a light
+VNote selection background. `tests/gui/test_themeservice.cpp` renders file, plain-line
+and matched-line selections across themes and active/inactive states.
+
 ## Related Modules
 
 - [`../models/AGENTS.md`](../models/AGENTS.md) — Models displayed by views
