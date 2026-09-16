@@ -554,6 +554,38 @@
         <file>themes/pure/up.svg</file>
         <file>themes/pure/up_disabled.svg</file>
         <file>themes/pure/web.css</file>
+        <file>themes/pink-shock/arrow_dropdown.svg</file>
+        <file>themes/pink-shock/arrow_dropdown_disabled.svg</file>
+        <file>themes/pink-shock/branch_closed.svg</file>
+        <file>themes/pink-shock/branch_open.svg</file>
+        <file>themes/pink-shock/checkbox_checked.svg</file>
+        <file>themes/pink-shock/checkbox_checked_disabled.svg</file>
+        <file>themes/pink-shock/checkbox_unchecked.svg</file>
+        <file>themes/pink-shock/checkbox_unchecked_disabled.svg</file>
+        <file>themes/pink-shock/close.svg</file>
+        <file>themes/pink-shock/expand_toolbar.svg</file>
+        <file>themes/pink-shock/close_grey.svg</file>
+        <file>themes/pink-shock/down.svg</file>
+        <file>themes/pink-shock/down_disabled.svg</file>
+        <file>themes/pink-shock/float.svg</file>
+        <file>themes/pink-shock/highlight.css</file>
+        <file>themes/pink-shock/interface.qss</file>
+        <file>themes/pink-shock/left.svg</file>
+        <file>themes/pink-shock/left_disabled.svg</file>
+        <file>themes/pink-shock/menu_checkbox.svg</file>
+        <file>themes/pink-shock/menu_radiobutton.svg</file>
+        <file>themes/pink-shock/palette.json</file>
+        <file>themes/pink-shock/radiobutton_checked.svg</file>
+        <file>themes/pink-shock/radiobutton_checked_disabled.svg</file>
+        <file>themes/pink-shock/radiobutton_unchecked.svg</file>
+        <file>themes/pink-shock/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/pink-shock/right.svg</file>
+        <file>themes/pink-shock/right_disabled.svg</file>
+        <file>themes/pink-shock/sizegrip.svg</file>
+        <file>themes/pink-shock/text-editor.theme</file>
+        <file>themes/pink-shock/up.svg</file>
+        <file>themes/pink-shock/up_disabled.svg</file>
+        <file>themes/pink-shock/web.css</file>
         <file>themes/solarized-dark/arrow_dropdown.svg</file>
         <file>themes/solarized-dark/arrow_dropdown_disabled.svg</file>
         <file>themes/solarized-dark/branch_closed.svg</file>

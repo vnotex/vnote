@@ -1,0 +1,202 @@
+{
+    "metadata" : {
+        "revision" : 0,
+        "name" : "Pink Shock",
+        "type" : "vtextedit"
+    },
+    "editor-styles" : {
+        "Text" : {
+            "//comment" : "Support a list of fonts separated by ,",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
+            "font-size" : 12,
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@base#content#bg",
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
+        },
+        "CursorLine" : {
+            "background-color" : "@palette#bg2_7"
+        },
+        "TrailingSpace" : {
+            "background-color" : "@palette#fg3_8"
+        },
+        "Tab" : {
+            "background-color" : "@palette#bg3_2"
+        },
+        "SelectedText" : {
+            "//comment" : "Selected text highlight",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_mark"
+        },
+        "IndicatorsBorder" : {
+            "text-color" : "@base#muted#fg",
+            "background-color" : "@base#normal#bg"
+        },
+        "CurrentLineNumber" : {
+            "text-color" : "@base#normal#fg"
+        },
+        "Folding" : {
+            "text-color" : "@palette#bg2_5"
+        },
+        "FoldedFolding" : {
+            "text-color" : "@palette#bg2_4"
+        },
+        "FoldingHighlight" : {
+            "text-color" : "@palette#bg2_6"
+        },
+        "FoldedFoldingRangeLine" : {
+            "background-color" : "@palette#bg3_3"
+        },
+        "IncrementalSearch" : {
+            "//comment" : "Incremental search highlight",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search_incremental"
+        },
+        "Search" : {
+            "//comment" : "Search highlight",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search"
+        },
+        "SearchUnderCursor" : {
+            "//comment" : "Search highlight under cursor",
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_search_current"
+        }
+    },
+    "//comment" : "Override the Text style in editor-styles",
+    "markdown-editor-styles" : {
+        "ListItemGuide" : {"text-color" : "@base#muted#fg"},
+        "ActiveListItem" : {"background-color" : "@palette#bg2_7"},
+        "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "@palette#bg2_7"},
+        "Text" : {
+            "//comment" : "Support a list of fonts separated by ,",
+            "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
+            "font-size" : 12,
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@base#content#bg",
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
+        }
+    },
+    "markdown-syntax-styles" : {
+        "H1" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true,
+            "font-size" : 17
+        },
+        "H2" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true,
+            "font-size" : 16
+        },
+        "H3" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true,
+            "font-size" : 15
+        },
+        "H4" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true,
+            "font-size" : 14
+        },
+        "H5" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true,
+            "font-size" : 13
+        },
+        "H6" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true,
+            "font-size" : 12
+        },
+        "HRULE" : {
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_hr"
+        },
+        "LIST_BULLET" : {
+            "text-color" : "@palette#bg2_5",
+            "bold" : true
+        },
+        "LIST_ENUMERATOR" : {
+            "text-color" : "@palette#bg2_5"
+        },
+        "LINK" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "AUTO_LINK_URL" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "AUTO_LINK_EMAIL" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "IMAGE" : {
+            "text-color" : "@base#muted#fg"
+        },
+        "REFERENCE" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "CODE" : {
+            "text-color" : "@palette#fg_inline_code",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "EMPH" : {
+            "italic" : true
+        },
+        "STRONG" : {
+            "bold" : true
+        },
+        "HTML_ENTITY" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "HTML" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "HTMLBLOCK" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "COMMENT" : {
+            "text-color" : "@base#muted#fg"
+        },
+        "VERBATIM" : {
+            "text-color" : "@base#normal#fg",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "//comment" : "Please modify the syntax highlight theme as well if you change this",
+        "FENCEDCODEBLOCK" : {
+            "text-color" : "@base#normal#fg",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "BLOCKQUOTE" : {
+            "text-color" : "@palette#fg_blockquote"
+        },
+        "NOTE" : {
+            "text-color" : "@palette#fg_link"
+        },
+        "STRIKE" : {
+            "text-color" : "@base#muted#fg",
+            "strike-through" : true
+        },
+        "FRONTMATTER" : {
+            "text-color" : "@base#muted#fg"
+        },
+        "INLINEEQUATION" : {
+            "text-color" : "#9C4545",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "DISPLAYFORMULA" : {
+            "text-color" : "#9C4545",
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "MARK" : {
+            "text-color" : "@base#normal#fg",
+            "background-color" : "@palette#bg_mark"
+        },
+        "TABLE" : {
+            "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
+        },
+        "TABLEBORDER" : {
+            "text-color" : "@palette#bg2_5",
+            "background-color" : "@palette#bg3_45"
+        }
+   }
+}
