@@ -9,13 +9,6 @@ class MathRenderer extends VxWorker {
         this.langs = ['mathjax'];
     }
 
-    // Preserve the font promise while isolating the extra observer used by tracing.
-    waitForFonts() {
-        const ready = document.fonts.ready;
-        ready.then(() => {}, () => {});
-        return ready;
-    }
-
     registerInternal() {
         this.vxcore.on('basicMarkdownRendered', () => {
             this.render(this.vxcore.contentContainer, 'tex-to-render');
@@ -134,7 +127,7 @@ class MathRenderer extends VxWorker {
                         console.error('failed to render KaTeX', error);
                     }
                 });
-                return this.waitForFonts();
+                return document.fonts.ready;
             });
         }).catch((error) => {
             console.error('failed to render math', this.renderer, error);
@@ -244,7 +237,7 @@ class MathRenderer extends VxWorker {
 
     rasterizeHtml(p_node, p_pixelRatio) {
         let width, height, pixelWidth, pixelHeight;
-        return this.initializeRasterizer().then(() => this.waitForFonts()).then(() => {
+        return this.initializeRasterizer().then(() => document.fonts.ready).then(() => {
             const rect = p_node.getBoundingClientRect();
             width = Math.ceil(Math.max(rect.width, p_node.scrollWidth));
             height = Math.ceil(Math.max(rect.height, p_node.scrollHeight));

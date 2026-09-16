@@ -241,6 +241,15 @@ stdout as the end marker; custom PlantUML commands must accept the appended inde
 `GraphHelper` carries success separately from image data and includes the image index in its
 cache key, including cached empty end markers.
 
+SVG responses are parsed as inert XML and validated before joining the page list; the SVG list
+contains SVG elements, while PNG lists contain base64 strings. Never parse renderer responses as
+HTML: a failed HTML response can execute image handlers even in a detached fragment. Raster-only
+backends such as Ditaa may label PNG bytes as SVG; reject that mismatch locally and recommend PNG.
+On failure without valid pages, preserve the original code subtree and annotate it with an error
+tooltip. Do not rewrite its text: renderers share the hidden
+viewer document, and unrelated math can be waiting for its font/layout readiness. Failure to
+display partial results must also remain local and settle the node exactly once.
+
 Enumeration is bounded to 256 pages. Failures or the cap retain available read-mode pages with
 an incomplete-render warning; editor previews do not silently publish partial results. Protected
 notes remain blocked. `test_graphrenderer_js.cpp` covers web termination, error retention, the cap,

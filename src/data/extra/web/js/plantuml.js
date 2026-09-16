@@ -107,11 +107,20 @@ class PlantUml extends GraphRenderer {
         } catch (p_error) {
             if (isCurrent()) {
                 this.reportProblem('PlantUML rendering failed', p_error);
+                let partialShown = false;
                 if (p_error.pages && p_error.pages.length > 0) {
-                    this.handlePlantUmlResult(p_node, format, p_error.pages, p_error.message);
-                } else {
-                    p_node.textContent = '[PlantUML rendering failed: could not load all pages]\n'
-                                         + p_node.textContent;
+                    try {
+                        this.handlePlantUmlResult(p_node, format, p_error.pages, p_error.message);
+                        partialShown = true;
+                    } catch (p_displayError) {
+                        this.reportProblem('PlantUML partial result failed', p_displayError);
+                    }
+                }
+                if (!partialShown) {
+                    // Keep the source and its highlighting intact. Replacing its text
+                    // dirties the shared hidden document's layout while math may be
+                    // waiting for document.fonts.ready, even after this worker finishes.
+                    p_node.setAttribute('title', 'PlantUML rendering failed: ' + p_error.message);
                 }
             }
         } finally {
@@ -129,6 +138,22 @@ class PlantUml extends GraphRenderer {
             const error = new Error(p_message);
             error.pages = pages;
             throw error;
+        };
+        // Parse SVG as inert XML before admitting a page. In particular, never
+        // feed a failed response to innerHTML: even a detached HTML fragment can
+        // start image requests and event handlers in the viewer's document.
+        const decodePage = (p_data) => {
+            if (p_format !== 'svg') {
+                return p_data;
+            }
+            const parsed = new DOMParser().parseFromString(p_data, 'image/svg+xml');
+            const svg = parsed.documentElement;
+            if (!svg || svg.localName !== 'svg'
+                || svg.namespaceURI !== 'http://www.w3.org/2000/svg'
+                || parsed.getElementsByTagName('parsererror').length) {
+                fail('PlantUML returned invalid SVG');
+            }
+            return svg;
         };
         // A custom server/command may ignore the index and return images forever.
         // Fail visibly rather than hanging the viewer or silently truncating it.
@@ -157,6 +182,9 @@ class PlantUml extends GraphRenderer {
             // XHR's text decoder replaces the PNG signature's leading byte with U+FFFD.
             const rasterOnly = /^[\u0089\uFFFD]PNG\r\n\x1a\n/.test(firstSvg.data);
             singlePage = rasterOnly || (type && type[1] !== 'SEQUENCE');
+            if (rasterOnly && p_format === 'svg') {
+                fail('PlantUML returned PNG instead of SVG; select PNG output');
+            }
         }
         for (let imageIndex = 0; imageIndex < maxPages && p_isCurrent(); ++imageIndex) {
             const result = imageIndex === 0 && p_format === 'svg' && firstSvg
@@ -164,7 +192,7 @@ class PlantUml extends GraphRenderer {
             if (!result.success) {
                 // Keep the renderer's syntax-error image for a failed first page.
                 if (imageIndex === 0 && result.data) {
-                    return [result.data];
+                    return [decodePage(result.data)];
                 }
                 fail('Failed to render PlantUML page ' + (imageIndex + 1));
             }
@@ -174,7 +202,7 @@ class PlantUml extends GraphRenderer {
                 }
                 return pages;
             }
-            pages.push(result.data);
+            pages.push(decodePage(result.data));
             if (singlePage) {
                 return pages;
             }
@@ -328,11 +356,8 @@ class PlantUml extends GraphRenderer {
             const page = document.createElement('div');
             page.classList.add('vx-plantuml-page');
             if (p_format === 'svg') {
-                page.innerHTML = data;
-                const svg = page.querySelector('svg');
-                if (!svg) {
-                    throw new Error('PlantUML returned invalid SVG');
-                }
+                const svg = data;
+                page.appendChild(svg);
                 Utils.renamespaceSvgIds(page, '-puml-' + this.nextSvgIndex++);
                 window.vxImageViewer.setupSVGToView(svg, false);
             } else {

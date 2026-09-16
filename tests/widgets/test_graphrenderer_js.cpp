@@ -1007,6 +1007,13 @@ void TestGraphRendererJs::testPlantUmlPages_data() {
       << QStringLiteral("raster-preview") << 1 << false << QStringLiteral("svg") << true << false;
   QTest::newRow("legacy-svg-without-type")
       << QStringLiteral("untyped") << 2 << false << QString() << true << false;
+  QTest::newRow("raster-svg-failure-is-local") << QStringLiteral("raster-svg-failure") << 1 << true
+                                               << QStringLiteral("svg") << true << false;
+  QTest::newRow("malformed-svg-failure-is-inert") << QStringLiteral("malformed-svg-failure") << 1
+                                                  << true << QStringLiteral("svg") << true << false;
+  QTest::newRow("malformed-partial-failure-retains-valid-pages")
+      << QStringLiteral("malformed-partial-failure") << 2 << true << QStringLiteral("svg") << true
+      << false;
   QTest::newRow("invalid-format-keeps-svg")
       << QStringLiteral("400") << 2 << false << QStringLiteral("unsupported") << true << false;
 }
@@ -1061,7 +1068,7 @@ window.vxcore = {
   source += QStringLiteral(R"JS(
 renderer.register(window.vxcore);
 renderer.initialized = true;
-renderer.getPlantUMLOnlineUrl = (server, format, text, index) => format + '/' + index;
+renderer.getPlantUMLOnlineUrl = (server, format, text, index) => format + '/' + index + '/' + text;
 const svg = (text) => '<svg xmlns="http://www.w3.org/2000/svg"'
   + (scenario === 'untyped' ? '' : ' data-diagram-type="'
     + (scenario === 'class' ? 'CLASS' : 'SEQUENCE') + '"')
@@ -1081,7 +1088,7 @@ const rasterSvg = new TextDecoder().decode(await pngs[0].arrayBuffer());
 let requests = 0;
 Utils.httpGet = (url, type, callback) => {
   ++requests;
-  const [format, indexText] = url.split('/');
+  const [format, indexText, text] = url.split('/');
   const index = Number(indexText);
   let status = 200;
   let mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
@@ -1090,7 +1097,13 @@ Utils.httpGet = (url, type, callback) => {
   if (scenario === 'class' && index > 0) {
     throw new Error('Non-sequence diagram must not enumerate a broken server');
   }
-  if (scenario.startsWith('raster')) {
+  if (text === 'NEIGHBOR') {
+    data = '<svg xmlns="http://www.w3.org/2000/svg" data-diagram-type="CLASS"><text>NEIGHBOR</text></svg>';
+  } else if (scenario.startsWith('malformed')) {
+    data = scenario === 'malformed-partial-failure' && index === 0 ? svg('FIRST')
+      : '<img src="data:," onerror="window.__plantSideEffect = 1">not SVG';
+    if (index >= 2) { status = 503; mime = 'text/plain'; data = ''; }
+  } else if (scenario.startsWith('raster')) {
     // This raster-only backend ignores every page index, including on the SVG endpoint.
     data = format === 'svg' ? rasterSvg : pngs[0];
   } else if (index >= 2 && scenario !== 'cap') {
@@ -1134,6 +1147,11 @@ if (scenario === 'preview' || scenario === 'protected' || scenario === 'raster-p
   await new Promise(resolve => {
     onFinished = resolve;
     codeNodes.push(node);
+    if (scenario.endsWith('-failure')) {
+      const neighbor = document.createElement('code'); neighbor.textContent = 'NEIGHBOR';
+      document.body.appendChild(neighbor);
+      codeNodes.push(neighbor);
+    }
     basicMarkdownRendered();
   });
   await new Promise(resolve => setTimeout(resolve, 0));
@@ -1155,7 +1173,9 @@ if (scenario === 'preview' || scenario === 'protected' || scenario === 'raster-p
     svgs: document.querySelectorAll('.vx-plantuml-page svg').length,
     pages: document.querySelectorAll('.vx-plantuml-page').length,
     labels: Array.from(document.querySelectorAll('.vx-plantuml-page text'), n => n.textContent),
-    incomplete: !!document.querySelector('[role=alert]')});
+    incomplete: !!document.querySelector('[role=alert]') || (node.isConnected && !!node.title),
+    sourcePreserved: node.isConnected && node.textContent === 'source',
+    sideEffects: window.__plantSideEffect || 0});
 }
 } catch(error) { window.__plantResult = JSON.stringify({error: String(error) + '\n' + error.stack}); }
 })();
@@ -1205,11 +1225,26 @@ script.remove();
       QCOMPARE(values.value(QStringLiteral("second")).toString(), QStringLiteral("0,0,255,255"));
     }
   } else {
+    if (scenario.endsWith(QStringLiteral("-failure"))) {
+      QCOMPARE(values.value(QStringLiteral("sideEffects")).toInt(), 0);
+      if (scenario != QStringLiteral("malformed-partial-failure")) {
+        QVERIFY(values.value(QStringLiteral("sourcePreserved")).toBool());
+      }
+    }
     QCOMPARE(values.value(QStringLiteral("pages")).toInt(), pages);
     QCOMPARE(values.value(QStringLiteral("incomplete")).toBool(), incomplete);
     QCOMPARE(values.value(QStringLiteral("completed")).toInt(), 1);
     QVERIFY(!values.value(QStringLiteral("active")).toBool());
     const auto images = values.value(QStringLiteral("images")).toArray();
+    if (scenario.endsWith(QStringLiteral("-failure"))) {
+      QVERIFY(images.isEmpty());
+      const auto labels = values.value(QStringLiteral("labels")).toArray();
+      QVERIFY(labels.contains(QStringLiteral("NEIGHBOR")));
+      if (scenario == QStringLiteral("malformed-partial-failure")) {
+        QVERIFY(labels.contains(QStringLiteral("FIRST")));
+      }
+      return;
+    }
     if (forcePng || configuredFormat == QStringLiteral("png")) {
       QCOMPARE(values.value(QStringLiteral("svgs")).toInt(), 0);
       QCOMPARE(images.size(), pages);
