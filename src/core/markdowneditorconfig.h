@@ -91,6 +91,9 @@ public:
   bool getAutoSectionNumberInEditModeEnabled() const;
   void setAutoSectionNumberInEditModeEnabled(bool p_enabled);
 
+  bool getConcealmentEnabled() const;
+  void setConcealmentEnabled(bool p_enabled);
+
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
@@ -215,6 +218,9 @@ private:
 
   bool m_autoSectionNumberEnabled = true;
   bool m_autoSectionNumberInEditModeEnabled = false;
+
+  // Shorten long destinations visually without changing Markdown source.
+  bool m_concealmentEnabled = true;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

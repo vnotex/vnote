@@ -67,6 +67,7 @@
     "markdown-editor-styles" : {
         "ListItemGuide" : {"text-color" : "#4b6870"},
         "ActiveListItem" : {"background-color" : "#04313c"},
+        "ConcealedText" : {"text-color" : "#2AA198", "background-color" : "#04313c"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",

@@ -4096,6 +4096,14 @@
         <translation>将表格渲染为可编辑的表格控件，编辑结果会写回 Markdown 源文本</translation>
     </message>
     <message>
+        <source>Conceal long link destinations</source>
+        <translation>省略显示较长的链接目标</translation>
+    </message>
+    <message>
+        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
+        <translation>缩略显示较长的图片、链接和引用目标，不修改 Markdown 源文本。悬停可查看完整目标</translation>
+    </message>
+    <message>
         <source>Automatically renumber ordered lists</source>
         <translation>自动调整有序列表编号</translation>
     </message>

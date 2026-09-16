@@ -14,6 +14,7 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Drag headings in the outline to reorder whole sections, adjusting heading levels to preserve the hierarchy, including moves under an adjacent heading
     * The editor includes upstream AST-aware list editing and Vi open-line continuation while retaining VNote's heading numbering and protected preview resources
     * All bundled themes style list-item guides and active-item backgrounds; automatic ordered-list renumbering is enabled by default and can be disabled in Markdown Editor settings
+    * Long image, link, and reference destinations are visually shortened by default in Markdown edit mode, with styles in every bundled theme; concealment can be disabled in Markdown Editor settings without changing the source
     * A table-size picker was added to the Markdown toolbar
     * Clipboard images inserted as files now use JPEG with a white background for transparency; original file/URL formats and lossless Base64 insertion are unchanged
     * Table-source alignment also formats directly edited Markdown tables; interactive table previews support Markdown type actions, highlight edited cells and write changes back after one second

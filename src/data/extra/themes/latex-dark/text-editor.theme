@@ -67,6 +67,7 @@
     "markdown-editor-styles" : {
         "ListItemGuide" : {"text-color" : "#5b5b5b"},
         "ActiveListItem" : {"background-color" : "#242424"},
+        "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "#242424"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "Latin Modern Roman, CMU Serif, Times New Roman, Times, Noto Serif CJK SC, Source Han Serif SC, Songti SC, STSong, 宋体, SimSun, Georgia, Serif",

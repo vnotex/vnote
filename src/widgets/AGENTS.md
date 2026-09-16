@@ -207,6 +207,18 @@ numbering. `Heading::m_isPlaceholder` marks only synthesized level gaps: never i
 The outline controller refreshes the shared pattern on `ConfigEditorChanged`, including open
 popup outlines, without mutating producer names.
 
+### Markdown concealment
+
+Settings → Markdown Editor → Edit exposes **Conceal long link destinations**. It stores
+`editor.markdown_editor.concealment`, defaulting to `true`; older configurations inherit that
+default through `ConfigMgr2`'s merge. `applyMarkdownConfigFields()` maps both editor-config
+builders: disabling clears vtextedit's concealment flags, while enabling retains its image, link,
+and reference URL flags and length threshold. `ConfigEditorChanged` refreshes open editors.
+Concealment is visual only: never rewrite the Markdown source; hover shows the full destination.
+
+Every bundled `text-editor.theme` defines `markdown-editor-styles.ConcealedText` with foreground
+and background colors. `ThemeService` resolves palette tokens before vtextedit loads the theme.
+
 ### PlantUML pagination
 
 `src/data/extra/web/js/plantuml.js` owns page enumeration for both read mode and editor previews.

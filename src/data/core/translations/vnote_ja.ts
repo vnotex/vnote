@@ -4101,6 +4101,14 @@
         <translation>テーブルを編集可能なシートとして表示し、編集内容を Markdown のソースに書き戻します</translation>
     </message>
     <message>
+        <source>Conceal long link destinations</source>
+        <translation>長いリンク先を省略表示</translation>
+    </message>
+    <message>
+        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
+        <translation>Markdown のソースを変更せずに、長い画像・リンク・参照のリンク先を短く表示します。マウスを重ねるとリンク先全体を表示します</translation>
+    </message>
+    <message>
         <source>Automatically renumber ordered lists</source>
         <translation>番号付きリストを自動的に振り直す</translation>
     </message>

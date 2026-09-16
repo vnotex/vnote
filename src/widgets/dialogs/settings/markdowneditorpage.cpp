@@ -62,6 +62,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
 
+  m_concealmentCheckBox->setChecked(markdownConfig.getConcealmentEnabled());
+
   m_constrainInplacePreviewWidthCheckBox->setChecked(
       markdownConfig.getConstrainInplacePreviewWidthEnabled());
 
@@ -142,6 +144,8 @@ bool MarkdownEditorPage::saveInternal() {
       m_autoSectionNumberInEditModeCheckBox->isChecked());
 
   markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
+
+  markdownConfig.setConcealmentEnabled(m_concealmentCheckBox->isChecked());
 
   markdownConfig.setConstrainInplacePreviewWidthEnabled(
       m_constrainInplacePreviewWidthCheckBox->isChecked());
@@ -422,6 +426,21 @@ void MarkdownEditorPage::setupEditGroup() {
     addSearchItem(label, m_autoSectionNumberInEditModeCheckBox->toolTip(),
                   m_autoSectionNumberInEditModeCheckBox);
     connect(m_autoSectionNumberInEditModeCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Conceal long link destinations"));
+    m_concealmentCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_concealmentCheckBox->setObjectName(QStringLiteral("concealmentCheckBox"));
+    m_concealmentCheckBox->setToolTip(
+        tr("Shorten long image, link, and reference destinations without changing the Markdown "
+           "source. Hover to see the full destination"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_concealmentCheckBox, m_concealmentCheckBox->toolTip(), this));
+    addSearchItem(label, m_concealmentCheckBox->toolTip(), m_concealmentCheckBox);
+    connect(m_concealmentCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
   }
 
