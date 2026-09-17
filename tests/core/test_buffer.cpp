@@ -286,6 +286,8 @@ private slots:
   void testSearchReplacementWaitsForAutosave();
   void testSearchReplacementBeforeSaveVeto();
   void testSearchReplacementDigestConflict();
+  void testSearchReplacementExternalChangeErrors_data();
+  void testSearchReplacementExternalChangeErrors();
   void testSearchReplacementWriteFailureRecovery();
   void testSearchReplacementStaleWriter();
   void testSearchReplacementAfterSaveEdit();
@@ -1530,6 +1532,76 @@ void TestBuffer::testSearchReplacementBeforeSaveVeto() {
   QCOMPARE(restoredWriter, editor);
   QVERIFY(buffers.pullActiveWriterContent(note.id()));
   QCOMPARE(note.getContentRaw(), editor.toUtf8());
+}
+
+void TestBuffer::testSearchReplacementExternalChangeErrors_data() {
+  QTest::addColumn<int>("failure");
+  QTest::addColumn<QString>("expectedError");
+  QTest::newRow("check-api-failure")
+      << 0 << QStringLiteral("Could not check the note for changes on disk.");
+  QTest::newRow("file-changed") << 1
+                                << QStringLiteral(
+                                       "The note changed on disk. Search again before replacing.");
+  QTest::newRow("file-missing") << 2
+                                << QStringLiteral(
+                                       "The note changed on disk. Search again before replacing.");
+}
+
+void TestBuffer::testSearchReplacementExternalChangeErrors() {
+  QFETCH(int, failure);
+  QFETCH(QString, expectedError);
+  const auto target =
+      createReplacementTarget(QStringLiteral("replace-external-error-%1.md").arg(failure));
+  QVERIFY(!target.m_id.isEmpty());
+  const auto path = replacementFilePath(target);
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  BufferCoreService core(m_context);
+  const auto note = buffers.openBuffer({target.m_notebookId, target.m_path});
+  QVERIFY(note.isValid());
+  const QByteArray original = note.getContentRaw(); // Load before changing the backing file.
+  ReplacementObserver observer(buffers);
+  QSignalSpy completed(&observer, &ReplacementObserver::finished);
+  bool injected = false;
+  bool bufferClosed = false;
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    if (!bufferClosed)
+      buffers.closeBuffer(note.id());
+  });
+  observer.stateCallback = [&](const ReplacementState &p_state) {
+    if (!p_state.active)
+      return;
+    if (failure == 0) {
+      // Bypass the reservation through the real core API to make the check itself fail.
+      injected = bufferClosed = core.closeBuffer(note.id());
+    } else if (failure == 1) {
+      injected = writeReplacementFile(path, QByteArrayLiteral("external"));
+      QFile file(path);
+      injected = injected && file.open(QIODevice::ReadWrite) &&
+                 file.setFileTime(QDateTime::currentDateTime().addSecs(2),
+                                  QFileDevice::FileModificationTime);
+    } else {
+      injected = QFile::remove(path);
+    }
+  };
+  QVERIFY(buffers.replaceSearchMatches(target, QStringLiteral("bar")) > 0);
+  QVERIFY(completed.wait(10000));
+  QVERIFY(injected);
+  QCOMPARE(completed.count(), 1);
+  const auto result = observer.completions.constFirst();
+  QCOMPARE(result.error, expectedError);
+  QCOMPARE(result.matches, 0);
+  QVERIFY(!result.saved);
+  QVERIFY(!buffers.isContentReplacementActive(note.id()));
+  if (failure == 2) {
+    QVERIFY(!QFile::exists(path));
+    QCOMPARE(note.getState(), BufferState::FileMissing);
+  } else {
+    QCOMPARE(readReplacementFile(path), failure == 1 ? QByteArrayLiteral("external") : original);
+    if (failure == 1)
+      QCOMPARE(note.getState(), BufferState::FileChanged);
+  }
 }
 
 void TestBuffer::testSearchReplacementDigestConflict() {

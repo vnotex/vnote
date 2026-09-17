@@ -532,6 +532,11 @@ void BufferService::prepareSearchReplacement(int p_token) {
       return;
     }
     if (!BufferCoreService::checkExternalChanges(id)) {
+      fail(tr("Could not check the note for changes on disk."));
+      return;
+    }
+    const auto state = BufferCoreService::getState(id);
+    if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
       fail(tr("The note changed on disk. Search again before replacing."));
       return;
     }
