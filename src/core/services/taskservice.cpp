@@ -20,13 +20,7 @@ TaskService::TaskService(ConfigMgr2 *p_configMgr, NotebookCoreService *p_noteboo
     : QObject(p_parent), m_configMgr(p_configMgr), m_notebookService(p_notebookService),
       m_snippetService(p_snippetService), m_context(p_context), m_variableMgr(this) {}
 
-void TaskService::init() {
-  m_variableMgr.init();
-
-  // Load all tasks. Notebook-scoped tasks are (re)loaded by the UI via
-  // reloadNotebookTasks() when the current notebook changes.
-  loadAllTasks();
-}
+void TaskService::init() { m_variableMgr.init(); }
 
 void TaskService::reload() { loadAllTasks(); }
 
@@ -89,16 +83,31 @@ void TaskService::runTask(Task *p_task) {
   }
 }
 
-void TaskService::setTaskContext(ITaskContext *p_context) { m_context = p_context; }
+void TaskService::setTaskContext(ITaskContext *p_context) {
+  if (m_context == p_context) {
+    return;
+  }
+  m_context = p_context;
+  reloadNotebookTasks();
+}
 
 void TaskService::reloadNotebookTasks() {
-  loadNotebookTasks();
+  m_notebookTasksLoaded = false;
+  m_notebookTasks.clear();
   emit tasksUpdated();
 }
 
-const QVector<QSharedPointer<Task>> &TaskService::getAppTasks() const { return m_appTasks; }
+const QVector<QSharedPointer<Task>> &TaskService::getAppTasks() {
+  if (!m_appTasksLoaded) {
+    loadGlobalTasks();
+  }
+  return m_appTasks;
+}
 
-const QVector<QSharedPointer<Task>> &TaskService::getNotebookTasks() const {
+const QVector<QSharedPointer<Task>> &TaskService::getNotebookTasks() {
+  if (!m_notebookTasksLoaded) {
+    loadNotebookTasks();
+  }
   return m_notebookTasks;
 }
 
@@ -163,9 +172,13 @@ void TaskService::loadAllTasks() {
 
 void TaskService::loadNotebookTasks() {
   loadTasksFromFolder(m_notebookTasks, getNotebookTaskFolder());
+  m_notebookTasksLoaded = true;
 }
 
-void TaskService::loadGlobalTasks() { loadTasksFromFolder(m_appTasks, getAppTaskFolder()); }
+void TaskService::loadGlobalTasks() {
+  loadTasksFromFolder(m_appTasks, getAppTaskFolder());
+  m_appTasksLoaded = true;
+}
 
 QString TaskService::getAppTaskFolder() const {
   return m_configMgr ? m_configMgr->getConfigDataFolder(ConfigMgr2::Tasks) : QString();

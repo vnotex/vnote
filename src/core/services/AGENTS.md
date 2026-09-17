@@ -21,6 +21,24 @@ If a service here needs to tell the user something, use one of these three sanct
 
 The compile error is the enforcement: losing the `Qt::Widgets` link removes the QtWidgets include directories, so a regression fails to compile rather than silently re-introducing the dependency.
 
+## TaskService lazy loading
+
+`TaskService::init()` initializes variables only; it must not scan files before
+`ConfigMgr2::initAfterQtAppStarted()` installs bundled tasks. The first `getAppTasks()`
+or `getNotebookTasks()` request loads that scope, including caching an empty result.
+Getters never emit `tasksUpdated()` because models call them during refresh.
+
+`reload()` immediately reloads both scopes and emits `tasksUpdated()`.
+`reloadNotebookTasks()` invalidates only the notebook cache and notifies consumers;
+the next request loads the current notebook. `setTaskContext()` does the same when
+the context pointer changes. Keep the notebook-change wiring in `MainWindow2`.
+Running tasks retain their owning roots across reload/invalidation.
+
+The task panel still requests tasks during window construction, after bundled-data
+installation; loading is not deferred until the dock becomes visible.
+Coverage: `tests/core/test_taskservice.cpp` (late installation, cached empty results,
+explicit reload, and notebook/context changes).
+
 ## NotificationService
 
 `NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QHash>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageUpdated` / `messageDismissed` / `messageRemoved` / `messagesCleared`. All presentation (severity→icon mapping, toast, popup, badge) lives in the widget layer (`NotificationToast` / `NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).

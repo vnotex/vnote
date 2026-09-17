@@ -30,15 +30,18 @@ public:
               SnippetCoreService *p_snippetService, ITaskContext *p_context,
               QObject *p_parent = nullptr);
 
-  // Loads all tasks. Call once after construction and registration.
+  // Initializes variables only. Task files are loaded on the first request,
+  // after startup has installed bundled data. Call once after registration.
   void init();
 
   // Inject (or replace) the live editor/notebook context used to resolve
   // context-derived task variables (${notebook*}, ${buffer*}, ${input:*},
   // ${selectedText}). Safe to call after init(): TaskVariableMgr resolves the
-  // context lazily at evaluate-time, so no re-init is required.
+  // context lazily at evaluate-time, so no re-init is required. Replacing the
+  // context invalidates notebook tasks and emits tasksUpdated().
   void setTaskContext(ITaskContext *p_context);
 
+  // Immediately reload both scopes from disk and emit tasksUpdated().
   void reload();
 
   // Runs the given task, keeping the owning root task alive for the duration of
@@ -47,13 +50,15 @@ public:
   // a Task (and its QProcess) mid-execution.
   void runTask(Task *p_task);
 
-  // Reload only the notebook-scoped tasks (e.g. after the current notebook
-  // changes). Emits tasksUpdated().
+  // Invalidate notebook-scoped tasks after the current notebook changes.
+  // Emits tasksUpdated(); the next request reloads from the current notebook.
   void reloadNotebookTasks();
 
-  const QVector<QSharedPointer<Task>> &getAppTasks() const;
+  // Load each scope once on demand, including empty results. These getters
+  // never emit tasksUpdated(), so they are safe during a model refresh.
+  const QVector<QSharedPointer<Task>> &getAppTasks();
 
-  const QVector<QSharedPointer<Task>> &getNotebookTasks() const;
+  const QVector<QSharedPointer<Task>> &getNotebookTasks();
 
   // Absolute path to the current notebook's task folder, or "" if there is no
   // current notebook (or no context).
@@ -103,8 +108,10 @@ private:
 
   ITaskContext *m_context = nullptr;
 
+  bool m_appTasksLoaded = false;
   QVector<QSharedPointer<Task>> m_appTasks;
 
+  bool m_notebookTasksLoaded = false;
   QVector<QSharedPointer<Task>> m_notebookTasks;
 
   // Root tasks kept alive while one of their (sub)tasks is executing, keyed by

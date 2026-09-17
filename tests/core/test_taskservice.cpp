@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QScopeGuard>
 #include <QTemporaryDir>
 #include <QTextStream>
 
@@ -54,6 +55,7 @@ private slots:
   void cleanupTestCase();
 
   void testAppTaskLoading();
+  void testEmptyTaskCacheReload();
   void testNotebookScopedTaskLoading();
   void testRawNotebookTaskFolderEmpty();
   void testBufferVariables();
@@ -110,8 +112,7 @@ void TestTaskService::initTestCase() {
   m_snippetService = new SnippetCoreService(m_context);
   m_context2 = new MockTaskContext();
 
-  m_taskService =
-      new TaskService(m_configMgr, m_notebookService, m_snippetService, m_context2);
+  m_taskService = new TaskService(m_configMgr, m_notebookService, m_snippetService, m_context2);
   m_taskService->init();
 }
 
@@ -136,61 +137,129 @@ void TestTaskService::cleanupTestCase() {
 }
 
 void TestTaskService::testAppTaskLoading() {
-  const QString tasksFolder = m_configMgr->getConfigDataFolder(ConfigMgr2::Tasks);
-  QVERIFY(!tasksFolder.isEmpty());
-
-  const QString path = writeTask(
-      tasksFolder, QStringLiteral("ut_app_task.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"UtAppTask\",\"command\":\"echo hi\"}"));
-  QVERIFY(!path.isEmpty());
-
-  m_taskService->reload();
-
-  bool found = false;
-  for (const auto &task : m_taskService->getAppTasks()) {
-    if (task->getLabel() == QStringLiteral("UtAppTask")) {
-      found = true;
-      break;
-    }
+  QTemporaryDir bundle;
+  QVERIFY(bundle.isValid());
+  for (const auto *folder :
+       {"themes", "tasks", "syntax-highlighting", "web", "dicts", "templates"}) {
+    QVERIFY(QDir(bundle.path()).mkpath(QLatin1String(folder)));
   }
-  QVERIFY(found);
+  QVERIFY(!writeTask(bundle.path() + QStringLiteral("/tasks"), QStringLiteral("ut_app_task.json"),
+                     QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"UtAppTask\","
+                                    "\"command\":\"echo hi\"}"))
+               .isEmpty());
 
-  QFile::remove(path);
+  ConfigMgr2 config(m_configService);
+  config.setExtraDataSourceRootOverrideForTesting(bundle.path());
+  config.init();
+  TaskService service(&config, m_notebookService, m_snippetService, nullptr);
+  service.init();
+  QSignalSpy updated(&service, &TaskService::tasksUpdated);
+  const auto installedTask =
+      config.getConfigDataFolder(ConfigMgr2::Tasks) + QStringLiteral("/ut_app_task.json");
+  auto cleanup = qScopeGuard([&installedTask]() { QFile::remove(installedTask); });
+
+  // Match first launch: initialize the service before installing bundled data.
+  config.initAfterQtAppStarted();
+  QVERIFY(config.extraDataCopyFailures().isEmpty());
+  const auto &tasks = service.getAppTasks();
+  QCOMPARE(tasks.size(), 1);
+  QCOMPARE(tasks.first()->getLabel(), QStringLiteral("UtAppTask"));
+  // A getter must not recursively refresh a model that is already reading it.
+  QCOMPARE(updated.count(), 0);
+}
+
+void TestTaskService::testEmptyTaskCacheReload() {
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, nullptr);
+  service.init();
+  QVERIFY(service.getAppTasks().isEmpty());
+
+  const auto folder = service.getAppTaskFolder();
+  const auto path = writeTask(
+      folder, QStringLiteral("ut_cached_task.json"),
+      QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"Before\",\"command\":\"echo hi\"}"));
+  QVERIFY(!path.isEmpty());
+  auto cleanup = qScopeGuard([&path]() { QFile::remove(path); });
+  // Empty is a loaded result, not a reason to scan the directory again.
+  QVERIFY(service.getAppTasks().isEmpty());
+
+  QSignalSpy updated(&service, &TaskService::tasksUpdated);
+  service.reload();
+  QCOMPARE(updated.count(), 1);
+  QCOMPARE(service.getAppTasks().size(), 1);
+  QCOMPARE(service.getAppTasks().first()->getLabel(), QStringLiteral("Before"));
+
+  QVERIFY(!writeTask(folder, QStringLiteral("ut_cached_task.json"),
+                     QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"After\","
+                                    "\"command\":\"echo hi\"}"))
+               .isEmpty());
+  QCOMPARE(service.getAppTasks().first()->getLabel(), QStringLiteral("Before"));
+  service.reload();
+  QCOMPARE(service.getAppTasks().first()->getLabel(), QStringLiteral("After"));
+  QCOMPARE(updated.count(), 2);
 }
 
 void TestTaskService::testNotebookScopedTaskLoading() {
   QTemporaryDir tmp;
   QVERIFY(tmp.isValid());
-  const QString nbRoot = PathUtils::concatenateFilePath(tmp.path(), QStringLiteral("scopednb"));
-  QDir().mkpath(nbRoot);
+  const auto firstId = m_notebookService->createNotebook(tmp.path() + QStringLiteral("/first"),
+                                                         QStringLiteral("{\"name\":\"First\"}"),
+                                                         NotebookType::Bundled);
+  const auto secondId = m_notebookService->createNotebook(tmp.path() + QStringLiteral("/second"),
+                                                          QStringLiteral("{\"name\":\"Second\"}"),
+                                                          NotebookType::Bundled);
+  QVERIFY(!firstId.isEmpty());
+  QVERIFY(!secondId.isEmpty());
+  auto cleanup = qScopeGuard([&]() {
+    m_notebookService->closeNotebook(firstId);
+    m_notebookService->closeNotebook(secondId);
+  });
 
-  const QString id = m_notebookService->createNotebook(
-      nbRoot, QStringLiteral("{\"name\":\"Scoped\"}"), NotebookType::Bundled);
-  QVERIFY(!id.isEmpty());
-  m_context2->m_notebookId = id;
+  MockTaskContext context;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, nullptr);
+  service.init();
+  QVERIFY(service.getNotebookTasks().isEmpty());
 
-  // The task folder must resolve to <root>/vx_notebook/tasks.
-  const QString taskFolder = m_taskService->getNotebookTaskFolder();
-  QVERIFY(!taskFolder.isEmpty());
-  QCOMPARE(QDir::cleanPath(taskFolder),
-           QDir::cleanPath(nbRoot + QStringLiteral("/vx_notebook/tasks")));
+  context.m_notebookId = firstId;
+  service.setTaskContext(&context);
+  const auto firstFolder = service.getNotebookTaskFolder();
+  QCOMPARE(QDir::cleanPath(firstFolder), tmp.path() + QStringLiteral("/first/vx_notebook/tasks"));
+  // Context injection invalidates the empty cache but must not eagerly scan.
+  QVERIFY(
+      !writeTask(firstFolder, QStringLiteral("first.json"),
+                 QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"First\",\"command\":\"c\"}"))
+           .isEmpty());
+  QSignalSpy updated(&service, &TaskService::tasksUpdated);
+  QCOMPARE(service.getNotebookTasks().size(), 1);
+  QCOMPARE(service.getNotebookTasks().first()->getLabel(), QStringLiteral("First"));
+  QCOMPARE(updated.count(), 0);
 
-  writeTask(taskFolder, QStringLiteral("nb_task.json"),
-            QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"NbScopedTask\",\"command\":\"c\"}"));
+  context.m_notebookId = secondId;
+  service.reloadNotebookTasks();
+  QCOMPARE(updated.count(), 1);
+  QVERIFY(service.getNotebookTasks().isEmpty());
+  const auto secondFolder = service.getNotebookTaskFolder();
+  QVERIFY(
+      !writeTask(secondFolder, QStringLiteral("second.json"),
+                 QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"Second\",\"command\":\"c\"}"))
+           .isEmpty());
+  QVERIFY(service.getNotebookTasks().isEmpty());
+  service.reloadNotebookTasks();
+  // A file arriving after invalidation must be seen on the next request.
+  QVERIFY(!writeTask(secondFolder, QStringLiteral("second.json"),
+                     QStringLiteral("{\"version\":\"0.1.3\",\"label\":\"Second updated\","
+                                    "\"command\":\"c\"}"))
+               .isEmpty());
+  QCOMPARE(service.getNotebookTasks().size(), 1);
+  QCOMPARE(service.getNotebookTasks().first()->getLabel(), QStringLiteral("Second updated"));
+  QCOMPARE(updated.count(), 2);
 
-  m_taskService->reloadNotebookTasks();
-
-  bool found = false;
-  for (const auto &task : m_taskService->getNotebookTasks()) {
-    if (task->getLabel() == QStringLiteral("NbScopedTask")) {
-      found = true;
-      break;
-    }
-  }
-  QVERIFY(found);
-
-  m_context2->m_notebookId.clear();
-  m_notebookService->closeNotebook(id);
+  MockTaskContext replacement;
+  replacement.m_notebookId = firstId;
+  service.setTaskContext(&replacement);
+  QCOMPARE(service.getNotebookTasks().size(), 1);
+  QCOMPARE(service.getNotebookTasks().first()->getLabel(), QStringLiteral("First"));
+  service.setTaskContext(nullptr);
+  QVERIFY(service.getNotebookTasks().isEmpty());
 }
 
 void TestTaskService::testRawNotebookTaskFolderEmpty() {
@@ -199,17 +268,17 @@ void TestTaskService::testRawNotebookTaskFolderEmpty() {
   const QString nbRoot = PathUtils::concatenateFilePath(tmp.path(), QStringLiteral("rawnb"));
   QDir().mkpath(nbRoot);
 
-  const QString id = m_notebookService->createNotebook(
-      nbRoot, QStringLiteral("{\"name\":\"Raw\"}"), NotebookType::Raw);
+  const QString id = m_notebookService->createNotebook(nbRoot, QStringLiteral("{\"name\":\"Raw\"}"),
+                                                       NotebookType::Raw);
   QVERIFY(!id.isEmpty());
   m_context2->m_notebookId = id;
 
   // Raw notebooks have no per-notebook config folder, so no task folder.
   QVERIFY(m_taskService->getNotebookTaskFolder().isEmpty());
 
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"[${notebookTaskFolder}]\"}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"[${notebookTaskFolder}]\"}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   QCOMPARE(task->getCommand(), QStringLiteral("[]"));
@@ -225,9 +294,9 @@ void TestTaskService::testBufferVariables() {
       PathUtils::concatenateFilePath(tmp.path(), QStringLiteral("notes/foo.md"));
   m_context2->m_bufferPath = bufferPath;
 
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${buffer}\"}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${buffer}\"}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
 
@@ -259,17 +328,16 @@ void TestTaskService::testBufferNotebookAndRelativePath() {
       nbRoot, QStringLiteral("{\"name\":\"BufNB\"}"), NotebookType::Bundled);
   QVERIFY(!id.isEmpty());
 
-  const QString bufferPath =
-      PathUtils::concatenateFilePath(nbRoot, QStringLiteral("sub/note.md"));
+  const QString bufferPath = PathUtils::concatenateFilePath(nbRoot, QStringLiteral("sub/note.md"));
   m_context2->m_bufferPath = bufferPath;
   m_context2->m_bufferNotebookId = id;
   m_context2->m_bufferRelativePath = QStringLiteral("sub/note.md");
 
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
-                     "\"args\":[\"${bufferNotebookFolder}\",\"${bufferRelativePath}\","
-                     "\"${bufferDir}\"]}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
+                               "\"args\":[\"${bufferNotebookFolder}\",\"${bufferRelativePath}\","
+                               "\"${bufferDir}\"]}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   const auto args = task->getArgs();
@@ -288,9 +356,9 @@ void TestTaskService::testSelectedTextVariable() {
   m_context2->m_selectedText = QStringLiteral("hello world");
   QTemporaryDir tmp;
   QVERIFY(tmp.isValid());
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${selectedText}\"}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${selectedText}\"}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   QCOMPARE(task->getCommand(), QStringLiteral("hello world"));
@@ -305,16 +373,15 @@ void TestTaskService::testNotebookVariables() {
 
   const QString configJson =
       QStringLiteral("{\"name\":\"MyNotebook\",\"description\":\"My Desc\"}");
-  const QString id =
-      m_notebookService->createNotebook(nbRoot, configJson, NotebookType::Bundled);
+  const QString id = m_notebookService->createNotebook(nbRoot, configJson, NotebookType::Bundled);
   QVERIFY(!id.isEmpty());
 
   m_context2->m_notebookId = id;
 
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
-                     "\"args\":[\"${notebookName}\",\"${notebookDescription}\"]}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
+                               "\"args\":[\"${notebookName}\",\"${notebookDescription}\"]}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   const auto args = task->getArgs();
@@ -337,11 +404,11 @@ void TestTaskService::testNotebookFolderVariables() {
   QVERIFY(!id.isEmpty());
   m_context2->m_notebookId = id;
 
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
-                     "\"args\":[\"${notebookFolder}\",\"${notebookFolderName}\","
-                     "\"${notebookTaskFolder}\"]}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
+                               "\"args\":[\"${notebookFolder}\",\"${notebookFolderName}\","
+                               "\"${notebookTaskFolder}\"]}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   const auto args = task->getArgs();
@@ -365,9 +432,10 @@ void TestTaskService::testConfigVariable() {
 
   QTemporaryDir tmp;
   QVERIFY(tmp.isValid());
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${config:main.core.toolbarIconSize}\"}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral(
+                    "{\"version\":\"0.1.3\",\"command\":\"${config:main.core.toolbarIconSize}\"}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   QCOMPARE(task->getCommand(), expected);
@@ -379,9 +447,9 @@ void TestTaskService::testMagicVariable() {
 
   // A dynamic built-in snippet (datetime) expands to non-empty text with no
   // residual '%' symbols, matching the SnippetCoreService symbol contract.
-  const QString dtFile = writeTask(
-      tmp.path(), QStringLiteral("dt.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${magic:datetime}\"}"));
+  const QString dtFile =
+      writeTask(tmp.path(), QStringLiteral("dt.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${magic:datetime}\"}"));
   auto dtTask = Task::fromFile(dtFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(dtTask);
   const QString dtResult = dtTask->getCommand();
@@ -394,9 +462,9 @@ void TestTaskService::testMagicVariable() {
 
   // Reduced-fidelity note: buffer-dependent symbols (note/no) get no overrides
   // in the new-arch path. Pin the behavior so it cannot change unnoticed.
-  const QString noteFile = writeTask(
-      tmp.path(), QStringLiteral("note.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${magic:note}\"}"));
+  const QString noteFile =
+      writeTask(tmp.path(), QStringLiteral("note.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${magic:note}\"}"));
   auto noteTask = Task::fromFile(noteFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(noteTask);
   QCOMPARE(noteTask->getCommand(),
@@ -406,18 +474,16 @@ void TestTaskService::testMagicVariable() {
 void TestTaskService::testConfigFolderVariables() {
   QTemporaryDir tmp;
   QVERIFY(tmp.isValid());
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
-                     "\"args\":[\"${taskFolder}\",\"${themeFolder}\"]}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"c\","
+                               "\"args\":[\"${taskFolder}\",\"${themeFolder}\"]}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   const auto args = task->getArgs();
   QCOMPARE(args.size(), 2);
-  QCOMPARE(args.at(0),
-           PathUtils::cleanPath(m_configMgr->getConfigDataFolder(ConfigMgr2::Tasks)));
-  QCOMPARE(args.at(1),
-           PathUtils::cleanPath(m_configMgr->getConfigDataFolder(ConfigMgr2::Themes)));
+  QCOMPARE(args.at(0), PathUtils::cleanPath(m_configMgr->getConfigDataFolder(ConfigMgr2::Tasks)));
+  QCOMPARE(args.at(1), PathUtils::cleanPath(m_configMgr->getConfigDataFolder(ConfigMgr2::Themes)));
 }
 
 void TestTaskService::testInputPromptResolves() {
@@ -426,11 +492,11 @@ void TestTaskService::testInputPromptResolves() {
 
   QTemporaryDir tmp;
   QVERIFY(tmp.isValid());
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${input:myid}\","
-                     "\"inputs\":[{\"id\":\"myid\",\"type\":\"promptString\","
-                     "\"description\":\"Enter\"}]}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${input:myid}\","
+                               "\"inputs\":[{\"id\":\"myid\",\"type\":\"promptString\","
+                               "\"description\":\"Enter\"}]}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   QCOMPARE(task->getCommand(), QStringLiteral("typed-value"));
@@ -442,11 +508,11 @@ void TestTaskService::testInputPromptCancels() {
 
   QTemporaryDir tmp;
   QVERIFY(tmp.isValid());
-  const QString taskFile = writeTask(
-      tmp.path(), QStringLiteral("t.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${input:myid}\","
-                     "\"inputs\":[{\"id\":\"myid\",\"type\":\"promptString\","
-                     "\"description\":\"Enter\"}]}"));
+  const QString taskFile =
+      writeTask(tmp.path(), QStringLiteral("t.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${input:myid}\","
+                               "\"inputs\":[{\"id\":\"myid\",\"type\":\"promptString\","
+                               "\"description\":\"Enter\"}]}"));
   auto task = Task::fromFile(taskFile, QStringLiteral("en_US"), m_taskService);
   QVERIFY(task);
   QCOMPARE(task->getCommand(), QString());
@@ -479,11 +545,11 @@ void TestTaskService::testNullContextResolvesEmpty() {
     QCOMPARE(arg, QStringLiteral("[]"));
   }
 
-  const QString inputTaskFile = writeTask(
-      tmp.path(), QStringLiteral("i.json"),
-      QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${input:myid}\","
-                     "\"inputs\":[{\"id\":\"myid\",\"type\":\"promptString\","
-                     "\"description\":\"Enter\"}]}"));
+  const QString inputTaskFile =
+      writeTask(tmp.path(), QStringLiteral("i.json"),
+                QStringLiteral("{\"version\":\"0.1.3\",\"command\":\"${input:myid}\","
+                               "\"inputs\":[{\"id\":\"myid\",\"type\":\"promptString\","
+                               "\"description\":\"Enter\"}]}"));
   auto inputTask = Task::fromFile(inputTaskFile, QStringLiteral("en_US"), &nullCtxService);
   QVERIFY(inputTask);
   QCOMPARE(inputTask->getCommand(), QString());
@@ -492,5 +558,19 @@ void TestTaskService::testNullContextResolvesEmpty() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestTaskService)
+int main(int argc, char **argv) {
+  // vxcore test mode uses the process temp directory. Give this executable its
+  // own root so prior runs and parallel test executables cannot seed its caches.
+  QTemporaryDir tempRoot;
+  if (!tempRoot.isValid()) {
+    return 1;
+  }
+  const auto path = QFile::encodeName(tempRoot.path());
+  qputenv("TMPDIR", path);
+  qputenv("TMP", path);
+  qputenv("TEMP", path);
+  QCoreApplication app(argc, argv);
+  tests::TestTaskService test;
+  return QTest::qExec(&test, argc, argv);
+}
 #include "test_taskservice.moc"

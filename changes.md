@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Load tasks on first request so freshly installed bundled tasks are available without restarting VNote
 
 * **Search**
     * The Search panel can replace selected or all reviewed Simple content matches with literal text; confirmation saves affected notes including existing unsaved edits, with cancellation and failed-write recovery
