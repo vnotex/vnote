@@ -170,9 +170,12 @@ QAction *UnitedEntry::getActivateAction() {
   }
 
   auto *themeService = m_services.get<ThemeService>();
-  // Use the theme's master/accent color so the button stands out and invites use.
-  const auto fg = themeService->paletteColor("base#master#bg");
-  const auto icon = IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), fg);
+  const auto fg = themeService->paletteColor("widgets#toolbar#icon#fg");
+  const auto disabledFg = themeService->paletteColor("widgets#toolbar#icon#disabled#fg");
+  const QVector<IconUtils::OverriddenColor> colors = {
+      IconUtils::OverriddenColor(fg, QIcon::Normal),
+      IconUtils::OverriddenColor(disabledFg, QIcon::Disabled)};
+  const auto icon = IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), colors);
 
   m_activateAction = new QAction(icon, tr("United Entry"), this);
   connect(m_activateAction, &QAction::triggered, this, &UnitedEntry::activate);
@@ -730,10 +733,13 @@ void UnitedEntry::refreshIcons() {
   m_busyIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg));
 
   if (m_activateAction) {
-    // Master/accent color to keep the button prominent.
-    const auto masterFg = themeService->paletteColor("base#master#bg");
+    const auto toolbarFg = themeService->paletteColor("widgets#toolbar#icon#fg");
+    const auto disabledFg = themeService->paletteColor("widgets#toolbar#icon#disabled#fg");
+    const QVector<IconUtils::OverriddenColor> colors = {
+        IconUtils::OverriddenColor(toolbarFg, QIcon::Normal),
+        IconUtils::OverriddenColor(disabledFg, QIcon::Disabled)};
     m_activateAction->setIcon(
-        IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), masterFg));
+        IconUtils::fetchIcon(themeService->getIconFile("united_entry.svg"), colors));
   }
 }
 
