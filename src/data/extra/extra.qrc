@@ -492,6 +492,38 @@
         <file>themes/moonlight/up.svg</file>
         <file>themes/moonlight/up_disabled.svg</file>
         <file>themes/moonlight/web.css</file>
+        <file>themes/dreamy/arrow_dropdown.svg</file>
+        <file>themes/dreamy/arrow_dropdown_disabled.svg</file>
+        <file>themes/dreamy/branch_closed.svg</file>
+        <file>themes/dreamy/branch_open.svg</file>
+        <file>themes/dreamy/checkbox_checked.svg</file>
+        <file>themes/dreamy/checkbox_checked_disabled.svg</file>
+        <file>themes/dreamy/checkbox_unchecked.svg</file>
+        <file>themes/dreamy/checkbox_unchecked_disabled.svg</file>
+        <file>themes/dreamy/close.svg</file>
+        <file>themes/dreamy/expand_toolbar.svg</file>
+        <file>themes/dreamy/close_grey.svg</file>
+        <file>themes/dreamy/down.svg</file>
+        <file>themes/dreamy/down_disabled.svg</file>
+        <file>themes/dreamy/float.svg</file>
+        <file>themes/dreamy/highlight.css</file>
+        <file>themes/dreamy/interface.qss</file>
+        <file>themes/dreamy/left.svg</file>
+        <file>themes/dreamy/left_disabled.svg</file>
+        <file>themes/dreamy/menu_checkbox.svg</file>
+        <file>themes/dreamy/menu_radiobutton.svg</file>
+        <file>themes/dreamy/palette.json</file>
+        <file>themes/dreamy/radiobutton_checked.svg</file>
+        <file>themes/dreamy/radiobutton_checked_disabled.svg</file>
+        <file>themes/dreamy/radiobutton_unchecked.svg</file>
+        <file>themes/dreamy/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/dreamy/right.svg</file>
+        <file>themes/dreamy/right_disabled.svg</file>
+        <file>themes/dreamy/sizegrip.svg</file>
+        <file>themes/dreamy/text-editor.theme</file>
+        <file>themes/dreamy/up.svg</file>
+        <file>themes/dreamy/up_disabled.svg</file>
+        <file>themes/dreamy/web.css</file>
         <file>themes/everforest-dark/arrow_dropdown.svg</file>
         <file>themes/everforest-dark/arrow_dropdown_disabled.svg</file>
         <file>themes/everforest-dark/branch_closed.svg</file>
