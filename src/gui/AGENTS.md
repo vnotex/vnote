@@ -23,7 +23,9 @@ keys, then retires the old main-config keys through normal persistence. Explicit
 session values, including an empty date and index zero, take precedence.
 
 Select catalog translations using `QLocale().uiLanguages()` in preference order,
-normalizing hyphens to underscores for JSON keys, then fall back to `en_US`.
+trying each tag with underscores, its canonical `QLocale(tag).name()` key (so
+`zh-Hans-CN` can match `zh_CN` even without Qt-expanded aliases), and its language
+prefix before falling back to `en_US`.
 Do not use `getLocaleToUse()` here: it returns the regional-format locale, which
 can differ from the system UI language. Startup already applies explicit language
 settings through `QLocale::setDefault()` before tips are produced.

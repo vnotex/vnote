@@ -4,6 +4,9 @@
 #include <QDate>
 #include <QObject>
 #include <QString>
+#include <QStringList>
+
+class QJsonObject;
 
 namespace vnotex {
 class ServiceLocator;
@@ -17,6 +20,8 @@ public:
 
   bool showTipIfDue(const QDate &p_today = QDate::currentDate());
   void setCatalogPathOverrideForTesting(const QString &p_path);
+
+  static QString selectTipText(const QJsonObject &p_tip, const QStringList &p_uiLanguages);
 
 private:
   ServiceLocator &m_services;

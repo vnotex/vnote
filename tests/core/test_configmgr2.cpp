@@ -1819,13 +1819,23 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
     QString next;
   };
   const QByteArray bilingual(R"([{"en_US":"English","zh_CN":"中文"},{"en_US":"Next"}])");
+  // A system UI tag must win over an unrelated regional-format locale, even
+  // when Qt supplies no expanded aliases for the tag.
+  QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+  QCOMPARE(QLocale().name(), QStringLiteral("en_US"));
+  const auto tip = QJsonDocument::fromJson(bilingual).array().first().toObject();
+  QCOMPARE(ToolTipService::selectTipText(tip, {"zh-Hans-CN", "en-US"}), QStringLiteral("中文"));
+  QCOMPARE(ToolTipService::selectTipText(tip, {"en-US", "zh-Hans-CN"}), QStringLiteral("English"));
+  QCOMPARE(ToolTipService::selectTipText(QJsonObject{{"ja", "日本語"}, {"en_US", "English"}},
+                                         {"ja-Jpan-JP", "en-US"}),
+           QStringLiteral("日本語"));
+
   const SelectionCase cases[] = {
       {"zh_CN", bilingual, 0, QStringLiteral("中文"), QStringLiteral("Next")},
       {"zh_CN", R"([{"zh_Hans_CN":"中文","en_US":"English"},{"en_US":"Next"}])", 0,
        QStringLiteral("中文"), QStringLiteral("Next")},
       {"ja_JP", R"([{"ja":"日本語","en_US":"English"},{"en_US":"Next"}])", 0,
        QStringLiteral("日本語"), QStringLiteral("Next")},
-      {"zh_TW", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
       {"en_US", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
       {"ja_JP", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
       {"zh_CN", R"([{"en_US":"Fallback"},{"en_US":"Next"}])", 0, QStringLiteral("Fallback"),

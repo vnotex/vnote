@@ -28,6 +28,24 @@ void ToolTipService::setCatalogPathOverrideForTesting(const QString &p_path) {
   m_catalogPathOverride = p_path;
 }
 
+QString ToolTipService::selectTipText(const QJsonObject &p_tip, const QStringList &p_uiLanguages) {
+  for (auto locale : p_uiLanguages) {
+    locale.replace(QLatin1Char('-'), QLatin1Char('_'));
+    auto text = p_tip.value(locale).toString().trimmed();
+    if (text.isEmpty()) {
+      // Older Qt versions may not expand script tags such as zh-Hans-CN.
+      text = p_tip.value(QLocale(locale).name()).toString().trimmed();
+    }
+    if (text.isEmpty()) {
+      text = p_tip.value(locale.section(QLatin1Char('_'), 0, 0)).toString().trimmed();
+    }
+    if (!text.isEmpty()) {
+      return text;
+    }
+  }
+  return p_tip.value(QStringLiteral("en_US")).toString().trimmed();
+}
+
 bool ToolTipService::showTipIfDue(const QDate &p_today) {
   auto *configMgr = m_services.get<ConfigMgr2>();
   auto *notifications = m_services.get<NotificationService>();
@@ -91,24 +109,13 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
 
   // Match the UI language preferences used by QTranslator, not the regional
   // formatting locale (which can differ when following the system language).
-  auto locales = QLocale().uiLanguages();
-  for (auto &locale : locales) {
-    locale.replace(QLatin1Char('-'), QLatin1Char('_'));
-  }
+  const auto uiLanguages = QLocale().uiLanguages();
   const int count = tips.size();
   int position = sessionConfig.getNextToolTipIndex() % count;
   QString text;
   for (int scanned = 0; scanned < count; ++scanned) {
     const auto item = tips.at(position).toObject();
-    for (const auto &locale : qAsConst(locales)) {
-      text = item.value(locale).toString().trimmed();
-      if (!text.isEmpty()) {
-        break;
-      }
-    }
-    if (text.isEmpty()) {
-      text = item.value(QStringLiteral("en_US")).toString().trimmed();
-    }
+    text = selectTipText(item, uiLanguages);
     if (++position == count) {
       position = 0;
     }
