@@ -524,6 +524,38 @@
         <file>themes/dreamy/up.svg</file>
         <file>themes/dreamy/up_disabled.svg</file>
         <file>themes/dreamy/web.css</file>
+        <file>themes/jadeite/arrow_dropdown.svg</file>
+        <file>themes/jadeite/arrow_dropdown_disabled.svg</file>
+        <file>themes/jadeite/branch_closed.svg</file>
+        <file>themes/jadeite/branch_open.svg</file>
+        <file>themes/jadeite/checkbox_checked.svg</file>
+        <file>themes/jadeite/checkbox_checked_disabled.svg</file>
+        <file>themes/jadeite/checkbox_unchecked.svg</file>
+        <file>themes/jadeite/checkbox_unchecked_disabled.svg</file>
+        <file>themes/jadeite/close.svg</file>
+        <file>themes/jadeite/expand_toolbar.svg</file>
+        <file>themes/jadeite/close_grey.svg</file>
+        <file>themes/jadeite/down.svg</file>
+        <file>themes/jadeite/down_disabled.svg</file>
+        <file>themes/jadeite/float.svg</file>
+        <file>themes/jadeite/highlight.css</file>
+        <file>themes/jadeite/interface.qss</file>
+        <file>themes/jadeite/left.svg</file>
+        <file>themes/jadeite/left_disabled.svg</file>
+        <file>themes/jadeite/menu_checkbox.svg</file>
+        <file>themes/jadeite/menu_radiobutton.svg</file>
+        <file>themes/jadeite/palette.json</file>
+        <file>themes/jadeite/radiobutton_checked.svg</file>
+        <file>themes/jadeite/radiobutton_checked_disabled.svg</file>
+        <file>themes/jadeite/radiobutton_unchecked.svg</file>
+        <file>themes/jadeite/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/jadeite/right.svg</file>
+        <file>themes/jadeite/right_disabled.svg</file>
+        <file>themes/jadeite/sizegrip.svg</file>
+        <file>themes/jadeite/text-editor.theme</file>
+        <file>themes/jadeite/up.svg</file>
+        <file>themes/jadeite/up_disabled.svg</file>
+        <file>themes/jadeite/web.css</file>
         <file>themes/everforest-dark/arrow_dropdown.svg</file>
         <file>themes/everforest-dark/arrow_dropdown_disabled.svg</file>
         <file>themes/everforest-dark/branch_closed.svg</file>
