@@ -53,12 +53,17 @@ h6 {
 }
 
 a {
-    color: #0099ff;
+    color: #006FBA;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
-    text-decoration: none;
+    text-decoration: underline;
     word-break: break-word;
+}
+
+a:focus {
+    outline: 2px solid #006FBA;
+    outline-offset: 2px;
 }
 
 a:hover {
@@ -103,7 +108,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, Monospace, Courier;
-    color: #e96900;
+    color: #B04F00;
     word-break: break-word;
 }
 
@@ -195,7 +200,7 @@ div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
     /* background: #bdcbd3; */
-    color: #c4c4c4;
+    color: #737373;
 }
 
 div.vx-flowchartjs-graph {
@@ -204,7 +209,7 @@ div.vx-flowchartjs-graph {
     width: fit-content;
     overflow: hidden;
     /* background: #bdcbd3; */
-    color: #c7c4c4;
+    color: #757373;
 }
 
 div.vx-wavedrom-graph {
@@ -213,7 +218,7 @@ div.vx-wavedrom-graph {
     width: fit-content;
     overflow: hidden;
     /* background: #bdcbd3; */
-    color: #c4c4c4;
+    color: #737373;
 }
 
 div.vx-plantuml-graph {
@@ -222,12 +227,12 @@ div.vx-plantuml-graph {
     width: fit-content;
     overflow: hidden;
     /* background: #bdcbd3; */
-    color: #c4c4c4;
+    color: #737373;
 }
 
 ::selection {
-  background-color: #dae3ea;
-  color: #34495e;
+  background-color: @base#content#selection#bg;
+  color: @base#content#selection#fg;
 }
 
 ::-webkit-scrollbar {
@@ -246,18 +251,18 @@ div.vx-plantuml-graph {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.3);
+    background: #7A7A7A;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.5);
+    background: #6C7C8B;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: rgba(128, 128, 128, 0.7);
+    background: #6C7C8B;
 }
 
 ::-webkit-scrollbar-button {
@@ -267,11 +272,63 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #34495e;
+    color: #2A3B4C;
     background-color: #4db6ac;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #34495e;
+    color: #2C3D4F;
     background-color: #66bb6a;
+}
+
+/* Quiet alert surfaces; semantic color is carried by the left border. */
+.vx-alert,
+.vx-alert.alert-primary,
+.vx-alert.alert-secondary,
+.vx-alert.alert-success,
+.vx-alert.alert-s,
+.vx-alert.alert-warning,
+.vx-alert.alert-w,
+.vx-alert.alert-info,
+.vx-alert.alert-i,
+.vx-alert.alert-danger,
+.vx-alert.alert-d,
+.vx-alert.alert-light,
+.vx-alert.alert-dark {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left: 1px solid @base#muted#fg;
+}
+
+.vx-alert.alert-primary {
+    border-left-color: @base#info#fg;
+}
+
+.vx-alert.alert-secondary {
+    border-left-color: @base#muted#fg;
+}
+
+.vx-alert.alert-success,
+.vx-alert.alert-s {
+    border-left-color: @base#success#fg;
+}
+
+.vx-alert.alert-warning,
+.vx-alert.alert-w {
+    border-left-color: @base#warning#fg;
+}
+
+.vx-alert.alert-info,
+.vx-alert.alert-i {
+    border-left-color: @base#info#fg;
+}
+
+.vx-alert.alert-danger,
+.vx-alert.alert-d {
+    border-left-color: @base#error#fg;
+}
+
+.vx-alert.alert-light,
+.vx-alert.alert-dark {
+    border-left-color: @base#muted#fg;
 }

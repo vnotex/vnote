@@ -54,12 +54,12 @@
     },
     "base" : {
         "normal" : {
-            "fg" : "@palette#fg1_5",
+            "fg" : "#B2B2B2",
             "bg" : "@palette#bg1_5",
             "border" : "@palette#bg1_6"
         },
         "master" : {
-            "fg" : "@palette#fg1_9",
+            "fg" : "#ffffff",
             "bg" : "@palette#bg2_5",
             "alt" : "@palette#bg2_4"
         },
@@ -90,16 +90,16 @@
             "focus" : {
                 "fg" : "@base#content#fg",
                 "bg" : "@base#focus#bg",
-                "border" : "@base#master#bg"
+                "border" : "#818ED3"
             },
             "hover" : {
                 "fg" : "@base#content#fg",
                 "bg" : "@base#hover#bg",
-                "border" : "@base#master#bg"
+                "border" : "#818ED3"
             },
             "selection" : {
-                "fg" : "@palette#fg1_10",
-                "bg" : "@palette#bg11"
+                "fg" : "#ffffff",
+                "bg" : "#0A62CC"
             },
             "selected" : {
                 "fg" : "@base#content#fg",
@@ -127,19 +127,19 @@
             }
         },
         "muted" : {
-            "fg" : "#828282"
+            "fg" : "#8E8E8E"
         },
         "error" : {
-            "fg" : "@palette#fg10"
+            "fg" : "#D27272"
         },
         "success" : {
             "fg" : "@palette#fg_success"
         },
         "warning" : {
-            "fg" : "@palette#fg11"
+            "fg" : "#BC799D"
         },
         "info" : {
-            "fg" : "@palette#fg12"
+            "fg" : "#7C8AD1"
         },
         "danger" : {
             "fg": "@palette#fg1_10",
@@ -168,7 +168,7 @@
         "icon" : {
             "fg" : "@palette#fg15_5",
             "inactive" : {
-                "fg" : "@palette#fg15_4"
+                "fg" : "#8B929F"
             },
             "disabled" : {
                 "fg" : "@palette#fg15_3"
@@ -253,7 +253,7 @@
                 "fg" : "@base#icon#inactive#fg"
             },
             "external_node_text" : {
-                "fg" : "#80808080"
+                "fg" : "@base#muted#fg"
             }
         },
         "locationlist" : {
@@ -383,7 +383,7 @@
             "bg" : "transparent",
             "border" : "@base#normal#border",
             "default" : {
-                "border" : "@base#master#bg"
+                "border" : "#CED4EE"
             },
             "focus" : {
                 "fg" : "@base#focus#fg",
@@ -413,7 +413,7 @@
         "qcombobox" : {
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
-            "border" : "@base#content#border",
+            "border" : "#727272",
             "focus" : {
                 "bg" : "@base#content#focus#bg",
                 "border" : "@base#content#focus#border"
@@ -444,7 +444,7 @@
             "fg" : "@base#normal#fg"
         },
         "qlineedit" : {
-            "border" : "@base#content#border",
+            "border" : "#727272",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "selection" : {
@@ -475,7 +475,7 @@
                 "selected" : {
                     "fg" : "@base#content#fg",
                     "bg" : "@base#content#bg",
-                    "border" : "@base#master#bg"
+                    "border" : "#C8CDEC"
                 }
             }
         },
@@ -543,7 +543,7 @@
             "spelling" : {
                 "bg" : "#00695c",
                 "hover" : {
-                    "bg" : "#00897b"
+                    "bg" : "#008275"
                 },
                 "pressed" : {
                     "bg" : "#004d40"
@@ -553,7 +553,7 @@
                 "bg" : "#4527a0"
             },
             "mode" : {
-                "bg" : "#ef6c00"
+                "bg" : "#a34a00"
             }
         },
         "qscrollbar" : {
@@ -562,12 +562,12 @@
                 "bg" : "transparent"
             },
             "handle" : {
-                "bg" : "@palette#bg1_6",
+                "bg" : "#6A6A6A",
                 "hover" : {
-                    "bg" : "@palette#bg1_71"
+                    "bg" : "#616B78"
                 },
                 "pressed" : {
-                    "bg" : "@palette#bg1_7"
+                    "bg" : "#6A6A6A"
                 }
             }
         },
@@ -604,7 +604,7 @@
             }
         },
         "qspinbox" : {
-            "border" : "@base#content#border",
+            "border" : "#727272",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "disabled" : {
@@ -647,7 +647,7 @@
             "bg" : "@base#content#bg",
             "border" : "@base#content#border",
             "chunk" : {
-                "bg" : "@base#master#alt"
+                "bg" : "#596BC5"
             }
         },
         "qgroupbox" : {
@@ -753,7 +753,7 @@
                 "fg" : "@base#content#fg"
             },
             "description" : {
-                "fg" : "@palette#fg1_1"
+                "fg" : "#848EA1"
             },
             "separator" : {
                 "bg" : "@base#normal#border"

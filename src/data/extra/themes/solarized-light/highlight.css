@@ -32,7 +32,7 @@ green     #859900
 
 code[class*="language-"],
 pre[class*="language-"] {
-    color: #657b83; /* base00 */
+    color: #5D7179; /* base00 */
     font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
     font-size: 1em;
     text-align: left;
@@ -55,12 +55,14 @@ pre[class*="language-"] {
 
 pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
 code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
-    background: #073642; /* base02 */
+    background: #006A78;
+    color: #FDF6E3;
 }
 
 pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
 code[class*="language-"]::selection, code[class*="language-"] ::selection {
-    background: #073642; /* base02 */
+    background: #006A78;
+    color: #FDF6E3;
 }
 
 /* Code blocks */
@@ -86,7 +88,7 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-    color: #93a1a1; /* base1 */
+    color: #677070; /* base1 */
 }
 
 .token.punctuation {
@@ -94,7 +96,7 @@ pre[class*="language-"] {
 }
 
 .token.namespace {
-    opacity: .7;
+    color: #677070;
 }
 
 .token.property,
@@ -104,7 +106,7 @@ pre[class*="language-"] {
 .token.constant,
 .token.symbol,
 .token.deleted {
-    color: #268bd2; /* blue */
+    color: #2073AE; /* blue */
 }
 
 .token.selector,
@@ -114,29 +116,29 @@ pre[class*="language-"] {
 .token.builtin,
 .token.url,
 .token.inserted {
-    color: #2aa198; /* cyan */
+    color: #207A74; /* cyan */
 }
 
 .token.entity {
-    color: #657b83; /* base00 */
+    color: #56696F; /* base00 */
     background: #eee8d5; /* base2 */
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-    color: #859900; /* green */
+    color: #667500; /* green */
 }
 
 .token.function,
 .token.class-name {
-    color: #b58900; /* yellow */
+    color: #8B6900; /* yellow */
 }
 
 .token.regex,
 .token.important,
 .token.variable {
-    color: #cb4b16; /* orange */
+    color: #BF4715; /* orange */
 }
 
 .token.important,
@@ -186,7 +188,7 @@ pre[class*="language-"].line-numbers > code {
 
         .line-numbers-rows > span:before {
             content: counter(linenumber);
-            color: #999;
+            color: #6E6E6E;
             display: block;
             padding-right: 0.8em;
             text-align: right;
@@ -239,7 +241,7 @@ div.code-toolbar > .toolbar > .toolbar-item > button {
 div.code-toolbar > .toolbar > .toolbar-item > a,
 div.code-toolbar > .toolbar > .toolbar-item > button,
 div.code-toolbar > .toolbar > .toolbar-item > span {
-    color: #bbb;
+    color: #646464;
     font-size: .8em;
     padding: 0 .5em;
     background: #f5f2f0;
@@ -254,7 +256,7 @@ div.code-toolbar > .toolbar > .toolbar-item > button:hover,
 div.code-toolbar > .toolbar > .toolbar-item > button:focus,
 div.code-toolbar > .toolbar > .toolbar-item > span:hover,
 div.code-toolbar > .toolbar > .toolbar-item > span:focus {
-    color: inherit;
+    color: #4B5B61;
     text-decoration: none;
 }
 

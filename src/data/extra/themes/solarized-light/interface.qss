@@ -296,7 +296,8 @@ QToolBarExtension#qt_toolbar_ext_button:pressed {
 
 /* QToolButton */
 QToolButton {
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
     border-radius: 4px;
     color: @widgets#qtoolbutton#fg;
     background-color: @widgets#qtoolbutton#bg;
@@ -310,7 +311,6 @@ QToolButton:checked {
 }
 
 QToolButton:hover {
-    border: none;
     color: @widgets#qtoolbutton#hover#fg;
     background-color: @widgets#qtoolbutton#hover#bg;
 }
@@ -351,7 +351,8 @@ QToolButton[popupMode="1"] {
 }
 
 QToolButton[ActionToolButton="true"] {
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
 }
 
 QToolButton[ActionToolButton="true"]::menu-indicator {
@@ -389,7 +390,8 @@ QWidget[StatusBarCol="5"] { background-color: @widgets#statusbarcolumn#mode#bg; 
 QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
     color: @widgets#qwidget#danger#fg;
     background-color: @widgets#qwidget#danger#bg;
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
     border-radius: 4px;
 }
 
@@ -398,6 +400,7 @@ QPushButton {
     color: @widgets#qpushbutton#fg;
     background-color: @widgets#qpushbutton#bg;
     border: 1px solid @widgets#qpushbutton#border;
+    border-left: 2px solid transparent;
     border-radius: 4px;
     padding: 6px 12px;
     min-width: 64px;
@@ -405,12 +408,14 @@ QPushButton {
 
 QPushButton:default {
     border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
 }
 
 QPushButton:focus {
     color: @widgets#qpushbutton#focus#fg;
     background-color: @widgets#qpushbutton#focus#bg;
     border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
 }
 
 QPushButton:checked {
@@ -730,6 +735,7 @@ QTreeView {
 
 QTreeView::item {
     padding: 4px 8px;
+    border-left: 2px solid transparent;
 }
 
 QTreeView::item:hover {
@@ -799,6 +805,7 @@ QListView {
 
 QListView::item {
     padding: 4px 8px;
+    border-left: 2px solid transparent;
 }
 
 QListView::item:hover {
@@ -822,6 +829,7 @@ QListView::item:selected:!active {
 }
 
 QListView::item:disabled {
+    color: @base#disabled#fg;
     background-color: transparent;
 }
 
@@ -967,11 +975,13 @@ QCheckBox::indicator:checked:disabled {
 }
 
 QCheckBox::indicator {
+    border: 1px solid transparent;
     width: 20px;
     height: 20px;
 }
 
 QCheckBox::indicator:focus {
+    border-color: @widgets#qlineedit#focus#border;
     background-color: @widgets#qcheckbox#indicator#focus#bg;
 }
 
@@ -1009,11 +1019,13 @@ QRadioButton::indicator:checked:disabled {
 }
 
 QRadioButton::indicator {
+    border: 1px solid transparent;
     width: 20px;
     height: 20px;
 }
 
 QRadioButton::indicator:focus {
+    border-color: @widgets#qlineedit#focus#border;
     background-color: @widgets#qradiobutton#indicator#focus#bg;
 }
 
@@ -1139,7 +1151,8 @@ QProgressBar {
     background-color: @widgets#qprogressbar#bg;
     border: 1px solid @widgets#qprogressbar#border;
     border-radius: 4px;
-    text-align: center;
+    text-align: right;
+    padding-right: 4em;
     min-height: 6px;
     max-height: 12px;
 }
@@ -1357,4 +1370,52 @@ vnotex--InlineBanner QLabel {
    unconditionally and define no :disabled variant. */
 *[MutedText="true"] {
     color: @base#muted#fg;
+}
+
+/* Keep keyboard focus separate from persistent checked/selected markers. */
+QToolButton:focus:enabled,
+QToolButton[ActionToolButton="true"]:focus:enabled,
+QToolButton[DangerButton="true"]:focus:enabled,
+QToolButton[DangerButton="true"]:hover:focus:enabled,
+QPushButton[DangerButton="true"]:focus:enabled,
+QPushButton[DangerButton="true"]:hover:focus:enabled {
+    border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
+}
+
+QToolButton:checked:enabled,
+QToolButton:checked:hover:enabled,
+QToolButton:checked:pressed:enabled,
+QToolButton[ActionToolButton="true"]:checked:enabled,
+QToolButton[ActionToolButton="true"]:checked:hover:enabled,
+QToolButton[ActionToolButton="true"]:checked:pressed:enabled,
+QToolButton[DangerButton="true"]:checked:enabled,
+QToolButton[DangerButton="true"]:checked:hover:enabled,
+QToolButton[DangerButton="true"]:checked:pressed:enabled,
+QPushButton:checked:enabled,
+QPushButton:checked:hover:enabled,
+QPushButton:checked:pressed:enabled,
+QPushButton[DangerButton="true"]:checked:enabled,
+QPushButton[DangerButton="true"]:checked:hover:enabled,
+QPushButton[DangerButton="true"]:checked:pressed:enabled,
+QTreeView::item:selected,
+QTreeView::item:selected:hover,
+QTreeView::item:selected:active,
+QTreeView::item:selected:!active,
+QListView::item:selected,
+QListView::item:selected:hover,
+QListView::item:selected:active,
+QListView::item:selected:!active {
+    border-left: 2px solid @widgets#qtabbar#tab#selected#border;
+}
+
+/* Status chips need the inverse focus edge on their dark semantic fills. */
+QToolButton[StatusBarCol="3"]:focus:enabled,
+QToolButton[StatusBarCol="3"]:hover:focus:enabled,
+QToolButton[StatusBarCol="3"]:pressed:focus:enabled {
+    border-color: #D5D5D5;
+}
+
+QToolButton:disabled {
+    color: @base#disabled#fg;
 }

@@ -113,6 +113,11 @@ endif()
 
 add_subdirectory(src)
 
+option(VNOTE_BUILD_THEME_DEMO "Build the theme visibility demo" OFF)
+if(VNOTE_BUILD_THEME_DEMO)
+    add_subdirectory(tools/theme-demo)
+endif()
+
 # tlsprobe: Windows-only CI gate proving the packaged build can initialize TLS.
 # Deliberately in the default ALL target (so the Qt5 job's plain `cmake --build .`
 # produces it) and independent of VNOTE_BUILD_TESTS, which that job sets to OFF.

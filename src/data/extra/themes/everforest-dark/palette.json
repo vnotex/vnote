@@ -37,7 +37,7 @@
         "bg2_7": "#7FBBB3",
         "bg2_8": "#7FBBB3",
         "bg2_9": "#7FBBB3",
-        "fg10": "#E67E80",
+        "fg10": "#F0B3B5",
         "fg11": "#E69875",
         "fg12": "#83C092",
         "fg13": "#514045",
@@ -52,9 +52,9 @@
         "bg10_8": "#475258",
         "bg11": "#543A48",
         "bg3_45": "#3D484D",
-        "fg_link": "#7FBBB3",
+        "fg_link": "#9ECCC5",
         "fg_inline_code": "#D3C6AA",
-        "fg_blockquote": "#859289",
+        "fg_blockquote": "#BDC4C0",
         "bg_code_block": "#2D353B",
         "bg_search": "#83C092",
         "bg_search_current": "#A7C080",
@@ -70,7 +70,7 @@
             "border": "@palette#bg1_6"
         },
         "master": {
-            "fg": "@palette#fg1_9",
+            "fg": "#232A2E",
             "bg": "@palette#bg2_5",
             "alt": "@palette#bg2_4"
         },
@@ -138,7 +138,7 @@
             }
         },
         "muted": {
-            "fg": "#A39C8A"
+            "fg": "#B1AB9B"
         },
         "error": {
             "fg": "@palette#fg10"
@@ -161,7 +161,7 @@
             "bg": "@base#normal#bg"
         },
         "pressed": {
-            "fg": "@palette#fg1_3",
+            "fg": "@base#normal#fg",
             "bg": "@palette#bg1_3"
         },
         "focus": {
@@ -174,12 +174,12 @@
         },
         "selected": {
             "fg": "@palette#fg1_9",
-            "bg": "@palette#bg1_8"
+            "bg": "#475258"
         },
         "icon": {
             "fg": "@palette#fg15_5",
             "inactive": {
-                "fg": "@palette#fg15_4"
+                "fg": "#9CA79F"
             },
             "disabled": {
                 "fg": "@palette#fg15_3"
@@ -264,7 +264,7 @@
                 "fg": "@base#icon#inactive#fg"
             },
             "external_node_text": {
-                "fg": "#807A8478"
+                "fg": "@base#muted#fg"
             }
         },
         "locationlist": {
@@ -343,7 +343,7 @@
             }
         },
         "qtooltip": {
-            "fg": "@base#master#fg",
+            "fg": "@base#normal#fg",
             "bg": "@base#normal#bg"
         },
         "qtoolbar": {
@@ -394,7 +394,7 @@
             "bg": "transparent",
             "border": "@base#normal#border",
             "default": {
-                "border": "@base#master#bg"
+                "border": "@base#info#fg"
             },
             "focus": {
                 "fg": "@base#focus#fg",
@@ -424,7 +424,7 @@
         "qcombobox": {
             "fg": "@base#content#fg",
             "bg": "@base#content#bg",
-            "border": "@base#content#border",
+            "border": "#868D90",
             "focus": {
                 "bg": "@base#content#focus#bg",
                 "border": "@base#content#focus#border"
@@ -455,7 +455,7 @@
             "fg": "@base#normal#fg"
         },
         "qlineedit": {
-            "border": "@base#content#border",
+            "border": "#868D90",
             "fg": "@base#content#fg",
             "bg": "@base#content#bg",
             "selection": {
@@ -554,7 +554,7 @@
             "spelling": {
                 "bg": "#00695c",
                 "hover": {
-                    "bg": "#00897b"
+                    "bg": "#008275"
                 },
                 "pressed": {
                     "bg": "#004d40"
@@ -564,7 +564,7 @@
                 "bg": "#4527a0"
             },
             "mode": {
-                "bg": "#ef6c00"
+                "bg": "#a34a00"
             }
         },
         "qscrollbar": {
@@ -573,12 +573,12 @@
                 "bg": "transparent"
             },
             "handle": {
-                "bg": "@palette#bg1_6",
+                "bg": "#7B8386",
                 "hover": {
-                    "bg": "@palette#bg1_71"
+                    "bg": "#7C8287"
                 },
                 "pressed": {
-                    "bg": "@palette#bg1_7"
+                    "bg": "#7B8387"
                 }
             }
         },
@@ -615,7 +615,7 @@
             }
         },
         "qspinbox": {
-            "border": "@base#content#border",
+            "border": "#868D90",
             "fg": "@base#content#fg",
             "bg": "@base#content#bg",
             "disabled": {
@@ -658,7 +658,7 @@
             "bg": "@base#content#bg",
             "border": "@base#content#border",
             "chunk": {
-                "bg": "@base#master#alt"
+                "bg": "#858E88"
             }
         },
         "qgroupbox": {
@@ -764,7 +764,7 @@
                 "fg": "@base#content#fg"
             },
             "description": {
-                "fg": "@palette#fg1_1"
+                "fg": "#A6ADA5"
             },
             "separator": {
                 "bg": "@base#normal#border"

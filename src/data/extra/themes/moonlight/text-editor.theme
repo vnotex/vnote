@@ -29,23 +29,23 @@
             "background-color" : "#dfdf00"
         },
         "IndicatorsBorder" : {
-            "text-color" : "#8a93a6",
+            "text-color" : "#AAB0BE",
             "background-color" : "#3c414d"
         },
         "CurrentLineNumber" : {
             "text-color" : "@base#content#fg"
         },
         "Folding" : {
-            "text-color" : "#838fd3"
+            "text-color" : "#9DA6DC"
         },
         "FoldedFolding" : {
-            "text-color" : "#919cd8"
+            "text-color" : "#9DA6DC"
         },
         "FoldingHighlight" : {
             "text-color" : "#4c5562"
         },
         "FoldedFoldingRangeLine" : {
-            "background-color" : "#3a4ba6"
+            "background-color" : "#3c414d"
         },
         "IncrementalSearch" : {
             "//comment" : "Incremental search highlight",
@@ -65,7 +65,7 @@
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#606b7d"},
+        "ListItemGuide" : {"text-color" : "#959DA9"},
         "ActiveListItem" : {"background-color" : "#3b424e"},
         "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "#3b424e"},
         "Text" : {
@@ -113,7 +113,7 @@
             "font-size" : 12
         },
         "HRULE" : {
-            "text-color" : "@palette#fg1_5",
+            "text-color" : "#CACFD7",
             "background-color" : "#864046"
         },
         "LIST_BULLET" : {
@@ -133,10 +133,10 @@
             "text-color" : "@palette#fg_link"
         },
         "IMAGE" : {
-            "text-color" : "#4883b3"
+            "text-color" : "#A4C2D9"
         },
         "REFERENCE" : {
-            "text-color" : "#56b6c2"
+            "text-color" : "#83C9D2"
         },
         "CODE" : {
             "text-color" : "@palette#fg_inline_code",
@@ -149,16 +149,16 @@
             "bold" : true
         },
         "HTML_ENTITY" : {
-            "text-color" : "#c07855"
+            "text-color" : "#DDB6A3"
         },
         "HTML" : {
-            "text-color" : "#c07855"
+            "text-color" : "#DDB6A3"
         },
         "HTMLBLOCK" : {
-            "text-color" : "#c07855"
+            "text-color" : "#DDB6A3"
         },
         "COMMENT" : {
-            "text-color" : "#7e899d"
+            "text-color" : "#B9BFC9"
         },
         "VERBATIM" : {
             "text-color" : "@palette#fg_inline_code",
@@ -173,21 +173,21 @@
             "text-color" : "@palette#fg_blockquote"
         },
         "NOTE" : {
-            "text-color" : "#9575cd"
+            "text-color" : "#C7B6E5"
         },
         "STRIKE" : {
-            "text-color" : "#e57373",
+            "text-color" : "#F0ADAD",
             "strike-through" : true
         },
         "FRONTMATTER" : {
-            "text-color" : "#6e7686"
+            "text-color" : "#BABEC5"
         },
         "INLINEEQUATION" : {
-            "text-color" : "#4db6ac",
+            "text-color" : "#80CBC4",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "DISPLAYFORMULA" : {
-            "text-color" : "#4db6ac",
+            "text-color" : "#80CBC4",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
@@ -198,7 +198,7 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "TABLEBORDER" : {
-            "text-color" : "#e06c75",
+            "text-color" : "#EEADB2",
             "background-color" : "#444b58"
         }
    }

@@ -62,7 +62,8 @@ vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
 vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"] {
     padding: 4px 10px 4px 4px;
     margin: 0px;
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
 }
 
 vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"]:checked {
@@ -179,7 +180,8 @@ QTabBar::scroller {
     width: 20px;
 }
 QTabBar QToolButton {
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
 }
 QTabBar QToolButton::right-arrow:enabled {
     image: url(right.svg);
@@ -296,12 +298,13 @@ QToolBarExtension#qt_toolbar_ext_button:pressed {
 
 /* QToolButton */
 QToolButton {
-    border: none;
+    border: 1px solid transparent;
     border-radius: 4px;
     color: @widgets#qtoolbutton#fg;
     background-color: @widgets#qtoolbutton#bg;
     margin: 2px;
     padding: 4px;
+    border-left: 2px solid transparent;
 }
 
 QToolButton:checked {
@@ -310,7 +313,7 @@ QToolButton:checked {
 }
 
 QToolButton:hover {
-    border: none;
+
     color: @widgets#qtoolbutton#hover#fg;
     background-color: @widgets#qtoolbutton#hover#bg;
 }
@@ -351,7 +354,8 @@ QToolButton[popupMode="1"] {
 }
 
 QToolButton[ActionToolButton="true"] {
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
 }
 
 QToolButton[ActionToolButton="true"]::menu-indicator {
@@ -389,8 +393,9 @@ QWidget[StatusBarCol="5"] { background-color: @widgets#statusbarcolumn#mode#bg; 
 QPushButton[DangerButton="true"]:hover, QToolButton[DangerButton="true"]:hover {
     color: @widgets#qwidget#danger#fg;
     background-color: @widgets#qwidget#danger#bg;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 4px;
+    border-left: 2px solid transparent;
 }
 
 /* QPushButton */
@@ -401,16 +406,19 @@ QPushButton {
     border-radius: 4px;
     padding: 6px 12px;
     min-width: 64px;
+    border-left: 2px solid transparent;
 }
 
 QPushButton:default {
     border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
 }
 
 QPushButton:focus {
     color: @widgets#qpushbutton#focus#fg;
     background-color: @widgets#qpushbutton#focus#bg;
     border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
 }
 
 QPushButton:checked {
@@ -562,6 +570,7 @@ QComboBox:hover {
 
 QComboBox:disabled {
     color: @widgets#qcombobox#disabled#fg;
+    border-color: @base#content#border;
 }
 
 QComboBox::drop-down {
@@ -666,6 +675,7 @@ QLineEdit[State="error"]:focus {
 
 QLineEdit:disabled {
     color: @widgets#qlineedit#disabled#fg;
+    border-color: @base#content#border;
 }
 
 QLineEdit[EmbeddedLineEdit="true"] {
@@ -730,6 +740,7 @@ QTreeView {
 
 QTreeView::item {
     padding: 4px 8px;
+    border-left: 2px solid transparent;
 }
 
 QTreeView::item:hover {
@@ -799,6 +810,7 @@ QListView {
 
 QListView::item {
     padding: 4px 8px;
+    border-left: 2px solid transparent;
 }
 
 QListView::item:hover {
@@ -822,6 +834,7 @@ QListView::item:selected:!active {
 }
 
 QListView::item:disabled {
+    color: @base#disabled#fg;
     background-color: transparent;
 }
 
@@ -969,10 +982,12 @@ QCheckBox::indicator:checked:disabled {
 QCheckBox::indicator {
     width: 20px;
     height: 20px;
+    border: 1px solid transparent;
 }
 
 QCheckBox::indicator:focus {
     background-color: @widgets#qcheckbox#indicator#focus#bg;
+    border-color: @widgets#qlineedit#focus#border;
 }
 
 QCheckBox::indicator:hover {
@@ -1011,10 +1026,12 @@ QRadioButton::indicator:checked:disabled {
 QRadioButton::indicator {
     width: 20px;
     height: 20px;
+    border: 1px solid transparent;
 }
 
 QRadioButton::indicator:focus {
     background-color: @widgets#qradiobutton#indicator#focus#bg;
+    border-color: @widgets#qlineedit#focus#border;
 }
 
 QRadioButton::indicator:hover {
@@ -1039,6 +1056,7 @@ QAbstractSpinBox {
 QAbstractSpinBox:disabled {
     color: @widgets#qspinbox#disabled#fg;
     background-color: @widgets#qspinbox#disabled#bg;
+    border-color: @base#content#border;
 }
 
 QAbstractSpinBox:focus {
@@ -1139,9 +1157,10 @@ QProgressBar {
     background-color: @widgets#qprogressbar#bg;
     border: 1px solid @widgets#qprogressbar#border;
     border-radius: 4px;
-    text-align: center;
+    text-align: right;
     min-height: 6px;
     max-height: 12px;
+    padding-right: 4em;
 }
 
 QProgressBar::chunk {
@@ -1357,4 +1376,45 @@ vnotex--InlineBanner QLabel {
    unconditionally and define no :disabled variant. */
 *[MutedText="true"] {
     color: @base#muted#fg;
+}
+/* Reserve keyboard focus independently from persistent checked/selected markers. */
+QToolButton:focus:enabled,
+QToolButton[ActionToolButton="true"]:focus:enabled,
+QToolButton[DangerButton="true"]:focus:enabled,
+QToolButton[DangerButton="true"]:hover:focus:enabled,
+QPushButton[DangerButton="true"]:hover:focus:enabled {
+    border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
+}
+
+QToolButton:checked:enabled,
+QToolButton:checked:hover:enabled,
+QToolButton:checked:pressed:enabled,
+QToolButton:checked:focus:enabled,
+QToolButton[ActionToolButton="true"]:checked:focus:enabled,
+QToolButton[DangerButton="true"]:checked:focus:enabled,
+QToolButton[DangerButton="true"]:checked:hover:focus:enabled,
+QToolButton[DangerButton="true"]:checked:hover:enabled,
+QPushButton:checked:enabled,
+QPushButton:checked:hover:enabled,
+QPushButton:checked:pressed:enabled,
+QPushButton:checked:focus:enabled,
+QPushButton[DangerButton="true"]:checked:hover:enabled,
+QPushButton[DangerButton="true"]:checked:hover:focus:enabled {
+    border-left: 2px solid @widgets#qtabbar#tab#selected#border;
+}
+
+QTreeView::item:selected:enabled,
+QTreeView::item:selected:hover:enabled,
+QTreeView::item:selected:active:enabled,
+QTreeView::item:selected:!active:enabled,
+QListView::item:selected:enabled,
+QListView::item:selected:hover:enabled,
+QListView::item:selected:active:enabled,
+QListView::item:selected:!active:enabled {
+    border-left: 2px solid @widgets#qtabbar#tab#selected#border;
+}
+
+QToolButton:disabled {
+    color: @base#disabled#fg;
 }

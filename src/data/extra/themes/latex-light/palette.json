@@ -43,7 +43,7 @@
         "fg15_4" : "#6b6760",
         "fg15_5" : "#1a1a1a",
         "bg11" : "#2e67d3",
-        "fg_link" : "#2e67d3",
+        "fg_link" : "#2C62CA",
         "fg_inline_code" : "#a03e3e",
         "fg_blockquote" : "#55524c",
         "bg_code_block" : "#f0ede6",
@@ -257,7 +257,7 @@
                 "fg" : "@base#icon#inactive#fg"
             },
             "external_node_text" : {
-                "fg" : "@palette#fg3_7"
+                "fg" : "@base#muted#fg"
             }
         },
         "locationlist" : {
@@ -368,7 +368,7 @@
             "bg" : "transparent",
             "border" : "@base#normal#border",
             "default" : {
-                "border" : "@base#master#bg"
+                "border" : "#000001"
             },
             "focus" : {
                 "fg" : "@base#focus#fg",
@@ -398,7 +398,7 @@
         "qcombobox" : {
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
-            "border" : "@base#content#border",
+            "border" : "#8B8781",
             "focus" : {
                 "bg" : "@base#content#focus#bg",
                 "border" : "@base#content#focus#border"
@@ -429,7 +429,7 @@
             "fg" : "@base#normal#fg"
         },
         "qlineedit" : {
-            "border" : "@base#content#border",
+            "border" : "#8B8781",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "selection" : {
@@ -438,7 +438,7 @@
             },
             "focus" : {
                 "bg" : "@base#edit#focus#bg",
-                "border" : "@base#edit#focus#border"
+                "border" : "#2A5EC1"
             },
             "hover" : {
                 "bg" : "@base#edit#hover#bg",
@@ -460,7 +460,7 @@
                 "selected" : {
                     "fg" : "@base#content#fg",
                     "bg" : "@base#content#bg",
-                    "border" : "@base#master#bg"
+                    "border" : "#000001"
                 }
             }
         },
@@ -547,12 +547,12 @@
                 "bg" : "transparent"
             },
             "handle" : {
-                "bg" : "@palette#bg3_2",
+                "bg" : "#8B8780",
                 "hover" : {
-                    "bg" : "@palette#bg3_1"
+                    "bg" : "#8B877F"
                 },
                 "pressed" : {
-                    "bg" : "@palette#bg3_0"
+                    "bg" : "#8B877F"
                 }
             }
         },
@@ -589,7 +589,7 @@
             }
         },
         "qspinbox" : {
-            "border" : "@base#content#border",
+            "border" : "#8B8781",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "disabled" : {

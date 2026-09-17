@@ -31,15 +31,15 @@ pre[class*="language-"] {
 pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
 code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
     text-shadow: none;
-    background-color: #1976d2;
-    color: #f5f5f5;
+    background-color: #5a5f66;
+    color: #e3e5e9;
 }
 
 pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
 code[class*="language-"]::selection, code[class*="language-"] ::selection {
     text-shadow: none;
-    background-color: #1976d2;
-    color: #f5f5f5;
+    background-color: #5a5f66;
+    color: #e3e5e9;
 }
 
 @media print {
@@ -81,7 +81,7 @@ pre[class*="language-"] {
 }
 
 .token.namespace {
-    opacity: .7;
+    opacity: 1;
 }
 
 .token.property,
@@ -230,7 +230,7 @@ div.code-toolbar > .toolbar button {
 div.code-toolbar > .toolbar a,
 div.code-toolbar > .toolbar button,
 div.code-toolbar > .toolbar span {
-    color: #bbb;
+    color: #E5E5E5;
     font-size: .8em;
     padding: 0 .5em;
     background: rgba(224, 224, 224, 0.2);
@@ -244,6 +244,6 @@ div.code-toolbar > .toolbar button:hover,
 div.code-toolbar > .toolbar button:focus,
 div.code-toolbar > .toolbar span:hover,
 div.code-toolbar > .toolbar span:focus {
-    color: inherit;
+    color: #E5E5E5;
     text-decoration: none;
 }

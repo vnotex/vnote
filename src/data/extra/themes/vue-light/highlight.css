@@ -10,7 +10,7 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
  pre[class*="language-"] {
      color: #525252;
      background: none;
-     text-shadow: 0 1px white;
+     text-shadow: none;
      font-size:  0.9rem;
      text-align: left;
      white-space: pre;
@@ -78,11 +78,11 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
  }
  
  .token.punctuation {
-     color: #999;
+     color: #6C6C6C;
  }
  
  .token.namespace {
-     opacity: .7;
+     color: #525252;
  }
  
  .token.property,
@@ -101,7 +101,7 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
  .token.char,
  .token.builtin,
  .token.inserted {
-     color: #690;
+     color: #507700;
  }
  
  .token.operator,
@@ -109,7 +109,7 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
  .token.url,
  .language-css .token.string,
  .style .token.string {
-     color: #9a6e3a;
+     color: #8D6435;
  }
  
  .token.atrule,
@@ -120,13 +120,13 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
  
  .token.function,
  .token.class-name {
-     color: #DD4A68;
+     color: #BD3F59;
  }
  
  .token.regex,
  .token.important,
  .token.variable {
-     color: #e90;
+     color: #976100;
  }
  
  .token.important,
@@ -162,7 +162,7 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
      width: 3em; /* works for line-numbers below 1000 lines */
      letter-spacing: -1px;
      border-right: 1px solid #ddd;
-     color: #999;
+     color: #6C6C6C;
      -webkit-user-select: none;
      -moz-user-select: none;
      -ms-user-select: none;
@@ -177,7 +177,7 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
 
 .line-numbers-rows > span:before {
     content: counter(linenumber);
-    color: #999;
+    color: #6C6C6C;
     display: block;
     padding-right: 0.8em;
     text-align: right;
@@ -229,7 +229,7 @@ https://prismjs.com/download.html#themes=prism&languages=markup+css+clike+javasc
  div.code-toolbar > .toolbar a,
  div.code-toolbar > .toolbar button,
  div.code-toolbar > .toolbar span {
-     color: #fff;
+     color: #323232;
      font-size: .8em;
      font-weight: bold;
      padding: .2em .5em;

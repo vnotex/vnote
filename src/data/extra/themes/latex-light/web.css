@@ -70,12 +70,17 @@ a {
     margin: 0;
     padding: 0;
     vertical-align: baseline;
-    text-decoration: none;
+    text-decoration: underline;
     word-break: break-word;
 }
 
 a:hover {
     text-decoration: underline;
+}
+
+a:focus {
+    outline: 2px solid @palette#fg_link;
+    outline-offset: 2px;
 }
 
 a:visited {
@@ -259,18 +264,18 @@ div.vx-plantuml-graph {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.3);
+    background: @base#icon#inactive#fg;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.5);
+    background: @base#icon#fg;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: rgba(128, 128, 128, 0.7);
+    background: @base#icon#fg;
 }
 
 ::-webkit-scrollbar-button {
@@ -294,35 +299,41 @@ mark {
     background-color: @palette#bg_mark;
 }
 
-.vx-alert {
-    background-color: @palette#bg_blockquote !important;
-    padding: 0.7em 1.2em 0.7em 1.4em !important;
-    border-radius: 0 !important;
-    border: 1px solid @palette#border_blockquote !important;
-    border-left: 3px solid @palette#fg12 !important;
-    color: inherit !important;
+.vx-alert,
+.vx-alert.alert-primary,
+.vx-alert.alert-secondary,
+.vx-alert.alert-success, .vx-alert.alert-s,
+.vx-alert.alert-warning, .vx-alert.alert-w,
+.vx-alert.alert-info, .vx-alert.alert-i,
+.vx-alert.alert-danger, .vx-alert.alert-d,
+.vx-alert.alert-light,
+.vx-alert.alert-dark {
+    background-color: @base#content#bg;
+    padding: 0.7em 1.2em 0.7em 1.4em;
+    border-radius: 0;
+    border: 1px solid @palette#border_blockquote;
+    border-left: 3px solid @base#info#fg;
+    color: @base#normal#fg;
 }
 
-.alert-success, .alert-s {
-    border-left-color: @palette#fg_success !important;
+.vx-alert.alert-secondary,
+.vx-alert.alert-light,
+.vx-alert.alert-dark {
+    border-left-color: @base#muted#fg;
 }
 
-.alert-warning, .alert-w {
-    border-left-color: @palette#fg11 !important;
+.vx-alert.alert-success, .vx-alert.alert-s {
+    border-left-color: @base#success#fg;
 }
 
-.alert-info, .alert-i {
-    border-left-color: @palette#fg12 !important;
+.vx-alert.alert-warning, .vx-alert.alert-w {
+    border-left-color: @base#warning#fg;
 }
 
-.alert-danger, .alert-d {
-    border-left-color: @palette#fg10 !important;
+.vx-alert.alert-info, .vx-alert.alert-i {
+    border-left-color: @base#info#fg;
 }
 
-.alert-light {
-    border-left-color: @palette#fg3_9 !important;
-}
-
-.alert-dark {
-    border-left-color: @base#normal#fg !important;
+.vx-alert.alert-danger, .vx-alert.alert-d {
+    border-left-color: @base#error#fg;
 }

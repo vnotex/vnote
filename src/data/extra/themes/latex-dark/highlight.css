@@ -32,14 +32,14 @@ pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selectio
 code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
     text-shadow: none;
     background-color: #3c5a8a;
-    color: #ffffff;
+    color: #f7f7f5;
 }
 
 pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
 code[class*="language-"]::selection, code[class*="language-"] ::selection {
     text-shadow: none;
     background-color: #3c5a8a;
-    color: #ffffff;
+    color: #f7f7f5;
 }
 
 @media print {
@@ -72,15 +72,11 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-    color: #7d7d7d;
+    color: #909090;
 }
 
 .token.punctuation {
-    color: #7d7d7d;
-}
-
-.token.namespace {
-    opacity: .7;
+    color: #909090;
 }
 
 .token.property,
@@ -174,7 +170,7 @@ pre[class*="language-"].line-numbers > code {
 
         .line-numbers-rows > span:before {
             content: counter(linenumber);
-            color: #7d7d7d;
+            color: #909090;
             display: block;
             padding-right: 0.8em;
             text-align: right;
@@ -226,7 +222,7 @@ div.code-toolbar > .toolbar button {
 div.code-toolbar > .toolbar a,
 div.code-toolbar > .toolbar button,
 div.code-toolbar > .toolbar span {
-    color: #7d7d7d;
+    color: #9F9F9F;
     font-size: .8em;
     padding: 0 .5em;
     background: rgba(64, 64, 64, 0.4);

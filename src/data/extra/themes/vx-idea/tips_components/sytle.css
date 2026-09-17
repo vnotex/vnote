@@ -27,23 +27,26 @@ src: url('data:font/woff2;charset=utf-8;base64,d09GMgABAAAAAAaAAA0AAAAADDAAAAYqA
   padding-right: .2em;
 }
 
-.alert-info:before {
+.alert-info:before,
+.alert-i:before {
   content: "\e654";
-  color: #23a3ba;
+  color: #2199AF;
   float: left;
   padding-right: .2em;
 }
 
-.alert-danger:before {
+.alert-danger:before,
+.alert-d:before {
   content: "\e63e";
   color: #bf3300;
   float: left;
   padding-right: .2em;
 }
 
-.alert-warning:before {
+.alert-warning:before,
+.alert-w:before {
   content: "\e751";
-  color: #d88400;
+  color: #C87A00;
   float: left;
   padding-right: .2em;
 }

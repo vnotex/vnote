@@ -80,7 +80,7 @@
  .token.constant,
  .token.number,
  .token.atrule {
-	 color: #b76b01;
+	 color: #A25E01;
  }
  
  .token.keyword {
@@ -92,7 +92,7 @@
  .token.symbol,
  .token.deleted,
  .token.important {
-	 color: #e45649;
+	 color: #BD473D;
  }
  
  .token.selector,
@@ -103,17 +103,17 @@
  .token.regex,
  .token.attr-value,
  .token.attr-value > .token.punctuation {
-	 color: #16a085;
+	 color: #117C67;
  }
  
  .token.variable,
  .token.operator,
  .token.function {
-	 color: #4078f2;
+	 color: #3869D5;
  }
  
  .token.url {
-	 color: #0184bc;
+	 color: #0175A7;
 	 text-decoration: underline;
  }
  
@@ -125,7 +125,7 @@
  
  /* CSS overrides */
  .language-css .token.selector {
-	 color: #e45649;
+	 color: #BD473D;
  }
  
  .language-css .token.property {
@@ -138,11 +138,11 @@
  
  .language-css .token.function,
  .language-css .token.url > .token.function {
-	 color: #0184bc;
+	 color: #0175A7;
  }
  
  .language-css .token.url > .token.string.url {
-	 color: #16a085;
+	 color: #117C67;
  }
  
  .language-css .token.important,
@@ -165,7 +165,7 @@
  }
  
  .language-json .token.null.keyword {
-	 color: #b76b01;
+	 color: #A25E01;
  }
  
  /* MD overrides */
@@ -177,28 +177,28 @@
  }
  
  .language-markdown .token.url > .token.content {
-	 color: #4078f2;
+	 color: #3869D5;
 	 text-decoration: none;
  }
  
  .language-markdown .token.url > .token.url,
  .language-markdown .token.url-reference.url {
-	 color: #0184bc;
+	 color: #0175A7;
 	 text-decoration: underline;
  }
  
  .language-markdown .token.blockquote.punctuation,
  .language-markdown .token.hr.punctuation {
-	 color: #a0a1a7;
+	 color: #6E6E73;
 	 font-style: italic;
  }
  
  .language-markdown .token.code-snippet {
-	 color: #16a085;
+	 color: #117C67;
  }
  
  .language-markdown .token.bold .token.content {
-	 color: #b76b01;
+	 color: #A25E01;
  }
  
  .language-markdown .token.italic .token.content {
@@ -209,7 +209,7 @@
  .language-markdown .token.strike .token.punctuation,
  .language-markdown .token.list.punctuation,
  .language-markdown .token.title.important > .token.punctuation {
-	 color: #e45649;
+	 color: #BD473D;
  }
  
  /* General */
@@ -226,9 +226,6 @@
 	 cursor: help;
  }
  
- .token.namespace {
-	 opacity: 0.8;
- }
  
  div.code-toolbar {
 	 position: relative;
@@ -276,7 +273,7 @@
  div.code-toolbar > .toolbar a,
  div.code-toolbar > .toolbar button,
  div.code-toolbar > .toolbar span {
-	 color: #757F9A;
+	 color: #575E73;
 	 font-size: .8em;
 	 padding: 0 .5em;
 	 background: #D7DDE8;
@@ -290,8 +287,22 @@
  div.code-toolbar > .toolbar button:focus,
  div.code-toolbar > .toolbar span:hover,
  div.code-toolbar > .toolbar span:focus {
-	 color: #757F9A;
+	 color: #575E73;
 	 text-decoration: none;
+	 outline-color: currentColor;
  }
  
  
+/* Preserve readable selected syntax, including token descendants. */
+pre[class*="language-"]::selection,
+pre[class*="language-"] ::selection,
+code[class*="language-"]::selection,
+code[class*="language-"] ::selection {
+    color: #fafafa;
+    background-color: #657184;
+}
+
+/* Untyped code keeps its dark surface; transparent action icons are inverse. */
+div.code-toolbar > pre:not([class*="language-"]) ~ .toolbar .vx-codeblock-action-btn {
+    color: #7D87A0;
+}

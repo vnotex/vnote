@@ -11,8 +11,8 @@
             "font-size" : 12,
             "text-color" : "#ccd1d8",
             "background-color" : "#002B36",
-            "selected-text-color" : "#e3e5e9",
-            "selected-background-color" : "#0c7bff"
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
         },
         "CursorLine" : {
             "background-color" : "#073642"
@@ -36,16 +36,16 @@
             "text-color" : "#ccd1d8"
         },
         "Folding" : {
-            "text-color" : "#838fd3"
+            "text-color" : "#D9DDF1"
         },
         "FoldedFolding" : {
-            "text-color" : "#919cd8"
+            "text-color" : "#D9DDF1"
         },
         "FoldingHighlight" : {
-            "text-color" : "#4c5562"
+            "text-color" : "#727A84"
         },
         "FoldedFoldingRangeLine" : {
-            "background-color" : "#3a4ba6"
+            "background-color" : "#04313c"
         },
         "IncrementalSearch" : {
             "//comment" : "Incremental search highlight",
@@ -65,17 +65,17 @@
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#4b6870"},
+        "ListItemGuide" : {"text-color" : "#6B8289"},
         "ActiveListItem" : {"background-color" : "#04313c"},
-        "ConcealedText" : {"text-color" : "#2AA198", "background-color" : "#04313c"},
+        "ConcealedText" : {"text-color" : "#42ACA4", "background-color" : "#04313c"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size" : 12,
             "text-color" : "#ccd1d8",
             "background-color" : "#002B36",
-            "selected-text-color" : "#e3e5e9",
-            "selected-background-color" : "#0c7bff"
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
         },
         "Preview" : {
             "background-color" : "#b0bec5"
@@ -83,57 +83,57 @@
     },
     "markdown-syntax-styles" : {
         "H1" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true,
             "font-size" : 17
         },
         "H2" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true,
             "font-size" : 16
         },
         "H3" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true,
             "font-size" : 15
         },
         "H4" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true,
             "font-size" : 14
         },
         "H5" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true,
             "font-size" : 13
         },
         "H6" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true,
             "font-size" : 12
         },
         "HRULE" : {
-            "text-color" : "#abb2bf",
+            "text-color" : "#CACFD7",
             "background-color" : "#864046"
         },
         "LIST_BULLET" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#DB8663",
             "bold" : true
         },
         "LIST_ENUMERATOR" : {
-            "text-color" : "#CA4A17"
+            "text-color" : "#DB8663"
         },
         "LINK" : {
-            "text-color" : "#2AA198"
+            "text-color" : "#42ACA4"
         },
         "AUTO_LINK_URL" : {
-            "text-color" : "#2AA198"
+            "text-color" : "#42ACA4"
         },
         "AUTO_LINK_EMAIL" : {
-            "text-color" : "#2AA198"
+            "text-color" : "#42ACA4"
         },
         "IMAGE" : {
-            "text-color" : "#4883b3"
+            "text-color" : "#74A1C5"
         },
         "REFERENCE" : {
             "text-color" : "#56b6c2"
@@ -149,16 +149,16 @@
             "bold" : true
         },
         "HTML_ENTITY" : {
-            "text-color" : "#c07855"
+            "text-color" : "#CA8E70"
         },
         "HTML" : {
-            "text-color" : "#c07855"
+            "text-color" : "#CA8E70"
         },
         "HTMLBLOCK" : {
-            "text-color" : "#c07855"
+            "text-color" : "#CA8E70"
         },
         "COMMENT" : {
-            "text-color" : "#7e899d"
+            "text-color" : "#939CAD"
         },
         "VERBATIM" : {
             "text-color" : "#D7BA7D",
@@ -170,17 +170,17 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "BLOCKQUOTE" : {
-            "text-color" : "#7482ce"
+            "text-color" : "#8D98D7"
         },
         "NOTE" : {
-            "text-color" : "#9575cd"
+            "text-color" : "#A98FD7"
         },
         "STRIKE" : {
-            "text-color" : "#e57373",
+            "text-color" : "#E77D7D",
             "strike-through" : true
         },
         "FRONTMATTER" : {
-            "text-color" : "#6e7686"
+            "text-color" : "#969CA7"
         },
         "INLINEEQUATION" : {
             "text-color" : "#4db6ac",
@@ -192,13 +192,13 @@
         },
         "MARK" : {
             "text-color" : "#d7dae0",
-            "background-color" : "#898900"
+            "background-color" : "#606000"
         },
         "TABLE" : {
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "TABLEBORDER" : {
-            "text-color" : "#CA4A17",
+            "text-color" : "#E8B29C",
             "background-color" : "#444b58"
         }
    }

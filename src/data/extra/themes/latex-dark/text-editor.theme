@@ -18,10 +18,10 @@
             "background-color" : "#2a2a2a"
         },
         "TrailingSpace" : {
-            "background-color" : "#4a4a4a"
+            "background-color" : "#848484"
         },
         "Tab" : {
-            "background-color" : "@palette#bg3_41"
+            "background-color" : "#848484"
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
@@ -29,20 +29,20 @@
             "background-color" : "@palette#bg_search"
         },
         "IndicatorsBorder" : {
-            "text-color" : "@palette#fg3_9",
+            "text-color" : "#8E8E8E",
             "background-color" : "@palette#bg_blockquote"
         },
         "CurrentLineNumber" : {
             "text-color" : "@base#normal#fg"
         },
         "Folding" : {
-            "text-color" : "@palette#fg_link"
+            "text-color" : "#BED4FC"
         },
         "FoldedFolding" : {
-            "text-color" : "@palette#bg2_4"
+            "text-color" : "#CBD3E1"
         },
         "FoldingHighlight" : {
-            "text-color" : "#3c5a8a"
+            "text-color" : "#59739B"
         },
         "FoldedFoldingRangeLine" : {
             "background-color" : "#2a3a2a"
@@ -59,13 +59,13 @@
         },
         "SearchUnderCursor" : {
             "//comment" : "Search highlight under cursor",
-            "text-color" : "@base#normal#fg",
+            "text-color" : "#E4E4E4",
             "background-color" : "@palette#bg_search_current"
         }
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#5b5b5b"},
+        "ListItemGuide" : {"text-color" : "#848484"},
         "ActiveListItem" : {"background-color" : "#242424"},
         "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "#242424"},
         "Text" : {
@@ -112,7 +112,7 @@
             "font-size" : 13
         },
         "HRULE" : {
-            "text-color" : "@palette#fg3_7",
+            "text-color" : "#A5A19A",
             "background-color" : "@palette#bg3_4"
         },
         "LIST_BULLET" : {
@@ -148,16 +148,16 @@
             "bold" : true
         },
         "HTML_ENTITY" : {
-            "text-color" : "#b48ad0"
+            "text-color" : "#B993D3"
         },
         "HTML" : {
-            "text-color" : "#b48ad0"
+            "text-color" : "#B993D3"
         },
         "HTMLBLOCK" : {
-            "text-color" : "#b48ad0"
+            "text-color" : "#B993D3"
         },
         "COMMENT" : {
-            "text-color" : "@palette#fg3_8"
+            "text-color" : "#A2A2A2"
         },
         "VERBATIM" : {
             "text-color" : "#9ab6e0",
@@ -179,7 +179,7 @@
             "strike-through" : true
         },
         "FRONTMATTER" : {
-            "text-color" : "@palette#fg3_7"
+            "text-color" : "#A5A19A"
         },
         "INLINEEQUATION" : {
             "text-color" : "@palette#fg_success",

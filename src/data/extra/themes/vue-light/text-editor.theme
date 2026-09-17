@@ -11,17 +11,17 @@
             "font-size" : 12,
             "text-color" : "#222222",
             "background-color" : "#FFFFFF",
-            "selected-text-color" : "#ffffff",
-            "selected-background-color" : "#1976d2"
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
         },
         "CursorLine" : {
             "background-color" : "#D2E2FF"
         },
         "TrailingSpace" : {
-            "background-color" : "#a8a8a8"
+            "background-color" : "#7B7B7B"
         },
         "Tab" : {
-            "background-color" : "#cfcfcf"
+            "background-color" : "#7B7B7B"
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
@@ -29,20 +29,20 @@
             "background-color" : "#dfdf00"
         },
         "IndicatorsBorder" : {
-            "text-color" : "#aaaaaa",
+            "text-color" : "#707070",
             "background-color" : "#fafafa"
         },
         "CurrentLineNumber" : {
             "text-color" : "#222222"
         },
         "Folding" : {
-            "text-color" : "#6495ed"
+            "text-color" : "#293E62"
         },
         "FoldedFolding" : {
-            "text-color" : "#4169e1"
+            "text-color" : "#24397B"
         },
         "FoldingHighlight" : {
-            "text-color" : "#a9c4f5"
+            "text-color" : "#7A8DB1"
         },
         "FoldedFoldingRangeLine" : {
             "background-color" : "#befbdd"
@@ -65,17 +65,17 @@
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#a3b3c4"},
+        "ListItemGuide" : {"text-color" : "#727D89"},
         "ActiveListItem" : {"background-color" : "#f0f5fc"},
-        "ConcealedText" : {"text-color" : "#005fff", "background-color" : "#f0f5fc"},
+        "ConcealedText" : {"text-color" : "#0055E3", "background-color" : "#f0f5fc"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size" : 12,
             "text-color" : "#222222",
             "background-color" : "#fefefe",
-            "selected-text-color" : "#ffffff",
-            "selected-background-color" : "#1976d2"
+            "selected-text-color" : "@base#content#selection#fg",
+            "selected-background-color" : "@base#content#selection#bg"
         }
     },
     "markdown-syntax-styles" : {
@@ -114,26 +114,26 @@
             "background-color" : "#dac7c9"
         },
         "LIST_BULLET" : {
-            "text-color" : "#d33682",
+            "text-color" : "#AF2D6C",
             "bold" : true
         },
         "LIST_ENUMERATOR" : {
             "text-color" : "#0000ff"
         },
         "LINK" : {
-            "text-color" : "#005fff"
+            "text-color" : "#0055E3"
         },
         "AUTO_LINK_URL" : {
-            "text-color" : "#005fff"
+            "text-color" : "#0055E3"
         },
         "AUTO_LINK_EMAIL" : {
-            "text-color" : "#005fff"
+            "text-color" : "#0055E3"
         },
         "IMAGE" : {
             "text-color" : "#616161"
         },
         "REFERENCE" : {
-            "text-color" : "#826200"
+            "text-color" : "#7B5D00"
         },
         "CODE" : {
             "text-color" : "#8e24aa",
@@ -155,7 +155,7 @@
             "text-color" : "#8900b5"
         },
         "COMMENT" : {
-            "text-color" : "#93a1a1"
+            "text-color" : "#5B6363"
         },
         "VERBATIM" : {
             "text-color" : "#673ab7",
@@ -167,24 +167,24 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "BLOCKQUOTE" : {
-            "text-color" : "#00af00"
+            "text-color" : "#007200"
         },
         "NOTE" : {
-            "text-color" : "#0087b5"
+            "text-color" : "#00698D"
         },
         "STRIKE" : {
             "text-color" : "#b71c1c",
             "strike-through" : true
         },
         "FRONTMATTER" : {
-            "text-color" : "#6c6c6c"
+            "text-color" : "#616161"
         },
         "INLINEEQUATION" : {
-            "text-color" : "#00897b",
+            "text-color" : "#006E63",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "DISPLAYFORMULA" : {
-            "text-color" : "#00897b",
+            "text-color" : "#006E63",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
@@ -195,7 +195,7 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "TABLEBORDER" : {
-            "text-color" : "#d33682",
+            "text-color" : "#AE2C6B",
             "background-color" : "#e0e0e0"
         }
    }

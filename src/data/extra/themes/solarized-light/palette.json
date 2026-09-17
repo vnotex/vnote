@@ -61,12 +61,12 @@
     },
         "base" : {
         "normal" : {
-            "fg" : "@palette#fg1_5",
+            "fg" : "#455A64",
             "bg" : "@palette#bg1_5",
             "border" : "@palette#bg1_6"
         },
         "master" : {
-            "fg" : "@palette#fg1_9",
+            "fg" : "#002B36",
             "bg" : "@palette#bg2_5",
             "alt" : "@palette#bg2_4"
         },
@@ -83,7 +83,7 @@
             "bg" : "@palette#bg1_51"
         },
         "content" : {
-            "fg" : "@palette#fg1_8",
+            "fg" : "#455A64",
             "bg" : "@palette#bg10_5",
             "border" : "@base#normal#border",
             "disabled" : {
@@ -105,8 +105,8 @@
                 "border" : "@base#master#bg"
             },
             "selection" : {
-                "fg" : "@palette#fg1_10",
-                "bg" : "@palette#bg11"
+                "fg" : "#FDF6E3",
+                "bg" : "#006A78"
             },
             "selected" : {
                 "fg" : "@base#content#fg",
@@ -134,22 +134,22 @@
             }
         },
         "muted" : {
-            "fg" : "#657B83"
+            "fg" : "#56696F"
         },
         "error" : {
             "fg" : "@palette#fg10"
         },
         "success" : {
-            "fg" : "@palette#fg_success"
+            "fg" : "#5E6C00"
         },
         "warning" : {
-            "fg" : "@palette#fg11"
+            "fg" : "#984C74"
         },
         "info" : {
-            "fg" : "@palette#fg12"
+            "fg" : "#505FB4"
         },
         "danger" : {
-            "fg": "@palette#fg1_10",
+            "fg": "#FDF6E3",
             "bg": "@palette#fg13"
         },
         "disabled" : {
@@ -157,23 +157,23 @@
             "bg" : "@base#normal#bg"
         },
         "pressed" : {
-            "fg" : "@palette#fg1_3",
+            "fg" : "@base#normal#fg",
             "bg" : "@palette#bg1_3"
         },
         "focus" : {
-            "fg" : "@palette#fg1_8",
+            "fg" : "@base#normal#fg",
             "bg" : "@palette#bg1_6"
         },
         "hover" : {
-            "fg" : "@palette#fg1_8",
+            "fg" : "@base#normal#fg",
             "bg" : "@palette#bg1_7"
         },
         "selected" : {
-            "fg" : "@palette#fg1_9",
+            "fg" : "@base#normal#fg",
             "bg" : "@palette#bg1_8"
         },
         "icon" : {
-            "fg" : "@palette#fg15_5",
+            "fg" : "#586E75",
             "inactive" : {
                 "fg" : "@palette#fg15_4"
             },
@@ -260,7 +260,7 @@
                 "fg" : "@base#icon#inactive#fg"
             },
             "external_node_text" : {
-                "fg" : "#80808080"
+                "fg" : "@base#muted#fg"
             }
         },
         "locationlist" : {
@@ -389,7 +389,7 @@
             "bg" : "transparent",
             "border" : "@base#normal#border",
             "default" : {
-                "border" : "@base#master#bg"
+                "border" : "#05050A"
             },
             "focus" : {
                 "fg" : "@base#focus#fg",
@@ -419,14 +419,14 @@
         "qcombobox" : {
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
-            "border" : "@base#content#border",
+            "border" : "#858077",
             "focus" : {
                 "bg" : "@base#content#focus#bg",
-                "border" : "@base#content#focus#border"
+                "border" : "#98785E"
             },
             "hover" : {
                 "bg" : "@base#content#hover#bg",
-                "border" : "@base#content#hover#border"
+                "border" : "#92745B"
             },
             "disabled" : {
                 "fg" : "@base#content#disabled#fg"
@@ -450,7 +450,7 @@
             "fg" : "@base#normal#fg"
         },
         "qlineedit" : {
-            "border" : "@base#content#border",
+            "border" : "#858077",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "selection" : {
@@ -459,11 +459,11 @@
             },
             "focus" : {
                 "bg" : "@base#content#focus#bg",
-                "border" : "@base#content#focus#border"
+                "border" : "#92745B"
             },
             "hover" : {
                 "bg" : "@base#content#hover#bg",
-                "border" : "@base#content#hover#border"
+                "border" : "#92745B"
             },
             "disabled" : {
                 "fg" : "@base#content#disabled#fg"
@@ -481,7 +481,7 @@
                 "selected" : {
                     "fg" : "@base#content#fg",
                     "bg" : "@base#content#bg",
-                    "border" : "@base#master#bg"
+                    "border" : "#070504"
                 }
             }
         },
@@ -549,7 +549,7 @@
             "spelling" : {
                 "bg" : "#00695c",
                 "hover" : {
-                    "bg" : "#00897b"
+                    "bg" : "#008275"
                 },
                 "pressed" : {
                     "bg" : "#004d40"
@@ -559,7 +559,7 @@
                 "bg" : "#4527a0"
             },
             "mode" : {
-                "bg" : "#ef6c00"
+                "bg" : "#a34a00"
             }
         },
         "qscrollbar" : {
@@ -568,12 +568,12 @@
                 "bg" : "transparent"
             },
             "handle" : {
-                "bg" : "@palette#bg1_6",
+                "bg" : "#8E897F",
                 "hover" : {
-                    "bg" : "@palette#bg1_71"
+                    "bg" : "#8E897F"
                 },
                 "pressed" : {
-                    "bg" : "@palette#bg1_7"
+                    "bg" : "#8D8A7E"
                 }
             }
         },
@@ -610,7 +610,7 @@
             }
         },
         "qspinbox" : {
-            "border" : "@base#content#border",
+            "border" : "#858077",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "disabled" : {
@@ -623,11 +623,11 @@
             },
             "focus" : {
                 "bg" : "@base#content#focus#bg",
-                "border" : "@base#content#focus#border"
+                "border" : "#98785E"
             },
             "hover" : {
                 "bg" : "@base#content#hover#bg",
-                "border" : "@base#content#hover#border"
+                "border" : "#92745B"
             },
             "button" : {
                 "hover" : {
@@ -759,7 +759,7 @@
                 "fg" : "@base#normal#fg"
             },
             "description" : {
-                "fg" : "@palette#fg1_1"
+                "fg" : "#69655D"
             },
             "separator" : {
                 "bg" : "@base#normal#border"

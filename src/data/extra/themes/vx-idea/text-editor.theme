@@ -11,17 +11,17 @@
             "font-size": 12,
             "text-color": "#34495e",
             "background-color": "#ffffff",
-            "selected-text-color": "#f5f5f5",
-            "selected-background-color": "#1976d2"
+            "selected-text-color": "@base#content#selection#fg",
+            "selected-background-color": "@base#content#selection#bg"
         },
         "CursorLine": {
             "background-color": "#f1f2f6"
         },
         "TrailingSpace": {
-            "background-color": "#f1f2f6"
+            "background-color": "#848487"
         },
         "Tab": {
-            "background-color": "#cfcfcf"
+            "background-color": "#848484"
         },
         "SelectedText": {
             "//comment": "Selected text highlight",
@@ -29,53 +29,53 @@
             "background-color": "#dfdf00"
         },
         "IndicatorsBorder": {
-            "text-color": "#aaaaaa",
+            "text-color": "#686868",
             "background-color": "#e6edf5"
         },
         "CurrentLineNumber": {
             "text-color": "#34495e"
         },
         "Folding": {
-            "text-color": "#6495ed"
+            "text-color": "#243656"
         },
         "FoldedFolding": {
-            "text-color": "#4169e1"
+            "text-color": "#1F326C"
         },
         "FoldingHighlight": {
-            "text-color": "#a9c4f5"
+            "text-color": "#7284A5"
         },
         "FoldedFoldingRangeLine": {
             "background-color": "#befbdd"
         },
         "IncrementalSearch": {
             "//comment": "Incremental search highlight",
-            "text-color": "#34495e",
+            "text-color": "#2B3C4E",
             "background-color": "#ce93d8"
         },
         "Search": {
             "//comment": "Search highlight",
-            "text-color": "#34495e",
+            "text-color": "#2A3B4C",
             "background-color": "#4db6ac"
         },
         "SearchUnderCursor": {
             "//comment": "Search highlight under cursor",
-            "text-color": "#34495e",
+            "text-color": "#2C3D4F",
             "background-color": "#66bb6a"
         }
     },
     "//comment": "Override the Text style in editor-styles",
     "markdown-editor-styles": {
-        "ListItemGuide": {"text-color": "#a1afbc"},
+        "ListItemGuide": {"text-color": "#7B858F"},
         "ActiveListItem": {"background-color": "#f6f8fa"},
-        "ConcealedText": {"text-color": "#005fff", "background-color": "#f6f8fa"},
+        "ConcealedText": {"text-color": "#005BF6", "background-color": "#f6f8fa"},
         "Text": {
             "//comment": "Support a list of fonts separated by ,",
             "font-family": "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, sans-serif, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size": 12,
             "text-color": "#34495e",
             "background-color": "#ffffff",
-            "selected-text-color": "#f5f5f5",
-            "selected-background-color": "#1976d2"
+            "selected-text-color": "@base#content#selection#fg",
+            "selected-background-color": "@base#content#selection#bg"
         }
     },
     "markdown-syntax-styles": {
@@ -114,20 +114,20 @@
             "background-color": "#dac7c9"
         },
         "LIST_BULLET": {
-            "text-color": "#d33682",
+            "text-color": "#BC3074",
             "bold": true
         },
         "LIST_ENUMERATOR": {
             "text-color": "#0000ff"
         },
         "LINK": {
-            "text-color": "#005fff"
+            "text-color": "#005BF6"
         },
         "AUTO_LINK_URL": {
-            "text-color": "#005fff"
+            "text-color": "#005BF6"
         },
         "AUTO_LINK_EMAIL": {
-            "text-color": "#005fff"
+            "text-color": "#005BF6"
         },
         "IMAGE": {
             "text-color": "#616161"
@@ -155,7 +155,7 @@
             "text-color": "#8900b5"
         },
         "COMMENT": {
-            "text-color": "#93a1a1"
+            "text-color": "#626B6B"
         },
         "VERBATIM": {
             "text-color": "#673ab7",
@@ -167,10 +167,10 @@
             "font-family": "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "BLOCKQUOTE": {
-            "text-color": "#00af00"
+            "text-color": "#007B00"
         },
         "NOTE": {
-            "text-color": "#0087b5"
+            "text-color": "#007198"
         },
         "STRIKE": {
             "text-color": "#b71c1c",
@@ -180,11 +180,11 @@
             "text-color": "#6c6c6c"
         },
         "INLINEEQUATION": {
-            "text-color": "#00897b",
+            "text-color": "#00766A",
             "font-family": "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "DISPLAYFORMULA": {
-            "text-color": "#00897b",
+            "text-color": "#00766A",
             "font-family": "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK": {
@@ -195,7 +195,7 @@
             "font-family": "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "TABLEBORDER": {
-            "text-color": "#d33682",
+            "text-color": "#BC3074",
             "background-color": "#ffffff"
         }
     }

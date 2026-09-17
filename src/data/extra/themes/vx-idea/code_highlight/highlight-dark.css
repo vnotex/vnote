@@ -69,7 +69,7 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  }
  
  .token.function-name {
-	 color: #6196cc;
+	 color: #689BCE;
  }
  
  .token.boolean,
@@ -120,7 +120,7 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  }
  
  .token.inserted {
-	 color: green;
+	 color: #53A953;
  }
  
  pre[class*="language-"].line-numbers {
@@ -210,7 +210,7 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  div.code-toolbar > .toolbar a,
  div.code-toolbar > .toolbar button,
  div.code-toolbar > .toolbar span {
-	 color: #bbb;
+	 color: #F5F5F5;
 	 font-size: .8em;
 	 padding: 0 .5em;
 	 background: #f5f2f0;
@@ -227,6 +227,15 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  div.code-toolbar > .toolbar span:focus {
 	 color: #ffffff;
 	 text-decoration: none;
+	 outline-color: currentColor;
  }
  
  
+/* Preserve readable selected syntax, including token descendants. */
+pre[class*="language-"]::selection,
+pre[class*="language-"] ::selection,
+code[class*="language-"]::selection,
+code[class*="language-"] ::selection {
+    color: #fafafa;
+    background-color: #657184;
+}

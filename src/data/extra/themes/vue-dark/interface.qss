@@ -62,7 +62,8 @@ vnotex--ToolBox QWidget[ToolBoxTitle="true"] {
 vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"] {
     padding: 4px 10px 4px 4px;
     margin: 0px;
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
 }
 
 vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"]:checked {
@@ -296,7 +297,8 @@ QToolBarExtension#qt_toolbar_ext_button:pressed {
 
 /* QToolButton */
 QToolButton {
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
     border-radius: 4px;
     color: @widgets#qtoolbutton#fg;
     background-color: @widgets#qtoolbutton#bg;
@@ -310,7 +312,6 @@ QToolButton:checked {
 }
 
 QToolButton:hover {
-    border: none;
     color: @widgets#qtoolbutton#hover#fg;
     background-color: @widgets#qtoolbutton#hover#bg;
 }
@@ -351,7 +352,8 @@ QToolButton[popupMode="1"] {
 }
 
 QToolButton[ActionToolButton="true"] {
-    border: none;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
 }
 
 QToolButton[ActionToolButton="true"]::menu-indicator {
@@ -398,6 +400,7 @@ QPushButton {
     color: @widgets#qpushbutton#fg;
     background-color: @widgets#qpushbutton#bg;
     border: 1px solid @widgets#qpushbutton#border;
+    border-left: 2px solid transparent;
     border-radius: 4px;
     padding: 6px 12px;
     min-width: 64px;
@@ -405,12 +408,14 @@ QPushButton {
 
 QPushButton:default {
     border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
 }
 
 QPushButton:focus {
     color: @widgets#qpushbutton#focus#fg;
     background-color: @widgets#qpushbutton#focus#bg;
     border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
 }
 
 QPushButton:checked {
@@ -562,6 +567,7 @@ QComboBox:hover {
 
 QComboBox:disabled {
     color: @widgets#qcombobox#disabled#fg;
+    border-color: @base#content#border;
 }
 
 QComboBox::drop-down {
@@ -666,6 +672,7 @@ QLineEdit[State="error"]:focus {
 
 QLineEdit:disabled {
     color: @widgets#qlineedit#disabled#fg;
+    border-color: @base#content#border;
 }
 
 QLineEdit[EmbeddedLineEdit="true"] {
@@ -730,6 +737,7 @@ QTreeView {
 
 QTreeView::item {
     padding: 4px 8px;
+    border-left: 2px solid transparent;
 }
 
 QTreeView::item:hover {
@@ -799,6 +807,7 @@ QListView {
 
 QListView::item {
     padding: 4px 8px;
+    border-left: 2px solid transparent;
 }
 
 QListView::item:hover {
@@ -822,6 +831,7 @@ QListView::item:selected:!active {
 }
 
 QListView::item:disabled {
+    color: @base#disabled#fg;
     background-color: transparent;
 }
 
@@ -969,10 +979,12 @@ QCheckBox::indicator:checked:disabled {
 QCheckBox::indicator {
     width: 20px;
     height: 20px;
+    border: 1px solid transparent;
 }
 
 QCheckBox::indicator:focus {
     background-color: @widgets#qcheckbox#indicator#focus#bg;
+    border-color: @widgets#qlineedit#focus#border;
 }
 
 QCheckBox::indicator:hover {
@@ -1011,10 +1023,12 @@ QRadioButton::indicator:checked:disabled {
 QRadioButton::indicator {
     width: 20px;
     height: 20px;
+    border: 1px solid transparent;
 }
 
 QRadioButton::indicator:focus {
     background-color: @widgets#qradiobutton#indicator#focus#bg;
+    border-color: @widgets#qlineedit#focus#border;
 }
 
 QRadioButton::indicator:hover {
@@ -1039,6 +1053,7 @@ QAbstractSpinBox {
 QAbstractSpinBox:disabled {
     color: @widgets#qspinbox#disabled#fg;
     background-color: @widgets#qspinbox#disabled#bg;
+    border-color: @base#content#border;
 }
 
 QAbstractSpinBox:focus {
@@ -1139,7 +1154,8 @@ QProgressBar {
     background-color: @widgets#qprogressbar#bg;
     border: 1px solid @widgets#qprogressbar#border;
     border-radius: 4px;
-    text-align: center;
+    text-align: right;
+    padding-right: 4em;
     min-height: 6px;
     max-height: 12px;
 }
@@ -1357,4 +1373,35 @@ vnotex--InlineBanner QLabel {
    unconditionally and define no :disabled variant. */
 *[MutedText="true"] {
     color: @base#muted#fg;
+}
+/* Reserve independent keyboard focus and persistent checked/selected cues. */
+QToolButton:focus:enabled,
+QToolButton[ActionToolButton="true"]:focus:enabled,
+QToolButton[DangerButton="true"]:focus:enabled,
+QToolButton[DangerButton="true"]:focus:enabled:hover,
+QPushButton[DangerButton="true"]:focus:enabled:hover {
+    border: 1px solid @widgets#qpushbutton#default#border;
+    border-left-width: 2px;
+}
+
+vnotex--ToolBox QToolButton[ToolBoxTitleButton="true"]:checked,
+QToolButton:checked,
+QToolButton:checked:hover,
+QToolButton:checked:pressed,
+QPushButton:checked,
+QPushButton:checked:hover,
+QPushButton:checked:pressed,
+QTreeView::item:selected,
+QTreeView::item:selected:active,
+QTreeView::item:selected:!active,
+QTreeView::item:selected:hover,
+QListView::item:selected,
+QListView::item:selected:active,
+QListView::item:selected:!active,
+QListView::item:selected:hover {
+    border-left: 2px solid @widgets#qtabbar#tab#selected#border;
+}
+
+QToolButton:disabled {
+    color: @base#disabled#fg;
 }

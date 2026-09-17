@@ -53,7 +53,7 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-    color: #859289;
+    color: #A4AEA7;
 }
 
 .token.punctuation {
@@ -64,7 +64,7 @@ pre[class*="language-"] {
 .token.attr-name,
 .token.namespace,
 .token.deleted {
-    color: #E67E80;
+    color: #EA9495;
 }
 
 .token.function-name {
@@ -157,7 +157,7 @@ pre[class*="language-"].line-numbers > code {
 
         .line-numbers-rows > span:before {
             content: counter(linenumber);
-            color: #859289;
+            color: #A4AEA7;
             display: block;
             padding-right: 0.8em;
             text-align: right;
@@ -209,12 +209,17 @@ div.code-toolbar > .toolbar button {
 div.code-toolbar > .toolbar a,
 div.code-toolbar > .toolbar button,
 div.code-toolbar > .toolbar span {
-    color: #9DA9A0;
+    color: #D8DCD9;
     font-size: .8em;
     padding: 0 .5em;
-    background: rgba(224, 224, 224, 0.2);
     box-shadow: 0 2px 0 0 rgba(0,0,0,0.2);
     border-radius: .5em;
+}
+
+div.code-toolbar > .toolbar .toolbar-item > a,
+div.code-toolbar > .toolbar .toolbar-item > button,
+div.code-toolbar > .toolbar .toolbar-item > span {
+    background: rgba(224, 224, 224, 0.2);
 }
 
 div.code-toolbar > .toolbar a:hover,
@@ -223,6 +228,15 @@ div.code-toolbar > .toolbar button:hover,
 div.code-toolbar > .toolbar button:focus,
 div.code-toolbar > .toolbar span:hover,
 div.code-toolbar > .toolbar span:focus {
-    color: inherit;
+    color: #D8DCD9;
     text-decoration: none;
+}
+
+/* Selected Prism descendants use the editor's true-selection pair. */
+pre[class*="language-"]::selection,
+pre[class*="language-"] *::selection,
+code[class*="language-"]::selection,
+code[class*="language-"] *::selection {
+    color: #D3C6AA;
+    background-color: #543A48;
 }

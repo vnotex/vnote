@@ -120,7 +120,7 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  }
  
  .token.inserted {
-     color: green;
+     color: #319931;
  }
  
  pre[class*="language-"].line-numbers {
@@ -210,7 +210,7 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  div.code-toolbar > .toolbar a,
  div.code-toolbar > .toolbar button,
  div.code-toolbar > .toolbar span {
-    color: rgba(235, 235, 235, 0.38);
+    color: #8F8F8F;
     padding: 0 .5em;
     margin: 0 .5em;
     background: #252526;
@@ -231,3 +231,10 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
      text-decoration: none;
  }
  
+code[class*="language-"]::selection,
+code[class*="language-"] *::selection,
+pre[class*="language-"]::selection,
+pre[class*="language-"] *::selection {
+    color: #ffffff;
+    background-color: #0A62CC;
+}

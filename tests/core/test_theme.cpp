@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QColor>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -10,6 +11,9 @@
 #include <QScopedPointer>
 #include <QSet>
 #include <QTemporaryDir>
+
+#include <algorithm>
+#include <cmath>
 
 #include <core/theme.h>
 
@@ -23,7 +27,8 @@ class TestTheme : public QObject {
 private slots:
   void initTestCase();
   void cleanupTestCase();
-  void testStub();
+  void testEnabledContrast_data();
+  void testEnabledContrast();
   void testTranslateStyleByPalette_jsonQuotedValue();
   void testTranslateStyleByPalette_qssStillWorks();
   void testTranslateStyleByPalette_colonPrefixStillWorks();
@@ -53,8 +58,6 @@ private slots:
 void TestTheme::initTestCase() {}
 
 void TestTheme::cleanupTestCase() {}
-
-void TestTheme::testStub() { QVERIFY(true); }
 
 // T1 acceptance: regex must match @-tokens preceded by " (JSON-quoted values).
 void TestTheme::testTranslateStyleByPalette_jsonQuotedValue() {
@@ -317,16 +320,7 @@ void assertThemeFullyResolved(const QString &p_themeName) {
 }
 
 // Common assertion body for editor/web concept-color parity tests.
-struct ParityExpected {
-  QString heading;
-  QString link;
-  QString inlineCode;
-  QString blockquote;
-  QString searchBg;
-  QString currentSearchBg;
-};
-
-void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpected &p_exp) {
+void assertEditorWebConceptParity(const QString &p_themeName) {
   QString src = findThemePath(p_themeName);
   QVERIFY2(!src.isEmpty(), qPrintable(QStringLiteral("theme '%1' not found").arg(p_themeName)));
   QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(src));
@@ -348,21 +342,18 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
   QString editorHeading =
       syntax[QStringLiteral("H1")].toObject()[QStringLiteral("text-color")].toString();
   QCOMPARE(editorHeading, webHeading);
-  QCOMPARE(editorHeading, p_exp.heading);
 
   // Link
   QString webLink = extractCssColor(css, QStringLiteral("a"), QStringLiteral("color"));
   QString editorLink =
       syntax[QStringLiteral("LINK")].toObject()[QStringLiteral("text-color")].toString();
   QCOMPARE(editorLink, webLink);
-  QCOMPARE(editorLink, p_exp.link);
 
   // Inline code (first occurrence of `code { ... }` -- not `pre code`).
   QString webInlineCode = extractCssColor(css, QStringLiteral("code"), QStringLiteral("color"));
   QString editorInlineCode =
       syntax[QStringLiteral("CODE")].toObject()[QStringLiteral("text-color")].toString();
   QCOMPARE(editorInlineCode, webInlineCode);
-  QCOMPARE(editorInlineCode, p_exp.inlineCode);
 
   // Blockquote
   QString webBlockquote =
@@ -370,7 +361,6 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
   QString editorBlockquote =
       syntax[QStringLiteral("BLOCKQUOTE")].toObject()[QStringLiteral("text-color")].toString();
   QCOMPARE(editorBlockquote, webBlockquote);
-  QCOMPARE(editorBlockquote, p_exp.blockquote);
 
   // Search match bg
   QString webSearchBg = extractCssColor(css, QStringLiteral("#vx-content span.vx-search-match"),
@@ -379,7 +369,6 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
                                .toObject()[QStringLiteral("background-color")]
                                .toString();
   QCOMPARE(editorSearchBg, webSearchBg);
-  QCOMPARE(editorSearchBg, p_exp.searchBg);
 
   // Current search match bg
   QString webCurrentBg =
@@ -389,7 +378,6 @@ void assertEditorWebConceptParity(const QString &p_themeName, const ParityExpect
                                 .toObject()[QStringLiteral("background-color")]
                                 .toString();
   QCOMPARE(editorCurrentBg, webCurrentBg);
-  QCOMPARE(editorCurrentBg, p_exp.currentSearchBg);
 }
 } // anonymous namespace
 
@@ -412,58 +400,109 @@ void TestTheme::testThemeFullyResolved_latexDark() {
 }
 
 void TestTheme::testEditorWebConceptParity_pure() {
-  ParityExpected exp;
-  exp.heading = QStringLiteral("#222222");
-  exp.link = QStringLiteral("#0099ff");
-  exp.inlineCode = QStringLiteral("#8e24aa");
-  exp.blockquote = QStringLiteral("#666666");
-  exp.searchBg = QStringLiteral("#4db6ac");
-  exp.currentSearchBg = QStringLiteral("#66bb6a");
-  assertEditorWebConceptParity(QStringLiteral("pure"), exp);
+  assertEditorWebConceptParity(QStringLiteral("pure"));
 }
 
 void TestTheme::testEditorWebConceptParity_everforestDark() {
-  ParityExpected exp;
-  exp.heading = QStringLiteral("#E67E80");
-  exp.link = QStringLiteral("#7FBBB3");
-  exp.inlineCode = QStringLiteral("#D3C6AA");
-  exp.blockquote = QStringLiteral("#859289");
-  exp.searchBg = QStringLiteral("#83C092");
-  exp.currentSearchBg = QStringLiteral("#A7C080");
-  assertEditorWebConceptParity(QStringLiteral("everforest-dark"), exp);
+  assertEditorWebConceptParity(QStringLiteral("everforest-dark"));
 }
 
 void TestTheme::testEditorWebConceptParity_moonlight() {
-  ParityExpected exp;
-  exp.heading = QStringLiteral("#e06c75");
-  exp.link = QStringLiteral("#61afef");
-  exp.inlineCode = QStringLiteral("#98c379");
-  exp.blockquote = QStringLiteral("#abb2bf");
-  exp.searchBg = QStringLiteral("#4db6ac");
-  exp.currentSearchBg = QStringLiteral("#66bb6a");
-  assertEditorWebConceptParity(QStringLiteral("moonlight"), exp);
+  assertEditorWebConceptParity(QStringLiteral("moonlight"));
 }
 
 void TestTheme::testEditorWebConceptParity_latexLight() {
-  ParityExpected exp;
-  exp.heading = QStringLiteral("#1a1a1a");
-  exp.link = QStringLiteral("#2e67d3");
-  exp.inlineCode = QStringLiteral("#a03e3e");
-  exp.blockquote = QStringLiteral("#55524c");
-  exp.searchBg = QStringLiteral("#f0d264");
-  exp.currentSearchBg = QStringLiteral("#9fd8a0");
-  assertEditorWebConceptParity(QStringLiteral("latex-light"), exp);
+  assertEditorWebConceptParity(QStringLiteral("latex-light"));
 }
 
 void TestTheme::testEditorWebConceptParity_latexDark() {
-  ParityExpected exp;
-  exp.heading = QStringLiteral("#dcdcdc");
-  exp.link = QStringLiteral("#8bb1f9");
-  exp.inlineCode = QStringLiteral("#d78a8a");
-  exp.blockquote = QStringLiteral("#a8a39b");
-  exp.searchBg = QStringLiteral("#3d5a66");
-  exp.currentSearchBg = QStringLiteral("#4f6b3d");
-  assertEditorWebConceptParity(QStringLiteral("latex-dark"), exp);
+  assertEditorWebConceptParity(QStringLiteral("latex-dark"));
+}
+
+// Enabled text must remain readable in its actual role/state, not match an aesthetic snapshot.
+void TestTheme::testEnabledContrast_data() {
+  QTest::addColumn<QString>("themeName");
+  QTest::addColumn<QString>("foregroundRole");
+  QTest::addColumn<QString>("backgroundRole");
+  QTest::addColumn<QString>("editorLayer");
+  const QStringList themes = {"everforest-dark", "latex-dark",      "latex-light", "moonlight",
+                              "solarized-dark",  "solarized-light", "vscode-dark", "vue-dark",
+                              "vue-light",       "vx-idea"};
+  for (const auto &theme : themes) {
+    const auto add = [&](const QString &fg, const QString &bg, const QString &layer = QString()) {
+      const QByteArray label = (theme + "/" + (layer.isEmpty() ? fg + "/" + bg : layer)).toUtf8();
+      QTest::newRow(label.constData()) << theme << fg << bg << layer;
+    };
+    for (const auto &role :
+         {"normal", "master", "pressed", "content", "content#selected", "content#selected#active",
+          "content#selected#inactive", "content#selection"}) {
+      const QString prefix = QStringLiteral("base#") + QLatin1String(role);
+      add(prefix + "#fg", prefix + "#bg");
+    }
+    add("widgets#statusbarcolumn#fg", "widgets#statusbarcolumn#mode#bg");
+    for (const auto &role : {"muted", "info", "warning", "error", "success"}) {
+      for (const auto &surface : {"normal", "content"}) {
+        add(QStringLiteral("base#") + QLatin1String(role) + "#fg",
+            QStringLiteral("base#") + QLatin1String(surface) + "#bg");
+      }
+    }
+    add("base#content#selection#fg", "base#content#selection#bg", "editor-styles");
+    add("base#content#selection#fg", "base#content#selection#bg", "markdown-editor-styles");
+  }
+}
+
+void TestTheme::testEnabledContrast() {
+  QFETCH(QString, themeName);
+  QFETCH(QString, foregroundRole);
+  QFETCH(QString, backgroundRole);
+  QFETCH(QString, editorLayer);
+  const QString path = findThemePath(themeName);
+  QVERIFY2(!path.isEmpty(), qPrintable(themeName));
+  QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(path));
+  QVERIFY(theme);
+  QColor foreground(theme->paletteColor(foregroundRole));
+  QColor background(theme->paletteColor(backgroundRole));
+  const QColor surface(theme->paletteColor(QStringLiteral("base#normal#bg")));
+  QVERIFY(foreground.isValid());
+  QVERIFY(background.isValid());
+  QVERIFY(surface.isValid());
+  if (!editorLayer.isEmpty()) {
+    QJsonParseError error;
+    const QJsonDocument editor =
+        QJsonDocument::fromJson(theme->fetchTextEditorStyle().toUtf8(), &error);
+    QVERIFY2(error.error == QJsonParseError::NoError, qPrintable(error.errorString()));
+    const QJsonObject text = editor.object()[editorLayer].toObject()["Text"].toObject();
+    const QColor selectedText(text["selected-text-color"].toString());
+    const QColor selectedBackground(text["selected-background-color"].toString());
+    QVERIFY(selectedText.isValid());
+    QVERIFY(selectedBackground.isValid());
+    // The plain and Markdown editors expose the same true-selection semantics.
+    QCOMPARE(selectedText, foreground);
+    QCOMPARE(selectedBackground, background);
+    foreground = selectedText;
+    background = selectedBackground;
+  }
+  const auto composite = [](const QColor &fg, const QColor &bg) {
+    const double alpha = fg.alphaF();
+    return QColor::fromRgbF(fg.redF() * alpha + bg.redF() * (1.0 - alpha),
+                            fg.greenF() * alpha + bg.greenF() * (1.0 - alpha),
+                            fg.blueF() * alpha + bg.blueF() * (1.0 - alpha));
+  };
+  background = composite(background, surface);
+  foreground = composite(foreground, background);
+  const auto luminance = [](const QColor &color) {
+    const auto linear = [](double channel) {
+      return channel <= 0.04045 ? channel / 12.92 : std::pow((channel + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * linear(color.redF()) + 0.7152 * linear(color.greenF()) +
+           0.0722 * linear(color.blueF());
+  };
+  const double fg = luminance(foreground);
+  const double bg = luminance(background);
+  const double ratio = (std::max(fg, bg) + 0.05) / (std::min(fg, bg) + 0.05);
+  QVERIFY2(ratio >= 4.5, qPrintable(QStringLiteral("%1 on %2: %3:1 (requires 4.5:1)")
+                                        .arg(foreground.name(), background.name())
+                                        .arg(ratio, 0, 'f', 6)));
 }
 
 // -------- Cross-theme regression: interface.qss token resolution --------

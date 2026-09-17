@@ -14,7 +14,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #CA4A17;
+    color: #D7764F;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -51,11 +51,11 @@ h6 {
 }
 
 a {
-    color: #2AA198;
+    color: #6DBFB8;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
-    text-decoration: none;
+    text-decoration: underline;
     word-break: break-word;
 }
 
@@ -63,8 +63,13 @@ a:hover {
     text-decoration: underline;
 }
 
+a:focus {
+    outline: 2px solid #6DBFB8;
+    outline-offset: 2px;
+}
+
 a:visited {
-    color: #ba68c8;
+    color: #D39FDC;
 }
 
 ul, ol {
@@ -187,7 +192,7 @@ div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
     background: #B0BEC5;
-    color: #6C6C6C;
+    color: #494949;
 }
 
 div.vx-flowchartjs-graph {
@@ -196,7 +201,7 @@ div.vx-flowchartjs-graph {
     width: fit-content;
     overflow: hidden;
     background: #B0BEC5;
-    color: #6C6C6C;
+    color: #494949;
 }
 
 div.vx-wavedrom-graph {
@@ -205,7 +210,7 @@ div.vx-wavedrom-graph {
     width: fit-content;
     overflow: hidden;
     background: #B0BEC5;
-    color: #6C6C6C;
+    color: #494949;
 }
 
 div.vx-plantuml-graph {
@@ -214,12 +219,12 @@ div.vx-plantuml-graph {
     width: fit-content;
     overflow: hidden;
     background: #B0BEC5;
-    color: #6C6C6C;
+    color: #494949;
 }
 
 ::selection {
-  background-color: #0c7bff;
-  color: #e3e5e9;
+  background-color: @base#content#selection#bg;
+  color: @base#content#selection#fg;
 }
 
 ::-webkit-scrollbar {
@@ -238,18 +243,18 @@ div.vx-plantuml-graph {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.3);
+    background: #A0A6B1;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.5);
+    background: #9ea5b4;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: rgba(128, 128, 128, 0.7);
+    background: #9ea5b4;
 }
 
 ::-webkit-scrollbar-button {
@@ -269,17 +274,17 @@ div.vx-plantuml-graph {
 }
 
 .vx-alert{
-    background-color: #E2EDF3;
+    background-color: @base#content#bg;
     padding: 12px 24px 12px 30px;
     border-radius:0;
     border:none;
-    border-left: 4px solid #498BA7;
-    color: inherit;
+    border-left: 4px solid @base#info#fg;
+    color: @base#normal#fg;
 }
 .vx-alert::before{
-    background-color: #498BA7;
+    background-color: @base#info#fg;
     border-radius: 100%;
-    color: #fff;
+    color: #484A4B;
     content: '!';
     font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -292,15 +297,75 @@ div.vx-plantuml-graph {
     text-align: center;
     top: 14px;
 }
-.alert-success,.alert-s{ border-color: #42B983; background-color: #D4EDDA; }
-.alert-success::before,.alert-s::before{ background-color: #42B983; }
-.alert-warning,.alert-w{ border-color: #ffa502; background-color: #fff3cd; }
-.alert-warning:before,.alert-w::before{ background-color: #ffa502; }
-.alert-info,.alert-i{ border-color: #70a1ff; background-color: #CCE5FF; }
-.alert-info:before,.alert-i::before{ background-color: #70a1ff; }
-.alert-danger,.alert-d{ border-color: #ff4757; background-color: #F8D7DA; }
-.alert-danger:before,.alert-d::before{ background-color: #ff4757; }
-.alert-light{ border-color: #C1C1C1; background-color: #f8f8f8; }
-.alert-light:before{ background-color: #C1C1C1; }
-.alert-dark{ border-color: #484848; background-color: #F0F0F0; }
-.alert-dark:before{ background-color: #484848; }
+.vx-alert.alert-primary {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#info#fg;
+}
+.vx-alert.alert-primary::before {
+    background-color: @base#info#fg;
+    color: #484A4B;
+}
+.vx-alert.alert-secondary {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#muted#fg;
+}
+.vx-alert.alert-secondary::before {
+    background-color: @base#muted#fg;
+    color: #464849;
+}
+.vx-alert.alert-success, .vx-alert.alert-s {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#success#fg;
+}
+.vx-alert.alert-success::before, .vx-alert.alert-s::before {
+    background-color: @base#success#fg;
+    color: #484B4C;
+}
+.vx-alert.alert-warning, .vx-alert.alert-w {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#warning#fg;
+}
+.vx-alert.alert-warning::before, .vx-alert.alert-w::before {
+    background-color: @base#warning#fg;
+    color: #484B4C;
+}
+.vx-alert.alert-info, .vx-alert.alert-i {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#info#fg;
+}
+.vx-alert.alert-info::before, .vx-alert.alert-i::before {
+    background-color: @base#info#fg;
+    color: #484A4B;
+}
+.vx-alert.alert-danger, .vx-alert.alert-d {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#error#fg;
+}
+.vx-alert.alert-danger::before, .vx-alert.alert-d::before {
+    background-color: @base#error#fg;
+    color: #484A4B;
+}
+.vx-alert.alert-light {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#muted#fg;
+}
+.vx-alert.alert-light::before {
+    background-color: @base#muted#fg;
+    color: #464849;
+}
+.vx-alert.alert-dark {
+    color: @base#normal#fg;
+    background-color: @base#content#bg;
+    border-left-color: @base#muted#fg;
+}
+.vx-alert.alert-dark::before {
+    background-color: @base#muted#fg;
+    color: #464849;
+}

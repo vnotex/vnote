@@ -29,12 +29,12 @@
         "fg3_8" : "#7d7d7d",
         "fg3_9" : "#6a6a6a",
         "fg3_10" : "#3d3d3d",
-        "bg2_4" : "#33528a",
+        "bg2_4" : "#92A3C1",
         "bg2_5" : "#3c5f9e",
         "bg2_6" : "#4a6fb0",
         "bg2_7" : "#2a3242",
         "fg_on_master" : "#f7f7f5",
-        "fg10" : "#e57373",
+        "fg10" : "#E88686",
         "fg11" : "#d3a35c",
         "fg12" : "#7fb2e5",
         "fg13" : "#b3261e",
@@ -172,7 +172,7 @@
         "icon" : {
             "fg" : "@palette#fg15_5",
             "inactive" : {
-                "fg" : "@palette#fg15_4"
+                "fg" : "#A6A29A"
             },
             "disabled" : {
                 "fg" : "@palette#fg15_3"
@@ -257,7 +257,7 @@
                 "fg" : "@base#icon#inactive#fg"
             },
             "external_node_text" : {
-                "fg" : "@palette#fg3_7"
+                "fg" : "@base#muted#fg"
             }
         },
         "locationlist" : {
@@ -368,7 +368,7 @@
             "bg" : "transparent",
             "border" : "@base#normal#border",
             "default" : {
-                "border" : "@base#master#bg"
+                "border" : "#A5C9ED"
             },
             "focus" : {
                 "fg" : "@base#focus#fg",
@@ -398,14 +398,14 @@
         "qcombobox" : {
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
-            "border" : "@base#content#border",
+            "border" : "#767676",
             "focus" : {
                 "bg" : "@base#content#focus#bg",
-                "border" : "@base#content#focus#border"
+                "border" : "#7F96BF"
             },
             "hover" : {
                 "bg" : "@base#content#hover#bg",
-                "border" : "@base#content#hover#border"
+                "border" : "#6581B2"
             },
             "disabled" : {
                 "fg" : "@base#content#disabled#fg"
@@ -429,7 +429,7 @@
             "fg" : "@base#normal#fg"
         },
         "qlineedit" : {
-            "border" : "@base#content#border",
+            "border" : "#767676",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "selection" : {
@@ -438,11 +438,11 @@
             },
             "focus" : {
                 "bg" : "@base#edit#focus#bg",
-                "border" : "@base#edit#focus#border"
+                "border" : "#8EA3C7"
             },
             "hover" : {
                 "bg" : "@base#edit#hover#bg",
-                "border" : "@base#edit#hover#border"
+                "border" : "#6480B2"
             },
             "disabled" : {
                 "fg" : "@base#content#disabled#fg"
@@ -460,7 +460,7 @@
                 "selected" : {
                     "fg" : "@base#content#fg",
                     "bg" : "@base#content#bg",
-                    "border" : "@base#master#bg"
+                    "border" : "#AABAD5"
                 }
             }
         },
@@ -547,12 +547,12 @@
                 "bg" : "transparent"
             },
             "handle" : {
-                "bg" : "@palette#bg3_2",
+                "bg" : "#767676",
                 "hover" : {
-                    "bg" : "@palette#bg3_1"
+                    "bg" : "#767676"
                 },
                 "pressed" : {
-                    "bg" : "@palette#bg3_0"
+                    "bg" : "#767676"
                 }
             }
         },
@@ -589,7 +589,7 @@
             }
         },
         "qspinbox" : {
-            "border" : "@base#content#border",
+            "border" : "#767676",
             "fg" : "@base#content#fg",
             "bg" : "@base#content#bg",
             "disabled" : {
@@ -602,11 +602,11 @@
             },
             "focus" : {
                 "bg" : "@base#edit#focus#bg",
-                "border" : "@base#edit#focus#border"
+                "border" : "#5776AC"
             },
             "hover" : {
                 "bg" : "@base#edit#hover#bg",
-                "border" : "@base#edit#hover#border"
+                "border" : "#6480B2"
             },
             "button" : {
                 "hover" : {

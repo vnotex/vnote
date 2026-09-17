@@ -18,10 +18,10 @@
             "background-color" : "#eceae3"
         },
         "TrailingSpace" : {
-            "background-color" : "#ddd8cc"
+            "background-color" : "#84817A"
         },
         "Tab" : {
-            "background-color" : "@palette#bg3_41"
+            "background-color" : "#84817C"
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
@@ -29,20 +29,20 @@
             "background-color" : "@palette#bg_search"
         },
         "IndicatorsBorder" : {
-            "text-color" : "@palette#fg3_9",
+            "text-color" : "#6E6A65",
             "background-color" : "@palette#bg_blockquote"
         },
         "CurrentLineNumber" : {
             "text-color" : "@base#normal#fg"
         },
         "Folding" : {
-            "text-color" : "@palette#fg_link"
+            "text-color" : "#18356E"
         },
         "FoldedFolding" : {
-            "text-color" : "@palette#bg2_4"
+            "text-color" : "#153570"
         },
         "FoldingHighlight" : {
-            "text-color" : "#a9c4f5"
+            "text-color" : "#7486A8"
         },
         "FoldedFoldingRangeLine" : {
             "background-color" : "#dfeee4"
@@ -65,7 +65,7 @@
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#b2ada3"},
+        "ListItemGuide" : {"text-color" : "#85817A"},
         "ActiveListItem" : {"background-color" : "#f6f4ee"},
         "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "#f6f4ee"},
         "Text" : {
@@ -112,7 +112,7 @@
             "font-size" : 13
         },
         "HRULE" : {
-            "text-color" : "@palette#fg3_7",
+            "text-color" : "#605D56",
             "background-color" : "@palette#bg3_4"
         },
         "LIST_BULLET" : {
@@ -157,7 +157,7 @@
             "text-color" : "#6b4a8a"
         },
         "COMMENT" : {
-            "text-color" : "@palette#fg3_8"
+            "text-color" : "#696661"
         },
         "VERBATIM" : {
             "text-color" : "#3d5a8a",

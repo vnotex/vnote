@@ -1,0 +1,174 @@
+{
+    "metadata": {
+        "revision": 1,
+        "name": "vx-idea Editor"
+    },
+    "text-styles": {
+        "Normal": {
+            "text-color": "#34495E",
+            "selected-text-color": "#FAFAFA",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "strike-through": false
+        },
+        "Keyword": {
+            "text-color": "#1f1c1b",
+            "selected-text-color": "#FAFAFA",
+            "bold": true
+        },
+        "Function": {
+            "text-color": "#644a9b",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Variable": {
+            "text-color": "#0057ae",
+            "selected-text-color": "#FAFAFA"
+        },
+        "ControlFlow": {
+            "text-color": "#1f1c1b",
+            "selected-text-color": "#FAFAFA",
+            "bold": true
+        },
+        "Operator": {
+            "text-color": "#1f1c1b",
+            "selected-text-color": "#FAFAFA"
+        },
+        "BuiltIn": {
+            "text-color": "#644a9b",
+            "selected-text-color": "#FAFAFA",
+            "bold": true
+        },
+        "Extension": {
+            "text-color": "#006BB8",
+            "selected-text-color": "#FAFAFA",
+            "bold": true
+        },
+        "Preprocessor": {
+            "text-color": "#006e28",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Attribute": {
+            "text-color": "#0057ae",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Char": {
+            "text-color": "#924c9d",
+            "selected-text-color": "#FAFAFA"
+        },
+        "SpecialChar": {
+            "text-color": "#276F95",
+            "selected-text-color": "#FAFAFA"
+        },
+        "String": {
+            "text-color": "#bf0303",
+            "selected-text-color": "#FAFAFA"
+        },
+        "VerbatimString": {
+            "text-color": "#bf0303",
+            "selected-text-color": "#FAFAFA"
+        },
+        "SpecialString": {
+            "text-color": "#BB3E00",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Import": {
+            "text-color": "#BB3E00",
+            "selected-text-color": "#FAFAFA"
+        },
+        "DataType": {
+            "text-color": "#0057ae",
+            "selected-text-color": "#FAFAFA"
+        },
+        "DecVal": {
+            "text-color": "#886300",
+            "selected-text-color": "#FAFAFA"
+        },
+        "BaseN": {
+            "text-color": "#886300",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Float": {
+            "text-color": "#886300",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Constant": {
+            "text-color": "#A55200",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Comment": {
+            "text-color": "#6A6968",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Documentation": {
+            "text-color": "#576C74",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Annotation": {
+            "text-color": "#9B499B",
+            "selected-text-color": "#FAFAFA"
+        },
+        "CommentVar": {
+            "text-color": "#006BB8",
+            "selected-text-color": "#FAFAFA"
+        },
+        "RegionMarker": {
+            "text-color": "#0057ae",
+            "selected-text-color": "#FAFAFA",
+            "background-color": "#e0e9f8"
+        },
+        "Information": {
+            "text-color": "#886300",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Warning": {
+            "text-color": "#bf0303",
+            "selected-text-color": "#FAFAFA"
+        },
+        "Alert": {
+            "text-color": "#bf0303",
+            "selected-text-color": "#FAFAFA",
+            "background-color": "#f7e6e6",
+            "bold": true
+        },
+        "Error": {
+            "text-color": "#bf0303",
+            "selected-text-color": "#FAFAFA",
+            "underline": true
+        },
+        "Others": {
+            "text-color": "#006e28",
+            "selected-text-color": "#FAFAFA"
+        }
+    },
+    "editor-colors": {
+        "background-color": "#FFFFFF",
+        "code-folding": "#243656",
+        "bracket-matching": "#ffff00",
+        "current-line": "#F1F2F6",
+        "icon-border": "#E6EDF5",
+        "indentation-line": "#d2d2d2",
+        "line-numbers": "#686868",
+        "current-line-number": "#34495E",
+        "mark-bookmark": "#0000ff",
+        "mark-breakpoint-active": "#ff0000",
+        "mark-breakpoint-reached": "#ffff00",
+        "mark-breakpoint-disabled": "#ff00ff",
+        "mark-execution": "#a0a0a4",
+        "mark-warning": "#00ff00",
+        "mark-error": "#ff0000",
+        "modified-lines": "#fdbc4b",
+        "replace-highlight": "#00ff00",
+        "saved-lines": "#2ecc71",
+        "search-highlight": "#4DB6AC",
+        "selection": "#657184",
+        "separator": "#898887",
+        "spell-checking": "#bf0303",
+        "tab-marker": "#848484",
+        "template-background": "#d6d2d0",
+        "template-placeholder": "#baf8ce",
+        "template-focused-placeholder": "#76da98",
+        "template-read-only-placeholder": "#f6e6e6",
+        "word-wrap-marker": "#ededed"
+    }
+}
