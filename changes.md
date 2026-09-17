@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix note encryption failing with "Not found" when the notebook has an empty Git sync directory
 * Remove buffer reload logging and log external file changes only at debug level to avoid log-viewing feedback at normal log levels
 * Keep the custom title bar Close icon visible on hover in Dreamy and Jadeite themes
 * Match the United Entry icon color to the other main toolbar icons, including live theme changes
