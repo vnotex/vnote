@@ -55,8 +55,11 @@ void SearchResultDelegate::paintFileResult(QPainter *p_painter,
   const QWidget *widget = p_option.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
 
-  // Draw selection/hover background
-  style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
+  // Native styles may paint selection only in the full item control.
+  QStyleOptionViewItem backgroundOption(p_option);
+  backgroundOption.text.clear();
+  backgroundOption.state &= ~QStyle::State_HasFocus;
+  style->drawControl(QStyle::CE_ItemViewItem, &backgroundOption, p_painter, widget);
 
   // File name in bold
   QString displayText = p_index.data(Qt::DisplayRole).toString();
@@ -125,8 +128,11 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
   const QWidget *widget = p_option.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
 
-  // Draw selection/hover background
-  style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
+  // Native styles may paint selection only in the full item control.
+  QStyleOptionViewItem backgroundOption(p_option);
+  backgroundOption.text.clear();
+  backgroundOption.state &= ~QStyle::State_HasFocus;
+  style->drawControl(QStyle::CE_ItemViewItem, &backgroundOption, p_painter, widget);
 
   int lineNumber = p_index.data(SearchResultModel::LineNumberRole).toInt();
   const auto segments =

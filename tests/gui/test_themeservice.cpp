@@ -428,20 +428,39 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
   list.setCurrentIndex(QModelIndex());
 
   vnotex::ThemeService svc(makeConfig());
+  svc.switchTheme(QStringLiteral("native"));
+  host.setStyleSheet(svc.fetchQtStyleSheet());
+  QCoreApplication::processEvents();
+  QAbstractItemView *const views[] = {&tree, &list};
+  QColor nativeRows[2][2];
+  for (int i = 0; i < 2; ++i) {
+    auto *view = views[i];
+    QTest::mouseMove(view->viewport(), view->viewport()->rect().bottomRight());
+    QCoreApplication::processEvents();
+    const auto image = view->viewport()->grab().toImage();
+    for (int row = 0; row < 2; ++row) {
+      const QRect rect = view->visualRect(view->model()->index(row, 0));
+      QVERIFY(rect.isValid());
+      const QPoint sample(view->viewport()->width() - 10, rect.center().y());
+      nativeRows[i][row] = image.pixelColor(sample * view->devicePixelRatioF());
+    }
+  }
+  // Native styles may transform palette colors. Compare restoration with their
+  // actual rendering, not a platform-specific assumption about those colors.
   // Keep the same views alive: the report includes a light-to-dark switch.
   for (const auto &name : {QStringLiteral("pure"), themeName, QStringLiteral("native")}) {
     svc.switchTheme(name);
     host.setStyleSheet(svc.fetchQtStyleSheet());
     QCoreApplication::processEvents();
-    for (QAbstractItemView *view :
-         {static_cast<QAbstractItemView *>(&tree), static_cast<QAbstractItemView *>(&list)}) {
+    for (int i = 0; i < 2; ++i) {
+      auto *view = views[i];
       const bool native = name == QStringLiteral("native");
       const QString widget =
           view == &tree ? QStringLiteral("qtreeview") : QStringLiteral("qlistview");
-      const QColor base = native ? desktopPalette.color(QPalette::Base)
-                                 : QColor(svc.paletteColor("widgets#" + widget + "#bg"));
-      const QColor alternate = native ? desktopPalette.color(QPalette::AlternateBase)
-                                      : QColor(svc.paletteColor("base#normal#bg"));
+      const QColor base =
+          native ? nativeRows[i][0] : QColor(svc.paletteColor("widgets#" + widget + "#bg"));
+      const QColor alternate =
+          native ? nativeRows[i][1] : QColor(svc.paletteColor("base#normal#bg"));
       // Native styles also paint hover/focus; sample unselected, unhovered rows.
       QTest::mouseMove(view->viewport(), view->viewport()->rect().bottomRight());
       QCoreApplication::processEvents();
@@ -475,6 +494,10 @@ void TestThemeService::selectedSearchResultsKeepThemeText() {
   vnotex::SearchResultDelegate delegate(&view);
   QStandardItemModel model(1, 1);
   const auto index = model.index(0, 0);
+  // Exact color checks must not depend on platform font antialiasing.
+  QFont font = view.font();
+  font.setStyleStrategy(QFont::NoAntialias);
+  model.setData(index, font, Qt::FontRole);
   model.setData(index, QStringLiteral("Readable selected search result"));
   model.setData(index, 58, vnotex::SearchResultModel::LineNumberRole);
   model.setData(index, 3, vnotex::SearchResultModel::MatchCountRole);
@@ -514,12 +537,19 @@ void TestThemeService::selectedSearchResultsKeepThemeText() {
       delegate.paint(&painter, option, index);
       painter.end();
 
+      // Native palette text may be translucent; compare the composited color.
+      QImage textSample(1, 1, QImage::Format_RGB32);
+      textSample.fill(image.pixelColor(4, image.height() / 2));
+      QPainter samplePainter(&textSample);
+      samplePainter.fillRect(textSample.rect(), text);
+      samplePainter.end();
+      const QColor paintedText = textSample.pixelColor(0, 0);
       bool hasThemeText = false;
       bool hasDesktopHighlightText = false;
       for (int y = 0; y < image.height(); ++y) {
         for (int x = 0; x < image.width(); ++x) {
           const QColor pixel = image.pixelColor(x, y);
-          hasThemeText |= pixel == text;
+          hasThemeText |= pixel == paintedText;
           hasDesktopHighlightText |= pixel == desktopHighlightText;
         }
       }
@@ -528,7 +558,7 @@ void TestThemeService::selectedSearchResultsKeepThemeText() {
       QVERIFY2(hasThemeText, qPrintable(context));
       QVERIFY2(!hasDesktopHighlightText, qPrintable(context));
       // Selection remains visible; only its foreground-color reversal is removed.
-      QVERIFY2(image.pixelColor(1, image.height() / 2) != base, qPrintable(context));
+      QVERIFY2(image.pixelColor(4, image.height() / 2) != base, qPrintable(context));
     }
   }
 }

@@ -67,6 +67,9 @@ row heights on `QEvent::StyleChange`, which is why the views need no
 
 `SearchResultDelegate` keeps `QPalette::Text` for file names and result text when
 selected. Selection/hover backgrounds and keyboard focus still come from the style.
+Draw the background with `CE_ItemViewItem` and empty text, leaving custom text and
+focus painting to the delegate: Windows 11 does not draw selection through
+`PE_PanelItemViewItem` alone.
 Do not switch to the desktop's `HighlightedText`: it can be white over a light
 VNote selection background. `tests/gui/test_themeservice.cpp` renders file, plain-line
 and matched-line selections across themes and active/inactive states.

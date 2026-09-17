@@ -42,7 +42,7 @@ A feature release with encrypted notes, richer Markdown editing, offline math re
     * The Outline dock receives more default space than Comments; search status text no longer widens its dock
     * The notification popup has a taller, font-scaled minimum height; long toasts stay visible for 60 seconds and persistent toasts auto-hide after 30 seconds, above native WebEngine content
     * Git task icons and the Image Host toolbar icon follow live theme switches, and existing math and diagram previews regenerate with the new theme
-    * Application views no longer use alternating row backgrounds, and selected Location List results remain readable in the VX Idea theme
+    * Application views no longer use alternating row backgrounds; selected Location List results remain readable in the VX Idea theme and retain their selection background with the native Windows 11 style
     * Heading hover no longer changes the layout in read mode or exports, and the Markdown read-mode WebEngine inspector is available again
     * Linux AppImages are built on Ubuntu 22.04 for broader distribution compatibility
 * **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
