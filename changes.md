@@ -1,4 +1,52 @@
 # Changes
+## v4.7.0
+A feature release with encrypted notes, richer Markdown editing, offline math rendering and faster keyboard navigation on top of VNote 4.6.1:
+
+* **Encrypted notes**
+    * Protect the contents of individual Markdown, plain-text and mind-map notes in bundled notebooks with a password-protected portable key hierarchy
+    * Unlock on demand; Lock All in the Settings menu saves protected edits and closes protected views while leaving ordinary tabs open
+    * Protected note previews use memory-only profiles; exporting and printing encrypted note bodies are not supported
+    * Filenames, folders and tags remain visible; conversion does not erase plaintext in existing Git history, backups, shared resources or external source files
+    * Images, attachments and comments stored as separate files remain unencrypted; conversion warns about this and never scans or changes assets
+    * Insert as Base64 embeds images through reference links and is the default insertion method for encrypted Markdown notes
+* **Editor and Markdown**
+    * Automatically number unnumbered headings in read mode and the outline; an independent edit-mode option writes and maintains heading numbers in the source, using the shared section number pattern
+    * Navigation mode reaches Markdown content across visible splits, in both edit and read modes
+    * The editor includes upstream AST-aware list editing and Vi open-line continuation; themed list-item guides and active-item backgrounds accompany automatic ordered-list renumbering, which can be disabled in Markdown Editor settings
+    * Long image, link and reference destinations are visually shortened by default in edit mode; concealment can be disabled without changing the source
+    * Markdown pipe-table preview cells display inline images and math; Insert Image targets the selected cell, including embedded images and image-host uploads
+    * Single-line `$$...$$` formulas preview in table cells, paragraphs and lists with inline placement and display-style typesetting
+    * Editor find supports multiline matches, and the replacement tooltip explains capture references, newline, tab and literal-backslash escapes
+    * Bundled notebooks can override the global editor line-ending setting, and saves respect Git line-ending rules
+    * Clipboard images inserted as files use JPEG with a white background for transparency; original file/URL formats and lossless Base64 insertion are unchanged
+* **Math and diagrams**
+    * KaTeX, its fonts and the preview rasterizer are bundled for offline reading, editor previews and exports; standalone HTML embeds the math fonts, while protected-note math restrictions remain unchanged
+    * PlantUML sequence diagrams show each `newpage` page in read mode and stack all pages into one editor-preview image, without changing the note source
+    * Choose SVG or PNG for PlantUML graphs in read mode and exports; editor previews use PNG, and PNG-only renderers no longer loop through duplicate pages
+    * Graphviz accepts engine-named Markdown fences as well as the existing graph syntax
+    * Math rendering, in-place previews and raster exports wait for KaTeX fonts rather than document-wide font/layout readiness, avoiding hidden-viewer stalls
+    * Invalid PlantUML SVG responses fail locally without replacing the failed block's source, and valid partial pages remain usable
+    * Headings containing math formulas retain formula text in their anchors, fixing navigation to math-only headings and keeping TOC links consistent
+* **Quick notes and notebooks**
+    * Quick Note is available through a global shortcut and the system tray; each scheme can open its notes in a detached window from any quick-note entry point
+    * New quick-note schemes default to the same `my_notebook` folder under Documents used for the first-run notebook; existing scheme folders remain unchanged
+    * Quick notes outside notebooks open at their actual path; the picker and parentless error dialogs activate even when the main window is hidden or minimized
+    * File import from the toolbar uses the correct source and destination folder, selects imported files and reports batch results
+    * Folder rename releases Windows directory watches and preserves descendant metadata, loaded child rows, expansion and selection without requiring Reload
+    * Sorting from a folder in the notebook explorer reorders its parent's children, matching notes
+    * Gitee notebook sync accepts the token owner's Git username; Configure Sync and Open Notebook expose the field, and username-only changes preserve local Git history
+* **Interface and packaging**
+    * Added the Pink Shock light theme
+    * Daily localized usage tips include acknowledgement and a persistent opt-out, and the default notebook includes Markdown guides
+    * Save All is available directly above Close Tab in the tab context menu, and notebook context-menu actions have been reordered
+    * The Outline dock receives more default space than Comments; search status text no longer widens its dock
+    * The notification popup has a taller, font-scaled minimum height; long toasts stay visible for 60 seconds and persistent toasts auto-hide after 30 seconds, above native WebEngine content
+    * Git task icons and the Image Host toolbar icon follow live theme switches, and existing math and diagram previews regenerate with the new theme
+    * Application views no longer use alternating row backgrounds, and selected Location List results remain readable in the VX Idea theme
+    * Heading hover no longer changes the layout in read mode or exports, and the Markdown read-mode WebEngine inspector is available again
+    * Linux AppImages are built on Ubuntu 22.04 for broader distribution compatibility
+* **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
+
 ## v4.6.1
 A maintenance release with cross-notebook transfers, more flexible Markdown editing and preview fixes on top of VNote 4.6.0:
 
@@ -9,47 +57,22 @@ A maintenance release with cross-notebook transfers, more flexible Markdown edit
     * Bundled notebooks can use a custom recycle bin folder, specified as an absolute path or relative to the notebook root
     * Optional automatic recycle bin cleanup permanently removes entries older than a configurable retention period
 * **Editor and Markdown**
-    * Markdown read mode automatically numbers unnumbered headings; choose a shared number pattern in Editor settings, with independent read-mode and outline toggles enabled by default
     * Headings can be folded in read mode and HTML exports, with fold controls shown beside the heading on hover
     * Drag headings in the outline to reorder whole sections, adjusting heading levels to preserve the hierarchy, including moves under an adjacent heading
-    * The editor includes upstream AST-aware list editing and Vi open-line continuation while retaining VNote's heading numbering and protected preview resources
-    * All bundled themes style list-item guides and active-item backgrounds; automatic ordered-list renumbering is enabled by default and can be disabled in Markdown Editor settings
-    * Long image, link, and reference destinations are visually shortened by default in Markdown edit mode, with styles in every bundled theme; concealment can be disabled in Markdown Editor settings without changing the source
     * A table-size picker was added to the Markdown toolbar
-    * Clipboard images inserted as files now use JPEG with a white background for transparency; original file/URL formats and lossless Base64 insertion are unchanged
     * Table-source alignment also formats directly edited Markdown tables; interactive table previews support Markdown type actions, highlight edited cells and write changes back after one second
-    * Markdown pipe-table preview cells now display inline images and math; Insert Image targets the selected cell, including embedded images and image-host uploads
-    * Single-line `$$...$$` formulas now preview in table cells, paragraphs and lists, using inline preview placement with display-style math typesetting
     * Choose KaTeX or MathJax for formulas in read mode and previews, with room reserved for numbered KaTeX equations
-    * KaTeX, its fonts and the preview rasterizer are bundled for offline reading, editor previews and exports; standalone HTML embeds the math fonts, while protected-note math restrictions remain unchanged
-    * PlantUML sequence diagrams show each `newpage` page in read mode and stack all pages into one editor-preview image, without changing the note source
     * KaTeX, MathJax and SVG-based graph previews retain higher-resolution pixels without enlarging their display size; KaTeX raster exports retain the same extra detail
     * Inline and display math previews resize immediately with editor zoom while sharper rasters refresh asynchronously, preserving unrounded layout geometry
     * Folding ranges track surviving source anchors after edits; bulk deletion no longer retains deleted block handles, preventing folding crashes, misplaced fold markers and hidden unrelated text
     * The `%folder%` magic word expands to the current note's notebook-relative folder in snippets and note templates
 * **Export and interface**
-    * Quick Note is available through a global shortcut and the system tray; each scheme can choose to open its notes in a detached window from any quick-note entry point
-    * New quick-note schemes default to the same `my_notebook` folder under Documents used for the first-run notebook; existing scheme folders remain unchanged
-    * The notification popup has a taller, font-scaled minimum height so messages and actions have more room
-    * Long notification toasts stay visible for 60 seconds instead of 7 seconds; persistent toasts auto-hide after 30 seconds instead of 15 seconds
     * Export is available directly from the main file toolbar
     * Exported HTML offers the corresponding HTML target when following a relative Markdown link
     * The Save shortcut applies changes in Settings
     * The United Entry toolbar input has a bounded width, and its `n` alias searches files by name
     * No-match find feedback, panel close buttons and notification close icons follow the active theme
-    * Built-in Git task icons follow the active theme in the Tasks dock and task launcher, including live theme switches
 * **Fixes**
-    * Invalid PlantUML SVG responses fail locally without replacing the failed block's source, and valid partial pages remain usable
-    * Math rendering, in-place previews and raster exports wait for KaTeX fonts instead of document-wide font/layout readiness, avoiding hidden-viewer stalls
-    * The Image Host toolbar icon follows live theme switches, and existing math and diagram previews are regenerated with the new theme
-    * Folder rename releases Windows explorer watches before changing the directory and preserves all descendant metadata in bundled notebooks
-    * Renaming an expanded explorer folder preserves its child rows, expansion and selection without leaving blank areas or requiring Reload
-    * Selected Location List results retain readable dark text on the VX Idea theme's light selection background
-    * Sorting from a folder in the notebook explorer now reorders its parent's children, matching notes; the dialog encloses the target folder name in parentheses
-    * Gitee notebook sync accepts the token owner's Git username instead of sending the GitHub-specific login; Configure Sync and Open Notebook expose a Git username field, and username-only changes preserve local Git history
-    * Quick notes in folders outside notebooks now open at their actual path, without incorrectly prepending the current notebook root
-    * Quick Note explicitly raises and activates its picker and parentless error dialogs when the main window is hidden or minimized, without revealing the main window
-    * Headings containing math formulas now retain formula text in their anchors, fixing navigation to math-only headings and keeping TOC links consistent
     * PDF highlights, drawings and text boxes use the page content origin, eliminating the page-border offset when capturing annotations
     * PDF highlights join adjacent text fragments into one region per continuous line, removing internal frames and overlapping fills, including for existing highlights
     * Qt 6.9+ builds no longer create an empty WebEngine directory under Roaming AppData/VNoteX on Windows
@@ -73,13 +96,6 @@ A feature release that adds PDF comments, batch tag editing and substantial Mark
     * In-place previews publish results in batches, prioritize visible graph previews and recover cleanly when a render pass stalls, is hidden or is replaced
     * Notes with more than 100 math blocks are no longer silently truncated, image-host images are not downloaded again for each preview, and multiline inline highlights render correctly
     * Prism was upgraded to 1.30.0 with every bundled language
-* **Encrypted notes**
-    * Protect the contents of individual Markdown, plain-text and mind-map notes in bundled notebooks with a password-protected portable key hierarchy
-    * Unlock on demand; Lock All saves protected edits and closes protected views while leaving ordinary tabs open
-    * Protected note previews use memory-only profiles; exporting and printing encrypted note bodies are not supported
-    * Filenames, folders and tags remain visible; conversion does not erase plaintext in existing Git history, backups, shared resources or external source files
-    * Images, attachments and comments stored as separate files remain unencrypted; conversion warns about this and never scans or changes assets
-    * Markdown image insertion adds Insert as Base64 using reference links and an embedded data URI; this option is first and default for encrypted Markdown notes
 * **Tags**: tags can be added to or removed from multiple selected files in one operation
 * **Interface**
     * The right dock tabs now use the same compact sidebar treatment as the left dock, with consistent indentation and theme-owned row spacing
