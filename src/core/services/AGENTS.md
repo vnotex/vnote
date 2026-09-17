@@ -188,6 +188,36 @@ The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault 
 
 **Degradation.** The initiating thread help-drains its own enqueued items, so a search stays correct even if this pool is absent or stalled. With no drain threads the search simply runs single-threaded; results, ordering, cancellation, and `max_results` are unaffected.
 
+## Search-result replacement
+
+`SearchService::buildReplacement()` transforms immutable Simple-search addresses: one-based
+lines, zero-based UTF-16 columns, end-exclusive ranges, and terminator-free line snapshots.
+Replacement text is literal even for regex searches. Validate whole lines and surrogate-safe,
+nonoverlapping ranges before constructing output; never rematch a changed line or interpret rg
+byte offsets. Only final successful Simple results carry `m_replacementSupported`; parsing and
+streaming previews cannot grant it. The controller rejects truncated or invalidated results.
+
+`BufferService::replaceSearchMatches()` owns each deferred request, independently of the
+controller. Reject protected/read-only/non-notebook targets before opening. Private opens must
+not fire `FileAfterOpen` (it creates editor tabs). Reserve the buffer, suspend autosave and writer
+registration, freeze views, then asynchronously drain earlier saves before capturing current
+writer text. Preparation uses copied inputs on QtConcurrent, strict round-trippable codecs,
+a 50 MiB source limit, and a backing-file SHA-256; existing encoding and UTF-8 BOM are preserved.
+
+`BufferSaveQueue::enqueueReplacement()` is an exact job on the existing executor. It accepts
+only an idle key, excludes ordinary enqueues, never coalesces or emits ordinary `saveFinished`,
+and rechecks cancellation and the disk digest under `NotebookIoGate` before installing bytes.
+Once installed, finish the save attempt. Hooks run outside the gate; refresh all views before
+restoring the writer. A failed write retains transformed dirty text for explicit recovery, with
+no automatic destructive retry. A successful manual recovery save retires that dirty revision.
+Cancellation does not roll back saved files. Shutdown joins preparation futures and drains exact
+jobs before releasing reservations or destroying the context/gate.
+
+Reservation hooks reject notebook close and delete/move/rename of the file or an ancestor
+folder, using notebook identity and path-component boundaries. Coverage lives in
+`test_searchservice`, `test_buffer`, `test_buffer_save_queue`, `test_searchresultmodel`, and
+`test_searchcontroller`.
+
 ## UpdateService
 
 Mechanism half of the update check: the release API, the source-scoped host allowlist,

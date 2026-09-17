@@ -21,6 +21,7 @@ namespace vnotex {
 class HookManager;
 class BufferSaveQueue;
 class NotebookIoGate;
+struct SearchFileResult;
 
 // Auto-save policy for buffer content.
 // Matches EditorConfig::AutoSavePolicy values.
@@ -121,6 +122,11 @@ public:
   // event, so this sweep is the available mechanism.
   int pruneClosedBuffers();
 
+  // Literal replacement of reviewed Simple-search matches; completion is always deferred.
+  int replaceSearchMatches(const SearchFileResult &p_target, const QString &p_replacement);
+  void cancelSearchReplacement(int p_token);
+  bool isContentReplacementActive(const QString &p_bufferId) const;
+
   // ============ Per-Buffer Encoding (transient) ============
 
   // Encoding used to decode/encode this buffer's raw bytes. Defaults to
@@ -212,7 +218,7 @@ public:
                                       VxCoreError *p_error = nullptr) const;
   bool setContent(const Buffer2 &p_buffer, const QString &p_contentJson);
   bool setContentRaw(const Buffer2 &p_buffer, const QByteArray &p_data);
-  using BufferCoreService::setContentRaw; // IBufferCoreService's ordinary worker boundary.
+  bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data) override;
   QString insertAttachment(const Buffer2 &p_buffer, const QString &p_sourcePath);
   bool deleteAttachment(const Buffer2 &p_buffer, const QString &p_filename);
   QString renameAttachment(const Buffer2 &p_buffer, const QString &p_oldFilename,
@@ -313,7 +319,7 @@ public:
   // Only unregisters if @p_writerKey matches the current active writer.
   void unregisterActiveWriter(const QString &p_bufferId, quintptr p_writerKey);
 
-  // Conversion-only snapshot/suspension; never writes plaintext or closes a buffer.
+  // Capture the active or temporarily suspended writer without changing buffer content.
   bool captureActiveWriterContent(const QString &p_bufferId, QString *p_outText) const;
   bool beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody);
   void endNoteConversion(const QString &p_bufferId, bool p_committed);
@@ -333,6 +339,11 @@ public:
   bool checkSingleExternalChange(const QString &p_bufferId);
 
 signals:
+  void contentReplacementStateChanged(const QString &p_bufferId, bool p_active,
+                                      bool p_contentChanged, bool p_saved);
+  void searchReplacementFinished(int p_token, const NodeIdentifier &p_nodeId,
+                                 const QString &p_bufferId, int p_replacedMatches, bool p_saved,
+                                 const QString &p_error);
   void protectedOpenRequested(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
   void protectedLockingChanged(bool p_locking);
   void protectedSaveFinished(const QString &p_bufferId, quint64 p_generation, quint64 p_revision,
@@ -383,6 +394,17 @@ signals:
 
 private:
   friend class Buffer2;
+  struct SearchReplacement;
+  Buffer2 openReplacementBuffer(const NodeIdentifier &p_nodeId);
+  void startSearchReplacement(int p_token);
+  void prepareSearchReplacement(int p_token);
+  void dispatchSearchReplacement(int p_token);
+  void finishSearchReplacement(int p_token, bool p_changed, bool p_saved, const QString &p_error);
+  bool replacementIdentityCurrent(const SearchReplacement &p_request) const;
+  void onReplacementFinished(const QString &p_bufferId, quint64 p_revision, bool p_changed,
+                             bool p_ok, const QString &p_error);
+  bool replacementAffectsNode(const QString &p_notebookId, const QString &p_path,
+                              bool p_folder) const;
   QString prepareTextForSave(const QString &p_bufferId, const QString &p_text) const;
   void updateProtectedNodeId(const Buffer2 &p_buffer, const NodeIdentifier &p_nodeId);
   // Timer tick handler — syncs all dirty buffers and executes auto-save policy.
@@ -469,6 +491,13 @@ private:
   // Transient per-buffer encoding override (codec name). Absence means the
   // UTF-8 default. Cleared on closeBuffer; never persisted. GUI-thread only.
   QHash<QString, QString> m_bufferEncodings;
+
+  QHash<int, std::shared_ptr<SearchReplacement>> m_searchReplacements;
+  QHash<QString, int> m_replacementReservations;
+  QSet<QString> m_failedReplacements; // Unsaved recovery text must not be retried automatically.
+  QVector<int> m_replacementHookIds;
+  int m_nextReplacementToken = 0;
+  bool m_replacementStopping = false;
 };
 
 } // namespace vnotex

@@ -7,8 +7,13 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QModelIndex>
+#include <QScopedValueRollback>
 #include <QSet>
 #include <QStringList>
+#include <QTimer>
+
+#include <limits>
+#include <utility>
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -28,37 +33,87 @@ using namespace vnotex;
 
 SearchController::SearchController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {
-  auto *searchSvc = m_services.get<SearchService>();
-  if (!searchSvc) {
-    return;
+  if (auto *searchSvc = m_services.get<SearchService>()) {
+    connect(searchSvc, &SearchService::searchFinished, this, &SearchController::onSearchFinished,
+            Qt::QueuedConnection);
+    connect(searchSvc, &SearchService::searchFailed, this, &SearchController::onSearchFailed,
+            Qt::QueuedConnection);
+    connect(searchSvc, &SearchService::searchCancelled, this, &SearchController::onSearchCancelled,
+            Qt::QueuedConnection);
+    connect(searchSvc, &SearchService::searchBatch, this, &SearchController::onSearchBatch);
+    connect(searchSvc, &SearchService::searchProgress, this, [this](int p_token, int p_percent) {
+      if (m_activeTokens.contains(p_token) && !m_cancelRequested) {
+        emit progressUpdated(p_percent);
+      }
+    });
   }
-
-  connect(searchSvc, &SearchService::searchFinished, this, &SearchController::onSearchFinished);
-  connect(searchSvc, &SearchService::searchFailed, this, &SearchController::onSearchFailed);
-  connect(searchSvc, &SearchService::searchCancelled, this, &SearchController::onSearchCancelled);
-  connect(searchSvc, &SearchService::searchBatch, this, &SearchController::onSearchBatch);
-  connect(searchSvc, &SearchService::searchProgress, this, [this](int p_token, int p_percent) {
-    if (!m_activeTokens.contains(p_token) && !m_expectingStartSignal) {
-      return;
-    }
-    emit progressUpdated(p_percent);
-  });
-  connect(searchSvc, &SearchService::searchStarted, this, [this](int p_token) {
-    if (!m_activeTokens.contains(p_token) && !m_expectingStartSignal) {
-      return;
-    }
-    emit searchStarted();
-  });
+  if (auto *bufferSvc = m_services.get<BufferService>()) {
+    connect(bufferSvc->asQObject(),
+            SIGNAL(searchReplacementFinished(int, NodeIdentifier, QString, int, bool, QString)),
+            this,
+            SLOT(onSearchReplacementFinished(int, NodeIdentifier, QString, int, bool, QString)));
+  }
 }
 
-void SearchController::setModel(SearchResultModel *p_model) { m_model = p_model; }
+SearchController::~SearchController() {
+  if (auto *searchSvc = m_services.get<SearchService>()) {
+    for (int token : m_activeTokens) {
+      searchSvc->cancel(token);
+    }
+  }
+  if (m_replacement && m_replacement->activeToken > 0) {
+    if (auto *bufferSvc = m_services.get<BufferService>()) {
+      bufferSvc->cancelSearchReplacement(m_replacement->activeToken);
+    }
+  }
+}
+
+void SearchController::setModel(SearchResultModel *p_model) {
+  if (m_model == p_model) {
+    return;
+  }
+  if (m_model) {
+    disconnect(m_model, nullptr, this, nullptr);
+  }
+  m_model = p_model;
+  invalidateReplacementResults();
+  m_selectedTargets.clear();
+  if (m_model) {
+    connect(m_model, &QAbstractItemModel::modelAboutToBeReset, this, [this]() {
+      m_selectedTargets.clear();
+      if (!m_updatingModel) {
+        invalidateReplacementResults();
+      }
+    });
+    const auto changed = [this]() {
+      if (!m_updatingModel) {
+        m_selectedTargets.clear();
+        invalidateReplacementResults();
+      }
+    };
+    connect(m_model, &QAbstractItemModel::rowsInserted, this, changed);
+    connect(m_model, &QAbstractItemModel::rowsRemoved, this, changed);
+    connect(m_model, &QAbstractItemModel::dataChanged, this, changed);
+    connect(m_model, &QObject::destroyed, this, [this]() {
+      m_model = nullptr;
+      m_selectedTargets.clear();
+      invalidateReplacementResults();
+    });
+  }
+}
 
 void SearchController::setCurrentNotebookId(const QString &p_notebookId) {
-  m_currentNotebookId = p_notebookId;
+  if (m_currentNotebookId != p_notebookId) {
+    m_currentNotebookId = p_notebookId;
+    invalidateReplacementResults();
+  }
 }
 
 void SearchController::setCurrentFolderId(const NodeIdentifier &p_folderId) {
-  m_currentFolderId = p_folderId;
+  if (m_currentFolderId != p_folderId) {
+    m_currentFolderId = p_folderId;
+    invalidateReplacementResults();
+  }
 }
 
 void SearchController::search(const QString &p_keyword, int p_scope, int p_searchMode,
@@ -68,10 +123,12 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
                 << "mode:" << p_searchMode << "caseSensitive:" << p_caseSensitive
                 << "regex:" << p_useRegex << "filePattern:" << p_filePattern;
 
+  ++m_searchGeneration;
+  cancel();
   resetSearchState();
-  if (m_model) {
-    m_model->clear();
-  }
+  invalidateReplacementResults();
+  m_resultsInvalidated = false;
+  publishSearchResult(SearchResult());
 
   m_activeSearchMode = p_searchMode;
 
@@ -176,29 +233,40 @@ void SearchController::search(const QString &p_keyword, int p_scope, int p_searc
 
   if (m_pendingTargets.isEmpty()) {
     qCDebug(lcUi) << "SearchController::search: no targets found, emitting empty result";
-    if (m_model) {
-      m_model->setSearchResult(m_accumulatedResult);
-    }
+    resetSearchState();
     emit searchFinished(0, false, 0);
     return;
   }
 
   qCDebug(lcUi) << "SearchController::search: pendingTargets:" << m_pendingTargets.size();
-  startNextSearch();
+  const SearchSnapshot snapshot{m_pendingTargets, m_queryJson, m_lastKeyword, m_lastFindOptions,
+                                m_activeSearchMode};
+  beginSearch(snapshot);
 }
 
 void SearchController::cancel() {
-  qCDebug(lcUi) << "SearchController::cancel: cancelling search";
+  if (m_replacement && m_replacement->confirmed) {
+    m_replacement->cancelled = true;
+    if (auto *bufferSvc = m_services.get<BufferService>()) {
+      if (m_replacement->activeToken > 0) {
+        bufferSvc->cancelSearchReplacement(m_replacement->activeToken);
+      }
+    }
+    QTimer::singleShot(0, this, &SearchController::startNextReplacement);
+  }
+  if (!m_searchRunning) {
+    return;
+  }
   m_cancelRequested = true;
   m_pendingTargets.clear();
-
-  auto *searchSvc = m_services.get<SearchService>();
-  if (searchSvc) {
+  m_completedSearchSuccessful = false;
+  updateReplacementAvailability();
+  if (auto *searchSvc = m_services.get<SearchService>()) {
+    // Keep ownership until the terminal callback, including a finish already queued at cancel.
     for (int token : m_activeTokens) {
       searchSvc->cancel(token);
     }
   }
-  m_activeTokens.clear();
 }
 
 void SearchController::activateResult(const QModelIndex &p_index) {
@@ -218,15 +286,15 @@ void SearchController::activateResult(const QModelIndex &p_index) {
 
   FileOpenSettings settings;
   int lineNumber = m_model->data(p_index, SearchResultModel::LineNumberRole).toInt();
-  if (lineNumber >= 0) {
-    settings.m_lineNumber = lineNumber;
+  if (lineNumber > 0) {
+    settings.m_lineNumber = lineNumber - 1;
   }
 
   if (m_activeSearchMode == ContentSearch && !m_lastKeyword.isEmpty()) {
     SearchHighlightContext ctx;
     ctx.m_patterns = QStringList{m_lastKeyword};
     ctx.m_options = m_lastFindOptions;
-    ctx.m_currentMatchLine = lineNumber;
+    ctx.m_currentMatchLine = lineNumber > 0 ? lineNumber - 1 : -1;
     ctx.m_isValid = true;
     settings.m_searchHighlight = ctx;
   }
@@ -239,66 +307,63 @@ void SearchController::activateResult(const QModelIndex &p_index) {
 
 void SearchController::onSearchFinished(int p_token, const SearchResult &p_result) {
   if (!m_activeTokens.contains(p_token)) {
-    qCDebug(lcUi) << "SearchController::onSearchFinished: discarding stale token:" << p_token;
+    return;
+  }
+  if (m_cancelRequested) {
+    onSearchCancelled(p_token);
     return;
   }
   m_activeTokens.remove(p_token);
-
-  qCDebug(lcUi) << "SearchController::onSearchFinished: matchCount:" << p_result.m_matchCount
-                << "fileResults:" << p_result.m_fileResults.size()
-                << "truncated:" << p_result.m_truncated
-                << "pendingTargets:" << m_pendingTargets.size();
-
   mergeSearchResult(p_result);
-
-  if (m_cancelRequested) {
-    return;
-  }
-
   if (!m_pendingTargets.isEmpty()) {
     startNextSearch();
     return;
   }
 
-  if (m_activeTokens.isEmpty() && m_pendingTargets.isEmpty()) {
-    if (m_model) {
-      m_model->setSearchResult(m_accumulatedResult);
-    }
-
-    emit searchFinished(m_accumulatedResult.m_matchCount, m_accumulatedResult.m_truncated,
-                        m_accumulatedResult.m_encryptedSkippedCount);
-    resetSearchState();
+  m_completedSearch = m_searchSnapshot;
+  m_completedTruncated = m_accumulatedResult.m_truncated;
+  m_completedProvenance = !m_accumulatedResult.m_fileResults.isEmpty();
+  for (const auto &file : m_accumulatedResult.m_fileResults) {
+    m_completedProvenance = m_completedProvenance && file.m_replacementSupported;
   }
+  const auto result = m_accumulatedResult;
+  const auto generation = m_searchGeneration;
+  publishSearchResult(result);
+  if (generation != m_searchGeneration) {
+    return;
+  }
+  m_completedSearchSuccessful = !m_resultsInvalidated;
+  resetSearchState();
+  updateReplacementAvailability();
+  emit searchFinished(result.m_matchCount, result.m_truncated, result.m_encryptedSkippedCount);
 }
 
 void SearchController::onSearchFailed(int p_token, const Error &p_error) {
   if (!m_activeTokens.contains(p_token)) {
-    qCDebug(lcUi) << "SearchController::onSearchFailed: discarding stale token:" << p_token;
     return;
   }
-  m_activeTokens.remove(p_token);
-
+  if (m_cancelRequested) {
+    onSearchCancelled(p_token);
+    return;
+  }
   QString message = p_error.message();
   if (message.isEmpty()) {
     message = p_error.what();
   }
-
-  qWarning() << "SearchController::onSearchFailed:" << message;
-
-  emit searchFailed(message);
+  m_completedSearchSuccessful = false;
   resetSearchState();
+  updateReplacementAvailability();
+  emit searchFailed(message);
 }
 
 void SearchController::onSearchCancelled(int p_token) {
-  if (!m_activeTokens.contains(p_token)) {
-    qCDebug(lcUi) << "SearchController::onSearchCancelled: discarding stale token:" << p_token;
+  if (!m_activeTokens.remove(p_token)) {
     return;
   }
-  m_activeTokens.remove(p_token);
-
-  qCDebug(lcUi) << "SearchController::onSearchCancelled";
-  emit searchCancelled();
+  m_completedSearchSuccessful = false;
   resetSearchState();
+  updateReplacementAvailability();
+  emit searchCancelled();
 }
 
 void SearchController::onSearchBatch(int p_token, const SearchResult &p_result) {
@@ -319,8 +384,228 @@ void SearchController::onSearchBatch(int p_token, const SearchResult &p_result) 
                 << "matchCount:" << p_result.m_matchCount;
 
   if (m_model) {
+    QScopedValueRollback<bool> updating(m_updatingModel, true);
     m_model->appendSearchResult(p_result);
   }
+}
+
+void SearchController::setSelectedResults(const QModelIndexList &p_indexes) {
+  m_selectedTargets =
+      m_model ? m_model->replacementTargets(p_indexes) : QVector<SearchFileResult>();
+  updateReplacementAvailability();
+}
+
+void SearchController::invalidateReplacementResults() {
+  ++m_resultsGeneration;
+  // Sticky across final publication and automatic refresh; only an explicit search resets it.
+  m_resultsInvalidated = true;
+  m_completedSearchSuccessful = false;
+  updateReplacementAvailability();
+}
+
+QString SearchController::replacementEligibilityError() const {
+  if (m_searchRunning || (m_replacement && m_replacement->confirmed)) {
+    return tr("Wait for the current operation to finish before replacing.");
+  }
+  if (!m_model || !m_completedSearchSuccessful || m_resultsInvalidated ||
+      m_completedSearch.mode != ContentSearch || m_model->rowCount() == 0) {
+    return tr("Run a new completed content search before replacing.");
+  }
+  if (m_completedTruncated) {
+    return tr(
+        "Results are truncated. Narrow the search or increase the result limit before replacing.");
+  }
+  const auto *searchSvc = m_services.get<SearchService>();
+  if (!m_completedProvenance || !searchSvc || !searchSvc->isReplacementSupported()) {
+    return tr("Replacement is available only for Simple search results.");
+  }
+  if (!m_services.get<BufferService>()) {
+    return tr("Buffer service is not available.");
+  }
+  return QString();
+}
+
+void SearchController::updateReplacementAvailability() {
+  const QString reason = replacementEligibilityError();
+  const bool available = !m_replacement && reason.isEmpty();
+  emit replacementAvailabilityChanged(available && !m_selectedTargets.isEmpty(), available);
+  const bool explain = !m_searchRunning && !m_replacement && m_completedSearchSuccessful &&
+                       m_completedSearch.mode == ContentSearch && m_model &&
+                       m_model->rowCount() > 0;
+  emit replacementStatusChanged(explain ? reason : QString());
+}
+
+void SearchController::requestReplacement(const QString &p_replacement, bool p_all) {
+  if (m_replacement) {
+    return;
+  }
+  const QString error = replacementEligibilityError();
+  if (!error.isEmpty()) {
+    updateReplacementAvailability();
+    emit replacementFinished(0, 0, false, {error});
+    return;
+  }
+  auto targets = p_all ? m_model->allReplacementTargets() : m_selectedTargets;
+  if (targets.isEmpty()) {
+    return;
+  }
+  qint64 matches = 0;
+  for (const auto &file : targets) {
+    if (!file.m_replacementSupported) {
+      emit replacementFinished(0, 0, false,
+                               {tr("Replacement is available only for Simple search results.")});
+      return;
+    }
+    for (const auto &line : file.m_lineMatches) {
+      matches += line.m_segments.size();
+    }
+  }
+  if (matches > (std::numeric_limits<int>::max)() ||
+      targets.size() > (std::numeric_limits<int>::max)()) {
+    emit replacementFinished(0, 0, false,
+                             {tr("Too many matches. Narrow the search before replacing.")});
+    return;
+  }
+  if (matches == 0) {
+    return;
+  }
+  m_replacement = std::make_unique<ReplacementBatch>();
+  m_replacement->targets = std::move(targets);
+  m_replacement->replacement = p_replacement;
+  m_replacement->search = m_completedSearch;
+  m_replacement->searchGeneration = m_searchGeneration;
+  m_replacement->resultsGeneration = m_resultsGeneration;
+  const int files = static_cast<int>(m_replacement->targets.size());
+  updateReplacementAvailability();
+  emit replacementConfirmationRequested(static_cast<int>(matches), files);
+}
+
+void SearchController::confirmReplacement(bool p_confirmed) {
+  if (!m_replacement || m_replacement->confirmed) {
+    return;
+  }
+  if (!p_confirmed) {
+    m_replacement.reset();
+    updateReplacementAvailability();
+    return;
+  }
+  QString error = replacementEligibilityError();
+  if (m_replacement->searchGeneration != m_searchGeneration ||
+      m_replacement->resultsGeneration != m_resultsGeneration) {
+    error = tr("Search results changed. Search again before replacing.");
+  }
+  for (const auto &file : m_replacement->targets) {
+    if (!file.m_replacementSupported) {
+      error = tr("Replacement is available only for Simple search results.");
+      break;
+    }
+  }
+  if (!error.isEmpty()) {
+    m_replacement.reset();
+    updateReplacementAvailability();
+    emit replacementFinished(0, 0, false, {error});
+    return;
+  }
+  m_replacement->confirmed = true;
+  updateReplacementAvailability();
+  emit replacementStarted(static_cast<int>(m_replacement->targets.size()));
+  // Also gives a synchronous Cancel from the view's started handler a pre-dispatch boundary.
+  QTimer::singleShot(0, this, &SearchController::startNextReplacement);
+}
+
+void SearchController::startNextReplacement() {
+  if (!m_replacement || !m_replacement->confirmed || m_replacement->activeToken > 0) {
+    return;
+  }
+  if (m_replacement->cancelled || m_replacement->completedFiles == m_replacement->targets.size()) {
+    finishReplacement();
+    return;
+  }
+  const auto &target = m_replacement->targets.at(m_replacement->completedFiles);
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (bufferSvc) {
+    // BufferService guarantees that no terminal callback precedes this method's return.
+    m_replacement->activeToken =
+        bufferSvc->replaceSearchMatches(target, m_replacement->replacement);
+  }
+  if (m_replacement->activeToken <= 0) {
+    m_replacement->errors.append(target.m_notebookId + QLatin1Char('/') + target.m_path +
+                                 QStringLiteral(": ") + tr("Buffer service is not available."));
+    ++m_replacement->completedFiles;
+    emit replacementProgress(m_replacement->completedFiles,
+                             static_cast<int>(m_replacement->targets.size()));
+    QTimer::singleShot(0, this, &SearchController::startNextReplacement);
+  }
+}
+
+void SearchController::onSearchReplacementFinished(int p_token, const NodeIdentifier &p_nodeId,
+                                                   const QString &p_bufferId, int p_replacedMatches,
+                                                   bool p_saved, const QString &p_error) {
+  if (!m_replacement || !m_replacement->confirmed || p_token <= 0 ||
+      p_token != m_replacement->activeToken) {
+    return;
+  }
+  m_replacement->activeToken = 0;
+  const auto &target = m_replacement->targets.at(m_replacement->completedFiles);
+  if (p_saved && p_replacedMatches > 0) {
+    m_replacement->replacedMatches += p_replacedMatches;
+    ++m_replacement->savedFiles;
+  }
+  if (!p_error.isEmpty()) {
+    m_replacement->errors.append(target.m_notebookId + QLatin1Char('/') + target.m_path +
+                                 QStringLiteral(": ") + p_error);
+  }
+  ++m_replacement->completedFiles;
+  if (!p_saved && p_replacedMatches > 0 && !p_bufferId.isEmpty()) {
+    FileOpenSettings settings;
+    settings.m_mode = ViewWindowMode::Edit;
+    settings.m_forceMode = true;
+    emit nodeActivated(p_nodeId, settings);
+  }
+  emit replacementProgress(m_replacement->completedFiles,
+                           static_cast<int>(m_replacement->targets.size()));
+  // Never dispatch the next file inside completion observers; they may request cancellation.
+  QTimer::singleShot(0, this, &SearchController::startNextReplacement);
+}
+
+void SearchController::finishReplacement() {
+  auto batch = std::move(m_replacement);
+  m_completedSearchSuccessful = false;
+  ++m_resultsGeneration;
+  if (batch->searchGeneration == m_searchGeneration) {
+    publishSearchResult(SearchResult());
+  }
+  updateReplacementAvailability();
+  emit replacementFinished(batch->replacedMatches, batch->savedFiles, batch->cancelled,
+                           batch->errors);
+  const auto generation = batch->searchGeneration;
+  QTimer::singleShot(0, this, [this, generation, snapshot = std::move(batch->search)]() {
+    if (generation != m_searchGeneration) {
+      return;
+    }
+    beginSearch(snapshot);
+  });
+}
+
+void SearchController::publishSearchResult(const SearchResult &p_result) {
+  m_selectedTargets.clear();
+  if (m_model) {
+    QScopedValueRollback<bool> updating(m_updatingModel, true);
+    m_model->setSearchResult(p_result);
+  }
+}
+
+void SearchController::beginSearch(const SearchSnapshot &p_search) {
+  resetSearchState();
+  m_searchSnapshot = p_search;
+  m_pendingTargets = p_search.targets;
+  m_queryJson = p_search.queryJson;
+  m_activeSearchMode = p_search.mode;
+  m_lastKeyword = p_search.keyword;
+  m_lastFindOptions = p_search.findOptions;
+  m_searchRunning = true;
+  updateReplacementAvailability();
+  startNextSearch();
 }
 
 QString SearchController::buildQueryJson(const QString &p_keyword, int p_searchMode,
@@ -423,13 +708,12 @@ void SearchController::dispatchSearch(const SearchTarget &p_target) {
   auto *searchSvc = m_services.get<SearchService>();
   if (!searchSvc) {
     qWarning() << "SearchController::dispatchSearch: SearchService not available";
-    emit searchFailed(tr("Search service is not available."));
     resetSearchState();
+    emit searchFailed(tr("Search service is not available."));
     return;
   }
 
   int token = 0;
-  m_expectingStartSignal = true;
   switch (m_activeSearchMode) {
   case FileNameSearch:
     token = searchSvc->searchFiles(p_target.notebookId, m_queryJson, p_target.inputFilesJson);
@@ -444,15 +728,20 @@ void SearchController::dispatchSearch(const SearchTarget &p_target) {
     break;
 
   default:
-    m_expectingStartSignal = false;
-    emit searchFailed(tr("Invalid search mode."));
     resetSearchState();
+    emit searchFailed(tr("Invalid search mode."));
     return;
   }
-  m_expectingStartSignal = false;
 
   if (token > 0) {
     m_activeTokens.insert(token);
+    if (!m_searchStartedEmitted) {
+      m_searchStartedEmitted = true;
+      emit searchStarted();
+    }
+  } else {
+    resetSearchState();
+    emit searchFailed(tr("Failed to start search."));
   }
 }
 
@@ -473,6 +762,9 @@ void SearchController::resetSearchState() {
   m_accumulatedResult = SearchResult();
   m_queryJson.clear();
   m_cancelRequested = false;
+  m_searchRunning = false;
+  m_searchStartedEmitted = false;
+  m_searchSnapshot = SearchSnapshot();
 }
 
 void SearchController::mergeSearchResult(const SearchResult &p_result) {

@@ -99,6 +99,10 @@ public:
   Error searchByTags(const QString &p_notebookId, const QString &p_queryJson,
                      const QString &p_inputFilesJson, QJsonArray *p_results) const;
 
+  // Whether normalized backend ordering guarantees Simple search replacement addresses.
+  // Unreadable/malformed configuration fails closed; rg is never probed for availability.
+  bool isReplacementSupported() const;
+
   // Non-owning access to the vxcore context (owned in main(), outlives services).
   // Used by SearchService to drain the "vxcore.search" content-search work queue.
   VxCoreContextHandle context() const { return m_context; }

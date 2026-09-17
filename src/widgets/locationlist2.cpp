@@ -1,6 +1,7 @@
 #include "locationlist2.h"
 
 #include <QDebug>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -23,13 +24,9 @@ LocationList2::LocationList2(ServiceLocator &p_services, QWidget *p_parent)
 
 LocationList2::~LocationList2() = default;
 
-SearchResultModel *LocationList2::getModel() {
-  return m_model;
-}
+SearchResultModel *LocationList2::getModel() { return m_model; }
 
-void LocationList2::clear() {
-  m_model->clear();
-}
+void LocationList2::clear() { m_model->clear(); }
 
 void LocationList2::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
@@ -64,13 +61,18 @@ void LocationList2::setupUI() {
 }
 
 void LocationList2::setupConnections() {
-  connect(m_view, &SearchResultView::resultActivated,
-          this, &LocationList2::resultActivated);
-  connect(m_view, &SearchResultView::contextMenuRequested,
-          this, &LocationList2::contextMenuRequested);
+  connect(m_view, &SearchResultView::resultActivated, this, &LocationList2::resultActivated);
+  connect(m_view, &SearchResultView::contextMenuRequested, this,
+          &LocationList2::contextMenuRequested);
 
-  connect(m_model, &QAbstractItemModel::modelReset,
-          this, &LocationList2::updatePlaceholder);
+  connect(m_view->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+          [this]() { emit selectedResultsChanged(m_view->selectionModel()->selectedRows(0)); });
+  connect(m_model, &QAbstractItemModel::modelReset, this, [this]() {
+    emit selectedResultsChanged({});
+    updatePlaceholder();
+  });
+  connect(m_model, &QAbstractItemModel::rowsInserted, this, &LocationList2::updatePlaceholder);
+  connect(m_model, &QAbstractItemModel::rowsRemoved, this, &LocationList2::updatePlaceholder);
 }
 
 void LocationList2::updatePlaceholder() {

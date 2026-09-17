@@ -45,6 +45,14 @@ public:
   void cancel();
   bool isSearching() const;
   bool isSearching(int p_token) const;
+  bool isReplacementSupported() const;
+
+  // Validate immutable Simple search snapshots and replace their exact ranges literally.
+  // Empty/identical replacements are allowed. All output pointers are required; errors
+  // leave the output text empty and count zero, never a partially transformed document.
+  static bool buildReplacement(const QString &p_source, const QVector<SearchLineMatch> &p_matches,
+                               const QString &p_replacement, QString *p_outText, int *p_outCount,
+                               QString *p_outError);
 
   size_t testDrainThreadCount() const { return m_drainThreads.size(); }
   uint64_t testDrainItemsProcessed() const {

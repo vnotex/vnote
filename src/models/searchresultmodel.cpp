@@ -2,6 +2,8 @@
 
 #include <QDebug>
 #include <QFileInfo>
+#include <QHash>
+#include <QSet>
 
 #include <core/nodeidentifier.h>
 
@@ -203,3 +205,91 @@ void SearchResultModel::clear() {
 int SearchResultModel::totalMatchCount() const { return m_result.m_matchCount; }
 
 bool SearchResultModel::isTruncated() const { return m_result.m_truncated; }
+
+QVector<SearchFileResult>
+SearchResultModel::replacementTargets(const QModelIndexList &p_indexes) const {
+  return collectReplacementTargets(p_indexes, false);
+}
+
+QVector<SearchFileResult> SearchResultModel::allReplacementTargets() const {
+  return collectReplacementTargets({}, true);
+}
+
+QVector<SearchFileResult>
+SearchResultModel::collectReplacementTargets(const QModelIndexList &p_indexes, bool p_all) const {
+  // A line row of -1 denotes its parent file, which subsumes all of that file's children.
+  QHash<int, QSet<int>> selectedRows;
+  for (const auto &idx : p_indexes) {
+    if (!idx.isValid() || idx.model() != this || idx.column() != 0 || idx.row() < 0) {
+      continue;
+    }
+    if (idx.internalId() == 0) {
+      if (idx.row() < m_result.m_fileResults.size()) {
+        selectedRows[idx.row()].insert(-1);
+      }
+    } else if (idx.internalId() <= static_cast<quintptr>(m_result.m_fileResults.size())) {
+      const int fileRow = static_cast<int>(idx.internalId() - 1);
+      if (idx.row() < m_result.m_fileResults[fileRow].m_lineMatches.size()) {
+        selectedRows[fileRow].insert(idx.row());
+      }
+    }
+  }
+  if (!p_all && selectedRows.isEmpty()) {
+    return {};
+  }
+
+  struct LineRows {
+    int m_row = -1;
+    QSet<QPair<int, int>> m_segments;
+  };
+  struct FileRows {
+    int m_row = -1;
+    QHash<int, LineRows> m_lines;
+  };
+  QHash<QPair<QString, QString>, FileRows> fileRows;
+  QVector<SearchFileResult> targets;
+  for (int fileRow = 0; fileRow < m_result.m_fileResults.size(); ++fileRow) {
+    const auto &file = m_result.m_fileResults[fileRow];
+    const auto selection = selectedRows.constFind(fileRow);
+    if (file.m_type != SearchResultType::File || file.m_lineMatches.isEmpty() ||
+        (!p_all && selection == selectedRows.constEnd())) {
+      continue;
+    }
+    const bool wholeFile = p_all || selection.value().contains(-1);
+    auto &rows = fileRows[qMakePair(file.m_notebookId, file.m_path)];
+    for (int lineRow = 0; lineRow < file.m_lineMatches.size(); ++lineRow) {
+      const auto &line = file.m_lineMatches[lineRow];
+      if ((!wholeFile && !selection.value().contains(lineRow)) || line.m_segments.isEmpty()) {
+        continue;
+      }
+
+      if (rows.m_row < 0) {
+        rows.m_row = targets.size();
+        targets.append(file);
+        targets.last().m_lineMatches.clear();
+        targets.last().m_matchCount = 0;
+      }
+      auto &target = targets[rows.m_row];
+      // Combining rows must never promote an unsupported snapshot into a replaceable one.
+      target.m_replacementSupported = target.m_replacementSupported && file.m_replacementSupported;
+      auto &lineRows = rows.m_lines[line.m_lineNumber];
+      if (lineRows.m_row < 0) {
+        lineRows.m_row = target.m_lineMatches.size();
+        target.m_lineMatches.append({line.m_lineNumber, line.m_lineText, {}});
+      } else if (target.m_lineMatches[lineRows.m_row].m_lineText != line.m_lineText) {
+        // Conflicting snapshots cannot be merged into one trustworthy replacement address.
+        return {};
+      }
+      auto &segments = target.m_lineMatches[lineRows.m_row].m_segments;
+      for (const auto &segment : line.m_segments) {
+        const auto address = qMakePair(segment.m_columnStart, segment.m_columnEnd);
+        if (!lineRows.m_segments.contains(address)) {
+          lineRows.m_segments.insert(address);
+          segments.append(segment);
+          ++target.m_matchCount;
+        }
+      }
+    }
+  }
+  return targets;
+}

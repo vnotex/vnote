@@ -18,6 +18,8 @@
 
 #include "buffersavequeue.h"
 
+#include <QCryptographicHash>
+#include <QFile>
 #include <QLoggingCategory>
 #include <QMutexLocker>
 #include <QSet>
@@ -74,9 +76,9 @@ BufferSaveQueue::BufferSaveQueue(IBufferCoreService &p_coreService, NotebookIoGa
     : QObject(p_parent), m_coreService(p_coreService), m_gate(p_gate) {}
 
 BufferSaveQueue::~BufferSaveQueue() {
-  shutdown(5000);
-  // A protected worker must not outlive its queue or its core/context.
-  drainProtected(-1);
+  // No worker may outlive the queue, gate, or core/context, even after a prior
+  // bounded shutdown timed out. This joins ordinary, exact, and protected jobs.
+  shutdown(-1);
 }
 
 QString BufferSaveQueue::compositeKey(const QString &p_notebookId, const QString &p_bufferId) {
@@ -112,6 +114,11 @@ void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_buff
       return;
     }
 
+    if (m_running.value(key, JobType::Ordinary) == JobType::Replacement) {
+      qCWarning(bufferSaveQueueLog) << "enqueue rejected: replacement owns" << key;
+      return;
+    }
+
     // Coalesce: an existing PENDING (not started) job for this key is dropped
     // in favour of the newest snapshot. We must still notify the caller that
     // its older save resolved, so capture it for an out-of-lock signal.
@@ -129,8 +136,8 @@ void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_buff
     job.encoding = p_encoding;
     m_pending.insert(key, job);
 
-    if (!m_running.value(key, false)) {
-      m_running.insert(key, true);
+    if (!m_running.contains(key)) {
+      m_running.insert(key, JobType::Ordinary);
       ++m_inFlightCount;
       needLaunch = true;
     }
@@ -148,6 +155,37 @@ void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_buff
   }
 }
 
+bool BufferSaveQueue::enqueueReplacement(const QString &p_notebookId, const QString &p_bufferId,
+                                         const QString &p_resolvedPath,
+                                         const QByteArray &p_expectedFileSha256,
+                                         const QByteArray &p_content, quint64 p_revision,
+                                         const std::shared_ptr<std::atomic_bool> &p_cancelled) {
+  if (m_coreService.isBufferReadOnly(p_bufferId)) {
+    return false;
+  }
+  const QString key = compositeKey(p_notebookId, p_bufferId);
+  {
+    QMutexLocker locker(&m_mutex);
+    if (m_stopping || m_running.contains(key) || m_pending.contains(key)) {
+      return false;
+    }
+    SaveJob job;
+    job.type = JobType::Replacement;
+    job.notebookId = p_notebookId;
+    job.bufferId = p_bufferId;
+    job.rawContent = p_content;
+    job.resolvedPath = p_resolvedPath;
+    job.expectedFileSha256 = p_expectedFileSha256;
+    job.revision = p_revision;
+    job.cancelled = p_cancelled;
+    m_pending.insert(key, std::move(job));
+    m_running.insert(key, JobType::Replacement);
+    ++m_inFlightCount;
+  }
+  QThreadPool::globalInstance()->start([this, key]() { runWorker(key); });
+  return true;
+}
+
 void BufferSaveQueue::runWorker(const QString &p_key) {
   for (;;) {
     SaveJob job;
@@ -155,7 +193,7 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       QMutexLocker locker(&m_mutex);
       auto it = m_pending.find(p_key);
       if (it == m_pending.end()) {
-        m_running.insert(p_key, false);
+        m_running.remove(p_key);
         if (m_inFlightCount > 0) {
           --m_inFlightCount;
         }
@@ -164,24 +202,51 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
         }
         return;
       }
-      job = it.value();
+      job = std::move(it.value());
       m_pending.erase(it);
     }
 
     QString errMsg;
     bool ok = false;
+    bool contentChanged = false;
 
     try {
       // Acquire gate OUTSIDE m_mutex. Worker thread only.
       NotebookIoGate::ScopedLock lock(m_gate, job.notebookId);
 
-      const QByteArray bytes = encodeWith(job.encoding, job.content);
-      if (!m_coreService.setContentRaw(job.bufferId, bytes)) {
-        errMsg = QStringLiteral("setContentRaw failed");
-      } else if (!m_coreService.saveBuffer(job.bufferId)) {
-        errMsg = QStringLiteral("saveBuffer failed");
+      auto persist = [&](const QByteArray &p_bytes) {
+        if (!m_coreService.setContentRaw(job.bufferId, p_bytes)) {
+          errMsg = QStringLiteral("setContentRaw failed");
+          return;
+        }
+        contentChanged = true;
+        // Once memory has changed, cancellation must not abandon the save.
+        if (!m_coreService.saveBuffer(job.bufferId)) {
+          errMsg = QStringLiteral("saveBuffer failed");
+        } else {
+          ok = true;
+        }
+      };
+      if (job.type == JobType::Replacement) {
+        auto cancelled = [&]() { return job.cancelled && job.cancelled->load(); };
+        auto matchesDisk = [&]() {
+          QFile file(job.resolvedPath);
+          QCryptographicHash hash(QCryptographicHash::Sha256);
+          return file.open(QIODevice::ReadOnly) && hash.addData(&file) &&
+                 file.error() == QFileDevice::NoError && hash.result() == job.expectedFileSha256;
+        };
+        if (cancelled()) {
+          errMsg = QStringLiteral("Replacement cancelled.");
+        } else if (!matchesDisk()) {
+          errMsg = QStringLiteral("The note changed on disk. Search again before replacing.");
+        } else if (cancelled()) {
+          // Hashing can take time; cancellation must still prevent installation.
+          errMsg = QStringLiteral("Replacement cancelled.");
+        } else {
+          persist(job.rawContent);
+        }
       } else {
-        ok = true;
+        persist(encodeWith(job.encoding, job.content));
       }
     } catch (const std::exception &e) {
       errMsg = QStringLiteral("exception: ") + QString::fromUtf8(e.what());
@@ -189,6 +254,23 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       errMsg = QStringLiteral("unknown exception");
     }
 
+    if (job.type == JobType::Replacement) {
+      QMutexLocker locker(&m_mutex);
+      m_running.remove(p_key);
+      // Post before dropping worker accounting, so shutdown cannot destroy this
+      // object between releasing the key and posting its terminal notification.
+      QMetaObject::invokeMethod(
+          this,
+          [this, bufferId = job.bufferId, revision = job.revision, contentChanged, ok, errMsg]() {
+            emit replacementFinished(bufferId, revision, contentChanged, ok, errMsg);
+          },
+          Qt::QueuedConnection);
+      --m_inFlightCount;
+      if (m_inFlightCount == 0) {
+        m_drained.wakeAll();
+      }
+      return;
+    }
     emitFinishedQueued(job.bufferId, job.revision, ok, errMsg);
   }
 }
@@ -220,17 +302,16 @@ bool BufferSaveQueue::enqueueProtected(BufferCoreService &p_coreService,
   if (!p_lease || !p_lease->isCurrent()) {
     return false;
   }
-  {
-    QMutexLocker lock(&m_mutex);
-    if (m_stopping) {
-      return false;
-    }
-  }
-  // BufferService publishes this before any protected handle escapes.
-  prepareProtected();
   const QString bufferId = p_lease->bufferId();
   bool launch = false;
   {
+    QMutexLocker queueLock(&m_mutex);
+    if (m_stopping) {
+      return false;
+    }
+    // Publish the job before shutdown can stop acceptance and start draining.
+    // BufferService also prepares this before any protected handle escapes.
+    prepareProtected();
     QMutexLocker lock(&m_protectedQueue->mutex);
     ProtectedQueue::Job job;
     job.coreService = &p_coreService;
@@ -354,31 +435,20 @@ bool BufferSaveQueue::drainProtected(int p_timeoutMs) {
 bool BufferSaveQueue::isBusy(const QString &p_notebookId, const QString &p_bufferId) const {
   const QString key = compositeKey(p_notebookId, p_bufferId);
   QMutexLocker locker(&m_mutex);
-  return m_pending.contains(key) || m_running.value(key, false);
+  return m_pending.contains(key) || m_running.contains(key);
 }
 
 bool BufferSaveQueue::shutdown(int p_timeoutMs) {
-  if (!drainProtected(p_timeoutMs)) {
-    return false;
-  }
-  QMutexLocker locker(&m_mutex);
-  if (m_stopping && m_inFlightCount == 0) {
-    return true;
-  }
-  m_stopping = true;
-  // NOTE: do NOT clear m_pending here — workers already dispatched are counted
-  // as in-flight and must drain (run their pending job) so callers see the
-  // saveFinished signal. m_stopping blocks new enqueue() from adding more.
-
-  if (m_inFlightCount == 0) {
-    return true;
-  }
-
   QDeadlineTimer deadline(p_timeoutMs);
-  while (m_inFlightCount > 0) {
-    if (!m_drained.wait(&m_mutex, deadline)) {
-      return m_inFlightCount == 0;
+  {
+    QMutexLocker locker(&m_mutex);
+    m_stopping = true;
+    // Keep accepted jobs: each must report its actual persistence outcome.
+    while (m_inFlightCount > 0) {
+      if (!m_drained.wait(&m_mutex, deadline) && m_inFlightCount > 0) {
+        return false;
+      }
     }
   }
-  return true;
+  return drainProtected(static_cast<int>(deadline.remainingTime()));
 }

@@ -624,6 +624,9 @@ protected:
   int m_lastKnownRevision = 0;
 
 private slots:
+  void onContentReplacementStateChanged(const QString &p_bufferId, bool p_active,
+                                        bool p_contentChanged, bool p_saved);
+
   // Called when BufferService emits bufferAutoSaved for any buffer.
   // Clears dirty/modified state if the buffer ID matches ours.
   void onBufferAutoSaved(const QString &p_bufferId);
@@ -677,6 +680,9 @@ private:
   bool m_noteConversionFrozen = false;
   bool m_noteConversionWasEnabled = true;
   bool m_noteConversionCommentsEditable = false;
+  bool m_contentReplacementFrozen = false;
+  bool m_contentReplacementWasEnabled = true;
+  ViewPositionState m_contentReplacementPosition;
 
   Buffer2 m_buffer;
 

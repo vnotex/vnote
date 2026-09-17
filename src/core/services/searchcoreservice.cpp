@@ -1,5 +1,7 @@
 #include "searchcoreservice.h"
 
+#include <memory>
+
 #include <QDebug>
 
 #include <vxcore/vxcore.h>
@@ -39,6 +41,50 @@ void streamingBatchTrampoline(int p_batchIndex, int p_totalBatches, const char *
 
 SearchCoreService::SearchCoreService(VxCoreContextHandle p_context, QObject *p_parent)
     : QObject(p_parent), m_context(p_context) {}
+
+bool SearchCoreService::isReplacementSupported() const {
+  if (!m_context) {
+    return false;
+  }
+
+  char *json = nullptr;
+  const VxCoreError error = vxcore_context_get_config(m_context, &json);
+  const std::unique_ptr<char, decltype(&vxcore_string_free)> ownedJson(json, vxcore_string_free);
+  if (error != VXCORE_OK || !json) {
+    return false;
+  }
+
+  QJsonParseError parseError;
+  const QJsonDocument document = QJsonDocument::fromJson(QByteArray(json), &parseError);
+  if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+    return false;
+  }
+  const QJsonValue search = document.object().value(QStringLiteral("search"));
+  if (!search.isObject()) {
+    return false;
+  }
+  const QJsonValue backendsValue = search.toObject().value(QStringLiteral("backends"));
+  if (!backendsValue.isArray()) {
+    return false;
+  }
+  const QJsonArray backends = backendsValue.toArray();
+  for (const QJsonValue &backend : backends) {
+    if (!backend.isString()) {
+      return false;
+    }
+  }
+  for (const QJsonValue &backend : backends) {
+    const QString name = backend.toString();
+    if (name == QLatin1String("simple")) {
+      return true;
+    }
+    if (name == QLatin1String("rg")) {
+      return false;
+    }
+  }
+  // CreateSearchManager defaults to Simple when no configured entry is recognized.
+  return true;
+}
 
 Error SearchCoreService::searchFiles(const QString &p_notebookId, const QString &p_queryJson,
                                      const QString &p_inputFilesJson, QJsonArray *p_results) const {

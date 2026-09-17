@@ -92,6 +92,11 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
   // so we use asQObject() + SIGNAL/SLOT string-based connect.
   auto *bufferService = m_services.get<BufferService>();
   if (bufferService) {
+    connect(bufferService->asQObject(),
+            SIGNAL(contentReplacementStateChanged(QString, bool, bool, bool)), this,
+            SLOT(onContentReplacementStateChanged(QString, bool, bool, bool)));
+    if (bufferService->isContentReplacementActive(m_buffer.id()))
+      onContentReplacementStateChanged(m_buffer.id(), true, false, false);
     qRegisterMetaType<BufferState>("BufferState");
     connect(bufferService->asQObject(), SIGNAL(bufferAutoSaved(QString)), this,
             SLOT(onBufferAutoSaved(QString)));
@@ -120,6 +125,10 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
 }
 
 ViewWindow2::~ViewWindow2() {
+  if (m_contentReplacementFrozen) {
+    if (auto *buffers = m_services.get<BufferService>())
+      buffers->unregisterActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this));
+  }
   if (m_noteConversionFrozen) {
     if (auto *buffers = m_services.get<BufferService>()) {
       buffers->endNoteConversion(m_buffer.id(), true);
@@ -300,7 +309,7 @@ void ViewWindow2::setNoteConversionFrozen(bool p_frozen) {
 }
 
 bool ViewWindow2::aboutToClose(bool p_force) {
-  if (m_noteConversionFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return false;
   }
   // A fullscreen container would otherwise sit in front of the Save/Discard
@@ -785,6 +794,8 @@ ServiceLocator &ViewWindow2::getServices() const { return m_services; }
 // ============ Auto-Save Integration ============
 
 void ViewWindow2::onEditorContentsChanged() {
+  if (m_contentReplacementFrozen)
+    return;
   if (!m_buffer.isValid()) {
     return;
   }
@@ -800,6 +811,8 @@ void ViewWindow2::onEditorContentsChanged() {
 }
 
 bool ViewWindow2::save() {
+  if (m_contentReplacementFrozen)
+    return false;
   if (!m_buffer.isValid()) {
     return false;
   }
@@ -835,6 +848,8 @@ bool ViewWindow2::save() {
 }
 
 void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
+  if (m_contentReplacementFrozen)
+    return;
   if (!m_buffer.isValid()) {
     return;
   }
@@ -887,7 +902,7 @@ void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
 }
 
 void ViewWindow2::onFocusGained() {
-  if (m_noteConversionFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return;
   }
   if (!m_buffer.isValid()) {
@@ -916,7 +931,7 @@ void ViewWindow2::onFocusGained() {
 }
 
 void ViewWindow2::onFocusLost() {
-  if (m_noteConversionFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return;
   }
   if (!m_buffer.isValid()) {
@@ -936,8 +951,38 @@ void ViewWindow2::onFocusLost() {
   }
 }
 
+void ViewWindow2::onContentReplacementStateChanged(const QString &p_bufferId, bool p_active,
+                                                   bool p_contentChanged, bool p_saved) {
+  if (p_bufferId != m_buffer.id())
+    return;
+  if (p_active) {
+    if (m_contentReplacementFrozen)
+      return;
+    m_contentReplacementFrozen = true;
+    m_contentReplacementWasEnabled = isEnabled();
+    m_contentReplacementPosition = capturePositionState();
+    setContentFullScreen(false);
+    setEnabled(false);
+    return;
+  }
+  if (!m_contentReplacementFrozen)
+    return;
+  if (p_contentChanged) {
+    m_editorDirty = false;
+    m_externalChangeDismissed = false;
+    syncEditorFromBufferPreservingPosition(m_contentReplacementPosition);
+    setModified(!p_saved);
+  }
+  // An earlier queued save may have advanced this even on a pre-write failure.
+  // Its old snapshot must not reload over the still-preserved dirty editor.
+  m_lastKnownRevision = m_buffer.getRevision();
+  setEnabled(m_contentReplacementWasEnabled);
+  m_contentReplacementFrozen = false;
+  emit statusChanged();
+}
+
 void ViewWindow2::onBufferAutoSaved(const QString &p_bufferId) {
-  if (m_noteConversionFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return;
   }
   if (p_bufferId != m_buffer.id()) {
@@ -950,6 +995,8 @@ void ViewWindow2::onBufferAutoSaved(const QString &p_bufferId) {
 }
 
 void ViewWindow2::onBufferModifiedChanged(const QString &p_bufferId) {
+  if (m_contentReplacementFrozen)
+    return;
   if (p_bufferId != m_buffer.id()) {
     return;
   }
@@ -968,6 +1015,8 @@ void ViewWindow2::setAutoReload(bool p_enabled) { m_autoReload = p_enabled; }
 bool ViewWindow2::autoReload() const { return m_autoReload; }
 
 bool ViewWindow2::reload() {
+  if (m_contentReplacementFrozen)
+    return false;
   // Defensive guard for unbound/untitled buffers.
   if (m_buffer.resolvedPath().isEmpty()) {
     return false;
@@ -1036,7 +1085,7 @@ bool ViewWindow2::reload() {
 }
 
 void ViewWindow2::onBufferExternallyChanged(const QString &p_bufferId, BufferState p_state) {
-  if (m_noteConversionFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return;
   }
   if (p_bufferId != m_buffer.id()) {
@@ -1608,6 +1657,8 @@ void ViewWindow2::updateEditReadDiscardActionState() {
 }
 
 void ViewWindow2::discardChangesAndRead() {
+  if (m_contentReplacementFrozen)
+    return;
   // Sync editor content to buffer first so isModified() is accurate.
   auto *bufferService = m_services.get<BufferService>();
   if (bufferService && m_editorDirty && m_buffer.isValid()) {

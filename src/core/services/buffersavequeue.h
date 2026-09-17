@@ -8,6 +8,7 @@
 #include <QQueue>
 #include <QString>
 #include <QWaitCondition>
+#include <atomic>
 #include <functional>
 #include <memory>
 
@@ -41,7 +42,7 @@ class BufferService;
 //   (notebookId, bufferId) composite key, only the newest snapshot is kept.
 //   Each superseded job still emits saveFinished(..., ok=true, errorMsg="")
 //   so any waiters resolve cleanly. The currently in-flight job is never
-//   coalesced.
+//   coalesced. Exact replacements never coalesce or emit saveFinished.
 class BufferSaveQueue : public QObject {
   Q_OBJECT
 
@@ -57,6 +58,15 @@ public:
   void enqueue(const QString &p_notebookId, const QString &p_bufferId, const QString &p_content,
                quint64 p_revision, const QString &p_encoding = QString());
 
+  // Accept only an idle, writable key. The raw payload is installed and saved
+  // only if the backing file still has the expected SHA-256 digest. Cancellation
+  // is honored until installation starts; completion reports the actual write.
+  // Ordinary enqueues for this key are refused until the exact job exits.
+  bool enqueueReplacement(const QString &p_notebookId, const QString &p_bufferId,
+                          const QString &p_resolvedPath, const QByteArray &p_expectedFileSha256,
+                          const QByteArray &p_content, quint64 p_revision,
+                          const std::shared_ptr<std::atomic_bool> &p_cancelled);
+
   // Separate protected FIFO: no lease, generation, or backup flag is added
   // to ordinary SaveJob. Every accepted revision reports its actual result.
   bool enqueueProtected(BufferCoreService &p_coreService, const QString &p_notebookId,
@@ -68,7 +78,8 @@ public:
   bool drainProtected(int p_timeoutMs);
 
   // Stop accepting new jobs and wait up to @p_timeoutMs for in-flight workers
-  // to drain. Returns true if drained; false on timeout.
+  // to drain, including exact/protected jobs. A negative timeout waits forever.
+  // Returns true if drained; false on timeout (the queue remains stopped).
   bool shutdown(int p_timeoutMs = 5000);
 
   // True if a save for @p_notebookId/@p_bufferId is pending (coalesced, not yet
@@ -86,6 +97,11 @@ signals:
   void saveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                     const QString &p_errorMsg);
 
+  // Exact completion is queued after the key is idle and the IO gate released.
+  // contentChanged stays true if installation succeeded but saving failed.
+  void replacementFinished(const QString &p_bufferId, quint64 p_revision, bool p_contentChanged,
+                           bool p_ok, const QString &p_errorMsg);
+
   // Emitted when enqueue() refuses to dispatch a save because the buffer is
   // read-only (T16). The disk file is NEVER touched in
   // this case — the guard fires BEFORE any mutex acquisition, queue
@@ -97,12 +113,18 @@ signals:
 private:
   friend class BufferService;
   void prepareProtected();
+  enum class JobType { Ordinary, Replacement };
   struct SaveJob {
+    JobType type = JobType::Ordinary;
     QString notebookId;
     QString bufferId;
     QString content;
     quint64 revision = 0;
     QString encoding;
+    QByteArray rawContent;
+    QString resolvedPath;
+    QByteArray expectedFileSha256;
+    std::shared_ptr<std::atomic_bool> cancelled;
   };
 
   // Composite key "notebookId::bufferId" — pin buffer-level serialisation
@@ -129,8 +151,8 @@ private:
 
   // Per composite-key pending job (coalesced — newest wins).
   QHash<QString, SaveJob> m_pending;
-  // Per composite-key in-flight flag (worker dispatched).
-  QHash<QString, bool> m_running;
+  // Dispatched worker ownership; exact jobs exclude every later enqueue.
+  QHash<QString, JobType> m_running;
 
   int m_inFlightCount = 0;
   bool m_stopping = false;

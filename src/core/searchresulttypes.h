@@ -9,7 +9,8 @@ class QJsonObject;
 
 namespace vnotex {
 
-// A single matched column range within a line.
+// A single matched column range within a line. Simple-backed replacement addresses use
+// 0-based UTF-16 columns with an end-exclusive endpoint.
 struct SearchMatchSegment {
   int m_columnStart = 0;
   int m_columnEnd = 0;
@@ -20,7 +21,8 @@ struct SearchMatchSegment {
 // SearchLineMatch carrying one segment per occurrence, so a line with N matches
 // renders as one row with N highlighted ranges (not N duplicated rows).
 struct SearchLineMatch {
-  int m_lineNumber = -1; // 0-based line number
+  int m_lineNumber = -1; // 1-based line number
+  // Simple search snapshots omit LF and a trailing CR; neither is part of a match range.
   QString m_lineText;
   QVector<SearchMatchSegment> m_segments;
 };
@@ -42,6 +44,10 @@ struct SearchFileResult {
 
   // Line-level matches (content search only; empty for file search).
   QVector<SearchLineMatch> m_lineMatches;
+
+  // Qt-side provenance, set only on successful completed Simple-backed content searches.
+  // JSON parsing, streaming previews, and file/tag results never grant this capability.
+  bool m_replacementSupported = false;
 };
 
 // Aggregate search result container.

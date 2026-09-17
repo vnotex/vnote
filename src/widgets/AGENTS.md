@@ -93,6 +93,25 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
 
+#### Search replacement projection
+
+SearchPanel2 owns confirmation/progress/error dialogs; SearchController owns completed-result
+eligibility, immutable selected/all targets, sequential replacement, cancellation and refresh.
+LocationList2 emits value selections from `selectedRows(0)`; empty selection never means All.
+Content keywords preserve whitespace, and replacement text is literal (empty text deletes).
+Confirmation discloses saving existing unsaved edits and no cross-file Undo guarantee.
+
+ViewWindow2 uses `m_contentReplacementFrozen`, separate from encryption conversion. Freeze
+focus sync/close/external prompts without changing permanent read-only state. On changed content,
+refresh each split's editor and Markdown preview before BufferService restores the active writer;
+failed writes display the transformed text as unsaved rather than restoring stale editor text.
+
+The replacement progress dialog stays application-modal until terminal completion, including
+Cancel/Escape/window close while a write is pending. Disconnect QProgressDialog's built-in
+`canceled()` -> `cancel()` connection with matching SIGNAL/SLOT syntax: the typed disconnect does
+not remove Qt's legacy connection, and would hide the dialog before the write settles. Preserve
+the replacement outcome while the captured original search refreshes.
+
 #### Right-hand toolbar slots
 
 `addRightCommonToolBarActions()` builds the right group in a fixed order, with

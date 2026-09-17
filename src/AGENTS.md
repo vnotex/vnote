@@ -253,8 +253,9 @@ Known name-resolved queued sites:
 | `Q_ARG(ImageHostWorkItem, ...)` (`src/core/services/imagehostservice.cpp`) | `"ImageHostWorkItem"` |
 | `ImageHostWorker::uploadCompleted`, `::removeCompleted` (`src/core/services/imagehostworker.h`) | `"ImageHostAsyncResult"` |
 
-Coverage: `testQueuedMetatypeNamesAreRegistered` in `tests/core/test_searchservice.cpp` and
-`tests/core/test_imagehostservice.cpp`.
+Coverage: real queued search delivery in `testSimpleSearchUnicodeReplacement` and
+`testSearchContentStreamingBatchUnion` (`tests/core/test_searchservice.cpp`), plus
+`testQueuedMetatypeNamesAreRegistered` in `tests/core/test_imagehostservice.cpp`.
 
 **This is NOT a blanket requirement for every `Q_DECLARE_METATYPE(vnotex::X)`.** The required
 runtime name is whatever moc recorded or `Q_ARG` stringified: `UpdateService::checkFinished`

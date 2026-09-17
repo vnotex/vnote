@@ -43,7 +43,14 @@ public:
   int totalMatchCount() const;
   bool isTruncated() const;
 
+  // Snapshot only explicitly selected content rows; an empty selection stays empty.
+  QVector<SearchFileResult> replacementTargets(const QModelIndexList &p_indexes) const;
+  QVector<SearchFileResult> allReplacementTargets() const;
+
 private:
+  QVector<SearchFileResult> collectReplacementTargets(const QModelIndexList &p_indexes,
+                                                      bool p_all) const;
+
   SearchResult m_result;
 };
 

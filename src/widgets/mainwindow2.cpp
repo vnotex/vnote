@@ -1009,6 +1009,8 @@ void MainWindow2::setupDocks() {
   // Wire LocationList2 result activation to SearchController.
   connect(m_locationList, &LocationList2::resultActivated, m_searchPanel->getController(),
           &SearchController::activateResult);
+  connect(m_locationList, &LocationList2::selectedResultsChanged, m_searchPanel->getController(),
+          &SearchController::setSelectedResults);
 
   // Auto-show the Location List dock when a search starts.
   connect(m_searchPanel->getController(), &SearchController::searchStarted, this,

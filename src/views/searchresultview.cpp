@@ -15,7 +15,7 @@ SearchResultView::~SearchResultView() {}
 void SearchResultView::setupView() {
   setHeaderHidden(true);
   setAlternatingRowColors(false);
-  setSelectionMode(QAbstractItemView::SingleSelection);
+  setSelectionMode(QAbstractItemView::ExtendedSelection);
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setRootIsDecorated(true);
   setUniformRowHeights(true);

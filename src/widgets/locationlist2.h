@@ -2,11 +2,11 @@
 #define LOCATIONLIST2_H
 
 #include <QFrame>
+#include <QModelIndex>
 
 #include <core/noncopyable.h>
 
 class QLabel;
-class QModelIndex;
 class QPoint;
 class QStackedWidget;
 
@@ -30,6 +30,7 @@ public:
 
 signals:
   void resultActivated(const QModelIndex &p_index);
+  void selectedResultsChanged(const QModelIndexList &p_indexes);
   void contextMenuRequested(const QModelIndex &p_index, const QPoint &p_globalPos);
 
 private:

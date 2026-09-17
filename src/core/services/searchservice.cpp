@@ -1,6 +1,7 @@
 #include "searchservice.h"
 
 #include <algorithm>
+#include <limits>
 #include <mutex>
 
 #include <QDebug>
@@ -13,6 +14,7 @@
 #include <QMetaType>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QStringView>
 #include <QThread>
 #include <QVector>
 
@@ -126,8 +128,10 @@ public slots:
     };
 
     Error error;
+    bool replacementSupportedAtStart = false;
     {
       QMutexLocker locker(m_mutex);
+      replacementSupportedAtStart = m_coreService->isReplacementSupported();
       error = m_coreService->searchContentStreaming(p_notebookId, p_queryJson, p_inputFilesJson, 0,
                                                     p_cancelFlag, onBatch);
     }
@@ -171,6 +175,15 @@ public slots:
     }
 
     SearchResult result = SearchResult::fromContentSearchJson(finalObj, p_notebookId);
+    {
+      QMutexLocker locker(m_mutex);
+      const bool replacementSupportedAtFinish = m_coreService->isReplacementSupported();
+      if (replacementSupportedAtStart && replacementSupportedAtFinish) {
+        for (SearchFileResult &file : result.m_fileResults) {
+          file.m_replacementSupported = true;
+        }
+      }
+    }
 
     qDebug() << "SearchWorker::doSearchContent: [worker thread streaming] completed, matchCount:"
              << result.m_matchCount << "truncated:" << result.m_truncated
@@ -477,5 +490,181 @@ void SearchService::cancel() {
 bool SearchService::isSearching() const { return !m_activeTokens.isEmpty(); }
 
 bool SearchService::isSearching(int p_token) const { return m_activeTokens.contains(p_token); }
+
+bool SearchService::isReplacementSupported() const {
+  return m_coreService && m_coreService->isReplacementSupported();
+}
+
+bool SearchService::buildReplacement(const QString &p_source,
+                                     const QVector<SearchLineMatch> &p_matches,
+                                     const QString &p_replacement, QString *p_outText,
+                                     int *p_outCount, QString *p_outError) {
+  // Keep implicit-shared snapshots before initializing outputs, including in-place callers.
+  const QString source = p_source;
+  const QString replacement = p_replacement;
+  if (p_outText) {
+    p_outText->clear();
+  }
+  if (p_outCount) {
+    *p_outCount = 0;
+  }
+  if (p_outError) {
+    p_outError->clear();
+  }
+  const auto invalidRange = [p_outError]() {
+    if (p_outError) {
+      *p_outError = tr("The search result contains an invalid match range.");
+    }
+    return false;
+  };
+  const auto staleLine = [p_outError]() {
+    *p_outError = tr("Search results are out of date. Save affected notes and search again.");
+    return false;
+  };
+  if (!p_outText || !p_outCount || !p_outError || p_outText == p_outError) {
+    return invalidRange();
+  }
+  if (p_matches.isEmpty()) {
+    *p_outText = source;
+    return true;
+  }
+
+  using StringSize = decltype(source.size());
+  struct Range {
+    StringSize m_start;
+    StringSize m_end;
+    bool m_changed = false;
+  };
+  QVector<const SearchLineMatch *> lines;
+  lines.reserve(p_matches.size());
+  qint64 rangeCount = 0;
+  for (const SearchLineMatch &line : p_matches) {
+    if (line.m_lineNumber <= 0 ||
+        line.m_segments.size() > (std::numeric_limits<int>::max)() - rangeCount) {
+      return invalidRange();
+    }
+    rangeCount += line.m_segments.size();
+    lines.append(&line);
+  }
+  std::sort(lines.begin(), lines.end(),
+            [](const SearchLineMatch *p_left, const SearchLineMatch *p_right) {
+              return p_left->m_lineNumber < p_right->m_lineNumber;
+            });
+
+  QVector<Range> ranges;
+  ranges.reserve(static_cast<int>(rangeCount));
+  const QStringView sourceView(source);
+  StringSize lineStart = 0;
+  StringSize lineEnd = 0;
+  int lineNumber = 1;
+  const SearchLineMatch *previousLine = nullptr;
+  for (const SearchLineMatch *line : lines) {
+    if (previousLine && previousLine->m_lineNumber == line->m_lineNumber) {
+      if (previousLine->m_lineText != line->m_lineText) {
+        return staleLine();
+      }
+    } else {
+      while (lineNumber < line->m_lineNumber) {
+        const StringSize newline = source.indexOf(QLatin1Char('\n'), lineStart);
+        if (newline < 0) {
+          return staleLine();
+        }
+        lineStart = newline + 1;
+        ++lineNumber;
+      }
+      lineEnd = source.indexOf(QLatin1Char('\n'), lineStart);
+      if (lineEnd < 0) {
+        lineEnd = source.size();
+      }
+      if (lineEnd > lineStart && source.at(lineEnd - 1) == QLatin1Char('\r')) {
+        --lineEnd;
+      }
+      if (sourceView.mid(lineStart, lineEnd - lineStart) != QStringView(line->m_lineText)) {
+        return staleLine();
+      }
+    }
+    previousLine = line;
+
+    const auto splitsSurrogate = [&](StringSize p_column) {
+      const StringSize offset = lineStart + p_column;
+      return offset > lineStart && offset < lineEnd && source.at(offset - 1).isHighSurrogate() &&
+             source.at(offset).isLowSurrogate();
+    };
+    for (const SearchMatchSegment &segment : line->m_segments) {
+      if (segment.m_columnStart < 0 || segment.m_columnEnd < segment.m_columnStart ||
+          segment.m_columnEnd > lineEnd - lineStart || splitsSurrogate(segment.m_columnStart) ||
+          splitsSurrogate(segment.m_columnEnd)) {
+        return invalidRange();
+      }
+      ranges.append({lineStart + segment.m_columnStart, lineStart + segment.m_columnEnd, false});
+    }
+  }
+
+  std::sort(ranges.begin(), ranges.end(), [](const Range &p_left, const Range &p_right) {
+    return p_left.m_start < p_right.m_start ||
+           (p_left.m_start == p_right.m_start && p_left.m_end < p_right.m_end);
+  });
+  ranges.erase(std::unique(ranges.begin(), ranges.end(),
+                           [](const Range &p_left, const Range &p_right) {
+                             return p_left.m_start == p_right.m_start &&
+                                    p_left.m_end == p_right.m_end;
+                           }),
+               ranges.end());
+
+  // Check the sum in forward output order, bounded by both QString's signed size type and
+  // its UTF-16 byte storage. No subtraction or multiplication can wrap before allocation.
+  const qint64 maxOutputSize =
+      qMin<qint64>((std::numeric_limits<StringSize>::max)() - 1,
+                   (std::numeric_limits<qptrdiff>::max)() / sizeof(QChar) - 1);
+  qint64 outputSize = 0;
+  const auto addOutputSize = [&](qint64 p_size) {
+    if (p_size > maxOutputSize - outputSize) {
+      return false;
+    }
+    outputSize += p_size;
+    return true;
+  };
+  const QStringView replacementView(replacement);
+  StringSize cursor = 0;
+  int changedCount = 0;
+  for (Range &range : ranges) {
+    // Identical ranges are already deduplicated. An insertion at a range boundary is valid,
+    // but an insertion strictly inside another range overlaps and must also be rejected.
+    if (range.m_start < cursor) {
+      return invalidRange();
+    }
+    if (!addOutputSize(range.m_start - cursor) || !addOutputSize(replacement.size())) {
+      return invalidRange();
+    }
+    range.m_changed = sourceView.mid(range.m_start, range.m_end - range.m_start) != replacementView;
+    if (range.m_changed) {
+      ++changedCount;
+    }
+    cursor = range.m_end;
+  }
+  if (!addOutputSize(source.size() - cursor)) {
+    return invalidRange();
+  }
+  if (changedCount == 0) {
+    *p_outText = source;
+    return true;
+  }
+
+  QString output;
+  output.reserve(static_cast<StringSize>(outputSize));
+  cursor = 0;
+  for (const Range &range : ranges) {
+    if (!range.m_changed) {
+      continue;
+    }
+    output.append(source.constData() + cursor, range.m_start - cursor);
+    output.append(replacement);
+    cursor = range.m_end;
+  }
+  output.append(source.constData() + cursor, source.size() - cursor);
+  *p_outText = std::move(output);
+  *p_outCount = changedCount;
+  return true;
+}
 
 #include "searchservice.moc"

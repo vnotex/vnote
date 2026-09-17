@@ -1,6 +1,8 @@
 // test_searchservice.cpp - Tests for vnotex::SearchService
 #include <QtTest>
 
+#include <memory>
+
 #include <QJsonObject>
 
 #include <core/searchresulttypes.h>
@@ -23,9 +25,7 @@ static QString canonicalizeContentResult(const SearchResult &p_result) {
              .arg(p_result.m_matchCount)
              .arg(p_result.m_truncated ? 1 : 0);
   for (const SearchFileResult &fr : p_result.m_fileResults) {
-    out += QStringLiteral("[path=%1;id=%2;fmc=%3;")
-               .arg(fr.m_path, fr.m_id)
-               .arg(fr.m_matchCount);
+    out += QStringLiteral("[path=%1;id=%2;fmc=%3;").arg(fr.m_path, fr.m_id).arg(fr.m_matchCount);
     for (const SearchLineMatch &lm : fr.m_lineMatches) {
       out += QStringLiteral("(ln=%1;txt=%2;").arg(lm.m_lineNumber).arg(lm.m_lineText);
       for (const SearchMatchSegment &seg : lm.m_segments) {
@@ -66,8 +66,17 @@ private slots:
   // Test searchFiles with files
   void testSearchFilesWithFiles();
 
-  // Test searchContent with content
-  void testSearchContentWithContent();
+  void testSimpleSearchUnicodeReplacement();
+  void testReplacementCapabilityUsesBackendOrder();
+  void testReplacementPreservesSourceSlices();
+  void testReplacementLiteralAndDeletion();
+  void testReplacementNoOps();
+  void testReplacementZeroLengthAndBoundaries();
+  void testReplacementInvalidRanges_data();
+  void testReplacementInvalidRanges();
+  void testReplacementRejectsStaleSnapshots();
+  void testReplacementRejectsOverlaps();
+  void testReplacementOutputPointers();
 
   // Test searchByTags with tags
   void testSearchByTagsWithTags();
@@ -114,10 +123,6 @@ private slots:
   // streaming path, matching the blob baseline (absent key != uncapped).
   void testStreamingFinishedMatchesBlobBaselineDefaultCap();
 
-  // Test that the UNQUALIFIED metatype names Qt 5 resolves queued-connection arguments by are
-  // registered by the SearchService constructor.
-  void testQueuedMetatypeNamesAreRegistered();
-
 private:
   VxCoreContextHandle m_context = nullptr;
   TempDirFixture m_tempDir;
@@ -133,6 +138,8 @@ void TestSearchService::initTestCase() {
   VxCoreError err = vxcore_context_create(nullptr, &m_context);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
+  QCOMPARE(vxcore_context_update_config(m_context, "{\"search\":{\"backends\":[\"simple\"]}}"),
+           VXCORE_OK);
 
   // Create a test notebook
   QString notebookPath = m_tempDir.filePath("test_notebook");
@@ -156,6 +163,7 @@ void TestSearchService::cleanupTestCase() {
 
 void TestSearchService::testNullContext() {
   SearchCoreService service(nullptr);
+  QVERIFY(!service.isReplacementSupported());
   QJsonArray results;
 
   Error err = service.searchFiles(m_notebookId, "{}", QString(), &results);
@@ -222,15 +230,326 @@ void TestSearchService::testSearchFilesWithFiles() {
   QVERIFY(result.contains("id"));
 }
 
-void TestSearchService::testSearchContentWithContent() {
-  SearchCoreService service(m_context);
-  QJsonArray results;
+void TestSearchService::testSimpleSearchUnicodeReplacement() {
+  const QString source = QStringLiteral("\u4f60\u597d \U0001f600 foo foo\r\n");
+  char *fileId = nullptr;
+  QCOMPARE(
+      vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "", "unicode.md", &fileId),
+      VXCORE_OK);
+  vxcore_string_free(fileId);
 
-  // Search for content (may be empty if no indexing)
-  Error err = service.searchContent(m_notebookId, "{\"pattern\":\"test\"}", QString(), &results);
+  char *bufferId = nullptr;
+  QCOMPARE(
+      vxcore_buffer_open(m_context, m_notebookId.toUtf8().constData(), "unicode.md", &bufferId),
+      VXCORE_OK);
+  const QByteArray bytes = source.toUtf8();
+  QCOMPARE(vxcore_buffer_set_content_raw(m_context, bufferId, bytes.constData(),
+                                         static_cast<size_t>(bytes.size())),
+           VXCORE_OK);
+  QCOMPARE(vxcore_buffer_save(m_context, bufferId), VXCORE_OK);
+  QCOMPARE(vxcore_buffer_close(m_context, bufferId), VXCORE_OK);
+  vxcore_string_free(bufferId);
 
-  // searchContent may or may not find results; just verify the call doesn't crash
-  QVERIFY2(err.isOk(), qPrintable(QString("searchContent failed: %1").arg(err.message())));
+  SearchCoreService coreService(m_context);
+  SearchService service(&coreService);
+  QVERIFY(service.isReplacementSupported());
+  QSignalSpy batchSpy(&service, &SearchService::searchBatch);
+  QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
+  QSignalSpy failedSpy(&service, &SearchService::searchFailed);
+  const QString query =
+      QStringLiteral("{\"pattern\":\"foo\",\"caseSensitive\":true,\"maxResults\":0}");
+  const QString input = QStringLiteral("{\"files\":[\"unicode.md\"]}");
+  const int token = service.searchContent(m_notebookId, query, input);
+  QTRY_VERIFY_WITH_TIMEOUT(!finishedSpy.isEmpty() || !failedSpy.isEmpty(), 10000);
+  QVERIFY(failedSpy.isEmpty());
+  QCOMPARE(finishedSpy.size(), 1);
+  QCOMPARE(finishedSpy.first().at(0).toInt(), token);
+  const SearchResult result = finishedSpy.first().at(1).value<SearchResult>();
+  QCOMPARE(result.m_fileResults.size(), 1);
+  const SearchFileResult &target = result.m_fileResults.first();
+  QVERIFY(target.m_replacementSupported);
+  QString output;
+  QString error;
+  int count = -1;
+  QVERIFY(SearchService::buildReplacement(source, target.m_lineMatches, QStringLiteral("bar"),
+                                          &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("\u4f60\u597d \U0001f600 bar bar\r\n"));
+  QCOMPARE(count, 2);
+  QVERIFY(error.isEmpty());
+
+  QCOMPARE(batchSpy.size(), 1);
+  const SearchResult preview = batchSpy.first().at(1).value<SearchResult>();
+  QCOMPARE(preview.m_fileResults.size(), 1);
+  QVERIFY(!preview.m_fileResults.first().m_replacementSupported);
+
+  QJsonObject json;
+  QVERIFY(coreService.searchContentCancellable(m_notebookId, query, input, nullptr, &json).isOk());
+  const SearchResult parsed = SearchResult::fromContentSearchJson(json, m_notebookId);
+  QCOMPARE(parsed.m_fileResults.size(), 1);
+  QVERIFY(!parsed.m_fileResults.first().m_replacementSupported);
+}
+
+void TestSearchService::testReplacementCapabilityUsesBackendOrder() {
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  const std::unique_ptr<VxCoreContext, decltype(&vxcore_context_destroy)> ownedContext(
+      context, vxcore_context_destroy);
+  SearchCoreService coreService(context);
+  SearchService service(&coreService);
+  const struct {
+    const char *m_config;
+    bool m_supported;
+  } cases[] = {
+      {"{\"search\":{\"backends\":[\"simple\",\"rg\"]}}", true},
+      {"{\"search\":{\"backends\":[\"rg\",\"simple\"]}}", false},
+      {"{\"search\":{\"backends\":[\"unknown\",\"simple\",\"rg\"]}}", true},
+      {"{\"search\":{\"backends\":[\"unknown\",\"rg\",\"simple\"]}}", false},
+      {"{\"search\":{\"backends\":[]}}", true},
+      {"{\"search\":{\"backends\":[\"unknown\"]}}", true},
+  };
+  // Configuration inspection only: no search is dispatched and rg is never executed.
+  for (const auto &entry : cases) {
+    QCOMPARE(vxcore_context_update_config(context, entry.m_config), VXCORE_OK);
+    QCOMPARE(coreService.isReplacementSupported(), entry.m_supported);
+    QCOMPARE(service.isReplacementSupported(), entry.m_supported);
+  }
+}
+
+void TestSearchService::testReplacementPreservesSourceSlices() {
+  const QString source = QStringLiteral("foo foo\r\nkeep\r\nfoo");
+  const SearchLineMatch first{1, QStringLiteral("foo foo"), {{4, 7}, {0, 3}}};
+  const SearchLineMatch last{3, QStringLiteral("foo"), {{0, 3}}};
+  // Both line order and segment order may vary; duplicate lines/ranges apply only once.
+  const QVector<SearchLineMatch> matches{last, first, first};
+  QString output;
+  QString error;
+  int count = -1;
+  QVERIFY(SearchService::buildReplacement(source, matches, QStringLiteral("bar"), &output, &count,
+                                          &error));
+  QCOMPARE(output, QStringLiteral("bar bar\r\nkeep\r\nbar"));
+  QCOMPARE(count, 3);
+  QVERIFY(error.isEmpty());
+
+  const QVector<SearchLineMatch> onlyLast{last};
+  QVERIFY(SearchService::buildReplacement(QStringLiteral("foo foo\r\ndraft\r\nfoo"), onlyLast,
+                                          QStringLiteral("bar"), &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("foo foo\r\ndraft\r\nbar"));
+  QCOMPARE(count, 1);
+  QVERIFY(error.isEmpty());
+
+  const QVector<SearchLineMatch> trailingCr{{1, QStringLiteral("foo"), {{0, 3}}}};
+  QVERIFY(SearchService::buildReplacement(QStringLiteral("foo\r"), trailingCr,
+                                          QStringLiteral("bar"), &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("bar\r"));
+  QCOMPARE(count, 1);
+}
+
+void TestSearchService::testReplacementLiteralAndDeletion() {
+  const QString source = QStringLiteral(" foo foo \r\n foo ");
+  const QVector<SearchLineMatch> matches{{1, QStringLiteral(" foo foo "), {{1, 4}}},
+                                         {2, QStringLiteral(" foo "), {{1, 4}}}};
+  QString output;
+  QString error;
+  int count = -1;
+  QVERIFY(SearchService::buildReplacement(source, matches, QString(), &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("  foo \r\n  "));
+  QCOMPARE(count, 2);
+  QVERIFY(error.isEmpty());
+
+  // Inserted text contains both capture-like escapes and the original search text. None of it
+  // is expanded or scanned again; leading/trailing replacement whitespace is also literal.
+  QVERIFY(SearchService::buildReplacement(source, matches, QStringLiteral(" $1\\1 foo "), &output,
+                                          &count, &error));
+  QCOMPARE(output, QStringLiteral("  $1\\1 foo  foo \r\n  $1\\1 foo  "));
+  QCOMPARE(count, 2);
+  QVERIFY(error.isEmpty());
+}
+
+void TestSearchService::testReplacementNoOps() {
+  const QString source = QStringLiteral("foo bar\r\n");
+  QString output = QStringLiteral("old output");
+  QString error = QStringLiteral("old error");
+  int count = -1;
+  QVERIFY(
+      SearchService::buildReplacement(source, {}, QStringLiteral("bar"), &output, &count, &error));
+  QCOMPARE(output, source);
+  QCOMPARE(count, 0);
+  QVERIFY(error.isEmpty());
+
+  const QVector<SearchLineMatch> same{{1, QStringLiteral("foo bar"), {{0, 3}}}};
+  QVERIFY(SearchService::buildReplacement(source, same, QStringLiteral("foo"), &output, &count,
+                                          &error));
+  QCOMPARE(output, source);
+  QCOMPARE(count, 0);
+  QVERIFY(error.isEmpty());
+
+  const QVector<SearchLineMatch> mixed{{1, QStringLiteral("foo bar"), {{0, 3}, {4, 7}}}};
+  QVERIFY(SearchService::buildReplacement(source, mixed, QStringLiteral("foo"), &output, &count,
+                                          &error));
+  QCOMPARE(output, QStringLiteral("foo foo\r\n"));
+  QCOMPARE(count, 1);
+
+  const QVector<SearchLineMatch> insertion{{1, QStringLiteral("foo bar"), {{3, 3}}}};
+  QVERIFY(SearchService::buildReplacement(source, insertion, QString(), &output, &count, &error));
+  QCOMPARE(output, source);
+  QCOMPARE(count, 0);
+}
+
+void TestSearchService::testReplacementZeroLengthAndBoundaries() {
+  QString output;
+  QString error;
+  int count = -1;
+  const SearchLineMatch insertion{1, QStringLiteral("ab"), {{1, 1}, {1, 1}}};
+  QVERIFY(SearchService::buildReplacement(QStringLiteral("ab\r\n"), {insertion, insertion},
+                                          QStringLiteral("x"), &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("axb\r\n"));
+  QCOMPARE(count, 1);
+
+  const QVector<SearchLineMatch> boundaries{{1, QStringLiteral("ab"), {{2, 2}, {0, 2}, {0, 0}}}};
+  QVERIFY(SearchService::buildReplacement(QStringLiteral("ab"), boundaries, QStringLiteral("x"),
+                                          &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("xxx"));
+  QCOMPARE(count, 3);
+
+  const QVector<SearchLineMatch> emptyLine{{1, QString(), {{0, 0}}}};
+  QVERIFY(SearchService::buildReplacement(QString(), emptyLine, QStringLiteral("x"), &output,
+                                          &count, &error));
+  QCOMPARE(output, QStringLiteral("x"));
+  QCOMPARE(count, 1);
+
+  const QVector<SearchLineMatch> finalLine{{2, QString(), {{0, 0}}}};
+  QVERIFY(SearchService::buildReplacement(QStringLiteral("a\n"), finalLine, QStringLiteral("x"),
+                                          &output, &count, &error));
+  QCOMPARE(output, QStringLiteral("a\nx"));
+  QCOMPARE(count, 1);
+
+  const QString unicode = QStringLiteral("a\U0001f600b");
+  const QVector<SearchLineMatch> wholeSurrogate{{1, unicode, {{1, 3}}}};
+  QVERIFY(SearchService::buildReplacement(unicode, wholeSurrogate, QStringLiteral("x"), &output,
+                                          &count, &error));
+  QCOMPARE(output, QStringLiteral("axb"));
+  QCOMPARE(count, 1);
+  QVERIFY(error.isEmpty());
+}
+
+void TestSearchService::testReplacementInvalidRanges_data() {
+  QTest::addColumn<int>("lineNumber");
+  QTest::addColumn<int>("start");
+  QTest::addColumn<int>("end");
+  QTest::newRow("negative-column") << 1 << -1 << 1;
+  QTest::newRow("reversed-range") << 1 << 3 << 2;
+  QTest::newRow("past-line-end") << 1 << 0 << 5;
+  QTest::newRow("surrogate-start") << 1 << 2 << 3;
+  QTest::newRow("surrogate-end") << 1 << 1 << 2;
+  QTest::newRow("surrogate-insertion") << 1 << 2 << 2;
+  QTest::newRow("zero-line-number") << 0 << 0 << 1;
+  QTest::newRow("negative-line-number") << -1 << 0 << 1;
+  QTest::newRow("missing-line") << 2 << 0 << 1;
+}
+
+void TestSearchService::testReplacementInvalidRanges() {
+  QFETCH(int, lineNumber);
+  QFETCH(int, start);
+  QFETCH(int, end);
+  const QString source = QStringLiteral("a\U0001f600b");
+  const QVector<SearchLineMatch> matches{{lineNumber, source, {{start, end}}}};
+  QString output = QStringLiteral("old output");
+  QString error;
+  int count = -1;
+  QVERIFY(!SearchService::buildReplacement(source, matches, QStringLiteral("x"), &output, &count,
+                                           &error));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(source, QStringLiteral("a\U0001f600b"));
+}
+
+void TestSearchService::testReplacementRejectsStaleSnapshots() {
+  const QString source = QStringLiteral("foo\nchanged");
+  const QVector<SearchLineMatch> matches{{1, QStringLiteral("foo"), {{0, 3}}},
+                                         {2, QStringLiteral("foo"), {{0, 3}}}};
+  QString output = QStringLiteral("old output");
+  QString error;
+  int count = -1;
+  QVERIFY(!SearchService::buildReplacement(source, matches, QStringLiteral("bar"), &output, &count,
+                                           &error));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(source, QStringLiteral("foo\nchanged"));
+
+  const QVector<SearchLineMatch> shifted{{2, QStringLiteral("foo"), {{0, 3}}}};
+  QVERIFY(!SearchService::buildReplacement(QStringLiteral("inserted\nkeep\nfoo"), shifted,
+                                           QStringLiteral("bar"), &output, &count, &error));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+
+  const QVector<SearchLineMatch> inconsistent{{1, QStringLiteral("foo"), {{0, 3}}},
+                                              {1, QStringLiteral("bar"), {{0, 3}}}};
+  QVERIFY(!SearchService::buildReplacement(QStringLiteral("foo"), inconsistent,
+                                           QStringLiteral("bar"), &output, &count, &error));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+}
+
+void TestSearchService::testReplacementRejectsOverlaps() {
+  const QString source = QStringLiteral("abcd");
+  const QVector<SearchLineMatch> overlap{{1, source, {{0, 3}, {2, 4}}}};
+  QString output;
+  QString error;
+  int count = -1;
+  QVERIFY(!SearchService::buildReplacement(source, overlap, QStringLiteral("x"), &output, &count,
+                                           &error));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+
+  const QVector<SearchLineMatch> interiorInsertion{{1, source, {{0, 3}, {1, 1}}}};
+  QVERIFY(!SearchService::buildReplacement(source, interiorInsertion, QStringLiteral("x"), &output,
+                                           &count, &error));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+
+  const QVector<SearchLineMatch> adjacent{{1, source, {{2, 4}, {0, 2}}}};
+  QVERIFY(SearchService::buildReplacement(source, adjacent, QStringLiteral("x"), &output, &count,
+                                          &error));
+  QCOMPARE(output, QStringLiteral("xx"));
+  QCOMPARE(count, 2);
+  QVERIFY(error.isEmpty());
+}
+
+void TestSearchService::testReplacementOutputPointers() {
+  const QVector<SearchLineMatch> matches{{1, QStringLiteral("foo"), {{0, 3}}}};
+  QString output = QStringLiteral("old output");
+  QString error = QStringLiteral("old error");
+  int count = -1;
+  QVERIFY(!SearchService::buildReplacement(QStringLiteral("foo"), matches, QStringLiteral("bar"),
+                                           nullptr, &count, &error));
+  QCOMPARE(count, 0);
+  QVERIFY(!error.isEmpty());
+
+  QVERIFY(!SearchService::buildReplacement(QStringLiteral("foo"), matches, QStringLiteral("bar"),
+                                           &output, nullptr, &error));
+  QVERIFY(output.isEmpty());
+  QVERIFY(!error.isEmpty());
+
+  output = QStringLiteral("old output");
+  count = -1;
+  QVERIFY(!SearchService::buildReplacement(QStringLiteral("foo"), matches, QStringLiteral("bar"),
+                                           &output, &count, nullptr));
+  QVERIFY(output.isEmpty());
+  QCOMPARE(count, 0);
+
+  output = QStringLiteral("foo");
+  QVERIFY(SearchService::buildReplacement(output, matches, QStringLiteral("bar"), &output, &count,
+                                          &error));
+  QCOMPARE(output, QStringLiteral("bar"));
+  QCOMPARE(count, 1);
+  QVERIFY(error.isEmpty());
 }
 
 void TestSearchService::testSearchByTagsWithTags() {
@@ -523,16 +842,15 @@ void TestSearchService::testSearchContentStreamingBatchUnion() {
   QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
   QSignalSpy failedSpy(&service, &SearchService::searchFailed);
 
-  const int token =
-      service.searchContent(m_notebookId, QStringLiteral("{\"pattern\":\"streamneedle\"}"),
-                            QString());
+  const int token = service.searchContent(
+      m_notebookId, QStringLiteral("{\"pattern\":\"streamneedle\"}"), QString());
   QVERIFY(token > 0);
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 10000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QString("streaming searchContent failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString()
-                                                   : failedSpy.takeFirst().at(1).toString())));
+           qPrintable(
+               QString("streaming searchContent failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
   QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
 
   const SearchResult finishedResult = finishedSpy.at(0).at(1).value<SearchResult>();
@@ -561,8 +879,8 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineWithCap() {
   // case the async streaming worker must reproduce byte-for-byte from the blob baseline.
   auto seedFile = [&](const char *p_name, const QByteArray &p_content) {
     char *fileId = nullptr;
-    VxCoreError e = vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "", p_name,
-                                       &fileId);
+    VxCoreError e =
+        vxcore_file_create(m_context, m_notebookId.toUtf8().constData(), "", p_name, &fileId);
     QCOMPARE(e, VXCORE_OK);
     vxcore_string_free(fileId);
 
@@ -583,8 +901,7 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineWithCap() {
            QByteArrayLiteral("capneedle one\nfiller\ncapneedle two\ncapneedle three\n"));
   seedFile("capfile_b.md", QByteArrayLiteral("capneedle b1\ncapneedle b2\n"));
 
-  const QString queryJson =
-      QStringLiteral("{\"pattern\":\"capneedle\",\"maxResults\":2}");
+  const QString queryJson = QStringLiteral("{\"pattern\":\"capneedle\",\"maxResults\":2}");
 
   // Blob baseline: authoritative capped result the async path must match exactly.
   SearchCoreService coreService(m_context);
@@ -606,9 +923,9 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineWithCap() {
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 10000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QString("streaming searchContent failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString()
-                                                   : failedSpy.takeFirst().at(1).toString())));
+           qPrintable(
+               QString("streaming searchContent failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
 
   const SearchResult streamedResult = finishedSpy.at(0).at(1).value<SearchResult>();
 
@@ -670,31 +987,15 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineDefaultCap() {
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 10000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QString("streaming searchContent failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString()
-                                                   : failedSpy.takeFirst().at(1).toString())));
+           qPrintable(
+               QString("streaming searchContent failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
 
   const SearchResult streamedResult = finishedSpy.at(0).at(1).value<SearchResult>();
   QVERIFY2(streamedResult.m_truncated,
            "streaming finished result ignored the implicit default maxResults=100 cap");
   QCOMPARE(streamedResult.m_matchCount, blobResult.m_matchCount);
   QCOMPARE(canonicalizeContentResult(streamedResult), canonicalizeContentResult(blobResult));
-}
-
-// Qt 5 resolves queued-connection argument types by the NAME moc recorded for the signal
-// parameter. SearchWorker::finished / ::batch / ::failed are declared inside namespace vnotex
-// and spell their parameters UNQUALIFIED, so moc records "SearchResult" / "Error" while
-// Q_DECLARE_METATYPE registers "vnotex::SearchResult" / "vnotex::Error". Without the
-// unqualified aliases Qt 5 drops every cross-thread emission with
-// "QObject::connect: Cannot queue arguments of type 'SearchResult'".
-void TestSearchService::testQueuedMetatypeNamesAreRegistered() {
-  SearchCoreService coreService(m_context);
-  SearchService service(&coreService);
-
-  QVERIFY2(QMetaType::fromName(QByteArrayLiteral("SearchResult")).isValid(),
-           "SearchService must register the unqualified \"SearchResult\" metatype alias");
-  QVERIFY2(QMetaType::fromName(QByteArrayLiteral("Error")).isValid(),
-           "SearchService must register the unqualified \"Error\" metatype alias");
 }
 
 } // namespace tests

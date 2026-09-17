@@ -94,6 +94,7 @@ add_qt_test(test_searchresultmodel
     ${CMAKE_SOURCE_DIR}/src/models/searchresultmodel.cpp
     ${CMAKE_SOURCE_DIR}/src/core/searchresulttypes.cpp
   LINKS
+    core_services
     Qt6::Widgets
   GUILESS
 )

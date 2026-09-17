@@ -3,6 +3,7 @@
 #include <QAbstractItemModelTester>
 
 #include <core/nodeidentifier.h>
+#include <core/services/searchservice.h>
 #include <models/searchresultmodel.h>
 
 namespace tests {
@@ -22,10 +23,16 @@ private slots:
   void testSegmentsRole();
   void testIsFileResultRole();
   void testModelTester();
+  void testReplacementParentSubsumesChildren();
+  void testReplacementSingleLine();
+  void testReplacementRejectsInvalidSelections();
+  void testAllReplacementTargetsDeduplicateInModelOrder();
+  void testReplacementRejectsConflictingSnapshots();
 
 private:
   static vnotex::SearchResult makeContentResult();
   static vnotex::SearchResult makeFileResult();
+  static vnotex::SearchResult makeReplacementResult();
 };
 
 vnotex::SearchResult TestSearchResultModel::makeContentResult() {
@@ -227,6 +234,176 @@ void TestSearchResultModel::testModelTester() {
   QAbstractItemModelTester tester(&model, QAbstractItemModelTester::FailureReportingMode::Fatal);
   model.setSearchResult(makeContentResult());
   QCOMPARE(model.rowCount(), 1);
+}
+
+vnotex::SearchResult TestSearchResultModel::makeReplacementResult() {
+  auto result = makeContentResult();
+  auto &file = result.m_fileResults[0];
+  file.m_lineMatches = {{1, QStringLiteral("foo foo"), {{0, 3}, {4, 7}}},
+                        {3, QStringLiteral("foo"), {{0, 3}}}};
+  file.m_replacementSupported = true;
+  // Extraction must count available segments, not trust an aggregate count.
+  file.m_matchCount = 99;
+  result.m_matchCount = 99;
+  return result;
+}
+
+void TestSearchResultModel::testReplacementParentSubsumesChildren() {
+  vnotex::SearchResultModel model;
+  model.setSearchResult(makeReplacementResult());
+  const auto parent = model.index(0, 0);
+  const auto targets = model.replacementTargets(
+      {model.index(1, 0, parent), model.index(0, 0, parent), parent, parent});
+  QCOMPARE(targets.size(), 1);
+  QCOMPARE(targets[0].m_matchCount, 3);
+  QCOMPARE(targets[0].m_lineMatches.size(), 2);
+
+  // The extracted value remains usable after the original model has been reset.
+  model.clear();
+  QString text;
+  QString error;
+  int count = 0;
+  QVERIFY(vnotex::SearchService::buildReplacement(QStringLiteral("foo foo\nkeep\nfoo"),
+                                                  targets[0].m_lineMatches, QStringLiteral("bar"),
+                                                  &text, &count, &error));
+  QCOMPARE(text, QStringLiteral("bar bar\nkeep\nbar"));
+  QCOMPARE(count, 3);
+}
+
+void TestSearchResultModel::testReplacementSingleLine() {
+  vnotex::SearchResultModel model;
+  model.setSearchResult(makeReplacementResult());
+  const auto parent = model.index(0, 0);
+  const auto targets = model.replacementTargets({model.index(1, 0, parent)});
+  QCOMPARE(targets.size(), 1);
+  QCOMPARE(targets[0].m_matchCount, 1);
+
+  QString text;
+  QString error;
+  int count = 0;
+  QVERIFY(vnotex::SearchService::buildReplacement(QStringLiteral("foo foo\nkeep\nfoo"),
+                                                  targets[0].m_lineMatches, QStringLiteral("bar"),
+                                                  &text, &count, &error));
+  QCOMPARE(text, QStringLiteral("foo foo\nkeep\nbar"));
+  QCOMPARE(count, 1);
+}
+
+void TestSearchResultModel::testReplacementRejectsInvalidSelections() {
+  class IndexProbeModel : public vnotex::SearchResultModel {
+  public:
+    QModelIndex nonzeroColumnIndex() const { return createIndex(0, 1, static_cast<quintptr>(0)); }
+  };
+  IndexProbeModel model;
+  model.setSearchResult(makeReplacementResult());
+  vnotex::SearchResultModel foreign;
+  foreign.setSearchResult(makeReplacementResult());
+  const QVector<QModelIndexList> selections = {
+      {}, {QModelIndex()}, {foreign.index(0, 0)}, {model.nonzeroColumnIndex()}};
+  const QString source = QStringLiteral("foo foo\nkeep\nfoo");
+  for (const auto &selection : selections) {
+    const auto targets = model.replacementTargets(selection);
+    QVector<vnotex::SearchLineMatch> lines;
+    for (const auto &target : targets) {
+      lines += target.m_lineMatches;
+    }
+    QString text;
+    QString error;
+    int count = 0;
+    QVERIFY(vnotex::SearchService::buildReplacement(source, lines, QStringLiteral("bar"), &text,
+                                                    &count, &error));
+    QCOMPARE(text, source);
+    QCOMPARE(count, 0);
+    QVERIFY(targets.isEmpty());
+  }
+
+  // Rejected rows neither widen a valid selection nor prevent its selected line from contributing.
+  const auto targets =
+      model.replacementTargets({foreign.index(0, 0), QModelIndex(), model.nonzeroColumnIndex(),
+                                model.index(1, 0, model.index(0, 0))});
+  QCOMPARE(targets.size(), 1);
+  QString text;
+  QString error;
+  int count = 0;
+  QVERIFY(vnotex::SearchService::buildReplacement(source, targets[0].m_lineMatches,
+                                                  QStringLiteral("bar"), &text, &count, &error));
+  QCOMPARE(text, QStringLiteral("foo foo\nkeep\nbar"));
+  QCOMPARE(count, 1);
+}
+
+void TestSearchResultModel::testAllReplacementTargetsDeduplicateInModelOrder() {
+  auto result = makeReplacementResult();
+  auto &first = result.m_fileResults[0];
+  // Deliberately nonnumeric line order: extraction follows rows, not sorted addresses.
+  first.m_lineMatches.swapItemsAt(0, 1);
+  auto otherNotebook = first;
+  otherNotebook.m_notebookId = QStringLiteral("nb-2");
+  otherNotebook.m_lineMatches = {{2, QStringLiteral("foo"), {{0, 3}}}};
+  otherNotebook.m_replacementSupported = false;
+  auto duplicate = first;
+  duplicate.m_lineMatches.swapItemsAt(0, 1);
+  duplicate.m_lineMatches[0].m_segments.append({0, 3});
+  result.m_fileResults += {otherNotebook, duplicate};
+  result.m_fileResults += makeFileResult().m_fileResults;
+
+  vnotex::SearchResultModel model;
+  model.setSearchResult(result);
+  const auto allTargets = model.allReplacementTargets();
+  const auto selectedTargets =
+      model.replacementTargets({model.index(2, 0), model.index(1, 0), model.index(0, 0)});
+  for (const auto &targets : {allTargets, selectedTargets}) {
+    QCOMPARE(targets.size(), 2);
+    QCOMPARE(targets[0].m_notebookId, QStringLiteral("nb-1"));
+    QCOMPARE(targets[1].m_notebookId, QStringLiteral("nb-2"));
+    QCOMPARE(targets[0].m_lineMatches[0].m_lineNumber, 3);
+    QCOMPARE(targets[0].m_lineMatches[1].m_lineNumber, 1);
+    QCOMPARE(targets[0].m_matchCount, 3);
+    QCOMPARE(targets[1].m_matchCount, 1);
+    QVERIFY(targets[0].m_replacementSupported);
+    QVERIFY(!targets[1].m_replacementSupported);
+
+    QString text;
+    QString error;
+    int count = 0;
+    QVERIFY(vnotex::SearchService::buildReplacement(QStringLiteral("foo foo\nkeep\nfoo"),
+                                                    targets[0].m_lineMatches, QStringLiteral("bar"),
+                                                    &text, &count, &error));
+    QCOMPARE(text, QStringLiteral("bar bar\nkeep\nbar"));
+    QCOMPARE(count, 3);
+    QVERIFY(vnotex::SearchService::buildReplacement(QStringLiteral("keep\nfoo"),
+                                                    targets[1].m_lineMatches, QStringLiteral("bar"),
+                                                    &text, &count, &error));
+    QCOMPARE(text, QStringLiteral("keep\nbar"));
+    QCOMPARE(count, 1);
+  }
+
+  // Deduplicating a mixed-provenance file must not grant permission to its unsupported rows.
+  result.m_fileResults[2].m_replacementSupported = false;
+  model.setSearchResult(result);
+  const auto mixedTargets = model.allReplacementTargets();
+  QCOMPARE(mixedTargets.size(), 2);
+  QVERIFY(!mixedTargets[0].m_replacementSupported);
+}
+
+void TestSearchResultModel::testReplacementRejectsConflictingSnapshots() {
+  auto result = makeReplacementResult();
+  auto duplicate = result.m_fileResults[0];
+  duplicate.m_lineMatches[0].m_lineText = QStringLiteral("foo old");
+  result.m_fileResults.append(duplicate);
+  vnotex::SearchResultModel model;
+  model.setSearchResult(result);
+  QVERIFY(model.allReplacementTargets().isEmpty());
+
+  // Selecting the conflicting snapshot alone retains the conflict for the transformation to reject.
+  const auto targets = model.replacementTargets({model.index(0, 0, model.index(1, 0))});
+  QCOMPARE(targets.size(), 1);
+  QString text;
+  QString error;
+  int count = 0;
+  QVERIFY(!vnotex::SearchService::buildReplacement(QStringLiteral("foo foo\nkeep\nfoo"),
+                                                   targets[0].m_lineMatches, QStringLiteral("bar"),
+                                                   &text, &count, &error));
+  QVERIFY(text.isEmpty());
+  QCOMPARE(count, 0);
 }
 
 } // namespace tests
