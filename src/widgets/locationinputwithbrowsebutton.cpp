@@ -23,9 +23,9 @@ LocationInputWithBrowseButton::LocationInputWithBrowseButton(QWidget *p_parent,
   layout->addWidget(m_lineEdit, 1);
   connect(m_lineEdit, &QLineEdit::textChanged, this, &LocationInputWithBrowseButton::textChanged);
 
-  auto browseBtn = new QPushButton(tr("Browse"), this);
-  layout->addWidget(browseBtn);
-  connect(browseBtn, &QPushButton::clicked, this, [this]() {
+  m_browseButton = new QPushButton(tr("Browse"), this);
+  layout->addWidget(m_browseButton);
+  connect(m_browseButton, &QPushButton::clicked, this, [this]() {
     if (m_browseConfigured) {
       browse();
     } else {
@@ -50,6 +50,11 @@ void LocationInputWithBrowseButton::setText(const QString &p_text) {
   }
 }
 
+void LocationInputWithBrowseButton::setReadOnly(bool p_readOnly) {
+  m_lineEdit->setReadOnly(p_readOnly);
+  m_browseButton->setVisible(!p_readOnly);
+}
+
 QString LocationInputWithBrowseButton::toolTip() const { return m_lineEdit->toolTip(); }
 
 void LocationInputWithBrowseButton::setToolTip(const QString &p_tip) {
@@ -60,9 +65,8 @@ void LocationInputWithBrowseButton::setPlaceholderText(const QString &p_text) {
   m_lineEdit->setPlaceholderText(p_text);
 }
 
-void LocationInputWithBrowseButton::setBrowseType(BrowseType p_type,
-                                                   const QString &p_title,
-                                                   const QString &p_filter) {
+void LocationInputWithBrowseButton::setBrowseType(BrowseType p_type, const QString &p_title,
+                                                  const QString &p_filter) {
   m_browseType = p_type;
   m_browseTitle = p_title;
   m_browseFilter = p_filter;

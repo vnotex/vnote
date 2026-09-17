@@ -44,6 +44,7 @@ private slots:
   void testRawBytesRemainExact();
   void testLineEndingControllerPersistence();
   void testProtectedWriterLineEndings();
+  void testNotebookAssetsFolderPersistence();
 
 private:
   Buffer2 openTestBuffer();
@@ -217,6 +218,7 @@ bool TestBufferEncoding::applyLineEnding(const QString &p_ending) {
   input.notebookId = info.id;
   input.name = info.name;
   input.description = info.description;
+  input.assetsFolder = info.assetsFolder;
   input.recycleBinFolder = info.recycleBinFolder;
   input.lineEnding = p_ending;
   return controller.updateNotebook(input).success;
@@ -409,6 +411,7 @@ void TestBufferEncoding::testLineEndingControllerPersistence() {
   QVERIFY(!raw.isEmpty());
   NotebookUpdateInput input;
   input.notebookId = raw;
+  input.assetsFolder = controller.getNotebookInfo(raw).assetsFolder;
   input.name = QStringLiteral("raw renamed");
   input.lineEnding = QStringLiteral("invalid-but-ignored");
   const auto rawMetadata =
@@ -420,6 +423,54 @@ void TestBufferEncoding::testLineEndingControllerPersistence() {
   QVERIFY(m_notebookService->closeNotebook(raw));
   input.notebookId = QStringLiteral("missing-notebook");
   QVERIFY(!controller.updateNotebook(input).success);
+}
+
+void TestBufferEncoding::testNotebookAssetsFolderPersistence() {
+  auto buffer = openTestBuffer();
+  QVERIFY(buffer.isValid());
+  const auto originalAssets = QDir::cleanPath(buffer.getAssetsFolder());
+  const auto uuid = QFileInfo(originalAssets).fileName();
+  const auto noteParent = QFileInfo(buffer.resolvedPath()).absolutePath();
+  QCOMPARE(originalAssets,
+           QDir::cleanPath(QDir(noteParent).filePath(QStringLiteral("vx_assets/") + uuid)));
+
+  ManageNotebooksController controller(m_services);
+  const auto root = controller.getNotebookInfo(m_notebookId).rootFolder;
+  auto updateAssets = [&](const QString &p_assetsFolder) {
+    const auto info = controller.getNotebookInfo(m_notebookId);
+    NotebookUpdateInput input;
+    input.notebookId = info.id;
+    input.name = info.name;
+    input.description = info.description;
+    input.assetsFolder = p_assetsFolder;
+    input.recycleBinFolder = info.recycleBinFolder;
+    input.lineEnding = info.lineEnding;
+    return controller.updateNotebook(input);
+  };
+
+  auto result = updateAssets(QStringLiteral("  media/images  "));
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  const auto customAssets =
+      QDir::cleanPath(QDir(noteParent).filePath(QStringLiteral("media/images/") + uuid));
+  QCOMPARE(QDir::cleanPath(buffer.getAssetsFolder()), customAssets);
+
+  QVERIFY(m_bufferService->closeBuffer(buffer.id()));
+  QVERIFY(m_notebookService->closeNotebook(m_notebookId));
+  QCOMPARE(m_notebookService->openNotebook(root), m_notebookId);
+  buffer = openTestBuffer();
+  QVERIFY(buffer.isValid());
+  QCOMPARE(QDir::cleanPath(buffer.getAssetsFolder()), customAssets);
+
+  result = updateAssets(QStringLiteral("   "));
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(QDir::cleanPath(buffer.getAssetsFolder()), originalAssets);
+
+  QVERIFY(m_bufferService->closeBuffer(buffer.id()));
+  QVERIFY(m_notebookService->closeNotebook(m_notebookId));
+  QCOMPARE(m_notebookService->openNotebook(root), m_notebookId);
+  buffer = openTestBuffer();
+  QVERIFY(buffer.isValid());
+  QCOMPARE(QDir::cleanPath(buffer.getAssetsFolder()), originalAssets);
 }
 
 void TestBufferEncoding::testProtectedWriterLineEndings() {
@@ -456,6 +507,7 @@ void TestBufferEncoding::testProtectedWriterLineEndings() {
   ManageNotebooksController controller(m_services);
   NotebookUpdateInput input;
   input.notebookId = notebookId;
+  input.assetsFolder = controller.getNotebookInfo(notebookId).assetsFolder;
   input.name = QStringLiteral("Protected line endings");
   input.lineEnding = QStringLiteral("crlf");
   QVERIFY(controller.updateNotebook(input).success);

@@ -388,6 +388,7 @@ add_qt_test(test_syncservice_lifecycle
   SOURCES
     test_syncservice_lifecycle.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/managenotebooksdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebookinfowidget.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp

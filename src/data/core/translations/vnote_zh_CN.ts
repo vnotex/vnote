@@ -3789,113 +3789,32 @@
 <context>
     <name>vnotex::ManageNotebooksDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="+66"/>
-        <source>Notebook name</source>
-        <translation>笔记本名称</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <location line="+2"/>
-        <source>Description</source>
-        <translation>描述</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Open</source>
-        <translation>打开</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Open root folder in file explorer</source>
-        <translation>在文件管理器中打开根文件夹</translation>
-    </message>
-    <message>
-        <location line="-22"/>
-        <source>Name</source>
-        <translation>名字</translation>
-    </message>
-    <message>
-        <location line="+28"/>
-        <source>Root folder</source>
-        <translation>根文件夹</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Select Recycle Bin Folder</source>
-        <translation>选择回收站文件夹</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Absolute path, or a path relative to the notebook root. Empty uses vx_notebook/recycle_bin</source>
-        <translation>绝对路径或相对于笔记本根目录的路径。留空则使用 vx_notebook/recycle_bin</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Recycle bin folder</source>
-        <translation>回收站文件夹</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Line ending</source>
-        <translation>行结尾</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Use global editor setting</source>
-        <translation>使用全局编辑器设置</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>LF (Linux/macOS)</source>
-        <translation>LF(Linux/macOS)</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>CR LF (Windows)</source>
-        <translation>CR LF(Windows)</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>CR</source>
-        <translation>CR</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Used when saving note content with built-in editors; existing notes are not converted until edited and saved</source>
-        <translation>使用内置编辑器保存笔记内容时采用此设置；现有笔记只有在编辑并保存后才会转换</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Type</source>
-        <translation>类型</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="62"/>
         <source>Close Notebook</source>
         <translation>关闭笔记本</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="70"/>
         <source>Manage Notebooks</source>
         <translation>管理笔记本</translation>
     </message>
     <message>
-        <location line="+131"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="166"/>
         <source>There are unsaved changes to current notebook.</source>
         <translation>当前笔记本有尚未保存的更改。</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="184"/>
         <source>Close notebook (%1)?</source>
         <translation>关闭笔记本(%1)？</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="185"/>
         <source>The notebook could be opened by VNote again later.</source>
         <translation>稍后可以再次用 VNote 打开该笔记本。</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../../../widgets/dialogs/managenotebooksdialog2.cpp" line="186"/>
         <source>Notebook location: %1</source>
         <translation>笔记本路径: %1</translation>
     </message>
@@ -5138,129 +5057,42 @@
 <context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+55"/>
-        <source>Optional description for the notebook</source>
-        <translation>笔记本的可选描述</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Select Notebook Root Folder</source>
-        <translation>选择笔记本根文件夹</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Select a folder as notebook root</source>
-        <translation>选择一个文件夹作为笔记本根目录</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Bundled notebook</source>
-        <translation>自包笔记本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Raw notebook</source>
-        <translation>原生笔记本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Bundled: notebook with metadata stored in config files.
-Raw: plain folder structure with minimal VNote metadata</source>
-        <translation>自包：元数据存储在配置文件中的笔记本。
-原生：仅含最少 VNote 元数据的普通文件夹结构</translation>
-    </message>
-    <message>
-        <location line="+35"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation</source>
-        <translation>Git 同步仅支持自包笔记本。同步设置会在创建笔记本前通过“配置”按钮立即进行配置</translation>
-    </message>
-    <message>
-        <location line="-62"/>
-        <source>Name</source>
-        <translation>名字</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Description</source>
-        <translation>描述</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Root folder</source>
-        <translation>根文件夹</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Type</source>
-        <translation>类型</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Root folder of the notebook.
-For raw notebooks, you can select an existing folder with files.
-The folder&apos;s contents will be indexed as notebook nodes</source>
-        <translation>笔记本的根文件夹。
-对于原生笔记本，可选择一个已包含文件的现有文件夹。
-该文件夹的内容会被索引为笔记本节点</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Root folder of the notebook.
-A new notebook requires an empty folder or a non-existent path (will be created)</source>
-        <translation>笔记本的根文件夹。
-新笔记本需要一个空文件夹或一个不存在的路径（将自动创建）</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="51"/>
         <source>Sync method</source>
         <translation>同步方式</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="55"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="56"/>
         <source>Git</source>
         <translation>Git</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="57"/>
+        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation</source>
+        <translation>Git 同步仅支持自包笔记本。同步设置会在创建笔记本前通过“配置”按钮立即进行配置</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="61"/>
         <source>Configure</source>
         <translation>配置</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="63"/>
         <source>Configure Git sync remote URL and credentials</source>
         <translation>配置 Git 同步远端 URL 与凭据</translation>
     </message>
     <message>
-        <location line="+34"/>
-        <source>Advanced</source>
-        <translation>高级</translation>
-    </message>
-    <message>
-        <location line="+13"/>
-        <source>Name or path for the assets folder.
-Can be a folder name (vx_assets), relative path, or absolute path.
-Relative paths resolve against each note file&apos;s parent directory</source>
-        <translation>资源文件夹的名称或路径。
-可以是文件夹名（vx_assets）、相对路径或绝对路径。
-相对路径相对于每个笔记文件所在目录解析</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Assets folder</source>
-        <translation>资源文件夹</translation>
-    </message>
-    <message>
-        <location line="+14"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="90"/>
         <source>New Notebook</source>
         <translation>新建笔记本</translation>
     </message>
     <message>
-        <location line="+161"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="236"/>
         <source>Click &apos;Configure&apos; to set up Git sync first</source>
         <translation>点击&quot;配置&quot;以先配置 Git 同步</translation>
     </message>
@@ -6734,6 +6566,160 @@ Description: %4</source>
         <location line="+87"/>
         <source>URL change failed: re-enable error. Notebook now in disabled state; use Enable Sync to retry.</source>
         <translation>URL 更改失败：重新启用错误。笔记本现在处于禁用状态；请使用&quot;启用同步&quot;重试。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NotebookInfoWidget</name>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="43"/>
+        <source>Notebook name</source>
+        <translation>笔记本名称</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="44"/>
+        <source>Name</source>
+        <translation>名字</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="50"/>
+        <source>Optional description for the notebook</source>
+        <translation>笔记本的可选描述</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="52"/>
+        <source>Description</source>
+        <translation>描述</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="67"/>
+        <source>Select Notebook Root Folder</source>
+        <translation>选择笔记本根文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="68"/>
+        <source>Select a folder as notebook root</source>
+        <translation>选择一个文件夹作为笔记本根目录</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="70"/>
+        <source>Open</source>
+        <translation>打开</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="71"/>
+        <source>Open root folder in file explorer</source>
+        <translation>在文件管理器中打开根文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="88"/>
+        <source>Root folder</source>
+        <translation>根文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="92"/>
+        <source>Bundled notebook</source>
+        <translation>自包笔记本</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="93"/>
+        <source>Raw notebook</source>
+        <translation>原生笔记本</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="94"/>
+        <source>Bundled: notebook with metadata stored in config files.
+Raw: plain folder structure with minimal VNote metadata</source>
+        <translation>自包：元数据存储在配置文件中的笔记本。
+原生：仅含最少 VNote 元数据的普通文件夹结构</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="96"/>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="99"/>
+        <source>Advanced</source>
+        <translation>高级</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="113"/>
+        <source>Name or path for the assets folder.
+Can be a folder name (vx_assets), relative path, or absolute path.
+Relative paths resolve against each note file&apos;s parent directory.
+Empty uses vx_assets.
+Changing this setting does not move existing assets, attachments, or comments</source>
+        <translation>资源文件夹的名称或路径。
+可以是文件夹名（vx_assets）、相对路径或绝对路径。
+相对路径相对于每个笔记文件所在目录解析。
+留空则使用 vx_assets。
+更改此设置不会移动现有资源、附件或评论</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="118"/>
+        <source>Assets folder</source>
+        <translation>资源文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="124"/>
+        <source>Select Recycle Bin Folder</source>
+        <translation>选择回收站文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="127"/>
+        <source>Absolute path, or a path relative to the notebook root. Empty uses vx_notebook/recycle_bin</source>
+        <translation>绝对路径或相对于笔记本根目录的路径。留空则使用 vx_notebook/recycle_bin</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="129"/>
+        <source>Recycle bin folder</source>
+        <translation>回收站文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="135"/>
+        <source>Use global editor setting</source>
+        <translation>使用全局编辑器设置</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="136"/>
+        <source>LF (Linux/macOS)</source>
+        <translation>LF(Linux/macOS)</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="137"/>
+        <source>CR LF (Windows)</source>
+        <translation>CR LF(Windows)</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="138"/>
+        <source>CR</source>
+        <translation>CR</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="140"/>
+        <source>Used when saving note content with built-in editors; existing notes are not converted until edited and saved</source>
+        <translation>使用内置编辑器保存笔记内容时采用此设置；现有笔记只有在编辑并保存后才会转换</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="142"/>
+        <source>Line ending</source>
+        <translation>行结尾</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="182"/>
+        <source>Root folder of the notebook.
+A new notebook requires an empty folder or a non-existent path (will be created)</source>
+        <translation>笔记本的根文件夹。
+新笔记本需要一个空文件夹或一个不存在的路径（将自动创建）</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="184"/>
+        <source>Root folder of the notebook.
+For raw notebooks, you can select an existing folder with files.
+The folder&apos;s contents will be indexed as notebook nodes</source>
+        <translation>笔记本的根文件夹。
+对于原生笔记本，可选择一个已包含文件的现有文件夹。
+该文件夹的内容会被索引为笔记本节点</translation>
     </message>
 </context>
 <context>

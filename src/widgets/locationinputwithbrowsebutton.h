@@ -13,11 +13,14 @@ public:
   enum BrowseType { File, Folder };
 
   explicit LocationInputWithBrowseButton(QWidget *p_parent = nullptr,
-                                        const QString &p_defaultPath = QString());
+                                         const QString &p_defaultPath = QString());
 
   QString text() const;
 
   void setText(const QString &p_text);
+
+  // Keep the path selectable while hiding the editing-only Browse button.
+  void setReadOnly(bool p_readOnly);
 
   QString toolTip() const;
 
@@ -27,8 +30,7 @@ public:
 
   // Set browse type and optional dialog title/filter.
   // When set, the widget handles the browse dialog internally.
-  void setBrowseType(BrowseType p_type,
-                     const QString &p_title = QString(),
+  void setBrowseType(BrowseType p_type, const QString &p_title = QString(),
                      const QString &p_filter = QString());
 
 signals:
@@ -44,6 +46,7 @@ private:
   static QString defaultBrowsePath();
 
   QLineEdit *m_lineEdit = nullptr;
+  QPushButton *m_browseButton = nullptr;
 
   BrowseType m_browseType = File;
   QString m_browseTitle;

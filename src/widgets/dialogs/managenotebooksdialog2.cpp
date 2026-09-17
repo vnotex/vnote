@@ -1,32 +1,20 @@
 #include "managenotebooksdialog2.h"
 
-#include <QComboBox>
-#include <QDesktopServices>
-#include <QFormLayout>
 #include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QPlainTextEdit>
 #include <QPushButton>
-#include <QUrl>
+#include <QSignalBlocker>
+#include <QVBoxLayout>
 
 #include <controllers/managenotebookscontroller.h>
 #include <core/servicelocator.h>
 
 #include "../listwidget.h"
-#include "../locationinputwithbrowsebutton.h"
 #include "../messageboxhelper.h"
-#include "../propertydefs.h"
-#include "../widgetsfactory.h"
-#include <utils/widgetutils.h>
+#include "notebookinfowidget.h"
 
 using namespace vnotex;
-
-namespace {
-const char *kRecycleBinFolderInputName = "recycleBinFolderInput";
-}
 
 ManageNotebooksDialog2::ManageNotebooksDialog2(ServiceLocator &p_services,
                                                const QString &p_currentNotebookId,
@@ -57,74 +45,10 @@ void ManageNotebooksDialog2::setupUI() {
 
   auto *infoLayout = new QVBoxLayout(infoWidget);
 
-  // Form for notebook properties.
-  auto *formLayout = new QFormLayout();
-  infoLayout->addLayout(formLayout);
-
-  // Name input.
-  m_nameEdit = WidgetsFactory::createLineEdit(infoWidget);
-  m_nameEdit->setPlaceholderText(tr("Notebook name"));
-  formLayout->addRow(tr("Name"), m_nameEdit);
-  connect(m_nameEdit, &QLineEdit::textChanged, this,
+  m_infoWidget = new NotebookInfoWidget(m_services, NotebookInfoWidget::Mode::Edit, infoWidget);
+  infoLayout->addWidget(m_infoWidget);
+  connect(m_infoWidget, &NotebookInfoWidget::inputEdited, this,
           [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
-
-  // Description input.
-  m_descriptionEdit = new QPlainTextEdit(infoWidget);
-  m_descriptionEdit->setPlaceholderText(tr("Description"));
-  m_descriptionEdit->setMaximumHeight(100);
-  formLayout->addRow(tr("Description"), m_descriptionEdit);
-  connect(m_descriptionEdit, &QPlainTextEdit::textChanged, this,
-          [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
-
-  // Root folder (read-only) with Open button.
-  auto *rootFolderWidget = new QWidget(infoWidget);
-  auto *rootFolderLayout = new QHBoxLayout(rootFolderWidget);
-  rootFolderLayout->setContentsMargins(0, 0, 0, 0);
-
-  m_rootFolderEdit = WidgetsFactory::createLineEdit(rootFolderWidget);
-  m_rootFolderEdit->setReadOnly(true);
-  rootFolderLayout->addWidget(m_rootFolderEdit, 1);
-
-  auto *openFolderBtn = new QPushButton(tr("Open"), rootFolderWidget);
-  openFolderBtn->setToolTip(tr("Open root folder in file explorer"));
-  rootFolderLayout->addWidget(openFolderBtn);
-  connect(openFolderBtn, &QPushButton::clicked, this,
-          &ManageNotebooksDialog2::openRootFolderInExplorer);
-
-  rootFolderWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  formLayout->addRow(tr("Root folder"), rootFolderWidget);
-
-  // Recycle bin folder (bundled notebooks only).
-  m_recycleBinFolderInput = new LocationInputWithBrowseButton(infoWidget);
-  m_recycleBinFolderInput->setObjectName(QLatin1String(kRecycleBinFolderInputName));
-  m_recycleBinFolderInput->setBrowseType(LocationInputWithBrowseButton::Folder,
-                                         tr("Select Recycle Bin Folder"));
-  m_recycleBinFolderInput->setPlaceholderText(QStringLiteral("vx_notebook/recycle_bin"));
-  m_recycleBinFolderInput->setToolTip(
-      tr("Absolute path, or a path relative to the notebook root. Empty uses "
-         "vx_notebook/recycle_bin"));
-  formLayout->addRow(tr("Recycle bin folder"), m_recycleBinFolderInput);
-  connect(m_recycleBinFolderInput, &LocationInputWithBrowseButton::textChanged, this,
-          [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
-
-  // Line ending override (bundled notebooks only).
-  m_lineEndingLabel = new QLabel(tr("Line ending"), infoWidget);
-  m_lineEndingComboBox = WidgetsFactory::createComboBox(infoWidget);
-  m_lineEndingComboBox->setObjectName(QStringLiteral("lineEndingComboBox"));
-  m_lineEndingComboBox->addItem(tr("Use global editor setting"), QString());
-  m_lineEndingComboBox->addItem(tr("LF (Linux/macOS)"), QStringLiteral("lf"));
-  m_lineEndingComboBox->addItem(tr("CR LF (Windows)"), QStringLiteral("crlf"));
-  m_lineEndingComboBox->addItem(tr("CR"), QStringLiteral("cr"));
-  m_lineEndingComboBox->setToolTip(
-      tr("Used when saving note content with built-in editors; existing notes are not converted "
-         "until edited and saved"));
-  formLayout->addRow(m_lineEndingLabel, m_lineEndingComboBox);
-  connect(m_lineEndingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this]() { setChangesUnsaved(!m_currentNotebookId.isEmpty()); });
-
-  // Notebook type (read-only label).
-  m_typeLabel = new QLabel(infoWidget);
-  formLayout->addRow(tr("Type"), m_typeLabel);
 
   // Stretch to push buttons to bottom.
   infoLayout->addStretch();
@@ -186,7 +110,11 @@ void ManageNotebooksDialog2::onCurrentNotebookChanged(QListWidgetItem *p_current
     // Revert selection if there are unsaved changes.
     if (checkUnsavedChanges()) {
       QMetaObject::invokeMethod(
-          this, [this, p_previous]() { m_notebookList->setCurrentItem(p_previous); },
+          this,
+          [this, p_previous]() {
+            const QSignalBlocker blocker(m_notebookList);
+            m_notebookList->setCurrentItem(p_previous);
+          },
           Qt::QueuedConnection);
       return;
     }
@@ -197,48 +125,8 @@ void ManageNotebooksDialog2::onCurrentNotebookChanged(QListWidgetItem *p_current
 }
 
 void ManageNotebooksDialog2::selectNotebook(const QString &p_notebookId) {
-  // Block signals while populating to avoid triggering unsaved changes.
-  m_nameEdit->blockSignals(true);
-  m_descriptionEdit->blockSignals(true);
-  m_recycleBinFolderInput->blockSignals(true);
-  m_lineEndingComboBox->blockSignals(true);
-
-  if (p_notebookId.isEmpty()) {
-    m_nameEdit->clear();
-    m_descriptionEdit->clear();
-    m_rootFolderEdit->clear();
-    m_recycleBinFolderInput->setText(QString());
-    m_recycleBinFolderInput->setEnabled(false);
-    m_lineEndingComboBox->setCurrentIndex(0);
-    m_lineEndingComboBox->setVisible(false);
-    m_lineEndingComboBox->setEnabled(false);
-    m_lineEndingLabel->setVisible(false);
-    m_typeLabel->clear();
-    m_closeBtn->setEnabled(false);
-  } else {
-    NotebookInfo info = m_controller->getNotebookInfo(p_notebookId);
-
-    m_nameEdit->setText(info.name);
-    m_descriptionEdit->setPlainText(info.description);
-    m_rootFolderEdit->setText(info.rootFolder);
-    m_recycleBinFolderInput->setText(info.recycleBinFolder);
-    const bool bundled = info.type == QStringLiteral("bundled");
-    m_recycleBinFolderInput->setEnabled(bundled);
-    m_lineEndingComboBox->setCurrentIndex(bundled ? m_lineEndingComboBox->findData(info.lineEnding)
-                                                  : 0);
-    m_lineEndingComboBox->setVisible(bundled);
-    m_lineEndingComboBox->setEnabled(bundled && !info.readOnly);
-    m_lineEndingLabel->setVisible(bundled);
-    m_typeLabel->setText(info.typeDisplayName);
-
-    m_closeBtn->setEnabled(true);
-  }
-
-  m_nameEdit->blockSignals(false);
-  m_descriptionEdit->blockSignals(false);
-  m_recycleBinFolderInput->blockSignals(false);
-  m_lineEndingComboBox->blockSignals(false);
-
+  m_infoWidget->setNotebookInfo(m_controller->getNotebookInfo(p_notebookId));
+  m_closeBtn->setEnabled(!p_notebookId.isEmpty());
   setChangesUnsaved(false);
 }
 
@@ -255,10 +143,11 @@ bool ManageNotebooksDialog2::saveChangesToNotebook() {
 
   NotebookUpdateInput input;
   input.notebookId = m_currentNotebookId;
-  input.name = m_nameEdit->text();
-  input.description = m_descriptionEdit->toPlainText();
-  input.recycleBinFolder = m_recycleBinFolderInput->text();
-  input.lineEnding = m_lineEndingComboBox->currentData().toString();
+  input.name = m_infoWidget->getName();
+  input.description = m_infoWidget->getDescription();
+  input.assetsFolder = m_infoWidget->getAssetsFolder();
+  input.recycleBinFolder = m_infoWidget->getRecycleBinFolder();
+  input.lineEnding = m_infoWidget->getLineEnding();
 
   NotebookOperationResult result = m_controller->updateNotebook(input);
 
@@ -332,12 +221,5 @@ void ManageNotebooksDialog2::appliedButtonClicked() {
     // Reload to show updated name in list.
     m_initialNotebookId = m_currentNotebookId;
     loadNotebooks();
-  }
-}
-
-void ManageNotebooksDialog2::openRootFolderInExplorer() {
-  QString rootFolder = m_rootFolderEdit->text();
-  if (!rootFolder.isEmpty()) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(rootFolder));
   }
 }

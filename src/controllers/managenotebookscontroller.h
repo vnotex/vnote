@@ -10,11 +10,12 @@ namespace vnotex {
 
 class ServiceLocator;
 
-// Input data structure for updating notebook config.
+// Complete editable-settings snapshot for updating notebook config (not a patch).
 struct NotebookUpdateInput {
   QString notebookId;
   QString name;
   QString description;
+  QString assetsFolder;
   QString recycleBinFolder;
   QString lineEnding; // Empty means inherit the global editor setting.
 };
@@ -37,9 +38,9 @@ struct NotebookInfo {
   QString name;
   QString description;
   QString rootFolder;
+  QString assetsFolder;
   QString recycleBinFolder;
   QString type;
-  QString typeDisplayName;
   QString lineEnding; // Empty means inherit the global editor setting.
   bool readOnly = false;
 };
@@ -58,7 +59,7 @@ public:
   QJsonArray listNotebooks() const;
 
   // Get notebook info for display.
-  // Returns NotebookInfo with user-friendly type name.
+  // Includes notebook access state alongside its editable settings.
   NotebookInfo getNotebookInfo(const QString &p_notebookId) const;
 
   // Validate notebook name.

@@ -3,18 +3,14 @@
 
 #include "dialog.h"
 
-class QComboBox;
-class QLabel;
-class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
-class QPlainTextEdit;
 class QPushButton;
 
 namespace vnotex {
 
 class ManageNotebooksController;
-class LocationInputWithBrowseButton;
+class NotebookInfoWidget;
 class ServiceLocator;
 
 // ManageNotebooksDialog2 - Dialog for managing notebooks using DI architecture.
@@ -39,8 +35,6 @@ protected:
 
 private slots:
   void onCurrentNotebookChanged(QListWidgetItem *p_current, QListWidgetItem *p_previous);
-
-  void openRootFolderInExplorer();
 
 private:
   void setupUI();
@@ -72,13 +66,7 @@ private:
 
   // UI widgets.
   QListWidget *m_notebookList = nullptr;
-  QLineEdit *m_nameEdit = nullptr;
-  QPlainTextEdit *m_descriptionEdit = nullptr;
-  QLineEdit *m_rootFolderEdit = nullptr;
-  LocationInputWithBrowseButton *m_recycleBinFolderInput = nullptr;
-  QComboBox *m_lineEndingComboBox = nullptr;
-  QLabel *m_lineEndingLabel = nullptr;
-  QLabel *m_typeLabel = nullptr;
+  NotebookInfoWidget *m_infoWidget = nullptr;
   QPushButton *m_closeBtn = nullptr;
 
   bool m_changesUnsaved = false;

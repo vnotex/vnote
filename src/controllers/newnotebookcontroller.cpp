@@ -23,6 +23,13 @@
 
 using namespace vnotex;
 
+namespace {
+bool isRecognizedLineEnding(const QString &p_lineEnding) {
+  return p_lineEnding == QStringLiteral("lf") || p_lineEnding == QStringLiteral("crlf") ||
+         p_lineEnding == QStringLiteral("cr");
+}
+} // namespace
+
 NewNotebookController::NewNotebookController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
@@ -101,6 +108,12 @@ ValidationResult NewNotebookController::validateAll(const NewNotebookInput &p_in
     return result;
   }
 
+  if (p_input.type == NotebookType::Bundled && !p_input.lineEnding.isEmpty() &&
+      !isRecognizedLineEnding(p_input.lineEnding)) {
+    result.valid = false;
+    result.message = tr("Invalid line ending format.");
+  }
+
   return result;
 }
 
@@ -156,6 +169,11 @@ QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) 
   QString assetsFolderTrimmed = p_input.assetsFolder.trimmed();
   if (!assetsFolderTrimmed.isEmpty() && assetsFolderTrimmed != QStringLiteral("vx_assets")) {
     configObj[QLatin1String(vxcore::kJsonKeyAssetsFolder)] = assetsFolderTrimmed;
+  }
+  if (p_input.type == NotebookType::Bundled && isRecognizedLineEnding(p_input.lineEnding)) {
+    QJsonObject metadata;
+    metadata[QLatin1String(vxcore::kJsonKeyLineEnding)] = p_input.lineEnding;
+    configObj[QLatin1String(vxcore::kJsonKeyMetadata)] = metadata;
   }
   // Per ADR-8: sync configuration uses FLAT keys on the notebook config
   // (syncEnabled, syncBackend), not a nested "sync" object. syncRemoteUrl is
