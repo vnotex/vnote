@@ -4,6 +4,7 @@
 * **Search**
     * The Search panel can replace selected or all reviewed Simple content matches with literal text; confirmation saves affected notes including existing unsaved edits, with cancellation and failed-write recovery
     * Content search results now navigate to the correct editor line
+    * Vi-mode search updates incrementally and uses correct source positions in folded documents and table cells
 
 ## v4.7.0
 A feature release with encrypted notes, richer Markdown editing, offline math rendering and faster keyboard navigation on top of VNote 4.6.1:
