@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep the custom title bar Close icon visible on hover in Dreamy and Jadeite themes
 * Match the United Entry icon color to the other main toolbar icons, including live theme changes
 * Load tasks on first request so freshly installed bundled tasks are available without restarting VNote
 * Translate daily tips using the preferred UI language when the system regional format uses a different locale

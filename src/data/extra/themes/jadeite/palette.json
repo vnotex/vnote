@@ -198,7 +198,7 @@
                 "fg" : "@base#warning#fg"
             },
             "danger" : {
-                "fg": "@palette#fg13"
+                "fg": "@base#danger#fg"
             },
             "selected" : {
                 "fg" : "@palette#fg_link"
