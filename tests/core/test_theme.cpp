@@ -42,11 +42,15 @@ private slots:
   void testThemeFullyResolved_moonlight();
   void testThemeFullyResolved_latexLight();
   void testThemeFullyResolved_latexDark();
+  void testThemeFullyResolved_additionalThemes_data();
+  void testThemeFullyResolved_additionalThemes();
   void testEditorWebConceptParity_pure();
   void testEditorWebConceptParity_everforestDark();
   void testEditorWebConceptParity_moonlight();
   void testEditorWebConceptParity_latexLight();
   void testEditorWebConceptParity_latexDark();
+  void testEditorWebConceptParity_additionalThemes_data();
+  void testEditorWebConceptParity_additionalThemes();
   void testInterfaceQssFullyResolved_data();
   void testInterfaceQssFullyResolved();
   void testCppPaletteTokenExtractor();
@@ -417,6 +421,77 @@ void TestTheme::testEditorWebConceptParity_latexLight() {
 
 void TestTheme::testEditorWebConceptParity_latexDark() {
   assertEditorWebConceptParity(QStringLiteral("latex-dark"));
+}
+
+void TestTheme::testThemeFullyResolved_additionalThemes_data() {
+  QTest::addColumn<QString>("themeName");
+  for (const auto &name :
+       {"solarized-dark", "solarized-light", "vscode-dark", "vue-dark", "vue-light", "vx-idea"}) {
+    QTest::newRow(name) << QString::fromLatin1(name);
+  }
+}
+
+void TestTheme::testThemeFullyResolved_additionalThemes() {
+  QFETCH(QString, themeName);
+  assertThemeFullyResolved(themeName);
+}
+
+void TestTheme::testEditorWebConceptParity_additionalThemes_data() {
+  QTest::addColumn<QString>("themeName");
+  QTest::addColumn<QString>("cssSelector");
+  QTest::addColumn<QString>("cssProperty");
+  QTest::addColumn<QString>("editorSection");
+  QTest::addColumn<QString>("editorStyle");
+  QTest::addColumn<QString>("editorProperty");
+  for (const auto &name :
+       {"solarized-dark", "solarized-light", "vscode-dark", "vue-dark", "vue-light", "vx-idea"}) {
+    const QString theme = QString::fromLatin1(name);
+    const auto add = [&](const QString &concept, const QString &selector, const QString &cssProp,
+                         const QString &section, const QString &style, const QString &editorProp) {
+      const QByteArray row = (theme + QLatin1Char('/') + concept).toUtf8();
+      QTest::newRow(row.constData())
+          << theme << selector << cssProp << section << style << editorProp;
+    };
+    // These states intentionally mean the same thing in both surfaces. Other
+    // prose colors retain per-theme source/reader distinctions, not forced parity.
+    add("search", "#vx-content span.vx-search-match", "background-color", "editor-styles", "Search",
+        "background-color");
+    add("current-search", "#vx-content span.vx-current-search-match", "background-color",
+        "editor-styles", "SearchUnderCursor", "background-color");
+    add("selection-text", "::selection", "color", "editor-styles", "Text", "selected-text-color");
+    add("selection-background", "::selection", "background-color", "editor-styles", "Text",
+        "selected-background-color");
+    if (theme == QLatin1String("vscode-dark") || theme == QLatin1String("vx-idea")) {
+      add("heading", "h1, h2, h3, h4, h5, h6", "color", "markdown-syntax-styles", "H1",
+          "text-color");
+    }
+    if (theme == QLatin1String("solarized-dark")) {
+      add("inline-code", "code", "color", "markdown-syntax-styles", "CODE", "text-color");
+    }
+  }
+}
+
+void TestTheme::testEditorWebConceptParity_additionalThemes() {
+  QFETCH(QString, themeName);
+  QFETCH(QString, cssSelector);
+  QFETCH(QString, cssProperty);
+  QFETCH(QString, editorSection);
+  QFETCH(QString, editorStyle);
+  QFETCH(QString, editorProperty);
+  const QString path = findThemePath(themeName);
+  QVERIFY2(!path.isEmpty(), qPrintable(themeName));
+  QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(path));
+  QVERIFY(theme);
+  QJsonParseError error;
+  const auto editor = QJsonDocument::fromJson(theme->fetchTextEditorStyle().toUtf8(), &error);
+  QVERIFY2(error.error == QJsonParseError::NoError, qPrintable(error.errorString()));
+  const QColor sourceColor(
+      editor.object()[editorSection].toObject()[editorStyle].toObject()[editorProperty].toString());
+  const QColor readerColor(extractCssColor(theme->fetchWebStyleSheet(), cssSelector, cssProperty));
+  QVERIFY2(sourceColor.isValid(),
+           qPrintable(editorSection + "/" + editorStyle + "/" + editorProperty));
+  QVERIFY2(readerColor.isValid(), qPrintable(cssSelector + "/" + cssProperty));
+  QCOMPARE(sourceColor, readerColor);
 }
 
 // Enabled text must remain readable in its actual role/state, not match an aesthetic snapshot.

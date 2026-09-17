@@ -304,7 +304,9 @@ body {
 
 ## Theme Token Conversion Convention
 
-Theme authors should use palette tokens to share colors between `web.css` and `text-editor.theme`. This convention is followed by 5 themes (pure, everforest-dark, moonlight, latex-light, latex-dark). The remaining 7 themes ship hardcoded hex and will convert in future tasks.
+Theme authors should use palette tokens to share colors between `web.css` and `text-editor.theme`.
+The original conversion pilot covered pure, everforest-dark, moonlight, latex-light and
+latex-dark. Its limits remain documented below; the broader cleanup is a separate exception.
 
 ### Naming Convention
 
@@ -335,8 +337,8 @@ The viewer (`web.css`) color wins by default for shared concepts. A theme may op
 | Theme | Concept | Decision |
 |---|---|---|
 | pure | FENCEDCODEBLOCK + VERBATIM | OPT-OUT (keep editor purple `#673ab7` to distinguish source code from prose) |
-| everforest-dark | FENCEDCODEBLOCK + VERBATIM | OPT-OUT (keep editor green `#A7C080` to distinguish source code from prose) |
-| moonlight | (none) | UNIFIED (editor and web both already used `#98c379`) |
+| everforest-dark | FENCEDCODEBLOCK + VERBATIM | OPT-OUT (use `fg_code_block_source` to keep green source code distinct from reader prose) |
+| moonlight | FENCEDCODEBLOCK + VERBATIM | UNIFIED (retain the existing shared `fg_inline_code` references) |
 
 Authors should document any opt-out decision in the plan or commit message with a one-line rationale so future contributors understand why a token was not adopted.
 
@@ -353,12 +355,42 @@ The conversion pilot does NOT tokenize:
 - CSS comments (`/* ... */`).
 - Source-text concepts with no rendered HTML analog: `LIST_BULLET`, `LIST_ENUMERATOR`, `IMAGE`, `REFERENCE`, `HTML_ENTITY`, `HTML`, `HTMLBLOCK`, `COMMENT`, `NOTE`, `FRONTMATTER`, `INLINEEQUATION`, `DISPLAYFORMULA`, `TABLEBORDER`.
 
+### Broader Opaque-Color Cleanup Exception
+
+The semantic-palette cleanup deliberately extends the pilot for everforest-dark, latex-dark,
+latex-light, moonlight, solarized-dark, solarized-light, vscode-dark, vue-dark, vue-light and
+vx-idea. For these themes, opaque colors in editor chrome, source-only syntax, alerts, graph
+surfaces and state-specific focus cues also use palette tokens. This is a broader exception,
+not removal of the pilot limits above. Native, pure and pink-shock remain unchanged by this pass.
+
+- Existing semantic base/widget roles win when both their value and purpose match. Otherwise
+  reuse an appropriate foreground/background shade primitive, or add a used flat semantic role.
+  Equal RGB alone does not justify coupling unrelated roles.
+- This pass is value-preserving: retain editor/reader distinctions with separate source/reader
+  roles rather than applying the pilot's viewer-wins rule. Source code, headings, links, quotes,
+  marks and search foregrounds may differ while intentionally shared backgrounds still agree.
+- Name paint roles by their purpose: `bg_folding_highlight` is a fill even though vtextedit stores
+  it in a `text-color` property. Do not add unused aliases or references inside the raw palette.
+- Opaque CSS named colors may resolve to equivalent hex. Intrinsic `transparent`, `none`,
+  `inherit` and `currentColor` remain CSS paint operations. Preserve exact fractional `rgba(...)`
+  expressions: encoding their alpha as 8-bit hex would change values.
+- `highlight.css`, SVGs and KSyntax theme files still load without token expansion. Their literal
+  colors, including optional VX styles, are outside this cleanup; no resolver/build pipeline is added.
+
 ### Verification Template
 
-When converting a new theme, add 2 tests to `tests/core/test_theme.cpp`:
+When converting a new theme, cover both behaviors in `tests/core/test_theme.cpp` with per-theme
+slots or data-driven rows:
 
 - `testThemeFullyResolved_<name>()`: asserts that the resolved `web.css` and `text-editor.theme` contain no `@palette#` or `@base#` substrings, and that the resolved JSON still parses cleanly.
-- `testEditorWebConceptParity_<name>()`: asserts that resolved editor concept colors equal resolved viewer concept colors for heading, link, inline code, blockquote, search match background, and current search background.
+- `testEditorWebConceptParity_*`: assert editor/viewer equality only for intentionally shared
+  concepts, without literal-color expectations. The additional-theme matrix covers search and
+  true-selection pairs in all six newly converted themes, headings in VS Code/VX Idea, and inline
+  code in Solarized Dark. Other foreground distinctions remain explicit opt-outs.
+
+For a value-preserving conversion, also compare production-resolved QSS, web CSS and editor JSON
+before/after (normalizing equivalent color spelling only), require every existing palette role
+to remain unchanged, and run the focused theme tests plus the application resource build.
 
 ### Token Regex Limitations
 

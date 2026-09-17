@@ -1413,7 +1413,7 @@ QListView::item:selected:!active {
 QToolButton[StatusBarCol="3"]:focus:enabled,
 QToolButton[StatusBarCol="3"]:hover:focus:enabled,
 QToolButton[StatusBarCol="3"]:pressed:focus:enabled {
-    border-color: #D5D5D5;
+    border-color: @palette#border_statusbar_focus;
 }
 
 QToolButton:disabled {

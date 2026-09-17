@@ -6,15 +6,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-    color: #ccd1d8;
+    color: @palette#fg_reader;
     line-height: 1.5;
     padding: 16px;
-    background-color: #002B36;
+    background-color: @base#content#bg;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #D7764F;
+    color: @palette#fg_heading;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -51,7 +51,7 @@ h6 {
 }
 
 a {
-    color: #6DBFB8;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -64,12 +64,12 @@ a:hover {
 }
 
 a:focus {
-    outline: 2px solid #6DBFB8;
+    outline: 2px solid @palette#fg_link;
     outline-offset: 2px;
 }
 
 a:visited {
-    color: #D39FDC;
+    color: @palette#fg_link_visited;
 }
 
 ul, ol {
@@ -91,8 +91,8 @@ p, ul, ol {
 }
 
 mark {
-    color: #000000;
-    background-color: #c4c400;
+    color: @palette#fg_mark;
+    background-color: @palette#bg_mark;
 }
 
 pre {
@@ -106,7 +106,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New", monospace;
-    color: #D7BA7D;
+    color: @palette#fg_inline_code;
     word-break: break-word;
 }
 
@@ -114,8 +114,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #D7BA7D;
-    background-color: #073642;
+    color: @palette#fg_inline_code;
+    background-color: @palette#bg1_5;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New", monospace;
     white-space: pre;
@@ -131,14 +131,14 @@ aside {
 }
 
 blockquote {
-    color: #abb2bf;
-    border-left: .5em solid #abb2bf;
+    color: @palette#fg_blockquote;
+    border-left: .5em solid @palette#border_blockquote;
     padding: 0 1em;
     margin-left: 0;
 }
 
 blockquote p {
-    color: #abb2bf;
+    color: @palette#fg_blockquote;
 }
 
 hr {
@@ -147,7 +147,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background-color: #4c5562;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -157,25 +157,25 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #4c5562;
-   background-color: #002B36;
+   border-top: 1px solid @palette#border_table;
+   background-color: @base#content#bg;
    margin: 0;
    padding: 0;
 }
 
 table tr:hover {
-   background-color: #3b424c;
+   background-color: @palette#bg_table_hover;
 }
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #4c5562;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #4c5562;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
@@ -191,8 +191,8 @@ table tr th :last-child, table tr td :last-child {
 div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-flowchartjs-graph {
@@ -200,8 +200,8 @@ div.vx-flowchartjs-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-wavedrom-graph {
@@ -209,8 +209,8 @@ div.vx-wavedrom-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-plantuml-graph {
@@ -218,8 +218,8 @@ div.vx-plantuml-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 ::selection {
@@ -243,18 +243,18 @@ div.vx-plantuml-graph {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #A0A6B1;
+    background: @base#icon#inactive#fg;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #9ea5b4;
+    background: @base#icon#fg;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: #9ea5b4;
+    background: @base#icon#fg;
 }
 
 ::-webkit-scrollbar-button {
@@ -264,13 +264,13 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #222222;
-    background-color: #4db6ac;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #222222;
-    background-color: #66bb6a;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search_current;
 }
 
 .vx-alert{
@@ -284,7 +284,7 @@ div.vx-plantuml-graph {
 .vx-alert::before{
     background-color: @base#info#fg;
     border-radius: 100%;
-    color: #484A4B;
+    color: @palette#fg_alert_info_icon;
     content: '!';
     font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -304,7 +304,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-primary::before {
     background-color: @base#info#fg;
-    color: #484A4B;
+    color: @palette#fg_alert_info_icon;
 }
 .vx-alert.alert-secondary {
     color: @base#normal#fg;
@@ -313,7 +313,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-secondary::before {
     background-color: @base#muted#fg;
-    color: #464849;
+    color: @palette#fg_alert_muted_icon;
 }
 .vx-alert.alert-success, .vx-alert.alert-s {
     color: @base#normal#fg;
@@ -322,7 +322,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-success::before, .vx-alert.alert-s::before {
     background-color: @base#success#fg;
-    color: #484B4C;
+    color: @palette#fg_alert_success_icon;
 }
 .vx-alert.alert-warning, .vx-alert.alert-w {
     color: @base#normal#fg;
@@ -331,7 +331,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-warning::before, .vx-alert.alert-w::before {
     background-color: @base#warning#fg;
-    color: #484B4C;
+    color: @palette#fg_alert_warning_icon;
 }
 .vx-alert.alert-info, .vx-alert.alert-i {
     color: @base#normal#fg;
@@ -340,7 +340,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-info::before, .vx-alert.alert-i::before {
     background-color: @base#info#fg;
-    color: #484A4B;
+    color: @palette#fg_alert_info_icon;
 }
 .vx-alert.alert-danger, .vx-alert.alert-d {
     color: @base#normal#fg;
@@ -349,7 +349,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-danger::before, .vx-alert.alert-d::before {
     background-color: @base#error#fg;
-    color: #484A4B;
+    color: @palette#fg_alert_error_icon;
 }
 .vx-alert.alert-light {
     color: @base#normal#fg;
@@ -358,7 +358,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-light::before {
     background-color: @base#muted#fg;
-    color: #464849;
+    color: @palette#fg_alert_muted_icon;
 }
 .vx-alert.alert-dark {
     color: @base#normal#fg;
@@ -367,5 +367,5 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-dark::before {
     background-color: @base#muted#fg;
-    color: #464849;
+    color: @palette#fg_alert_muted_icon;
 }

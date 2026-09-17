@@ -1397,7 +1397,7 @@ QPushButton[DangerButton="true"]:focus:hover:enabled {
 QToolButton[StatusBarCol="3"]:focus:enabled,
 QToolButton[StatusBarCol="3"]:focus:hover:enabled,
 QToolButton[StatusBarCol="3"]:focus:pressed:enabled {
-    border-color: #B0C7E8;
+    border-color: @palette#border_statusbar_focus;
 }
 
 QToolButton:checked:enabled,

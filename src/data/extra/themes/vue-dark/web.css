@@ -1,15 +1,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
-    color: #E3E3E3;
+    color: @palette#fg_reader;
     line-height: 1.5;
     padding: 16px;
-    background-color: #242424;
+    background-color: @base#content#bg;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #E1E1E1;
+    color: @palette#fg_heading;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -46,7 +46,7 @@ h6 {
 }
 
 a {
-    color: #A5AAFF;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -55,7 +55,7 @@ a {
 }
 
 a:focus {
-    outline: 2px solid #A5AAFF;
+    outline: 2px solid @palette#fg_link;
     outline-offset: 2px;
 }
 
@@ -64,7 +64,7 @@ a:hover {
 }
 
 a:visited {
-    color: #D39FDC;
+    color: @palette#fg_link_visited;
 }
 
 ul, ol {
@@ -86,8 +86,8 @@ p, ul, ol {
 }
 
 mark {
-    color: #000000;
-    background-color: #c4c400;
+    color: @palette#fg_mark;
+    background-color: @palette#bg_mark;
 }
 
 pre {
@@ -101,7 +101,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
-    color: #C9DEF1;
+    color: @palette#fg_inline_code;
     word-break: break-word;
 }
 
@@ -113,8 +113,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #C9DEF1;
-    background-color: #2d323b;
+    color: @palette#fg_code_block;
+    background-color: @palette#bg10_4;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     white-space: pre;
@@ -130,15 +130,15 @@ aside {
 }
 
 blockquote {
-    color: #abb2bf;
-    border-left: .2em solid #abb2bf;
+    color: @palette#fg_blockquote;
+    border-left: .2em solid @palette#fg_blockquote;
     margin: 1em 0;
     padding: .3em .5rem;
-    background-color: #3A3A3A;
+    background-color: @palette#bg_blockquote;
 }
 
 blockquote p,blockquote ul {
-    color: #abb2bf;
+    color: @palette#fg_blockquote;
     margin: 8px 0;
 }
 
@@ -148,7 +148,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background-color: #4c5562;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -160,24 +160,24 @@ table {
 
 table tr {
    border-top: 1px solid rgba(84, 84, 84, .65);;
-   background-color: #242424;
+   background-color: @base#content#bg;
    margin: 0;
    padding: 0;
 }
 
 table tr:hover {
-   background-color: #3b424c;
+   background-color: @palette#bg_table_hover;
 }
 
 table tr:nth-child(2n){
-    background-color: #2f2f2f;
+    background-color: @palette#bg_table_alternate;
 }
 
 table tr th {
    font-weight: bold;
    border: 1px solid rgba(84, 84, 84, .65);;
-   background-color: #1A1A1A;
-   color: #E1E1E1;
+   background-color: @base#normal#bg;
+   color: @palette#fg_heading;
    margin: 0;
    padding: 12px 16px;
 }
@@ -199,8 +199,8 @@ table tr th :last-child, table tr td :last-child {
 div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-flowchartjs-graph {
@@ -208,8 +208,8 @@ div.vx-flowchartjs-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-wavedrom-graph {
@@ -217,8 +217,8 @@ div.vx-wavedrom-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-plantuml-graph {
@@ -226,8 +226,8 @@ div.vx-plantuml-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 ::selection {
@@ -272,13 +272,13 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #222222;
-    background-color: #4db6ac;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #222222;
-    background-color: #66bb6a;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search_current;
 }
 
 /* 宽度设定 */
@@ -344,7 +344,7 @@ div.vx-plantuml-graph {
 .vx-alert::before {
     background-color: @base#info#fg;
     border-radius: 100%;
-    color: #242424;
+    color: @palette#fg_alert_icon;
     content: '!';
     font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -368,7 +368,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-info::before,
 .vx-alert.alert-i::before {
     background-color: @base#info#fg;
-    color: #242424;
+    color: @palette#fg_alert_icon;
 }
 
 .vx-alert.alert-secondary,
@@ -381,7 +381,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-light::before,
 .vx-alert.alert-dark::before {
     background-color: @base#muted#fg;
-    color: #242424;
+    color: @palette#fg_alert_icon;
 }
 
 .vx-alert.alert-success,
@@ -392,7 +392,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-success::before,
 .vx-alert.alert-s::before {
     background-color: @base#success#fg;
-    color: #383838;
+    color: @palette#fg_alert_success_icon;
 }
 
 .vx-alert.alert-warning,
@@ -403,7 +403,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-warning::before,
 .vx-alert.alert-w::before {
     background-color: @base#warning#fg;
-    color: #242424;
+    color: @palette#fg_alert_icon;
 }
 
 .vx-alert.alert-danger,
@@ -414,5 +414,5 @@ div.vx-plantuml-graph {
 .vx-alert.alert-danger::before,
 .vx-alert.alert-d::before {
     background-color: @base#error#fg;
-    color: #242424;
+    color: @palette#fg_alert_icon;
 }

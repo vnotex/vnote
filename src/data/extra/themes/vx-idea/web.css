@@ -7,15 +7,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Segoe UI", Helvetica, sans-serif, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体";
-    color: #34495e;
+    color: @base#content#fg;
     line-height: 1.5;
     padding: 15px;
-    background-color: #ffffff;
+    background-color: @palette#layer4;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #34495e;
+    color: @base#content#fg;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -53,7 +53,7 @@ h6 {
 }
 
 a {
-    color: #006FBA;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -62,7 +62,7 @@ a {
 }
 
 a:focus {
-    outline: 2px solid #006FBA;
+    outline: 2px solid @palette#fg_link;
     outline-offset: 2px;
 }
 
@@ -71,7 +71,7 @@ a:hover {
 }
 
 a:visited {
-    color: #800080;
+    color: @palette#fg_link_visited;
 }
 
 ul, ol {
@@ -93,8 +93,8 @@ p, ul, ol {
 }
 
 mark {
-    color: #000000;
-    background-color: #c4c400;
+    color: @palette#fg_mark;
+    background-color: @palette#bg_mark;
 }
 
 pre {
@@ -108,7 +108,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, Monospace, Courier;
-    color: #B04F00;
+    color: @palette#fg_inline_code;
     word-break: break-word;
 }
 
@@ -116,8 +116,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #e8eaf6;
-    background-color: #272822;
+    color: @palette#fg_code_block;
+    background-color: @palette#bg_code_block;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, Monospace, Courier;
     white-space: pre;
@@ -133,15 +133,15 @@ aside {
 }
 
 blockquote {
-    color: #34495e;
-    border-left: .2em solid #a0c1dd;
+    color: @base#content#fg;
+    border-left: .2em solid @palette#border_blockquote;
     padding: .1em 1em;
-    background-color: #f4f7f9;
+    background-color: @palette#bg_blockquote;
     margin-left: 0;
 }
 
 blockquote p {
-    color: #34495e;
+    color: @base#content#fg;
 }
 
 hr {
@@ -150,7 +150,7 @@ hr {
     margin: 1em 0; 
     border: none;
     height: 1px;
-    background-color: #bdc3c7;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -160,30 +160,30 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #dfe2e5;
-   background-color: #ffffff;
+   border-top: 1px solid @palette#border_table;
+   background-color: @palette#layer4;
    margin: 0;
    padding: 0;
 }
 
 table tr:nth-child(2n),
 th {
-    background-color: #fafafa;
+    background-color: @palette#bg3_6;
 }
 
 table tr:hover {
-   background-color: #f1f2f6;
+   background-color: @palette#bg3_5;
 }
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #dfe2e5;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #dfe2e5;
+   border: 1px solid @palette#border_table;
    margin: 0;
    padding: 6px 13px;
 }
@@ -200,7 +200,7 @@ div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
     /* background: #bdcbd3; */
-    color: #737373;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-flowchartjs-graph {
@@ -209,7 +209,7 @@ div.vx-flowchartjs-graph {
     width: fit-content;
     overflow: hidden;
     /* background: #bdcbd3; */
-    color: #757373;
+    color: @palette#fg_graph_caption_flowchart;
 }
 
 div.vx-wavedrom-graph {
@@ -218,7 +218,7 @@ div.vx-wavedrom-graph {
     width: fit-content;
     overflow: hidden;
     /* background: #bdcbd3; */
-    color: #737373;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-plantuml-graph {
@@ -227,7 +227,7 @@ div.vx-plantuml-graph {
     width: fit-content;
     overflow: hidden;
     /* background: #bdcbd3; */
-    color: #737373;
+    color: @palette#fg_graph_caption;
 }
 
 ::selection {
@@ -251,18 +251,18 @@ div.vx-plantuml-graph {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #7A7A7A;
+    background: @palette#fg3_7;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #6C7C8B;
+    background: @palette#bg_scrollbar_interactive;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: #6C7C8B;
+    background: @palette#bg_scrollbar_interactive;
 }
 
 ::-webkit-scrollbar-button {
@@ -272,13 +272,13 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #2A3B4C;
-    background-color: #4db6ac;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #2C3D4F;
-    background-color: #66bb6a;
+    color: @palette#fg_search_current;
+    background-color: @palette#bg_search_current;
 }
 
 /* Quiet alert surfaces; semantic color is carried by the left border. */

@@ -290,7 +290,7 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-current-search-match {
-    color: #E4E4E4;
+    color: @palette#fg_search_current;
     background-color: @palette#bg_search_current;
 }
 

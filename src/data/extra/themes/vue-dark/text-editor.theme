@@ -9,137 +9,137 @@
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New",
             "font-size" : 12,
-            "text-color" : "#ccd1d8",
-            "background-color" : "#242424",
+            "text-color" : "@base#content#fg",
+            "background-color" : "@base#content#bg",
             "selected-text-color" : "@base#content#selection#fg",
             "selected-background-color" : "@base#content#selection#bg"
         },
         "CursorLine" : {
-            "background-color" : "#424242"
+            "background-color" : "@palette#bg1_51"
         },
         "TrailingSpace" : {
-            "background-color" : "#959eae"
+            "background-color" : "@palette#fg1_3"
         },
         "Tab" : {
-            "background-color" : "#a0a8b7"
+            "background-color" : "@palette#fg1_4"
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
-            "text-color" : "#222222",
-            "background-color" : "#dfdf00"
+            "text-color" : "@palette#fg_search",
+            "background-color" : "@palette#bg_selected_text"
         },
         "IndicatorsBorder" : {
-            "text-color" : "#9A9A9A",
-            "background-color" : "#2F2F2F"
+            "text-color" : "@palette#fg_line_number",
+            "background-color" : "@palette#bg_editor_gutter"
         },
         "CurrentLineNumber" : {
-            "text-color" : "#ccd1d8"
+            "text-color" : "@base#content#fg"
         },
         "Folding" : {
-            "text-color" : "#9DA6DC"
+            "text-color" : "@palette#fg_folding"
         },
         "FoldedFolding" : {
-            "text-color" : "#9DA6DC"
+            "text-color" : "@palette#fg_folding"
         },
         "FoldingHighlight" : {
-            "text-color" : "#4c5562"
+            "text-color" : "@palette#bg_folding_highlight"
         },
         "FoldedFoldingRangeLine" : {
-            "background-color" : "#303030"
+            "background-color" : "@palette#bg_folded_range"
         },
         "IncrementalSearch" : {
             "//comment" : "Incremental search highlight",
-            "text-color" : "#222222",
-            "background-color" : "#ce93d8"
+            "text-color" : "@palette#fg_search",
+            "background-color" : "@palette#bg_search_incremental"
         },
         "Search" : {
             "//comment" : "Search highlight",
-            "text-color" : "#222222",
-            "background-color" : "#4db6ac"
+            "text-color" : "@palette#fg_search",
+            "background-color" : "@palette#bg_search"
         },
         "SearchUnderCursor" : {
             "//comment" : "Search highlight under cursor",
-            "text-color" : "#222222",
-            "background-color" : "#66bb6a"
+            "text-color" : "@palette#fg_search",
+            "background-color" : "@palette#bg_search_current"
         }
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#8D9297"},
-        "ActiveListItem" : {"background-color" : "#303030"},
-        "ConcealedText" : {"text-color" : "#72B8F1", "background-color" : "#303030"},
+        "ListItemGuide" : {"text-color" : "@palette#fg_list_guide"},
+        "ActiveListItem" : {"background-color" : "@palette#bg_active_list_item"},
+        "ConcealedText" : {"text-color" : "@palette#fg_concealed_text", "background-color" : "@palette#bg_concealed_text"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "YaHei Consolas Hybrid, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, Tahoma, Arial, Geneva, Georgia, Times New Roman",
             "font-size" : 12,
-            "text-color" : "#ccd1d8",
-            "background-color" : "#242424",
+            "text-color" : "@base#content#fg",
+            "background-color" : "@base#content#bg",
             "selected-text-color" : "@base#content#selection#fg",
             "selected-background-color" : "@base#content#selection#bg"
         },
         "Preview" : {
-            "background-color" : "#b0bec5"
+            "background-color" : "@palette#bg_editor_preview"
         }
     },
     "markdown-syntax-styles" : {
         "H1" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_heading_source",
             "bold" : true,
             "font-size" : 17
         },
         "H2" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_heading_source",
             "bold" : true,
             "font-size" : 16
         },
         "H3" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_heading_source",
             "bold" : true,
             "font-size" : 15
         },
         "H4" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_heading_source",
             "bold" : true,
             "font-size" : 14
         },
         "H5" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_heading_source",
             "bold" : true,
             "font-size" : 13
         },
         "H6" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_heading_source",
             "bold" : true,
             "font-size" : 12
         },
         "HRULE" : {
-            "text-color" : "#CACFD7",
-            "background-color" : "#864046"
+            "text-color" : "@palette#fg_hr_source",
+            "background-color" : "@palette#bg_hr_source"
         },
         "LIST_BULLET" : {
-            "text-color" : "#E3E3E3",
+            "text-color" : "@palette#fg_list_marker",
             "bold" : true
         },
         "LIST_ENUMERATOR" : {
-            "text-color" : "#E3E3E3"
+            "text-color" : "@palette#fg_list_marker"
         },
         "LINK" : {
-            "text-color" : "#72B8F1"
+            "text-color" : "@palette#fg_link_source"
         },
         "AUTO_LINK_URL" : {
-            "text-color" : "#72B8F1"
+            "text-color" : "@palette#fg_link_source"
         },
         "AUTO_LINK_EMAIL" : {
-            "text-color" : "#72B8F1"
+            "text-color" : "@palette#fg_link_source"
         },
         "IMAGE" : {
-            "text-color" : "#93B6D2"
+            "text-color" : "@palette#fg_image"
         },
         "REFERENCE" : {
-            "text-color" : "#6ABEC9"
+            "text-color" : "@palette#fg_reference"
         },
         "CODE" : {
-            "text-color" : "#98c379",
+            "text-color" : "@palette#fg_inline_code_source",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "EMPH" : {
@@ -149,57 +149,57 @@
             "bold" : true
         },
         "HTML_ENTITY" : {
-            "text-color" : "#D6A891"
+            "text-color" : "@palette#fg_html"
         },
         "HTML" : {
-            "text-color" : "#D6A891"
+            "text-color" : "@palette#fg_html"
         },
         "HTMLBLOCK" : {
-            "text-color" : "#D6A891"
+            "text-color" : "@palette#fg_html"
         },
         "COMMENT" : {
-            "text-color" : "#AAB2BF"
+            "text-color" : "@palette#fg_source_comment"
         },
         "VERBATIM" : {
-            "text-color" : "#98c379",
+            "text-color" : "@palette#fg_code_block_source",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "//comment" : "Please modify the syntax highlight theme as well if you change this",
         "FENCEDCODEBLOCK" : {
-            "text-color" : "#98c379",
+            "text-color" : "@palette#fg_code_block_source",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "BLOCKQUOTE" : {
-            "text-color" : "#A6AFE0"
+            "text-color" : "@palette#fg_blockquote_source"
         },
         "NOTE" : {
-            "text-color" : "#BDA8E0"
+            "text-color" : "@palette#fg_note"
         },
         "STRIKE" : {
-            "text-color" : "#ED9C9C",
+            "text-color" : "@palette#fg_strike",
             "strike-through" : true
         },
         "FRONTMATTER" : {
-            "text-color" : "#ADB2BB"
+            "text-color" : "@palette#fg_front_matter"
         },
         "INLINEEQUATION" : {
-            "text-color" : "#67C1B8",
+            "text-color" : "@palette#fg_math",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "DISPLAYFORMULA" : {
-            "text-color" : "#67C1B8",
+            "text-color" : "@palette#fg_math",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
-            "text-color" : "#d7dae0",
-            "background-color" : "#606000"
+            "text-color" : "@palette#fg1_9",
+            "background-color" : "@palette#bg_mark_source"
         },
         "TABLE" : {
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "TABLEBORDER" : {
-            "text-color" : "#FFFFFF",
-            "background-color" : "#424242"
+            "text-color" : "@palette#fg_table_border_source",
+            "background-color" : "@palette#bg1_51"
         }
    }
 }

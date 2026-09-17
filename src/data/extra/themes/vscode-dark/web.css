@@ -1,15 +1,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
-    color: #D4D4D4;
+    color: @palette#fg_text;
     line-height: 1.5;
     padding: 16px;
-    background-color: #1E1E1E;
+    background-color: @base#normal#bg;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #D4D4D4;
+    color: @palette#fg_text;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -46,7 +46,7 @@ h6 {
 }
 
 a {
-    color: #77C9FF;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -55,7 +55,7 @@ a {
 }
 
 a:focus {
-    outline: 2px solid #77C9FF;
+    outline: 2px solid @palette#fg_link;
     outline-offset: 2px;
 }
 
@@ -64,7 +64,7 @@ a:hover {
 }
 
 a:visited {
-    color: #DAB4DA;
+    color: @palette#fg_link_visited;
 }
 
 ul, ol {
@@ -96,7 +96,7 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
-    color: #E3B896;
+    color: @palette#fg_inline_code;
     word-break: break-word;
 }
 
@@ -105,8 +105,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #D4D4D4;
-    background-color: #161616;
+    color: @palette#fg_text;
+    background-color: @palette#bg_code_block;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     white-space: pre;
@@ -122,14 +122,14 @@ aside {
 }
 
 blockquote {
-    color: #888888;
-    border-left: .5em solid #7a7a7a;
+    color: @palette#fg_blockquote;
+    border-left: .5em solid @palette#border_blockquote;
     padding: 0 1em;
     margin-left: 0;
 }
 
 blockquote p {
-    color: #888888;
+    color: @palette#fg_blockquote;
 }
 
 hr {
@@ -138,7 +138,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background-color: #999999;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -148,8 +148,8 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #cccccc;
-   background-color: #1e1e1e;
+   border-top: 1px solid @palette#fg1_8;
+   background-color: @base#normal#bg;
    margin: 0;
    padding: 0;
 }
@@ -160,13 +160,13 @@ table tr:hover {
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #cccccc;
+   border: 1px solid @palette#fg1_8;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #cccccc;
+   border: 1px solid @palette#fg1_8;
    margin: 0;
    padding: 6px 13px;
 }
@@ -247,13 +247,13 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #222222;
-    background-color: #4db6ac;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #222222;
-    background-color: #66bb6a;
+    color: @palette#fg_search;
+    background-color: @palette#bg_search_current;
 }
 
 .vx-alert, div.vx-alert {
@@ -267,7 +267,7 @@ div.vx-plantuml-graph {
 .vx-alert::before {
     background-color: @base#info#fg;
     border-radius: 100%;
-    color: #252524;
+    color: @palette#fg_alert_icon;
     content: '!';
     font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -287,7 +287,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-primary::before {
     background-color: @base#info#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }
 .vx-alert.alert-secondary {
     color: @base#normal#fg;
@@ -296,7 +296,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-secondary::before {
     background-color: @base#muted#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }
 .vx-alert.alert-success, .vx-alert.alert-s {
     color: @base#normal#fg;
@@ -305,7 +305,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-success::before, .vx-alert.alert-s::before {
     background-color: @base#success#fg;
-    color: #232322;
+    color: @palette#fg_alert_success_icon;
 }
 .vx-alert.alert-warning, .vx-alert.alert-w {
     color: @base#normal#fg;
@@ -314,7 +314,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-warning::before, .vx-alert.alert-w::before {
     background-color: @base#warning#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }
 .vx-alert.alert-info, .vx-alert.alert-i {
     color: @base#normal#fg;
@@ -323,7 +323,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-info::before, .vx-alert.alert-i::before {
     background-color: @base#info#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }
 .vx-alert.alert-danger, .vx-alert.alert-d {
     color: @base#normal#fg;
@@ -332,7 +332,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-danger::before, .vx-alert.alert-d::before {
     background-color: @base#error#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }
 .vx-alert.alert-light {
     color: @base#normal#fg;
@@ -341,7 +341,7 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-light::before {
     background-color: @base#muted#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }
 .vx-alert.alert-dark {
     color: @base#normal#fg;
@@ -350,5 +350,5 @@ div.vx-plantuml-graph {
 }
 .vx-alert.alert-dark::before {
     background-color: @base#muted#fg;
-    color: #252524;
+    color: @palette#fg_alert_icon;
 }

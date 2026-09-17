@@ -54,7 +54,23 @@
         "bg_search_incremental" : "#5a3d63",
         "bg_mark" : "#6b5a1e",
         "bg_hr" : "#4a4a4a",
-        "border_table" : "#3d3d3d"
+        "border_table" : "#3d3d3d",
+        "bg_editor_cursor_line" : "#2a2a2a",
+        "bg_trailing_space" : "#848484",
+        "bg_tab_marker" : "#848484",
+        "fg_line_number" : "#8E8E8E",
+        "fg_folding" : "#BED4FC",
+        "fg_folded_folding" : "#CBD3E1",
+        "bg_folding_highlight" : "#59739B",
+        "bg_folded_range" : "#2a3a2a",
+        "fg_search_current" : "#E4E4E4",
+        "fg_list_guide" : "#848484",
+        "bg_active_list_item" : "#242424",
+        "fg_hr_source" : "#A5A19A",
+        "fg_html" : "#B993D3",
+        "fg_source_comment" : "#A2A2A2",
+        "fg_code_block_source" : "#9ab6e0",
+        "fg_front_matter" : "#A5A19A"
     },
     "base" : {
         "normal" : {

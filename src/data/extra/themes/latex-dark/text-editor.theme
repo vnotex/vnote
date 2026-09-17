@@ -15,13 +15,13 @@
             "selected-background-color" : "@base#content#selection#bg"
         },
         "CursorLine" : {
-            "background-color" : "#2a2a2a"
+            "background-color" : "@palette#bg_editor_cursor_line"
         },
         "TrailingSpace" : {
-            "background-color" : "#848484"
+            "background-color" : "@palette#bg_trailing_space"
         },
         "Tab" : {
-            "background-color" : "#848484"
+            "background-color" : "@palette#bg_tab_marker"
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
@@ -29,23 +29,23 @@
             "background-color" : "@palette#bg_search"
         },
         "IndicatorsBorder" : {
-            "text-color" : "#8E8E8E",
+            "text-color" : "@palette#fg_line_number",
             "background-color" : "@palette#bg_blockquote"
         },
         "CurrentLineNumber" : {
             "text-color" : "@base#normal#fg"
         },
         "Folding" : {
-            "text-color" : "#BED4FC"
+            "text-color" : "@palette#fg_folding"
         },
         "FoldedFolding" : {
-            "text-color" : "#CBD3E1"
+            "text-color" : "@palette#fg_folded_folding"
         },
         "FoldingHighlight" : {
-            "text-color" : "#59739B"
+            "text-color" : "@palette#bg_folding_highlight"
         },
         "FoldedFoldingRangeLine" : {
-            "background-color" : "#2a3a2a"
+            "background-color" : "@palette#bg_folded_range"
         },
         "IncrementalSearch" : {
             "//comment" : "Incremental search highlight",
@@ -59,15 +59,15 @@
         },
         "SearchUnderCursor" : {
             "//comment" : "Search highlight under cursor",
-            "text-color" : "#E4E4E4",
+            "text-color" : "@palette#fg_search_current",
             "background-color" : "@palette#bg_search_current"
         }
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
-        "ListItemGuide" : {"text-color" : "#848484"},
-        "ActiveListItem" : {"background-color" : "#242424"},
-        "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "#242424"},
+        "ListItemGuide" : {"text-color" : "@palette#fg_list_guide"},
+        "ActiveListItem" : {"background-color" : "@palette#bg_active_list_item"},
+        "ConcealedText" : {"text-color" : "@palette#fg_link", "background-color" : "@palette#bg_active_list_item"},
         "Text" : {
             "//comment" : "Support a list of fonts separated by ,",
             "font-family" : "Latin Modern Roman, CMU Serif, Times New Roman, Times, Noto Serif CJK SC, Source Han Serif SC, Songti SC, STSong, 宋体, SimSun, Georgia, Serif",
@@ -112,7 +112,7 @@
             "font-size" : 13
         },
         "HRULE" : {
-            "text-color" : "#A5A19A",
+            "text-color" : "@palette#fg_hr_source",
             "background-color" : "@palette#bg3_4"
         },
         "LIST_BULLET" : {
@@ -148,24 +148,24 @@
             "bold" : true
         },
         "HTML_ENTITY" : {
-            "text-color" : "#B993D3"
+            "text-color" : "@palette#fg_html"
         },
         "HTML" : {
-            "text-color" : "#B993D3"
+            "text-color" : "@palette#fg_html"
         },
         "HTMLBLOCK" : {
-            "text-color" : "#B993D3"
+            "text-color" : "@palette#fg_html"
         },
         "COMMENT" : {
-            "text-color" : "#A2A2A2"
+            "text-color" : "@palette#fg_source_comment"
         },
         "VERBATIM" : {
-            "text-color" : "#9ab6e0",
+            "text-color" : "@palette#fg_code_block_source",
             "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
         },
         "//comment" : "Please modify the syntax highlight theme as well if you change this",
         "FENCEDCODEBLOCK" : {
-            "text-color" : "#9ab6e0",
+            "text-color" : "@palette#fg_code_block_source",
             "font-family" : "Latin Modern Mono, CMU Typewriter Text, Consolas, Courier New, Courier, Monospace"
         },
         "BLOCKQUOTE" : {
@@ -179,7 +179,7 @@
             "strike-through" : true
         },
         "FRONTMATTER" : {
-            "text-color" : "#A5A19A"
+            "text-color" : "@palette#fg_front_matter"
         },
         "INLINEEQUATION" : {
             "text-color" : "@palette#fg_success",

@@ -1,15 +1,15 @@
 body {
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
-    color: #34495E;
+    color: @palette#fg_reader;
     line-height: 1.5;
     padding: 0;
-    background-color: #ffffff;
+    background-color: @base#content#bg;
     font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #34495e;
+    color: @palette#fg_heading;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -40,7 +40,7 @@ h2 {
     line-height: 1.225;
     margin: 35px 0 15px;
     padding-bottom: 0.5em;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid @palette#border_heading;
 }
 
 h3 {
@@ -59,11 +59,11 @@ h5 {
 
 h6 {
     font-size: 1rem;
-    color: #737373;
+    color: @palette#fg_heading_muted;
 }
 
 a {
-    color: #006FBA;
+    color: @palette#fg_link;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
@@ -72,7 +72,7 @@ a {
 }
 
 a:focus {
-    outline: 2px solid #006FBA;
+    outline: 2px solid @palette#fg_link;
     outline-offset: 2px;
 }
 
@@ -81,7 +81,7 @@ a:hover {
 }
 
 a:visited {
-    color: #800080;
+    color: @palette#fg_link_visited;
 }
 
 ul, ol {
@@ -113,11 +113,11 @@ pre {
 
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
-    color: #B65200;
+    color: @palette#fg_inline_code;
     padding: 0 4px;
     margin: 4px 0;
     border-radius: 2px;
-    background-color: #f8f8f8;
+    background-color: @palette#bg_inline_code;
     word-break: break-word;
 }
 
@@ -129,8 +129,8 @@ pre code {
     display: block;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    color: #34495e;
-    background-color: #e0e0e0;
+    color: @palette#fg_reader;
+    background-color: @palette#bg3_41;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     white-space: pre;
@@ -146,14 +146,14 @@ aside {
 }
 
 blockquote {
-    color: #666666;
-    border-left: .5em solid #7a7a7a;
+    color: @palette#fg_blockquote;
+    border-left: .5em solid @palette#fg3_7;
     padding: 0 1em;
     margin-left: 0;
 }
 
 blockquote p {
-    color: #666666;
+    color: @palette#fg_blockquote;
 }
 
 hr {
@@ -162,7 +162,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 1px;
-    background-color: #cccccc;
+    background-color: @palette#bg_hr;
 }
 
 table {
@@ -173,26 +173,26 @@ table {
  }
  
  table tr {
-    border-top: 1px solid #cccccc;
-    background-color: white;
+    border-top: 1px solid @palette#border_table;
+    background-color: @base#content#bg;
     margin: 0;
     padding: 0;
  }
  
  table tr:nth-child(2n){
-     background-color: #f8f8f8;
+     background-color: @palette#bg_table_stripe;
  }
  table tr th {
     font-weight: bold;
-    border: 1px solid #cccccc;
-    background-color: #f2f2f2;
+    border: 1px solid @palette#border_table;
+    background-color: @palette#bg_table_header;
     text-align: left;
     margin: 0;
     padding: 6px 13px;
  }
  
  table tr td {
-    border: 1px solid #cccccc;
+    border: 1px solid @palette#border_table;
     margin: 0;
     padding: 6px 13px;
  }
@@ -274,13 +274,13 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #222222;
-    background-color: #4db6ac;
+    color: @base#content#fg;
+    background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #222222;
-    background-color: #66bb6a;
+    color: @base#content#fg;
+    background-color: @palette#bg_search_current;
 }
 
 #vx-content {
@@ -332,7 +332,7 @@ div.vx-plantuml-graph {
 {
     background-color: @base#info#fg;
     border-radius: 100%;
-    color: #F4F4F4;
+    color: @palette#fg_alert_info_icon;
     content: '!';
     font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -359,7 +359,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-info::before,
 .vx-alert.alert-i::before {
     background-color: @base#info#fg;
-    color: #F4F4F4;
+    color: @palette#fg_alert_info_icon;
 }
 
 #vx-content .vx-alert.alert-secondary,
@@ -371,7 +371,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-light::before,
 .vx-alert.alert-dark::before {
     background-color: @base#muted#fg;
-    color: #F9F9F9;
+    color: @palette#fg_alert_muted_icon;
 }
 
 #vx-content .vx-alert.alert-success,
@@ -381,7 +381,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-success::before,
 .vx-alert.alert-s::before {
     background-color: @base#success#fg;
-    color: #F5F5F5;
+    color: @palette#bg3_5;
 }
 
 #vx-content .vx-alert.alert-warning,
@@ -391,7 +391,7 @@ div.vx-plantuml-graph {
 .vx-alert.alert-warning::before,
 .vx-alert.alert-w::before {
     background-color: @base#warning#fg;
-    color: #F5F5F5;
+    color: @palette#bg3_5;
 }
 
 #vx-content .vx-alert.alert-danger,
@@ -401,12 +401,12 @@ div.vx-plantuml-graph {
 .vx-alert.alert-danger::before,
 .vx-alert.alert-d::before {
     background-color: @base#error#fg;
-    color: #DBDBDB;
+    color: @palette#fg_alert_error_icon;
 }
 
 /* 标题层级展示 CSS */
-.vx-header-anchor::after{background-color: #eee;padding: 0 5px;border-radius: 3px;}
-.vx-header-anchor{color: #999;display: inline-block;margin-left: 10px;}
+.vx-header-anchor::after{background-color: @palette#layer4;padding: 0 5px;border-radius: 3px;}
+.vx-header-anchor{color: @palette#fg_heading_anchor;display: inline-block;margin-left: 10px;}
 
 h1 .vx-header-anchor::after { content: 'H1';}
 h2 .vx-header-anchor::after { content: 'H2';}
@@ -424,6 +424,6 @@ h5 .vx-header-anchor{margin-top: -1px;}
 
 /* 优化嵌套代码块样式 */
 .vx-alert .code-toolbar pre[class*="language-"]{
-    background-color: #f3f3f3 !important;
-    border: 1px dashed #eee;
+    background-color: @palette#bg_code_block_alert !important;
+    border: 1px dashed @palette#layer4;
 }

@@ -64,7 +64,7 @@ a:hover {
 }
 
 a:visited {
-    color: #D39FDC;
+    color: @palette#fg_link_visited;
 }
 
 ul, ol {
@@ -86,8 +86,8 @@ p, ul, ol {
 }
 
 mark {
-    color: #000000;
-    background-color: #c4c400;
+    color: @palette#fg_mark_reader;
+    background-color: @palette#bg_mark_reader;
 }
 
 pre {
@@ -186,8 +186,8 @@ table tr th :last-child, table tr td :last-child {
 div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-flowchartjs-graph {
@@ -195,8 +195,8 @@ div.vx-flowchartjs-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-wavedrom-graph {
@@ -204,8 +204,8 @@ div.vx-wavedrom-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-plantuml-graph {
@@ -213,8 +213,8 @@ div.vx-plantuml-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: #B0BEC5;
-    color: #494949;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 ::selection {
@@ -259,12 +259,12 @@ div.vx-plantuml-graph {
 }
 
 #vx-content span.vx-search-match {
-    color: #222222;
+    color: @palette#fg_search;
     background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: #222222;
+    color: @palette#fg_search;
     background-color: @palette#bg_search_current;
 }
 
@@ -281,7 +281,7 @@ div.vx-plantuml-graph {
 {
     background-color: @base#info#fg;
     border-radius: 100%;
-    color: #36383C;
+    color: @palette#fg_alert_info_icon;
     content: '!';
     font-family: 'Dosis', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -303,7 +303,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-primary::before {
     background-color: @base#info#fg;
-    color: #36383C;
+    color: @palette#fg_alert_info_icon;
 }
 
 .vx-alert.alert-secondary {
@@ -314,7 +314,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-secondary::before {
     background-color: @base#muted#fg;
-    color: #35383C;
+    color: @palette#fg_alert_muted_icon;
 }
 
 .vx-alert.alert-success, .vx-alert.alert-s {
@@ -325,7 +325,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-success::before, .vx-alert.alert-s::before {
     background-color: @base#success#fg;
-    color: #43464B;
+    color: @palette#fg_alert_success_icon;
 }
 
 .vx-alert.alert-warning, .vx-alert.alert-w {
@@ -336,7 +336,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-warning::before, .vx-alert.alert-w::before {
     background-color: @base#warning#fg;
-    color: #36383D;
+    color: @palette#fg_alert_warning_icon;
 }
 
 .vx-alert.alert-info, .vx-alert.alert-i {
@@ -347,7 +347,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-info::before, .vx-alert.alert-i::before {
     background-color: @base#info#fg;
-    color: #36383C;
+    color: @palette#fg_alert_info_icon;
 }
 
 .vx-alert.alert-danger, .vx-alert.alert-d {
@@ -358,7 +358,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-danger::before, .vx-alert.alert-d::before {
     background-color: @base#error#fg;
-    color: #36383D;
+    color: @palette#fg_alert_error_icon;
 }
 
 .vx-alert.alert-light {
@@ -369,7 +369,7 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-light::before {
     background-color: @base#muted#fg;
-    color: #35383C;
+    color: @palette#fg_alert_muted_icon;
 }
 
 .vx-alert.alert-dark {
@@ -380,5 +380,5 @@ div.vx-plantuml-graph {
 
 .vx-alert.alert-dark::before {
     background-color: @base#muted#fg;
-    color: #35383C;
+    color: @palette#fg_alert_muted_icon;
 }
