@@ -1821,6 +1821,12 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
   const QByteArray bilingual(R"([{"en_US":"English","zh_CN":"中文"},{"en_US":"Next"}])");
   const SelectionCase cases[] = {
       {"zh_CN", bilingual, 0, QStringLiteral("中文"), QStringLiteral("Next")},
+      {"zh_CN", R"([{"zh_Hans_CN":"中文","en_US":"English"},{"en_US":"Next"}])", 0,
+       QStringLiteral("中文"), QStringLiteral("Next")},
+      {"ja_JP", R"([{"ja":"日本語","en_US":"English"},{"en_US":"Next"}])", 0,
+       QStringLiteral("日本語"), QStringLiteral("Next")},
+      {"zh_TW", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
+      {"en_US", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
       {"ja_JP", bilingual, 0, QStringLiteral("English"), QStringLiteral("Next")},
       {"zh_CN", R"([{"en_US":"Fallback"},{"en_US":"Next"}])", 0, QStringLiteral("Fallback"),
        QStringLiteral("Next")},

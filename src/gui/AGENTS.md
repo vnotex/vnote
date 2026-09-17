@@ -22,6 +22,12 @@ reset therefore restarts daily eligibility and rotation without undoing opt-out.
 keys, then retires the old main-config keys through normal persistence. Explicit
 session values, including an empty date and index zero, take precedence.
 
+Select catalog translations using `QLocale().uiLanguages()` in preference order,
+normalizing hyphens to underscores for JSON keys, then fall back to `en_US`.
+Do not use `getLocaleToUse()` here: it returns the regional-format locale, which
+can differ from the system UI language. Startup already applies explicit language
+settings through `QLocale::setDefault()` before tips are produced.
+
 Keep the producer stack-scoped after the main-window startup hook. Its retained
 opt-out action captures only a `QPointer<ConfigMgr2>`; no producer or config-field
 reference may outlive that scope. `OK` dismisses only the current message;

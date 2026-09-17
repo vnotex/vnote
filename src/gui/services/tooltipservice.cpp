@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QLocale>
 #include <QPointer>
 #include <QResource>
 #include <QScopeGuard>
@@ -88,13 +89,23 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
     return false;
   }
 
-  const auto locale = coreConfig.getLocaleToUse();
+  // Match the UI language preferences used by QTranslator, not the regional
+  // formatting locale (which can differ when following the system language).
+  auto locales = QLocale().uiLanguages();
+  for (auto &locale : locales) {
+    locale.replace(QLatin1Char('-'), QLatin1Char('_'));
+  }
   const int count = tips.size();
   int position = sessionConfig.getNextToolTipIndex() % count;
   QString text;
   for (int scanned = 0; scanned < count; ++scanned) {
     const auto item = tips.at(position).toObject();
-    text = item.value(locale).toString().trimmed();
+    for (const auto &locale : qAsConst(locales)) {
+      text = item.value(locale).toString().trimmed();
+      if (!text.isEmpty()) {
+        break;
+      }
+    }
     if (text.isEmpty()) {
       text = item.value(QStringLiteral("en_US")).toString().trimmed();
     }
