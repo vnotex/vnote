@@ -13,6 +13,7 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSaveFile>
+#include <QScopedPointer>
 #include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
@@ -22,6 +23,7 @@
 #include <core/markdowneditorconfig.h>
 #include <core/markdownwebglobaloptions.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/themeutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
@@ -113,9 +115,31 @@ void fillGlobalStyles(QString &p_template, const WebResource &p_resource, Config
 }
 
 void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
-                     const QString &p_highlightStyleSheetFile) {
+                     const QString &p_highlightStyleSheetFile, const Theme &p_currentTheme) {
   QString styles;
-  styles += fillStyleTag(p_webStyleSheetFile);
+  const QFileInfo webStyleFile(p_webStyleSheetFile);
+  const auto themeFolder = webStyleFile.absolutePath();
+  if (!p_webStyleSheetFile.isEmpty() &&
+      webStyleFile == QFileInfo(Theme::getFile(themeFolder, Theme::File::WebStyleSheet)) &&
+      QFileInfo::exists(Theme::getFile(themeFolder, Theme::File::Palette))) {
+    // Like read mode, resolve palette tokens before Chromium parses the stylesheet.
+    // Otherwise invalid declarations (including table borders) vanish from the CSSOM.
+    QScopedPointer<Theme> selectedTheme;
+    const Theme *theme = &p_currentTheme;
+    if (webStyleFile != QFileInfo(p_currentTheme.getFile(Theme::File::WebStyleSheet))) {
+      selectedTheme.reset(Theme::fromFolder(themeFolder, ThemeUtils::backfillSystemPalette));
+      theme = selectedTheme.data();
+    }
+    const auto content = theme->fetchWebStyleSheet();
+    if (content.contains(QStringLiteral("</style>"), Qt::CaseInsensitive)) {
+      qWarning() << "export web style content contains </style>, refusing to inline";
+    } else if (!content.isEmpty()) {
+      styles += QStringLiteral("<style type=\"text/css\">\n%1\n</style>\n").arg(content);
+    }
+  } else {
+    // Standalone custom stylesheets keep their original URL and relative-resource base.
+    styles += fillStyleTag(p_webStyleSheetFile);
+  }
   styles += fillStyleTag(p_highlightStyleSheetFile);
   if (!styles.isEmpty()) {
     p_template.replace(QStringLiteral("<!-- VX_THEME_STYLES_PLACEHOLDER -->"), styles);
@@ -183,7 +207,8 @@ void fillResourcesByContent(QString &p_template, const WebResource &p_resource,
 
 QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
                                        const MarkdownEditorConfig &p_config,
-                                       const HtmlTemplateUtils::MarkdownParas &p_paras) {
+                                       const HtmlTemplateUtils::MarkdownParas &p_paras,
+                                       const Theme &p_currentTheme) {
   const auto &viewerResource = p_config.getViewerResource();
   const auto templateFile = resolveConfigFile(p_configMgr, viewerResource.m_template);
   auto htmlTemplate = readTemplateFile(templateFile, "failed to read HTML template");
@@ -192,7 +217,8 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   }
 
   fillGlobalStyles(htmlTemplate, viewerResource, p_configMgr, QString());
-  fillThemeStyles(htmlTemplate, p_paras.m_webStyleSheetFile, p_paras.m_highlightStyleSheetFile);
+  fillThemeStyles(htmlTemplate, p_paras.m_webStyleSheetFile, p_paras.m_highlightStyleSheetFile,
+                  p_currentTheme);
 
   MarkdownWebGlobalOptions opts;
   opts.m_webPlantUml = p_config.getWebPlantUml();
@@ -592,7 +618,8 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   paras.m_removeCodeToolBarEnabled =
       p_option.m_targetFormat == ExportFormat::HTML ? p_option.m_removeCodeToolBarEnabled : true;
 
-  m_htmlTemplate = generateMarkdownViewerTemplate(*configMgr, config, paras);
+  m_htmlTemplate =
+      generateMarkdownViewerTemplate(*configMgr, config, paras, themeService->getCurrentTheme());
 
   {
     const bool addOutlinePanel =

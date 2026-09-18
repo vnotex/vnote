@@ -9,6 +9,9 @@
 * Load tasks on first request so freshly installed bundled tasks are available without restarting VNote
 * Translate daily tips using the preferred UI language when the system regional format uses a different locale
 
+* **Export**
+    * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors
+
 * **Search**
     * The Search panel can replace selected or all reviewed Simple content matches with literal text; confirmation saves affected notes including existing unsaved edits, with cancellation and failed-write recovery
     * Content search results now navigate to the correct editor line

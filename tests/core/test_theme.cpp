@@ -200,7 +200,9 @@ void TestTheme::testFetchWebStyleSheet_resolvesTokens() {
 
   // Override web.css with a tokenized version. The pure palette has fg3_5 = #222222.
   QVERIFY(writeUtf8(QDir(themeDir).filePath("web.css"),
-                    QStringLiteral("body { color: @palette#fg3_5; }")));
+                    QStringLiteral("body { color: @palette#fg3_5; }"
+                                   "table tr td { border: 1px solid @palette#border_table;"
+                                   "background-color: @base#content#bg; }")));
 
   QScopedPointer<vnotex::Theme> theme(vnotex::Theme::fromFolder(themeDir));
   QVERIFY(theme);
@@ -209,6 +211,8 @@ void TestTheme::testFetchWebStyleSheet_resolvesTokens() {
            qPrintable(QStringLiteral("expected resolved hex; got: %1").arg(out)));
   QVERIFY2(!out.contains(QStringLiteral("@palette")),
            qPrintable(QStringLiteral("token should be replaced; got: %1").arg(out)));
+  QCOMPARE(extractCssColor(out, "table tr td", "border"), QStringLiteral("1px solid #cccccc"));
+  QCOMPARE(extractCssColor(out, "table tr td", "background-color"), QStringLiteral("#ffffff"));
 }
 
 void TestTheme::testFetchTextEditorStyle_resolvesTokensInJson() {
