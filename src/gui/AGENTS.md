@@ -12,15 +12,6 @@
 | `NavigationModeService` | Keyboard navigation mode service |
 | `ToolTipService` | One scoped startup attempt to post a localized daily usage tip |
 
-## Markdown theme CSS
-
-Read mode and `WebViewExporter` must load theme `web.css` through
-`Theme::fetchWebStyleSheet()` before Chromium parses it. Raw theme files contain
-`@palette#...` / `@base#...` tokens; Chromium drops these invalid declarations,
-and CSSOM serialization cannot recover them. Export resolves the selected theme's
-palette (including system-palette backfill), not necessarily the active UI theme.
-Standalone custom CSS remains linked so relative resources retain their base URL.
-
 ## Daily usage tip state
 
 `ToolTipService` uses `ConfigMgr2` for both stores: the permanent `toolTipsEnabled`

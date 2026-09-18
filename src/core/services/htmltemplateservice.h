@@ -64,6 +64,11 @@ public:
                                     const QString &p_webStyleContent,
                                     const QString &p_highlightStyleSheetFile, bool p_force = false);
 
+  // Shared read-mode/export injection: web CSS must already be palette-resolved.
+  // Rejects closing style tags; syntax-highlight CSS remains linked.
+  static void fillThemeStylesWithContent(QString &p_template, const QString &p_webStyleContent,
+                                         const QString &p_highlightStyleSheetFile);
+
   // Get the cached Markdown viewer template HTML.
   const QString &getMarkdownViewerTemplate() const;
 
@@ -133,12 +138,6 @@ private:
   // Generate theme style tags from file paths.
   static void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
                               const QString &p_highlightStyleSheetFile);
-
-  // Generate theme style block from web CSS content (inlined as <style>) +
-  // highlight CSS file path (linked via <link>). Used by markdown viewer
-  // template (which receives token-resolved web.css content).
-  static void fillThemeStylesWithContent(QString &p_template, const QString &p_webStyleContent,
-                                         const QString &p_highlightStyleSheetFile);
 
   void generatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
                                  Template &p_template) const;
