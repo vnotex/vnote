@@ -9,11 +9,6 @@ var setVisible = function(node, visible) {
     }
 };
 
-var isVisible = function(node) {
-    var cl = 'hide-none';
-    return !node.classList.contains(cl);
-};
-
 var setPostContentExpanded = function(node, expanded) {
     var cl = 'col-expand';
     if (expanded) {
@@ -27,13 +22,33 @@ var setOutlinePanelVisible = function(visible) {
     var outlinePanel = document.getElementById('outline-panel');
     var postContent = document.getElementById('post-content');
 
-    setVisible(outlinePanel, visible);
+    var button = document.getElementById('floating-button');
+    if (!visible && outlinePanel.contains(document.activeElement)) {
+        button.focus();
+    }
+    outlinePanel.classList.toggle('outline-collapsed', !visible);
+    outlinePanel.setAttribute('aria-hidden', String(!visible));
+    outlinePanel.inert = !visible;
+    var links = outlinePanel.querySelectorAll('a');
+    for (var i = 0; i < links.length; ++i) {
+        if (visible) {
+            links[i].removeAttribute('tabindex');
+        } else {
+            links[i].setAttribute('tabindex', '-1');
+        }
+    }
+    button.setAttribute('aria-expanded', String(visible));
+    button.setAttribute('aria-label', visible ? 'Hide outline' : 'Show outline');
+    button.title = visible ? 'Hide outline' : 'Show outline';
     setPostContentExpanded(postContent, !visible);
+    if (visible) {
+        updateOutlineHighlight();
+    }
 };
 
 var isOutlinePanelVisible = function() {
     var outlinePanel = document.getElementById('outline-panel');
-    return isVisible(outlinePanel);
+    return !outlinePanel.classList.contains('outline-collapsed');
 };
 
 window.addEventListener('load', function() {
@@ -82,8 +97,18 @@ window.addEventListener('load', function() {
     var tocTree = tocToTree(toPerfectToc(vxOutlineToc, baseLevel), baseLevel);
 
     outlineContent.innerHTML = tocTree;
+    var pageStyle = window.getComputedStyle(document.body);
+    if (pageStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+        pageStyle.backgroundColor !== 'transparent') {
+        floatingContainer.style.setProperty('--vx-outline-surface', pageStyle.backgroundColor);
+        floatingContainer.style.setProperty('--vx-outline-foreground', pageStyle.color);
+    }
     setOutlinePanelVisible(true);
     setVisible(floatingContainer, true);
+    // Enable transitions after the initial layout, without animating page load.
+    requestAnimationFrame(function() {
+        document.documentElement.classList.add('vx-outline-ready');
+    });
 });
 
 // Return the topest level of @vxOutlineToc, starting from 1.
@@ -179,25 +204,15 @@ var toggleMore = function() {
         return;
     }
 
-    var p = document.getElementById('floating-more');
-    if (isOutlinePanelVisible()) {
-        p.textContent = '<';
-        setOutlinePanelVisible(false);
-    } else {
-        p.textContent = '>';
-        setOutlinePanelVisible(true);
-    }
+    setOutlinePanelVisible(!isOutlinePanelVisible());
 };
 
-window.addEventListener('scroll', function() {
+var updateOutlineHighlight = function() {
     if (vxOutlineToc.length == 0 || !isOutlinePanelVisible()) {
         return;
     }
 
     var postContent = document.getElementById('post-content');
-    var scrollTop = document.documentElement.scrollTop
-                    || document.body.scrollTop
-                    || window.pageYOffset;
     var eles = postContent.querySelectorAll("h1, h2, h3, h4, h5, h6");
 
     if (eles.length == 0) {
@@ -205,9 +220,8 @@ window.addEventListener('scroll', function() {
     }
 
     var idx = -1;
-    var biaScrollTop = scrollTop + 50;
     for (var i = 0; i < eles.length; ++i) {
-        if (biaScrollTop >= eles[i].offsetTop) {
+        if (eles[i].getBoundingClientRect().top <= 80) {
             idx = i;
         } else {
             break;
@@ -220,22 +234,24 @@ window.addEventListener('scroll', function() {
     }
 
     highlightItemOnlyInOutline(header);
+};
+
+window.addEventListener('scroll', updateOutlineHighlight, { passive: true });
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && vxOutlineToc.length && isOutlinePanelVisible()) {
+        setOutlinePanelVisible(false);
+    }
 });
 
 var highlightItemOnlyInOutline = function(id) {
-    var cl = 'outline-bold';
     var outlineContent = document.getElementById('outline-content');
     var eles = outlineContent.querySelectorAll("a");
-    var target = null;
     for (var i = 0; i < eles.length; ++i) {
         var ele = eles[i];
         if (ele.getAttribute('data') == id) {
-            target = ele;
-            ele.classList.add(cl);
+            ele.setAttribute('aria-current', 'location');
         } else {
-            ele.classList.remove(cl);
+            ele.removeAttribute('aria-current');
         }
     }
-
-    // TODO: scroll target into view within the outline panel scroll area.
 };

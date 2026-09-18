@@ -11,6 +11,7 @@
 
 * **Export**
     * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors
+    * The exported outline panel opens and closes smoothly, with a refreshed toggle, active-section styling, keyboard controls and reduced-motion support
 
 * **Search**
     * The Search panel can replace selected or all reviewed Simple content matches with literal text; confirmation saves affected notes including existing unsaved edits, with cancellation and failed-write recovery
