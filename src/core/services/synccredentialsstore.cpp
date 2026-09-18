@@ -84,14 +84,8 @@ QString SyncCredentialsStore::keychainKey(const QString &p_notebookId) {
 }
 
 void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const QString &p_pat) {
-  // Thread-safety guard: SyncCredentialsStore lives on the GUI thread and
-  // parents QKeychain::Job instances to itself. When called from a worker
-  // thread (e.g., via a NotebookAfterClose/AfterOpen hook handler fired
-  // inside OpenNotebookController::cloneAndOpen's QtConcurrent::run
-  // worker), the `new QKeychain::...(serviceName(), this)` below would
-  // trip Qt's cross-thread child-parenting check. Self-marshal to the
-  // store's own thread before touching the keychain machinery. Mirrors
-  // the pattern already used in the #else branch below.
+  // Create and start jobs on the store's thread, including calls from
+  // NotebookAfterClose/AfterOpen hooks running on a QtConcurrent worker.
   if (thread() != QThread::currentThread()) {
     const QString notebookId = p_notebookId;
     const QString pat = p_pat;
@@ -101,8 +95,12 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
     return;
   }
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
-  auto *job = new QKeychain::WritePasswordJob(serviceName(), this);
-  job->setAutoDelete(false);
+  // Native keychain operations cannot be cancelled by deleting their job:
+  // Apple's backend borrows its data until the main-queue completion arrives.
+  // Leave jobs unparented with QtKeychain's default auto-delete ownership so
+  // they survive store destruction. The receiver context disconnects our
+  // callback when the store dies; QtKeychain still finishes and deletes the job.
+  auto *job = new QKeychain::WritePasswordJob(serviceName());
   job->setInsecureFallback(false);
   job->setKey(keychainKey(p_notebookId));
   job->setTextData(p_pat);
@@ -114,7 +112,6 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
     } else {
       emit credentialsStoreError(notebookId, job->errorString());
     }
-    job->deleteLater();
   });
 
   job->start();
@@ -140,8 +137,7 @@ void SyncCredentialsStore::retrieveCredentials(const QString &p_notebookId) {
     return;
   }
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
-  auto *job = new QKeychain::ReadPasswordJob(serviceName(), this);
-  job->setAutoDelete(false);
+  auto *job = new QKeychain::ReadPasswordJob(serviceName());
   job->setInsecureFallback(false);
   job->setKey(keychainKey(p_notebookId));
 
@@ -153,7 +149,6 @@ void SyncCredentialsStore::retrieveCredentials(const QString &p_notebookId) {
     } else {
       emit credentialsError(notebookId, job->errorString());
     }
-    job->deleteLater();
   });
 
   job->start();
@@ -178,8 +173,7 @@ void SyncCredentialsStore::deleteCredentials(const QString &p_notebookId) {
     return;
   }
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
-  auto *job = new QKeychain::DeletePasswordJob(serviceName(), this);
-  job->setAutoDelete(false);
+  auto *job = new QKeychain::DeletePasswordJob(serviceName());
   job->setInsecureFallback(false);
   job->setKey(keychainKey(p_notebookId));
 
@@ -195,7 +189,6 @@ void SyncCredentialsStore::deleteCredentials(const QString &p_notebookId) {
     } else {
       emit credentialsError(notebookId, job->errorString());
     }
-    job->deleteLater();
   });
 
   job->start();

@@ -153,20 +153,24 @@ jobs:
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
         working-directory: ${{runner.workspace}}/build
 
+      - name: Prepare Test Keychain
+        run: |
+          set -e
+          keychain="$RUNNER_TEMP/vnote-tests.keychain-db"
+          password="$(openssl rand -hex 32)"
+          security default-keychain -d user | xargs > "$RUNNER_TEMP/vnote-test-default-keychain"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 7200 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security default-keychain -d user -s "$keychain"
+
       - name: Build and Run Tests
         # Build the test executables (tests/CMakeLists.txt narrows them to the
         # host arch on macOS, so this links arm64-only against the universal
         # libs) then run them headlessly via the Qt offscreen platform plugin.
         # VNOTE_BUILD_TESTS defaults to OFF and is turned ON at configure time above.
-        #
-        # Sync/keychain tests are EXCLUDED on macOS. The real qtkeychain path
-        # (keychain_apple.mm + Security.framework) cannot run in CI: even with a
-        # created + unlocked default keychain, an UNSIGNED test binary segfaults
-        # inside Security.framework on a headless runner (verified — making them
-        # pass would require ad-hoc-codesigning every test exe with keychain
-        # entitlements). The platform-agnostic sync LOGIC is already covered
-        # against the real backend on Linux + Windows; the macOS keychain path
-        # is third-party and only reachable from the signed prod app.
+        # QtKeychain tests use the unlocked disposable keychain above and the
+        # CoreFoundation event dispatcher configured in tests/CMakeLists.txt.
         run: |
           set -e
           cmake --build .
@@ -181,7 +185,7 @@ jobs:
           # libVTextEdit.dylib lives next to the parent build's VNote binary;
           # add it to DYLD_LIBRARY_PATH so Qt-side test exes resolve it at load.
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
-          ctest --output-on-failure -E '(sync|bootstrap|credential|keychain|syncinfo)'
+          ctest --output-on-failure
         working-directory: ${{runner.workspace}}/build
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
@@ -196,6 +200,17 @@ jobs:
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
           ctest --rerun-failed --extra-verbose || true
         working-directory: ${{runner.workspace}}/build
+
+      - name: Remove Test Keychain
+        if: always()
+        run: |
+          set -e
+          if [ -f "$RUNNER_TEMP/vnote-test-default-keychain" ]; then
+            security default-keychain -d user -s "$(cat "$RUNNER_TEMP/vnote-test-default-keychain")"
+          fi
+          if [ -f "$RUNNER_TEMP/vnote-tests.keychain-db" ]; then
+            security delete-keychain "$RUNNER_TEMP/vnote-tests.keychain-db"
+          fi
 
       - name: Codesign Bundle
         # Extract the secrets we defined earlier as environment variables

@@ -802,7 +802,7 @@ endif()
 
 # Task 13.4 (F1.6): SyncService::bootstrapAndPersist atomic enable+persist with
 # rollback on persist failure. Verifies happy path, rollback on persist failure,
-# and rollback failure logging.
+# and preservation of the original persist error when rollback fails.
 add_qt_test(test_bootstrap_and_persist
   SOURCES
     test_bootstrap_and_persist.cpp

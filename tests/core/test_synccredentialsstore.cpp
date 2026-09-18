@@ -165,6 +165,18 @@ void TestSyncCredentialsStore::storeRetrieve() {
   QCOMPARE(retrievedSpy.first().at(0).toString(), notebookId);
   QCOMPARE(retrievedSpy.first().at(1).toString(), pat);
 
+  // Start a native read, then destroy its facade before Apple's main-queue
+  // callback runs. The in-flight job must survive and let the next job finish.
+  {
+    SyncCredentialsStore transientStore(m_services);
+    transientStore.retrieveCredentials(notebookId);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+  }
+  retrievedSpy.clear();
+  store.retrieveCredentials(notebookId);
+  QCOMPARE(waitForEither(retrievedSpy, errorSpy2, 5000), 1);
+  QCOMPARE(retrievedSpy.first().at(1).toString(), pat);
+
   // POST-test cleanup: delete what THIS test wrote
   guard.cleanup();
 #endif
@@ -226,8 +238,7 @@ void TestSyncCredentialsStore::deleteMissingEntryEmitsDeleted() {
   SyncCredentialsStore store(m_services);
   tests::KeychainGuard guard(&store);
   const QString notebookId =
-      QStringLiteral("nb_never_stored_") +
-      QString::number(QDateTime::currentMSecsSinceEpoch());
+      QStringLiteral("nb_never_stored_") + QString::number(QDateTime::currentMSecsSinceEpoch());
 
   // Probe backend usability first with a real store, then delete it, so the
   // notebookId is guaranteed absent for the idempotency assertion below. A
@@ -245,9 +256,8 @@ void TestSyncCredentialsStore::deleteMissingEntryEmitsDeleted() {
     const int stored = waitForEither(storedSpy, storeErrSpy, 5000);
     if (stored == 2) {
       const QString errMsg = storeErrSpy.first().at(1).toString();
-      QSKIP(qPrintable(
-          QStringLiteral("OS keychain backend not usable in this test environment: %1")
-              .arg(errMsg)));
+      QSKIP(qPrintable(QStringLiteral("OS keychain backend not usable in this test environment: %1")
+                           .arg(errMsg)));
     }
     QCOMPARE(stored, 1);
 

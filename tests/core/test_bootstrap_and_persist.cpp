@@ -7,10 +7,9 @@
 //      successful enable triggers a rollback via disableSyncForNotebook;
 //      bootstrapAndPersistFinished surfaces the ORIGINAL persist error;
 //      notebook ends in clean S0 (no flat sync keys, runtime unregistered).
-//   3. rollback_failure_logged: when both persist AND rollback fail, the
-//      caller still sees the ORIGINAL persist error in
-//      bootstrapAndPersistFinished, and a qCritical log line is emitted
-//      reporting the rollback failure.
+//   3. rollback_failure_preserves_persist_error: when persist AND rollback
+//      fail, completion reports the ORIGINAL persist error exactly once and
+//      the notebook remains runtime-registered.
 //
 // Per ADR-1: never includes sync/sync_manager.h.
 
@@ -48,7 +47,7 @@ private slots:
 
   void happy_path_s5();
   void persist_failure_rolls_back_to_original_state();
-  void rollback_failure_logged();
+  void rollback_failure_preserves_persist_error();
 
 private:
   QString seedBareRepo(const QString &p_bareRepoPath, TempDirFixture &p_workTemp);
@@ -307,7 +306,7 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   vxcore_context_destroy(ctx);
 }
 
-void TestBootstrapAndPersist::rollback_failure_logged() {
+void TestBootstrapAndPersist::rollback_failure_preserves_persist_error() {
   VxCoreContextHandle ctx = nullptr;
   QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
   QVERIFY(ctx != nullptr);
@@ -343,29 +342,22 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   syncService.testForceNextPersistFailure(injectedMsg);
   syncService.testForceNextRollbackFailure();
 
-  // Expect the qCritical rollback-failure log line.
-  QTest::ignoreMessage(QtCriticalMsg,
-                       QRegularExpression(QStringLiteral("ROLLBACK FAILED for notebook")));
-  // Also expect the precursor qCritical "persist failed after enable" line.
-  QTest::ignoreMessage(QtCriticalMsg, QRegularExpression(QStringLiteral(
-                                          "persist failed after enable; rolling back")));
-
+  QSignalSpy storeErrorSpy(&credStore, &SyncCredentialsStore::credentialsStoreError);
   QSignalSpy finSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
   syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_134c"));
 
   QVERIFY(finSpy.wait(15000));
-  // Multiple emissions are possible if the real worker disableFinished also
-  // arrives after the synthesized failure (one-shot rbConn only consumes
-  // first). The FIRST emission MUST carry the original persist error.
-  QVERIFY(finSpy.count() >= 1);
+  QCOMPARE(finSpy.count(), 1);
   QCOMPARE(finSpy.first().at(0).toString(), nbId);
   const VxCoreError result = qvariant_cast<VxCoreError>(finSpy.first().at(1));
   const QString msg = finSpy.first().at(2).toString();
   // Track for cleanup regardless: rollback-failure leaves the keychain entry
   // alive, so guard.cleanup() must remove it.
   guard.track(nbId);
-  if (result == VXCORE_ERR_UNKNOWN && msg != injectedMsg) {
-    // Enable phase itself failed -> persist seam unreached. Skip.
+  if (storeErrorSpy.count() == 1 && storeErrorSpy.first().at(0).toString() == nbId &&
+      result == VXCORE_ERR_UNKNOWN && msg == storeErrorSpy.first().at(1).toString()) {
+    // Skip only an observed keychain store failure. An unexpected error from
+    // persist or rollback must fail the assertions below, not become a skip.
     syncService.shutdown();
     credStore.deleteCredentials(nbId);
     QTest::qWait(500);
@@ -376,6 +368,8 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   }
   QCOMPARE(result, VXCORE_ERR_UNKNOWN);
   QCOMPARE(msg, injectedMsg); // ORIGINAL persist error preserved even when rollback fails.
+  QVERIFY2(syncService.isSyncRegistered(nbId),
+           "failed rollback must leave the existing runtime registration intact");
 
   // See happy_path_s5 for the rationale behind the explicit shutdown() —
   // the persistence-event cascade triggered by SaveFolderConfig may have
@@ -387,6 +381,7 @@ void TestBootstrapAndPersist::rollback_failure_logged() {
   // CRITICAL: see happy_path_s5 for rationale — drain before ctx destroy to
   // avoid use-after-free of the vxcore context from the worker thread.
   syncService.shutdown();
+  QCOMPARE(finSpy.count(), 1);
   vxcore_context_destroy(ctx);
 }
 

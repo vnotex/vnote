@@ -195,6 +195,7 @@ void ViewWindow2::handleFindAndReplaceWidgetClosed() {}
 void ViewWindow2::handleFindAndReplaceWidgetOpened() {}
 
 // Private slots (still need symbols for vtable / signal-slot wiring)
+void ViewWindow2::onContentReplacementStateChanged(const QString &, bool, bool, bool) {}
 void ViewWindow2::onBufferAutoSaved(const QString &) {}
 void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 void ViewWindow2::onAttachmentChanged(const QString &) {}

@@ -188,6 +188,12 @@ ctest --test-dir build -R test_error      # Run single test (pattern match)
 ctest --test-dir build --output-on-failure  # Show output on failure
 ```
 
+**macOS keychain tests:** `add_qt_test()` sets `QT_EVENT_DISPATCHER_CORE_FOUNDATION=1`
+for CTest. Set the same variable when launching test executables directly: the default
+`QCoreApplication` UNIX dispatcher does not drain the main dispatch queue used by
+QtKeychain completion callbacks. Tests also need an unlocked default keychain; macOS CI
+creates a disposable one and restores the previous default after testing.
+
 ### VTextEdit.dll runtime copy
 
 Tests that link `VTextEdit` (directly, or transitively via `core_configs`) load `VTextEdit.dll` at runtime. **`core_services` alone no longer pulls it in**, so a pure-core test that links only `core_services` + `vxcore` runs with no `VTextEdit.dll` anywhere near it. The build copies the DLL next to each subdirectory's test exes via a `POST_BUILD` step anchored on one test target per subdir (the canonical reference is `tests/utils/CMakeLists.txt:78-83`):

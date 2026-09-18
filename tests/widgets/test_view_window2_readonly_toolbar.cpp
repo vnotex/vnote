@@ -115,6 +115,7 @@ void ViewWindow2::handleReplace(const QString &, FindOptions, const QString &) {
 void ViewWindow2::handleReplaceAll(const QString &, FindOptions, const QString &) {}
 void ViewWindow2::handleFindAndReplaceWidgetClosed() {}
 void ViewWindow2::handleFindAndReplaceWidgetOpened() {}
+void ViewWindow2::onContentReplacementStateChanged(const QString &, bool, bool, bool) {}
 void ViewWindow2::onBufferAutoSaved(const QString &) {}
 void ViewWindow2::onBufferModifiedChanged(const QString &) {}
 void ViewWindow2::onAttachmentChanged(const QString &) {}

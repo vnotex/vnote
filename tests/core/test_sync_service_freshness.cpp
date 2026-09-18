@@ -39,7 +39,6 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
-#include <core/services/syncworkqueuemanager.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -92,12 +91,12 @@ void TestSyncServiceFreshness::test_post_reconcile_triggers_when_stale() {
   tests::KeychainGuard guard(&credStore);
   services.registerService<NotebookCoreService>(&notebookService);
   services.registerService<SyncCredentialsStore>(&credStore);
-  SyncWorkQueueManager workQueue;
-  services.registerService<SyncWorkQueueManager>(&workQueue);
   SyncService syncService(services);
 
   const QString notebookId = QStringLiteral("test-nb-stale-triggers");
 
+  // Let SyncService own its queue so it drains the worker before destroying
+  // itself, including when an assertion returns before sync finishes.
   // Spy on syncStarted, which fires from triggerSyncNow's enqueued work.
   QSignalSpy startedSpy(&syncService, &SyncService::syncStarted);
 
@@ -132,8 +131,6 @@ void TestSyncServiceFreshness::test_post_reconcile_skips_when_fresh() {
   tests::KeychainGuard guard(&credStore);
   services.registerService<NotebookCoreService>(&notebookService);
   services.registerService<SyncCredentialsStore>(&credStore);
-  SyncWorkQueueManager workQueue;
-  services.registerService<SyncWorkQueueManager>(&workQueue);
   SyncService syncService(services);
 
   const QString notebookId = QStringLiteral("test-nb-fresh-skips");
@@ -168,8 +165,6 @@ void TestSyncServiceFreshness::test_post_reconcile_skips_when_in_progress() {
   tests::KeychainGuard guard(&credStore);
   services.registerService<NotebookCoreService>(&notebookService);
   services.registerService<SyncCredentialsStore>(&credStore);
-  SyncWorkQueueManager workQueue;
-  services.registerService<SyncWorkQueueManager>(&workQueue);
   SyncService syncService(services);
 
   const QString notebookId = QStringLiteral("test-nb-in-progress-skips");
@@ -212,8 +207,6 @@ void TestSyncServiceFreshness::test_post_reconcile_skips_on_enable_failure() {
   tests::KeychainGuard guard(&credStore);
   services.registerService<NotebookCoreService>(&notebookService);
   services.registerService<SyncCredentialsStore>(&credStore);
-  SyncWorkQueueManager workQueue;
-  services.registerService<SyncWorkQueueManager>(&workQueue);
   SyncService syncService(services);
 
   const QString notebookId = QStringLiteral("test-nb-enable-failed-skips");

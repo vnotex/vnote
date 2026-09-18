@@ -24,10 +24,11 @@ class ServiceLocator;
 // All public methods are asynchronous: they return immediately and emit a
 // completion signal (credentialsStored / credentialsRetrieved /
 // credentialsDeleted) or an error signal (credentialsStoreError for the store
-// path, credentialsError for retrieve/delete) on the caller's thread on the
-// next event-loop tick.
+// path, credentialsError for retrieve/delete) on the store's thread after
+// the backend finishes. In-flight jobs finish even if the store is destroyed;
+// their completion callbacks are disconnected in that case.
 //
-// PAT values are never held in memory. Each async call routes directly to the
+// PAT values are not cached; they live only in in-flight jobs. Calls use the
 // OS keychain. Only a lightweight existence cache (notebook IDs only, no PATs)
 // is maintained to support synchronous hasCredentials() probes by the UI.
 class SyncCredentialsStore : public QObject, private Noncopyable {

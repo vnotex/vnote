@@ -34,6 +34,8 @@ void ViewWindow2::replace(const QString &, FindOptions, const QString &) {}
 
 void ViewWindow2::replaceAll(const QString &, FindOptions, const QString &) {}
 
+void ViewWindow2::onContentReplacementStateChanged(const QString &, bool, bool, bool) {}
+
 void ViewWindow2::onBufferAutoSaved(const QString &) {}
 
 void ViewWindow2::onBufferModifiedChanged(const QString &) {}
@@ -227,9 +229,13 @@ void TestSnippetApply::initTestCase() {
 }
 
 void TestSnippetApply::cleanupTestCase() {
+  delete m_bufferService;
   m_bufferService = nullptr;
+  delete m_hookMgr;
   m_hookMgr = nullptr;
+  delete m_notebookService;
   m_notebookService = nullptr;
+  delete m_snippetService;
   m_snippetService = nullptr;
 
   if (m_context) {
