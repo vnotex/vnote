@@ -527,13 +527,19 @@ void TestPdfViewerAdapterOutline::producerNumberingGuaranteeSurvivesPanelToggles
   model.setAutoSectionNumberEnabled(false);
   QCOMPARE(model.data(model.indexForHeadingIndex(0)).toString(), QStringLiteral("A"));
   model.setAutoSectionNumberEnabled(true);
+  for (bool detectHeading1 : {false, true}) {
+    model.setSectionNumberOptions(QStringLiteral("1.1)"), detectHeading1);
+    QCOMPARE(model.data(model.indexForHeadingIndex(0)).toString(), QStringLiteral("A"));
+    QCOMPARE(model.data(model.indexForHeadingIndex(1)).toString(), QStringLiteral("B"));
+  }
+  model.setSectionNumberOptions(QStringLiteral("1.1."), true);
   auto raw = QSharedPointer<vnotex::Outline>::create(*outline);
   raw->m_hasSectionNumber = false;
   QVERIFY(!(*raw == *outline));
   model.setOutline(raw);
   QCOMPARE(model.data(model.indexForHeadingIndex(0)).toString(), QStringLiteral("1. A"));
   QCOMPARE(model.data(model.indexForHeadingIndex(1)).toString(), QStringLiteral("2. B"));
-  model.setSectionNumberPattern(QStringLiteral("1.1)"));
+  model.setSectionNumberOptions(QStringLiteral("1.1)"), true);
   QCOMPARE(model.data(model.indexForHeadingIndex(1)).toString(), QStringLiteral("2) B"));
   outline->clear();
   QVERIFY(!outline->m_hasSectionNumber);
@@ -543,38 +549,69 @@ void TestPdfViewerAdapterOutline::automaticPolicyDisplaysExpectedNames_data() {
   QTest::addColumn<QVector<int>>("levels");
   QTest::addColumn<QStringList>("names");
   QTest::addColumn<QString>("pattern");
+  QTest::addColumn<bool>("detectHeading1");
+  QTest::addColumn<QVector<int>>("placeholderIndices");
   QTest::addColumn<QStringList>("expected");
 
   const QString dot = QStringLiteral("1.1.");
   QTest::newRow("exempt-title") << QVector<int>{1, 2, 3, 2} << QStringList{"Title", "A", "B", "C"}
-                                << dot << QStringList{"Title", "1. A", "1.1. B", "2. C"};
-  QTest::newRow("multiple-h1") << QVector<int>{1, 2, 1} << QStringList{"A", "B", "C"} << dot
-                               << QStringList{"1. A", "1.1. B", "2. C"};
+                                << dot << true << QVector<int>{}
+                                << QStringList{"Title", "1. A", "1.1. B", "2. C"};
+  QTest::newRow("multiple-h1") << QVector<int>{1, 2, 1} << QStringList{"A", "B", "C"} << dot << true
+                               << QVector<int>{} << QStringList{"1. A", "1.1. B", "2. C"};
   QTest::newRow("h1-after-first-heading")
-      << QVector<int>{2, 1} << QStringList{"A", "B"} << dot << QStringList{"1.1. A", "2. B"};
-  QTest::newRow("base-after-title") << QVector<int>{1, 3, 3} << QStringList{"Title", "A", "B"}
-                                    << dot << QStringList{"Title", "1. A", "2. B"};
+      << QVector<int>{2, 1} << QStringList{"A", "B"} << dot << true << QVector<int>{}
+      << QStringList{"1.1. A", "2. B"};
+  QTest::newRow("base-after-title")
+      << QVector<int>{1, 3, 3} << QStringList{"Title", "A", "B"} << dot << true << QVector<int>{}
+      << QStringList{"Title", "1. A", "2. B"};
   QTest::newRow("skipped-levels") << QVector<int>{1, 2, 4, 2} << QStringList{"Title", "A", "B", "C"}
-                                  << dot << QStringList{"Title", "1. A", "1.1.1. B", "2. C"};
-  QTest::newRow("no-final-suffix") << QVector<int>{1, 2, 3} << QStringList{"Title", "A", "B"}
-                                   << QStringLiteral("1.1") << QStringList{"Title", "1 A", "1.1 B"};
+                                  << dot << true << QVector<int>{}
+                                  << QStringList{"Title", "1. A", "1.1.1. B", "2. C"};
+  QTest::newRow("no-final-suffix")
+      << QVector<int>{1, 2, 3} << QStringList{"Title", "A", "B"} << QStringLiteral("1.1") << true
+      << QVector<int>{} << QStringList{"Title", "1 A", "1.1 B"};
   QTest::newRow("closing-parenthesis")
-      << QVector<int>{1, 2, 3} << QStringList{"Title", "A", "B"} << QStringLiteral("1.1)")
-      << QStringList{"Title", "1) A", "1.1) B"};
-  QTest::newRow("title-only") << QVector<int>{1} << QStringList{"Title"} << dot
-                              << QStringList{"Title"};
+      << QVector<int>{1, 2, 3} << QStringList{"Title", "A", "B"} << QStringLiteral("1.1)") << true
+      << QVector<int>{} << QStringList{"Title", "1) A", "1.1) B"};
+  QTest::newRow("title-only") << QVector<int>{1} << QStringList{"Title"} << dot << true
+                              << QVector<int>{} << QStringList{"Title"};
+  QTest::newRow("no-h1") << QVector<int>{2, 3, 2} << QStringList{"A", "B", "C"} << dot << true
+                         << QVector<int>{} << QStringList{"1. A", "1.1. B", "2. C"};
+  QTest::newRow("placeholders-before-title-and-child")
+      << QVector<int>{1, 1, 2, 3} << QStringList{"[EMPTY]", "Title", "[EMPTY]", "A"} << dot << true
+      << QVector<int>{0, 2} << QStringList{"Title", "1. A"};
+  QTest::newRow("off-number-title")
+      << QVector<int>{1, 2, 3, 2} << QStringList{"Title", "A", "B", "C"} << dot << false
+      << QVector<int>{} << QStringList{"1. Title", "1.1. A", "1.1.1. B", "1.2. C"};
+  QTest::newRow("off-title-only") << QVector<int>{1} << QStringList{"Title"} << dot << false
+                                  << QVector<int>{} << QStringList{"1. Title"};
+  QTest::newRow("off-placeholders-before-title-and-child")
+      << QVector<int>{1, 1, 2, 3} << QStringList{"[EMPTY]", "Title", "[EMPTY]", "A"} << dot << false
+      << QVector<int>{0, 2} << QStringList{"1. Title", "1.1.1. A"};
+  QTest::newRow("off-authored-numbers")
+      << QVector<int>{1, 2} << QStringList{"1. Title", "1.1. A"} << dot << false << QVector<int>{}
+      << QStringList{"1. Title", "1.1. A"};
+  QTest::newRow("off-no-h1") << QVector<int>{2, 3, 2} << QStringList{"A", "B", "C"} << dot << false
+                             << QVector<int>{} << QStringList{"1. A", "1.1. B", "2. C"};
+  QTest::newRow("off-multiple-h1")
+      << QVector<int>{1, 2, 1} << QStringList{"A", "B", "C"} << dot << false << QVector<int>{}
+      << QStringList{"1. A", "1.1. B", "2. C"};
 }
 
 void TestPdfViewerAdapterOutline::automaticPolicyDisplaysExpectedNames() {
   QFETCH(QVector<int>, levels);
   QFETCH(QStringList, names);
   QFETCH(QString, pattern);
+  QFETCH(bool, detectHeading1);
+  QFETCH(QVector<int>, placeholderIndices);
   QFETCH(QStringList, expected);
 
   QVector<vnotex::Outline::Heading> raw;
   for (int i = 0; i < names.size(); ++i) {
     vnotex::Outline::Heading heading(names[i], levels[i]);
-    heading.m_reorderable = true;
+    heading.m_isPlaceholder = placeholderIndices.contains(i);
+    heading.m_reorderable = !heading.m_isPlaceholder;
     raw.append(heading);
   }
 
@@ -590,7 +627,7 @@ void TestPdfViewerAdapterOutline::automaticPolicyDisplaysExpectedNames() {
     const auto supplied = outline->m_headings;
     vnotex::OutlineModel model;
     model.setAutoSectionNumberEnabled(true);
-    model.setSectionNumberPattern(pattern);
+    model.setSectionNumberOptions(pattern, detectHeading1);
     model.setOutline(outline);
 
     QStringList displayed;
@@ -779,6 +816,7 @@ void TestPdfViewerAdapterOutline::sharedPatternUpdatesBothViewsWithoutLosingStat
   vnotex::ConfigMgr2 config(&configService);
   config.getWidgetConfig().setOutlineAutoSectionNumberEnabled(true);
   config.getEditorConfig().setSectionNumberPattern(QStringLiteral("1.1"));
+  config.getEditorConfig().setDetectHeading1ForSectionNumber(true);
   vnotex::HookManager hooks;
   vnotex::ServiceLocator services;
   services.registerService<vnotex::ConfigMgr2>(&config);
@@ -814,19 +852,49 @@ void TestPdfViewerAdapterOutline::sharedPatternUpdatesBothViewsWithoutLosingStat
   QCOMPARE(popupView.currentIndex().data().toString(), QStringLiteral("1 A"));
 
   QSignalSpy clickedSpy(provider.data(), &vnotex::OutlineProvider::headingClicked);
+  const auto verifyViews = [&](const QStringList &p_expected) {
+    for (auto *controller : {&dock, &popup}) {
+      QStringList displayed;
+      for (int i = 0; i < outline->m_headings.size(); ++i) {
+        displayed.append(controller->model()->indexForHeadingIndex(i).data().toString());
+      }
+      QCOMPARE(displayed, p_expected);
+      QCOMPARE(controller->model()->getCurrentHeadingIndex(), 1);
+      QCOMPARE(controller->view()->currentIndex().data().toString(), p_expected[1]);
+      QCOMPARE(
+          controller->view()->currentIndex().data(vnotex::OutlineModel::HeadingIndexRole).toInt(),
+          1);
+    }
+    QCOMPARE(dockView.saveExpansionState(), dockExpanded);
+    QCOMPARE(popupView.saveExpansionState(), popupExpanded);
+    QCOMPARE(clickedSpy.count(), 0);
+  };
+  const QStringList exemptTitle{"Title", "1) A", "1.1) Detail", "2) B", "2.1) More"};
   config.getEditorConfig().setSectionNumberPattern(QStringLiteral("1.1)"));
   hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
-  for (auto *controller : {&dock, &popup}) {
-    QCOMPARE(controller->model()->indexForHeadingIndex(2).data().toString(),
-             QStringLiteral("1.1) Detail"));
-    QCOMPARE(controller->model()->getCurrentHeadingIndex(), 1);
-    QCOMPARE(controller->view()->currentIndex().data().toString(), QStringLiteral("1) A"));
-    QCOMPARE(
-        controller->view()->currentIndex().data(vnotex::OutlineModel::HeadingIndexRole).toInt(), 1);
-  }
-  QCOMPARE(dockView.saveExpansionState(), dockExpanded);
-  QCOMPARE(popupView.saveExpansionState(), popupExpanded);
-  QCOMPARE(clickedSpy.count(), 0);
+  verifyViews(exemptTitle);
+
+  config.getEditorConfig().setDetectHeading1ForSectionNumber(false);
+  hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
+  verifyViews({"1) Title", "1.1) A", "1.1.1) Detail", "1.2) B", "1.2.1) More"});
+  config.getEditorConfig().setDetectHeading1ForSectionNumber(true);
+  hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
+  verifyViews(exemptTitle);
+
+  QSignalSpy dockResetSpy(dock.model(), &QAbstractItemModel::modelReset);
+  QSignalSpy popupResetSpy(popup.model(), &QAbstractItemModel::modelReset);
+  config.getEditorConfig().setSectionNumberPattern(QStringLiteral("1.1."));
+  config.getEditorConfig().setDetectHeading1ForSectionNumber(false);
+  hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
+  const QStringList numberedTitle{"1. Title", "1.1. A", "1.1.1. Detail", "1.2. B", "1.2.1. More"};
+  verifyViews(numberedTitle);
+  QCOMPARE(dockResetSpy.count(), 1);
+  QCOMPARE(popupResetSpy.count(), 1);
+
+  hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
+  verifyViews(numberedTitle);
+  QCOMPARE(dockResetSpy.count(), 1);
+  QCOMPARE(popupResetSpy.count(), 1);
 }
 
 void TestPdfViewerAdapterOutline::sourceNumberingFeedsAuthoritativeOutline() {
@@ -852,15 +920,16 @@ void TestPdfViewerAdapterOutline::sourceNumberingFeedsAuthoritativeOutline() {
             outline->m_reorderSupported = !editor.isReadOnly();
             model.setOutline(outline);
           });
-  const auto installPattern = [&](const QString &p_pattern) {
+  const auto installPattern = [&](const QString &p_pattern, bool p_detectHeading1) {
     editor.setHeadingSectionNumberProvider(
-        [p_pattern](const QVector<vte::md::HeadingInfo> &p_headings) {
-          return vnotex::MarkdownEditorController::generateSectionNumbers(p_headings, p_pattern);
+        [p_pattern, p_detectHeading1](const QVector<vte::md::HeadingInfo> &p_headings) {
+          return vnotex::MarkdownEditorController::generateSectionNumbers(p_headings, p_pattern,
+                                                                          p_detectHeading1);
         });
   };
   const QString source = QStringLiteral("# Title\n## Alpha\n#### Detail\n## Beta\n");
   const QString numbered = QStringLiteral("# Title\n## 1. Alpha\n#### 1.1.1. Detail\n## 2. Beta\n");
-  installPattern(QStringLiteral("1.1."));
+  installPattern(QStringLiteral("1.1."), true);
   editor.setText(source);
   QTRY_VERIFY_WITH_TIMEOUT(outline && outline->m_headings.size() == 5, 5000);
   QCOMPARE(editor.document()->toPlainText(), source);
@@ -888,18 +957,45 @@ void TestPdfViewerAdapterOutline::sourceNumberingFeedsAuthoritativeOutline() {
   QCOMPARE(deep.parent(), model.indexForHeadingIndex(2));
   QVERIFY(!(model.flags(deep.parent()) & Qt::ItemIsDragEnabled));
 
-  installPattern(QStringLiteral("1.1)"));
+  installPattern(QStringLiteral("1.1)"), true);
   QTRY_COMPARE_WITH_TIMEOUT(
       editor.document()->toPlainText(),
       QStringLiteral("# Title\n## 1) Alpha\n#### 1.1.1) Detail\n## 2) Beta\n"), 5000);
   QTRY_VERIFY_WITH_TIMEOUT(outline->m_hasSectionNumber, 5000);
   QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1) Alpha"));
-  installPattern(QStringLiteral("1.1"));
-  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(),
-                            QStringLiteral("# Title\n## 1 Alpha\n#### 1.1.1 Detail\n## 2 Beta\n"),
-                            5000);
+  installPattern(QStringLiteral("1.1"), true);
+  const QString noSuffix = QStringLiteral("# Title\n## 1 Alpha\n#### 1.1.1 Detail\n## 2 Beta\n");
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(), noSuffix, 5000);
   QTRY_VERIFY_WITH_TIMEOUT(outline->m_hasSectionNumber, 5000);
   QCOMPARE(model.indexForHeadingIndex(1).data().toString(), QStringLiteral("1 Alpha"));
+
+  installPattern(QStringLiteral("1.1"), false);
+  QTRY_COMPARE_WITH_TIMEOUT(
+      editor.document()->toPlainText(),
+      QStringLiteral("# 1 Title\n## 1.1 Alpha\n#### 1.1.1.1 Detail\n## 1.2 Beta\n"), 5000);
+  const QStringList numberedTitle{"1 Title", "1.1 Alpha", "[EMPTY]", "1.1.1.1 Detail", "1.2 Beta"};
+  for (int i = 0; i < numberedTitle.size(); ++i) {
+    QTRY_COMPARE_WITH_TIMEOUT(model.indexForHeadingIndex(i).data().toString(), numberedTitle[i],
+                              5000);
+  }
+  QVERIFY(outline->m_hasSectionNumber);
+
+  installPattern(QStringLiteral("1.1"), true);
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(),
+                            QStringLiteral("# 1 Title\n## 1 Alpha\n#### 1.1.1 Detail\n## 2 Beta\n"),
+                            5000);
+  const QStringList retainedTitle{"1 Title", "1 Alpha", "[EMPTY]", "1.1.1 Detail", "2 Beta"};
+  for (int i = 0; i < retainedTitle.size(); ++i) {
+    QTRY_COMPARE_WITH_TIMEOUT(model.indexForHeadingIndex(i).data().toString(), retainedTitle[i],
+                              5000);
+  }
+  QVERIFY(outline->m_hasSectionNumber);
+
+  // Reset the authored title before exercising provider removal and an empty document.
+  editor.setText(source);
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(), noSuffix, 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(model.indexForHeadingIndex(0).data().toString(),
+                            QStringLiteral("Title"), 5000);
 
   const QString retained = editor.document()->toPlainText();
   editor.setHeadingSectionNumberProvider({});

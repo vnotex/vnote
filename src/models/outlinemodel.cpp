@@ -49,13 +49,16 @@ void OutlineModel::setAutoSectionNumberEnabled(bool p_enabled) {
   endResetModel();
 }
 
-void OutlineModel::setSectionNumberPattern(const QString &p_pattern) {
+void OutlineModel::setSectionNumberOptions(const QString &p_pattern,
+                                           bool p_detectHeading1ForSectionNumber) {
   const auto pattern = SectionNumberUtils::normalizePattern(p_pattern);
-  if (m_sectionNumberPattern == pattern) {
+  if (m_sectionNumberPattern == pattern &&
+      m_detectHeading1ForSectionNumber == p_detectHeading1ForSectionNumber) {
     return;
   }
 
   m_sectionNumberPattern = pattern;
+  m_detectHeading1ForSectionNumber = p_detectHeading1ForSectionNumber;
   beginResetModel();
   buildTree();
   endResetModel();
@@ -209,7 +212,7 @@ void OutlineModel::buildTree() {
 
   SectionNumberUtils::Analysis analysis;
   if (m_autoSectionNumberEnabled && !m_outline->m_hasSectionNumber) {
-    analysis = SectionNumberUtils::analyze(m_outline->m_headings);
+    analysis = SectionNumberUtils::analyze(m_outline->m_headings, m_detectHeading1ForSectionNumber);
   }
 
   // Fill gaps for skipped heading levels (e.g., H1 -> H3 inserts [EMPTY] H2).

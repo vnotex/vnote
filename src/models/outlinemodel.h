@@ -69,7 +69,7 @@ public:
 
   // Section number display configuration.
   void setAutoSectionNumberEnabled(bool p_enabled);
-  void setSectionNumberPattern(const QString &p_pattern);
+  void setSectionNumberOptions(const QString &p_pattern, bool p_detectHeading1ForSectionNumber);
 
   // Get the QModelIndex for a given heading index (for the view to highlight).
   QModelIndex indexForHeadingIndex(int p_headingIndex) const;
@@ -113,6 +113,7 @@ private:
   // Section number configuration.
   bool m_autoSectionNumberEnabled = true;
   QString m_sectionNumberPattern = QStringLiteral("1.1.");
+  bool m_detectHeading1ForSectionNumber = true;
 };
 
 } // namespace vnotex

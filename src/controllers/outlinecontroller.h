@@ -78,7 +78,7 @@ private:
 
   void clearPendingReorder();
 
-  void updateSectionNumberPattern();
+  void updateSectionNumberOptions();
 
   struct PendingReorder {
     QSharedPointer<Outline> m_outline;

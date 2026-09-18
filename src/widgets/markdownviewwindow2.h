@@ -247,6 +247,7 @@ private:
   bool m_propagateEditorToBuffer = false;
   bool m_editSectionNumberEnabled = false;
   QString m_editSectionNumberPattern = QStringLiteral("1.1.");
+  bool m_editDetectHeading1ForSectionNumber = true;
   bool m_switchingMode = false; // Reentrancy guard.
   quint64 m_navigationGeneration = 0;
   int m_textEditorBufferRevision = 0;

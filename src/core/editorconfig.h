@@ -143,6 +143,9 @@ public:
   const QString &getSectionNumberPattern() const;
   void setSectionNumberPattern(const QString &p_pattern);
 
+  bool getDetectHeading1ForSectionNumber() const;
+  void setDetectHeading1ForSectionNumber(bool p_enabled);
+
 private:
   friend class MainConfig;
 
@@ -200,6 +203,7 @@ private:
   LineEndingPolicy m_lineEnding = LineEndingPolicy::LF;
 
   QString m_sectionNumberPattern = QStringLiteral("1.1.");
+  bool m_detectHeading1ForSectionNumber = true;
 };
 } // namespace vnotex
 

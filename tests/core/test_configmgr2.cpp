@@ -80,6 +80,7 @@ private slots:
   void testEditSectionNumber_mergeAndIndependentPersistence();
   void testSectionNumberPattern_mergeNormalizationAndPersistence_data();
   void testSectionNumberPattern_mergeNormalizationAndPersistence();
+  void testDetectHeading1ForSectionNumber_mergeAndPersistedOptOut();
   void testOutlineAutoSectionNumber_migrationAndPersistence_data();
   void testOutlineAutoSectionNumber_migrationAndPersistence();
   void testMathRenderer_mergeNormalizationAndPersistence();
@@ -793,6 +794,36 @@ void TestConfigMgr2::testSectionNumberPattern_mergeNormalizationAndPersistence()
   ConfigMgr2 restarted(m_configService);
   restarted.init();
   QCOMPARE(restarted.getConfig().getEditorConfig().getSectionNumberPattern(), expected);
+}
+
+void TestConfigMgr2::testDetectHeading1ForSectionNumber_mergeAndPersistedOptOut() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("core"),
+                         QStringLiteral("detectHeading1ForSectionNumber")};
+  MainConfig defaults(m_configMgr);
+  const auto loaded = loadThroughMergePath(withoutKeyAt(defaults.toJson(), path));
+  QCOMPARE(valueAt(loaded, path), QJsonValue(true));
+
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    QVERIFY(settings.getEditorConfig().getDetectHeading1ForSectionNumber());
+    settings.getEditorConfig().setDetectHeading1ForSectionNumber(false);
+    // Destruction flushes the normal pending write, as at application shutdown.
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QVERIFY(!restarted.getEditorConfig().getDetectHeading1ForSectionNumber());
+    restarted.getEditorConfig().setDetectHeading1ForSectionNumber(true);
+  }
+  ConfigMgr2 restored(m_configService);
+  restored.init();
+  QVERIFY(restored.getEditorConfig().getDetectHeading1ForSectionNumber());
 }
 
 void TestConfigMgr2::testOutlineAutoSectionNumber_migrationAndPersistence_data() {

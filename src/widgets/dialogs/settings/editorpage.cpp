@@ -1,5 +1,6 @@
 #include "editorpage.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -87,6 +88,22 @@ void EditorPage::setupUI() {
     addSearchItem(label, m_sectionNumberPatternComboBox->toolTip(), m_sectionNumberPatternComboBox);
     connect(m_sectionNumberPatternComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &EditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Detect Heading 1 for Section Number"));
+    m_detectHeading1ForSectionNumberCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_detectHeading1ForSectionNumberCheckBox->setToolTip(tr(
+        "Exclude a sole leading level-1 heading from automatic section numbering; when disabled, "
+        "number from the first heading"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_detectHeading1ForSectionNumberCheckBox,
+        m_detectHeading1ForSectionNumberCheckBox->toolTip(), this));
+    addSearchItem(label, m_detectHeading1ForSectionNumberCheckBox->toolTip(),
+                  m_detectHeading1ForSectionNumberCheckBox);
+    connect(m_detectHeading1ForSectionNumberCheckBox, &QCheckBox::stateChanged, this,
+            &EditorPage::pageIsChanged);
   }
 
   {
@@ -206,6 +223,9 @@ void EditorPage::loadInternal() {
     m_sectionNumberPatternComboBox->setCurrentIndex(idx);
   }
 
+  m_detectHeading1ForSectionNumberCheckBox->setChecked(
+      editorConfig.getDetectHeading1ForSectionNumber());
+
   m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
 
   {
@@ -236,6 +256,8 @@ bool EditorPage::saveInternal() {
   }
 
   editorConfig.setSectionNumberPattern(m_sectionNumberPatternComboBox->currentData().toString());
+  editorConfig.setDetectHeading1ForSectionNumber(
+      m_detectHeading1ForSectionNumberCheckBox->isChecked());
 
   editorConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());
 

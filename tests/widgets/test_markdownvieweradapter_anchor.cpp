@@ -498,7 +498,15 @@ void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
 void TestMarkdownViewerAdapterAnchor::numberingStatusTracksDocumentReplacement() {
   MarkdownViewerAdapter adapter;
   adapter.setReady(true);
-  adapter.setSectionNumberOptions(true, QStringLiteral("1.1)"));
+  adapter.setSectionNumberOptions(true, QStringLiteral("1.1)"), true);
+  QSignalSpy optionsSpy(&adapter, &MarkdownViewerAdapter::sectionNumberOptionsChanged);
+  adapter.setSectionNumberOptions(true, QStringLiteral("1.1)"), false);
+  QCOMPARE(optionsSpy.count(), 1);
+  const QJsonObject options{
+      {"enabled", true}, {"pattern", "1.1)"}, {"detectHeading1ForSectionNumber", false}};
+  QCOMPARE(adapter.property("sectionNumberOptions").toJsonObject(), options);
+  adapter.setSectionNumberOptions(true, QStringLiteral("1.1)"), false);
+  QCOMPARE(optionsSpy.count(), 1);
   const QJsonArray headings{QJsonObject{{"name", "Title"}, {"level", 1}, {"anchor", "title"}},
                             QJsonObject{{"name", "1) Detail"}, {"level", 3}, {"anchor", "detail"}}};
   adapter.setHeadings(headings, true);
@@ -517,8 +525,9 @@ void TestMarkdownViewerAdapterAnchor::numberingStatusTracksDocumentReplacement()
   adapter.reset();
   QVERIFY(!adapter.getHeadingsHaveSectionNumber());
   QVERIFY(adapter.getHeadings().isEmpty());
-  QVERIFY(adapter.property("sectionNumberOptions").toJsonObject() ==
-          (QJsonObject{{"enabled", true}, {"pattern", "1.1)"}}));
+  QCOMPARE(adapter.property("sectionNumberOptions").toJsonObject(), options);
+  adapter.setSectionNumberOptions(true, QStringLiteral("1.1)"), false);
+  QCOMPARE(optionsSpy.count(), 1);
 }
 
 } // namespace tests

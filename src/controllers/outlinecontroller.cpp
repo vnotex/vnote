@@ -142,12 +142,14 @@ OutlineController::OutlineController(ServiceLocator &p_services, QObject *p_pare
   if (configMgr) {
     m_autoExpandedLevel = configMgr->getWidgetConfig().getOutlineAutoExpandedLevel();
     m_autoSectionNumberEnabled = configMgr->getWidgetConfig().getOutlineAutoSectionNumberEnabled();
-    m_model->setSectionNumberPattern(configMgr->getEditorConfig().getSectionNumberPattern());
+    const auto &editorConfig = configMgr->getEditorConfig();
+    m_model->setSectionNumberOptions(editorConfig.getSectionNumberPattern(),
+                                     editorConfig.getDetectHeading1ForSectionNumber());
     auto *hookMgr = m_services.get<HookManager>();
     if (hookMgr) {
       m_editorConfigHookId = hookMgr->addAction(
           HookNames::ConfigEditorChanged,
-          [this](HookContext &, const QVariantMap &) { updateSectionNumberPattern(); });
+          [this](HookContext &, const QVariantMap &) { updateSectionNumberOptions(); });
     }
   }
   m_model->setAutoSectionNumberEnabled(m_autoSectionNumberEnabled);
@@ -298,7 +300,7 @@ void OutlineController::toggleAutoSectionNumber() {
   }
 }
 
-void OutlineController::updateSectionNumberPattern() {
+void OutlineController::updateSectionNumberOptions() {
   auto *configMgr = m_services.get<ConfigMgr2>();
   if (!configMgr) {
     return;
@@ -307,7 +309,9 @@ void OutlineController::updateSectionNumberPattern() {
   if (m_view) {
     expanded = m_view->saveExpansionState();
   }
-  m_model->setSectionNumberPattern(configMgr->getEditorConfig().getSectionNumberPattern());
+  const auto &editorConfig = configMgr->getEditorConfig();
+  m_model->setSectionNumberOptions(editorConfig.getSectionNumberPattern(),
+                                   editorConfig.getDetectHeading1ForSectionNumber());
   if (m_view) {
     m_view->restoreExpansionState(expanded);
     m_view->highlightHeading(m_model->getCurrentHeadingIndex());

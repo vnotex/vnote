@@ -30,10 +30,12 @@ using namespace vnotex;
 
 QVector<QString>
 MarkdownEditorController::generateSectionNumbers(const QVector<vte::md::HeadingInfo> &p_headings,
-                                                 const QString &p_pattern) {
+                                                 const QString &p_pattern,
+                                                 bool p_detectHeading1ForSectionNumber) {
   QVector<QString> result(p_headings.size());
   const auto analysis = SectionNumberUtils::analyzeStructure(
-      p_headings, [](const vte::md::HeadingInfo &p_heading) { return p_heading.m_level; });
+      p_headings, [](const vte::md::HeadingInfo &p_heading) { return p_heading.m_level; },
+      p_detectHeading1ForSectionNumber);
   if (analysis.m_skip) {
     return result;
   }

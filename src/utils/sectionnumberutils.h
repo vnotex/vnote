@@ -15,7 +15,8 @@ public:
   };
 
   template <class T, class LevelFor>
-  static Analysis analyzeStructure(const QVector<T> &p_headings, LevelFor p_levelFor) {
+  static Analysis analyzeStructure(const QVector<T> &p_headings, LevelFor p_levelFor,
+                                   bool p_detectHeading1ForSectionNumber) {
     Analysis result;
     int first = -1;
     int h1Count = 0;
@@ -27,6 +28,9 @@ public:
       if (first < 0) {
         first = i;
       }
+      if (!p_detectHeading1ForSectionNumber) {
+        break;
+      }
       if (level == 1) {
         ++h1Count;
       }
@@ -34,7 +38,8 @@ public:
     if (first < 0) {
       return result;
     }
-    const bool exemptTitle = p_levelFor(p_headings[first]) == 1 && h1Count == 1;
+    const bool exemptTitle =
+        p_detectHeading1ForSectionNumber && p_levelFor(p_headings[first]) == 1 && h1Count == 1;
     for (int i = first + (exemptTitle ? 1 : 0); i < p_headings.size(); ++i) {
       const int level = p_levelFor(p_headings[i]);
       if (level <= 0) {
@@ -51,10 +56,12 @@ public:
     return result;
   }
 
-  template <class T> static Analysis analyze(const QVector<T> &p_headings) {
-    auto result = analyzeStructure(p_headings, [](const T &p_heading) {
-      return p_heading.m_isPlaceholder ? 0 : p_heading.m_level;
-    });
+  template <class T>
+  static Analysis analyze(const QVector<T> &p_headings, bool p_detectHeading1ForSectionNumber) {
+    auto result = analyzeStructure(
+        p_headings,
+        [](const T &p_heading) { return p_heading.m_isPlaceholder ? 0 : p_heading.m_level; },
+        p_detectHeading1ForSectionNumber);
     if (result.m_skip) {
       return result;
     }

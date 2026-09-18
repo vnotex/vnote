@@ -46,13 +46,16 @@ class AutoSectionNumber extends VxWorker {
             return false;
         }
 
-        let h1Count = 0;
-        for (const heading of headings) {
-            if (heading.tagName === 'H1') {
-                ++h1Count;
+        let first = 0;
+        if (p_options.detectHeading1ForSectionNumber) {
+            let h1Count = 0;
+            for (const heading of headings) {
+                if (heading.tagName === 'H1') {
+                    ++h1Count;
+                }
             }
+            first = headings[0].tagName === 'H1' && h1Count === 1 ? 1 : 0;
         }
-        const first = headings[0].tagName === 'H1' && h1Count === 1 ? 1 : 0;
         if (first === headings.length) {
             return false;
         }

@@ -121,7 +121,8 @@ public:
   int getCurrentHeadingIndex() const;
 
   QJsonObject getSectionNumberOptions() const;
-  void setSectionNumberOptions(bool p_enabled, const QString &p_pattern);
+  void setSectionNumberOptions(bool p_enabled, const QString &p_pattern,
+                               bool p_detectHeading1ForSectionNumber);
   bool getHeadingsHaveSectionNumber() const;
 
   void scrollToHeading(int p_idx);
@@ -317,6 +318,7 @@ private:
   // Per-view options survive document resets and page reloads.
   bool m_autoSectionNumberEnabled = false;
   QString m_sectionNumberPattern = QStringLiteral("1.1.");
+  bool m_detectHeading1ForSectionNumber = true;
 
   int m_currentHeadingIndex = -1;
 

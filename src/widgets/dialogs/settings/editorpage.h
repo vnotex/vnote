@@ -3,6 +3,7 @@
 
 #include "settingspage.h"
 
+class QCheckBox;
 class QComboBox;
 class QSpinBox;
 
@@ -38,6 +39,8 @@ private:
   QComboBox *m_lineEndingComboBox = nullptr;
 
   QComboBox *m_sectionNumberPatternComboBox = nullptr;
+
+  QCheckBox *m_detectHeading1ForSectionNumberCheckBox = nullptr;
 
   QComboBox *m_layoutModeComboBox = nullptr;
 

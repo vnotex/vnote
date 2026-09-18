@@ -1514,7 +1514,8 @@ void MarkdownViewWindow2::updateSectionNumberOptions() {
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
   adapter()->setSectionNumberOptions(isReadMode() && mdConfig.getAutoSectionNumberEnabled(),
-                                     editorConfig.getSectionNumberPattern());
+                                     editorConfig.getSectionNumberPattern(),
+                                     editorConfig.getDetectHeading1ForSectionNumber());
 }
 
 void MarkdownViewWindow2::updateEditSectionNumberOptions(bool p_activate) {
@@ -1532,13 +1533,18 @@ void MarkdownViewWindow2::updateEditSectionNumberOptions(bool p_activate) {
   const bool enabled =
       editorConfig.getMarkdownEditorConfig().getAutoSectionNumberInEditModeEnabled();
   const auto pattern = SectionNumberUtils::normalizePattern(editorConfig.getSectionNumberPattern());
-  if (enabled != m_editSectionNumberEnabled || pattern != m_editSectionNumberPattern) {
+  const bool detectHeading1ForSectionNumber = editorConfig.getDetectHeading1ForSectionNumber();
+  if (enabled != m_editSectionNumberEnabled || pattern != m_editSectionNumberPattern ||
+      detectHeading1ForSectionNumber != m_editDetectHeading1ForSectionNumber) {
     m_editSectionNumberEnabled = enabled;
     m_editSectionNumberPattern = pattern;
+    m_editDetectHeading1ForSectionNumber = detectHeading1ForSectionNumber;
     if (enabled) {
       m_editor->setHeadingSectionNumberProvider(
-          [pattern](const QVector<vte::md::HeadingInfo> &p_headings) {
-            return MarkdownEditorController::generateSectionNumbers(p_headings, pattern);
+          [pattern,
+           detectHeading1ForSectionNumber](const QVector<vte::md::HeadingInfo> &p_headings) {
+            return MarkdownEditorController::generateSectionNumbers(p_headings, pattern,
+                                                                    detectHeading1ForSectionNumber);
           });
     } else {
       m_editor->setHeadingSectionNumberProvider({});

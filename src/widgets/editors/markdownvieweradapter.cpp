@@ -310,16 +310,20 @@ int MarkdownViewerAdapter::getCurrentHeadingIndex() const { return m_currentHead
 
 QJsonObject MarkdownViewerAdapter::getSectionNumberOptions() const {
   return {{QStringLiteral("enabled"), m_autoSectionNumberEnabled},
-          {QStringLiteral("pattern"), m_sectionNumberPattern}};
+          {QStringLiteral("pattern"), m_sectionNumberPattern},
+          {QStringLiteral("detectHeading1ForSectionNumber"), m_detectHeading1ForSectionNumber}};
 }
 
-void MarkdownViewerAdapter::setSectionNumberOptions(bool p_enabled, const QString &p_pattern) {
+void MarkdownViewerAdapter::setSectionNumberOptions(bool p_enabled, const QString &p_pattern,
+                                                    bool p_detectHeading1ForSectionNumber) {
   const auto pattern = SectionNumberUtils::normalizePattern(p_pattern);
-  if (m_autoSectionNumberEnabled == p_enabled && m_sectionNumberPattern == pattern) {
+  if (m_autoSectionNumberEnabled == p_enabled && m_sectionNumberPattern == pattern &&
+      m_detectHeading1ForSectionNumber == p_detectHeading1ForSectionNumber) {
     return;
   }
   m_autoSectionNumberEnabled = p_enabled;
   m_sectionNumberPattern = pattern;
+  m_detectHeading1ForSectionNumber = p_detectHeading1ForSectionNumber;
   emit sectionNumberOptionsChanged();
 }
 

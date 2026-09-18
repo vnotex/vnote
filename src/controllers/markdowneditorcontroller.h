@@ -142,7 +142,8 @@ public:
 
   // Empty entries leave exempt titles and invalid heading levels untouched.
   static QVector<QString> generateSectionNumbers(const QVector<vte::md::HeadingInfo> &p_headings,
-                                                 const QString &p_pattern);
+                                                 const QString &p_pattern,
+                                                 bool p_detectHeading1ForSectionNumber);
 
   // ============ Heading Link ============
 

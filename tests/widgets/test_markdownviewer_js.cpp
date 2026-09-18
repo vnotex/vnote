@@ -473,7 +473,7 @@ var __sectionNumber = vxcore.getWorker('sectionnumber');
 var __container, __sectionHeadings;
 var __optionHandlers = [], __publications = [], __finishSnapshots = [], __trace = [];
 window.vxMarkdownAdapter = {
-  sectionNumberOptions: { enabled: false, pattern: '1.1.' },
+  sectionNumberOptions: { enabled: false, pattern: '1.1.', detectHeading1ForSectionNumber: true },
   sectionNumberOptionsChanged: {
     connect: function(callback) { __optionHandlers.push(callback); },
     emit: function() { __optionHandlers.slice().forEach(function(callback) { callback(); }); }
@@ -495,8 +495,9 @@ window.vxMarkdownAdapter = {
   setCurrentHeadingAnchor: function() {},
   setTopLineNumber: function() {}
 };
-function __setSectionOptions(enabled, pattern) {
-  vxMarkdownAdapter.sectionNumberOptions = { enabled: enabled, pattern: pattern };
+function __setSectionOptions(enabled, pattern, detectHeading1ForSectionNumber) {
+  vxMarkdownAdapter.sectionNumberOptions = { enabled: enabled, pattern: pattern,
+                                            detectHeading1ForSectionNumber: detectHeading1ForSectionNumber };
   vxMarkdownAdapter.sectionNumberOptionsChanged.emit();
 }
 function __makeSectionFixture(rows) {
@@ -1572,29 +1573,31 @@ void TestMarkdownViewerJs::testSectionNumber_policyParity_data() {
   QTest::addColumn<int>("generated");
   QTest::addColumn<bool>("hasSectionNumber");
   QTest::addColumn<QString>("pattern");
-  const auto row = [](const char *name, const char *json, const QStringList &expected,
-                      int generated, bool numbered = true,
+  QTest::addColumn<bool>("detectHeading1ForSectionNumber");
+  const auto row = [](const char *name, bool detectHeading1ForSectionNumber, const char *json,
+                      const QStringList &expected, int generated, bool numbered = true,
                       const QString &pattern = QStringLiteral("1.1.")) {
     QTest::newRow(name) << QJsonDocument::fromJson(json).array() << expected << generated
-                        << numbered << pattern;
+                        << numbered << pattern << detectHeading1ForSectionNumber;
   };
 
-  row("title-after-prose", R"JSON([[1,"Title"],[2,"A"],[3,"B"],[2,"C"]])JSON",
+  row("title-after-prose", true, R"JSON([[1,"Title"],[2,"A"],[3,"B"],[2,"C"]])JSON",
       {"Title", "1. A", "1.1. B", "2. C"}, 3);
-  row("two-h1s", R"JSON([[1,"A"],[2,"B"],[1,"C"]])JSON", {"1. A", "1.1. B", "2. C"}, 3);
-  row("sole-nonfirst-h1", R"JSON([[2,"A"],[1,"B"]])JSON", {"1.1. A", "2. B"}, 2);
-  row("base-h3", R"JSON([[1,"Title"],[3,"A"],[3,"B"]])JSON", {"Title", "1. A", "2. B"}, 2);
-  row("skipped-level", R"JSON([[1,"Title"],[2,"A"],[4,"B"],[2,"C"]])JSON",
+  row("two-h1s", true, R"JSON([[1,"A"],[2,"B"],[1,"C"]])JSON", {"1. A", "1.1. B", "2. C"}, 3);
+  row("sole-nonfirst-h1", true, R"JSON([[2,"A"],[1,"B"]])JSON", {"1.1. A", "2. B"}, 2);
+  row("base-h3", true, R"JSON([[1,"Title"],[3,"A"],[3,"B"]])JSON", {"Title", "1. A", "2. B"}, 2);
+  row("skipped-level", true, R"JSON([[1,"Title"],[2,"A"],[4,"B"],[2,"C"]])JSON",
       {"Title", "1. A", "1.1.1. B", "2. C"}, 3);
-  row("no-headings", "[]", {}, 0, false);
-  row("title-only", R"JSON([[1,"Title"]])JSON", {"Title"}, 0, false);
-  row("no-suffix", R"JSON([[1,"Title"],[2,"A"],[3,"B"]])JSON", {"Title", "1 A", "1.1 B"}, 2, true,
-      QStringLiteral("1.1"));
-  row("parenthesis-suffix", R"JSON([[1,"Title"],[2,"A"],[3,"B"]])JSON", {"Title", "1) A", "1.1) B"},
-      2, true, QStringLiteral("1.1)"));
-  row("unknown-pattern", R"JSON([[2,"A"],[3,"B"]])JSON", {"1. A", "1.1. B"}, 2, true,
+  row("no-headings", true, "[]", {}, 0, false);
+  row("title-only", true, R"JSON([[1,"Title"]])JSON", {"Title"}, 0, false);
+  row("no-suffix", true, R"JSON([[1,"Title"],[2,"A"],[3,"B"]])JSON", {"Title", "1 A", "1.1 B"}, 2,
+      true, QStringLiteral("1.1"));
+  row("parenthesis-suffix", true, R"JSON([[1,"Title"],[2,"A"],[3,"B"]])JSON",
+      {"Title", "1) A", "1.1) B"}, 2, true, QStringLiteral("1.1)"));
+  row("unknown-pattern", true, R"JSON([[2,"A"],[3,"B"]])JSON", {"1. A", "1.1. B"}, 2, true,
       QStringLiteral("unknown"));
-  row("empty-pattern", R"JSON([[2,"A"],[3,"B"]])JSON", {"1. A", "1.1. B"}, 2, true, QString());
+  row("empty-pattern", true, R"JSON([[2,"A"],[3,"B"]])JSON", {"1. A", "1.1. B"}, 2, true,
+      QString());
 
   for (int count = 1; count <= 4; ++count) {
     QJsonArray headings;
@@ -1606,40 +1609,56 @@ void TestMarkdownViewerJs::testSectionNumber_policyParity_data() {
       names.append(name);
     }
     QTest::newRow(qPrintable(QStringLiteral("short-authored-%1").arg(count)))
-        << headings << names << 0 << true << QStringLiteral("1.1.");
+        << headings << names << 0 << true << QStringLiteral("1.1.") << true;
   }
-  row("five-match-sixth-mismatch",
+  row("five-match-sixth-mismatch", true,
       R"JSON([[1,"Title"],[2,"1. A"],[2,"2. B"],[2,"3. C"],[2,"4. D"],[2,"5. E"],[2,"F"]])JSON",
       {"Title", "1. A", "2. B", "3. C", "4. D", "5. E", "F"}, 0);
-  row("fourth-mismatch-keeps-authored-prefixes",
+  row("fourth-mismatch-keeps-authored-prefixes", true,
       R"JSON([[1,"Title"],[2,"1. A"],[2,"2. B"],[2,"3. C"],[2,"D"],[2,"5. E"],[2,"6. F"]])JSON",
       {"Title", "1. 1. A", "2. 2. B", "3. 3. C", "4. D", "5. 5. E", "6. 6. F"}, 6);
-  row("mixed-authored-styles",
+  row("mixed-authored-styles", true,
       R"JSON([[2,"1 Intro"],[2,"1. Intro"],[2,"1) Intro"],[2,"1.2. Intro"],[2,"1.2) Intro"]])JSON",
       {"1 Intro", "1. Intro", "1) Intro", "1.2. Intro", "1.2) Intro"}, 0, true,
       QStringLiteral("1.1)"));
-  row("numeric-only", R"JSON([[2,"0"],[2,"1."],[2,"1)"],[2,"1.2"],[2,"1.2)"]])JSON",
+  row("numeric-only", true, R"JSON([[2,"0"],[2,"1."],[2,"1)"],[2,"1.2"],[2,"1.2)"]])JSON",
       {"0", "1.", "1)", "1.2", "1.2)"}, 0);
-  row("leading-unicode-space", R"JSON([[2,"\u20030 Intro"],[3,"\t1.2 Detail"]])JSON",
+  row("leading-unicode-space", true, R"JSON([[2,"\u20030 Intro"],[3,"\t1.2 Detail"]])JSON",
       {QString(QChar(0x2003)) + QStringLiteral("0 Intro"), QStringLiteral("\t1.2 Detail")}, 0);
-  row("nonleading-numeric-prefix", R"JSON([[2,"v1.2 Intro"]])JSON", {"1. v1.2 Intro"}, 1);
-  row("missing-prefix-separator", R"JSON([[2,"1.2Intro"]])JSON", {"1. 1.2Intro"}, 1);
-  row("empty-prefix-component", R"JSON([[2,"1.. Intro"]])JSON", {"1. 1.. Intro"}, 1);
-  row("placeholders-before-title-and-base",
+  row("nonleading-numeric-prefix", true, R"JSON([[2,"v1.2 Intro"]])JSON", {"1. v1.2 Intro"}, 1);
+  row("missing-prefix-separator", true, R"JSON([[2,"1.2Intro"]])JSON", {"1. 1.2Intro"}, 1);
+  row("empty-prefix-component", true, R"JSON([[2,"1.. Intro"]])JSON", {"1. 1.. Intro"}, 1);
+  row("placeholders-before-title-and-base", true,
       R"JSON([[1,"[EMPTY]",true],[1,"Title"],[2,"[EMPTY]",true],[3,"A"]])JSON", {"Title", "1. A"},
       1);
-  row("placeholders-do-not-break-authored-sample",
+  row("placeholders-do-not-break-authored-sample", true,
       R"JSON([[1,"Title"],[2,"1. A"],[3,"[EMPTY]",true],[4,"1.1.1. B"]])JSON",
       {"Title", "1. A", "1.1.1. B"}, 0);
-  row("placeholders-do-not-advance-counters",
+  row("placeholders-do-not-advance-counters", true,
       R"JSON([[1,"Title"],[2,"A"],[3,"[EMPTY]",true],[4,"B"],[2,"C"]])JSON",
       {"Title", "1. A", "1.1.1. B", "2. C"}, 3);
-  row("real-empty-name-participates",
+  row("real-empty-name-participates", true,
       R"JSON([[1,"Title"],[2,"1. A"],[3,"[EMPTY]",true],[4,"[EMPTY]"]])JSON",
       {"Title", "1. 1. A", "1.1.1. [EMPTY]"}, 2);
-  row("only-placeholders", R"JSON([[1,"[EMPTY]",true],[2,"[EMPTY]",true]])JSON", {}, 0, false);
-  row("invalid-levels-are-not-headings",
+  row("only-placeholders", true, R"JSON([[1,"[EMPTY]",true],[2,"[EMPTY]",true]])JSON", {}, 0,
+      false);
+  row("invalid-levels-are-not-headings", true,
       R"JSON([[0,"Invalid"],[1,"Title"],[-1,"Invalid"],[2,"A"]])JSON", {"Title", "1. A"}, 1);
+
+  row("detection-off-title", false, R"JSON([[1,"Title"],[2,"A"],[3,"B"],[2,"C"]])JSON",
+      {"1. Title", "1.1. A", "1.1.1. B", "1.2. C"}, 4);
+  row("detection-off-title-only", false, R"JSON([[1,"Title"]])JSON", {"1. Title"}, 1);
+  row("detection-off-placeholders", false,
+      R"JSON([[1,"[EMPTY]",true],[1,"Title"],[2,"[EMPTY]",true],[3,"A"]])JSON",
+      {"1. Title", "1.1.1. A"}, 2);
+  row("detection-off-authored", false, R"JSON([[1,"1. Title"],[2,"1.1. A"]])JSON",
+      {"1. Title", "1.1. A"}, 0);
+  row("detection-off-no-h1", false, R"JSON([[2,"A"],[3,"B"],[2,"C"]])JSON",
+      {"1. A", "1.1. B", "2. C"}, 3);
+  row("detection-on-no-h1", true, R"JSON([[2,"A"],[3,"B"],[2,"C"]])JSON",
+      {"1. A", "1.1. B", "2. C"}, 3);
+  row("detection-off-two-h1s", false, R"JSON([[1,"A"],[2,"B"],[1,"C"]])JSON",
+      {"1. A", "1.1. B", "2. C"}, 3);
 }
 
 void TestMarkdownViewerJs::testSectionNumber_policyParity() {
@@ -1648,6 +1667,7 @@ void TestMarkdownViewerJs::testSectionNumber_policyParity() {
   QFETCH(int, generated);
   QFETCH(bool, hasSectionNumber);
   QFETCH(QString, pattern);
+  QFETCH(bool, detectHeading1ForSectionNumber);
 
   struct Heading {
     int m_level;
@@ -1663,7 +1683,8 @@ void TestMarkdownViewerJs::testSectionNumber_policyParity() {
       maximumLevel = qMax(maximumLevel, cppHeadings.last().m_level);
     }
   }
-  const auto analysis = vnotex::SectionNumberUtils::analyze(cppHeadings);
+  const auto analysis =
+      vnotex::SectionNumberUtils::analyze(cppHeadings, detectHeading1ForSectionNumber);
   QVector<int> numbers(maximumLevel + 1, 0);
   QStringList cppNames;
   int cppGenerated = 0;
@@ -1692,8 +1713,11 @@ void TestMarkdownViewerJs::testSectionNumber_policyParity() {
           .arg(QString::fromUtf8(QJsonDocument(headings).toJson(QJsonDocument::Compact))));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
   engine.globalObject().setProperty(QStringLiteral("__pattern"), pattern);
+  engine.globalObject().setProperty(QStringLiteral("__detectHeading1"),
+                                    detectHeading1ForSectionNumber);
   res = engine.evaluate(
-      QStringLiteral("__sectionNumber.apply(__container, { enabled: true, pattern: __pattern });"));
+      QStringLiteral("__sectionNumber.apply(__container, { enabled: true, pattern: __pattern, "
+                     "detectHeading1ForSectionNumber: __detectHeading1 });"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
   QCOMPARE(res.toBool(), hasSectionNumber);
   QCOMPARE(engine.evaluate(QStringLiteral("__container.__vxHasSectionNumber")).toBool(),
@@ -1733,7 +1757,7 @@ var outside = add(document.body, 'h1', 'outside', 'Outside');
 var code = add(add(__container, 'pre'), 'code', '', '# Not a heading');
 var toc = add(add(__container, 'nav'), 'a', '', 'Title');
 toc.setAttribute('href', '#heading-0');
-__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.', detectHeading1ForSectionNumber: true });
 )JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 
@@ -1752,14 +1776,15 @@ __sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
   };
   check(dottedNames, true, 4);
   res = engine.evaluate(QStringLiteral(R"JS(
-__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
-__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.', detectHeading1ForSectionNumber: true });
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.', detectHeading1ForSectionNumber: true });
 )JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
   check(dottedNames, true, 4);
 
-  res = engine.evaluate(
-      QStringLiteral("__sectionNumber.apply(__container, { enabled: true, pattern: '1.1)' });"));
+  res =
+      engine.evaluate(QStringLiteral("__sectionNumber.apply(__container, { enabled: true, pattern: "
+                                     "'1.1)', detectHeading1ForSectionNumber: true });"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
   check({"Title", "1) Alpha Link Detail authored", "1.1) Nested", "2) Peer"}, true, 4);
   QVERIFY(engine
@@ -1769,7 +1794,7 @@ __sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
   res = engine.evaluate(QStringLiteral(R"JS(
 var ownedSpans = __sectionHeadings.map(function(node) { return node.__vxSectionNumberSpan; })
                                 .filter(function(node) { return !!node; });
-__sectionNumber.apply(__container, { enabled: false, pattern: '1.1)' });
+__sectionNumber.apply(__container, { enabled: false, pattern: '1.1)', detectHeading1ForSectionNumber: true });
 link.click();
 )JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
@@ -1785,7 +1810,7 @@ link.click();
               .toBool());
 
   res = engine.evaluate(QStringLiteral(R"JS(
-__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.' });
+__sectionNumber.apply(__container, { enabled: true, pattern: '1.1.', detectHeading1ForSectionNumber: true });
 link.click();
 )JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
@@ -1821,8 +1846,11 @@ void TestMarkdownViewerJs::testSectionNumber_renderLifecycleAndFolding() {
   setupSectionNumber(engine);
   auto res = engine.evaluate(QStringLiteral(R"JS(
 // The retained property changes before the worker can subscribe on its first render.
-__setSectionOptions(true, '1.1)');
+__setSectionOptions(true, '1.1)', true);
 __makeSectionFixture([[1, 'Title'], [2, 'Alpha'], [3, 'Detail'], [2, 'Beta']]);
+__sectionHeadings[1].textContent = '';
+var inlineLink = add(__sectionHeadings[1], 'a', '', 'Alpha');
+inlineLink.setAttribute('href', '#heading-2');
 vxcore.nodeLineMapper = new __NodeLineMapper(vxcore, __container);
 vxcore.setHeadingFoldingEnabled(true);
 // Supply rendered child nodes at the renderer boundary; dispatch, worker accounting,
@@ -1865,17 +1893,25 @@ vxcore.scrollToAnchor('heading-2');
   struct Transition {
     bool enabled;
     QString pattern;
+    bool detectHeading1;
     QStringList names;
   };
   const QVector<Transition> transitions{
-      {true, QStringLiteral("1.1"), {"Title", "1 Alpha", "1.1 Detail", "2 Beta"}},
-      {false, QStringLiteral("1.1"), {"Title", "Alpha", "Detail", "Beta"}},
-      {true, QStringLiteral("1.1."), {"Title", "1. Alpha", "1.1. Detail", "2. Beta"}}};
+      {true, QStringLiteral("1.1"), true, {"Title", "1 Alpha", "1.1 Detail", "2 Beta"}},
+      {false, QStringLiteral("1.1"), true, {"Title", "Alpha", "Detail", "Beta"}},
+      {true, QStringLiteral("1.1."), true, {"Title", "1. Alpha", "1.1. Detail", "2. Beta"}},
+      {true,
+       QStringLiteral("1.1."),
+       false,
+       {"1. Title", "1.1. Alpha", "1.1.1. Detail", "1.2. Beta"}},
+      {true, QStringLiteral("1.1."), true, {"Title", "1. Alpha", "1.1. Detail", "2. Beta"}}};
   for (const auto &transition : transitions) {
     engine.globalObject().setProperty(QStringLiteral("nextEnabled"), transition.enabled);
     engine.globalObject().setProperty(QStringLiteral("nextPattern"), transition.pattern);
-    res = engine.evaluate(
-        QStringLiteral("__trace = []; __setSectionOptions(nextEnabled, nextPattern);"));
+    engine.globalObject().setProperty(QStringLiteral("nextDetectHeading1"),
+                                      transition.detectHeading1);
+    res = engine.evaluate(QStringLiteral(
+        "__trace = []; __setSectionOptions(nextEnabled, nextPattern, nextDetectHeading1);"));
     QVERIFY2(!res.isError(), qPrintable(res.toString()));
     QCOMPARE(engine.evaluate(QStringLiteral("__sectionNames()")).toVariant().toStringList(),
              transition.names);
@@ -1898,7 +1934,17 @@ vxcore.scrollToAnchor('heading-2');
                  .evaluate(QStringLiteral(
                      "__container.querySelectorAll('span.vx-section-number').length"))
                  .toInt(),
-             transition.enabled ? 3 : 0);
+             transition.enabled ? (transition.detectHeading1 ? 3 : 4) : 0);
+    QCOMPARE(engine
+                 .evaluate(QStringLiteral(
+                     "__sectionHeadings.map(function(heading) { return heading.id; })"))
+                 .toVariant()
+                 .toStringList(),
+             (QStringList{"heading-0", "heading-1", "heading-2", "heading-3"}));
+    QVERIFY(
+        engine.evaluate(QStringLiteral("inlineLink.parentNode === __sectionHeadings[1]")).toBool());
+    QCOMPARE(engine.evaluate(QStringLiteral("inlineLink.getAttribute('href')")).toString(),
+             QStringLiteral("#heading-2"));
     QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 1);
     QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
   }
@@ -1948,7 +1994,7 @@ synchronousTrace = __trace.join('|');
   }
 
   // A later option update must still publish exactly once and never finish a render unit.
-  res = engine.evaluate(QStringLiteral("__trace = []; __setSectionOptions(false, '1.1.');"));
+  res = engine.evaluate(QStringLiteral("__trace = []; __setSectionOptions(false, '1.1.', true);"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
   QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
            QStringLiteral("headings"));
@@ -1973,7 +2019,7 @@ synchronousTrace = __trace.join('|');
   res = engine.evaluate(QStringLiteral(R"JS(
 __container.textContent = '';
 __sectionHeadings = [add(__container, 'h1', 'new-title', 'Replacement title')];
-__setSectionOptions(true, '1.1.');
+__setSectionOptions(true, '1.1.', true);
 vxcore.setMarkdownText('title-only replacement');
 )JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
@@ -1986,14 +2032,32 @@ vxcore.setMarkdownText('title-only replacement');
 
   res = engine.evaluate(QStringLiteral(R"JS(
 __container.textContent = '';
-__sectionHeadings = [];
-vxcore.setMarkdownText('empty replacement');
+__sectionHeadings = [add(__container, 'h1', 'numbered-title', 'Replacement title')];
+__setSectionOptions(true, '1.1.', false);
+vxcore.setMarkdownText('numbered title-only replacement');
 )JS"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
   QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 6);
   QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[5].names")).toVariant().toStringList(),
+           (QStringList{"1. Replacement title"}));
+  QVERIFY(engine.evaluate(QStringLiteral("__finishSnapshots[5].hasSectionNumber")).toBool());
+  QCOMPARE(
+      engine
+          .evaluate(QStringLiteral("__container.querySelectorAll('span.vx-section-number').length"))
+          .toInt(),
+      1);
+  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+
+  res = engine.evaluate(QStringLiteral(R"JS(
+__container.textContent = '';
+__sectionHeadings = [];
+vxcore.setMarkdownText('empty replacement');
+)JS"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 7);
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[6].names")).toVariant().toStringList(),
            QStringList());
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[5].hasSectionNumber")).toBool(),
+  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[6].hasSectionNumber")).toBool(),
            false);
   QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
   QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);

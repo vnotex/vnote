@@ -110,6 +110,7 @@ void EditorConfig::loadCore(const QJsonObject &p_jobj) {
 
   m_sectionNumberPattern =
       SectionNumberUtils::normalizePattern(READSTR(QStringLiteral("sectionNumberPattern")));
+  m_detectHeading1ForSectionNumber = READBOOL(QStringLiteral("detectHeading1ForSectionNumber"));
 }
 
 QJsonObject EditorConfig::saveCore() const {
@@ -123,6 +124,7 @@ QJsonObject EditorConfig::saveCore() const {
   obj[QStringLiteral("spellCheckDefaultDictionary")] = m_spellCheckDefaultDictionary;
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
   obj[QStringLiteral("sectionNumberPattern")] = m_sectionNumberPattern;
+  obj[QStringLiteral("detectHeading1ForSectionNumber")] = m_detectHeading1ForSectionNumber;
   return obj;
 }
 
@@ -238,6 +240,14 @@ const QString &EditorConfig::getSectionNumberPattern() const { return m_sectionN
 
 void EditorConfig::setSectionNumberPattern(const QString &p_pattern) {
   updateConfig(m_sectionNumberPattern, SectionNumberUtils::normalizePattern(p_pattern), this);
+}
+
+bool EditorConfig::getDetectHeading1ForSectionNumber() const {
+  return m_detectHeading1ForSectionNumber;
+}
+
+void EditorConfig::setDetectHeading1ForSectionNumber(bool p_enabled) {
+  updateConfig(m_detectHeading1ForSectionNumber, p_enabled, this);
 }
 
 const QString &EditorConfig::getBackupFileDirectory() const { return m_backupFileDirectory; }
