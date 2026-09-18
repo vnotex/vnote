@@ -74,10 +74,11 @@ namespace {
 const QStringList &themeNames() {
   static const QStringList names = {
       QStringLiteral("everforest-dark"), QStringLiteral("latex-dark"),
-      QStringLiteral("latex-light"),     QStringLiteral("moonlight"),
-      QStringLiteral("solarized-dark"),  QStringLiteral("solarized-light"),
-      QStringLiteral("vscode-dark"),     QStringLiteral("vue-dark"),
-      QStringLiteral("vue-light"),       QStringLiteral("vx-idea")};
+      QStringLiteral("latex-light"),     QStringLiteral("lucius"),
+      QStringLiteral("moonlight"),       QStringLiteral("solarized-dark"),
+      QStringLiteral("solarized-light"), QStringLiteral("vscode-dark"),
+      QStringLiteral("vue-dark"),        QStringLiteral("vue-light"),
+      QStringLiteral("vx-idea")};
   return names;
 }
 

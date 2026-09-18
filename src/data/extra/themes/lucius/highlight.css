@@ -1,0 +1,234 @@
+/* Lucius Light, normal contrast. Based on the Prism theme by Lea Verou.
+ * Lucius palette copyright and license: interface.qss
+ */
+
+ code[class*="language-"],
+ pre[class*="language-"] {
+     color: #444444;
+     background: none;
+     text-shadow: none;
+     font-size:  0.9rem;
+     text-align: left;
+     white-space: pre;
+     word-spacing: normal;
+     word-break: normal;
+     word-wrap: normal;
+     line-height: 1.5;
+
+     -moz-tab-size: 4;
+     -o-tab-size: 4;
+     tab-size: 4;
+
+     -webkit-hyphens: none;
+     -moz-hyphens: none;
+     -ms-hyphens: none;
+     hyphens: none;
+ }
+
+ pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+ code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+     text-shadow: none;
+     background-color: #afd7ff;
+     color: #444444;
+ }
+
+ pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+ code[class*="language-"]::selection, code[class*="language-"] ::selection {
+     text-shadow: none;
+     background-color: #afd7ff;
+     color: #444444;
+ }
+
+ @media print {
+     code[class*="language-"],
+     pre[class*="language-"] {
+         text-shadow: none;
+     }
+ }
+
+ /* Code blocks */
+ pre[class*="language-"] {
+     padding: 1em;
+     margin: 0;
+     overflow: auto;
+     border-radius: 4px;
+ }
+
+ :not(pre) > code[class*="language-"],
+ pre[class*="language-"] {
+     background:#eeeeee !important;
+ }
+
+ /* Inline code */
+ :not(pre) > code[class*="language-"] {
+     padding: .1em;
+     border-radius: .3em;
+     white-space: normal;
+ }
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+    color: #808080;
+}
+
+.token.punctuation,
+.token.namespace {
+    color: #444444;
+}
+
+.token.property,
+.token.function,
+.token.selector,
+.token.attr-name,
+.token.builtin,
+.token.variable,
+.token.inserted {
+    color: #008700;
+}
+
+.token.boolean,
+.token.number,
+.token.constant,
+.token.string,
+.token.char,
+.token.attr-value,
+.language-css .token.string,
+.style .token.string {
+    color: #af5f00;
+}
+
+.token.operator,
+.token.keyword,
+.token.tag {
+    color: #005faf;
+}
+
+.token.class-name {
+    color: #005f87;
+}
+
+.token.atrule,
+.token.url {
+    color: #008787;
+}
+
+.token.regex,
+.token.entity,
+.token.symbol,
+.token.important {
+    color: #870087;
+}
+
+.token.deleted {
+    color: #af0000;
+}
+
+ .token.important,
+ .token.bold {
+     font-weight: bold;
+ }
+ .token.italic {
+     font-style: italic;
+ }
+
+ .token.entity {
+     cursor: help;
+ }
+
+ pre[class*="language-"].line-numbers {
+     position: relative;
+     padding-left: 3.8em;
+     counter-reset: linenumber;
+ }
+
+ pre[class*="language-"].line-numbers > code {
+     position: relative;
+     white-space: inherit;
+     letter-spacing: 1px;
+ }
+
+ .line-numbers .line-numbers-rows {
+     position: absolute;
+     pointer-events: none;
+     top: 0;
+     font-size: 100%;
+     left: -3.8em;
+     width: 3em; /* works for line-numbers below 1000 lines */
+     letter-spacing: -1px;
+     border-right: 1px solid #bcbcbc;
+     color: #626262;
+     -webkit-user-select: none;
+     -moz-user-select: none;
+     -ms-user-select: none;
+     user-select: none;
+
+ }
+
+.line-numbers-rows > span {
+    display: block;
+    counter-increment: linenumber;
+}
+
+.line-numbers-rows > span:before {
+    content: counter(linenumber);
+    color: #626262;
+    display: block;
+    padding-right: 0.8em;
+    text-align: right;
+}
+
+ div.code-toolbar {
+     position: relative;
+ }
+
+ div.code-toolbar > .toolbar {
+     position: absolute;
+     top: 0;
+     right: 0;
+     transition: opacity 0.3s ease-in-out;
+     opacity: 0;
+ }
+
+ div.code-toolbar:hover > .toolbar {
+     opacity: 1;
+ }
+
+ /* Separate line b/c rules are thrown out if selector is invalid.
+    IE11 and old Edge versions don't support :focus-within. */
+ div.code-toolbar:focus-within > .toolbar {
+     opacity: 1;
+ }
+
+ div.code-toolbar > .toolbar .toolbar-item {
+     display: inline-block;
+ }
+
+ div.code-toolbar > .toolbar a {
+     cursor: pointer;
+ }
+
+ div.code-toolbar > .toolbar button {
+     background: none;
+     border: 0;
+     color: inherit;
+     font: inherit;
+     line-height: normal;
+     overflow: visible;
+     padding: 0;
+     -webkit-user-select: none; /* for button */
+     -moz-user-select: none;
+     -ms-user-select: none;
+ }
+
+ div.code-toolbar > .toolbar a,
+ div.code-toolbar > .toolbar button,
+ div.code-toolbar > .toolbar span {
+     color: #eeeeee;
+     font-size: .8em;
+     font-weight: bold;
+     padding: .2em .5em;
+     border-radius: 0 4px 0 4px;
+     background-color: #005faf;
+ }

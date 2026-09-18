@@ -1154,6 +1154,40 @@
         <file>themes/vscode-dark/up.svg</file>
         <file>themes/vscode-dark/up_disabled.svg</file>
         <file>themes/vscode-dark/web.css</file>
+        <file>themes/lucius/arrow_dropdown.svg</file>
+        <file>themes/lucius/arrow_dropdown_disabled.svg</file>
+        <file>themes/lucius/branch_closed.svg</file>
+        <file>themes/lucius/branch_open.svg</file>
+        <file>themes/lucius/checkbox_checked.svg</file>
+        <file>themes/lucius/checkbox_checked_disabled.svg</file>
+        <file>themes/lucius/checkbox_unchecked.svg</file>
+        <file>themes/lucius/checkbox_unchecked_disabled.svg</file>
+        <file>themes/lucius/close.svg</file>
+        <file>themes/lucius/close_grey.svg</file>
+        <file>themes/lucius/down.svg</file>
+        <file>themes/lucius/down_disabled.svg</file>
+        <file>themes/lucius/editor-highlight.theme</file>
+        <file>themes/lucius/expand_toolbar.svg</file>
+        <file>themes/lucius/float.svg</file>
+        <file>themes/lucius/highlight.css</file>
+        <file>themes/lucius/interface.qss</file>
+        <file>themes/lucius/left.svg</file>
+        <file>themes/lucius/left_disabled.svg</file>
+        <file>themes/lucius/markdown-editor-highlight.theme</file>
+        <file>themes/lucius/menu_checkbox.svg</file>
+        <file>themes/lucius/menu_radiobutton.svg</file>
+        <file>themes/lucius/palette.json</file>
+        <file>themes/lucius/radiobutton_checked.svg</file>
+        <file>themes/lucius/radiobutton_checked_disabled.svg</file>
+        <file>themes/lucius/radiobutton_unchecked.svg</file>
+        <file>themes/lucius/radiobutton_unchecked_disabled.svg</file>
+        <file>themes/lucius/right.svg</file>
+        <file>themes/lucius/right_disabled.svg</file>
+        <file>themes/lucius/sizegrip.svg</file>
+        <file>themes/lucius/text-editor.theme</file>
+        <file>themes/lucius/up.svg</file>
+        <file>themes/lucius/up_disabled.svg</file>
+        <file>themes/lucius/web.css</file>
         <file>themes/vue-light/arrow_dropdown.svg</file>
         <file>themes/vue-light/arrow_dropdown_disabled.svg</file>
         <file>themes/vue-light/branch_closed.svg</file>

@@ -1,0 +1,783 @@
+{
+    "metadata": {
+        "revision": 1,
+        "editor-highlight-theme": "Default",
+        "markdown-editor-highlight-theme": "Markdown Default",
+        "display_name": "Lucius",
+        "display_name_zh_CN": "Lucius",
+        "description": "Lucius Light, normal contrast, by Jonathan Filip; adapted for VNote",
+        "source": "https://github.com/jonathanfilip/lucius"
+    },
+    "palette": {
+        "bg3_0": "#bcbcbc",
+        "bg3_1": "#bcbcbc",
+        "bg3_2": "#d0d0d0",
+        "bg3_3": "#afd7ff",
+        "bg3_4": "#e4e4e4",
+        "bg3_41": "#dadada",
+        "bg3_45": "#d0d0d0",
+        "bg3_5": "#eeeeee",
+        "bg3_6": "#eeeeee",
+        "fg3_5": "#444444",
+        "fg3_6": "#626262",
+        "fg3_7": "#808080",
+        "fg3_8": "#9e9e9e",
+        "fg3_9": "#bcbcbc",
+        "fg3_10": "#bcbcbc",
+        "bg2_4": "#005f87",
+        "bg2_5": "#005faf",
+        "bg2_6": "#008787",
+        "bg2_7": "#afd7ff",
+        "fg10": "#af0000",
+        "fg11": "#af5f00",
+        "fg12": "#005faf",
+        "fg13": "#af0000",
+        "fg_success": "#008700",
+        "fg15_3": "#9e9e9e",
+        "fg15_4": "#626262",
+        "fg15_5": "#444444",
+        "bg11": "#afd7ff",
+        "layer1": "#e4e4e4",
+        "layer2": "#afd7ff",
+        "layer3": "#dadada",
+        "layer4": "#e4e4e4",
+        "fg_reader": "#444444",
+        "fg_heading": "#005faf",
+        "border_heading": "#bcbcbc",
+        "fg_heading_muted": "#626262",
+        "fg_link": "#005faf",
+        "fg_link_visited": "#870087",
+        "fg_inline_code": "#af5f00",
+        "bg_inline_code": "#e4e4e4",
+        "fg_blockquote": "#626262",
+        "bg_hr": "#bcbcbc",
+        "border_table": "#bcbcbc",
+        "bg_table_stripe": "#e4e4e4",
+        "bg_table_header": "#dadada",
+        "bg_search": "#ffaf00",
+        "bg_search_current": "#5fd7d7",
+        "fg_alert_info_icon": "#eeeeee",
+        "fg_alert_muted_icon": "#eeeeee",
+        "fg_alert_error_icon": "#eeeeee",
+        "fg_heading_anchor": "#626262",
+        "bg_code_block_alert": "#e4e4e4",
+        "bg_trailing_space": "#afd7af",
+        "bg_tab_marker": "#afd7af",
+        "bg_selected_text": "#ffffaf",
+        "bg_editor_gutter": "#dadada",
+        "fg_folding": "#626262",
+        "fg_folded_folding": "#626262",
+        "bg_folding_highlight": "#5f87af",
+        "bg_folded_range": "#bcbcbc",
+        "bg_search_incremental": "#5fd7d7",
+        "fg_list_guide": "#9e9e9e",
+        "bg_active_list_item": "#e4e4e4",
+        "fg_link_source": "#005faf",
+        "bg_concealed_text": "#e4e4e4",
+        "bg_hr_source": "#e4e4e4",
+        "fg_list_bullet": "#008700",
+        "fg_list_number": "#af5f00",
+        "fg_image": "#00875f",
+        "fg_reference": "#008787",
+        "fg_inline_code_source": "#af5f00",
+        "fg_source_comment": "#808080",
+        "fg_blockquote_source": "#00875f",
+        "fg_note": "#008787",
+        "fg_front_matter": "#808080",
+        "fg_table_border_source": "#008787",
+        "fg_html": "#870087",
+        "fg_code_block_source": "#444444",
+        "fg_math": "#870087",
+        "bg_editor_text": "#eeeeee",
+        "bg_mark": "#ffffaf"
+    },
+    "base": {
+        "normal": {
+            "fg": "@palette#fg3_5",
+            "bg": "@palette#bg3_5",
+            "border": "@palette#fg3_10"
+        },
+        "master": {
+            "fg": "@palette#bg3_6",
+            "bg": "@palette#bg2_5",
+            "alt": "@palette#bg2_6"
+        },
+        "header": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg"
+        },
+        "footer": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg"
+        },
+        "title": {
+            "fg": "@base#normal#fg",
+            "bg": "@palette#bg3_41"
+        },
+        "content": {
+            "fg": "@palette#fg3_5",
+            "bg": "@palette#bg3_6",
+            "border": "@base#normal#border",
+            "disabled": {
+                "fg": "@base#disabled#fg",
+                "bg": "@base#content#bg"
+            },
+            "pressed": {
+                "fg": "@base#pressed#fg",
+                "bg": "@base#pressed#bg"
+            },
+            "focus": {
+                "fg": "@base#content#fg",
+                "bg": "@base#focus#bg",
+                "border": "@base#master#bg"
+            },
+            "hover": {
+                "fg": "@base#content#fg",
+                "bg": "@base#hover#bg",
+                "border": "@base#master#bg"
+            },
+            "selection": {
+                "fg": "@base#content#fg",
+                "bg": "@palette#bg11"
+            },
+            "selected": {
+                "fg": "@base#content#fg",
+                "bg": "@base#selected#bg",
+                "active": {
+                    "fg": "@base#content#selected#fg",
+                    "bg": "@base#content#selected#bg"
+                },
+                "inactive": {
+                    "fg": "@base#content#selected#fg",
+                    "bg": "@base#content#hover#bg"
+                }
+            }
+        },
+        "edit": {
+            "focus": {
+                "fg": "@base#content#fg",
+                "bg": "@base#content#bg",
+                "border": "@base#master#bg"
+            },
+            "hover": {
+                "fg": "@base#content#fg",
+                "bg": "@palette#bg2_7",
+                "border": "@base#master#bg"
+            }
+        },
+        "muted": {
+            "fg": "@palette#fg3_6"
+        },
+        "error": {
+            "fg": "@palette#fg10"
+        },
+        "success": {
+            "fg": "@palette#fg_success"
+        },
+        "warning": {
+            "fg": "@palette#fg11"
+        },
+        "info": {
+            "fg": "@palette#fg12"
+        },
+        "danger": {
+            "fg": "@base#normal#bg",
+            "bg": "@palette#fg13"
+        },
+        "disabled": {
+            "fg": "@palette#fg3_8",
+            "bg": "@base#normal#bg"
+        },
+        "pressed": {
+            "fg": "@palette#fg3_5",
+            "bg": "@palette#bg3_1"
+        },
+        "focus": {
+            "fg": "@palette#fg3_5",
+            "bg": "@palette#bg3_2"
+        },
+        "hover": {
+            "fg": "@palette#fg3_5",
+            "bg": "@palette#bg3_4"
+        },
+        "selected": {
+            "fg": "@palette#fg3_5",
+            "bg": "@palette#bg3_3"
+        },
+        "icon": {
+            "fg": "@palette#fg15_5",
+            "inactive": {
+                "fg": "@palette#fg15_4"
+            },
+            "disabled": {
+                "fg": "@palette#fg15_3"
+            },
+            "warning": {
+                "fg": "@base#warning#fg"
+            },
+            "danger": {
+                "fg": "@base#danger#fg"
+            },
+            "selected": {
+                "fg": "@base#master#bg"
+            }
+        }
+    },
+    "widgets": {
+        "separator": {
+            "bg": "@base#normal#border"
+        },
+        "qwidget": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg",
+            "info": {
+                "border": "@base#info#fg"
+            },
+            "warning": {
+                "border": "@base#warning#fg"
+            },
+            "error": {
+                "border": "@base#error#fg"
+            },
+            "success": {
+                "border": "@base#success#fg"
+            },
+            "danger": {
+                "fg": "@base#danger#fg",
+                "bg": "@base#danger#bg"
+            }
+        },
+        "toolbox": {
+            "title": {
+                "border": "@widgets#toolbox#title#button#active#bg",
+                "button": {
+                    "fg": "@base#normal#fg",
+                    "active": {
+                        "fg": "@base#master#fg",
+                        "bg": "@base#master#bg"
+                    }
+                }
+            }
+        },
+        "titlebar": {
+            "button": {
+                "fg": "@base#icon#fg"
+            },
+            "menu_icon": {
+                "fg": "@base#icon#fg",
+                "disabled": {
+                    "fg": "@base#icon#disabled#fg"
+                }
+            }
+        },
+        "toolbar": {
+            "icon": {
+                "fg": "@base#icon#fg",
+                "disabled": {
+                    "fg": "@base#icon#disabled#fg"
+                },
+                "danger": {
+                    "fg": "@base#icon#danger#fg"
+                }
+            }
+        },
+        "notebookexplorer": {
+            "node_icon": {
+                "fg": "@base#icon#fg",
+                "invalid": {
+                    "fg": "@base#icon#warning#fg"
+                }
+            },
+            "external_node_icon": {
+                "fg": "@base#icon#inactive#fg"
+            },
+            "external_node_text": {
+                "fg": "@base#muted#fg"
+            }
+        },
+        "locationlist": {
+            "node_icon": {
+                "fg": "@base#icon#fg"
+            }
+        },
+        "viewsplit": {
+            "action_button": {
+                "fg": "@base#icon#inactive#fg",
+                "active": {
+                    "fg": "@base#icon#fg"
+                }
+            },
+            "tabbar": {
+                "tab": {
+                    "selected": {
+                        "fg": "@base#content#fg",
+                        "bg": "@base#content#bg"
+                    }
+                }
+            },
+            "flash": {
+                "bg": "@base#master#alt"
+            }
+        },
+        "qmainwindow": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg",
+            "separator": {
+                "bg": "@widgets#separator#bg"
+            }
+        },
+        "dragdropareaindicator": {
+            "fg": "@base#normal#fg",
+            "border": "@widgets#dragdropareaindicator#fg"
+        },
+        "navigationlabel": {
+            "fg": "@widgets#toolbox#title#button#active#fg",
+            "bg": "@widgets#toolbox#title#button#active#bg"
+        },
+        "qmenu": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg",
+            "border": "@base#normal#border",
+            "item": {
+                "selected": {
+                    "fg": "@base#selected#fg",
+                    "bg": "@base#selected#bg"
+                },
+                "disabled": {
+                    "fg": "@base#disabled#fg"
+                }
+            },
+            "separator": {
+                "bg": "@widgets#separator#bg"
+            }
+        },
+        "qtooltip": {
+            "fg": "@base#master#fg",
+            "bg": "@base#master#bg"
+        },
+        "qtoolbar": {
+            "bg": "@base#header#bg",
+            "separator": {
+                "bg": "@widgets#separator#bg"
+            },
+            "extension": {
+                "bg": "@base#normal#border",
+                "hover": {
+                    "bg": "@base#hover#bg"
+                }
+            }
+        },
+        "qtoolbutton": {
+            "fg": "@base#normal#fg",
+            "bg": "transparent",
+            "checked": {
+                "fg": "@base#selected#fg",
+                "bg": "@base#selected#bg"
+            },
+            "hover": {
+                "fg": "@base#hover#fg",
+                "bg": "@base#hover#bg"
+            },
+            "pressed": {
+                "fg": "@base#pressed#fg",
+                "bg": "@base#pressed#bg"
+            }
+        },
+        "qdockwidget": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg",
+            "title": {
+                "bg": "@base#title#bg",
+                "button": {
+                    "pressed": {
+                        "bg": "@base#pressed#bg"
+                    },
+                    "hover": {
+                        "bg": "@base#hover#bg"
+                    }
+                }
+            }
+        },
+        "qpushbutton": {
+            "fg": "@base#normal#fg",
+            "bg": "transparent",
+            "border": "@base#normal#border",
+            "default": {
+                "border": "@base#master#bg"
+            },
+            "focus": {
+                "fg": "@base#focus#fg",
+                "bg": "@base#focus#bg"
+            },
+            "checked": {
+                "fg": "@base#selected#fg",
+                "bg": "@base#selected#bg"
+            },
+            "hover": {
+                "fg": "@base#hover#fg",
+                "bg": "@base#hover#bg"
+            },
+            "pressed": {
+                "fg": "@base#pressed#fg",
+                "bg": "@base#pressed#bg"
+            },
+            "disabled": {
+                "fg": "@base#disabled#fg",
+                "bg": "@widgets#qpushbutton#bg"
+            }
+        },
+        "qdialog": {
+            "fg": "@base#normal#fg",
+            "bg": "@base#normal#bg"
+        },
+        "qcombobox": {
+            "fg": "@base#content#fg",
+            "bg": "@base#content#bg",
+            "border": "@palette#fg3_7",
+            "focus": {
+                "bg": "@base#content#focus#bg",
+                "border": "@base#master#bg"
+            },
+            "hover": {
+                "bg": "@base#content#hover#bg",
+                "border": "@palette#bg2_4"
+            },
+            "disabled": {
+                "fg": "@base#content#disabled#fg"
+            },
+            "view": {
+                "border": "@base#content#border",
+                "bg": "@widgets#qcombobox#bg",
+                "selection": {
+                    "fg": "@base#content#selection#fg",
+                    "bg": "@base#content#selection#bg"
+                }
+            },
+            "item": {
+                "hover": {
+                    "fg": "@base#content#hover#fg",
+                    "bg": "@base#content#hover#bg"
+                }
+            }
+        },
+        "qlabel": {
+            "fg": "@base#normal#fg"
+        },
+        "qlineedit": {
+            "border": "@palette#fg3_7",
+            "fg": "@base#content#fg",
+            "bg": "@base#content#bg",
+            "selection": {
+                "fg": "@base#content#selection#fg",
+                "bg": "@base#content#selection#bg"
+            },
+            "focus": {
+                "bg": "@base#edit#focus#bg",
+                "border": "@base#master#bg"
+            },
+            "hover": {
+                "bg": "@base#edit#hover#bg",
+                "border": "@palette#bg2_4"
+            },
+            "disabled": {
+                "fg": "@base#content#disabled#fg"
+            }
+        },
+        "qtabbar": {
+            "tab": {
+                "fg": "@base#normal#fg",
+                "bg": "@base#normal#bg",
+                "border": "@base#normal#border",
+                "hover": {
+                    "fg": "@base#hover#fg",
+                    "bg": "@base#hover#bg"
+                },
+                "selected": {
+                    "fg": "@base#content#fg",
+                    "bg": "@base#content#bg",
+                    "border": "@base#master#bg"
+                }
+            }
+        },
+        "qtreeview": {
+            "fg": "@base#content#fg",
+            "bg": "@base#content#bg",
+            "item": {
+                "hover": {
+                    "fg": "@base#content#hover#fg",
+                    "bg": "@base#content#hover#bg"
+                },
+                "selected": {
+                    "fg": "@base#content#selected#fg",
+                    "bg": "@base#content#selected#bg",
+                    "active": {
+                        "fg": "@base#content#selected#active#fg",
+                        "bg": "@base#content#selected#active#bg"
+                    },
+                    "inactive": {
+                        "fg": "@base#content#selected#inactive#fg",
+                        "bg": "@base#content#selected#inactive#bg"
+                    }
+                }
+            }
+        },
+        "qlistview": {
+            "fg": "@base#content#fg",
+            "bg": "@base#content#bg",
+            "item": {
+                "hover": {
+                    "fg": "@base#content#hover#fg",
+                    "bg": "@base#content#hover#bg"
+                },
+                "selected": {
+                    "fg": "@base#content#selected#fg",
+                    "bg": "@base#content#selected#bg",
+                    "active": {
+                        "fg": "@base#content#selected#active#fg",
+                        "bg": "@base#content#selected#active#bg"
+                    },
+                    "inactive": {
+                        "fg": "@base#content#selected#inactive#fg",
+                        "bg": "@base#content#selected#inactive#bg"
+                    }
+                }
+            }
+        },
+        "qsplitter": {
+            "handle": {
+                "bg": "@base#normal#border",
+                "pressed": {
+                    "bg": "@base#pressed#bg"
+                }
+            }
+        },
+        "qstatusbar": {
+            "fg": "@base#footer#fg",
+            "bg": "@base#footer#bg"
+        },
+        "statusbarcolumn": {
+            "fg": "@palette#bg3_6",
+            "cursor": {
+                "bg": "@base#master#bg"
+            },
+            "spelling": {
+                "bg": "#005f00",
+                "hover": {
+                    "bg": "#008700"
+                },
+                "pressed": {
+                    "bg": "#005f00"
+                }
+            },
+            "syntax": {
+                "bg": "#870087"
+            },
+            "mode": {
+                "bg": "#875f00"
+            }
+        },
+        "qscrollbar": {
+            "bg": "transparent",
+            "addpage": {
+                "bg": "transparent"
+            },
+            "handle": {
+                "bg": "@palette#fg3_7",
+                "hover": {
+                    "bg": "@palette#fg3_6"
+                },
+                "pressed": {
+                    "bg": "@palette#fg3_5"
+                }
+            }
+        },
+        "qcheckbox": {
+            "disabled": {
+                "fg": "@base#disabled#fg"
+            },
+            "indicator": {
+                "focus": {
+                    "bg": "@base#focus#bg"
+                },
+                "hover": {
+                    "bg": "@base#hover#bg"
+                },
+                "pressed": {
+                    "bg": "@base#pressed#bg"
+                }
+            }
+        },
+        "qradiobutton": {
+            "disabled": {
+                "fg": "@base#disabled#fg"
+            },
+            "indicator": {
+                "focus": {
+                    "bg": "@base#focus#bg"
+                },
+                "hover": {
+                    "bg": "@base#hover#bg"
+                },
+                "pressed": {
+                    "bg": "@base#pressed#bg"
+                }
+            }
+        },
+        "qspinbox": {
+            "border": "@palette#fg3_7",
+            "fg": "@base#content#fg",
+            "bg": "@base#content#bg",
+            "disabled": {
+                "fg": "@base#content#disabled#fg",
+                "bg": "@base#content#disabled#bg"
+            },
+            "selection": {
+                "fg": "@base#content#selection#fg",
+                "bg": "@base#content#selection#bg"
+            },
+            "focus": {
+                "bg": "@base#edit#focus#bg",
+                "border": "@base#master#bg"
+            },
+            "hover": {
+                "bg": "@base#edit#hover#bg",
+                "border": "@palette#bg2_4"
+            },
+            "button": {
+                "hover": {
+                    "bg": "@base#content#hover#bg"
+                },
+                "pressed": {
+                    "bg": "@base#content#pressed#bg"
+                }
+            }
+        },
+        "qheaderview": {
+            "section": {
+                "fg": "@base#content#fg",
+                "bg": "@base#content#bg",
+                "border": "@base#content#border",
+                "checked": {
+                    "fg": "@base#content#selected#fg",
+                    "bg": "@base#content#selected#bg"
+                }
+            }
+        },
+        "qprogressbar": {
+            "bg": "@base#content#bg",
+            "border": "@base#content#border",
+            "chunk": {
+                "bg": "@base#master#alt"
+            }
+        },
+        "qgroupbox": {
+            "border": "@base#normal#border",
+            "title": {
+                "fg": "@base#normal#fg"
+            }
+        },
+        "qabstractscrollarea": {
+            "border": "@base#normal#border",
+            "corner": {
+                "bg": "@widgets#qscrollbar#bg"
+            }
+        },
+        "qslider": {
+            "groove": {
+                "bg": "@base#content#bg",
+                "border": "@base#content#border"
+            },
+            "handle": {
+                "border": "@base#content#border",
+                "bg": "@base#master#bg",
+                "hover": {
+                    "bg": "@base#master#alt"
+                }
+            },
+            "subpage": {
+                "border": "@widgets#qslider#handle#border",
+                "bg": "@base#master#alt"
+            }
+        },
+        "viewwindow": {
+            "toolbar": {
+                "bg": "@base#content#bg"
+            }
+        },
+        "quickselector": {
+            "item_icon": {
+                "fg": "@base#master#bg",
+                "border": "@base#master#bg"
+            }
+        },
+        "styleditemdelegate": {
+            "separator": {
+                "fg": "@base#normal#fg",
+                "bg": "@widgets#separator#bg"
+            },
+            "highlight": {
+                "fg": "@base#master#fg",
+                "bg": "@base#master#bg"
+            }
+        },
+        "mainwindow": {
+            "side_bar": {
+                "fg": "@base#normal#fg",
+                "bg": "@palette#layer1",
+                "selected": {
+                    "fg": "@base#normal#fg",
+                    "bg": "@palette#layer2"
+                },
+                "icon": {
+                    "fg": "@widgets#mainwindow#side_bar#fg",
+                    "selected": {
+                        "fg": "@widgets#mainwindow#side_bar#selected#fg"
+                    }
+                },
+                "hover": {
+                    "fg": "@widgets#mainwindow#side_bar#fg",
+                    "bg": "@palette#layer3"
+                },
+                "widget": {
+                    "bg": "@palette#layer4"
+                }
+            },
+            "dockwidget_tabbar": {
+                "icon": {
+                    "fg": "@base#icon#fg",
+                    "selected": {
+                        "fg": "@base#icon#selected#fg"
+                    }
+                }
+            },
+            "tips_label": {
+                "fg": "@base#master#fg",
+                "bg": "@base#master#bg"
+            }
+        },
+        "unitedentry": {
+            "icon": {
+                "fg": "@base#icon#fg",
+                "busy": {
+                    "fg": "@base#master#bg"
+                }
+            },
+            "popup": {
+                "border": "@base#normal#border"
+            }
+        },
+        "settingscard": {
+            "bg": "@base#content#bg",
+            "border": "@base#normal#border",
+            "title": {
+                "fg": "@base#normal#fg"
+            },
+            "description": {
+                "fg": "@base#muted#fg"
+            },
+            "separator": {
+                "bg": "@base#normal#border"
+            }
+        }
+    }
+}

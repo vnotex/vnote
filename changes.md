@@ -1,6 +1,7 @@
 # Changes
 ## Unreleased
 * Fix crashes when sync credential storage is destroyed with native keychain operations still in flight, and repair cross-platform CI test linking and teardown
+* Add Lucius, a light theme based on Jonathan Filip's Lucius Light normal-contrast palette, covering the interface, editors and Markdown preview
 * Restore the startup splash after the single-instance check, without flashing it for secondary launches
 * Fix note encryption failing with "Not found" when the notebook has an empty Git sync directory
 * Explain encryption preflight failures with notebook locations and localized guidance for unreadable sync metadata or conflicting key files
