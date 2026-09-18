@@ -1,7 +1,10 @@
 #include "webutils.h"
 
+#include <QCoreApplication>
 #include <QFileInfo>
 #include <QImageReader>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QUrl>
 
 #include "fileutils2.h"
@@ -106,4 +109,31 @@ QString WebUtils::copyResource(const QUrl &p_url, const QString &p_folder) {
   }
 
   return succ ? targetFile : QString();
+}
+
+QString WebUtils::translationScript() {
+  // Stable web IDs are independent of the source wording used by Qt Linguist.
+  const QJsonObject texts{
+      {QStringLiteral("outline.title"), QCoreApplication::translate("WebUtils", "Outline")},
+      {QStringLiteral("outline.onThisPage"),
+       QCoreApplication::translate("WebUtils", "On this page")},
+      {QStringLiteral("outline.show"), QCoreApplication::translate("WebUtils", "Show outline")},
+      {QStringLiteral("outline.hide"), QCoreApplication::translate("WebUtils", "Hide outline")}};
+  auto json = QString::fromUtf8(QJsonDocument(texts).toJson(QJsonDocument::Compact));
+  // JSON quoting is not enough inside an HTML script element. Also keep the output
+  // valid for JavaScript engines that treat Unicode line separators as syntax.
+  json.replace(QLatin1Char('<'), QStringLiteral("\\u003c"));
+  json.replace(QLatin1Char('>'), QStringLiteral("\\u003e"));
+  json.replace(QLatin1Char('&'), QStringLiteral("\\u0026"));
+  // A translated comment marker must not be consumed by later template substitutions.
+  json.replace(QLatin1Char('/'), QStringLiteral("\\u002f"));
+  json.replace(QChar(0x2028), QStringLiteral("\\u2028"));
+  json.replace(QChar(0x2029), QStringLiteral("\\u2029"));
+  return QStringLiteral(
+             "window.vxI18n = (function(texts) {\n"
+             "    return { tr: function(id) {\n"
+             "        return Object.prototype.hasOwnProperty.call(texts, id) ? texts[id] : id;\n"
+             "    } };\n"
+             "})(%1);\n")
+      .arg(json);
 }

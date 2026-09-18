@@ -16,6 +16,10 @@ public:
   static QString toDataUri(const QUrl &p_url, bool p_keepTitle);
 
   static QString copyResource(const QUrl &p_url, const QString &p_folder);
+
+  // Snapshot the current Qt translations as an inline-script-safe window.vxI18n.tr(id)
+  // lookup. Unknown IDs return the ID; no WebChannel or network access is required.
+  static QString translationScript();
 };
 } // namespace vnotex
 

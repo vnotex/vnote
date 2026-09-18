@@ -839,6 +839,29 @@
     </message>
 </context>
 <context>
+    <name>WebUtils</name>
+    <message>
+        <location filename="../../../utils/webutils.cpp" line="+117"/>
+        <source>Outline</source>
+        <translation>アウトライン</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>On this page</source>
+        <translation>このページの内容</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show outline</source>
+        <translation>アウトラインを表示</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Hide outline</source>
+        <translation>アウトラインを非表示</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::ActivitySticker</name>
     <message>
         <location filename="../../../widgets/dashboard/activitysticker.cpp" line="+28"/>

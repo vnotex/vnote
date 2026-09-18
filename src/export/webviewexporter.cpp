@@ -237,6 +237,9 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
 
   fillGlobalStyles(htmlTemplate, exportResource, p_configMgr, QString());
   HtmlTemplateUtils::fillOutlinePanel(htmlTemplate, exportResource, p_addOutlinePanel);
+  htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
+                       WebUtils::translationScript() +
+                           QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
 
   // Always inject the self-contained exported-page handlers + copy-button styling, independent
   // of the user-mutable exportResource config (existing persisted config would otherwise omit

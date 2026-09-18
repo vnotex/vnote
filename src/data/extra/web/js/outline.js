@@ -38,8 +38,9 @@ var setOutlinePanelVisible = function(visible) {
         }
     }
     button.setAttribute('aria-expanded', String(visible));
-    button.setAttribute('aria-label', visible ? 'Hide outline' : 'Show outline');
-    button.title = visible ? 'Hide outline' : 'Show outline';
+    var label = window.vxI18n.tr(visible ? 'outline.hide' : 'outline.show');
+    button.setAttribute('aria-label', label);
+    button.title = label;
     setPostContentExpanded(postContent, !visible);
     if (visible) {
         updateOutlineHighlight();
@@ -53,6 +54,10 @@ var isOutlinePanelVisible = function() {
 
 window.addEventListener('load', function() {
     var outlinePanel = document.getElementById('outline-panel');
+    var title = window.vxI18n.tr('outline.onThisPage');
+    outlinePanel.setAttribute('aria-label', title);
+    outlinePanel.querySelector('.outline-title').textContent = title;
+    document.getElementById('outline-toggle-label').textContent = window.vxI18n.tr('outline.title');
     outlinePanel.style.display = 'initial';
 
     var floatingContainer = document.getElementById('container-floating');

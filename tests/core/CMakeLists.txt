@@ -608,6 +608,13 @@ add_qt_test(test_htmltemplateservice
     core_configs
   GUILESS
 )
+if(TARGET Qt6::Qml)
+  target_link_libraries(test_htmltemplateservice PRIVATE Qt6::Qml)
+  target_compile_definitions(test_htmltemplateservice PRIVATE
+    VNOTE_TEST_WEB_TRANSLATIONS
+    VNOTE_TRANSLATIONS_DIR="${CMAKE_BINARY_DIR}/src/translations")
+  add_dependencies(test_htmltemplateservice lrelease)
+endif()
 
 # Note templates: the listing must not offer the extra-data version stamp.
 add_qt_test(test_templateservice

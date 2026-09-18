@@ -28,8 +28,8 @@
     <div class="container-fluid">
     <div class="row">
         <!-- VX_OUTLINE_PANEL_START -->
-        <nav id="outline-panel" style="display:none;" aria-label="On this page" class="d-none d-md-block d-xl-block col-md-3 col-xl-2 bd-toc">
-            <div class="outline-title">On this page</div>
+        <nav id="outline-panel" style="display:none;" class="d-none d-md-block d-xl-block col-md-3 col-xl-2 bd-toc">
+            <div class="outline-title"></div>
             <div id="outline-content" class="section-nav"></div>
         </nav>
         <!-- VX_OUTLINE_PANEL_END -->
@@ -42,8 +42,8 @@
 
     <!-- VX_OUTLINE_BUTTON_START -->
     <div id="container-floating" style="display:none;" class="d-none d-md-block d-xl-block">
-        <button id="floating-button" type="button" onclick="toggleMore()" aria-controls="outline-panel" aria-expanded="true" aria-label="Hide outline" title="Hide outline">
-            <span>Outline</span>
+        <button id="floating-button" type="button" onclick="toggleMore()" aria-controls="outline-panel" aria-expanded="true">
+            <span id="outline-toggle-label"></span>
             <svg id="floating-more" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="m9 6 6 6-6 6" />
             </svg>
