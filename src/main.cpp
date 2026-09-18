@@ -774,6 +774,9 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+    // Override the theme's QWidget background while the splash is still visible.
+    splash->setStyleSheet(
+        QStringLiteral("QSplashScreen { background: transparent; border: none; }"));
 
     // Activity tracking (Qt side): must be constructed BEFORE MainWindow2 so
     // it subscribes to FileAfterOpen / MainWindowBeforeClose before those hooks
