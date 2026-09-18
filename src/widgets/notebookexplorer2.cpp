@@ -237,11 +237,33 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     p_errorMessage = tr("The note encryption services are unavailable.");
     return VXCORE_ERR_NOT_INITIALIZED;
   }
-  const auto fail = [&](VxCoreError p_error, const QString &p_message = QString()) {
-    p_errorMessage = !p_message.isEmpty() ? p_message
-                     : p_error == VXCORE_ERR_ENCRYPTION_AUTH_FAILED
-                         ? tr("Unable to unlock: incorrect password or damaged key data")
-                         : QString::fromUtf8(vxcore_error_message(p_error));
+  const auto fail = [&](VxCoreError p_error, const QString &p_message = QString(),
+                        const QString &p_sourceId = QString()) {
+    QString message;
+    if (p_error == VXCORE_ERR_ENCRYPTION_SYNC_STATE) {
+      message = tr("Cannot check encryption key conflicts in the notebook's local Git sync data "
+                   "(vx_notebook/vx_sync). Check folder permissions and repair the local sync "
+                   "repository before retrying. Do not delete encryption.vne or Git history.");
+    } else if (p_error == VXCORE_ERR_SYNC_CONFLICT) {
+      message = tr("The notebook key file (vx_notebook/encryption.vne) has an unresolved sync "
+                   "conflict. Back up the notebook and resolve that conflict before retrying. "
+                   "Do not delete the key file or merge its contents as text.");
+    } else if (p_error == VXCORE_ERR_ENCRYPTION_AUTH_FAILED) {
+      message = tr("Unable to unlock: incorrect password or damaged key data");
+    } else {
+      message = p_message.isEmpty() ? QString::fromUtf8(vxcore_error_message(p_error)) : p_message;
+    }
+    const auto location = [&](const QString &p_id) {
+      const auto path = notebooks->buildAbsolutePath(p_id, QString());
+      return path.isEmpty() ? p_id : QDir::toNativeSeparators(path);
+    };
+    QString notebook = location(p_notebookId);
+    if (!p_sourceId.isEmpty() && p_sourceId != p_notebookId) {
+      notebook +=
+          QLatin1Char('\n') + tr("Master-password source notebook: %1").arg(location(p_sourceId));
+    }
+    p_errorMessage =
+        tr("Could not prepare note encryption.\n\nNotebook: %1\n\n%2").arg(notebook, message);
     return p_error;
   };
   const auto unlock = [&](const QString &p_id, const QString &p_name) {
@@ -257,7 +279,9 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     passwordText.fill(QChar(0));
     passwordText.clear();
     p_progress.setLabelText(tr("Unlocking notebook..."));
-    return m_viewAreaController->unlockNoteEncryption(p_id, password);
+    const auto error = m_viewAreaController->unlockNoteEncryption(p_id, password);
+    return error == VXCORE_OK || error == VXCORE_ERR_CANCELLED ? error
+                                                               : fail(error, QString(), p_id);
   };
 
   VxCoreError statusError = VXCORE_OK;
@@ -272,8 +296,7 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     const QString name = notebooks->getNotebookConfig(p_notebookId)
                              .value(QLatin1String(vxcore::kJsonKeyName))
                              .toString();
-    const auto error = unlock(p_notebookId, name);
-    return error == VXCORE_OK || error == VXCORE_ERR_CANCELLED ? error : fail(error);
+    return unlock(p_notebookId, name);
   }
 
   struct Source {
@@ -326,7 +349,7 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     if (!source.unlocked) {
       const auto error = unlock(source.id, source.label);
       if (error != VXCORE_OK) {
-        return error == VXCORE_ERR_CANCELLED ? error : fail(error);
+        return error;
       }
     }
   } else {
@@ -375,7 +398,7 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
   }
   p_progress.setLabelText(tr("Preparing the notebook key..."));
   p_setup = m_viewAreaController->prepareNoteEncryption(p_notebookId, sourceId, password);
-  return p_setup.isValid() ? VXCORE_OK : fail(p_setup.m_error, p_setup.m_errorMessage);
+  return p_setup.isValid() ? VXCORE_OK : fail(p_setup.m_error, p_setup.m_errorMessage, sourceId);
 }
 
 NewNoteResult NotebookExplorer2::createEncryptedNote(const NewNoteInput &p_input) {

@@ -5878,6 +5878,30 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>加密笔记</translation>
     </message>
     <message>
+        <source>Cannot check encryption key conflicts in the notebook's local Git sync data (vx_notebook/vx_sync). Check folder permissions and repair the local sync repository before retrying. Do not delete encryption.vne or Git history.</source>
+        <translation>无法检查笔记本本地 Git 同步数据（vx_notebook/vx_sync）中的加密密钥冲突。请检查文件夹权限并修复本地同步仓库后重试。请勿删除 encryption.vne 或 Git 历史记录。</translation>
+    </message>
+    <message>
+        <source>The notebook key file (vx_notebook/encryption.vne) has an unresolved sync conflict. Back up the notebook and resolve that conflict before retrying. Do not delete the key file or merge its contents as text.</source>
+        <translation>笔记本密钥文件（vx_notebook/encryption.vne）存在未解决的同步冲突。请先备份笔记本并解决该冲突，然后重试。请勿删除密钥文件或以文本方式合并其内容。</translation>
+    </message>
+    <message>
+        <source>Master-password source notebook: %1</source>
+        <translation>主密码来源笔记本：%1</translation>
+    </message>
+    <message>
+        <source>Could not prepare note encryption.
+
+Notebook: %1
+
+%2</source>
+        <translation>无法准备笔记加密。
+
+笔记本：%1
+
+%2</translation>
+    </message>
+    <message>
         <location line="-60"/>
         <source>Select notes from one notebook at a time.</source>
         <translation>每次只能选择同一笔记本中的笔记。</translation>

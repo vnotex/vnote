@@ -5878,6 +5878,30 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>ノートを暗号化</translation>
     </message>
     <message>
+        <source>Cannot check encryption key conflicts in the notebook's local Git sync data (vx_notebook/vx_sync). Check folder permissions and repair the local sync repository before retrying. Do not delete encryption.vne or Git history.</source>
+        <translation>ノートブックのローカル Git 同期データ（vx_notebook/vx_sync）の暗号鍵の競合を確認できません。フォルダーのアクセス権を確認し、ローカル同期リポジトリを修復してから再試行してください。encryption.vne や Git の履歴を削除しないでください。</translation>
+    </message>
+    <message>
+        <source>The notebook key file (vx_notebook/encryption.vne) has an unresolved sync conflict. Back up the notebook and resolve that conflict before retrying. Do not delete the key file or merge its contents as text.</source>
+        <translation>ノートブックの鍵ファイル（vx_notebook/encryption.vne）に未解決の同期競合があります。ノートブックをバックアップし、その競合を解決してから再試行してください。鍵ファイルを削除したり、内容をテキストとしてマージしたりしないでください。</translation>
+    </message>
+    <message>
+        <source>Master-password source notebook: %1</source>
+        <translation>マスターパスワードの提供元ノートブック: %1</translation>
+    </message>
+    <message>
+        <source>Could not prepare note encryption.
+
+Notebook: %1
+
+%2</source>
+        <translation>ノートの暗号化を準備できませんでした。
+
+ノートブック: %1
+
+%2</translation>
+    </message>
+    <message>
         <location line="-60"/>
         <source>Select notes from one notebook at a time.</source>
         <translation>一度に選択するノートは同じノートブック内のものにしてください。</translation>
