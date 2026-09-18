@@ -159,10 +159,12 @@ jobs:
           keychain="$RUNNER_TEMP/vnote-tests.keychain-db"
           password="$(openssl rand -hex 32)"
           security default-keychain -d user | xargs > "$RUNNER_TEMP/vnote-test-default-keychain"
+          security list-keychains -d user > "$RUNNER_TEMP/vnote-test-keychains"
           security create-keychain -p "$password" "$keychain"
           security set-keychain-settings -lut 7200 "$keychain"
           security unlock-keychain -p "$password" "$keychain"
           security default-keychain -d user -s "$keychain"
+          xargs security list-keychains -d user -s "$keychain" < "$RUNNER_TEMP/vnote-test-keychains"
 
       - name: Build and Run Tests
         # Build the test executables (tests/CMakeLists.txt narrows them to the
@@ -207,6 +209,9 @@ jobs:
           set -e
           if [ -f "$RUNNER_TEMP/vnote-test-default-keychain" ]; then
             security default-keychain -d user -s "$(cat "$RUNNER_TEMP/vnote-test-default-keychain")"
+          fi
+          if [ -f "$RUNNER_TEMP/vnote-test-keychains" ]; then
+            xargs security list-keychains -d user -s < "$RUNNER_TEMP/vnote-test-keychains"
           fi
           if [ -f "$RUNNER_TEMP/vnote-tests.keychain-db" ]; then
             security delete-keychain "$RUNNER_TEMP/vnote-tests.keychain-db"
