@@ -12,7 +12,8 @@
 * **Export**
     * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors
     * The exported outline panel opens and closes smoothly, with a refreshed toggle, active-section styling, keyboard controls and reduced-motion support
-    * Exported outline labels, tooltips and accessibility text use the application language, including Simplified Chinese and Japanese
+    * Exported outline and code-block toolbar labels, tooltips and accessibility text use the application language, including Simplified Chinese and Japanese
+    * HTML code blocks retain the same Copy and Collapse/Expand toolbar as read mode; copying a collapsed block still copies all of its code
 
 * **Search**
     * The Search panel can replace selected or all reviewed Simple content matches with literal text; confirmation saves affected notes including existing unsaved edits, with cancellation and failed-write recovery

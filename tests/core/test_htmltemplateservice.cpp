@@ -31,8 +31,8 @@ private slots:
   void testFillPdfResources_moduleTypeOnlyForMjs();
   void testFillPdfResources_skipsDisabledAndGlobal();
 
-  void testMarkdownWebGlobalOptions_headingFoldingBoolean();
 #ifdef VNOTE_TEST_WEB_TRANSLATIONS
+  void testMarkdownWebGlobalOptions_headingFoldingBoolean();
   void testWebTranslationsFollowUiLanguage_data();
   void testWebTranslationsFollowUiLanguage();
   void testWebTranslationsAreInlineScriptSafe();
@@ -248,30 +248,40 @@ void TestHtmlTemplateService::testFillPdfResources_skipsDisabledAndGlobal() {
   QVERIFY(!tmpl.contains(QStringLiteral("web/global.css")));
 }
 
+#ifdef VNOTE_TEST_WEB_TRANSLATIONS
 void TestHtmlTemplateService::testMarkdownWebGlobalOptions_headingFoldingBoolean() {
+  QJSEngine engine;
+  engine.globalObject().setProperty("window", engine.newObject());
   vnotex::MarkdownWebGlobalOptions options;
-  QVERIFY(options.toJavascriptObject().contains(QStringLiteral("headingFoldingEnabled: false,\n")));
-
-  options.m_headingFoldingEnabled = true;
-  QVERIFY(options.toJavascriptObject().contains(QStringLiteral("headingFoldingEnabled: true,\n")));
+  for (bool enabled : {true, false}) {
+    options.m_headingFoldingEnabled = enabled;
+    QVERIFY(!engine.evaluate(options.toJavascriptObject()).isError());
+    QCOMPARE(engine.evaluate("window.vxOptions.headingFoldingEnabled").toBool(), enabled);
+    QCOMPARE(engine.evaluate("window.vxI18n.tr('code.collapse')").toString(),
+             QStringLiteral("Collapse"));
+  }
 }
 
-#ifdef VNOTE_TEST_WEB_TRANSLATIONS
 void TestHtmlTemplateService::testWebTranslationsFollowUiLanguage_data() {
   QTest::addColumn<QString>("locale");
   QTest::addColumn<QStringList>("expected");
-  QTest::newRow("simplified-chinese")
-      << QStringLiteral("zh_CN")
-      << QStringList{QStringLiteral("\u5927\u7eb2"), QStringLiteral("\u672c\u9875\u76ee\u5f55"),
-                     QStringLiteral("\u663e\u793a\u5927\u7eb2"),
-                     QStringLiteral("\u9690\u85cf\u5927\u7eb2")};
+  QTest::newRow("simplified-chinese") << QStringLiteral("zh_CN")
+                                      << QStringList{QStringLiteral("\u5927\u7eb2"),
+                                                     QStringLiteral("\u672c\u9875\u76ee\u5f55"),
+                                                     QStringLiteral("\u663e\u793a\u5927\u7eb2"),
+                                                     QStringLiteral("\u9690\u85cf\u5927\u7eb2"),
+                                                     QStringLiteral("\u590d\u5236"),
+                                                     QStringLiteral("\u6298\u53e0"),
+                                                     QStringLiteral("\u5c55\u5f00")};
   QTest::newRow("japanese")
       << QStringLiteral("ja")
-      << QStringList{
-             QStringLiteral("\u30a2\u30a6\u30c8\u30e9\u30a4\u30f3"),
-             QStringLiteral("\u3053\u306e\u30da\u30fc\u30b8\u306e\u5185\u5bb9"),
-             QStringLiteral("\u30a2\u30a6\u30c8\u30e9\u30a4\u30f3\u3092\u8868\u793a"),
-             QStringLiteral("\u30a2\u30a6\u30c8\u30e9\u30a4\u30f3\u3092\u975e\u8868\u793a")};
+      << QStringList{QStringLiteral("\u30a2\u30a6\u30c8\u30e9\u30a4\u30f3"),
+                     QStringLiteral("\u3053\u306e\u30da\u30fc\u30b8\u306e\u5185\u5bb9"),
+                     QStringLiteral("\u30a2\u30a6\u30c8\u30e9\u30a4\u30f3\u3092\u8868\u793a"),
+                     QStringLiteral("\u30a2\u30a6\u30c8\u30e9\u30a4\u30f3\u3092\u975e\u8868\u793a"),
+                     QStringLiteral("\u30b3\u30d4\u30fc"),
+                     QStringLiteral("\u6298\u308a\u305f\u305f\u3080"),
+                     QStringLiteral("\u5c55\u958b")};
 }
 
 void TestHtmlTemplateService::testWebTranslationsFollowUiLanguage() {
@@ -289,7 +299,8 @@ void TestHtmlTemplateService::testWebTranslationsFollowUiLanguage() {
       qScopeGuard([&translator]() { QCoreApplication::removeTranslator(&translator); });
   QVERIFY(!engine.evaluate(vnotex::WebUtils::translationScript()).isError());
   auto lookup = engine.globalObject().property("window").property("vxI18n").property("tr");
-  const QStringList ids{"outline.title", "outline.onThisPage", "outline.show", "outline.hide"};
+  const QStringList ids{"outline.title", "outline.onThisPage", "outline.show", "outline.hide",
+                        "code.copy",     "code.collapse",      "code.expand"};
   for (int i = 0; i < ids.size(); ++i) {
     QCOMPARE(lookup.call({QJSValue(ids[i])}).toString(), expected[i]);
   }

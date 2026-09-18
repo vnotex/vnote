@@ -860,6 +860,21 @@
         <source>Hide outline</source>
         <translation>アウトラインを非表示</translation>
     </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy</source>
+        <translation>コピー</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Collapse</source>
+        <translation>折りたたむ</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Expand</source>
+        <translation>展開</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ActivitySticker</name>

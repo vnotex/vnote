@@ -118,7 +118,10 @@ QString WebUtils::translationScript() {
       {QStringLiteral("outline.onThisPage"),
        QCoreApplication::translate("WebUtils", "On this page")},
       {QStringLiteral("outline.show"), QCoreApplication::translate("WebUtils", "Show outline")},
-      {QStringLiteral("outline.hide"), QCoreApplication::translate("WebUtils", "Hide outline")}};
+      {QStringLiteral("outline.hide"), QCoreApplication::translate("WebUtils", "Hide outline")},
+      {QStringLiteral("code.copy"), QCoreApplication::translate("WebUtils", "Copy")},
+      {QStringLiteral("code.collapse"), QCoreApplication::translate("WebUtils", "Collapse")},
+      {QStringLiteral("code.expand"), QCoreApplication::translate("WebUtils", "Expand")}};
   auto json = QString::fromUtf8(QJsonDocument(texts).toJson(QJsonDocument::Compact));
   // JSON quoting is not enough inside an HTML script element. Also keep the output
   // valid for JavaScript engines that treat Unicode line separators as syntax.

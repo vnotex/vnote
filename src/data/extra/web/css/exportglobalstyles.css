@@ -1,8 +1,3 @@
-/* The collapse button is JS-only and non-functional in a static exported file. */
-div.code-toolbar > .toolbar .vx-collapse-btn {
-    display: none;
-}
-
 /* Reserve width to prevent hover wrapping; font-relative height keeps short headings compact. */
 .vx-heading-fold-toggle {
     align-items: center;

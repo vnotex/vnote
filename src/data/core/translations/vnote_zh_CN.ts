@@ -860,6 +860,21 @@
         <source>Hide outline</source>
         <translation>隐藏大纲</translation>
     </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Collapse</source>
+        <translation>折叠</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Expand</source>
+        <translation>展开</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ActivitySticker</name>

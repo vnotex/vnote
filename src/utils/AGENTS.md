@@ -23,8 +23,9 @@
 
 `WebUtils::translationScript()` snapshots the current Qt translations into a standalone
 `window.vxI18n.tr(id)` lookup. Inject the returned JavaScript before scripts that consume
-it; it needs neither WebChannel nor network access. `WebViewExporter` does this for HTML
-exports. Existing pages keep their export-time language; generate a new snapshot for a
+it; it needs neither WebChannel nor network access. `MarkdownWebGlobalOptions` includes it
+for live Markdown viewers (including protected pages), and `WebViewExporter` includes it
+for standalone HTML. Existing exports keep their export-time language; generate a new snapshot for a
 new page rather than caching translated strings across language changes.
 
 Maintain stable IDs and literal `QCoreApplication::translate("WebUtils", ...)` calls in

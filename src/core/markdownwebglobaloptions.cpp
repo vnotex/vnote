@@ -6,11 +6,12 @@
 #include "markdownwebglobaloptions.h"
 
 #include <utils/utils.h>
+#include <utils/webutils.h>
 
 using namespace vnotex;
 
 QString MarkdownWebGlobalOptions::toJavascriptObject() const {
-  return QStringLiteral("window.vxOptions = {\n") +
+  return WebUtils::translationScript() + QStringLiteral("window.vxOptions = {\n") +
          QStringLiteral("webPlantUml: %1,\n").arg(Utils::boolToString(m_webPlantUml)) +
          (m_plantUmlFormat == QStringLiteral("png") ? QStringLiteral("plantUmlFormat: 'png',\n")
                                                     : QStringLiteral("plantUmlFormat: 'svg',\n")) +

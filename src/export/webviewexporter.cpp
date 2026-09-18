@@ -241,14 +241,14 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
                        WebUtils::translationScript() +
                            QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
 
-  // Always inject the self-contained exported-page handlers + copy-button styling, independent
+  // Always inject the shared code toolbar and self-contained page handlers, independent
   // of the user-mutable exportResource config (existing persisted config would otherwise omit
   // them). Injected ahead of the placeholder so fillResourcesByContent() still appends any
   // config resources.
   {
-    const auto copyScript =
-        readTemplateFile(resolveConfigFile(p_configMgr, QStringLiteral("web/js/exportcodecopy.js")),
-                         "failed to read code-block copy script");
+    const auto copyScript = readTemplateFile(
+        resolveConfigFile(p_configMgr, QStringLiteral("web/js/codeblockactions.js")),
+        "failed to read code-block toolbar script");
     if (!copyScript.isEmpty()) {
       htmlTemplate.replace(QStringLiteral("/* VX_SCRIPTS_PLACEHOLDER */"),
                            copyScript + QStringLiteral("\n/* VX_SCRIPTS_PLACEHOLDER */"));
@@ -275,7 +275,7 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
 
     const auto copyStyle = readTemplateFile(
         resolveConfigFile(p_configMgr, QStringLiteral("web/css/codeblockactions.css")),
-        "failed to read code-block copy style");
+        "failed to read code-block toolbar style");
     if (!copyStyle.isEmpty()) {
       htmlTemplate.replace(QStringLiteral("/* VX_STYLES_PLACEHOLDER */"),
                            copyStyle + QStringLiteral("\n/* VX_STYLES_PLACEHOLDER */"));
@@ -606,7 +606,7 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   // v3 SVG output has no matchFontHeight, so the `minScale` option is a no-op (verified by
   // measuring rendered equation height across scale/minScale combinations).
   paras.m_mathJaxScale = useWkhtmltopdf ? 1.5 : -1;
-  // Keep the code-block toolbar (copy button) only for genuine HTML export. For PDF/Custom,
+  // Keep the code-block toolbar only for genuine HTML export. For PDF/Custom,
   // force it off. The intermediate HTML feeding PDF/custom has target format HTML but sets
   // m_removeCodeToolBarEnabled = true explicitly, so it is honored here and still drops the
   // toolbar; genuine HTML export leaves the option at its false default.
