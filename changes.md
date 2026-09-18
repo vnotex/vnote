@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Restore the startup splash after the single-instance check, without flashing it for secondary launches
 * Fix note encryption failing with "Not found" when the notebook has an empty Git sync directory
 * Explain encryption preflight failures with notebook locations and localized guidance for unreadable sync metadata or conflicting key files
 * Remove buffer reload logging and log external file changes only at debug level to avoid log-viewing feedback at normal log levels

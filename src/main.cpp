@@ -8,6 +8,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QProcess>
+#include <QSplashScreen>
 #include <QSslSocket>
 #include <QStyle>
 #include <QTextCodec>
@@ -645,9 +646,9 @@ int main(int argc, char *argv[]) {
     }
 
     // The guard is already listening, while MainWindow2 does not exist yet.
-    // ensureExtraData() processes events to keep startup responsive, so retain
-    // any requests arriving in that window and replay them once the final
-    // handlers are connected below.
+    // Both the splash and ensureExtraData() process events, so retain any
+    // requests arriving during startup and replay them once the final handlers
+    // are connected below.
     struct PendingOpenRequest {
       QStringList m_files;
       bool m_detached = false;
@@ -669,6 +670,13 @@ int main(int argc, char *argv[]) {
     const auto pendingShowConnection =
         QObject::connect(&guard, &SingleInstanceGuard::showRequested, &app,
                          [&pendingShow]() { pendingShow = true; });
+
+    // Use embedded artwork: bundled data and the theme are not ready yet.
+    std::unique_ptr<QSplashScreen> splash(new QSplashScreen(
+        QIcon(QStringLiteral(":/vnotex/data/core/logo/vnote.svg")).pixmap(256, 256)));
+    splash->setAttribute(Qt::WA_TranslucentBackground);
+    splash->show();
+    app.processEvents();
 
     // Only the primary may install bundled data. Besides avoiding duplicate
     // work, this prevents a rejected secondary launch from overwriting themes
@@ -830,9 +838,13 @@ int main(int argc, char *argv[]) {
 
     if (cmdOptions.m_detachedView) {
       mainWindow.showMinimized();
+      // finish() waits for exposure, which a minimized window cannot provide.
+      splash->close();
     } else {
       mainWindow.show();
+      splash->finish(&mainWindow);
     }
+    splash.reset();
     qInfo() << "MainWindow2 shown";
 
     for (const auto &request : pendingOpenRequests) {
