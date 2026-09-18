@@ -574,7 +574,9 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
     } catch (Exception &p_e) {
       qWarning() << "failed to load export theme" << themeFolder << p_e.what();
     }
-  } else {
+  }
+  if (webStyleContent.isEmpty()) {
+    // Keep the selected stylesheet when resolution is unavailable, as for standalone CSS.
     paras.m_webStyleSheetFile = webStyleFile;
   }
   // Guarantee a real highlight.css: honor the selected syntax style only when it truly is a
