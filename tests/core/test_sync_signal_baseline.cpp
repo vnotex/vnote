@@ -21,6 +21,8 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <core/servicelocator.h>
 #include <core/services/eventbridge.h>
 #include <core/services/notebookcoreservice.h>
@@ -267,5 +269,5 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestSyncSignalBaseline)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestSyncSignalBaseline)
 #include "test_sync_signal_baseline.moc"

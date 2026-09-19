@@ -17,6 +17,8 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
@@ -152,67 +154,67 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
     }
 
     if (!seedFailed) {
-    QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
-    QDir().mkpath(nbRoot);
-    QString nbId = notebookService.createNotebook(
-        nbRoot, R"({"name":"AR","description":"","version":"1"})", NotebookType::Bundled);
-    QVERIFY(!nbId.isEmpty());
+      QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
+      QDir().mkpath(nbRoot);
+      QString nbId = notebookService.createNotebook(
+          nbRoot, R"({"name":"AR","description":"","version":"1"})", NotebookType::Bundled);
+      QVERIFY(!nbId.isEmpty());
 
-    QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-    syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_T31"));
-    QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
-    // CI Linux runners have no D-Bus session / org.freedesktop.secrets
-    // provider; bootstrapAndPersist propagates the keychain failure
-    // verbatim via the 3rd payload slot. Skip rather than assert what the
-    // environment cannot deliver. QSKIP runs AFTER scope close (see comment
-    // above) so don't destroy ctx here.
-    const QString bootstrapMsg = enableSpy.first().at(2).toString();
-    keychainUnavailable =
-        (enableSpy.first().at(1).toInt() != static_cast<int>(VXCORE_OK) &&
-         (bootstrapMsg.contains(QStringLiteral("secrets"), Qt::CaseInsensitive) ||
-          bootstrapMsg.contains(QStringLiteral("keychain"), Qt::CaseInsensitive)));
-    if (!keychainUnavailable) {
-      QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
+      QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
+      syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_T31"));
+      QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
+      // CI Linux runners have no D-Bus session / org.freedesktop.secrets
+      // provider; bootstrapAndPersist propagates the keychain failure
+      // verbatim via the 3rd payload slot. Skip rather than assert what the
+      // environment cannot deliver. QSKIP runs AFTER scope close (see comment
+      // above) so don't destroy ctx here.
+      const QString bootstrapMsg = enableSpy.first().at(2).toString();
+      keychainUnavailable =
+          (enableSpy.first().at(1).toInt() != static_cast<int>(VXCORE_OK) &&
+           (bootstrapMsg.contains(QStringLiteral("secrets"), Qt::CaseInsensitive) ||
+            bootstrapMsg.contains(QStringLiteral("keychain"), Qt::CaseInsensitive)));
+      if (!keychainUnavailable) {
+        QCOMPARE(enableSpy.first().at(1).toInt(), static_cast<int>(VXCORE_OK));
 
-      // Defensive track in case credentialsStored signal raced cleanup.
-      guard.track(nbId);
+        // Defensive track in case credentialsStored signal raced cleanup.
+        guard.track(nbId);
 
-      // Wait for the initial sync (kicked off by enable) to drain.
-      QSignalSpy finishedSpy(&syncService, &SyncService::syncFinished);
-      QElapsedTimer t;
-      t.start();
-      while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        QTest::qWait(50);
+        // Wait for the initial sync (kicked off by enable) to drain.
+        QSignalSpy finishedSpy(&syncService, &SyncService::syncFinished);
+        QElapsedTimer t;
+        t.start();
+        while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
+          QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+          QTest::qWait(50);
+        }
+        finishedSpy.clear();
+
+        // Trigger auto-sync by saving a buffer (vxcore emits sync.should_run).
+        QString fileId = notebookService.createFile(nbId, QString(), QStringLiteral("auto.md"));
+        QVERIFY(!fileId.isEmpty());
+        Buffer2 buf = bufferService.openBuffer(NodeIdentifier{nbId, QStringLiteral("auto.md")});
+        QVERIFY(buf.isValid());
+        QVERIFY(buf.setContentRaw(QByteArray("auto sync trigger\n")));
+        QVERIFY(buf.save());
+
+        t.restart();
+        while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
+          QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+          QTest::qWait(50);
+        }
+        // Post vxcore-metadata-events plan: createFile / openBuffer / save each
+        // fire folder.config_changed (T4 persistence event) → mark_dirty →
+        // sync.should_run, so the auto-route enqueues up to 3 triggerSync items.
+        // SyncWorkQueueManager coalesces concurrent requests on coalesceKey
+        // "trigger", so the actual finishedSpy count is timing-dependent (1, 2,
+        // or 3 depending on which syncs collapse into the in-flight one).
+        // For this end-to-end test we only verify that AT LEAST ONE sync round
+        // trip completed via the SyncService auto-route — the exact count is
+        // covered by test_sync_signal_auto_baseline which drives vxcore_sync_trigger
+        // directly (no coalescing).
+        QVERIFY(finishedSpy.count() >= 1);
+        QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
       }
-      finishedSpy.clear();
-
-      // Trigger auto-sync by saving a buffer (vxcore emits sync.should_run).
-      QString fileId = notebookService.createFile(nbId, QString(), QStringLiteral("auto.md"));
-      QVERIFY(!fileId.isEmpty());
-      Buffer2 buf = bufferService.openBuffer(NodeIdentifier{nbId, QStringLiteral("auto.md")});
-      QVERIFY(buf.isValid());
-      QVERIFY(buf.setContentRaw(QByteArray("auto sync trigger\n")));
-      QVERIFY(buf.save());
-
-      t.restart();
-      while (finishedSpy.isEmpty() && t.elapsed() < 15000) {
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        QTest::qWait(50);
-      }
-      // Post vxcore-metadata-events plan: createFile / openBuffer / save each
-      // fire folder.config_changed (T4 persistence event) → mark_dirty →
-      // sync.should_run, so the auto-route enqueues up to 3 triggerSync items.
-      // SyncWorkQueueManager coalesces concurrent requests on coalesceKey
-      // "trigger", so the actual finishedSpy count is timing-dependent (1, 2,
-      // or 3 depending on which syncs collapse into the in-flight one).
-      // For this end-to-end test we only verify that AT LEAST ONE sync round
-      // trip completed via the SyncService auto-route — the exact count is
-      // covered by test_sync_signal_auto_baseline which drives vxcore_sync_trigger
-      // directly (no coalescing).
-      QVERIFY(finishedSpy.count() >= 1);
-      QCOMPARE(finishedSpy.first().at(0).toString(), nbId);
-    }
     } // close if (!seedFailed)
 
     syncService.shutdown();
@@ -258,87 +260,89 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
     }
 
     if (!seedFailed) {
-    QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
-    QDir().mkpath(nbRoot);
-    QString nbId = notebookService.createNotebook(
-        nbRoot, R"({"name":"AR","description":"","version":"1"})", NotebookType::Bundled);
-    QVERIFY(!nbId.isEmpty());
+      QString nbRoot = localTemp.filePath(QStringLiteral("nb_root"));
+      QDir().mkpath(nbRoot);
+      QString nbId = notebookService.createNotebook(
+          nbRoot, R"({"name":"AR","description":"","version":"1"})", NotebookType::Bundled);
+      QVERIFY(!nbId.isEmpty());
 
-    QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-    syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_T31_QF"));
-    QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
+      QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
+      syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_T31_QF"));
+      QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
 
-    guard.track(nbId);
+      guard.track(nbId);
 
-    // Drain any initial sync.
-    QTest::qWait(500);
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
-    // Wait for any in-flight work from bootstrap to finish, then tighten the cap.
-    QElapsedTimer drainSetup;
-    drainSetup.start();
-    while ((wqMgr.queueDepth(nbId) > 0 || wqMgr.isRunning(nbId)) && drainSetup.elapsed() < 15000) {
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-      QTest::qWait(50);
-    }
-    wqMgr.setMaxDepth(1);
-
-    // Install a long-running blocker as the current item. We enqueue directly
-    // for the same notebookId; with maxDepth=1 the next two sync.should_run
-    // emissions must result in 0 enqueues beyond the blocker (one slot
-    // fills with the first should_run, second is QueueFull -> silent).
-    QSignalSpy failedSpy(&syncService, &SyncService::syncFailed);
-
-    // Fire 2 sync.should_run events while a blocker is busy.
-    QMutex blockerMutex;
-    QWaitCondition blockerCond;
-    bool blockerRunning = false;
-    bool releaseBlocker = false;
-    wqMgr.enqueue(nbId, [&]() {
-      QMutexLocker lk(&blockerMutex);
-      blockerRunning = true;
-      blockerCond.wakeAll();
-      while (!releaseBlocker) {
-        blockerCond.wait(&blockerMutex, 100);
+      // Drain any initial sync.
+      QTest::qWait(500);
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+      // Wait for any in-flight work from bootstrap to finish, then tighten the cap.
+      QElapsedTimer drainSetup;
+      drainSetup.start();
+      while ((wqMgr.queueDepth(nbId) > 0 || wqMgr.isRunning(nbId)) &&
+             drainSetup.elapsed() < 15000) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QTest::qWait(50);
       }
-    });
-    // Wait for blocker to actually start.
-    {
-      QMutexLocker lk(&blockerMutex);
-      QElapsedTimer t;
-      t.start();
-      while (!blockerRunning && t.elapsed() < 2000) {
-        blockerCond.wait(&blockerMutex, 100);
+      wqMgr.setMaxDepth(1);
+
+      // Install a long-running blocker as the current item. We enqueue directly
+      // for the same notebookId; with maxDepth=1 the next two sync.should_run
+      // emissions must result in 0 enqueues beyond the blocker (one slot
+      // fills with the first should_run, second is QueueFull -> silent).
+      QSignalSpy failedSpy(&syncService, &SyncService::syncFailed);
+
+      // Fire 2 sync.should_run events while a blocker is busy.
+      QMutex blockerMutex;
+      QWaitCondition blockerCond;
+      bool blockerRunning = false;
+      bool releaseBlocker = false;
+      wqMgr.enqueue(nbId, [&]() {
+        QMutexLocker lk(&blockerMutex);
+        blockerRunning = true;
+        blockerCond.wakeAll();
+        while (!releaseBlocker) {
+          blockerCond.wait(&blockerMutex, 100);
+        }
+      });
+      // Wait for blocker to actually start.
+      {
+        QMutexLocker lk(&blockerMutex);
+        QElapsedTimer t;
+        t.start();
+        while (!blockerRunning && t.elapsed() < 2000) {
+          blockerCond.wait(&blockerMutex, 100);
+        }
       }
-    }
-    QVERIFY(blockerRunning);
+      QVERIFY(blockerRunning);
 
-    // Emit should_run twice. First fills the pending slot (queueDepth = 1
-    // pending + 1 running); second sees coalesce-match on "trigger" → Coalesced
-    // (still silent). Either way: no syncFailed.
-    emitShouldRun(ctx, nbId);
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
-    emitShouldRun(ctx, nbId);
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
-    QTest::qWait(300);
+      // Emit should_run twice. First fills the pending slot (queueDepth = 1
+      // pending + 1 running); second sees coalesce-match on "trigger" → Coalesced
+      // (still silent). Either way: no syncFailed.
+      emitShouldRun(ctx, nbId);
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+      emitShouldRun(ctx, nbId);
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
+      QTest::qWait(300);
 
-    QCOMPARE(failedSpy.count(), 0);
+      QCOMPARE(failedSpy.count(), 0);
 
-    // Release blocker; let things drain.
-    {
-      QMutexLocker lk(&blockerMutex);
-      releaseBlocker = true;
-      blockerCond.wakeAll();
-    }
-    // Allow the unblocked queue + any auto-trigger to run to completion before
-    // shutting down so SyncService teardown does not race with in-flight work.
-    QElapsedTimer drainTimer;
-    drainTimer.start();
-    while ((wqMgr.queueDepth(nbId) > 0 || wqMgr.isRunning(nbId)) && drainTimer.elapsed() < 15000) {
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-      QTest::qWait(50);
-    }
-    syncService.shutdown();
-    guard.cleanup();
+      // Release blocker; let things drain.
+      {
+        QMutexLocker lk(&blockerMutex);
+        releaseBlocker = true;
+        blockerCond.wakeAll();
+      }
+      // Allow the unblocked queue + any auto-trigger to run to completion before
+      // shutting down so SyncService teardown does not race with in-flight work.
+      QElapsedTimer drainTimer;
+      drainTimer.start();
+      while ((wqMgr.queueDepth(nbId) > 0 || wqMgr.isRunning(nbId)) &&
+             drainTimer.elapsed() < 15000) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QTest::qWait(50);
+      }
+      syncService.shutdown();
+      guard.cleanup();
     } // close if (!seedFailed)
   }
   vxcore_context_destroy(ctx);
@@ -392,5 +396,5 @@ void TestSyncAutoRoute::test_auto_route_disabled_bail() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestSyncAutoRoute)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestSyncAutoRoute)
 #include "test_sync_auto_route.moc"

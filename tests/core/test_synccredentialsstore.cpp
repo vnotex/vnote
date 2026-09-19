@@ -15,6 +15,8 @@
 #include <QThread>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <core/servicelocator.h>
 #include <core/services/synccredentialsstore.h>
 #include <vxcore/vxcore.h>
@@ -654,5 +656,5 @@ void TestSyncCredentialsStore::testDeleteSafeFromWorkerThread() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestSyncCredentialsStore)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestSyncCredentialsStore)
 #include "test_synccredentialsstore.moc"

@@ -70,13 +70,6 @@ function(add_qt_test NAME)
     TIMEOUT 60
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
-  if(APPLE)
-    # QTEST_GUILESS_MAIN uses QCoreApplication, whose default UNIX dispatcher
-    # does not drain GCD's main queue. QtKeychain's Apple backend completes all
-    # native jobs there; use Qt's CoreFoundation dispatcher without adding GUI.
-    set_property(TEST ${NAME} APPEND PROPERTY ENVIRONMENT
-      "QT_EVENT_DISPATCHER_CORE_FOUNDATION=1")
-  endif()
 endfunction()
 
 # Tests are never shipped; they run only on the CI runner's native arch. The
