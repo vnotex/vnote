@@ -180,6 +180,21 @@ private slots:
     QCOMPARE(data.m_image.width(), 20);
   }
 
+  void rasterizeKeepsCanvasOutOfImage() {
+    const auto payload =
+        QByteArrayLiteral("<svg xmlns='http://www.w3.org/2000/svg' width='80' height='48'>"
+                          "<rect x='32' y='16' width='16' height='16' fill='red'/></svg>");
+    GraphPreviewData data(1, QStringLiteral("svg"), payload, true, QColor("#b0bec5").rgba());
+    // The editor paints the canvas separately. DPI/zoom changes must not bake
+    // it into transparent pixels or change the graph's opaque ink.
+    for (const qreal factor : {1.25, 0.5, 1.0}) {
+      data.rasterize(factor);
+      const auto image = data.m_image.toImage();
+      QCOMPARE(image.pixelColor(0, 0).alpha(), 0);
+      QCOMPARE(image.pixelColor(image.width() / 2, image.height() / 2), QColor(Qt::red));
+    }
+  }
+
   // Always from the ORIGINAL bytes, so repeated zooming never accumulates
   // resampling artifacts nor drifts in size.
   void rasterizePngFromOriginalBytes() {

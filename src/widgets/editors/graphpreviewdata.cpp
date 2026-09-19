@@ -43,7 +43,8 @@ void GraphPreviewData::rasterize(qreal p_cppRasterFactor) {
   }
 
   if (m_format == QStringLiteral("svg")) {
-    m_image = ImageUtils::svgToPixmap(m_data, m_background, p_cppRasterFactor);
+    // The native preview painter supplies the canvas beneath the transparent raster.
+    m_image = ImageUtils::svgToPixmap(m_data, 0x0, p_cppRasterFactor);
   } else {
     QPixmap tmpImg;
     tmpImg.loadFromData(m_data, m_format.toLocal8Bit().data());

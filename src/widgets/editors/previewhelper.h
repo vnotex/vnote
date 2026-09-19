@@ -174,7 +174,7 @@ private:
   void updateEditorInplacePreviewMathBlock();
 
   void handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
-                       const QString &p_data, bool p_forcedBackground);
+                       const QString &p_data);
 
   // @p_zoomRatio: the generation's zoom ratio.
   qreal getEditorScaleFactor(qreal p_zoomRatio) const;

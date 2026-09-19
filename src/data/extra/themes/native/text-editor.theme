@@ -63,6 +63,9 @@
     },
     "//comment" : "Override the Text style in editor-styles",
     "markdown-editor-styles" : {
+        "Preview" : {
+            "background-color" : "#ffffff"
+        },
         "ListItemGuide" : {"text-color" : "#a3a9bc"},
         "ActiveListItem" : {"background-color" : "#f0f1f8"},
         "ConcealedText" : {"text-color" : "#005fff", "background-color" : "#f0f1f8"},

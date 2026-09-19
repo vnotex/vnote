@@ -14,8 +14,11 @@
 
 #include <QAbstractTextDocumentLayout>
 #include <QBuffer>
+#include <QDir>
+#include <QPainter>
 #include <QPixmap>
 #include <QSignalSpy>
+#include <QStandardPaths>
 #include <QString>
 #include <QTextBlock>
 #include <QTextDocument>
@@ -25,9 +28,12 @@
 #include <vtextedit/previewdata.h>
 #include <vtextedit/previewmgr.h>
 #include <vtextedit/texteditorconfig.h>
+#include <vtextedit/theme.h>
 #include <vtextedit/vmarkdowneditor.h>
+#include <vtextedit/vtextedit.h>
 
 #include <core/servicelocator.h>
+#include <widgets/editors/graphvizhelper.h>
 #include <widgets/editors/markdownvieweradapter.h>
 #include <widgets/editors/previewhelper.h>
 
@@ -49,6 +55,10 @@ private slots:
   void previewResultsKeepHighResolutionAtLogicalSize();
   void mathPreviewZoomWhileRasterPending_data();
   void mathPreviewZoomWhileRasterPending();
+  void graphPreviewCanvas_data();
+  void graphPreviewCanvas();
+  void localGraphPreviewCanvas();
+  void graphPreviewCanvasChangesWithTheme();
   void numberingStatusTracksDocumentReplacement();
 
 private:
@@ -493,6 +503,248 @@ void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
   QVERIFY(deliver(requests.last()));
   QTRY_COMPARE(rasterSize(), baseRasterSize);
   QCOMPARE(previewSize(), baseSize);
+}
+
+namespace {
+
+const QColor c_editorBackground(QStringLiteral("#202830"));
+const QColor c_graphCanvas(QStringLiteral("#b0bec5"));
+
+QSharedPointer<vte::MarkdownEditorConfig> graphCanvasConfig(const QColor &p_canvas,
+                                                            qreal p_scaleFactor = 1) {
+  const QJsonObject json{
+      {"metadata", QJsonObject{{"type", "vtextedit"}}},
+      {"editor-styles",
+       QJsonObject{{"Text", QJsonObject{{"font-family", "Arial"},
+                                        {"font-size", 12},
+                                        {"text-color", "#eeeeee"},
+                                        {"background-color", c_editorBackground.name()}}}}},
+      {"markdown-editor-styles",
+       p_canvas.isValid()
+           ? QJsonObject{{"Preview", QJsonObject{{"background-color", p_canvas.name()}}}}
+           : QJsonObject()}};
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  textConfig->m_theme = vte::Theme::createThemeFromContent(
+      QString::fromUtf8(QJsonDocument(json).toJson(QJsonDocument::Compact)));
+  textConfig->m_scaleFactor = p_scaleFactor;
+  auto config = QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig);
+  config->m_inplacePreviewSources = vte::MarkdownEditorConfig::CodeBlock;
+  config->m_autoFoldPreviewedBlocksEnabled = false;
+  return config;
+}
+
+struct GraphCanvasFixture {
+  explicit GraphCanvasFixture(qreal p_scaleFactor = 1, bool p_protected = false,
+                              bool p_webGraphviz = true, const QColor &p_canvas = c_graphCanvas)
+      : m_adapter(m_services), m_editor(graphCanvasConfig(p_canvas, p_scaleFactor),
+                                        QSharedPointer<vte::TextEditorParameters>::create()),
+        m_helper(&m_editor), m_requests(&m_helper, &PreviewHelper::graphPreviewRequested) {
+    m_helper.setProtectedView(p_protected);
+    m_helper.setWebGraphvizEnabled(p_webGraphviz);
+    m_helper.setInplacePreviewCodeBlocksEnabled(true);
+    QObject::connect(m_editor.getHighlighter(), &vte::MarkdownHighlighter::codeBlocksUpdated,
+                     &m_helper, &PreviewHelper::codeBlocksUpdated);
+    QObject::connect(&m_adapter, &MarkdownViewerAdapter::graphPreviewDataReady, &m_helper,
+                     &PreviewHelper::handleGraphPreviewData);
+    QObject::connect(&m_helper, &PreviewHelper::inplacePreviewCodeBlockUpdated,
+                     m_editor.getPreviewMgr(), &vte::PreviewMgr::updateCodeBlocks);
+    QObject::connect(&m_helper, &PreviewHelper::potentialObsoletePreviewBlocksUpdated,
+                     m_editor.getPreviewMgr(), &vte::PreviewMgr::checkBlocksForObsoletePreview);
+    QObject::connect(&m_helper, &PreviewHelper::inplacePreviewCodeBlockUpdated, &m_editor,
+                     [this](const QVector<QSharedPointer<vte::PreviewItem>> &p_items) {
+                       if (!p_items.isEmpty()) {
+                         ++m_publications;
+                       }
+                     });
+    m_editor.resize(640, 480);
+    m_editor.show();
+  }
+
+  void setSource(const QString &p_language, const QString &p_source) {
+    m_editor.setText(
+        QStringLiteral("Before\n\n```%1\n%2\n```\n\nFollowing\n").arg(p_language, p_source));
+    auto cursor = m_editor.getTextEdit()->textCursor();
+    cursor.movePosition(QTextCursor::Start);
+    m_editor.getTextEdit()->setTextCursor(cursor);
+  }
+
+  bool deliver(const QList<QVariant> &p_request, bool p_svg = false,
+               const QColor &p_ink = Qt::red) {
+    QString payload;
+    if (p_svg) {
+      payload = QStringLiteral("<svg xmlns='http://www.w3.org/2000/svg' width='80' height='48' "
+                               "viewBox='0 0 80 48'><rect x='32' y='16' width='16' height='16' "
+                               "fill='%1'/></svg>")
+                    .arg(p_ink.name());
+    } else {
+      QImage image(80, 48, QImage::Format_ARGB32_Premultiplied);
+      image.fill(Qt::transparent);
+      QPainter painter(&image);
+      painter.fillRect(QRect(32, 16, 16, 16), p_ink);
+      painter.end();
+      QByteArray bytes;
+      QBuffer buffer(&bytes);
+      if (!buffer.open(QIODevice::WriteOnly) || !image.save(&buffer, "PNG")) {
+        return false;
+      }
+      payload = QString::fromLatin1(bytes.toBase64());
+    }
+    m_adapter.setGraphPreviewData(p_request[0].toULongLong(), p_request[1].toULongLong(),
+                                  p_svg ? QStringLiteral("svg") : QStringLiteral("png"), payload,
+                                  p_svg == false, p_svg, p_svg ? 0 : 80, p_svg ? 0 : 48);
+    return true;
+  }
+
+  QImage render() {
+    auto layout = m_editor.document()->documentLayout();
+    const auto size = layout->documentSize();
+    QImage image(qMax(640, qCeil(size.width())), qCeil(size.height()) + 16,
+                 QImage::Format_ARGB32_Premultiplied);
+    image.fill(c_editorBackground);
+    QPainter painter(&image);
+    QAbstractTextDocumentLayout::PaintContext context;
+    context.clip = image.rect();
+    context.palette = m_editor.getTextEdit()->palette();
+    layout->draw(&painter, context);
+    return image;
+  }
+
+  ServiceLocator m_services;
+  MarkdownViewerAdapter m_adapter;
+  vte::VMarkdownEditor m_editor;
+  PreviewHelper m_helper;
+  QSignalSpy m_requests;
+  int m_publications = 0;
+};
+
+QRect graphInkBounds(const QImage &p_image) {
+  QRect bounds;
+  for (int y = 0; y < p_image.height(); ++y) {
+    for (int x = 0; x < p_image.width(); ++x) {
+      if (p_image.pixelColor(x, y) == QColor(Qt::red)) {
+        bounds |= QRect(x, y, 1, 1);
+      }
+    }
+  }
+  return bounds;
+}
+
+void verifyGraphCanvas(const QImage &p_image, const QColor &p_canvas) {
+  const auto ink = graphInkBounds(p_image);
+  QVERIFY2(!ink.isEmpty(), "The real document painter must draw the graph's red marker");
+  QCOMPARE(p_image.pixelColor(ink.center()), QColor(Qt::red));
+  // All fixtures have transparent padding around their opaque red marker.
+  const QPoint interior(ink.left() - 6, ink.center().y());
+  QVERIFY(p_image.rect().contains(interior));
+  QCOMPARE(p_image.pixelColor(interior), p_canvas);
+  // Same scanline, well beyond the preview: never a full-width editor band.
+  QCOMPARE(p_image.pixelColor(p_image.width() - 8, ink.center().y()), c_editorBackground);
+}
+
+} // namespace
+
+void TestMarkdownViewerAdapterAnchor::graphPreviewCanvas_data() {
+  QTest::addColumn<QString>("language");
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<bool>("protectedView");
+  QTest::addColumn<bool>("svg");
+  QTest::addColumn<bool>("canvas");
+  QTest::addColumn<QColor>("previewColor");
+  QTest::newRow("mermaid") << QStringLiteral("mermaid") << QStringLiteral("graph TD; A-->B")
+                           << false << false << true << c_graphCanvas;
+  QTest::newRow("flowchart") << QStringLiteral("flowchart") << QStringLiteral("st=>start: Start")
+                             << false << false << true << c_graphCanvas;
+  QTest::newRow("wavedrom") << QStringLiteral("wavedrom")
+                            << QStringLiteral("{\"signal\":[{\"name\":\"clk\",\"wave\":\"p...\"}]}")
+                            << false << false << true << c_graphCanvas;
+  QTest::newRow("plantuml") << QStringLiteral("plantuml")
+                            << QStringLiteral("@startuml\nAlice -> Bob\n@enduml") << false << false
+                            << true << c_graphCanvas;
+  QTest::newRow("graphviz") << QStringLiteral("graphviz") << QStringLiteral("digraph G { A -> B; }")
+                            << false << false << true << c_graphCanvas;
+  QTest::newRow("mathjax") << QStringLiteral("mathjax") << QStringLiteral("x^2") << false << false
+                           << false << c_graphCanvas;
+  QTest::newRow("protected-plantuml")
+      << QStringLiteral("plantuml") << QStringLiteral("@startuml\nAlice -> Bob\n@enduml") << true
+      << false << false << c_graphCanvas;
+  QTest::newRow("graphviz-svg-scaled")
+      << QStringLiteral("graphviz") << QStringLiteral("digraph G { A -> B; }") << false << true
+      << true << c_graphCanvas;
+  QTest::newRow("mermaid-no-canvas-style")
+      << QStringLiteral("mermaid") << QStringLiteral("graph TD; A-->B") << false << false << false
+      << QColor();
+  QTest::newRow("graphviz-svg-no-canvas-style")
+      << QStringLiteral("graphviz") << QStringLiteral("digraph G { A -> B; }") << false << true
+      << false << QColor();
+}
+
+void TestMarkdownViewerAdapterAnchor::graphPreviewCanvas() {
+  QFETCH(QString, language);
+  QFETCH(QString, source);
+  QFETCH(bool, protectedView);
+  QFETCH(bool, svg);
+  QFETCH(bool, canvas);
+  QFETCH(QColor, previewColor);
+  GraphCanvasFixture fixture(svg ? 1.25 : 1, protectedView, true, previewColor);
+  QVERIFY(QTest::qWaitForWindowExposed(&fixture.m_editor));
+  fixture.setSource(language, source);
+  QTRY_COMPARE_WITH_TIMEOUT(fixture.m_requests.count(), 1, 60000);
+  QVERIFY(fixture.deliver(fixture.m_requests.last(), svg));
+  QTRY_COMPARE(fixture.m_publications, 1);
+  const auto image = fixture.render();
+  const auto artifactDir = qEnvironmentVariable("VNOTE_TEST_ARTIFACT_DIR");
+  if (!artifactDir.isEmpty()) {
+    QVERIFY(image.save(QDir(artifactDir)
+                           .filePath(QStringLiteral("graph-canvas-%1.png")
+                                         .arg(QString::fromLatin1(QTest::currentDataTag())))));
+  }
+  verifyGraphCanvas(image, canvas ? c_graphCanvas : c_editorBackground);
+}
+
+void TestMarkdownViewerAdapterAnchor::localGraphPreviewCanvas() {
+  if (QStandardPaths::findExecutable(QStringLiteral("dot")).isEmpty()) {
+    QSKIP("Local Graphviz requires dot on PATH");
+  }
+  GraphvizHelper::getInst().update(QString());
+  GraphCanvasFixture fixture(1, false, false);
+  QVERIFY(QTest::qWaitForWindowExposed(&fixture.m_editor));
+  fixture.setSource(
+      QStringLiteral("graphviz"),
+      QStringLiteral("digraph G { bgcolor=\"transparent\"; margin=0; pad=0.5; "
+                     "a [shape=box, style=filled, fillcolor=red, color=red, label=\"\"]; }"));
+  QTRY_COMPARE_WITH_TIMEOUT(fixture.m_publications, 1, 60000);
+  QCOMPARE(fixture.m_requests.count(), 0);
+  verifyGraphCanvas(fixture.render(), c_graphCanvas);
+}
+
+void TestMarkdownViewerAdapterAnchor::graphPreviewCanvasChangesWithTheme() {
+  GraphCanvasFixture fixture;
+  QVERIFY(QTest::qWaitForWindowExposed(&fixture.m_editor));
+  fixture.setSource(QStringLiteral("mermaid"), QStringLiteral("graph TD; A-->B"));
+  const auto source = fixture.m_editor.getText();
+  QTRY_COMPARE_WITH_TIMEOUT(fixture.m_requests.count(), 1, 60000);
+  const auto oldRequest = fixture.m_requests.last();
+  QVERIFY(fixture.deliver(oldRequest));
+  QTRY_COMPARE(fixture.m_publications, 1);
+  verifyGraphCanvas(fixture.render(), c_graphCanvas);
+
+  fixture.m_helper.invalidatePreviews();
+  const QColor newCanvas(QStringLiteral("#f2efe7"));
+  fixture.m_editor.setConfig(graphCanvasConfig(newCanvas));
+  fixture.m_editor.getHighlighter()->updateHighlight();
+  QTRY_COMPARE_WITH_TIMEOUT(fixture.m_requests.count(), 2, 60000);
+  QVERIFY(fixture.deliver(fixture.m_requests.last()));
+  QTRY_COMPARE(fixture.m_publications, 2);
+  const auto image = fixture.render();
+  verifyGraphCanvas(image, newCanvas);
+  QCOMPARE(fixture.m_editor.getText(), source);
+
+  // Different ink makes an incorrectly accepted retired result observable even
+  // if it picks up the new theme's canvas while being decoded.
+  QVERIFY(fixture.deliver(oldRequest, false, Qt::blue));
+  QTest::qWait(100);
+  QCOMPARE(fixture.render(), image);
+  QCOMPARE(fixture.m_editor.getText(), source);
 }
 
 void TestMarkdownViewerAdapterAnchor::numberingStatusTracksDocumentReplacement() {

@@ -518,7 +518,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
         static_cast<quint64>(p_blockPreviewIdx), m_codeBlockTimeStamp, QStringLiteral("svg"),
         vte::TextUtils::removeCodeBlockFence(blockData.m_text), this,
         [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data, bool) {
-          handleLocalData(id, timeStamp, format, data, false);
+          handleLocalData(id, timeStamp, format, data);
         },
         0, GraphvizHelper::getEngineForLanguage(blockData.m_lang));
     return;
@@ -870,7 +870,7 @@ void PreviewHelper::setProtectedView(bool p_protected) {
 void PreviewHelper::setWebGraphvizEnabled(bool p_enabled) { m_webGraphvizEnabled = p_enabled; }
 
 void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
-                                    const QString &p_data, bool p_forcedBackground) {
+                                    const QString &p_data) {
   const bool perf = perfEnabled();
   const qint64 entryMs = perf ? perfNowMs() : 0;
 
@@ -890,10 +890,11 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
   }
 
   auto &blockData = m_codeBlocksData[p_id];
+  const bool forcedBackground = needForcedBackground(blockData.m_lang);
   const qint64 decodeStartMs = perf ? perfNowMs() : 0;
   auto previewData = QSharedPointer<GraphPreviewData>::create(
       p_timeStamp, p_format, p_data.toUtf8(), true,
-      p_forcedBackground
+      forcedBackground
           ? m_editor->theme()->editorStyle(vte::Theme::EditorStyle::Preview).m_backgroundColor
           : 0,
       getEditorScaleFactor(m_codeBlockRequestZoomRatio), m_codeBlockRequestZoomRatio);
@@ -920,11 +921,15 @@ void PreviewHelper::handleLocalData(quint64 p_id, TimeStamp p_timeStamp, const Q
 }
 
 bool PreviewHelper::needForcedBackground(const QString &p_lang) const {
-  if (checkPreviewSourceLang(SourceFlag::PlantUml, p_lang)) {
-    return true;
+  if (m_protectedView && checkPreviewSourceLang(SourceFlag::PlantUml, p_lang)) {
+    return false;
   }
 
-  return false;
+  return checkPreviewSourceLang(SourceFlag::FlowChart, p_lang) ||
+         checkPreviewSourceLang(SourceFlag::Mermaid, p_lang) ||
+         checkPreviewSourceLang(SourceFlag::WaveDrom, p_lang) ||
+         checkPreviewSourceLang(SourceFlag::PlantUml, p_lang) ||
+         checkPreviewSourceLang(SourceFlag::Graphviz, p_lang);
 }
 
 void PreviewHelper::setInplacePreviewSources(SourceFlags p_srcs) {

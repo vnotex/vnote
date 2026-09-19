@@ -47,7 +47,7 @@ struct GraphPreviewData {
   // Name of the image for identification in resource manager.
   QString m_name;
 
-  // Background color to override.
+  // Canvas color for preview painting, never baked into m_image.
   // 0x0 indicates it is not specified.
   QRgb m_background = 0x0;
 

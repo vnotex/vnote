@@ -79,7 +79,7 @@
             "selected-background-color" : "@base#content#selection#bg"
         },
         "Preview" : {
-            "background-color" : "@palette#bg1_9"
+            "background-color" : "#B0BEC5"
         }
     },
     "markdown-syntax-styles" : {
