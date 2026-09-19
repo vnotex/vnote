@@ -52,13 +52,13 @@ public:
   // Placement happens in THREE steps, because the toolbar is shared with the
   // base class and two of the positions are only reachable later:
   //
-  //   1. install()                   -- sidebar, Outline hook, page, zoom, and
+  //   1. install()                   -- sidebar, Outline/Find hook, page, zoom, and
   //                                     the overflow MENU's contents
   //   2. installPresentationAction() -- from ViewWindow2::addAdditionalViewToolBarActions()
   //   3. installOverflowAction()     -- from ViewWindow2::addAdditionalToolBarMenuAction()
   //
   // @p_afterSidebar runs between the sidebar toggle and the page controls, and
-  // is where PdfViewWindow2 inserts the Outline popup. It is a hook rather than
+  // is where PdfViewWindow2 inserts Outline and Find. It is a hook rather than
   // a fourth step because the popup needs a ServiceLocator and an
   // OutlineProvider, and this component deliberately holds neither.
   void install(QToolBar *p_toolBar, const IconProvider &p_icons = {},
@@ -67,12 +67,12 @@ public:
   // Adds Presentation Mode to @p_toolBar and returns it.
   //
   // ViewWindow2::addAdditionalViewToolBarActions() places it after the viewer
-  // controls and before Find And Replace, keeping it directly accessible.
+  // controls and before Menu, keeping it directly accessible.
   QAction *installPresentationAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 
   // Adds the Menu entry that opens the menu install() built, and returns it.
-  // ViewWindow2::addAdditionalToolBarMenuAction() places it after Find And
-  // Replace. Its menu also hosts common actions, so the entry stays enabled
+  // ViewWindow2::addAdditionalToolBarMenuAction() places it after Presentation
+  // Mode. Its menu also hosts common actions, so the entry stays enabled
   // independently of viewer readiness.
   QAction *installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 

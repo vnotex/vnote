@@ -263,8 +263,8 @@ reproduced as a native Qt widget on `PdfViewWindow2`'s view-window toolbar
 (`PdfViewerToolBar`, `src/widgets/pdfviewertoolbar.{h,cpp}`). One chrome instead
 of two.
 
-Layout, left to right: sidebar toggle → Outline → page (prev / spin box / `of N`
-/ next) → zoom (out / combo / in) → Presentation Mode → Find And Replace →
+Layout, left to right: sidebar toggle → Outline → Find And Replace → page
+(prev / spin box / `of N` / next) → zoom (out / combo / in) → Presentation Mode →
 **Menu** (`⋮`). Menu contains rotate, cursor, scroll mode, spread mode, document
 properties, then a separator and the common Readable Width action. Print is absent.
 
@@ -272,8 +272,8 @@ Placement happens in **three** steps, called by `ViewWindow2`'s toolbar hooks:
 
 | Step | Called from | Places |
 |---|---|---|
-| `install()` | `addAdditionalRightToolBarActions()` | sidebar, Outline hook, page, zoom, and the viewer menu's contents |
-| `installPresentationAction()` | `addAdditionalViewToolBarActions()` | Presentation Mode, directly before Find And Replace |
+| `install()` | `addAdditionalRightToolBarActions()` | sidebar, Outline/Find hook, page, zoom, and the viewer menu's contents |
+| `installPresentationAction()` | `addAdditionalViewToolBarActions()` | Presentation Mode, directly before Menu |
 | `installOverflowAction()` | `addAdditionalToolBarMenuAction()` | the Menu entry, last on the toolbar |
 
 Presentation Mode adopts the current viewer-enabled state. Menu itself stays

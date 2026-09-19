@@ -103,20 +103,19 @@ void PdfViewWindow2::setupToolBar() {
   toolBar->addSeparator();
   setupAnnotationToolBarActions(toolBar);
 
-  addRightCommonToolBarActions(toolBar);
+  addRightCommonToolBarActions(toolBar, false);
 }
 
 void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   // The native replacements for pdf.js's hidden built-in strip. The Outline
-  // popup is inserted by the hook below, between the sidebar toggle and the
-  // page controls -- both are view chrome of the same kind, and the sequence
-  // mirrors where pdf.js put them.
+  // popup and Find And Replace are inserted by the hook below, between the
+  // sidebar toggle and the page controls.
   setupViewerToolBarActions(p_toolBar);
-  // The base appends Presentation Mode, Find And Replace and Menu, then adds
+  // The base appends Presentation Mode and Menu, then adds
   // Readable Width to Menu. Print is opted out of; see isPrintSupported().
 }
 
-// Presentation Mode stays directly on the toolbar, before Find And Replace.
+// Presentation Mode stays directly on the toolbar, before Menu.
 // Its intent is already connected in setupViewerToolBarActions().
 void PdfViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   if (!m_viewerToolBar) {
@@ -165,6 +164,7 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
             outlinePopup->setOutlineProvider(m_outlineProvider);
           }
         }
+        addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
       });
 
   connect(m_viewerToolBar, &PdfViewerToolBar::pageRequested, this, [this](int p_page) {

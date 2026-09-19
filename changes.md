@@ -1,7 +1,6 @@
 # Changes
 ## Unreleased
-* Add an enabled-by-default General Settings option to allow Ctrl+Alt shortcuts; turn it off and restart to avoid AltGr conflicts without losing custom bindings
-* Add a text-only Edit JSON button to the right of the Settings toolbar to edit vnotex.json in VNote
+* Place PDF Find And Replace beside Outline, before the page-navigation controls
 * Keep Outline and Find And Replace on view-window toolbars and group secondary actions under a three-dot Menu; retain PDF-specific viewer controls and move Readable Width into its renamed Menu
 * Add a default-on, per-window Allow Auto Section Number menu toggle to temporarily disable Markdown read, edit and outline numbering without changing saved settings
 * Restore the missing left border on normal buttons in the Lucius theme
@@ -18,6 +17,8 @@
 * Match the United Entry icon color to the other main toolbar icons, including live theme changes
 * Load tasks on first request so freshly installed bundled tasks are available without restarting VNote
 * Translate daily tips using the preferred UI language when the system regional format uses a different locale
+* Add an enabled-by-default General Settings option to allow Ctrl+Alt shortcuts; turn it off and restart to avoid AltGr conflicts without losing custom bindings
+* Add a text-only Edit JSON button to the right of the Settings toolbar to edit vnotex.json in VNote
 
 * **Export**
     * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors

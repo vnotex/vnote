@@ -534,11 +534,13 @@ void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
   }
 }
 
-void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
+void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar, bool p_addFindAndReplace) {
   ViewWindowToolBarHelper2::addSpacer(p_toolBar);
   addAdditionalRightToolBarActions(p_toolBar);
   addAdditionalViewToolBarActions(p_toolBar);
-  addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
+  if (p_addFindAndReplace) {
+    addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
+  }
   auto *menuAction = addAdditionalToolBarMenuAction(p_toolBar);
   if (!menuAction) {
     menuAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Menu);

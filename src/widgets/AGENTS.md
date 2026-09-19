@@ -120,9 +120,9 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | Position | What |
 |---|---|
 | spacer | |
-| `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, page and zoom controls |
+| `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, page and zoom controls |
 | `addAdditionalViewToolBarActions()` | PDF: Presentation Mode |
-| Find And Replace | |
+| Find And Replace | Default position; PDF opts out because Find is beside Outline |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the

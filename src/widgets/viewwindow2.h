@@ -467,12 +467,13 @@ protected:
 
   // Add the right group: spacer, subclass controls, Find And Replace, and Menu.
   // Readable Width and Print (when supported) live inside Menu.
-  void addRightCommonToolBarActions(QToolBar *p_toolBar);
+  // Set p_addFindAndReplace to false when the subclass places Find itself.
+  void addRightCommonToolBarActions(QToolBar *p_toolBar, bool p_addFindAndReplace = true);
 
   // Add subclass-specific controls before Find And Replace (Markdown: Outline).
   virtual void addAdditionalRightToolBarActions(QToolBar *p_toolBar);
 
-  // PDF keeps Presentation Mode directly before Find And Replace.
+  // PDF keeps Presentation Mode directly before Menu.
   virtual void addAdditionalViewToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
 
   // Reuse a subtype's existing menu button (PDF); otherwise the base creates Menu.

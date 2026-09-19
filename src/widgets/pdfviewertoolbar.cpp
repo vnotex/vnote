@@ -57,8 +57,8 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   m_sidebarAction->setCheckable(true);
   connect(m_sidebarAction, &QAction::triggered, this, [this]() { emit sidebarToggleRequested(); });
 
-  // 2. The Outline popup goes HERE, between the sidebar toggle and the page
-  //    controls -- it is view chrome of the same kind. The hook exists because
+  // 2. Outline and Find go HERE, between the sidebar toggle and the page
+  //    controls. The hook exists because
   //    the popup needs PdfViewWindow2's ServiceLocator and outline provider,
   //    neither of which this component may hold (that is the whole reason it is
   //    constructible in a test with a bare QToolBar).
@@ -132,7 +132,7 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   connect(m_zoomInAction, &QAction::triggered, this, [this]() { emit zoomStepRequested(true); });
 
   // 5. Build the menu contents now; the base's menu hook places its toolbar
-  //    entry after Find And Replace and appends the common actions.
+  //    entry after Presentation Mode and appends the common actions.
   buildOverflowMenu(p_toolBar, p_icons);
 
   // Viewer commands stay disabled until the first accepted state.
@@ -202,7 +202,7 @@ void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider
   m_viewerMenuActions += m_spreadActions;
 }
 
-// The base's menu hook places this last, after Find And Replace.
+// The base's menu hook places this last, after Presentation Mode.
 QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons) {
   Q_ASSERT(p_toolBar);
   Q_ASSERT(m_overflowMenu);
@@ -235,7 +235,7 @@ QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const Icon
 }
 
 // The base's view-action hook keeps Presentation Mode on the toolbar before
-// Find And Replace. A mode that hides the toolbar should have a visible way in.
+// Menu. A mode that hides the toolbar should have a visible way in.
 QAction *PdfViewerToolBar::installPresentationAction(QToolBar *p_toolBar,
                                                      const IconProvider &p_icons) {
   Q_ASSERT(p_toolBar);
