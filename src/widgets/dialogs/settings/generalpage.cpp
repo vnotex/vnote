@@ -19,7 +19,8 @@ using namespace vnotex;
 
 namespace {
 const char c_appNameLineEditName[] = "applicationDisplayNameLineEdit";
-}
+const char c_disableCtrlAltShortcutsName[] = "disableCtrlAltShortcutsCheckBox";
+} // namespace
 
 GeneralPage::GeneralPage(ServiceLocator &p_services, QWidget *p_parent)
     : SettingsPage(p_services, p_parent) {
@@ -99,6 +100,22 @@ void GeneralPage::setupUI() {
   }
 #endif
 
+  {
+    const QString label(tr("Disable Ctrl+Alt shortcuts"));
+    m_disableCtrlAltShortcutsCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_disableCtrlAltShortcutsCheckBox->setObjectName(QLatin1String(c_disableCtrlAltShortcutsName));
+    m_disableCtrlAltShortcutsCheckBox->setToolTip(
+        tr("Ignore configured shortcuts containing Ctrl+Alt, including global hotkeys, to avoid "
+           "conflicts with AltGr on some keyboard layouts (restart required)"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_disableCtrlAltShortcutsCheckBox, m_disableCtrlAltShortcutsCheckBox->toolTip(), this));
+    addSearchItem(label, m_disableCtrlAltShortcutsCheckBox->toolTip(),
+                  m_disableCtrlAltShortcutsCheckBox);
+    connect(m_disableCtrlAltShortcutsCheckBox, &QCheckBox::stateChanged, this,
+            &GeneralPage::pageIsChangedWithRestartNeeded);
+  }
+
   // AutoStartUtils::isSupported() is the single platform gate for this row, so the
   // widget and the code that effects it can never disagree about where it applies.
   if (AutoStartUtils::isSupported()) {
@@ -171,6 +188,7 @@ void GeneralPage::loadInternal() {
   }
 
   m_appNameLineEdit->setText(coreConfig.getAppName());
+  m_disableCtrlAltShortcutsCheckBox->setChecked(coreConfig.isCtrlAltShortcutsDisabled());
 
   if (m_openGLComboBox) {
     int idx = m_openGLComboBox->findData(sessionConfig.getOpenGL());
@@ -209,6 +227,7 @@ bool GeneralPage::saveInternal() {
   }
 
   coreConfig.setAppName(m_appNameLineEdit->text());
+  coreConfig.setCtrlAltShortcutsDisabled(m_disableCtrlAltShortcutsCheckBox->isChecked());
 
   if (m_openGLComboBox) {
     int opt = m_openGLComboBox->currentData().toInt();

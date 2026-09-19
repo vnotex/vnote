@@ -3,6 +3,8 @@
 
 #include "iconfig.h"
 
+#include <bitset>
+
 #include <QObject>
 #include <QScopedPointer>
 #include <QSharedPointer>
@@ -170,6 +172,7 @@ private:
   int m_toolBarIconSize = 16;
 
   QString m_shortcuts[Shortcut::MaxShortcut];
+  std::bitset<Shortcut::MaxShortcut> m_filteredShortcuts;
 
   AutoSavePolicy m_autoSavePolicy = AutoSavePolicy::AutoSave;
 

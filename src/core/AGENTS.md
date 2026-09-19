@@ -125,6 +125,20 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
 4. **Version upgrade** — `upgradeMainConfigOnVersionChange()` runs the config migration (`doVersionSpecificOverride` then stamping `c_version`) when the persisted version differs.
 5. **Bundled extra data** — `ensureExtraData(bool p_force)` installs `themes/`, `tasks/`, `syntax-highlighting/`, `web/`, `dicts/` and `templates/` from `vnote_extra.rcc`. It runs on every **primary-instance** launch, after `SingleInstanceGuard::tryRun()` succeeds, not just on a version change; a rejected secondary must never mutate resources used by the running primary. Installation is gated per folder by a stamp file (`FileUtils2::c_versionStampFileName`, `.vnote-extra-version`) that `FileUtils2::installVersionedDir` writes **only after that folder copied completely**. A partial copy therefore leaves the folder unstamped and is retried on the next launch instead of being remembered as done. Deliberately decoupled from the config version stamp above: coupling them would re-run `doVersionSpecificOverride` on every launch and pin the config version to the old value forever whenever a copy is permanently broken. Per-folder failures are aggregated in `extraDataCopyFailures()` and PULLED once by `NotificationRouter` at `MainWindowAfterStart` (ConfigMgr2 has no `ServiceLocator`, and the copy runs in `main()` long before the router exists). `web/css/user.css` is on a preserve list because Settings treats an existing regular file there as user-owned; an incompatible node is a copy failure and prevents the completion stamp. `templates/` has NO preserve list: the bundled `templates/title.md` (`# %no%` plus a trailing `@@` cursor mark, so a new note opens with a level-1 heading matching its base name and the caret on the blank line below) is overwritten on every version bump, so a user who wants a variant must save it under a different name; user-created templates are untouched because only bundled paths are written.
 
+### Ctrl+Alt Shortcut Filtering
+
+Settings → General → **Disable Ctrl+Alt shortcuts** persists
+`core.disableCtrlAltShortcuts`, default `false`. It requires a restart.
+`MainConfig::fromJson()` masks core and editor shortcuts, including the global
+Quick Note and wake-up bindings and the shortcut leader key. A binding is
+filtered when any stroke contains both Qt Control and Alt modifiers, even with
+additional modifiers. Ctrl and Alt in separate strokes do not match.
+
+Keep configured strings intact in `toJson()`: filtering is a runtime view, not a
+rewrite of the user's bindings. Turning the option off and restarting must
+restore them, including custom bindings. Setters persist the preference without
+changing the loaded masks or partially rebinding a running session.
+
 ### VxCoreLogBridge
 
 `VxCoreLogBridge` routes vxcore's internal log lines through Qt's `qInstallMessageHandler` pipeline so they land in VNote's unified log file alongside `qDebug`/`qWarning`/`qCritical` output. Without it, vxcore would write to its own stderr/file sinks and the two log streams would diverge.

@@ -55,9 +55,11 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
     m_locale = QStringLiteral("en_US");
   }
 
+  m_ctrlAltShortcutsDisabled = READBOOL(QStringLiteral("disableCtrlAltShortcuts"));
   loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
   m_shortcutLeaderKey = READSTR(QStringLiteral("shortcutLeaderKey"));
+  m_shortcutLeaderKeyFiltered = false;
 
   m_toolBarIconSize = READINT(QStringLiteral("toolbarIconSize"));
   if (m_toolBarIconSize <= 0) {
@@ -123,6 +125,7 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("theme")] = m_theme;
   obj[QStringLiteral("appName")] = m_appName;
   obj[QStringLiteral("locale")] = m_locale;
+  obj[QStringLiteral("disableCtrlAltShortcuts")] = m_ctrlAltShortcutsDisabled;
   obj[QStringLiteral("shortcuts")] = saveShortcuts();
   obj[QStringLiteral("shortcutLeaderKey")] = m_shortcutLeaderKey;
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
@@ -163,6 +166,7 @@ const QStringList &CoreConfig::getAvailableLocales() {
 }
 
 void CoreConfig::loadShortcuts(const QJsonObject &p_jobj) {
+  m_filteredShortcuts.reset();
   static const auto indexOfShortcutEnum =
       CoreConfig::staticMetaObject.indexOfEnumerator("Shortcut");
   Q_ASSERT(indexOfShortcutEnum >= 0);
@@ -202,7 +206,15 @@ QJsonObject CoreConfig::saveShortcuts() const {
 
 const QString &CoreConfig::getShortcut(Shortcut p_shortcut) const {
   Q_ASSERT(p_shortcut < Shortcut::MaxShortcut);
-  return m_shortcuts[p_shortcut];
+  static const QString c_empty;
+  return m_filteredShortcuts[p_shortcut] ? c_empty : m_shortcuts[p_shortcut];
+}
+
+bool CoreConfig::isCtrlAltShortcutsDisabled() const { return m_ctrlAltShortcutsDisabled; }
+
+void CoreConfig::setCtrlAltShortcutsDisabled(bool p_disabled) {
+  // The masks and registered shortcuts stay unchanged until the next config load.
+  updateConfig(m_ctrlAltShortcutsDisabled, p_disabled, this);
 }
 
 int CoreConfig::getToolBarIconSize() const { return m_toolBarIconSize; }
@@ -344,7 +356,10 @@ void CoreConfig::setSearchMaxResults(int p_count) {
   updateConfig(m_searchMaxResults, clamped, this);
 }
 
-const QString &CoreConfig::getShortcutLeaderKey() const { return m_shortcutLeaderKey; }
+const QString &CoreConfig::getShortcutLeaderKey() const {
+  static const QString c_empty;
+  return m_shortcutLeaderKeyFiltered ? c_empty : m_shortcutLeaderKey;
+}
 
 LineEndingPolicy CoreConfig::getLineEndingPolicy() const { return m_lineEnding; }
 

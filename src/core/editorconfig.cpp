@@ -129,6 +129,7 @@ QJsonObject EditorConfig::saveCore() const {
 }
 
 void EditorConfig::loadShortcuts(const QJsonObject &p_jobj) {
+  m_filteredShortcuts.reset();
   static const auto indexOfShortcutEnum =
       EditorConfig::staticMetaObject.indexOfEnumerator("Shortcut");
   Q_ASSERT(indexOfShortcutEnum >= 0);
@@ -197,7 +198,8 @@ void EditorConfig::setToolBarIconSize(int p_size) {
 
 const QString &EditorConfig::getShortcut(Shortcut p_shortcut) const {
   Q_ASSERT(p_shortcut < Shortcut::MaxShortcut);
-  return m_shortcuts[p_shortcut];
+  static const QString c_empty;
+  return m_filteredShortcuts[p_shortcut] ? c_empty : m_shortcuts[p_shortcut];
 }
 
 QString EditorConfig::autoSavePolicyToString(AutoSavePolicy p_policy) const {

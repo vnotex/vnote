@@ -7,6 +7,8 @@
 #include <QStringList>
 #include <QtGlobal>
 
+#include <bitset>
+
 #include "global.h"
 
 namespace vnotex {
@@ -102,6 +104,9 @@ public:
   QString getLocaleToUse() const;
 
   const QString &getShortcut(Shortcut p_shortcut) const;
+
+  bool isCtrlAltShortcutsDisabled() const;
+  void setCtrlAltShortcutsDisabled(bool p_disabled);
 
   int getToolBarIconSize() const;
   void setToolBarIconSize(int p_size);
@@ -207,10 +212,14 @@ private:
   // Empty if not specified.
   QString m_locale;
 
+  // Keep configured bindings intact; MainConfig masks runtime shortcuts on load.
   QString m_shortcuts[Shortcut::MaxShortcut];
+  std::bitset<Shortcut::MaxShortcut> m_filteredShortcuts;
+  bool m_ctrlAltShortcutsDisabled = false;
 
   // Leader key of shortcuts defined in m_shortctus.
   QString m_shortcutLeaderKey;
+  bool m_shortcutLeaderKeyFiltered = false;
 
   // Icon size of MainWindow tool bar.
   int m_toolBarIconSize = 18;

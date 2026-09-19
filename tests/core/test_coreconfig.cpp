@@ -2,7 +2,9 @@
 #include <QtTest>
 
 #include <core/coreconfig.h>
+#include <core/editorconfig.h>
 #include <core/iconfigmgr.h>
+#include <core/mainconfig.h>
 
 using namespace vnotex;
 
@@ -19,6 +21,9 @@ class TestCoreConfig : public QObject {
   Q_OBJECT
 
 private slots:
+  void testCtrlAltFiltering_data();
+  void testCtrlAltFiltering();
+  void testCtrlAltFilteringPreservesBindingsAcrossRestarts();
   void testDefaultWhenAbsent();
   void testRoundTrip();
   void testClampAboveMax();
@@ -47,6 +52,88 @@ private slots:
 private:
   MockConfigMgr m_mockMgr;
 };
+
+void TestCoreConfig::testCtrlAltFiltering_data() {
+  QTest::addColumn<QString>("binding");
+  QTest::addColumn<bool>("filtered");
+  QTest::newRow("ctrl-alt") << QStringLiteral("Ctrl+Alt+Q") << true;
+  QTest::newRow("reordered-shift") << QStringLiteral("Alt+Shift+Ctrl+Q") << true;
+  QTest::newRow("later-stroke") << QStringLiteral("Ctrl+G, Ctrl+Alt+Q") << true;
+  QTest::newRow("separate-strokes") << QStringLiteral("Ctrl+G, Alt+Q") << false;
+  QTest::newRow("ctrl-only") << QStringLiteral("Ctrl+Q") << false;
+  QTest::newRow("alt-only") << QStringLiteral("Alt+Q") << false;
+  QTest::newRow("empty") << QString() << false;
+}
+
+void TestCoreConfig::testCtrlAltFiltering() {
+  QFETCH(QString, binding);
+  QFETCH(bool, filtered);
+  MainConfig config(&m_mockMgr);
+  auto json = config.toJson();
+  auto core = json.value(QStringLiteral("core")).toObject();
+  auto editor = json.value(QStringLiteral("editor")).toObject();
+  auto editorCore = editor.value(QStringLiteral("core")).toObject();
+  core[QStringLiteral("disableCtrlAltShortcuts")] = true;
+  // Exercise both global hotkeys and a local action through their normal getters.
+  core[QStringLiteral("shortcuts")] = QJsonObject{{QStringLiteral("NewQuickNote"), binding},
+                                                  {QStringLiteral("Global_WakeUp"), binding},
+                                                  {QStringLiteral("Settings"), binding}};
+  core[QStringLiteral("shortcutLeaderKey")] = binding;
+  editorCore[QStringLiteral("shortcuts")] = QJsonObject{{QStringLiteral("Save"), binding}};
+  editor[QStringLiteral("core")] = editorCore;
+  json[QStringLiteral("core")] = core;
+  json[QStringLiteral("editor")] = editor;
+  config.fromJson(json);
+
+  const auto expected = filtered ? QString() : binding;
+  QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote), expected);
+  QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::Global_WakeUp), expected);
+  QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::Settings), expected);
+  QCOMPARE(config.getCoreConfig().getShortcutLeaderKey(), expected);
+  QCOMPARE(config.getEditorConfig().getShortcut(EditorConfig::Save), expected);
+  // A normal settings save must not turn temporary filtering into data loss.
+  const auto saved = config.toJson();
+  QCOMPARE(saved.value(QStringLiteral("core"))
+               .toObject()
+               .value(QStringLiteral("shortcuts"))
+               .toObject()
+               .value(QStringLiteral("NewQuickNote"))
+               .toString(),
+           binding);
+  QCOMPARE(saved.value(QStringLiteral("editor"))
+               .toObject()
+               .value(QStringLiteral("core"))
+               .toObject()
+               .value(QStringLiteral("shortcuts"))
+               .toObject()
+               .value(QStringLiteral("Save"))
+               .toString(),
+           binding);
+}
+
+void TestCoreConfig::testCtrlAltFilteringPreservesBindingsAcrossRestarts() {
+  MainConfig config(&m_mockMgr);
+  auto json = config.toJson();
+  auto core = json.value(QStringLiteral("core")).toObject();
+  core.remove(QStringLiteral("disableCtrlAltShortcuts"));
+  json[QStringLiteral("core")] = core;
+  config.fromJson(json);
+  const auto original = config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote);
+  QCOMPARE(original, QStringLiteral("Ctrl+Alt+Q"));
+
+  config.getCoreConfig().setCtrlAltShortcutsDisabled(true);
+  QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote), original);
+  config.fromJson(config.toJson());
+  QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
+  config.getCoreConfig().setTheme(QStringLiteral("native"));
+  config.fromJson(config.toJson());
+  QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
+
+  config.getCoreConfig().setCtrlAltShortcutsDisabled(false);
+  QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
+  config.fromJson(config.toJson());
+  QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote), original);
+}
 
 void TestCoreConfig::testDefaultWhenAbsent() {
   CoreConfig cfg(&m_mockMgr, nullptr);

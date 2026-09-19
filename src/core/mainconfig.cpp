@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QJsonObject>
+#include <QKeySequence>
 #include <QVersionNumber>
 
 #include "coreconfig.h"
@@ -13,6 +14,23 @@
 #include "widgetconfig.h"
 
 using namespace vnotex;
+
+namespace {
+bool containsCtrlAlt(const QString &p_shortcut) {
+  const QKeySequence keys(p_shortcut, QKeySequence::PortableText);
+  for (int i = 0; i < keys.count(); ++i) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const auto modifiers = keys[i].keyboardModifiers();
+#else
+    const auto modifiers = Qt::KeyboardModifiers(keys[i] & Qt::KeyboardModifierMask);
+#endif
+    if (modifiers.testFlag(Qt::ControlModifier) && modifiers.testFlag(Qt::AltModifier)) {
+      return true;
+    }
+  }
+  return false;
+}
+} // namespace
 
 MainConfig::MainConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {
   m_childConfigs.resize(ChildConfigIndex::ChildConfigCount);
@@ -33,6 +51,19 @@ void MainConfig::fromJson(const QJsonObject &p_jobj) {
   for (auto &childConfig : m_childConfigs) {
     Q_ASSERT(childConfig);
     childConfig->fromJson(p_jobj.value(childConfig->getSectionName()).toObject());
+  }
+
+  auto &coreConfig = getCoreConfig();
+  if (coreConfig.isCtrlAltShortcutsDisabled()) {
+    // Filter the loaded runtime view, never the bindings serialized by toJson().
+    auto filter = [](auto &p_config) {
+      for (size_t i = 0; i < p_config.m_filteredShortcuts.size(); ++i) {
+        p_config.m_filteredShortcuts[i] = containsCtrlAlt(p_config.m_shortcuts[i]);
+      }
+    };
+    filter(coreConfig);
+    filter(getEditorConfig());
+    coreConfig.m_shortcutLeaderKeyFiltered = containsCtrlAlt(coreConfig.m_shortcutLeaderKey);
   }
 }
 
