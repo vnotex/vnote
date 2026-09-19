@@ -304,23 +304,28 @@ void MarkdownViewWindow2::setupToolBar() {
   }
 
   addRightCommonToolBarActions(toolBar);
-
-  if (!getBuffer().isEncrypted()) {
-    m_debugAction = addAction(toolBar, ViewWindowToolBarHelper2::Debug);
-    connect(m_debugAction, &QAction::toggled, this, &MarkdownViewWindow2::setDebugVisible);
-    m_debugAction->setEnabled(isReadMode());
-    m_debugAction->setVisible(isReadMode());
-    connect(this, &ViewWindow2::modeChanged, this, [this]() {
-      m_debugAction->setEnabled(isReadMode());
-      m_debugAction->setVisible(isReadMode());
-    });
-  }
 }
 
 void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
+  // Keep Outline directly on the toolbar.
+  {
+    auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAct));
+    if (toolBtn) {
+      auto *outlinePopup = dynamic_cast<OutlinePopup *>(toolBtn->menu());
+      if (outlinePopup) {
+        outlinePopup->setOutlineProvider(m_outlineProvider);
+      }
+    }
+  }
+}
+
+void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
+  p_menu->addSeparator();
+
   // Image hosts are not an available storage destination for protected notes.
   if (!getBuffer().isEncrypted()) {
-    auto *act = addAction(p_toolBar, ViewWindowToolBarHelper2::ImageHost);
+    auto *act = addAction(p_menu, ViewWindowToolBarHelper2::ImageHost);
     m_imageHostMenu = act->menu();
     updateImageHostMenu();
     connect(m_imageHostMenu, &QMenu::triggered, this,
@@ -336,21 +341,9 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
             [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
   }
 
-  // Outline popup button (right corner, first): wire it to this window's outline provider.
-  {
-    auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
-    auto *toolBtn = dynamic_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAct));
-    if (toolBtn) {
-      auto *outlinePopup = dynamic_cast<OutlinePopup *>(toolBtn->menu());
-      if (outlinePopup) {
-        outlinePopup->setOutlineProvider(m_outlineProvider);
-      }
-    }
-  }
-
   // Live preview toggle (visible only in Edit mode).
   {
-    auto *livePreviewAction = addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLivePreview);
+    auto *livePreviewAction = addAction(p_menu, ViewWindowToolBarHelper2::ToggleLivePreview);
     livePreviewAction->setChecked(m_editViewMode ==
                                   MarkdownEditorConfig::EditViewMode::EditPreview);
     connect(livePreviewAction, &QAction::toggled, this, [this](bool p_checked) {
@@ -365,7 +358,7 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
 
   // In-place preview toggle (visible only in Edit mode).
   {
-    auto *inplacePreviewAction = addAction(p_toolBar, ViewWindowToolBarHelper2::InplacePreview);
+    auto *inplacePreviewAction = addAction(p_menu, ViewWindowToolBarHelper2::InplacePreview);
     // setChecked before connect so this does not fire the toggled handler.
     inplacePreviewAction->setChecked(m_inplacePreviewEnabled);
     connect(inplacePreviewAction, &QAction::toggled, this, [this](bool p_checked) {
@@ -377,13 +370,23 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
   }
 
   {
-    auto *sectionNumberAction =
-        addAction(p_toolBar, ViewWindowToolBarHelper2::AllowAutoSectionNumber);
+    auto *sectionNumberAction = addAction(p_menu, ViewWindowToolBarHelper2::AllowAutoSectionNumber);
     sectionNumberAction->setChecked(m_outlineProvider->getAutoSectionNumberAllowed());
     connect(sectionNumberAction, &QAction::toggled, this, [this](bool p_checked) {
       m_outlineProvider->setAutoSectionNumberAllowed(p_checked);
       updateSectionNumberOptions();
       updateEditSectionNumberOptions(true);
+    });
+  }
+
+  if (!getBuffer().isEncrypted()) {
+    m_debugAction = addAction(p_menu, ViewWindowToolBarHelper2::Debug);
+    connect(m_debugAction, &QAction::toggled, this, &MarkdownViewWindow2::setDebugVisible);
+    m_debugAction->setEnabled(isReadMode());
+    m_debugAction->setVisible(isReadMode());
+    connect(this, &ViewWindow2::modeChanged, this, [this]() {
+      m_debugAction->setEnabled(isReadMode());
+      m_debugAction->setVisible(isReadMode());
     });
   }
 }

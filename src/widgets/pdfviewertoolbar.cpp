@@ -131,12 +131,11 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
       addIconAction(p_toolBar, QStringLiteral("zoom_in_editor.svg"), tr("Zoom In"), p_icons);
   connect(m_zoomInAction, &QAction::triggered, this, [this]() { emit zoomStepRequested(true); });
 
-  // 5. The overflow MENU is built now; the toolbar entry that opens it is
-  //    placed later, by installOverflowAction(), because it belongs at the very
-  //    end of the toolbar -- after everything the base class appends.
+  // 5. Build the menu contents now; the base's menu hook places its toolbar
+  //    entry after Find And Replace and appends the common actions.
   buildOverflowMenu(p_toolBar, p_icons);
 
-  // Nothing is live until the first accepted viewer state.
+  // Viewer commands stay disabled until the first accepted state.
   setControlsEnabled(false);
 }
 
@@ -162,9 +161,7 @@ QMenu *PdfViewerToolBar::addModeSubmenu(const QString &p_title, const QList<QStr
 }
 
 void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider &p_icons) {
-  // Only the MENU. The toolbar entry that opens it is added by
-  // installOverflowAction(), which runs after the base class has finished the
-  // toolbar so the button can sit at the very end.
+  // The toolbar entry is installed separately by the base's menu hook.
   m_overflowMenu = new QMenu(p_toolBar);
 
   m_rotateCwAction = m_overflowMenu->addAction(
@@ -194,15 +191,18 @@ void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider
   m_documentPropertiesAction->setProperty("iconName", QStringLiteral("info.svg"));
   connect(m_documentPropertiesAction, &QAction::triggered, this,
           [this]() { emit documentPropertiesRequested(); });
+
+  for (auto *action : m_overflowMenu->actions()) {
+    if (!action->isSeparator()) {
+      m_viewerMenuActions.append(action);
+    }
+  }
+  m_viewerMenuActions += m_cursorActions;
+  m_viewerMenuActions += m_scrollActions;
+  m_viewerMenuActions += m_spreadActions;
 }
 
-// Placed separately from install(), and LAST of the three placement steps.
-//
-// The overflow button is the toolbar's catch-all, so it belongs at the very end
-// -- after Readable Width, Presentation Mode and Find And Replace, all of which
-// the base class appends once addAdditionalRightToolBarActions() has returned.
-// Only PdfViewWindow2::setupToolBar(), which calls addRightCommonToolBarActions()
-// itself, can reach that position.
+// The base's menu hook places this last, after Find And Replace.
 QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons) {
   Q_ASSERT(p_toolBar);
   Q_ASSERT(m_overflowMenu);
@@ -212,26 +212,10 @@ QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const Icon
   // so it reads as its own group without one, and the extra rule only adds
   // clutter next to the window edge.
 
-  // A PLAIN action carrying its menu -- NOT addWidget() with a pre-built
-  // QToolButton.
-  //
-  // This is the difference between the overflow menu surviving a narrow window
-  // and vanishing from it. When a QToolBar runs out of room it hides the
-  // trailing items and re-offers them through its own extension ("»") popup,
-  // which is built by adding the hidden ACTIONS to a QMenu. A QWidgetAction
-  // cannot render there, so an addWidget()-ed button simply disappears and
-  // every verb behind it -- rotate, cursor, scroll mode, spread mode and
-  // document properties -- becomes unreachable. The plain actions beside it
-  // (Readable Width, Find and Replace) kept working, which is what made the
-  // hole look like a missing button rather than a broken layout.
-  //
-  // With the menu on the ACTION, both surfaces work from one declaration:
-  // QToolButton::menu() falls back to defaultAction()->menu() on the toolbar,
-  // and QMenu renders an action-with-a-menu as a SUBMENU inside the extension
-  // popup. It also makes the icon reachable by
-  // ViewWindowToolBarHelper2::refreshToolBarIcons(), which only iterates the
-  // toolbar's own actions.
-  m_overflowAction = addIconAction(p_toolBar, QStringLiteral("menu.svg"), tr("More"), p_icons);
+  // A plain action carrying its menu survives as a submenu in QToolBar's
+  // narrow-window extension popup; an addWidget()-ed button does not. The
+  // toolbar button and recursive theme refresh also use this action's menu.
+  m_overflowAction = addIconAction(p_toolBar, QStringLiteral("menu.svg"), tr("Menu"), p_icons);
   m_overflowAction->setMenu(m_overflowMenu);
 
   // The toolbar creates the button; take it back to set the popup behaviour.
@@ -246,24 +230,12 @@ QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const Icon
     m_overflowButton->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
   }
 
-  // install()'s enable sweep has already run, so match whatever state it left.
-  m_overflowAction->setEnabled(m_state.m_valid);
-  if (m_overflowButton) {
-    m_overflowButton->setEnabled(m_state.m_valid);
-  }
+  // Menu must remain available for common actions even while the PDF loads.
   return m_overflowAction;
 }
 
-// Deliberately NOT part of install(): this action belongs to a different region
-// of the toolbar, one the base class owns. ViewWindow2 builds Readable Width and
-// Find And Replace after addAdditionalRightToolBarActions() has returned, so the
-// slot between them is only reachable from its own hook
-// (ViewWindow2::addAdditionalViewToolBarActions).
-//
-// It sits there rather than in the overflow menu because it changes how the
-// content is PRESENTED, which is what Readable Width beside it does -- and
-// because a mode with no visible way back (the toolbar is gone once it is on)
-// should at least have a visible way in.
+// The base's view-action hook keeps Presentation Mode on the toolbar before
+// Find And Replace. A mode that hides the toolbar should have a visible way in.
 QAction *PdfViewerToolBar::installPresentationAction(QToolBar *p_toolBar,
                                                      const IconProvider &p_icons) {
   Q_ASSERT(p_toolBar);
@@ -293,20 +265,14 @@ void PdfViewerToolBar::refreshIcons(const IconProvider &p_icons) {
     }
   };
 
-  // The toolbar's own actions are also covered by
-  // ViewWindowToolBarHelper2::refreshToolBarIcons(); doing them here as well is
-  // idempotent and keeps this component correct in isolation (the gate builds
-  // it on a bare QToolBar with no helper anywhere).
+  // Standalone callers do not have ViewWindowToolBarHelper2's recursive
+  // toolbar/menu refresh, so cover all of this component's icons here.
   refresh(m_sidebarAction);
   refresh(m_previousPageAction);
   refresh(m_nextPageAction);
   refresh(m_zoomOutAction);
   refresh(m_zoomInAction);
 
-  // These are the ones nothing else can reach: entries inside the overflow
-  // menu. The overflow button itself is now a plain toolbar action, so
-  // refreshToolBarIcons() covers it -- but it is refreshed here too, so this
-  // component stays correct in isolation.
   refresh(m_overflowAction);
   refresh(m_rotateCwAction);
   refresh(m_rotateCcwAction);
@@ -316,9 +282,9 @@ void PdfViewerToolBar::refreshIcons(const IconProvider &p_icons) {
 
 void PdfViewerToolBar::setControlsEnabled(bool p_enabled) {
   const QList<QAction *> actions = {
-      m_sidebarAction,  m_previousPageAction, m_nextPageAction,       m_zoomOutAction,
-      m_zoomInAction,   m_pageSpinBoxAction,  m_pageCountLabelAction, m_zoomComboBoxAction,
-      m_overflowAction, m_presentationAction};
+      m_sidebarAction,        m_previousPageAction, m_nextPageAction,
+      m_zoomOutAction,        m_zoomInAction,       m_pageSpinBoxAction,
+      m_pageCountLabelAction, m_zoomComboBoxAction, m_presentationAction};
   for (auto *act : actions) {
     if (act) {
       act->setEnabled(p_enabled);
@@ -333,21 +299,11 @@ void PdfViewerToolBar::setControlsEnabled(bool p_enabled) {
   if (m_zoomComboBox) {
     m_zoomComboBox->setEnabled(p_enabled);
   }
-  if (m_overflowButton) {
-    m_overflowButton->setEnabled(p_enabled);
-  }
-  if (m_overflowMenu) {
-    m_overflowMenu->setEnabled(p_enabled);
-  }
 
-  // Each menu entry individually too: QAction::trigger() consults only the
-  // action's OWN enabled state, so disabling the menu alone would leave every
-  // row invokable.
-  QList<QAction *> menuActions = {m_rotateCwAction, m_rotateCcwAction, m_documentPropertiesAction};
-  menuActions += m_cursorActions;
-  menuActions += m_scrollActions;
-  menuActions += m_spreadActions;
-  for (auto *act : menuActions) {
+  // Gate only viewer-owned menu commands, not the menu or shared actions
+  // appended by the caller. Each leaf needs its own enabled state because
+  // QAction::trigger() does not consult the containing menu.
+  for (auto *act : m_viewerMenuActions) {
     if (act) {
       act->setEnabled(p_enabled);
     }

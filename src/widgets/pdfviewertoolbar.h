@@ -55,7 +55,7 @@ public:
   //   1. install()                   -- sidebar, Outline hook, page, zoom, and
   //                                     the overflow MENU's contents
   //   2. installPresentationAction() -- from ViewWindow2::addAdditionalViewToolBarActions()
-  //   3. installOverflowAction()     -- after ViewWindow2::addRightCommonToolBarActions()
+  //   3. installOverflowAction()     -- from ViewWindow2::addAdditionalToolBarMenuAction()
   //
   // @p_afterSidebar runs between the sidebar toggle and the page controls, and
   // is where PdfViewWindow2 inserts the Outline popup. It is a hook rather than
@@ -66,35 +66,23 @@ public:
 
   // Adds Presentation Mode to @p_toolBar and returns it.
   //
-  // Separate from install() because it belongs to a region the BASE class owns:
-  // ViewWindow2 adds Readable Width and Find And Replace after
-  // addAdditionalRightToolBarActions() has returned, so the slot between them is
-  // reachable only from ViewWindow2::addAdditionalViewToolBarActions(). It sits
-  // there rather than in the overflow menu because it changes how the content is
-  // presented, exactly like Readable Width beside it.
+  // ViewWindow2::addAdditionalViewToolBarActions() places it after the viewer
+  // controls and before Find And Replace, keeping it directly accessible.
   QAction *installPresentationAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 
-  // Adds the overflow ("More") entry that opens the menu install() built, and
-  // returns it.
-  //
-  // LAST of the three steps: the catch-all button belongs at the very end of
-  // the toolbar, after Readable Width, Presentation Mode and Find And Replace,
-  // which the base class appends once addAdditionalRightToolBarActions() has
-  // returned. Only PdfViewWindow2::setupToolBar() can reach that position.
+  // Adds the Menu entry that opens the menu install() built, and returns it.
+  // ViewWindow2::addAdditionalToolBarMenuAction() places it after Find And
+  // Replace. Its menu also hosts common actions, so the entry stays enabled
+  // independently of viewer readiness.
   QAction *installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 
-  // Re-supply the icons after a theme switch.
-  //
-  // ViewWindowToolBarHelper2::refreshToolBarIcons() covers the plain actions
-  // for free (they carry an `iconName` property and live directly on the
-  // toolbar), but it iterates the TOOLBAR's actions only: an entry inside the
-  // overflow menu is never reached, and setting an icon on the widget-action of
-  // an addWidget()-ed QToolButton does not repaint the button. Hence this.
+  // Re-supply the icons for standalone callers. PdfViewWindow2 uses
+  // ViewWindowToolBarHelper2's recursive toolbar/menu refresh instead.
   void refreshIcons(const IconProvider &p_icons);
 
-  // Repaints every control from the caller's state. Controls stay DISABLED
-  // until the first accepted state (p_state.m_valid), so a blank window has no
-  // live controls rather than controls that silently do nothing.
+  // Repaints every viewer control from the caller's state. Viewer commands
+  // are disabled while p_state.m_valid is false; Menu and common actions
+  // added by the caller remain available.
   void syncState(const ViewerState &p_state);
 
   // ---- Accessors, for the gate ----
@@ -197,6 +185,9 @@ private:
   QList<QAction *> m_cursorActions;
   QList<QAction *> m_scrollActions;
   QList<QAction *> m_spreadActions;
+
+  // Viewer-owned menu entries, captured before callers append shared actions.
+  QList<QAction *> m_viewerMenuActions;
 
   // Separators, so a theme refresh / enable sweep can skip them and the gate
   // can assert the layout.

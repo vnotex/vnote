@@ -785,6 +785,10 @@
         <source>Could not create the bundle folder in the destination.</source>
         <translation>无法在目标位置创建包文件夹。</translation>
     </message>
+    <message>
+        <source>Menu</source>
+        <translation>菜单</translation>
+    </message>
 </context>
 <context>
     <name>QWebEnginePage</name>
@@ -7793,8 +7797,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+41"/>
-        <source>More</source>
-        <translation>更多</translation>
+        <source>Menu</source>
+        <translation>菜单</translation>
     </message>
     <message>
         <location line="+39"/>

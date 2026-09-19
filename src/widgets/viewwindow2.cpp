@@ -537,16 +537,26 @@ void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
 void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar) {
   ViewWindowToolBarHelper2::addSpacer(p_toolBar);
   addAdditionalRightToolBarActions(p_toolBar);
-  addAction(p_toolBar, ViewWindowToolBarHelper2::ToggleLayoutMode);
   addAdditionalViewToolBarActions(p_toolBar);
   addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
+  auto *menuAction = addAdditionalToolBarMenuAction(p_toolBar);
+  if (!menuAction) {
+    menuAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Menu);
+  }
+  auto *menu = menuAction->menu();
+  Q_ASSERT(menu);
+  if (!menu->isEmpty()) {
+    menu->addSeparator();
+  }
+  addAction(menu, ViewWindowToolBarHelper2::ToggleLayoutMode);
   // Opt-out rather than opt-in, so existing windows are unaffected: a window
   // type that cannot print must say so instead of shipping a dead button (the
   // base handlePrint() is a no-op).
   if (isPrintSupported()) {
-    m_printAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Print);
+    m_printAction = addAction(menu, ViewWindowToolBarHelper2::Print);
     connect(m_printAction, &QAction::triggered, this, &ViewWindow2::handlePrint);
   }
+  addAdditionalMenuActions(menu);
 }
 
 void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
@@ -696,11 +706,6 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     break;
   }
 
-  case ViewWindowToolBarHelper2::Print:
-    // Print is subclass-specific. Base class creates the action;
-    // subclasses connect additional triggered logic.
-    break;
-
   case ViewWindowToolBarHelper2::FindAndReplace:
     connect(act, &QAction::triggered, this, [this]() {
       if (findAndReplaceWidgetVisible()) {
@@ -709,29 +714,6 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
         showFindAndReplaceWidget();
       }
     });
-    break;
-
-  case ViewWindowToolBarHelper2::ToggleLayoutMode:
-    m_layoutModeAction = act;
-    act->setChecked(getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
-    connect(act, &QAction::toggled, this, [this](bool p_checked) {
-      setLayoutMode(p_checked ? ViewWindowLayoutMode::ReadableWidth
-                              : ViewWindowLayoutMode::FullWidth);
-    });
-    break;
-
-  case ViewWindowToolBarHelper2::ToggleLivePreview:
-    // Visible only in Edit mode. Subclass wires the toggled signal.
-    act->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this,
-            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
-    break;
-
-  case ViewWindowToolBarHelper2::InplacePreview:
-    // Visible only in Edit mode. Subclass wires the toggled signal.
-    act->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this,
-            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
     break;
 
   case ViewWindowToolBarHelper2::Tag: {
@@ -778,6 +760,32 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
     break;
   }
 
+  return act;
+}
+
+QAction *ViewWindow2::addAction(QMenu *p_menu, ViewWindowToolBarHelper2::Action p_action) {
+  auto *act = ViewWindowToolBarHelper2::addAction(p_menu, p_action, getServices(), this);
+  switch (p_action) {
+  case ViewWindowToolBarHelper2::ToggleLayoutMode:
+    m_layoutModeAction = act;
+    act->setChecked(getLayoutMode() == ViewWindowLayoutMode::ReadableWidth);
+    connect(act, &QAction::toggled, this, [this](bool p_checked) {
+      setLayoutMode(p_checked ? ViewWindowLayoutMode::ReadableWidth
+                              : ViewWindowLayoutMode::FullWidth);
+    });
+    break;
+
+  case ViewWindowToolBarHelper2::ToggleLivePreview:
+  case ViewWindowToolBarHelper2::InplacePreview:
+    // Visible only in Edit mode. Subclass wires the toggled signal.
+    act->setVisible(m_mode == ViewWindowMode::Edit);
+    connect(this, &ViewWindow2::modeChanged, this,
+            [act, this]() { act->setVisible(m_mode == ViewWindowMode::Edit); });
+    break;
+
+  default:
+    break;
+  }
   return act;
 }
 

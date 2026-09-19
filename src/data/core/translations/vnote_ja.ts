@@ -785,6 +785,10 @@
         <source>Could not create the bundle folder in the destination.</source>
         <translation>コピー先にバンドルフォルダーを作成できませんでした。</translation>
     </message>
+    <message>
+        <source>Menu</source>
+        <translation>メニュー</translation>
+    </message>
 </context>
 <context>
     <name>QWebEnginePage</name>
@@ -7795,8 +7799,8 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+41"/>
-        <source>More</source>
-        <translation>その他</translation>
+        <source>Menu</source>
+        <translation>メニュー</translation>
     </message>
     <message>
         <location line="+39"/>

@@ -26,6 +26,7 @@ class QHBoxLayout;
 class QVBoxLayout;
 class QAction;
 class QToolBar;
+class QMenu;
 class QResizeEvent;
 class QTextEdit;
 class QWheelEvent;
@@ -371,6 +372,9 @@ protected:
   // Returns the created action (caller may connect additional signals).
   QAction *addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::Action p_action);
 
+  // Create a menu action with the same window-scoped shortcuts and state wiring.
+  QAction *addAction(QMenu *p_menu, ViewWindowToolBarHelper2::Action p_action);
+
   // Handle a formatting type action by type action ID.
   // @p_action: a TypeAction value (e.g., TypeBold, TypeHeading1).
   // Default: no-op. Override in subclasses that support formatting.
@@ -461,35 +465,31 @@ protected:
   // @p_toolBar: The toolbar to add actions to.
   void addLeftCommonToolBarActions(QToolBar *p_toolBar);
 
-  // Add common right-side toolbar actions: spacer + layout mode toggle + find-and-replace
-  // + print. Call at the end of subclass setupToolBar() after adding subclass-specific
-  // actions.
-  // @p_toolBar: The toolbar to add actions to.
+  // Add the right group: spacer, subclass controls, Find And Replace, and Menu.
+  // Readable Width and Print (when supported) live inside Menu.
   void addRightCommonToolBarActions(QToolBar *p_toolBar);
 
-  // Add subclass-specific right-side toolbar actions between the spacer and the standard
-  // right-side actions.
+  // Add subclass-specific controls before Find And Replace (Markdown: Outline).
   virtual void addAdditionalRightToolBarActions(QToolBar *p_toolBar);
 
-  // Add subclass-specific actions in the VIEW-MODE slot: immediately after
-  // Readable Width and before Find And Replace.
-  //
-  // A second hook rather than a parameter to the one above, because the two
-  // positions mean different things. `addAdditionalRightToolBarActions` is the
-  // window's own chrome; this one sits with the actions that change how the
-  // content is presented, which is where a reader looks for them.
-  // `PdfViewWindow2` puts Presentation Mode here.
-  //
-  // Defined INLINE, like isPrintSupported(): several tests link a hand-written
-  // stub of viewwindow2.cpp rather than compiling it, so an out-of-line default
-  // would make every one of them fail to link on an unresolved symbol.
+  // PDF keeps Presentation Mode directly before Find And Replace.
   virtual void addAdditionalViewToolBarActions(QToolBar *p_toolBar) { Q_UNUSED(p_toolBar) }
+
+  // Reuse a subtype's existing menu button (PDF); otherwise the base creates Menu.
+  // Inline defaults keep tests with a stub ViewWindow2 implementation linkable.
+  virtual QAction *addAdditionalToolBarMenuAction(QToolBar *p_toolBar) {
+    Q_UNUSED(p_toolBar)
+    return nullptr;
+  }
+
+  // Append subtype actions after the common menu entries.
+  virtual void addAdditionalMenuActions(QMenu *p_menu) { Q_UNUSED(p_menu) }
 
   // Handle print action.
   virtual void handlePrint();
 
   // Whether this window can actually print. Returning false omits the Print
-  // action from the toolbar entirely.
+  // action from the menu entirely.
   //
   // The default is true, so existing windows are unaffected; a window type that
   // cannot print must OPT OUT rather than inherit a button that does nothing

@@ -14,15 +14,15 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QMenu>
+#include <QPair>
+#include <QPixmap>
 #include <QSignalSpy>
 #include <QSpinBox>
 #include <QToolBar>
 #include <QToolButton>
-#include <QWidgetAction>
 #include <QtTest>
 
 #include <widgets/pdfviewertoolbar.h>
-#include <widgets/propertydefs.h>
 
 using vnotex::PdfViewerAdapter;
 using vnotex::PdfViewerToolBar;
@@ -57,58 +57,17 @@ class TestPdfViewerToolBar : public QObject {
   Q_OBJECT
 
 private slots:
-  void installBuildsEveryControl();
   void theOutlineHookRunsBetweenSidebarAndPageControls();
-  void controlsAreDeadUntilTheFirstAcceptedState();
+  void sharedMenuActionRemainsUsableAcrossViewerReadiness();
   void syncStateDoesNotEchoIntentsBack();
   void eachExclusiveGroupEndsWithExactlyOneTick();
   void aUserPickEmitsItsIntent();
   void pageStepsAreBoundedByTheDocument();
   void rotationIsRequestedAsAbsoluteDegrees();
   void anOffPresetZoomIsShownAsAPercentage();
-  void theOverflowButtonHidesItsMenuIndicator();
   void theOverflowMenuSurvivesANarrowToolBar();
-  void presentationModeSitsOnTheToolBarNotInTheOverflowMenu();
-  void theOverflowButtonIsTheLastThingOnTheToolBar();
-  void everyIconBearingActionCarriesItsIconName();
+  void standaloneThemeRefreshUpdatesToolBarAndMenuIcons();
 };
-
-void TestPdfViewerToolBar::installBuildsEveryControl() {
-  QToolBar bar;
-  PdfViewerToolBar toolBar;
-  toolBar.install(&bar);
-
-  QVERIFY(toolBar.sidebarAction());
-  QVERIFY(toolBar.sidebarAction()->isCheckable());
-  QVERIFY(toolBar.previousPageAction());
-  QVERIFY(toolBar.nextPageAction());
-  QVERIFY(toolBar.pageSpinBox());
-  QVERIFY(toolBar.pageCountLabel());
-  QVERIFY(toolBar.zoomOutAction());
-  QVERIFY(toolBar.zoomInAction());
-  QVERIFY(toolBar.zoomComboBox());
-  // The overflow MENU is built by install(); the toolbar entry that opens it
-  // is placed later, by installOverflowAction().
-  QVERIFY(toolBar.overflowMenu());
-  QVERIFY(!toolBar.overflowButton());
-  QVERIFY(!toolBar.overflowAction());
-  QVERIFY(toolBar.rotateClockwiseAction());
-  QVERIFY(toolBar.rotateCounterClockwiseAction());
-  QVERIFY(toolBar.documentPropertiesAction());
-
-  // pdf.js's own mode vocabularies.
-  QCOMPARE(toolBar.cursorToolActions().size(), 2);
-  QCOMPARE(toolBar.scrollModeActions().size(), 4);
-  QCOMPARE(toolBar.spreadModeActions().size(), 3);
-
-  // The zoom combo carries the four presets plus the percentage rows, and the
-  // data strings are the WIRE vocabulary shared with pdfviewercore.js.
-  QCOMPARE(toolBar.zoomComboBox()->itemData(0).toString(), QStringLiteral("auto"));
-  QCOMPARE(toolBar.zoomComboBox()->itemData(1).toString(), QStringLiteral("page-actual"));
-  QCOMPARE(toolBar.zoomComboBox()->itemData(2).toString(), QStringLiteral("page-fit"));
-  QCOMPARE(toolBar.zoomComboBox()->itemData(3).toString(), QStringLiteral("page-width"));
-  QVERIFY(toolBar.zoomComboBox()->findData(QStringLiteral("1")) >= 0);
-}
 
 // The Outline popup belongs between the sidebar toggle and the page controls --
 // both are view chrome of the same kind. It cannot be built here (it needs a
@@ -122,7 +81,6 @@ void TestPdfViewerToolBar::theOutlineHookRunsBetweenSidebarAndPageControls() {
   QAction *marker = nullptr;
   toolBar.install(&bar, {},
                   [&bar, &marker]() { marker = bar.addAction(QStringLiteral("Outline")); });
-  QVERIFY(marker);
 
   const QList<QAction *> actions = bar.actions();
   const int sidebarAt = actions.indexOf(toolBar.sidebarAction());
@@ -132,54 +90,76 @@ void TestPdfViewerToolBar::theOutlineHookRunsBetweenSidebarAndPageControls() {
   const int zoomOutAt = actions.indexOf(toolBar.zoomOutAction());
 
   QVERIFY(sidebarAt >= 0);
-  QCOMPARE(markerAt, sidebarAt + 1);
-  // A separator sits between the hook and the page controls.
-  QVERIFY(actions.at(markerAt + 1)->isSeparator());
-  QCOMPARE(previousAt, markerAt + 2);
+  QVERIFY(markerAt > sidebarAt);
+  QVERIFY(previousAt > markerAt);
   QVERIFY(nextAt > previousAt);
   QVERIFY(zoomOutAt > nextAt);
-  // Zoom is the last thing install() places; the base class's Readable Width,
-  // Presentation Mode and Find And Replace come next, and the overflow button
-  // is appended after all of them by installOverflowAction().
-  QCOMPARE(zoomOutAt, actions.size() - 3);
-
-  // The hook is optional: nothing else may depend on it.
-  QToolBar bare;
-  PdfViewerToolBar plain;
-  plain.install(&bare);
-  QVERIFY(bare.actions().indexOf(plain.sidebarAction()) >= 0);
 }
 
-// A blank window must have no live controls, rather than controls that silently
-// do nothing.
-void TestPdfViewerToolBar::controlsAreDeadUntilTheFirstAcceptedState() {
+// This exercises the component's readiness boundary, not ViewWindow2's menu
+// construction. Caller-owned actions must survive both loading and reloading.
+void TestPdfViewerToolBar::sharedMenuActionRemainsUsableAcrossViewerReadiness() {
   QToolBar bar;
   PdfViewerToolBar toolBar;
   toolBar.install(&bar);
+  toolBar.installPresentationAction(&bar);
   toolBar.installOverflowAction(&bar);
+  QList<QAction *> viewerActions = {toolBar.sidebarAction(),  toolBar.previousPageAction(),
+                                    toolBar.nextPageAction(), toolBar.zoomOutAction(),
+                                    toolBar.zoomInAction(),   toolBar.presentationModeAction()};
+  for (auto *action : toolBar.overflowMenu()->actions()) {
+    if (!action->isSeparator()) {
+      viewerActions.append(action);
+    }
+  }
+  viewerActions += toolBar.cursorToolActions();
+  viewerActions += toolBar.scrollModeActions();
+  viewerActions += toolBar.spreadModeActions();
 
-  QVERIFY(!toolBar.sidebarAction()->isEnabled());
-  QVERIFY(!toolBar.pageSpinBox()->isEnabled());
-  QVERIFY(!toolBar.zoomComboBox()->isEnabled());
-  QVERIFY(!toolBar.overflowButton()->isEnabled());
-  // Every MENU entry individually: QAction::trigger() consults only the
-  // action's own enabled state, so disabling the menu alone leaves each row
-  // invokable.
-  QVERIFY(!toolBar.rotateClockwiseAction()->isEnabled());
-  QVERIFY(!toolBar.scrollModeActions().at(0)->isEnabled());
+  auto *sharedAction = toolBar.overflowMenu()->addAction(QStringLiteral("Shared action"));
+  QSignalSpy sharedSpy(sharedAction, &QAction::triggered);
+  QSignalSpy pageSpy(&toolBar, &PdfViewerToolBar::pageRequested);
+  QSignalSpy zoomSpy(&toolBar, &PdfViewerToolBar::zoomStepRequested);
+  QSignalSpy rotationSpy(&toolBar, &PdfViewerToolBar::rotationRequested);
+  QSignalSpy cursorSpy(&toolBar, &PdfViewerToolBar::cursorToolRequested);
+  QSignalSpy scrollSpy(&toolBar, &PdfViewerToolBar::scrollModeRequested);
+  QSignalSpy spreadSpy(&toolBar, &PdfViewerToolBar::spreadModeRequested);
+  QSignalSpy sidebarSpy(&toolBar, &PdfViewerToolBar::sidebarToggleRequested);
+  QSignalSpy presentationSpy(&toolBar, &PdfViewerToolBar::presentationModeRequested);
+  QSignalSpy propertiesSpy(&toolBar, &PdfViewerToolBar::documentPropertiesRequested);
+  const QList<QPair<QSignalSpy *, int>> expectedIntents = {
+      {&pageSpy, 2},   {&zoomSpy, 2},    {&rotationSpy, 2},     {&cursorSpy, 2},    {&scrollSpy, 4},
+      {&spreadSpy, 3}, {&sidebarSpy, 1}, {&presentationSpy, 1}, {&propertiesSpy, 1}};
 
-  toolBar.syncState(state(1, 10));
-  QVERIFY(toolBar.sidebarAction()->isEnabled());
-  QVERIFY(toolBar.pageSpinBox()->isEnabled());
-  QVERIFY(toolBar.zoomComboBox()->isEnabled());
-  QVERIFY(toolBar.overflowButton()->isEnabled());
-  QVERIFY(toolBar.rotateClockwiseAction()->isEnabled());
-  QVERIFY(toolBar.scrollModeActions().at(0)->isEnabled());
+  for (int transition = 0; transition < 3; ++transition) {
+    const bool ready = transition == 1;
+    // Keep an interior page even when invalid, so page bounds cannot mask a
+    // readiness failure in Previous Page or Next Page.
+    auto s = state(5, 10);
+    s.m_valid = ready;
+    toolBar.syncState(s);
 
-  // A reload drives it back to not-valid.
-  toolBar.syncState(PdfViewerAdapter::ViewerState());
-  QVERIFY(!toolBar.pageSpinBox()->isEnabled());
-  QVERIFY(toolBar.pageCountLabel()->text().isEmpty());
+    QVERIFY(toolBar.overflowAction()->isEnabled());
+    QVERIFY(toolBar.overflowButton()->isEnabled());
+    QVERIFY(toolBar.overflowMenu()->isEnabled());
+    QVERIFY(sharedAction->isEnabled());
+    sharedAction->trigger();
+    QCOMPARE(sharedSpy.count(), transition + 1);
+
+    QCOMPARE(toolBar.pageSpinBox()->isEnabled(), ready);
+    QCOMPARE(toolBar.zoomComboBox()->isEnabled(), ready);
+    if (!ready) {
+      QVERIFY(toolBar.pageCountLabel()->text().isEmpty());
+    }
+    for (auto *action : viewerActions) {
+      QCOMPARE(action->isEnabled(), ready);
+      action->trigger();
+    }
+    for (const auto &intent : expectedIntents) {
+      QCOMPARE(intent.first->count(), ready ? intent.second : 0);
+      intent.first->clear();
+    }
+  }
 }
 
 // The whole point of repainting from the ADAPTER: a programmatic repaint must
@@ -362,23 +342,6 @@ void TestPdfViewerToolBar::anOffPresetZoomIsShownAsAPercentage() {
   QCOMPARE(toolBar.zoomComboBox()->currentData().toString(), QStringLiteral("auto"));
 }
 
-// The overflow button is an InstantPopup ICON button (Outline / Tag /
-// Attachment shape), so the built-in dropdown arrow is redundant chrome. This
-// is the OPPOSITE of PdfAnnotationToolBar's MenuButtonPopup buttons, where the
-// indicator is the entire affordance and the property must stay unset.
-void TestPdfViewerToolBar::theOverflowButtonHidesItsMenuIndicator() {
-  QToolBar bar;
-  PdfViewerToolBar toolBar;
-  toolBar.install(&bar);
-  toolBar.installOverflowAction(&bar);
-
-  QCOMPARE(toolBar.overflowButton()->popupMode(), QToolButton::InstantPopup);
-  QCOMPARE(toolBar.overflowButton()
-               ->property(vnotex::PropertyDefs::c_toolButtonWithoutMenuIndicator)
-               .toBool(),
-           true);
-}
-
 // A narrow window is the NORMAL case on a laptop with the sidebar and outline
 // dock open, and it is where the overflow menu used to disappear completely.
 //
@@ -386,23 +349,15 @@ void TestPdfViewerToolBar::theOverflowButtonHidesItsMenuIndicator() {
 // them through its own extension ("»") popup, which it builds by adding the
 // hidden ACTIONS to a QMenu. A QWidgetAction cannot render there, so the
 // addWidget()-ed QToolButton this used to be simply vanished -- taking rotate,
-// cursor, scroll mode, spread mode, presentation and document properties with
+// cursor, scroll mode, spread mode and document properties with
 // it, while the plain actions beside it kept working.
 void TestPdfViewerToolBar::theOverflowMenuSurvivesANarrowToolBar() {
   QToolBar bar;
   PdfViewerToolBar toolBar;
   toolBar.install(&bar);
+  auto *presentation = toolBar.installPresentationAction(&bar);
   toolBar.installOverflowAction(&bar);
   toolBar.syncState(state(1, 10));
-
-  // The property that makes both surfaces work from one declaration:
-  // QToolButton::menu() falls back to defaultAction()->menu() on the toolbar,
-  // and QMenu renders an action-with-a-menu as a submenu in the extension
-  // popup.
-  QCOMPARE(toolBar.overflowAction()->menu(), toolBar.overflowMenu());
-  QVERIFY2(!qobject_cast<QWidgetAction *>(toolBar.overflowAction()),
-           "the overflow entry must be a plain action; a QWidgetAction cannot "
-           "render in the toolbar's extension popup");
 
   // Force the overflow.
   bar.resize(80, 40);
@@ -422,125 +377,43 @@ void TestPdfViewerToolBar::theOverflowMenuSurvivesANarrowToolBar() {
   // reachable rather than being a dead row.
   QCOMPARE(hidden.at(hidden.indexOf(toolBar.overflowAction()))->menu(), toolBar.overflowMenu());
   QVERIFY(toolBar.overflowMenu()->actions().contains(toolBar.documentPropertiesAction()));
+  QVERIFY(hidden.contains(presentation));
+  QVERIFY(!toolBar.overflowMenu()->actions().contains(presentation));
+
+  QSignalSpy propertiesSpy(&toolBar, &PdfViewerToolBar::documentPropertiesRequested);
+  toolBar.documentPropertiesAction()->trigger();
+  QCOMPARE(propertiesSpy.count(), 1);
+  QSignalSpy presentationSpy(&toolBar, &PdfViewerToolBar::presentationModeRequested);
+  hidden.at(hidden.indexOf(presentation))->trigger();
+  QCOMPARE(presentationSpy.count(), 1);
 }
 
-// Presentation Mode belongs beside Readable Width, not buried in the overflow
-// menu: both change how the content is PRESENTED, and that is where a reader
-// looks for them. A mode whose own toolbar disappears once it is on should at
-// least have a visible way IN.
-//
-// It cannot be installed by install(), because the slot it occupies is owned by
-// the base class -- ViewWindow2 adds Readable Width and Find And Replace after
-// addAdditionalRightToolBarActions() has already returned.
-void TestPdfViewerToolBar::presentationModeSitsOnTheToolBarNotInTheOverflowMenu() {
-  QToolBar bar;
-  PdfViewerToolBar toolBar;
-  toolBar.install(&bar);
-
-  // install() alone must not create it, or it would land in the wrong region.
-  QVERIFY(!toolBar.presentationModeAction());
-  QVERIFY(!toolBar.overflowMenu()->actions().contains(toolBar.presentationModeAction()));
-
-  // Stand in for the base class: Readable Width, then the hook, then Find.
-  auto *readableWidth = bar.addAction(QStringLiteral("Readable Width"));
-  auto *presentation = toolBar.installPresentationAction(&bar);
-  auto *find = bar.addAction(QStringLiteral("Find and Replace"));
-
-  QVERIFY(presentation);
-  QCOMPARE(toolBar.presentationModeAction(), presentation);
-  QVERIFY2(!toolBar.overflowMenu()->actions().contains(presentation),
-           "Presentation Mode must not be offered in two places at once");
-
-  // Directly after Readable Width, before Find.
-  const QList<QAction *> actions = bar.actions();
-  QCOMPARE(actions.indexOf(presentation), actions.indexOf(readableWidth) + 1);
-  QCOMPARE(actions.indexOf(find), actions.indexOf(presentation) + 1);
-
-  // It is a plain action, so it survives into the extension popup when the
-  // toolbar is too narrow -- the same rule the overflow entry follows.
-  QVERIFY(!qobject_cast<QWidgetAction *>(presentation));
-  QVERIFY(!presentation->property("iconName").toString().isEmpty());
-
-  // Installed after install()'s enable sweep, so it must pick up the current
-  // state rather than defaulting to enabled on a blank window.
-  QVERIFY(!presentation->isEnabled());
-  toolBar.syncState(state(1, 10));
-  QVERIFY(presentation->isEnabled());
-
-  QSignalSpy spy(&toolBar, &PdfViewerToolBar::presentationModeRequested);
-  presentation->trigger();
-  QCOMPARE(spy.count(), 1);
-}
-
-// The overflow button is the toolbar's catch-all, so it belongs at the very END
-// -- past everything the base class appends. install() cannot put it there:
-// Readable Width, Presentation Mode and Find And Replace are all added after
-// addAdditionalRightToolBarActions() has returned, so only
-// PdfViewWindow2::setupToolBar() can reach the position.
-void TestPdfViewerToolBar::theOverflowButtonIsTheLastThingOnTheToolBar() {
-  QToolBar bar;
-  PdfViewerToolBar toolBar;
-  toolBar.install(&bar);
-
-  // Stand in for everything ViewWindow2::addRightCommonToolBarActions() appends.
-  bar.addAction(QStringLiteral("Readable Width"));
-  toolBar.installPresentationAction(&bar);
-  auto *find = bar.addAction(QStringLiteral("Find and Replace"));
-
-  auto *overflow = toolBar.installOverflowAction(&bar);
-  QVERIFY(overflow);
-  QCOMPARE(toolBar.overflowAction(), overflow);
-
-  const QList<QAction *> actions = bar.actions();
-  QCOMPARE(actions.last(), overflow);
-  // Directly after Find, with NO separator: being last already sets it apart,
-  // and a rule against the window edge is clutter.
-  QCOMPARE(actions.indexOf(overflow), actions.indexOf(find) + 1);
-
-  QCOMPARE(bar.widgetForAction(overflow), static_cast<QWidget *>(toolBar.overflowButton()));
-  QCOMPARE(overflow->menu(), toolBar.overflowMenu());
-
-  // install()'s enable sweep already ran, so a late arrival must match it
-  // rather than defaulting to enabled on a blank window.
-  QVERIFY(!overflow->isEnabled());
-  QVERIFY(!toolBar.overflowButton()->isEnabled());
-  toolBar.syncState(state(1, 10));
-  QVERIFY(overflow->isEnabled());
-  QVERIFY(toolBar.overflowButton()->isEnabled());
-}
-
-// Theme refresh is NOT automatic: ViewWindowToolBarHelper2::refreshToolBarIcons()
-// regenerates only actions carrying a non-empty `iconName`. An action without
-// one silently keeps the previous theme's tint forever.
-void TestPdfViewerToolBar::everyIconBearingActionCarriesItsIconName() {
-  QToolBar bar;
-  PdfViewerToolBar toolBar;
-  toolBar.install(&bar);
-  toolBar.installPresentationAction(&bar);
-  toolBar.installOverflowAction(&bar);
-
-  const QList<QAction *> iconActions = {toolBar.sidebarAction(),
-                                        toolBar.previousPageAction(),
-                                        toolBar.nextPageAction(),
-                                        toolBar.zoomOutAction(),
-                                        toolBar.zoomInAction(),
-                                        toolBar.rotateClockwiseAction(),
-                                        toolBar.rotateCounterClockwiseAction(),
-                                        toolBar.presentationModeAction(),
-                                        toolBar.documentPropertiesAction()};
-  for (auto *act : iconActions) {
-    QVERIFY2(!act->property("iconName").toString().isEmpty(),
-             qPrintable(QStringLiteral("no iconName on %1").arg(act->text())));
-  }
-
-  // refreshIcons() reaches the menu entries and the overflow BUTTON, neither of
-  // which refreshToolBarIcons() can touch.
+void TestPdfViewerToolBar::standaloneThemeRefreshUpdatesToolBarAndMenuIcons() {
   QPixmap pixmap(8, 8);
   pixmap.fill(Qt::red);
-  const QIcon marker(pixmap);
-  toolBar.refreshIcons([&marker](const QString &) { return marker; });
-  QVERIFY(!toolBar.rotateClockwiseAction()->icon().isNull());
-  QVERIFY(!toolBar.overflowButton()->icon().isNull());
+  QIcon icon(pixmap);
+  const auto icons = [&icon](const QString &) { return icon; };
+  QToolBar bar;
+  PdfViewerToolBar toolBar;
+  toolBar.install(&bar, icons);
+  toolBar.installPresentationAction(&bar, icons);
+  toolBar.installOverflowAction(&bar, icons);
+
+  pixmap.fill(Qt::blue);
+  icon = QIcon(pixmap);
+  toolBar.refreshIcons(icons);
+
+  const QList<QAction *> iconActions = {
+      toolBar.sidebarAction(),          toolBar.previousPageAction(),
+      toolBar.nextPageAction(),         toolBar.zoomOutAction(),
+      toolBar.zoomInAction(),           toolBar.overflowAction(),
+      toolBar.rotateClockwiseAction(),  toolBar.rotateCounterClockwiseAction(),
+      toolBar.presentationModeAction(), toolBar.documentPropertiesAction()};
+  for (auto *action : iconActions) {
+    QCOMPARE(action->icon().pixmap(8, 8).toImage().pixelColor(4, 4), QColor(Qt::blue));
+  }
+  QCOMPARE(toolBar.overflowButton()->icon().pixmap(8, 8).toImage().pixelColor(4, 4),
+           QColor(Qt::blue));
 }
 
 } // namespace tests

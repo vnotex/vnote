@@ -102,6 +102,8 @@ protected:
 
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
+  void addAdditionalMenuActions(QMenu *p_menu) Q_DECL_OVERRIDE;
+
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
   void handlePrint() Q_DECL_OVERRIDE;

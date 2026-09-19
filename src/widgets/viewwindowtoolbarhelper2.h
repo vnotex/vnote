@@ -4,6 +4,7 @@
 #include <QIcon>
 
 class QAction;
+class QMenu;
 class QToolBar;
 class QToolButton;
 class QWidget;
@@ -72,7 +73,9 @@ public:
     // Image host selection.
     ImageHost,
 
-    Debug
+    Debug,
+
+    Menu
   };
 
   ViewWindowToolBarHelper2() = delete;
@@ -83,6 +86,10 @@ public:
   // @p_services: ServiceLocator for theme/config resolution.
   // @p_shortcutWidget: Widget for shortcut context (the ViewWindow2 instance).
   static QAction *addAction(QToolBar *p_tb, Action p_action, ServiceLocator &p_services,
+                            QWidget *p_shortcutWidget);
+
+  // Create a menu action via DI, with the same shortcut context as toolbar actions.
+  static QAction *addAction(QMenu *p_menu, Action p_action, ServiceLocator &p_services,
                             QWidget *p_shortcutWidget);
 
   // Add a spacer widget to push subsequent actions to the right.
@@ -99,7 +106,7 @@ public:
   // Generate a QIcon from theme icon file name via DI.
   static QIcon generateIcon(ServiceLocator &p_services, const QString &p_iconName);
 
-  // Refresh all toolbar action icons from the current theme.
+  // Refresh toolbar and nested menu action icons from the current theme.
   // Called on theme change to regenerate icons with new palette colors.
   static void refreshToolBarIcons(QToolBar *p_tb, ServiceLocator &p_services);
 };

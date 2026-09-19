@@ -85,6 +85,8 @@ protected:
 
   void addAdditionalViewToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
+  QAction *addAdditionalToolBarMenuAction(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
+
   // A pdf.js viewer cannot be printed reliably; see the comment on the
   // override in the .cpp.
   bool isPrintSupported() const Q_DECL_OVERRIDE;

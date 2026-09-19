@@ -31,8 +31,8 @@ With the menu on the action both surfaces work from one declaration:
 `QToolButton::menu()` falls back to `defaultAction()->menu()` on the toolbar, and
 `QMenu` renders an action-with-a-menu as a **submenu** inside the extension
 popup. It also makes the icon reachable by
-`ViewWindowToolBarHelper2::refreshToolBarIcons()`, which only iterates the
-toolbar's own actions. Precedents: `Outline` / `Tag` / `Attachment` in
+`ViewWindowToolBarHelper2::refreshToolBarIcons()`, which recursively visits the
+toolbar actions and their action-owned menus. Precedents: `Outline` / `Tag` / `Attachment` in
 `viewwindowtoolbarhelper2.cpp`. Gate:
 `theOverflowMenuSurvivesANarrowToolBar` in `tests/widgets/test_pdfviewertoolbar.cpp`,
 which resizes a real toolbar until it overflows.
@@ -114,21 +114,31 @@ the replacement outcome while the captured original search refreshes.
 
 #### Right-hand toolbar slots
 
-`addRightCommonToolBarActions()` builds the right group in a fixed order, with
-**two** subclass hooks in it:
+`addRightCommonToolBarActions()` keeps primary controls on the toolbar and puts
+secondary actions in a three-dot **Menu** (`menu.svg`):
 
 | Position | What |
 |---|---|
 | spacer | |
-| `addAdditionalRightToolBarActions()` | the window's own chrome (PDF: the whole viewer toolbar + Outline) |
-| Readable Width | |
-| `addAdditionalViewToolBarActions()` | actions that change how the content is **presented** (PDF: Presentation Mode) |
+| `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, page and zoom controls |
+| `addAdditionalViewToolBarActions()` | PDF: Presentation Mode |
 | Find And Replace | |
-| Print, when `isPrintSupported()` | |
+| Menu | Readable Width and Print, when `isPrintSupported()` |
 
-Two hooks rather than one, because the positions mean different things — and a
-subclass cannot reach the second one from the first, since the base class adds
-Readable Width only after `addAdditionalRightToolBarActions()` has returned.
+`addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
+base creates one otherwise. PDF's existing rotate/cursor/scroll/spread/properties
+entries precede a separator and Readable Width. Only viewer-owned entries are
+readiness-gated: Menu and Readable Width remain available during loading/reloading.
+
+`addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview,
+Toggle In-Place Preview, Allow Auto Section Number and Debug after a separator.
+Edit-only/Read-only visibility and encrypted-note restrictions still apply.
+Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
+window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
+overload owns the remaining direct controls. Theme refresh reaches both.
+
+Text and MindMap inherit Find And Replace plus Menu. Widget-hosted Settings and
+Dashboard retain their content-owned toolbars; locked-note placeholders have none.
 
 #### Content fullscreen
 
@@ -220,7 +230,8 @@ Configuration persistence remains owned by `ConfigMgr2`; this action only opens 
 
 ### Automatic section numbers
 
-Markdown windows expose **Allow Auto Section Number** immediately after **Toggle In-Place Preview**.
+Markdown windows expose **Allow Auto Section Number** in **Menu**, immediately after
+**Toggle In-Place Preview**.
 The default-on permission lives only in the window's `OutlineProvider`, never in configuration or
 outline snapshots. OFF vetoes read decoration, edit-mode source numbering, and dock/popup outline
 numbering; ON respects each existing global preference. Settings changes, mode changes and new

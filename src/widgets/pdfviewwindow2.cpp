@@ -104,17 +104,6 @@ void PdfViewWindow2::setupToolBar() {
   setupAnnotationToolBarActions(toolBar);
 
   addRightCommonToolBarActions(toolBar);
-
-  // LAST, deliberately: the overflow "More" button is the toolbar's catch-all
-  // and belongs at the very end, after Readable Width, Presentation Mode and
-  // Find And Replace. Those are appended by addRightCommonToolBarActions()
-  // above, so this is the only place that can reach the position.
-  if (m_viewerToolBar) {
-    auto &services = getServices();
-    m_viewerToolBar->installOverflowAction(toolBar, [&services](const QString &p_iconName) {
-      return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
-    });
-  }
 }
 
 void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
@@ -123,21 +112,26 @@ void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   // page controls -- both are view chrome of the same kind, and the sequence
   // mirrors where pdf.js put them.
   setupViewerToolBarActions(p_toolBar);
-  // ViewWindow2::addRightCommonToolBarActions() appends ToggleLayoutMode, then
-  // calls addAdditionalViewToolBarActions() (where Presentation Mode lands),
-  // then Find And Replace. Print is opted out of; see isPrintSupported().
+  // The base appends Presentation Mode, Find And Replace and Menu, then adds
+  // Readable Width to Menu. Print is opted out of; see isPrintSupported().
 }
 
-// Presentation Mode sits with Readable Width rather than in the overflow menu:
-// both change how the content is PRESENTED, and that is where a reader looks
-// for them. The intent is already connected in setupViewerToolBarActions(),
-// which runs earlier in the same toolbar build.
+// Presentation Mode stays directly on the toolbar, before Find And Replace.
+// Its intent is already connected in setupViewerToolBarActions().
 void PdfViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   if (!m_viewerToolBar) {
     return;
   }
   auto &services = getServices();
   m_viewerToolBar->installPresentationAction(p_toolBar, [&services](const QString &p_iconName) {
+    return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+  });
+}
+
+QAction *PdfViewWindow2::addAdditionalToolBarMenuAction(QToolBar *p_toolBar) {
+  Q_ASSERT(m_viewerToolBar);
+  auto &services = getServices();
+  return m_viewerToolBar->installOverflowAction(p_toolBar, [&services](const QString &p_iconName) {
     return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
   });
 }
@@ -679,16 +673,6 @@ void PdfViewWindow2::handleThemeChanged() {
   // The colour chips are theme-dependent, and the BORDER travels as a value
   // rather than a callback, so both must be re-supplied — not merely redrawn.
   applySwatchResolvers();
-
-  // ViewWindow2::handleThemeChanged() -> refreshToolBarIcons() covers the plain
-  // toolbar actions, but it iterates the TOOLBAR's actions only: the overflow
-  // menu's entries and the overflow QToolButton itself are unreachable that way.
-  if (m_viewerToolBar) {
-    auto &services = getServices();
-    m_viewerToolBar->refreshIcons([&services](const QString &p_iconName) {
-      return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
-    });
-  }
 
   // Reload the viewer content with the new template.
   syncEditorFromBuffer();

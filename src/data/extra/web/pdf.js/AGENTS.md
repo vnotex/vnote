@@ -264,21 +264,21 @@ reproduced as a native Qt widget on `PdfViewWindow2`'s view-window toolbar
 of two.
 
 Layout, left to right: sidebar toggle → Outline → page (prev / spin box / `of N`
-/ next) → zoom (out / combo / in) → *[base class: Readable Width, Presentation
-Mode, Find And Replace]* → the overflow `⋮` menu (rotate, cursor, scroll mode,
-spread mode, document properties).
+/ next) → zoom (out / combo / in) → Presentation Mode → Find And Replace →
+**Menu** (`⋮`). Menu contains rotate, cursor, scroll mode, spread mode, document
+properties, then a separator and the common Readable Width action. Print is absent.
 
-Placement happens in **three** steps, because the toolbar is shared with
-`ViewWindow2` and two of the positions are only reachable after it has run:
+Placement happens in **three** steps, called by `ViewWindow2`'s toolbar hooks:
 
 | Step | Called from | Places |
 |---|---|---|
-| `install()` | `addAdditionalRightToolBarActions()` | sidebar, Outline hook, page, zoom, and the overflow menu's *contents* |
-| `installPresentationAction()` | `addAdditionalViewToolBarActions()` | Presentation Mode, beside Readable Width — the other action that changes how content is presented |
-| `installOverflowAction()` | `PdfViewWindow2::setupToolBar()`, after `addRightCommonToolBarActions()` | the `⋮` entry, last on the toolbar |
+| `install()` | `addAdditionalRightToolBarActions()` | sidebar, Outline hook, page, zoom, and the viewer menu's contents |
+| `installPresentationAction()` | `addAdditionalViewToolBarActions()` | Presentation Mode, directly before Find And Replace |
+| `installOverflowAction()` | `addAdditionalToolBarMenuAction()` | the Menu entry, last on the toolbar |
 
-Each late step must re-apply the current enabled state, because `install()`'s
-enable sweep has already run by the time it is called.
+Presentation Mode adopts the current viewer-enabled state. Menu itself stays
+enabled so Readable Width remains usable while loading or reloading; only the
+viewer-owned menu commands and direct viewer controls are readiness-gated.
 
 ### Hidden with CSS, plus a runtime tripwire — never DOM removal
 

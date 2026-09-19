@@ -122,13 +122,6 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::FindAndReplace), p_shortcutWidget);
     break;
 
-  case Action::Print:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("print_editor.svg")),
-                          QObject::tr("Print"));
-    act->setProperty("iconName", QStringLiteral("print_editor.svg"));
-    addActionShortcut(act, editorConfig.getShortcut(Shortcut::Print), p_shortcutWidget);
-    break;
-
   case Action::WordCount: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("word_count_editor.svg")),
                           QObject::tr("Word Count"));
@@ -313,46 +306,6 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), p_shortcutWidget);
     break;
 
-  case Action::ToggleLayoutMode:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("readable_width_editor.svg")),
-                          QObject::tr("Readable Width"));
-    act->setProperty("iconName", QStringLiteral("readable_width_editor.svg"));
-    act->setCheckable(true);
-    {
-      const auto &shortcut = editorConfig.getShortcut(Shortcut::ToggleLayoutMode);
-      if (!shortcut.isEmpty()) {
-        addActionShortcut(act, shortcut, p_shortcutWidget);
-      }
-    }
-    break;
-
-  case Action::ToggleLivePreview:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("view_mode_editor.svg")),
-                          QObject::tr("Live Preview"));
-    act->setProperty("iconName", QStringLiteral("view_mode_editor.svg"));
-    act->setCheckable(true);
-    {
-      const auto &shortcut = editorConfig.getShortcut(Shortcut::AlternateViewMode);
-      if (!shortcut.isEmpty()) {
-        addActionShortcut(act, shortcut, p_shortcutWidget);
-      }
-    }
-    break;
-
-  case Action::InplacePreview:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("inplace_preview_editor.svg")),
-                          QObject::tr("Toggle In-Place Preview"));
-    act->setProperty("iconName", QStringLiteral("inplace_preview_editor.svg"));
-    act->setCheckable(true);
-    break;
-
-  case Action::AllowAutoSectionNumber:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("section_editor.svg")),
-                          QObject::tr("Allow Auto Section Number"));
-    act->setProperty("iconName", QStringLiteral("section_editor.svg"));
-    act->setCheckable(true);
-    break;
-
   case Action::Outline: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("outline_editor.svg")),
                           QObject::tr("Outline"));
@@ -395,22 +348,92 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
   }
 
-  case Action::ImageHost: {
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("image_host_editor.svg")),
-                          QObject::tr("Image Host"));
-    act->setProperty("iconName", QStringLiteral("image_host_editor.svg"));
-    auto *btn = qobject_cast<QToolButton *>(p_tb->widgetForAction(act));
-    Q_ASSERT(btn);
-    btn->setPopupMode(QToolButton::InstantPopup);
-    btn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
-    auto *menu = new QMenu(p_tb);
-    act->setMenu(menu);
+  case Action::Menu: {
+    act =
+        p_tb->addAction(generateIcon(p_services, QStringLiteral("menu.svg")), QObject::tr("Menu"));
+    act->setProperty("iconName", QStringLiteral("menu.svg"));
+    act->setMenu(new QMenu(p_tb));
+    auto *toolBtn = dynamic_cast<QToolButton *>(p_tb->widgetForAction(act));
+    Q_ASSERT(toolBtn);
+    toolBtn->setPopupMode(QToolButton::InstantPopup);
+    toolBtn->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
     break;
   }
 
+  default:
+    Q_ASSERT(false);
+    break;
+  }
+
+  return act;
+}
+
+QAction *ViewWindowToolBarHelper2::addAction(QMenu *p_menu, Action p_action,
+                                             ServiceLocator &p_services,
+                                             QWidget *p_shortcutWidget) {
+  auto *configMgr = p_services.get<ConfigMgr2>();
+  Q_ASSERT(configMgr);
+  const auto &editorConfig = configMgr->getEditorConfig();
+
+  QAction *act = nullptr;
+  switch (p_action) {
+  case Action::Print:
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("print_editor.svg")),
+                            QObject::tr("Print"));
+    act->setProperty("iconName", QStringLiteral("print_editor.svg"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::Print), p_shortcutWidget);
+    break;
+
+  case Action::ToggleLayoutMode:
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("readable_width_editor.svg")),
+                            QObject::tr("Readable Width"));
+    act->setProperty("iconName", QStringLiteral("readable_width_editor.svg"));
+    act->setCheckable(true);
+    {
+      const auto &shortcut = editorConfig.getShortcut(Shortcut::ToggleLayoutMode);
+      if (!shortcut.isEmpty()) {
+        addActionShortcut(act, shortcut, p_shortcutWidget);
+      }
+    }
+    break;
+
+  case Action::ToggleLivePreview:
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("view_mode_editor.svg")),
+                            QObject::tr("Live Preview"));
+    act->setProperty("iconName", QStringLiteral("view_mode_editor.svg"));
+    act->setCheckable(true);
+    {
+      const auto &shortcut = editorConfig.getShortcut(Shortcut::AlternateViewMode);
+      if (!shortcut.isEmpty()) {
+        addActionShortcut(act, shortcut, p_shortcutWidget);
+      }
+    }
+    break;
+
+  case Action::InplacePreview:
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("inplace_preview_editor.svg")),
+                            QObject::tr("Toggle In-Place Preview"));
+    act->setProperty("iconName", QStringLiteral("inplace_preview_editor.svg"));
+    act->setCheckable(true);
+    break;
+
+  case Action::AllowAutoSectionNumber:
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("section_editor.svg")),
+                            QObject::tr("Allow Auto Section Number"));
+    act->setProperty("iconName", QStringLiteral("section_editor.svg"));
+    act->setCheckable(true);
+    break;
+
+  case Action::ImageHost:
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("image_host_editor.svg")),
+                            QObject::tr("Image Host"));
+    act->setProperty("iconName", QStringLiteral("image_host_editor.svg"));
+    act->setMenu(new QMenu(p_menu));
+    break;
+
   case Action::Debug:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("console_dock.svg")),
-                          QObject::tr("Debug"));
+    act = p_menu->addAction(generateIcon(p_services, QStringLiteral("console_dock.svg")),
+                            QObject::tr("Debug"));
     act->setProperty("iconName", QStringLiteral("console_dock.svg"));
     act->setCheckable(true);
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::Debug), p_shortcutWidget);
@@ -424,23 +447,31 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   return act;
 }
 
-void ViewWindowToolBarHelper2::refreshToolBarIcons(QToolBar *p_tb, ServiceLocator &p_services) {
-  for (auto *act : p_tb->actions()) {
+static void refreshActionIcons(const QList<QAction *> &p_actions, ServiceLocator &p_services) {
+  for (auto *act : p_actions) {
     auto editIconName = act->property("editIconName").toString();
     if (!editIconName.isEmpty()) {
       auto *erdAct = dynamic_cast<EditReadDiscardAction *>(act);
       if (erdAct) {
         auto readIconName = act->property("readIconName").toString();
         auto discardIconName = act->property("discardIconName").toString();
-        erdAct->refreshStateIcons(generateIcon(p_services, editIconName),
-                                  generateIcon(p_services, readIconName));
-        erdAct->refreshDiscardIcon(generateIcon(p_services, discardIconName));
+        erdAct->refreshStateIcons(ViewWindowToolBarHelper2::generateIcon(p_services, editIconName),
+                                  ViewWindowToolBarHelper2::generateIcon(p_services, readIconName));
+        erdAct->refreshDiscardIcon(
+            ViewWindowToolBarHelper2::generateIcon(p_services, discardIconName));
       }
-      continue;
+    } else {
+      auto iconName = act->property("iconName").toString();
+      if (!iconName.isEmpty()) {
+        act->setIcon(ViewWindowToolBarHelper2::generateIcon(p_services, iconName));
+      }
     }
-    auto iconName = act->property("iconName").toString();
-    if (!iconName.isEmpty()) {
-      act->setIcon(generateIcon(p_services, iconName));
+    if (auto *menu = act->menu()) {
+      refreshActionIcons(menu->actions(), p_services);
     }
   }
+}
+
+void ViewWindowToolBarHelper2::refreshToolBarIcons(QToolBar *p_tb, ServiceLocator &p_services) {
+  refreshActionIcons(p_tb->actions(), p_services);
 }
