@@ -188,11 +188,14 @@ ctest --test-dir build -R test_error      # Run single test (pattern match)
 ctest --test-dir build --output-on-failure  # Show output on failure
 ```
 
-**macOS keychain tests:** `add_qt_test()` sets `QT_EVENT_DISPATCHER_CORE_FOUNDATION=1`
-for CTest. Set the same variable when launching test executables directly: the default
-`QCoreApplication` UNIX dispatcher does not drain the main dispatch queue used by
-QtKeychain completion callbacks. Tests also need an unlocked default keychain; macOS CI
-creates a disposable one and restores the previous default after testing.
+**macOS keychain tests:** core tests that exercise real QtKeychain jobs use
+`VNOTE_KEYCHAIN_TEST_MAIN` from `test_helper.h`: a native GUI application on macOS,
+`QCoreApplication` elsewhere. On macOS, run these and keychain-using widget tests with
+`QT_QPA_PLATFORM=cocoa`, not `offscreen`: QtKeychain completes on the native main queue,
+which the offscreen UNIX dispatcher does not drain. Do not set
+`QT_EVENT_DISPATCHER_CORE_FOUNDATION`: it also replaces worker-thread dispatchers and
+can stall queued work. Tests also need an unlocked default keychain; macOS CI creates
+a disposable one and restores the previous default after testing.
 
 ### VTextEdit.dll runtime copy
 

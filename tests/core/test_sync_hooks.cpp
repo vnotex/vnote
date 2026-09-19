@@ -22,6 +22,8 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
@@ -284,5 +286,5 @@ void TestSyncHooks::cancelledFires() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestSyncHooks)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestSyncHooks)
 #include "test_sync_hooks.moc"

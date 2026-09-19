@@ -22,6 +22,8 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
@@ -387,5 +389,5 @@ void TestBootstrapAndPersist::rollback_failure_preserves_persist_error() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestBootstrapAndPersist)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestBootstrapAndPersist)
 #include "test_bootstrap_and_persist.moc"

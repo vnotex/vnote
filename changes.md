@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix macOS CI event-loop stalls while preserving native keychain test coverage
 * Fix crashes when sync credential storage is destroyed with native keychain operations still in flight, and repair cross-platform CI test linking and teardown
 * Generate transparent PlantUML UML PNG previews in light themes, preserving explicit diagram backgrounds and node fills
 * Let light-theme graph canvases blend into the page, including PlantUML, Mermaid, Flowchart, WaveDrom and Graphviz SVGs
