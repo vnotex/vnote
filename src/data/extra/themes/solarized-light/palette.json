@@ -71,7 +71,6 @@
         "fg_list_guide" : "#7C7A6F",
         "bg_active_list_item" : "#f8f1df",
         "fg_link_source" : "#1C6A64",
-        "bg_graph_canvas" : "#b0bec5",
         "fg_heading_source" : "#815541",
         "fg_hr_source" : "#5C5F66",
         "bg_hr_source" : "#E7DADB",
@@ -107,8 +106,7 @@
         "fg_alert_success_icon" : "#E5E8E9",
         "fg_alert_warning_icon" : "#E5E8E9",
         "fg_alert_error_icon" : "#D6DBDD",
-        "border_statusbar_focus" : "#D5D5D5",
-        "bg_editor_preview" : "#b0bec5"
+        "border_statusbar_focus" : "#D5D5D5"
     },
         "base" : {
         "normal" : {

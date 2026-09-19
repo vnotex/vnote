@@ -199,6 +199,21 @@ div.vx-plantuml-graph {
     overflow: hidden;
 }
 
+/* Light themes share the page background, including PlantUML's inline SVG canvas. */
+div.vx-mermaid-graph > svg,
+div.vx-flowchartjs-graph > svg,
+div.vx-wavedrom-graph > svg,
+div.vx-plantuml-graph svg,
+div.vx-graphviz-graph > svg {
+    background-color: transparent !important;
+}
+
+/* Graphviz paints its canvas as a polygon; node and cluster fills stay intact. */
+div.vx-graphviz-graph > svg > g.graph > polygon:first-of-type {
+    fill: none;
+    stroke: none;
+}
+
 ::selection {
   background-color: #1976d2;
   color: #ffffff;

@@ -76,9 +76,6 @@
             "background-color" : "@base#normal#bg",
             "selected-text-color" : "@base#content#selection#fg",
             "selected-background-color" : "@base#content#selection#bg"
-        },
-        "Preview" : {
-            "background-color" : "@palette#bg_editor_preview"
         }
     },
     "markdown-syntax-styles" : {

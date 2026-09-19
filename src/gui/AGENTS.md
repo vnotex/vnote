@@ -106,6 +106,14 @@ Location List and Comments explicitly disable alternating rows; no application v
 currently enables them. `tests/gui/test_themeservice.cpp` deliberately opts in to
 verify theme colors and Native restoration independently of application row policy.
 
+## Light-theme graph canvases
+
+Light reader themes leave graph containers and SVG canvases transparent so the page
+background shows through. Override PlantUML's inline SVG background, and clear only
+Graphviz's outer canvas polygon; never clear node or cluster fills. Keep dark-theme
+backdrops unchanged. Backgrounds baked into raster images are image data, not CSS
+surfaces, and are not recolored by the theme.
+
 ## Core vs GUI Distinction
 
 Core services (`src/core/services/`) wrap the vxcore C API and have minimal Qt dependencies. GUI services (`src/gui/services/`) require Qt Widgets and handle presentation concerns.
