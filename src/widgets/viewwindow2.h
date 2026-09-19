@@ -401,36 +401,18 @@ protected:
   // @p_widget: The editor widget to display. nullptr is allowed (clears existing widget).
   void setCentralWidget(QWidget *p_widget);
 
-  // ---- Content fullscreen ----
-  //
-  // Lifts the CENTRAL WIDGET out of this window into a frameless fullscreen
-  // top-level, and puts it back. Generic on purpose: it is plain widget
-  // reparenting with no knowledge of what the central widget is, so any view
-  // window can use it (a web view asking for HTML5 fullscreen, a future
-  // distraction-free mode, a slideshow).
-  //
-  // Only the central widget travels — the toolbar, find bar, banners and status
-  // widget stay behind with the window, which is what makes this a *content*
-  // fullscreen rather than a window one.
-  //
-  // Returns false when there is nothing to do (no central widget, or already in
-  // the requested state). A caller driving this from a page request must treat
-  // false as "the page and Qt disagree" rather than ignoring it.
-  bool setContentFullScreen(bool p_on);
+  // Promote this entire view to fullscreen without changing its parent or tab identity.
+  // Returns false for an invalid entry or a redundant transition.
+  bool setViewFullScreen(bool p_on);
 
-  bool isContentFullScreen() const;
-
-  // Label for the floating exit button shown while the content is fullscreen.
-  // Name the MODE the caller entered, not the mechanism -- "Exit Full Screen"
-  // reads as the application's own full-screen toggle. Call before entering.
-  void setContentFullScreenExitText(const QString &p_text) { m_contentFullScreenExitText = p_text; }
+  bool isViewFullScreen() const;
 
 signals:
-  // Escape was pressed while the content is fullscreen. Deliberately an INTENT
-  // rather than an automatic exit: the owner usually has to tell the content
-  // first (a web page must be driven out through Chromium, or it keeps
-  // believing it is fullscreen and rejects the next request).
-  void contentFullScreenExitRequested();
+  // Exit intent from Escape, native close, tab hiding or native fullscreen loss.
+  void viewFullScreenExitRequested();
+
+  // Emitted only after a successful transition, including forced base exits.
+  void viewFullScreenChanged(bool p_on);
 
 protected:
   // Add a widget below the central widget (above status widget).
@@ -709,13 +691,8 @@ private:
   // Managed by QObject.
   QWidget *m_centralWidget = nullptr;
 
-  // The helper that does the reparenting while the content is fullscreen; null
-  // until first used. Lives in contentfullscreenhost.{h,cpp} so the mechanics
-  // are unit-testable -- no test compiles viewwindow2.cpp.
+  // Same-parent fullscreen flag promotion; allocated on first entry.
   ContentFullScreenHost *m_fullScreenHost = nullptr;
-
-  // Empty until a subclass names its fullscreen mode.
-  QString m_contentFullScreenExitText;
 
   // Managed by QObject.
   QToolBar *m_toolBar = nullptr;

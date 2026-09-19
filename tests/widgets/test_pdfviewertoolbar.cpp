@@ -11,15 +11,22 @@
 // against real widgets.
 
 #include <QAction>
+#include <QApplication>
 #include <QComboBox>
+#include <QEnterEvent>
+#include <QGraphicsEffect>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
+#include <QPainter>
 #include <QPair>
 #include <QPixmap>
+#include <QPointer>
 #include <QSignalSpy>
 #include <QSpinBox>
 #include <QToolBar>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QtTest>
 
 #include <widgets/pdfviewertoolbar.h>
@@ -51,6 +58,102 @@ int checkedCount(const QList<QAction *> &p_actions) {
   return count;
 }
 
+// A real native surface with an unoccluded, solid toolbar patch. Sampling the
+// composed parent catches a no-op effect or dimming the whole page, not just a
+// changed opacity property on an effect that never reaches the screen.
+class SolidPatch : public QWidget {
+protected:
+  void paintEvent(QPaintEvent *) override {
+    QPainter painter(this);
+    painter.fillRect(rect(), palette().color(QPalette::Window));
+  }
+};
+
+struct PresentationSurface {
+  QWidget m_window;
+  QToolBar m_bar{&m_window};
+  SolidPatch m_patch;
+  QLineEdit m_content{&m_window};
+  PdfViewerToolBar m_controls;
+  QMenu *m_outlineMenu = nullptr;
+  const QColor m_parentColor{20, 40, 60};
+  const QColor m_toolBarColor{220, 140, 80};
+
+  PresentationSurface() {
+    auto palette = m_window.palette();
+    palette.setColor(QPalette::Window, m_parentColor);
+    m_window.setPalette(palette);
+    m_window.setAutoFillBackground(true);
+
+    palette.setColor(QPalette::Window, m_toolBarColor);
+    m_patch.setPalette(palette);
+    m_patch.setFixedSize(80, 28);
+    m_bar.addWidget(&m_patch);
+    m_bar.setMovable(false);
+
+    QPixmap pixmap(16, 16);
+    pixmap.fill(Qt::black);
+    const auto icons = [pixmap](const QString &) { return QIcon(pixmap); };
+    m_controls.install(&m_bar, icons, [this, &icons]() {
+      auto *action = m_bar.addAction(icons(QString()), QStringLiteral("Outline"));
+      m_outlineMenu = new QMenu(&m_bar);
+      m_outlineMenu->addAction(QStringLiteral("Alpha"));
+      action->setMenu(m_outlineMenu);
+      auto *button = qobject_cast<QToolButton *>(m_bar.widgetForAction(action));
+      button->setPopupMode(QToolButton::InstantPopup);
+    });
+    m_controls.installPresentationAction(&m_bar, icons);
+    m_controls.installOverflowAction(&m_bar, icons);
+    m_controls.syncState(state());
+
+    auto *layout = new QVBoxLayout(&m_window);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->addWidget(&m_bar);
+    layout->addWidget(&m_content, 1);
+    m_content.setText(QStringLiteral("PDF content"));
+  }
+
+  void show() {
+    m_window.resize(1000, 300);
+    m_window.show();
+    m_window.raise();
+    m_window.activateWindow();
+  }
+
+  void movePointer(QWidget *p_target) {
+    const auto global = p_target->mapToGlobal(p_target->rect().center());
+    QTest::mouseMove(p_target, p_target->rect().center());
+    // Deliver the Qt hover boundary too: a locked Windows desktop can discard
+    // the native cursor movement even though its windows still render normally.
+    if (p_target->window() == &m_window && m_bar.rect().contains(m_bar.mapFromGlobal(global))) {
+      QEnterEvent enter(m_bar.mapFromGlobal(global), m_window.mapFromGlobal(global), global);
+      QCoreApplication::sendEvent(&m_bar, &enter);
+    } else {
+      QEvent leave(QEvent::Leave);
+      QCoreApplication::sendEvent(&m_bar, &leave);
+    }
+  }
+
+  QColor sampleColor() {
+    const auto image = m_window.grab().toImage();
+    const auto point = m_patch.mapTo(&m_window, m_patch.rect().center());
+    const auto ratio = image.devicePixelRatio();
+    return image.pixelColor(qRound(point.x() * ratio), qRound(point.y() * ratio));
+  }
+
+  QColor inactiveColor() const {
+    return QColor(qRound(0.1 * m_toolBarColor.red() + 0.9 * m_parentColor.red()),
+                  qRound(0.1 * m_toolBarColor.green() + 0.9 * m_parentColor.green()),
+                  qRound(0.1 * m_toolBarColor.blue() + 0.9 * m_parentColor.blue()));
+  }
+};
+
+bool colorNear(const QColor &p_actual, const QColor &p_expected) {
+  return qAbs(p_actual.red() - p_expected.red()) <= 2 &&
+         qAbs(p_actual.green() - p_expected.green()) <= 2 &&
+         qAbs(p_actual.blue() - p_expected.blue()) <= 2;
+}
+
 } // namespace
 
 class TestPdfViewerToolBar : public QObject {
@@ -66,6 +169,11 @@ private slots:
   void rotationIsRequestedAsAbsoluteDegrees();
   void anOffPresetZoomIsShownAsAPercentage();
   void theOverflowMenuSurvivesANarrowToolBar();
+  void presentationToggleFollowsConfirmedState();
+  void presentationCanExitWhileViewerReloads();
+  void presentationOpacityTracksHoverFocusAndPopups();
+  void presentationOpacityTracksWindowActivation();
+  void presentationTrackingEndsWithEitherOwner();
   void standaloneThemeRefreshUpdatesToolBarAndMenuIcons();
 };
 
@@ -108,6 +216,8 @@ void TestPdfViewerToolBar::sharedMenuActionRemainsUsableAcrossViewerReadiness() 
   toolBar.install(&bar);
   toolBar.installPresentationAction(&bar);
   toolBar.installOverflowAction(&bar);
+  connect(&toolBar, &PdfViewerToolBar::presentationModeRequested, &toolBar,
+          [&toolBar]() { toolBar.setPresentationMode(false); });
   QList<QAction *> viewerActions = {toolBar.sidebarAction(),  toolBar.previousPageAction(),
                                     toolBar.nextPageAction(), toolBar.zoomOutAction(),
                                     toolBar.zoomInAction(),   toolBar.presentationModeAction()};
@@ -387,9 +497,248 @@ void TestPdfViewerToolBar::theOverflowMenuSurvivesANarrowToolBar() {
   QSignalSpy propertiesSpy(&toolBar, &PdfViewerToolBar::documentPropertiesRequested);
   toolBar.documentPropertiesAction()->trigger();
   QCOMPARE(propertiesSpy.count(), 1);
+  bar.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&bar));
+  toolBar.setPresentationMode(true);
+  auto reloading = state();
+  reloading.m_valid = false;
+  toolBar.syncState(reloading);
+  QVERIFY(presentation->isChecked());
+  QVERIFY(presentation->isEnabled());
+
   QSignalSpy presentationSpy(&toolBar, &PdfViewerToolBar::presentationModeRequested);
-  hidden.at(hidden.indexOf(presentation))->trigger();
-  QCOMPARE(presentationSpy.count(), 1);
+  connect(&toolBar, &PdfViewerToolBar::presentationModeRequested, &toolBar,
+          [&toolBar]() { toolBar.setPresentationMode(false); });
+  auto *menu = extension->menu();
+  menu->popup(bar.mapToGlobal(QPoint(0, bar.height())));
+  QTRY_VERIFY(menu->isVisible());
+  QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                    menu->actionGeometry(presentation).center());
+  QTRY_COMPARE(presentationSpy.count(), 1);
+  QVERIFY(!presentation->isChecked());
+  QVERIFY(!presentation->isEnabled());
+  QVERIFY(!bar.graphicsEffect());
+}
+
+void TestPdfViewerToolBar::presentationToggleFollowsConfirmedState() {
+  PresentationSurface surface;
+  auto &controls = surface.m_controls;
+  auto *action = controls.presentationModeAction();
+  auto *button = qobject_cast<QToolButton *>(surface.m_bar.widgetForAction(action));
+  QVERIFY(button);
+  QVERIFY(action->isCheckable());
+  bool presenting = false;
+  bool acceptEntry = true;
+  connect(&controls, &PdfViewerToolBar::presentationModeRequested, &controls, [&]() {
+    if (presenting || acceptEntry) {
+      presenting = !presenting;
+    }
+    controls.setPresentationMode(presenting);
+  });
+  QSignalSpy requests(&controls, &PdfViewerToolBar::presentationModeRequested);
+  surface.show();
+  QVERIFY(QTest::qWaitForWindowActive(&surface.m_window));
+  QVERIFY(button->isVisible());
+
+  QTest::mouseClick(button, Qt::LeftButton);
+  QCOMPARE(requests.count(), 1);
+  QVERIFY(presenting);
+  QVERIFY(action->isChecked());
+  QTest::mouseClick(button, Qt::LeftButton);
+  QCOMPARE(requests.count(), 2);
+  QVERIFY(!presenting);
+  QVERIFY(!action->isChecked());
+
+  acceptEntry = false;
+  QTest::mouseClick(button, Qt::LeftButton);
+  QCOMPARE(requests.count(), 3);
+  QVERIFY(!presenting);
+  QVERIFY(!action->isChecked());
+  QVERIFY(!button->isChecked());
+
+  controls.setPresentationMode(true);
+  QVERIFY(action->isChecked());
+  QVERIFY(button->isChecked());
+  controls.setPresentationMode(false);
+  QVERIFY(!action->isChecked());
+  QVERIFY(!button->isChecked());
+  QCOMPARE(requests.count(), 3);
+}
+
+void TestPdfViewerToolBar::presentationCanExitWhileViewerReloads() {
+  PresentationSurface surface;
+  auto &controls = surface.m_controls;
+  auto *action = controls.presentationModeAction();
+  auto *button = qobject_cast<QToolButton *>(surface.m_bar.widgetForAction(action));
+  QVERIFY(button);
+  auto reloading = state();
+  reloading.m_valid = false;
+  bool presenting = false;
+  bool exitStayedEnabled = false;
+  connect(&controls, &PdfViewerToolBar::presentationModeRequested, &controls, [&]() {
+    if (presenting) {
+      // The click has already unchecked QAction. It is not confirmed state.
+      controls.syncState(reloading);
+      exitStayedEnabled = action->isEnabled();
+    }
+    presenting = !presenting;
+    controls.setPresentationMode(presenting);
+  });
+  QSignalSpy requests(&controls, &PdfViewerToolBar::presentationModeRequested);
+  surface.show();
+  QVERIFY(QTest::qWaitForWindowActive(&surface.m_window));
+  QTest::mouseClick(button, Qt::LeftButton);
+  QVERIFY(presenting);
+
+  controls.syncState(reloading);
+  QVERIFY(!controls.pageSpinBox()->isEnabled());
+  QVERIFY(!controls.zoomComboBox()->isEnabled());
+  QVERIFY(action->isChecked());
+  QVERIFY(action->isEnabled());
+  QTest::mouseClick(button, Qt::LeftButton);
+  QCOMPARE(requests.count(), 2);
+  QVERIFY(exitStayedEnabled);
+  QVERIFY(!presenting);
+  QVERIFY(!action->isChecked());
+  QVERIFY(!action->isEnabled());
+  QTest::mouseClick(button, Qt::LeftButton);
+  QCOMPARE(requests.count(), 2);
+}
+
+void TestPdfViewerToolBar::presentationOpacityTracksHoverFocusAndPopups() {
+  PresentationSurface surface;
+  surface.show();
+  QVERIFY(QTest::qWaitForWindowActive(&surface.m_window));
+  QTest::mouseClick(&surface.m_content, Qt::LeftButton);
+  surface.movePointer(&surface.m_content);
+  surface.m_controls.setPresentationMode(true);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+  QVERIFY(!surface.m_content.graphicsEffect());
+  QVERIFY(!surface.m_window.graphicsEffect());
+
+  surface.movePointer(&surface.m_patch);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  auto *page = surface.m_controls.pageSpinBox();
+  QTest::mouseClick(page, Qt::LeftButton);
+  QVERIFY(surface.m_bar.isAncestorOf(QApplication::focusWidget()));
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::mouseClick(&surface.m_content, Qt::LeftButton);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  // Outline is caller-owned rather than built by PdfViewerToolBar itself.
+  const auto popupPoint = surface.m_content.mapToGlobal(QPoint(20, 20));
+  surface.m_outlineMenu->popup(popupPoint);
+  QTRY_VERIFY(surface.m_outlineMenu->isVisible());
+  surface.movePointer(surface.m_outlineMenu);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(surface.m_outlineMenu, Qt::Key_Escape);
+  QTRY_VERIFY(!surface.m_outlineMenu->isVisible());
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  auto *menu = surface.m_controls.overflowMenu();
+  auto *submenu = qobject_cast<QMenu *>(surface.m_controls.scrollModeActions().first()->parent());
+  QVERIFY(submenu);
+  menu->popup(popupPoint);
+  QTRY_VERIFY(menu->isVisible());
+  menu->setActiveAction(submenu->menuAction());
+  QTest::keyClick(menu, Qt::Key_Right);
+  QTRY_VERIFY(submenu->isVisible());
+  surface.movePointer(submenu);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(submenu, Qt::Key_Escape);
+  QTRY_VERIFY(!submenu->isVisible());
+  QVERIFY(menu->isVisible());
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(menu, Qt::Key_Escape);
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  auto *combo = surface.m_controls.zoomComboBox();
+  QTest::mouseClick(combo, Qt::LeftButton, Qt::NoModifier,
+                    QPoint(combo->width() - 8, combo->height() / 2));
+  QTRY_VERIFY(QApplication::activePopupWidget());
+  auto *popup = QApplication::activePopupWidget();
+  surface.movePointer(popup);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(popup, Qt::Key_Escape);
+  QTRY_VERIFY(!QApplication::activePopupWidget());
+  QTest::mouseClick(&surface.m_content, Qt::LeftButton);
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  surface.m_window.resize(220, 300);
+  auto *extension = surface.m_bar.findChild<QToolButton *>(QStringLiteral("qt_toolbar_ext_button"));
+  QVERIFY(extension);
+  QTRY_VERIFY(extension->isVisible());
+  QVERIFY(surface.m_patch.isVisible());
+  QVERIFY(extension->menu());
+  menu = extension->menu();
+  menu->popup(surface.m_content.mapToGlobal(QPoint(20, 20)));
+  QTRY_VERIFY(menu->isVisible());
+  surface.movePointer(menu);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(menu, Qt::Key_Escape);
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  surface.m_controls.setPresentationMode(false);
+  QVERIFY(!surface.m_bar.graphicsEffect());
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+}
+
+void TestPdfViewerToolBar::presentationOpacityTracksWindowActivation() {
+  PresentationSurface surface;
+  surface.show();
+  QVERIFY(QTest::qWaitForWindowActive(&surface.m_window));
+  QTest::mouseClick(surface.m_controls.pageSpinBox(), Qt::LeftButton);
+  surface.movePointer(&surface.m_content);
+  surface.m_controls.setPresentationMode(true);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+
+  QWidget unrelated;
+  unrelated.resize(200, 100);
+  unrelated.show();
+  unrelated.raise();
+  unrelated.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&unrelated));
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  unrelated.hide();
+  surface.m_window.raise();
+  surface.m_window.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&surface.m_window));
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  surface.m_controls.setPresentationMode(false);
+  QTest::mouseClick(&surface.m_content, Qt::LeftButton);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+}
+
+void TestPdfViewerToolBar::presentationTrackingEndsWithEitherOwner() {
+  QToolBar bar;
+  auto *controls = new PdfViewerToolBar;
+  controls->install(&bar);
+  controls->installPresentationAction(&bar);
+  controls->setPresentationMode(true);
+  QVERIFY(bar.graphicsEffect());
+  bar.show();
+  delete controls;
+  QVERIFY(!bar.graphicsEffect());
+
+  PdfViewerToolBar survivingControls;
+  auto *shortLivedBar = new QToolBar;
+  survivingControls.install(shortLivedBar);
+  survivingControls.installPresentationAction(shortLivedBar);
+  survivingControls.setPresentationMode(true);
+  QPointer<QObject> effect = shortLivedBar->graphicsEffect();
+  QVERIFY(effect);
+  shortLivedBar->show();
+  delete shortLivedBar;
+  QVERIFY(!effect);
+  // Flush any already queued hover/focus evaluation after the toolbar is gone.
+  QCoreApplication::processEvents();
+  survivingControls.setPresentationMode(false);
 }
 
 void TestPdfViewerToolBar::standaloneThemeRefreshUpdatesToolBarAndMenuIcons() {

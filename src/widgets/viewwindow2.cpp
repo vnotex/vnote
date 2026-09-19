@@ -134,10 +134,8 @@ ViewWindow2::~ViewWindow2() {
       buffers->endNoteConversion(m_buffer.id(), true);
     }
   }
-  // Before anything else: the central widget currently lives in a separate
-  // top-level, and letting this window die around it would leave a visible,
-  // un-closable fullscreen artefact on screen.
-  setContentFullScreen(false);
+  // Restore embedding and the parent layout before child teardown.
+  setViewFullScreen(false);
 
   if (m_statusWidget) {
     m_statusWidget->setParent(nullptr);
@@ -293,7 +291,7 @@ void ViewWindow2::setNoteConversionFrozen(bool p_frozen) {
     if (comments) {
       comments->setEditable(false);
     }
-    setContentFullScreen(false);
+    setViewFullScreen(false);
     setEnabled(false);
   } else {
     if (m_editorDirty) {
@@ -312,11 +310,8 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return false;
   }
-  // A fullscreen container would otherwise sit in front of the Save/Discard
-  // dialog below, which is modal to THIS window and would be invisible behind
-  // it. Coming back also guarantees the central widget is owned by this window
-  // again if the close is refused.
-  setContentFullScreen(false);
+  // Restore normal window state before opening the Save/Discard dialog.
+  setViewFullScreen(false);
 
   if (!p_force && isModified()) {
     // Show Save/Discard/Cancel dialog for unsaved changes.
@@ -409,9 +404,8 @@ void ViewWindow2::addToolBar(QToolBar *p_bar) {
 void ViewWindow2::addTopWidget(QWidget *p_widget) { m_topLayout->addWidget(p_widget); }
 
 void ViewWindow2::setCentralWidget(QWidget *p_widget) {
-  // A swap while fullscreen would leave the OLD central widget stranded in the
-  // container and put the new one in a layout nobody can see. Come back first.
-  setContentFullScreen(false);
+  // End presentation before replacing its content and focus proxy.
+  setViewFullScreen(false);
 
   if (m_centralWidget) {
     m_contentLayout->removeWidget(m_centralWidget);
@@ -426,29 +420,24 @@ void ViewWindow2::setCentralWidget(QWidget *p_widget) {
   }
 }
 
-bool ViewWindow2::isContentFullScreen() const {
+bool ViewWindow2::isViewFullScreen() const {
   return m_fullScreenHost && m_fullScreenHost->isFullScreen();
 }
 
-bool ViewWindow2::setContentFullScreen(bool p_on) {
+bool ViewWindow2::setViewFullScreen(bool p_on) {
   if (!m_fullScreenHost) {
     if (!p_on) {
       return false;
     }
     m_fullScreenHost = new ContentFullScreenHost(this);
     connect(m_fullScreenHost, &ContentFullScreenHost::exitRequested, this,
-            &ViewWindow2::contentFullScreenExitRequested);
-    if (!m_contentFullScreenExitText.isEmpty()) {
-      m_fullScreenHost->setExitButtonText(m_contentFullScreenExitText);
-    }
+            &ViewWindow2::viewFullScreenExitRequested);
   }
 
-  const bool changed =
-      m_fullScreenHost->setFullScreen(p_on, m_centralWidget, m_contentLayout, window());
-  if (changed && !p_on) {
-    // Only the CONTENT travelled, so the window's own readable-width policy has
-    // to be re-applied to the widget that just came back.
+  const bool changed = m_fullScreenHost->setFullScreen(p_on, this);
+  if (changed) {
     applyReadableWidth();
+    emit viewFullScreenChanged(p_on);
   }
   return changed;
 }
@@ -971,7 +960,7 @@ void ViewWindow2::onContentReplacementStateChanged(const QString &p_bufferId, bo
     m_contentReplacementFrozen = true;
     m_contentReplacementWasEnabled = isEnabled();
     m_contentReplacementPosition = capturePositionState();
-    setContentFullScreen(false);
+    setViewFullScreen(false);
     setEnabled(false);
     return;
   }
@@ -1724,7 +1713,7 @@ void ViewWindow2::updateContentMargins() {
     return;
   }
 
-  if (getLayoutMode() == ViewWindowLayoutMode::ReadableWidth) {
+  if (!isViewFullScreen() && getLayoutMode() == ViewWindowLayoutMode::ReadableWidth) {
     auto *configMgr = m_services.get<ConfigMgr2>();
     int maxWidth = 720;
     if (configMgr) {

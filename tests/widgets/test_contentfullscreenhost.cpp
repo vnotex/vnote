@@ -1,25 +1,20 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// test_contentfullscreenhost.cpp
-//
-// The widget reparenting behind ViewWindow2's content fullscreen (HTML5
-// fullscreen from a web view, i.e. pdf.js's presentation mode).
-//
-// This lives in its own component precisely so it can be gated: no test
-// compiles viewwindow2.cpp (it drags in the whole widget world), and
-// reparenting is exactly the kind of code that fails as a stuck, blank or
-// orphaned window rather than as a crash. Every case here is a failure that
-// would otherwise only be found by a human noticing something odd on screen.
-//
-// NOT GUILESS: real windows, real layouts, real focus.
+// Whole-ViewWindow fullscreen promotion: real tab identity, native flags,
+// layouts, focus and exit events. NOT GUILESS: this is the native-window gate.
 
-#include <QBoxLayout>
+#include <QApplication>
+#include <QDialog>
 #include <QKeyEvent>
+#include <QLineEdit>
+#include <QMenu>
 #include <QPointer>
-#include <QPushButton>
+#include <QScreen>
 #include <QSignalSpy>
+#include <QTabWidget>
+#include <QToolBar>
 #include <QVBoxLayout>
-#include <QWidget>
+#include <QWindow>
 #include <QtTest>
 
 #include <widgets/contentfullscreenhost.h>
@@ -30,24 +25,50 @@ namespace tests {
 
 namespace {
 
-// A host window shaped like ViewWindow2: a vertical layout with a non-content
-// widget above the stretching content, so a case can prove only the CONTENT
-// travels.
 struct Fixture {
-  QWidget m_window;
-  QVBoxLayout *m_layout = nullptr;
-  QWidget *m_chrome = nullptr;
-  QWidget *m_content = nullptr;
+  QTabWidget m_tabs;
+  QLineEdit *m_before = new QLineEdit;
+  QWidget *m_page = new QWidget;
+  QLineEdit *m_after = new QLineEdit;
+  QVBoxLayout *m_layout = new QVBoxLayout(m_page);
+  QToolBar *m_toolbar = new QToolBar(m_page);
+  QWidget *m_content = new QWidget(m_page);
+  QLineEdit *m_editor = nullptr;
+  QLineEdit *m_find = new QLineEdit(m_page);
 
   Fixture() {
-    m_layout = new QVBoxLayout(&m_window);
-    m_chrome = new QWidget(&m_window);
-    m_content = new QWidget(&m_window);
-    m_layout->addWidget(m_chrome, 0);
+    m_toolbar->addAction(QStringLiteral("Presentation Mode"));
+    auto *contentLayout = new QVBoxLayout(m_content);
+    auto *inner = new QWidget(m_content);
+    auto *innerLayout = new QVBoxLayout(inner);
+    m_editor = new QLineEdit(inner);
+    innerLayout->addWidget(m_editor);
+    contentLayout->addWidget(inner);
+    m_layout->addWidget(m_toolbar);
     m_layout->addWidget(m_content, 1);
-    m_window.resize(400, 300);
+    m_layout->addWidget(m_find);
+    m_page->setFocusProxy(m_editor);
+    m_page->setWindowFlag(Qt::CustomizeWindowHint);
+    m_page->setAttribute(Qt::WA_QuitOnClose, true);
+    m_tabs.addTab(m_before, QStringLiteral("Before"));
+    m_tabs.addTab(m_page, QStringLiteral("Document"));
+    m_tabs.addTab(m_after, QStringLiteral("After"));
+    m_tabs.setCurrentWidget(m_page);
+    m_tabs.resize(620, 420);
+  }
+
+  bool show() {
+    m_tabs.show();
+    m_tabs.raise();
+    m_tabs.activateWindow();
+    return QTest::qWaitForWindowExposed(&m_tabs);
   }
 };
+
+void connectExitConsumer(ContentFullScreenHost &p_host) {
+  QObject::connect(&p_host, &ContentFullScreenHost::exitRequested, &p_host,
+                   [&p_host]() { p_host.exitFullScreen(); });
+}
 
 } // namespace
 
@@ -55,301 +76,493 @@ class TestContentFullScreenHost : public QObject {
   Q_OBJECT
 
 private slots:
+  // Keep this first: the replacement depends on Qt preserving this exact page.
+  void theWholeTabKeepsItsIdentity();
+  void aDisabledParentLayoutStaysDisabled();
+  void aParentWithoutALayoutIsSupported();
   void aFreshHostIsNotFullScreen();
-  void onlyTheContentTravels();
-  void leavingPutsTheContentBackWithItsStretch();
-  void leavingPutsTheContentBackAtItsOriginalIndex();
   void aRedundantToggleIsRefused();
-  void enteringWithNothingToLiftIsRefused();
+  void invalidEntryDoesNotChangeTheWidget();
   void escapeIsReportedAsAnIntentNotAnExit();
-  void escapeFromADescendantOfTheContentStillExits();
-  void thereIsAlwaysAVisibleWayOut();
-  void theExitLabelNamesTheModeNotTheMechanism();
-  void escapeIsNotSwallowedOutsideTheContainer();
-  void otherKeysAreNotSwallowed();
-  void destroyingTheHostReturnsTheContent();
-  void aDestroyedContentDoesNotCrashTheRestore();
+  void escapeFromADeepDescendantClaimsShortcutOverride();
+  void anOwnedPopupHandlesTheFirstEscape();
+  void escapeLeavesUnrelatedWidgetsAndChildDialogsAlone();
+  void nativeWindowEscapeUsesTheActivePresentation();
+  void otherKeysReachTheContent();
+  void nativeCloseExitsWithoutClosingTheTab();
+  void switchingTabsExitsWithoutShowingOrFocusingTheOldTab();
+  void ownershipTransferRestoresUnderTheNewParent();
+  void anOldHideCannotExitANewPresentation();
+  void losingFullScreenExitsButMinimizingDoesNot();
+  void aRemovedFocusTargetFallsBackToTheExistingProxy();
+  void destroyingTheHostRestoresThePage();
+  void destroyingThePageRestoresTheSurvivingLayout();
+  void destroyingTheOwnerLeavesNoActiveHost();
 };
+
+void TestContentFullScreenHost::theWholeTabKeepsItsIdentity() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  auto *page = fixture.m_page;
+  auto *parent = page->parentWidget();
+  auto *parentLayout = parent->layout();
+  QVERIFY(parentLayout);
+  QVERIFY(parentLayout->isEnabled());
+  const auto flags = page->windowFlags();
+  const auto state = page->windowState();
+  const auto geometry = page->geometry();
+  const auto toolbarGeometry = fixture.m_toolbar->geometry();
+  const auto contentGeometry = fixture.m_content->geometry();
+  const auto findGeometry = fixture.m_find->geometry();
+  const auto screen = page->screen();
+  const auto topLevels = QApplication::topLevelWidgets();
+  QSignalSpy tabChanges(&fixture.m_tabs, &QTabWidget::currentChanged);
+  ContentFullScreenHost host;
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+
+  for (int pass = 0; pass < 2; ++pass) {
+    fixture.m_find->setFocus();
+    QTRY_VERIFY(fixture.m_find->hasFocus());
+    QVERIFY(host.setFullScreen(true, page));
+    QVERIFY(QTest::qWaitForWindowExposed(page));
+    QTRY_COMPARE(page->geometry(), screen->geometry());
+    QVERIFY(page->isFullScreen());
+    QVERIFY(page->isWindow());
+    QVERIFY(host.isFullScreen());
+    QCOMPARE(host.content(), page);
+    QCOMPARE(page->parentWidget(), parent);
+    QCOMPARE(page->screen(), screen);
+    QVERIFY(!page->testAttribute(Qt::WA_QuitOnClose));
+    QVERIFY(!parentLayout->isEnabled());
+    QVERIFY(fixture.m_layout->isEnabled());
+    QVERIFY(fixture.m_toolbar->isVisible());
+    QVERIFY(fixture.m_find->isVisible());
+    QCOMPARE(fixture.m_layout->indexOf(fixture.m_toolbar), 0);
+    QCOMPARE(fixture.m_layout->indexOf(fixture.m_content), 1);
+    QCOMPARE(fixture.m_layout->indexOf(fixture.m_find), 2);
+    QVERIFY(fixture.m_toolbar->geometry().bottom() < fixture.m_content->geometry().top());
+    QVERIFY(fixture.m_content->geometry().bottom() < fixture.m_find->geometry().top());
+    QTRY_VERIFY(fixture.m_editor->hasFocus());
+    for (auto *window : QApplication::topLevelWidgets()) {
+      QVERIFY(window == page || topLevels.contains(window));
+    }
+
+    // A background QStackedLayout pass must not resize the promoted current page.
+    fixture.m_tabs.resize(740 + pass * 60, 520 + pass * 40);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    QCoreApplication::processEvents();
+    QCOMPARE(page->geometry(), screen->geometry());
+    QCOMPARE(fixture.m_tabs.count(), 3);
+    QCOMPARE(fixture.m_tabs.indexOf(page), 1);
+    QCOMPARE(fixture.m_tabs.widget(0), fixture.m_before);
+    QCOMPARE(fixture.m_tabs.widget(1), page);
+    QCOMPARE(fixture.m_tabs.widget(2), fixture.m_after);
+    QCOMPARE(fixture.m_tabs.tabText(0), QStringLiteral("Before"));
+    QCOMPARE(fixture.m_tabs.tabText(1), QStringLiteral("Document"));
+    QCOMPARE(fixture.m_tabs.tabText(2), QStringLiteral("After"));
+    QCOMPARE(fixture.m_tabs.currentWidget(), page);
+    QCOMPARE(tabChanges.count(), 0);
+    QCOMPARE(exits.count(), 0);
+
+    QVERIFY(host.exitFullScreen());
+    QVERIFY(!host.isFullScreen());
+    QVERIFY(!host.content());
+    QVERIFY(!page->isWindow());
+    QVERIFY(page->isVisible());
+    QCOMPARE(page->parentWidget(), parent);
+    QCOMPARE(page->windowFlags(), flags);
+    QCOMPARE(page->windowState(), state);
+    QVERIFY(page->testAttribute(Qt::WA_QuitOnClose));
+    QVERIFY(parentLayout->isEnabled());
+    QTRY_COMPARE(page->geometry(), parent->contentsRect());
+    QTRY_VERIFY(fixture.m_find->hasFocus());
+    QCOMPARE(fixture.m_tabs.currentWidget(), page);
+    QCOMPARE(fixture.m_tabs.count(), 3);
+    QCOMPARE(fixture.m_tabs.indexOf(page), 1);
+    QCOMPARE(tabChanges.count(), 0);
+
+    fixture.m_tabs.resize(620, 420);
+    QTRY_COMPARE(page->geometry(), geometry);
+    QTRY_COMPARE(fixture.m_toolbar->geometry(), toolbarGeometry);
+    QCOMPARE(fixture.m_content->geometry(), contentGeometry);
+    QCOMPARE(fixture.m_find->geometry(), findGeometry);
+  }
+}
+
+void TestContentFullScreenHost::aDisabledParentLayoutStaysDisabled() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  auto *layout = fixture.m_page->parentWidget()->layout();
+  layout->setEnabled(false);
+  const auto geometry = fixture.m_page->geometry();
+  ContentFullScreenHost host;
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  fixture.m_tabs.resize(810, 570);
+  QVERIFY(host.exitFullScreen());
+  QCoreApplication::processEvents();
+  QVERIFY(!layout->isEnabled());
+  QCOMPARE(fixture.m_page->geometry(), geometry);
+  QVERIFY(fixture.m_page->isVisible());
+}
+
+void TestContentFullScreenHost::aParentWithoutALayoutIsSupported() {
+  QWidget parent;
+  QWidget page(&parent);
+  parent.resize(400, 300);
+  page.setGeometry(30, 40, 200, 150);
+  parent.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&parent));
+  const auto geometry = page.geometry();
+  const auto flags = page.windowFlags();
+  page.setAttribute(Qt::WA_QuitOnClose, false);
+  ContentFullScreenHost host;
+  QVERIFY(host.setFullScreen(true, &page));
+  QVERIFY(host.exitFullScreen());
+  QCOMPARE(page.parentWidget(), &parent);
+  QCOMPARE(page.geometry(), geometry);
+  QCOMPARE(page.windowFlags(), flags);
+  QVERIFY(!page.testAttribute(Qt::WA_QuitOnClose));
+  QVERIFY(page.isVisible());
+}
 
 void TestContentFullScreenHost::aFreshHostIsNotFullScreen() {
   ContentFullScreenHost host;
   QVERIFY(!host.isFullScreen());
-  QVERIFY(!host.container());
   QVERIFY(!host.content());
-  // Leaving when not in it is a no-op, not a crash: every teardown path calls
-  // this unconditionally.
-  QCOMPARE(host.exitFullScreen(), false);
+  QVERIFY(!host.exitFullScreen());
 }
 
-// Only the CONTENT is lifted. Everything else -- toolbar, find bar, banners,
-// status widget -- stays behind with the window; that is what makes this a
-// *content* fullscreen rather than a window one.
-void TestContentFullScreenHost::onlyTheContentTravels() {
-  Fixture fixture;
-  ContentFullScreenHost host;
-
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-
-  QVERIFY(host.isFullScreen());
-  QVERIFY(host.container());
-  QCOMPARE(host.content(), fixture.m_content);
-
-  // The content now belongs to the container...
-  QCOMPARE(fixture.m_content->parentWidget(), host.container());
-  QVERIFY(fixture.m_layout->indexOf(fixture.m_content) < 0);
-  // ...and the chrome did not move.
-  QCOMPARE(fixture.m_chrome->parentWidget(), &fixture.m_window);
-  QVERIFY(fixture.m_layout->indexOf(fixture.m_chrome) >= 0);
-
-  // The container is a TOP-LEVEL parented to the owner window, so closing that
-  // window cannot leave a fullscreen widget stranded on screen.
-  QVERIFY(host.container()->isWindow());
-  QCOMPARE(host.container()->parentWidget(), &fixture.m_window);
-}
-
-// Restoring with a hardcoded stretch would silently collapse a content widget
-// to its size hint -- a window that comes back from fullscreen as a thin strip.
-void TestContentFullScreenHost::leavingPutsTheContentBackWithItsStretch() {
-  Fixture fixture;
-  ContentFullScreenHost host;
-
-  const int index = fixture.m_layout->indexOf(fixture.m_content);
-  QCOMPARE(fixture.m_layout->stretch(index), 1);
-
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-  QVERIFY(host.exitFullScreen());
-
-  QVERIFY(!host.isFullScreen());
-  QCOMPARE(fixture.m_content->parentWidget(), &fixture.m_window);
-  const int back = fixture.m_layout->indexOf(fixture.m_content);
-  QVERIFY(back >= 0);
-  QCOMPARE(fixture.m_layout->stretch(back), 1);
-
-  // The container is gone rather than merely hidden.
-  QPointer<QWidget> container = host.container();
-  QVERIFY(container.isNull());
-}
-
-// Restoring by APPENDING would silently reorder a layout that has widgets on
-// both sides of the content -- the fixture above cannot catch it, because its
-// content is already last.
-void TestContentFullScreenHost::leavingPutsTheContentBackAtItsOriginalIndex() {
-  QWidget window;
-  auto *layout = new QVBoxLayout(&window);
-  auto *above = new QWidget(&window);
-  auto *content = new QWidget(&window);
-  auto *below = new QWidget(&window);
-  layout->addWidget(above, 0);
-  layout->addWidget(content, 1);
-  layout->addWidget(below, 0);
-  QCOMPARE(layout->indexOf(content), 1);
-
-  ContentFullScreenHost host;
-  QVERIFY(host.setFullScreen(true, content, layout, &window));
-  QVERIFY(host.exitFullScreen());
-
-  QCOMPARE(layout->indexOf(above), 0);
-  QCOMPARE(layout->indexOf(content), 1);
-  QCOMPARE(layout->indexOf(below), 2);
-  QCOMPARE(layout->stretch(1), 1);
-}
-
-// A page and Qt can disagree about the current state; accepting a redundant
-// toggle would reparent the view twice, which is how this ends up as a blank or
-// orphaned fullscreen window.
 void TestContentFullScreenHost::aRedundantToggleIsRefused() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-
-  QCOMPARE(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window), true);
-  auto *first = host.container();
-  QCOMPARE(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window), false);
-  QCOMPARE(host.container(), first);
-
-  QCOMPARE(host.exitFullScreen(), true);
-  QCOMPARE(host.exitFullScreen(), false);
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  const auto flags = fixture.m_page->windowFlags();
+  QVERIFY(!host.setFullScreen(true, fixture.m_page));
+  QVERIFY(!host.setFullScreen(true, fixture.m_before));
+  QCOMPARE(host.content(), fixture.m_page);
+  QCOMPARE(fixture.m_page->windowFlags(), flags);
+  QVERIFY(host.exitFullScreen());
+  QVERIFY(!host.exitFullScreen());
 }
 
-void TestContentFullScreenHost::enteringWithNothingToLiftIsRefused() {
+void TestContentFullScreenHost::invalidEntryDoesNotChangeTheWidget() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-
-  QCOMPARE(host.setFullScreen(true, nullptr, fixture.m_layout, &fixture.m_window), false);
+  const auto flags = fixture.m_before->windowFlags();
+  auto *parent = fixture.m_before->parentWidget();
+  QVERIFY(!host.setFullScreen(true, nullptr));
+  QVERIFY(!host.setFullScreen(true, fixture.m_before));
+  QVERIFY(!host.setFullScreen(true, &fixture.m_tabs));
+  QWidget childWindow(fixture.m_page, Qt::Window);
+  childWindow.show();
+  QVERIFY(!host.setFullScreen(true, &childWindow));
   QVERIFY(!host.isFullScreen());
-  QCOMPARE(host.setFullScreen(true, fixture.m_content, nullptr, &fixture.m_window), false);
-  QVERIFY(!host.isFullScreen());
-  // ...and the content was not disturbed by either refusal.
-  QVERIFY(fixture.m_layout->indexOf(fixture.m_content) >= 0);
+  QVERIFY(!host.content());
+  QCOMPARE(fixture.m_before->windowFlags(), flags);
+  QCOMPARE(fixture.m_before->parentWidget(), parent);
+  QCOMPARE(fixture.m_tabs.currentWidget(), fixture.m_page);
+  QVERIFY(parent->layout()->isEnabled());
 }
 
-// Escape must NOT exit by itself. A web page has to be driven out through
-// Chromium first, or it keeps believing it is fullscreen and rejects the next
-// request -- presentation mode would then work exactly once per document.
 void TestContentFullScreenHost::escapeIsReportedAsAnIntentNotAnExit() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-
-  QSignalSpy spy(&host, &ContentFullScreenHost::exitRequested);
-
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
   QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
-  QVERIFY(QCoreApplication::sendEvent(host.container(), &escape));
-
-  QCOMPARE(spy.count(), 1);
-  // Still fullscreen: the owner decides when to come back.
+  QCoreApplication::sendEvent(fixture.m_page, &escape);
+  QCOMPARE(exits.count(), 1);
+  QVERIFY(escape.isAccepted());
   QVERIFY(host.isFullScreen());
-  QVERIFY(escape.isAccepted());
 }
 
-// THE regression case. The key press is delivered to the FOCUS widget, which
-// for a QWebEngineView is Chromium's render widget several levels below the
-// view -- and it consumes the event rather than letting it propagate up. A
-// filter installed only on the container never sees it, which is exactly why
-// the first version of presentation mode had no working exit at all.
-void TestContentFullScreenHost::escapeFromADescendantOfTheContentStillExits() {
+void TestContentFullScreenHost::escapeFromADeepDescendantClaimsShortcutOverride() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-
-  // Stand in for the render widget: a grandchild of the content.
-  auto *inner = new QWidget(fixture.m_content);
-  auto *deepest = new QWidget(inner);
-
-  QSignalSpy spy(&host, &ContentFullScreenHost::exitRequested);
-
-  QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
-  QCoreApplication::sendEvent(deepest, &escape);
-
-  QCOMPARE(spy.count(), 1);
-  // Swallowed, so the content never sees it -- the host owns Escape while
-  // fullscreen.
-  QVERIFY(escape.isAccepted());
-
-  // ShortcutOverride is claimed too, so no QShortcut anywhere can steal Escape
-  // before the key press arrives.
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
   QKeyEvent override(QEvent::ShortcutOverride, Qt::Key_Escape, Qt::NoModifier);
-  QVERIFY(QCoreApplication::sendEvent(deepest, &override));
+  override.ignore();
+  QCoreApplication::sendEvent(fixture.m_editor, &override);
   QVERIFY(override.isAccepted());
+  QCOMPARE(exits.count(), 0);
+  QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
+  escape.ignore();
+  QCoreApplication::sendEvent(fixture.m_editor, &escape);
+  QCOMPARE(exits.count(), 1);
+  QVERIFY(escape.isAccepted());
 }
 
-// The window's own chrome stayed behind, so without this there is NOTHING on
-// screen that ends fullscreen -- and a key that the content swallows is not a
-// discoverable affordance even when it works.
-void TestContentFullScreenHost::thereIsAlwaysAVisibleWayOut() {
+void TestContentFullScreenHost::anOwnedPopupHandlesTheFirstEscape() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-
-  auto *button = host.exitButton();
-  QVERIFY(button);
-  QCOMPARE(button->parentWidget(), host.container());
-  // It floats OVER the content rather than taking a strip of it.
-  QVERIFY(host.container()->layout()->indexOf(button) < 0);
-  // Focus must stay with the content, or the first keystroke of a presentation
-  // would go to the button.
-  QCOMPARE(button->focusPolicy(), Qt::NoFocus);
-  QVERIFY(!button->text().isEmpty());
-
-  QSignalSpy spy(&host, &ContentFullScreenHost::exitRequested);
-  button->click();
-  QCOMPARE(spy.count(), 1);
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  connectExitConsumer(host);
+  QMenu menu(fixture.m_toolbar);
+  menu.addAction(QStringLiteral("Page"));
+  menu.popup(fixture.m_toolbar->mapToGlobal(QPoint(0, fixture.m_toolbar->height())));
+  QTRY_VERIFY(menu.isVisible());
+  QKeyEvent override(QEvent::ShortcutOverride, Qt::Key_Escape, Qt::NoModifier);
+  override.ignore();
+  QCoreApplication::sendEvent(fixture.m_page, &override);
+  QVERIFY(!override.isAccepted());
+  QTest::keyClick(&menu, Qt::Key_Escape);
+  QTRY_VERIFY(!menu.isVisible());
+  QCOMPARE(exits.count(), 0);
+  QVERIFY(host.isFullScreen());
+  QTest::keyClick(fixture.m_editor, Qt::Key_Escape);
+  QCOMPARE(exits.count(), 1);
+  QVERIFY(!host.isFullScreen());
 }
 
-// The label must name the MODE the owner entered, not the mechanism: "Exit Full
-// Screen" reads as the application's own full-screen toggle and sends the user
-// looking at the View menu.
-void TestContentFullScreenHost::theExitLabelNamesTheModeNotTheMechanism() {
+void TestContentFullScreenHost::escapeLeavesUnrelatedWidgetsAndChildDialogsAlone() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-  host.setExitButtonText(QStringLiteral("Exit Presentation Mode"));
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-
-  QCOMPARE(host.exitButton()->text(), QStringLiteral("Exit Presentation Mode"));
-  // The key hint lives in the tooltip, so the visible label stays short but the
-  // shortcut is still discoverable.
-  QVERIFY(host.exitButton()->toolTip().contains(QStringLiteral("Esc")));
-  QVERIFY(host.exitButton()->toolTip().contains(QStringLiteral("Exit Presentation Mode")));
-
-  // Settable while already fullscreen, and an empty label is refused rather
-  // than producing an unlabelled button nobody can identify.
-  host.setExitButtonText(QStringLiteral("Leave Slideshow"));
-  QCOMPARE(host.exitButton()->text(), QStringLiteral("Leave Slideshow"));
-  host.setExitButtonText(QString());
-  QCOMPARE(host.exitButton()->text(), QStringLiteral("Leave Slideshow"));
-}
-
-// The Escape filter is application-wide, so it MUST be scoped: swallowing
-// Escape everywhere would break every dialog, popup and editor in the app.
-void TestContentFullScreenHost::escapeIsNotSwallowedOutsideTheContainer() {
-  Fixture fixture;
-  ContentFullScreenHost host;
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-
-  QSignalSpy spy(&host, &ContentFullScreenHost::exitRequested);
-
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
   QWidget elsewhere;
   QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
   escape.ignore();
   QCoreApplication::sendEvent(&elsewhere, &escape);
-
-  QCOMPARE(spy.count(), 0);
   QVERIFY(!escape.isAccepted());
 
-  // ...and once fullscreen ends, the filter is gone entirely.
+  QDialog dialog(fixture.m_page);
+  dialog.open();
+  QTRY_VERIFY(dialog.isVisible());
+  QTest::keyClick(&dialog, Qt::Key_Escape);
+  QTRY_VERIFY(!dialog.isVisible());
+  QCOMPARE(exits.count(), 0);
+  QVERIFY(host.isFullScreen());
+
   QVERIFY(host.exitFullScreen());
-  QKeyEvent after(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
+  QKeyEvent after(QEvent::ShortcutOverride, Qt::Key_Escape, Qt::NoModifier);
   after.ignore();
-  QCoreApplication::sendEvent(fixture.m_content, &after);
-  QCOMPARE(spy.count(), 0);
+  QCoreApplication::sendEvent(fixture.m_page, &after);
   QVERIFY(!after.isAccepted());
+  QCOMPARE(exits.count(), 0);
 }
 
-void TestContentFullScreenHost::otherKeysAreNotSwallowed() {
+void TestContentFullScreenHost::nativeWindowEscapeUsesTheActivePresentation() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
-  QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QTRY_VERIFY(fixture.m_page->isActiveWindow());
+  QVERIFY(fixture.m_page->windowHandle());
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
+  QCoreApplication::sendEvent(fixture.m_page->windowHandle(), &escape);
+  QCOMPARE(exits.count(), 1);
+  QVERIFY(escape.isAccepted());
+}
 
-  QSignalSpy spy(&host, &ContentFullScreenHost::exitRequested);
-
-  QKeyEvent pageDown(QEvent::KeyPress, Qt::Key_PageDown, Qt::NoModifier);
-  QCoreApplication::sendEvent(host.container(), &pageDown);
-
-  QCOMPARE(spy.count(), 0);
+void TestContentFullScreenHost::otherKeysReachTheContent() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  ContentFullScreenHost host;
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  QTest::keyClicks(fixture.m_editor, QStringLiteral("page"));
+  QCOMPARE(fixture.m_editor->text(), QStringLiteral("page"));
+  QCOMPARE(exits.count(), 0);
   QVERIFY(host.isFullScreen());
 }
 
-// The content belongs to the CALLER. A host destroyed while fullscreen must not
-// take it down with the container -- that would destroy a view window's editor.
-void TestContentFullScreenHost::destroyingTheHostReturnsTheContent() {
+void TestContentFullScreenHost::nativeCloseExitsWithoutClosingTheTab() {
   Fixture fixture;
-  QPointer<QWidget> content = fixture.m_content;
-
-  {
-    ContentFullScreenHost host;
-    QVERIFY(host.setFullScreen(true, fixture.m_content, fixture.m_layout, &fixture.m_window));
-    QCOMPARE(fixture.m_content->parentWidget(), host.container());
-  }
-
-  QVERIFY(!content.isNull());
-  QCOMPARE(content->parentWidget(), &fixture.m_window);
-  QVERIFY(fixture.m_layout->indexOf(content) >= 0);
+  QVERIFY(fixture.show());
+  ContentFullScreenHost host;
+  QPointer<QWidget> page = fixture.m_page;
+  page->setAttribute(Qt::WA_DeleteOnClose, true);
+  const auto flags = page->windowFlags();
+  QVERIFY(host.setFullScreen(true, page));
+  connectExitConsumer(host);
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  QVERIFY(page->windowHandle());
+  page->windowHandle()->close();
+  QTRY_VERIFY(!host.isFullScreen());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(page);
+  QVERIFY(page->isVisible());
+  QCOMPARE(page->windowFlags(), flags);
+  QCOMPARE(fixture.m_tabs.currentWidget(), page.data());
+  QCOMPARE(fixture.m_tabs.count(), 3);
+  QCOMPARE(fixture.m_tabs.indexOf(page), 1);
+  QCOMPARE(exits.count(), 1);
 }
 
-// The caller can be torn down from underneath (a view window closing while
-// fullscreen). Raw pointers here would be a dangling reparent.
-void TestContentFullScreenHost::aDestroyedContentDoesNotCrashTheRestore() {
+void TestContentFullScreenHost::switchingTabsExitsWithoutShowingOrFocusingTheOldTab() {
   Fixture fixture;
+  QVERIFY(fixture.show());
   ContentFullScreenHost host;
+  const auto flags = fixture.m_page->windowFlags();
+  auto *parent = fixture.m_page->parentWidget();
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  connectExitConsumer(host);
+  fixture.m_tabs.setCurrentWidget(fixture.m_after);
+  fixture.m_tabs.activateWindow();
+  fixture.m_after->setFocus();
+  QTRY_VERIFY(!host.isFullScreen());
+  QTRY_VERIFY(fixture.m_after->hasFocus());
+  QVERIFY(!fixture.m_page->isVisible());
+  QCOMPARE(fixture.m_page->windowFlags(), flags);
+  QCOMPARE(fixture.m_page->parentWidget(), parent);
+  QVERIFY(parent->layout()->isEnabled());
+  QCOMPARE(fixture.m_tabs.currentWidget(), fixture.m_after);
+  QCOMPARE(fixture.m_tabs.count(), 3);
+  QCOMPARE(fixture.m_tabs.indexOf(fixture.m_page), 1);
+}
 
-  auto *content = new QWidget(&fixture.m_window);
-  fixture.m_layout->addWidget(content, 1);
-  QVERIFY(host.setFullScreen(true, content, fixture.m_layout, &fixture.m_window));
+void TestContentFullScreenHost::ownershipTransferRestoresUnderTheNewParent() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  QTabWidget destination;
+  destination.addTab(new QWidget, QStringLiteral("Destination"));
+  destination.resize(460, 340);
+  destination.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&destination));
+  ContentFullScreenHost host;
+  auto *oldParent = fixture.m_page->parentWidget();
+  const auto flags = fixture.m_page->windowFlags();
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  connectExitConsumer(host);
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
 
-  delete content;
+  fixture.m_tabs.removeTab(fixture.m_tabs.indexOf(fixture.m_page));
+  fixture.m_page->hide();
+  destination.addTab(fixture.m_page, QStringLiteral("Document"));
+  destination.setCurrentWidget(fixture.m_page);
+  destination.activateWindow();
+  fixture.m_editor->setFocus();
+  QTRY_VERIFY(!host.isFullScreen());
+  QCoreApplication::processEvents();
+  QCOMPARE(exits.count(), 1);
+  QVERIFY(fixture.m_page->parentWidget() != oldParent);
+  QCOMPARE(fixture.m_page->windowFlags(), flags);
+  QVERIFY(oldParent->layout()->isEnabled());
+  QCOMPARE(destination.currentWidget(), fixture.m_page);
+  QCOMPARE(destination.indexOf(fixture.m_page), 1);
+  QCOMPARE(destination.count(), 2);
+  QCOMPARE(fixture.m_tabs.indexOf(fixture.m_page), -1);
+  QCOMPARE(fixture.m_tabs.count(), 2);
+  QVERIFY(fixture.m_page->isVisible());
+  QTRY_COMPARE(fixture.m_page->geometry(), fixture.m_page->parentWidget()->contentsRect());
+  QTRY_VERIFY(fixture.m_editor->hasFocus());
+}
 
-  QCOMPARE(host.exitFullScreen(), true);
+void TestContentFullScreenHost::anOldHideCannotExitANewPresentation() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  ContentFullScreenHost host;
+  connectExitConsumer(host);
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  fixture.m_page->hide();
+  QVERIFY(host.exitFullScreen());
+  fixture.m_page->show();
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QCoreApplication::processEvents();
+  QVERIFY(host.isFullScreen());
+  QCOMPARE(exits.count(), 0);
+}
+
+void TestContentFullScreenHost::losingFullScreenExitsButMinimizingDoesNot() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  ContentFullScreenHost host;
+  const auto flags = fixture.m_page->windowFlags();
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  connectExitConsumer(host);
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  fixture.m_page->setWindowState(Qt::WindowMinimized);
+  QCoreApplication::processEvents();
+  QVERIFY(host.isFullScreen());
+  QCOMPARE(exits.count(), 0);
+  fixture.m_page->setWindowState(Qt::WindowNoState);
+  QTRY_VERIFY(!host.isFullScreen());
+  QCOMPARE(exits.count(), 1);
+  QCOMPARE(fixture.m_page->windowFlags(), flags);
+  QVERIFY(fixture.m_page->isVisible());
+}
+
+void TestContentFullScreenHost::aRemovedFocusTargetFallsBackToTheExistingProxy() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  fixture.m_find->setFocus();
+  QTRY_VERIFY(fixture.m_find->hasFocus());
+  ContentFullScreenHost host;
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QWidget otherOwner;
+  fixture.m_find->setParent(&otherOwner);
+  QVERIFY(host.exitFullScreen());
+  QTRY_VERIFY(fixture.m_editor->hasFocus());
+}
+
+void TestContentFullScreenHost::destroyingTheHostRestoresThePage() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  QPointer<QWidget> page = fixture.m_page;
+  auto *parent = page->parentWidget();
+  const auto flags = page->windowFlags();
+  {
+    ContentFullScreenHost host;
+    QVERIFY(host.setFullScreen(true, page));
+  }
+  QVERIFY(page);
+  QCOMPARE(page->windowFlags(), flags);
+  QCOMPARE(page->parentWidget(), parent);
+  QVERIFY(parent->layout()->isEnabled());
+  QVERIFY(page->isVisible());
+  QCOMPARE(fixture.m_tabs.currentWidget(), page.data());
+  QCOMPARE(fixture.m_tabs.indexOf(page), 1);
+}
+
+void TestContentFullScreenHost::destroyingThePageRestoresTheSurvivingLayout() {
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  ContentFullScreenHost host;
+  auto *parentLayout = fixture.m_page->parentWidget()->layout();
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  connectExitConsumer(host);
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  delete fixture.m_page;
   QVERIFY(!host.isFullScreen());
-  QVERIFY(!host.container());
+  QVERIFY(!host.content());
+  QVERIFY(parentLayout->isEnabled());
+  QVERIFY(!host.exitFullScreen());
+  QCoreApplication::processEvents();
+  QCOMPARE(exits.count(), 0);
+  QCOMPARE(fixture.m_tabs.count(), 2);
+  QCOMPARE(fixture.m_tabs.currentWidget(), fixture.m_after);
+  QTRY_COMPARE(fixture.m_after->geometry(), fixture.m_after->parentWidget()->contentsRect());
+  fixture.m_after->setText(QStringLiteral("still usable"));
+  QVERIFY(host.setFullScreen(true, fixture.m_after));
+  QVERIFY(host.exitFullScreen());
+  QCOMPARE(fixture.m_after->text(), QStringLiteral("still usable"));
+}
+
+void TestContentFullScreenHost::destroyingTheOwnerLeavesNoActiveHost() {
+  auto *fixture = new Fixture;
+  QVERIFY(fixture->show());
+  ContentFullScreenHost host;
+  QPointer<QWidget> page = fixture->m_page;
+  QVERIFY(host.setFullScreen(true, page));
+  connectExitConsumer(host);
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  delete fixture;
+  QCoreApplication::processEvents();
+  QVERIFY(page.isNull());
+  QVERIFY(!host.isFullScreen());
+  QVERIFY(!host.content());
+  QVERIFY(!host.exitFullScreen());
+  QCOMPARE(exits.count(), 0);
 }
 
 } // namespace tests

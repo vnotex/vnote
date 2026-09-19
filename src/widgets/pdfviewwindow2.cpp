@@ -67,6 +67,8 @@ PdfViewWindow2::PdfViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buff
 }
 
 PdfViewWindow2::~PdfViewWindow2() {
+  // The confirmed-exit connection still needs the adapter and saved view state.
+  setPresentationMode(false);
   // The debounce timer would otherwise drop the user's last edit when the tab
   // is closed within the window.
   if (m_commentController) {
@@ -125,6 +127,7 @@ void PdfViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   m_viewerToolBar->installPresentationAction(p_toolBar, [&services](const QString &p_iconName) {
     return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
   });
+  m_viewerToolBar->setPresentationMode(isViewFullScreen());
 }
 
 QAction *PdfViewWindow2::addAdditionalToolBarMenuAction(QToolBar *p_toolBar) {
@@ -145,6 +148,18 @@ QAction *PdfViewWindow2::addAdditionalToolBarMenuAction(QToolBar *p_toolBar) {
 // the toolbar's contract depends on that ordering.
 void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
   m_viewerToolBar = new PdfViewerToolBar(this);
+  connect(this, &ViewWindow2::viewFullScreenChanged, this, [this](bool p_on) {
+    m_viewerToolBar->setPresentationMode(p_on);
+    if (!p_on) {
+      if (auto *a = adapter()) {
+        if (!m_prePresentationZoom.isEmpty()) {
+          a->setZoom(m_prePresentationZoom);
+        }
+        a->setScrollMode(m_prePresentationScrollMode);
+      }
+      m_prePresentationZoom.clear();
+    }
+  });
 
   auto &services = getServices();
   m_viewerToolBar->install(
@@ -580,14 +595,10 @@ void PdfViewWindow2::setupViewer() {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
 
-  // Names the mode the user actually entered. "Exit Full Screen" would read as
-  // the application's own full-screen toggle and send them to the View menu.
-  setContentFullScreenExitText(tr("Exit Presentation Mode"));
-
   // Escape leaves presentation mode. Driven entirely from Qt: see
   // togglePresentationMode() for why pdf.js's own HTML5-fullscreen presentation
   // mode is not used.
-  connect(this, &ViewWindow2::contentFullScreenExitRequested, this,
+  connect(this, &ViewWindow2::viewFullScreenExitRequested, this,
           [this]() { setPresentationMode(false); });
 
   // Outline pipeline: PDF bookmarks -> OutlineProvider.
@@ -796,14 +807,17 @@ void PdfViewWindow2::zoom(bool p_zoomIn) {
 // requires QWebEngineSettings::FullScreenSupportEnabled; see the note in
 // webviewer.h for why that is not turned on globally.)
 //
-// So VNote does the two halves itself: ViewWindow2 lifts the viewer into a
-// fullscreen top-level, and the adapter puts the document into page-fit +
-// page-at-a-time scrolling. Both halves are things we already own and can test.
+// VNote promotes the whole ViewWindow, retaining its toolbar and Find layout.
+// The adapter supplies page-fit + page-at-a-time scrolling; confirmed exit
+// restores the captured zoom and scroll mode through viewFullScreenChanged.
 
-void PdfViewWindow2::togglePresentationMode() { setPresentationMode(!isContentFullScreen()); }
+void PdfViewWindow2::togglePresentationMode() {
+  setPresentationMode(!isViewFullScreen());
+  m_viewerToolBar->setPresentationMode(isViewFullScreen());
+}
 
 void PdfViewWindow2::setPresentationMode(bool p_on) {
-  if (p_on == isContentFullScreen()) {
+  if (p_on == isViewFullScreen()) {
     return;
   }
 
@@ -819,7 +833,7 @@ void PdfViewWindow2::setPresentationMode(bool p_on) {
     m_prePresentationZoom = a->getViewerState().m_scaleValue;
     m_prePresentationScrollMode = a->getViewerState().m_scrollMode;
 
-    if (!setContentFullScreen(true)) {
+    if (!setViewFullScreen(true)) {
       return;
     }
     a->setZoom(QStringLiteral("page-fit"));
@@ -828,14 +842,7 @@ void PdfViewWindow2::setPresentationMode(bool p_on) {
     return;
   }
 
-  setContentFullScreen(false);
-  if (a) {
-    if (!m_prePresentationZoom.isEmpty()) {
-      a->setZoom(m_prePresentationZoom);
-    }
-    a->setScrollMode(m_prePresentationScrollMode);
-  }
-  m_prePresentationZoom.clear();
+  setViewFullScreen(false);
 }
 
 // ============ Find and Replace ============

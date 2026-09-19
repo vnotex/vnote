@@ -26,8 +26,8 @@ public:
   //
   // QWebEngineSettings::FullScreenSupportEnabled is off by default, and turning
   // it on would make `document.fullscreenEnabled` true for EVERY web view
-  // (Markdown preview, mind map) while only some of them have a host able to
-  // move the widget -- Chromium would then believe it is fullscreen with
+  // (Markdown preview, mind map) while only some of them implement
+  // native presentation -- Chromium would then believe it is fullscreen with
   // nothing on screen having changed. Enabling it is also not enough on its
   // own: Chromium requires transient renderer user activation for
   // requestFullscreen(), which a click on a Qt QAction routed through
@@ -35,7 +35,7 @@ public:
   // page swallows the rejection silently.
   //
   // A view window that wants a distraction-free mode drives
-  // ViewWindow2::setContentFullScreen() from the Qt side instead; see
+  // ViewWindow2::setViewFullScreen() from the Qt side instead; see
   // PdfViewWindow2's presentation mode.
 
 signals:

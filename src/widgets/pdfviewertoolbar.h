@@ -6,13 +6,16 @@
 #include <QIcon>
 #include <QList>
 #include <QObject>
+#include <QPointer>
 #include <QString>
+#include <QTimer>
 
 #include "editors/pdfvieweradapter.h"
 
 class QAction;
 class QActionGroup;
 class QComboBox;
+class QGraphicsOpacityEffect;
 class QLabel;
 class QMenu;
 class QSpinBox;
@@ -46,6 +49,7 @@ public:
   using ViewerState = PdfViewerAdapter::ViewerState;
 
   explicit PdfViewerToolBar(QObject *p_parent = nullptr);
+  ~PdfViewerToolBar() override;
 
   // Creates the actions, widgets and menus on @p_toolBar. Call once.
   //
@@ -82,8 +86,11 @@ public:
 
   // Repaints every viewer control from the caller's state. Viewer commands
   // are disabled while p_state.m_valid is false; Menu and common actions
-  // added by the caller remain available.
+  // added by the caller remain available, as does exiting Presentation Mode.
   void syncState(const ViewerState &p_state);
+
+  // Synchronizes confirmed native presentation state without requesting a transition.
+  void setPresentationMode(bool p_on);
 
   // ---- Accessors, for the gate ----
   QAction *sidebarAction() const { return m_sidebarAction; }
@@ -134,7 +141,12 @@ signals:
 
   void documentPropertiesRequested();
 
+protected:
+  bool eventFilter(QObject *p_obj, QEvent *p_event) override;
+
 private:
+  void updatePresentationOpacity();
+
   QAction *addIconAction(QToolBar *p_toolBar, const QString &p_iconName, const QString &p_text,
                          const IconProvider &p_icons);
 
@@ -155,6 +167,12 @@ private:
 
   // Ticks the one entry whose data() equals @p_value and unticks the rest.
   static void syncModeGroup(const QList<QAction *> &p_actions, int p_value);
+
+  QPointer<QToolBar> m_toolBar;
+  QPointer<QGraphicsOpacityEffect> m_presentationOpacityEffect;
+  QTimer m_presentationOpacityTimer;
+  QMetaObject::Connection m_presentationFocusConnection;
+  bool m_presentationMode = false;
 
   // Everything below is owned by the toolbar / the menus / this QObject.
   QAction *m_sidebarAction = nullptr;

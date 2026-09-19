@@ -1268,20 +1268,6 @@
     </message>
 </context>
 <context>
-    <name>vnotex::ContentFullScreenHost</name>
-    <message>
-        <location filename="../../../widgets/contentfullscreenhost.cpp" line="+14"/>
-        <source>Exit Full Screen</source>
-        <translation>全画面表示を終了</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <location line="+74"/>
-        <source>%1 (Esc)</source>
-        <translation>%1（Esc）</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::CustomCommandProvider</name>
     <message>
         <location filename="../../../imagehost/customcommandprovider.cpp" line="+15"/>
@@ -7656,14 +7642,6 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+16"/>
         <source>Opacity</source>
         <translation>不透明度</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::PdfViewWindow2</name>
-    <message>
-        <location filename="../../../widgets/pdfviewwindow2.cpp" line="+591"/>
-        <source>Exit Presentation Mode</source>
-        <translation>プレゼンテーションモードを終了</translation>
     </message>
 </context>
 <context>

@@ -1616,11 +1616,9 @@ target_include_directories(test_pdfannotationtoolbar PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
 
-# The widget reparenting behind ViewWindow2's content fullscreen (HTML5
-# fullscreen from a web view -- pdf.js's presentation mode is the first
-# consumer). Extracted into its own component precisely so it can be gated: no
-# test compiles viewwindow2.cpp, and reparenting fails as a stuck, blank or
-# orphaned window rather than as a crash.
+# Same-parent window-flag promotion behind ViewWindow2's native fullscreen.
+# Gate tab identity, layout restoration, focus, exit intents and widget lifetime
+# without compiling viewwindow2.cpp and its full application dependencies.
 #
 # NOT GUILESS: real windows, real layouts, real focus.
 add_qt_test(test_contentfullscreenhost

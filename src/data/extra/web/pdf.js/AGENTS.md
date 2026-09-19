@@ -468,19 +468,26 @@ silently dead button. (It does not even *construct* `pdfPresentationMode` unless
 `QWebEngineSettings::FullScreenSupportEnabled`; that is deliberately left off,
 see the note in `src/widgets/webviewer.h`.)
 
-So `PdfViewWindow2::setPresentationMode()` does the two halves itself:
-`ViewWindow2::setContentFullScreen()` lifts the viewer into a fullscreen
-top-level, and the adapter puts the document into `page-fit` +
-`ScrollMode::PAGE`. The pre-entry zoom and scroll mode are captured on the way
-in so leaving restores what the user was actually looking at.
+`PdfViewWindow2::setPresentationMode()` drives two native/adapter halves:
+`ViewWindow2::setViewFullScreen()` promotes the **whole existing ViewWindow**
+in place, retaining its parent and tab identity, toolbar row, Find and scoped
+shortcuts. The adapter requests `page-fit` + `ScrollMode::PAGE` only after entry
+succeeds. Readable-width margins are suspended. Confirmed exit restores the
+captured zoom/scroll state, including forced exits and native state changes.
 
-**Leaving** is Escape or the floating **"Exit Presentation Mode"** button — the
-toolbar that armed presentation mode stayed behind with the window and is not
-reachable. The label deliberately names the mode rather than the mechanism;
-"Exit Full Screen" would read as the application's own full-screen toggle.
-Escape has to be filtered at the application level, because Chromium's render
-widget consumes the key before it can reach the container; see
-[widgets AGENTS.md § Content fullscreen](../../../../widgets/AGENTS.md).
+**Leaving** uses the checked **Presentation Mode** toolbar action, Escape, or
+native Close (Alt+F4), which exits presentation without closing the document.
+There is no floating exit button. An owned popup handles Escape first. The
+application-level filter reaches Chromium's nested render widget but excludes
+unrelated windows and child dialogs; tab hides do not reopen the hidden page.
+
+The existing toolbar is **10% opaque when inactive, 100% when active**. Active
+means the presentation window is active and the pointer is over the toolbar,
+a toolbar control has keyboard focus, or a toolbar-owned popup is open. PDF,
+Find and popup windows remain opaque. The checkable action remains enabled while
+presenting even during viewer reload, including in the narrow-toolbar extension
+menu. Normal mode removes dimming. See
+[widgets AGENTS.md § Whole-view fullscreen](../../../../widgets/AGENTS.md#whole-view-fullscreen).
 
 ---
 

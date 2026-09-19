@@ -1,220 +1,244 @@
 #include "contentfullscreenhost.h"
 
 #include <QApplication>
-#include <QBoxLayout>
 #include <QEvent>
 #include <QKeyEvent>
-#include <QPushButton>
-#include <QVBoxLayout>
+#include <QLayout>
+#include <QScopedValueRollback>
+#include <QScreen>
+#include <QTimer>
 #include <QWidget>
+#include <QWindow>
 
 using namespace vnotex;
 
-ContentFullScreenHost::ContentFullScreenHost(QObject *p_parent)
-    : QObject(p_parent), m_exitButtonText(tr("Exit Full Screen")) {}
+ContentFullScreenHost::ContentFullScreenHost(QObject *p_parent) : QObject(p_parent) {}
 
-void ContentFullScreenHost::setExitButtonText(const QString &p_text) {
-  if (p_text.isEmpty()) {
-    return;
-  }
-  m_exitButtonText = p_text;
-  if (m_exitButton) {
-    m_exitButton->setText(p_text);
-    m_exitButton->setToolTip(tr("%1 (Esc)").arg(p_text));
-    layoutExitButton();
-  }
-}
+ContentFullScreenHost::~ContentFullScreenHost() { exitFullScreen(); }
 
-ContentFullScreenHost::~ContentFullScreenHost() {
-  // The content belongs to the caller and is currently parented to a container
-  // that is about to die with this object. Put it back first, or it is
-  // destroyed along with the container.
-  exitFullScreen();
-}
-
-bool ContentFullScreenHost::isFullScreen() const { return !m_container.isNull(); }
-
-QWidget *ContentFullScreenHost::container() const { return m_container.data(); }
-
-QPushButton *ContentFullScreenHost::exitButton() const { return m_exitButton.data(); }
+bool ContentFullScreenHost::isFullScreen() const { return !m_content.isNull(); }
 
 QWidget *ContentFullScreenHost::content() const { return m_content.data(); }
 
-bool ContentFullScreenHost::exitFullScreen() {
-  return setFullScreen(false, nullptr, nullptr, nullptr);
-}
+bool ContentFullScreenHost::exitFullScreen() { return setFullScreen(false, nullptr); }
 
-bool ContentFullScreenHost::setFullScreen(bool p_on, QWidget *p_content, QBoxLayout *p_home,
-                                          QWidget *p_ownerWindow) {
-  if (p_on == isFullScreen()) {
+bool ContentFullScreenHost::setFullScreen(bool p_on, QWidget *p_content) {
+  if (m_transitionInProgress || p_on == isFullScreen()) {
     return false;
   }
 
-  if (p_on) {
-    if (!p_content || !p_home) {
-      return false;
-    }
-
-    m_content = p_content;
-    m_home = p_home;
-    // Both remembered BEFORE the widget leaves, because a layout reports
-    // nothing about an item it no longer holds. Restoring by APPENDING would
-    // silently reorder a layout that has widgets on both sides of the content,
-    // and a hardcoded stretch would collapse it to its size hint.
-    m_homeIndex = p_home->indexOf(p_content);
-    m_homeStretch = m_homeIndex >= 0 ? p_home->stretch(m_homeIndex) : 1;
-
-    // Parented to the owner window rather than left ownerless: closing that
-    // window must not leave a fullscreen widget behind on screen.
-    m_container = new QWidget(p_ownerWindow, Qt::Window);
-    auto *layout = new QVBoxLayout(m_container);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
-
-    p_home->removeWidget(p_content);
-    layout->addWidget(p_content, 1);
-
-    // A VISIBLE way out, not only a key.
-    //
-    // Everything else in the window -- toolbar, menus -- stayed behind, so
-    // while the content is fullscreen this button is the ONLY thing on screen
-    // that can end it. Relying on Escape alone left users with no affordance at
-    // all, and (see the application-level filter below) the key does not even
-    // reach a QWebEngineView's host reliably.
-    //
-    // The LABEL names the mode the owner entered, not the mechanism. "Exit
-    // Full Screen" reads as the application's own full-screen toggle and sends
-    // the user looking at the View menu; the owner supplies the term its users
-    // actually saw on the way in (PdfViewWindow2 passes "Exit Presentation
-    // Mode"). The Escape hint lives in the tooltip so the visible label stays
-    // short.
-    //
-    // A child of the container rather than a layout item, so it floats OVER the
-    // content instead of stealing a strip of it. No stylesheet: the theme's
-    // QSS styles a plain QPushButton, and a literal colour here would be wrong
-    // in 11 of the 12 themes.
-    m_exitButton = new QPushButton(m_exitButtonText, m_container);
-    m_exitButton->setToolTip(tr("%1 (Esc)").arg(m_exitButtonText));
-    m_exitButton->setFocusPolicy(Qt::NoFocus);
-    m_exitButton->setCursor(Qt::ArrowCursor);
-    connect(m_exitButton, &QPushButton::clicked, this, [this]() { emit exitRequested(); });
-    m_exitButton->adjustSize();
-    m_exitButton->raise();
-
-    // Escape must be caught at the APPLICATION level, not on the container.
-    //
-    // A filter on the container only sees events DELIVERED to the container,
-    // and a key press goes to the focus widget -- which for a QWebEngineView is
-    // Chromium's render widget, several levels down, and it consumes the event
-    // rather than letting it propagate up. That is why an earlier
-    // container-only filter left presentation mode with no working exit at all.
-    // An application filter runs inside QCoreApplication::notify, before the
-    // target sees anything.
-    //
-    // Scoped in eventFilter() to events destined for this container, so it
-    // cannot swallow Escape anywhere else in the app.
-    m_container->installEventFilter(this);
-    if (auto *app = QCoreApplication::instance()) {
-      app->installEventFilter(this);
-    }
-
-    m_container->showFullScreen();
-    p_content->show();
-    p_content->setFocus();
-    layoutExitButton();
+  if (!p_on) {
+    restore(false);
     return true;
   }
 
-  auto *container = m_container.data();
-  auto *content = m_content.data();
-  auto *home = m_home.data();
-
-  // Cleared FIRST, so anything the restore below re-enters already sees a
-  // non-fullscreen host.
-  m_container = nullptr;
-  m_content = nullptr;
-  m_home = nullptr;
-
-  if (content && home) {
-    if (container->layout()) {
-      container->layout()->removeWidget(content);
-    }
-    // insertWidget, not addWidget: the content goes back where it was, not on
-    // the end. Clamped, because the layout may have changed while it was away.
-    const int index = m_homeIndex >= 0 ? qMin(m_homeIndex, home->count()) : home->count();
-    home->insertWidget(index, content, m_homeStretch);
-    content->show();
+  if (!p_content || !p_content->parentWidget() || p_content->isWindow() ||
+      !p_content->isVisible()) {
+    return false;
   }
 
-  if (container) {
-    container->removeEventFilter(this);
-    if (auto *app = QCoreApplication::instance()) {
-      app->removeEventFilter(this);
-    }
-    // hide() before deleteLater(): a fast exit/enter cycle must not leave a
-    // still-visible fullscreen window queued for destruction on top of the new
-    // one.
-    container->hide();
-    container->deleteLater();
+  const QScopedValueRollback<bool> transition(m_transitionInProgress, true);
+  ++m_generation;
+  m_content = p_content;
+  m_parent = p_content->parentWidget();
+  m_parentLayout = m_parent->layout();
+  m_parentLayoutEnabled = m_parentLayout && m_parentLayout->isEnabled();
+  m_windowFlags = p_content->windowFlags();
+  m_windowState = p_content->windowState();
+  m_geometry = p_content->geometry();
+  m_restoreVisibility = p_content->isVisible();
+  m_quitOnClose = p_content->testAttribute(Qt::WA_QuitOnClose);
+  m_screen = p_content->screen();
+  auto *focus = QApplication::focusWidget();
+  if (focus && (focus == p_content || p_content->isAncestorOf(focus)) &&
+      focus->window() == p_content->window()) {
+    m_focusWidget = focus;
   }
-  m_exitButton = nullptr;
+
+  m_destroyedConnection =
+      connect(p_content, &QObject::destroyed, this, [this]() { restore(true); });
+  if (auto *app = QCoreApplication::instance()) {
+    // Chromium's deeply nested focus widget consumes Escape before it reaches
+    // a filter on the promoted root. Scope the application filter below.
+    app->installEventFilter(this);
+  }
+
+  // QStackedLayout still owns this same tab page and otherwise resizes it when
+  // the background split lays out. Do not disable the page's own layout.
+  if (m_parentLayout) {
+    m_parentLayout->setEnabled(false);
+  }
+  p_content->setWindowFlags((m_windowFlags & ~Qt::WindowType_Mask) | Qt::Window |
+                            Qt::FramelessWindowHint);
+  if (m_screen) {
+    p_content->setScreen(m_screen);
+    p_content->move(m_screen->geometry().topLeft());
+  }
+  p_content->setAttribute(Qt::WA_QuitOnClose, false);
+  p_content->showFullScreen();
+  p_content->raise();
+  p_content->activateWindow();
+  p_content->setFocus(Qt::OtherFocusReason);
   return true;
 }
 
-void ContentFullScreenHost::layoutExitButton() {
-  if (!m_container || !m_exitButton) {
+void ContentFullScreenHost::restore(bool p_contentDestroyed) {
+  const QScopedValueRollback<bool> transition(m_transitionInProgress, true);
+  const QPointer<QWidget> content = p_contentDestroyed ? nullptr : m_content.data();
+  const auto parent = m_parent;
+  const auto parentLayout = m_parentLayout;
+  const auto focus = m_focusWidget;
+  const auto flags = m_windowFlags;
+  const auto state = m_windowState;
+  const auto geometry = m_geometry;
+  const bool layoutEnabled = m_parentLayoutEnabled;
+  const bool restoreVisibility = m_restoreVisibility;
+  const bool quitOnClose = m_quitOnClose;
+
+  // Clear active state before flag changes, layout activation or focus callbacks
+  // can reenter. In destroyed(), even a nonnull QPointer may name a dying QWidget.
+  m_content.clear();
+  m_parent.clear();
+  m_parentLayout.clear();
+  m_focusWidget.clear();
+  m_screen.clear();
+  m_restoreVisibility = false;
+  disconnect(m_destroyedConnection);
+  m_destroyedConnection = {};
+  if (auto *app = QCoreApplication::instance()) {
+    app->removeEventFilter(this);
+  }
+
+  if (content) {
+    content->hide();
+    content->setWindowFlags(flags);
+    content->setWindowState(state);
+    content->setAttribute(Qt::WA_QuitOnClose, quitOnClose);
+    if (content->parentWidget() == parent) {
+      content->setGeometry(geometry);
+    }
+  }
+
+  if (parentLayout) {
+    parentLayout->setEnabled(layoutEnabled);
+    if (layoutEnabled) {
+      parentLayout->invalidate();
+      if (p_contentDestroyed) {
+        // QWidget emits destroyed() before its layout item is removed from the
+        // parent's layout. Do not lay out the dying page from that signal.
+        QTimer::singleShot(0, parentLayout, [parentLayout]() {
+          if (parentLayout && parentLayout->isEnabled()) {
+            parentLayout->activate();
+          }
+        });
+      } else {
+        parentLayout->activate();
+      }
+    }
+  }
+
+  if (!content) {
     return;
   }
-  // Top-right, inset by a margin. Positioned by hand rather than through the
-  // layout so it floats OVER the content instead of taking a strip of it.
-  const int margin = 12;
-  const QSize size = m_exitButton->sizeHint();
-  m_exitButton->resize(size);
-  m_exitButton->move(qMax(0, m_container->width() - size.width() - margin), margin);
-  m_exitButton->raise();
+  if (content->parentWidget() != parent && content->parentWidget()) {
+    auto *layout = content->parentWidget()->layout();
+    if (layout && layout->isEnabled()) {
+      // A real ownership transfer wins: never move the widget back or apply
+      // geometry from its previous split to the new parent.
+      layout->invalidate();
+      layout->activate();
+    }
+  }
+  if (restoreVisibility) {
+    content->show();
+    content->window()->activateWindow();
+    if (focus && (focus == content || content->isAncestorOf(focus)) &&
+        focus->window() == content->window()) {
+      focus->setFocus(Qt::OtherFocusReason);
+    } else {
+      content->setFocus(Qt::OtherFocusReason);
+    }
+  }
 }
 
-// Whether an event destined for @p_obj belongs to this host's fullscreen
-// container. The application-level filter MUST be scoped this way, or it would
-// swallow Escape everywhere else in the app.
 bool ContentFullScreenHost::ownsEventTarget(QObject *p_obj) const {
-  if (!m_container) {
-    return false;
-  }
-  if (p_obj == m_container) {
-    return true;
-  }
   if (auto *widget = qobject_cast<QWidget *>(p_obj)) {
-    // Covers Chromium's render widget, which is several levels below the
-    // QWebEngineView and is where the key press is actually delivered.
-    return m_container->isAncestorOf(widget) || widget->window() == m_container;
+    // QObject ancestry alone would also capture separate child dialogs.
+    return widget == m_content || widget->window() == m_content;
   }
-  // A native window event (the render widget's QWindow) carries no widget
-  // parent chain; fall back to window activation.
-  return QApplication::activeWindow() == m_container;
+  // Native Chromium QWindow targets have no QWidget parent chain.
+  return qobject_cast<QWindow *>(p_obj) && !QApplication::activePopupWidget() &&
+         QApplication::activeWindow() == m_content;
+}
+
+bool ContentFullScreenHost::hasOwnedPopup() const {
+  for (QObject *obj = QApplication::activePopupWidget(); obj; obj = obj->parent()) {
+    if (obj == m_content) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool ContentFullScreenHost::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (!m_content || m_transitionInProgress) {
+    return QObject::eventFilter(p_obj, p_event);
+  }
+
   switch (p_event->type()) {
   case QEvent::KeyPress:
-    if (static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape && ownsEventTarget(p_obj)) {
+  case QEvent::ShortcutOverride:
+    if (static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape && ownsEventTarget(p_obj) &&
+        !hasOwnedPopup()) {
+      p_event->accept();
+      if (p_event->type() == QEvent::KeyPress) {
+        emit exitRequested();
+      }
+      return true;
+    }
+    break;
+
+  case QEvent::Close:
+    if (p_obj == m_content) {
+      p_event->ignore();
       emit exitRequested();
       return true;
     }
     break;
 
-  case QEvent::ShortcutOverride:
-    // Claim Escape before any QShortcut or the focus widget can act on it, so
-    // the KeyPress above is guaranteed to arrive.
-    if (static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape && ownsEventTarget(p_obj)) {
-      p_event->accept();
-      return true;
+  case QEvent::Hide:
+    if (p_obj == m_content && !p_event->spontaneous() && m_restoreVisibility) {
+      m_restoreVisibility = false;
+      const auto generation = m_generation;
+      // QWidget destruction also sends Hide before destroyed() and before its
+      // QPointer clears. Defer the intent so teardown never restores a dying view.
+      QTimer::singleShot(0, this, [this, generation]() {
+        if (m_content && m_generation == generation && !m_restoreVisibility) {
+          emit exitRequested();
+        }
+      });
     }
     break;
 
-  case QEvent::Resize:
-    if (p_obj == m_container) {
-      layoutExitButton();
+  case QEvent::ParentChange:
+    if (p_obj == m_content && !m_restoreVisibility) {
+      // Finish a hide/reparent transfer under its NEW parent before the caller
+      // shows the destination tab. A queued Hide must not hide it afterwards.
+      emit exitRequested();
+    }
+    break;
+
+  case QEvent::WindowStateChange:
+    if (p_obj == m_content && !m_content->isFullScreen() && !m_content->isMinimized()) {
+      const auto generation = m_generation;
+      // The platform can deliver this from inside its native state transition.
+      // Restoring flags there destroys the QWindow still in use by that callback.
+      QTimer::singleShot(0, this, [this, generation]() {
+        if (m_content && m_generation == generation && !m_content->isFullScreen() &&
+            !m_content->isMinimized()) {
+          emit exitRequested();
+        }
+      });
     }
     break;
 

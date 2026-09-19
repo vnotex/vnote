@@ -140,55 +140,50 @@ overload owns the remaining direct controls. Theme refresh reaches both.
 Text and MindMap inherit Find And Replace plus Menu. Widget-hosted Settings and
 Dashboard retain their content-owned toolbars; locked-note placeholders have none.
 
-#### Content fullscreen
+#### Whole-view fullscreen
 
-`ViewWindow2::setContentFullScreen(bool)` lifts **only the central widget** into
-a frameless fullscreen top-level; the toolbar, find bar, banners and status
-widget stay behind. Generic on purpose — plain widget reparenting with no
-knowledge of what is being moved, so a web view asking for HTML5 fullscreen, a
-future distraction-free mode and a slideshow are all the same operation.
+`ViewWindow2::setViewFullScreen(bool)` promotes the **existing ViewWindow** to
+frameless fullscreen in place. `ContentFullScreenHost` changes its window flags,
+not its parent or tab registration. Toolbar, content, Find, banners and scoped
+shortcuts keep their normal layout; no container, placeholder or floating exit
+button is created. Readable-width margins are zero during presentation.
 
-The mechanics live in `ContentFullScreenHost` (`contentfullscreenhost.{h,cpp}`)
-rather than inline, because **no test compiles `viewwindow2.cpp`** — it drags in
-the whole widget world — and reparenting fails as a stuck, blank or orphaned
-window rather than as a crash. Gate: `tests/widgets/test_contentfullscreenhost.cpp`.
+The existing parent layout is disabled before promotion so QStackedLayout cannot
+resize the fullscreen page during a background layout pass. Exit restores the
+exact saved flags/state, QuitOnClose attribute and layout enabled state. An
+originally disabled layout stays disabled. Normal exits restore visibility/focus;
+external tab hides do not reopen or focus the hidden page. Ownership transfers
+restore under the current parent rather than moving the view back.
 
-Three rules that are not optional:
+- **Escape is filtered at application level**, including ShortcutOverride, to
+  reach Chromium's deeply nested render widget. Only the promoted window's
+  widgets/native target qualify, not separate child dialogs. An owned popup
+  consumes the first Escape; the next Escape requests presentation exit.
+- **Exit is an intent:** Escape, native Close, external hide and removal of native
+  fullscreen emit `exitRequested` / `viewFullScreenExitRequested`. Native Close
+  exits presentation instead of hiding/deleting a registered document tab.
+  `viewFullScreenChanged` reports only confirmed transitions so every exit path
+  restores the PDF zoom/scroll snapshot and toolbar state.
+- **Restore before structural changes:** conversion/replacement freeze,
+  `setCentralWidget()`, `aboutToClose()` and teardown leave fullscreen first.
+  PDF teardown exits while derived state and its adapter still exist. Guarded
+  pointers and destruction handling restore surviving parent layouts without
+  touching a dying widget.
 
-- **Escape must be caught at the APPLICATION level.** A filter on the container
-  only sees events *delivered to the container*, and a key press goes to the
-  focus widget — which for a `QWebEngineView` is Chromium's render widget
-  several levels down, and it consumes the event rather than letting it
-  propagate up. A container-only filter shipped presentation mode with **no
-  working exit at all**. The host installs the filter on `QCoreApplication` and
-  scopes it in `ownsEventTarget()`; `QEvent::ShortcutOverride` is claimed too,
-  so no `QShortcut` can steal Escape first.
-- **There must always be a VISIBLE way out.** Everything else — toolbar, menus —
-  stayed behind, so the host's floating exit button is the only thing on screen
-  that can end fullscreen. A key nobody can see is not an affordance, and this
-  one was not even reaching us. Label it with
-  `ViewWindow2::setContentFullScreenExitText()` naming the **mode** the caller
-  entered, not the mechanism — `PdfViewWindow2` passes "Exit Presentation Mode",
-  because "Exit Full Screen" reads as the application's own full-screen toggle
-  and sends the user to the View menu. The Escape hint is appended to the
-  tooltip automatically.
-- **Escape is an intent, not an exit.** The host emits `exitRequested` /
-  `ViewWindow2::contentFullScreenExitRequested` and does nothing else, so the
-  owner can tear down whatever the fullscreen mode set up (a zoom, a scroll
-  mode, a page state) before the widget moves back.
-- **Come back before anything structural.** `setCentralWidget()`,
-  `aboutToClose()` and the destructor all call `setContentFullScreen(false)`
-  first; otherwise the central widget is stranded in an orphaned top-level, or
-  a modal dialog opens behind a fullscreen window.
+PDF's existing **Presentation Mode** action is checkable: checked while
+presenting, click again to exit. It remains usable even if the viewer reloads.
+Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
+means the presentation window is active and the toolbar is hovered, contains
+keyboard focus, or owns an open popup (including submenus, zoom and extension
+menus). PDF, Find and popup windows remain opaque. Exit removes the effect,
+application filter and focus tracking. Gates: `test_contentfullscreenhost` and
+`test_pdfviewertoolbar`, including tab identity and rendered-alpha regressions.
 
-**HTML5 fullscreen is deliberately NOT wired to this.**
-`QWebEngineSettings::FullScreenSupportEnabled` stays off: enabling it would make
-`document.fullscreenEnabled` true for every web view while only some have a host
-able to move the widget, and it is not sufficient anyway — Chromium requires
-transient renderer user activation for `requestFullscreen()`, which a click on a
-Qt `QAction` relayed over QWebChannel does not carry. A view window that wants a
-distraction-free or presentation mode drives `setContentFullScreen()` itself;
-`PdfViewWindow2::setPresentationMode()` is the worked example.
+**HTML5 fullscreen remains disabled.** Enabling
+`QWebEngineSettings::FullScreenSupportEnabled` advertises it to every web view
+without implementing their transitions, and Chromium requires transient renderer
+user activation that a Qt QAction relayed over QWebChannel does not carry.
+`PdfViewWindow2::setPresentationMode()` drives the native view transition instead.
 
 **The same announce-only trap applies to printing**, and there it is worse:
 `window.print()` in a page only reaches `QWebEngineView::printRequested`, and for
