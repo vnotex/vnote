@@ -375,6 +375,17 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
       }
     });
   }
+
+  {
+    auto *sectionNumberAction =
+        addAction(p_toolBar, ViewWindowToolBarHelper2::AllowAutoSectionNumber);
+    sectionNumberAction->setChecked(m_outlineProvider->getAutoSectionNumberAllowed());
+    connect(sectionNumberAction, &QAction::toggled, this, [this](bool p_checked) {
+      m_outlineProvider->setAutoSectionNumberAllowed(p_checked);
+      updateSectionNumberOptions();
+      updateEditSectionNumberOptions(true);
+    });
+  }
 }
 
 void MarkdownViewWindow2::handlePrint() {
@@ -1513,7 +1524,8 @@ void MarkdownViewWindow2::updateSectionNumberOptions() {
   }
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
-  adapter()->setSectionNumberOptions(isReadMode() && mdConfig.getAutoSectionNumberEnabled(),
+  adapter()->setSectionNumberOptions(m_outlineProvider->getAutoSectionNumberAllowed() &&
+                                         isReadMode() && mdConfig.getAutoSectionNumberEnabled(),
                                      editorConfig.getSectionNumberPattern(),
                                      editorConfig.getDetectHeading1ForSectionNumber());
 }
@@ -1531,6 +1543,7 @@ void MarkdownViewWindow2::updateEditSectionNumberOptions(bool p_activate) {
   }
   const auto &editorConfig = configMgr->getEditorConfig();
   const bool enabled =
+      m_outlineProvider->getAutoSectionNumberAllowed() &&
       editorConfig.getMarkdownEditorConfig().getAutoSectionNumberInEditModeEnabled();
   const auto pattern = SectionNumberUtils::normalizePattern(editorConfig.getSectionNumberPattern());
   const bool detectHeading1ForSectionNumber = editorConfig.getDetectHeading1ForSectionNumber();

@@ -220,6 +220,12 @@ Configuration persistence remains owned by `ConfigMgr2`; this action only opens 
 
 ### Automatic section numbers
 
+Markdown windows expose **Allow Auto Section Number** immediately after **Toggle In-Place Preview**.
+The default-on permission lives only in the window's `OutlineProvider`, never in configuration or
+outline snapshots. OFF vetoes read decoration, edit-mode source numbering, and dock/popup outline
+numbering; ON respects each existing global preference. Settings changes, mode changes and new
+outline snapshots must not reset it. Disabling does not remove numbers already written to source.
+
 Markdown read-mode numbering lives in `src/data/extra/web/js/sectionnumber.js`, not the parser.
 `MarkdownViewerAdapter::sectionNumberOptions` retains per-view enablement and the shared
 `EditorConfig::sectionNumberPattern` across page resets. Edit previews disable decoration;

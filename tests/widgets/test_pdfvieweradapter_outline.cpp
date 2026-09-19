@@ -895,6 +895,44 @@ void TestPdfViewerAdapterOutline::sharedPatternUpdatesBothViewsWithoutLosingStat
   verifyViews(numberedTitle);
   QCOMPARE(dockResetSpy.count(), 1);
   QCOMPARE(popupResetSpy.count(), 1);
+
+  // A window veto preserves both surfaces' preferences, expansion and selection.
+  const QStringList unnumbered{"Title", "A", "Detail", "B", "More"};
+  provider->setAutoSectionNumberAllowed(false);
+  verifyViews(unnumbered);
+  QVERIFY(config.getWidgetConfig().getOutlineAutoSectionNumberEnabled());
+  config.getEditorConfig().setSectionNumberPattern(QStringLiteral("1.1)"));
+  config.getEditorConfig().setDetectHeading1ForSectionNumber(true);
+  hooks.doAction(vnotex::HookNames::ConfigEditorChanged);
+  verifyViews(unnumbered);
+  dock.toggleAutoSectionNumber();
+  dock.toggleAutoSectionNumber();
+  verifyViews(unnumbered);
+
+  provider->setAutoSectionNumberAllowed(true);
+  verifyViews(exemptTitle);
+
+  // Allowing numbering never forces an independently disabled panel preference on.
+  dock.toggleAutoSectionNumber();
+  provider->setAutoSectionNumberAllowed(false);
+  verifyViews(unnumbered);
+  provider->setAutoSectionNumberAllowed(true);
+  QCOMPARE(dock.model()->indexForHeadingIndex(1).data().toString(), QStringLiteral("A"));
+  QCOMPARE(popup.model()->indexForHeadingIndex(1).data().toString(), QStringLiteral("1) A"));
+  QVERIFY(!config.getWidgetConfig().getOutlineAutoSectionNumberEnabled());
+
+  // The dock adopts each window's permission; a newly opened popup does too.
+  dock.toggleAutoSectionNumber();
+  auto otherProvider = QSharedPointer<vnotex::OutlineProvider>::create();
+  otherProvider->setOutline(outline);
+  provider->setAutoSectionNumberAllowed(false);
+  dock.setOutlineProvider(otherProvider);
+  QCOMPARE(dock.model()->indexForHeadingIndex(1).data().toString(), QStringLiteral("1) A"));
+  dock.setOutlineProvider(provider);
+  QCOMPARE(dock.model()->indexForHeadingIndex(1).data().toString(), QStringLiteral("A"));
+  vnotex::OutlineController latePopup(services);
+  latePopup.setOutlineProvider(provider);
+  QCOMPARE(latePopup.model()->indexForHeadingIndex(1).data().toString(), QStringLiteral("A"));
 }
 
 void TestPdfViewerAdapterOutline::sourceNumberingFeedsAuthoritativeOutline() {

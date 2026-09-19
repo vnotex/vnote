@@ -317,6 +317,10 @@
         <translation>インプレースプレビューの切り替え</translation>
     </message>
     <message>
+        <source>Allow Auto Section Number</source>
+        <translation>セクション番号の自動付与を許可</translation>
+    </message>
+    <message>
         <location line="+7"/>
         <source>Outline</source>
         <translation>アウトライン</translation>

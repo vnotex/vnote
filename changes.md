@@ -2,6 +2,7 @@
 ## Unreleased
 * Add an enabled-by-default General Settings option to allow Ctrl+Alt shortcuts; turn it off and restart to avoid AltGr conflicts without losing custom bindings
 * Add a text-only Edit JSON button to the right of the Settings toolbar to edit vnotex.json in VNote
+* Add a default-on, per-window Allow Auto Section Number toolbar toggle to temporarily disable Markdown read, edit and outline numbering without changing saved settings
 * Restore the missing left border on normal buttons in the Lucius theme
 * Fix macOS CI event-loop stalls while preserving native keychain coverage, and make sync IO-gate tests independent of worker scheduling
 * Fix crashes when sync credential storage is destroyed with native keychain operations still in flight, and repair cross-platform CI test linking and teardown

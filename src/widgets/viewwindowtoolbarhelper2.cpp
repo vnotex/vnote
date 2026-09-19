@@ -8,18 +8,18 @@
 #include <QToolButton>
 #include <QWidget>
 
-#include <core/editorconfig.h>
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
-#include <gui/utils/widgetutils.h>
 #include <gui/utils/iconutils.h>
+#include <gui/utils/widgetutils.h>
 
+#include "attachmentpopup2.h"
 #include "editreaddiscardaction.h"
 #include "outlinepopup.h"
-#include "attachmentpopup2.h"
-#include "tagpopup2.h"
 #include "propertydefs.h"
+#include "tagpopup2.h"
 
 using namespace vnotex;
 
@@ -66,8 +66,8 @@ void ViewWindowToolBarHelper2::addButtonShortcut(QToolButton *p_btn, const QStri
   });
   auto *act = p_btn->defaultAction();
   if (act) {
-    act->setText(QStringLiteral("%1\t%2").arg(
-        act->text(), shortcut->key().toString(QKeySequence::NativeText)));
+    act->setText(QStringLiteral("%1\t%2").arg(act->text(),
+                                              shortcut->key().toString(QKeySequence::NativeText)));
   } else {
     p_btn->setText(QStringLiteral("%1\t%2").arg(
         p_btn->text(), shortcut->key().toString(QKeySequence::NativeText)));
@@ -181,10 +181,10 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     for (int level = 2; level <= 6; ++level) {
       auto *headingAct = menu->addAction(QObject::tr("Heading %1").arg(level));
       headingAct->setData(level);
-      addActionShortcut(headingAct,
-                        editorConfig.getShortcut(
-                            static_cast<Shortcut>(Shortcut::TypeHeading1 + level - 1)),
-                        p_shortcutWidget, act);
+      addActionShortcut(
+          headingAct,
+          editorConfig.getShortcut(static_cast<Shortcut>(Shortcut::TypeHeading1 + level - 1)),
+          p_shortcutWidget, act);
     }
     menu->addSeparator();
     {
@@ -213,12 +213,10 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::TypeStrikethrough:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("type_strikethrough_editor.svg")),
-        QObject::tr("Strikethrough"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_strikethrough_editor.svg")),
+                          QObject::tr("Strikethrough"));
     act->setProperty("iconName", QStringLiteral("type_strikethrough_editor.svg"));
-    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeStrikethrough),
-                      p_shortcutWidget);
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeStrikethrough), p_shortcutWidget);
     break;
 
   case Action::TypeMark:
@@ -229,27 +227,23 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::TypeUnorderedList:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("type_unordered_list_editor.svg")),
-        QObject::tr("Unordered List"));
+    act =
+        p_tb->addAction(generateIcon(p_services, QStringLiteral("type_unordered_list_editor.svg")),
+                        QObject::tr("Unordered List"));
     act->setProperty("iconName", QStringLiteral("type_unordered_list_editor.svg"));
-    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeUnorderedList),
-                      p_shortcutWidget);
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeUnorderedList), p_shortcutWidget);
     break;
 
   case Action::TypeOrderedList:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("type_ordered_list_editor.svg")),
-        QObject::tr("Ordered List"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_ordered_list_editor.svg")),
+                          QObject::tr("Ordered List"));
     act->setProperty("iconName", QStringLiteral("type_ordered_list_editor.svg"));
-    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeOrderedList),
-                      p_shortcutWidget);
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeOrderedList), p_shortcutWidget);
     break;
 
   case Action::TypeTodoList:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("type_todo_list_editor.svg")),
-        QObject::tr("Todo List"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_todo_list_editor.svg")),
+                          QObject::tr("Todo List"));
     act->setProperty("iconName", QStringLiteral("type_todo_list_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTodoList), p_shortcutWidget);
     break;
@@ -271,9 +265,8 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::TypeCodeBlock:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("type_code_block_editor.svg")),
-        QObject::tr("Code Block"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_code_block_editor.svg")),
+                          QObject::tr("Code Block"));
     act->setProperty("iconName", QStringLiteral("type_code_block_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeCodeBlock), p_shortcutWidget);
     break;
@@ -286,9 +279,8 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::TypeMathBlock:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("type_math_block_editor.svg")),
-        QObject::tr("Math Block"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_math_block_editor.svg")),
+                          QObject::tr("Math Block"));
     act->setProperty("iconName", QStringLiteral("type_math_block_editor.svg"));
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeMathBlock), p_shortcutWidget);
     break;
@@ -322,9 +314,8 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::ToggleLayoutMode:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("readable_width_editor.svg")),
-        QObject::tr("Readable Width"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("readable_width_editor.svg")),
+                          QObject::tr("Readable Width"));
     act->setProperty("iconName", QStringLiteral("readable_width_editor.svg"));
     act->setCheckable(true);
     {
@@ -336,9 +327,8 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::ToggleLivePreview:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("view_mode_editor.svg")),
-        QObject::tr("Live Preview"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("view_mode_editor.svg")),
+                          QObject::tr("Live Preview"));
     act->setProperty("iconName", QStringLiteral("view_mode_editor.svg"));
     act->setCheckable(true);
     {
@@ -350,10 +340,16 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::InplacePreview:
-    act = p_tb->addAction(
-        generateIcon(p_services, QStringLiteral("inplace_preview_editor.svg")),
-        QObject::tr("Toggle In-Place Preview"));
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("inplace_preview_editor.svg")),
+                          QObject::tr("Toggle In-Place Preview"));
     act->setProperty("iconName", QStringLiteral("inplace_preview_editor.svg"));
+    act->setCheckable(true);
+    break;
+
+  case Action::AllowAutoSectionNumber:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_ordered_list_editor.svg")),
+                          QObject::tr("Allow Auto Section Number"));
+    act->setProperty("iconName", QStringLiteral("type_ordered_list_editor.svg"));
     act->setCheckable(true);
     break;
 

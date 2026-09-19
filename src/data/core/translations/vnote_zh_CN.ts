@@ -317,6 +317,10 @@
         <translation>切换原地预览</translation>
     </message>
     <message>
+        <source>Allow Auto Section Number</source>
+        <translation>允许自动章节编号</translation>
+    </message>
+    <message>
         <location line="+7"/>
         <source>Outline</source>
         <translation>大纲</translation>

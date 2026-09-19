@@ -57,6 +57,10 @@ public:
 
   void setReorderSupported(bool p_supported);
 
+  // Per-window permission, independent of persisted outline preferences and snapshots.
+  bool getAutoSectionNumberAllowed() const;
+  void setAutoSectionNumberAllowed(bool p_allowed);
+
   void requestMove(int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel);
 
   // Get current heading index in outline.
@@ -71,6 +75,8 @@ signals:
 
   void currentHeadingChanged();
 
+  void autoSectionNumberAllowedChanged();
+
   void headingClicked(int p_idx);
 
   void moveRequested(int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel);
@@ -79,6 +85,8 @@ private:
   QSharedPointer<Outline> m_outline;
 
   int m_currentHeadingIndex = -1;
+
+  bool m_autoSectionNumberAllowed = true;
 };
 
 template <class T>

@@ -40,6 +40,16 @@ void OutlineProvider::setReorderSupported(bool p_supported) {
   emit outlineChanged();
 }
 
+bool OutlineProvider::getAutoSectionNumberAllowed() const { return m_autoSectionNumberAllowed; }
+
+void OutlineProvider::setAutoSectionNumberAllowed(bool p_allowed) {
+  if (m_autoSectionNumberAllowed == p_allowed) {
+    return;
+  }
+  m_autoSectionNumberAllowed = p_allowed;
+  emit autoSectionNumberAllowedChanged();
+}
+
 void OutlineProvider::requestMove(int p_sourceHeadingIndex, int p_beforeHeadingIndex,
                                   int p_targetLevel) {
   if (!m_outline || !m_outline->m_reorderSupported) {

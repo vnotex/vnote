@@ -57,6 +57,9 @@ public:
     // In-place preview toggle (Edit mode only).
     InplacePreview,
 
+    // Per-window permission for automatic section numbering in every mode.
+    AllowAutoSectionNumber,
+
     // Outline popup button.
     Outline,
 
@@ -79,20 +82,19 @@ public:
   // @p_action: Which action to create.
   // @p_services: ServiceLocator for theme/config resolution.
   // @p_shortcutWidget: Widget for shortcut context (the ViewWindow2 instance).
-  static QAction *addAction(QToolBar *p_tb, Action p_action,
-                            ServiceLocator &p_services, QWidget *p_shortcutWidget);
+  static QAction *addAction(QToolBar *p_tb, Action p_action, ServiceLocator &p_services,
+                            QWidget *p_shortcutWidget);
 
   // Add a spacer widget to push subsequent actions to the right.
   static void addSpacer(QToolBar *p_tb);
 
   // Attach a keyboard shortcut to an action.
   // @p_parentAction: optional parent action (for actions in a submenu).
-  static void addActionShortcut(QAction *p_action, const QString &p_shortcut,
-                                QWidget *p_widget, QAction *p_parentAction = nullptr);
+  static void addActionShortcut(QAction *p_action, const QString &p_shortcut, QWidget *p_widget,
+                                QAction *p_parentAction = nullptr);
 
   // Attach a keyboard shortcut to a tool button.
-  static void addButtonShortcut(QToolButton *p_btn, const QString &p_shortcut,
-                                QWidget *p_widget);
+  static void addButtonShortcut(QToolButton *p_btn, const QString &p_shortcut, QWidget *p_widget);
 
   // Generate a QIcon from theme icon file name via DI.
   static QIcon generateIcon(ServiceLocator &p_services, const QString &p_iconName);

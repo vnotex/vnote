@@ -221,6 +221,9 @@ void OutlineController::setOutlineProvider(const QSharedPointer<OutlineProvider>
   m_provider = p_provider;
 
   if (m_provider) {
+    connect(m_provider.data(), &OutlineProvider::autoSectionNumberAllowedChanged, this,
+            &OutlineController::updateSectionNumberOptions);
+
     // Connect outline changes.
     connect(m_provider.data(), &OutlineProvider::outlineChanged, this, [this]() {
       clearPendingReorder();
@@ -240,6 +243,7 @@ void OutlineController::setOutlineProvider(const QSharedPointer<OutlineProvider>
   }
 
   // Immediately update model with current provider data (or clear if null).
+  updateSectionNumberOptions();
   updateModelFromProvider();
 }
 
@@ -286,32 +290,22 @@ void OutlineController::toggleAutoSectionNumber() {
     configMgr->getWidgetConfig().setOutlineAutoSectionNumberEnabled(m_autoSectionNumberEnabled);
   }
 
-  // Save expansion state before model reset, then restore after.
-  QSet<int> expanded;
-  if (m_view) {
-    expanded = m_view->saveExpansionState();
-  }
-
-  m_model->setAutoSectionNumberEnabled(m_autoSectionNumberEnabled);
-
-  if (m_view) {
-    m_view->restoreExpansionState(expanded);
-    m_view->highlightHeading(m_model->getCurrentHeadingIndex());
-  }
+  updateSectionNumberOptions();
 }
 
 void OutlineController::updateSectionNumberOptions() {
   auto *configMgr = m_services.get<ConfigMgr2>();
-  if (!configMgr) {
-    return;
-  }
   QSet<int> expanded;
   if (m_view) {
     expanded = m_view->saveExpansionState();
   }
-  const auto &editorConfig = configMgr->getEditorConfig();
-  m_model->setSectionNumberOptions(editorConfig.getSectionNumberPattern(),
-                                   editorConfig.getDetectHeading1ForSectionNumber());
+  m_model->setAutoSectionNumberEnabled(m_autoSectionNumberEnabled &&
+                                       (!m_provider || m_provider->getAutoSectionNumberAllowed()));
+  if (configMgr) {
+    const auto &editorConfig = configMgr->getEditorConfig();
+    m_model->setSectionNumberOptions(editorConfig.getSectionNumberPattern(),
+                                     editorConfig.getDetectHeading1ForSectionNumber());
+  }
   if (m_view) {
     m_view->restoreExpansionState(expanded);
     m_view->highlightHeading(m_model->getCurrentHeadingIndex());
