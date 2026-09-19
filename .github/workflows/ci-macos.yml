@@ -169,14 +169,15 @@ jobs:
       - name: Build and Run Tests
         # Build the test executables (tests/CMakeLists.txt narrows them to the
         # host arch on macOS, so this links arm64-only against the universal
-        # libs) then run them headlessly via the Qt offscreen platform plugin.
+        # libs). Cocoa drains the native main queue used by QtKeychain; the
+        # offscreen platform's UNIX dispatcher does not.
         # VNOTE_BUILD_TESTS defaults to OFF and is turned ON at configure time above.
         # QtKeychain tests use the unlocked disposable keychain above and the
-        # CoreFoundation event dispatcher configured in tests/CMakeLists.txt.
+        # native application runner from tests/helpers/test_helper.h.
         run: |
           set -e
           cmake --build .
-          export QT_QPA_PLATFORM=offscreen
+          export QT_QPA_PLATFORM=cocoa
           # Force a UTF-8 locale so std::filesystem::path round-trips through
           # std::string preserve non-ASCII bytes. Without this, CJK filenames
           # in tests/data/vnote3_notebooks/* get mangled during VNote3
@@ -196,7 +197,7 @@ jobs:
         # land in the CI log. Diagnostic only; never gates the workflow.
         if: failure()
         run: |
-          export QT_QPA_PLATFORM=offscreen
+          export QT_QPA_PLATFORM=cocoa
           export LC_ALL=en_US.UTF-8
           export LANG=en_US.UTF-8
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"

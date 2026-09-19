@@ -13,6 +13,8 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
@@ -519,5 +521,5 @@ void TestSyncOps::resolveConflictInvokesCallbackForKeepLocal() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestSyncOps)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestSyncOps)
 #include "test_sync_ops.moc"

@@ -23,6 +23,8 @@
 #include <QSignalSpy>
 #include <QtTest>
 
+#include <test_helper.h>
+
 #include <controllers/notebooksyncinfocontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
@@ -1346,5 +1348,5 @@ void TestNotebookSyncInfoController::testUrlChangeReenableFailureSurfacesError()
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestNotebookSyncInfoController)
+VNOTE_KEYCHAIN_TEST_MAIN(tests::TestNotebookSyncInfoController)
 #include "test_notebooksyncinfocontroller.moc"
