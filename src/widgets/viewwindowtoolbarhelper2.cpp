@@ -347,9 +347,9 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::AllowAutoSectionNumber:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("type_ordered_list_editor.svg")),
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("section_editor.svg")),
                           QObject::tr("Allow Auto Section Number"));
-    act->setProperty("iconName", QStringLiteral("type_ordered_list_editor.svg"));
+    act->setProperty("iconName", QStringLiteral("section_editor.svg"));
     act->setCheckable(true);
     break;
 
