@@ -1,7 +1,4 @@
-#include <QAtomicInt>
-#include <QElapsedTimer>
 #include <QSemaphore>
-#include <QThread>
 #include <QtTest>
 
 #include <thread>
@@ -12,8 +9,8 @@
 
 namespace tests {
 
-// Fake ISyncNotebookService — sleeps in each phase so we can observe gate
-// hold windows from the outside via contention timing.
+// Hold each phase until the test has observed whether another save could acquire
+// the notebook gate. Scheduling delays must not change the observation window.
 class FakeSyncNotebookService : public vnotex::ISyncNotebookService {
 public:
   VxCoreError syncStageOnly(const QString &p_notebookId,
@@ -21,12 +18,11 @@ public:
                             bool *p_didCommit) override {
     Q_UNUSED(p_notebookId);
     Q_UNUSED(p_cancellationToken);
-    m_stageEntered.storeRelaxed(1);
-    QThread::msleep(50);
+    m_stageEntered.release();
+    m_continueStage.acquire();
     if (p_didCommit) {
       *p_didCommit = true;
     }
-    m_stageExited.storeRelaxed(1);
     return VXCORE_OK;
   }
 
@@ -34,16 +30,15 @@ public:
                                VxCoreSyncCancellation *p_cancellationToken) override {
     Q_UNUSED(p_notebookId);
     Q_UNUSED(p_cancellationToken);
-    m_networkEntered.storeRelaxed(1);
-    QThread::msleep(200);
-    m_networkExited.storeRelaxed(1);
+    m_networkEntered.release();
+    m_continueNetwork.acquire();
     return VXCORE_OK;
   }
 
-  QAtomicInt m_stageEntered{0};
-  QAtomicInt m_stageExited{0};
-  QAtomicInt m_networkEntered{0};
-  QAtomicInt m_networkExited{0};
+  QSemaphore m_stageEntered;
+  QSemaphore m_continueStage;
+  QSemaphore m_networkEntered;
+  QSemaphore m_continueNetwork;
 };
 
 class TestSyncOpsGateRelease : public QObject {
@@ -51,95 +46,49 @@ class TestSyncOpsGateRelease : public QObject {
 
 private slots:
   void testGateReleasedBeforeNetworkPhase();
-  void testStagedPatternCompletesSuccessfully();
 };
 
 void TestSyncOpsGateRelease::testGateReleasedBeforeNetworkPhase() {
   FakeSyncNotebookService fake;
   vnotex::NotebookIoGate gate;
   const QString notebookId = QStringLiteral("nb-1");
+  VxCoreError finishedCode = VXCORE_ERR_UNKNOWN;
+  int finishedCount = 0;
+  std::thread worker([&]() {
+    vnotex::SyncOps::triggerSync(
+        &fake, notebookId, nullptr,
+        [&](VxCoreError p_code) {
+          finishedCode = p_code;
+          ++finishedCount;
+        },
+        &gate);
+  });
 
-  QSemaphore finishedSem(0);
-  QAtomicInt finishedCode{-1};
-  auto onFinished = [&](VxCoreError code) {
-    finishedCode.storeRelaxed(static_cast<int>(code));
-    finishedSem.release();
-  };
-
-  // 1. Hold the gate on the main thread.
-  auto mainLock = std::make_unique<vnotex::NotebookIoGate::ScopedLock>(gate, notebookId);
-
-  // 2. Dispatch triggerSync on a worker. It will block in stage acquiring the gate.
-  std::thread worker(
-      [&]() { vnotex::SyncOps::triggerSync(&fake, notebookId, nullptr, onFinished, &gate); });
-
-  // 3. Sleep so the worker is definitely blocked in gate acquire.
-  QThread::msleep(100);
-  QVERIFY2(fake.m_stageEntered.loadRelaxed() == 0,
-           "Worker should still be blocked on gate acquire (stage not entered)");
-
-  // 4. Release main's lock so worker proceeds.
-  QElapsedTimer sinceRelease;
-  sinceRelease.start();
-  mainLock.reset();
-
-  // 5. Wait long enough for worker to enter (and likely exit) stage, then
-  //    be inside the network phase (network sleeps 200ms).
-  //    Stage = 50ms. After ~120ms post-release we should be solidly in the
-  //    network phase.
-  QThread::msleep(120);
-  QVERIFY2(fake.m_networkEntered.loadRelaxed() == 1, "Worker should be in network phase by now");
-  QVERIFY2(fake.m_networkExited.loadRelaxed() == 0,
-           "Worker should NOT have finished network phase yet (sleeps 200ms)");
-
-  // 6. KEY ASSERTION: try to re-acquire the gate from the main thread.
-  //    If the gate were still held during network phase, this would block
-  //    ~80ms (remaining network time). If released, it's essentially instant.
-  QElapsedTimer acquireTimer;
-  acquireTimer.start();
-  {
-    vnotex::NotebookIoGate::ScopedLock probe(gate, notebookId);
-    const qint64 acquireMs = acquireTimer.elapsed();
-    QVERIFY2(acquireMs < 30,
-             qPrintable(QStringLiteral("Gate re-acquire took %1ms; expected <30ms "
-                                       "(gate should be released during network phase)")
-                            .arg(acquireMs)));
+  const bool stageEntered = fake.m_stageEntered.tryAcquire(1, 5000);
+  bool gateHeldDuringStage = false;
+  if (stageEntered) {
+    vnotex::NotebookIoGate::ScopedTryLock probe(gate, notebookId, 0);
+    gateHeldDuringStage = !probe.isLocked();
   }
+  fake.m_continueStage.release();
 
-  // 7. Wait for worker completion.
-  QVERIFY(finishedSem.tryAcquire(1, 5000));
-  QCOMPARE(static_cast<VxCoreError>(finishedCode.loadRelaxed()), VXCORE_OK);
+  const bool networkEntered = fake.m_networkEntered.tryAcquire(1, 5000);
+  bool gateReleasedDuringNetwork = false;
+  if (networkEntered) {
+    vnotex::NotebookIoGate::ScopedTryLock probe(gate, notebookId, 0);
+    gateReleasedDuringNetwork = probe.isLocked();
+  }
+  fake.m_continueNetwork.release();
+
+  // Join before asserting so a failed observation cannot destroy a joinable
+  // std::thread and abort the test process instead of reporting the failure.
   worker.join();
-}
-
-void TestSyncOpsGateRelease::testStagedPatternCompletesSuccessfully() {
-  FakeSyncNotebookService fake;
-  vnotex::NotebookIoGate gate;
-  const QString notebookId = QStringLiteral("nb-2");
-
-  QSemaphore finishedSem(0);
-  QAtomicInt finishedCode{-1};
-  auto onFinished = [&](VxCoreError code) {
-    finishedCode.storeRelaxed(static_cast<int>(code));
-    finishedSem.release();
-  };
-
-  QElapsedTimer timer;
-  timer.start();
-  std::thread worker(
-      [&]() { vnotex::SyncOps::triggerSync(&fake, notebookId, nullptr, onFinished, &gate); });
-
-  QVERIFY(finishedSem.tryAcquire(1, 5000));
-  const qint64 elapsed = timer.elapsed();
-  worker.join();
-
-  QCOMPARE(static_cast<VxCoreError>(finishedCode.loadRelaxed()), VXCORE_OK);
-  QCOMPARE(fake.m_stageExited.loadRelaxed(), 1);
-  QCOMPARE(fake.m_networkExited.loadRelaxed(), 1);
-
-  // Stage 50ms + network 200ms = ~250ms; allow generous CI headroom.
-  QVERIFY2(elapsed >= 240, qPrintable(QStringLiteral("Expected >=240ms, got %1ms").arg(elapsed)));
-  QVERIFY2(elapsed < 600, qPrintable(QStringLiteral("Expected <600ms, got %1ms").arg(elapsed)));
+  QVERIFY2(stageEntered, "Worker did not enter the staging phase");
+  QVERIFY2(gateHeldDuringStage, "Staging must exclude concurrent notebook saves");
+  QVERIFY2(networkEntered, "Worker did not enter the network phase");
+  QVERIFY2(gateReleasedDuringNetwork, "Network work must not block notebook saves");
+  QCOMPARE(finishedCode, VXCORE_OK);
+  QCOMPARE(finishedCount, 1);
 }
 
 } // namespace tests
