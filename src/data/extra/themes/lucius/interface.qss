@@ -426,7 +426,7 @@ QPushButton {
     color: @widgets#qpushbutton#fg;
     background-color: @widgets#qpushbutton#bg;
     border: 1px solid @widgets#qpushbutton#border;
-    border-left: 2px solid transparent;
+    border-left: 2px solid @widgets#qpushbutton#border;
     border-radius: 4px;
     padding: 6px 12px;
     min-width: 64px;

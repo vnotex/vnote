@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Restore the missing left border on normal buttons in the Lucius theme
 * Fix macOS CI event-loop stalls while preserving native keychain coverage, and make sync IO-gate tests independent of worker scheduling
 * Fix crashes when sync credential storage is destroyed with native keychain operations still in flight, and repair cross-platform CI test linking and teardown
 * Generate transparent PlantUML UML PNG previews in light themes, preserving explicit diagram backgrounds and node fills
