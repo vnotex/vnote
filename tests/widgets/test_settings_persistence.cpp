@@ -1,12 +1,8 @@
-// Persistence regressions on two real settings pages.
-//
-// Both bugs let a user edit vanish silently, which is exactly the class of
-// defect that also hit ImageHostPage:
+// Persistence and layout regressions on real settings pages:
 //   - QuickAccessPage: emptying the quick-access box was skipped by an
 //     `if (!text.isEmpty())` guard, so the old list survived the restart.
-//   - FileAssociationPage: a reload deleted the "Add Program" button but left
-//     m_addProgramButton dangling, and the row loop below dereferenced it
-//     before it was re-created, so rows landed AFTER the button.
+//   - FileAssociationPage: reloading and adding programs must keep their inputs
+//     above the compact Add Program button, including when it is nested in a row.
 //
 // The pages are constructed for real (not stubbed as in test_settings_slug),
 // so this is NOT GUILESS: it needs a QApplication.
@@ -18,7 +14,6 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSpinBox>
-#include <QVBoxLayout>
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -205,42 +200,32 @@ void TestSettingsPersistence::test_reloadKeepsProgramRowsAboveTheAddButton() {
 
   FileAssociationPage page(*m_services);
 
-  // A second load is where the Add Program button is destroyed and re-created.
-  // This is a structural invariant / smoke test of that rebuild, NOT direct
-  // coverage of the stale-member bug it accompanies: QLayout::indexOf() only
-  // compares pointer identity, so the reverted code still produces this same
-  // layout and not even a sanitizer is guaranteed to flag it.
-  page.load();
-  page.load();
+  page.resize(1000, 900);
+  page.show();
 
-  QPushButton *addButton = nullptr;
-  for (auto *btn : page.findChildren<QPushButton *>()) {
-    if (btn->text() == QStringLiteral("Add Program")) {
-      QVERIFY2(!addButton, "more than one Add Program button survived the reload");
-      addButton = btn;
-    }
-  }
-  QVERIFY(addButton);
+  for (int reload = 0; reload < 2; ++reload) {
+    page.load();
 
-  auto *layout = qobject_cast<QVBoxLayout *>(addButton->parentWidget()->layout());
-  QVERIFY(layout);
-  const int addIndex = layout->indexOf(addButton);
-  QVERIFY(addIndex >= 0);
-
-  // Exactly one external program row (the system-default row is added by
-  // SessionConfig itself and carries the same property), and every row sits
-  // above the Add Program button.
-  int rowCount = 0;
-  for (int i = 0; i < layout->count(); ++i) {
-    auto *w = layout->itemAt(i)->widget();
-    if (w && w->property("programRow").toBool()) {
-      QVERIFY2(i < addIndex, "a program row was inserted after the Add Program button");
-      if (!w->property("systemRow").toBool()) {
-        ++rowCount;
+    QPushButton *addButton = nullptr;
+    for (auto *button : page.findChildren<QPushButton *>()) {
+      if (button->text() == QStringLiteral("Add Program")) {
+        QVERIFY2(!addButton, "more than one Add Program button survived the reload");
+        addButton = button;
       }
     }
+    QVERIFY(addButton);
+    QTRY_VERIFY(addButton->isVisible());
+    QCOMPARE(page.findChildren<QLineEdit *>(QStringLiteral("nameEdit")).size(), 1);
+
+    QTest::mouseClick(addButton, Qt::LeftButton);
+    QTRY_COMPARE(page.findChildren<QLineEdit *>(QStringLiteral("nameEdit")).size(), 2);
+    QTRY_COMPARE(addButton->width(), addButton->sizeHint().width());
+
+    for (auto *edit : page.findChildren<QLineEdit *>(QStringLiteral("suffixesEdit"))) {
+      QTRY_VERIFY(edit->mapTo(&page, QPoint(0, edit->height())).y() <=
+                  addButton->mapTo(&page, QPoint()).y());
+    }
   }
-  QCOMPARE(rowCount, 1);
 }
 
 void TestSettingsPersistence::test_generalPageLoadsAppNameAndRequiresRestartWhenEdited() {

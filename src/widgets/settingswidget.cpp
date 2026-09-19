@@ -11,11 +11,14 @@
 #include <QStackedLayout>
 #include <QTimer>
 #include <QToolBar>
+#include <QToolButton>
 #include <QVBoxLayout>
 
+#include "viewwindowtoolbarhelper2.h"
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <widgets/lineedit.h>
@@ -24,7 +27,6 @@
 #include <widgets/propertydefs.h>
 #include <widgets/treewidget.h>
 #include <widgets/widgetsfactory.h>
-#include "viewwindowtoolbarhelper2.h"
 
 #include "dialogs/settings/appearancepage.h"
 #include "dialogs/settings/editorpage.h"
@@ -122,8 +124,8 @@ void SettingsWidget::setupToolBar(QToolBar *p_toolBar) {
 
   m_applyAction =
       p_toolBar->addAction(IconUtils::fetchIconWithDisabledState(
-                                themeService->getIconFile(QStringLiteral("apply_editor.svg"))),
-                            tr("Apply"));
+                               themeService->getIconFile(QStringLiteral("apply_editor.svg"))),
+                           tr("Apply"));
   m_applyAction->setProperty("iconName", QStringLiteral("apply_editor.svg"));
   ViewWindowToolBarHelper2::addActionShortcut(
       m_applyAction,
@@ -143,6 +145,24 @@ void SettingsWidget::setupToolBar(QToolBar *p_toolBar) {
   m_resetAction->setProperty("iconName", QStringLiteral("reset_editor.svg"));
   m_resetAction->setEnabled(false);
   connect(m_resetAction, &QAction::triggered, this, [this]() { resetPages(); });
+
+  ViewWindowToolBarHelper2::addSpacer(p_toolBar);
+  auto *editJsonAction = p_toolBar->addAction(tr("Edit JSON"));
+  auto *editJsonButton = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(editJsonAction));
+  editJsonButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  connect(editJsonAction, &QAction::triggered, this, [this]() {
+    auto *bufferSvc = m_services.get<BufferService>();
+    if (!bufferSvc) {
+      return;
+    }
+    NodeIdentifier nodeId;
+    nodeId.relativePath =
+        m_services.get<ConfigMgr2>()->getFileFromConfigFolder(QStringLiteral("vnotex.json"));
+    FileOpenSettings settings;
+    settings.m_mode = ViewWindowMode::Edit;
+    settings.m_forceMode = true;
+    bufferSvc->openBuffer(nodeId, settings);
+  });
 }
 
 bool SettingsWidget::isDirty() const { return m_changesUnsaved; }
@@ -432,9 +452,8 @@ void SettingsWidget::navigateTo(const QStringList &p_pathSegments, const QString
     if (currentPage) {
       auto *target = currentPage->findChild<QWidget *>(p_fragment);
       if (target && m_scrollArea) {
-        QTimer::singleShot(0, this, [this, target]() {
-          m_scrollArea->ensureWidgetVisible(target);
-        });
+        QTimer::singleShot(0, this,
+                           [this, target]() { m_scrollArea->ensureWidgetVisible(target); });
       }
     }
   }

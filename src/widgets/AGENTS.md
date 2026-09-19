@@ -213,6 +213,11 @@ for why neither print route works there.
 - `MindMapViewWindow2` — mind map viewer
 - `WidgetViewWindow2` — generic widget-hosting window
 
+`SettingsWidget` adds a right-aligned, text-only **Edit JSON** toolbar action. Resolve
+`vnotex.json` through `ConfigMgr2::getFileFromConfigFolder()` and open it with `BufferService`
+in forced edit mode; do not launch an external editor or depend on a `MainWindow2` pointer.
+Configuration persistence remains owned by `ConfigMgr2`; this action only opens the file.
+
 ### Automatic section numbers
 
 Markdown read-mode numbering lives in `src/data/extra/web/js/sectionnumber.js`, not the parser.

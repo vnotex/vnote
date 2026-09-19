@@ -68,7 +68,7 @@ void ImageHostPage::setupUI() {
   {
     auto *newBtn = new QPushButton(tr("New Image Host"), this);
     connect(newBtn, &QPushButton::clicked, this, &ImageHostPage::newImageHost);
-    m_mainLayout->addWidget(newBtn);
+    m_mainLayout->addWidget(newBtn, 0, Qt::AlignRight);
   }
 
   m_mainLayout->addStretch();

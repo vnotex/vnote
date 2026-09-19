@@ -192,7 +192,7 @@ void FileAssociationPage::loadBuiltInTypesGroup() {
 }
 
 void FileAssociationPage::loadExternalProgramsGroup() {
-  // Clear previous dynamic rows. The Add Program button is one of them, so the
+  // Clear previous dynamic rows. One owns the Add Program button, so the
   // member must be cleared BEFORE the row loop below: addExternalProgramRow()
   // dereferences it, and it is only re-created further down.
   m_addProgramButton = nullptr;
@@ -214,13 +214,17 @@ void FileAssociationPage::loadExternalProgramsGroup() {
     addExternalProgramRow(prog.m_name, prog.m_command, prog.m_suffixes.join(c_suffixSeparator));
   }
 
-  // Add Program button.
-  m_addProgramButton = new QPushButton(tr("Add Program"), this);
+  // Fill the action row with the same themed background as the program rows.
+  auto *buttonRow = new QWidget(m_externalCardLayout->parentWidget());
+  auto *buttonLayout = new QVBoxLayout(buttonRow);
+  buttonLayout->setContentsMargins(0, 0, 0, 0);
+  m_addProgramButton = new QPushButton(tr("Add Program"), buttonRow);
   connect(m_addProgramButton, &QPushButton::clicked, this, [this]() {
     addExternalProgramRow(QString(), QString(), QString());
     pageIsChanged();
   });
-  m_externalCardLayout->addWidget(m_addProgramButton);
+  buttonLayout->addWidget(m_addProgramButton, 0, Qt::AlignRight);
+  m_externalCardLayout->addWidget(buttonRow);
 
   // System program row — always last, before the Add button.
   for (const auto &prog : programs) {
@@ -271,10 +275,10 @@ void FileAssociationPage::addExternalProgramRow(const QString &p_name, const QSt
   rowLayout->addWidget(suffixesEdit, 2);
   rowLayout->addWidget(removeBtn, 0);
 
-  // Insert before the Add Program button if it exists.
+  // Insert before the Add Program action row if it exists.
   int insertIndex = m_externalCardLayout->count();
   if (m_addProgramButton) {
-    insertIndex = m_externalCardLayout->indexOf(m_addProgramButton);
+    insertIndex = m_externalCardLayout->indexOf(m_addProgramButton->parentWidget());
   }
   m_externalCardLayout->insertWidget(insertIndex, rowWidget);
 }
@@ -306,10 +310,10 @@ void FileAssociationPage::addSystemProgramRow(const QString &p_suffixes) {
   rowLayout->addWidget(nameLabel, 2);
   rowLayout->addWidget(suffixesEdit, 5);
 
-  // Insert before the Add Program button if it exists.
+  // Insert before the Add Program action row if it exists.
   int insertIndex = m_externalCardLayout->count();
   if (m_addProgramButton) {
-    insertIndex = m_externalCardLayout->indexOf(m_addProgramButton);
+    insertIndex = m_externalCardLayout->indexOf(m_addProgramButton->parentWidget());
   }
   m_externalCardLayout->insertWidget(insertIndex, rowWidget);
 }
