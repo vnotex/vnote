@@ -37,6 +37,9 @@ struct Fixture {
   QLineEdit *m_find = new QLineEdit(m_page);
 
   Fixture() {
+    // Match ViewWindow2 rather than platform-dependent child/window defaults.
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setSpacing(0);
     m_toolbar->addAction(QStringLiteral("Presentation Mode"));
     auto *contentLayout = new QVBoxLayout(m_content);
     auto *inner = new QWidget(m_content);
