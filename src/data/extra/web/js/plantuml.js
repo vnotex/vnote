@@ -220,6 +220,20 @@ class PlantUml extends GraphRenderer {
             p_callback('png', '');
             return;
         }
+        // CSS cannot remove a PNG's opaque canvas. Set a renderer default before
+        // the user's UML commands so explicit backgrounds still take precedence.
+        if (window.getComputedStyle(document.body)
+            .getPropertyValue('--vx-plantuml-preview-background').trim() === 'transparent') {
+            const start = /^([ \t]*@startuml\b[^\r\n]*)(\r?\n|$)/im;
+            const background = 'skinparam backgroundColor transparent';
+            if (start.test(p_text)) {
+                p_text = p_text.replace(start, (match, marker, newline) =>
+                    marker + (newline || '\n') + background + (newline || '\n'));
+            } else if (!/^[ \t]*@start\w+\b/im.test(p_text)) {
+                p_text = background + '\n' + p_text;
+            }
+            // Other PlantUML languages (JSON, Ditaa, etc.) need their own syntax.
+        }
         const render = () => this.renderPages('png', p_text)
             .then((p_pages) => this.combinePages(p_pages))
             .then((p_data) => p_callback('png', p_data), (p_error) => {

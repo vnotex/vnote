@@ -1,6 +1,7 @@
 # Changes
 ## Unreleased
 * Fix crashes when sync credential storage is destroyed with native keychain operations still in flight, and repair cross-platform CI test linking and teardown
+* Generate transparent PlantUML UML PNG previews in light themes, preserving explicit diagram backgrounds and node fills
 * Let light-theme graph canvases blend into the page, including PlantUML, Mermaid, Flowchart, WaveDrom and Graphviz SVGs
 * Add Lucius, a light theme based on Jonathan Filip's Lucius Light normal-contrast palette, covering the interface, editors and Markdown preview
 * Restore the startup splash after the single-instance check, without flashing it for secondary launches

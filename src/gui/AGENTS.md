@@ -114,6 +114,13 @@ Graphviz's outer canvas polygon; never clear node or cluster fills. Keep dark-th
 backdrops unchanged. Backgrounds baked into raster images are image data, not CSS
 surfaces, and are not recolored by the theme.
 
+Light themes opt PlantUML in-place previews into renderer-generated transparency with
+`body { --vx-plantuml-preview-background: transparent; }`. The PNG request inserts
+`skinparam backgroundColor transparent` after `@startuml` (or before an unwrapped UML
+source), ahead of user commands so explicit backgrounds retain precedence. It does
+not recolor pixels, rewrite stored notes, or inject UML syntax into other PlantUML
+languages such as JSON or Ditaa. Dark themes omit the property.
+
 ## Core vs GUI Distinction
 
 Core services (`src/core/services/`) wrap the vxcore C API and have minimal Qt dependencies. GUI services (`src/gui/services/`) require Qt Widgets and handle presentation concerns.

@@ -1,4 +1,5 @@
 body {
+    --vx-plantuml-preview-background: transparent;
     margin: 0 auto;
     max-width: 46em;
     padding: 2.5em 1.5em 5em 1.5em;
