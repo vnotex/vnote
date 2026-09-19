@@ -127,15 +127,15 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
 
 ### Ctrl+Alt Shortcut Filtering
 
-Settings → General → **Disable Ctrl+Alt shortcuts** persists
-`core.disableCtrlAltShortcuts`, default `false`. It requires a restart.
-`MainConfig::fromJson()` masks core and editor shortcuts, including the global
+Settings → General → **Allow Ctrl+Alt shortcuts** persists
+`core.allowCtrlAltShortcuts`, default `true`. Changing it requires a restart.
+When it is `false`, `MainConfig::fromJson()` masks core and editor shortcuts, including the global
 Quick Note and wake-up bindings and the shortcut leader key. A binding is
 filtered when any stroke contains both Qt Control and Alt modifiers, even with
 additional modifiers. Ctrl and Alt in separate strokes do not match.
 
 Keep configured strings intact in `toJson()`: filtering is a runtime view, not a
-rewrite of the user's bindings. Turning the option off and restarting must
+rewrite of the user's bindings. Turning the option on and restarting must
 restore them, including custom bindings. Setters persist the preference without
 changing the loaded masks or partially rebinding a running session.
 

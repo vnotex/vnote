@@ -73,7 +73,7 @@ void TestCoreConfig::testCtrlAltFiltering() {
   auto core = json.value(QStringLiteral("core")).toObject();
   auto editor = json.value(QStringLiteral("editor")).toObject();
   auto editorCore = editor.value(QStringLiteral("core")).toObject();
-  core[QStringLiteral("disableCtrlAltShortcuts")] = true;
+  core[QStringLiteral("allowCtrlAltShortcuts")] = false;
   // Exercise both global hotkeys and a local action through their normal getters.
   core[QStringLiteral("shortcuts")] = QJsonObject{{QStringLiteral("NewQuickNote"), binding},
                                                   {QStringLiteral("Global_WakeUp"), binding},
@@ -115,13 +115,14 @@ void TestCoreConfig::testCtrlAltFilteringPreservesBindingsAcrossRestarts() {
   MainConfig config(&m_mockMgr);
   auto json = config.toJson();
   auto core = json.value(QStringLiteral("core")).toObject();
-  core.remove(QStringLiteral("disableCtrlAltShortcuts"));
+  QVERIFY(core.value(QStringLiteral("allowCtrlAltShortcuts")).toBool());
+  core.remove(QStringLiteral("allowCtrlAltShortcuts"));
   json[QStringLiteral("core")] = core;
   config.fromJson(json);
   const auto original = config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote);
   QCOMPARE(original, QStringLiteral("Ctrl+Alt+Q"));
 
-  config.getCoreConfig().setCtrlAltShortcutsDisabled(true);
+  config.getCoreConfig().setCtrlAltShortcutsAllowed(false);
   QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote), original);
   config.fromJson(config.toJson());
   QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
@@ -129,7 +130,7 @@ void TestCoreConfig::testCtrlAltFilteringPreservesBindingsAcrossRestarts() {
   config.fromJson(config.toJson());
   QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
 
-  config.getCoreConfig().setCtrlAltShortcutsDisabled(false);
+  config.getCoreConfig().setCtrlAltShortcutsAllowed(true);
   QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
   config.fromJson(config.toJson());
   QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote), original);

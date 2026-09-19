@@ -55,7 +55,7 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
     m_locale = QStringLiteral("en_US");
   }
 
-  m_ctrlAltShortcutsDisabled = READBOOL(QStringLiteral("disableCtrlAltShortcuts"));
+  m_allowCtrlAltShortcuts = p_jobj.value(QStringLiteral("allowCtrlAltShortcuts")).toBool(true);
   loadShortcuts(p_jobj.value(QStringLiteral("shortcuts")).toObject());
 
   m_shortcutLeaderKey = READSTR(QStringLiteral("shortcutLeaderKey"));
@@ -125,7 +125,7 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("theme")] = m_theme;
   obj[QStringLiteral("appName")] = m_appName;
   obj[QStringLiteral("locale")] = m_locale;
-  obj[QStringLiteral("disableCtrlAltShortcuts")] = m_ctrlAltShortcutsDisabled;
+  obj[QStringLiteral("allowCtrlAltShortcuts")] = m_allowCtrlAltShortcuts;
   obj[QStringLiteral("shortcuts")] = saveShortcuts();
   obj[QStringLiteral("shortcutLeaderKey")] = m_shortcutLeaderKey;
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
@@ -210,11 +210,11 @@ const QString &CoreConfig::getShortcut(Shortcut p_shortcut) const {
   return m_filteredShortcuts[p_shortcut] ? c_empty : m_shortcuts[p_shortcut];
 }
 
-bool CoreConfig::isCtrlAltShortcutsDisabled() const { return m_ctrlAltShortcutsDisabled; }
+bool CoreConfig::isCtrlAltShortcutsAllowed() const { return m_allowCtrlAltShortcuts; }
 
-void CoreConfig::setCtrlAltShortcutsDisabled(bool p_disabled) {
+void CoreConfig::setCtrlAltShortcutsAllowed(bool p_allowed) {
   // The masks and registered shortcuts stay unchanged until the next config load.
-  updateConfig(m_ctrlAltShortcutsDisabled, p_disabled, this);
+  updateConfig(m_allowCtrlAltShortcuts, p_allowed, this);
 }
 
 int CoreConfig::getToolBarIconSize() const { return m_toolBarIconSize; }

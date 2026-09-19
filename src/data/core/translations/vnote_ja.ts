@@ -2604,12 +2604,12 @@
 <context>
     <name>vnotex::GeneralPage</name>
     <message>
-        <source>Disable Ctrl+Alt shortcuts</source>
-        <translation>Ctrl+Alt ショートカットを無効にする</translation>
+        <source>Allow Ctrl+Alt shortcuts</source>
+        <translation>Ctrl+Alt ショートカットを許可する</translation>
     </message>
     <message>
-        <source>Ignore configured shortcuts containing Ctrl+Alt, including global hotkeys, to avoid conflicts with AltGr on some keyboard layouts (restart required)</source>
-        <translation>一部のキーボード配列で AltGr との競合を避けるため、グローバルホットキーを含む Ctrl+Alt を使用する設定済みショートカットを無視します（再起動が必要）</translation>
+        <source>Allow configured shortcuts containing Ctrl+Alt, including global hotkeys. Turn off to avoid conflicts with AltGr on some keyboard layouts (restart required)</source>
+        <translation>グローバルホットキーを含む Ctrl+Alt を使用する設定済みショートカットを許可します。一部のキーボード配列で AltGr との競合を避けるには、この設定をオフにしてください（再起動が必要）</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/generalpage.cpp" line="+36"/>

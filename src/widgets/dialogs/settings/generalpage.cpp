@@ -19,7 +19,7 @@ using namespace vnotex;
 
 namespace {
 const char c_appNameLineEditName[] = "applicationDisplayNameLineEdit";
-const char c_disableCtrlAltShortcutsName[] = "disableCtrlAltShortcutsCheckBox";
+const char c_allowCtrlAltShortcutsName[] = "allowCtrlAltShortcutsCheckBox";
 } // namespace
 
 GeneralPage::GeneralPage(ServiceLocator &p_services, QWidget *p_parent)
@@ -101,18 +101,19 @@ void GeneralPage::setupUI() {
 #endif
 
   {
-    const QString label(tr("Disable Ctrl+Alt shortcuts"));
-    m_disableCtrlAltShortcutsCheckBox = WidgetsFactory::createCheckBox(label, this);
-    m_disableCtrlAltShortcutsCheckBox->setObjectName(QLatin1String(c_disableCtrlAltShortcutsName));
-    m_disableCtrlAltShortcutsCheckBox->setToolTip(
-        tr("Ignore configured shortcuts containing Ctrl+Alt, including global hotkeys, to avoid "
+    const QString label(tr("Allow Ctrl+Alt shortcuts"));
+    m_allowCtrlAltShortcutsCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_allowCtrlAltShortcutsCheckBox->setObjectName(QLatin1String(c_allowCtrlAltShortcutsName));
+    m_allowCtrlAltShortcutsCheckBox->setToolTip(
+        tr("Allow configured shortcuts containing Ctrl+Alt, including global hotkeys. Turn off to "
+           "avoid "
            "conflicts with AltGr on some keyboard layouts (restart required)"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
-        m_disableCtrlAltShortcutsCheckBox, m_disableCtrlAltShortcutsCheckBox->toolTip(), this));
-    addSearchItem(label, m_disableCtrlAltShortcutsCheckBox->toolTip(),
-                  m_disableCtrlAltShortcutsCheckBox);
-    connect(m_disableCtrlAltShortcutsCheckBox, &QCheckBox::stateChanged, this,
+        m_allowCtrlAltShortcutsCheckBox, m_allowCtrlAltShortcutsCheckBox->toolTip(), this));
+    addSearchItem(label, m_allowCtrlAltShortcutsCheckBox->toolTip(),
+                  m_allowCtrlAltShortcutsCheckBox);
+    connect(m_allowCtrlAltShortcutsCheckBox, &QCheckBox::stateChanged, this,
             &GeneralPage::pageIsChangedWithRestartNeeded);
   }
 
@@ -188,7 +189,7 @@ void GeneralPage::loadInternal() {
   }
 
   m_appNameLineEdit->setText(coreConfig.getAppName());
-  m_disableCtrlAltShortcutsCheckBox->setChecked(coreConfig.isCtrlAltShortcutsDisabled());
+  m_allowCtrlAltShortcutsCheckBox->setChecked(coreConfig.isCtrlAltShortcutsAllowed());
 
   if (m_openGLComboBox) {
     int idx = m_openGLComboBox->findData(sessionConfig.getOpenGL());
@@ -227,7 +228,7 @@ bool GeneralPage::saveInternal() {
   }
 
   coreConfig.setAppName(m_appNameLineEdit->text());
-  coreConfig.setCtrlAltShortcutsDisabled(m_disableCtrlAltShortcutsCheckBox->isChecked());
+  coreConfig.setCtrlAltShortcutsAllowed(m_allowCtrlAltShortcutsCheckBox->isChecked());
 
   if (m_openGLComboBox) {
     int opt = m_openGLComboBox->currentData().toInt();

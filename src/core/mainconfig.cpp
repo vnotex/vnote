@@ -54,7 +54,7 @@ void MainConfig::fromJson(const QJsonObject &p_jobj) {
   }
 
   auto &coreConfig = getCoreConfig();
-  if (coreConfig.isCtrlAltShortcutsDisabled()) {
+  if (!coreConfig.isCtrlAltShortcutsAllowed()) {
     // Filter the loaded runtime view, never the bindings serialized by toJson().
     auto filter = [](auto &p_config) {
       for (size_t i = 0; i < p_config.m_filteredShortcuts.size(); ++i) {

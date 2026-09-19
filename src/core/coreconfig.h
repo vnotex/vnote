@@ -105,8 +105,8 @@ public:
 
   const QString &getShortcut(Shortcut p_shortcut) const;
 
-  bool isCtrlAltShortcutsDisabled() const;
-  void setCtrlAltShortcutsDisabled(bool p_disabled);
+  bool isCtrlAltShortcutsAllowed() const;
+  void setCtrlAltShortcutsAllowed(bool p_allowed);
 
   int getToolBarIconSize() const;
   void setToolBarIconSize(int p_size);
@@ -215,7 +215,7 @@ private:
   // Keep configured bindings intact; MainConfig masks runtime shortcuts on load.
   QString m_shortcuts[Shortcut::MaxShortcut];
   std::bitset<Shortcut::MaxShortcut> m_filteredShortcuts;
-  bool m_ctrlAltShortcutsDisabled = false;
+  bool m_allowCtrlAltShortcuts = true;
 
   // Leader key of shortcuts defined in m_shortctus.
   QString m_shortcutLeaderKey;

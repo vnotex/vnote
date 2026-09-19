@@ -31,7 +31,7 @@ private:
 
   QComboBox *m_openGLComboBox = nullptr;
 
-  QCheckBox *m_disableCtrlAltShortcutsCheckBox = nullptr;
+  QCheckBox *m_allowCtrlAltShortcutsCheckBox = nullptr;
 
   QCheckBox *m_systemTrayCheckBox = nullptr;
 
