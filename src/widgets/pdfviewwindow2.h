@@ -8,6 +8,7 @@
 
 #include <QColor>
 #include <QHash>
+#include <QTimer>
 
 #include <core/pdfviewerconfig.h>
 
@@ -73,6 +74,8 @@ protected slots:
 
 protected:
   void paintEvent(QPaintEvent *p_event) Q_DECL_OVERRIDE;
+
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
@@ -203,6 +206,10 @@ private:
   int m_prePresentationScrollMode = 0;
 
   QColor m_presentationBackground;
+
+  QTimer m_presentationFitTimer;
+
+  bool m_presentationFitOnEntry = false;
 
   // Managed by QObject parent (this).
   CommentController *m_commentController = nullptr;

@@ -150,6 +150,10 @@ button is created. Readable-width margins are zero during presentation.
 PDF entry defers its adapter commands until native layout settles, activates the
 layout, then sets page-scroll before Page Fit. The webview's remaining height
 already excludes toolbar/Find rows; never subtract a fixed toolbar height.
+A single-shot timer also coalesces native PDF viewport resizes while presenting
+with Page Fit selected, including Find/banner changes. Explicit zoom selections
+are preserved; every confirmed exit cancels the pending fit before restoring
+normal zoom/scroll state.
 
 The existing parent layout is disabled before promotion so QStackedLayout cannot
 resize the fullscreen page during a background layout pass. Exit restores the

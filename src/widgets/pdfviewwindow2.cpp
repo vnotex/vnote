@@ -2,12 +2,12 @@
 
 #include <QActionGroup>
 #include <QDesktopServices>
+#include <QEvent>
 #include <QJsonArray>
 #include <QLayout>
 #include <QMenu>
 #include <QPainter>
 #include <QSignalBlocker>
-#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
@@ -56,6 +56,27 @@ PdfViewWindow2::PdfViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buff
     : ViewWindow2(p_services, p_buffer, p_parent) {
   m_controller = new PdfViewWindowController(p_services, this);
   m_mode = ViewWindowMode::Read;
+
+  m_presentationFitTimer.setSingleShot(true);
+  m_presentationFitTimer.setInterval(0);
+  connect(&m_presentationFitTimer, &QTimer::timeout, this, [this]() {
+    const bool entering = m_presentationFitOnEntry;
+    m_presentationFitOnEntry = false;
+    if (!isViewFullScreen()) {
+      return;
+    }
+    auto *a = adapter();
+    if (!a || !a->getViewerState().m_valid ||
+        (!entering && a->getViewerState().m_scaleValue != QStringLiteral("page-fit"))) {
+      return;
+    }
+    // Let the toolbar/Find rows reserve their height before fitting the viewport.
+    layout()->activate();
+    if (entering) {
+      a->setScrollMode(3); // pdf.js ScrollMode::PAGE; may itself recalculate scale.
+    }
+    a->setZoom(QStringLiteral("page-fit"));
+  });
 
   // MUST run before setupUI(): setupToolBar() hands the provider to the Outline
   // popup. The headingClicked lambda resolves adapter() lazily, so the adapter
@@ -159,6 +180,8 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
     update();
     m_viewerToolBar->setPresentationMode(p_on);
     if (!p_on) {
+      m_presentationFitTimer.stop();
+      m_presentationFitOnEntry = false;
       if (auto *a = adapter()) {
         if (!m_prePresentationZoom.isEmpty()) {
           a->setZoom(m_prePresentationZoom);
@@ -599,6 +622,7 @@ void PdfViewWindow2::setupViewer() {
         return themeService->commentHighlightColor(p_token);
       },
       themeService->paletteColor(QStringLiteral("base#normal#border")));
+  m_viewer->installEventFilter(this);
   connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
   });
@@ -846,23 +870,25 @@ void PdfViewWindow2::setPresentationMode(bool p_on) {
     if (!setViewFullScreen(true)) {
       return;
     }
-    // The fullscreen resize and readable-width reset post native layout work.
-    // Fit only after the toolbar/Find rows have taken their share of the height.
-    QTimer::singleShot(0, this, [this]() {
-      if (!isViewFullScreen()) {
-        return;
-      }
-      layout()->activate();
-      if (auto *viewerAdapter = adapter()) {
-        // Switching modes can recalculate scale; Page Fit must be last.
-        viewerAdapter->setScrollMode(3); // pdf.js ScrollMode::PAGE.
-        viewerAdapter->setZoom(QStringLiteral("page-fit"));
-      }
-    });
+    m_presentationFitOnEntry = true;
+    m_presentationFitTimer.start();
     return;
   }
 
   setViewFullScreen(false);
+}
+
+bool PdfViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  // Watch the viewport, not only the outer window: Find and banners resize it too.
+  if (p_obj == m_viewer && p_event->type() == QEvent::Resize && isViewFullScreen() &&
+      !m_presentationFitTimer.isActive()) {
+    auto *a = adapter();
+    if (a && a->getViewerState().m_valid &&
+        a->getViewerState().m_scaleValue == QStringLiteral("page-fit")) {
+      m_presentationFitTimer.start();
+    }
+  }
+  return ViewWindow2::eventFilter(p_obj, p_event);
 }
 
 void PdfViewWindow2::paintEvent(QPaintEvent *p_event) {
