@@ -69,29 +69,33 @@ private slots:
   void standaloneThemeRefreshUpdatesToolBarAndMenuIcons();
 };
 
-// The Outline popup belongs between the sidebar toggle and the page controls --
-// both are view chrome of the same kind. It cannot be built here (it needs a
-// ServiceLocator and an OutlineProvider, neither of which this component may
-// hold), so install() takes a hook; without it the popup ends up AFTER the whole
-// viewer toolbar, which is not the agreed layout.
+// The hook must keep Outline and Find together before page navigation. These
+// markers test the component's insertion slot, not PdfViewWindow2's wiring;
+// the real Outline popup requires a ServiceLocator and an OutlineProvider.
 void TestPdfViewerToolBar::theOutlineHookRunsBetweenSidebarAndPageControls() {
   QToolBar bar;
   PdfViewerToolBar toolBar;
 
   QAction *marker = nullptr;
-  toolBar.install(&bar, {},
-                  [&bar, &marker]() { marker = bar.addAction(QStringLiteral("Outline")); });
+  QAction *findMarker = nullptr;
+  toolBar.install(&bar, {}, [&bar, &marker, &findMarker]() {
+    marker = bar.addAction(QStringLiteral("Outline"));
+    findMarker = bar.addAction(QStringLiteral("Find And Replace"));
+  });
 
   const QList<QAction *> actions = bar.actions();
   const int sidebarAt = actions.indexOf(toolBar.sidebarAction());
   const int markerAt = actions.indexOf(marker);
+  const int findAt = actions.indexOf(findMarker);
   const int previousAt = actions.indexOf(toolBar.previousPageAction());
   const int nextAt = actions.indexOf(toolBar.nextPageAction());
   const int zoomOutAt = actions.indexOf(toolBar.zoomOutAction());
 
   QVERIFY(sidebarAt >= 0);
   QVERIFY(markerAt > sidebarAt);
-  QVERIFY(previousAt > markerAt);
+  QCOMPARE(findAt, markerAt + 1);
+  QVERIFY(actions.at(findAt + 1)->isSeparator());
+  QCOMPARE(previousAt, findAt + 2);
   QVERIFY(nextAt > previousAt);
   QVERIFY(zoomOutAt > nextAt);
 }
