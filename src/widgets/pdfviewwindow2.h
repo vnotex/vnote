@@ -6,6 +6,7 @@
 #include "outlineprovider.h"
 #include "viewwindow2.h"
 
+#include <QColor>
 #include <QHash>
 
 #include <core/pdfviewerconfig.h>
@@ -71,6 +72,8 @@ protected slots:
   void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
 
 protected:
+  void paintEvent(QPaintEvent *p_event) Q_DECL_OVERRIDE;
+
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
   void handleNodeRetargeted(const NodeIdentifier &p_newNodeId) Q_DECL_OVERRIDE;
@@ -198,6 +201,8 @@ private:
   QString m_prePresentationZoom;
 
   int m_prePresentationScrollMode = 0;
+
+  QColor m_presentationBackground;
 
   // Managed by QObject parent (this).
   CommentController *m_commentController = nullptr;

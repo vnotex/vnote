@@ -18,7 +18,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
-#include <QPainter>
 #include <QPair>
 #include <QPixmap>
 #include <QPointer>
@@ -58,21 +57,12 @@ int checkedCount(const QList<QAction *> &p_actions) {
   return count;
 }
 
-// A real native surface with an unoccluded, solid toolbar patch. Sampling the
-// composed parent catches a no-op effect or dimming the whole page, not just a
-// changed opacity property on an effect that never reaches the screen.
-class SolidPatch : public QWidget {
-protected:
-  void paintEvent(QPaintEvent *) override {
-    QPainter painter(this);
-    painter.fillRect(rect(), palette().color(QPalette::Window));
-  }
-};
-
+// Sample an empty toolbar region, not a painted child: its styled background
+// must fade together with the controls over the presentation content backdrop.
 struct PresentationSurface {
   QWidget m_window;
   QToolBar m_bar{&m_window};
-  SolidPatch m_patch;
+  QWidget m_patch;
   QLineEdit m_content{&m_window};
   PdfViewerToolBar m_controls;
   QMenu *m_outlineMenu = nullptr;
@@ -85,8 +75,8 @@ struct PresentationSurface {
     m_window.setPalette(palette);
     m_window.setAutoFillBackground(true);
 
-    palette.setColor(QPalette::Window, m_toolBarColor);
-    m_patch.setPalette(palette);
+    m_bar.setStyleSheet(QStringLiteral("QToolBar { background-color: %1; border: none; }")
+                            .arg(m_toolBarColor.name()));
     m_patch.setFixedSize(80, 28);
     m_bar.addWidget(&m_patch);
     m_bar.setMovable(false);

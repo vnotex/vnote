@@ -147,6 +147,9 @@ frameless fullscreen in place. `ContentFullScreenHost` changes its window flags,
 not its parent or tab registration. Toolbar, content, Find, banners and scoped
 shortcuts keep their normal layout; no container, placeholder or floating exit
 button is created. Readable-width margins are zero during presentation.
+PDF entry defers its adapter commands until native layout settles, activates the
+layout, then sets page-scroll before Page Fit. The webview's remaining height
+already excludes toolbar/Find rows; never subtract a fixed toolbar height.
 
 The existing parent layout is disabled before promotion so QStackedLayout cannot
 resize the fullscreen page during a background layout pass. Exit restores the
@@ -175,7 +178,11 @@ presenting, click again to exit. It remains usable even if the viewer reloads.
 Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension
-menus). PDF, Find and popup windows remain opaque. Exit removes the effect,
+menus). The effect includes the toolbar's styled background, not only its buttons.
+During presentation, PdfViewWindow2 paints the parent backdrop with the theme's
+`base#content#bg`, so a matching toolbar-colored parent cannot mask the fade.
+Theme changes refresh that color; normal mode restores normal frame painting.
+PDF, Find and popup windows remain opaque. Exit removes the effect,
 application filter and focus tracking. Gates: `test_contentfullscreenhost` and
 `test_pdfviewertoolbar`, including tab identity and rendered-alpha regressions.
 

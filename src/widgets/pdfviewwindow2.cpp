@@ -3,8 +3,11 @@
 #include <QActionGroup>
 #include <QDesktopServices>
 #include <QJsonArray>
+#include <QLayout>
 #include <QMenu>
+#include <QPainter>
 #include <QSignalBlocker>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
@@ -149,6 +152,11 @@ QAction *PdfViewWindow2::addAdditionalToolBarMenuAction(QToolBar *p_toolBar) {
 void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
   m_viewerToolBar = new PdfViewerToolBar(this);
   connect(this, &ViewWindow2::viewFullScreenChanged, this, [this](bool p_on) {
+    if (p_on) {
+      m_presentationBackground = QColor(
+          getServices().get<ThemeService>()->paletteColor(QStringLiteral("base#content#bg")));
+    }
+    update();
     m_viewerToolBar->setPresentationMode(p_on);
     if (!p_on) {
       if (auto *a = adapter()) {
@@ -680,6 +688,8 @@ void PdfViewWindow2::handleThemeChanged() {
 
   // Update WebEngine page background color.
   m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());
+  m_presentationBackground = QColor(themeService->paletteColor(QStringLiteral("base#content#bg")));
+  update();
 
   // The colour chips are theme-dependent, and the BORDER travels as a value
   // rather than a callback, so both must be re-supplied — not merely redrawn.
@@ -836,13 +846,34 @@ void PdfViewWindow2::setPresentationMode(bool p_on) {
     if (!setViewFullScreen(true)) {
       return;
     }
-    a->setZoom(QStringLiteral("page-fit"));
-    // pdf.js ScrollMode::PAGE.
-    a->setScrollMode(3);
+    // The fullscreen resize and readable-width reset post native layout work.
+    // Fit only after the toolbar/Find rows have taken their share of the height.
+    QTimer::singleShot(0, this, [this]() {
+      if (!isViewFullScreen()) {
+        return;
+      }
+      layout()->activate();
+      if (auto *viewerAdapter = adapter()) {
+        // Switching modes can recalculate scale; Page Fit must be last.
+        viewerAdapter->setScrollMode(3); // pdf.js ScrollMode::PAGE.
+        viewerAdapter->setZoom(QStringLiteral("page-fit"));
+      }
+    });
     return;
   }
 
   setViewFullScreen(false);
+}
+
+void PdfViewWindow2::paintEvent(QPaintEvent *p_event) {
+  ViewWindow2::paintEvent(p_event);
+  if (isViewFullScreen()) {
+    // The whole toolbar (including its background) already has an opacity
+    // effect. A matching toolbar-colored parent makes only the buttons look
+    // faded, so composite it against the theme's content surface instead.
+    QPainter painter(this);
+    painter.fillRect(rect(), m_presentationBackground);
+  }
 }
 
 // ============ Find and Replace ============
