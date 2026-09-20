@@ -44,6 +44,9 @@
 
 namespace {
 // Object names used for test discovery (findChild<>). See dialogs/AGENTS.md.
+constexpr const char *kRenderingStyleComboName = "renderingStyleCombo";
+constexpr const char *kSyntaxStyleComboName = "syntaxStyleCombo";
+constexpr const char *kFollowThemeButtonName = "followThemeButton";
 constexpr const char *kPdfHeaderLeftName = "pdfHeaderLeftEdit";
 constexpr const char *kPdfHeaderCenterName = "pdfHeaderCenterEdit";
 constexpr const char *kPdfHeaderRightName = "pdfHeaderRightEdit";
@@ -319,22 +322,24 @@ void ExportDialog2::setupUI() {
   commonLayout->addWidget(new QLabel(tr("Source"), optionsGroupBox), 0, 0);
   commonLayout->addWidget(m_sourceCombo, 0, 1);
   commonLayout->addWidget(new QLabel(tr("Format"), optionsGroupBox), 0, 2);
-  commonLayout->addWidget(m_formatCombo, 0, 3);
+  commonLayout->addWidget(m_formatCombo, 0, 3, 1, 2);
 
   // Row 1: Output directory.
   m_outputDirInput = new LocationInputWithBrowseButton(optionsGroupBox, getDefaultOutputDir());
   m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                   tr("Select Export Output Directory"));
   commonLayout->addWidget(new QLabel(tr("Output directory"), optionsGroupBox), 1, 0);
-  commonLayout->addWidget(m_outputDirInput, 1, 1, 1, 3);
+  commonLayout->addWidget(m_outputDirInput, 1, 1, 1, 4);
 
-  // Row 2: Rendering style + Syntax style.
+  // Row 2: Rendering style + Syntax style + Follow Theme.
   auto *themeService = m_services.get<ThemeService>();
   const auto webStyles = themeService->getWebStyles();
   const auto syntaxStyles = themeService->getSyntaxStyles();
 
   m_renderingStyleCombo = WidgetsFactory::createComboBox(optionsGroupBox);
+  m_renderingStyleCombo->setObjectName(QLatin1String(kRenderingStyleComboName));
   m_syntaxStyleCombo = WidgetsFactory::createComboBox(optionsGroupBox);
+  m_syntaxStyleCombo->setObjectName(QLatin1String(kSyntaxStyleComboName));
   for (const auto &style : webStyles) {
     m_renderingStyleCombo->addItem(style.first, style.second);
   }
@@ -347,12 +352,30 @@ void ExportDialog2::setupUI() {
   commonLayout->addWidget(new QLabel(tr("Syntax style"), optionsGroupBox), 2, 2);
   commonLayout->addWidget(m_syntaxStyleCombo, 2, 3);
 
+  auto *followThemeButton = new QPushButton(tr("Follow Theme"), optionsGroupBox);
+  followThemeButton->setObjectName(QLatin1String(kFollowThemeButtonName));
+  followThemeButton->setAutoDefault(false);
+  commonLayout->addWidget(followThemeButton, 2, 4);
+  connect(followThemeButton, &QPushButton::clicked, this, [this]() {
+    auto *theme = m_services.get<ThemeService>();
+    const int renderingIdx =
+        m_renderingStyleCombo->findData(theme->getFile(Theme::File::WebStyleSheet));
+    const int syntaxIdx =
+        m_syntaxStyleCombo->findData(theme->getFile(Theme::File::HighlightStyleSheet));
+    if (renderingIdx >= 0) {
+      m_renderingStyleCombo->setCurrentIndex(renderingIdx);
+    }
+    if (syntaxIdx >= 0) {
+      m_syntaxStyleCombo->setCurrentIndex(syntaxIdx);
+    }
+  });
+
   // Row 3: Checkboxes.
   m_transparentBgCheck =
       WidgetsFactory::createCheckBox(tr("Use transparent background"), optionsGroupBox);
   m_recursiveCheck = WidgetsFactory::createCheckBox(tr("Process sub-folders"), optionsGroupBox);
   commonLayout->addWidget(m_transparentBgCheck, 3, 0, 1, 2);
-  commonLayout->addWidget(m_recursiveCheck, 3, 2, 1, 2);
+  commonLayout->addWidget(m_recursiveCheck, 3, 2, 1, 3);
 
   mainLayout->addWidget(optionsGroupBox);
 

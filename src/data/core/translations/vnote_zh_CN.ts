@@ -1709,6 +1709,10 @@
 <context>
     <name>vnotex::ExportDialog2</name>
     <message>
+        <source>Follow Theme</source>
+        <translation>跟随主题</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="+162"/>
         <source>No current buffer content available</source>
         <translation>没有可用的当前缓冲区内容</translation>

@@ -85,6 +85,8 @@ void PdfAnnotationToolBar::addTool(QToolBar *p_toolBar, const QString &p_tool,
 
   const QIcon icon = p_icons ? p_icons(p_iconName) : QIcon();
   entry.m_action = p_toolBar->addAction(icon, p_text);
+  // Participate in the shared toolbar theme refresh.
+  entry.m_action->setProperty("iconName", p_iconName);
   entry.m_action->setCheckable(true);
   entry.m_action->setData(p_tool);
   m_toolGroup->addAction(entry.m_action);

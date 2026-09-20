@@ -1709,6 +1709,10 @@
 <context>
     <name>vnotex::ExportDialog2</name>
     <message>
+        <source>Follow Theme</source>
+        <translation>テーマに合わせる</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="+162"/>
         <source>No current buffer content available</source>
         <translation>現在のバッファーのコンテンツが利用できません</translation>
