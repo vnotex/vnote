@@ -33,6 +33,7 @@
 #include <gui/utils/iconutils.h>
 #include <unitedentry/unitedentry.h>
 #include <unitedentry/unitedentrymgr.h>
+#include <utils/docsutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
 
@@ -572,6 +573,30 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
                                MainWindow2::tr("No log file found."), m_mainWindow);
     }
   });
+
+  menu->addSeparator();
+
+  const auto openDoc = [this](const QString &p_baseName) {
+    const auto file = DocsUtils::getDocFile(p_baseName);
+    if (file.isEmpty()) {
+      MessageBoxHelper::notify(MessageBoxHelper::Type::Information,
+                               MainWindow2::tr("Documentation file not found: %1").arg(p_baseName),
+                               m_mainWindow);
+      return;
+    }
+
+    NodeIdentifier nodeId;
+    nodeId.relativePath = file;
+    FileOpenSettings settings;
+    settings.m_readOnly = true;
+    settings.m_mode = ViewWindowMode::Read;
+    settings.m_forceMode = true;
+    m_services.get<BufferService>()->openBuffer(nodeId, settings);
+  };
+  menu->addAction(MainWindow2::tr("Shortcuts Help"), menu,
+                  [openDoc]() { openDoc(QStringLiteral("shortcuts.md")); });
+  menu->addAction(MainWindow2::tr("Markdown Guide"), menu,
+                  [openDoc]() { openDoc(QStringLiteral("markdown_guide.md")); });
 
   menu->addSeparator();
 

@@ -279,10 +279,10 @@ void TestConfigMgr2::testDebouncing() {
 // =============================================================================
 
 // The folders ensureExtraData() installs, in bundle order.
-static const char *const kExtraFolders[] = {"themes", "tasks", "syntax-highlighting",
-                                            "web",    "dicts", "templates"};
+static const char *const kExtraFolders[] = {
+    "themes", "tasks", "syntax-highlighting", "web", "dicts", "templates", "docs"};
 
-// The ConfigDataType of each entry in kExtraFolders, same order.
+// The typed extra-data folders; docs uses getFileFromConfigFolder().
 static const ConfigMgr2::ConfigDataType kExtraTypes[] = {
     ConfigMgr2::ConfigDataType::Themes,
     ConfigMgr2::ConfigDataType::Tasks,
@@ -318,6 +318,7 @@ void TestConfigMgr2::resetInstalledExtraData() const {
   for (auto type : kExtraTypes) {
     QDir(m_configMgr->getConfigDataFolder(type)).removeRecursively();
   }
+  QDir(m_configMgr->getFileFromConfigFolder(QStringLiteral("docs"))).removeRecursively();
 }
 
 QString TestConfigMgr2::stampPath(ConfigMgr2::ConfigDataType p_type) const {
@@ -348,6 +349,14 @@ void TestConfigMgr2::testExtraData_cleanRunInstallsEveryFolderAndStamps() {
              qPrintable(QStringLiteral("no stamp in %1").arg(folder)));
     QCOMPARE(QString::fromUtf8(stamp.readAll()).trimmed(), ConfigMgr2::getApplicationVersion());
   }
+
+  const QDir docs(mgr.getFileFromConfigFolder(QStringLiteral("docs")));
+  QFile doc(docs.filePath(QStringLiteral("marker.txt")));
+  QVERIFY(doc.open(QIODevice::ReadOnly));
+  QCOMPARE(doc.readAll(), QByteArray("bundled docs"));
+  QFile docsStamp(docs.filePath(QLatin1String(FileUtils2::c_versionStampFileName)));
+  QVERIFY(docsStamp.open(QIODevice::ReadOnly));
+  QCOMPARE(QString::fromUtf8(docsStamp.readAll()).trimmed(), ConfigMgr2::getApplicationVersion());
 
   // The bundled note template lands byte-for-byte.
   QFile title(QDir(mgr.getConfigDataFolder(ConfigMgr2::ConfigDataType::Templates))
@@ -450,6 +459,8 @@ void TestConfigMgr2::testExtraData_missingBundleFailsEveryFolderAndInstallsNothi
         qPrintable(
             QStringLiteral("stamped without a bundle: %1").arg(mgr.getConfigDataFolder(type))));
   }
+  QVERIFY(!QFileInfo::exists(mgr.getFileFromConfigFolder(QStringLiteral("docs/")) +
+                             QLatin1String(FileUtils2::c_versionStampFileName)));
 }
 
 void TestConfigMgr2::testExtraData_userCssSurvivesInstallAndFailedRecovery() {

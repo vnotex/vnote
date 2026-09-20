@@ -1,7 +1,7 @@
 #include "docsutils.h"
 
-#include <QDir>
 #include <QDebug>
+#include <QDir>
 
 #include "fileutils2.h"
 
@@ -33,7 +33,7 @@ QString DocsUtils::getDocFile(const QString &p_baseName) {
 
   const auto fullLocaleName = QStringLiteral("%1/%2").arg(s_locale, p_baseName);
   const auto shortLocaleName = QStringLiteral("%1/%2").arg(shortLocale, p_baseName);
-  const auto defaultLocaleName = QStringLiteral("%1/%2").arg(QStringLiteral("en"), p_baseName);
+  const auto defaultLocaleName = QStringLiteral("%1/%2").arg(QStringLiteral("en_US"), p_baseName);
 
   for (const auto &pa : s_searchPaths) {
     QDir dir(pa);

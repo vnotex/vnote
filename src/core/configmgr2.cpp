@@ -505,6 +505,8 @@ void ConfigMgr2::ensureExtraData(bool p_force) {
   // because only bundled paths are written.
   folders.append(FolderSpec{QStringLiteral("templates"),
                             getConfigDataFolder(ConfigDataType::Templates), QSet<QString>()});
+  folders.append(FolderSpec{QStringLiteral("docs"), getFileFromConfigFolder(QStringLiteral("docs")),
+                            QSet<QString>()});
 
   QString extraDataRoot = m_extraDataSourceRootOverride;
 

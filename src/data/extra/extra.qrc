@@ -1,6 +1,10 @@
 <RCC>
     <qresource prefix="/vnotex/data/extra">
         <file>tooltips.json</file>
+        <file>docs/en_US/markdown_guide.md</file>
+        <file>docs/en_US/shortcuts.md</file>
+        <file>docs/zh_CN/markdown_guide.md</file>
+        <file>docs/zh_CN/shortcuts.md</file>
         <file>web/markdown-viewer-template.html</file>
         <file>web/markdown-export-template.html</file>
         <file>web/css/user.css</file>

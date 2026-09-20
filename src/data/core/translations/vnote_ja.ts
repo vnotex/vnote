@@ -3755,6 +3755,18 @@
         <translation>ログの表示</translation>
     </message>
     <message>
+        <source>Shortcuts Help</source>
+        <translation>ショートカットのヘルプ</translation>
+    </message>
+    <message>
+        <source>Markdown Guide</source>
+        <translation>Markdown ガイド</translation>
+    </message>
+    <message>
+        <source>Documentation file not found: %1</source>
+        <translation>ドキュメントファイルが見つかりません：%1</translation>
+    </message>
+    <message>
         <location line="+13"/>
         <source>No log file found.</source>
         <translation>ログファイルが見つかりません。</translation>

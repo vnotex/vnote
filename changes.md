@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Restore the bundled Markdown Guide and Shortcuts Help in English and Simplified Chinese, available read-only from the Settings menu with English fallback; refresh the keyboard reference against active bindings
 * Preserve read-only buffers, including View Logs, when recovering visible or hidden workspaces after restart
 * Use a pen-off icon for read-only note tabs and notebook badges to distinguish them from encrypted notes
 * Keep editor-toolbar Outline, Tags, Attachments, Word Count and Insert Table popups anchored to their buttons and on-screen, including in presentation mode

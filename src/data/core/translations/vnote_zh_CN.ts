@@ -3755,6 +3755,18 @@
         <translation>查看日志</translation>
     </message>
     <message>
+        <source>Shortcuts Help</source>
+        <translation>快捷键帮助</translation>
+    </message>
+    <message>
+        <source>Markdown Guide</source>
+        <translation>Markdown 指南</translation>
+    </message>
+    <message>
+        <source>Documentation file not found: %1</source>
+        <translation>未找到文档文件：%1</translation>
+    </message>
+    <message>
         <location line="+13"/>
         <source>No log file found.</source>
         <translation>未找到日志文件。</translation>

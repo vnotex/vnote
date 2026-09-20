@@ -65,6 +65,7 @@
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
 #include <utils/autostartutils.h>
+#include <utils/docsutils.h>
 #include <vtextedit/spellchecker.h>
 #include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
@@ -750,6 +751,8 @@ int main(int argc, char *argv[]) {
     }
 
     loadTranslators(app, configMgr);
+    DocsUtils::setLocale(configMgr.getCoreConfig().getLocaleToUse());
+    DocsUtils::addSearchPath(configMgr.getFileFromConfigFolder(QStringLiteral("docs")));
 
     // Push the effective locale into vxcore so its locale-aware, UTF-8 output
     // (the built-in %MMM%/%MMMM%/%ddd%/%dddd% snippets) follows VNote's language
