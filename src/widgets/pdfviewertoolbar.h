@@ -8,14 +8,12 @@
 #include <QObject>
 #include <QPointer>
 #include <QString>
-#include <QTimer>
 
 #include "editors/pdfvieweradapter.h"
 
 class QAction;
 class QActionGroup;
 class QComboBox;
-class QGraphicsOpacityEffect;
 class QLabel;
 class QMenu;
 class QSpinBox;
@@ -23,6 +21,8 @@ class QToolBar;
 class QToolButton;
 
 namespace vnotex {
+
+class PresentationToolBarEffect;
 
 // Builds and owns the native replacements for pdf.js's built-in toolbar strip
 // (which pdfviewer.css hides) on a caller-supplied QToolBar: sidebar toggle,
@@ -53,30 +53,23 @@ public:
 
   // Creates the actions, widgets and menus on @p_toolBar. Call once.
   //
-  // Placement happens in THREE steps, because the toolbar is shared with the
-  // base class and two of the positions are only reachable later:
-  //
-  //   1. install()                   -- sidebar, Outline/Find hook, page, zoom, and
-  //                                     the overflow MENU's contents
-  //   2. installPresentationAction() -- from ViewWindow2::addAdditionalViewToolBarActions()
-  //   3. installOverflowAction()     -- from ViewWindow2::addAdditionalToolBarMenuAction()
-  //
-  // @p_afterSidebar runs between the sidebar toggle and the page controls, and
-  // is where PdfViewWindow2 inserts Outline and Find. It is a hook rather than
-  // a fourth step because the popup needs a ServiceLocator and an
-  // OutlineProvider, and this component deliberately holds neither.
+  // @p_afterSidebar runs between the sidebar toggle and the page controls.
+  // PdfViewWindow2 uses it for Outline, Find And Replace, and
+  // installPresentationAction(). The popup needs a ServiceLocator and an
+  // OutlineProvider, neither of which this component may hold.
+  // installOverflowAction() later places Menu after the page/zoom controls.
   void install(QToolBar *p_toolBar, const IconProvider &p_icons = {},
                const std::function<void()> &p_afterSidebar = {});
 
   // Adds Presentation Mode to @p_toolBar and returns it.
   //
-  // ViewWindow2::addAdditionalViewToolBarActions() places it after the viewer
-  // controls and before Menu, keeping it directly accessible.
+  // PdfViewWindow2 installs it after Find And Replace in @p_afterSidebar,
+  // keeping Outline, Find And Replace, and Presentation Mode together.
   QAction *installPresentationAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 
   // Adds the Menu entry that opens the menu install() built, and returns it.
-  // ViewWindow2::addAdditionalToolBarMenuAction() places it after Presentation
-  // Mode. Its menu also hosts common actions, so the entry stays enabled
+  // ViewWindow2::addAdditionalToolBarMenuAction() places it after the page/zoom
+  // controls. Its menu also hosts common actions, so the entry stays enabled
   // independently of viewer readiness.
   QAction *installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons = {});
 
@@ -141,12 +134,7 @@ signals:
 
   void documentPropertiesRequested();
 
-protected:
-  bool eventFilter(QObject *p_obj, QEvent *p_event) override;
-
 private:
-  void updatePresentationOpacity();
-
   QAction *addIconAction(QToolBar *p_toolBar, const QString &p_iconName, const QString &p_text,
                          const IconProvider &p_icons);
 
@@ -169,9 +157,7 @@ private:
   static void syncModeGroup(const QList<QAction *> &p_actions, int p_value);
 
   QPointer<QToolBar> m_toolBar;
-  QPointer<QGraphicsOpacityEffect> m_presentationOpacityEffect;
-  QTimer m_presentationOpacityTimer;
-  QMetaObject::Connection m_presentationFocusConnection;
+  PresentationToolBarEffect *m_presentationEffect = nullptr;
   bool m_presentationMode = false;
 
   // Everything below is owned by the toolbar / the menus / this QObject.

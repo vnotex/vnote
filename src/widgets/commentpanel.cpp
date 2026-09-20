@@ -101,7 +101,7 @@ void CommentPanel::setupUI() {
   m_stack = new QStackedWidget(this);
   layout->addWidget(m_stack, 2);
 
-  m_emptyLabel = new QLabel(tr("Select a highlight to edit its note."), m_stack);
+  m_emptyLabel = new QLabel(tr("Select a highlight to edit its note"), m_stack);
   m_emptyLabel->setObjectName(QStringLiteral("CommentEmptyLabel"));
   m_emptyLabel->setWordWrap(true);
   m_emptyLabel->setAlignment(Qt::AlignCenter);

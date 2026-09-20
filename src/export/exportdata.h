@@ -129,7 +129,7 @@ struct ExportOption {
 
   ExportFormat m_targetFormat = ExportFormat::HTML;
 
-  bool m_useTransparentBg = true;
+  bool m_useTransparentBg = false;
 
   QString m_renderingStyleFile;
 

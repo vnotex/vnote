@@ -89,8 +89,6 @@ protected:
 
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
-  void addAdditionalViewToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
-
   QAction *addAdditionalToolBarMenuAction(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
   // A pdf.js viewer cannot be printed reliably; see the comment on the

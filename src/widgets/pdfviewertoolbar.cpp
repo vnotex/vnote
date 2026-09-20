@@ -2,10 +2,7 @@
 
 #include <QAction>
 #include <QActionGroup>
-#include <QApplication>
 #include <QComboBox>
-#include <QEvent>
-#include <QGraphicsOpacityEffect>
 #include <QLabel>
 #include <QMenu>
 #include <QSignalBlocker>
@@ -14,6 +11,7 @@
 #include <QToolButton>
 #include <QtMath>
 
+#include "presentationtoolbareffect.h"
 #include "propertydefs.h"
 
 using namespace vnotex;
@@ -33,25 +31,9 @@ const ZoomPreset c_zoomPresets[] = {
     {"1.5", 150}, {"2", 200},   {"3", 300}, {"4", 400},
 };
 
-// Menus and combo/extension popups are windows, so QWidget::window() alone
-// loses their relationship to the toolbar. QObject ancestry preserves it.
-bool isOwnedBy(const QObject *p_object, const QObject *p_owner) {
-  for (auto *object = p_object; object; object = object->parent()) {
-    if (object == p_owner) {
-      return true;
-    }
-  }
-  return false;
-}
-
 } // namespace
 
-PdfViewerToolBar::PdfViewerToolBar(QObject *p_parent) : QObject(p_parent) {
-  m_presentationOpacityTimer.setSingleShot(true);
-  m_presentationOpacityTimer.setInterval(0);
-  connect(&m_presentationOpacityTimer, &QTimer::timeout, this,
-          &PdfViewerToolBar::updatePresentationOpacity);
-}
+PdfViewerToolBar::PdfViewerToolBar(QObject *p_parent) : QObject(p_parent) {}
 
 PdfViewerToolBar::~PdfViewerToolBar() { setPresentationMode(false); }
 
@@ -71,6 +53,7 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   Q_ASSERT(!m_sidebarAction);
 
   m_toolBar = p_toolBar;
+  m_presentationEffect = new PresentationToolBarEffect(p_toolBar, this);
   connect(p_toolBar, &QObject::destroyed, this, [this]() {
     m_toolBar.clear();
     m_presentationAction = nullptr;
@@ -85,8 +68,8 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   m_sidebarAction->setCheckable(true);
   connect(m_sidebarAction, &QAction::triggered, this, [this]() { emit sidebarToggleRequested(); });
 
-  // 2. Outline and Find go HERE, between the sidebar toggle and the page
-  //    controls. The hook exists because
+  // 2. Outline, Find, and Presentation go between the sidebar and page controls.
+  //    The hook exists because
   //    the popup needs PdfViewWindow2's ServiceLocator and outline provider,
   //    neither of which this component may hold (that is the whole reason it is
   //    constructible in a test with a bare QToolBar).
@@ -160,7 +143,7 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   connect(m_zoomInAction, &QAction::triggered, this, [this]() { emit zoomStepRequested(true); });
 
   // 5. Build the menu contents now; the base's menu hook places its toolbar
-  //    entry after Presentation Mode and appends the common actions.
+  //    entry after the page/zoom controls and appends the common actions.
   buildOverflowMenu(p_toolBar, p_icons);
 
   // Viewer commands stay disabled until the first accepted state.
@@ -230,7 +213,7 @@ void PdfViewerToolBar::buildOverflowMenu(QToolBar *p_toolBar, const IconProvider
   m_viewerMenuActions += m_spreadActions;
 }
 
-// The base's menu hook places this last, after Presentation Mode.
+// The base's menu hook places this last, after the page/zoom controls.
 QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const IconProvider &p_icons) {
   Q_ASSERT(p_toolBar);
   Q_ASSERT(m_overflowMenu);
@@ -262,8 +245,8 @@ QAction *PdfViewerToolBar::installOverflowAction(QToolBar *p_toolBar, const Icon
   return m_overflowAction;
 }
 
-// The base's view-action hook keeps Presentation Mode on the toolbar before
-// Menu. The same checkable action enters and leaves presentation.
+// The caller places Presentation Mode beside Outline and Find. The same
+// checkable action enters and leaves presentation.
 QAction *PdfViewerToolBar::installPresentationAction(QToolBar *p_toolBar,
                                                      const IconProvider &p_icons) {
   Q_ASSERT(p_toolBar);
@@ -286,73 +269,8 @@ void PdfViewerToolBar::setPresentationMode(bool p_on) {
     m_presentationAction->setEnabled(m_state.m_valid || m_presentationMode);
   }
 
-  if (p_on && m_toolBar) {
-    if (!m_presentationOpacityEffect) {
-      m_presentationOpacityEffect = new QGraphicsOpacityEffect(m_toolBar);
-      m_toolBar->setGraphicsEffect(m_presentationOpacityEffect);
-      qApp->installEventFilter(this);
-      m_presentationFocusConnection =
-          connect(qApp, &QApplication::focusChanged, this, [this](QWidget *, QWidget *) {
-            if (!m_presentationOpacityTimer.isActive()) {
-              m_presentationOpacityTimer.start();
-            }
-          });
-    }
-    updatePresentationOpacity();
-  } else {
-    m_presentationOpacityTimer.stop();
-    if (qApp) {
-      qApp->removeEventFilter(this);
-    }
-    disconnect(m_presentationFocusConnection);
-    m_presentationFocusConnection = {};
-    if (m_toolBar && m_presentationOpacityEffect &&
-        m_toolBar->graphicsEffect() == m_presentationOpacityEffect) {
-      m_toolBar->setGraphicsEffect(nullptr);
-    }
-    m_presentationOpacityEffect.clear();
-  }
-}
-
-bool PdfViewerToolBar::eventFilter(QObject *p_obj, QEvent *p_event) {
-  if (m_presentationMode && m_toolBar) {
-    switch (p_event->type()) {
-    case QEvent::Enter:
-    case QEvent::Leave:
-    case QEvent::Show:
-    case QEvent::Hide:
-    case QEvent::Close:
-    case QEvent::WindowActivate:
-    case QEvent::WindowDeactivate:
-    case QEvent::ActivationChange:
-    case QEvent::ApplicationStateChange:
-      // Evaluate after Qt has updated hover, popup and activation bookkeeping.
-      // Child-to-child moves and popup handoffs share one pending evaluation.
-      if (!m_presentationOpacityTimer.isActive()) {
-        m_presentationOpacityTimer.start();
-      }
-      break;
-    default:
-      break;
-    }
-  }
-  return QObject::eventFilter(p_obj, p_event);
-}
-
-void PdfViewerToolBar::updatePresentationOpacity() {
-  if (!m_presentationMode || !m_toolBar || !m_presentationOpacityEffect) {
-    return;
-  }
-
-  const auto *window = m_toolBar->window();
-  const auto *popup = QApplication::activePopupWidget();
-  const bool ownsPopup = isOwnedBy(popup, m_toolBar);
-  const bool windowActive = QApplication::activeWindow() == window && window->isActiveWindow();
-  const bool engaged =
-      m_toolBar->underMouse() || isOwnedBy(QApplication::focusWidget(), m_toolBar) || ownsPopup;
-  const qreal opacity = windowActive && (!popup || ownsPopup) && engaged ? 1.0 : 0.1;
-  if (m_presentationOpacityEffect->opacity() != opacity) {
-    m_presentationOpacityEffect->setOpacity(opacity);
+  if (m_presentationEffect) {
+    m_presentationEffect->setActive(p_on);
   }
 }
 

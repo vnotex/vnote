@@ -120,9 +120,9 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | Position | What |
 |---|---|
 | spacer | |
-| `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, page and zoom controls |
-| `addAdditionalViewToolBarActions()` | PDF: Presentation Mode |
+| `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
+| `addAdditionalViewToolBarActions()` | Text: Presentation Mode |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
@@ -137,8 +137,10 @@ Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
 window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
 overload owns the remaining direct controls. Theme refresh reaches both.
 
-Text and MindMap inherit Find And Replace plus Menu. Widget-hosted Settings and
-Dashboard retain their content-owned toolbars; locked-note placeholders have none.
+Text keeps **Find And Replace → Presentation Mode → Menu**. PDF keeps
+**Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
+MindMap inherits Find And Replace plus Menu. Widget-hosted Settings and Dashboard
+retain their content-owned toolbars; locked-note placeholders have none.
 
 #### Whole-view fullscreen
 
@@ -173,18 +175,21 @@ restore under the current parent rather than moving the view back.
   restores the PDF zoom/scroll snapshot and toolbar state.
 - **Restore before structural changes:** conversion/replacement freeze,
   `setCentralWidget()`, `aboutToClose()` and teardown leave fullscreen first.
-  PDF teardown exits while derived state and its adapter still exist. Guarded
+  Text/PDF teardown exits while derived state and any adapter still exist. Guarded
   pointers and destruction handling restore surviving parent layouts without
   touching a dying widget.
 
-PDF's existing **Presentation Mode** action is checkable: checked while
-presenting, click again to exit. It remains usable even if the viewer reloads.
+Text and PDF have a checkable **Presentation Mode** action: checked while presenting,
+click again to exit. Its view-scoped shortcut defaults to **F9**, configured through
+`editor.core.shortcuts.PresentationMode`; an empty string disables the shortcut.
+PDF's action remains usable even if the viewer reloads.
 Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension
 menus). The effect includes the toolbar's styled background, not only its buttons.
-During presentation, PdfViewWindow2 paints the parent backdrop with the theme's
-`base#content#bg`, so a matching toolbar-colored parent cannot mask the fade.
+`PresentationToolBarEffect` shares this policy between text and PDF. During presentation,
+both views paint the parent backdrop with the theme's `base#content#bg`, so a matching
+toolbar-colored parent cannot mask the fade.
 Theme changes refresh that color; normal mode restores normal frame painting.
 PDF, Find and popup windows remain opaque. Exit removes the effect,
 application filter and focus tracking. Gates: `test_contentfullscreenhost` and

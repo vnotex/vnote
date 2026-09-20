@@ -2,8 +2,10 @@
 
 #include <QAction>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPrinter>
 #include <QScrollBar>
+#include <QSignalBlocker>
 #include <QToolBar>
 
 #include <vtextedit/vtextedit.h>
@@ -21,6 +23,7 @@
 #include "editors/texteditor.h"
 #include "encodingbutton.h"
 #include "findandreplacewidget2.h"
+#include "presentationtoolbareffect.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
 
@@ -36,6 +39,8 @@ TextViewWindow2::TextViewWindow2(ServiceLocator &p_services, const Buffer2 &p_bu
   setupUI();
 }
 
+TextViewWindow2::~TextViewWindow2() { setViewFullScreen(false); }
+
 void TextViewWindow2::setupUI() {
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &editorConfig = configMgr->getEditorConfig();
@@ -48,18 +53,12 @@ void TextViewWindow2::setupUI() {
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
-  const auto &widgetConfig = configMgr->getWidgetConfig();
-  int maxContentWidth =
-      widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
-          ? widgetConfig.getReadableWidthMaxPx()
-          : 0;
-
   // Central widget: text editor.
   {
     m_editor = new TextEditor(
-        TextViewWindowController::buildTextEditorConfigFromContent(editorConfig, textEditorConfig,
-                                                                   themeContent, syntaxTheme,
-                                                                   scaleFactor, maxContentWidth),
+        TextViewWindowController::buildTextEditorConfigFromContent(
+            editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor,
+            getEditorMaxContentWidth()),
         TextViewWindowController::buildTextEditorParameters(editorConfig, textEditorConfig), this);
     setCentralWidget(m_editor);
 
@@ -112,6 +111,47 @@ void TextViewWindow2::setupToolBar() {
   addRightCommonToolBarActions(toolBar);
 }
 
+void TextViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
+  const auto iconName = QStringLiteral("presentation_editor.svg");
+  m_presentationAction = p_toolBar->addAction(
+      ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Presentation Mode"));
+  m_presentationAction->setProperty("iconName", iconName);
+  ViewWindowToolBarHelper2::addActionShortcut(
+      m_presentationAction,
+      getServices().get<ConfigMgr2>()->getEditorConfig().getShortcut(
+          EditorConfig::Shortcut::PresentationMode),
+      this);
+  m_presentationAction->setCheckable(true);
+  m_presentationAction->setChecked(false);
+  m_presentationEffect = new PresentationToolBarEffect(p_toolBar, this);
+
+  connect(m_presentationAction, &QAction::triggered, this, [this]() {
+    setViewFullScreen(!isViewFullScreen());
+    const QSignalBlocker blocker(m_presentationAction);
+    m_presentationAction->setChecked(isViewFullScreen());
+  });
+  connect(this, &ViewWindow2::viewFullScreenExitRequested, this,
+          [this]() { setViewFullScreen(false); });
+  connect(this, &ViewWindow2::viewFullScreenChanged, this, [this](bool p_on) {
+    const QSignalBlocker blocker(m_presentationAction);
+    m_presentationAction->setChecked(p_on);
+    if (p_on) {
+      m_presentationBackground = QColor(
+          getServices().get<ThemeService>()->paletteColor(QStringLiteral("base#content#bg")));
+    }
+    m_presentationEffect->setActive(p_on);
+    update();
+  });
+}
+
+void TextViewWindow2::paintEvent(QPaintEvent *p_event) {
+  ViewWindow2::paintEvent(p_event);
+  if (isViewFullScreen()) {
+    QPainter painter(this);
+    painter.fillRect(rect(), m_presentationBackground);
+  }
+}
+
 void TextViewWindow2::handlePrint() {
   if (getBuffer().isEncrypted()) {
     QMessageBox::information(this, tr("Protected Note"),
@@ -162,18 +202,20 @@ void TextViewWindow2::syncEditorFromBuffer() {
   m_propagateEditorToBuffer = old;
 }
 
+int TextViewWindow2::getEditorMaxContentWidth() const {
+  if (isViewFullScreen() || getLayoutMode() != ViewWindowLayoutMode::ReadableWidth) {
+    return 0;
+  }
+  return getServices().get<ConfigMgr2>()->getWidgetConfig().getReadableWidthMaxPx();
+}
+
 void TextViewWindow2::applyReadableWidth() {
   if (!m_editor) {
     ViewWindow2::applyReadableWidth();
     return;
   }
 
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  const auto &widgetConfig = configMgr->getWidgetConfig();
-  int maxPx = getLayoutMode() == ViewWindowLayoutMode::ReadableWidth
-                  ? widgetConfig.getReadableWidthMaxPx()
-                  : 0;
-  m_editor->getTextEdit()->setMaxContentWidth(maxPx);
+  m_editor->getTextEdit()->setMaxContentWidth(getEditorMaxContentWidth());
 }
 
 QString TextViewWindow2::getLatestContent() const {
@@ -232,14 +274,9 @@ void TextViewWindow2::handleEditorConfigChange() {
     auto syntaxTheme = themeService->getEditorHighlightTheme();
     qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
-    const auto &widgetConfig = configMgr->getWidgetConfig();
-    int maxContentWidth =
-        widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
-            ? widgetConfig.getReadableWidthMaxPx()
-            : 0;
-
     auto config = TextViewWindowController::buildTextEditorConfigFromContent(
-        editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
+        editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor,
+        getEditorMaxContentWidth());
 
     // Guard: config application (e.g. applyLineSpacing) modifies block formats,
     // which fires contentsChanged. Suppress propagation so this is not treated
@@ -255,6 +292,11 @@ void TextViewWindow2::handleEditorConfigChange() {
 
 void TextViewWindow2::handleThemeChanged() {
   ViewWindow2::handleThemeChanged();
+  if (isViewFullScreen()) {
+    m_presentationBackground =
+        QColor(getServices().get<ThemeService>()->paletteColor(QStringLiteral("base#content#bg")));
+    update();
+  }
 
   if (!m_editor) {
     return;
@@ -269,14 +311,9 @@ void TextViewWindow2::handleThemeChanged() {
   auto syntaxTheme = themeService->getEditorHighlightTheme();
   qreal scaleFactor = WidgetUtils::calculateScaleFactor();
 
-  const auto &widgetConfig = configMgr->getWidgetConfig();
-  int maxContentWidth =
-      widgetConfig.getViewWindowLayoutMode() == ViewWindowLayoutMode::ReadableWidth
-          ? widgetConfig.getReadableWidthMaxPx()
-          : 0;
-
   auto config = TextViewWindowController::buildTextEditorConfigFromContent(
-      editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
+      editorConfig, textEditorConfig, themeContent, syntaxTheme, scaleFactor,
+      getEditorMaxContentWidth());
 
   // Propagation guard: prevent setConfig from triggering false "modified" state.
   const bool old = m_propagateEditorToBuffer;

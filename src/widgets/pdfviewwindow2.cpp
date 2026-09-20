@@ -134,24 +134,10 @@ void PdfViewWindow2::setupToolBar() {
 
 void PdfViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   // The native replacements for pdf.js's hidden built-in strip. The Outline
-  // popup and Find And Replace are inserted by the hook below, between the
-  // sidebar toggle and the page controls.
+  // popup, Find And Replace, and Presentation Mode precede the page controls.
   setupViewerToolBarActions(p_toolBar);
-  // The base appends Presentation Mode and Menu, then adds
+  // The base appends Menu, then adds
   // Readable Width to Menu. Print is opted out of; see isPrintSupported().
-}
-
-// Presentation Mode stays directly on the toolbar, before Menu.
-// Its intent is already connected in setupViewerToolBarActions().
-void PdfViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
-  if (!m_viewerToolBar) {
-    return;
-  }
-  auto &services = getServices();
-  m_viewerToolBar->installPresentationAction(p_toolBar, [&services](const QString &p_iconName) {
-    return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
-  });
-  m_viewerToolBar->setPresentationMode(isViewFullScreen());
 }
 
 QAction *PdfViewWindow2::addAdditionalToolBarMenuAction(QToolBar *p_toolBar) {
@@ -211,6 +197,18 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
           }
         }
         addAction(p_toolBar, ViewWindowToolBarHelper2::FindAndReplace);
+
+        auto &services = getServices();
+        auto *action = m_viewerToolBar->installPresentationAction(
+            p_toolBar, [&services](const QString &p_iconName) {
+              return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
+            });
+        ViewWindowToolBarHelper2::addActionShortcut(
+            action,
+            services.get<ConfigMgr2>()->getEditorConfig().getShortcut(
+                EditorConfig::Shortcut::PresentationMode),
+            this);
+        m_viewerToolBar->setPresentationMode(isViewFullScreen());
       });
 
   connect(m_viewerToolBar, &PdfViewerToolBar::pageRequested, this, [this](int p_page) {

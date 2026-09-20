@@ -3,10 +3,13 @@
 
 #include "viewwindow2.h"
 
+#include <QColor>
+
 namespace vnotex {
 class TextEditor;
 class TextViewWindowController;
 class EditorStatusBarBinder;
+class PresentationToolBarEffect;
 
 // Concrete ViewWindow2 subclass for plain text files.
 // Provides a text editor (TextEditor) for viewing/editing text files
@@ -21,6 +24,8 @@ public:
 
   explicit TextViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                            QWidget *p_parent = nullptr);
+
+  ~TextViewWindow2() override;
 
   QString getLatestContent() const Q_DECL_OVERRIDE;
 
@@ -65,6 +70,10 @@ protected slots:
   void handleFindAndReplaceWidgetClosed() Q_DECL_OVERRIDE;
 
 protected:
+  void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
+
+  void paintEvent(QPaintEvent *p_event) override;
+
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
   void applyReadableWidth() override;
@@ -95,6 +104,8 @@ private:
 
   void updateEditorFromConfig();
 
+  int getEditorMaxContentWidth() const;
+
   // Managed by QObject parent (this).
   TextViewWindowController *m_controller = nullptr;
 
@@ -103,6 +114,10 @@ private:
 
   // Builds and binds the status bar columns to the editor. Managed by QObject.
   EditorStatusBarBinder *m_statusBinder = nullptr;
+
+  QAction *m_presentationAction = nullptr;
+  PresentationToolBarEffect *m_presentationEffect = nullptr;
+  QColor m_presentationBackground;
 
   // Whether to propagate editor state changes to the buffer.
   bool m_propagateEditorToBuffer = false;

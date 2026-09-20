@@ -167,7 +167,7 @@ private slots:
   void standaloneThemeRefreshUpdatesToolBarAndMenuIcons();
 };
 
-// The hook must keep Outline and Find together before page navigation. These
+// The hook keeps Outline, Find, and Presentation before page navigation. These
 // markers test the component's insertion slot, not PdfViewWindow2's wiring;
 // the real Outline popup requires a ServiceLocator and an OutlineProvider.
 void TestPdfViewerToolBar::theOutlineHookRunsBetweenSidebarAndPageControls() {
@@ -176,15 +176,17 @@ void TestPdfViewerToolBar::theOutlineHookRunsBetweenSidebarAndPageControls() {
 
   QAction *marker = nullptr;
   QAction *findMarker = nullptr;
-  toolBar.install(&bar, {}, [&bar, &marker, &findMarker]() {
+  toolBar.install(&bar, {}, [&bar, &toolBar, &marker, &findMarker]() {
     marker = bar.addAction(QStringLiteral("Outline"));
     findMarker = bar.addAction(QStringLiteral("Find And Replace"));
+    toolBar.installPresentationAction(&bar);
   });
 
   const QList<QAction *> actions = bar.actions();
   const int sidebarAt = actions.indexOf(toolBar.sidebarAction());
   const int markerAt = actions.indexOf(marker);
   const int findAt = actions.indexOf(findMarker);
+  const int presentationAt = actions.indexOf(toolBar.presentationModeAction());
   const int previousAt = actions.indexOf(toolBar.previousPageAction());
   const int nextAt = actions.indexOf(toolBar.nextPageAction());
   const int zoomOutAt = actions.indexOf(toolBar.zoomOutAction());
@@ -192,10 +194,14 @@ void TestPdfViewerToolBar::theOutlineHookRunsBetweenSidebarAndPageControls() {
   QVERIFY(sidebarAt >= 0);
   QVERIFY(markerAt > sidebarAt);
   QCOMPARE(findAt, markerAt + 1);
-  QVERIFY(actions.at(findAt + 1)->isSeparator());
-  QCOMPARE(previousAt, findAt + 2);
+  QCOMPARE(presentationAt, findAt + 1);
+  QVERIFY(actions.at(presentationAt + 1)->isSeparator());
+  QCOMPARE(previousAt, presentationAt + 2);
   QVERIFY(nextAt > previousAt);
   QVERIFY(zoomOutAt > nextAt);
+  QVERIFY(!toolBar.presentationModeAction()->isEnabled());
+  toolBar.syncState(state());
+  QVERIFY(toolBar.presentationModeAction()->isEnabled());
 }
 
 // This exercises the component's readiness boundary, not ViewWindow2's menu

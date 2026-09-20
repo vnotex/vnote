@@ -1679,6 +1679,7 @@ add_qt_test(test_pdfviewertoolbar
   SOURCES
     test_pdfviewertoolbar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/pdfviewertoolbar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/presentationtoolbareffect.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp

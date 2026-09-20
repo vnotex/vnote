@@ -1215,7 +1215,7 @@
     <name>vnotex::CommentPanel</name>
     <message>
         <location filename="../../../widgets/commentpanel.cpp" line="+34"/>
-        <source>Select a highlight to edit its note.</source>
+        <source>Select a highlight to edit its note</source>
         <translation>请选择一处高亮以编辑其注释。</translation>
     </message>
     <message>
@@ -9055,6 +9055,11 @@ This removes the file and any sub-tasks it contains: %2</source>
     <name>vnotex::TextViewWindow2</name>
     <message>
         <location filename="../../../widgets/textviewwindow2.cpp" line="+117"/>
+        <source>Presentation Mode</source>
+        <translation>演示模式</translation>
+    </message>
+    <message>
+        <location line="+40"/>
         <source>Protected Note</source>
         <translation>受保护笔记</translation>
     </message>
