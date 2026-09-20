@@ -15,6 +15,11 @@ across an upgrade:
   `<link>`/`<script>` tags — the `<link rel="resource" ... locale/locale.json>`
   is KEPT)
 
+`pdfviewer.css` keeps the body transparent so unused page margins and gaps show
+the theme-colored `QWebEnginePage` background supplied by `PdfViewWindow2`. Its
+existing theme-change handler refreshes that color; PDF page and canvas colors
+remain unchanged. Keep the native background opaque.
+
 `web/locale/` is deliberately trimmed to a subset of the upstream locales. v6
 uses a Fluent manifest: `web/locale/locale.json` maps a LOWERCASED tag to
 `<Tag>/viewer.ftl`. Keep it in sync with the folders actually vendored, and keep

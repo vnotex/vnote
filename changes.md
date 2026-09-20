@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Match the PDF viewer's unused space to the active theme, including live theme changes, without recoloring PDF pages
 * Place PDF Find And Replace beside Outline, before the page-navigation controls
 * Keep Outline and Find And Replace on view-window toolbars and group secondary actions under a three-dot Menu; retain PDF-specific viewer controls and move Readable Width into its renamed Menu
 * Add a default-on, per-window Allow Auto Section Number menu toggle to temporarily disable Markdown read, edit and outline numbering without changing saved settings

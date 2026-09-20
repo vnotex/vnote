@@ -1,3 +1,10 @@
+/* Let the theme-colored QWebEnginePage show through the unused space.
+ * PdfViewWindow2 refreshes that background when the theme changes;
+ * PDF pages and their canvases keep their own colors. */
+body {
+    background-color: transparent;
+}
+
 /* ============ The built-in toolbar strip is hidden ============
  *
  * Every control it carried is reproduced as a native Qt widget on
