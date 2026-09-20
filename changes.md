@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep the attachments popup on-screen in presentation mode while preserving right alignment where it fits
 * Present rendered Markdown as offline reveal.js slides with light/dark palettes matching the current VNote theme: F9 toggles presentation, H2/H3 split slides, H3 slides pin their parent H2, and oversized content scrolls
 * Render Markdown heading fold arrows with CSS so they do not paste as oversized SVGs into rich-text editors
 * Refresh PDF Highlight, Draw, and Text box icons when switching themes

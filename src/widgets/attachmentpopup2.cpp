@@ -8,6 +8,7 @@
 #include <QListView>
 #include <QMessageBox>
 #include <QPointer>
+#include <QScreen>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -283,11 +284,12 @@ void AttachmentPopup2::setScanExclusionProvider(std::function<QStringList()> p_p
 void AttachmentPopup2::showEvent(QShowEvent *p_event) {
   ButtonPopup::showEvent(p_event);
 
-  // Move it to be right-aligned.
+  // Prefer right alignment without moving the popup off the button's screen.
   if (m_button->isVisible()) {
-    const auto p = pos();
-    const auto btnRect = m_button->geometry();
-    move(p.x() + btnRect.width() - geometry().width(), p.y());
+    const auto available = m_button->screen()->availableGeometry();
+    const int preferredX = m_button->mapToGlobal(QPoint(m_button->width(), 0)).x() - width();
+    const int maxX = qMax(available.x(), available.x() + available.width() - width());
+    move(qBound(available.x(), preferredX, maxX), y());
   }
 }
 
@@ -313,8 +315,7 @@ void AttachmentPopup2::updateButtonsState() {
   const bool writable = available && !m_buffer->isReadOnly();
   m_addBtn->setEnabled(writable);
   m_openFolderBtn->setEnabled(available);
-  m_scanBtn->setEnabled(writable && m_buffer->isAttachmentSupported() &&
-                        m_scanExclusionProvider);
+  m_scanBtn->setEnabled(writable && m_buffer->isAttachmentSupported() && m_scanExclusionProvider);
   m_openBtn->setEnabled(available && count > 0);
   m_deleteBtn->setEnabled(writable && count > 0);
   m_copyPathBtn->setEnabled(available && count > 0);
