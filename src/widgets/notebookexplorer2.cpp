@@ -718,7 +718,7 @@ void NotebookExplorer2::setupUI() {
 
   // T26: Read-only badge label. Hidden by default; visibility is driven by
   // setCurrentNotebookInternal() based on NotebookCoreService::isNotebookReadOnly.
-  // Lives directly under the selector so users see the lock + reason inline
+  // Lives directly under the selector so users see the pen-off badge + reason inline
   // with the active notebook name. Object name is exported for test discovery
   // and themed via QSS (objectName == "readOnlyBadgeLabel").
   m_readOnlyBadgeLabel = new QLabel(this);
@@ -1293,7 +1293,7 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
   updateTitleBarMenuState();
 
   // T26: surface read-only state to the user inline. Hidden for writable
-  // notebooks; rich-text label with embedded lock icon when read-only. The
+  // notebooks; rich-text label with embedded pen-off icon when read-only. The
   // tooltip ("Read-only notebook (no PAT)") was set once in setupUI() and
   // does not need to be updated per-switch.
   bool readOnly = false;

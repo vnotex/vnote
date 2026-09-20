@@ -1,14 +1,14 @@
-// T26: Lock-icon badge for read-only notebooks in NotebookSelector2.
+// T26: Read-only badge for read-only notebooks in NotebookSelector2.
 //
 // Verifies that NotebookSelector2::addNotebookItem decorates a read-only
-// notebook's combobox entry with the shared lock icon
+// notebook's combobox entry with the shared read-only icon
 // (`:/vnotex/data/core/icons/read_only.svg`) while leaving writable
 // notebooks with their name-derived (auto-generated) icon.
 //
-// Identity check: the lock icon and the RO notebook's item icon both
+// Rendering check: the read-only icon and the RO notebook's item icon both
 // originate from the same Qt resource path, so their rendered 16x16
 // pixmaps are bytewise-equal. For writable notebooks the auto-generated
-// text-rect icon is bytewise-different from the lock pixmap.
+// text-rect icon is bytewise-different from the read-only pixmap.
 //
 // Per tests/AGENTS.md: vxcore_set_test_mode(1) BEFORE
 // vxcore_context_create. We build a minimal ServiceLocator with only the
@@ -19,10 +19,10 @@
 // saveCurrentNotebook, navigation labels) handle nullptr defensively.
 //
 // Subtests:
-//   1. testReadOnlyNotebookGetsLockIcon — RO notebook item icon's 16x16
-//      pixmap matches the lock asset's 16x16 pixmap bytewise.
-//   2. testWritableNotebookHasNoLockIcon — writable notebook item icon's
-//      16x16 pixmap does NOT match the lock asset's pixmap.
+//   1. testReadOnlyNotebookGetsReadOnlyIcon — RO notebook item icon's 16x16
+//      pixmap matches the read-only asset's 16x16 pixmap bytewise.
+//   2. testWritableNotebookHasNoReadOnlyIcon — writable notebook item icon's
+//      16x16 pixmap does NOT match the read-only asset's pixmap.
 
 #include <QApplication>
 #include <QIcon>
@@ -50,8 +50,8 @@ private slots:
   void initTestCase();
   void cleanupTestCase();
 
-  void testReadOnlyNotebookGetsLockIcon();
-  void testWritableNotebookHasNoLockIcon();
+  void testReadOnlyNotebookGetsReadOnlyIcon();
+  void testWritableNotebookHasNoReadOnlyIcon();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -80,7 +80,7 @@ void TestNotebookSelector2ReadOnlyBadge::cleanupTestCase() {
   }
 }
 
-void TestNotebookSelector2ReadOnlyBadge::testReadOnlyNotebookGetsLockIcon() {
+void TestNotebookSelector2ReadOnlyBadge::testReadOnlyNotebookGetsReadOnlyIcon() {
   // Create a bundled notebook then mark it read-only via the vxcore C ABI.
   const QString nbPath = m_tempDir.filePath(QStringLiteral("nb_ro_badge"));
   const QString configJson =
@@ -93,7 +93,7 @@ void TestNotebookSelector2ReadOnlyBadge::testReadOnlyNotebookGetsLockIcon() {
   QVERIFY(m_notebookService->isNotebookReadOnly(nbId));
 
   // Selector loads notebooks from the service. After loadNotebooks() the
-  // RO notebook's item icon must be the shared lock icon.
+  // RO notebook's item icon must be the shared read-only icon.
   NotebookSelector2 selector(m_services);
   selector.loadNotebooks();
   QVERIFY2(selector.count() >= 1, "Selector should contain at least the RO notebook");
@@ -109,19 +109,19 @@ void TestNotebookSelector2ReadOnlyBadge::testReadOnlyNotebookGetsLockIcon() {
   QVERIFY2(roIdx >= 0, "Read-only notebook not found in selector");
 
   const QIcon itemIcon = selector.itemIcon(roIdx);
-  const QIcon lockIcon(QStringLiteral(":/vnotex/data/core/icons/read_only.svg"));
+  const QIcon readOnlyIcon(QStringLiteral(":/vnotex/data/core/icons/read_only.svg"));
 
   QVERIFY2(!itemIcon.isNull(), "RO notebook item should have an icon set");
-  QVERIFY2(!lockIcon.isNull(),
-           "Lock icon asset must be reachable via the Qt resource system (qrc)");
+  QVERIFY2(!readOnlyIcon.isNull(),
+           "Read-only icon asset must be reachable via the Qt resource system (qrc)");
 
   // Render both at 16x16 and compare bytewise. Both icons come from the
   // same SVG so the pixels must match exactly.
   const QPixmap itemPx = itemIcon.pixmap(16, 16);
-  const QPixmap lockPx = lockIcon.pixmap(16, 16);
+  const QPixmap readOnlyPx = readOnlyIcon.pixmap(16, 16);
   QVERIFY(!itemPx.isNull());
-  QVERIFY(!lockPx.isNull());
-  QCOMPARE(itemPx.toImage(), lockPx.toImage());
+  QVERIFY(!readOnlyPx.isNull());
+  QCOMPARE(itemPx.toImage(), readOnlyPx.toImage());
 
   // Tooltip carries the read-only reason for screen-reader / hover affordance.
   const QString tooltip = selector.itemData(roIdx, Qt::ToolTipRole).toString();
@@ -134,7 +134,7 @@ void TestNotebookSelector2ReadOnlyBadge::testReadOnlyNotebookGetsLockIcon() {
   m_notebookService->closeNotebook(nbId);
 }
 
-void TestNotebookSelector2ReadOnlyBadge::testWritableNotebookHasNoLockIcon() {
+void TestNotebookSelector2ReadOnlyBadge::testWritableNotebookHasNoReadOnlyIcon() {
   // Create a writable bundled notebook.
   const QString nbPath = m_tempDir.filePath(QStringLiteral("nb_writable_no_badge"));
   const QString configJson =
@@ -157,18 +157,18 @@ void TestNotebookSelector2ReadOnlyBadge::testWritableNotebookHasNoLockIcon() {
   QVERIFY2(wIdx >= 0, "Writable notebook not found in selector");
 
   const QIcon itemIcon = selector.itemIcon(wIdx);
-  const QIcon lockIcon(QStringLiteral(":/vnotex/data/core/icons/read_only.svg"));
+  const QIcon readOnlyIcon(QStringLiteral(":/vnotex/data/core/icons/read_only.svg"));
 
   // The writable notebook gets the auto-generated text-rect icon. It is
-  // non-null AND its pixels differ from the lock icon.
+  // non-null AND its pixels differ from the read-only icon.
   QVERIFY2(!itemIcon.isNull(), "Writable notebook should still get an auto-generated icon");
 
   const QPixmap itemPx = itemIcon.pixmap(16, 16);
-  const QPixmap lockPx = lockIcon.pixmap(16, 16);
+  const QPixmap readOnlyPx = readOnlyIcon.pixmap(16, 16);
   QVERIFY(!itemPx.isNull());
-  QVERIFY(!lockPx.isNull());
-  QVERIFY2(itemPx.toImage() != lockPx.toImage(),
-           "Writable notebook icon must NOT match the read-only lock icon");
+  QVERIFY(!readOnlyPx.isNull());
+  QVERIFY2(itemPx.toImage() != readOnlyPx.toImage(),
+           "Writable notebook icon must NOT match the read-only badge icon");
 
   // Tooltip should NOT contain the read-only suffix for writable notebooks.
   const QString tooltip = selector.itemData(wIdx, Qt::ToolTipRole).toString();

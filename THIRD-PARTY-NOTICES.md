@@ -62,7 +62,7 @@ Covers 60 files in `src/data/core/icons/`:
 
 - 58 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
 - `read_only.svg` and `theme_switcher.svg` carry no class but are path-identical to
-  upstream `lock` and `shirt`.
+  upstream `pen-off` and `shirt`.
 
 The files are modified from upstream in one respect: VNote rewrites Lucide
 `currentColor` stroke and fill values to explicit `#000000` so
@@ -83,7 +83,6 @@ files are in that subset:
 | `src/data/core/icons/info.svg` | `info` |
 | `src/data/core/icons/lock.svg` | `lock` |
 | `src/data/core/icons/move.svg` | `move` |
-| `src/data/core/icons/read_only.svg` | `lock` |
 | `src/data/core/icons/search.svg` | `search` |
 | `src/data/core/icons/textbox_editor.svg` | `type` |
 

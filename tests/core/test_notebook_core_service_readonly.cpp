@@ -2,7 +2,7 @@
 //
 // SessionConfig does NOT mirror NotebookRecord -- per-notebook state lives in
 // vxcore. T21 therefore adds a thin Qt-side query wrapper around
-// vxcore_notebook_is_read_only so UI consumers (lock-icon badge in
+// vxcore_notebook_is_read_only so UI consumers (read-only badge in
 // NotebookSelector2 / NotebookExplorer2, Sync Info disable/enable affordance)
 // have one branch-free entry point.
 //

@@ -155,7 +155,7 @@ void ViewSplit2::initIcons() {
   m_stayOnTopIcon =
       IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("stay_on_top.svg")), fg);
 
-  // Read-only buffers display this lock badge on their tab (see effectiveTabIcon()).
+  // Read-only buffers display this pen-off badge on their tab (see effectiveTabIcon()).
   // Reuse the tab-area icon foreground (fg) so it matches sibling tab icons and
   // re-themes on theme change.
   m_readOnlyTabIcon =
@@ -534,7 +534,7 @@ QIcon ViewSplit2::effectiveTabIcon(ViewWindow2 *p_win) const {
     return QIcon();
   }
   // Read-only is queried live (never cached) per the project rule; a read-only
-  // notebook stays read-only for the buffer's lifetime, so the lock is stable.
+  // notebook stays read-only for the buffer's lifetime, so the badge is stable.
   if (p_win->getBuffer().isReadOnly()) {
     return m_readOnlyTabIcon;
   }

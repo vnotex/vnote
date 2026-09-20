@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Use a pen-off icon for read-only note tabs and notebook badges to distinguish them from encrypted notes
 * Keep editor-toolbar Outline, Tags, Attachments, Word Count and Insert Table popups anchored to their buttons and on-screen, including in presentation mode
 * Present rendered Markdown as offline reveal.js slides with light/dark palettes matching the current VNote theme: F9 toggles presentation, H2/H3 split slides, H3 slides pin their parent H2, and oversized content scrolls
 * Render Markdown heading fold arrows with CSS so they do not paste as oversized SVGs into rich-text editors

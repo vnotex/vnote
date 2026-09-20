@@ -504,7 +504,7 @@ QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {
 }
 
 void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
-  // The read-only indicator lives on the view-window TAB (a lock badge to the
+  // The read-only indicator lives on the view-window TAB (a pen-off badge to the
   // left of the title, see ViewSplit2::effectiveTabIcon), not in this toolbar.
   //
   // Save is omitted entirely for a window that can never be modified, rather

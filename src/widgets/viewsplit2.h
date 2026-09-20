@@ -208,7 +208,7 @@ private:
   void focusCurrentViewWindow();
 
   // Resolve the icon to display on p_win's tab. Returns the themed read-only
-  // lock badge when the window's buffer belongs to a read-only notebook;
+  // pen-off badge when the window's buffer belongs to a read-only notebook;
   // otherwise falls back to p_win->getIcon().
   QIcon effectiveTabIcon(ViewWindow2 *p_win) const;
 
@@ -253,7 +253,7 @@ private:
   QIcon m_menuActiveIcon;
   QIcon m_stayOnTopIcon;
 
-  // Lock badge shown on the left of the tab title when the tab's buffer
+  // Pen-off badge shown on the left of the tab title when the tab's buffer
   // belongs to a read-only notebook (see effectiveTabIcon()).
   QIcon m_readOnlyTabIcon;
 

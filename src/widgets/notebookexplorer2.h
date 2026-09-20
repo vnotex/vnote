@@ -297,7 +297,7 @@ private:
   // UI Components
   TitleBar *m_titleBar = nullptr;
   NotebookSelector2 *m_notebookSelector = nullptr;
-  // T26: visible lock badge that surfaces a notebook's read-only state next
+  // T26: visible pen-off badge that surfaces a notebook's read-only state next
   // to the selector. Hidden by default; toggled from setCurrentNotebookInternal
   // based on NotebookCoreService::isNotebookReadOnly.
   QLabel *m_readOnlyBadgeLabel = nullptr;

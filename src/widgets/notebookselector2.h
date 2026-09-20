@@ -58,8 +58,7 @@ private:
   // gate).
   bool isNotebookReadOnly(const QString &p_notebookId) const;
 
-  // Lazily-loaded shared lock icon used to badge read-only notebooks. Cached
-  // for cacheKey() identity comparisons in tests.
+  // Lazily-loaded shared pen-off icon used to badge read-only notebooks.
   static const QIcon &readOnlyBadgeIcon();
 
   QString generateItemToolTip(const QString &p_name, const QString &p_rootPath,

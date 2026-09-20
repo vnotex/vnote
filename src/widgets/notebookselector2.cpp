@@ -124,8 +124,8 @@ void NotebookSelector2::addNotebookItem(const QJsonObject &p_notebookJson) {
   }
 
   int idx = count();
-  // T26: read-only notebooks get a lock badge in place of the name-derived
-  // icon. The lock icon is intentionally distinctive (monochrome padlock)
+  // T26: read-only notebooks get a pen-off badge in place of the name-derived
+  // icon. The pen-off icon distinguishes read-only from encryption
   // and pairs with a tooltip suffix so accessibility is preserved.
   const bool readOnly = isNotebookReadOnly(guid);
   QIcon itemIcon = readOnly ? readOnlyBadgeIcon() : generateItemIcon(name, icon);
@@ -152,8 +152,7 @@ bool NotebookSelector2::isNotebookReadOnly(const QString &p_notebookId) const {
 }
 
 const QIcon &NotebookSelector2::readOnlyBadgeIcon() {
-  // QIcon's cacheKey() is stable per QIcon instance; we hold a single shared
-  // instance so the test's identity check (`cacheKey() ==`) is reliable.
+  // Share the resource icon across read-only notebook entries.
   static const QIcon s_icon(QStringLiteral(":/vnotex/data/core/icons/read_only.svg"));
   return s_icon;
 }
