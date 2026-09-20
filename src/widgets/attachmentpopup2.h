@@ -31,8 +31,6 @@ private slots:
   void onProtectedLockingChanged(bool p_locking);
 
 protected:
-  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
-
   bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
 private:

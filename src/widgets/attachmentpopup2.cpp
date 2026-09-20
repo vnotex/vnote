@@ -8,7 +8,6 @@
 #include <QListView>
 #include <QMessageBox>
 #include <QPointer>
-#include <QScreen>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -28,7 +27,7 @@ using namespace vnotex;
 
 AttachmentPopup2::AttachmentPopup2(ServiceLocator &p_services, QToolButton *p_btn,
                                    QWidget *p_parent)
-    : ButtonPopup(p_btn, p_parent), m_services(p_services) {
+    : ButtonPopup(p_btn, p_parent, Alignment::Right), m_services(p_services) {
   setupUI();
 
   connect(this, &QMenu::aboutToShow, this, [this]() {
@@ -279,18 +278,6 @@ void AttachmentPopup2::setBuffer(Buffer2 *p_buffer) {
 
 void AttachmentPopup2::setScanExclusionProvider(std::function<QStringList()> p_provider) {
   m_scanExclusionProvider = std::move(p_provider);
-}
-
-void AttachmentPopup2::showEvent(QShowEvent *p_event) {
-  ButtonPopup::showEvent(p_event);
-
-  // Prefer right alignment without moving the popup off the button's screen.
-  if (m_button->isVisible()) {
-    const auto available = m_button->screen()->availableGeometry();
-    const int preferredX = m_button->mapToGlobal(QPoint(m_button->width(), 0)).x() - width();
-    const int maxX = qMax(available.x(), available.x() + available.width() - width());
-    move(qBound(available.x(), preferredX, maxX), y());
-  }
 }
 
 bool AttachmentPopup2::eventFilter(QObject *p_obj, QEvent *p_event) {

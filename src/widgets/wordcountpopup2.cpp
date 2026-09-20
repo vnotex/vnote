@@ -6,7 +6,7 @@ using namespace vnotex;
 
 WordCountPopup2::WordCountPopup2(QToolButton *p_btn, const FetchCallback &p_fetchCallback,
                                  QWidget *p_parent)
-    : ButtonPopup(p_btn, p_parent), m_fetchCallback(p_fetchCallback) {
+    : ButtonPopup(p_btn, p_parent, Alignment::Right), m_fetchCallback(p_fetchCallback) {
   setupUI();
 
   connect(this, &QMenu::aboutToShow, this, [this]() {

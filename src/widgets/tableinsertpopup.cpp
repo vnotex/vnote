@@ -91,7 +91,7 @@ private:
 };
 
 TableInsertPopup::TableInsertPopup(QToolButton *p_button, QWidget *p_parent)
-    : ButtonPopup(p_button, p_parent) {
+    : ButtonPopup(p_button, p_parent, Alignment::Right) {
   auto *widget = new QWidget(this);
   auto *layout = new QVBoxLayout(widget);
   layout->addWidget(new QLabel(tr("Insert Table"), widget));

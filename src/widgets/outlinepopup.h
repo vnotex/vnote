@@ -16,13 +16,9 @@ class ServiceLocator;
 class OutlinePopup : public ButtonPopup {
   Q_OBJECT
 public:
-  OutlinePopup(ServiceLocator &p_services, QToolButton *p_btn,
-               QWidget *p_parent = nullptr);
+  OutlinePopup(ServiceLocator &p_services, QToolButton *p_btn, QWidget *p_parent = nullptr);
 
   void setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider);
-
-protected:
-  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
   void setupUI();

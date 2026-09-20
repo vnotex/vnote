@@ -1219,6 +1219,15 @@ add_custom_command(TARGET test_greetingsticker POST_BUILD
 )
 
 
+# Editor toolbar popups share button-anchored, screen-bounded placement.
+add_qt_test(test_buttonpopup
+  SOURCES
+    test_buttonpopup.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp
+  LINKS
+    Qt6::Widgets
+)
+
 # TableInsertPopup: body-row/column hover selection and the retained dialog route.
 add_qt_test(test_tableinsertpopup
   SOURCES

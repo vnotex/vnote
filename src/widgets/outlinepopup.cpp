@@ -1,16 +1,11 @@
 #include "outlinepopup.h"
 
-#include <QToolButton>
-
 #include "outlineviewer.h"
-#include <core/global.h>
-#include <utils/widgetutils.h>
 
 using namespace vnotex;
 
-OutlinePopup::OutlinePopup(ServiceLocator &p_services, QToolButton *p_btn,
-                           QWidget *p_parent)
-    : ButtonPopup(p_btn, p_parent), m_services(p_services) {
+OutlinePopup::OutlinePopup(ServiceLocator &p_services, QToolButton *p_btn, QWidget *p_parent)
+    : ButtonPopup(p_btn, p_parent, Alignment::Right), m_services(p_services) {
   setupUI();
 
   connect(this, &QMenu::aboutToShow, this, [this]() { m_viewer->setFocus(); });
@@ -22,18 +17,6 @@ void OutlinePopup::setupUI() {
   addWidget(m_viewer);
 }
 
-void OutlinePopup::setOutlineProvider(
-    const QSharedPointer<OutlineProvider> &p_provider) {
+void OutlinePopup::setOutlineProvider(const QSharedPointer<OutlineProvider> &p_provider) {
   m_viewer->setOutlineProvider(p_provider);
-}
-
-void OutlinePopup::showEvent(QShowEvent *p_event) {
-  ButtonPopup::showEvent(p_event);
-
-  // Move it to be right-aligned.
-  if (m_button->isVisible()) {
-    const auto p = pos();
-    const auto btnRect = m_button->geometry();
-    move(p.x() + btnRect.width() - geometry().width(), p.y());
-  }
 }

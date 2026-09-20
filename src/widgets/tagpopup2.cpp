@@ -1,15 +1,13 @@
 #include "tagpopup2.h"
 
 #include <QLabel>
-#include <QToolButton>
 
 #include "tagviewer2.h"
 
 using namespace vnotex;
 
-TagPopup2::TagPopup2(ServiceLocator &p_services, QToolButton *p_btn,
-                     QWidget *p_parent)
-    : ButtonPopup(p_btn, p_parent), m_services(p_services) {
+TagPopup2::TagPopup2(ServiceLocator &p_services, QToolButton *p_btn, QWidget *p_parent)
+    : ButtonPopup(p_btn, p_parent, Alignment::Right), m_services(p_services) {
   setupUI();
 
   connect(this, &QMenu::aboutToShow, this, [this]() {
@@ -40,14 +38,3 @@ void TagPopup2::setupUI() {
 }
 
 void TagPopup2::setNodeId(const NodeIdentifier &p_nodeId) { m_nodeId = p_nodeId; }
-
-void TagPopup2::showEvent(QShowEvent *p_event) {
-  ButtonPopup::showEvent(p_event);
-
-  // Move it to be right-aligned.
-  if (m_button->isVisible()) {
-    const auto p = pos();
-    const auto btnRect = m_button->geometry();
-    move(p.x() + btnRect.width() - geometry().width(), p.y());
-  }
-}

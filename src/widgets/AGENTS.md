@@ -42,6 +42,16 @@ spin box, a combo, a slider. Those degrade by vanishing at narrow widths, which
 is accepted; make sure a plain-action route to the same operation exists (the
 PDF page spin box is flanked by prev/next page actions for exactly this reason).
 
+Custom editor-toolbar menus derive from `ButtonPopup` and opt into
+`ButtonPopup::Alignment::Right` in their constructor. The base anchors to the
+button's global right edge and clamps horizontally to its screen's available
+geometry; Qt retains vertical placement. Never shift from the menu's existing
+position in a subclass `showEvent()` — Qt may already have moved it at a screen
+edge. Outline, Tags, Attachments, Word Count and Insert Table share this policy.
+Hidden overflow buttons keep Qt placement, as do non-editor popups using the
+`Native` default (including Notifications). Ordinary `QMenu`s remain Qt-managed.
+Gate: `tests/widgets/test_buttonpopup.cpp`.
+
 ## Hiding the QToolButton Menu Indicator
 Plain-text status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
 (e.g. the status bar "Spelling" menu, the `EncodingButton`, the toolbar theme

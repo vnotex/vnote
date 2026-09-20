@@ -17,13 +17,9 @@ class TagPopup2 : public ButtonPopup {
   Q_OBJECT
 
 public:
-  TagPopup2(ServiceLocator &p_services, QToolButton *p_btn,
-            QWidget *p_parent = nullptr);
+  TagPopup2(ServiceLocator &p_services, QToolButton *p_btn, QWidget *p_parent = nullptr);
 
   void setNodeId(const NodeIdentifier &p_nodeId);
-
-protected:
-  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
   void setupUI();
