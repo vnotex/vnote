@@ -85,40 +85,41 @@ pre[class*="language-"] {
 
 .token.property,
 .token.tag,
-.token.boolean,
-.token.number,
-.token.constant,
-.token.symbol,
 .token.deleted {
     color: #972D4C;
 }
 
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+    color: #7046A0;
+}
+
 .token.selector,
 .token.attr-name,
+.token.attr-value,
 .token.string,
 .token.char,
 .token.builtin,
 .token.inserted {
-    color: #6E4560;
+    color: #246A64;
 }
 
 .token.operator,
 .token.entity,
-.token.url,
-.language-css .token.string,
-.style .token.string {
+.token.url {
     color: #785000;
 }
 
 .token.atrule,
-.token.attr-value,
 .token.keyword {
     color: #972D4C;
 }
 
 .token.function,
 .token.class-name {
-    color: #9C4545;
+    color: #315F96;
 }
 
 .token.regex,
