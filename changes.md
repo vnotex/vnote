@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Render Markdown heading fold arrows with CSS so they do not paste as oversized SVGs into rich-text editors
 * Refresh PDF Highlight, Draw, and Text box icons when switching themes
 * Match the PDF viewer's unused space to the active theme, including live theme changes, without recoloring PDF pages
 * Place PDF Find And Replace beside Outline, before the page-navigation controls

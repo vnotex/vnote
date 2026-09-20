@@ -1413,11 +1413,6 @@ void TestMarkdownViewerJs::testHeadingFolding_enabledAndDisabledDecoration() {
                    "window.__buttonFor(window.__nodes.alpha).getAttribute('aria-label')"))
                .toString(),
            QStringLiteral("Collapse section"));
-  QCOMPARE(engine
-               .evaluate(QStringLiteral(
-                   "document.body.querySelectorAll('svg.vx-heading-fold-icon').length"))
-               .toInt(),
-           7);
 
   res = engine.evaluate(QStringLiteral("window.__mapper.setHeadingFoldingEnabled(false);"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
