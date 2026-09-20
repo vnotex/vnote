@@ -2447,7 +2447,11 @@ void ViewAreaController::restoreSession(const QStringList &p_layoutWorkspaceIds)
 bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
                                             const QString &p_workspaceId, const QString &p_bufferId,
                                             bool p_focus, ViewWindowMode p_mode, int p_lineNumber) {
-  Buffer2 buf = p_bufferSvc->getBufferHandle(p_bufferId);
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  const bool readOnly = wsSvc && wsSvc->getBufferMetadata(p_workspaceId, p_bufferId)
+                                     .value(QLatin1String(vxcore::kJsonKeyReadOnly))
+                                     .toBool();
+  Buffer2 buf = p_bufferSvc->getBufferHandle(p_bufferId, readOnly);
   if (!buf.isValid()) {
     qWarning() << "    Failed to get buffer handle:" << p_bufferId;
     return false;

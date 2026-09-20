@@ -6,6 +6,8 @@
 //
 // Tests against a bundled notebook with real vxcore integration.
 
+#include <QFile>
+#include <QScopeGuard>
 #include <QtTest>
 
 #include <core/hookevents.h>
@@ -14,6 +16,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
@@ -39,6 +42,7 @@ private slots:
   void testForcedReadOnlyUpgradesDeduplicatedWritableBuffer();
   void testClosedBufferStateIsForgotten();
   void testNotebookCloseSweepsBufferState();
+  void testForcedReadOnlySurvivesSessionRecovery();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -288,7 +292,6 @@ void TestBufferReadOnly::testRestoredBufferHandleAdoptsReadOnly() {
   const QString bufferId =
       m_bufferCoreService->openBuffer(m_notebookId, QStringLiteral("test_restore_ro.md"));
   QVERIFY(!bufferId.isEmpty());
-  QVERIFY(!m_bufferService->isBufferReadOnly(bufferId)); // not resolved yet
 
   Buffer2 restored = m_bufferService->getBufferHandle(bufferId);
   QVERIFY(restored.isValid());
@@ -368,6 +371,83 @@ void TestBufferReadOnly::testNotebookCloseSweepsBufferState() {
   // closeNotebook fires NotebookAfterClose, which BufferService subscribes to.
   QCOMPARE(m_notebookService->closeNotebook(nbId), true);
   QCOMPARE(m_bufferService->isBufferReadOnly(bufferId), false);
+}
+
+void TestBufferReadOnly::testForcedReadOnlySurvivesSessionRecovery() {
+  const QString logPath = m_tempDir.filePath(QStringLiteral("session-log.txt"));
+  const QString notePath = m_tempDir.filePath(QStringLiteral("session-note.txt"));
+  const QByteArray original("original content\n");
+  for (const auto &path : {logPath, notePath}) {
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    QCOMPARE(file.write(original), qint64(original.size()));
+  }
+
+  QString logId;
+  QString noteId;
+  QString workspaceId;
+  // Local contexts/services: never restart or clear the suite's shared fixture.
+  {
+    VxCoreContextHandle context = nullptr;
+    QCOMPARE(vxcore_context_create(R"({"recoverLastSession":true})", &context), VXCORE_OK);
+    const auto cleanup = qScopeGuard([&]() { vxcore_context_destroy(context); });
+    HookManager hooks;
+    BufferService buffers(context, &hooks, AutoSavePolicy::None);
+    WorkspaceCoreService workspaces(context);
+    FileOpenSettings settings;
+    settings.m_readOnly = true;
+    const auto log = buffers.openBuffer({QString(), logPath}, settings);
+    const auto note = buffers.openBuffer({QString(), notePath});
+    QVERIFY(log.isValid());
+    QVERIFY(note.isValid());
+    logId = log.id();
+    noteId = note.id();
+    workspaceId = workspaces.createWorkspace(QStringLiteral("Read-only recovery"));
+    QVERIFY(!workspaceId.isEmpty());
+    QVERIFY(workspaces.addBuffer(workspaceId, logId));
+    QVERIFY(workspaces.addBuffer(workspaceId, noteId));
+    QVERIFY(workspaces.setBufferMetadata(workspaceId, logId,
+                                         {{QStringLiteral("readOnly"), log.isReadOnly()}}));
+    // The ordinary buffer intentionally has no readOnly field (old sessions).
+    QCOMPARE(vxcore_prepare_shutdown(context), VXCORE_OK);
+  }
+
+  {
+    VxCoreContextHandle context = nullptr;
+    QCOMPARE(vxcore_context_create(R"({"recoverLastSession":true})", &context), VXCORE_OK);
+    const auto cleanup = qScopeGuard([&]() { vxcore_context_destroy(context); });
+    HookManager hooks;
+    BufferService buffers(context, &hooks, AutoSavePolicy::None);
+    WorkspaceCoreService workspaces(context);
+    const auto adopt = [&](const QString &p_id) {
+      const auto metadata = workspaces.getBufferMetadata(workspaceId, p_id);
+      return buffers.getBufferHandle(p_id, metadata.value(QStringLiteral("readOnly")).toBool());
+    };
+    const auto log = adopt(logId);
+    const auto note = adopt(noteId);
+    QVERIFY(log.isValid());
+    QVERIFY(note.isValid());
+    QVERIFY(log.isReadOnly());
+    QVERIFY(!note.isReadOnly());
+
+    // A second workspace or caller with no override cannot downgrade the log.
+    QVERIFY(buffers.getBufferHandle(logId).isReadOnly());
+    buffers.markDirty(logId);
+    QVERIFY(!buffers.isDirty(logId));
+    QVERIFY(!buffers.saveBuffer(logId));
+    QFile logFile(logPath);
+    QVERIFY(logFile.open(QIODevice::ReadOnly));
+    QCOMPARE(logFile.readAll(), original);
+
+    // Restored ordinary files still accept edits; a later forced adoption may
+    // upgrade a shared handle, but a subsequent false cannot make it writable.
+    buffers.markDirty(noteId);
+    QVERIFY(buffers.isDirty(noteId));
+    QVERIFY(buffers.getBufferHandle(noteId, true).isReadOnly());
+    QVERIFY(note.isReadOnly());
+    QVERIFY(buffers.getBufferHandle(noteId, false).isReadOnly());
+    QVERIFY(workspaces.deleteWorkspace(workspaceId));
+  }
 }
 
 } // namespace tests

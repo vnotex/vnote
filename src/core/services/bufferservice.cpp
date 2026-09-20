@@ -1113,7 +1113,7 @@ QString BufferService::decodeContent(const QString &p_bufferId,
 
 // ============ Buffer Handle ============
 
-Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
+Buffer2 BufferService::getBufferHandle(const QString &p_bufferId, bool p_forcedReadOnly) {
   if (p_bufferId.isEmpty()) {
     return Buffer2();
   }
@@ -1132,8 +1132,8 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId) {
   // Adoption: a buffer restored from the session was created inside vxcore
   // before this service existed, so it never went through openBuffer. Resolve
   // its read-only state here — BEFORE the handle escapes — or the restored
-  // ViewWindow2 would be built writable for a read-only notebook.
-  resolveBufferFacts(p_bufferId, false, bufJson);
+  // ViewWindow2 would lose the notebook flag or saved per-buffer override.
+  resolveBufferFacts(p_bufferId, p_forcedReadOnly, bufJson);
 
   return (m_bufferFlags.value(p_bufferId) & Encrypted) != 0
              ? protectedHandle(p_bufferId)
@@ -1569,7 +1569,7 @@ bool BufferService::isVirtualBuffer(const QString &p_bufferId) const {
 QJsonArray BufferService::listBuffers() const { return BufferCoreService::listBuffers(); }
 
 bool BufferService::isBufferReadOnly(const QString &p_bufferId) const {
-  // Resolved once at open time; see openBuffer.
+  // Resolved at open or restored-handle adoption; subsequent queries are lookups.
   return (m_bufferFlags.value(p_bufferId) & (ReadOnly | Converting)) != 0;
 }
 

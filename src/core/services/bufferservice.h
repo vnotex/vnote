@@ -152,7 +152,8 @@ public:
   // Useful when you have a buffer ID (e.g., from a hook) and need a handle.
   // Constructs NodeIdentifier internally from vxcore buffer info.
   // Returns an invalid Buffer2 if the buffer ID is not valid.
-  Buffer2 getBufferHandle(const QString &p_bufferId);
+  // @p_forcedReadOnly restores a saved override; false never clears read-only state.
+  Buffer2 getBufferHandle(const QString &p_bufferId, bool p_forcedReadOnly = false);
 
   // Protected-only lifecycle roster. Does not implicitly open/decrypt a note.
   Buffer2 findOpenProtectedBuffer(const NodeIdentifier &p_nodeId) const;
@@ -208,8 +209,8 @@ public:
   QString insertAsset(const Buffer2 &p_buffer, const QString &p_sourcePath);
   QString insertAssetRaw(const Buffer2 &p_buffer, const QString &p_assetName,
                          const QByteArray &p_data);
-  // A buffer's read-only state is resolved ONCE, at open time (see
-  // openBuffer): FileOpenSettings::m_readOnly ORed with the owning notebook's
+  // A buffer's read-only state is resolved at openBuffer or getBufferHandle
+  // adoption: the per-open or saved override ORed with the owning notebook's
   // read-only flag. This query is a plain lookup of that resolved state, so
   // callers never learn (or need to care) WHY a buffer is read-only.
   bool isBufferReadOnly(const QString &p_bufferId) const override;

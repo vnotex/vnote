@@ -103,6 +103,15 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
 
+#### Read-only session recovery
+
+`ViewArea2` saves each buffer's read-only state in workspace `bufferMetadata.readOnly`,
+including before hiding a workspace. Preserve other metadata keys when updating hidden
+workspaces. `ViewAreaController::openRestoredBuffer()` passes the saved flag to
+`BufferService::getBufferHandle()` before constructing any editor. Adoption ORs it with
+the notebook flag and never downgrades an already-read-only shared buffer. Missing keys
+in older sessions default to false; `ViewWindowMode::Read` is not a read-only buffer flag.
+
 #### Search replacement projection
 
 SearchPanel2 owns confirmation/progress/error dialogs; SearchController owns completed-result

@@ -16,6 +16,8 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
+#include <vxcore/notebook_json_keys.h>
+
 #include <controllers/viewareacontroller.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -806,13 +808,14 @@ void ViewArea2::saveSession() {
         }
         bufferIds.append(bufferId);
 
-        // Persist per-buffer metadata (mode, cursor, scroll position).
+        // Persist per-buffer metadata (mode, positions, read-only state).
         QJsonObject bufMeta;
         ViewWindowMode mode = win->getMode();
         bufMeta[QStringLiteral("mode")] =
             (mode == ViewWindowMode::Edit) ? QStringLiteral("Edit") : QStringLiteral("Read");
         bufMeta[QStringLiteral("cursorPosition")] = win->getCursorPosition();
         bufMeta[QStringLiteral("scrollPosition")] = win->getScrollPosition();
+        bufMeta[QLatin1String(vxcore::kJsonKeyReadOnly)] = win->getBuffer().isReadOnly();
         wsSvc->setBufferMetadata(it.key(), bufferId, bufMeta);
       }
       wsSvc->setBufferOrder(it.key(), bufferIds);
@@ -1683,8 +1686,17 @@ QVector<QObject *> ViewArea2::takeViewWindowsFromSplit(const QString &p_workspac
     auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       QStringList bufferIds;
+      auto *bufferSvc = m_services.get<BufferService>();
       for (auto *win : split->getAllViewWindows()) {
-        bufferIds.append(win->getBuffer().id());
+        const QString bufferId = win->getBuffer().id();
+        bufferIds.append(bufferId);
+        if (!bufferSvc || !bufferSvc->isVirtualBuffer(bufferId)) {
+          // Hidden workspaces are not visited by saveSession(). Preserve their
+          // existing view metadata while recording the shared buffer state.
+          auto metadata = wsSvc->getBufferMetadata(p_workspaceId, bufferId);
+          metadata[QLatin1String(vxcore::kJsonKeyReadOnly)] = win->getBuffer().isReadOnly();
+          wsSvc->setBufferMetadata(p_workspaceId, bufferId, metadata);
+        }
       }
       qCDebug(lcWorkspace) << "  Syncing buffer order before hide:" << bufferIds;
       wsSvc->setBufferOrder(p_workspaceId, bufferIds);
