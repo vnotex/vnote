@@ -23,7 +23,7 @@
 * Add a text-only Edit JSON button to the right of the Settings toolbar to edit vnotex.json in VNote
 
 * **Export**
-    * Add Follow Theme to select the active theme's rendering and syntax styles in the export dialog
+    * Add a compact palette-icon Follow Theme button to select the active theme's rendering and syntax styles in the export dialog
     * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors
     * The exported outline panel opens and closes smoothly, with a refreshed toggle, active-section styling, keyboard controls and reduced-motion support
     * Exported outline and code-block toolbar labels, tooltips and accessibility text use the application language, including Simplified Chinese and Japanese

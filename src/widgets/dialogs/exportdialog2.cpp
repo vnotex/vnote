@@ -352,11 +352,15 @@ void ExportDialog2::setupUI() {
   commonLayout->addWidget(new QLabel(tr("Syntax style"), optionsGroupBox), 2, 2);
   commonLayout->addWidget(m_syntaxStyleCombo, 2, 3);
 
-  auto *followThemeButton = new QPushButton(tr("Follow Theme"), optionsGroupBox);
+  auto *followThemeButton = new QToolButton(optionsGroupBox);
   followThemeButton->setObjectName(QLatin1String(kFollowThemeButtonName));
-  followThemeButton->setAutoDefault(false);
+  followThemeButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  followThemeButton->setIcon(
+      IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("palette.svg"))));
+  followThemeButton->setToolTip(tr("Follow Theme"));
+  followThemeButton->setAccessibleName(tr("Follow Theme"));
   commonLayout->addWidget(followThemeButton, 2, 4);
-  connect(followThemeButton, &QPushButton::clicked, this, [this]() {
+  connect(followThemeButton, &QToolButton::clicked, this, [this]() {
     auto *theme = m_services.get<ThemeService>();
     const int renderingIdx =
         m_renderingStyleCombo->findData(theme->getFile(Theme::File::WebStyleSheet));

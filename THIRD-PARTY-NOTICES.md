@@ -51,15 +51,15 @@ both under `${datadir}/licenses/vxcore`. These copies are required, not optional
 - **License:** ISC, with an MIT-licensed subset inherited from Feather
 - **Full text:** [`licenses/Lucide-LICENSE.txt`](licenses/Lucide-LICENSE.txt) (verbatim copy of upstream `LICENSE`)
 
-Covers 59 files in `src/data/core/icons/`:
+Covers 60 files in `src/data/core/icons/`:
 
-- 57 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
+- 58 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
 - `read_only.svg` and `theme_switcher.svg` carry no class but are path-identical to
   upstream `lock` and `shirt`.
 
-The files are modified from upstream in one respect: Lucide ships
-`stroke="currentColor"`, and VNote rewrites that to an explicit
-`stroke="#000000"` so `IconUtils::fetchIcon` recolors them per theme.
+The files are modified from upstream in one respect: VNote rewrites Lucide
+`currentColor` stroke and fill values to explicit `#000000` so
+`IconUtils::fetchIcon` recolors them per theme.
 
 ### The Feather / MIT subset
 
