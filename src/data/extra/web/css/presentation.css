@@ -1,0 +1,192 @@
+/* Enabled only for the lifetime of a rendered-DOM presentation. */
+html.vx-presentation-active,
+body.vx-presentation-active {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: var(--r-background-color) !important;
+}
+
+.vx-presentation-active #vx-image-view-box {
+    z-index: 1001;
+}
+
+.vx-presentation-active #vx-content {
+    display: none !important;
+}
+
+#vx-presentation {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    background: var(--r-background-color);
+    color: var(--r-main-color);
+    font-family: var(--r-main-font);
+    font-size: var(--r-main-font-size);
+    line-height: 1.3;
+    text-align: left;
+    touch-action: pan-x pan-y;
+}
+
+#vx-presentation .slides {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+#vx-presentation .slides > .vx-presentation-slide {
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0 0 32px;
+    flex-direction: column;
+    text-align: left;
+}
+
+#vx-presentation .vx-presentation-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    padding: 0 16px 12px 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    outline: none;
+}
+
+#vx-presentation .vx-presentation-parent {
+    flex: 0 0 auto;
+    max-height: 30%;
+    overflow: auto;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid currentColor;
+}
+
+#vx-presentation h1,
+#vx-presentation h2,
+#vx-presentation h3,
+#vx-presentation h4,
+#vx-presentation h5,
+#vx-presentation h6 {
+    color: var(--r-heading-color);
+    background: transparent;
+    font-family: var(--r-heading-font);
+    font-weight: var(--r-heading-font-weight);
+    line-height: var(--r-heading-line-height);
+    letter-spacing: var(--r-heading-letter-spacing);
+    text-transform: var(--r-heading-text-transform);
+    text-shadow: var(--r-heading-text-shadow);
+    border: 0;
+    padding: 0;
+    margin: 0 0 0.5em;
+}
+
+#vx-presentation h1 { font-size: 2em; }
+#vx-presentation h2 { font-size: 1.6em; }
+#vx-presentation h3 { font-size: 1.3em; }
+#vx-presentation h4,
+#vx-presentation h5,
+#vx-presentation h6 { font-size: 1.1em; }
+#vx-presentation .vx-presentation-parent h2 { font-size: 1.1em; margin: 0; }
+
+#vx-presentation p,
+#vx-presentation li,
+#vx-presentation td,
+#vx-presentation th {
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-indent: 0;
+}
+
+#vx-presentation .vx-heading-fold-toggle,
+#vx-presentation .vx-header-anchor {
+    display: none !important;
+}
+
+#vx-presentation .vx-presentation-title .vx-presentation-body {
+    text-align: center;
+}
+
+#vx-presentation pre {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0.5em 0;
+    padding: 0.6em;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--r-main-color);
+    font-family: var(--r-code-font);
+    font-size: 0.6em;
+    line-height: 1.4;
+    text-shadow: none;
+    white-space: pre;
+    overflow: auto;
+}
+
+#vx-presentation pre code {
+    display: block;
+    max-height: none;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-shadow: none;
+    white-space: inherit;
+    overflow: visible;
+}
+
+#vx-presentation :not(pre) > code {
+    font-family: var(--r-code-font);
+    color: inherit;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#vx-presentation .vx-codeblock-action-btn { color: var(--r-main-color); }
+#vx-presentation .code-toolbar { --vx-code-bg: var(--r-background-color) !important; }
+#vx-presentation table { width: auto; max-width: 100%; font-size: 0.75em; }
+#vx-presentation th,
+#vx-presentation td { background: transparent; border-color: currentColor; }
+#vx-presentation blockquote { width: auto; margin: 0.5em 0; padding: 0.5em; }
+
+#vx-presentation img,
+#vx-presentation video,
+#vx-presentation svg {
+    max-width: 100%;
+    max-height: 560px;
+    object-fit: contain;
+}
+
+#vx-presentation img,
+#vx-presentation .vx-plantuml-graph > svg,
+#vx-presentation .vx-mermaid-graph > svg,
+#vx-presentation .vx-flowchartjs-graph > svg,
+#vx-presentation .vx-wavedrom-graph > svg,
+#vx-presentation .vx-graphviz-graph > svg {
+    height: auto;
+}
+
+#vx-presentation .katex,
+#vx-presentation mjx-container {
+    color: inherit;
+    text-transform: none;
+}
+
+#vx-presentation eqn {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+}

@@ -133,6 +133,8 @@ public:
 
   QString getCrossCopyTargetDisplayName(const QString &p_target) const;
 
+  void setPresentationMode(bool p_active);
+
   void saveContent();
 
   // Should be called before WebViewer.setHtml().
@@ -165,6 +167,8 @@ public slots:
   void activateProtectedLink(const QString &p_url);
 
   void setWorkFinished();
+
+  void setPresentationState(bool p_active, const QString &p_error);
 
   // The line number at the top.
   void setTopLineNumber(int p_lineNumber);
@@ -221,6 +225,8 @@ public slots:
 signals:
   void sectionNumberOptionsChanged();
 
+  void presentationModeRequested(bool p_active);
+
   // Current Markdown text is updated.
   void textUpdated(const QString &p_text);
 
@@ -266,6 +272,8 @@ signals:
 
   // Signals to be connected at cpp side.
 signals:
+  void presentationStateChanged(bool p_active, const QString &p_error);
+
   void graphPreviewDataReady(const PreviewData &p_data);
 
   void mathPreviewDataReady(const PreviewData &p_data);

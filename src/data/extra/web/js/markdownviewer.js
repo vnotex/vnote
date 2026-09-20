@@ -13,28 +13,31 @@ function installTaskListHandler() {
     }
     window.vxTaskListHandlerInstalled = true;
 
-    window.vxcore.contentContainer.addEventListener('click', function(p_event) {
-        let target = p_event.target;
-        if (!target || target.tagName !== 'INPUT'
-            || !target.classList.contains('task-list-item-checkbox')) {
-            return;
-        }
+    window.vxcore.contentContainer.addEventListener('click', handleTaskListClick);
+}
 
-        let item = target.closest('[data-source-line]');
-        if (!item) {
-            // No source mapping, revert the optimistic toggle.
-            target.checked = !target.checked;
-            return;
-        }
+// The presentation root uses the same handler while the original nodes are relocated.
+function handleTaskListClick(p_event) {
+    let target = p_event.target;
+    if (!target || target.tagName !== 'INPUT'
+        || !target.classList.contains('task-list-item-checkbox')) {
+        return;
+    }
 
-        let lineNumber = parseInt(item.getAttribute('data-source-line'), 10);
-        if (isNaN(lineNumber)) {
-            target.checked = !target.checked;
-            return;
-        }
+    let item = target.closest('[data-source-line]');
+    if (!item) {
+        // No source mapping, revert the optimistic toggle.
+        target.checked = !target.checked;
+        return;
+    }
 
-        window.vxMarkdownAdapter.toggleTaskListItem(lineNumber, target.checked);
-    });
+    let lineNumber = parseInt(item.getAttribute('data-source-line'), 10);
+    if (isNaN(lineNumber)) {
+        target.checked = !target.checked;
+        return;
+    }
+
+    window.vxMarkdownAdapter.toggleTaskListItem(lineNumber, target.checked);
 }
 
 function revertTaskListItem(p_lineNumber) {
@@ -52,6 +55,14 @@ new QWebChannel(qt.webChannelTransport,
         window.vxMarkdownAdapter = adapter;
 
         // Connect signals from CPP side.
+        adapter.presentationModeRequested.connect(function(p_active) {
+            if (window.vxPresentation) {
+                window.vxPresentation.setActive(p_active);
+            } else if (p_active) {
+                adapter.setPresentationState(false, 'The presentation runtime is unavailable');
+            }
+        });
+
         adapter.textUpdated.connect(function(p_text) {
             window.vxcore.setMarkdownText(p_text);
         });

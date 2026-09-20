@@ -21,6 +21,9 @@ class EasyAccess {
 
     setupMouseMove() {
         window.addEventListener('mousedown', (e) => {
+            if (window.vxPresentation && window.vxPresentation.isActive()) {
+                return;
+            }
             e = e || window.event;
             let isCtrl = window.vxcore.os === 'Mac' ? e.metaKey : e.ctrlKey;
             // Left button and Ctrl key.
@@ -79,6 +82,16 @@ class EasyAccess {
 
     setupViNavigation() {
         document.addEventListener('keydown', (e) => {
+            if (window.vxPresentation && window.vxPresentation.isActive()) {
+                this.pendingKeys = [];
+                this.repeatToken = 0;
+                // Escape must still reach the native fullscreen host. Presentation owns
+                // navigation; all other reader shortcuts must leave the hidden DOM alone.
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    window.vxcore.setKeyPress(27, !!e.ctrlKey, !!e.shiftKey, !!e.metaKey);
+                }
+                return;
+            }
             // Need to clear pending kyes.
             let needClear = true;
 

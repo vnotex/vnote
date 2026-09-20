@@ -19,6 +19,14 @@
 
 using namespace vnotex;
 
+namespace {
+const QStringList c_presentationScripts = {QStringLiteral("web/js/reveal/reveal.js"),
+                                           QStringLiteral("web/js/presentation.js")};
+const QStringList c_presentationStyles = {
+    QStringLiteral("web/js/reveal/reset.css"), QStringLiteral("web/js/reveal/reveal.css"),
+    QStringLiteral("web/js/reveal/black.css"), QStringLiteral("web/css/presentation.css")};
+} // namespace
+
 HtmlTemplateService::HtmlTemplateService(ConfigMgr2 *p_configMgr, QObject *p_parent)
     : QObject(p_parent), m_configMgr(p_configMgr) {}
 
@@ -312,11 +320,22 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
         QStringLiteral("/* VX_GLOBAL_OPTIONS_PLACEHOLDER */"), opts.toJavascriptObject());
   }
 
-  // Required viewer feature, after configured dependencies even for older resource lists.
+  // Required viewer features, after configured dependencies even for older resource lists.
   const auto scriptPlaceholder = QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->");
-  m_markdownViewerTemplate.m_template.replace(
-      scriptPlaceholder, scriptPlaceholder + fillScriptTag(resolveConfigFile(
-                                                 QStringLiteral("web/js/sectionnumber.js"))));
+  QString scripts = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/sectionnumber.js")));
+  for (const auto &path : c_presentationScripts) {
+    scripts += fillScriptTag(resolveConfigFile(path));
+  }
+  m_markdownViewerTemplate.m_template.replace(scriptPlaceholder, scriptPlaceholder + scripts);
+  const auto stylePlaceholder = QStringLiteral("<!-- VX_STYLES_PLACEHOLDER -->");
+  QString styles;
+  for (const auto &path : c_presentationStyles) {
+    auto tag = fillStyleTag(resolveConfigFile(path));
+    tag.replace(QStringLiteral("<link "),
+                QStringLiteral("<link data-vx-presentation-style media=\"not all\" "));
+    styles += tag;
+  }
+  m_markdownViewerTemplate.m_template.replace(stylePlaceholder, stylePlaceholder + styles);
   fillResources(m_markdownViewerTemplate.m_template, viewerResource);
 }
 
@@ -371,65 +390,66 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   const auto origin = QStringLiteral("vxnote://") + p_token;
   // Ordering follows the built-in Markdown viewer resource definition. This is
   // a fixed execution allowlist, intentionally independent of user config.
-  const QStringList scripts = {
-      QStringLiteral("web/js/qwebchannel.js"),
-      QStringLiteral("web/js/eventemitter.js"),
-      QStringLiteral("web/js/vxcore.js"),
-      QStringLiteral("web/js/utils.js"),
-      QStringLiteral("web/js/nodelinemapper.js"),
-      QStringLiteral("web/js/lrucache.js"),
-      QStringLiteral("web/js/graphcache.js"),
-      QStringLiteral("web/js/graphpreviewer.js"),
-      QStringLiteral("web/js/markdownviewercore.js"),
-      QStringLiteral("web/js/vxworker.js"),
-      QStringLiteral("web/js/graphrenderer.js"),
-      QStringLiteral("web/js/svg-to-image.js"),
-      QStringLiteral("web/js/computed-style-to-inline-style.js"),
-      QStringLiteral("web/js/imageviewer.js"),
-      QStringLiteral("web/js/easyaccess.js"),
-      QStringLiteral("web/js/crosscopy.js"),
-      QStringLiteral("web/js/markdownviewer.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
-      QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
-      QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
-      QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
-      QStringLiteral("web/js/markdownit.js"),
-      QStringLiteral("web/js/prism.js"),
-      QStringLiteral("web/js/codeblockactions.js"),
-      QStringLiteral("web/js/mermaid.js"),
-      QStringLiteral("web/js/flowchart.js/raphael.min.js"),
-      QStringLiteral("web/js/flowchart.js/flowchart.min.js"),
-      QStringLiteral("web/js/flowchartjs.js"),
-      QStringLiteral("web/js/wavedrom.js"),
-      QStringLiteral("web/js/mathjax.js"),
-      QStringLiteral("web/js/plantuml.js"),
-      QStringLiteral("web/js/graphviz.js"),
-      QStringLiteral("web/js/turndown/turndown.js"),
-      QStringLiteral("web/js/turndown/turndown-plugin-gfm.js"),
-      QStringLiteral("web/js/turndown.js"),
-      QStringLiteral("web/js/mark.js/mark.min.js"),
-      QStringLiteral("web/js/markjs.js")};
+  QStringList scripts = {QStringLiteral("web/js/qwebchannel.js"),
+                         QStringLiteral("web/js/eventemitter.js"),
+                         QStringLiteral("web/js/vxcore.js"),
+                         QStringLiteral("web/js/utils.js"),
+                         QStringLiteral("web/js/nodelinemapper.js"),
+                         QStringLiteral("web/js/lrucache.js"),
+                         QStringLiteral("web/js/graphcache.js"),
+                         QStringLiteral("web/js/graphpreviewer.js"),
+                         QStringLiteral("web/js/markdownviewercore.js"),
+                         QStringLiteral("web/js/vxworker.js"),
+                         QStringLiteral("web/js/graphrenderer.js"),
+                         QStringLiteral("web/js/svg-to-image.js"),
+                         QStringLiteral("web/js/computed-style-to-inline-style.js"),
+                         QStringLiteral("web/js/imageviewer.js"),
+                         QStringLiteral("web/js/easyaccess.js"),
+                         QStringLiteral("web/js/crosscopy.js"),
+                         QStringLiteral("web/js/markdownviewer.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
+                         QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
+                         QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
+                         QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
+                         QStringLiteral("web/js/markdownit.js"),
+                         QStringLiteral("web/js/prism.js"),
+                         QStringLiteral("web/js/codeblockactions.js"),
+                         QStringLiteral("web/js/mermaid.js"),
+                         QStringLiteral("web/js/flowchart.js/raphael.min.js"),
+                         QStringLiteral("web/js/flowchart.js/flowchart.min.js"),
+                         QStringLiteral("web/js/flowchartjs.js"),
+                         QStringLiteral("web/js/wavedrom.js"),
+                         QStringLiteral("web/js/mathjax.js"),
+                         QStringLiteral("web/js/plantuml.js"),
+                         QStringLiteral("web/js/graphviz.js"),
+                         QStringLiteral("web/js/turndown/turndown.js"),
+                         QStringLiteral("web/js/turndown/turndown-plugin-gfm.js"),
+                         QStringLiteral("web/js/turndown.js"),
+                         QStringLiteral("web/js/mark.js/mark.min.js"),
+                         QStringLiteral("web/js/markjs.js")};
+  scripts += c_presentationScripts;
   const QStringList lazyScripts = {QStringLiteral("web/js/prism/prism.min.js"),
                                    QStringLiteral("web/js/mermaid/mermaid.min.js"),
                                    QStringLiteral("web/js/wavedrom/theme-default.js"),
                                    QStringLiteral("web/js/wavedrom/wavedrom.min.js"),
                                    QStringLiteral("web/js/viz.js/viz.js"),
                                    QStringLiteral("web/js/viz.js/full.render.js")};
-  const QStringList styles = {
+  QStringList styles = {
       QStringLiteral("web/css/globalstyles.css"),  QStringLiteral("themes/pure/web.css"),
       QStringLiteral("themes/pure/highlight.css"), QStringLiteral("web/css/imageviewer.css"),
       QStringLiteral("web/css/markdownit.css"),    QStringLiteral("web/css/codeblockactions.css")};
+  styles += c_presentationStyles;
   QHash<QString, QByteArray> resources;
   for (const auto &path : scripts + lazyScripts + styles) {
     auto bytes = readBundled(path);
@@ -481,7 +501,12 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   }
   QString styleTags;
   for (const auto &path : styles) {
-    styleTags += fillStyleTagForUrl(origin + QStringLiteral("/app/") + path);
+    auto tag = fillStyleTagForUrl(origin + QStringLiteral("/app/") + path);
+    if (c_presentationStyles.contains(path)) {
+      tag.replace(QStringLiteral("<link "),
+                  QStringLiteral("<link data-vx-presentation-style media=\"not all\" "));
+    }
+    styleTags += tag;
   }
 
   MarkdownWebGlobalOptions options;

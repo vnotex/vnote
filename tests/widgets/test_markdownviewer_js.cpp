@@ -120,6 +120,7 @@ window.__adapter = {
   headingAnchorRequested: makeSignal(), crossCopyRequested: makeSignal(),
   findTextRequested: makeSignal(), contentRequested: makeSignal(),
   graphRenderDataReady: makeSignal(), taskListToggleRejected: makeSignal(),
+  presentationModeRequested: makeSignal(), setPresentationState: function() {},
   toggleTaskListItem: function(line, checked) {
     window.__toggleCalls.push({ line: line, checked: checked });
   }
@@ -389,6 +390,9 @@ class TestMarkdownViewerJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testPresentation_groupingAndRestoration();
+  void testPresentation_pinnedHeaderScrolling();
+  void testPresentation_cancellationRenderAndExport();
   void testNavigation_visibleRectangles_data();
   void testNavigation_visibleRectangles();
   void testNavigation_staleSnapshots();
@@ -421,6 +425,8 @@ private:
   void setupHeadingFolding(QJSEngine &p_engine);
   void setupSectionNumber(QJSEngine &p_engine);
   void setupMath(QJSEngine &p_engine);
+  void setupPresentationPage(QWebEnginePage &p_page);
+  void setPresentationActive(QWebEnginePage &p_page, bool p_active);
   void setupNavigationPage(QWebEnginePage &p_page, bool p_protected = false);
   void evaluateNavigation(QWebEnginePage &p_page, const QString &p_script, QJsonObject &p_result);
 };
@@ -658,6 +664,398 @@ return {ready: true};
   QJsonObject result;
   evaluateNavigation(p_page, script, result);
   QVERIFY(result.value(QStringLiteral("ready")).toBool());
+}
+
+void TestMarkdownViewerJs::setupPresentationPage(QWebEnginePage &p_page) {
+  setupNavigationPage(p_page, true);
+  QString error;
+  QString source = QStringLiteral(R"JS(
+window.__presentationReports = [];
+window.__nativeKeys = [];
+window.vxMarkdownAdapter.setPresentationState = function(active, error) {
+  __presentationReports.push({active, error});
+};
+window.vxMarkdownAdapter.setKeyPress = function(key) { __nativeKeys.push(key); };
+window.vxMarkdownAdapter.setSavedContent = function(head, styles, html, classes) {
+  window.__savedPresentationContent = {styles, html, classes};
+};
+window.vxMarkdownAdapter.onPdfRenderReady = function() { window.__exportReady = true; };
+window.vxI18n = {tr: function(key) { return key; }};
+window.vxImageViewer = {isViewingImage: function() { return false; }, setupForAllImages: function() {}};
+)JS");
+  for (const auto *name : {"nodelinemapper.js", "easyaccess.js", "vxworker.js",
+                           "codeblockactions.js", "reveal/reveal.js", "presentation.js"}) {
+    source += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &error) +
+              QLatin1Char('\n');
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+  }
+  source += QStringLiteral("\nwindow.vxEasyAccess.setupViNavigation();\n");
+  QJsonArray styles;
+  for (const auto *name : {"js/reveal/reset.css", "js/reveal/reveal.css", "js/reveal/black.css",
+                           "css/presentation.css"}) {
+    styles.append(readFile(webDir() + QLatin1Char('/') + QLatin1String(name), &error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+  }
+  const QJsonObject assets{{QStringLiteral("source"), source}, {QStringLiteral("styles"), styles}};
+  QJsonObject result;
+  evaluateNavigation(
+      p_page,
+      QStringLiteral(R"JS(
+const assets = %1;
+for (const text of assets.styles) {
+  const style = document.createElement('style');
+  style.setAttribute('data-vx-presentation-style', '');
+  style.media = 'not all';
+  style.textContent = text;
+  document.head.appendChild(style);
+}
+const script = document.createElement('script');
+script.textContent = assets.source;
+document.head.appendChild(script);
+script.remove();
+return {ready: !!window.vxPresentation};
+)JS")
+          .arg(QString::fromUtf8(QJsonDocument(assets).toJson(QJsonDocument::Compact))),
+      result);
+  QVERIFY(result.value(QStringLiteral("ready")).toBool());
+}
+
+void TestMarkdownViewerJs::setPresentationActive(QWebEnginePage &p_page, bool p_active) {
+  QJsonObject result;
+  evaluateNavigation(p_page,
+                     QStringLiteral("vxPresentation.setActive(%1); return {requested: true};")
+                         .arg(p_active ? QStringLiteral("true") : QStringLiteral("false")),
+                     result);
+  const auto update = [&]() {
+    evaluateNavigation(p_page, QStringLiteral(R"JS(
+const reports = window.__presentationReports;
+const last = reports.length ? reports[reports.length - 1] : {};
+return {active: vxPresentation.isActive(), ready: !!document.querySelector('#vx-presentation.ready'),
+        settled: vxPresentation.session === null, failure: last.error || ''};
+)JS"),
+                       result);
+    return result.value(QStringLiteral("failure")).toString().isEmpty() &&
+           (p_active ? result.value(QStringLiteral("ready")).toBool()
+                     : result.value(QStringLiteral("settled")).toBool());
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(update(), 10000);
+  QCOMPARE(result.value(QStringLiteral("active")).toBool(), p_active);
+}
+
+void TestMarkdownViewerJs::testPresentation_groupingAndRestoration() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupPresentationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const content = vxcore.contentContainer;
+content.innerHTML = `
+<!-- Leading whitespace and comments are not a preamble slide. -->
+<h1 id="title">Title</h1><p id="intro">Introduction</p>
+<h2 id="parent">Parent <em id="emphasis">heading</em></h2><p>Parent body</p>
+<h3 id="child">Child</h3>
+<section id="math" class="eqno"><eqn><svg id="equation" viewBox="0 0 20 20">
+  <defs><path id="glyph" d="M0 0L10 10"/></defs><use href="#glyph"/></svg></eqn></section>
+<div id="diagram" class="vx-mermaid-graph"><svg viewBox="0 0 120 40">
+  <text x="4" y="20" fill="#222">Rendered diagram</text></svg></div>
+<section id="semantic" data-state="unwanted"><p>User section</p>
+  <section id="nested">Nested section</section></section>
+<blockquote><h3 id="quote">Quoted heading</h3><p id="quote-body">Quoted body</p></blockquote>
+<ul><li><h2 id="list-heading">List heading</h2><p>List body</p></li></ul>
+<div class="code-toolbar"><pre><code id="code">one\ntwo\nthree\nfour\nfive</code></pre>
+  <div class="toolbar"></div></div>
+<p><a id="protected" href="#">Protected notebook link</a></p>
+<p><span id="fragment" class="fragment" data-fragment-index="1">Always visible</span></p>
+<button id="note-fullscreen" class="enter-fullscreen">Note control</button>
+<h4 id="minor">Minor heading</h4><p>Same child slide</p>
+<h2 id="second">Second</h2><h3 id="last">Last child</h3>`;
+document.body.style.backgroundColor = 'rgb(250, 250, 250)';
+document.body.style.padding = '13px';
+window.__originalBodyStyle = document.body.getAttribute('style');
+window.__folding = new HeadingFolding(content);
+__folding.setEnabled(true);
+__folding.refresh();
+for (const button of content.querySelectorAll('.vx-heading-fold-toggle')) {
+  __folding.setExpanded(button, document.getElementById(button.getAttribute('aria-controls')), false);
+}
+vxcore.numOfOngoingWorkers = 1;
+vxcore.emit('basicMarkdownRendered');
+window.__protected = document.getElementById('protected');
+vxcore.navigationLinkDestinations.set(__protected, 'private.md#destination');
+window.__originalNodes = Array.from(content.querySelectorAll('*'));
+window.__originalHtml = content.outerHTML;
+window.__originalText = content.textContent;
+window.__originalInlineStyles = __originalNodes.map(node => node.style.cssText);
+window.__originalBody = document.body.getAttribute('class');
+window.__originalRoot = document.documentElement.getAttribute('class');
+window.__equation = document.getElementById('equation');
+window.__code = document.getElementById('code');
+window.__fullscreenRequests = 0;
+Element.prototype.requestFullscreen = function() { ++__fullscreenRequests; return Promise.resolve(); };
+window.__readerY = 120;
+window.scrollTo(0, __readerY);
+return {prepared: true};
+)JS"),
+                     result);
+
+  // Repetition catches destruction leaks and stale placeholder/section restoration state.
+  for (int pass = 0; pass < 2; ++pass) {
+    setPresentationActive(page, true);
+    evaluateNavigation(page, QStringLiteral(R"JS(
+const root = document.getElementById('vx-presentation');
+const slides = Array.from(root.querySelector('.slides').children);
+const deck = vxPresentation.session.deck;
+const child = document.getElementById('child').closest('.vx-presentation-slide');
+const header = child.querySelector('.vx-presentation-parent');
+vxcore.scrollToAnchor('child');
+const collapse = child.querySelector('.vx-collapse-btn');
+collapse.click();
+const collapsed = child.querySelector('.code-toolbar').classList.contains('vx-collapsed');
+collapse.click();
+document.getElementById('note-fullscreen').click();
+return {
+  count: deck.getSlides().length,
+  boundaries: slides.map(slide => Array.from(slide.querySelector('.vx-presentation-body').children)
+    .find(node => /^H[1-3]$/.test(node.tagName)).id),
+  allHorizontal: slides.length === root.querySelectorAll('.slides section').length &&
+    root.querySelector('.stack') === null,
+  titleIntro: slides[0].classList.contains('vx-presentation-title') && slides[0].contains(document.getElementById('intro')),
+  parentText: header.textContent.trim(), parentIds: header.querySelectorAll('[id]').length,
+  nestedStay: ['math', 'semantic', 'nested', 'quote', 'list-heading', 'minor']
+    .every(id => child.contains(document.getElementById(id))),
+  retagged: ['math', 'semantic', 'nested'].every(id => document.getElementById(id).tagName === 'DIV'),
+  diagramSurface: getComputedStyle(document.getElementById('diagram')).backgroundColor === 'rgb(250, 250, 250)',
+  expanded: !root.querySelector('.vx-heading-fold-content[hidden]'),
+  controlsHidden: getComputedStyle(document.getElementById('child').querySelector('button')).display === 'none',
+  originalObjects: __equation === document.getElementById('equation') && __code === document.getElementById('code'),
+  protectedDestination: vxcore.navigationLinkDestinations.get(document.getElementById('protected')),
+  codeAction: collapsed && !child.querySelector('.code-toolbar').classList.contains('vx-collapsed'),
+  fragmentVisible: getComputedStyle(document.getElementById('fragment')).visibility === 'visible',
+  anchorSlide: deck.getCurrentSlide() === child,
+  nativeFullscreenOnly: __fullscreenRequests === 0
+};
+)JS"),
+                       result);
+    QCOMPARE(result.value(QStringLiteral("count")).toInt(), 5);
+    QCOMPARE(result.value(QStringLiteral("boundaries")).toArray(),
+             QJsonArray({QStringLiteral("title"), QStringLiteral("parent"), QStringLiteral("child"),
+                         QStringLiteral("second"), QStringLiteral("last")}));
+    QCOMPARE(result.value(QStringLiteral("parentText")).toString(),
+             QStringLiteral("Parent heading"));
+    QCOMPARE(result.value(QStringLiteral("parentIds")).toInt(), 0);
+    QCOMPARE(result.value(QStringLiteral("protectedDestination")).toString(),
+             QStringLiteral("private.md#destination"));
+    for (const auto *key : {"allHorizontal", "titleIntro", "nestedStay", "retagged", "expanded",
+                            "controlsHidden", "originalObjects", "codeAction", "fragmentVisible",
+                            "diagramSurface", "anchorSlide", "nativeFullscreenOnly"}) {
+      QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
+    }
+    setPresentationActive(page, false);
+    evaluateNavigation(page, QStringLiteral(R"JS(
+const nodes = Array.from(vxcore.contentContainer.querySelectorAll('*'));
+return {
+  readerContent: vxcore.contentContainer.textContent === __originalText,
+  readerInlineStyles: nodes.every((node, i) => node.style.cssText === __originalInlineStyles[i]),
+  readerFolds: Array.from(vxcore.contentContainer.querySelectorAll('.vx-heading-fold-content')).every(node => node.hidden),
+  sameNodes: nodes.length === __originalNodes.length && nodes.every((node, i) => node === __originalNodes[i]),
+  readerClasses: document.body.getAttribute('class') === __originalBody &&
+    document.documentElement.getAttribute('class') === __originalRoot,
+  readerStyles: document.body.getAttribute('style') === __originalBodyStyle,
+  scroll: window.scrollY === __readerY,
+  stylesDisabled: Array.from(document.querySelectorAll('[data-vx-presentation-style]'))
+    .every(style => style.media === 'not all'),
+  noDeck: !document.getElementById('vx-presentation')
+};
+)JS"),
+                       result);
+    for (const auto *key :
+         {"readerContent", "readerInlineStyles", "readerFolds", "sameNodes", "readerClasses",
+          "readerStyles", "scroll", "stylesDisabled", "noDeck"}) {
+      QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
+    }
+  }
+
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.contentContainer.innerHTML = '<p id="preamble">Preamble</p><h1 id="first">In flow</h1>' +
+  '<h3 id="orphan">Orphan</h3><h2 id="parent-two">Parent</h2><h3 id="under-parent">Child</h3>' +
+  '<h1 id="reset">Reset ancestry without splitting</h1><h3 id="after-reset">Orphan again</h3>';
+return {prepared: true};
+)JS"),
+                     result);
+  setPresentationActive(page, true);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const slides = vxPresentation.session.deck.getSlides();
+return {count: slides.length,
+  preamble: slides[0].contains(document.getElementById('preamble')) && slides[0].contains(document.getElementById('first')),
+  noTitle: !document.querySelector('.vx-presentation-title'),
+  parents: slides.map(slide => !!slide.querySelector('.vx-presentation-parent')),
+  noH1Split: document.getElementById('reset').closest('.vx-presentation-slide') === slides[3]};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("count")).toInt(), 5);
+  QCOMPARE(result.value(QStringLiteral("parents")).toArray(),
+           QJsonArray({false, false, false, true, false}));
+  QVERIFY(result.value(QStringLiteral("preamble")).toBool());
+  QVERIFY(result.value(QStringLiteral("noTitle")).toBool());
+  QVERIFY(result.value(QStringLiteral("noH1Split")).toBool());
+  setPresentationActive(page, false);
+}
+
+void TestMarkdownViewerJs::testPresentation_pinnedHeaderScrolling() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupPresentationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const content = vxcore.contentContainer;
+content.innerHTML = '<h2 id="parent">Pinned parent</h2><h3 id="child">Long child</h3>' +
+  Array.from({length: 80}, (_, i) => '<p>Paragraph ' + i + '</p>').join('') + '<h3 id="next">Next child</h3>';
+return {prepared: true};
+)JS"),
+                     result);
+  setPresentationActive(page, true);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxPresentation.scrollToAnchor('child');
+const deck = vxPresentation.session.deck;
+const slide = deck.getCurrentSlide();
+const body = slide.querySelector('.vx-presentation-body');
+const header = slide.querySelector('.vx-presentation-parent');
+const key = value => document.dispatchEvent(new KeyboardEvent('keydown', {key:value, bubbles:true, cancelable:true}));
+const before = header.getBoundingClientRect().top;
+key('PageDown');
+const pageDown = body.scrollTop > 0 && deck.getCurrentSlide() === slide;
+key('End');
+const atEnd = Math.abs(body.scrollTop + body.clientHeight - body.scrollHeight) <= 1;
+const pinned = Math.abs(header.getBoundingClientRect().top - before) < 0.5;
+key('ArrowRight');
+const next = deck.getCurrentSlide().contains(document.getElementById('next'));
+key('ArrowLeft');
+const previous = deck.getCurrentSlide() === slide;
+key('Home');
+key('ArrowDown');
+const down = body.scrollTop > 0 && body.scrollTop < body.scrollHeight - body.clientHeight;
+key('Escape');
+key('f');
+return {pageDown, atEnd, pinned, next, previous, down,
+  overflow: body.scrollHeight > body.clientHeight && getComputedStyle(body).overflowY === 'auto',
+  usableHeight: body.clientHeight > 300 && header.getBoundingClientRect().bottom <= body.getBoundingClientRect().top + 1,
+  blackTheme: getComputedStyle(header.querySelector('h2')).color === 'rgb(255, 255, 255)',
+  nativeEscapeOnly: __nativeKeys.length === 1 && __nativeKeys[0] === 27,
+  noWebFullscreen: !document.fullscreenElement,
+  hashUnchanged: !location.hash};
+)JS"),
+                     result);
+  for (const auto *key :
+       {"pageDown", "atEnd", "pinned", "next", "previous", "down", "overflow", "usableHeight",
+        "blackTheme", "nativeEscapeOnly", "noWebFullscreen", "hashUnchanged"}) {
+    QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
+  }
+  setPresentationActive(page, false);
+}
+
+void TestMarkdownViewerJs::testPresentation_cancellationRenderAndExport() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupPresentationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.contentContainer.innerHTML = '<h2 id="only">Only</h2><p>Body</p>';
+window.__originalHtml = vxcore.contentContainer.outerHTML;
+vxPresentation.setActive(true);
+vxPresentation.setActive(false);
+return {restoredImmediately: vxcore.contentContainer.outerHTML === __originalHtml && !vxPresentation.isActive()};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("restoredImmediately")).toBool());
+  const auto settled = [&]() {
+    evaluateNavigation(
+        page,
+        QStringLiteral("return {settled: vxPresentation.session === null, "
+                       "noActiveReport: !__presentationReports.some(report => report.active)};"),
+        result);
+    return result.value(QStringLiteral("settled")).toBool();
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(settled(), 10000);
+  QVERIFY(result.value(QStringLiteral("noActiveReport")).toBool());
+
+  // A new request must survive the old, canceled initialize() completing later.
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxPresentation.setActive(true);
+vxPresentation.setActive(false);
+vxPresentation.setActive(true);
+return {requested: true};
+)JS"),
+                     result);
+  setPresentationActive(page, true);
+  setPresentationActive(page, false);
+
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const bundledReveal = window.Reveal;
+window.Reveal = undefined;
+vxPresentation.setActive(true);
+window.Reveal = bundledReveal;
+const report = __presentationReports[__presentationReports.length - 1];
+return {failedClosed: report.active === false && report.error.length > 0 &&
+  vxPresentation.session === null && vxcore.contentContainer.outerHTML === __originalHtml};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("failedClosed")).toBool());
+
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.numOfOngoingWorkers = 1;
+vxPresentation.setActive(true);
+const deferred = vxPresentation.isActive() === false;
+vxcore.finishWorker('held');
+return {deferred};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("deferred")).toBool());
+  setPresentationActive(page, true);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.saveContent();
+return {restored: vxcore.contentContainer.outerHTML === __originalHtml,
+  html: __savedPresentationContent.html === __originalHtml,
+  noPresentationStyles: !__savedPresentationContent.styles.includes('--r-main-font') &&
+    __savedPresentationContent.styles.includes('vx-presentation') === false,
+  noPresentationClasses: !__savedPresentationContent.classes.includes('vx-presentation'),
+  stylesRestored: document.querySelectorAll('[data-vx-presentation-style]').length === 4,
+  inactive: !vxPresentation.isActive()};
+)JS"),
+                     result);
+  for (const auto *key : {"restored", "html", "noPresentationStyles", "noPresentationClasses",
+                          "stylesRestored", "inactive"}) {
+    QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
+  }
+  setPresentationActive(page, true);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.prepareForExport({});
+return {restoredBeforeExport: !vxPresentation.isActive() && vxcore.contentContainer.outerHTML === __originalHtml};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("restoredBeforeExport")).toBool());
+  setPresentationActive(page, true);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+vxcore.setMarkdownText('## Replacement');
+return {restoredBeforeRender: !vxPresentation.isActive() && !document.getElementById('vx-presentation'),
+  noPlaceholders: !vxcore.contentContainer.innerHTML.includes('vx-presentation')};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("restoredBeforeRender")).toBool());
+  QVERIFY(result.value(QStringLiteral("noPlaceholders")).toBool());
+  const auto rendered = [&]() {
+    evaluateNavigation(page, QStringLiteral(R"JS(
+return {finished: vxcore.numOfOngoingWorkers === 0,
+  replacement: vxcore.contentContainer.textContent.trim() === 'Replacement',
+  noOldContent: document.getElementById('only') === null,
+  inactive: vxPresentation.isActive() === false};
+)JS"),
+                       result);
+    return result.value(QStringLiteral("finished")).toBool();
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(rendered(), 10000);
+  QVERIFY(result.value(QStringLiteral("replacement")).toBool());
+  QVERIFY(result.value(QStringLiteral("noOldContent")).toBool());
+  QVERIFY(result.value(QStringLiteral("inactive")).toBool());
 }
 
 void TestMarkdownViewerJs::testNavigation_visibleRectangles_data() {

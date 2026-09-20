@@ -3,6 +3,7 @@
 
 #include "viewwindow2.h"
 
+#include <QColor>
 #include <QScopedPointer>
 #include <QSet>
 #include <QSharedPointer>
@@ -31,6 +32,7 @@ class MarkdownViewWindowController;
 class ImageHostController;
 class EditorStatusBarBinder;
 class LegacyImageMigrationBar;
+class PresentationToolBarEffect;
 
 // Concrete ViewWindow2 subclass for Markdown files.
 // Supports dual-mode (Edit/Read) with lazy-initialized editor and viewer,
@@ -102,6 +104,10 @@ protected:
 
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) Q_DECL_OVERRIDE;
 
+  void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
+
+  void paintEvent(QPaintEvent *p_event) override;
+
   void addAdditionalMenuActions(QMenu *p_menu) Q_DECL_OVERRIDE;
 
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
@@ -134,6 +140,14 @@ private:
   void setupTextEditor();
 
   bool setupViewer();
+
+  void setPresentationMode(bool p_on);
+
+  void requestPresentationWhenReady();
+
+  void handlePresentationStateChanged(bool p_active, const QString &p_error);
+
+  void updatePresentationUi();
 
   void setDebugVisible(bool p_visible);
 
@@ -236,6 +250,9 @@ private:
   MarkdownViewer *m_viewer = nullptr; // Lazily created.
   WebViewer *m_debugViewer = nullptr; // Lazily created.
   QAction *m_debugAction = nullptr;
+  QAction *m_presentationAction = nullptr;
+  PresentationToolBarEffect *m_presentationEffect = nullptr;
+  QColor m_presentationBackground;
   struct ProtectedView;
   QScopedPointer<ProtectedView> m_protectedView;
   PreviewHelper *m_previewHelper = nullptr;
@@ -256,6 +273,12 @@ private:
   int m_viewerBufferRevision = 0;
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
   bool m_viewerReady = false;
+  // Intent, dispatch and web confirmation are distinct while the page/deck initializes.
+  bool m_presentationRequested = false;
+  bool m_presentationRequestSent = false;
+  bool m_presentationActive = false;
+  bool m_preparingPresentation = false;
+  quint64 m_presentationGeneration = 0;
   QString m_viewerMathRenderer;
   QString m_viewerMathJaxScript;
   QString m_viewerPlantUmlFormat;

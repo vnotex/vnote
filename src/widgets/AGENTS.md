@@ -122,7 +122,7 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | spacer | |
 | `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
-| `addAdditionalViewToolBarActions()` | Text: Presentation Mode |
+| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
@@ -137,7 +137,8 @@ Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
 window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
 overload owns the remaining direct controls. Theme refresh reaches both.
 
-Text keeps **Find And Replace → Presentation Mode → Menu**. PDF keeps
+Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
+**Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
 MindMap inherits Find And Replace plus Menu. Widget-hosted Settings and Dashboard
 retain their content-owned toolbars; locked-note placeholders have none.
@@ -179,7 +180,7 @@ restore under the current parent rather than moving the view back.
   pointers and destruction handling restore surviving parent layouts without
   touching a dying widget.
 
-Text and PDF have a checkable **Presentation Mode** action: checked while presenting,
+Markdown, Text and PDF have a checkable **Presentation Mode** action: checked while presenting,
 click again to exit. Its view-scoped shortcut defaults to **F9**, configured through
 `editor.core.shortcuts.PresentationMode`; an empty string disables the shortcut.
 PDF's action remains usable even if the viewer reloads.
@@ -187,13 +188,31 @@ Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension
 menus). The effect includes the toolbar's styled background, not only its buttons.
-`PresentationToolBarEffect` shares this policy between text and PDF. During presentation,
+`PresentationToolBarEffect` shares this policy between Markdown, text and PDF. During presentation,
 both views paint the parent backdrop with the theme's `base#content#bg`, so a matching
 toolbar-colored parent cannot mask the fade.
 Theme changes refresh that color; normal mode restores normal frame painting.
 PDF, Find and popup windows remain opaque. Exit removes the effect,
 application filter and focus tracking. Gates: `test_contentfullscreenhost` and
 `test_pdfviewertoolbar`, including tab identity and rendered-alpha regressions.
+
+#### Markdown slides
+
+Markdown Presentation Mode switches Edit to Read through normal buffer synchronization, then
+waits for rendering and reveal.js readiness before confirming native fullscreen. F9 toggles;
+Escape exits. Rendering, page reload, mode/theme changes and export tear the deck down first.
+`presentation.js` moves rendered nodes reversibly; it never reparses or rewrites note source.
+A sole leading H1 opens a title slide with its introductory content. H2 and H3 start slides;
+H3 slides repeat their nearest preceding H2 in a fixed header above the scrollable body.
+Preamble is retained, H4–H6 stay in-flow, and additional H1s reset the H2 association without
+splitting. Headings inside atomic lists, tables and blockquotes are not slide boundaries.
+
+Viewer fold wrappers are traversed without losing their state. Every remaining nested SECTION
+(including display math) becomes a temporary DIV: reveal.js treats all descendant SECTIONs as
+slides. Exit restores original node objects, wrappers, folding, styles and scroll positions.
+The local core and black theme (including fonts) are viewer-only, media-gated styles; exported
+reader CSS excludes them. Protected previews use the same explicit bundled-resource allowlist
+and unchanged CSP. JavaScript must never request HTML5 fullscreen.
 
 **HTML5 fullscreen remains disabled.** Enabling
 `QWebEngineSettings::FullScreenSupportEnabled` advertises it to every web view

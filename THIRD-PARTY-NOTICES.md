@@ -15,11 +15,16 @@ It does **not** restate licenses that already ship next to the code they cover:
 | pdf.js, and the CMaps / ICC profiles / standard fonts / WASM decoders it bundles | `src/data/extra/web/pdf.js/web/**/LICENSE*` |
 | [KaTeX 0.16.22](https://github.com/KaTeX/KaTeX/releases/tag/v0.16.22), including its WOFF2 / WOFF / TTF fonts (MIT) | `src/data/extra/web/js/katex/LICENSE` |
 | [html-to-image 1.11.13](https://github.com/bubkoo/html-to-image/tree/v1.11.13), used for KaTeX previews and raster exports (MIT) | `src/data/extra/web/js/html-to-image/LICENSE` |
+| [reveal.js 6.0.2](https://github.com/hakimel/reveal.js/tree/6.0.2) core and black theme (MIT), including embedded Source Sans Pro fonts (SIL OFL 1.1) | `src/data/extra/web/js/reveal/LICENSE` and `LICENSE.font` |
 | `libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`, and the cmark fork they vendor | each submodule's own repository |
 
 The KaTeX and html-to-image runtime files are unmodified upstream distribution files.
 Their licenses are included in `vnote_extra.rcc` and installed alongside the extracted
 web assets. KaTeX loads these local assets; MathJax retains its configurable script URL.
+
+The reveal.js core has one VNote lifecycle patch: `destroy()` clears its scroll-prevention
+interval and removes the load listener even before readiness. The styles and embedded fonts
+are unmodified upstream distribution assets. Both license files ship in `vnote_extra.rcc`.
 
 Icon provenance below was established by comparing SVG path data against upstream, not
 by assuming from file names. Where that failed, the file says so — see

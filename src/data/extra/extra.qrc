@@ -129,6 +129,14 @@
         <file>web/js/prism.js</file>
         <file>web/js/codeblockactions.js</file>
         <file>web/js/sectionnumber.js</file>
+        <file>web/js/presentation.js</file>
+        <file>web/css/presentation.css</file>
+        <file>web/js/reveal/reveal.js</file>
+        <file>web/js/reveal/reveal.css</file>
+        <file>web/js/reveal/reset.css</file>
+        <file>web/js/reveal/black.css</file>
+        <file>web/js/reveal/LICENSE</file>
+        <file>web/js/reveal/LICENSE.font</file>
         <file>web/js/exportlinkfallback.js</file>
         <file>web/js/svg-to-image.js</file>
         <file>web/js/computed-style-to-inline-style.js</file>

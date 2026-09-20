@@ -126,6 +126,9 @@ class MarkdownViewerCore extends VXCore {
     // hook. onPdfRenderReady() is signalled exactly once, after every hook has settled - a
     // rejected hook is logged and treated as done, so one broken renderer cannot hang the export.
     prepareForExport(p_options) {
+        if (window.vxPresentation) {
+            window.vxPresentation.setActive(false);
+        }
         let options = p_options || {};
         let tasks = [];
         this.workers.forEach(function (p_worker) {
@@ -162,6 +165,9 @@ class MarkdownViewerCore extends VXCore {
     }
 
     setMarkdownText(p_text) {
+        if (window.vxPresentation) {
+            window.vxPresentation.setActive(false);
+        }
         ++this.navigationSnapshot;
         this.navigationTargets = [];
         if (this.numOfOngoingWorkers > 0) {
@@ -301,6 +307,9 @@ class MarkdownViewerCore extends VXCore {
     }
 
     scrollToAnchor(p_anchor) {
+        if (window.vxPresentation && window.vxPresentation.scrollToAnchor(p_anchor)) {
+            return;
+        }
         if (!p_anchor) {
             return;
         }
@@ -497,15 +506,31 @@ class MarkdownViewerCore extends VXCore {
     }
 
     saveContent() {
+        if (window.vxPresentation) {
+            window.vxPresentation.setActive(false);
+        }
         if (!this.initialized) {
             console.warn('saveContent() called before initialization');
             window.vxMarkdownAdapter.setSavedContent('', '', '');
             return;
         }
-        window.vxMarkdownAdapter.setSavedContent("",
-                                                 Utils.fetchStyleContent(),
-                                                 this.contentContainer.outerHTML,
-                                                 document.body.classList.value);
+        // fetchStyleContent() serializes even media="not all" stylesheets. Keep presentation
+        // assets out of reader exports, then synchronously put their links back in place.
+        const styles = Array.from(document.querySelectorAll('[data-vx-presentation-style]'))
+            .map(link => [link, document.createComment('vx-presentation-style')]);
+        for (const [link, placeholder] of styles) {
+            link.replaceWith(placeholder);
+        }
+        try {
+            window.vxMarkdownAdapter.setSavedContent("",
+                                                     Utils.fetchStyleContent(),
+                                                     this.contentContainer.outerHTML,
+                                                     document.body.classList.value);
+        } finally {
+            for (const [link, placeholder] of styles) {
+                placeholder.replaceWith(link);
+            }
+        }
     }
 
     setBodySize(p_width, p_height) {

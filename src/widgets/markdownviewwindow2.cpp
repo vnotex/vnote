@@ -10,8 +10,13 @@
 #include <QEvent>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QKeyEvent>
+#include <QLayout>
 #include <QMenu>
+#include <QPainter>
+#include <QPointer>
 #include <QPrinter>
+#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSplitter>
@@ -24,6 +29,7 @@
 #include <QUrl>
 #include <QUuid>
 #include <QWebEngineProfile>
+#include <QWindow>
 
 #include <algorithm>
 
@@ -72,6 +78,7 @@
 #include "messageboxhelper.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
+#include "presentationtoolbareffect.h"
 #include "propertydefs.h"
 #include "tableinsertpopup.h"
 #include "textviewwindowhelper.h"
@@ -115,6 +122,7 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 // ============ Destructor ============
 
 MarkdownViewWindow2::~MarkdownViewWindow2() {
+  setPresentationMode(false);
   if (m_viewer && m_debugViewer) {
     m_viewer->page()->setDevToolsPage(nullptr);
   }
@@ -132,6 +140,7 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
 }
 
 void MarkdownViewWindow2::releaseProtectedView() {
+  setPresentationMode(false);
   ++m_navigationGeneration;
   if (m_viewer) {
     m_viewer->invalidateNavigationTargets();
@@ -320,6 +329,175 @@ void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) 
   }
 }
 
+void MarkdownViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
+  const auto iconName = QStringLiteral("presentation_editor.svg");
+  m_presentationAction = p_toolBar->addAction(
+      ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Presentation Mode"));
+  m_presentationAction->setProperty("iconName", iconName);
+  ViewWindowToolBarHelper2::addActionShortcut(
+      m_presentationAction,
+      getServices().get<ConfigMgr2>()->getEditorConfig().getShortcut(
+          EditorConfig::Shortcut::PresentationMode),
+      this);
+  m_presentationAction->setCheckable(true);
+  m_presentationEffect = new PresentationToolBarEffect(p_toolBar, this);
+
+  connect(m_presentationAction, &QAction::triggered, this, [this]() {
+    // QAction toggles before triggered(), but only the confirmed deck may be checked.
+    {
+      const QSignalBlocker blocker(m_presentationAction);
+      m_presentationAction->setChecked(m_presentationActive && isViewFullScreen());
+    }
+    setPresentationMode(!m_presentationRequested);
+  });
+  connect(this, &ViewWindow2::viewFullScreenExitRequested, this,
+          [this]() { setPresentationMode(false); });
+  connect(this, &ViewWindow2::viewFullScreenChanged, this, [this](bool p_on) {
+    if (!p_on && (m_presentationRequested || m_presentationActive)) {
+      setPresentationMode(false);
+    }
+    if (p_on) {
+      m_presentationBackground = QColor(
+          getServices().get<ThemeService>()->paletteColor(QStringLiteral("base#content#bg")));
+      const QPointer<MarkdownViewWindow2> self(this);
+      const QPointer<MarkdownViewer> viewer(m_viewer);
+      const auto generation = m_presentationGeneration;
+      QTimer::singleShot(0, this, [self, viewer, generation]() {
+        const auto current = [self, viewer, generation]() {
+          return self && viewer && self->m_viewer == viewer.data() &&
+                 self->m_presentationGeneration == generation && self->m_presentationRequested &&
+                 self->m_presentationActive && self->m_viewerReady && self->isViewFullScreen();
+        };
+        if (!current()) {
+          return;
+        }
+        if (self->layout()) {
+          self->layout()->activate();
+        }
+        if (current()) {
+          viewer->page()->runJavaScript(
+              QStringLiteral("if (window.vxPresentation) { window.vxPresentation.layout(); }"));
+        }
+      });
+    }
+    updatePresentationUi();
+  });
+}
+
+void MarkdownViewWindow2::setPresentationMode(bool p_on) {
+  if (!p_on) {
+    if (!m_presentationRequested && !m_presentationRequestSent && !m_presentationActive &&
+        !isViewFullScreen()) {
+      return;
+    }
+    const bool cancelWeb = m_presentationRequestSent;
+    m_presentationRequested = false;
+    m_presentationRequestSent = false;
+    m_presentationActive = false;
+    ++m_presentationGeneration;
+    qApp->removeEventFilter(this);
+    if (cancelWeb && adapter() && adapter()->isReady()) {
+      adapter()->setPresentationMode(false);
+    }
+    setViewFullScreen(false);
+    updatePresentationUi();
+    return;
+  }
+
+  if (m_presentationRequested || m_switchingMode || !isEnabled() || !isVisible()) {
+    return;
+  }
+  m_presentationRequested = true;
+  ++m_presentationGeneration;
+  // The fullscreen host owns Escape once promoted; cover the pending page/deck too.
+  qApp->installEventFilter(this);
+  {
+    const QScopedValueRollback<bool> preparing(m_preparingPresentation, true);
+    // The normal Edit -> Read path syncs unsaved source through BufferService::syncNow().
+    setMode(ViewWindowMode::Read);
+  }
+  if (!m_presentationRequested) {
+    return;
+  }
+  if (!isReadMode() || !m_viewer) {
+    setPresentationMode(false);
+    showMessage(tr("Unable to start presentation"));
+    return;
+  }
+  setDebugVisible(false);
+  requestPresentationWhenReady();
+}
+
+void MarkdownViewWindow2::requestPresentationWhenReady() {
+  if (!m_presentationRequested || m_presentationRequestSent || m_preparingPresentation ||
+      m_switchingMode || !isReadMode() || !m_viewerReady || !adapter() || !adapter()->isReady()) {
+    return;
+  }
+  m_presentationRequestSent = true;
+  adapter()->setPresentationMode(true);
+}
+
+void MarkdownViewWindow2::handlePresentationStateChanged(bool p_active, const QString &p_error) {
+  if (!p_error.isEmpty()) {
+    qWarning() << "Markdown presentation failed:" << p_error;
+  }
+  if (!p_active || !p_error.isEmpty()) {
+    // Rendering the initial page may report inactive before our request was dispatched.
+    if (!m_presentationRequestSent && !m_presentationActive) {
+      return;
+    }
+    const bool showError = m_presentationRequested && !p_error.isEmpty();
+    setPresentationMode(false);
+    if (showError) {
+      showMessage(tr("Unable to start presentation"));
+    }
+    return;
+  }
+
+  if (!m_presentationRequested || !m_presentationRequestSent || !isReadMode() || !m_viewerReady ||
+      !isEnabled() || !isVisible()) {
+    setPresentationMode(false);
+    // A ready callback can arrive after cancellation. Never resurrect the native window.
+    if (adapter() && adapter()->isReady()) {
+      adapter()->setPresentationMode(false);
+    }
+    return;
+  }
+
+  m_presentationActive = true;
+  qApp->removeEventFilter(this);
+  if (!isViewFullScreen() && !setViewFullScreen(true)) {
+    handlePresentationStateChanged(false, QStringLiteral("Unable to enter native fullscreen"));
+    return;
+  }
+  // Focus/layout events during promotion can cancel the request synchronously.
+  if (!m_presentationRequested || !m_presentationActive) {
+    setPresentationMode(false);
+    return;
+  }
+  updatePresentationUi();
+}
+
+void MarkdownViewWindow2::updatePresentationUi() {
+  const bool active = m_presentationActive && isViewFullScreen();
+  if (m_presentationAction) {
+    const QSignalBlocker blocker(m_presentationAction);
+    m_presentationAction->setChecked(active);
+  }
+  if (m_presentationEffect) {
+    m_presentationEffect->setActive(active);
+  }
+  update();
+}
+
+void MarkdownViewWindow2::paintEvent(QPaintEvent *p_event) {
+  ViewWindow2::paintEvent(p_event);
+  if (isViewFullScreen()) {
+    QPainter painter(this);
+    painter.fillRect(rect(), m_presentationBackground);
+  }
+}
+
 void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
   p_menu->addSeparator();
 
@@ -392,6 +570,7 @@ void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
 }
 
 void MarkdownViewWindow2::handlePrint() {
+  setPresentationMode(false);
   if (getBuffer().isEncrypted()) {
     showMessage(tr("Printing encrypted notes is not supported"));
     return;
@@ -413,6 +592,7 @@ void MarkdownViewWindow2::handlePrint() {
 }
 
 bool MarkdownViewWindow2::aboutToClose(bool p_force) {
+  setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   const bool isLast = isLastWindowForBuffer();
   const bool result = ViewWindow2::aboutToClose(p_force);
@@ -664,6 +844,29 @@ bool MarkdownViewWindow2::setupViewer() {
             showFindResult(p_texts, p_totalMatches, p_currentMatchIndex);
           });
 
+  connect(adapterObj, &MarkdownViewerAdapter::presentationStateChanged, this,
+          &MarkdownViewWindow2::handlePresentationStateChanged);
+  connect(adapterObj, &MarkdownViewerAdapter::textUpdated, this, [this]() {
+    if (m_presentationRequestSent) {
+      setPresentationMode(false);
+    }
+  });
+  connect(m_viewer->page(), &QWebEnginePage::loadStarted, this, [this]() {
+    const bool wasReady = m_viewerReady;
+    m_viewerReady = false;
+    // A requested Edit -> Read transition may still be loading its initial page.
+    if (!m_preparingPresentation && (wasReady || m_presentationRequestSent)) {
+      setPresentationMode(false);
+    }
+  });
+  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this, [this](bool p_ok) {
+    if (!p_ok && m_presentationRequested) {
+      qWarning() << "Markdown presentation failed: viewer page did not load";
+      setPresentationMode(false);
+      showMessage(tr("Unable to start presentation"));
+    }
+  });
+
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
     m_viewerReady = true;
@@ -677,6 +880,7 @@ bool MarkdownViewWindow2::setupViewer() {
     if (m_mode == ViewWindowMode::Edit) {
       setEditViewMode(m_editViewMode);
     }
+    requestPresentationWhenReady();
   });
 
   // Deferred anchor scroll: drain pending anchor after rendering completes.
@@ -1071,6 +1275,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   if (m_switchingMode) {
     return;
   }
+  if (!m_preparingPresentation) {
+    setPresentationMode(false);
+  }
   ++m_navigationGeneration;
   if (m_viewer) {
     m_viewer->invalidateNavigationTargets();
@@ -1326,6 +1533,9 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
 
 // Path 2: Buffer -> Viewer.
 void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) {
+  if (!m_preparingPresentation) {
+    setPresentationMode(false);
+  }
   if (!m_viewer) {
     return;
   }
@@ -1344,6 +1554,7 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
       return;
     }
     if (!m_protectedView->loaded) {
+      m_viewerReady = false;
       adapter()->reset();
       m_protectedView->loaded = true;
       m_viewer->load(m_protectedView->page.url);
@@ -1374,10 +1585,12 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
     auto tmpl = htmlTemplateService->getMarkdownViewerTemplate();
     auto baseUrl = PathUtils::pathToUrl(getBuffer().resolvedPath());
 
+    m_viewerReady = false;
     adapter()->reset();
     m_viewer->setHtml(tmpl, baseUrl);
     adapter()->setText(state.revision, state.content, lineNumber);
   } else {
+    m_viewerReady = false;
     adapter()->reset();
     m_viewer->setHtml(QString());
     adapter()->setText(0, QString(), -1);
@@ -1406,6 +1619,7 @@ void MarkdownViewWindow2::syncEditorPositionToPreview() {
 
 // ViewWindow2 pure virtual override.
 void MarkdownViewWindow2::syncEditorFromBuffer() {
+  setPresentationMode(false);
   syncTextEditorFromBuffer(false);
   syncViewerFromBuffer(false);
 }
@@ -1573,6 +1787,7 @@ void MarkdownViewWindow2::updateEditSectionNumberOptions(bool p_activate) {
 }
 
 void MarkdownViewWindow2::handleEditorConfigChange() {
+  setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   updateSectionNumberOptions();
   // Always update layout mode (WidgetConfig changes don't affect editor config revision).
@@ -1652,6 +1867,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {
+  setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   ViewWindow2::handleThemeChanged(); // base: refreshes toolbar icons
 
@@ -1730,6 +1946,10 @@ void MarkdownViewWindow2::handleThemeChanged() {
 }
 
 void MarkdownViewWindow2::applyReadableWidth() {
+  if (isViewFullScreen()) {
+    ViewWindow2::applyReadableWidth();
+    return;
+  }
   auto mode = getLayoutMode();
   auto &widgetConfig = getServices().get<ConfigMgr2>()->getWidgetConfig();
   int maxPx = widgetConfig.getReadableWidthMaxPx();
@@ -2162,6 +2382,30 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 // ============ Helpers ============
 
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (m_presentationRequested && !m_presentationActive) {
+    if (p_obj == this && ((p_event->type() == QEvent::Hide && !p_event->spontaneous()) ||
+                          p_event->type() == QEvent::Close ||
+                          (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
+      setPresentationMode(false);
+    } else if ((p_event->type() == QEvent::KeyPress ||
+                p_event->type() == QEvent::ShortcutOverride) &&
+               static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape &&
+               !QApplication::activePopupWidget()) {
+      auto *widget = qobject_cast<QWidget *>(p_obj);
+      auto *focus = QApplication::focusWidget();
+      const bool belongsToView =
+          (widget && (widget == this || isAncestorOf(widget)) && widget->window() == window()) ||
+          (qobject_cast<QWindow *>(p_obj) && focus && (focus == this || isAncestorOf(focus)) &&
+           QApplication::activeWindow() == window());
+      if (belongsToView) {
+        p_event->accept();
+        if (p_event->type() == QEvent::KeyPress) {
+          setPresentationMode(false);
+        }
+        return true;
+      }
+    }
+  }
   if (p_obj == m_splitter) {
     if (p_event->type() == QEvent::FocusIn) {
       focusEditor();
