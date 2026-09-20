@@ -39,13 +39,15 @@ public:
 
   // ============ PDF Viewer Template ============
 
-  // Update PDF viewer template from config. No-op if revision unchanged (unless forced).
+  // Update PDF viewer template when config or theme CSS changes (or when forced).
   // @p_commentColorsCss: a `:root { --vx-comment-*: ... }` block of RESOLVED
   //   colors from ThemeService::commentHighlightCssVariables(). Passed in as
   //   plain content, keeping this service free of GUI dependencies exactly as
   //   updateMarkdownViewerTemplate does with the web stylesheet.
-  void updatePdfViewerTemplate(const PdfViewerConfig &p_config,
-                               const QString &p_commentColorsCss = QString(), bool p_force = false);
+  // @p_webStyleContent: resolved theme web CSS, used only for standalone global
+  //   ::-webkit-scrollbar* rules, never Markdown page styles. Part of the cache key.
+  void updatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
+                               const QString &p_webStyleContent, bool p_force = false);
 
   // Get the cached PDF viewer template HTML.
   const QString &getPdfViewerTemplate() const;
@@ -140,7 +142,7 @@ private:
                               const QString &p_highlightStyleSheetFile);
 
   void generatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
-                                 Template &p_template) const;
+                                 const QString &p_webStyleContent, Template &p_template) const;
 
   void generateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
                                      const QString &p_webStyleSheetFile,
@@ -151,9 +153,10 @@ private:
   Template m_pdfViewerTemplate;
 
   // Part of the PDF template's cache key: a theme switch changes the resolved
-  // comment colors without changing the config revision, and the template must
+  // comment colors or scrollbars without changing the config revision, and the template must
   // be regenerated for it.
   QString m_pdfViewerCommentColorsCss;
+  QString m_pdfViewerWebStyleContent;
 
   Template m_markdownViewerTemplate;
   Template m_mindMapEditorTemplate;

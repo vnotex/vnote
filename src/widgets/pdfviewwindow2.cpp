@@ -605,11 +605,12 @@ void PdfViewWindow2::setupViewer() {
   auto *themeService = getServices().get<ThemeService>();
 
   // Prepare the PDF.js HTML template via HtmlTemplateService (DI, not legacy singleton).
-  // The comment colors are RESOLVED here, in the view layer, and passed down as
+  // The theme styles are RESOLVED here, in the view layer, and passed down as
   // plain content — HtmlTemplateService must stay free of GUI dependencies.
   auto *tmplService = getServices().get<HtmlTemplateService>();
   tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                       themeService->commentHighlightCssVariables());
+                                       themeService->commentHighlightCssVariables(),
+                                       themeService->fetchWebStyleSheet());
 
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
   auto *profileService = getServices().get<WebEngineProfileService>();
@@ -687,7 +688,8 @@ void PdfViewWindow2::handleEditorConfigChange() {
     auto *themeService = getServices().get<ThemeService>();
     auto *tmplService = getServices().get<HtmlTemplateService>();
     tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                         themeService->commentHighlightCssVariables());
+                                         themeService->commentHighlightCssVariables(),
+                                         themeService->fetchWebStyleSheet());
   }
 }
 
@@ -706,7 +708,7 @@ void PdfViewWindow2::handleThemeChanged() {
   auto *tmplService = getServices().get<HtmlTemplateService>();
   tmplService->updatePdfViewerTemplate(pdfViewerConfig,
                                        themeService->commentHighlightCssVariables(),
-                                       /*p_force=*/true);
+                                       themeService->fetchWebStyleSheet(), /*p_force=*/true);
 
   // Update WebEngine page background color.
   m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());

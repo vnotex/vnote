@@ -3,6 +3,8 @@
  * PDF pages and their canvases keep their own colors. */
 body {
     background-color: transparent;
+    /* Let the theme's WebKit scrollbar rules win over pdf.js's dark-mode colors. */
+    scrollbar-color: auto;
 }
 
 /* ============ The built-in toolbar strip is hidden ============

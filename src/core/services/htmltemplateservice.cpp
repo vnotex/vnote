@@ -25,6 +25,25 @@ const QStringList c_presentationScripts = {QStringLiteral("web/js/reveal/reveal.
 const QStringList c_presentationStyles = {
     QStringLiteral("web/js/reveal/reset.css"), QStringLiteral("web/js/reveal/reveal.css"),
     QStringLiteral("web/js/reveal/black.css"), QStringLiteral("web/css/presentation.css")};
+// Theme web.css uses flat, global scrollbar rules. Reuse those without importing
+// Markdown's body, typography or layout into the PDF viewer.
+QString pdfScrollBarStyles(QString p_webStyleContent) {
+  static const QRegularExpression comments(QStringLiteral("/\\*[\\s\\S]*?\\*/"));
+  static const QRegularExpression rules(QStringLiteral("([^{}]+)\\{([^{}]*)\\}"));
+  static const QRegularExpression selector(
+      QStringLiteral("^::-webkit-scrollbar(?:-[a-z-]+)?(?::[a-z-]+)*$"));
+  p_webStyleContent.remove(comments);
+  QString styles;
+  auto matches = rules.globalMatch(p_webStyleContent);
+  while (matches.hasNext()) {
+    const auto match = matches.next();
+    const auto ruleSelector = match.captured(1).trimmed();
+    if (selector.match(ruleSelector).hasMatch()) {
+      styles += ruleSelector + QLatin1Char('{') + match.captured(2) + QStringLiteral("}\n");
+    }
+  }
+  return styles;
+}
 } // namespace
 
 HtmlTemplateService::HtmlTemplateService(ConfigMgr2 *p_configMgr, QObject *p_parent)
@@ -226,15 +245,18 @@ void HtmlTemplateService::fillResourcesByContent(QString &p_template,
 // ============ PDF Viewer Template ============
 
 void HtmlTemplateService::updatePdfViewerTemplate(const PdfViewerConfig &p_config,
-                                                  const QString &p_commentColorsCss, bool p_force) {
+                                                  const QString &p_commentColorsCss,
+                                                  const QString &p_webStyleContent, bool p_force) {
   if (!p_force && p_config.revision() == m_pdfViewerTemplate.m_revision &&
-      p_commentColorsCss == m_pdfViewerCommentColorsCss) {
+      p_commentColorsCss == m_pdfViewerCommentColorsCss &&
+      p_webStyleContent == m_pdfViewerWebStyleContent) {
     return;
   }
 
   m_pdfViewerTemplate.m_revision = p_config.revision();
   m_pdfViewerCommentColorsCss = p_commentColorsCss;
-  generatePdfViewerTemplate(p_config, p_commentColorsCss, m_pdfViewerTemplate);
+  m_pdfViewerWebStyleContent = p_webStyleContent;
+  generatePdfViewerTemplate(p_config, p_commentColorsCss, p_webStyleContent, m_pdfViewerTemplate);
 }
 
 const QString &HtmlTemplateService::getPdfViewerTemplate() const {
@@ -247,6 +269,7 @@ const QString &HtmlTemplateService::getPdfViewerTemplatePath() const {
 
 void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_config,
                                                     const QString &p_commentColorsCss,
+                                                    const QString &p_webStyleContent,
                                                     Template &p_template) const {
   const auto &viewerResource = p_config.getViewerResource();
   p_template.m_templatePath = resolveConfigFile(viewerResource.m_template);
@@ -257,15 +280,17 @@ void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_con
     return;
   }
 
-  if (!p_commentColorsCss.isEmpty()) {
+  const auto themeStyles =
+      p_commentColorsCss + QLatin1Char('\n') + pdfScrollBarStyles(p_webStyleContent);
+  if (!themeStyles.trimmed().isEmpty()) {
     // Same defensive guard fillThemeStylesWithContent uses: content that closes
     // the style element would let a palette value inject markup.
-    if (p_commentColorsCss.contains(QStringLiteral("</style>"), Qt::CaseInsensitive)) {
-      qWarning() << "HtmlTemplateService: comment colors contain </style>, refusing to inline";
+    if (themeStyles.contains(QStringLiteral("</style>"), Qt::CaseInsensitive)) {
+      qWarning() << "HtmlTemplateService: PDF theme styles contain </style>, refusing to inline";
     } else {
       p_template.m_template.replace(
           QStringLiteral("<!-- VX_PDF_VARS_PLACEHOLDER -->"),
-          QStringLiteral("<style type=\"text/css\">\n%1</style>").arg(p_commentColorsCss));
+          QStringLiteral("<style type=\"text/css\">\n%1</style>").arg(themeStyles));
     }
   }
 

@@ -20,6 +20,14 @@ the theme-colored `QWebEnginePage` background supplied by `PdfViewWindow2`. Its
 existing theme-change handler refreshes that color; PDF page and canvas colors
 remain unchanged. Keep the native background opaque.
 
+PDF scrollbars reuse the active theme's Markdown read-mode rules: `PdfViewWindow2`
+passes the palette-resolved `web.css` to `HtmlTemplateService`, which extracts only
+standalone global `::-webkit-scrollbar*` rules. Keep those rules flat and ungrouped;
+Markdown body, typography and layout styles must never be imported into the PDF page.
+The resolved stylesheet participates in template caching and the existing theme-refresh
+reload. `pdfviewer.css` resets inherited `scrollbar-color` to `auto`, otherwise pdf.js's
+dark-mode colors override the WebKit rules in Chromium.
+
 `web/locale/` is deliberately trimmed to a subset of the upstream locales. v6
 uses a Fluent manifest: `web/locale/locale.json` maps a LOWERCASED tag to
 `<Tag>/viewer.ftl`. Keep it in sync with the folders actually vendored, and keep
