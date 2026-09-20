@@ -1,4 +1,24 @@
 /* Enabled only for the lifetime of a rendered-DOM presentation. */
+html.vx-presentation-active {
+    color-scheme: dark;
+    --vx-presentation-code-background: rgba(255, 255, 255, 0.08);
+}
+
+/* reveal.js 6.0.2 white palette; fonts and layout are shared with black.css. */
+html.vx-presentation-active.vx-presentation-light {
+    color-scheme: light;
+    --r-background-color: #fff;
+    --r-main-color: #222;
+    --r-heading-color: #222;
+    --r-link-color: #2a76dd;
+    --r-link-color-dark: #1f64c1;
+    --r-link-color-hover: #4a8be2;
+    --r-selection-background-color: #2a76dd;
+    --r-overlay-element-bg-color: 0 0 0;
+    --r-overlay-element-fg-color: 240 240 240;
+    --vx-presentation-code-background: rgba(0, 0, 0, 0.06);
+}
+
 html.vx-presentation-active,
 body.vx-presentation-active {
     width: 100% !important;
@@ -125,7 +145,7 @@ body.vx-presentation-active {
     width: 100%;
     margin: 0.5em 0;
     padding: 0.6em;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--vx-presentation-code-background);
     color: var(--r-main-color);
     font-family: var(--r-code-font);
     font-size: 0.6em;
@@ -152,7 +172,7 @@ body.vx-presentation-active {
 #vx-presentation :not(pre) > code {
     font-family: var(--r-code-font);
     color: inherit;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--vx-presentation-code-background);
 }
 
 #vx-presentation .vx-codeblock-action-btn { color: var(--r-main-color); }

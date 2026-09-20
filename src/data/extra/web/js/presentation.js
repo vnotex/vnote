@@ -5,6 +5,7 @@
     class Presentation {
         constructor() {
             this.requested = false;
+            this.darkTheme = true;
             this.generation = 0;
             this.session = null;
             window.vxcore.on('fullMarkdownRendered', () => {
@@ -24,7 +25,7 @@
             }
         }
 
-        setActive(p_active) {
+        setActive(p_active, p_darkTheme) {
             if (!p_active) {
                 const wasRequested = this.requested || this.isActive();
                 this.requested = false;
@@ -37,6 +38,7 @@
                 }
                 return;
             }
+            this.darkTheme = p_darkTheme;
             if (!this.requested) {
                 this.requested = true;
                 ++this.generation;
@@ -340,7 +342,11 @@
             });
             this.attribute(p_session, p_content, 'hidden', '');
             for (const node of [document.documentElement, document.body]) {
-                this.attribute(p_session, node, 'class', node.className + ' vx-presentation-active');
+                let classes = node.className + ' vx-presentation-active';
+                if (node === document.documentElement && !this.darkTheme) {
+                    classes += ' vx-presentation-light';
+                }
+                this.attribute(p_session, node, 'class', classes);
             }
             for (const link of document.querySelectorAll('[data-vx-presentation-style]')) {
                 p_session.styles.push([link, link.getAttribute('media')]);

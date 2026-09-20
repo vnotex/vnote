@@ -410,8 +410,8 @@ void MarkdownViewerAdapter::setCrossCopyResult(quint64 p_id, quint64 p_timeStamp
 
 void MarkdownViewerAdapter::setWorkFinished() { emit workFinished(); }
 
-void MarkdownViewerAdapter::setPresentationMode(bool p_active) {
-  emit presentationModeRequested(p_active);
+void MarkdownViewerAdapter::setPresentationMode(bool p_active, bool p_darkTheme) {
+  emit presentationModeRequested(p_active, p_darkTheme);
 }
 
 void MarkdownViewerAdapter::setPresentationState(bool p_active, const QString &p_error) {

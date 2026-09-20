@@ -55,9 +55,9 @@ new QWebChannel(qt.webChannelTransport,
         window.vxMarkdownAdapter = adapter;
 
         // Connect signals from CPP side.
-        adapter.presentationModeRequested.connect(function(p_active) {
+        adapter.presentationModeRequested.connect(function(p_active, p_darkTheme) {
             if (window.vxPresentation) {
-                window.vxPresentation.setActive(p_active);
+                window.vxPresentation.setActive(p_active, p_darkTheme);
             } else if (p_active) {
                 adapter.setPresentationState(false, 'The presentation runtime is unavailable');
             }

@@ -397,7 +397,7 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
     ++m_presentationGeneration;
     qApp->removeEventFilter(this);
     if (cancelWeb && adapter() && adapter()->isReady()) {
-      adapter()->setPresentationMode(false);
+      adapter()->setPresentationMode(false, false);
     }
     setViewFullScreen(false);
     updatePresentationUi();
@@ -434,7 +434,13 @@ void MarkdownViewWindow2::requestPresentationWhenReady() {
     return;
   }
   m_presentationRequestSent = true;
-  adapter()->setPresentationMode(true);
+  const auto *theme = getServices().get<ThemeService>();
+  QColor background(theme->optionalPaletteColor(
+      QStringLiteral("base#content#bg"))); // palette-token-optional: Native uses system Base
+  if (!background.isValid()) {
+    background = theme->getBaseBackground();
+  }
+  adapter()->setPresentationMode(true, qGray(background.rgb()) < 128);
 }
 
 void MarkdownViewWindow2::handlePresentationStateChanged(bool p_active, const QString &p_error) {
@@ -459,7 +465,7 @@ void MarkdownViewWindow2::handlePresentationStateChanged(bool p_active, const QS
     setPresentationMode(false);
     // A ready callback can arrive after cancellation. Never resurrect the native window.
     if (adapter() && adapter()->isReady()) {
-      adapter()->setPresentationMode(false);
+      adapter()->setPresentationMode(false, false);
     }
     return;
   }

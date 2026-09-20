@@ -210,9 +210,15 @@ splitting. Headings inside atomic lists, tables and blockquotes are not slide bo
 Viewer fold wrappers are traversed without losing their state. Every remaining nested SECTION
 (including display math) becomes a temporary DIV: reveal.js treats all descendant SECTIONs as
 slides. Exit restores original node objects, wrappers, folding, styles and scroll positions.
-The local core and black theme (including fonts) are viewer-only, media-gated styles; exported
-reader CSS excludes them. Protected previews use the same explicit bundled-resource allowlist
-and unchanged CSP. JavaScript must never request HTML5 fullscreen.
+The local core and shared black-theme fonts/layout are viewer-only, media-gated styles;
+exported reader CSS excludes them. Each entry selects the black or white reveal.js palette from
+the current VNote content background (`base#content#bg`, falling back to `getBaseBackground()`
+for Native); Qt `qGray < 128` selects dark. The adapter passes that mode explicitly, including
+for protected previews whose reader stylesheet stays light. The white palette is a small scoped
+CSS override, not a duplicate font bundle. Code surfaces and scrollbar color-scheme follow it;
+the light class is restored with the reader's other classes on exit. Theme changes still end
+presentation; the next entry picks the new palette. Protected previews retain their explicit
+bundled-resource allowlist and unchanged CSP. JavaScript must never request HTML5 fullscreen.
 
 **HTML5 fullscreen remains disabled.** Enabling
 `QWebEngineSettings::FullScreenSupportEnabled` advertises it to every web view

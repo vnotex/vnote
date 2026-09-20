@@ -133,7 +133,7 @@ public:
 
   QString getCrossCopyTargetDisplayName(const QString &p_target) const;
 
-  void setPresentationMode(bool p_active);
+  void setPresentationMode(bool p_active, bool p_darkTheme);
 
   void saveContent();
 
@@ -225,7 +225,7 @@ public slots:
 signals:
   void sectionNumberOptionsChanged();
 
-  void presentationModeRequested(bool p_active);
+  void presentationModeRequested(bool p_active, bool p_darkTheme);
 
   // Current Markdown text is updated.
   void textUpdated(const QString &p_text);

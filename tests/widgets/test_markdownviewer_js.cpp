@@ -390,6 +390,7 @@ class TestMarkdownViewerJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testPresentation_followsThemeAndRestoresReader();
   void testPresentation_groupingAndRestoration();
   void testPresentation_pinnedHeaderScrolling();
   void testPresentation_cancellationRenderAndExport();
@@ -426,7 +427,7 @@ private:
   void setupSectionNumber(QJSEngine &p_engine);
   void setupMath(QJSEngine &p_engine);
   void setupPresentationPage(QWebEnginePage &p_page);
-  void setPresentationActive(QWebEnginePage &p_page, bool p_active);
+  void setPresentationActive(QWebEnginePage &p_page, bool p_active, bool p_darkTheme = true);
   void setupNavigationPage(QWebEnginePage &p_page, bool p_protected = false);
   void evaluateNavigation(QWebEnginePage &p_page, const QString &p_script, QJsonObject &p_result);
 };
@@ -720,11 +721,13 @@ return {ready: !!window.vxPresentation};
   QVERIFY(result.value(QStringLiteral("ready")).toBool());
 }
 
-void TestMarkdownViewerJs::setPresentationActive(QWebEnginePage &p_page, bool p_active) {
+void TestMarkdownViewerJs::setPresentationActive(QWebEnginePage &p_page, bool p_active,
+                                                 bool p_darkTheme) {
   QJsonObject result;
   evaluateNavigation(p_page,
-                     QStringLiteral("vxPresentation.setActive(%1); return {requested: true};")
-                         .arg(p_active ? QStringLiteral("true") : QStringLiteral("false")),
+                     QStringLiteral("vxPresentation.setActive(%1, %2); return {requested: true};")
+                         .arg(p_active ? QStringLiteral("true") : QStringLiteral("false"),
+                              p_darkTheme ? QStringLiteral("true") : QStringLiteral("false")),
                      result);
   const auto update = [&]() {
     evaluateNavigation(p_page, QStringLiteral(R"JS(
@@ -740,6 +743,65 @@ return {active: vxPresentation.isActive(), ready: !!document.querySelector('#vx-
   };
   QTRY_VERIFY_WITH_TIMEOUT(update(), 10000);
   QCOMPARE(result.value(QStringLiteral("active")).toBool(), p_active);
+}
+
+void TestMarkdownViewerJs::testPresentation_followsThemeAndRestoresReader() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupPresentationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+// Protected previews have a light reader even when the application theme is dark.
+vxcore.contentContainer.innerHTML = '<h2>Theme</h2><p>Text <code>inline</code></p>' +
+  '<pre><code>const answer = 42;</code></pre><a href="https://example.com">Link</a>';
+document.body.style.backgroundColor = 'rgb(240, 240, 240)';
+document.body.style.color = 'rgb(30, 30, 30)';
+window.__readerHtmlClass = document.documentElement.getAttribute('class');
+window.__readerBodyClass = document.body.getAttribute('class');
+window.__readerColorScheme = getComputedStyle(document.documentElement).colorScheme;
+return {prepared: true};
+)JS"),
+                     result);
+
+  for (bool dark : {true, false, true}) {
+    setPresentationActive(page, true, dark);
+    evaluateNavigation(page, QStringLiteral(R"JS(
+const root = document.getElementById('vx-presentation');
+return {
+  background: getComputedStyle(root).backgroundColor,
+  foreground: getComputedStyle(root.querySelector('h2')).color,
+  link: getComputedStyle(root.querySelector('a')).color,
+  code: getComputedStyle(root.querySelector('pre')).backgroundColor,
+  inlineCode: getComputedStyle(root.querySelector('p code')).backgroundColor,
+  colorScheme: getComputedStyle(document.documentElement).colorScheme
+};
+)JS"),
+                       result);
+    QCOMPARE(result.value(QStringLiteral("background")).toString(),
+             dark ? QStringLiteral("rgb(25, 25, 25)") : QStringLiteral("rgb(255, 255, 255)"));
+    QCOMPARE(result.value(QStringLiteral("foreground")).toString(),
+             dark ? QStringLiteral("rgb(255, 255, 255)") : QStringLiteral("rgb(34, 34, 34)"));
+    QCOMPARE(result.value(QStringLiteral("link")).toString(),
+             dark ? QStringLiteral("rgb(66, 175, 250)") : QStringLiteral("rgb(42, 118, 221)"));
+    const auto codeBackground =
+        dark ? QStringLiteral("rgba(255, 255, 255, 0.08)") : QStringLiteral("rgba(0, 0, 0, 0.06)");
+    QCOMPARE(result.value(QStringLiteral("code")).toString(), codeBackground);
+    QCOMPARE(result.value(QStringLiteral("inlineCode")).toString(), codeBackground);
+    QCOMPARE(result.value(QStringLiteral("colorScheme")).toString(),
+             dark ? QStringLiteral("dark") : QStringLiteral("light"));
+    setPresentationActive(page, false);
+    evaluateNavigation(page, QStringLiteral(R"JS(
+return {
+  restored: document.documentElement.getAttribute('class') === __readerHtmlClass &&
+    document.body.getAttribute('class') === __readerBodyClass &&
+    getComputedStyle(document.documentElement).colorScheme === __readerColorScheme &&
+    getComputedStyle(document.body).backgroundColor === 'rgb(240, 240, 240)' &&
+    getComputedStyle(document.body).color === 'rgb(30, 30, 30)'
+};
+)JS"),
+                       result);
+    QVERIFY(result.value(QStringLiteral("restored")).toBool());
+  }
 }
 
 void TestMarkdownViewerJs::testPresentation_groupingAndRestoration() {
@@ -961,7 +1023,7 @@ void TestMarkdownViewerJs::testPresentation_cancellationRenderAndExport() {
   evaluateNavigation(page, QStringLiteral(R"JS(
 vxcore.contentContainer.innerHTML = '<h2 id="only">Only</h2><p>Body</p>';
 window.__originalHtml = vxcore.contentContainer.outerHTML;
-vxPresentation.setActive(true);
+vxPresentation.setActive(true, true);
 vxPresentation.setActive(false);
 return {restoredImmediately: vxcore.contentContainer.outerHTML === __originalHtml && !vxPresentation.isActive()};
 )JS"),
@@ -980,9 +1042,9 @@ return {restoredImmediately: vxcore.contentContainer.outerHTML === __originalHtm
 
   // A new request must survive the old, canceled initialize() completing later.
   evaluateNavigation(page, QStringLiteral(R"JS(
-vxPresentation.setActive(true);
+vxPresentation.setActive(true, true);
 vxPresentation.setActive(false);
-vxPresentation.setActive(true);
+vxPresentation.setActive(true, true);
 return {requested: true};
 )JS"),
                      result);
@@ -992,7 +1054,7 @@ return {requested: true};
   evaluateNavigation(page, QStringLiteral(R"JS(
 const bundledReveal = window.Reveal;
 window.Reveal = undefined;
-vxPresentation.setActive(true);
+vxPresentation.setActive(true, true);
 window.Reveal = bundledReveal;
 const report = __presentationReports[__presentationReports.length - 1];
 return {failedClosed: report.active === false && report.error.length > 0 &&
@@ -1003,7 +1065,7 @@ return {failedClosed: report.active === false && report.error.length > 0 &&
 
   evaluateNavigation(page, QStringLiteral(R"JS(
 vxcore.numOfOngoingWorkers = 1;
-vxPresentation.setActive(true);
+vxPresentation.setActive(true, true);
 const deferred = vxPresentation.isActive() === false;
 vxcore.finishWorker('held');
 return {deferred};
