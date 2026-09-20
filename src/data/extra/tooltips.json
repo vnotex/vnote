@@ -22,5 +22,29 @@
   {
     "en_US": "Press Ctrl+G, then W to enter Navigation Mode and use the displayed hints to navigate without the mouse",
     "zh_CN": "按 Ctrl+G，再按 W 进入导航模式，使用显示的提示键，无需鼠标即可导航"
+  },
+  {
+    "en_US": "Use Cross Copy to easily copy and paste Markdown content into other editors",
+    "zh_CN": "使用“交叉复制”，轻松将 Markdown 内容复制并粘贴到其他编辑器"
+  },
+  {
+    "en_US": "The Markdown editor can parse clipboard content as Markdown and download linked images when pasting",
+    "zh_CN": "Markdown 编辑器可在粘贴时将剪贴板内容解析为 Markdown，并下载其中链接的图片"
+  },
+  {
+    "en_US": "Use Auto Section Number to easily add section numbers to your note",
+    "zh_CN": "使用“自动章节编号”，轻松为笔记添加章节编号"
+  },
+  {
+    "en_US": "Detach a tab to open it in a standalone window",
+    "zh_CN": "分离标签页，即可在独立窗口中打开笔记"
+  },
+  {
+    "en_US": "Create a Mind Map note to organize your ideas visually",
+    "zh_CN": "创建思维导图笔记，以可视化方式整理思路"
+  },
+  {
+    "en_US": "Use Presentation Mode to present your note at a meeting",
+    "zh_CN": "使用“演示模式”，在会议中展示笔记"
   }
 ]
