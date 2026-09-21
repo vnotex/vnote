@@ -53,6 +53,7 @@ private slots:
   void requestIsPendedUntilReady();
   void concurrentRequestsGetDistinctIds();
   void previewResultsKeepHighResolutionAtLogicalSize();
+  void mathPreviewsFollowDocumentOrder();
   void mathPreviewZoomWhileRasterPending_data();
   void mathPreviewZoomWhileRasterPending();
   void graphPreviewCanvas_data();
@@ -372,6 +373,69 @@ void TestMarkdownViewerAdapterAnchor::previewResultsKeepHighResolutionAtLogicalS
     QCOMPARE(blockRect(), intrinsicRect);
     QCOMPARE(followingY(), intrinsicY);
   }
+}
+
+void TestMarkdownViewerAdapterAnchor::mathPreviewsFollowDocumentOrder() {
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  auto config = QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig);
+  vte::VMarkdownEditor editor(config, QSharedPointer<vte::TextEditorParameters>::create());
+  PreviewHelper helper(&editor);
+  connect(editor.getHighlighter(), &vte::MarkdownHighlighter::mathBlocksUpdated, &helper,
+          &PreviewHelper::mathBlocksUpdated);
+  QSignalSpy requests(&helper, &PreviewHelper::mathPreviewRequested);
+  auto requestedTexts = [&]() {
+    QStringList texts;
+    for (const auto &request : requests) {
+      texts.append(request[2].toString());
+    }
+    return texts;
+  };
+
+  editor.setText(QStringLiteral(R"MD($$
+\newcommand{\BigO}[1]{\mathcal{O}(#1)}
+$$
+
+Inline: $\BigO{n^2}$, then $a^2$ and $$b^2$$.
+
+$$
+c^2
+$$
+
+Finally $d^2$.
+)MD"));
+  const QStringList firstOrder{QStringLiteral("$$\n\\newcommand{\\BigO}[1]{\\mathcal{O}(#1)}\n$$"),
+                               QStringLiteral("$\\BigO{n^2}$"),
+                               QStringLiteral("$a^2$"),
+                               QStringLiteral("$$b^2$$"),
+                               QStringLiteral("$$\nc^2\n$$"),
+                               QStringLiteral("$d^2$")};
+  QTRY_COMPARE_WITH_TIMEOUT(requests.count(), firstOrder.size(), 60000);
+  QCOMPARE(requestedTexts(), firstOrder);
+
+  // Fresh sources keep this generation observable even if the first one was cached.
+  requests.clear();
+  editor.setText(QStringLiteral(R"MD(First $d^3$.
+
+$$
+c^3
+$$
+
+Then $a^3$ and $$b^3$$.
+
+$$
+\newcommand{\BigTheta}[1]{\Theta(#1)}
+$$
+
+Finally $\BigTheta{n^3}$.
+)MD"));
+  const QStringList secondOrder{QStringLiteral("$d^3$"),
+                                QStringLiteral("$$\nc^3\n$$"),
+                                QStringLiteral("$a^3$"),
+                                QStringLiteral("$$b^3$$"),
+                                QStringLiteral("$$\n\\newcommand{\\BigTheta}[1]{\\Theta(#1)}\n$$"),
+                                QStringLiteral("$\\BigTheta{n^3}$")};
+  QTRY_COMPARE_WITH_TIMEOUT(requests.count(), secondOrder.size(), 60000);
+  QCOMPARE(requestedTexts(), secondOrder);
 }
 
 void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending_data() {

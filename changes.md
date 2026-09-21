@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Dispatch inline and display math previews in document order instead of grouping inline formulas first
 * Add an Editor setting for the default clipboard image file format: JPEG (default) or PNG with transparency; Markdown respects it without changing original file/URL formats or lossless Base64 insertion
 * Restore Qt 5 presentation-mode builds, supply Native theme presentation backgrounds, and fix cross-platform CI fixtures and window-geometry checks
 * Restore the bundled Markdown Guide and Shortcuts Help in English and Simplified Chinese, available read-only from the Settings menu with English fallback; refresh the keyboard reference against active bindings

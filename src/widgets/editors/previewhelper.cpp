@@ -673,6 +673,15 @@ void PreviewHelper::handleMathBlocksUpdate() {
   m_mathBlocksData.clear();
   m_mathBlocksData.reserve(m_pendingMathBlocks.size());
 
+  // The highlighter groups inline math before display math; dispatch in source order.
+  // Multiline math uses its last block, which preserves the order of nonoverlapping math.
+  std::sort(m_pendingMathBlocks.begin(), m_pendingMathBlocks.end(),
+            [](const vte::md::MathBlock &p_left, const vte::md::MathBlock &p_right) {
+              return p_left.m_blockNumber < p_right.m_blockNumber ||
+                     (p_left.m_blockNumber == p_right.m_blockNumber &&
+                      p_left.m_index < p_right.m_index);
+            });
+
   for (const auto &mb : m_pendingMathBlocks) {
     m_mathBlocksData.append(MathBlockPreviewData(mb));
     const int blockPreviewIdx = m_mathBlocksData.size() - 1;
