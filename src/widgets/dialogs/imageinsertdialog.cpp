@@ -22,6 +22,7 @@
 #include <vtextedit/markdownutils.h>
 
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/sessionconfig.h>
 #include <gui/utils/imageutils.h>
 #include <utils/fileutils2.h>
@@ -267,9 +268,11 @@ QByteArray ImageInsertDialog::getImageData() const {
   if (!m_imageData.isEmpty()) {
     return m_imageData;
   }
-  const bool base64 = insertAsBase64();
+  const bool png = insertAsBase64() ||
+                   (m_configMgr &&
+                    m_configMgr->getEditorConfig().getDefaultImageFormat() == QLatin1String("png"));
   QImage image = m_image;
-  if (!base64 && image.hasAlphaChannel()) {
+  if (!png && image.hasAlphaChannel()) {
     // JPEG has no alpha channel. Composite onto white rather than discarding alpha.
     image = QImage(m_image.size(), QImage::Format_RGB32);
     image.fill(Qt::white);
@@ -278,7 +281,7 @@ QByteArray ImageInsertDialog::getImageData() const {
   }
   QByteArray data;
   QBuffer output(&data);
-  if (!output.open(QIODevice::WriteOnly) || !image.save(&output, base64 ? "PNG" : "JPEG")) {
+  if (!output.open(QIODevice::WriteOnly) || !image.save(&output, png ? "PNG" : "JPEG")) {
     return QByteArray();
   }
   return data;

@@ -91,6 +91,8 @@ void EditorConfig::loadCore(const QJsonObject &p_jobj) {
     m_autoSavePolicy = stringToAutoSavePolicy(autoSavePolicy);
   }
 
+  m_defaultImageFormat = normalizeDefaultImageFormat(READSTR(QStringLiteral("defaultImageFormat")));
+
   m_backupFileDirectory = READSTR(QStringLiteral("backupFileDirectory"));
 
   m_backupFileExtension = READSTR(QStringLiteral("backupFileExtension"));
@@ -117,6 +119,7 @@ QJsonObject EditorConfig::saveCore() const {
   QJsonObject obj;
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
   obj[QStringLiteral("autoSavePolicy")] = autoSavePolicyToString(m_autoSavePolicy);
+  obj[QStringLiteral("defaultImageFormat")] = m_defaultImageFormat;
   obj[QStringLiteral("backupFileDirectory")] = m_backupFileDirectory;
   obj[QStringLiteral("backupFileExtension")] = m_backupFileExtension;
   obj[QStringLiteral("shortcuts")] = saveShortcuts();
@@ -230,6 +233,17 @@ EditorConfig::AutoSavePolicy EditorConfig::getAutoSavePolicy() const { return m_
 
 void EditorConfig::setAutoSavePolicy(EditorConfig::AutoSavePolicy p_policy) {
   updateConfig(m_autoSavePolicy, p_policy, this);
+}
+
+QString EditorConfig::normalizeDefaultImageFormat(const QString &p_format) {
+  return p_format.compare(QStringLiteral("png"), Qt::CaseInsensitive) == 0 ? QStringLiteral("png")
+                                                                           : QStringLiteral("jpeg");
+}
+
+const QString &EditorConfig::getDefaultImageFormat() const { return m_defaultImageFormat; }
+
+void EditorConfig::setDefaultImageFormat(const QString &p_format) {
+  updateConfig(m_defaultImageFormat, normalizeDefaultImageFormat(p_format), this);
 }
 
 LineEndingPolicy EditorConfig::getLineEndingPolicy() const { return m_lineEnding; }

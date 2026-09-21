@@ -161,10 +161,15 @@ quick-note creation errors. Parented message boxes retain their existing behavio
 
 ## Inserted Image Encoding
 
+Settings → Editor → **Default image format** persists `editor.core.defaultImageFormat` as
+`jpeg` (default) or `png`; missing or invalid values fall back to JPEG. The image-insert dialog
+reads the current preference through `ConfigMgr2`, so no restart is needed.
+
 `ImageInsertDialog::getImageData()` preserves original bytes from files and URLs. For a
-clipboard `QImage`, image-file insertion encodes JPEG using Qt's default quality, compositing
-alpha onto white at the original pixel dimensions (independent of device pixel ratio).
-Base64 insertion keeps lossless PNG with alpha; choosing an image file must not mutate that
+clipboard `QImage`, image-file insertion uses the selected format: JPEG uses Qt's default
+quality and composites alpha onto white; PNG preserves pixels and alpha. Both retain the
+original pixel dimensions (independent of device pixel ratio). Base64 insertion keeps lossless
+PNG with alpha regardless of the preference; choosing an image file must not mutate that
 source. `MarkdownEditor` derives the saved/uploaded filename suffix from the encoded bytes.
 
 ## Image Size Authoring

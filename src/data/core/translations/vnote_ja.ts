@@ -1458,6 +1458,14 @@
 <context>
     <name>vnotex::EditorPage</name>
     <message>
+        <source>Default image format</source>
+        <translation>既定の画像形式</translation>
+    </message>
+    <message>
+        <source>Format for clipboard images saved as files. JPEG uses a white background; PNG keeps transparency. Original files and URLs keep their format; Base64 stays lossless</source>
+        <translation>クリップボードの画像をファイルとして保存する形式。JPEG は白い背景を使用し、PNG は透明度を保持します。元のファイルと URL の画像は形式を維持し、Base64 はロスレスのままです</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+40"/>
         <location line="+7"/>
         <source>Auto save policy</source>

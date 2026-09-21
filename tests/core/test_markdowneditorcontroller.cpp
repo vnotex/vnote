@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QScopeGuard>
 #include <QSet>
 #include <QTextBlock>
 #include <QTextCursor>
@@ -22,11 +23,13 @@
 #include <vtextedit/vtextedit.h>
 
 #include <controllers/markdowneditorcontroller.h>
+#include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/texteditorconfig.h>
@@ -92,6 +95,7 @@ private slots:
   void testPrepareBufferState_modifiedBuffer();
 
   void clipboardImageFileFlattensAlphaWithoutChangingBase64();
+  void clipboardImageFormatPreferencePreservesAlpha();
   void base64ReferencePreservesPixelsAndUndo();
   void base64ReferenceAvoidsCaseInsensitiveLabels();
   void imageInsertionChoice_data();
@@ -622,6 +626,52 @@ void TestMarkdownEditorController::clipboardImageFileFlattensAlphaWithoutChangin
   image.setDevicePixelRatio(1.0);
   dialog.setInsertAsBase64(true);
   QCOMPARE(QImage::fromData(dialog.getImageData()).convertToFormat(QImage::Format_ARGB32), image);
+}
+
+void TestMarkdownEditorController::clipboardImageFormatPreferencePreservesAlpha() {
+  ConfigCoreService configService(m_context);
+  const auto original = configService.getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    configService.updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  {
+    ConfigMgr2 configMgr(&configService);
+    configMgr.init();
+    configMgr.getEditorConfig().setDefaultImageFormat(QStringLiteral("png"));
+  }
+  ConfigMgr2 restarted(&configService);
+  restarted.init();
+
+  QImage image(64, 32, QImage::Format_ARGB32);
+  image.fill(QColor(255, 0, 0, 128));
+  image.setPixelColor(0, 0, Qt::transparent);
+  ImageInsertDialog dialog(QStringLiteral("Image"), QString(), QString(), QString(), &restarted,
+                           false);
+  dialog.setImage(image);
+  dialog.setImageSource(ImageInsertDialog::ImageData);
+  const auto png = dialog.getImageData();
+  QCOMPARE(ImageUtils::guessImageSuffix(png), QStringLiteral("png"));
+
+  auto buffer =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
+  QVERIFY(buffer.isValid());
+  const auto asset = buffer.insertAssetRaw(QStringLiteral("clipboard.png"), png);
+  QVERIFY(!asset.isEmpty());
+  QCOMPARE(QFileInfo(asset).suffix(), QStringLiteral("png"));
+  QImage saved(QDir(buffer.getResourceBasePath()).filePath(asset));
+  QCOMPARE(saved.convertToFormat(QImage::Format_ARGB32), image);
+
+  // Existing dialogs read the live preference, without losing the source alpha.
+  auto &config = restarted.getEditorConfig();
+  config.setDefaultImageFormat(QStringLiteral("jpeg"));
+  const auto jpeg = QImage::fromData(dialog.getImageData());
+  QVERIFY(!jpeg.isNull());
+  QVERIFY(!jpeg.hasAlphaChannel());
+  dialog.setInsertAsBase64(true);
+  QCOMPARE(QImage::fromData(dialog.getImageData()).convertToFormat(QImage::Format_ARGB32), image);
+  dialog.setInsertAsBase64(false);
+  config.setDefaultImageFormat(QStringLiteral("png"));
+  QCOMPARE(dialog.getImageData(), png);
 }
 
 void TestMarkdownEditorController::base64ReferencePreservesPixelsAndUndo() {

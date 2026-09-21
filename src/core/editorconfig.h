@@ -132,6 +132,9 @@ public:
   const QVector<ImageHostItem> &getImageHosts() const;
   void setImageHosts(const QVector<ImageHostItem> &p_hosts);
 
+  const QString &getDefaultImageFormat() const;
+  void setDefaultImageFormat(const QString &p_format);
+
   const QString &getDefaultImageHost() const;
   void setDefaultImageHost(const QString &p_host);
 
@@ -167,6 +170,8 @@ private:
 
   QJsonObject saveImageHost() const;
 
+  static QString normalizeDefaultImageFormat(const QString &p_format);
+
   void initDefaults();
 
   // Icon size of editor tool bar.
@@ -197,6 +202,8 @@ private:
   QString m_spellCheckDefaultDictionary;
 
   QVector<ImageHostItem> m_imageHosts;
+
+  QString m_defaultImageFormat = QStringLiteral("jpeg");
 
   QString m_defaultImageHost;
 

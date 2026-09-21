@@ -47,7 +47,8 @@ public:
   const QImage &getImage() const;
   void setImage(const QImage &p_image);
 
-  // Original source bytes, or JPEG for a clipboard QImage saved as a file (white background).
+  // Original source bytes, or the configured JPEG/PNG for a clipboard QImage saved as a file.
+  // JPEG composites alpha onto white; PNG preserves it.
   // Base64 keeps lossless PNG and alpha. Never staged on disk.
   QByteArray getImageData() const;
 
@@ -78,7 +79,7 @@ private:
   bool m_browserEnabled = true;
   bool m_encryptedNote = false;
 
-  // ConfigMgr2 (owner-supplied) for the session-scoped default media path.
+  // ConfigMgr2 (owner-supplied) for the default image format and session media path.
   ConfigMgr2 *m_configMgr = nullptr;
 
   Source m_source = Source::LocalFile;

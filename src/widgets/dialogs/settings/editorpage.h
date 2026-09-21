@@ -38,6 +38,8 @@ private:
 
   QComboBox *m_lineEndingComboBox = nullptr;
 
+  QComboBox *m_defaultImageFormatComboBox = nullptr;
+
   QComboBox *m_sectionNumberPatternComboBox = nullptr;
 
   QCheckBox *m_detectHeading1ForSectionNumberCheckBox = nullptr;

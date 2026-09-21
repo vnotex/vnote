@@ -73,6 +73,24 @@ void EditorPage::setupUI() {
   }
 
   {
+    m_defaultImageFormatComboBox = WidgetsFactory::createComboBox(this);
+    m_defaultImageFormatComboBox->setObjectName(QStringLiteral("defaultImageFormatComboBox"));
+    m_defaultImageFormatComboBox->setToolTip(
+        tr("Format for clipboard images saved as files. JPEG uses a white background; PNG keeps "
+           "transparency. Original files and URLs keep their format; Base64 stays lossless"));
+    m_defaultImageFormatComboBox->addItem(QStringLiteral("JPEG"), QStringLiteral("jpeg"));
+    m_defaultImageFormatComboBox->addItem(QStringLiteral("PNG"), QStringLiteral("png"));
+
+    const QString label(tr("Default image format"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_defaultImageFormatComboBox->toolTip(), m_defaultImageFormatComboBox, this));
+    addSearchItem(label, m_defaultImageFormatComboBox->toolTip(), m_defaultImageFormatComboBox);
+    connect(m_defaultImageFormatComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &EditorPage::pageIsChanged);
+  }
+
+  {
     m_sectionNumberPatternComboBox = WidgetsFactory::createComboBox(this);
     m_sectionNumberPatternComboBox->setToolTip(
         tr("Pattern used for automatic section numbers in outline"));
@@ -218,6 +236,11 @@ void EditorPage::loadInternal() {
   }
 
   {
+    int idx = m_defaultImageFormatComboBox->findData(editorConfig.getDefaultImageFormat());
+    m_defaultImageFormatComboBox->setCurrentIndex(idx != -1 ? idx : 0);
+  }
+
+  {
     int idx = m_sectionNumberPatternComboBox->findData(editorConfig.getSectionNumberPattern());
     Q_ASSERT(idx != -1);
     m_sectionNumberPatternComboBox->setCurrentIndex(idx);
@@ -254,6 +277,8 @@ bool EditorPage::saveInternal() {
     auto ending = m_lineEndingComboBox->currentData().toInt();
     editorConfig.setLineEndingPolicy(static_cast<LineEndingPolicy>(ending));
   }
+
+  editorConfig.setDefaultImageFormat(m_defaultImageFormatComboBox->currentData().toString());
 
   editorConfig.setSectionNumberPattern(m_sectionNumberPatternComboBox->currentData().toString());
   editorConfig.setDetectHeading1ForSectionNumber(
