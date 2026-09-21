@@ -7,20 +7,75 @@ Only Git discovery GETs are sent: no clone, commit, push, or keychain access.
 Optional disk probes touch only newly created temporary directories.
 Exit codes: 0 = checked probes passed, 1 = problem found, 2 = incomplete/cancelled.
 Passing discovery does NOT prove a PAT is valid or that a push will succeed.
+A unique vnote-git-sync-*.log is saved beside this script, or in the temporary
+folder if that directory is not writable. Inputs and tokens are not logged.
+Interactive runs wait for Enter before closing; redirected runs and --help do not.
+Native crashes may leave a fault stack in the report, but cannot be caught/paused.
 """
 
-import base64
-import ctypes as ct
-from ctypes import wintypes as wt
-from datetime import datetime
-import getpass
-import os
-from pathlib import Path
-import stat
 import sys
-import tempfile
-from urllib.parse import quote, unquote, urlsplit
-import warnings
+
+
+_log_file = None
+_log_failed = False
+
+
+def _write(stream, text):
+    if stream is None:
+        return False
+    try:
+        try:
+            stream.write(text)
+        except UnicodeError:
+            encoding = getattr(stream, "encoding", None) or "ascii"
+            stream.write(text.encode(encoding, "backslashreplace").decode(encoding))
+        stream.flush()
+        return True
+    except Exception:
+        return False
+
+
+def report(*values):
+    """Flush trusted diagnostic text only; never transcribe input or exception messages."""
+    global _log_failed
+    text = " ".join(str(value) for value in values) + "\n"
+    if _log_file is not None and not _log_failed and not _write(_log_file, text):
+        _log_failed = True
+        _write(sys.stderr, "WARNING: Report file write failed; remaining output is console-only.\n")
+    if not _write(sys.stdout, text):
+        _write(sys.stderr, text)
+
+
+def report_exception(error):
+    # Exception messages, source lines and locals can contain the PAT or Basic header.
+    report("Exception type:", type(error).__name__)
+    for name in ("winerror", "errno"):
+        value = getattr(error, name, None)
+        if isinstance(value, int):
+            report("  %s=%d" % (name, value))
+    frame = error.__traceback__
+    while frame is not None:
+        code = frame.tb_frame.f_code
+        filename = code.co_filename.replace("\\", "/").rsplit("/", 1)[-1]
+        report("  at %s:%d in %s" % (filename, frame.tb_lineno, code.co_name))
+        frame = frame.tb_next
+
+
+def load_runtime():
+    # Keep imports (including native _ctypes loading) inside the logged exception boundary.
+    global base64, ct, wt, datetime, getpass, os, Path, stat, tempfile
+    global quote, unquote, urlsplit, warnings
+    import base64
+    import ctypes as ct
+    from ctypes import wintypes as wt
+    from datetime import datetime
+    import getpass
+    import os
+    from pathlib import Path
+    import stat
+    import tempfile
+    from urllib.parse import quote, unquote, urlsplit
+    import warnings
 
 
 # WinHTTP SDK constants: keep credential/redirect policy names explicit.
@@ -188,27 +243,28 @@ def parse_url(text):
 
 def report_network(client, url, service, username="", pat=""):
     label = "fetch" if service == "git-upload-pack" else "push discovery (GET only)"
+    report("STEP:", label, "with PAT" if pat else "without PAT")
     try:
         status, git = client.probe(url, service, username, pat)
     except TransportError as error:
-        print("FAIL: %s: WinHTTP %s at %s; secure flags=0x%08x" %
+        report("FAIL: %s: WinHTTP %s at %s; secure flags=0x%08x" %
               (label, error.code, error.stage, error.flags))
-        print("  " + NETWORK_ERRORS.get(error.code, "WinHTTP setup/transport failed; report this code."))
+        report("  " + NETWORK_ERRORS.get(error.code, "WinHTTP setup/transport failed; report this code."))
         for bit, message in CERT_FLAGS.items():
             if error.flags & bit:
-                print("  " + message)
-        print("  Check Windows clock/root certificates and proxy/antivirus HTTPS inspection.")
-        print("  Do not disable certificate verification. Qt OpenSSL DLLs do not fix WinHTTP.")
+                report("  " + message)
+        report("  Check Windows clock/root certificates and proxy/antivirus HTTPS inspection.")
+        report("  Do not disable certificate verification. Qt OpenSSL DLLs do not fix WinHTTP.")
         return "FAIL", False
     if 300 <= status < 400:
-        print("INCOMPLETE: %s: HTTP %s redirect; not followed to protect credentials." % (label, status))
-        print("  Use the final HTTPS clone URL. VNote may follow an initial redirect.")
+        report("INCOMPLETE: %s: HTTP %s redirect; not followed to protect credentials." % (label, status))
+        report("  Use the final HTTPS clone URL. VNote may follow an initial redirect.")
         return "INCOMPLETE", False
     if status == 200 and git:
-        print("PASS: %s: TLS and Git service advertisement received." % label)
+        report("PASS: %s: TLS and Git service advertisement received." % label)
         return "PASS", True
     if status == 401 and not pat:
-        print("INCOMPLETE: %s: TLS works; HTTP 401 requests authentication." % label)
+        report("INCOMPLETE: %s: TLS works; HTTP 401 requests authentication." % label)
         return "INCOMPLETE", True
     messages = {
         200: "Not a Git advertisement; check clone URL, login portal or proxy interception.",
@@ -220,20 +276,21 @@ def report_network(client, url, service, username="", pat=""):
     }
     message = messages.get(status, "Server/proxy failure." if status >= 500 else "Unexpected HTTP response.")
     outcome = "INCOMPLETE" if not pat and status in (403, 404) else "FAIL"
-    print("%s: %s: HTTP %s. %s" % (outcome, label, status, message))
+    report("%s: %s: HTTP %s. %s" % (outcome, label, status, message))
     return outcome, status in (200, 401, 403, 404)
 
 
 def check_notebook(folder, write_probe):
+    report("STEP: Checking notebook filesystem")
     root = Path(folder)
     outcomes = []
     try:
         if not root.is_dir():
-            print("FAIL: Notebook folder does not exist or is not a directory.")
+            report("FAIL: Notebook folder does not exist or is not a directory.")
             return ["FAIL"]
         config = root / "vx_notebook" / "config.json"
         if not config.is_file():
-            print("FAIL: vx_notebook/config.json is missing; this is not a bundled notebook root.")
+            report("FAIL: vx_notebook/config.json is missing; this is not a bundled notebook root.")
             outcomes.append("FAIL")
         for name in (".git", "vx_notebook/vx_sync"):
             path = root / name
@@ -243,16 +300,16 @@ def check_notebook(folder, write_probe):
                 continue
             attrs = getattr(info, "st_file_attributes", 0)
             if name == ".git":
-                print("INFO: Existing .git: directory=%s, readonly=%s, hidden=%s, reparse=%s." %
+                report("INFO: Existing .git: directory=%s, readonly=%s, hidden=%s, reparse=%s." %
                       (stat.S_ISDIR(info.st_mode), bool(attrs & 1), bool(attrs & 2), bool(attrs & 1024)))
-                print("  This is the gitlink path implicated by 'template .git: Access denied'.")
-                print("  Existing directories/attributes/locks may block reinitialization; back up first.")
+                report("  This is the gitlink path implicated by 'template .git: Access denied'.")
+                report("  Existing directories/attributes/locks may block reinitialization; back up first.")
                 outcomes.append("INCOMPLETE")
             elif not path.is_dir() or not (path / "HEAD").is_file():
-                print("FAIL: vx_notebook/vx_sync exists without a usable HEAD; partial Git setup.")
+                report("FAIL: vx_notebook/vx_sync exists without a usable HEAD; partial Git setup.")
                 outcomes.append("FAIL")
         if not write_probe:
-            print("INCOMPLETE: Disk write checks skipped.")
+            report("INCOMPLETE: Disk write checks skipped.")
             return outcomes + ["INCOMPLETE"]
         kernel = ct.WinDLL("kernel32", use_last_error=True)
         kernel.SetFileAttributesW.argtypes = [wt.LPCWSTR, wt.DWORD]
@@ -266,40 +323,37 @@ def check_notebook(folder, write_probe):
                 if not kernel.SetFileAttributesW(str(probe), 2):
                     raise ct.WinError(ct.get_last_error())
                 probe.rename(Path(temp) / "renamed")
-            print("PASS: Temporary create/write/hide/rename/delete in %s." %
+            report("PASS: Temporary create/write/hide/rename/delete in %s." %
                   ("notebook root" if parent == root else parent.relative_to(root)))
-        print("INFO: Temporary probes do not prove existing .git files are writable or unlocked.")
+        report("INFO: Temporary probes do not prove existing .git files are writable or unlocked.")
     except OSError as error:
-        print("FAIL: Local file operation: Windows error=%s, errno=%s." %
+        report("FAIL: Local file operation: Windows error=%s, errno=%s." %
               (getattr(error, "winerror", None), error.errno))
-        print("  Check permissions, readonly/hidden attributes, locks and antivirus protection.")
-        print("  If cleanup was blocked, inspect only .vnote-sync-check-* temporary directories.")
+        report("  Check permissions, readonly/hidden attributes, locks and antivirus protection.")
+        report("  If cleanup was blocked, inspect only .vnote-sync-check-* temporary directories.")
         outcomes.append("FAIL")
     return outcomes or ["PASS"]
 
 
 def main():
-    if len(sys.argv) > 1:
-        print(__doc__)
-        return 0 if sys.argv[1:] in (["--help"], ["-h"]) else 2
     if sys.platform != "win32":
-        print("This diagnostic must run on the affected Windows machine (native WinHTTP).")
+        report("This diagnostic must run on the affected Windows machine (native WinHTTP).")
         return 2
-    print("VNote Git sync diagnostic: Windows WinHTTP, independent of Qt 5.15/Qt 6.")
-    print("Windows:", sys.getwindowsversion(), "Python bits:", ct.sizeof(ct.c_void_p) * 8)
-    print("Local time:", datetime.now().astimezone().isoformat(), "-- verify this clock")
-    print("No clone/push/keychain access. PAT is not saved. Do not put a PAT in the URL.")
-    print("Default WinHTTP proxy; diagnostic-only 15s stage timeouts; no redirects.")
+    report("VNote Git sync diagnostic: Windows WinHTTP, independent of Qt 5.15/Qt 6.")
+    report("Windows:", sys.getwindowsversion(), "Python bits:", ct.sizeof(ct.c_void_p) * 8)
+    report("Local time:", datetime.now().astimezone().isoformat(), "-- verify this clock")
+    report("No clone/push/keychain access. PAT is not saved. Do not put a PAT in the URL.")
+    report("Default WinHTTP proxy; diagnostic-only 15s stage timeouts; no redirects.")
     while True:
         try:
             url, username = parse_url(input("Exact HTTPS clone URL used in VNote: ").strip())
             break
         except ValueError as error:
-            print(error)
-    print("Target host:", url.hostname)
+            report(error)
+    report("Target host:", url.hostname)
     if not url.username:
-        print("INFO: VNote uses login x-access-token for this URL. Gitee may require the PAT")
-        print("  owner's account login: https://LOGIN@gitee.com/OWNER/REPO.git (no PAT in URL).")
+        report("INFO: VNote uses login x-access-token for this URL. Gitee may require the PAT")
+        report("  owner's account login: https://LOGIN@gitee.com/OWNER/REPO.git (no PAT in URL).")
     folder = input("Existing notebook folder (blank to skip disk checks): ").strip().strip('"')
     outcomes = []
     if folder:
@@ -307,12 +361,14 @@ def main():
         outcomes.extend(check_notebook(folder, consent))
     else:
         outcomes.append("INCOMPLETE")
+    report("STEP: Initializing WinHTTP")
     client = WinHTTP()
     result, reachable = report_network(client, url, "git-upload-pack")
     if reachable and input("Test with your PAT on this host? [y/N]: ").lower() == "y":
         # Windows getpass can block on console input even when stdin is redirected.
         if not sys.stdin.isatty():
             raise getpass.GetPassWarning("A real console is required")
+        report("STEP: Reading PAT securely (input is not logged)")
         with warnings.catch_warnings():
             warnings.simplefilter("error", getpass.GetPassWarning)
             pat = getpass.getpass("PAT (hidden; Enter to skip): ")
@@ -327,22 +383,110 @@ def main():
             outcomes.extend([result, "INCOMPLETE"])
     else:
         outcomes.extend([result, "INCOMPLETE"])
-    print("\nLimits: discovery is not a clone/push; even HTTP 200 does not prove PAT validity")
-    print("or branch write permission. Existing-file locks and VNote's keychain are not tested.")
-    print("For 'Password entry not found', re-enter the PAT in VNote after fixing TLS/disk errors.")
-    print("Share this output, not the PAT. No response headers/body or full URL are printed.")
+    report("\nLimits: discovery is not a clone/push; even HTTP 200 does not prove PAT validity")
+    report("or branch write permission. Existing-file locks and VNote's keychain are not tested.")
+    report("For 'Password entry not found', re-enter the PAT in VNote after fixing TLS/disk errors.")
+    report("Share this output, not the PAT. No response headers/body or full URL are printed.")
     summary = "FAIL" if "FAIL" in outcomes else "INCOMPLETE" if "INCOMPLETE" in outcomes else "PASS"
-    print("RESULT:", summary)
+    report("RESULT:", summary)
     return {"PASS": 0, "FAIL": 1, "INCOMPLETE": 2}[summary]
 
 
-if __name__ == "__main__":
+def run():
+    global _log_file, _log_failed
+    exit_code = 2
+    log_path = None
+    fault_handler = None
+    interactive = False
     try:
-        sys.exit(main())
-    except (KeyboardInterrupt, EOFError, getpass.GetPassWarning):
-        print("\nCancelled or no secure input terminal; no token will be echoed. Run in a console.")
-        sys.exit(2)
-    except OSError as error:
-        print("Windows runtime failure: error=%s, errno=%s. Run in a supported Windows/Python console." %
-              (getattr(error, "winerror", None), error.errno))
-        sys.exit(2)
+        if len(sys.argv) > 1:
+            report(__doc__)
+            return 0 if sys.argv[1:] in (["--help"], ["-h"]) else 2
+
+        try:
+            interactive = all(stream is not None and stream.isatty()
+                              for stream in (sys.stdin, sys.stdout))
+        except Exception:
+            pass
+
+        # Initialize the report before importing ctypes or loading Windows DLLs.
+        import os
+        import tempfile
+        for directory in (os.path.dirname(os.path.abspath(__file__)), None):
+            try:
+                descriptor, candidate = tempfile.mkstemp(
+                    prefix="vnote-git-sync-", suffix=".log", dir=directory)
+                try:
+                    _log_file = os.fdopen(descriptor, "w", encoding="utf-8")
+                except BaseException:
+                    os.close(descriptor)
+                    raise
+                log_path = candidate
+                break
+            except OSError as error:
+                report("WARNING: Could not create report beside script." if directory else
+                       "WARNING: Could not create temporary report; continuing console-only.")
+                report_exception(error)
+        if log_path is not None:
+            report("Diagnostic report:", log_path)
+            report("Native crashes may write a fault stack here but cannot wait for Enter.")
+            try:
+                import faulthandler
+                faulthandler.enable(file=_log_file, all_threads=True)
+                fault_handler = faulthandler
+            except Exception as error:
+                report("WARNING: Native fault logging is unavailable.")
+                report_exception(error)
+
+        report("Python:", sys.version.replace("\n", " "))
+        report("Platform:", sys.platform)
+        report("STEP: Loading diagnostic runtime")
+        load_runtime()
+        exit_code = main()
+    except (KeyboardInterrupt, EOFError) as error:
+        report("INCOMPLETE: Cancelled or input console closed.")
+        report_exception(error)
+    except BaseException as error:
+        report("INCOMPLETE: Diagnostic stopped unexpectedly; share the report below.")
+        if type(error).__name__ == "GetPassWarning":
+            report("No secure input terminal; no token will be echoed. Run in a console.")
+        report_exception(error)
+    finally:
+        # --help/invalid arguments return before creating a report or prompting.
+        if len(sys.argv) == 1:
+            report("Diagnostic exit code:", exit_code)
+            if log_path is not None:
+                report("Diagnostic report (may be partial):" if _log_failed else
+                       "Diagnostic report:", log_path)
+            else:
+                report("No report file available; copy the console output.")
+            if interactive:
+                try:
+                    input("Press Enter to close this diagnostic...")
+                except (KeyboardInterrupt, EOFError):
+                    pass
+                except BaseException as error:
+                    report("INCOMPLETE: Could not wait for console input.")
+                    report_exception(error)
+                    exit_code = 2
+                    report("Diagnostic exit code:", exit_code)
+        if fault_handler is not None:
+            try:
+                fault_handler.disable()
+            except Exception as error:
+                # Leave its descriptor alive if disabling failed.
+                report("WARNING: Could not disable native fault logging.")
+                report_exception(error)
+            else:
+                fault_handler = None
+        if _log_file is not None and fault_handler is None:
+            try:
+                _log_file.close()
+            except Exception:
+                _write(sys.stderr, "WARNING: Could not close the diagnostic report.\n")
+            _log_file = None
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(run())
